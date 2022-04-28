@@ -15,6 +15,7 @@
 #ifndef ESP_EVENT_PRIVATE_H_
 #define ESP_EVENT_PRIVATE_H_
 
+#include <stdbool.h>
 #include "esp_event.h"
 
 #ifdef __cplusplus

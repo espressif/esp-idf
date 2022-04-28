@@ -1,24 +1,16 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_REG_H_
 #define _SOC_EFUSE_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define EFUSE_PGM_DATA0_REG          (DR_REG_EFUSE_BASE + 0x0)
 /* EFUSE_PGM_DATA_0 : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -230,12 +222,12 @@ AG can be enabled in HMAC module..*/
 #define EFUSE_DIS_ICACHE_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_V  0x1
 #define EFUSE_DIS_ICACHE_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: Set this bit to disable boot from RTC RAM..*/
-#define EFUSE_DIS_RTC_RAM_BOOT    (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_S  7
+/* EFUSE_RPT4_RESERVED5 : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved */
+#define EFUSE_RPT4_RESERVED5    (BIT(7))
+#define EFUSE_RPT4_RESERVED5_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_V  0x1
+#define EFUSE_RPT4_RESERVED5_S  7
 /* EFUSE_RD_DIS : RO ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: Set this bit to disable reading from BlOCK4-10..*/
 #define EFUSE_RD_DIS    0x0000007F
@@ -437,18 +429,18 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_KEY_PURPOSE_2_S  0
 
 #define EFUSE_RD_REPEAT_DATA3_REG          (DR_REG_EFUSE_BASE + 0x3C)
-/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[31] ;default: 1'h0 ; */
-/*description: Reserved (used for four backups method)..*/
-#define EFUSE_RPT4_RESERVED1    (BIT(31))
-#define EFUSE_RPT4_RESERVED1_M  (BIT(31))
+/* EFUSE_ERR_RST_ENABLE : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_V  0x1
+#define EFUSE_ERR_RST_ENABLE_S  31
+/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[30] ;default: 1'h0 ; */
+/*description: Reserved (used for four backups method).*/
+#define EFUSE_RPT4_RESERVED1  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_M  (BIT(30))
 #define EFUSE_RPT4_RESERVED1_V  0x1
-#define EFUSE_RPT4_RESERVED1_S  31
-/* EFUSE_POWERGLITCH_EN : RO ;bitpos:[30] ;default: 1'b0 ; */
-/*description: Set this bit to enable power glitch function..*/
-#define EFUSE_POWERGLITCH_EN    (BIT(30))
-#define EFUSE_POWERGLITCH_EN_M  (BIT(30))
-#define EFUSE_POWERGLITCH_EN_V  0x1
-#define EFUSE_POWERGLITCH_EN_S  30
+#define EFUSE_RPT4_RESERVED1_S  30
 /* EFUSE_SECURE_VERSION : RO ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: Secure version (used by ESP-IDF anti-rollback feature)..*/
 #define EFUSE_SECURE_VERSION    0x0000FFFF
@@ -1283,12 +1275,12 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_DIS_ICACHE_ERR_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_ERR_V  0x1
 #define EFUSE_DIS_ICACHE_ERR_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT_ERR : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: If any bits in this filed are 1, then it indicates a programming error..*/
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR    (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_S  7
+/* EFUSE_RPT4_RESERVED5_ERR : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved*/
+#define EFUSE_RPT4_RESERVED5_ERR  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_ERR_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_ERR_V  0x1
+#define EFUSE_RPT4_RESERVED5_ERR_S  7
 /* EFUSE_RD_DIS_ERR : RO ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_RD_DIS_ERR    0x0000007F
@@ -1481,18 +1473,18 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_KEY_PURPOSE_2_ERR_S  0
 
 #define EFUSE_RD_REPEAT_ERR3_REG          (DR_REG_EFUSE_BASE + 0x188)
-/* EFUSE_RPT4_RESERVED1_ERR : RO ;bitpos:[31] ;default: 1'h0 ; */
-/*description: Reserved..*/
-#define EFUSE_RPT4_RESERVED1_ERR    (BIT(31))
-#define EFUSE_RPT4_RESERVED1_ERR_M  (BIT(31))
+/* EFUSE_ERR_RST_ENABLE_ERR : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE_ERR  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_ERR_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_ERR_V  0x1
+#define EFUSE_ERR_RST_ENABLE_ERR_S  31
+/* EFUSE_RPT4_RESERVED1_ERR : RO ;bitpos:[30] ;default: 1'h0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED1_ERR  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_ERR_M  (BIT(30))
 #define EFUSE_RPT4_RESERVED1_ERR_V  0x1
-#define EFUSE_RPT4_RESERVED1_ERR_S  31
-/* EFUSE_POWERGLITCH_EN_ERR : RO ;bitpos:[30] ;default: 1'b0 ; */
-/*description: .*/
-#define EFUSE_POWERGLITCH_EN_ERR    (BIT(30))
-#define EFUSE_POWERGLITCH_EN_ERR_M  (BIT(30))
-#define EFUSE_POWERGLITCH_EN_ERR_V  0x1
-#define EFUSE_POWERGLITCH_EN_ERR_S  30
+#define EFUSE_RPT4_RESERVED1_ERR_S  30
 /* EFUSE_SECURE_VERSION_ERR : RO ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_SECURE_VERSION_ERR    0x0000FFFF
@@ -1572,7 +1564,7 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_S  0
 
-#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x190)
+#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x18C)
 /* EFUSE_RPT4_RESERVED2_ERR : RO ;bitpos:[23:0] ;default: 24'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_RPT4_RESERVED2_ERR    0x00FFFFFF
@@ -1740,6 +1732,9 @@ ing user data failed and the number of error bytes is over 6..*/
 #define EFUSE_MEM_FORCE_PD_V  0x1
 #define EFUSE_MEM_FORCE_PD_S  0
 
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
+
 #define EFUSE_CONF_REG          (DR_REG_EFUSE_BASE + 0x1CC)
 /* EFUSE_OP_CODE : R/W ;bitpos:[15:0] ;default: 16'h0 ; */
 /*description: 0x5A5A: Operate programming command 0x5AA5: Operate read command..*/
@@ -1747,6 +1742,9 @@ ing user data failed and the number of error bytes is over 6..*/
 #define EFUSE_OP_CODE_M  ((EFUSE_OP_CODE_V)<<(EFUSE_OP_CODE_S))
 #define EFUSE_OP_CODE_V  0xFFFF
 #define EFUSE_OP_CODE_S  0
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE  0x5aa5
 
 #define EFUSE_STATUS_REG          (DR_REG_EFUSE_BASE + 0x1D0)
 /* EFUSE_REPEAT_ERR_CNT : RO ;bitpos:[17:10] ;default: 8'h0 ; */

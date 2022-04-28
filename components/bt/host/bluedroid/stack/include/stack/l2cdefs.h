@@ -257,11 +257,6 @@
 #define L2CAP_EXTFEA_EXT_WINDOW     0x00000100    /* Extended Window Size                   */
 #define L2CAP_EXTFEA_UCD_RECEPTION  0x00000200    /* Unicast Connectionless Data Reception  */
 
-/* Mask for locally supported features used in Information Response (default to none) */
-#ifndef L2CAP_EXTFEA_SUPPORTED_MASK
-#define L2CAP_EXTFEA_SUPPORTED_MASK 0
-#endif
-
 /* Mask for LE supported features used in Information Response (default to none) */
 #ifndef L2CAP_BLE_EXTFEA_MASK
 #define L2CAP_BLE_EXTFEA_MASK 0

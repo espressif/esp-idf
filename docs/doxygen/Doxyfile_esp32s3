@@ -1,0 +1,18 @@
+INPUT += \
+         $(PROJECT_PATH)/components/esp_hw_support/include/soc/$(IDF_TARGET)/esp_hmac.h \
+         $(PROJECT_PATH)/components/esp_hw_support/include/soc/$(IDF_TARGET)/esp_ds.h \
+         $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm.h \
+         $(PROJECT_PATH)/components/hal/include/hal/pcnt_types.h \
+         $(PROJECT_PATH)/components/driver/include/driver/pulse_cnt.h \
+         $(PROJECT_PATH)/components/driver/include/driver/temperature_sensor.h \
+         $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
+         $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
+         $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
+         $(PROJECT_PATH)/components/ulp/ulp_common/include/$(IDF_TARGET)/ulp_common_defs.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
+         $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
+         $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h

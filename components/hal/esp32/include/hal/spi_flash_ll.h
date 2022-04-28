@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -24,11 +16,13 @@
 
 #include <stdlib.h>
 #include "soc/spi_periph.h"
+#include "soc/spi_struct.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -368,7 +362,7 @@ static inline void spi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, i
         dev->addr = addr;
         dev->slv_wr_status = UINT32_MAX;
     } else {
-        uint32_t padding_ones = (bit_len == 32? 0 : UINT32_MAX >> bit_len);
+        uint32_t padding_ones = UINT32_MAX >> bit_len;
         dev->addr = (addr << (32 - bit_len)) | padding_ones;
     }
 }
@@ -393,7 +387,7 @@ static inline void spi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
 static inline void spi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
-    dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 static inline void spi_flash_ll_set_hold(spi_dev_t *dev, uint32_t hold_n)

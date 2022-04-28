@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for LEDC register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -19,8 +11,35 @@
 
 #include "hal/ledc_types.h"
 #include "soc/ledc_periph.h"
+#include "soc/ledc_struct.h"
 
-#define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_GET_HW()           &LEDC
+
+#define LEDC_LL_DUTY_NUM_MAX       (LEDC_DUTY_NUM_LSCH0_V)
+#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_DUTY_CYCLE_LSCH0_V)
+#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_DUTY_SCALE_LSCH0_V)
+#define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_LSCH0_V)
+#define LEDC_LL_FRACTIONAL_BITS    (8)
+#define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+
+#define LEDC_LL_GLOBAL_CLOCKS { \
+                                LEDC_SLOW_CLK_APB, \
+                                LEDC_SLOW_CLK_RTC8M, \
+                            }
+#define LEDC_LL_TIMER_SPECIFIC_CLOCKS \
+                            {\
+                                { \
+                                    .clk = LEDC_REF_TICK, \
+                                    .freq = REF_CLK_FREQ, \
+                                } \
+                            }
+
+/* On ESP32, APB clock is a timer-specific clock only in fast clock mode */
+#define LEDC_LL_IS_TIMER_SPECIFIC_CLOCK(SPEED, CLK) (\
+                                                     ((CLK) == LEDC_USE_REF_TICK) || \
+                                                     ((SPEED) == LEDC_HIGH_SPEED_MODE && (CLK) == LEDC_USE_APB_CLK) \
+                                                    )
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,6 +157,9 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
  * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
  * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
  * @param clk_src Timer clock source
+ *
+ * @note  REF_TICK can only be used when hw->conf.slow_clk_sel is set to 1 (through ledc_ll_set_slow_clk_sel()).
+ *        This is ensured in the LEDC driver layer.
  *
  * @return None
  */

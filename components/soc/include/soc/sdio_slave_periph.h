@@ -15,9 +15,12 @@
 #pragma once
 #include <stdint.h>
 //include soc related (generated) definitions
+#include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
+#ifdef SOC_SDIO_SLAVE_SUPPORTED
 #include "soc/slc_reg.h"
 #include "soc/slc_struct.h"
+#endif
 #include "soc/host_reg.h"
 #include "soc/host_struct.h"
 #include "soc/hinf_reg.h"

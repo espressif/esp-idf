@@ -1,12 +1,12 @@
 /* SD card and FAT filesystem example.
+   This example uses SPI peripheral to communicate with SD card.
+
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-
-// This example uses SPI peripheral to communicate with SD card.
 
 #include <string.h>
 #include <sys/unistd.h>
@@ -18,27 +18,12 @@ static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
 
-// Pin mapping
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-
-#define PIN_NUM_MISO 2
-#define PIN_NUM_MOSI 15
-#define PIN_NUM_CLK  14
-#define PIN_NUM_CS   13
-
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define PIN_NUM_MISO 18
-#define PIN_NUM_MOSI 9
-#define PIN_NUM_CLK  8
-#define PIN_NUM_CS   19
-
-#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-
-#if CONFIG_IDF_TARGET_ESP32S2 ||CONFIG_IDF_TARGET_ESP32C3
-#define SPI_DMA_CHAN    host.slot
-#else
-#define SPI_DMA_CHAN    1
-#endif
+// Pin assignments can be set in menuconfig, see "SD SPI Example Configuration" menu.
+// You can also change the pin assignments here by changing the following 4 lines.
+#define PIN_NUM_MISO  CONFIG_EXAMPLE_PIN_MISO
+#define PIN_NUM_MOSI  CONFIG_EXAMPLE_PIN_MOSI
+#define PIN_NUM_CLK   CONFIG_EXAMPLE_PIN_CLK
+#define PIN_NUM_CS    CONFIG_EXAMPLE_PIN_CS
 
 
 void app_main(void)
@@ -76,7 +61,7 @@ void app_main(void)
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
-    ret = spi_bus_initialize(host.slot, &bus_cfg, SPI_DMA_CHAN);
+    ret = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize bus.");
         return;
@@ -88,18 +73,20 @@ void app_main(void)
     slot_config.gpio_cs = PIN_NUM_CS;
     slot_config.host_id = host.slot;
 
+    ESP_LOGI(TAG, "Mounting filesystem");
     ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to mount filesystem. "
-                     "If you want the card to be formatted, set the EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+                     "If you want the card to be formatted, set the CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
         } else {
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                      "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
         }
         return;
     }
+    ESP_LOGI(TAG, "Filesystem mounted");
 
     // Card has been initialized, print its properties
     sdmmc_card_print_info(stdout, card);

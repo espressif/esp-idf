@@ -24,7 +24,32 @@
 
 * [中文版](./README_CN.md)
 
-ESP-IDF is the development framework for Espressif SoCs (released after 2016<sup>[1](#fn1)</sup>) provided for Windows, Linux and macOS.
+ESP-IDF is the development framework for Espressif SoCs supported on Windows, Linux and macOS.
+
+# ESP-IDF Release Support Schedule
+
+![Support Schedule](https://dl.espressif.com/dl/esp-idf/support-periods.svg)
+
+- Please read [the support policy](SUPPORT_POLICY.md) and [the documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) for more information about ESP-IDF versions.
+- Please see the [End-of-Life Advisories](https://www.espressif.com/en/support/documents/advisories?keys=&field_type_of_advisory_tid%5B%5D=817) for information about ESP-IDF releases with discontinued support.
+
+# ESP-IDF Release and SoC Compatibility
+
+The following table shows ESP-IDF support of Espressif SoCs where ![alt text][preview] and ![alt text][supported] denote preview status and support, respectively. The preview support is usually limited in time and intended for beta versions of chips. Please use an ESP-IDF release where the desired SoC is already supported.
+
+|Chip         |          v4.1         |          v4.2          |         v4.3           |          v4.4          |          v5.0          |                                                                                      |
+|:----------- |:---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:------------------------------------------------------------------------------------ |
+|ESP32        |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                                      |
+|ESP32-S2     |                       | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                                      |
+|ESP32-C3     |                       |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                                      |
+|ESP32-S3     |                       |                        |                        | ![alt text][supported] | ![alt text][supported] | [Announcement](https://www.espressif.com/en/news/ESP32_S3)                           |
+|ESP32-C2     |                       |                        |                        |                        | ![alt text][supported] | [Announcement](https://blog.espressif.com/esp32-c2-and-why-it-matter-s-bcf4d7d0b2c6) |
+|ESP32-H2     |                       |                        |                        | ![alt text][preview]   | ![alt text][preview]   | [Announcement](https://www.espressif.com/en/news/ESP32_H2)                           |
+
+[supported]: https://img.shields.io/badge/-supported-green "supported"
+[preview]: https://img.shields.io/badge/-preview-orange "preview"
+
+Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
 # Developing With ESP-IDF
 
@@ -36,11 +61,9 @@ See https://idf.espressif.com/ for links to detailed instructions on how to set 
 
 ### Non-GitHub forks
 
-ESP-IDF uses relative locations as its submodules URLs ([.gitmodules](.gitmodules)). So they link to GitHub.
-If ESP-IDF is forked to a Git repository which is not on GitHub, you will need to run the script
-[tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh) after git clone.
-The script sets absolute URLs for all submodules, allowing `git submodule update --init --recursive` to complete.
-If cloning ESP-IDF from GitHub, this step is not needed.
+ESP-IDF uses relative locations as its submodules URLs ([.gitmodules](.gitmodules)). So they link to GitHub. If ESP-IDF is forked to a Git repository which is not on GitHub, you will need to run the script [tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh) after git clone.
+
+The script sets absolute URLs for all submodules, allowing `git submodule update --init --recursive` to complete. If cloning ESP-IDF from GitHub, this step is not needed.
 
 ## Finding a Project
 
@@ -108,9 +131,9 @@ After the initial flash, you may just want to build and flash just your app, not
 
 ## Erasing Flash
 
-The `idf.py flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `idf.py erase_flash`.
+The `idf.py flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `idf.py erase-flash`.
 
-This can be combined with other targets, ie `idf.py -p PORT erase_flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
+This can be combined with other targets, ie `idf.py -p PORT erase-flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
 
 # Resources
 
@@ -121,8 +144,3 @@ This can be combined with other targets, ie `idf.py -p PORT erase_flash flash` w
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
 * If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html).
-
-
-________
-
-<a name="fn1">1</a>: ESP8266 and ESP8285 are not supported in ESP-IDF. See [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.

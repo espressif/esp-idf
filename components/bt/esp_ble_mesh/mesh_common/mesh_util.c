@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
- * Copyright (c) 2016 Vinayak Kariappa Chettimada
- * Copyright (c) 2015-2016 Intel Corporation
+ * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: 2016 Vinayak Kariappa Chettimada
+ * SPDX-FileCopyrightText: 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */

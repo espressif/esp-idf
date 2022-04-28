@@ -85,7 +85,7 @@ SSL
 If the certificate is not null-terminated then ``cert_len`` should also be set.
 Other SSL related configuration parameters are:
 
- * ``use_global_ca_store``: use the global certificate store to verify server certificate, see ``esp-tls.h`` for more information
+ * ``use_global_ca_store``: use the global certificate store to verify server certificate, see :component_file:`esp-tls/esp_tls.h` for more information
  * ``client_cert_pem``: pointer to certificate data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed.
  * ``client_cert_len``: length of the buffer pointed to by client_cert_pem. May be 0 for null-terminated pem.
  * ``client_key_pem``: pointer to private key data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed.

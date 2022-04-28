@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 # Need Python 3 string formatting functions
 from __future__ import print_function
 
@@ -165,8 +168,8 @@ def test_check_mode(dut=None, mode_str=None, value=None):
     return False
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_T2_RS485')
-def test_modbus_communication(env, comm_mode):
+@ttfw_idf.idf_example_test(env_tag='Example_T2_RS485', target=['esp32'])
+def test_modbus_serial_communication(env, comm_mode):
     global logger
 
     # Get device under test. "dut1 - master", "dut2 - slave" must be properly connected through RS485 interface driver
@@ -283,6 +286,5 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.addHandler(ch)
     logger.info('Start script %s.' % os.path.basename(__file__))
-    print('Logging file name: %s' % logger.handlers[0].baseFilename)
-    test_modbus_communication()
+    test_modbus_serial_communication()
     logging.shutdown()

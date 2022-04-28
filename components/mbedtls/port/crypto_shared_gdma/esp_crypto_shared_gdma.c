@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_crypto_shared_gdma.h"
 
@@ -37,7 +29,7 @@ static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config
     esp_err_t ret;
     int time_waited_ms = 0;
 
-    while(1) {
+    while (1) {
         ret = gdma_new_channel(channel_config, channel);
 
         if (ret == ESP_OK) {
@@ -53,25 +45,6 @@ static inline esp_err_t crypto_shared_gdma_new_channel(gdma_channel_alloc_config
     return ret;
 }
 
-
-#if SOC_GDMA_SUPPORT_EXTMEM
-/* Initialize external memory specific DMA configs */
-static void esp_crypto_shared_dma_init_extmem(void)
-{
-    int tx_ch_id = 0;
-    int rx_ch_id = 0;
-
-    gdma_get_channel_id(tx_channel, &tx_ch_id);
-    gdma_get_channel_id(rx_channel, &rx_ch_id);
-
-    /* An L2 FIFO bigger than 40 bytes is need when accessing external ram */
-    gdma_ll_tx_extend_fifo_size_to(&GDMA, tx_ch_id, 40);
-    gdma_ll_rx_extend_l2_fifo_size_to(&GDMA, rx_ch_id, 40);
-    gdma_ll_tx_set_block_size_psram(&GDMA, tx_ch_id, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
-    gdma_ll_rx_set_block_size_psram(&GDMA, rx_ch_id, GDMA_OUT_EXT_MEM_BK_SIZE_16B);
-}
-#endif //SOC_GDMA_SUPPORT_EXTMEM
-
 /* Initialize GDMA module and channels */
 static esp_err_t crypto_shared_gdma_init(void)
 {
@@ -85,6 +58,12 @@ static esp_err_t crypto_shared_gdma_init(void)
         .direction = GDMA_CHANNEL_DIRECTION_RX,
     };
 
+    gdma_transfer_ability_t transfer_ability = {
+        .sram_trans_align = 1,
+        .psram_trans_align = 16,
+    };
+
+
     ret = crypto_shared_gdma_new_channel(&channel_config_tx, &tx_channel);
     if (ret != ESP_OK) {
         goto err;
@@ -96,9 +75,9 @@ static esp_err_t crypto_shared_gdma_init(void)
         goto err;
     }
 
-#if SOC_GDMA_SUPPORT_EXTMEM
-    esp_crypto_shared_dma_init_extmem();
-#endif //SOC_GDMA_SUPPORT_EXTMEM
+
+    gdma_set_transfer_ability(tx_channel, &transfer_ability);
+    gdma_set_transfer_ability(rx_channel, &transfer_ability);
 
     gdma_connect(rx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
     gdma_connect(tx_channel, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_AES, 0));
@@ -106,7 +85,7 @@ static esp_err_t crypto_shared_gdma_init(void)
     return ESP_OK;
 
 err:
-    ESP_LOGE(TAG, "Failed to acquire DMA channel, Err=0x%X", ret);
+    ESP_LOGE(TAG, "Failed to acquire DMA channel, Err=%d", ret);
     tx_channel = NULL;
     rx_channel = NULL;
 
@@ -140,8 +119,8 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
         return ESP_ERR_INVALID_ARG;
     }
 
-  /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
-    gdma_get_channel_id(tx_channel, &rx_ch_id);
+    /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
+    gdma_get_channel_id(rx_channel, &rx_ch_id);
     gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
 
     gdma_start(tx_channel, (intptr_t)input);

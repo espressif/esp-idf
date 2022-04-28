@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ typedef struct {
 
 static spi_slave_t *spihost[SOC_SPI_PERIPH_NUM];
 
-static void IRAM_ATTR spi_intr(void *arg);
+static void spi_intr(void *arg);
 
 static inline bool is_valid_host(spi_host_device_t host)
 {
@@ -83,19 +83,19 @@ static inline bool is_valid_host(spi_host_device_t host)
 #endif
 }
 
-static inline bool bus_is_iomux(spi_slave_t *host)
+static inline bool SPI_SLAVE_ISR_ATTR bus_is_iomux(spi_slave_t *host)
 {
     return host->flags&SPICOMMON_BUSFLAG_IOMUX_PINS;
 }
 
-static void freeze_cs(spi_slave_t *host)
+static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 {
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host->id].spics_in, false);
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
 // This is used in test by internal gpio matrix connections
-static inline void restore_cs(spi_slave_t *host)
+static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
     if (bus_is_iomux(host)) {
         gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
@@ -140,7 +140,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     bool use_dma = (dma_chan != SPI_DMA_DISABLED);
     spihost[host]->dma_enabled = use_dma;
     if (use_dma) {
-        ret = spicommon_slave_dma_chan_alloc(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        ret = spicommon_dma_chan_alloc(host, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (ret != ESP_OK) {
             goto cleanup;
         }
@@ -240,7 +240,7 @@ cleanup:
     }
     spi_slave_hal_deinit(&spihost[host]->hal);
     if (spihost[host]->dma_enabled) {
-        spicommon_slave_free_dma(host);
+        spicommon_dma_chan_free(host);
     }
 
     free(spihost[host]);
@@ -257,7 +257,7 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     if (spihost[host]->trans_queue) vQueueDelete(spihost[host]->trans_queue);
     if (spihost[host]->ret_queue) vQueueDelete(spihost[host]->ret_queue);
     if (spihost[host]->dma_enabled) {
-        spicommon_slave_free_dma(host);
+        spicommon_dma_chan_free(host);
     }
     free(spihost[host]->hal.dmadesc_tx);
     free(spihost[host]->hal.dmadesc_rx);
@@ -370,6 +370,9 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     //Grab next transaction
     r = xQueueReceiveFromISR(host->trans_queue, &trans, &do_yield);
     if (r) {
+        // sanity check
+        assert(trans);
+
         //enable the interrupt again if there is packet to send
         esp_intr_enable(host->intr);
 

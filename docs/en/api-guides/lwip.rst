@@ -281,6 +281,58 @@ A number of configuration items are available to modify the task and the queues 
 - :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
 - :ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`
 
+IPv6 Support
+------------
+
+Both IPv4 and IPv6 are supported as dual stack and enabled by default (IPv6 may be disabled if it's not needed, see :ref:`lwip-ram-usage`).
+IPv6 support is limited to *Stateless Autoconfiguration* only, *Stateful configuration* is not supported in ESP-IDF (not in upstream lwip).
+IPv6 Address configuration is defined by means of these protocols or services:
+
+- **SLAAC** IPv6 Stateless Address Autoconfiguration (RFC-2462)
+- **DHCPv6** Dynamic Host Configuration Protocol for IPv6 (RFC-8415)
+
+None of these two types of address configuration is enabled by default, so the device uses only Link Local addresses or statically defined addresses.
+
+.. _lwip-ivp6-autoconfig:
+
+Stateless Autoconfiguration Process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To enable address autoconfiguration using Router Advertisement protocol please enable:
+
+- :ref:`CONFIG_LWIP_IPV6_AUTOCONFIG`
+
+This configuration option enables IPv6 autoconfiguration for all network interfaces
+(in contrast to the upstream lwIP, where the autoconfiguration needs to be explicitly enabled for each netif with ``netif->ip6_autoconfig_enabled=1``
+
+.. _lwip-ivp6-dhcp6:
+
+DHCPv6
+^^^^^^
+
+DHCPv6 in lwIP is very simple and support only stateless configuration. It could be enabled using:
+
+- :ref:`CONFIG_LWIP_IPV6_DHCP6`
+
+Since the DHCPv6 works only in its stateless configuration, the :ref:`lwip-ivp6-autoconfig` has to be enabled, too, by means of :ref:`CONFIG_LWIP_IPV6_AUTOCONFIG`.
+Moreover, the DHCPv6 needs to be explicitly enabled form the application code using
+
+    dhcp6_enable_stateless(netif);
+
+DNS servers in IPv6 autoconfiguration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to autoconfigure DNS server(s), especially in IPv6 only networks, we have these two options
+
+- Recursive domain name system -- this belongs to the Neighbor Discovery Protocol (NDP), uses :ref:`lwip-ivp6-autoconfig`.
+  Number of servers must be set :ref:`CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS`, this is option is disabled (set to 0) by default.
+
+- DHCPv6 stateless configuration -- uses :ref:`lwip-ivp6-dhcp6` to configure DNS servers. Note that the this configuration
+  assumes IPv6 Router Advertisement Flags (RFC-5175) to be set to
+
+    - Managed Address Configuration Flag = 0
+    - Other Configuration Flag = 1
+
 esp-lwip custom modifications
 -----------------------------
 
@@ -306,10 +358,15 @@ The default lwIP implementation is to have these timers enabled all the time, ev
 
 To return to the default lwIP behaviour (always-on timers), disable :ref:`CONFIG_LWIP_TIMERS_ONDEMAND`.
 
-Abort TCP connections when IP changes
-+++++++++++++++++++++++++++++++++++++
+Lwip timers API
++++++++++++++++
 
-:ref:`CONFIG_LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES` is disabled by default. This disables the default lwIP behaviour of keeping TCP connections open if an interface IP changes, in case the interface IP changes back (for example, if an interface connection goes down and comes back up). Enable this option to keep TCP connections open in this case, until they time out normally. This may increase the number of sockets in use if a network interface goes down temporarily.
+When users are not using WiFi, these APIs provide users with the ability to turn off LwIP timer to reduce power consumption.
+
+The following API functions are supported. For full details see :component_file:`lwip/lwip/src/include/lwip/timeouts.h`.
+
+- ``sys_timeouts_init()``
+- ``sys_timeouts_deinit()``
 
 Additional Socket Options
 +++++++++++++++++++++++++
@@ -333,7 +390,7 @@ Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fai
 
     Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
 
-.. only:: not esp32
+.. only:: not esp32 and SOC_WIFI_SUPPORTED
 
     Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` project configuration may also help.
 
@@ -355,11 +412,13 @@ The :example_file:`wifi/iperf/sdkconfig.defaults` file for the iperf example con
 
 - If a lot of tasks are competing for CPU time on the system, consider that the lwIP task has configurable CPU affinity (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`) and runs at fixed priority ``ESP_TASK_TCPIP_PRIO`` (18). Configure competing tasks to be pinned to a different core, or to run at a lower priority. See also :ref:`built-in-task-priorities`.
 
-- If using ``select()`` function with socket arguments only, setting :ref:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` will make ``select()`` calls faster.
+- If using ``select()`` function with socket arguments only, disabling :ref:`CONFIG_VFS_SUPPORT_SELECT` will make ``select()`` calls faster.
 
 - If there is enough free IRAM, select :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION` to improve TX/RX throughput
 
-If using a Wi-Fi network interface, please also refer to :ref:`wifi-buffer-usage`.
+.. only:: SOC_WIFI_SUPPORTED
+
+    If using a Wi-Fi network interface, please also refer to :ref:`wifi-buffer-usage`.
 
 Minimum latency
 ^^^^^^^^^^^^^^^
@@ -379,7 +438,10 @@ Most lwIP RAM usage is on-demand, as RAM is allocated from the heap as needed. T
 - Reducing :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`, :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` and :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` reduce memory usage at the expense of throughput, depending on usage.
 - Disable  :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2KB RAM when system power up and 7KB RAM when TCPIP stack running. If there is no requirement for supporting IPV6 then it can be disabled to save flash and RAM footprint.
 
-If using Wi-Fi, please also refer to :ref:`wifi-buffer-usage`.
+.. only:: SOC_WIFI_SUPPORTED
+
+    If using Wi-Fi, please also refer to :ref:`wifi-buffer-usage`.
+
 
 Peak Buffer Usage
 +++++++++++++++++

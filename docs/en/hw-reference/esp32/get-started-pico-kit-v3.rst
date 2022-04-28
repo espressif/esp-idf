@@ -39,25 +39,28 @@ The following figure and the table below describe the key components, interfaces
 
 Below is the description of the items identified in the figure starting from the top left corner and going clockwise.
 
-==================  =================================================================================================================================
-Key Component       Description
-==================  =================================================================================================================================
-ESP32-PICO-D4       Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT V3 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
 
-LDO                 5V-to-3.3V Low dropout voltage regulator (LDO).
-
-USB-UART bridge     Single-chip USB-UART bridge provides up to 1 Mbps transfers rates.
-
-Micro USB Port      USB interface. Power supply for the board as well as the communication interface between a computer and the board.
-
-Power On LED        This red LED turns on when power is supplied to the board.
-
-I/O                 All the pins on ESP32-PICO-D4 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
-
-BOOT Button         Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
-
-EN Button           Reset button.
-==================  =================================================================================================================================
+    * - Key Component 
+      - Description
+    * - ESP32-PICO-D4
+      - Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT V3 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+    * - LDO
+      - 5V-to-3.3V Low dropout voltage regulator (LDO).
+    * - USB-UART bridge
+      - Single-chip USB-UART bridge provides up to 1 Mbps transfers rates.
+    * - Micro USB Port
+      - USB interface. Power supply for the board as well as the communication interface between a computer and the board.
+    * - Power On LED
+      - This red LED turns on when power is supplied to the board.
+    * - I/O
+      - All the pins on ESP32-PICO-D4 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
+    * - BOOT Button
+      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+    * - EN Button
+      - Reset button.
 
 
 Start Application Development
@@ -74,4 +77,3 @@ Related Documents
 * `ESP32-PICO-KIT V3 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`
-

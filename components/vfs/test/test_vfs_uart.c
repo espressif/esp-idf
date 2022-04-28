@@ -131,38 +131,38 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY("4\n", dst, 2);
 }
 
+struct read_task_arg_t {
+    char* out_buffer;
+    size_t out_buffer_len;
+    SemaphoreHandle_t ready;
+    SemaphoreHandle_t done;
+};
+
+struct write_task_arg_t {
+    const char* str;
+    SemaphoreHandle_t done;
+};
+
+static void read_task_fn(void* varg)
+{
+    struct read_task_arg_t* parg = (struct read_task_arg_t*) varg;
+    parg->out_buffer[0] = 0;
+
+    fgets(parg->out_buffer, parg->out_buffer_len, stdin);
+    xSemaphoreGive(parg->done);
+    vTaskDelete(NULL);
+}
+
+static void write_task_fn(void* varg)
+{
+    struct write_task_arg_t* parg = (struct write_task_arg_t*) varg;
+    fwrite_str_loopback(parg->str, strlen(parg->str));
+    xSemaphoreGive(parg->done);
+    vTaskDelete(NULL);
+}
+
 TEST_CASE("can write to UART while another task is reading", "[vfs]")
 {
-    struct read_task_arg_t {
-        char* out_buffer;
-        size_t out_buffer_len;
-        SemaphoreHandle_t ready;
-        SemaphoreHandle_t done;
-    };
-
-    struct write_task_arg_t {
-        const char* str;
-        SemaphoreHandle_t done;
-    };
-
-    void read_task_fn(void* varg)
-    {
-        struct read_task_arg_t* parg = (struct read_task_arg_t*) varg;
-        parg->out_buffer[0] = 0;
-
-        fgets(parg->out_buffer, parg->out_buffer_len, stdin);
-        xSemaphoreGive(parg->done);
-        vTaskDelete(NULL);
-    }
-
-    void write_task_fn(void* varg)
-    {
-        struct write_task_arg_t* parg = (struct write_task_arg_t*) varg;
-        fwrite_str_loopback(parg->str, strlen(parg->str));
-        xSemaphoreGive(parg->done);
-        vTaskDelete(NULL);
-    }
-
     char out_buffer[32];
     size_t out_buffer_len = sizeof(out_buffer);
 

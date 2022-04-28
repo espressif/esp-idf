@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_BLE_MESH_DEFS_H_
 #define _ESP_BLE_MESH_DEFS_H_
@@ -21,16 +13,6 @@
 #include "mesh_common.h"
 #include "proxy_server.h"
 #include "provisioner_main.h"
-
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
-#define ESP_BLE_HOST_STATUS_ENABLED ESP_BLUEDROID_STATUS_ENABLED
-#define ESP_BLE_HOST_STATUS_CHECK(status) ESP_BLUEDROID_STATUS_CHECK(status)
-#else
-#define ESP_BLE_HOST_STATUS_ENABLED 0
-#define ESP_BLE_HOST_STATUS_CHECK(status)  do {} while (0)
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -582,6 +564,12 @@ typedef struct {
     /** Out of Band information field. */
     esp_ble_mesh_prov_oob_info_t oob_info;
 
+    /* NOTE: In order to avoid suffering brute-forcing attack (CVE-2020-26559).
+     * The Bluetooth SIG recommends that potentially vulnerable mesh provisioners
+     * support an out-of-band mechanism to exchange the public keys.
+     * So as an unprovisioned device, it should enable this flag to support
+     * using an out-of-band mechanism to exchange Public Key.
+     */
     /** Flag indicates whether unprovisioned devices support OOB public key */
     bool oob_pub_key;
 
@@ -635,12 +623,29 @@ typedef struct {
     /** Provisioning Algorithm for the Provisioner */
     uint8_t        prov_algorithm;
 
+    /* NOTE: In order to avoid suffering brute-forcing attack (CVE-2020-26559).
+     * The Bluetooth SIG recommends that potentially vulnerable mesh provisioners
+     * use an out-of-band mechanism to exchange the public keys.
+     */
     /** Provisioner public key oob */
     uint8_t        prov_pub_key_oob;
 
     /** Callback used to notify to set device OOB Public Key. Initialized by the stack. */
     esp_ble_mesh_cb_t provisioner_prov_read_oob_pub_key;
 
+    /* NOTE: The Bluetooth SIG recommends that mesh implementations enforce a randomly
+     * selected AuthValue using all of the available bits, where permitted by the
+     * implementation. A large entropy helps ensure that a brute-force of the AuthValue,
+     * even a static AuthValue, cannot normally be completed in a reasonable time (CVE-2020-26557).
+     *
+     * AuthValues selected using a cryptographically secure random or pseudorandom number
+     * generator and having the maximum permitted entropy (128-bits) will be most difficult
+     * to brute-force. AuthValues with reduced entropy or generated in a predictable manner
+     * will not grant the same level of protection against this vulnerability. Selecting a
+     * new AuthValue with each provisioning attempt can also make it more difficult to launch
+     * a brute-force attack by requiring the attacker to restart the search with each
+     * provisioning attempt (CVE-2020-26556).
+     */
     /** Provisioner static oob value */
     uint8_t        *prov_static_oob_val;
     /** Provisioner static oob value length */
@@ -872,6 +877,8 @@ typedef enum {
     ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
     ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
     ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
+    ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT,                    /*!< Proxy Server establishes connection successfully event */
+    ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT,                 /*!< Proxy Server terminates connection successfully event */
     ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT,           /*!< Local model subscribes group address completion event */
     ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT,         /*!< Local model unsubscribes group address completion event */
     ESP_BLE_MESH_DEINIT_MESH_COMP_EVT,                          /*!< De-initialize BLE Mesh stack completion event */
@@ -1454,6 +1461,19 @@ typedef union {
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT
+     */
+    struct ble_mesh_proxy_server_connected_param {
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+    } proxy_server_connected;                   /*!< Event parameter of ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT
+     */
+    struct ble_mesh_proxy_server_disconnected_param {
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint8_t reason;                         /*!< Proxy disconnect reason */
+    } proxy_server_disconnected;                /*!< Event parameter of ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT */
     /**
      * @brief ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT
      */

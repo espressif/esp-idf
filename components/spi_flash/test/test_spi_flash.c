@@ -7,32 +7,26 @@
 #include <unity.h>
 #include <esp_spi_flash.h>
 #include <esp_attr.h>
-#include "driver/timer.h"
 #include "esp_intr_alloc.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_spiflash.h"
 #include "esp_timer.h"
 
-#include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
-#endif
+#include "bootloader_flash.h"   //for bootloader_flash_xmc_startup
 
+#include "sdkconfig.h"
+
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+// TODO: SPI_FLASH IDF-4025
 struct flash_test_ctx {
     uint32_t offset;
     bool fail;
     SemaphoreHandle_t done;
 };
-
-static const char TAG[] = "test_spi_flash";
 
 /* Base offset in flash for tests. */
 static size_t start;
@@ -122,87 +116,10 @@ TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_fla
     vSemaphoreDelete(done);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// TODO ESP32-S3 IDF-2021
 
-
-typedef struct {
-    size_t buf_size;
-    uint8_t* buf;
-    size_t flash_addr;
-    size_t repeat_count;
-    SemaphoreHandle_t done;
-} read_task_arg_t;
-
-
-typedef struct {
-    size_t delay_time_us;
-    size_t repeat_count;
-} block_task_arg_t;
-
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define int_clr_timers int_clr
-#endif
-
-static void IRAM_ATTR timer_isr(void* varg) {
-    block_task_arg_t* arg = (block_task_arg_t*) varg;
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
-    esp_rom_delay_us(arg->delay_time_us);
-    arg->repeat_count++;
-}
-
-static void read_task(void* varg) {
-    read_task_arg_t* arg = (read_task_arg_t*) varg;
-    for (size_t i = 0; i < arg->repeat_count; ++i) {
-        ESP_ERROR_CHECK( spi_flash_read(arg->flash_addr, arg->buf, arg->buf_size) );
-    }
-    xSemaphoreGive(arg->done);
-    vTaskDelay(1);
-    vTaskDelete(NULL);
-}
-
-TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash][esp_flash]")
-{
-    const size_t size = 128;
-    read_task_arg_t read_arg = {
-            .buf_size = size,
-            .buf = (uint8_t*) malloc(size),
-            .flash_addr = 0,
-            .repeat_count = 1000,
-            .done = xSemaphoreCreateBinary()
-    };
-
-    timer_config_t config = {
-            .alarm_en = true,
-            .counter_en = false,
-            .intr_type = TIMER_INTR_LEVEL,
-            .counter_dir = TIMER_COUNT_UP,
-            .auto_reload = true,
-            .divider = 80
-    };
-
-    block_task_arg_t block_arg = {
-            .repeat_count = 0,
-            .delay_time_us = 100
-    };
-
-    ESP_ERROR_CHECK( timer_init(TIMER_GROUP_0, TIMER_0, &config) );
-    timer_pause(TIMER_GROUP_0, TIMER_0);
-    ESP_ERROR_CHECK( timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 120) );
-    intr_handle_t handle;
-    ESP_ERROR_CHECK( timer_isr_register(TIMER_GROUP_0, TIMER_0, &timer_isr, &block_arg, ESP_INTR_FLAG_IRAM, &handle) );
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_start(TIMER_GROUP_0, TIMER_0);
-
-    xTaskCreatePinnedToCore(read_task, "r", 2048, &read_arg, 3, NULL, portNUM_PROCESSORS - 1);
-    xSemaphoreTake(read_arg.done, portMAX_DELAY);
-
-    timer_pause(TIMER_GROUP_0, TIMER_0);
-    timer_disable_intr(TIMER_GROUP_0, TIMER_0);
-    esp_intr_free(handle);
-    vSemaphoreDelete(read_arg.done);
-    free(read_arg.buf);
-}
+static const char TAG[] = "test_spi_flash";
 
 typedef struct {
     uint32_t us_start;
@@ -310,29 +227,26 @@ TEST_CASE("Test spi_flash read/write performance", "[spi_flash]")
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
-// Data checks are disabled when PSRAM is used or in Freertos compliance check test
-#if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#  define CHECK_DATA(suffix) TEST_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_##suffix, "%d", speed_##suffix)
-#  define CHECK_ERASE(var) TEST_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE, "%d", var)
-#else
-#  define CHECK_DATA(suffix) ((void)speed_##suffix)
-#  define CHECK_ERASE(var) ((void)var)
-#endif
+#define LOG_DATA(suffix) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_LEGACY_"#suffix, "%d", speed_##suffix)
+#define LOG_ERASE(var) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_LEGACY_ERASE", "%d", var)
 
-    CHECK_DATA(WR_4B);
-    CHECK_DATA(RD_4B);
-    CHECK_DATA(WR_2KB);
-    CHECK_DATA(RD_2KB);
+    LOG_DATA(WR_4B);
+    LOG_DATA(RD_4B);
+    LOG_DATA(WR_2KB);
+    LOG_DATA(RD_2KB);
 
     // Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
-    CHECK_ERASE(erase_1);
-    CHECK_ERASE(erase_2);
+    LOG_ERASE(erase_1);
+    LOG_ERASE(erase_2);
 
     free(data_to_write);
     free(data_read);
 }
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
+//  TODO: This test is disabled on S3 with legacy impl - IDF-3505
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
 
 #if portNUM_PROCESSORS > 1
 TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")
@@ -392,6 +306,8 @@ TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash
 }
 #endif // portNUM_PROCESSORS > 1
 
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
+
 TEST_CASE("WEL is cleared after boot", "[spi_flash]")
 {
     esp_rom_spiflash_chip_t *legacy_chip = &g_rom_flashchip;
@@ -412,10 +328,30 @@ TEST_CASE("rom unlock will not erase QE bit", "[spi_flash]")
     if (((legacy_chip->device_id >> 16) & 0xff) != 0x9D) {
         TEST_IGNORE_MESSAGE("This test is only for ISSI chips. Ignore.");
     }
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
     esp_rom_spiflash_read_status(legacy_chip, &status);
     printf("status: %08x\n", status);
 
     TEST_ASSERT(status & 0x40);
 }
 #endif
+
+static IRAM_ATTR NOINLINE_ATTR void test_xmc_startup(void)
+{
+    extern void spi_flash_disable_interrupts_caches_and_other_cpu(void);
+    extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
+    esp_err_t ret = ESP_OK;
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    ret = bootloader_flash_xmc_startup();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+}
+
+TEST_CASE("bootloader_flash_xmc_startup can be called when cache disabled", "[spi_flash]")
+{
+    test_xmc_startup();
+}
+
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

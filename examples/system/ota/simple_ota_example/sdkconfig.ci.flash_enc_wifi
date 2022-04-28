@@ -13,6 +13,3 @@ CONFIG_EXAMPLE_CONNECT_ETHERNET=n
 CONFIG_EXAMPLE_CONNECT_WIFI=y
 # This is required for nvs encryption (which is enabled by default with flash encryption)
 CONFIG_PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS=y
-# IDF-3090
-CONFIG_ESP32C3_REV_MIN_0=y
-CONFIG_ESP32C3_REV_MIN=0

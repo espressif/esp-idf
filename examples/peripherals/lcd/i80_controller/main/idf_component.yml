@@ -1,0 +1,3 @@
+dependencies:
+  idf: ">=4.4"
+  lvgl/lvgl: "~8.2.0"

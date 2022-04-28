@@ -4,185 +4,96 @@ ESP HTTP Client
 Overview
 --------
 
-``esp_http_client`` provides an API for making HTTP/S requests from ESP-IDF programs. The steps to use this API for an HTTP request are:
+``esp_http_client`` provides an API for making HTTP/S requests from ESP-IDF applications. The steps to use this API are as follows:
 
-    * :cpp:func:`esp_http_client_init`: To use the HTTP client, the first thing we must do is create an :cpp:class:`esp_http_client` by pass into this function with the :cpp:class:`esp_http_client_config_t` configurations. Which configuration values we do not define, the library will use default.
-    * :cpp:func:`esp_http_client_perform`: The :cpp:class:`esp_http_client` argument created from the init function is needed. This function performs all operations of the esp_http_client, from opening the connection, sending data, downloading data and closing the connection if necessary. All related events will be invoked in the event_handle (defined by :cpp:class:`esp_http_client_config_t`). This function performs its job and blocks the current task until it's done
-    * :cpp:func:`esp_http_client_cleanup`: After completing our **esp_http_client's** task, this is the last function to be called. It will close the connection (if any) and free up all the memory allocated to the HTTP client
+    * :cpp:func:`esp_http_client_init`: Creates an :cpp:type:`esp_http_client_config_t` instance i.e. a HTTP client handle based on the given :cpp:type:`esp_http_client_config_t` configuration. This function must be the first to be called; default values will be assumed for the configuration values that are not explicitly defined by the user.
+    * :cpp:func:`esp_http_client_perform`: Performs all operations of the esp_http_client - opening the connection, exchanging data and closing the connection (as required), while blocking the current task until its completion. All related events will be invoked through the event handler (as specified in :cpp:type:`esp_http_client_config_t`).
+    * :cpp:func:`esp_http_client_cleanup`: Closes the connection (if any) and frees up all the memory allocated to the HTTP client instance. This must be the last function to be called after the completion of operations.
 
 
 Application Example
 -------------------
 
-    .. highlight:: c
+Simple example that uses ESP HTTP Client to make HTTP/S requests at :example:`protocols/esp_http_client`.
 
-    ::
 
-        esp_err_t _http_event_handle(esp_http_client_event_t *evt)
-        {
-            switch(evt->event_id) {
-                case HTTP_EVENT_ERROR:
-                    ESP_LOGI(TAG, "HTTP_EVENT_ERROR");
-                    break;
-                case HTTP_EVENT_ON_CONNECTED:
-                    ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
-                    break;
-                case HTTP_EVENT_HEADER_SENT:
-                    ESP_LOGI(TAG, "HTTP_EVENT_HEADER_SENT");
-                    break;
-                case HTTP_EVENT_ON_HEADER:
-                    ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER");
-                    printf("%.*s", evt->data_len, (char*)evt->data);
-                    break;
-                case HTTP_EVENT_ON_DATA:
-                    ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
-                    if (!esp_http_client_is_chunked_response(evt->client)) {
-                        printf("%.*s", evt->data_len, (char*)evt->data);
-                    }
+Basic HTTP request
+------------------
 
-                    break;
-                case HTTP_EVENT_ON_FINISH:
-                    ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
-                    break;
-                case HTTP_EVENT_DISCONNECTED:
-                    ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
-                    break;
-            }
-            return ESP_OK;
-        }
-
-        esp_http_client_config_t config = {
-           .url = "http://httpbin.org/redirect/2",
-           .event_handler = _http_event_handle,
-        };
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-        esp_err_t err = esp_http_client_perform(client);
-
-        if (err == ESP_OK) {
-           ESP_LOGI(TAG, "Status = %d, content_length = %d",
-                   esp_http_client_get_status_code(client),
-                   esp_http_client_get_content_length(client));
-        }
-        esp_http_client_cleanup(client);
-
+Check out the example functions ``http_rest_with_url`` and ``http_rest_with_hostname_path`` in the application example for implementation details.
 
 Persistent Connections
 ----------------------
 
-Persistent connections means that the HTTP client can re-use the same connection for several transfers. If the server does not request to close the connection with the ``Connection: close`` header, the new transfer with sample ip address, port, and protocol.
+Persistent connection means that the HTTP client can re-use the same connection for several exchanges. If the server does not request to close the connection with the ``Connection: close`` header, the connection is not dropped but is instead kept open and used for further requests.
 
-To allow the HTTP client to take full advantage of persistent connections, you should do as many of your file transfers as possible using the same handle.
+To allow ESP HTTP client to take full advantage of persistent connections, one should make as many requests as possible using the same handle instance.
 
-Persistent Connections example
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Check out the example functions ``http_rest_with_url`` and ``http_rest_with_hostname_path`` in the application example. Here, once the connection is created, multiple requests (``GET``, ``POST``, ``PUT``, etc.) are made before the connection is closed.
 
-.. highlight:: c
+HTTPS Request
+-------------
 
-::
+ESP HTTP client supports SSL connections using **mbedTLS**, with the ``url`` configuration starting with ``https`` scheme or ``transport_type`` set to ``HTTP_TRANSPORT_OVER_SSL``. HTTPS support can be configured via :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` (enabled by default).
 
-    esp_err_t err;
-    esp_http_client_config_t config = {
-        .url = "http://httpbin.org/get",
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&config);
-    // first request
-    err = esp_http_client_perform(client);
+.. note:: While making HTTPS requests, if server verification is needed, additional root certificate (in PEM format) needs to be provided to the ``cert_pem`` member in ``esp_http_client_config_t`` configuration. Users can also use the ``ESP x509 Certificate Bundle`` for server verification using the ``crt_bundle_attach`` member of the ``esp_http_client_config_t`` configuration.
 
-    // second request
-    esp_http_client_set_url(client, "http://httpbin.org/anything")
-    esp_http_client_set_method(client, HTTP_METHOD_DELETE);
-    esp_http_client_set_header(client, "HeaderKey", "HeaderValue");
-    err = esp_http_client_perform(client);
+Check out the example functions ``https_with_url`` and ``https_with_hostname_path`` in the application example. (Implementation details of the above note are found here)
 
-    esp_http_client_cleanup(client);
-
-
-HTTPS
------
-
-The HTTP client supports SSL connections using **mbedtls**, with the **url** configuration starting with ``https`` scheme (or ``transport_type = HTTP_TRANSPORT_OVER_SSL``). HTTPS support can be configured via :ref:`CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS` (enabled by default).
-
-.. note:: By providing information using HTTPS, the library will use the SSL transport type to connect to the server. If you want to verify server, then need to provide additional certificate in PEM format, and provide to ``cert_pem`` in ``esp_http_client_config_t``
-
-HTTPS example
-^^^^^^^^^^^^^
-
-.. highlight:: c
-
-::
-
-    static void https()
-    {
-        esp_http_client_config_t config = {
-            .url = "https://www.howsmyssl.com",
-            .cert_pem = howsmyssl_com_root_cert_pem_start,
-        };
-        esp_http_client_handle_t client = esp_http_client_init(&config);
-        esp_err_t err = esp_http_client_perform(client);
-
-        if (err == ESP_OK) {
-            ESP_LOGI(TAG, "Status = %d, content_length = %d",
-                    esp_http_client_get_status_code(client),
-                    esp_http_client_get_content_length(client));
-        }
-        esp_http_client_cleanup(client);
-    }
 
 HTTP Stream
 -----------
 
-Some applications need to open the connection and control the reading of the data in an active manner. the HTTP client supports some functions to make this easier, of course, once you use these functions you should not use the :cpp:func:`esp_http_client_perform` function with that handle, and :cpp:func:`esp_http_client_init` alway to called first to get the handle. Perform that functions in the order below:
+Some applications need to open the connection and control the exchange of data actively (data streaming). In such cases, the application flow is different from regular requests. Example flow is given below:
 
-    * :cpp:func:`esp_http_client_init`: to create and handle
-    * ``esp_http_client_set_*`` or ``esp_http_client_delete_*``: to modify the http connection information (optional)
-    * :cpp:func:`esp_http_client_open`: Open the http connection with ``write_len`` parameter, ``write_len=0`` if we only need read
-    * :cpp:func:`esp_http_client_write`: Upload data, max length equal to ``write_len`` of :cpp:func:`esp_http_client_open` function. We may not need to call it if ``write_len=0``
-    * :cpp:func:`esp_http_client_fetch_headers`: After sending the headers and write data (if any) to the server, this function will read the HTTP Server response headers. Calling this function will return the ``content-length`` from the Server, and we can call :cpp:func:`esp_http_client_get_status_code` for the HTTP status of the connection.
-    * :cpp:func:`esp_http_client_read`: Now, we can read the HTTP stream by this function. 
-    * :cpp:func:`esp_http_client_close`: We should the connection after finish
-    * :cpp:func:`esp_http_client_cleanup`: And release the resources
+    * :cpp:func:`esp_http_client_init`: Create a HTTP client handle
+    * ``esp_http_client_set_*`` or ``esp_http_client_delete_*``: Modify the HTTP connection parameters (optional)
+    * :cpp:func:`esp_http_client_open`: Open the HTTP connection with ``write_len`` parameter (content length that needs to be written to server), set ``write_len=0`` for read-only connection
+    * :cpp:func:`esp_http_client_write`: Write data to server with a maximum length equal to ``write_len`` of :cpp:func:`esp_http_client_open` function; no need to call this function for ``write_len=0``
+    * :cpp:func:`esp_http_client_fetch_headers`: Read the HTTP Server response headers, after sending the request headers and server data (if any). Returns the ``content-length`` from the server and can be succeeded by :cpp:func:`esp_http_client_get_status_code` for getting the HTTP status of the connection.
+    * :cpp:func:`esp_http_client_read`: Read the HTTP stream
+    * :cpp:func:`esp_http_client_close`: Close the connection
+    * :cpp:func:`esp_http_client_cleanup`: Release allocated resources
 
-Perform HTTP request as Stream reader
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Check the example function ``http_perform_as_stream_reader`` at :example:`protocols/esp_http_client`.
+Check out the example function ``http_perform_as_stream_reader`` in the application example for implementation details.
 
 
 HTTP Authentication
 -------------------
 
-The HTTP client supports both **Basic** and **Digest** Authentication. By providing usernames and passwords in ``url`` or in the ``username``, ``password`` of config entry. And with ``auth_type = HTTP_AUTH_TYPE_BASIC``, the HTTP client takes only 1 perform to pass the authentication process. If ``auth_type = HTTP_AUTH_TYPE_NONE``, but there are ``username`` and ``password`` in the configuration, the HTTP client takes 2 performs. The first time it connects to the server and receives the UNAUTHORIZED header. Based on this information, it will know which authentication method to choose, and perform it on the second.
+ESP HTTP client supports both **Basic** and **Digest** Authentication.
+    * Users can provide the username and password in the ``url`` or the ``username`` and ``password`` members of the ``esp_http_client_config_t`` configuration. For ``auth_type = HTTP_AUTH_TYPE_BASIC``, the HTTP client takes only 1 perform operation to pass the authentication process.
+    * If ``auth_type = HTTP_AUTH_TYPE_NONE``, but the ``username`` and ``password`` fields are present in the configuration, the HTTP client takes 2 perform operations. The client will receive the ``401 Unauthorized`` header in its first attempt to connect to the server. Based on this information, it decides which authentication method to choose and performs it in the second operation.
+    * Check out the example functions ``http_auth_basic``, ``http_auth_basic_redirect`` (for Basic authentication) and ``http_auth_digest`` (for Digest authentication) in the application example for implementation details.
+
+Examples of Authentication Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    * Authentication with URI
+
+        .. highlight:: c
+
+        ::
+
+            esp_http_client_config_t config = {
+                .url = "http://user:passwd@httpbin.org/basic-auth/user/passwd",
+                .auth_type = HTTP_AUTH_TYPE_BASIC,
+            };
 
 
-Config authentication example with URI
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    * Authentication with username and password entry
 
-.. highlight:: c
+        .. highlight:: c
 
-::
+        ::
 
-    esp_http_client_config_t config = {
-        .url = "http://user:passwd@httpbin.org/basic-auth/user/passwd",
-        .auth_type = HTTP_AUTH_TYPE_BASIC,
-    };
+            esp_http_client_config_t config = {
+                .url = "http://httpbin.org/basic-auth/user/passwd",
+                .username = "user",
+                .password = "passwd",
+                .auth_type = HTTP_AUTH_TYPE_BASIC,
+            };
 
-
-Config authentication example with username, password entry
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. highlight:: c
-
-::
-
-    esp_http_client_config_t config = {
-        .url = "http://httpbin.org/basic-auth/user/passwd",
-        .username = "user",
-        .password = "passwd",
-        .auth_type = HTTP_AUTH_TYPE_BASIC,
-    };
-    
-
-HTTP Client example: :example:`protocols/esp_http_client`.
 
 
 API Reference

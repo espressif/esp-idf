@@ -22,7 +22,7 @@ To run this example, you need to have one ESP32 development board integrated wit
 
 ### Configure the project
 
-Enter project configuration by `idf.py menuconfig` (or `make menuconfig` if using legacy GNU Make build system) and navigate into:
+Enter project configuration by `idf.py menuconfig` and navigate into:
 
 * `Example Connection Configuration` menu to choose the connection details:
 

@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct gpio_dev_s {
     uint32_t bt_select;                               /**/
     union {
         struct {

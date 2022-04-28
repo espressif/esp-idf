@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_BLE_MESH_PROVISIONING_API_H_
 #define _ESP_BLE_MESH_PROVISIONING_API_H_
@@ -69,6 +61,12 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers);
 /**
  * @brief        Unprovisioned device set own oob public key & private key pair.
  *
+ * @note         In order to avoid suffering brute-forcing attack (CVE-2020-26559).
+ *               The Bluetooth SIG recommends that potentially vulnerable mesh provisioners
+ *               use an out-of-band mechanism to exchange the public keys.
+ *               So as an unprovisioned device, it should use this function to input
+ *               the Public Key exchanged through the out-of-band mechanism.
+ *
  * @param[in]    pub_key_x:   Unprovisioned device's Public Key X
  * @param[in]    pub_key_y:   Unprovisioned device's Public Key Y
  * @param[in]    private_key: Unprovisioned device's Private Key
@@ -120,6 +118,10 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name);
 
 /**
  * @brief        Provisioner inputs unprovisioned device's oob public key.
+ *
+ * @note         In order to avoid suffering brute-forcing attack (CVE-2020-26559).
+ *               The Bluetooth SIG recommends that potentially vulnerable mesh provisioners
+ *               use an out-of-band mechanism to exchange the public keys.
  *
  * @param[in]    link_idx:   The provisioning link index
  * @param[in]    pub_key_x:  Unprovisioned device's Public Key X
@@ -323,6 +325,19 @@ esp_err_t esp_ble_mesh_provisioner_set_prov_data_info(esp_ble_mesh_prov_data_inf
 
 /**
  * @brief         This function is called by Provisioner to set static oob value used for provisioning.
+ *
+ * @note          The Bluetooth SIG recommends that mesh implementations enforce a randomly selected
+ *                AuthValue using all of the available bits, where permitted by the implementation.
+ *                A large entropy helps ensure that a brute-force of the AuthValue, even a static
+ *                AuthValue, cannot normally be completed in a reasonable time (CVE-2020-26557).
+ *
+ *                AuthValues selected using a cryptographically secure random or pseudorandom number
+ *                generator and having the maximum permitted entropy (128-bits) will be most difficult
+ *                to brute-force. AuthValues with reduced entropy or generated in a predictable manner
+ *                will not grant the same level of protection against this vulnerability. Selecting a
+ *                new AuthValue with each provisioning attempt can also make it more difficult to launch
+ *                a brute-force attack by requiring the attacker to restart the search with each
+ *                provisioning attempt (CVE-2020-26556).
  *
  * @param[in]     value:  Pointer to the static oob value.
  * @param[in]     length: Length of the static oob value.

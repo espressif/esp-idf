@@ -34,13 +34,13 @@ typedef struct {
         } operators[SOC_MCPWM_OPERATORS_PER_GROUP];
         struct {
             const uint32_t fault_sig;
-        } detectors[SOC_MCPWM_FAULT_DETECTORS_PER_GROUP];
+        } gpio_faults[SOC_MCPWM_GPIO_FAULTS_PER_GROUP];
         struct {
             const uint32_t cap_sig;
         } captures[SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER];
         struct {
             const uint32_t sync_sig;
-        } ext_syncers[SOC_MCPWM_EXT_SYNCERS_PER_GROUP];
+        } gpio_synchros[SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP];
     } groups[SOC_MCPWM_GROUPS];
 } mcpwm_signal_conn_t;
 

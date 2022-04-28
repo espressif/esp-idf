@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,8 @@
 The linker will link constructor (adc2_init_code_calibration) only when any sections inside the same file (adc2_cal_include) is used.
 Don't put any other code into this file. */
 
-#include "adc2_wifi_private.h"
 #include "hal/adc_hal.h"
+#include "esp_private/adc2_wifi.h"
 #include "esp_private/adc_cali.h"
 
 /**
@@ -18,7 +18,7 @@ Don't put any other code into this file. */
  */
 static __attribute__((constructor)) void adc2_init_code_calibration(void)
 {
-    const adc_ll_num_t adc_n = ADC_NUM_2;
+    const adc_unit_t adc_n = ADC_UNIT_2;
     const adc_atten_t atten = ADC_ATTEN_DB_11;
     const adc_channel_t channel = 0;
     adc_cal_offset(adc_n, channel, atten);

@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "slip_modem.h"
 
@@ -209,7 +201,7 @@ static void esp_slip_modem_uart_rx_task(void *arg)
 
     while (slip_modem->running == true) {
         // Read data from the UART
-        int len = uart_read_bytes(slip_modem->uart.uart_dev, slip_modem->buffer, slip_modem->buffer_len, 1 / portTICK_RATE_MS);
+        int len = uart_read_bytes(slip_modem->uart.uart_dev, slip_modem->buffer, slip_modem->buffer_len, 1 / portTICK_PERIOD_MS);
 
         if (len > 0) {
 

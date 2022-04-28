@@ -6,13 +6,13 @@ API 参考
 .. toctree::
    :maxdepth: 2
 
-   :SOC_BT_SUPPORTED: Bluetooth <bluetooth/index>
-   Networking <network/index>
-   Peripherals <peripherals/index>
-   协议 <protocols/index>
-   Provisioning <provisioning/index>
-   Storage <storage/index>
-   System <system/index>
-   Configuration Options <kconfig>
-   Error Codes Reference <error-codes>
-
+   api-conventions
+   protocols/index
+   :SOC_BT_SUPPORTED: bluetooth/index
+   error-codes
+   network/index
+   peripherals/index
+   kconfig
+   provisioning/index
+   storage/index
+   system/index

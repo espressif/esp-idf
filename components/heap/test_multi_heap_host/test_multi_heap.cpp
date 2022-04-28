@@ -484,6 +484,42 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
         }
     }
 
+    /* Check that TLSF doesn't allocate a memory space smaller than required.
+     * In any case, TLSF will write data in the previous block than the one
+     * allocated. Thus, we should try to get/allocate this previous block. If
+     * the poisoned filled pattern has beeen overwritten by TLSF, then this
+     * previous block will trigger an exception.
+     * More info on this bug in !16296. */
+    const size_t size = 50; /* TLSF will round the size up */
+    uint8_t *buf1 = (uint8_t *)multi_heap_aligned_alloc(heap, size, 4);
+    uint8_t *buf2 = (uint8_t *)multi_heap_aligned_alloc(heap, size, 4);
+    multi_heap_free(heap, buf1);
+    /* By specifying a size equal of the gap between buf1 and buf2. We are
+     * trying to force TLSF to allocate two consecutive blocks. */
+    buf1 = (uint8_t *)multi_heap_aligned_alloc(heap, buf2 - buf1, 4);
+    multi_heap_free(heap, buf2);
+
+
     printf("[ALIGNED_ALLOC] heap_size after: %d \n", multi_heap_free_size(heap));
     REQUIRE((old_size - multi_heap_free_size(heap)) <= leakage);
+}
+
+// TLSF has some overhead when allocating blocks, check that overhead
+TEST_CASE("multi_heap allocation overhead", "[multi_heap]")
+{
+    uint8_t heapdata[4 * 1024];
+    size_t alloc_size = 256;
+    multi_heap_handle_t heap = multi_heap_register(heapdata, sizeof(heapdata));
+    size_t free_bytes_1 = multi_heap_free_size(heap);
+
+    /* Allocate any amount of data, in any case there will be an overhead */
+    void *x = multi_heap_malloc(heap, alloc_size);
+
+    /* free_bytes_2 should be free_bytes_1 - alloc_size - overhead.
+     * We don't know the value of overhead, let's check that it is non-zero */
+    size_t free_bytes_2 = multi_heap_free_size(heap);
+    REQUIRE( free_bytes_1 > free_bytes_2 );
+    REQUIRE( free_bytes_1 - free_bytes_2 > alloc_size );
+
+    multi_heap_free(heap, x);
 }

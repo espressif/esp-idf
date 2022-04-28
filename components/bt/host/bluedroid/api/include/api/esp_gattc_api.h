@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_GATTC_API_H__
 #define __ESP_GATTC_API_H__
@@ -380,7 +372,7 @@ esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id,
 /**
  * @brief           Find all the service with the given service uuid in the gattc cache, if the svc_uuid is NULL, find all the service.
  *                  Note: It just get service from local cache, won't get from remote devices. If want to get it from remote device, need
- *                  to used the esp_ble_gattc_search_service.
+ *                  to used the esp_ble_gattc_cache_refresh, then call esp_ble_gattc_get_service again.
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID which identify the server.

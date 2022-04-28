@@ -5,3 +5,4 @@
             - return_thru_ptr
             - array
             - callback
+            - ignore_arg

@@ -6,9 +6,7 @@ IDF Monitor
 
 The IDF monitor tool is mainly a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
 
-This tool can be launched from an IDF project by running ``idf.py monitor``. 
-
-For the legacy GNU Make system, run ``make monitor``.
+This tool can be launched from an IDF project by running ``idf.py monitor``.
 
 Keyboard Shortcuts
 ==================
@@ -52,6 +50,9 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
    * - * Ctrl+L
      - Stop/resume log output saved to file
      - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).                
+   * - * Ctrl+I (or I)
+     - Stop/resume printing timestamps
+     - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the ``--timestamp-format`` command line argument.
    * - * Ctrl+H (or H)
      - Display all keyboard shortcuts
      -                
@@ -186,7 +187,6 @@ To decode each address, IDF Monitor runs the following command in the background
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 By default, if esp-idf crashes, the panic handler prints relevant registers and the stack dump (similar to the ones above) over the serial port. Then it resets the board.
 
 Furthermore, the application can be configured to run GDBStub in the background and handle the Ctrl+C event from the monitor.
@@ -200,7 +200,6 @@ In this case, if the panic handler or Ctrl+C command is triggered, as soon as ID
 In the background, IDF Monitor runs the following command::
 
   {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
-
 
 
 Output Filtering
@@ -268,9 +267,8 @@ Known Issues with IDF Monitor
 Issues Observed on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- If in the Windows environment you receive the error "winpty: command not found", fix it by running ``pacman -S winpty``.
 - Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
-- Occasionally, when "idf.py" or "make" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
+- Occasionally, when "idf.py" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
 - When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html

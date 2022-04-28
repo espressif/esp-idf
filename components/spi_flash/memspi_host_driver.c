@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "soc/soc_caps.h"
 #include "spi_flash_defs.h"
@@ -19,6 +11,7 @@
 #include "esp_log.h"
 #include "cache_utils.h"
 #include "esp_flash_partitions.h"
+#include "esp_memory_utils.h"
 
 
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
@@ -69,6 +62,10 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {
 
 esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg)
 {
+    if (!esp_ptr_internal(host) && cfg->host_id == SPI1_HOST) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
 #if SOC_MEMSPI_IS_INDEPENDENT
     if (cfg->host_id == SPI1_HOST)
         host->inst.driver = &esp_flash_default_host;
@@ -207,19 +204,47 @@ esp_err_t memspi_host_set_write_protect(spi_flash_host_inst_t *host, bool wp)
 // This is the simple case where the hardware has no other requirements than the size and page boundary
 int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size)
 {
+    uint32_t slicer_flag = ((spi_flash_hal_context_t*)host)->slicer_flags;
     uint32_t align_addr = address;
+
+    if (slicer_flag & SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR) {
+        if (((align_addr % 2) != 0) && ((len % 2) != 0)) {
+            align_addr -= 1;
+            len += 1;
+        } else if (((align_addr % 2) != 0) && ((len % 2) == 0)) {
+            align_addr -= 1;
+            len += 2;
+        } else if (((align_addr % 2) == 0) && ((len % 2) != 0)) {
+            len += 1;
+        }
+    }
+
     uint32_t end_bound = (align_addr/page_size + 1) * page_size;
     // Shouldn't program cross the page, or longer than SPI_FLASH_HAL_MAX_WRITE_BYTES
     uint32_t max_len = MIN(end_bound - align_addr, SPI_FLASH_HAL_MAX_WRITE_BYTES);
-    *align_address = address;
+    *align_address = align_addr;
     return MIN(max_len, len);
 }
 
 int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size)
 {
     // Shouldn't read longer than SPI_FLASH_HAL_MAX_READ_BYTES
+    uint32_t slicer_flag = ((spi_flash_hal_context_t*)host)->slicer_flags;
+    uint32_t align_addr = address;
+
+    if (slicer_flag & SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR) {
+        if (((align_addr % 2) != 0) && ((len % 2) != 0)) {
+            align_addr -= 1;
+            len += 1;
+        } else if (((align_addr % 2) != 0) && ((len % 2) == 0)) {
+            align_addr -= 1;
+            len += 2;
+        } else if (((align_addr % 2) == 0) && ((len % 2) != 0)) {
+            len += 1;
+        }
+    }
     uint32_t max_len = SPI_FLASH_HAL_MAX_READ_BYTES;
-    *align_address = address;
+    *align_address = align_addr;
     return MIN(max_len, len);
 }
 

@@ -15,7 +15,7 @@
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
 #include "esp_flash_encrypt.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
 
@@ -91,5 +91,7 @@ void bootloader_enable_random(void)
 void bootloader_print_banner(void)
 {
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
+#ifndef CONFIG_APP_REPRODUCIBLE_BUILD
     ESP_LOGI(TAG, "compile time " __TIME__);
+#endif
 }

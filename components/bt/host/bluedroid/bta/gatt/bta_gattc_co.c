@@ -154,6 +154,10 @@ static void cacheReset(BD_ADDR bda)
             cache_env->cache_addr[index].is_open = FALSE;
         } else {
             cacheOpen(bda, false, &index);
+            if (index == INVALID_ADDR_NUM) {
+                APPL_TRACE_ERROR("%s INVALID ADDR NUM", __func__);
+                return;
+            }
             if (cache_env->cache_addr[index].is_open) {
                 nvs_erase_all(cache_env->cache_addr[index].cache_fp);
                 nvs_close(cache_env->cache_addr[index].cache_fp);
@@ -393,6 +397,8 @@ void bta_gattc_co_cache_addr_init(void)
         osi_free(p_buf);
         return;
     }
+
+    memset(cache_env, 0x0, sizeof(cache_env_t));
 
     if ((err_code = nvs_open(cache_addr, NVS_READWRITE, &fp)) == ESP_OK) {
         cache_env->addr_fp = fp;

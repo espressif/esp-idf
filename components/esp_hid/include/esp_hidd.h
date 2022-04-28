@@ -54,10 +54,27 @@ typedef struct esp_hidd_dev_s esp_hidd_dev_t;
  */
 typedef union {
     /**
+     * @brief ESP_HIDD_START_EVENT
+     * @note Used only for Classic Bluetooth.
+     */
+    struct {
+        esp_err_t status;                       /*!< HID device operation status */
+    } start;                                    /*!< HID callback param of ESP_HIDD_START_EVENT */
+
+    /**
+     * @brief ESP_HIDD_STOP_EVENT
+     * @note Used only for Classic Bluetooth.
+     */
+    struct {
+        esp_err_t status;                       /*!< HID device operation status */
+    } stop;                                     /*!< HID callback param of ESP_HIDD_STOP_EVENT */
+
+    /**
      * @brief ESP_HIDD_CONNECT_EVENT
      */
     struct {
         esp_hidd_dev_t *dev;                    /*!< HID device structure */
+        esp_err_t status;                       /*!< HID device operation status, used only for Classic Bluetooth */
     } connect;                                  /*!< HID callback param of ESP_HIDD_CONNECT_EVENT */
 
     /**
@@ -66,6 +83,7 @@ typedef union {
     struct {
         esp_hidd_dev_t *dev;                    /*!< HID device structure */
         int reason;                             /*!< Indicate the reason of disconnection */
+        esp_err_t status;                       /*!< HID device operation status, used only for Classic Bluetooth */
     } disconnect;                               /*!< HID callback param of ESP_HIDD_DISCONNECT_EVENT */
 
     /**
@@ -90,6 +108,8 @@ typedef union {
         uint16_t length;                        /*!< data length */
         uint8_t  *data;                         /*!< The pointer to the data */
         uint8_t map_index;                      /*!< HID config report map index */
+        uint8_t trans_type;                     /*!< HID device feature transaction type, used only for Classic Bluetooth */
+        uint8_t report_type;                    /*!< HID device feature report type, used only for Classic Bluetooth */
     } feature;                                  /*!< HID callback param of ESP_HIDD_FEATURE_EVENT */
 
     /**

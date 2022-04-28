@@ -1,16 +1,8 @@
-// Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "btm_int.h"
 #include "stack/hcimsgs.h"
@@ -110,8 +102,8 @@ static char *btm_ble_hci_status_to_str(tHCI_STATUS status)
         return "HCI_ERR_INVALID_LMP_PARAM";
     case HCI_ERR_UNSPECIFIED:
         return "HCI_ERR_UNSPECIFIED";
-    case HCI_ERR_UNSUPPORTED_LMP_FEATURE:
-        return "HCI_ERR_UNSUPPORTED_LMP_FEATURE";
+    case HCI_ERR_UNSUPPORTED_LMP_PARAMETERS:
+        return "HCI_ERR_UNSUPPORTED_LMP_PARAMETERS";
     case HCI_ERR_ROLE_CHANGE_NOT_ALLOWED:
         return "HCI_ERR_ROLE_CHANGE_NOT_ALLOWED";
     case HCI_ERR_LMP_RESPONSE_TIMEOUT:
@@ -523,10 +515,6 @@ tBTM_STATUS BTM_BleStartExtAdv(BOOLEAN enable, UINT8 num, tBTM_BLE_EXT_ADV *ext_
 end:
 
     if (!enable && status == BTM_SUCCESS) {
-        // Reset the configure parameters when stop extend adv.
-        for (int i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
-            extend_adv_cb.inst[i].configured = false;
-        }
         // disable all ext adv
         if(num == 0) {
 
@@ -693,22 +681,15 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
 {
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
-    uint16_t rem_len;
+    uint16_t rem_len = len;
     UINT8 operation = 0;
     UINT16 data_offset = 0;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
        BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
+       goto end;
     }
-
-    if (len > controller_get_interface()->ble_get_ext_adv_data_max_len()) {
-        BTM_TRACE_ERROR("%s, The adv data len(%d) is longer then the controller adv max len(%d)",
-            __func__, len, controller_get_interface()->ble_get_ext_adv_data_max_len());
-        status = BTM_ILLEGAL_VALUE;
-    }
-
-    rem_len = len;
 
     do {
         UINT8 send_data_len = (rem_len > BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) ? BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX : rem_len;
@@ -733,8 +714,8 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
 	data_offset += send_data_len;
     } while(rem_len);
 
+end:
     cb_params.status = status;
-
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -1110,6 +1091,12 @@ static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len,
     if (extend_adv_cb.inst[instance].legacy_pdu) {
         if (len > 31) {
             BTM_TRACE_ERROR("%s, for the legacy adv, the adv data length can't exceed 31. line %d", __func__, __LINE__);
+            return BTM_ILLEGAL_VALUE;
+        }
+    } else {
+        if (len > controller_get_interface()->ble_get_ext_adv_data_max_len()) {
+            BTM_TRACE_ERROR("%s, The adv data len(%d) is longer then the controller adv max len(%d)",
+                __func__, len, controller_get_interface()->ble_get_ext_adv_data_max_len());
             return BTM_ILLEGAL_VALUE;
         }
     }

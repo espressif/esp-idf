@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -27,8 +19,8 @@ static void spp_task_task_handler(void *arg);
 static bool spp_task_send_msg(spp_task_msg_t *msg);
 static void spp_task_work_dispatched(spp_task_msg_t *msg);
 
-static xQueueHandle spp_task_task_queue = NULL;
-static xTaskHandle spp_task_task_handle = NULL;
+static QueueHandle_t spp_task_task_queue = NULL;
+static TaskHandle_t spp_task_task_handle = NULL;
 
 bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_params, int param_len, spp_task_copy_cb_t p_copy_cback)
 {
@@ -63,7 +55,7 @@ static bool spp_task_send_msg(spp_task_msg_t *msg)
         return false;
     }
 
-    if (xQueueSend(spp_task_task_queue, msg, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(spp_task_task_queue, msg, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         ESP_LOGE(SPP_TASK_TAG, "%s xQueue send failed", __func__);
         return false;
     }
@@ -81,7 +73,7 @@ static void spp_task_task_handler(void *arg)
 {
     spp_task_msg_t msg;
     for (;;) {
-        if (pdTRUE == xQueueReceive(spp_task_task_queue, &msg, (portTickType)portMAX_DELAY)) {
+        if (pdTRUE == xQueueReceive(spp_task_task_queue, &msg, (TickType_t)portMAX_DELAY)) {
             ESP_LOGD(SPP_TASK_TAG, "%s, sig 0x%x, 0x%x", __func__, msg.sig, msg.event);
             switch (msg.sig) {
             case SPP_TASK_SIG_WORK_DISPATCH:

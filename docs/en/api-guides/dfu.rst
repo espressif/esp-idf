@@ -2,13 +2,8 @@
 Device Firmware Upgrade through USB
 ***********************************************
 
-.. only:: esp32
-
-    .. note::
-        Device Firmware Upgrade through USB is not supported with ESP32 chips.
-
 Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of devices through Universal Serial Bus (USB).
-DFU is supported by ESP32-S2 chips. The necessary connections for the USB peripheral are shown in the following table.
+DFU is supported by {IDF_TARGET_NAME} chips. The necessary connections for the USB peripheral are shown in the following table.
 
 +------+-------------+
 | GPIO | USB         |
@@ -22,8 +17,14 @@ DFU is supported by ESP32-S2 chips. The necessary connections for the USB periph
 | +5V  | +5V (red)   |
 +------+-------------+
 
+.. only:: esp32s3
+
+    By default, :doc:`USB_SERIAL_JTAG<usb-serial-jtag-console>` module is connected to the internal PHY of the ESP32-S3, while USB_OTG peripheral can be used only if the external USB PHY is connected. Since DFU mode is provided via USB_OTG peripheral, it cannot be used through the internal PHY in this configuration.
+
+    You can permanently switch the internal USB PHY to work with USB_OTG peripheral instead of USB_SERIAL_JTAG by burning ``USB_PHY_SEL`` eFuse. See ESP32-S3 Technical Reference Manual for more details about USB_SERIAL_JTAG and USB_OTG.
+
 .. note::
-    The ESP32-S2 chip needs to be in bootloader mode for the detection as a DFU device and flashing. This can be
+    The {IDF_TARGET_NAME} chip needs to be in bootloader mode for the detection as a DFU device and flashing. This can be
     achieved by pulling GPIO0 down (e.g. pressing the BOOT button), pulsing RESET down for a moment and releasing
     GPIO0.
 
@@ -112,8 +113,8 @@ Please see the `libusb wiki <https://github.com/libusb/libusb/wiki/Windows#How_t
 details.
 
 The drivers can be installed by the `Zadig tool <https://zadig.akeo.ie/>`_. Please make sure that the device is in
-download mode before running the tool and that it detects the ESP32-S2 device before installing the drivers. The Zadig
-tool might detect several USB interfaces of ESP32-S2. Please install the WinUSB driver for only that interface for
+download mode before running the tool and that it detects the {IDF_TARGET_NAME} device before installing the drivers. The Zadig
+tool might detect several USB interfaces of {IDF_TARGET_NAME}. Please install the WinUSB driver for only that interface for
 which there is no driver installed (probably it is Interface 2) and don't re-install the driver for the other interface.
 
 .. warning::

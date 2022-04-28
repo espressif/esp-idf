@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,13 @@
 #include "param_test.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
+#include "soc/spi_periph.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
+
+#define TEST_SPI_PERIPH_NUM     (SOC_SPI_PERIPH_NUM - 1)
+
 #if CONFIG_IDF_TARGET_ESP32
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI3_HOST
@@ -82,8 +86,8 @@
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32C3
-//NOTE: On esp32c3, there is only 1 GPSPI controller, so master-slave test on single board should be disabled
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2
+//NOTE: On these chips, there is only 1 GPSPI controller, so master-slave test on single board should be disabled
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI2_HOST
 
@@ -292,4 +296,8 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 //then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
 void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num);
 
+/**
+ * This function is used to get tx_buffer used in dual-board test
+ */
+void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size);
 #endif  //_TEST_COMMON_SPI_H_

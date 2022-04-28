@@ -1,11 +1,11 @@
 # Function to check the toolchain used the expected version
 # of crosstool, and warn otherwise
 
-set(ctng_version_warning "Check Getting Started documentation or proceed at own risk.")
+set(ctng_version_warning "Check Getting Started documentation or proceed at own risk.\n")
 
 function(gcc_version_check expected_gcc_version)
     if(NOT "${CMAKE_C_COMPILER_VERSION}" STREQUAL "${expected_gcc_version}")
-        message(WARNING "Xtensa toolchain ${CMAKE_C_COMPILER} version ${CMAKE_C_COMPILER_VERSION} "
+        message(WARNING "Toolchain ${CMAKE_C_COMPILER} version ${CMAKE_C_COMPILER_VERSION} "
             "is not the supported version ${expected_gcc_version}. ${ctng_version_warning}")
     endif()
 endfunction()
@@ -22,11 +22,20 @@ function(crosstool_version_check expected_ctng_version)
     # the expected version string.
     string(FIND "${ctng_version}" "${expected_ctng_version}" found_expected_version)
     if(NOT ctng_version)
-        message(WARNING "Xtensa toolchain ${CMAKE_C_COMPILER} does not appear to be built with crosstool-ng. "
+        message(WARNING "Toolchain ${CMAKE_C_COMPILER} does not appear to be built with crosstool-ng. "
             "${ctng_version_warning}")
     elseif(found_expected_version EQUAL -1)
-        message(WARNING "Xtensa toolchain ${CMAKE_C_COMPILER} crosstool-ng version ${ctng_version} "
-            "doesn't match supported version ${expected_ctng_version}. ${ctng_version_warning}")
+        set(wrong_compiler_msg "\nToolchain: ${CMAKE_C_COMPILER}, "
+            "crosstool-ng version ${ctng_version} doesn't match supported version ${expected_ctng_version}"
+            "\nPlease try to run 'idf.py fullclean' to solve it quickly.\n")
+        set(IDF_MAINTAINER $ENV{IDF_MAINTAINER})
+        if(IDF_MAINTAINER)
+            message(WARNING ${wrong_compiler_msg} ${ctng_version_warning})
+        else()
+            set(ctng_version_error "Check Getting Started documentation if the error continues."
+        "\nYou can override this error and proceed with build by defining the IDF_MAINTAINER environment variable.\n")
+            message(FATAL_ERROR ${wrong_compiler_msg} ${ctng_version_error})
+        endif()
     endif()
 endfunction()
 

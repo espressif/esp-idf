@@ -1,5 +1,5 @@
-RMT
-===
+Remote Control (RMT)
+====================
 
 The RMT (Remote Control) module driver can be used to send and receive infrared remote control signals. Due to flexibility of RMT module, the driver can also be used to generate or receive many other types of signals.
 
@@ -103,6 +103,10 @@ There couple of typical steps to setup and operate the RMT and they are discusse
 
     The RMT has four channels numbered from zero to three. The first half (i.e. Channel 0 ~ 1) channels can only be configured for transmitting, and the other half (i.e. Channel 2 ~ 3) channels can only be configured for receiving. They are referred to using indexes defined in structure :cpp:type:`rmt_channel_t`.
 
+.. only:: esp32s3
+
+    The RMT has eight channels numbered from zero to seven. The first half (i.e. Channel 0 ~ 3) channels can only be configured for transmitting, and the other half (i.e. Channel 4 ~ 7) channels can only be configured for receiving. They are referred to using indexes defined in structure :cpp:type:`rmt_channel_t`.
+
 Configure Driver
 ----------------
 
@@ -144,7 +148,7 @@ When configuring channel in transmit mode, set **tx_config** and the following m
     * Level of the RMT output, when the carrier is applied - **carrier_level**
     * Enable the RMT output if idle - **idle_output_en**
     * Set the signal level on the RMT output if idle - **idle_level**
-    :esp32s2: * Specify maximum number of transmissions in a loop - **loop_count**
+    :SOC_RMT_SUPPORT_TX_LOOP_COUNT: * Specify maximum number of transmissions in a loop - **loop_count**
 
 Receive Mode
 ^^^^^^^^^^^^
@@ -156,17 +160,17 @@ In receive mode, set **rx_config** and the following members of :cpp:type:`rmt_r
     * Enable a filter on the input of the RMT receiver - **filter_en**
     * A threshold of the filter, set in the number of ticks - **filter_ticks_thresh**. Pulses shorter than this setting will be filtered out. Note, that the range of entered tick values is [0..255].
     * A pulse length threshold that will turn the RMT receiver idle, set in number of ticks - **idle_threshold**. The receiver will ignore pulses longer than this setting.
-    :esp32s2: * Enable the RMT carrier demodulation - **carrier_rm**
-    :esp32s2: * Frequency of the carrier in Hz - **carrier_freq_hz**
-    :esp32s2: * Duty cycle of the carrier signal in percent (%) - **carrier_duty_percent**
-    :esp32s2: * Level of the RMT input, where the carrier is modulated to - **carrier_level**
+    :SOC_RMT_SUPPORT_RX_DEMODULATION: * Enable the RMT carrier demodulation - **carrier_rm**
+    :SOC_RMT_SUPPORT_RX_DEMODULATION: * Frequency of the carrier in Hz - **carrier_freq_hz**
+    :SOC_RMT_SUPPORT_RX_DEMODULATION: * Duty cycle of the carrier signal in percent (%) - **carrier_duty_percent**
+    :SOC_RMT_SUPPORT_RX_DEMODULATION: * Level of the RMT input, where the carrier is modulated to - **carrier_level**
 
 Finalize Configuration
 ^^^^^^^^^^^^^^^^^^^^^^
 
 Once the :cpp:type:`rmt_config_t` structure is populated with parameters, it should be then invoked with :cpp:func:`rmt_config` to make the configuration effective.
 
-The last configuration step is installation of the driver in memory by calling :cpp:func:`rmt_driver_install`. If :cpp:type:`rx_buf_size` parameter of this function is > 0, then a ring buffer for incoming data will be allocated. A default ISR handler will be installed, see a note in `Use Interrupts`_.
+The last configuration step is installation of the driver in memory by calling :cpp:func:`rmt_driver_install`. If `rx_buf_size` parameter of this function is > 0, then a ring buffer for incoming data will be allocated. A default ISR handler will be installed, see a note in `Use Interrupts`_.
 
 Now, depending on how the channel is configured, we are ready to either `Transmit Data`_ or `Receive Data`_. This is described in next two sections.
 
@@ -209,6 +213,11 @@ Receive Data
 
 .. only:: esp32
 
+    .. warning::
+        RMT RX channel can't receive packet whose items are larger than its memory block size. If you set the memory block number to 1, then this RX channel can't receive packet with more than 64 items. This is a hardware limitation.
+
+.. only:: esp32
+
     Before starting the receiver we need some storage for incoming items. The RMT controller has 512 x 32-bits of internal RAM shared between all eight channels.
 
 .. only:: esp32s2
@@ -218,6 +227,10 @@ Receive Data
 .. only:: esp32c3
 
     Before starting the receiver we need some storage for incoming items. The RMT controller has 192 x 32-bits of internal RAM shared between all four channels.
+
+.. only:: esp32s3
+
+    Before starting the receiver we need some storage for incoming items. The RMT controller has 384 x 32-bits of internal RAM shared between all eight channels.
 
 In typical scenarios it is not enough as an ultimate storage for all incoming (and outgoing) items. Therefore this API supports retrieval of incoming items on the fly to save them in a ring buffer of a size defined by the user. The size is provided when calling :cpp:func:`rmt_driver_install` discussed above. To get a handle to this buffer call :cpp:func:`rmt_get_ringbuf_handle`.
 
@@ -248,6 +261,11 @@ Transmit Mode Parameters
 * Binary level on the output to apply the carrier - :cpp:func:`rmt_set_tx_carrier`, selected from :cpp:type:`rmt_carrier_level_t`
 * Determines the binary level on the output when transmitter is idle - :cpp:func:`rmt_set_idle_level()`, selected from :cpp:type:`rmt_idle_level_t`
 
+.. only:: SOC_RMT_SUPPORT_TX_LOOP_COUNT
+
+    * Enable or disable loop count feature to automatically transmit items for N iterations, then trigger an ISR callback - :cpp:func:`rmt_set_tx_loop_count`
+    * Enable automatically stopping when the number of iterations matches the set loop count. Note this is not reliable for target that doesn't support `SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP`. - :cpp:func:`rmt_enable_tx_loop_autostop`
+
 
 Receive Mode Parameters
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -272,8 +290,6 @@ The RMT controller triggers interrupts on four specific events describes below. 
 * The RMT transmitter has finished transmitting the signal - :cpp:func:`rmt_set_tx_intr_en`
 * The number of events the transmitter has sent matches a threshold value :cpp:func:`rmt_set_tx_thr_intr_en`
 * Ownership to the RMT memory block has been violated - :cpp:func:`rmt_set_err_intr_en`
-
-Setting or clearing an interrupt enable mask for specific channels and events may be also done by calling :cpp:func:`rmt_set_intr_enable_mask` or :cpp:func:`rmt_clr_intr_enable_mask`.
 
 When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 

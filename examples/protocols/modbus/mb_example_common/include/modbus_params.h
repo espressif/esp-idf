@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /*=====================================================================================
  * Description:
  *   The Modbus parameter structures used to define Modbus instances that
@@ -44,6 +50,7 @@ typedef struct
     float input_data5;
     float input_data6;
     float input_data7;
+    uint16_t data_block1[150];
 } input_reg_params_t;
 #pragma pack(pop)
 

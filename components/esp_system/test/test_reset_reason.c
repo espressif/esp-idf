@@ -49,7 +49,7 @@ static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 #define BROWNOUT            "BROWN_OUT_RST"
 #define STORE_ERROR         "StoreProhibited"
 
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #define DEEPSLEEP           "DSLEEP"
 #define LOAD_STORE_ERROR    "Store access fault"
 #define RESET               "RTC_SW_CPU_RST"
@@ -181,7 +181,8 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", 
 static void do_int_wdt(void)
 {
     setup_values();
-    portENTER_CRITICAL_NESTED();
+    BaseType_t prev_level = portSET_INTERRUPT_MASK_FROM_ISR();
+    (void) prev_level;
     while(1);
 }
 

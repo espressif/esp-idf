@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 #define UART_TAG         "Uart"
 #define UART_NUM1        (UART_NUM_1)
 #define BUF_SIZE         (100)
-#define UART1_RX_PIN     (22)
-#define UART1_TX_PIN     (23)
+#define UART1_RX_PIN     (5)
+#define UART1_TX_PIN     (4)
 #define UART_BAUD_11520  (11520)
 #define UART_BAUD_115200 (115200)
 #define TOLERANCE        (0.02)    //baud rate error tolerance 2%.
@@ -30,7 +30,7 @@
 #define PACKETS_NUMBER  (10)
 
 // Wait timeout for uart driver
-#define PACKET_READ_TICS    (1000 / portTICK_RATE_MS)
+#define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
 
 #define TEST_DEFAULT_CLK UART_SCLK_APB
 
@@ -54,7 +54,7 @@ static volatile bool exit_flag;
 
 static void test_task(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     char* data = (char *) malloc(256);
 
     while (exit_flag == false) {
@@ -82,7 +82,7 @@ TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]"
 {
     uart_config(UART_BAUD_11520, TEST_DEFAULT_CLK);
 
-    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
     exit_flag = false;
 
     xTaskCreate(test_task,  "tsk1", 2048, &exit_sema, 5, NULL);
@@ -132,7 +132,7 @@ TEST_CASE("test uart tx data with break", "[uart]")
     uart_config(UART_BAUD_115200, TEST_DEFAULT_CLK);
     printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
     uart_write_bytes_with_break(UART_NUM1, (const char *)psend, send_len, brk_len);
-    uart_wait_tx_done(UART_NUM1, (portTickType)portMAX_DELAY);
+    uart_wait_tx_done(UART_NUM1, (TickType_t)portMAX_DELAY);
     //If the code is running here, it means the test passed, otherwise it will crash due to the interrupt wdt timeout.
     printf("Send data with break test passed\n");
     free(psend);
@@ -276,7 +276,7 @@ TEST_CASE("uart read write test", "[uart]")
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
     TEST_ESP_OK(uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART1_CTS_PIN));
     //Connect the RTS out_signal to the CTS pin (which is mapped to CTS in_signal)
-    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, uart_periph_signal[uart_num].rts_sig, 0, 0);
+    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
 
     TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
     vTaskDelay(1 / portTICK_PERIOD_MS); // make sure last byte has flushed from TX FIFO
@@ -345,7 +345,7 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
     TEST_ESP_OK(uart_set_pin(uart_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART1_CTS_PIN));
     //Connect the RTS out_signal to the CTS pin (which is mapped to CTS in_signal)
-    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, uart_periph_signal[uart_num].rts_sig, 0, 0);
+    esp_rom_gpio_connect_out_signal(UART1_CTS_PIN, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RTS_PIN_IDX), 0, 0);
 
     for (int i = 0; i < 1024; i++) {
         wr_data[i] = i;
@@ -358,4 +358,77 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     TEST_ESP_OK(uart_driver_delete(uart_num));
     free(rd_data);
     free(wr_data);
+}
+
+TEST_CASE("uart int state restored after flush", "[uart]")
+{
+    /**
+     * The first goal of this test is to make sure that when our RX FIFO is full,
+     * we can continue receiving back data after flushing
+     * For more details, check IDF-4374
+     */
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+
+    const uart_port_t uart_echo = UART_NUM_1;
+    const int uart_tx_signal = U1TXD_OUT_IDX;
+    const int uart_tx = UART1_TX_PIN;
+    const int uart_rx = UART1_RX_PIN;
+    const int buf_size = 256;
+    const int intr_alloc_flags = 0;
+
+    TEST_ESP_OK(uart_driver_install(uart_echo, buf_size * 2, 0, 0, NULL, intr_alloc_flags));
+    TEST_ESP_OK(uart_param_config(uart_echo, &uart_config));
+    TEST_ESP_OK(uart_set_pin(uart_echo, uart_tx, uart_rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    /* Make sure UART2's RX signal is connected to TX pin
+     * This creates a loop that lets us receive anything we send on the UART */
+    esp_rom_gpio_connect_out_signal(uart_rx, uart_tx_signal, false, false);
+
+    uint8_t *data = (uint8_t *) malloc(buf_size);
+    TEST_ASSERT_NOT_NULL(data);
+    uart_write_bytes(uart_echo, (const char *) data, buf_size);
+
+    /* As we set up a loopback, we can read them back on RX */
+    int len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(len, buf_size);
+
+    /* Fill the RX buffer, this should disable the RX interrupts */
+    int written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
+    TEST_ASSERT_NOT_EQUAL(-1, written);
+    written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
+    TEST_ASSERT_NOT_EQUAL(-1, written);
+    written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
+    TEST_ASSERT_NOT_EQUAL(-1, written);
+
+    /* Flush the input buffer, RX interrupts should be re-enabled */
+    uart_flush_input(uart_echo);
+    written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
+    TEST_ASSERT_NOT_EQUAL(-1, written);
+    len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_PERIOD_MS);
+    /* len equals buf_size bytes if interrupts were indeed re-enabled */
+    TEST_ASSERT_EQUAL(len, buf_size);
+
+    /**
+     * Second test, make sure that if we explicitly disable the RX interrupts,
+     * they are NOT re-enabled after flushing
+     * To do so, start by cleaning the RX FIFO, disable the RX interrupts,
+     * flush again, send data to the UART and check that we haven't received
+     * any of the bytes */
+    uart_flush_input(uart_echo);
+    uart_disable_rx_intr(uart_echo);
+    uart_flush_input(uart_echo);
+    written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
+    TEST_ASSERT_NOT_EQUAL(-1, written);
+    len = uart_read_bytes(uart_echo, data, buf_size, 250 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(len, 0);
+
+    TEST_ESP_OK(uart_driver_delete(uart_echo));
+    free(data);
 }

@@ -2,7 +2,7 @@ ESP32-PICO-KIT V4 / V4.1 Getting Started Guide
 ==============================================
 :link_to_translation:`zh_CN:[中文]`
 
-This guide shows how to get started with the ESP32-PICO-KIT V4 / V4.1 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../../hw-reference/index`.
+This guide shows how to get started with the ESP32-PICO-KIT V4/V4.1 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../../hw-reference/index`.
 
 This particular description covers ESP32-PICO-KIT V4 and V4.1. The difference is the upgraded USB-UART bridge from CP2102 in V4 with up to 1 Mbps transfer rates to CP2102N in V4.1 with up to 3 Mbps transfer rates.
 
@@ -37,8 +37,8 @@ All the IO signals and system power on ESP32-PICO-D4 are led out to two rows of 
 
 .. note::
 
-    1. The 2 x 3 pads not populated with pin headers are connected to the flash memory embedded in the ESP32-PICO-D4 SiP module. For more details see module's datasheet in `Related Documents`_.
-    2. ESP32-PICO-KIT comes with male headers by default.
+    1. There are two versions of ESP32-PICO-KIT boards, respectively with male headers and female headers. In this guide, the male header version is taken as an example.
+    2. The 2 x 3 pads not populated with pin headers are connected to the flash memory embedded in the ESP32-PICO-D4 SiP module. For more details, see module's datasheet in `Related Documents`_.
 
 Functionality Overview
 ----------------------
@@ -62,32 +62,35 @@ The following figure and the table below describe the key components, interfaces
 
 .. figure:: ../../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
-    :alt: ESP32-PICO-KIT board layout
+    :alt: ESP32-PICO-KIT board layout (with female headers)
     :figclass: align-center
 
-    ESP32-PICO-KIT board layout
+    ESP32-PICO-KIT board layout (with female headers)
 
 Below is the description of the items identified in the figure starting from the top left corner and going clockwise.
 
-==================  =================================================================================================================================
-Key Component       Description
-==================  =================================================================================================================================
-ESP32-PICO-D4       Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
 
-LDO                 5V-to-3.3V Low dropout voltage regulator (LDO).
-
-USB-UART bridge     Single-chip USB-UART bridge: CP2102 in V4 provides up to 1 Mbps transfer rates and CP2102N in V4.1 offers up to 3 Mbps transfers rates.
-
-Micro USB Port      USB interface. Power supply for the board as well as the communication interface between a computer and the board.
-
-5V Power On LED     This red LED turns on when power is supplied to the board. For details, see the schematics in `Related Documents`_.
-
-I/O                 All the pins on ESP32-PICO-D4 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details, please see Section `Pin Descriptions`_.
-
-BOOT Button         Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
-
-EN Button           Reset button.
-==================  =================================================================================================================================
+    * - Key Component
+      - Description
+    * - ESP32-PICO-D4
+      - Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+    * - LDO
+      - 5V-to-3.3V Low dropout voltage regulator (LDO).
+    * - USB-UART bridge
+      - Single-chip USB-UART bridge: CP2102 in V4 provides up to 1 Mbps transfer rates and CP2102N in V4.1 offers up to 3 Mbps transfers rates.
+    * - Micro USB Port
+      - USB interface. Power supply for the board as well as the communication interface between a computer and the board.
+    * - 5V Power On LED
+      - This red LED turns on when power is supplied to the board. For details, see the schematics in `Related Documents`_.
+    * - I/O
+      - All the pins on ESP32-PICO-D4 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details, please see Section `Pin Descriptions`_.
+    * - BOOT Button
+      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+    * - EN Button
+      - Reset button.
 
 
 Power Supply Options
@@ -178,14 +181,12 @@ No.     Name               Type    Function
 
 .. _get-started-pico-kit-v4-pin-notes:
 
-The following notes give more information about the items in the tables above.
+.. note::
 
     1. This pin is connected to the flash pin of ESP32-PICO-D4.
-    2. 32.768 kHz crystal oscillator:
-       a) input
-       b) output
+    2. 32.768 kHz crystal oscillator: a) input, b) output.
     3. This pin is connected to the pin of the USB bridge chip on the board.
-    4. The operating voltage of ESP32-PICO-KIT’s embedded SPI flash is 3.3V. Therefore, the strapping pin MTDI should hold bit zero during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
+    4. The operating voltage of ESP32-PICO-KIT’s embedded SPI flash is 3.3 V. Therefore, the strapping pin MTDI should hold bit zero during the module power-on reset. If connected, please make sure that this pin is not held up on reset.
 
 
 Start Application Development
@@ -203,17 +204,17 @@ The dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4").
 
 .. figure:: ../../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
     :align: center
-    :alt: ESP32-PICO-KIT dimensions - back
+    :alt: ESP32-PICO-KIT dimensions - back (with male headers)
     :figclass: align-center
 
-    ESP32-PICO-KIT dimensions - back
+    ESP32-PICO-KIT dimensions - back (with male headers)
 
 .. figure:: ../../../_static/esp32-pico-kit-v4-dimensions-side.jpg
     :align: center
-    :alt: ESP32-PICO-KIT V4 dimensions - side
+    :alt: ESP32-PICO-KIT V4 dimensions - side (with male headers)
     :figclass: align-center
 
-    ESP32-PICO-KIT dimensions - side
+    ESP32-PICO-KIT dimensions - side (with male headers)
 
 For the board physical construction details, please refer to its Reference Design listed below.
 
@@ -223,7 +224,7 @@ Related Documents
 
 * `ESP32-PICO-KIT V4 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT V4.1 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
-* `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32-PICO-KIT Reference Design <https://www.espressif.com/sites/default/files/documentation/esp32-pico-kit_v4.1_20180314_en.zip>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`
 

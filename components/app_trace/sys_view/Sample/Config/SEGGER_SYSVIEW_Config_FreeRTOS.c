@@ -1,3 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2017 SEGGER Microcontroller GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * SPDX-FileContributor: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ */
 /*********************************************************************
 *                SEGGER Microcontroller GmbH & Co. KG                *
 *                        The Embedded Experts                        *
@@ -69,12 +76,7 @@ Revision: $Rev: 3734 $
 #include "esp_intr_alloc.h"
 #include "soc/soc.h"
 #include "soc/interrupts.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
-#endif
-
+#include "esp_private/esp_clk.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -89,37 +91,33 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
 // The target device name
 #define SYSVIEW_DEVICE_NAME     CONFIG_IDF_TARGET
+// The target core name
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
+#define SYSVIEW_CORE_NAME       "xtensa"
+#elif CONFIG_IDF_TARGET_ARCH_RISCV
+#define SYSVIEW_CORE_NAME       "riscv"
+#endif
 
 // Determine which timer to use as timestamp source
-#if CONFIG_SYSVIEW_TS_SOURCE_CCOUNT
+#if CONFIG_APPTRACE_SV_TS_SOURCE_CCOUNT
 #define TS_USE_CCOUNT 1
-#elif CONFIG_SYSVIEW_TS_SOURCE_ESP_TIMER
+#elif CONFIG_APPTRACE_SV_TS_SOURCE_ESP_TIMER
 #define TS_USE_ESP_TIMER 1
 #else
 #define TS_USE_TIMERGROUP 1
 #endif
 
 #if TS_USE_TIMERGROUP
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 
 // Timer group timer divisor
 #define SYSVIEW_TIMER_DIV       2
 
-// Frequency of the timestamp.
+// Frequency of the timestamp, using APB as GPTimer source clock
 #define SYSVIEW_TIMESTAMP_FREQ  (esp_clk_apb_freq() / SYSVIEW_TIMER_DIV)
 
-// Timer ID and group ID
-#if defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_00) || defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_01)
-#define TS_TIMER_ID 0
-#else
-#define TS_TIMER_ID 1
-#endif // TIMER_00 || TIMER_01
-
-#if defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_00) || defined(CONFIG_SYSVIEW_TS_SOURCE_TIMER_10)
-#define TS_TIMER_GROUP 0
-#else
-#define TS_TIMER_GROUP 1
-#endif // TIMER_00 || TIMER_10
+// GPTimer handle
+gptimer_handle_t s_sv_gptimer;
 
 #endif // TS_USE_TIMERGROUP
 
@@ -130,11 +128,7 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
 #if TS_USE_CCOUNT
 // CCOUNT is incremented at CPU frequency
-#if CONFIG_IDF_TARGET_ESP32
-#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ * 1000000)
-#endif
+#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #endif // TS_USE_CCOUNT
 
 // System Frequency.
@@ -143,12 +137,17 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 // The lowest RAM address used for IDs (pointers)
 #define SYSVIEW_RAM_BASE        (SOC_DROM_LOW)
 
+#ifdef CONFIG_FREERTOS_TICK_SUPPORT_CORETIMER
 #if CONFIG_FREERTOS_CORETIMER_0
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
 #endif
 #if CONFIG_FREERTOS_CORETIMER_1
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
 #endif
+
+#elif CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
+    #define SYSTICK_INTR_ID (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
+#endif // CONFIG_FREERTOS_TICK_SUPPORT_CORETIMER
 
 // SystemView is single core specific: it implies that SEGGER_SYSVIEW_LOCK()
 // disables IRQs (disables rescheduling globally). So we can not use finite timeouts for locks and return error
@@ -167,11 +166,13 @@ static esp_apptrace_lock_t s_sys_view_lock = {.mux = portMUX_INITIALIZER_UNLOCKE
 */
 static void _cbSendSystemDesc(void) {
     char irq_str[32];
-    SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME",C=Xtensa,O=FreeRTOS");
+    SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME",C="SYSVIEW_CORE_NAME",O=FreeRTOS");
     snprintf(irq_str, sizeof(irq_str), "I#%d=SysTick", SYSTICK_INTR_ID);
     SEGGER_SYSVIEW_SendSysDesc(irq_str);
     size_t isr_count = sizeof(esp_isr_names)/sizeof(esp_isr_names[0]);
     for (size_t i = 0; i < isr_count; ++i) {
+        if (esp_isr_names[i] == NULL || (ETS_INTERNAL_INTR_SOURCE_OFF + i) == SYSTICK_INTR_ID)
+            continue;
         snprintf(irq_str, sizeof(irq_str), "I#%d=%s", ETS_INTERNAL_INTR_SOURCE_OFF + i, esp_isr_names[i]);
         SEGGER_SYSVIEW_SendSysDesc(irq_str);
     }
@@ -189,19 +190,15 @@ static void SEGGER_SYSVIEW_TS_Init(void)
      * esp_timer and ccount can be used as is.
      */
 #if TS_USE_TIMERGROUP
-    timer_config_t config = {
-        .alarm_en = 0,
-        .auto_reload = 0,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = SYSVIEW_TIMER_DIV,
-        .counter_en = 0
+    gptimer_config_t config = {
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = SYSVIEW_TIMESTAMP_FREQ,
     };
-    /* Configure timer */
-    timer_init(TS_TIMER_GROUP, TS_TIMER_ID, &config);
-    /* Load counter value */
-    timer_set_counter_value(TS_TIMER_GROUP, TS_TIMER_ID, 0x00000000ULL);
+    // pick any free GPTimer instance
+    ESP_ERROR_CHECK(gptimer_new_timer(&config, &s_sv_gptimer));
     /* Start counting */
-    timer_start(TS_TIMER_GROUP, TS_TIMER_ID);
+    gptimer_start(s_sv_gptimer);
 #endif // TS_USE_TIMERGROUP
 }
 
@@ -213,43 +210,43 @@ void SEGGER_SYSVIEW_Conf(void) {
                         &SYSVIEW_X_OS_TraceAPI, _cbSendSystemDesc);
     SEGGER_SYSVIEW_SetRAMBase(SYSVIEW_RAM_BASE);
 
-#if !CONFIG_SYSVIEW_EVT_OVERFLOW_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_OVERFLOW_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_OVERFLOW;
 #endif
-#if !CONFIG_SYSVIEW_EVT_ISR_ENTER_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_ISR_ENTER_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_ISR_ENTER;
 #endif
-#if !CONFIG_SYSVIEW_EVT_ISR_EXIT_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_ISR_EXIT_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_ISR_EXIT;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TASK_START_EXEC_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TASK_START_EXEC_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_START_EXEC;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TASK_STOP_EXEC_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TASK_STOP_EXEC_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_STOP_EXEC;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TASK_START_READY_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TASK_START_READY_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_START_READY;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TASK_STOP_READY_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TASK_STOP_READY_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_STOP_READY;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TASK_CREATE_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TASK_CREATE_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_CREATE;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TASK_TERMINATE_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TASK_TERMINATE_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TASK_TERMINATE;
 #endif
-#if !CONFIG_SYSVIEW_EVT_IDLE_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_IDLE_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_IDLE;
 #endif
-#if !CONFIG_SYSVIEW_EVT_ISR_TO_SCHEDULER_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_ISR_TO_SCHED_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_ISR_TO_SCHEDULER;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TIMER_ENTER_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TIMER_ENTER_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TIMER_ENTER;
 #endif
-#if !CONFIG_SYSVIEW_EVT_TIMER_EXIT_ENABLE
+#if !CONFIG_APPTRACE_SV_EVT_TIMER_EXIT_ENABLE
     disable_evts |= SYSVIEW_EVTMASK_TIMER_EXIT;
 #endif
   SEGGER_SYSVIEW_DisableEvents(disable_evts);
@@ -259,7 +256,7 @@ U32 SEGGER_SYSVIEW_X_GetTimestamp(void)
 {
 #if TS_USE_TIMERGROUP
     uint64_t ts = 0;
-    timer_get_counter_value(TS_TIMER_GROUP, TS_TIMER_ID, &ts);
+    gptimer_get_raw_count(s_sv_gptimer, &ts);
     return (U32) ts; // return lower part of counter value
 #elif TS_USE_CCOUNT
     return portGET_RUN_TIME_COUNTER_VALUE();

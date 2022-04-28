@@ -1,22 +1,7 @@
 /*
- * Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <assert.h>
@@ -30,6 +15,21 @@
 #include "esp_bt.h"
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
+#include "soc/soc_caps.h"
+
+#if SOC_ESP_NIMBLE_CONTROLLER
+
+/* For Chips not using VHCI, these functions return success */
+esp_err_t esp_nimble_hci_and_controller_init(void)
+{
+    return ESP_OK;
+}
+
+esp_err_t esp_nimble_hci_and_controller_deinit(void)
+{
+    return ESP_OK;
+}
+#else
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
@@ -534,3 +534,4 @@ esp_err_t esp_nimble_hci_and_controller_deinit(void)
 
     return ESP_OK;
 }
+#endif // #if SOC_ESP_NIMBLE_CONTROLLER

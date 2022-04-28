@@ -1,0 +1,2847 @@
+Documentation and download available at https://www.FreeRTOS.org/
+
+Changes since the last release:
+	+ Added xTaskCatchUpTicks() which corrects the tick count value after the
+	  application code has held interrupts disabled for an extended period.
+	+ Updated the xTaskResumeAll() implementation so it uses the new
+	  xTaskCatchUpTicks() function mentioned above to unwind ticks that were
+	  pended while the scheduler was suspended.
+	+ Update the Windows simulator port to use a synchronous object to prevent
+	  a user reported error whereby a task continues to run for a short time
+	  after being moved to the Blocked state.  Note we were not able to
+	  replicate the reported error.
+	+ Added the vPortGetHeapStats() API function which returns information on
+	  the heap_4 and heap_5 state.
+	+ Change type of uxPendedTicks from UBaseType_t to TickType_t to ensure it
+	  has same type as variables it is compared to, and therefore also rename
+	  the variable xPendingTicks.
+	+ Correct alignment of stack top in RISC-V port when
+	  configISR_STACK_SIZE_WORDS is defined to a non zero value.
+
+
+Changes between FreeRTOS V10.4.2 and FreeRTOS V10.4.3 released December 14 2020
+
+	V10.4.3 is included in the 202012.00 LTS release.  Learn more at https:/freertos.org/lts-libraries.html
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	+ Changes to improve robustness and consistency for buffer allocation in
+	  the heap, queue and stream buffer.
+	+ The following functions can no longer be called from unprivileged code.
+	  - xTaskCreateRestricted
+	  - xTaskCreateRestrictedStatic
+	  - vTaskAllocateMPURegions
+
+
+Changes between FreeRTOS V10.4.1 and FreeRTOS V10.4.2 released November 10 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	+ Fix an issue in the ARMv8-M ports that caused BASEPRI to be masked
+	  between the first task starting to execute and that task making
+	  a FreeRTOS API call.
+	+ Introduced xTaskDelayUntil(), which is functionally equivalent to
+	  vTaskDelayUntil(), with the addition of returning a value to
+	  indicating whether or not the function placed the calling task into
+	  the Blocked state or not.
+	+ Update WolfSSL to 4.5.0 and add the FIPS ready demo.
+	+ Add support for ESP IDF 4.2 to ThirdParty Xtensa port.
+	+ Re-introduce uxTopUsedPriority to support OpenOCD debugging.
+	+ Convert most dependent libraries in FreeRTOS/FreeRTOS to submodules.
+	+ Various general maintenance and improvements to MISRA compliance.
+
+
+Changes between FreeRTOS V10.4.0 and FreeRTOS V10.4.1 released September 17 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	+ Fixed an incorrectly named parameter that prevented the
+	  ulTaskNotifyTakeIndexed macro compiling, and the name space clash in the
+	  test code that prevented this error causing test failures.
+
+
+Changes between FreeRTOS V10.3.1 and FreeRTOS V10.4.0 released September 10 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	Major enhancements:
+
+	+ Task notifications:  Prior to FreeRTOS V10.4.0 each created task had a
+	  single direct to task notification.  From FreeRTOS V10.4.0 each task has
+	  an array of notifications.  The direct to task notification API has been
+	  extended with API functions postfixed with "Indexed" to enable the API to
+	  operate on a task notification at any array index.  See
+	  https://www.freertos.org/RTOS-task-notifications.html for more information.
+	+ Kernel ports that support memory protection units (MPUs): The ARMv7-M and
+	  ARMv8-M MPU ports now support a privilege access only heap. The ARMv7-M
+	  MPU ports now support devices that have 16 MPU regions, have the ability
+	  to override default memory attributes for privileged code and data
+	  regions, and have the ability to place the FreeRTOS kernel code outside of
+	  the Flash memory. The ARMv8-M MPU ports now support tickless idle mode.
+	  See https://www.freertos.org/FreeRTOS-MPU-memory-protection-unit.html
+	  for more information.
+
+	Additional noteworthy updates:
+
+	+ Code formatting is now automated to facilitate the increase in
+	  collaborative development in Git.  The auto-formated code is not identical
+	  to the original formatting conventions.  Most notably spaces are now used
+	  in place of tabs.
+	+ The prototypes for callback functions (those that start with "Application",
+	  such as vApplicationStackOverflowHook()) are now in the FreeRTOS header
+	  files, removing the need for application writers to add prototypes into
+	  the C files in which they define the functions.
+	+ New Renesas RXv3 port layer.
+	+ Updates to the Synopsys ARC code, including support for EM and HS cores,
+	  and updated BSP.
+	+ Added new POSIX port layer that allows FreeRTOS to run on Linux hosts in
+	  the same way the Windows port layer enables FreeRTOS to run on Windows
+	  hosts.
+	+ Many other minor optimisations and enhancements. For full details
+	  see https://github.com/FreeRTOS/FreeRTOS-Kernel/commits/master
+
+
+Changes between FreeRTOS V10.3.0 and FreeRTOS V10.3.1 released February 18 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.3.x.html
+
+	+ ./FreeRTOS-Labs directory was removed from this file. The libraries it
+	contained are now available as a separate download.
+
+Changes between FreeRTOS V10.2.1 and FreeRTOS V10.3.0 released February 7 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.3.x.html
+
+	New and updated kernel ports:
+
+	+ Added RISC-V port for the IAR compiler.
+	+ Update the Windows simulator port to use a synchronous object to prevent
+	  a user reported error whereby a task continues to run for a short time
+	  after being moved to the Blocked state.  Note we were not able to
+	  replicate the reported issue and it likely depends on your CPU model.
+	+ Correct alignment of stack top in RISC-V port when
+	  configISR_STACK_SIZE_WORDS is defined to a non zero value, which causes
+	  the interrupt stack to be statically allocated.
+	+ The RISC-V machine timer compare register can now be for any HART, whereas
+	  previously it was always assumed FreeRTOS was running on HART 0.
+	+ Update the sequence used to update the 64-bit machine timer
+	  compare register on 32-bit cores to match that suggested in RISC-V
+	  documentation.
+	+ Added tickless low power modes into the ARM, IAR and GCC Cortex-M0 compiler
+	  ports.
+	+ Updated the behaviour of the ARMv7-M MPU (Memory Protection Unit) ports to
+	  match that of the ARMv8-M ports whereby privilege escalations can only
+	  originate from within the kernel's own memory segment.  Added
+	  configENFORCE_SYSTEM_CALLS_FROM_KERNEL_ONLY configuration constant.
+	+ Update existing MPU ports to correctly disable the MPU before it is
+	  updated.
+	+ Added contributed port and demo application for a T-Head (formally C-SKY)
+	  microcontroller.
+
+	New API functions:
+
+	+ Added the vPortGetHeapStats() API function which returns information on
+	  the heap_4 and heap_5 state.
+	+ Added xTaskCatchUpTicks(), which corrects the tick count value after the
+	  application code has held interrupts disabled for an extended period.
+	+ Added xTaskNotifyValueClear() API function.
+	+ Added uxTimerGetReloadMode() API function.
+
+	Other miscellaneous changes:
+	+ Change type of uxPendedTicks from UBaseType_t to TickType_t to ensure it
+	  has the same type as variables with which it is compared to, and therefore
+	  also renamed the variable xPendingTicks.
+	+ Update Keil projects that use the MPU so memory regions come from linker
+	  script (scatter file) variables instead of being hard coded.
+	+ Added LPC51U68 Cortex-M0+ demos for GCC (MCUXpresso), Keil and IAR
+	  compilers.
+	+ Added CORTEX_MPU_STM32L4_Discovery_Keil_STM32Cube demo.
+	+ Added LPC54018 MPU demo.
+	+ Rename xTaskGetIdleRunTimeCounter() to ulTaskGetIdleRunTimeCounter().
+
+
+Changes between FreeRTOS V10.2.1 and FreeRTOS V10.2.0 released May 13 2019:
+
+	+ Added ARM Cortex-M23 port layer to complement the pre-existing ARM
+	  Cortex-M33 port layer.
+	+ The RISC-V port now automatically switches between 32-bit and 64-bit
+	  cores.
+	+ Introduced the portMEMORY_BARRIER macro to prevent instruction re-ordering
+	  when GCC link time optimisation is used.
+	+ Introduced the portDONT_DISCARD macro to the ARMv8-M ports to try and
+	  prevent the secure side builds from removing symbols required by the
+	  non secure side build.
+	+ Introduced the portARCH_NAME to provide additional data to select semi-
+	  automated build environments.
+	+ Cortex-M33 and Cortex-M23 ports now correctly disable the MPU before
+	  updating the MPU registers.
+
+	+ Added Nuvoton NuMaker-PFM-M2351 ARM Cortex-M23 demo.
+	+ Added LPC55S69 ARM Cortex-M33 demo.
+	+ Added an STM32 dual core AMP stress test demo.
+
+
+Changes between FreeRTOS V10.1.1 and FreeRTOS V10.2.0 released February 25 2019:
+
+	+ Added GCC RISC-V MCU port with three separate demo applications.
+	+ Included pre-existing ARM Cortex-M33 (ARMv8-M) GCC/ARMclang and IAR ports
+	  with Keil simulator demo.
+	+ Update the method used to detect if a timer is active.  Previously the
+	  timer was deemed to be inactive if it was not referenced from a list.
+	  However, when a timer is updated it is temporarily removed from, then
+	  re-added to a list, so now the timer's active status is stored separately.
+	+ Add vTimerSetReloadMode(), xTaskGetIdleRunTimeCounter(), and
+	  xTaskGetApplicationTaskTagFromISR() API functions.
+	+ Updated third party Xtensa port so it is MIT licensed.
+	+ Added configINCLUDE_PLATFORM_H_INSTEAD_OF_IODEFINE_H to the Renesas
+	  compiler RX600v2 port to enable switching between platform.h and
+	  iodefine.h includes within that port's port.c file.
+	+ Removed the 'FromISR' functions from the MPU ports as ISRs run privileged
+	  anyway.
+	+ Added uxTaskGetStackHighWaterMark2() function to enable the return type to
+	  be changed without breaking backward compatibility.
+	  uxTaskGetStackHighWaterMark() returns a UBaseType_t as always,
+	  uxTaskGetStackHighWaterMark2() returns configSTACK_DEPTH_TYPE to allow the
+	  user to determine the return type.
+	+ Fixed issues in memory protected ports related to different combinations
+	  of static memory only and dynamic memory only builds.  As a result the
+	  definition of tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE became more
+	  complex and was moved to FreeRTOS.h with a table explaining its definition.
+	+ Added a 'get task tag from ISR' function.
+	+ Change the method used to determine if a timer is active or not from just
+	  seeing if it is referenced from the active timer list to storing its
+	  active state explicitly.  The change prevents the timer reporting that it
+	  is inactive while it is being moved from one list to another.
+	+ The pcName parameter passed into the task create functions can be NULL,
+	  previously a name had to be provided.
+	+ When using tickless idle, prvResetNextTaskUnblockTime() is now only called
+	  in xTaskRemoveFromEventList() if the scheduler is not suspended.
+	+ Introduced portHAS_STACK_OVERFLOW_CHECKING, which should be set to 1 for
+	  FreeRTOS ports that run on architectures that have stack limit registers.
+
+
+Changes between FreeRTOS V10.1.0 and FreeRTOS V10.1.1 released 7 September 2018
+
+	+ Reverted a few structure name changes that broke several kernel aware
+	  debugger plug-ins.
+	+ Updated to the latest trace recorder code.
+	+ Fixed some formatting in the FreeRTOS+TCP TCP/IP stack code.
+	+ Reverted moving some variables from file to function scope as doing so
+	  broke debug scenarios that require the static qualifier to be removed.
+
+Changes between FreeRTOS V10.0.1 and FreeRTOS V10.1.0 released 22 August 2018
+
+	FreeRTOS Kernel Changes:
+
+	+ Update lint checked MISRA compliance to use the latest MISRA standard, was
+	  previously using the original MISRA standard.
+	+ Updated all object handles (TaskHandle_t, QueueHandle_t, etc.) to be
+	  unique types instead of void pointers, improving type safety.  (this was
+	  attempted some years back but had to be backed out due to bugs in some
+	  debuggers).  Note this required the pvContainer member of a ListItem_t
+	  struct to be renamed - set configENABLE_BACKWARD_COMPATIBILITY to 1 if
+	  this causes an issue.
+	+ Added configUSE_POSIX_ERRNO to enable per task POSIX style errno
+	  functionality in a more user friendly way - previously the generic thread
+	  local storage feature was used for this purpose.
+	+ Added Xtensa port and demo application for the XCC compiler.
+	+ Changed the implementation of vPortEndScheduler() for the Win32 port to
+	  simply call exit( 0 ).
+	+ Bug fix in vPortEnableInterrupt() for the GCC Microblaze port to protect
+	  the read modify write access to an internal Microblaze register.
+	+ Fix minor niggles when the MPU is used with regards to prototype
+	  differences, static struct size differences, etc.
+	+ The usStackHighWaterMark member of the TaskStatus_t structure now has type
+	  configSTACK_DEPTH_TYPE in place of uint16_t - that change should have been
+	  made when the configSTACK_DEPTH_TYPE type (which gets around the previous
+	  16-bit limit on stack size specifications) was introduced.
+	+ Added the xMessageBufferNextLengthBytes() API function and likewise stream
+	  buffer equivalent.
+	+ Introduce configMESSAGE_BUFFER_LENGTH_TYPE to allow the number of bytes
+	  used to hold the length of a message in the message buffer to be reduced.
+	  configMESSAGE_BUFFER_LENGTH_TYPE default to size_t, but if, for example,
+	  messages can never be more than 255 bytes it could be set to uint8_t,
+	  saving 3 bytes each time a message is written into the message buffer
+	  (assuming sizeof( size_t ) is 4).
+	+ Updated the StaticTimer_t structure to ensure it matches the size of the
+	  Timer_t structure when the size of TaskFunction_t does not equal the size
+	  of void *.
+	+ Update various Xilinx demos to use 2018.1 version of the SDK tools.
+	+ Various updates to demo tasks to maintain test coverage.
+	+ FreeRTOS+UDP was removed in FreeRTOS V10.1.0 as it was replaced by
+	  FreeRTOS+TCP, which was brought into the main download in FreeRTOS
+	  V10.0.0.  FreeRTOS+TCP can be configured as a UDP only stack, and
+	  FreeRTOS+UDP does not contain the patches applied to FreeRTOS+TCP.
+
+	FreeRTOS+TCP Changes:
+
+	+ Multiple security improvements and fixes in packet parsing routines, DNS
+	  caching, and TCP sequence number and ID generation.
+	+ Disable NBNS and LLMNR by default.
+	+ Add TCP hang protection by default.
+
+	We thank Ori Karliner of Zimperium zLabs Team for reporting these issues.
+
+
+Changes between FreeRTOS V10.0.0 and FreeRTOS V10.0.1, released December 20 2017
+
+	+ Fix position of "#if defined( __cplusplus )" in stream_buffer.h.
+	+ Correct declarations of MPU_xQueuePeek() and MPU_xQueueSemaphoreTake() in
+	  mpu_prototypes.h.
+	+ Correct formatting in vTaskList() helper function when it prints the state
+	  of the currently executing task.
+	+ Introduce #error if stream_buffer.c is built without
+	  configUSE_TASK_NOTIFICATIONS set to 1.
+	+ Update FreeRTOS+TCP to V2.0.0
+		- Improve the formatting of text that displays the available netword
+		  interfaces when FreeRTOS+TCP is used on Windows with WinPCap.
+		- Introduce ipconfigSOCKET_HAS_USER_WAKE_CALLBACK option to enable a user
+		  definable callback to execute when data arrives on a socket.
+
+Changes between FreeRTOS V9.0.1 and FreeRTOS V10.0.0:
+
+	The FreeRTOS kernel is now MIT licensed: https://www.FreeRTOS.org/license
+
+	New Features and components:
+
+	+ Stream Buffers - see https://www.FreeRTOS.org/RTOS-stream-buffer-example.html
+	+ Message Buffers - see https://www.FreeRTOS.org//RTOS-message-buffer-example.html
+	+ Move FreeRTOS+TCP into the main repository, along with the basic Win32
+	  TCP demo FreeRTOS_Plus_TCP_Minimal_Windows_Simulator.
+
+	New ports or demos:
+
+	+ Added demo for TI SimpleLink CC3220 MCU.
+	+ Added MPU and non MPU projects for Microchip CEC and MEC 17xx and 51xx
+	  MCUs.
+	+ Added CORTEX_MPU_Static_Simulator_Keil_GCC demo to test static allocation
+	  in the MPU port.
+
+	Fixes or enhancements:
+
+	+ Cortex-M ports push additional register prior to calling
+	  vTaskSwitchContext to ensure 8-byte alignment is maintained.  Only
+	  important if a user defined tick hook function performs an operation that
+	  requires 8-byte alignment.
+	+ Optimisations to the implementation of the standard tickless idle mode on
+	  Cortex-M devices.
+	+ Improvements to the Win32 port including using higher priority threads.
+	+ Ensure interrupt stack alignment on PIC32 ports.
+	+ Updated GCC TriCore port to build with later compiler versions.
+	+ Update mpu_wrappers.c to support static allocation.
+	+ The uxNumberOfItems member of List_t is now volatile - solving an issue
+	  when the IAR compiler was used with maximum optimization.
+	+ Introduced configRECORD_STACK_HIGH_ADDRESS.  When set to 1 the stack start
+	  address is saved into each task's TCB (assuming stack grows down).
+	+ Introduced configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H to allow user defined
+	  functionality, and user defined initialisation, to be added to FreeRTOS's
+	  tasks.c source file.  When configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H is
+	  set to 1 a user provided header file called freertos_task_c_additions.h
+	  will be included at the bottom of tasks.c.  Functions defined in that
+	  header file can call freertos_tasks_c_additions_init(), which in turn
+	  calls a macro called FREERTOS_TASKS_C_ADDITIONS_INIT(), if it is defined.
+	  FREERTOS_TASKS_C_ADDITIONS_INIT() can be defined in FreeRTOSConfig.h.
+	+ Introduced configPRE_SUPPRESS_TICKS_AND_SLEEP_PROCESSING( x ) which can be
+	  defined by a user in FreeRTOSConfig.h.  The macro is called before
+	  assessing whether to enter tickless idle mode or not.  If the macro sets
+	  x to zero then tickless idle mode will not be entered.  This allows users
+	  to abort tickless idle mode entry before the tickless idle function is
+	  even called - previously it was only possible to abort from within the
+	  tickless idle function itself.
+	+ Added configPRINTF(), which can be defined by users to allow all libraries
+	  to use the same print formatter.
+	+ Introduced configMAX() and configMIN() macros which default to standard
+	  max( x, y ) and min( x, y ) macro behaviour, but can be overridden if the
+	  application writer defines the same macros in FreeRTOSConfig.h.
+	+ Corrected the definition of StaticTask_t in the case where
+	  INCLUDE_xTaskAbortDelay is set to 1.
+	+ Introduced configTIMER_SERVICE_TASK_NAME and configIDLE_TASK_NAME, both of
+	  which can be defined to strings in FreeRTOSConfig.h to change the default
+	  names of the timer service and idle tasks respectively.
+	+ Only fill the stack of a newly created task with a known value if stack
+	  checking, or high water mark checking/viewing, is in use - removing the
+	  dependency on memset() in other cases.
+	+ Introduced xTaskCreateRestrictedStatic() so static allocation can be used
+	  with the MPU.
+	+ Ensure suspended tasks cannot be unsuspended by a received task
+	  notification.
+	+ Fix race condition in vTaskSetTimeOutState().
+	+ Updated trace recorder files to the latest version.
+
+Changes since FreeRTOS V9.0.0:
+
+	+ Priority dis-inheritance behaviour has been enhanced in the case where a
+	  task that attempted to take a mutex that was held by a lower priority task
+	  timed out before it was able to obtain the mutex (causing the task that
+	  holds the mutex to have its priority raised, then lowered again, in
+	  accordance with the priority inheritance protocol).
+	+ Split the overloaded xQueueGenericReceive() function into three separate
+	  dedicated functions.
+	+ Allow the default human readable text names given to the Idle and Timer
+	  tasks to be overridden by defining the configIDLE_TASK_NAME and
+	  configTIMER_SERVICE_TASK_NAME definitions respectively in FreeRTOSConfig.h.
+	+ Introduced configINITIAL_TICK_COUNT to allow the tick count to take a
+	  value of than than 0 when the system boots.  This can be useful for
+	  testing purposes - although setting configUSE_16_BIT_TICKS to 1 can also
+	  be used to test frequent tick overflows.
+	+ Ensure the Cortex-M SysTick count is cleared to zero before starting the
+	  first task.
+	+ Add configASSERT() into ARM Cortex-M ports to check the number of priority
+	  bit settings.
+	+ Clear the 'control' register before starting ARM Cortex-M4F ports in case
+	  the FPU is used before the scheduler is started.  This just saves a few
+	  bytes on the main stack as it prevents space being left for a later save
+	  of FPU registers.
+	+ Added xSemaphoreGetMutexHolderFromISR().
+	+ Corrected use of portNVIC_PENDSVSET to portNVIC_PENDSVSET_BIT in MPU ports.
+	+ Introduced configSTACK_DEPTH_TYPE to allow users to change the type used
+	  to specify the stack size when using xTaskCreate().  For historic reasons,
+	  when FreeRTOS was only used on small MCUs, the type was set to uint16_t,
+	  but that can be too restrictive when FreeRTOS is used on larger
+	  processors.  configSTACK_DEPTH_TYPE defaults to uint16_t.
+	  xTaskCreateStatic(), being a newer function, used a uint32_t.
+	+ Increase the priority of the Windows threads used by the Win32 port.  As
+	  all the threads run on the same core, and the threads run with very high
+	  priority, there is a risk that the host will become unresponsive, so also
+	  prevent the Windows port executing on single core hosts.
+
+Changes between FreeRTOS V9.0.0 and FreeRTOS V9.0.0rc2 released May 25 2016:
+
+	See https://www.FreeRTOS.org/FreeRTOS-V9.html
+
+	RTOS kernel updates:
+
+	+ The prototype of the new xTaskCreateStatic() API function was modified to
+	  remove a parameter and improve compatibility with other new
+	  "CreateStatic()" API functions.  The stack size parameter in
+	  xTaskCreateStatic() is now uint32_t, which changes the prototype of the
+	  callback functions.  See the following URL:
+	  https://www.FreeRTOS.org/xTaskCreateStatic.html
+	+ GCC ARM Cortex-A port:  Introduced the configUSE_TASK_FPU_SUPPORT
+	  constant.  When configUSE_TASK_FPU_SUPPORT is set to 2 every task is
+	  automatically given a floating point (FPU) context.
+	+ GCC ARM Cortex-A port:  It is now possible to automatically save and
+	  restore all floating point (FPU) registers on entry to each potentially
+	  nested interrupt by defining vApplicationFPUSafeIRQHandler() instead of
+	  vApplicationIRQHandler().
+	+ All ARM Cortex-M3/4F/7 ports:  Clear the least significant bit of the task
+	  entry address placed onto the stack of a task when the task is created for
+	  strict compliance with the ARM Cortex-M3/4/7 architecture documentation
+	  (no noticeable effect unless using the QMEU emulator).
+	+ Added GCC and Keil ARM Cortex-M4F MPU ports - previously the MPU was only
+	  supported on ARM Cortex-M3.
+	+ ARM Cortex-M3/4F MPU ports:  Update to fully support the FreeRTOS V9.0.0
+	  API (other than static object creation) and added the
+	  FreeRTOS/Demo/CORTEX_MPU_Simulator_Keil_GCC demo application to
+	  demonstrate how to use the updated MPU port.
+	+ All ARM Cortex-M3/4F/7 ports:  Add additional barrier instructions to the
+	  default low power tickless implementation.
+	+ All ARM Cortex-M0 ports:  Prevent an item being left on the stack of the
+	  first task that executes.
+	+ Win32 ports:  Reduce the amount of stack used and change the way Windows
+	  threads are deleted to increase the maximum execution time.
+	+ Add an ARM Cortex-M4F port for the MikroC compiler.  Ensure to read the
+	  documentation page for this port before use.
+	+ MPS430X IAR port:  Update to be compatible with the latest EW430 tools
+	  release.
+	+ IAR32 GCC port:  Correct vPortExitCritical() when
+	  configMAX_API_CALL_INTERRUPT_PRIORITY == portMAX_PRIORITY.
+	+ For consistency vTaskGetTaskInfo() now has the alias vTaskGetInfo(),
+	  xTaskGetTaskHandle() now has the alias xTaskGetHandle() and
+	  pcQueueGetQueueName() now has an alias pcQueueGetName().
+	+ Fix various errors in comments and compiler warnings.
+
+	Demo application updates:
+
+	+ Update Atmel Studio projects to use Atmel Studio 7.
+	+ Update Xilinx SDK projects to use the 2016.1 version of the SDK.
+	+ Remove dependency on legacy IO libraries from the PIC32 demos.
+	+ Move the Xilinx UltraScale Cortex-R5 demo into the main distribution.
+	+ Update the MSP432 libraries to the latest version.
+	+ Add Microchip CEC1302 (ARM Cortex-M4F) demos for GCC, Keil and MikroC
+	  compilers.
+	+ Move the Atmel SAMA5D2 demo into the main distribution.
+
+Changes between FreeRTOS V9.0.0rc1 and FreeRTOS V9.0.0rc2 (release candidate 2)
+released March 30 2016:
+
+	NOTE - See https://www.FreeRTOS.org/FreeRTOS-V9.html for details
+
+	+ The functions that create RTOS objects using static memory allocation have
+	  been simplified and will not revert to using dynamic allocation if a
+	  buffer is passed into a function as NULL.
+	+ Introduced the configSUPPORT_DYNAMIC_ALLOCATION configuration constant to
+	  allow a FreeRTOS application to be built without a heap even being being
+	  defined. The Win32 example located in the
+	  /FreeRTOS/demo/WIN32-MSVC-Static-Allocation-Only directory is provided as
+	  a reference for projects that do not include a FreeRTOS heap.
+	+ Minor run-time optimisations.
+	+ Two new low power tickless implementations that target Silicon Labs EFM32
+	  microcontrollers.
+	+ Addition of the xTimerGetPeriod() and xTimerGetExpireTime() API functions.
+
+Changes between FreeRTOS V8.2.3 and FreeRTOS V9.0.0rc1 (release candidate 1)
+released February 19 2016:
+
+	RTOS Kernel Updates:
+
+	+ Major new feature - tasks, semaphores, queues, timers and event groups can
+	  now be created using statically allocated memory, so without any calls to
+	  pvPortMalloc().
+	+ Major new features - Added the xTaskAbortDelay() API function which allows
+	  one task to force another task to immediately leave the Blocked state,
+	  even if the event the blocked task is waiting for has not occurred, or the
+	  blocked task's timeout has not expired.
+	+ Updates necessary to allow FreeRTOS to run on 64-bit architectures.
+	+ Added vApplicationDaemonTaskStartupHook() which executes when the RTOS
+	  daemon task (which used to be called the timer service task) starts
+	  running.  This is useful if the application includes initialisation code
+	  that would benefit from executing after the scheduler has been started.
+	+ Added the xTaskGetTaskHandle() API function, which obtains a task handle
+	  from the task's name.  xTaskGetTaskHandle() uses multiple string compare
+	  operations, so it is recommended that it is called only once per task.
+	  The handle returned by xTaskGetTaskHandle() can then be stored locally for
+	  later re-use.
+	+ Added the pcQueueGetQueueName() API function, which obtains the name of
+	  a queue from the queue's handle.
+	+ Tickless idling (for low power applications) can now also be used when
+	  configUSE_PREEMPTION is 0.
+	+ If one task deletes another task, then the stack and TCB of the deleted
+	  task is now freed immediately.  If a task deletes itself, then the stack
+	  and TCB of the deleted task are freed by the Idle task as before.
+	+ If a task notification is used to unblock a task from an ISR, but the
+	  xHigherPriorityTaskWoken parameter is not used, then pend a context switch
+	  that will then occur during the next tick interrupt.
+	+ Heap_1.c and Heap_2.c now use the configAPPLICATION_ALLOCATED_HEAP
+	  settings, which previously was only used by heap_4.c.
+	  configAPPLICATION_ALLOCATED_HEAP allows the application writer to declare
+	  the array that will be used as the FreeRTOS heap, and in-so-doing, place
+	  the heap at a specific memory location.
+	+ TaskStatus_t structures are used to obtain details of a task.
+	  TaskStatus_t now includes the bae address of the task's stack.
+	+ Added the vTaskGetTaskInfo() API function, which returns a TaskStatus_t
+	  structure that contains information about a single task.  Previously this
+	  information could only be obtained for all the tasks at once, as an array
+	  of TaskStatus_t structures.
+	+ Added the uxSemaphoreGetCount() API function.
+	+ Replicate previous Cortex-M4F and Cortex-M7 optimisations in some
+	  Cortex-M3 port layers.
+
+	Demo Application Updates:
+
+	Further demo applications will be added prior to the final FreeRTOS V9
+	release.
+
+	+ Updated SAM4L Atmel Studio project to use Atmel Studio 7.
+	+ Added ARM Cortex-A53 64-bit port.
+	+ Added a port and demo for the ARM Cortex-A53 64-bit cores on the Xilinx
+	  Ultrascale MPSoC.
+	+ Added Cortex-M7 SAME70 GCC demo.
+	+ Added EFM32 Giant and Wonder Gecko demos.
+
+
+Changes between V8.2.2 and V8.2.3 released October 16, 2015
+
+	RTOS kernel updates:
+
+	+ Fix bug identified in a modification made in V8.2.2 to the software timer
+	  code that allows tickless low power applications to sleep indefinitely
+	  when software timers are used.
+	+ Simplify and improve efficiency of stack overflow checking.
+	+ Add xTaskNotifyStateClear() API function.
+	+ New IAR and GCC Cortex-R ports for microprocessors that do not use an ARM
+	  generic interrupt controller (GIC).
+	+ New PIC32MEC14xx port.
+	+ Add support for PIC32MZ EF parts (with floating point) into the PIC32MZ
+	  port.
+	+ Zynq7000 port layer now declares the functions that setup and clear the
+	  tick interrupt as weak symbols so they can be overridden by the
+	  application, and uses a global XScuGic object so the same object can be
+	  used by the application code.
+	+ Introduced configUSE_TASK_FPU_SUPPORT, although the PIC32MZ EF port is
+	  currently the only port that uses it.
+	+ Updates to RL78 and 78K0 IAR port layers to improve support for
+	  combinations of memory models.
+	+ Minor updates to heap_5.c to remove compiler warnings generated by some
+	  compilers.
+	+ License simplifications.  See /FreeRTOS/License/license.txt in the
+	  official distribution.
+
+	FreeRTOS+ updates:
+
+	+ Update directory names to use WolfSSL instead of CyaSSL, inline with
+	  WolfSSL's re-branding.
+	+ Update to latest WolfSSL code.
+	+ Update to latest FreeRTOS+Trace recorder code.
+	+ Add in the FreeRTOS+Trace recorder library required for streaming trace.
+
+	Demo application changes:
+
+	+ Add demo applications for Renesas RZ/T (Cortex-R), PIC32MZ EF (PIC32 with
+	  floating point hardware), PIC32MEC14xx, RX71M, RX113 and RX231.
+	+ General tidy up of spelling and compiler warnings.
+
+
+Changes between V8.2.1 and V8.2.2 released August 12, 2015
+
+	RTOS kernel updates:
+
+	+ Added Intel IA32/x86 32-bit port.
+	+ General maintenance.
+	+ PRIVILEGED_FUNCTION and PRIVILEGED_DATA macros, which are used in memory
+	  protected systems, have been added to the newer event group and software
+	  timer functions.
+	+ Add the errno definitions used by FreeRTOS+ components into projdefs.h.
+	+ Remove the restriction that prevented tick-less idle implementations
+	  waiting indefinitely when software timers were used in the same
+	  application.
+	+ Introduce xTaskNotifyAndQueryFromISR() as the interrupt safe version of
+	  xTaskNotifyAndQuery().
+	+ Add additional NOPs to the MSP430X port layers to ensure strict compliance
+	  with the hardware documentation.
+	+ Microblaze port: Added option for port optimised task selection.
+	+ Microblaze port: Previously tasks inherited the exception enable state
+	  at the time the task was created.  Now all tasks are created with
+	  exceptions enabled if the Microblaze design supports exceptions.
+	+ Windows port: Add additional safe guards to ensure the correct start up
+	  sequence and thread switching timing.
+	+ Windows port: Improve the implementation of the port optimised task
+	  selection assembly code.
+	+ Update heap_4 and heap_5 to allow use on 64-bit processors.
+	+ Simplify the code that creates a queue.
+	+ General improved tick-less idle behaviour.
+	+ Ensure none of the variables in the common kernel files are initialised to
+	  anything other than zero.
+	+ Correct calculation of xHeapStructSize in heap_4 and heap_5.
+
+	Demo application updates:
+
+	+ Added demo project for the new IA32/x86 port that targets the Galileo
+	  hardware.
+	+ Added MSP430FR5969 demos (previously provided as a separate download).
+	+ Added FreeRTOS BSP repository for automatic creation of FreeRTOS
+	  applications in the Xilinx SDK.
+	+ Added Atmel Studio / GCC project for the SAMV71 (ARM Cortex-M7)
+	+ Update Xilinx SDK projects to use version 2015.2 of the SDK.
+	+ Remove Microblaze demos that were using obsolete tools.
+	+ Add MSP43FR5969 IAR and CCS demos.
+
+	FreeRTOS+ Updates:
+
+	+ Updated FreeRTOS+Trace recorder library, which requires an update to the
+	  FreeRTOS+Trace application.
+	+ Added Reliance Edge source code and demo application.  Reliance edge is
+	  a fail safe transactional file system ideal for applications that require
+	  file storage, and especially when high reliability is essential.
+	+ Introduce configAPPLICATION_PROVIDES_cOutputBuffer to allow FreeRTOS+CLI
+	  users to place the output buffer at a fixed memory address.
+	+ Improve the NetworkInterface.c file provided for the Windows port of
+	  FreeRTOS+UDP.
+
+Changes between V8.2.0 and V8.2.1 released 24th March 2015.
+
+	RTOS kernel updates:
+
+	+ Added user definable and flexible thread local storage facility.
+	+ Added vTimerSetTimerID() API function to complement the pvTimerGetTimerID()
+	  function to allow the timer's ID to be used as timer local storage.
+	+ Fixed a potential issue related to the use of queue sets from an ISR.
+	+ Some updates to the Xilinx Microblaze GCC port.
+	+ Added ARM Cortex-M4F port for Texas Instruments Code Composer Studio.
+	+ Added ARM Cortex-M7 r0p1 port layer for IAR, GCC and Keil which contains a
+	  minor errata work around.  All other ARM Cortex-M7 core revisions should
+	  use the ARM Cortex-M4F port.
+	+ Exclude the whole of croutine.c if configUSE_CO_ROUTINES is set to 0.
+	+ Change some data types from uint32_t to size_t in preparation for 64-bit
+	  Windows port.
+	+ Update the PIC32 port to remove deprecation warnings output by the latest
+	  XC32 compilers.
+	+ Fix bug when xQueueOverwrite() and xQueueOverwrite() from ISR are used to
+	  overwrite items in two queues that are part of the same set.
+
+	Demo application updates:
+
+	+ Added demo application for TI's ARM Cortex-M4F based MSP432
+	  microcontroller using IAR, Keil and CCS compilers.
+	+ Added demo application for STM32F ARM Cortex-M7 based microcontroller
+	  using IAR and Keil.
+	+ Added demo application for Atmel SAMV71 ARM Cortex-M7 based
+	  microcontroller using IAR and Keil.
+	+ Added Microblaze demo that uses the 2014.4 version of the Xilinx SDK and
+	  runs on the KC705 evaluation board (Kintex FPGA).
+
+Changes between V8.1.2 and V8.2.0 released 16th January 2015
+
+	Changes between release candidate 1 and the official release are restricted
+	to maintenance only.
+
+	Significant RTOS kernel updates:
+
+	+ MAJOR NEW FEATURE!  Task notifications.  Please see the following URL for
+	  details: https://www.FreeRTOS.org/RTOS-task-notifications.html
+	+ NEW HEADER FILE REQUIRED!  Obsolete definitions have been separated into
+	  a new header file called FreeRTOS/Source/include/deprecated_definitions.h.
+	  This header file must be present to build.  Note some of the obsolete
+	  definitions are still used by very old demo application projects.
+
+	Other RTOS kernel updates:
+
+	+ Made xSemaphoreGiveFromISR() a function rather than a macro that calls
+	  xQueueGenericSendFromISR().  This allows for major performance
+	  enhancements at the expense of some additional code size if both functions
+	  are used in the same application.  NOTE:  In most uses cases such use of
+	  a semaphore can now be replaced with a task notification which is smaller
+	  and faster still.
+	+ The TCB is now always allocated such that the task's stack grows away from
+	  the TCB (improves debugging of stack overflows as the overflow will not
+	  overwrite the task's name).
+	+ GCC, IAR and Keil Cortex-M4F ports now use more inlining (performance
+	  enhancements at the cost of a little additional code space).
+	+ Queues are now allocated with a single call to pvPortMalloc() which
+	  allocates both the queue structure and the queue storage area.
+	+ Introduced a new critical section macro for reading the tick count that
+	  defines away to nothing in cases where the width of the tick allows the
+	  tick count to be read atomically (performance benefits - especially when
+	  optimisation is on).
+	+ Introduced configAPPLICATION_ALLOCATED_HEAP in heap_4.c to allow the
+	  application writer to provide their own heap array - and in so doing
+	  control the location of the heap.
+	+ Introduced configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES which, when set, will
+	  include known values in both list and list item structures.  The values
+	  are intended to assist debugging.  If the values get overwritten then it
+	  is likely application code has written over RAM used by the kernel.
+	+ configASSERT()s in all Cortex-M ports used to test the lowest 5 bits of
+	  the interrupt control register to detect taskENTER_CRITICAL() being called
+	  from an interrupt.  This has been changed to test all 8 bits.
+	+ Introduced uxTaskPriorityGetFromISR().
+	+ Microblze V8 port now tests XPAR_MICROBLAZE_0_USE_FPU for inequality to 0
+	  rather than equality to 1, and 2 and 3 are also valid values.
+	+ Cortex-A5 GIC-less port no longer passes the address of the interrupting
+	  peripheral into the interrupt handler.
+	+ Fix an issue in FreeRTOS-MPU where an attempt was made to free the stack
+	  belonging to a task when the task was deleted, even when the stack was
+	  allocated statically.
+	+ Utility (helper) functions that format task statistic information into
+	  human readable tables now pad task names with spaces to ensure columns
+	  line up correctly even where task name lengths vary greatly.
+	+ Update FreeRTOS+Trace recorder library to version 2.7.0.
+
+	Demo application updates:
+
+	+ Added two new standard demo task sets:  IntSemTest and TaskNotify.
+	+ Added port and demo application for Atmel SAMA5D4 Cortex-A5 MPU.
+	+ Added demo application for Altera Cyclone V Cortex-A9 MPU.
+	+ Updated Zynq demo to use version 2014.4 of Xilinx's SDK and added in
+	  demo tasks for new RTOS features.
+	+ Updated Atmel SAM4E and SAM4S demos to include a lot of additional test
+	  and demo tasks.
+	+ Fixed a corner case issue in Atmel SAM4L low power tickless
+	  implementation, and added button interrupt handling.
+	+ Make the interrupt queue tests more tolerant to heave CPU loads.
+	+ Updated MSVC FreeRTOS simulator demo to include the latest standard test
+	  and demo tasks.
+	+ Updated MingW/Eclipse FreeRTOS simulator demo to match the FreeRTOS MSVC
+	  simulator demo.
+	+ Updated all demos that use FreeRTOS+Trace to work with the latest trace
+	  recorder code.
+
+
+Changes between V8.1.1 and V8.1.2 released September 2nd 2014
+
+	Move the defaulting of configUSE_PORT_OPTIMISED_TASK_SELECTION into the
+	individual port layers where necessary so it does not affect ports that do
+	not support the definition.
+
+Changes between V8.1.0 and V8.1.1 released August 29th 2014
+
+	By popular requests - a minor patch to V8.1.0 to re-instate the ability to
+	give a mutex type semaphore (with priority inheritance) from an interrupt
+	handler.
+
+Changes between V8.0.1 and V8.1.0 released August 26th 2014
+
+	FreeRTOS scheduler, kernel, demo and test updates:
+
+	+ Improved the priority inheritance algorithms to assist integration with
+	  off the shelf middleware that may hold multiple mutexes simultaneously.
+	+ Introduce heap_5.c, which is similar to heap_4.c but allows the heap to
+	  span multiple non-contiguous memory regions.
+	+ Updated all Cortex-A9 ports to help trap a couple of common usage errors -
+	  the first being when a task incorrectly attempts to exit its implementing
+	  function and the second being when a non interrupt safe API function is
+	  called from an interrupt.
+	+ Update all Cortex-A9 ports to remove obsolete mode switches prior to
+	  restoring a task context.
+	+ configUSE_PORT_OPTIMISED_TASK_SELECTION now defaults to 1 instead of 0.
+	+ Update all Cortex-M3/4F ports to trap a non interrupt safe API function
+	  being called from an interrupt handler.
+	+ Simplify the alignment checks in heap_4.c.
+	+ Update the MSVC Windows simulator demo to use heap_5.c in place of
+	  heap_4.c to ensure end users have an example to refer to.
+	+ Updated standard demo test code to test the new priority inheritance
+	  algorithms.
+	+ Updated the standard demo tasks to make use of stdint and the FreeRTOS
+	  specific typedefs that were introduced in FreeRTOS V8.0.0.
+	+ Introduce the pdMS_TO_TICKS() macro as a more user friendly and intuitive
+	  alternative to pdTICKS_PER_MS - both of which can be used to convert a
+	  time specified in milliseconds to a time specified in RTOS ticks.
+	+ Fix a bug in the Tasking compiler's Cortex-M port that resulted in an
+	  incorrect value being written to the basepri register.  This only effects
+	  users of the Tasking compiler.
+	+ Update the Zynq demo to use version 2014.2 of the SDK and add in an lwIP
+	  example that demonstrates lwIP being used with both its raw and sockets
+	  interfaces.
+	+ Updated the CCS Cortex-R4 port to enable it to be built with the latest
+	  CCS compiler.
+
+	New ports and demo applications:
+
+	+ Two Renesas RX64M ports (RXv2 core) and demos introduced, one for the GCC
+	  compiler and one for the Renesas compiler.  Both demos use e2 studio.
+	+ Generic IAR Cortex-A5 port (without any reliance on a GIC) introduced.
+	  The new port is demonstrated on an Atmel SAMA5D3 XPlained board.
+
+	FreeRTOS+ component updates:
+
+	+ Update CyaSSL to the latest version.
+	+ Updated the FreeRTOS+ components supplied directly by Real Time Engineers
+	  Ltd. to make use of stdint and the FreeRTOS specific typedefs that were
+	  introduced in FreeRTOS V8.0.0.
+	+ Rework and simplify the FreeRTOS+FAT SL RAM disk driver.
+
+	Miscellaneous updates and maintenance:
+
+	+ Update the IAR and DS-5/ARM RZ demos to target the official RZ RSK
+	  hardware in place of the previously targeted Renesas internal (not
+	  publicly available) hardware.
+	+ Various other maintenance tasks.
+
+
+Changes between V8.0.0 and V8.0.1 released 2nd May 2014
+
+	+ Minor fixes to the event group functionality that was released in V8.0.0.
+	  The 'clear bits from ISR' functionality is now implemented using a
+	  deferred interrupt callback instead of a function, and the 'wait bits' and
+	  'task sync' functions now correctly clear internal control bits before
+	  returning a value in every possible path through the respective functions.
+	+ Ensure the updating of internal control data is protected by a critical
+	  section after a task is deleted or suspended.
+	+ Minor fixes to FreeRTOS+FAT SL - namely seeking beyond the end of a file
+	  when the offset was not a multiple of the sector size.
+	+ Ensure Cortex-A9 system registers are only ever accessed as 32-bit values,
+	  even when only the lest significant byte of the register is implemented.
+
+	Other updates:
+
+	+ Updated the XMC4200 IAR project so it links with version 7.x of the IAR
+	  tools.
+	+ Add RL78L1C demo.
+	+ Add pcTimerGetName() API function.
+	+ Call _reclaim_reent() when a task is deleted if configUSE_NEWLIB_REENTRANT
+	  is defined.
+
+Changes between V7.6.0 and V8.0.0 released 19th Feb 2014
+
+	https://www.FreeRTOS.org/upgrading-to-FreeRTOS-V8.html
+
+	FreeRTOS V8.x.x is a drop-in compatible replacement for FreeRTOS V7.x.x,
+	although a change to the type used to reference character strings may result
+	in application code generating a few (easily clearable) compiler warnings
+	after the upgrade, and an updated typedef naming convention means use of the
+	old typedef names is now discouraged.
+	See https://www.FreeRTOS.org/upgrading-to-FreeRTOS-V8.html for full
+	information.
+
+	New features and functionality:
+
+	+ Event groups - see https://www.FreeRTOS.org/FreeRTOS-Event-Groups.html
+	+ Centralised deferred interrupt processing - see
+	  https://www.FreeRTOS.org/xTimerPendFunctionCallFromISR.html
+
+	Other updates:
+
+	+ Previously, when a task left the Blocked state, a context switch was
+	  performed if the priority of the unblocked task was greater than or equal
+	  to the priority of the Running task.  Now a context switch is only
+	  performed if the priority of the unblocked task is greater than the
+	  priority of the Running task.
+	+ New low power tickless demonstration project that targets the ST STM32L
+	  microcontroller - see
+	  https://www.FreeRTOS.org/STM32L-discovery-low-power-tickless-RTOS-demo.html
+	+ Add xPortGetMinimumEverFreeHeapSize() to heap_4.c.
+	+ Small change to the tickless low power implementation on the SAM4L to
+	  ensure the alarm value (compare match value) cannot be set to zero when a
+	  tickless period is exited due to an interrupt originating from a source
+	  other than the RTOS tick.
+	+ Update the GCC/Eclipse Win32 simulator demo to make better use of Eclipse
+	  resource filters and match the functionality of the MSVC equivalent.
+	+ xTaskIsTaskSuspended() is no longer a public function.  Use
+	  eTaskGetState() in its place.
+	+ Improved trace macros, including tracing of heap usage.
+	+ Remove one level of indirection when accepting interrupts on the PIC32MZ.
+	+ Add Cortex-A9 GCC port layer.
+	+ Add Xilinx Zynq demo application.
+
+
+Changes between V7.5.3 and V7.6.0 released 18th November 2013
+
+	V7.6.0 changes some behaviour when the co-operative scheduler is used (when
+	configUSE_PREEMPTION is set to 0).  It is important to note that the
+	behaviour of the pre-emptive scheduler is unchanged - the following
+	description only applies when configUSE_PREEMPTION is set to 0:
+
+	WHEN configUSE_PREEMPTION IS SET TO 0 (which is in a small minority of
+	cases) a context switch will now only occur when a task places itself into
+	the Blocked state, or explicitly calls taskYIELD().  This differs from
+	previous versions, where a context switch would also occur when implicitly
+	moving a higher priority task out of the Blocked state.  For example,
+	previously, WHEN PREEMPTION WAS TURNED OFF, if task A unblocks task B by
+	writing to a queue, then the scheduler would switch to the higher priority
+	task.  Now, WHEN PREEMPTION IS TURNED OFF, if task A unblocks task B by
+	writing to a queue, task B will not start running until task A enters the
+	Blocked state or task A calls taskYIELD().  [If configUSE_PREEMPTION is not
+	set to 0, so the normal pre-emptive scheduler is being used, then task B
+	will start running immediately that it is moved out of the Blocked state].
+
+	Other changes:
+
+	+ Added a port layer and a demo project for the new PIC32MZ architecture.
+	+ Update the PIC32MX port layer to re-introduce some ehb instructions that
+	  were previously removed, add the ability to catch interrupt stack
+	  overflows (previously only task stack overflows were trapped), and also
+	  add the ability to catch an application task incorrectly attempting to
+	  return from its implementing function.
+	+ Make dramatic improvements to the performance of the Win32 simulator port
+	  layer.
+	+ Ensure tasks that are blocked indefinitely report their state as Blocked
+	  instead of Suspended.
+	+ Slight improvement to the Cortex-M4F port layers where previously one
+	  register was inadvertently being saved twice.
+	+ Introduce the xSemaphoreCreateBinary() API function to ensure consistency
+	  in the semantics of how each semaphore type is created.  It is no longer
+	  recommended to use vSemaphoreCreateBinary() (the version prefixed with a
+	  'v'), although it will remain in the code for backward compatibility.
+	+ Update the Cortex-M0 port layers to allow the scheduler to be started
+	  without using the SVC handler.
+	+ Added a build configuration to the PIC32MX MPLAB X demo project that
+	  targets the PIC32 USB II starter kit.  Previously all the build
+	  configurations required the Explorer 16 hardware.
+	+ Some of the standard demo tasks have been updated to ensure they execute
+	  correctly with the updated co-operative scheduling behaviour.
+	+ Added comprehensive demo for the Atmel SAM4E, including use of
+	  FreeRTOS+UDP, FreeRTOS+FAT SL and FreeRTOS+CLI.
+
+	FreeRTOS+ Changes:
+
+	+ Minor maintenance on FreeRTOS+UDP.
+
+Changes between V7.5.2 and V7.5.3 released October 14 2013
+
+	Kernel changes:
+
+	+ Prior to V7.5.x yields requested from the tick hook would occur in the
+	  same tick interrupt - revert to that original behaviour.
+	+ New API function uxQueueSpacesAvailable().
+	+ Introduced the prvTaskExitError() function to Cortex-M0, Cortex-M3/4
+	  and Cortex-M4F ports.  prvTaskExitError() is used to trap tasks that
+	  attempt to return from their implementing functions (tasks should call
+	  vTaskDelete( NULL ); if they want to exit).
+	+ The Cortex-M0 version of portSET_INTERRUPT_MASK_FROM_ISR and
+	  portCLEAR_INTERRUPT_MASK_FROM_ISR are now fully nestable.
+	+ Improved behaviour and robustness of the default Cortex-M tickless idle
+	  behaviour.
+	+ Add workaround for silicon errata PMU_CM001 in Infineon XMC4000 devices to
+	  all Cortex-M4F ports.
+	+ Add Cortex-M0 port for Keil.
+	+ Updated Cortus port.
+	+ Ensure _impure_ptr is initialised before the scheduler is started.
+	  Previously it was not set until the first context switch.
+
+	FreeRTOS+ changes:
+
+	+ Update FreeRTOS+UDP to V1.0.1 - including direct integration of the
+	  FreeRTOS+Nabto task, improvements to the DHCP behaviour, and a correction
+	  to the test that prevents the network event hook being called on the first
+	  network down event.  The FreeRTOS+UDP change history is maintained
+	  separately.
+	+ Correct the __NVIC_PRIO_BITS setting in the LPC18xx.h header files
+	  provided in the NXP CMSIS library, then update the interrupts used by the
+	  LPC18xx demos accordingly.
+	+ Replace double quotes (") with single quotes (') in FreeRTOS+CLI help
+	  strings to ensure the strings can be used with the JSON descriptions used
+	  in the FreeRTOS+Nabto demos.
+
+	Demo and miscellaneous changes:
+
+	+ Added demo for the Atmel SAMD20 Cortex-M0+.  The demo includes
+	  FreeRTOS+CLI
+	+ Added a demo for the Infineon Cortex-M0 that can be built with the IAR
+	  Keil and GCC tools.
+	+ Updated the Infineon XMC4000 demos for IAR, Keil, GCC and Tasking tools,
+	  with additional build configurations to directly support the XMC4200 and
+	  XMC4400 devices, in addition to the previously supported XMC4500.
+	+ Updated the demo application.
+	+ Added additional trace macros traceMALLOC and traceFREE to track heap
+	  usage.
+
+Changes between V7.5.0 and V7.5.2 released July 24 2013
+
+	V7.5.2 makes the new Cortex-M vPortCheckInterruptPriority() function
+	compatible with the STM32 standard peripheral driver library, and adds
+	an extra critical section to the default low power tickless mode
+	implementation.  Only users of the STM32 peripheral library or the default
+	tickless implementation need update from version 7.5.0.
+
+Changes between V7.4.2 and V7.5.0 released July 19 2013
+
+	V7.5.0 is a major upgrade that includes multiple scheduling and efficiency
+	improvements, and some new API functions.
+
+	Compatibility information for FreeRTOS users:
+	  FreeRTOS V7.5.0 is backward compatible with FreeRTOS V7.4.0 with one
+	  exception; the vTaskList() and vTaskGetRunTimeStats() functions are now
+	  considered legacy, having been replaced by the single uxTaskGetSystemState()
+	  function.  configUSE_STATS_FORMATTING_FUNCTIONS must be set to 1 in
+	  FreeRTOSConfig.h for vTaskList() and vTaskGetRunTimeStats() to be
+	  available.
+
+	Compatibility information for FreeRTOS port writers:
+	  vTaskIncrementTick() is now called xTaskIncrementTick() (because it now
+	  returns a value).
+
+	Headline changes:
+
+	+ Multiple scheduling and efficiency improvements.
+	+ Core kernel files now pass PC-Lint V8 static checking without outputting
+	  any warnings (information on the test conditions will follow).
+
+	New API functions:
+
+	+ uxTaskGetSystemState() https://www.FreeRTOS.org/uxTaskGetSystemState.html
+	+ xQueueOverwrite() https://www.FreeRTOS.org/xQueueOverwrite.html
+	+ xQueueOverwriteFromISR()
+	+ xQueuePeekFromISR()
+
+	The following ports and demos, which were previously available separately,
+	are now incorporated into the main FreeRTOS zip file download:
+
+	+ ARM Cortex-A9 IAR
+	+ ARM Cortex-A9 ARM compiler
+	+ Renesas RZ
+	+ Microsemi SmartFusion2
+
+	New FreeRTOSConfig.h settings
+	https://freertos.org/a00110.html
+
+	+ configUSE_TIME_SLICING
+	+ configUSE_NEWLIB_REENTRANT
+	+ configUSE_STATS_FORMATTING_FUNCTIONS
+	+ configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS
+
+	Other changes:
+
+	+ (MPU port only) The configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS
+	  options provides a mechanism that allows application writers to execute
+	  certain functions in privileged mode even when a task is running in user
+	  mode.
+	+ Ports that support interrupt nesting now include a configASSERT() that
+	  will trigger if an interrupt safe FreeRTOS function is called from an
+	  interrupt that has a priority designated as above the maximum system/API
+	  call interrupt priority.
+	+ The included FreeRTOS+Trace recorder code has been updated to the latest
+	  version, and the demo applications that use the trace recorder code have
+	  been updated accordingly.
+	+ The FreeRTOS Windows Simulator (MSVC version only) has been updated to
+	  include a new basic 'blinky' build option in addition to the original
+	  comprehensive build option.
+	+ Improve RAM usage efficiency of heap_4.c and heap_2.c.
+	+ Prevent heap_4.c from attempting to free memory blocks that were not
+	  allocated by heap_4.c, or have already been freed.
+	+ As FreeRTOS now comes with FreeRTOS+FAT SL (donated by HCC) the Chan FATfs
+	  files have been removed from FreeRTOS/Demo/Common.
+	+ Fix build error when R4 port is build in co-operative mode.
+	+ Multiple port and demo application maintenance activities.
+
+Changes between V7.4.1 and V7.4.2 released May 1 2013
+
+	NOTE: There are no changes in the FreeRTOS kernel between V7.4.1 and V7.4.2
+
+	+ Added FreeRTOS+FAT SL source code and demo project.  The demo project
+	  runs in the FreeRTOS Windows simulator for easy and hardware independent
+	  experimentation and evaluation.  See https://www.FreeRTOS.org/fat_sl
+
+Changes between V7.4.0 and V7.4.1 released April 18 2013
+
+	+ To ensure strict conformance with the spec and ensure compatibility with
+	  future chips data and instruction barrier instructions have been added to
+	  the yield macros of Cortex-M and Cortex-R port layers.  For efficiency
+	  the Cortex-M port layer "yield" and "yield" from ISR are now implemented
+	  separately as the barrier instructions are not required in the ISR case.
+	+ Added FreeRTOS+UDP into main download.
+	+ Reorganised the FreeRTOS+ directory so it now matches the FreeRTOS
+	  directory with Source and Demo subdirectories.
+	+ Implemented the Berkeley sockets select() function in FreeRTOS+UDP.
+	+ Changed (unsigned) casting in calls to standard library functions with
+	  (size_t) casting.
+	+ Added the Atmel SAM4L and Renesas RX100 demos that demonstrates the
+	  tickless (tick suppression) low power FreeRTOS features.
+	+ Add a new RL78 IAR demo that targets numerous new RL78 chips and
+	  evaluation boards.
+	+ Adjusted stack alignment on RX200 ports to ensure an assert was not
+	  falsely triggered when configASSERT() is defined.
+	+ Updated the Cortex_M4F_Infineon_XMC4500_IAR demo to build with the latest
+	  version of EWARM.
+	+ Corrected header comments in the het.c and het.h files (RM48/TMS570 demo).
+
+
+Changes between V7.3.0 and V7.4.0 released February 20 2013
+
+	+ New feature:  Queue sets.  See:
+	  https://www.FreeRTOS.org/Pend-on-multiple-rtos-objects.html
+	+ Overhauled the default tickless idle mode implementation provided with the
+	  ARM Cortex-M3 port layers.
+	+ Enhanced tickless support in the core kernel code with the introduction of
+	  the configEXPECTED_IDLE_TIME_BEFORE_SLEEP macro and the
+	  eTaskConfirmSleepModeStatus() function.
+	+ Added the QueueSet.c common demo/test file.  Several demo applications
+	  have been updated to use the new demo/test tasks.
+	+ Removed reliance on the PLIB libraries from the MPLAB PIC32 port layer and
+	  demo applications.
+	+ Added the FreeRTOS+Trace recorder code to the MSVC Win32 demo.
+	+ Renamed eTaskStateGet() to eTaskGetState() for consistency, and added a
+	  pre-processor macro for backward compatibility with the previous name.
+	+ Updated functions implemented in the core queue.c source file to allow
+	  queue.h to be included from the .c file directly (this prevents compiler
+	  warnings that were generated by some compilers).
+	+ Updated the CCS Cortex-R4 port layer to replace the CLZ assembler function
+	  with the CLZ compiler intrinsic that is provided by the latest versions of
+	  the CCS ARM compiler.
+	+ Updated all heap_x.c implementations to replace the structure that was
+	  used to ensure the start of the heap was aligned with a more portable
+	  direct C code implementation.
+	+ Added support for PIC24 devices that include EDS.
+	+ Minor optimisations to the PIC32 port layer.
+	+ Minor changes to tasks.c that allow the state viewer plug-ins to display
+	  additional information.
+	+ Bug fix:  Update prvProcessReceivedCommands() in timers.c to remove an
+	  issue that could occur if the priority of the timer daemon task was set
+	  below the priority of tasks that used timer services.
+	+ Update the FreeRTOS+Trace recorder code to the latest version.
+
+Changes between V7.2.0 and V7.3.0 released October 31 2012
+
+	+ Added ability to override the default scheduler task selection mechanism
+	  with implementations that make use of architecture specific instructions.
+	+ Added ability to suppress tick interrupts during idle time, and in so
+	  doing, provide the ability to make use of architecture specific low power
+	  functionality.
+	+ Added the portSUPPRESS_TICKS_AND_SLEEP() macro and vTaskStepTick() helper
+	  function.
+	+ Added the configSYSTICK_CLOCK_HZ configuration constant.
+	+ Reworked the Cortex-M3 and Cortex-M4F port layers for GCC, Keil and IAR to
+	  directly support basic power saving functionality.
+	+ Added hooks to allow basic power saving to be augmented in the application
+	  by making use of chip specific functionality.
+	+ Minor change to allow mutex type semaphores to be used from interrupts
+	  (which would not be a normal usage model for a mutex).
+	+ Change the behaviour of the interrupt safe interrupt mask save and restore
+	  macros in the Cortex-M ports.  The save macro now returns the previous
+	  mask value.  The restore macro now uses the previous mask value.  These
+	  changes are not necessary for the kernel's own implementation, and are
+	  made purely because the macros were being used by application writers.
+	+ Added eTaskStateGet() API function.
+	+ Added port specific optimisations to the PIC32 port layer, and updated the
+	  PIC32 demo applications to make use of this new feature.
+	+ Added port specific optimisations to the Win32 simulator port.
+	+ Added new ports and demo applications for the TI Hercules RM48 and TMS570
+	  safety microcontrollers.
+	+ Added SAM3 demos targeting the ATSAM3S-EK2 and ATSAM3X-EK evaluation
+	  boards.
+	+ Updated the PIC32 MPLAB X project to manually set the compiler include
+	  paths instead of using the IDE entry box following reports that the
+	  include paths were somehow being deleted.
+	+ Improved character handling in FreeRTOS+CLI.
+
+Changes between V7.1.1 and V7.2.0 released 14 August 2012
+
+	FreeRTOS V7.2.0 is backward compatible with FreeRTOS V7.1.2.
+
+	+ Added a FreeRTOS+ sub-directory.  The directory contains some FreeRTOS+
+	  source code, and example projects that use the FreeRTOS Win32 simulator.
+	+ Added a new example heap allocation implementation (heap_4.c) that
+	  includes memory block coalescence.
+	+ Added a demo that targets the Atmel SAM4S Cortex-M4 based microcontroller.
+	  The demo is preconfigured to build using the free Atmel Studio 6 IDE and
+	  GCC compiler.
+	+ Added xSemaphoreTakeFromISR() implementation.
+	+ The last parameter in ISR safe FreeRTOS queue and semaphore functions
+	  (xHigherPriorityTaskWoken) is now optional and can be set to NULL if it
+	  is not required.
+	+ Update the IAR and MSP430X ports to clear all lower power mode bits before
+	  exiting the tick interrupt [bug fix].
+	+ Allow xQueueReset() to be used, even when the queues event lists are not
+	  empty.
+	+ Added a vQueueDelete() handler for the FreeRTOS MPU port (this was
+	  previously missing).
+	+ Updated the vPortSVCHandler() functions in the FreeRTOS MPU port layer to
+	  ensure it compiles with the latest ARM GCC compilers from Linaro.
+	+ Updated the prvReadGP() function in the NIOS II port to ensure the compiler
+	  can choose any register for the functions parameter (required at high
+	  compiler optimisation levels).
+	+ Add #error macros into the Keil and IAR Cortex-M ports to ensure they
+	  cannot be built if the user has set configMAX_SYSCALL_INTERRUPT_PRIORITY
+	  to 0.
+	+ Added comments in the FreeRTOSConfig.h files associated with Cortex-M3 and
+	  Cortex-M4 demos stating that the configMAX_SYSCALL_INTERRUPT_PRIORITY
+	  parameter must not be set to 0.
+	+ Introduce new INCLUDE_xQueueGetMutexHolder configuration constant
+	  (defaulted to 0).
+	+ Added two new list handling macros - for internal use only in upcoming new
+	  products.
+	+ Removed all mention of the legacy vTaskStartTrace and ulTaskEndTrace
+	  macros.  FreeRTOS+Trace supersedes the legacy trace.
+	+ Added a configASSERT() into the vPortFree() function in heap_1.c as it is
+	  invalid for the function to be called.
+	+ Made the xRxLock and xTxLock members of the queue structure volatile.
+	  This is probably not necessary, and is included as a precautionary
+	  measure.
+	+ Modify the assert() that checks to see if the priority passed into an
+	  xTaskCreate() function is within valid bounds to permit the assert to be
+	  used in the FreeRTOS MPU port.
+	+ The software timer service (daemon) task is now created in a way that
+	  to ensure compatibility with FreeRTOS MPU.
+
+Changes between V7.1.0 and V7.1.1 released May 1 2012
+
+	New ports:
+
+	The following ports are brand new:
+	+ Cortex-M3 Tasking
+
+	The following ports have been available as separate downloads for a number
+	of months, but are now included in the main FreeRTOS download.
+	+ Cortex-M0 IAR
+	+ Cortex-M0 GCC
+	+ Cortex-M4F GCC (with full floating point support)
+
+
+	New demos:
+
+	The following demos are brand new:
+	+ Renesas RX63N RDK (Renesas compiler)
+
+	The following demos have been available as separate downloads for a number
+	of months, but are now included in the main FreeRTOS download.
+	+ NXP LPC1114 GCC/LPCXpresso
+	+ ST STM32F0518 IAR
+	+ Infineon XMC4500 GCC/Atollic
+	+ Infineon XMC4500 IAR
+	+ Infineon XMC4500 Keil
+	+ Infineon XMC4500 Tasking
+
+
+	Kernel miscellaneous / maintenance:
+
+	+ Introduced the portSETUP_TCB() macro to remove the requirement for the
+	  Windows simulator to use the traceTASK_CREATE() macro, leaving the trace
+	  macro available for use by FreeRTOS+Trace (https://www.FreeRTOS.org/trace).
+	+ Added a new trace macro, traceMOVE_TASK_TO_READY_STATE(), to allow future
+	  FreeRTOS+Trace versions to provide even more information to users.
+	+ Updated the FreeRTOS MPU port to be correct for changes that were
+	  introduced in FreeRTOS V7.1.0.
+	+ Introduced the xQueueReset() API function.
+	+ Introduced the xSemaphoreGetMutexHolder() API function.
+	+ Tidy up various port implementations to add the static key word where
+	  appropriate, and remove obsolete code.
+	+ Slight change to the initial stack frame given to the RX600 ports to allow
+	  them to be used in the Eclipse based E2Studio IDE without confusing GDB.
+	+ Correct the alignment given to the initial stack of Cortex-M4F tasks.
+	+ Added a NOP following each DINT instruction on MSP430 devices for strict
+	  conformance with the instructions on using DINT.
+	+ Changed the implementation of thread deletes in the Win32 port to prevent
+	  the port making use of the traceTASK_DELETE() trace macros - leaving this
+	  macro free for use by FreeRTOS+Trace.
+	+ Made some benign changes to the RX600 Renesas compiler port layer to
+	  ensure the code can be built to a library without essential code being
+	  removed by the linker.
+	+ Reverted the change in the name of the uxTaskNumber variable made in
+	  V7.1.0 as it broke the IAR plug-in.
+
+
+	Demo miscellaneous / maintenance:
+
+	+ The command interpreter has now been formally released as FreeRTOS+CLI,
+	  and been moved out of the main FreeRTOS download, to instead be available
+	  from the FreeRTOS+ Ecosystem site https://www.FreeRTOS.org/plus.
+	+ flash_timer.c/h has been added to the list of standard demo tasks.  This
+	  performs the same functionality as the flash.c tasks, but using software
+	  timers in place of tasks.
+	+ Upgraded the PIC32 demo as follows:  Changes to how the library functions
+	  are called necessitated by the new compiler version, addition of MPLAB X
+	  project with PIC32MX360, PIC32MX460 and PIC32MX795 configurations,
+	  addition of simply blinky demo, updated FreeRTOSConfig.h to include more
+	  parameters, addition of hook function stubs.
+	+ The MSP430X IAR and CCS demos have been updated to ensure the power
+	  settings are correct for the configured CPU frequency.
+	+ Rowley CrossWorks projects have been updated to correct the "multiple
+	  definition of ..." warnings introduced when the toolchain was updated.
+	+ Updated various FreeRTOSConfig.h header files associated with projects
+	  that build with Eclipse to include a #error statement informing the user
+	  that the CreateProjectDirectoryStructure.bat batch file needs to be
+	  executed before the projects can be opened.
+	+ Renamed directories that included "CCS4" in their name to remove the '4'
+	  and instead just be "CCS".  This is because the demo was updated and
+	  tested to also work with later Code Composer Studio versions.
+	+ Updated the TCP/IP periodic timer frequency in numerous uIP demos to be
+	  50ms instead of 500ms.
+
+Changes between V7.0.2 and V7.1.0 released December 13 2011
+
+	New ports:
+
+	+ Cortex-M4F IAR port.
+	+ Cortex-M4F Keil/RVDS port.
+	+ TriCore GCC port.
+
+	New demos:
+
+	+ NXP LPC4350 using the Keil MDK, and demonstrated on a Hitex development
+	  board.
+	+ ST STM32F407 using the IAR Embedded Workbench for ARM, and demonstrated on
+	  the IAR STM32F407ZG-SK starter kit.
+	+ Infineon TriCore TC1782, using the GCC compiler, demonstrated on the
+	  TriBoard TC1782 evaluation board.
+	+ Renesas RX630, using the Renesas compiler and HEW, demonstrated on an
+	  RX630 RSK (Renesas Starter Kit).
+
+	Miscellaneous / maintenance:
+
+	+ Removed all calls to printf() from the K60/IAR Kinetis demo so the project
+	  can execute stand alone - without being connected to the debugger.
+	+ Completed the command interpreter framework.  Command handlers now receive
+	  the entire command string, giving them direct access to parameters.
+	  Utility functions are provided to check the number of parameters, and
+	  return parameter sub-strings.
+	+ The previously documented fix for the bug in xTaskResumeFromISR() that
+	  effected (only) ports supporting interrupt nesting has now been
+	  incorporated into the main release.
+	+ The portALIGNMENT_ASSERT_pxCurrentTCB() definition has been added to allow
+	  specific ports to skip the second stack alignment check when a task is
+	  created.  This is because the second check is not appropriate for some
+	  ports - including the new TriCore port where the checked pointer does not
+	  actually point to a stack.
+	+ The portCLEAN_UP_TCB() macro has been added to allow port specific clean
+	  up when a task is deleted - again this is required by the TriCore port.
+	+ Various other minor changes to ensure warning free builds on a growing
+	  number of microcontroller and toolchain platforms.  This includes a
+	  (benign) correction to the prototype of the
+	  vApplicationStackOverflowHook() definition found in lots of recent demos.
+
+	Trace system:
+
+	+ The legacy trace mechanism has been completely removed - it has been
+	  obsolete for the years since the trace macros were introduced.  The
+	  configuration constant configUSE_TRACE_FACILITY is now used to optionally
+	  include additional queue and task information.  The additional information
+	  is intended to make the trace mechanism more generic, and allow the trace
+	  output to provide more information.  When configUSE_TRACE_FACILITY is set
+	  to 1:
+		- the queue structure includes an additional member to hold the queue
+		  type, which can be base, mutex, counting semaphore, binary semaphore
+		  or recursive mutex.
+		- the queue structure includes an additional member to hold a queue
+		  number.  A trace tool can set and query the queue number for its own
+		  purposes.  The kernel does not use the queue number itself.
+		- the TCB structure includes an additional member to hold a task number
+		  number.  A trace tool can set and query the task number for its own
+		  purposes.  The kernel does not use the task number itself.
+	+ Queues and all types of semaphores are now automatically allocated their
+	  type as they are created.
+	+ Added two new trace macros - traceTASK_PRIORITY_INHERIT() and
+	  traskTASK_PRIORITY_DISINHERIT().
+	+ Updated the traceQUEUE_CREATE_FAILED() macro to take a parameter that
+	  indicates the type of queue, mutex, or semaphore that failed to be
+	  created.
+	+ The position from which traceCREATE_MUTEX() is called has been moved from
+	  after the call to xQueueGenericSend() [within the same function] to before
+	  the call.  This ensures the trace events occur in the correct order.
+	+ The value passed into tracePRIORITY_SET() has been corrected for the case
+	  where vTaskPrioritySet() is called with a null parameter.
+
+Changes between V7.0.1 and V7.0.2 released September 20 2011
+
+	New ports:
+
+	+ The official FreeRTOS Renesas RX200 port and demo application have been
+	  incorporated into the main FreeRTOS zip file download.
+	+ The official FreeRTOS Renesas RL78 port and demo application have been
+	  incorporated into the main FreeRTOS zip file download.
+	+ The official FreeRTOS Freescale Kinetis K60 tower demo application has
+	  been incorporated into the main FreeRTOS zip file download.  This includes
+	  an embedded web server example.
+	+ A new Microblaze V8 port layer has been created to replace the older, now
+	  deprecated, port layer.  The V8 port supports V8.x of the Microblaze IP,
+	  including exceptions, caches, and the floating point unit.  A new
+	  Microblaze demo has also been added to demonstrate the new Microblaze V8
+	  port layer.  The demo application was created using V13.1 of the Xilinx
+	  EDK, and includes a basic embedded web server that uses lwIP V1.4.0.
+	+ The official FreeRTOS Fujitsu FM3 MB9A310 demo application has been
+	  incorporated into the main FreeRTOS zip file download.  Projects are
+	  provided for both the IAR and Keil toolchains.
+
+
+	API additions:
+
+	+ xTaskGetIdleTaskHandle() has been added.
+	+ xTaskGetTimerDaemonTaskHandle() has been added.
+	+ pcTaskGetTaskName() has been added.
+	+ vSemaphoreDelete() macro has been added to make it obvious how to delete
+	  a semaphore.  In previous versions vQueueDelete() had to be used.
+	+ vTaskCleanUpResources() has been removed.  It has been obsolete for a
+	  while.
+	+ portPOINTER_SIZE_TYPE has been introduced to prevent compiler warnings
+	  being generated when the size of a pointer does not match the size of
+	  the stack type.  This will (has already) be used in new ports, but will
+	  not be retrofitted to existing ports until the existing port itself is
+	  updated.
+
+	Other updates and news:
+
+	+ The core files have all been modified to tighten the coding standard even
+	  further.  These are style, not functional changes.
+	+ All ARM7 port layers have been slightly modified to prevent erroneous
+	  assert() failures when tasks are created and configASSERT() is defined.
+	+ All ARM IAR projects have been updated to build with the latest V6.2.x
+	  versions of the IAR Embedded Workbench for ARM tools (EWARM).  This was
+	  necessary due to a change in the way EWARM uses the CMSIS libraries.
+	+ The PIC32 port layer has been updated in preparation for V2 of the C32
+	  compiler.
+	+ The old Virtex-4 Microblaze demo has been marked as deprecated.  Please
+	  use the brand new Spartan-6 port and demo in its place.
+	+ The bones of a new generic command interpreter is located in
+	  FreeRTOS/Demo/Common/Utils/CommandInterpreter.c.  This is still a work in
+	  progress, and not documented.  It is however already in use.  It will be
+	  documented in full when the projects that are already using it are
+	  completed.
+	+ A couple of new standard demos have been included.  First, a version of
+	  flop.c called sp_flop.c.  This is similar to flop.c, but uses single
+	  precision floats in place of double precision doubles.  This allows the
+	  for testing ports to processors that have only single precision floating
+	  point units, and revert to using emulated calculations whenever a double
+	  is used.  Second, comtest_strings.c has been included to allow the test
+	  of UART drivers when an entire string is transmitted at once.  The
+	  previous comtest.c only used single character transmission and reception.
+	+ lwIP V1.4.0 is now included in the FreeRTOS/Demo/Common directory, and
+	  used by a couple of new demos.
+
+Changes between V7.0.0 and V7.0.1 released May 13 2011
+
+	+ Added a Fujitsu FM3 demo application for both the IAR and Keil tool
+	  chains.
+	+ Added a SmartFusion demo application for all of the IAR, Keil and
+	  SoftConsole (GCC/Eclipse) tool chains.
+	+ Updated the RX600 port and demo applications to take into account the
+	  different semantics required when using the latest (V1.0.2.0) version of
+	  the Renesas compiler.
+	+ Modified the RX600 Ethernet driver slightly to make it more robust under
+	  heavy load, and updated the uIP handling task to make use of the FreeRTOS
+	  software timers.
+	+ Slightly changed the PIC32 port layer to move an ehb instruction in line
+	  with the recommendations of the MIPS core manual, and ensure 8 byte stack
+	  alignment is truly always obtained.
+	+ Changed the behaviour when tasks are suspended before the scheduler has
+	  been started.  Before, there needed to be at least one task that was not
+	  in the suspended state.  This is no longer the case.
+
+Changes between V6.1.1 and V7.0.0 released April 8 2011
+
+	FreeRTOS V7.0.0 is backward compatible with FreeRTOS V6.x.x
+
+	Main changes:
+
+	+ Introduced a new software timer implementation.
+	+ Introduced a new common demo application file to exercise the new timer
+	  implementation.
+	+ Updated the Win32/MSVC simulator project to include the new software timer
+	  demo tasks and software timer tick hook test.  Much simpler software timer
+	  demonstrations are included in the demo projects for both of the new ports
+	  (MSP430X with CCS4 and STM32 with TrueStudio).
+	+ Various enhancements to the kernel implementation in tasks.c.  These are
+	  transparent to users and do not effect the pre-existing API.
+	+ Added calls to configASSERT() within the kernel code.  configASSERT() is
+	  functionally equivalent to the standard C assert() macro, but does not
+	  rely on the compiler providing assert.h.
+
+	Other changes:
+
+	+ Updated the MSP430X IAR port and demo project to include support for the
+	  medium memory model.
+	+ Added a demo project for the MSP430X that targets the MSP430X Discovery
+	  board and uses the Code Composer Studio 4 tools.  This demo includes use
+	  of the new software timer implementation.
+	+ Added an STM32F100RB demo project that targets the STM32 Discovery Board
+	  and uses the TrueStudio Eclipse based IDE from Atollic.
+	+ Removed some compiler warnings from the PSoC demo application.
+	+ Updated the PIC32 port layer to ensure the
+	  configMAX_SYSCALL_INTERRUPT_PRIORITY constant works as expected no matter
+	  what its value is (within the valid range set by the microcontroller
+	  kernel).
+	+ Updated the PIC24, dsPIC and PIC32 projects so they work with the latest
+	  MPLAB compiler versions from Microchip.
+	+ Various cosmetic changes to prepare for a standards compliance statement
+	  that will be published after the software release.
+
+
+Changes between V6.1.0 and V6.1.1 released January 14 2011
+
+	+ Added two new Windows simulator ports.  One uses the free Microsoft Visual
+	  Studio 2010 express edition, and the other the free MingW/Eclipse
+	  environment.  Demo projects are provided for both.
+	+ Added three demo projects for the PSoC 5 (CYAC5588).  These are for the
+	  GCC, Keil, and RVDS build tools, and all use the PSoC Creator IDE.
+	+ Added a demo for the low power STM32L152 microcontroller using the IAR
+	  Embedded Workbench.
+	+ Added a new port for the MSP430X core using the IAR Embedded Workbench.
+	+ Updated all the RX62N demo projects that target the Renesas Demonstration
+	  Kit (RDK) to take into account the revered LED wiring on later hardware
+	  revisions, and the new J-Link debug interface DLL.
+	+ Updated all the RX62N demo projects so the IO page served by the example
+	  embedded web server works with all web browsers.
+	+ Updated the Red Suite projects to work with the up coming Red Suite
+	  release, and to use a more recent version of the CMSIS libraries.
+	+ Added the traceTAKE_MUTEX_RECURSIVE_FAILED() trace macro.
+	+ Removed the (pointless) parameter from the traceTASK_CREATE_FAILED()
+	  trace macro.
+	+ Introduced the portALT_GET_RUN_TIME_COUNTER_VALUE() macro to compliment
+	  the already existing portGET_RUN_TIME_COUNTER_VALUE().  This allows for
+	  more flexibility in how the time base for the run time statistics feature
+	  can be implemented.
+	+ Added a "cpsie i" instruction before the "svc 0" instruction used to start
+	  the scheduler in each of the Cortex M3 ports.  This is to ensure that
+	  interrupts are globally enabled prior to the "svc 0" instruction being
+	  executed in cases where interrupts are left disabled by the C start up
+	  code.
+	+ Slight optimisation in the run time stats calculation.
+
+Changes between V6.0.5 and V6.1.0 released October 6 2010
+
+	+ Added xTaskGetTickCountFromISR() function.
+	+ Modified vTaskSuspend() to allow tasks that have just been created to be
+	  immediately suspended even when the kernel has not been started.  This
+	  allows them to effectively start in the Suspended state - a feature that
+	  has been asked for on numerous occasions to assist with initialisation
+	  procedures.
+	+ Added ports for the Renesas RX62N using IAR, GCC and Renesas tool suites.
+	+ Added a STM32F103 demo application that uses the Rowley tools.
+	+ Under specific conditions xFreeBytesRemaining within heap_2.c could end up
+	  with an incorrect	value.  This has been fixed.
+	+ xTaskCreateGeneric() has a parameter that can be used to pass the handle
+	  of the task just created out to the calling task.  The assignment to this
+	  parameter has been moved to ensure it is assigned prior to the newly
+	  created having any possibility of executing.  This takes into account the
+	  case where the assignment is made to a global variable that is accessed by
+	  the newly created task.
+	+ Fixed some build time compiler warnings in various FreeTCPIP (based on
+	  uIP) files.
+	+ Fixed some build time compiler warnings in Demo/Common/Minimal/IntQueue.c.
+
+Changes between V6.0.4 and V6.0.5 released May 17 2010
+
+	+ Added port and demo application for the Cortus APS3 processor.
+
+Changes between V6.0.3 and V6.0.4 released March 14 2010
+
+	+ All the contributed files that were located in the Demo/Unsupported_Demos
+	  directory have been removed.  These files are instead now available in the
+	  new  Community Contributions section of the FreeRTOS website.  See
+	  https://www.FreeRTOS.org/RTOS-contributed-ports.html
+	+ The project file located in the Demo/CORTEX_STM32F107_GCC_Rowley directory
+	  has been upgraded to use V2.x of the Rowley Crossworks STM32 support
+	  package.
+	+ An initial Energy Micro EFM32 demo has been included.  This will be
+	  updated over the coming months to make better use of the low power modes
+	  the EFM32 provides.
+
+Changes between V6.0.2 and V6.0.3 released February 26 2010
+
+	+ SuperH SH7216 (SH2A-FPU) port and demo application added.
+	+ Slight modification made to the default implementation of
+	  pvPortMallocAligned() and vPortFreeAligned() macros so by default they
+	  just call pvPortMalloc() and vPortFree().  The macros are only needed to
+	  be defined when a memory protection unit (MPU) is being used - and then
+	  only depending on other configuration settings.
+
+Changes between V6.0.1 and V6.0.2 released January 9th 2010
+
+	+ Changed all GCC ARM 7 ports to use 0 as the SWI instruction parameter.
+	  Previously the parameter was blank and therefore only an implicit 0 but
+	  newer GCC releases do not permit this.
+	+ Updated IAR SAM7S and SAM7X ports to work with IAR V5.40.
+	+ Changed the stack alignment requirement for PIC32 from 4 bytes to 8 bytes.
+	+ Updated prvListTaskWithinSingleList() is it works on processors where the
+	  stack grows up from low memory.
+	+ Corrected some comments.
+	+ Updated the startup file for the RVDS LPC21xx demo.
+
+Changes between V6.0.0 and V6.0.1 released November 15th 2009
+
+	+ Altered pxPortInitialiseStack() for all Cortex-M3 ports to ensure the
+	  stack pointer is where the compiler expects it to be when a task first
+	  starts executing.
+
+	  The following minor changes only effect the Cortex-M3 MPU port:
+
+	+ portRESET_PRIVILEGE() assembly macro updated to include a clobber list.
+	+ Added prototypes for all the privileged function wrappers to ensure no
+	  compile time warnings are generated no matter what the warning level
+	  setting.
+	+ Corrected the name of portSVC_prvRaisePrivilege to
+	  portSVC_RAISE_PRIVILEGE.
+	+ Added conditional compilation into xTaskGenericCreate() to prevent some
+	  compilers issuing warnings when portPRIVILEGE_BIT is defined as zero.
+
+
+Changes between V5.4.2 and V6.0.0 released October 16th 2009
+
+	FreeRTOS V6 is backward compatible with FreeRTOS V5.x.
+
+	Main changes:
+
+	+ FreeRTOS V6 is the first version to include memory protection unit (MPU)
+	  support.  Two ports now exist for the Cortex M3, the standard FreeRTOS
+	  which does not include MPU support, and FreeRTOS-MPU which does.
+	+ xTaskCreateRestricted() and vTaskAllocateMPURegions() API functions added
+	  in support of FreeRTOS-MPU.
+	+ Wording for the GPL exception has been (hopefully) clarified.  Also the
+	  license.txt file included in the download has been fixed (the previous
+	  version contained some corruption).
+
+	Other changes:
+
+	+ New API function xPortGetFreeHeapSize() added to heap_1.c and heap_2.c.
+	+ ARM7 GCC demo interrupt service routines wrappers have been modified to
+	  call the C portion using an __asm statement.  This prevents the function
+	  call being inlined at higher optimisation levels.
+	+ ARM7 ports now automatically set the THUMB bit if necessary when
+	  setting up the initial stack of a task - removing the need for
+	  THUMB_INTERWORK to be defined.  This also allows THUMB mode and ARM mode
+	  tasks to be mixed more easily.
+	+ All ARM7/9 ports now have portBYTE_ALIGNMENT set to 8 by default.
+	+ Various demo application project files have been updated to be up to date
+	  with the latest IDE versions.
+	+ The linker scripts used with command line GCC demos have been updated to
+	  include an eh_frame section to allow their use with the latest Yagarto
+	  release.  Likewise the demo makefiles have been updated to include
+	  command line options to reduce or eliminate the eh_frame section all
+	  together.
+	+ The definition of portBYTE_ALIGNMENT_MASK has been moved out of the
+	  various memory allocation files and into the common portable.h header
+	  file.
+	+ Removed unnecessary use of portLONG, portSHORT and portCHAR.
+	+ Added LM3Sxxxx demo for Rowley CrossWorks.
+	+ Posix simulator has been upgraded - see the corresponding WEB page on the
+	  FreeRTOS.org site.
+
+
+Changes between V5.4.1 and V5.4.2 released August 9th 2009
+
+	+ Added a new port and demo app for the Altera Nios2 soft core.
+	+ Added LPC1768 demo for IAR.
+	+ Added a USB CDC demo to all LPC1768 demos (Code Red, CrossWorks and IAR).
+	+ Changed clock frequency of LPC1768 demos to 99MHz.
+
+Changes between V5.4.0 and V5.4.1 released July 25th 2009
+
+	+ New hook function added.  vApplicationMallocFailedHook() is (optionally)
+	  called if pvPortMalloc() returns NULL.
+	+ Additional casting added to xTaskCheckForTimeOut().  This prevents
+	  problems that can arise should configUSE_16_BIT_TICKS be set to 1 on a
+	  32 bit architecture (which would probably be a mistake, anyway).
+	+ Corrected the parameter passed to NVIC_SetPriority() to set the MAC
+	  interrupt priority in both LPC1768 demos.
+	+ Decreased the default setting of configMINIMAL_STACK_SIZE in the PIC32
+	  demo application to ensure the heap space was not completely consumed
+	  before the scheduler was started.
+
+Changes between V5.3.1 and V5.4.0 released July 13th 2009
+
+	+ Added Virtex5 / PPC440 port and demos.
+	+ Replaced the LPC1766 Red Suite demo with an LPC1768 Red Suite demo.  The
+	  original demo was configured to use engineering samples of the CPU.  The
+	  new demo has an improved Ethernet driver.
+	+ Added LPC1768 Rowley demo with zero copy Ethernet driver.
+	+ Reworked byte alignment code to ensure 8 byte alignment works correctly.
+	+ Set configUSE_16_BIT_TICKS to 0 in the PPC405 demo projects.
+	+ Changed the initial stack setup for the PPC405 to ensure the small data
+	  area pointers are setup correctly.
+
+Changes between V5.3.0 and V5.3.1 released June 21st 2009
+
+	+ Added ColdFire V1 MCF51CN128 port and WEB server demo.
+	+ Added STM32 Connectivity Line STM32107 Cortex M3 WEB server demo.
+	+ Changed the Cortex M3 port.c asm statements to __asm so it can be
+	  compiled using Rowley CrossWorks V2 in its default configuration.
+	+ Updated the Posix/Linux simulator contributed port.
+
+Changes between V5.2.0 and V5.3.0 released June 1st 2009
+
+	Main changes:
+
+	+ Added new (optional) feature that gathers statistics on the amount of CPU
+	  time used by each task.
+	+ Added a new demo application for the Atmel AT91SAM3U Cortex-M3 based
+	  microcontroller.
+	+ Added a new demo application for the NXP LPC1766 Cortex-M3 based
+	  microcontroller.
+	+ Added a contributed port/demo that allows FreeRTOS to be 'simulated' in a
+	  Linux environment.
+
+	Minor changes:
+	+ Updated the Stellaris uIP WEB server demos to include the new run time
+	  statistics gathering feature - and include a served WEB page that
+	  presents the information in a tabular format.
+	+ Added in the lwIP port layer for the Coldfire MCF52259.
+	+ Updated the CrossWorks LPC2368 WEB server to include an image in the
+	  served content.
+	+ Changed some of the timing in the initialisation of the LPC2368 MAC to
+	  permit its use on all part revisions.
+	+ Minor modifications to the core uIP code to remove some compiler warnings.
+	+ Added xTaskGetApplicationTaskTag() function and updated the OpenWatcom
+	  demo to make use of the new function.
+	+ Added contributed demos for AVR32 AP7000, STM32 Primer 2 and STM32 using
+	  Rowley Crossworks.
+	+ Heap_1.c and Heap_2.c used to define structures for the purpose of data
+	  alignment.  These have been converted to unions to save a few bytes of
+	  RAM that would otherwise be wasted.
+	+ Remove the call to strncpy() used to copy the task name into the TCB when
+	  the maximum task name is configured to be 1 byte long.
+
+Changes between V5.1.2 and V5.2.0 released March 14th 2009
+
+	+ Optimised the queue send and receive functions (also used by semaphores).
+	+ Replaced the standard critical sections used to protect BIOS calls in the
+	  PC port to instead use scheduler locks.  This is because the BIOS calls
+	  always return with interrupts enabled.
+	+ Corrected unclosed comments in boot.s.
+
+Changes between V5.1.1 and V5.1.2 released February 9th 2009
+
+	+ Added NEC V850ES port and demo.
+	+ Added NEC 78K0R port and demo.
+	+ Added MCF52259 port and demo.
+	+ Added the AT91SAM9XE port and demo.
+	+ Updated the MCF52233 FEC driver to work around a silicon bug that
+	  prevents the part auto negotiating some network parameters.
+	+ Minor modifications to the MCF52233 makefile to permit it to be used
+	  on Linux hosts.
+	+ Updated the STM32 primer files to allow them to be built with the latest
+	  version of the RIDE tools.
+	+ Updated the threads.js Java script used for kernel aware debugging in
+	  the Rowley CrossWorks IDE.
+
+
+Changes between V5.1.0 and V5.1.1 released November 20, 2008
+
+	+ Added Coldfire MCF52233 WEB server demo using GCC and Eclipse.
+	+ Added IAR MSP430 port and demo.
+	+ Corrected several compiler time issues that had crept in as tool versions
+	  change.
+	+ Included FreeRTOS-uIP - a faster uIP.  This is not yet complete.
+
+Changes between V5.0.4 and V5.1.0 released October 24, 2008
+
+	+ Added a new port and demo application for the ColdFire V2 core using the
+	  CodeWarrior development tools.
+	+ Replaced the ARM7 demo that used the old (and now no longer supported)
+	  Keil compiler with a new port that uses the new Keil/RVDS combo.
+	+ Stack overflow checking now works for stacks that grow up from low
+	  memory (PIC24 and dsPIC).
+	+ BUG FIX - set the PIC32 definition of portSTACK_GROWTH to the correct
+	  value of -1.
+	+ MSP430 port layers have been updated to permit tasks to place the
+	  microcontroller into power down modes 1 to 3.  The demo applications have
+	  likewise been updated to demonstrate the new feature.
+	+ Replaced the two separate MSP430/Rowley port layers with a single and more
+	  flexible version.
+	+ Added more contributed ports, including ports for NEC and SAM9
+	  microcontrollers.
+	+ Changed the linker script used in the LPC2368 Eclipse demo.
+
+Changes between V5.0.3 and V5.0.4 released September 22, 2008
+
+	+ Completely re-written port for ColdFire GCC.
+	+ Bug fix:  All Cortex M3 ports have a minor change to the code that sets
+	  the pending interrupt.
+	+ Some header files require that FreeRTOS.h be included prior to their
+	  inclusion.  #error message have been added to all such header file
+	  informing users to the cause of the compilation error should the headers
+	  not be included in the correct order.
+
+Changes between V5.0.2 and V5.0.3 released July 31, 2008
+
+	Changes relating to the Cortex M3:
+
+	+ Added configMAX_SYSCALL_INTERRUPT_PRIORITY usage to all the Cortex M3
+	  ports and demos.  See the port documentation pages on the FreeRTOS.org
+	  WEB site for full usage information.
+	+ Improved efficiency of Cortex M3 port even further.
+	+ Ensure the Cortex M3 port works no matter where the vector table is
+	  located.
+	+ Added the IntQTimer demo/test tasks to a demo project for each CM3 port
+	  (Keil, GCC and IAR) to test the new configMAX_SYSCALL_INTERRUPT_PRIORITY
+	  functionality.
+	+ Added the mainINCLUDE_WEB_SERVER definition to the LM3SXXXX IAR and Keil
+	  projects to allow the WEB server to be conditionally excluded from the
+	  build and therefore allow use of the KickStart (code size limited)
+	  compiler version.
+
+	Other changes:
+
+	+ Moved the PIC24 and dsPIC versions of vPortYield() from the C file to
+	  an assembly file to allow use with all MPLAB compiler versions.  This also
+	  allows the omit-frame-pointer optimisation to be turned off.
+
+Changes between V5.0.0 and V5.0.2 released May 30, 2008
+
+	+ Updated the PIC32 port to allow queue API calls to be used from
+	  interrupts above the kernel interrupt priority, and to allow full
+	  interrupt nesting.  Task stack usages has also been reduced.
+	+ Added a new PowerPC port that demonstrates how the trace macros can be
+	  used to allow the use of a floating point co-processor.  The
+	  traceTASK_SWITCHED_OUT() and traceTASK_SWITCHED_INT() macros are used to
+	  save and restore the floating point context respectively for those tasks
+	  that actually use floating point operations.
+	+ BUG FIX:  The first PPC405 port contained a bug in that it did not leave
+	  adequate space above the stack for the backchain to be saved when a task
+	  started to execute for the first time.
+	+ Updated queue.c to add in the means to allow interrupt nesting and for
+	  queue API functions to be called from interrupts that have a priority
+	  above the kernel priority.  This is only supported on PIC32 ports thus
+	  far.
+	+ Fixed the compiler warnings that were generated when the latest version
+	  of WinAVR was used.
+	+ Remove all inline usage of 'inline' from the core kernel code.
+	+ Added the queue registry feature.  The queue registry is provided as a
+	  means for kernel aware debuggers to locate queue definitions.  It has no
+	  purpose unless you are using a kernel aware debugger.  The queue registry
+	  will only be used when configQUEUE_REGISTRY_SIZE is greater than zero.
+	+ Added the ST Cortex-M3 drivers into the Demo/Common/Drivers directory to
+	  prevent them from having to be included in multiple demos.
+	+ Added a Keil STM32 demo application.
+	+ Changed the blocktim.c test files as it is no longer legitimate for all
+	  ports to call queue API functions from within a critical section.
+	+ Added the IntQueue.c test file to test the calling of queue API functions
+	  from different interrupt priority levels, and test interrupt nesting.
+
+Changes between V5.0.0 and V5.0.1
+
+	+ V5.0.1 was a customer specific release.
+
+Changes between V4.8.0 and V5.0.0 released April 15, 2008
+
+	*** VERY IMPORTANT INFORMATION ON UPGRADING TO FREERTOS.ORG V5.0.0 ***
+
+	The parameters to the functions xQueueSendFromISR(), xQueueSendToFrontFromISR(),
+	xQueueSendToBackFromISR() and xSemaphoreGiveFromISR() have changed.  You must
+	update all calls to these functions to use the new calling convention!  Your
+	compiler might not issue any type mismatch warnings!
+
+
+	Other changes:
+
+	+ Support added for the new Luminary Micro LM3S3768 and LM3S3748 Cortex-M3
+	  microcontrollers.
+	+ New task hook feature added.
+	+ PowerPC demo updated to use version 10.1 of the Xilinx EDK.
+	+ Efficiency gains within the PIC32 port layer.
+
+Changes between V4.7.2 and V4.8.0 released March 26 2008
+
+	+ Added a Virtex4 PowerPC 405 port and demo application.
+	+ Added optional stack overflow checking and new
+	  uxTaskGetStackHighWaterMark() function.
+	+ Added new xQueueIsQueueEmptyFromISR(), xQueueIsQueueFullFromISR() and
+	  uxQueueMessagesWaitingFromISR() API functions.
+	+ Efficiency improvements to the Cortex-M3 port layer.  NOTE: This
+	  requires that an SVC handler be installed in the application.
+	+ Efficiency improvements to the queue send and receive functions.
+	+ Added new trace macros.  These are application definable to provide
+	  a flexible trace facility.
+	+ Implemented the configKERNEL_INTERRUPT_PRIORITY within the Keil Cortex
+	  M3 port layer (bringing it up to the same standard as the IAR and GCC
+	  versions).
+	+ Ports that used the arm-stellaris-eabi-gcc tools have been converted to
+	  use the arm-non-eabi-gcc tools.
+
+Changes between V4.7.1 and V4.7.2 released February 21, 2008
+
+	+ Added Fujitsu MB91460 port and demo.
+	+ Added Fujitsu MB96340 port and demo.
+	+ Tidied up the capitalisation of include files to facilitate builds on
+	  Linux hosts.
+	+ Removed some redundant casting that was generating warnings - but was
+	  included to remove warnings on other compilers.
+
+Changes between V4.7.0 and V4.7.1 released February 3, 2008
+
+	+ Updated all IAR ARM projects to use V5.11 of the IAR Embedded Workbench
+	  for ARM.
+	+ Introduced recursive semaphore feature.
+	+ Updated LPC2368 demos to take into account silicon bugs in old chip
+	  revisions.
+	+ Updated STR9 uIP port to manually set the net mask and gateway addresses.
+	+ Updating demos to allow more to run with the co-operative scheduler.
+	+ Fixed co-operative scheduler behaviour upon the occurrence of a tick
+	  interrupt while the scheduler was suspended.
+	+ Updated documentation contained within semphr.h.
+	+ ARM7 GCC ports no longer use the IRQ attribute.
+
+Changes between V4.6.1 and V4.7.0 released December 6, 2007
+
+	+ Introduced the counting semaphore macros and demo source files.  The
+          Open Watcom PC project has been updated to include the new demo.  See
+          the online documentation for more information.
+	+ Introduced the 'alternative' queue handling API and demo source files.
+	  The Open Watcom PC project has been updated to include the new demo
+	  source files.  See the online documentation for more information.
+	+ Added AT91SAM7X Eclipse demo project.
+	+ Added the STM32 primer demo project for the GCC compiler and Ride IDE.
+	+ Removed the .lock files that were mistakenly included in the V4.6.1
+	  eclipse workspaces.
+
+Changes between V4.6.0 and V4.6.1 released November 5 2007
+
+	+ Added support for the MIPS M4K based PIC32.
+	+ Added 'extern "C"' to all the header files to facilitate use with C++.
+
+Changes between V4.5.0 and V4.6.0 released October 28 2007
+
+	+ Changed the method used to force a context switch within an ISR for the
+	  ARM7/9 GCC ports only.  The portENTER_SWITCHING_ISR() and
+	  portEXIT_SWITCHING_ISR() macros are no longer supported.  This is to
+	  ensure correct behaviour no matter which GCC version is used, with or
+	  without the -fomit-frame-pointer option, and at all optimisation levels.
+	+ Corrected the prototype for xQueueGenericSend() within queue.h.
+
+Changes between V4.4.0 and V4.5.0 released September 17 2007
+
+	+ Added the xQueueSendToFront(), xQueueSendToBack() and xQueuePeek()
+	  functionality.  These should now be used in preference to the old
+	  xQueueSend() function - which is maintained for backward compatibility.
+	+ Added Mutex functionality.  The behaviour of mutexes is subtly different
+	  to the already existing binary semaphores as mutexes automatically
+	  include a priority inheritance mechanism.
+	+ Added the GenQTest.c and QPeek.c to test and demonstrate the behaviour
+	  of the new functionality.
+	+ Updated the LM3Sxxxx and PC ports to include the new GenQTest.c and
+	  QPeek.c files.
+	+ Updated the GCC port for the Cortex M3 to include the
+	  configKERNEL_INTERRUPT_PRIORITY functionality.  This was previously only
+	  included in the IAR port.
+	+ Optimised the GCC and IAR port layer code - specifically the context
+	  switch code.
+	+ Consolidated the LM3Sxxxx EK demos for all development tools into a
+	  single project that automatically detects which version of the EK the
+	  application is executing on.
+	+ Added Eclipse support for LM3Sxxxx evaluation kits.
+	+ Added Eclipse support for the Keil LPC2368 evaluation kit.
+	+ Added the Demo/Drivers directory to hold code that is common to multiple
+	  demo application projects.
+	+ Included some minor bug fixes in the uIP 1.0 code.
+	+ Added an lwIP demo for the STR9 - thanks ST for assistance.
+	+ Updated the AVR32 port to ensure correct behaviour with full compiler
+	  optimisation.
+	+ Included binaries for OpenOCD FTDI and parallel port interfaces.
+
+Changes between V4.4.0 and V4.3.1 released July 31, 2007
+
+	+ Added AVR32 UC3B demo application.
+	+ Updated AVR32 UC3A port and demo applications.
+	+ Added IAR lwIP demo for AVR32 UC3A.
+	+ Updated listGET_OWNER_OF_NEXT_ENTRY() to assist compiler optimisation
+	  (thanks Niu Yong for making the suggestion).
+	+ Added xTaskGetSchedulerState() API function.
+	+ BUG FIX:  Corrected behaviour when tasks that are blocked indefinitely
+	  have their block time adjusted (within xQueueSend() and xQueueReceive()),
+	  and are the subject of a call the vTaskResume() when they are not
+	  actually in the Suspended state (thanks Dan Searles for reporting the
+	  issues).
+
+
+Changes between V4.3.0 and V4.3.1 released June 11, 2007
+
+	+ Added STMicroelectronics STM32 Cortex-M3 demo application.
+	+ Updated ustdlib.c for the GCC LM3S6965 demo.
+
+Changes between V4.2.1 and V4.3.0 released June 5, 2007
+
+	+ Introduced configKERNEL_INTERRUPT_PRIORITY to the IAR Cortex-M3, PIC24
+	  and dsPIC ports.  See the LM3S6965 and PIC24 demo application
+	  documentation pages for more information.
+	+ Updated the PIC24 and dsPIC demos to build with V3.0 of the PIC30 GCC
+	  tools, and changed the demo applications.
+	+ Added demos for the new Ethernet and CAN enabled Luminary Micro Stellaris
+	  microcontrollers.
+	+ Corrected bug in uIP the demos that prevented frames of approximately 1480
+	  bytes and over from being transmitted.
+	+ Included the LPC2368/uIP/Rowley demo into the main FreeRTOS.org
+	  download.
+	+ Update to WizC PIC18 port to permit its use with version 14 of the
+	  compiler.  Thanks Marcel!
+
+Changes between V4.2.1 and V4.2.0 released April 2, 2007
+
+	+ Added AVR32 AT32UC3A ports for GCC and IAR.
+	+ Added -fomit-frame-pointer option to lwIP SAM7X demo makefile.
+	+ Moved location of call to LCD_Init() in STR9 demo to ensure it is only
+	  called after the scheduler has been started.
+
+Changes between V4.1.3 and V4.2.0 released February 8, 2007
+
+	+ Changes to both task.c and queue.c as a result of testing performed on
+	  the SafeRTOS code base.
+	+ Added Cortex-M3 LM3S811 demos for GCC and IAR tools.
+
+Changes between V4.1.2 and V4.1.3 released November 19, 2006
+
+	+ Added STR750 ARM7 port using the Raisonance RIDE/GCC tools.
+	+ Added -fomit-frame-pointer option to Rowley ARM7 demos as work around
+	  to GCC bug at some optimisation levels.
+	+ Altered the way the heap is defined in the LM3S811 Keil demo to prevent
+	  the RAM usage from counting toward the code size limit calculation.
+	+ CO-ROUTINE BUG FIX:  Removed the call to prvIsQueueEmpty from within
+	  xQueueCRReceive as it exited with interrupts enabled.  Thanks Paul Katz.
+	+ Tasks that block on events with a timeout of portMAX_DELAY are now
+	  blocked indefinitely if configINCLUDE_vTaskSuspend is defined.
+	  Previously portMAX_DELAY was just the longest block time possible. This
+	  is still the case if configINCLUDE_vTaskSuspend is not defined.
+	+ Minor changes to some demo application files.
+
+Changes between V4.1.1 and V4.1.2 released October 21, 2006
+
+	+ Added 16bit PIC ports and demos.
+	+ Added STR750 port and demo.
+
+
+Changes between V4.1.0 and V4.1.1 released September 24, 2006
+
+	+ Added the Luminary Micro Stellaris LM3S811 demo application.
+
+Changes between V4.0.5 and V4.1.0 released August 28, 2006
+
+	+ Prior to V4.1.0, under certain documented circumstances, it was possible
+	  for xQueueSend() and xQueueReceive() to return without having completed
+	  and without their block time expiring.  The block time effectively
+	  stated a maximum block time, and the return value of the function needed
+	  to be checked to determine the reason for returning.  This is no longer
+	  the case as the functions will only return once the block time has
+	  expired or they are able to complete their operation.  It is therefore no
+	  longer necessary to wrap calls within loops.
+	+ Changed the critical section handling in the IAR AVR port to correct the
+	  behaviour when used with later compiler versions.
+	+ Added the LPC2138 CrossWorks demo into the zip file.  Previously this was
+	  only available as a separate download.
+	+ Modified the AVR demo applications to demonstrate the use of co-routines.
+
+Changes between V4.0.4 and V4.0.5 released August 13, 2006
+
+	+ Introduced API function xTaskResumeFromISR().  Same functionality as
+	  xTaskResume(), but can be called from within an interrupt service routine.
+	+ Optimised vListInsert() in the case when the wake time is the maximum
+	  tick count value.
+	+ Bug fix:  The 'value' of the event list item is updated when the priority
+	  of a task is changed.  Previously only the priority of the TCB itself was
+	  changed.
+	+ vTaskPrioritySet() and vTaskResume() no longer use the event list item.
+	  This has not been necessary since V4.0.1 when the xMissedYield handling
+	  was added.
+	+ Lowered the PCLK setting on the ARM9 STR9 demo from 96MHz to 48MHz.
+	+ When ending the scheduler - do not try to attempt a context switch when
+	  deleting the current task.
+	+ SAM7X EMAC drivers:  Corrected the Rx frame length mask when obtaining
+	  the length from the rx descriptor.
+
+
+Changes between V4.0.3 and V4.0.4 released June 22, 2006
+
+	+ Added a port and demo application for the STR9 ARM9 based processors from
+	  ST.
+	+ Slight optimisation to the vTaskPrioritySet() function.
+	+ Included the latest uIP version (1.0) in the demo/common/ethernet
+	  directory.
+
+Changes between V4.0.2 and V4.0.3 released June 7, 2006
+
+	+ Added a port and demo application for the Cortex-M3 target using the IAR
+	  development tools.
+	+ The ARM Cortex-m3 Rowley projects have been updated to use V1.6 of the
+	  CrossStudio tools.
+	+ The heap size defined for the lwIP Rowley demo has been reduced so that
+	  the project will link correctly when using the command line GCC tools
+	  also.  The makefile has also been modified to allow debugging.
+	+ The lwIP Rowley demo not includes a 'kernel aware' debug window.
+	+ The uIP Rowley project has been updated to build with V1.6 of CrossWorks.
+	+ The second set of tasks in the blockQ demo were created the wrong way
+	  around (inconsistent to the description in the file).  This has been
+	  corrected.
+
+Changes between V4.0.1 and V4.0.2 released May 28, 2006
+
+	+ Port and demo application added for the Tern Ethernet Engine controller.
+	+ Port and demo application added for MC9S12 using GCC, thanks to
+	  Jefferson "imajeff" Smith.
+	+ The function vTaskList() now suspends the scheduler rather than disabling
+	  interrupts during the creation of the task list.
+	+ Allow a task to delete itself by passing in its own handle.  Previously
+	  this could only be done by passing in NULL.
+	+ Corrected the value passed to the WDG_PeriodValueConfig() library
+	  function in the STR71x demo.
+	+ The tick hook function is now called only within a tick isr.  Previously
+	  it was also called when the tick function was called during the scheduler
+	  unlocking process.
+	+ The EMAC driver in the SAM7X lwIP demo has been made more robust as per
+	  the thread: https://sourceforge.net/forum/message.php?msg_id=3714405
+	+ In the PC ports:  Add function prvSetTickFrequencyDefault() to set the
+	  DOS tick back to its proper value when the scheduler exits.  Thanks
+	  Raynald!
+	+ In the Borland x86 ports there was a mistake in the portFIRST_CONTEXT
+	  macro where the BP register was not popped from the stack correctly.  The
+	  BP value would never get used so this did not cause a problem, but it has
+	  been corrected all the same.
+
+
+Changes between V4.0.0 and V4.0.1 released April 7 2006
+
+	+ Improved the ARM CORTEX M3 ports so they now only have to service
+	  pendSV interrupts.
+	+ Added a Luminary Micro port and demo for use with Rowley CrossWorks.
+	+ Added the xMissedYield handling to tasks.c.
+
+Changes between V3.2.4 and V4.0.0
+
+	Major changes:
+
+	+ Added new RTOS port for Luminary Micros ARM CORTEX M3 microcontrollers.
+	+ Added new co-routine functionality.
+
+	Other kernel changes:
+
+	+ An optional tick hook call is now included in the tick function.
+	+ Introduced the xMiniListItem structure and removed the list pxHead
+	  member in order to reduce RAM usage.
+	+ Added the following definitions to the FreeRTOSConfig.h file included
+	  with every port:
+		configUSE_TICK_HOOK
+		configUSE_CO_ROUTINES
+		configMAX_CO_ROUTINE_PRIORITIES
+	+ The volatile qualification has been changed on the list members to allow
+	  the task.c code to be tidied up a bit.
+	+ The scheduler can now be started even if no tasks have been created!
+	  This is to allow co-routines to run when there are no tasks.
+	+ A task being woken by an event will now preempt the currently running task
+	  even if its priority is only equal to the currently running task.
+
+	Port and demo application changes:
+
+	+ Updated the WinAVR demo to compile with the latest version of WinAVR
+	  with no warnings generated.
+	+ Changed the WinAVR makefile to make chars signed - needed for the
+	  co-routine code if BaseType_t is set to char.
+	+ Added new demo application file crflash.c.  This demonstrates co-routine
+	  functionality including passing data between co-routines.
+	+ Added new demo application file crhook.c.  This demonstrates co-routine
+	  and tick hook functionality including passing data between and ISR and
+	  a co-routine.
+	+ Some NOP's were missing following stmdb{}^ instructions in various ARM7
+	  ports.  These have been added.
+	+ Updated the Open Watcom PC demo project to include the crflash and crhook
+	  demo co-routines as an example of their use.
+	+ Updated the H8S demo to compile with the latest version of GCC.
+	+ Updated the SAM7X EMAC drivers to take into account the hardware errata
+	  regarding lost packets.
+	+ Changed the default MAC address used by some WEB server demos as the
+	  original addresses used was not liked by some routers.
+	+ Modified the SAM7X/IAR startup code slightly to prevent it hanging on
+	  some systems when the code is executed using a j-link debugger.  The
+	  j-link macro file configures the PLL before the code executes so
+	  attempting to configure it again in the startup code was causing a
+	  problem for some user.  Now a check is performed first to see if the
+	  PLL is already set up.
+	+ GCC port now contain all assembler code in a single asm block rather than
+	  individual blocks as before.
+	+ GCC LPC2000 code now explicitly uses R0 rather than letting the assembler
+	  choose the register to use as a temporary register during the context
+	  switch.
+	+ Added portNOP() macro.
+	+ The compare match load value on LPC2000 ports now has 1 added to correct
+	  the value used.
+	+ The minimal stack depth has been increased slightly on the WIZC PIC18
+	  port.
+
+Changes between V3.2.3 and V3.2.4
+
+	+ Modified the GCC ARM7 port layer to allow use with GCC V4.0.0 and above.
+	  Many thanks to Glen Biagioni for the provided update.
+	+ Added a new Microblaze port and demo application.
+	+ Modified the SAM7X EMAC demo to default to use the MII interface rather
+	  than the RMII interface.
+	+ Modified the startup sequence of the SAM7X demo slightly to allow the
+	  EMAC longer to auto negotiate.
+
+Changes between V3.2.2 and V3.2.3
+
+	+ Added MII interface support to the SAM7X EMAC peripheral driver.
+	  Previously versions worked with the RMII interface only.
+	+ Added command line GCC support to the SAM7X lwIP demo.  Previously the
+	  project could only be built using the CrossWorks IDE.  Modifications to
+	  this end include the addition of a standard makefile and linker script to
+	  the download, and some adjustments to the stacks allocated to each task.
+	+ Changed the page returned by the lwIP WEB server demo to display the
+	  task status table rather than the TCP/IP statistics.
+	+ Corrected the capitalisation of some header file includes and makefile
+	  dependencies to facilitate use on Linux host computers.
+	+ The various LPC2000 ports had a mistake in the timer setup where the
+	  prescale value was written to T0_PC instead of T0_PR.  This would have
+	  no effect unless a prescale value was actually required.  This has been
+	  corrected.
+
+Changes between V3.2.1 and V3.2.2 - Released 23 September, 2005
+
+	+ Added an IAR port for the Philips LPC2129
+	+ The Atmel ARM7 IAR demo project files are now saved in the IAR Embedded
+	  Workbench V4.30a format.
+	+ Updated the J-Link macro file included with the SAM7X uIP demo project
+	  to allow the demo board to be reset over the J-Link.
+
+Changes between V3.2.0 and V3.2.1 - Released 1 September, 2005
+
+	+ Added lwIP demo for AT91SAM7X using Rowley tools.
+	+ Added uIP demo for AT91SAM7X using IAR tools.
+	+ Added function xTaskGetCurrentTaskHandle().
+	+ Renamed events.h to mevents.h to prevent it conflicting with the events.h
+	  generated automatically by the HCS12 processor expert utility.  events.h
+	  is only used by the PC demo application.
+	+ Both PIC18 ports now initialise the TBLPTRU to 0 as this is the value
+	  expected by the compiler, and the compilers do not write to this
+	  register.
+	+ The HCS12 banked model demo now creates the 'suicide' tasks immediately
+	  prior to starting the scheduler.  These tasks should be the last tasks to
+	  get started in order for the test to function correctly.
+
+Changes between V3.1.1 and V3.2.0 - Released 29 June, 2005
+
+	V3.2.0 introduces two new MSP430 ports and corrects a minor kernel
+	issues.  Thanks to Ares.qi for his input.
+
+	+ Added two MSP430 ports that use the Rowley CrossWorks development tools.
+	  One port just mirrors the existing GCC port.  The other port was provided
+	  by Milos Prokic.  Thanks!
+	+ V3.2.0 corrects the behavior when vTaskPrioritySet() or vTaskResume()
+	  are called while the scheduler is locked (by a call to
+	  vTaskSuspendAll()).  When this is done the subject task now starts to
+	  execute immediately when the scheduler is unlocked if it has the highest
+	  priority that is ready to run.  Previously there was a possibility that
+	  the task would not run until the next RTOS tick or call to portYIELD().
+	+ Another similar small correction ensures that in the case where more than
+	  one task is blocked on a semaphore or queue, the task with the highest
+	  priority is guaranteed to be unblocked first.
+	+ Added a couple of more test tasks to the PC demo which cover the points
+	  above.
+
+Changes between V3.1.0 and V3.1.1 - Released 21st June, 2005
+
+	This release updates the HCS12 port.  The common kernel code
+	remains unchanged.
+
+	+ Updated the HCS12 port to support banking and introduced a demo
+	  application for the MC9S12DP256.  The new demo application is
+	  located in the Demo/HCS12_CodeWarrior_banked directory.
+	+ The name of the directory containing the MC9S12F32 demo application
+	  has been changed to Demo/HCS12_CodeWarrior_small (as in 'small'
+	  memory model).
+	+ MC9S12F32 demo updated slightly to use the PLL.  The CPU speed for the
+	  demo application is now 24MHz.  Previously it was 8MHz.
+	+ The demo application file Demo/Common/Minimal/death.c has a slight
+	  alteration to prevent it using floating point variables.
+
+
+Changes between V3.0.0 and V3.1.0 - Released 11th June, 2005
+
+	+ Added new ports for ST Microsystems STR71x, and Freescale HCS12
+	  microcontrollers.  Currently the HCS12 port is limited to the small
+	  memory model.  Large memory models will be supported in the next
+	  release.
+	+ PIC18 wizC port updated.  Thanks to Marcel van Lieshout for his
+	  continuing contribution.
+	+ The accuracy of the AVR port timer setup has been improved.  Thanks to
+	  Thomas Krutmann for this contribution.
+	+ Added a new conditional compilation macro configIDLE_SHOULD_YIELD.
+	  See the WEB documentation for details.
+	+ Updated the CrossWorks uIP demo to build with V1.4 of CrossWorks.
+	+ Slight modification to the SAM7 release build configuration to correct
+	  an include path definition.
+	+ Updated the MPLAB PIC18 documentation to provide extra details on linker
+	  file configuration.
+
+Changes between V3.0.0 and V2.6.1 - Released 23rd April, 2005
+
+	V3.0.0 includes many enhancements, so this history list is broken into
+	subsections as follows:
+
+		API changes
+		New ports
+		Directory name changes
+		Kernel and miscellaneous changes changes
+
+	- API changes
+
+		+ Each port now defines BaseType_t as the data type that is most
+		  efficient for that architecture.  The type BaseType_t is used
+		  extensively in API calls necessitating the following changes to the
+		  FreeRTOS API function prototypes.
+
+		  See the "New for V3.0.0" section of the FreeRTOS online
+		  documentation for full details of API changes.
+
+	- New ports
+
+		+ The AT91FR40008 ARM7 port contributed by John Feller is now included
+		  in the download (thanks John!).
+		+ The PIC18 port for the wizC/fedC compiler contributed by Marcel van
+		  Lieshout is now included in the download (thanks Marcel!).
+		+ The IAR port for the AVR microcontroller has been upgraded to V3.0.0
+		  and is now a supported port.
+
+	- Directory name changes
+
+		For consistency, and to allow integration of the new ports, the
+		following directory names have been changed.
+
+		+ The source/portable/GCC/ARM7 directory has been renamed
+		  source/portable/GCC/ARM7_LPC2000 so it is compatible with the naming
+		  of other GCC ARM7 ports.
+		+ The Demo/PIC directory has been renamed Demo/PIC18_MPLAB to
+		  accommodate the wizC/fedC PIC port.
+		+ The demo applications for the two AVR ports no longer share the same
+		  directory.  The WinAVR demo is in the Demo/AVR_ATMega323_WinAVR
+		  directory and the IAR port in the Demo/AVR_ATMega323_IAR directory.
+
+
+	- Kernel and miscellaneous changes changes
+
+		  See the "New for V3.0.0" section of the FreeRTOS online
+		  documentation for more information.
+
+		+ Previously 'portmacro.h' contained some user editable definitions
+		  relating to the user application, and some fixed definitions relating
+		  specifically to the port being used.  The application specific
+		  definitions have been removed from 'portmacro.h' and placed inside a
+		  new header file called 'FreeRTOSConfig.h'.  'portmacro.h' should now
+		  never be modified by the user.  A 'FreeRTOSConfig.h' is now included
+		  in each of FreeRTOS/Demo subdirectories - as it's settings relate to
+		  the demo application rather than being specific to the port.
+		+ Introduced configUSE_IDLE_HOOK in idle task.
+		+ The idle task will yield when another idle priority task is ready to
+		  run. Previously the idle task would run to the end of its time slice
+		  regardless.
+		+ The idle task is now created when the scheduler is started.  This
+		  requires less stack than the previous scheme where it was created upon
+		  creation of the first application task.
+		+ The function usPortCheckFreeStackSpace() has been renamed
+		  usTaskCheckFreeStackSpace() and moved from the portable layer to
+		  tasks.c.
+		+ Corrected spelling of portMINMAL_STACK_SIZE to portMINIMAL_STACK_SIZE.
+		+ The portheap.c file included with the AVR port has been deleted.  The
+		  AVR demo now uses the standard heap1 sample memory allocator.
+		+ The GCC AVR port is now build using the standard make utility.  The
+		  batch files used previously have been deleted.  This means a recent
+		  version of WinAVR is required in order to create a binary suitable for
+		  source level debugging.
+		+ vTaskStartScheduler() no longer takes the configUSE_PREEMPTION
+		  constant as a parameter.  Instead the constant is used directly within
+		  tasks.c  and no parameter is required.
+		+ The header file 'FreeRTOS.h' has been created and is used to include
+		  'projdefs.h', 'FreeRTOSConfig.h' and 'portable.h' in the necessary
+		  order.  FreeRTOS.h can now be included in place of these other
+		  headers.
+		+ The header file 'errors.h' has been deleted.  The definitions it
+		  contained are now located within 'projdefs.h'.
+		+ pvPortMalloc() now takes a size_t parameter as per the ANSI malloc().
+		  Previously an unsigned short was used.
+		+ When resuming the scheduler a yield is performed if either a tick has
+		  been missed, or a task is moved from the pending ready list into a
+		  ready list.  Previously a yield was not performed on this second
+		  condition.
+		+ In heap1.c an overflow check has been added to ensure the next free
+		  byte variable does not wrap around.
+		+ Introduced the portTASK_FUNCTION() and portTASK_FUNCTION_PROTO()
+		  macros.
+		+ The MPLAB PIC port now saved the TABLAT register in interrupt service
+		  routines.
+
+Changes between V2.6.0 and V2.6.1 - Released Feb 22, 2005
+
+	This version adds support for the H8 processor.
+
+	Other changes:
+
+	+ tskMAX_TASK_NAME_LEN removed from the task.h header and added to each
+	  individual portmacro.h file as portMAX_TASK_NAME_LEN.  This allows RAM
+	  limited ports to allocate fewer characters to the task name.
+	+ AVR port - Replaced the inb() and outb() functions with direct memory
+	  access.  This allows the port to be built with the 20050414 build of
+	  WinAVR.
+	+ GCC LPC2106 port - removed the 'static' from the definition of
+	  vNonPreemptiveTick() to allow the demo to link when using the cooperative
+	  scheduler.
+	+ GCC LPC2106 port - Corrected the optimisation options in the batch files
+	  ROM_THUMB.bat, RAM_THUMB.bat, ROM_ARM.bat and RAM_ARM.bat.  The lower case
+	  -o is replaced by an uppercase -O.
+	+ Tasks.c - The strcpy call has been removed when copying across the task
+	  name into the TCB.
+	+ Updated the trace visualisation to always be 4 byte aligned so it can be
+	  used on ARM architectures.
+	+ There are now two tracecon executables (that convert the trace file binary
+	  into an ASCII file).  One for big endian targets and one for little endian
+	  targets.
+	+ Added ucTasksDeleted variable to prevent vTaskSuspendAll() being called
+	  too often in the idle task.
+	+ SAM7 USB driver - Replaced the duplicated RX_DATA_BK0 in the interrupt
+	  mask with the RX_DATA_BK1.
+
+
+Changes between V2.5.5 and V2.6.0 - Released January 16, 2005
+
+	+ Added the API function vTaskDelayUntil().  The demo app file
+	  Demo/Common/Minimal/flash.c has been updated to demonstrate its use.
+	+ Added INCLUDE_vTaskDelay conditional compilation.
+	+ Changed the name of the Demo/ARM7_AtmelSAM7S64_IAR directory to
+	  Demo/ARM7_AT91SAM7S64_IAR for consistency.
+	+ Modified the AT91SAM7S USB driver to allow descriptors that have
+	  a length that is an exact multiple of the FIFO to be transmitted.
+
+Changes between V2.5.4 and V2.5.5 - Released January 3, 2005
+
+	This version adds support for the Atmel SAM7 ARM7 microcontrollers
+	along with the IAR development tools.
+
+	Other changes:
+
+	+ Renamed the Demo/ARM7 directory to Demo/ARM7_LPC2106_GCC.
+	+ Renamed the Demo/ARM7_Keil directory to Demo/ARM7_LPC2129_Keil.
+	+ Modified the Philips ARM7 serial interrupt service routines to only
+	  process one interrupt per call.  This seems to enable the ISR to
+	  operate more quickly.
+	+ Removed the 'far' keyword from the Open Watcom portable layer source
+	  files.  This allows their use with V1.3 of Open Watcom.
+	+ Minor modifications to the SDCC build files to allow their use under
+	  Linux.  Thanks to Frieder Ferlemann for this contribution.
+	+ Small change to sTaskCreate() to allow a context switch even when
+	  pxCreatedTask is NULL.  Thanks to Kamil for this contribution.
+	+ inline keyword removed from vTaskSwitchContext() and VTaskIncrementTick()
+	  definitions.
+
+Changes between V2.5.3 and V2.5.4 - Released Dec 1, 2004
+
+	This is an important maintenance release.
+
+	The function cTaskResumeAll() has been modified so it can be used safely
+	prior to the kernel being initialised.  This was an issue as
+	cTaskResumeAll() is called from pvPortMalloc().  Thanks to Daniel Braun
+	for highlighting this issue.
+
+Changes between V2.5.2 and V2.5.3 - Released Nov 2, 2004
+
+	The critical section handling functions have been changed for the GCC ARM7
+	port.   Some optimisation levels use the stack differently to others.  This
+	means the interrupt flags cannot always be stored on the stack and are
+	instead now stored in a variable, which is then saved as part of the
+	tasks context.  This allows the GCC ARM7 port to be used at all
+	optimisation levels - including -Os.
+
+	Other minor changes:
+
+	+ MSP430 definition of usCriticalNesting now uses the volatile qualifier.
+	  This is probably not required but added just in case.
+
+Changes between V2.5.1 and V2.5.2 - Released Oct 26, 2004
+
+	+ Added the Keil ARM7 port.
+	+ Slight modification to comtest.c to make the delay periods more random.
+	  This creates a better test condition.
+
+Changes between V2.5.0 and V2.5.1 - Released Oct 9, 2004
+
+	+ Added the MSP430 port.
+	+ Extra comments added to the GCC ARM7 port.c and portISR.c files.
+	+ The memory pool allocated within heap_1.c has been placed within a
+	  structure to ensure correct memory alignment on 32bit systems.
+	+ Within the GCC ARM7 serial drivers an extra check is made to ensure
+	  the post to the queue was successful if then attempting immediately
+	  retrieve the posted character.
+	+ Changed the name of the constant portTICKS_PER_MS to portTICK_PERIOD_MS
+	  as the old name was misleading.
+
+
+Changes between V2.4.2 and V2.5.0 - Released Aug 12, 2004
+
+	The RTOS source code download now includes three separate memory allocation
+	schemes - so you can choose the most appropriate for your application.
+	These are found in the Source/Portable/MemMang directory.  The demo
+	application projects have also been updated to demonstrate the new schemes.
+	See the "Memory Management" page of the API documentation for more details.
+
+	+ Added heap_1.c, heap_2.c and heap_3.c in the Source/Portable/MemMang
+	  directory.
+	+ Replaced the portheap.c files for each demo application with one of the
+	  new memory allocation files.
+	+ Updated the portmacro.h file for each demo application to include the
+	  constants required for the new memory allocators: portTOTAL_HEAP_SIZE and
+	  portBYTE_ALIGNMENT.
+	+ Added a new test to the ARM7 demo application that tests the operation
+	  of the heap_2 memory allocator.
+
+
+Changes between V2.4.1 and V2.4.2 - Released July 14, 2004
+
+	+ The ARM7 port now supports THUMB mode.
+	+ Modification to the ARM7 demo application serial port driver.
+
+Changes between V2.4.0 and V2.4.1 - Released July 2, 2004
+
+	+ Rationalised the ARM7 port version of portEXIT_CRITICAL() -
+	  improvements provided by Bill Knight.
+	+ Made demo serial driver more complete and robust.
+
+
+Changes between V2.4.0 and V2.3.1 - Released June 30, 2004
+
+	+ Added the first ARM7 port - thanks to Bill Knight for the assistance
+	  provided.
+	+ Added extra files to the Demo/Common/Minimal directory.  These are
+	  equivalent to their Demo/Common/Full counterparts but with the
+	  calls to the functions defined in print.c removed.
+	+ Added TABLAT to the list of registers saved as part of a PIC18 context.
+
+Changes between V2.3.0 and V2.3.1 - Released June 25, 2004
+
+	+ Changed the way the vector table is defined to be more portable.
+	+ Corrected the definitions of SPH and SPL in portmacro.s90.
+	  The previous definitions prevented V2.3.0 operating if the iom323.h
+	  header file was included in portmacro.s90.
+
+Changes between V2.2.0 and V2.3.0 - Released June 19, 2004
+
+	+ Added an AVR port that uses the IAR compiler.
+	+ Explicit use of 'signed' qualifier on plain char types.
+	+ Modified the Open Watcom project files to use 'signed' as the
+	  default char type.
+	+ Changed odd calculation of initial pxTopOfStack value when
+	  portSTACK_GROWTH < 0.
+	+ Added inline qualifier to context switch functions within task.c.
+	  Ports that do not support the (non ANSI) inline keyword have the
+	  inline #define'd away in  their respective portmacro.h files.
+
+Changes between V2.1.1 and V2.2.0 - Released May 18, 2004
+
+	+ Added Cygnal 8051 port.
+	+ PCLATU and PCLATH are now saved as part of the PIC18 context.  This
+	  allows function pointers to be used within tasks.  Thanks to Javier
+	  Espeche for the enhancement.
+	+ Minor changes to demo application files to reduce stack usage.
+	+ Minor changes to prevent compiler warnings when compiling the new port.
+
+Changes between V2.1.0 and V2.1.1 - Released March 12, 2004
+
+	+ Bug fix - pxCurrentTCB is now initialised before the call to
+	  prvInitialiseTaskLists().  Previously pxCurrentTCB could be accessed
+	  while null during the initialisation sequence.  Thanks to Giuseppe
+	  Franco for the correction.
+
+Changes between V2.0.0 and V2.1.0 - Released Feb 29, 2004
+
+	V2.1.0 has significant reworks that greatly reduce the amount of time
+	the kernel has interrupts disabled.  The first section of modifications
+	listed here must be taken into account by users.  The second section
+	are related to the kernel implementation and as such are transparent.
+
+	Section1 :
+
+	+ The typedef TickType_t has been introduced.  All delay times should
+	  now use a variable of type TickType_t in place of the unsigned long's
+	  used previously.  API function prototypes have been updated
+	  appropriately.
+	+ The configuration macro USE_16_BIT_TICKS has been introduced.  If set
+	  to 1 TickType_t is defined as an unsigned short.  If set to 0
+	  TickType_t is defined as an unsigned long.  See the configuration
+	  section of the API documentation for more details.
+	+ The configuration macro INCLUDE_vTaskSuspendAll is now obsolete.
+	+ vTaskResumeAll() has been renamed cTaskResumeAll() as it now returns a
+	  value (see the API documentation).
+	+ ulTaskGetTickCount() has been renamed xTaskGetTickCount() as the type
+	  it returns now depends on the USE_16_BIT_TICKS definition.
+	+ cQueueReceive() must now >never< be used from within an ISR.  Use the new
+	  cQueueReceiveFromISR() function instead.
+
+	Section 2:
+
+	+ A mechanism has been introduced that allows a queue to be accessed by
+	  a task and ISR simultaneously.
+	+ A "pending ready" queue has been introduced that enables interrupts to
+	  be processed when the scheduler is suspended.
+	+ The list implementation has been improved to provide faster item
+	  removal.
+	+ The scheduler now makes use of the scheduler suspend mechanism in places
+	  where previously interrupts were disabled.
+
+Changes between V1.2.6 and V2.0.0 - Released Jan 31, 2004
+
+	+ Introduced new API functions:
+		vTaskPriorityGet ()
+		vTaskPrioritySet ()
+		vTaskSuspend ()
+		vTaskResume ()
+		vTaskSuspendAll ()
+		vTaskResumeAll ()
+	+ Added conditional compilation options that allow the components of the
+	  kernel that are unused by an application to be excluded from the build.
+	  See the Configuration section on the WEB site for more information (on
+	  the API pages).  The macros have been added to each portmacro.h file (
+	  sometimes called prtmacro.h).
+	+ Rearranged tasks.c.
+	+ Added demo application file dynamic.c.
+	+ Updated the PC demo application to make use of dynamic.c.
+	+ Updated the documentation contained in the kernel header files.
+	+ Creating a task now causes a context switch if the task being created
+	  has a higher priority than the calling task - assuming the kernel is
+	  running.
+	+ vTaskDelete() now only causes a context switch if the calling task is
+	  the task being deleted.
+
+Changes between V1.2.5 and V1.2.6 - Released December 31, 2003
+
+	Barring the change to the interrupt vector (PIC port) these are minor
+	enhancements.
+
+	+ The interrupt vector used for the PIC master ISR has been changed from
+	  0x18 to 0x08 - where it should have always been.  The incorrect address
+	  still works but probably executes a number of NOP's before getting to the
+	  ISR.
+	+ Changed the baud rate used by the AVR demo application to 38400.  This
+	  has an error percentage of less than one percent with an 8MHz clock.
+	+ Raised the priority of the Rx task in demo\full\comtest.c.  This only
+	  affects the Flashlite and PC ports.  This was done to prevent the Rx
+	  buffer becoming full.
+	+ Reverted the Flashlite COM port driver back so it does not use the DMA.
+	  The DMA appears to miss characters under stress.  The Borland Flashlite
+	  port was also calculating a register value incorrectly resulting in the
+	  wrong DMA source address being used.  The same code worked fine when
+	  compiling with Open Watcom.  Other minor enhancements were made to the
+	  interrupt handling.
+	+ Modified the PIC serial Rx ISR to check for and clear overrun errors.
+	  Overrun errors seem to prevent any further characters being received.
+	+ The PIC demo projects now have some optimisation switched on.
+
+
+Changes between V1.2.4 and V1.2.5
+
+	Small fix made to the PIC specific port.c file described below.
+
+	+ Introduced portGLOBAL_INTERRUPT_FLAG definition to test the global
+	  interrupt flag setting.  Using the two bits defined within
+	  portINITAL_INTERRUPT_STATE was causing the w register to get clobbered
+	  before the test was performed.
+
+Changes between V1.2.3 and V1.2.4
+
+	V1.2.4 contains a release version of the PIC18 port.
+	An optional exception has been included with the GPL.  See the licensing
+	section of www.FreeRTOS.org for details.
+
+	+ The function xPortInitMinimal() has been renamed to
+	  xSerialPortInitMinimal() and the function xPortInit() has been renamed
+	  to xSerialPortInit().
+	+ The function sSerialPutChar() has been renamed cSerialPutChar() and
+	  the function return type chaned to portCHAR.
+	+ The integer and flop tasks now include calls to tskYIELD(), allowing
+	  them to be used with the cooperative scheduler.
+	+ All the demo applications now use the integer and comtest tasks when the
+ 	  cooperative scheduler is being used.  Previously they were only used with
+	  the preemptive scheduler.
+	+ Minor changes made to operation of minimal versions of comtest.c and
+	  integer.c.
+	+ The ATMega port definition of portCPU_CLOSK_HZ definition changed to
+	  8MHz base 10, previously it base 16.
+
+
+
+Changes between V1.2.2a and V1.2.3
+
+	The only change of any significance is to the license, which has changed
+	from the Open Software License to the GNU GPL.
+
+	The zip file also contains a pre-release version of the PIC18 port.  This
+	has not yet completed testing and as such does not constitute part of the
+	V1.2.3 release.  It is still however covered by the GNU GPL.
+
+	There are minor source code changes to accommodate the PIC C compiler.
+	These mainly involve more explicit casting.
+
+	+ sTaskCreate() has been modified slightly to make use of the
+	  portSTACK_GROWTH macro.  This is required for the PIC port where the
+	  stack grows in the opposite direction to the other existing ports.
+	+ prvCheckTasksWaitingTermination() has been modified slightly to bring
+	  the decrementing of usCurrentNumberOfTasks within the critical section,
+	  where it should have been since the creation of an eight bit port.
+
+Changes between V1.2.2 and V1.2.2a
+
+	The makefile and buildcoff.bat files included with the AVR demo application
+	have been modified for use with the September 2003 build of WinAVR.  No
+	source files have changed.
+
+Changes between V1.2.1 and V1.2.2
+
+	There are only minor changes here to allow the PC and Flashlite 186 ports
+	to use the Borland V4.52 compiler, as supplied with the Flashlite 186
+	development kit.
+
+	+ Introduced a BCC directory under source\portable.  This contains all the
+	  files specific to the Borland compiler port.
+	+ Corrected the macro naming of portMS_PER_TICK to portTICKS_PER_MS.
+	+ Modified comtest.c to increase the rate at which the string is
+	  transmitted and received on the serial port.  The Flashlite 186 demo
+	  app baud rate has also been increased.
+	+ The values of the constants used in both integer.c files have been
+          increased to force the Borland compiler to use 32 bit values.  The
+          Borland optimiser placed the previous values in 16 bit registers, and in
+          So doing invalidated the test.
+
+Changes between V1.2.0 and V1.2.1
+
+	This version includes some minor changes to the list implementation aimed
+	at improving the context switch time - with is now approximately 10% faster.
+	Changes include the removal of some null pointer assignment checks.  These
+	were redundant where the scheduler uses the list functions, but means any
+	user application choosing to use the same list functions must now check
+	that no NULL pointers are passed as a parameter.
+
+	The Flashlite 186 serial port driver has also been modified to use a DMA
+	channel for transmissions.  The serial driver is fully functional but still
+	under development.  Flashlite users may prefer to use V1.2.0 for now.
+
+	Details:
+
+	+ Changed the baud rate for the ATMega323 serial test from 19200 to 57600.
+	+ Use vSerialPutString() instead of single character puts in
+	  Demo\Full\Comtest.c.  This allows the use of the flashlite DMA serial
+	  driver.  Also the check variable only stops incrementing after two
+	  consecutive failures.
+	+ semtest.c creates four tasks, two of which operate at the idle priority.
+	  The tasks that operate at the idle priority now use a lower expected
+	  count than those running at a higher priority.  This prevents the low
+	  priority tasks from signalling an error because they have not been
+	  scheduled enough time for each of them to count the shared variable to
+	  the higher original value.
+	+ The flashlite 186 serial driver now uses a DMA channel for transmissions.
+	+ Removed the volatile modifier from the list function parameters.  This was
+	  only ever included to prevent compiler warnings.  Now warnings are
+	  removed by casting parameters where the calls are made.
+	+ prvListGetOwnerOfNextEntry() and prvListGetOwnerOfHeadEntry() have been
+	  removed from list.c and added as macros in list.h.
+	+ usNumberOfItems has been added to the list structure.  This removes the
+	  need for a pointer comparison when checking if a list is empty, and so
+	  is slightly faster.
+	+ Removed the NULL check in vListRemove().  This makes the call faster but
+	  necessitates any application code utilising the list implementation to
+	  ensure NULL pointers are not passed.
+	+ Renamed portTICKS_PER_MS definition to portMS_PER_TICK (milli seconds
+	  per tick).  This is what it always should have been.
+
+Changes between V1.01 and V1.2.0
+
+	The majority of these changes were made to accommodate the 8bit AVR port.
+	The scheduler workings have not changed, but some of the data types used
+	have been made more friendly to an eight bit environment.
+
+	Details:
+
+	+ Changed the version numbering format.
+	+ Added AVR port.
+	+ Split the directory demo\common into demo\common\minimal and
+	  demo\common\full.  The files in the full directory are for systems with
+	  a display (currently PC and Flashlite 186 demo's).  The files in the
+	  minimal directory are for systems with limited RAM and no display
+	  (currently MegaAVR).
+	+ Minor changes to demo application function prototypes to make more use
+	  of 8bit data types.
+	+ Within the scheduler itself the following functions have slightly
+	  modified declarations to make use of 8bit data types where possible:
+		xQueueCreate(),
+		sQueueReceive(),
+		sQUeueReceive(),
+		usQueueMessageWaiting(),
+		sQueueSendFromISR(),
+		sSemaphoreTake(),
+		sSemaphoreGive(),
+		sSemaphoreGiveFromISR(),
+		sTaskCreate(),
+		sTaskMoveFromEventList().
+
+	  Where the return type has changed the function name has also changed in
+	  accordance with the naming convention.  For example
+	  usQueueMessageWaiting() has become ucQueueMessageWaiting().
+	+ The definition tskMAX_PRIORITIES has been moved from task.h to
+	  portmacro.h and renamed portMAX_PRIORITIES.  This allows different
+	  ports to allocate a different maximum number of priorities.
+	+ By default the trace facility is off, previously USE_TRACE_FACILITY
+	  was defined.
+	+ comtest.c now uses a psuedo random delay between sends.  This allows for
+	  better testing as the interrupts do not arrive at regular intervals.
+	+ Minor change to the Flashlite serial port driver.  The driver is written
+	  to demonstrate the scheduler and is not written to be efficient.
+
+
+
+Changes between V1.00 and V1.01
+
+	These changes improve the ports.  The scheduler itself has not changed.
+
+	Improved context switch mechanism used when performing a context
+	switch from an ISR (both the tick ISR and the serial comms ISR's within
+	the demo application).  The new mechanism is faster and uses less stack.
+
+	The assembler file portasm.asm has been replaced by a header file
+	portasm.h.  This includes a few assembler macro definitions.
+
+	All saving and restoring of registers onto/off of the stack is now handled
+	by the compiler.  This means the initial stack setup for a task has to
+	mimic the stack used by the compiler, which is different for debug and
+	release builds.
+
+	Slightly changed the operation of the demo application, details below.
+
+	Details:
+
+	+ portSWITCH_CONTEXT() replaced by vPortFirstContext().
+	+ pxPortInitialiseStack() modified to replicate the stack used by the
+	  compiler.
+	+ portasm.asm file removed.
+	+ portasm.h introduced.  This contains macro definitions for
+	  portSWITCH_CONTEXT() and portFIRST_CONTEXT().
+	+ Context switch from ISR now uses the compiler generated interrupt
+	  mechanism.  This is done simply by calling portSWITCH_CONTEXT and leaving
+	  the save/restore to compiler generated code.
+	+ Calls to taskYIELD() during ISR's have been replaced by calling the
+	  simpler and faster portSWITCH_CONTEXT().
+	+ The Flashlite 186 port now uses 186 instruction set (used to use 80x86
+	  instructions only).
+	+ The blocking queue tasks within the demo application did not operate
+	  quite as described.  This has been corrected.
+	+ The priority of the comtest Rx task within the demo application has been
+	  lowered.  Received characters are now processed (read from the queue) at
+	  the idle priority, allowing low priority tasks to run evenly at times of
+	  a high communications overhead.
+	+ Prevent the call to kbhit() in main.c for debug builds as the debugger
+	  seems to have problems stepping over the call.  This if for the PC port
+	  only.

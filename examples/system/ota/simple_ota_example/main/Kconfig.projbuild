@@ -2,10 +2,19 @@ menu "Example Configuration"
 
     config EXAMPLE_FIRMWARE_UPGRADE_URL
         string "firmware upgrade url endpoint"
-        default "https://192.168.0.3:8070/hello-world.bin"
+        default "https://192.168.0.3:8070/hello_world.bin"
         help
             URL of server which hosts the firmware
             image.
+
+    config EXAMPLE_USE_CERT_BUNDLE
+        bool "Enable certificate bundle"
+        default y
+        depends on MBEDTLS_CERTIFICATE_BUNDLE
+        help
+            Enable trusted root certificate bundle. This approach allows to have
+            OTA updates functional with any public server without requirement
+            to explicitly add its server certificate.
 
     config EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
         bool

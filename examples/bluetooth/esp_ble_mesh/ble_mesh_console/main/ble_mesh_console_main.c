@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -19,17 +11,10 @@
 #include "esp_vfs_dev.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-
 #include "esp_vfs_fat.h"
-
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-
 #include "esp_console.h"
-
 #include "ble_mesh_console_decl.h"
-
-#define TAG "ble_mesh_test"
+#include "ble_mesh_example_init.h"
 
 #if CONFIG_STORE_HISTORY
 
@@ -43,40 +28,12 @@ static void initialize_filesystem(void)
         .max_files = 4,
         .format_if_mount_failed = true
     };
-    esp_err_t err = esp_vfs_fat_spiflash_mount(MOUNT_PATH, "storage", &mount_config, &wl_handle);
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(MOUNT_PATH, "storage", &mount_config, &wl_handle);
     if (err != ESP_OK) {
         return;
     }
 }
 #endif // CONFIG_STORE_HISTORY
-
-esp_err_t bluetooth_init(void)
-{
-    esp_err_t ret;
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        return ret;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        return ret;
-    }
-    ret = esp_bluedroid_init();
-    if (ret) {
-        return ret;
-    }
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        return ret;
-    }
-
-    esp_log_level_set("*", ESP_LOG_ERROR);
-    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
-    return ret;
-}
 
 void app_main(void)
 {
@@ -90,6 +47,9 @@ void app_main(void)
         printf("esp32_bluetooth_init failed (ret %d)", res);
     }
 
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
+
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -97,7 +57,18 @@ void app_main(void)
     initialize_filesystem();
     repl_config.history_save_path = HISTORY_PATH;
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C3
+    repl_config.prompt = "esp32c3>";
+#elif CONFIG_IDF_TARGET_ESP32S3
+    repl_config.prompt = "esp32s3>";
+#elif CONFIG_IDF_TARGET_ESP32H2
+    repl_config.prompt = "esp32h2>";
+#else
     repl_config.prompt = "esp32>";
+#endif
+    printf("!!!ready!!!\n");
+
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 

@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 3.5)
-project(cmdlinerunner)
-set(CMAKE_EXE_LINKER_FLAGS " -static")
-add_library(cmdlinerunner SHARED cmdlinerunner.c)
-target_compile_definitions(cmdlinerunner PUBLIC UNICODE _UNICODE)
-set_target_properties(cmdlinerunner PROPERTIES PREFIX "")
-set_target_properties(cmdlinerunner PROPERTIES C_STANDARD 99)
-target_link_libraries(cmdlinerunner "-static-libgcc")

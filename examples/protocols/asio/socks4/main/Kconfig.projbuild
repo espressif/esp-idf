@@ -1,0 +1,16 @@
+menu "Example Configuration"
+
+    config EXAMPLE_PROXY_ADDRESS
+        string "Proxy address"
+        default "myproxy"
+        help
+            Address of the proxy to be used.
+
+    config EXAMPLE_PROXY_PORT
+        string "Proxy port"
+        default "myport"
+        help
+            Port for the proxy. Due to a limitation of lwip, must
+            be a number e.g. "1080".
+
+endmenu

@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 #define _SOC_HOST_STRUCT_H_
 
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
-typedef volatile struct {
+typedef volatile struct host_dev_s {
     uint32_t reserved_0;
     uint32_t reserved_4;
     uint32_t reserved_8;

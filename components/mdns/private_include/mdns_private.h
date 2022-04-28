@@ -1,21 +1,18 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
-#include "esp_event_base.h"
+#include "sdkconfig.h"
+#include "mdns.h"
 #include "esp_task.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
 #include "esp_timer.h"
 
 //#define MDNS_ENABLE_DEBUG
@@ -44,6 +41,27 @@
  * any item in question field */
 #define  MDNS_REPEAT_QUERY_IN_RESPONSE 1
 #endif
+
+/** Number of predefined interfaces */
+#ifndef CONFIG_MDNS_PREDEF_NETIF_STA
+#define CONFIG_MDNS_PREDEF_NETIF_STA 0
+#endif
+#ifndef CONFIG_MDNS_PREDEF_NETIF_AP
+#define CONFIG_MDNS_PREDEF_NETIF_AP 0
+#endif
+#ifndef CONFIG_MDNS_PREDEF_NETIF_ETH
+#define CONFIG_MDNS_PREDEF_NETIF_ETH 0
+#endif
+#define MDNS_MAX_PREDEF_INTERFACES (CONFIG_MDNS_PREDEF_NETIF_STA + CONFIG_MDNS_PREDEF_NETIF_AP + CONFIG_MDNS_PREDEF_NETIF_ETH)
+
+/** Number of configured interfaces */
+#if MDNS_MAX_PREDEF_INTERFACES > CONFIG_MDNS_MAX_INTERFACES
+#warning Number of configured interfaces is less then number of predefined interfaces. Please update CONFIG_MDNS_MAX_INTERFACES.
+#define MDNS_MAX_INTERFACES (MDNS_MAX_PREDEF_INTERFACES)
+#else
+#define MDNS_MAX_INTERFACES (CONFIG_MDNS_MAX_INTERFACES)
+#endif
+
 /** The maximum number of services */
 #define MDNS_MAX_SERVICES           CONFIG_MDNS_MAX_SERVICES
 
@@ -153,6 +171,8 @@
 #define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %d bytes)", __LINE__, esp_get_free_heap_size());
 #endif
 
+typedef size_t mdns_if_t;
+
 typedef enum {
     PCB_OFF, PCB_DUP, PCB_INIT,
     PCB_PROBE_1, PCB_PROBE_2, PCB_PROBE_3,
@@ -175,6 +195,7 @@ typedef enum {
     ACTION_SERVICE_TXT_REPLACE,
     ACTION_SERVICE_TXT_SET,
     ACTION_SERVICE_TXT_DEL,
+    ACTION_SERVICE_SUBTYPE_ADD,
     ACTION_SERVICES_CLEAR,
     ACTION_SEARCH_ADD,
     ACTION_SEARCH_SEND,
@@ -182,6 +203,8 @@ typedef enum {
     ACTION_TX_HANDLE,
     ACTION_RX_HANDLE,
     ACTION_TASK_STOP,
+    ACTION_DELEGATE_HOSTNAME_ADD,
+    ACTION_DELEGATE_HOSTNAME_REMOVE,
     ACTION_MAX
 } mdns_action_type_t;
 
@@ -210,7 +233,7 @@ typedef struct {
 } mdns_header_t;
 
 typedef struct {
-    char host[MDNS_NAME_BUF_LEN];
+    char host[MDNS_NAME_BUF_LEN]; // hostname for A/AAAA records, instance name for SRV records
     char service[MDNS_NAME_BUF_LEN];
     char proto[MDNS_NAME_BUF_LEN];
     char domain[MDNS_NAME_BUF_LEN];
@@ -222,6 +245,7 @@ typedef struct {
 typedef struct mdns_parsed_question_s {
     struct mdns_parsed_question_s * next;
     uint16_t type;
+    bool sub;
     bool unicast;
     char * host;
     char * service;
@@ -247,7 +271,6 @@ typedef struct mdns_parsed_record_s {
 typedef struct {
     mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
-    //struct udp_pcb *pcb;
     esp_ip_addr_t src;
     uint16_t src_port;
     uint8_t multicast;
@@ -272,18 +295,26 @@ typedef struct {
 
 typedef struct mdns_txt_linked_item_s {
     const char * key;                       /*!< item key name */
-    const char * value;                     /*!< item value string */
+    char * value;                           /*!< item value string */
+    uint8_t value_len;                      /*!< item value length */
     struct mdns_txt_linked_item_s * next;   /*!< next result, or NULL for the last result in the list */
 } mdns_txt_linked_item_t;
+
+typedef struct mdns_subtype_s {
+    const char *subtype;                    /*!< subtype */
+    struct mdns_subtype_s * next;           /*!< next result, or NULL for the last result in the list */
+} mdns_subtype_t;
 
 typedef struct {
     const char * instance;
     const char * service;
     const char * proto;
+    const char * hostname;
     uint16_t priority;
     uint16_t weight;
     uint16_t port;
     mdns_txt_linked_item_t * txt;
+    mdns_subtype_t *subtype;
 } mdns_service_t;
 
 typedef struct mdns_srv_item_s {
@@ -299,7 +330,14 @@ typedef struct mdns_out_question_s {
     const char * service;
     const char * proto;
     const char * domain;
+    bool own_dynamic_memory;
 } mdns_out_question_t;
+
+typedef struct mdns_host_item_t {
+    const char * hostname;
+    mdns_ip_addr_t *address_list;
+    struct mdns_host_item_t *next;
+} mdns_host_item_t;
 
 typedef struct mdns_out_answer_s {
     struct mdns_out_answer_s * next;
@@ -307,6 +345,7 @@ typedef struct mdns_out_answer_s {
     uint8_t bye;
     uint8_t flush;
     mdns_service_t * service;
+    mdns_host_item_t* host;
     const char * custom_instance;
     const char * custom_service;
     const char * custom_proto;
@@ -353,8 +392,10 @@ typedef struct mdns_search_once_s {
     uint32_t started_at;
     uint32_t sent_at;
     uint32_t timeout;
+    mdns_query_notify_t notifier;
     SemaphoreHandle_t done_semaphore;
     uint16_t type;
+    bool unicast;
     uint8_t max_results;
     uint8_t num_results;
     char * instance;
@@ -366,7 +407,7 @@ typedef struct mdns_search_once_s {
 typedef struct mdns_server_s {
     struct {
         mdns_pcb_t pcbs[MDNS_IP_PROTOCOL_MAX];
-    } interfaces[MDNS_IF_MAX];
+    } interfaces[MDNS_MAX_INTERFACES];
     const char * hostname;
     const char * instance;
     mdns_srv_item_t * services;
@@ -380,12 +421,14 @@ typedef struct mdns_server_s {
 typedef struct {
     mdns_action_type_t type;
     union {
-        char * hostname;
+        struct {
+            char * hostname;
+            TaskHandle_t calling_task;
+        } hostname_set;
         char * instance;
         struct {
-            esp_event_base_t event_base;
-            int32_t event_id;
-            esp_netif_t* interface;
+            mdns_if_t interface;
+            mdns_event_actions_t event_action;
         } sys_event;
         struct {
             mdns_srv_item_t * service;
@@ -409,11 +452,16 @@ typedef struct {
             mdns_srv_item_t * service;
             char * key;
             char * value;
+            uint8_t value_len;
         } srv_txt_set;
         struct {
             mdns_srv_item_t * service;
             char * key;
         } srv_txt_del;
+        struct {
+            mdns_srv_item_t * service;
+            char * subtype;
+        } srv_subtype_add;
         struct {
             mdns_search_once_t * search;
         } search_add;
@@ -423,6 +471,10 @@ typedef struct {
         struct {
             mdns_rx_packet_t * packet;
         } rx_handle;
+        struct {
+            const char * hostname;
+            mdns_ip_addr_t *address_list;
+        } delegate_hostname;
     } data;
 } mdns_action_t;
 

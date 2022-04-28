@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
 Linker file used to link the bootloader.
 */
 
@@ -43,22 +48,29 @@ SECTIONS
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
-    *libbootloader_support.a:bootloader_efuse_esp32.*(.literal .text .literal.* .text.*)
+    *libesp_common.a:fpga_overrides.*(.literal.bootloader_fill_random .text.bootloader_fill_random)
+    *libbootloader_support.a:bootloader_efuse.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_panic.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_soc.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:secure_boot.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
     *libhal.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+    *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
+    *libesp_rom.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)

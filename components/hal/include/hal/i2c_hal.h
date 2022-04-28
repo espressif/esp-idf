@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -66,7 +58,7 @@ typedef struct {
 #define i2c_hal_write_cmd_reg(hal,cmd, cmd_idx)    i2c_ll_write_cmd_reg((hal)->dev,cmd,cmd_idx)
 
 /**
- * @brief  Configure the I2C to triger a trasaction
+ * @brief  Configure the I2C to triger a transaction
  *
  * @param  hal Context of the HAL layer
  *
@@ -92,6 +84,7 @@ typedef struct {
  */
 #define i2c_hal_enable_master_tx_it(hal)    i2c_ll_master_enable_tx_it((hal)->dev)
 
+#if SOC_I2C_SUPPORT_SLAVE
 /**
  * @brief  Clear I2C slave TX interrupt
  *
@@ -111,16 +104,6 @@ typedef struct {
 #define i2c_hal_slave_clr_rx_it(hal)    i2c_ll_slave_clr_rx_it((hal)->dev)
 
 /**
- * @brief  Init the I2C master.
- *
- * @param  hal Context of the HAL layer
- * @param  i2c_num I2C port number
- *
- * @return None
- */
-void i2c_hal_master_init(i2c_hal_context_t *hal, i2c_port_t i2c_num);
-
-/**
  * @brief  Init the I2C slave.
  *
  * @param  hal Context of the HAL layer
@@ -129,6 +112,85 @@ void i2c_hal_master_init(i2c_hal_context_t *hal, i2c_port_t i2c_num);
  * @return None
  */
 void i2c_hal_slave_init(i2c_hal_context_t *hal, i2c_port_t i2c_num);
+
+/**
+ * @brief Configure the I2C slave address
+ *
+ * @param  hal Context of the HAL layer
+ * @param  slave_addr Slave address
+ * @param  addr_10bit_en Set true to enable 10-bit slave address mode, Set false to enable 7-bit address mode
+ *
+ * @return None
+ */
+void i2c_hal_set_slave_addr(i2c_hal_context_t *hal, uint16_t slave_addr, bool addr_10bit_en);
+
+
+/**
+ * @brief  Enable I2C slave TX interrupt
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return None
+ */
+void i2c_hal_enable_slave_tx_it(i2c_hal_context_t *hal);
+
+/**
+ * @brief  Disable I2C slave TX interrupt
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return None
+ */
+void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal);
+
+/**
+ * @brief  Enable I2C slave RX interrupt
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return None
+ */
+void i2c_hal_enable_slave_rx_it(i2c_hal_context_t *hal);
+
+/**
+ * @brief  Disable I2C slave RX interrupt
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return None
+ */
+void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal);
+
+/**
+ * @brief  I2C slave handle interrupt event
+ *
+ * @param  hal Context of the HAL layer
+ * @param  event Pointer to accept the interrupt event
+ *
+ * @return None
+ */
+void i2c_hal_slave_handle_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
+#endif // SOC_I2C_SUPPORT_SLAVE
+
+/**
+ * @brief  Set the source clock. This function is meant to be used in
+ *         slave mode, in order to select a source clock abe to handle
+ *         the expected SCL frequency.
+ *
+ * @param  hal Context of the HAL layer
+ * @param  src_clk Source clock to use choosen from `i2c_sclk_t` type
+ */
+#define i2c_hal_set_source_clk(hal, src_clk) i2c_ll_set_source_clk((hal)->dev, src_clk)
+
+/**
+ * @brief  Init the I2C master.
+ *
+ * @param  hal Context of the HAL layer
+ * @param  i2c_num I2C port number
+ *
+ * @return None
+ */
+void i2c_hal_master_init(i2c_hal_context_t *hal, i2c_port_t i2c_num);
 
 /**
  * @brief  Reset the I2C hw txfifo
@@ -260,17 +322,6 @@ void i2c_hal_set_tout(i2c_hal_context_t *hal, int tout_val);
  * @return None
  */
 void i2c_hal_get_tout(i2c_hal_context_t *hal, int *tout_val);
-
-/**
- * @brief Configure the I2C slave address
- *
- * @param  hal Context of the HAL layer
- * @param  slave_addr Slave address
- * @param  addr_10bit_en Set true to enable 10-bit slave address mode, Set false to enable 7-bit address mode
- *
- * @return None
- */
-void i2c_hal_set_slave_addr(i2c_hal_context_t *hal, uint16_t slave_addr, bool addr_10bit_en);
 
 /**
  * @brief  Configure the I2C stop timing
@@ -458,42 +509,6 @@ void i2c_hal_master_fsm_rst(i2c_hal_context_t *hal);
 void i2c_hal_master_clr_bus(i2c_hal_context_t *hal);
 
 /**
- * @brief  Enable I2C slave TX interrupt
- *
- * @param  hal Context of the HAL layer
- *
- * @return None
- */
-void i2c_hal_enable_slave_tx_it(i2c_hal_context_t *hal);
-
-/**
- * @brief  Disable I2C slave TX interrupt
- *
- * @param  hal Context of the HAL layer
- *
- * @return None
- */
-void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal);
-
-/**
- * @brief  Enable I2C slave RX interrupt
- *
- * @param  hal Context of the HAL layer
- *
- * @return None
- */
-void i2c_hal_enable_slave_rx_it(i2c_hal_context_t *hal);
-
-/**
- * @brief  Disable I2C slave RX interrupt
- *
- * @param  hal Context of the HAL layer
- *
- * @return None
- */
-void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal);
-
-/**
  * @brief  I2C master handle tx interrupt event
  *
  * @param  hal Context of the HAL layer
@@ -512,16 +527,6 @@ void i2c_hal_master_handle_tx_event(i2c_hal_context_t *hal, i2c_intr_event_t *ev
  * @return None
  */
 void i2c_hal_master_handle_rx_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
-
-/**
- * @brief  I2C slave handle interrupt event
- *
- * @param  hal Context of the HAL layer
- * @param  event Pointer to accept the interrupt event
- *
- * @return None
- */
-void i2c_hal_slave_handle_event(i2c_hal_context_t *hal, i2c_intr_event_t *event);
 
 /**
  * @brief Synchronize I2C status

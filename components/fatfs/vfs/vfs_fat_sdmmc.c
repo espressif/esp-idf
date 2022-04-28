@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -153,7 +145,7 @@ static esp_err_t partition_card(const esp_vfs_fat_mount_config_t *mount_config,
         return ESP_ERR_NO_MEM;
     }
 
-    DWORD plist[] = {100, 0, 0, 0};
+    LBA_t plist[] = {100, 0, 0, 0};
     res = f_fdisk(pdrv, plist, workbuf);
     if (res != FR_OK) {
         err = ESP_FAIL;
@@ -164,7 +156,8 @@ static esp_err_t partition_card(const esp_vfs_fat_mount_config_t *mount_config,
                 card->csd.sector_size,
                 mount_config->allocation_unit_size);
     ESP_LOGW(TAG, "formatting card, allocation unit size=%d", alloc_unit_size);
-    res = f_mkfs(drv, FM_ANY, alloc_unit_size, workbuf, workbuf_size);
+    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, alloc_unit_size};
+    res = f_mkfs(drv, &opt, workbuf, workbuf_size);
     if (res != FR_OK) {
         err = ESP_FAIL;
         ESP_LOGD(TAG, "f_mkfs failed (%d)", res);

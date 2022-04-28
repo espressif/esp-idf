@@ -1,6 +1,11 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
 cmake_minimum_required(VERSION 3.5)
 
+include(${CMAKE_CURRENT_LIST_DIR}/targets.cmake)
+# Initialize build target for this build using the environment variable or
+# value passed externally.
+__target_init()
+
 # The mere inclusion of this CMake file sets up some interal build properties.
 # These properties can be modified in between this inclusion the the idf_build_process
 # call.
@@ -33,10 +38,6 @@ else()
     idf_build_set_property(EXTRA_CMAKE_ARGS "")
 endif()
 
-# Initialize build target for this build using the environment variable or
-# value passed externally.
-__target_init()
-
 #
 # Get the project version from either a version file or the Git revision. This is passed
 # to the idf_build_process call. Dependencies are also set here for when the version file
@@ -60,6 +61,38 @@ function(__project_get_revision var)
         endif()
     endif()
     set(${var} "${PROJECT_VER}" PARENT_SCOPE)
+endfunction()
+
+
+# paths_with_spaces_to_list
+#
+# Replacement for spaces2list in cases where it was previously used on
+# directory lists.
+#
+# If the variable doesn't contain spaces, (e.g. is already a CMake list)
+# then the variable is unchanged. Otherwise an external Python script is called
+# to try to split the paths, and the variable is updated with the result.
+#
+# This feature is added only for compatibility. Please do not introduce new
+# space separated path lists.
+#
+function(paths_with_spaces_to_list variable_name)
+    if("${${variable_name}}" MATCHES "[ \t]")
+        idf_build_get_property(python PYTHON)
+        idf_build_get_property(idf_path IDF_PATH)
+        execute_process(
+            COMMAND ${python}
+                "${idf_path}/tools/split_paths_by_spaces.py"
+                "--var-name=${variable_name}"
+                "${${variable_name}}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}"
+            OUTPUT_VARIABLE result
+            RESULT_VARIABLE ret)
+        if(NOT ret EQUAL 0)
+            message(FATAL_ERROR "Failed to parse ${variable_name}, see diagnostics above")
+        endif()
+        set("${variable_name}" "${result}" PARENT_SCOPE)
+    endif()
 endfunction()
 
 #
@@ -110,6 +143,7 @@ function(__project_info test_components)
     include(${sdkconfig_cmake})
     idf_build_get_property(COMPONENT_KCONFIGS KCONFIGS)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
+    idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
     # Write project description JSON file
     idf_build_get_property(build_dir BUILD_DIR)
@@ -117,6 +151,9 @@ function(__project_info test_components)
     make_json_list("${build_component_paths};${test_component_paths}" build_component_paths_json)
     configure_file("${idf_path}/tools/cmake/project_description.json.in"
         "${build_dir}/project_description.json")
+
+    # Generate component dependency graph
+    depgraph_generate("${build_dir}/component_deps.dot")
 
     # We now have the following component-related variables:
     #
@@ -156,13 +193,14 @@ function(__project_init components_var test_components_var)
 
     function(__project_component_dir component_dir)
         get_filename_component(component_dir "${component_dir}" ABSOLUTE)
+        # The directory itself is a valid idf component
         if(EXISTS ${component_dir}/CMakeLists.txt)
             idf_build_component(${component_dir})
         else()
+            # otherwise, check whether the subfolders are potential idf components
             file(GLOB component_dirs ${component_dir}/*)
             foreach(component_dir ${component_dirs})
-                if(EXISTS ${component_dir}/CMakeLists.txt)
-                    get_filename_component(base_dir ${component_dir} NAME)
+                if(IS_DIRECTORY ${component_dir})
                     __component_dir_quick_check(is_component ${component_dir})
                     if(is_component)
                         idf_build_component(${component_dir})
@@ -172,14 +210,17 @@ function(__project_init components_var test_components_var)
         endif()
     endfunction()
 
-
     # Add component directories to the build, given the component filters, exclusions
     # extra directories, etc. passed from the root CMakeLists.txt.
     if(COMPONENT_DIRS)
         # User wants to fully override where components are pulled from.
-        spaces2list(COMPONENT_DIRS)
+        paths_with_spaces_to_list(COMPONENT_DIRS)
         idf_build_set_property(__COMPONENT_TARGETS "")
         foreach(component_dir ${COMPONENT_DIRS})
+            get_filename_component(component_abs_path ${component_dir} ABSOLUTE)
+            if(NOT EXISTS ${component_abs_path})
+                message(FATAL_ERROR "Directory specified in COMPONENT_DIRS doesn't exist: ${component_abs_path}")
+            endif()
             __project_component_dir(${component_dir})
         endforeach()
     else()
@@ -187,8 +228,12 @@ function(__project_init components_var test_components_var)
             __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/main")
         endif()
 
-        spaces2list(EXTRA_COMPONENT_DIRS)
+        paths_with_spaces_to_list(EXTRA_COMPONENT_DIRS)
         foreach(component_dir ${EXTRA_COMPONENT_DIRS})
+            get_filename_component(component_abs_path ${component_dir} ABSOLUTE)
+            if(NOT EXISTS ${component_abs_path})
+                message(FATAL_ERROR "Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: ${component_abs_path}")
+            endif()
             __project_component_dir("${component_dir}")
         endforeach()
 
@@ -196,6 +241,22 @@ function(__project_init components_var test_components_var)
         # extra component dirs, and CMAKE_CURRENT_LIST_DIR/components
         __project_component_dir("${CMAKE_CURRENT_LIST_DIR}/components")
     endif()
+
+    # For bootloader components, we only need to set-up the Kconfig files.
+    # Indeed, bootloader is currently compiled as a subproject, thus,
+    # its components are not part of the main project.
+    # However, in order to be able to configure these bootloader components
+    # using menuconfig, we need to look for their Kconfig-related files now.
+    file(GLOB bootloader_component_dirs "${CMAKE_CURRENT_LIST_DIR}/bootloader_components/*")
+    list(SORT bootloader_component_dirs)
+    foreach(bootloader_component_dir ${bootloader_component_dirs})
+        if(IS_DIRECTORY ${bootloader_component_dir})
+            __component_dir_quick_check(is_component ${bootloader_component_dir})
+            if(is_component)
+                __kconfig_bootloader_component_add("${bootloader_component_dir}")
+            endif()
+        endif()
+    endforeach()
 
     spaces2list(COMPONENTS)
     spaces2list(EXCLUDE_COMPONENTS)
@@ -273,7 +334,7 @@ macro(project project_name)
     __project(${project_name} C CXX ASM)
 
     # Generate compile_commands.json (needs to come after project call).
-    set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
     # Since components can import third-party libraries, the original definition of project() should be restored
     # before the call to add components to the build.
@@ -423,11 +484,26 @@ macro(project project_name)
     if(test_components)
         list(REMOVE_ITEM build_components ${test_components})
     endif()
-    target_link_libraries(${project_elf} ${build_components})
+
+    foreach(build_component ${build_components})
+        __component_get_target(build_component_target ${build_component})
+        __component_get_property(whole_archive ${build_component_target} WHOLE_ARCHIVE)
+        if(whole_archive)
+            message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
+            target_link_libraries(${project_elf} "-Wl,--whole-archive" ${build_component} "-Wl,--no-whole-archive")
+        else()
+            target_link_libraries(${project_elf} ${build_component})
+        endif()
+    endforeach()
+
 
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
-        target_link_libraries(${project_elf} "-Wl,--cref -Wl,--Map=${mapfile}")
+        set(idf_target "${IDF_TARGET}")
+        string(TOUPPER ${idf_target} idf_target)
+        target_link_libraries(${project_elf} "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
+        "-Wl,--Map=\"${mapfile}\"")
+        unset(idf_target)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
@@ -444,15 +520,15 @@ macro(project project_name)
 
     # Add size targets, depend on map file, run idf_size.py
     add_custom_target(size
-        DEPENDS ${project_elf}
+        DEPENDS ${mapfile}
         COMMAND ${idf_size} ${mapfile}
         )
     add_custom_target(size-files
-        DEPENDS ${project_elf}
+        DEPENDS ${mapfile}
         COMMAND ${idf_size} --files ${mapfile}
         )
     add_custom_target(size-components
-        DEPENDS ${project_elf}
+        DEPENDS ${mapfile}
         COMMAND ${idf_size} --archives ${mapfile}
         )
 

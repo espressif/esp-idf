@@ -19,7 +19,7 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 
 #### Pin Assignment(esp32, esp32s2):
 
-**Note:** The following pin assignments are used by default, yout can change these  in the `menuconfig` .
+**Note:** The following pin assignments are used by default, you can change these  in the `menuconfig` .
 
 |                           | SDA    | SCL    |
 | ------------------------- | ------ | ------ |
@@ -41,14 +41,38 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 
 **Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
 
-#### Pin Assignment(esp32c3):
+#### Pin Assignment(esp32s3):
 
-**Note:** The following pin assignments are used by default, you can change these in the `menuconfig` .
+**Note:** The following pin assignments are used by default, you can change these  in the `menuconfig` .
 
 |                           | SDA    | SCL    |
 | ------------------------- | ------ | ------ |
-| ESP32-C3 I2C Master(Slave)| GPIO5  | GPIO6  |
+| ESP32-S3 I2C Master       | GPIO1  | GPIO2  |
+| ESP32-S3 I2C Slave        | GPIO4  | GPIO5  |
 | BH1750 Sensor             | SDA    | SCL    |
+
+- slave:
+  - GPIO4 is assigned as the data signal of I2C slave port
+  - GPIO5 is assigned as the clock signal of I2C slave port
+- master:
+  - GPIO1 is assigned as the data signal of I2C master port
+  - GPIO2 is assigned as the clock signal of I2C master port
+
+- Connection:
+  - connect GPIO1 with GPIO4
+  - connect GPIO2 with GPIO5
+  - connect SDA/SCL of BH1750 sensor with GPIO18/GPIO19
+
+**Note:** It is recommended to add external pull-up resistors for SDA/SCL pins to make the communication more stable, though the driver will enable internal pull-up resistors.
+
+#### Pin Assignment(esp32c3, esp32c2, esp32h2):
+
+**Note:** The following pin assignments are used by default, you can change these in the `menuconfig` .
+
+|                                             | SDA    | SCL    |
+| ------------------------------------------- | ------ | ------ |
+| ESP32-C3/ESP32-C2/ESP32-H2 I2C Master(Slave)| GPIO5  | GPIO6  |
+| BH1750 Sensor                               | SDA    | SCL    |
 
 - master:
   - GPIO5 is assigned to the data signal of the I2C master port
@@ -97,70 +121,70 @@ sensor val: 386.67 [Lux]
 TASK[0]  MASTER READ FROM SLAVE
 *******************
 ====TASK[0] Slave buffer data ====
-00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 
-10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 
-20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f 
-30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f 
-40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 
-50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f 
-60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 
-70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f 
+00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f
+30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f
+40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f
+50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f
+60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f
+70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f
 
 ====TASK[0] Master read ====
-00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 
-10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 
-20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f 
-30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f 
-40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 
-50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f 
-60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 
-70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f 
+00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f
+30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f
+40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f
+50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f
+60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f
+70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f
 
 *******************
 TASK[1]  MASTER READ FROM SLAVE
 *******************
 ====TASK[1] Slave buffer data ====
-00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 
-10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 
-20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f 
-30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f 
-40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 
-50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f 
-60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 
-70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f 
+00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f
+30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f
+40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f
+50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f
+60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f
+70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f
 
 ====TASK[1] Master read ====
-00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 
-10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 
-20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f 
-30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f 
-40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 
-50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f 
-60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 
-70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f 
+00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
+20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d 2e 2f
+30 31 32 33 34 35 36 37 38 39 3a 3b 3c 3d 3e 3f
+40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f
+50 51 52 53 54 55 56 57 58 59 5a 5b 5c 5d 5e 5f
+60 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f
+70 71 72 73 74 75 76 77 78 79 7a 7b 7c 7d 7e 7f
 
 *******************
 TASK[0]  MASTER WRITE TO SLAVE
 *******************
 ----TASK[0] Master write ----
-0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 
-1a 1b 1c 1d 1e 1f 20 21 22 23 24 25 26 27 28 29 
-2a 2b 2c 2d 2e 2f 30 31 32 33 34 35 36 37 38 39 
-3a 3b 3c 3d 3e 3f 40 41 42 43 44 45 46 47 48 49 
-4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59 
-5a 5b 5c 5d 5e 5f 60 61 62 63 64 65 66 67 68 69 
-6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79 
-7a 7b 7c 7d 7e 7f 80 81 82 83 84 85 86 87 88 89 
+0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19
+1a 1b 1c 1d 1e 1f 20 21 22 23 24 25 26 27 28 29
+2a 2b 2c 2d 2e 2f 30 31 32 33 34 35 36 37 38 39
+3a 3b 3c 3d 3e 3f 40 41 42 43 44 45 46 47 48 49
+4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59
+5a 5b 5c 5d 5e 5f 60 61 62 63 64 65 66 67 68 69
+6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79
+7a 7b 7c 7d 7e 7f 80 81 82 83 84 85 86 87 88 89
 
 ----TASK[0] Slave read: [128] bytes ----
-0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 
-1a 1b 1c 1d 1e 1f 20 21 22 23 24 25 26 27 28 29 
-2a 2b 2c 2d 2e 2f 30 31 32 33 34 35 36 37 38 39 
-3a 3b 3c 3d 3e 3f 40 41 42 43 44 45 46 47 48 49 
-4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59 
-5a 5b 5c 5d 5e 5f 60 61 62 63 64 65 66 67 68 69 
-6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79 
-7a 7b 7c 7d 7e 7f 80 81 82 83 84 85 86 87 88 89 
+0a 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19
+1a 1b 1c 1d 1e 1f 20 21 22 23 24 25 26 27 28 29
+2a 2b 2c 2d 2e 2f 30 31 32 33 34 35 36 37 38 39
+3a 3b 3c 3d 3e 3f 40 41 42 43 44 45 46 47 48 49
+4a 4b 4c 4d 4e 4f 50 51 52 53 54 55 56 57 58 59
+5a 5b 5c 5d 5e 5f 60 61 62 63 64 65 66 67 68 69
+6a 6b 6c 6d 6e 6f 70 71 72 73 74 75 76 77 78 79
+7a 7b 7c 7d 7e 7f 80 81 82 83 84 85 86 87 88 89
 ```
 
 ## Troubleshooting

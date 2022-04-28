@@ -115,15 +115,20 @@
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <unistd.h>
+#include <assert.h>
 #include "linenoise.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
-#define LINENOISE_MAX_LINE 4096
+#define LINENOISE_DEFAULT_MAX_LINE 4096
+#define LINENOISE_MINIMAL_MAX_LINE 64
+#define LINENOISE_COMMAND_MAX_LEN 32
+#define LINENOISE_PASTE_KEY_DELAY 30 /* Delay, in milliseconds, between two characters being pasted from clipboard */
 
 static linenoiseCompletionCallback *completionCallback = NULL;
 static linenoiseHintsCallback *hintsCallback = NULL;
 static linenoiseFreeHintsCallback *freeHintsCallback = NULL;
 
+static size_t max_cmdline_length = LINENOISE_DEFAULT_MAX_LINE;
 static int mlmode = 0;  /* Multi line mode. Default is single line. */
 static int dumbmode = 0; /* Dumb mode where line editing is disabled. Off by default */
 static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
@@ -203,6 +208,11 @@ void linenoiseSetDumbMode(int set) {
     dumbmode = set;
 }
 
+/* Returns whether the current mode is dumbmode or not. */
+bool linenoiseIsDumbMode(void) {
+    return dumbmode;
+}
+
 static void flushWrite(void) {
     if (__fbufsize(stdout) > 0) {
         fflush(stdout);
@@ -214,47 +224,106 @@ static void flushWrite(void) {
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
 static int getCursorPosition(void) {
-    char buf[32];
-    int cols, rows;
-    unsigned int i = 0;
+    char buf[LINENOISE_COMMAND_MAX_LEN] = { 0 };
+    int cols = 0;
+    int rows = 0;
+    int i = 0;
+    const int out_fd = fileno(stdout);
+    const int in_fd = fileno(stdin);
+    /* The following ANSI escape sequence is used to get from the TTY the
+     * cursor position. */
+    const char get_cursor_cmd[] = "\x1b[6n";
 
-    /* Report cursor location */
-    fprintf(stdout, "\x1b[6n");
+    /* Send the command to the TTY on the other end of the UART.
+     * Let's use unistd's write function. Thus, data sent through it are raw
+     * reducing the overhead compared to using fputs, fprintf, etc... */
+    write(out_fd, get_cursor_cmd, sizeof(get_cursor_cmd));
+
+    /* For USB CDC, it is required to flush the output. */
     flushWrite();
-    /* Read the response: ESC [ rows ; cols R */
+
+    /* The other end will send its response which format is ESC [ rows ; cols R
+     * We don't know exactly how many bytes we have to read, thus, perform a
+     * read for each byte.
+     * Stop right before the last character of the buffer, to be able to NULL
+     * terminate it. */
     while (i < sizeof(buf)-1) {
-        if (fread(buf+i, 1, 1, stdin) != 1) break;
-        if (buf[i] == 'R') break;
-        i++;
+        /* Keep using unistd's functions. Here, using `read` instead of `fgets`
+         * or `fgets` guarantees us that we we can read a byte regardless on
+         * whether the sender sent end of line character(s) (CR, CRLF, LF). */
+        if (read(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
+            /* If we couldn't read a byte from STDIN or if 'R' was received,
+             * the transmission is finished. */
+            break;
+        }
+
+        /* For some reasons, it is possible that we receive new line character
+         * after querying the cursor position on some UART. Let's ignore them,
+         * this will not affect the rest of the program. */
+        if (buf[i] != '\n') {
+            i++;
+        }
     }
+
+    /* NULL-terminate the buffer, this is required by `sscanf`. */
     buf[i] = '\0';
-    /* Parse it. */
-    if (buf[0] != ESC || buf[1] != '[') return -1;
-    if (sscanf(buf+2,"%d;%d",&rows,&cols) != 2) return -1;
+
+    /* Parse the received data to get the position of the cursor. */
+    if (buf[0] != ESC || buf[1] != '[' || sscanf(buf+2,"%d;%d",&rows,&cols) != 2) {
+        return -1;
+    }
     return cols;
 }
 
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
 static int getColumns(void) {
-    int start, cols;
-    int fd = fileno(stdout);
+    int start = 0;
+    int cols = 0;
+    int written = 0;
+    char seq[LINENOISE_COMMAND_MAX_LEN] = { 0 };
+    const int fd = fileno(stdout);
+
+    /* The following ANSI escape sequence is used to tell the TTY to move
+     * the cursor to the most-right position. */
+    const char move_cursor_right[] = "\x1b[999C";
+    const size_t cmd_len = sizeof(move_cursor_right);
+
+    /* This one is used to set the cursor position. */
+    const char set_cursor_pos[] = "\x1b[%dD";
 
     /* Get the initial position so we can restore it later. */
     start = getCursorPosition();
-    if (start == -1) goto failed;
+    if (start == -1) {
+        goto failed;
+    }
 
-    /* Go to right margin and get position. */
-    if (fwrite("\x1b[999C", 1, 6, stdout) != 6) goto failed;
+    /* Send the command to go to right margin. Use `write` function instead of
+     * `fwrite` for the same reasons explained in `getCursorPosition()` */
+    if (write(fd, move_cursor_right, cmd_len) != cmd_len) {
+        goto failed;
+    }
     flushWrite();
-    cols = getCursorPosition();
-    if (cols == -1) goto failed;
 
-    /* Restore position. */
+    /* After sending this command, we can get the new position of the cursor,
+     * we'd get the size, in columns, of the opened TTY. */
+    cols = getCursorPosition();
+    if (cols == -1) {
+        goto failed;
+    }
+
+    /* Restore the position of the cursor back. */
     if (cols > start) {
-        char seq[32];
-        snprintf(seq,32,"\x1b[%dD",cols-start);
-        if (write(fd, seq, strlen(seq)) == -1) {
+        /* Generate the move cursor command. */
+        written = snprintf(seq, LINENOISE_COMMAND_MAX_LEN, set_cursor_pos, cols-start);
+
+        /* If `written` is equal or bigger than LINENOISE_COMMAND_MAX_LEN, it
+         * means that the output has been truncated because the size provided
+         * is too small. */
+        assert (written < LINENOISE_COMMAND_MAX_LEN);
+
+        /* Send the command with `write`, which is not buffered. */
+        if (write(fd, seq, written) == -1) {
             /* Can't recover... */
         }
         flushWrite();
@@ -432,9 +501,10 @@ void refreshShowHints(struct abuf *ab, struct linenoiseState *l, int plen) {
             int hintmaxlen = l->cols-(plen+l->len);
             if (hintlen > hintmaxlen) hintlen = hintmaxlen;
             if (bold == 1 && color == -1) color = 37;
-            if (color != -1 || bold != 0)
+            if (color != -1 || bold != 0) {
                 snprintf(seq,64,"\033[%d;%d;49m",bold,color);
-            abAppend(ab,seq,strlen(seq));
+                abAppend(ab,seq,strlen(seq));
+            }
             abAppend(ab,hint,hintlen);
             if (color != -1 || bold != 0)
                 abAppend(ab,"\033[0m",4);
@@ -617,6 +687,21 @@ int linenoiseEditInsert(struct linenoiseState *l, char c) {
     return 0;
 }
 
+int linenoiseInsertPastedChar(struct linenoiseState *l, char c) {
+    int fd = fileno(stdout);
+    if (l->len < l->buflen && l->len == l->pos) {
+        l->buf[l->pos] = c;
+        l->pos++;
+        l->len++;
+        l->buf[l->len] = '\0';
+        if (write(fd, &c,1) == -1) {
+            return -1;
+        }
+        flushWrite();
+    }
+    return 0;
+}
+
 /* Move cursor on the left. */
 void linenoiseEditMoveLeft(struct linenoiseState *l) {
     if (l->pos > 0) {
@@ -713,6 +798,12 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
     refreshLine(l);
 }
 
+uint32_t getMillis(void) {
+    struct timeval tv = { 0 };
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -723,6 +814,7 @@ void linenoiseEditDeletePrevWord(struct linenoiseState *l) {
  * The function returns the length of the current buffer. */
 static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 {
+    uint32_t t1 = 0;
     struct linenoiseState l;
     int out_fd = fileno(stdout);
     int in_fd = fileno(stdin);
@@ -761,8 +853,28 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         int nread;
         char seq[3];
 
+        /**
+         * To determine whether the user is pasting data or typing itself, we
+         * need to calculate how many milliseconds elapsed between two key
+         * presses. Indeed, if there is less than LINENOISE_PASTE_KEY_DELAY
+         * (typically 30-40ms), then a paste is being performed, else, the
+         * user is typing.
+         * NOTE: pressing a key down without releasing it will also spend
+         * about 40ms (or even more)
+         */
+        t1 = getMillis();
         nread = read(in_fd, &c, 1);
         if (nread <= 0) return l.len;
+
+        if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY && c != ENTER) {
+            /* Pasting data, insert characters without formatting.
+             * This can only be performed when the cursor is at the end of the
+             * line. */
+            if (linenoiseInsertPastedChar(&l,c)) {
+                return -1;
+            }
+            continue;
+        }
 
         /* Only autocomplete when the callback is set. It returns < 0 when
          * there was an error reading from fd. Otherwise it will return the
@@ -1013,15 +1125,15 @@ static void sanitize(char* src) {
 
 /* The high level function that is the main API of the linenoise library. */
 char *linenoise(const char *prompt) {
-    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    char *buf = calloc(1, max_cmdline_length);
     int count = 0;
     if (buf == NULL) {
         return NULL;
     }
     if (!dumbmode) {
-        count = linenoiseRaw(buf, LINENOISE_MAX_LINE, prompt);
+        count = linenoiseRaw(buf, max_cmdline_length, prompt);
     } else {
-        count = linenoiseDumb(buf, LINENOISE_MAX_LINE, prompt);
+        count = linenoiseDumb(buf, max_cmdline_length, prompt);
     }
     if (count > 0) {
         sanitize(buf);
@@ -1143,18 +1255,18 @@ int linenoiseHistorySave(const char *filename) {
  * If the file exists and the operation succeeded 0 is returned, otherwise
  * on error -1 is returned. */
 int linenoiseHistoryLoad(const char *filename) {
-    FILE *fp = fopen(filename,"r");
+    FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
         return -1;
     }
 
-    char *buf = calloc(1, LINENOISE_MAX_LINE);
+    char *buf = calloc(1, max_cmdline_length);
     if (buf == NULL) {
         fclose(fp);
         return -1;
     }
 
-    while (fgets(buf,LINENOISE_MAX_LINE,fp) != NULL) {
+    while (fgets(buf, max_cmdline_length, fp) != NULL) {
         char *p;
 
         p = strchr(buf,'\r');
@@ -1166,5 +1278,16 @@ int linenoiseHistoryLoad(const char *filename) {
     free(buf);
     fclose(fp);
 
+    return 0;
+}
+
+/* Set line maximum length. If len parameter is smaller than
+ * LINENOISE_MINIMAL_MAX_LINE, -1 is returned
+ * otherwise 0 is returned. */
+int linenoiseSetMaxLineLen(size_t len) {
+    if (len < LINENOISE_MINIMAL_MAX_LINE) {
+        return -1;
+    }
+    max_cmdline_length = len;
     return 0;
 }

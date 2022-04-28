@@ -1,9 +1,5 @@
-# Override some defaults so BT stack is enabled and
-# Classic BT is enabled and BT_DRAM_RELEASE is disabled
+# Enable Classic BT and disable BLE
 CONFIG_BT_ENABLED=y
-CONFIG_BTDM_CTRL_MODE_BLE_ONLY=n
 CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=y
-CONFIG_BTDM_CTRL_MODE_BTDM=n
 CONFIG_BT_CLASSIC_ENABLED=y
-CONFIG_BT_A2DP_ENABLE=n
 CONFIG_BT_BLE_ENABLED=n

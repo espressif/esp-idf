@@ -2,7 +2,7 @@ ESP-WROVER-KIT V4.1 入门指南
 =========================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
+本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。
 
 
 准备工作
@@ -10,7 +10,7 @@ ESP-WROVER-KIT V4.1 入门指南
 
 * :ref:`ESP-WROVER-KIT V4.1 开发板 <get-started-esp-wrover-kit-v4.1-board-front>`
 * USB 2.0 数据线（A 转 Micro-B）
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
@@ -22,9 +22,9 @@ ESP-WROVER-KIT 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的开�
 
 ESP-WROVER-KIT 开发板已集成了如下组件：
 
-- ESP32-WROVER-B 模组
+- ESP32-WROVER-E 模组
 - LCD 屏
-- MicroSD 卡槽
+- microSD 卡槽
 
 此外，ESP-WROVER-KIT 的独特之处在于集成了一款先进多协议 USB 桥接器 (FTDI FT2232HL)，允许开发人员直接通过 USB 接口，使用 JTAG 对 ESP32 进行调试，无需额外的 JTAG 调试器。ESP-WROVER-KIT 可为开发人员提供简单、便捷且极具成本效益的开发体验。
 
@@ -72,7 +72,10 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     ESP-WROVER-KIT 开发板布局 -- 仰视图
 
 
-下表将从图片右上角开始，以顺时针顺序介绍图 1 中的主要组件，然后按同样顺序介绍图 2 中的主要组件。
+下表介绍了开发板的主要组件，顺序如下：
+
+- 从图片右上角开始，以顺时针顺序介绍了图 1 中的主要组件
+- 然后以同样的顺序介绍了图 2 中的主要组件
 
 .. list-table::
     :widths: 25 75
@@ -80,24 +83,24 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
     * - 主要组件
       - 基本介绍
-    * - FT2232
-      - FT2232 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232 芯片进行控制和编程，与 ESP32 建立连接。FT2232 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。详见 `ESP-WROVER-KIT V4.1 原理图`_。
+    * - FT2232HL
+      - FT2232HL 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232HL 芯片进行控制和编程，与 ESP32 建立连接。FT2232HL 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。详见 `ESP-WROVER-KIT V4.1 原理图`_。
     * - 32.768 kHz
       - 32.768 kHz 晶振，可提供 Deep-sleep 下使用的低功耗时钟。
     * - 0 欧电阻
       - ESP-WROVER-KIT 开发板设计了一个 0 欧电阻，可在测量 ESP32 系列模组在不同功耗模式下的电流时，直接移除或替换为分流器。
-    * - ESP32-WROVER-B 模组
+    * - ESP32-WROVER-E 模组
       - 这款 ESP32 模组内置 64-Mbit PSRAM，可提供灵活的额外存储空间和数据处理能力。
     * - 诊断 LED 信号灯
-      - 本开发板 FT2232 芯片的 GPIO 管脚连接了 4 个红色 LED 信号灯，以备后用。
+      - 本开发板 FT2232HL 芯片的 GPIO 管脚连接了 4 个红色 LED 信号灯，以备后用。
     * - UART
-      - 串口。FT2232 和 ESP32 的串行 TX/RX 信号已引出至 JP2 的两端。默认情况下，这两路信号由跳线帽连接。如果仅需使用 ESP32 模组串口，则可移除相关跳线帽，将模组连接至其他外部串口设备。
+      - 串口。FT2232HL 和 ESP32 的串行 TX/RX 信号已引出至 JP2 的两端。默认情况下，这两路信号由跳线帽连接。如果仅需使用 ESP32 模组串口，则可移除相关跳线帽，将模组连接至其他外部串口设备。
     * - SPI
       - 默认情况下，ESP32 使用 SPI 接口访问内置 flash 和 PSRAM。使用这些引脚连接 ESP32 和其他 SPI 设备。这种情况下，需增加额外的片选 (CS) 信号。注意，本接口的工作电压为 3.3 V。
     * - CTS/RTS
       - 串口流控信号。管脚默认不连接至电路。为了使能该功能，必须用跳线帽断路掉 JP14 的相应管脚。
     * - JTAG
-      - JTAG 接口。FT2232 和 ESP32 的 JTAG 信号已引出至 JP2 的两端。默认情况下，这两路信号不连接。如需使能 JTAG，请按照 `设置选项`_ 的介绍，连接跳线帽。
+      - JTAG 接口。FT2232HL 和 ESP32 的 JTAG 信号已引出至 JP2 的两端。默认情况下，这两路信号不连接。如需使能 JTAG，请按照 `设置选项`_ 的介绍，连接跳线帽。
     * - USB 端口
       - USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
     * - EN
@@ -161,11 +164,11 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 ESP32 管脚分配
 ------------------------
 
-ESP32 模组的部分管脚/终端已被板上组件占用或用于外部硬件设备。如果某管脚对应的特定硬件未连接，则该管脚可用作他用。比如，摄像头/JP4 排针未连接相应硬件，则这些 GPIO 可用于其他用途。
+ESP32 模组的部分管脚或终端已被板上组件占用或用于外部硬件设备。如果某管脚对应的特定硬件未连接，则该管脚可用作他用。比如，摄像头/JP4 排针未连接相应硬件，则这些 GPIO 可用于其他用途。
 
 部分管脚具备多个功能，可供板上组件或外部硬件设备同时使用，比如 GPIO0 和 GPIO2。由于管脚限制，一些外围设备不可同时使用，比如，由于 JTAG 和 SD 卡槽需共用部分管脚，因此一些使用 SD 卡功能的应用无法同时进行 JTAG 调试。
 
-其他情况下，不同外设可同时使用。比如，LCD 屏幕和 SD 卡仅共用一个 GPIO21 管脚，可以同时使用。该管脚可为 LCD 屏幕提供 D/C（数据/控制）信号，并用于读取来自 SD 卡槽的 CD 信号（卡检测信号）。如无需使用卡检测功能，开发人员还可以通过移除 R167 来禁用该功能。此时，LCD 和 SD 卡槽可同时使用。
+其他情况下，不同外设可同时使用。比如，LCD 屏幕和 SD 卡仅共用一个 GPIO21 管脚，可以同时使用。该管脚可为 LCD 屏幕提供 D/C（数据/控制）信号，并用于读取来自 SD 卡槽的卡检测信号。如无需使用卡检测功能，开发人员还可以通过移除 R167 来禁用该功能。此时，LCD 和 SD 卡槽可同时使用。
 
 更多外设共享管脚的介绍，请见下一章节中的表格。
 
@@ -175,11 +178,9 @@ ESP32 模组的部分管脚/终端已被板上组件占用或用于外部硬件�
 
 JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 列的介绍。两侧的“共用”列则介绍了这些管脚在板上的其他用途。
 
-
 .. list-table::
     :widths: 30 20 20 30
     :header-rows: 1
-
 
     * - 共用
       - I/O
@@ -193,11 +194,11 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
       - IO32
       - IO33
       - NC/XTAL
-    * - JTAG，MicroSD
+    * - JTAG，microSD
       - IO12
       - IO13
-      - JTAG，MicroSD
-    * - JTAG，MicroSD
+      - JTAG，microSD
+    * - JTAG，microSD
       - IO14
       - IO27
       - 摄像头
@@ -220,7 +221,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
     * - 摄像头，LCD
       - IO22
       - IO21
-      - 摄像头，LCD，MicroSD
+      - 摄像头，LCD，microSD
     * - 摄像头，LCD
       - IO19
       - IO18
@@ -232,12 +233,12 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
     * - PSRAM
       - IO16
       - IO4
-      - LED，摄像头，MicroSD
+      - LED，摄像头，microSD
     * - 摄像头，LED，Boot
       - IO0
       - IO2
-      - LED，MicroSD
-    * - JTAG，MicroSD
+      - LED，microSD
+    * - JTAG，microSD
       - IO15
       - 5V
       -
@@ -249,9 +250,9 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 * Boot - Boot 按键 / SW2
 * 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
+* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
 * LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
-* PSRAM - ESP32-WROVER-B 的 PSRAM
+* PSRAM - ESP32-WROVER-E 的 PSRAM
 
 
 .. _get-started-esp-wrover-kit-v4.1-xtal:
@@ -268,7 +269,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 
 .. note::
 
-    默认情况下，管脚 GPIO32 和 GPIO33 已连接至晶振。因此，为了保证信号的完整性，这两个管脚并未连接至 JP1 I/O 连接器。用户可通过将 R11/R23 处的 0 欧电阻移至 R12/R24 处，以将 GP1O32 和 GPIO33 的连接从晶振移至 JP1。
+    默认情况下，管脚 GPIO32 和 GPIO33 已连接至晶振。因此，为了保证信号的完整性，这两个管脚并未连接至 JP1 I/O 连接器。用户可通过将 R11 或 R23 处的 0 欧电阻移至 R12 或 R24 处，以将 GP1O32 和 GPIO33 的连接从晶振移至 JP1。
 
 
 .. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
@@ -279,18 +280,17 @@ SPI Flash / JP2
 ====  =============
 .     ESP32 管脚
 ====  =============
-1.    CLK / GPIO6
-2.    SD0 / GPIO7
-3.    SD1 / GPIO8
-4.    SD2 / GPIO9
-5.    SD3 / GPIO10
-6.    CMD / GPIO11
+1     CLK / GPIO6
+2     SD0 / GPIO7
+3     SD1 / GPIO8
+4     SD2 / GPIO9
+5     SD3 / GPIO10
+6     CMD / GPIO11
 ====  =============
 
 .. important::
 
     模组的 flash 总线已通过 0 欧电阻 R140 ~ R145 连接至排针 JP2。如果需要将 flash 的工作频率控制在 80 MHz，以达到保证总线信号完整性等目的，建议移除 R140 ~ R145 电阻，将模组的 flash 总线与排针 JP2 断开。
-
 
 
 .. _get-started-esp-wrover-kit-v4.1-jtag-header:
@@ -301,11 +301,11 @@ JTAG / JP2
 ====  ==============  =============
 .     ESP32 管脚       JTAG 信号
 ====  ==============  =============
-1.    EN              TRST_N
-2.    MTMS / GPIO14   TMS
-3.    MTDO / GPIO15   TDO
-4.    MTDI / GPIO12   TDI
-5.    MTCK / GPIO13   TCK
+1     EN              TRST_N
+2     MTMS / GPIO14   TMS
+3     MTDO / GPIO15   TDO
+4     MTDI / GPIO12   TDI
+5     MTCK / GPIO13   TCK
 ====  ==============  =============
 
 
@@ -317,24 +317,24 @@ JTAG / JP2
 ====  ==========  =============================
 .     ESP32 管脚   摄像头信号
 ====  ==========  =============================
-1.    n/a         3.3V
-2.    n/a         地
-3.    GPIO27      SIO_C / SCCB 时钟
-4.    GPIO26      SIO_D / SCCB 数据
-5.    GPIO25      VSYNC / 垂直同步
-6.    GPIO23      HREF / 水平参考
-7.    GPIO22      PCLK / 像素时钟
-8.    GPIO21      XCLK / 系统时钟
-9.    GPIO35      D7 / 像素数据 Bit 7
-10.   GPIO34      D6 / 像素数据 Bit 6
-11.   GPIO39      D5 / 像素数据 Bit 5
-12.   GPIO36      D4 / 像素数据 Bit 4
-13.   GPIO19      D3 / 像素数据 Bit 3
-14.   GPIO18      D2 / 像素数据 Bit 2
-15.   GPIO5       D1 / 像素数据 Bit 1
-16.   GPIO4       D0 / 像素数据 Bit 0
-17.   GPIO0       RESET / 摄像头复位
-18.   n/a         PWDN / 摄像头断电
+1     n/a         3.3V
+2     n/a         地
+3     GPIO27      SIO_C / SCCB 时钟
+4     GPIO26      SIO_D / SCCB 数据
+5     GPIO25      VSYNC / 垂直同步
+6     GPIO23      HREF / 水平参考
+7     GPIO22      PCLK / 像素时钟
+8     GPIO21      XCLK / 系统时钟
+9     GPIO35      D7 / 像素数据 Bit 7
+10    GPIO34      D6 / 像素数据 Bit 6
+11    GPIO39      D5 / 像素数据 Bit 5
+12    GPIO36      D4 / 像素数据 Bit 4
+13    GPIO19      D3 / 像素数据 Bit 3
+14    GPIO18      D2 / 像素数据 Bit 2
+15    GPIO5       D1 / 像素数据 Bit 1
+16    GPIO4       D0 / 像素数据 Bit 0
+17    GPIO0       RESET / 摄像头复位
+18    n/a         PWDN / 摄像头断电
 ====  ==========  =============================
 
 * D0 到 D7 为摄像头的数据总线
@@ -348,19 +348,19 @@ RGB LED
 ====  ==========  =========
 .     ESP32 管脚   RGB LED
 ====  ==========  =========
-1.    GPIO0       红色
-2.    GPIO2       绿色
-3.    GPIO4       蓝色
+1     GPIO0       红色
+2     GPIO2       绿色
+3     GPIO4       蓝色
 ====  ==========  =========
 
 
 .. _get-started-esp-wrover-kit-v4.1-microsd-card-slot:
 
-MicroSD 卡
+microSD 卡
 ^^^^^^^^^^^^
 
 ====  ==============  ===============
-.     ESP32 管脚       MicroSD 信号
+.     ESP32 管脚       microSD 信号
 ====  ==============  ===============
 1.    MTDI / GPIO12   DATA2
 2.    MTCK / GPIO13   CD / DATA3
@@ -368,7 +368,7 @@ MicroSD 卡
 4.    MTMS / GPIO14   CLK
 5.    GPIO2           DATA0
 6.    GPIO4           DATA1
-7.    GPIO21          CD
+7.    GPIO21          Card Detect
 ====  ==============  ===============
 
 
@@ -380,13 +380,13 @@ LCD / U5
 ====  ==============  ===============
 .     ESP32 管脚       LCD 信号
 ====  ==============  ===============
-1.    GPIO18          复位
-2.    GPIO19          SCL
-3.    GPIO21          D/C
-4.    GPIO22          CS
-5.    GPIO23          SDA
-6.    GPIO25          SDO
-7.    GPIO5           背光
+1     GPIO18          复位
+2     GPIO19          SCL
+3     GPIO21          D/C
+4     GPIO22          CS
+5     GPIO23          SDA
+6     GPIO25          SDO
+7     GPIO5           背光
 ====  ==============  ===============
 
 
@@ -422,6 +422,12 @@ USB 供电                   使能 UART 通信
 
 现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
+以下链接提供了与 ESP-WROVER-KIT 开发板硬件相关的示例：
+
+* 板上 LCD 示例：:example:`peripherals/spi_master/lcd`
+* SD 卡槽示例： :example:`storage/sd_card`
+* 摄像头示例：https://github.com/espressif/esp32-camera
+
 
 相关文档
 -----------------
@@ -429,7 +435,7 @@ USB 供电                   使能 UART 通信
 * `ESP-WROVER-KIT V4.1 原理图`_ (PDF)
 * `ESP-WROVER-KIT V4.1 布局 <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF) 
-* `《ESP32-WROVER-B 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-WROVER-E 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`
 

@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "esp32_compat.h"
+#include "esp32_mock.h"
 
 void*     g_queue;
 int       g_queue_send_shall_fail = 0;
@@ -48,12 +48,8 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* create_args,
 
 uint32_t xTaskGetTickCount(void)
 {
-    struct timeval tv;
-    struct timezone tz;
-    if (gettimeofday(&tv, &tz) == 0) {
-        return (tv.tv_sec * 1000) + (tv.tv_usec / 1000);
-    }
-    return 0;
+    static uint32_t tick = 0;
+    return tick++;
 }
 
 /// Queue mock
@@ -97,4 +93,19 @@ void GetLastItem(void *pvBuffer)
 void ForceTaskDelete(void)
 {
     g_queue_send_shall_fail = 1;
+}
+
+TaskHandle_t xTaskGetCurrentTaskHandle(void)
+{
+    return NULL;
+}
+
+void xTaskNotifyGive(TaskHandle_t task)
+{
+    return;
+}
+
+BaseType_t xTaskNotifyWait(uint32_t bits_entry_clear, uint32_t bits_exit_clear, uint32_t * value, TickType_t wait_time)
+{
+    return pdTRUE;
 }

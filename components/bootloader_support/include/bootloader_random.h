@@ -13,16 +13,21 @@ extern "C" {
 #endif
 
 /**
- * @brief Enable an entropy source for RNG if RF is disabled
+ * @brief Enable an entropy source for RNG if RF subsystem is disabled
+ *
+ * @warning This function is not safe to use if any other subsystem is accessing the RF subsystem or
+ *          the ADC at the same time!
  *
  * The exact internal entropy source mechanism depends on the chip in use but
  * all SoCs use the SAR ADC to continuously mix random bits (an internal
  * noise reading) into the HWRNG. Consult the SoC Technical Reference
  * Manual for more information.
  *
- * Can also be used from app code early during operation, if true
- * random numbers are required before RF is initialised. Consult
- * ESP-IDF Programming Guide "Random Number Generation" section for
+ * Can also be called from app code, if true random numbers are required without initialized RF subsystem.
+ * This might be the case in early startup code of the application when the RF subsystem has not
+ * started yet or if the RF subsystem should not be enabled for power saving.
+ *
+ * Consult ESP-IDF Programming Guide "Random Number Generation" section for
  * details.
  */
 void bootloader_random_enable(void);
@@ -31,7 +36,7 @@ void bootloader_random_enable(void);
  * @brief Disable entropy source for RNG
  *
  * Disables internal entropy source. Must be called after
- * bootloader_random_enable() and before RF features, ADC, or
+ * bootloader_random_enable() and before RF subsystem features, ADC, or
  * I2S (ESP32 only) are initialized.
  *
  * Consult the ESP-IDF Programming Guide "Random Number Generation"

@@ -1,20 +1,14 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for SPI (common part)
 
 #include "hal/spi_hal.h"
+#include "hal/log.h"
+#include "hal/assert.h"
 #include "soc/soc_caps.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
@@ -30,7 +24,9 @@
 #define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
 #endif
 
-static const char SPI_HAL_TAG[] = "spi_hal";
+/* The tag may be unused if log level is set to NONE  */
+static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
+
 #define SPI_HAL_CHECK(a, str, ret_val, ...) \
     if (!(a)) { \
         HAL_LOGE(SPI_HAL_TAG,"%s(%d): "str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
@@ -84,7 +80,9 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int
 {
     spi_hal_timing_conf_t temp_conf;
 
-    int eff_clk_n = spi_ll_master_cal_clock(SPI_LL_PERIPH_CLK_FREQ, timing_param->clock_speed_hz, timing_param->duty_cycle, &temp_conf.clock_reg);
+    int clk_src_freq_hz = timing_param->clk_src_hz;
+    HAL_ASSERT((clk_src_freq_hz == 80 * 1000 * 1000) || (clk_src_freq_hz == 40 * 1000 * 1000) || (clk_src_freq_hz == 48 * 1000 * 1000));
+    int eff_clk_n = spi_ll_master_cal_clock(clk_src_freq_hz, timing_param->expected_freq, timing_param->duty_cycle, &temp_conf.clock_reg);
 
     //When the speed is too fast, we may need to use dummy cycles to compensate the reading.
     //But these don't work for full-duplex connections.

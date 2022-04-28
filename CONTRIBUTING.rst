@@ -13,7 +13,7 @@ Before Contributing
 
 Before sending us a Pull Request, please consider this list of points:
 
-* Is the contribution entirely your own work, or already licensed under an Apache License 2.0 compatible Open Source License? If not then we unfortunately cannot accept it.
+* Is the contribution entirely your own work, or already licensed under an Apache License 2.0 compatible Open Source License? If not then we unfortunately cannot accept it. Please check the :doc:`Copyright Header Guide <copyright-guide>` for additional information.
 
 * Does any new code conform to the esp-idf :doc:`Style Guide <style-guide>`?
 
@@ -56,7 +56,8 @@ Related Documents
     style-guide
     install-pre-commit-hook
     documenting-code
-    add-ons-reference
     creating-examples
     ../api-reference/template
     contributor-agreement
+    copyright-guide
+    esp-idf-tests-with-pytest

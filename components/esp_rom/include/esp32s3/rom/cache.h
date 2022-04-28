@@ -103,6 +103,11 @@ typedef enum {
     CACHE_AUTOLOAD_NEGATIVE = 1,        /*!< cache autoload step is negative */
 } cache_autoload_order_t;
 
+typedef enum {
+    CACHE_AUTOLOAD_REGION0 = 0,         /*!< cache autoload region0 */
+    CACHE_AUTOLOAD_REGION1 = 1,         /*!< cache autoload region1 */
+} cache_autoload_region_t;
+
 #define CACHE_AUTOLOAD_STEP(i) ((i) - 1)
 
 typedef enum {
@@ -144,14 +149,17 @@ struct dcache_tag_item {
 };
 
 struct autoload_config {
+    uint8_t ena;                        /*!< autoload enable */
     uint8_t order;                      /*!< autoload step is positive or negative */
     uint8_t trigger;                    /*!< autoload trigger */
-    uint8_t ena0;                       /*!< autoload region0 enable */
-    uint8_t ena1;                       /*!< autoload region1 enable */
-    uint32_t addr0;                     /*!< autoload region0 start address */
-    uint32_t size0;                     /*!< autoload region0 size */
-    uint32_t addr1;                     /*!< autoload region1 start address */
-    uint32_t size1;                     /*!< autoload region1 size */
+    uint8_t size;                       /*!< autoload size */
+};
+
+struct autoload_region_config {
+    uint8_t region;                     /*!< autoload region*/
+    uint8_t ena;                        /*!< autoload region enable */
+    uint32_t addr;                      /*!< autoload region start address */
+    uint32_t size;                      /*!< autoload region size */
 };
 
 struct tag_group_info {
@@ -160,6 +168,7 @@ struct tag_group_info {
     uint32_t vaddr_offset;                          /*!< virtual address offset of the cache ways */
     uint32_t tag_addr[MAX_CACHE_WAYS];              /*!< tag memory address, only [0~mode.ways-1] is valid to use */
     uint32_t cache_memory_offset[MAX_CACHE_WAYS];   /*!< cache memory address, only [0~mode.ways-1] is valid to use */
+    uint8_t use_legacy;                             /*!< 1 for using legacy tag api, 0 for using 2rd tag api */
 };
 
 struct lock_config {
@@ -167,6 +176,39 @@ struct lock_config {
     uint16_t size;                                  /*!< manual lock size*/
     uint16_t group;                                 /*!< manual lock group, 0 or 1*/
 };
+
+struct cache_internal_stub_table {
+    uint32_t (* icache_line_size)(void);
+    uint32_t (* dcache_line_size)(void);
+    uint32_t (* icache_addr)(uint32_t addr);
+    uint32_t (* dcache_addr)(uint32_t addr);
+    void (* invalidate_icache_items)(uint32_t addr, uint32_t items);
+    void (* invalidate_dcache_items)(uint32_t addr, uint32_t items);
+    void (* clean_items)(uint32_t addr, uint32_t items);
+    void (* writeback_items)(uint32_t addr, uint32_t items);
+    void (* lock_icache_items)(uint32_t addr, uint32_t items);
+    void (* lock_dcache_items)(uint32_t addr, uint32_t items);
+    void (* unlock_icache_items)(uint32_t addr, uint32_t items);
+    void (* unlock_dcache_items)(uint32_t addr, uint32_t items);
+    void (* occupy_items)(uint32_t addr, uint32_t items);
+    uint32_t (* suspend_icache_autoload)(void);
+    void (* resume_icache_autoload)(uint32_t autoload);
+    uint32_t (* suspend_dcache_autoload)(void);
+    void (* resume_dcache_autoload)(uint32_t autoload);
+    void (* freeze_icache_enable)(cache_freeze_mode_t mode);
+    void (* freeze_icache_disable)(void);
+    void (* freeze_dcache_enable)(cache_freeze_mode_t mode);
+    void (* freeze_dcache_disable)(void);
+    int (* op_addr)(uint32_t op_icache, uint32_t start_addr, uint32_t size, uint32_t cache_line_size, uint32_t max_sync_num, void(* cache_Iop)(uint32_t, uint32_t), void(* cache_Dop)(uint32_t, uint32_t));
+};
+
+typedef void (* cache_op_start)(void);
+typedef void (* cache_op_end)(void);
+
+typedef struct {
+    cache_op_start start;
+    cache_op_end end;
+} cache_op_cb_t;
 
 #define ESP_ROM_ERR_INVALID_ARG         1
 #define MMU_SET_ADDR_ALIGNED_ERROR      2
@@ -190,7 +232,7 @@ void Cache_MMU_Init(void);
   * @brief Set ICache mmu mapping.
   *        Please do not call this function in your SDK application.
   *
-  * @param  uint32_t ext_ram : DPORT_MMU_ACCESS_FLASH for flash, DPORT_MMU_ACCESS_SPIRAM for spiram, DPORT_MMU_INVALID for invalid.
+  * @param  uint32_t ext_ram : MMU_ACCESS_FLASH for flash, MMU_ACCESS_SPIRAM for spiram, MMU_INVALID for invalid.
   *
   * @param  uint32_t vaddr : virtual address in CPU address space.
   *                              Can be Iram0,Iram1,Irom0,Drom0 and AHB buses address.
@@ -217,7 +259,7 @@ int Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,  uint32
   * @brief Set DCache mmu mapping.
   *        Please do not call this function in your SDK application.
   *
-  * @param  uint32_t ext_ram : DPORT_MMU_ACCESS_FLASH for flash, DPORT_MMU_ACCESS_SPIRAM for spiram, DPORT_MMU_INVALID for invalid.
+  * @param  uint32_t ext_ram : MMU_ACCESS_FLASH for flash, MMU_ACCESS_SPIRAM for spiram, MMU_INVALID for invalid.
   *
   * @param  uint32_t vaddr : virtual address in CPU address space.
   *                              Can be DRam0, DRam1, DRom0, DPort and AHB buses address.
@@ -272,9 +314,9 @@ uint32_t Cache_Flash_To_SPIRAM_Copy(uint32_t bus, uint32_t bus_start_addr, uint3
   * @brief allocate memory to used by ICache.
   *        Please do not call this function in your SDK application.
   *
-  * @param cache_array_t icache_low : the data array bank used by icache low part, can be CACHE_MEMORY_INVALID, CACHE_MEMORY_IBANK0, CACHE_MEMORY_IBANK1
+  * @param cache_array_t icache_low : the data array bank used by icache low part. Due to timing constraint, can only be CACHE_MEMORY_INVALID, CACHE_MEMORY_IBANK0
   *
-  * @param cache_array_t icache_high : the data array bank used by icache high part, can be CACHE_MEMORY_INVALID, CACHE_MEMORY_IBANK0, CACHE_MEMORY_IBANK1 only if icache_low and icache_high is not CACHE_MEMORY_INVALID
+  * @param cache_array_t icache_high : the data array bank used by icache high part. Due to timing constraint, can only be CACHE_MEMORY_INVALID, or CACHE_MEMORY_IBANK1 only if icache_low and icache_high is CACHE_MEMORY_IBANK0
   *
   * return none
   */
@@ -284,9 +326,9 @@ void Cache_Occupy_ICache_MEMORY(cache_array_t icache_low, cache_array_t icache_h
   * @brief allocate memory to used by DCache.
   *        Please do not call this function in your SDK application.
   *
-  * @param cache_array_t dcache_low : the data array bank used by dcache low part, can be CACHE_MEMORY_INVALID, CACHE_MEMORY_DBANK0, CACHE_MEMORY_DBANK1
+  * @param cache_array_t dcache_low : the data array bank used by dcache low part. Due to timing constraint, can only be CACHE_MEMORY_INVALID, CACHE_MEMORY_DBANK1
   *
-  * @param cache_array_t dcache1_high : the data array bank used by dcache high part, can be CACHE_MEMORY_INVALID, CACHE_MEMORY_DBANK0, CACHE_MEMORY_DBANK1 only if dcache_low0 and dcache_low1 is not CACHE_MEMORY_INVALID
+  * @param cache_array_t dcache1_high : the data array bank used by dcache high part. Due to timing constraint, can only be CACHE_MEMORY_INVALID, or CACHE_MEMORY_DBANK0 only if dcache_low0 and dcache_low1 is CACHE_MEMORY_DBANK1
   *
   * return none
   */
@@ -310,7 +352,7 @@ void Cache_Get_Mode(struct cache_mode *mode);
   *
   * @param cache_ways_t ways : the associate ways of cache, can be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC
   *
-  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B and CACHE_LINE_SIZE_64B
+  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B and CACHE_LINE_SIZE_32B
   *
   * return none
   */
@@ -320,9 +362,9 @@ void Cache_Set_ICache_Mode(cache_size_t cache_size, cache_ways_t ways, cache_lin
   * @brief set DCache modes: cache size, associate ways and cache line size.
   *        Please do not call this function in your SDK application.
   *
-  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_8KB and CACHE_SIZE_16KB
+  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_HALF and CACHE_SIZE_FULL
   *
-  * @param cache_ways_t ways : the associate ways of cache, can be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC
+  * @param cache_ways_t ways : the associate ways of cache, can be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC, only CACHE_4WAYS_ASSOC works
   *
   * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B and CACHE_LINE_SIZE_64B
   *
@@ -351,7 +393,7 @@ uint32_t Cache_Address_Through_ICache(uint32_t addr);
 uint32_t Cache_Address_Through_DCache(uint32_t addr);
 
 /**
-  * @brief Init mmu owner register to make i/d cache use half mmu entries.
+  * @brief Init Cache for ROM boot, including resetting the Dcache, initializing Owner, MMU, setting DCache mode, Enabling DCache, unmasking bus.
   *
   * @param None
   *
@@ -637,6 +679,16 @@ void Cache_End_DCache_Preload(uint32_t autoload);
 void Cache_Config_ICache_Autoload(const struct autoload_config *config);
 
 /**
+  * @brief Config region autoload parameters of ICache.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param struct autoload_region_config * config : region autoload parameters.
+  *
+  * @return ESP_ROM_ERR_INVALID_ARG : invalid param, 0 : success
+  */
+int Cache_Config_ICache_Region_Autoload(const struct autoload_region_config *config);
+
+/**
   * @brief Enable auto preload for ICache.
   *        Please do not call this function in your SDK application.
   *
@@ -665,6 +717,16 @@ void Cache_Disable_ICache_Autoload(void);
   * @return None
   */
 void Cache_Config_DCache_Autoload(const struct autoload_config *config);
+
+/**
+  * @brief Config region autoload parameters of DCache.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param struct autoload_region_config * config : region autoload parameters.
+  *
+  * @return ESP_ROM_ERR_INVALID_ARG : invalid param, 0 : success
+  */
+int Cache_Config_DCache_Region_Autoload(const struct autoload_region_config *config);
 
 /**
   * @brief Enable auto preload for DCache.
@@ -1008,7 +1070,24 @@ void Cache_Freeze_DCache_Disable(void);
   *
   * @return None
   */
-void Cache_Travel_Tag_Memory(struct cache_mode *mode, uint32_t filter_addr, void (* process)(struct tag_group_info *));
+void Cache_Travel_Tag_Memory(struct cache_mode * mode, uint32_t filter_addr, void (* process)(struct tag_group_info *));
+
+/**
+  * @brief Travel tag memory to run a call back function, using 2nd tag registers.
+  *        ICache and DCache are suspend when doing this.
+  *        The callback will get the parameter tag_group_info, which will include a group of tag memory addresses and cache memory addresses.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param  struct cache_mode * mode : the cache to check and the cache mode.
+  *
+  * @param  uint32_t filter_addr : only the cache lines which may include the filter_address will be returned to the call back function.
+  *                                0 for do not filter, all cache lines will be returned.
+  *
+  * @param  void (* process)(struct tag_group_info *) : call back function, which may be called many times, a group(the addresses in the group are in the same position in the cache ways) a time.
+  *
+  * @return None
+  */
+void Cache_Travel_Tag_Memory2(struct cache_mode * mode, uint32_t filter_addr, void (* process)(struct tag_group_info *));
 
 /**
   * @brief Get the virtual address from cache mode, cache tag and the virtual address offset of cache ways.
@@ -1092,6 +1171,8 @@ int flash2spiram_rodata_offset(void);
 uint32_t flash_instr_rodata_start_page(uint32_t bus);
 uint32_t flash_instr_rodata_end_page(uint32_t bus);
 
+extern struct cache_internal_stub_table* rom_cache_internal_table_ptr;
+extern cache_op_cb_t rom_cache_op_cb;
 #ifdef __cplusplus
 }
 #endif

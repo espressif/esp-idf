@@ -1,25 +1,14 @@
-/**
+/*
  * SMTP email client
  *
  * Adapted from the `ssl_mail_client` example in mbedtls.
  *
- * Original Copyright (C) 2006-2016, ARM Limited, All Rights Reserved, Apache 2.0 License.
- * Additions Copyright (C) Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD, Apache 2.0 License.
+ * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-FileContributor: 2015-2021 Espressif Systems (Shanghai) CO LTD
  */
-
 #include <string.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -37,7 +26,6 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
 #include <mbedtls/base64.h>
 #include <sys/param.h>
 
@@ -100,6 +88,7 @@ static int write_and_get_response(mbedtls_net_context *sock_fd, unsigned char *b
 
     do {
         len = DATA_SIZE - 1;
+        memset(data, 0, DATA_SIZE);
         ret = mbedtls_net_recv(sock_fd, data, len);
 
         if (ret <= 0) {
@@ -153,6 +142,7 @@ static int write_ssl_and_get_response(mbedtls_ssl_context *ssl, unsigned char *b
 
     do {
         len = DATA_SIZE - 1;
+        memset(data, 0, DATA_SIZE);
         ret = mbedtls_ssl_read(ssl, data, len);
 
         if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
@@ -482,8 +472,12 @@ static void smtp_client_task(void *pvParameters)
     ret = 0; /* No errors */
 
 exit:
-    mbedtls_ssl_session_reset(&ssl);
     mbedtls_net_free(&server_fd);
+    mbedtls_x509_crt_free(&cacert);
+    mbedtls_ssl_free(&ssl);
+    mbedtls_ssl_config_free(&conf);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
 
     if (ret != 0) {
         mbedtls_strerror(ret, buf, 100);

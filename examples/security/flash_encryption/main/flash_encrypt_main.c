@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 #include "soc/efuse_reg.h"
 #include "esp_efuse.h"
-#include "esp_system.h"
+#include "esp_chip_info.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"

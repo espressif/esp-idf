@@ -1,10 +1,8 @@
 /*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -105,7 +103,8 @@ const char *c_codec_mode_str[] = {
 };
 
 #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
-#define TABLE_SIZE   100
+#define TABLE_SIZE         100
+#define TABLE_SIZE_BYTE    200
 // Produce a sine audio
 static const int16_t sine_int16[TABLE_SIZE] = {
      0,    2057,    4107,    6140,    8149,   10126,   12062,   13952,   15786,   17557,
@@ -142,8 +141,8 @@ static uint64_t s_time_new, s_time_old;
 static esp_timer_handle_t s_periodic_timer;
 static uint64_t s_last_enter_time, s_now_enter_time;
 static uint64_t s_us_duration;
-static xSemaphoreHandle s_send_data_Semaphore = NULL;
-static xTaskHandle s_bt_app_send_data_task_handler = NULL;
+static SemaphoreHandle_t s_send_data_Semaphore = NULL;
+static TaskHandle_t s_bt_app_send_data_task_handler = NULL;
 static esp_hf_audio_state_t s_audio_code;
 
 static void print_speed(void);
@@ -179,14 +178,13 @@ static void bt_app_hf_incoming_cb(const uint8_t *buf, uint32_t sz)
 
 static uint32_t bt_app_hf_create_audio_data(uint8_t *p_buf, uint32_t sz)
 {
-    static int sine_phase = 0;
+    static int index = 0;
+    uint8_t *data = (uint8_t *)sine_int16;
 
-    for (int i = 0; i * 2 + 1 < sz; i++) {
-        p_buf[i * 2]     = sine_int16[sine_phase];
-        p_buf[i * 2 + 1] = sine_int16[sine_phase];
-        ++sine_phase;
-        if (sine_phase >= TABLE_SIZE) {
-            sine_phase -= TABLE_SIZE;
+    for (uint32_t i = 0; i < sz; i++) {
+        p_buf[i] = data[index++];
+        if (index >= TABLE_SIZE_BYTE) {
+            index -= TABLE_SIZE_BYTE;
         }
     }
     return sz;
@@ -216,16 +214,19 @@ static void bt_app_send_data_task(void *arg)
     uint32_t item_size = 0;
     uint8_t *buf = NULL;
     for (;;) {
-        if (xSemaphoreTake(s_send_data_Semaphore, (portTickType)portMAX_DELAY)) {
+        if (xSemaphoreTake(s_send_data_Semaphore, (TickType_t)portMAX_DELAY)) {
             s_now_enter_time = esp_timer_get_time();
             s_us_duration = s_now_enter_time - s_last_enter_time;
             if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
             // time of a frame is 7.5ms, sample is 120, data is 2 (byte/sample), so a frame is 240 byte (HF_SBC_ENC_RAW_DATA_SIZE)
-                frame_data_num = s_us_duration / (PCM_BLOCK_DURATION_US / WBS_PCM_INPUT_DATA_SIZE);
-                s_last_enter_time += frame_data_num * (PCM_BLOCK_DURATION_US / WBS_PCM_INPUT_DATA_SIZE);
+                frame_data_num = s_us_duration / PCM_BLOCK_DURATION_US * WBS_PCM_INPUT_DATA_SIZE;
+                s_last_enter_time += frame_data_num / WBS_PCM_INPUT_DATA_SIZE * PCM_BLOCK_DURATION_US;
             } else {
-                frame_data_num = s_us_duration / (PCM_BLOCK_DURATION_US / PCM_INPUT_DATA_SIZE);
-                s_last_enter_time += frame_data_num * (PCM_BLOCK_DURATION_US / PCM_INPUT_DATA_SIZE);
+                frame_data_num = s_us_duration / PCM_BLOCK_DURATION_US * PCM_INPUT_DATA_SIZE;
+                s_last_enter_time += frame_data_num / PCM_INPUT_DATA_SIZE * PCM_BLOCK_DURATION_US;
+            }
+            if (frame_data_num == 0) {
+                continue;
             }
             buf = osi_malloc(frame_data_num);
             if (!buf) {

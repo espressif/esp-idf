@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // Test for spi_flash_{read,write}.
 
@@ -23,10 +15,18 @@
 #include <unity.h>
 #include <test_utils.h>
 #include <esp_spi_flash.h>
-#include <esp32/rom/spi_flash.h>
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_rom_spiflash.h"
+#if CONFIG_IDF_TARGET_ESP32
+// Used for rom_fix function
+#include "esp32/rom/spi_flash.h"
+#endif
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+// TODO: SPI_FLASH IDF-4025
 
 #define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
@@ -147,14 +147,18 @@ static void IRAM_ATTR fix_rom_func(void)
 {
     uint32_t freqdiv = 0;
 
-#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M && !CONFIG_ESPTOOLPY_OCT_FLASH
     freqdiv = 1;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_80M && CONFIG_ESPTOOLPY_OCT_FLASH
+    freqdiv = 2;
 #elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
     freqdiv = 2;
 #elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
     freqdiv = 3;
 #elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
     freqdiv = 4;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_120M
+    freqdiv = 2;
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -182,13 +186,19 @@ static void IRAM_ATTR fix_rom_func(void)
     read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
 #elif CONFIG_ESPTOOLPY_FLASHMODE_DOUT
     read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+#elif CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+    read_mode = ESP_ROM_SPIFLASH_OPI_STR_MODE;
+#elif CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+    read_mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
 #endif
 
 #if !CONFIG_IDF_TARGET_ESP32S2 && !CONFIG_IDF_TARGET_ESP32
     spi_common_set_dummy_output(read_mode);
 #endif //!CONFIG_IDF_TARGET_ESP32S2
     esp_rom_spiflash_config_clk(freqdiv, 1);
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
     esp_rom_spiflash_config_readmode(read_mode);
+#endif
 }
 
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
@@ -373,3 +383,5 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
 }
 
 #endif // CONFIG_SPIRAM
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

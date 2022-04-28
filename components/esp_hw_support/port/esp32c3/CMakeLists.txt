@@ -9,7 +9,13 @@ set(srcs "cpu_util_esp32c3.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "../async_memcpy_impl_gdma.c")
+    list(APPEND srcs "../async_memcpy_impl_gdma.c"
+                     "esp_hmac.c"
+                     "esp_crypto_lock.c"
+                     "esp_ds.c"
+                     "dport_access.c"
+                     "esp_memprot.c"
+                     "../esp_memprot_conv.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
@@ -17,8 +23,3 @@ add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
 target_include_directories(${COMPONENT_LIB} PUBLIC . private_include)
 target_include_directories(${COMPONENT_LIB} PRIVATE ../hal)
-
-if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/rtc_clk.c" PROPERTIES
-                                COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
-endif()

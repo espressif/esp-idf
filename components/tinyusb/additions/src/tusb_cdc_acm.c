@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) Co. Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include "esp_check.h"
@@ -18,6 +10,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/ringbuf.h"
 #include "tusb.h"
 #include "tusb_cdc_acm.h"
 #include "cdc.h"
@@ -30,7 +23,7 @@ typedef struct {
     bool initialized;
     size_t rx_unread_buf_sz;
     RingbufHandle_t rx_unread_buf;
-    xSemaphoreHandle ringbuf_read_mux;
+    SemaphoreHandle_t ringbuf_read_mux;
     uint8_t *rx_tfbuf;
     tusb_cdcacm_callback_t callback_rx;
     tusb_cdcacm_callback_t callback_rx_wanted_char;
@@ -103,7 +96,7 @@ void tud_cdc_rx_cb(uint8_t itf)
     while (tud_cdc_n_available(itf)) {
         int read_res = tud_cdc_n_read(  itf,
                                         acm->rx_tfbuf,
-                                        CONFIG_USB_CDC_RX_BUFSIZE );
+                                        CONFIG_TINYUSB_CDC_RX_BUFSIZE );
         int res = xRingbufferSend(acm->rx_unread_buf,
                                   acm->rx_tfbuf,
                                   read_res, 0);
@@ -290,7 +283,7 @@ size_t tinyusb_cdcacm_write_queue_char(tinyusb_cdcacm_itf_t itf, char ch)
 }
 
 
-size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, uint8_t *in_buf, size_t in_size)
+size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, const uint8_t *in_buf, size_t in_size)
 {
     if (!get_acm(itf)) { // non-initialized
         return 0;
@@ -312,7 +305,7 @@ esp_err_t tinyusb_cdcacm_write_flush(tinyusb_cdcacm_itf_t itf, uint32_t timeout_
     if (!timeout_ticks) { // if no timeout - nonblocking mode
         int res = tud_cdc_n_write_flush(itf);
         if (!res) {
-            ESP_LOGW(TAG, "flush fauled (res: %d)", res);
+            ESP_LOGW(TAG, "flush failed (res: %d)", res);
             return ESP_FAIL;
         } else {
             if (tud_cdc_n_write_occupied(itf)) {
@@ -396,7 +389,7 @@ esp_err_t tusb_cdc_acm_init(const tinyusb_config_cdcacm_t *cfg)
         return ESP_ERR_NO_MEM;
     }
 
-    acm->rx_tfbuf = malloc(CONFIG_USB_CDC_RX_BUFSIZE);
+    acm->rx_tfbuf = malloc(CONFIG_TINYUSB_CDC_RX_BUFSIZE);
     if (!acm->rx_tfbuf) {
         ESP_LOGE(TAG, "Creation buffer error");
         free_obj(itf);

@@ -1,0 +1,45 @@
+menu "Example Configuration"
+
+    config EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+        bool "Allocate color data from PSRAM"
+        depends on IDF_TARGET_ESP32S3
+        default y
+        help
+            Enable this option if you wish to allocate the color buffer used by LVGL from PSRAM.
+            Unmatched PSRAM band width with LCD requirement can lead to blurred image display.
+
+    choice EXAMPLE_LCD_I80_CONTROLLER_MODEL
+        prompt "i80 LCD controller model"
+        default EXAMPLE_LCD_I80_CONTROLLER_ST7789
+        help
+            Select LCD controller model
+
+        config EXAMPLE_LCD_I80_CONTROLLER_ST7789
+            bool "ST7789"
+
+        config EXAMPLE_LCD_I80_CONTROLLER_NT35510
+            bool "NT35510"
+    endchoice
+
+    if EXAMPLE_LCD_I80_CONTROLLER_NT35510
+        choice EXAMPLE_LCD_NT35510_DATA_WIDTH
+            prompt "NT35510 Data Width"
+            default EXAMPLE_LCD_NT35510_DATA_WIDTH_8
+            help
+                Select NT35510 Data Width (8 or 16), a.k.a, the number of data lines.
+
+            config EXAMPLE_LCD_NT35510_DATA_WIDTH_8
+                bool "8"
+
+            config EXAMPLE_LCD_NT35510_DATA_WIDTH_16
+                bool "16"
+        endchoice
+
+    endif
+
+    config EXAMPLE_LCD_I80_BUS_WIDTH
+        int
+        default 16 if EXAMPLE_LCD_NT35510_DATA_WIDTH_16
+        default 8
+
+endmenu

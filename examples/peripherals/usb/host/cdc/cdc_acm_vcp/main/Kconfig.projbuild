@@ -1,0 +1,15 @@
+menu "Example Configuration"
+
+    choice
+        prompt "USB-to-UART device type"
+        default EXAMPLE_USE_CP210X
+        help
+            Type of UART converter to use in this example.
+
+        config EXAMPLE_USE_FTDI
+            bool "FT232"
+        config EXAMPLE_USE_CP210X
+            bool "CP2012"
+    endchoice
+
+endmenu

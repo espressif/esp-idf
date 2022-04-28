@@ -18,9 +18,25 @@ menu "eFuse Bit Manager"
         bool "Simulate eFuse operations in RAM"
         default n
         help
-            All read and writes operations are redirected to RAM instead of eFuse registers.
-            If this option is set, all permanent changes (via eFuse) are disabled.
-            Log output will state changes which would be applied, but they will not be.
+            If "n" - No virtual mode. All eFuse operations are real and use eFuse registers.
+            If "y" - The virtual mode is enabled and all eFuse operations (read and write) are redirected
+            to RAM instead of eFuse registers, all permanent changes (via eFuse) are disabled.
+            Log output will state changes that would be applied, but they will not be.
+
+            During startup, the eFuses are copied into RAM. This mode is useful for fast tests.
+
+    config EFUSE_VIRTUAL_KEEP_IN_FLASH
+        bool "Keep eFuses in flash"
+        depends on EFUSE_VIRTUAL
+        help
+            In addition to the "Simulate eFuse operations in RAM" option, this option just adds
+            a feature to keep eFuses after reboots in flash memory. To use this mode the partition_table
+            should have the `efuse` partition. partition.csv: "efuse_em, data, efuse,   ,   0x2000,"
+
+            During startup, the eFuses are copied from flash or,
+            in case if flash is empty, from real eFuse to RAM and then update flash.
+            This mode is useful when need to keep changes after reboot
+            (testing secure_boot and flash_encryption).
 
     choice EFUSE_CODE_SCHEME_SELECTOR
         prompt "Coding Scheme Compatibility"

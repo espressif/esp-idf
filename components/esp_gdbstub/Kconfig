@@ -4,6 +4,7 @@ menu "GDB Stub"
     # menu in the target component.
     config ESP_GDBSTUB_ENABLED
         bool
+        select FREERTOS_ENABLE_TASK_SNAPSHOT
 
     config ESP_GDBSTUB_SUPPORT_TASKS
         bool "Enable listing FreeRTOS tasks through GDB Stub"

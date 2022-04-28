@@ -9,7 +9,9 @@ This note explains various steps which happen before ``app_main`` function of an
 The high level view of startup process is as follows:
 
 1. :ref:`first-stage-bootloader` in ROM loads second-stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_BOOTLOADER_OFFSET}.
+
 2. :ref:`second-stage-bootloader` loads partition table and main app image from flash. Main app incorporates both RAM segments and read-only segments mapped via flash cache.
+
 3. :ref:`application-startup` executes. At this point the second CPU and RTOS scheduler are started.
 
 This process is explained in detail in the following sections.
@@ -37,15 +39,15 @@ Startup code called from the reset vector determines the boot mode by checking `
 
 .. note::
 
-    During normal boot modes the RTC watchdog is enabled when this happens, so if the process is interrupted or stalled then the watchdog will reset the SOC automatically and repeat the boot process. This may cause the SoC to strap into a new boot mode, if the stapping GPIOs have changed.
+    During normal boot modes the RTC watchdog is enabled when this happens, so if the process is interrupted or stalled then the watchdog will reset the SOC automatically and repeat the boot process. This may cause the SoC to strap into a new boot mode, if the strapping GPIOs have changed.
 
 .. only:: esp32
 
-    Second stage bootloader binary image is loaded from flash starting at address 0x1000. If :doc:`/security/secure-boot-v1` is in use then the first 4kB sector of flash is used to store secure boot IV and digest of the bootloader image. Otherwise, this sector is unused.
+    Second stage bootloader binary image is loaded from flash starting at address 0x1000. If :doc:`/security/secure-boot-v1` is in use then the first 4 kB sector of flash is used to store secure boot IV and digest of the bootloader image. Otherwise, this sector is unused.
 
 .. only:: esp32s2
 
-    Second stage bootloader binary image is loaded from flash starting at address 0x1000. The 4kB sector of flash before this address is unused.
+    Second stage bootloader binary image is loaded from flash starting at address 0x1000. The 4 kB sector of flash before this address is unused.
 
 .. only:: not (esp32 or esp32s2)
 

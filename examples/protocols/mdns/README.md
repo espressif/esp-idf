@@ -5,6 +5,7 @@ Shows how to use mDNS to advertise lookup services and hosts
 ## Example workflow
 
 - mDNS is initialized with host name and instance name defined through the project configuration and `_http._tcp` service is added to be advertised
+- A delegated host `esp32-delegated._local` is added and another `_http._tcp` service is added for this host.
 - WiFi STA is started and trying to connect to the access point defined through the project configuration
 - The system event handler is used to pass the network events to mDNS so the service is aware when the interface comes up or down
 - GPIO0 (BOOT Button) is initialized as pulled-up input that can be monitored for button press
@@ -15,7 +16,6 @@ Shows how to use mDNS to advertise lookup services and hosts
 * Open the project configuration menu (`idf.py menuconfig`)
 
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
-* When using Make build system, set `Default serial port` under `Serial flasher config`.
 * Set `mDNS Hostname` as host name prefix for the device and its instance name in `mDNS Instance Name`
 * Disable `Resolve test services` to prevent the example from querying defined names/services on startup (cause warnings in example logs, as illustrated below)
 

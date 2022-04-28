@@ -7,20 +7,8 @@
 # Used internally by the ESP-IDF build system. But designed to be
 # non-IDF-specific.
 #
-# Copyright 2018-2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-from __future__ import print_function
+# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import json
@@ -29,15 +17,14 @@ import os.path
 import re
 import sys
 import tempfile
+import textwrap
+from collections import defaultdict
 
 import gen_kconfig_doc
 import kconfiglib
 from future.utils import iteritems
 
 __version__ = '0.1'
-
-if 'IDF_CMAKE' not in os.environ:
-    os.environ['IDF_CMAKE'] = ''
 
 
 class DeprecatedOptions(object):
@@ -57,7 +44,7 @@ class DeprecatedOptions(object):
 
     def _parse_replacements(self, repl_paths):
         rep_dic = {}
-        rev_rep_dic = {}
+        rev_rep_dic = defaultdict(list)
 
         def remove_config_prefix(string):
             if string.startswith(self.config_prefix):
@@ -82,11 +69,11 @@ class DeprecatedOptions(object):
 
                     (dep_opt, new_opt) = (remove_config_prefix(x) for x in sp_line)
                     rep_dic[dep_opt] = new_opt
-                    rev_rep_dic[new_opt] = dep_opt
+                    rev_rep_dic[new_opt].append(dep_opt)
         return rep_dic, rev_rep_dic
 
     def get_deprecated_option(self, new_option):
-        return self.rev_r_dic.get(new_option, None)
+        return self.rev_r_dic.get(new_option, [])
 
     def get_new_option(self, deprecated_option):
         return self.r_dic.get(deprecated_option, None)
@@ -142,10 +129,10 @@ class DeprecatedOptions(object):
                             for sym in syms:
                                 if sym.name in self.rev_r_dic:
                                     # only if the symbol has been renamed
-                                    dep_name = self.rev_r_dic[sym.name]
-
+                                    dep_names = self.rev_r_dic[sym.name]
+                                    dep_names = [config.config_prefix + name for name in dep_names]
                                     # config options doesn't have references
-                                    f_o.write('    - {}{}\n'.format(config.config_prefix, dep_name))
+                                    f_o.write('    - {}\n'.format(', '.join(dep_names)))
 
     def append_config(self, config, path_output):
         tmp_list = []
@@ -156,8 +143,9 @@ class DeprecatedOptions(object):
                 if item.name in self.rev_r_dic:
                     c_string = item.config_string
                     if c_string:
-                        tmp_list.append(c_string.replace(self.config_prefix + item.name,
-                                                         self.config_prefix + self.rev_r_dic[item.name]))
+                        for dep_name in self.rev_r_dic[item.name]:
+                            tmp_list.append(c_string.replace(self.config_prefix + item.name,
+                                                             self.config_prefix + dep_name))
 
         for n in config.node_iter():
             append_config_node_process(n)
@@ -170,9 +158,13 @@ class DeprecatedOptions(object):
 
     def append_header(self, config, path_output):
         def _opt_defined(opt):
-            if not opt.visibility:
-                return False
-            return not (opt.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and opt.str_value == 'n')
+            if opt.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and opt.str_value != 'n':
+                opt_defined = True
+            elif opt.orig_type in (kconfiglib.INT, kconfiglib.STRING, kconfiglib.HEX) and opt.str_value != '':
+                opt_defined = True
+            else:
+                opt_defined = False
+            return opt_defined
 
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
@@ -237,6 +229,10 @@ def main():
                         help='Optional file to load environment variables from. Contents '
                              'should be a JSON object where each key/value pair is a variable.')
 
+    parser.add_argument('--list-separator', choices=['space', 'semicolon'],
+                        default='space',
+                        help='Separator used in environment list variables (COMPONENT_SDKCONFIG_RENAMES)')
+
     args = parser.parse_args()
 
     for fmt, filename in args.output:
@@ -261,8 +257,12 @@ def main():
     config.warn_assign_redun = False
     config.warn_assign_override = False
 
+    sdkconfig_renames_sep = ';' if args.list_separator == 'semicolon' else ' '
+
     sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get('COMPONENT_SDKCONFIG_RENAMES', '').split()
+    sdkconfig_renames_from_env = os.environ.get('COMPONENT_SDKCONFIG_RENAMES')
+    if sdkconfig_renames_from_env:
+        sdkconfig_renames += sdkconfig_renames_from_env.split(sdkconfig_renames_sep)
     deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
 
     if len(args.defaults) > 0:
@@ -342,54 +342,19 @@ def write_config(deprecated_options, config, filename):
     deprecated_options.append_config(config, filename)
 
 
-def write_makefile(deprecated_options, config, filename):
-    CONFIG_HEADING = """#
-# Automatically generated file. DO NOT EDIT.
-# Espressif IoT Development Framework (ESP-IDF) Project Makefile Configuration
-#
-"""
-    with open(filename, 'w') as f:
-        tmp_dep_lines = []
-        f.write(CONFIG_HEADING)
+def write_min_config(deprecated_options, config, filename):
+    target_symbol = config.syms['IDF_TARGET']
+    # 'esp32` is harcoded here because the default value of IDF_TARGET is set on the first run from the environment
+    # variable. I.E. `esp32  is not defined as default value.
+    write_target = target_symbol.str_value != 'esp32'
 
-        def get_makefile_config_string(name, value, orig_type):
-            if orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
-                value = '' if value == 'n' else value
-            elif orig_type == kconfiglib.INT:
-                try:
-                    value = int(value)
-                except ValueError:
-                    value = ''
-            elif orig_type == kconfiglib.HEX:
-                try:
-                    value = hex(int(value, 16))  # ensure 0x prefix
-                except ValueError:
-                    value = ''
-            elif orig_type == kconfiglib.STRING:
-                value = '"{}"'.format(kconfiglib.escape(value))
-            else:
-                raise RuntimeError('{}{}: unknown type {}'.format(config.config_prefix, name, orig_type))
-
-            return '{}{}={}\n'.format(config.config_prefix, name, value)
-
-        def write_makefile_node(node):
-            item = node.item
-            if isinstance(item, kconfiglib.Symbol) and item.env_var is None:
-                # item.config_string cannot be used because it ignores hidden config items
-                val = item.str_value
-                f.write(get_makefile_config_string(item.name, val, item.orig_type))
-
-                dep_opt = deprecated_options.get_deprecated_option(item.name)
-                if dep_opt:
-                    # the same string but with the deprecated name
-                    tmp_dep_lines.append(get_makefile_config_string(dep_opt, val, item.orig_type))
-
-        for n in config.node_iter(True):
-            write_makefile_node(n)
-
-        if len(tmp_dep_lines) > 0:
-            f.write('\n# List of deprecated options\n')
-            f.writelines(tmp_dep_lines)
+    CONFIG_HEADING = textwrap.dedent('''\
+    # This file was generated using idf.py save-defconfig. It can be edited manually.
+    # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+    #
+    {}\
+    '''.format(target_symbol.config_string if write_target else ''))
+    config.write_min_config(filename, header=CONFIG_HEADING)
 
 
 def write_header(deprecated_options, config, filename):
@@ -433,10 +398,10 @@ def write_cmake(deprecated_options, config, filename):
                 write('set({}{} "{}")\n'.format(prefix, sym.name, val))
 
                 configs_list.append(prefix + sym.name)
-                dep_opt = deprecated_options.get_deprecated_option(sym.name)
-                if dep_opt:
-                    tmp_dep_list.append('set({}{} "{}")\n'.format(prefix, dep_opt, val))
-                    configs_list.append(prefix + dep_opt)
+                dep_opts = deprecated_options.get_deprecated_option(sym.name)
+                for opt in dep_opts:
+                    tmp_dep_list.append('set({}{} "{}")\n'.format(prefix, opt, val))
+                    configs_list.append(prefix + opt)
 
         for n in config.node_iter():
             write_node(n)
@@ -619,12 +584,12 @@ def update_if_changed(source, destination):
 
 
 OUTPUT_FORMATS = {'config': write_config,
-                  'makefile': write_makefile,  # only used with make in order to generate auto.conf
                   'header': write_header,
                   'cmake': write_cmake,
                   'docs': write_docs,
                   'json': write_json,
                   'json_menus': write_json_menus,
+                  'savedefconfig': write_min_config,
                   }
 
 

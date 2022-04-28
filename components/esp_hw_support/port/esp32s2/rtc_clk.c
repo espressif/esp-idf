@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -23,14 +15,19 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
+#include "soc/soc_caps.h"
 #include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/syscon_reg.h"
-#include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_rom_sys.h"
+#include "esp_hw_log.h"
 #include "rtc_clk_common.h"
 #include "sdkconfig.h"
+
+#include "regi2c_ctrl.h"
+#include "regi2c_apll.h"
+#include "regi2c_bbpll.h"
 
 static const char *TAG = "rtc_clk";
 
@@ -126,29 +123,89 @@ bool rtc_clk_8md256_enabled(void)
     return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV) == 0;
 }
 
-void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2, uint32_t o_div)
+void rtc_clk_apll_enable(bool enable)
 {
     REG_SET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD, enable ? 0 : 1);
     REG_SET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PU, enable ? 1 : 0);
+}
 
-    if (enable) {
-        REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM2, sdm2);
-        REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM0, sdm0);
-        REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM1, sdm1);
-        REGI2C_WRITE(I2C_APLL, I2C_APLL_SDM_STOP, APLL_SDM_STOP_VAL_1);
-        REGI2C_WRITE(I2C_APLL, I2C_APLL_SDM_STOP, APLL_SDM_STOP_VAL_2_REV1);
-        REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_OR_OUTPUT_DIV, o_div);
-
-        /* calibration */
-        REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, APLL_CAL_DELAY_1);
-        REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, APLL_CAL_DELAY_2);
-        REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, APLL_CAL_DELAY_3);
-
-        /* wait for calibration end */
-        while (!(REGI2C_READ_MASK(I2C_APLL, I2C_APLL_OR_CAL_END))) {
-            /* use esp_rom_delay_us so the RTC bus doesn't get flooded */
-            esp_rom_delay_us(1);
+uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2)
+{
+    uint32_t rtc_xtal_freq = (uint32_t)rtc_clk_xtal_freq_get();
+    if (rtc_xtal_freq == 0) {
+        // xtal_freq has not set yet
+        ESP_HW_LOGE(TAG, "Get xtal clock frequency failed, it has not been set yet");
+        abort();
+    }
+    /* Reference formula: apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) / ((o_div + 2) * 2)
+     *                                ----------------------------------------------   -----------------
+     *                                     350 MHz <= Numerator <= 500 MHz                Denominator
+     */
+    int o_div = 0; // range: 0~31
+    int sdm0 = 0;  // range: 0~255
+    int sdm1 = 0;  // range: 0~255
+    int sdm2 = 0;  // range: 0~63
+    /* Firstly try to satisfy the condition that the operation frequency of numerator should be greater than 350 MHz,
+     * i.e. xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= 350 MHz, '+1' in the following code is to get the ceil value.
+     * With this condition, as we know the 'o_div' can't be greater than 31, then we can calculate the APLL minimum support frequency is
+     * 350 MHz / ((31 + 2) * 2) = 5303031 Hz (for ceil) */
+    o_div = (int)(SOC_APLL_MULTIPLIER_OUT_MIN_HZ / (float)(freq * 2) + 1) - 2;
+    if (o_div > 31) {
+        ESP_HW_LOGE(TAG, "Expected frequency is too small");
+        return 0;
+    }
+    if (o_div < 0) {
+        /* Try to satisfy the condition that the operation frequency of numerator should be smaller than 500 MHz,
+         * i.e. xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) <= 500 MHz, we need to get the floor value in the following code.
+         * With this condition, as we know the 'o_div' can't be smaller than 0, then we can calculate the APLL maximum support frequency is
+         * 500 MHz / ((0 + 2) * 2) = 125000000 Hz */
+        o_div = (int)(SOC_APLL_MULTIPLIER_OUT_MAX_HZ / (float)(freq * 2)) - 2;
+        if (o_div < 0) {
+            ESP_HW_LOGE(TAG, "Expected frequency is too big");
+            return 0;
         }
+    }
+    // sdm2 = (int)(((o_div + 2) * 2) * apll_freq / xtal_freq) - 4
+    sdm2 = (int)(((o_div + 2) * 2 * freq) / (rtc_xtal_freq * 1000000)) - 4;
+    // numrator = (((o_div + 2) * 2) * apll_freq / xtal_freq) - 4 - sdm2
+    float numrator = (((o_div + 2) * 2 * freq) / ((float)rtc_xtal_freq * 1000000)) - 4 - sdm2;
+    // If numrator is bigger than 255/256 + 255/65536 + (1/65536)/2 = 1 - (1 / 65536)/2, carry bit to sdm2
+    if (numrator > 1.0 - (1.0 / 65536.0) / 2.0) {
+        sdm2++;
+    }
+    // If numrator is smaller than (1/65536)/2, keep sdm0 = sdm1 = 0, otherwise calculate sdm0 and sdm1
+    else if (numrator > (1.0 / 65536.0) / 2.0) {
+        // Get the closest sdm1
+        sdm1 = (int)(numrator * 65536.0 + 0.5) / 256;
+        // Get the closest sdm0
+        sdm0 = (int)(numrator * 65536.0 + 0.5) % 256;
+    }
+    uint32_t real_freq = (uint32_t)(rtc_xtal_freq * 1000000 * (4 + sdm2 + (float)sdm1/256.0 + (float)sdm0/65536.0) / (((float)o_div + 2) * 2));
+    *_o_div = o_div;
+    *_sdm0 = sdm0;
+    *_sdm1 = sdm1;
+    *_sdm2 = sdm2;
+    return real_freq;
+}
+
+void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2)
+{
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM2, sdm2);
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM0, sdm0);
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_DSDM1, sdm1);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_SDM_STOP, APLL_SDM_STOP_VAL_1);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_SDM_STOP, APLL_SDM_STOP_VAL_2_REV1);
+    REGI2C_WRITE_MASK(I2C_APLL, I2C_APLL_OR_OUTPUT_DIV, o_div);
+
+    /* calibration */
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, APLL_CAL_DELAY_1);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, APLL_CAL_DELAY_2);
+    REGI2C_WRITE(I2C_APLL, I2C_APLL_IR_CAL_DELAY, APLL_CAL_DELAY_3);
+
+    /* wait for calibration end */
+    while (!(REGI2C_READ_MASK(I2C_APLL, I2C_APLL_OR_CAL_END))) {
+        /* use esp_rom_delay_us so the RTC bus doesn't get flooded */
+        esp_rom_delay_us(1);
     }
 }
 
@@ -261,7 +318,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             break;
         }
         if (ext_cap == 15) {
-            SOC_LOGE(TAG, "BBPLL SOFTWARE CAL FAIL");
+            ESP_HW_LOGE(TAG, "BBPLL SOFTWARE CAL FAIL");
             abort();
         }
     }
@@ -286,7 +343,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         dbias = DIG_DBIAS_240M;
         per_conf = DPORT_CPUPERIOD_SEL_240;
     } else {
-        SOC_LOGE(TAG, "invalid frequency");
+        ESP_HW_LOGE(TAG, "invalid frequency");
         abort();
     }
     REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, per_conf);
@@ -304,7 +361,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* ou
     uint32_t divider;
     uint32_t real_freq_mhz;
 
-    uint32_t xtal_freq = (uint32_t) rtc_clk_xtal_freq_get();
+    uint32_t xtal_freq = RTC_XTAL_FREQ;
     if (freq_mhz <= xtal_freq) {
         divider = xtal_freq / freq_mhz;
         real_freq_mhz = (xtal_freq + divider / 2) / divider; /* round */
@@ -345,10 +402,9 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* ou
 
 void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
 {
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     uint32_t soc_clk_sel = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL);
     if (soc_clk_sel != DPORT_SOC_CLK_SEL_XTAL) {
-        rtc_clk_cpu_freq_to_xtal(xtal_freq, 1);
+        rtc_clk_cpu_freq_to_xtal(RTC_XTAL_FREQ, 1);
     }
     if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL && config->source_freq_mhz != s_cur_pll_freq) {
         rtc_clk_bbpll_disable();
@@ -359,7 +415,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         }
     } else if (config->source == RTC_CPU_FREQ_SRC_PLL) {
         rtc_clk_bbpll_enable();
-        rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
+        rtc_clk_bbpll_configure(RTC_XTAL_FREQ, config->source_freq_mhz);
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == RTC_CPU_FREQ_SRC_8M) {
         rtc_clk_cpu_freq_to_8m();
@@ -377,7 +433,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
         case DPORT_SOC_CLK_SEL_XTAL: {
             source = RTC_CPU_FREQ_SRC_XTAL;
             div = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT) + 1;
-            source_freq_mhz = (uint32_t) rtc_clk_xtal_freq_get();
+            source_freq_mhz = RTC_XTAL_FREQ;
             freq_mhz = source_freq_mhz / div;
         }
         break;
@@ -397,7 +453,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
                 div = 2;
                 freq_mhz = 240;
             } else {
-                SOC_LOGE(TAG, "unsupported frequency configuration");
+                ESP_HW_LOGE(TAG, "unsupported frequency configuration");
                 abort();
             }
             break;
@@ -410,7 +466,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
             break;
         case DPORT_SOC_CLK_SEL_APLL:
         default:
-            SOC_LOGE(TAG, "unsupported frequency configuration");
+            ESP_HW_LOGE(TAG, "unsupported frequency configuration");
             abort();
     }
     *out_config = (rtc_cpu_freq_config_t) {
@@ -436,10 +492,8 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t* config)
 
 void rtc_clk_cpu_freq_set_xtal(void)
 {
-    int freq_mhz = (int) rtc_clk_xtal_freq_get();
-
-    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
     /* BBPLL is kept enabled */
+    rtc_clk_cpu_freq_to_xtal(RTC_XTAL_FREQ, 1);
 }
 
 /**
@@ -474,17 +528,8 @@ static void rtc_clk_cpu_freq_to_8m(void)
 
 rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
-    uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
-    if (!clk_val_is_valid(xtal_freq_reg)) {
-        SOC_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
-        return RTC_XTAL_FREQ_40M;
-    }
-    return reg_val_to_clk_val(xtal_freq_reg);
-}
-
-void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
-{
-    WRITE_PERI_REG(RTC_XTAL_FREQ_REG, clk_val_to_reg_val(xtal_freq));
+    // Note, inside esp32s2-only code it's better to use RTC_XTAL_FREQ constant
+    return RTC_XTAL_FREQ;
 }
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)

@@ -69,6 +69,8 @@ static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg);
 *******************************************************************************/
 void rfc_mx_sm_execute (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 {
+    RFCOMM_TRACE_DEBUG("%s st:%d, evt:%d\n", __func__, p_mcb->state, event);
+
     switch (p_mcb->state) {
     case RFC_MX_STATE_IDLE:
         rfc_mx_sm_state_idle (p_mcb, event, p_data);

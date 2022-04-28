@@ -1,17 +1,9 @@
 
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef __ESP_ATTR_H__
 #define __ESP_ATTR_H__
 
@@ -33,17 +25,24 @@ extern "C" {
 // Forces data into DRAM instead of flash
 #define DRAM_ATTR _SECTION_ATTR_IMPL(".dram1", __COUNTER__)
 
-#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+// IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
+#define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+
+// Make sure that IRAM is accessible as an 8-bit memory on ESP32.
+// If that's not the case, coredump cannot dump data from IRAM.
+#if IRAM_8BIT_ACCESSIBLE
 // Forces data into IRAM instead of DRAM
 #define IRAM_DATA_ATTR __attribute__((section(".iram.data")))
 
 // Forces data into IRAM instead of DRAM and map it to coredump
-#define COREDUMP_IRAM_DATA_ATTR _SECTION_ATTR_IMPL(".iram.data.coredump", __COUNTER__)
+#define COREDUMP_IRAM_DATA_ATTR _SECTION_ATTR_IMPL(".iram2.coredump", __COUNTER__)
 
 // Forces bss into IRAM instead of DRAM
 #define IRAM_BSS_ATTR __attribute__((section(".iram.bss")))
 #else
-#define COREDUMP_IRAM_DATA_ATTR
+
+// IRAM is not accessible as an 8-bit memory, put IRAM coredump variables in DRAM
+#define COREDUMP_IRAM_DATA_ATTR COREDUMP_DRAM_ATTR
 #define IRAM_DATA_ATTR
 
 #define IRAM_BSS_ATTR
@@ -67,9 +66,19 @@ extern "C" {
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 // Forces bss variable into external memory. "
-#define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__)
+#define EXT_RAM_BSS_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__)
 #else
-#define EXT_RAM_ATTR
+#define EXT_RAM_BSS_ATTR
+#endif
+
+/**
+ * Deprecated Macro for putting .bss on PSRAM
+ */
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+// Forces bss variable into external memory. "
+#define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__) _Pragma ("GCC warning \"'EXT_RAM_ATTR' macro is deprecated, please use `EXT_RAM_BSS_ATTR`\"")
+#else
+#define EXT_RAM_ATTR _Pragma ("GCC warning \"'EXT_RAM_ATTR' macro is deprecated, please use `EXT_RAM_BSS_ATTR`\"")
 #endif
 
 // Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst"
@@ -89,13 +98,23 @@ extern "C" {
 // Forces data into noinit section to avoid initialization after restart.
 #define __NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit", __COUNTER__)
 
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+// Forces data into external memory noinit section to avoid initialization after restart.
+#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit", __COUNTER__)
+#else
+// Place in internal noinit section
+#define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR
+#endif
+
 // Forces data into RTC slow memory of .noinit section.
 // Any variable marked with this attribute will keep its value
 // after restart or during a deep sleep / wake cycle.
 #define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __COUNTER__)
 
 // Forces code into DRAM instead of flash and map it to coredump
-#define COREDUMP_DRAM_ATTR _SECTION_ATTR_IMPL(".dram1.coredump", __COUNTER__)
+// Use dram2 instead of dram1 to make sure this section will not be included
+// by dram1 section in the linker script
+#define COREDUMP_DRAM_ATTR _SECTION_ATTR_IMPL(".dram2.coredump", __COUNTER__)
 
 // Forces data into RTC memory and map it to coredump
 #define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __COUNTER__)
@@ -121,8 +140,8 @@ FORCE_INLINE_ATTR constexpr TYPE operator<< (TYPE a, int b) { return (TYPE)((INT
 FORCE_INLINE_ATTR TYPE& operator|=(TYPE& a, TYPE b) { a = a | b; return a; } \
 FORCE_INLINE_ATTR TYPE& operator&=(TYPE& a, TYPE b) { a = a & b; return a; } \
 FORCE_INLINE_ATTR TYPE& operator^=(TYPE& a, TYPE b) { a = a ^ b; return a; } \
-FORCE_INLINE_ATTR TYPE& operator>>=(TYPE& a, int b) { a >>= b; return a; } \
-FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
+FORCE_INLINE_ATTR TYPE& operator>>=(TYPE& a, int b) { a = a >> b; return a; } \
+FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 
 #define FLAG_ATTR_U32(TYPE) FLAG_ATTR_IMPL(TYPE, uint32_t)
 #define FLAG_ATTR FLAG_ATTR_U32
@@ -138,9 +157,14 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
 //
 // Using unique sections also means --gc-sections can remove unused
 // data with a custom section type set
+#ifndef CONFIG_IDF_TARGET_LINUX
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER) __attribute__((section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
-
 #define _COUNTER_STRINGIFY(COUNTER) #COUNTER
+#else
+// Custom section attributes are generally not used in the port files for Linux target, but may be found
+// in the common header files. Don't declare custom sections in that case.
+#define _SECTION_ATTR_IMPL(SECTION, COUNTER)
+#endif
 
 /* Use IDF_DEPRECATED attribute to mark anything deprecated from use in
    ESP-IDF's own source code, but not deprecated for external users.
@@ -155,4 +179,3 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
 }
 #endif
 #endif /* __ESP_ATTR_H__ */
-

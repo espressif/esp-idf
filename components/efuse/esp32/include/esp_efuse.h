@@ -1,10 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
+#include <esp_types.h>
+#include <esp_err.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +43,16 @@ typedef enum {
     EFUSE_CODING_SCHEME_REPEAT  = 2,    /**< Repeat coding */
 } esp_efuse_coding_scheme_t;
 
+/**
+ * @brief Type of key purpose (virtual because ESP32 has only fixed purposes for blocks)
+ */
+typedef enum {
+    ESP_EFUSE_KEY_PURPOSE_USER = 0,              /**< BLOCK3 */
+    ESP_EFUSE_KEY_PURPOSE_SYSTEM = 1,            /**< BLOCK0 */
+    ESP_EFUSE_KEY_PURPOSE_FLASH_ENCRYPTION = 2,  /**< BLOCK1 */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2 = 3,    /**< BLOCK2 */
+    ESP_EFUSE_KEY_PURPOSE_MAX,                   /**< MAX PURPOSE*/
+} esp_efuse_purpose_t;
 
 #ifdef __cplusplus
 }

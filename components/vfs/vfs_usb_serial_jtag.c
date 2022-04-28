@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 //This is a simple non-blocking (well, tx may spin for a bit if the buffer
 //is full) USB-serial-jtag driver. Select etc is not supported yet.
@@ -26,9 +18,12 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/usb_serial_jtag_ll.h"
+#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag.h"
 
 // Token signifying that no character is available
 #define NONE -1
@@ -110,23 +105,21 @@ static int usb_serial_jtag_open(const char * path, int flags, int mode)
 static void usb_serial_jtag_tx_char(int fd, int c)
 {
     uint8_t cc=(uint8_t)c;
-    if (usb_serial_jtag_ll_txfifo_writable()) {
-        //We can write to the buffer. Immediately do so.
-        usb_serial_jtag_ll_write_txfifo(&cc, 1);
-        s_ctx.last_tx_ts = esp_timer_get_time();
-    } else {
-        //Try to write to the buffer as long as we still expect the buffer to have
-        //a chance of being emptied by an active host. Just drop the data if there's
-        //no chance anymore.
-        while ((esp_timer_get_time() - s_ctx.last_tx_ts) < TX_FLUSH_TIMEOUT_US) {
-            if (usb_serial_jtag_ll_txfifo_writable()) {
-                //Woohoo, we can write again. Do so and exit the while loop.
-                usb_serial_jtag_ll_write_txfifo(&cc, 1);
-                s_ctx.last_tx_ts = esp_timer_get_time();
-                break;
-            }
+    // Try to write to the buffer as long as we still expect the buffer to have
+    // a chance of being emptied by an active host. Just drop the data if there's
+    // no chance anymore.
+    // When we first try to send a character and the buffer is not accessible yet,
+    // we wait until the time has been more than TX_FLUSH_TIMEOUT_US since we successfully
+    // sent the last byte. If it takes longer than TX_FLUSH_TIMEOUT_US, we drop every
+    // byte until the buffer can be accessible again.
+    do {
+        if (usb_serial_jtag_ll_txfifo_writable()) {
+            usb_serial_jtag_ll_write_txfifo(&cc, 1);
+            s_ctx.last_tx_ts = esp_timer_get_time();
+            break;
         }
-    }
+    } while ((esp_timer_get_time() - s_ctx.last_tx_ts) < TX_FLUSH_TIMEOUT_US);
+
 }
 
 static int usb_serial_jtag_rx_char(int fd)
@@ -361,25 +354,70 @@ void esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(esp_line_endings_t mode)
     s_ctx.rx_mode = mode;
 }
 
+static const esp_vfs_t vfs = {
+    .flags = ESP_VFS_FLAG_DEFAULT,
+    .write = &usb_serial_jtag_write,
+    .open = &usb_serial_jtag_open,
+    .fstat = &usb_serial_jtag_fstat,
+    .close = &usb_serial_jtag_close,
+    .read = &usb_serial_jtag_read,
+    .fcntl = &usb_serial_jtag_fcntl,
+    .fsync = &usb_serial_jtag_fsync,
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    .tcsetattr = &usb_serial_jtag_tcsetattr,
+    .tcgetattr = &usb_serial_jtag_tcgetattr,
+    .tcdrain = &usb_serial_jtag_tcdrain,
+    .tcflush = &usb_serial_jtag_tcflush,
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
+};
+
+const esp_vfs_t* esp_vfs_usb_serial_jtag_get_vfs(void)
+{
+    return &vfs;
+}
 
 esp_err_t esp_vfs_dev_usb_serial_jtag_register(void)
 {
-    esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &usb_serial_jtag_write,
-        .open = &usb_serial_jtag_open,
-        .fstat = &usb_serial_jtag_fstat,
-        .close = &usb_serial_jtag_close,
-        .read = &usb_serial_jtag_read,
-        .fcntl = &usb_serial_jtag_fcntl,
-        .fsync = &usb_serial_jtag_fsync,
-#ifdef CONFIG_VFS_SUPPORT_TERMIOS
-        .tcsetattr = &usb_serial_jtag_tcsetattr,
-        .tcgetattr = &usb_serial_jtag_tcgetattr,
-        .tcdrain = &usb_serial_jtag_tcdrain,
-        .tcflush = &usb_serial_jtag_tcflush,
-#endif // CONFIG_VFS_SUPPORT_TERMIOS
-    };
     // "/dev/usb_serial_jtag" unfortunately is too long for vfs
     return esp_vfs_register("/dev/usbserjtag", &vfs, NULL);
+}
+
+/***********************************************************
+ * VFS uses USB-SERIAL-JTAG driver part.
+ **********************************************************/
+
+static int usbjtag_rx_char_via_driver(int fd)
+{
+    uint8_t c;
+    int n = usb_serial_jtag_read_bytes(&c, 1, portMAX_DELAY);
+    if (n <= 0) {
+        return NONE;
+    }
+    return c;
+}
+
+static void usbjtag_tx_char_via_driver(int fd, int c)
+{
+    char ch = (char) c;
+    usb_serial_jtag_write_bytes(&ch, 1, portMAX_DELAY);
+}
+
+void esp_vfs_usb_serial_jtag_use_nonblocking(void)
+{
+    _lock_acquire_recursive(&s_ctx.read_lock);
+    _lock_acquire_recursive(&s_ctx.write_lock);
+    s_ctx.tx_func = usb_serial_jtag_tx_char;
+    s_ctx.rx_func = usb_serial_jtag_rx_char;
+    _lock_release_recursive(&s_ctx.write_lock);
+    _lock_release_recursive(&s_ctx.read_lock);
+}
+
+void esp_vfs_usb_serial_jtag_use_driver(void)
+{
+    _lock_acquire_recursive(&s_ctx.read_lock);
+    _lock_acquire_recursive(&s_ctx.write_lock);
+    s_ctx.tx_func = usbjtag_tx_char_via_driver;
+    s_ctx.rx_func = usbjtag_rx_char_via_driver;
+    _lock_release_recursive(&s_ctx.write_lock);
+    _lock_release_recursive(&s_ctx.read_lock);
 }

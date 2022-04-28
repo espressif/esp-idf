@@ -19,27 +19,30 @@
  * This test code shows how to configure gpio and how to use gpio interrupt.
  *
  * GPIO status:
- * GPIO18: output
- * GPIO19: output
+ * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
+ * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
  * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
  * GPIO5:  input, pulled up, interrupt from rising edge.
  *
+ * Note. These are the default GPIO pins to be used in the example. You can
+ * change IO pins in menuconfig.
+ *
  * Test:
- * Connect GPIO18 with GPIO4
- * Connect GPIO19 with GPIO5
- * Generate pulses on GPIO18/19, that triggers interrupt on GPIO4/5
+ * Connect GPIO18(8) with GPIO4
+ * Connect GPIO19(9) with GPIO5
+ * Generate pulses on GPIO18(8)/19(9), that triggers interrupt on GPIO4/5
  *
  */
 
-#define GPIO_OUTPUT_IO_0    18
-#define GPIO_OUTPUT_IO_1    19
+#define GPIO_OUTPUT_IO_0    CONFIG_GPIO_OUTPUT_0
+#define GPIO_OUTPUT_IO_1    CONFIG_GPIO_OUTPUT_1
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
-#define GPIO_INPUT_IO_0     4
-#define GPIO_INPUT_IO_1     5
+#define GPIO_INPUT_IO_0     CONFIG_GPIO_INPUT_0
+#define GPIO_INPUT_IO_1     CONFIG_GPIO_INPUT_1
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 
-static xQueueHandle gpio_evt_queue = NULL;
+static QueueHandle_t gpio_evt_queue = NULL;
 
 static void IRAM_ATTR gpio_isr_handler(void* arg)
 {
@@ -59,7 +62,8 @@ static void gpio_task_example(void* arg)
 
 void app_main(void)
 {
-    gpio_config_t io_conf;
+    //zero-initialize the config structure.
+    gpio_config_t io_conf = {};
     //disable interrupt
     io_conf.intr_type = GPIO_INTR_DISABLE;
     //set as output mode
@@ -83,7 +87,7 @@ void app_main(void)
     io_conf.pull_up_en = 1;
     gpio_config(&io_conf);
 
-    //change gpio intrrupt type for one pin
+    //change gpio interrupt type for one pin
     gpio_set_intr_type(GPIO_INPUT_IO_0, GPIO_INTR_ANYEDGE);
 
     //create a queue to handle gpio event from isr
@@ -108,7 +112,7 @@ void app_main(void)
     int cnt = 0;
     while(1) {
         printf("cnt: %d\n", cnt++);
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(GPIO_OUTPUT_IO_0, cnt % 2);
         gpio_set_level(GPIO_OUTPUT_IO_1, cnt % 2);
     }

@@ -7,7 +7,7 @@
 #include "esp_partition.h"
 
 #include "esp_err.h"
-#include "esp32/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 
 SpiFlash spiflash = SpiFlash();
 
@@ -73,6 +73,11 @@ extern "C" int spi_flash_get_total_erase_cycles(void)
 extern "C" int spi_flash_get_erase_cycles(size_t sector)
 {
     return spiflash.get_erase_cycles(sector);
+}
+
+extern "C" esp_err_t bootloader_flash_unlock(void)
+{
+    return ESP_OK;
 }
 
 esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t target, uint32_t *dest, int32_t len)

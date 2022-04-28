@@ -206,6 +206,9 @@ typedef struct httpd_config {
      * Called when a session is deleted, before freeing user and transport contexts and before
      * closing the socket. This is a place for custom de-init code common to all sockets.
      *
+     * The server will only close the socket if no custom session closing callback is set.
+     * If a custom callback is used, `close(sockfd)` should be called in here for most cases.
+     *
      * Set the user or transport context to NULL if it was freed here, so the server does not
      * try to free it again.
      *
@@ -942,6 +945,24 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
 esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, size_t val_size);
 
 /**
+ * @brief   Get the value string of a cookie value from the "Cookie" request headers by cookie name.
+ *
+ * @param[in]       req             Pointer to the HTTP request
+ * @param[in]       cookie_name     The cookie name to be searched in the request
+ * @param[out]      val             Pointer to the buffer into which the value of cookie will be copied if the cookie is found
+ * @param[inout]    val_size        Pointer to size of the user buffer "val". This variable will contain cookie length if
+ *                                  ESP_OK is returned and required buffer length incase ESP_ERR_HTTPD_RESULT_TRUNC is returned.
+ *
+ * @return
+ *  - ESP_OK : Key is found in the cookie string and copied to buffer
+ *  - ESP_ERR_NOT_FOUND          : Key not found
+ *  - ESP_ERR_INVALID_ARG        : Null arguments
+ *  - ESP_ERR_HTTPD_RESULT_TRUNC : Value string truncated
+ *  - ESP_ERR_NO_MEM             : Memory allocation failure
+ */
+esp_err_t httpd_req_get_cookie_val(httpd_req_t *req, const char *cookie_name, char *val, size_t *val_size);
+
+/**
  * @brief Test if a URI matches the given wildcard template.
  *
  * Template may end with "?" to make the previous character optional (typically a slash),
@@ -1586,6 +1607,11 @@ typedef struct httpd_ws_frame {
 } httpd_ws_frame_t;
 
 /**
+ * @brief Transfer complete callback
+ */
+typedef void (*transfer_complete_cb)(esp_err_t err, int socket, void *arg);
+
+/**
  * @brief Receive and parse a WebSocket frame
  *
  * @note    Calling httpd_ws_recv_frame() with max_len as 0 will give actual frame size in pkt->len.
@@ -1644,6 +1670,35 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
  *  - HTTPD_WS_CLIENT_WEBSOCKET : This fd is an active client, protocol is WS
  */
 httpd_ws_client_info_t httpd_ws_get_fd_info(httpd_handle_t hd, int fd);
+
+/**
+ * @brief Sends data to to specified websocket synchronously
+ *
+ * @param[in] handle  Server instance data
+ * @param[in] socket  Socket descriptor
+ * @param[in] frame   Websocket frame
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : When socket errors occurs
+ *  - ESP_ERR_NO_MEM            : Unable to allocate memory
+ */
+esp_err_t httpd_ws_send_data(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame);
+
+/**
+ * @brief Sends data to to specified websocket asynchronously
+ *
+ * @param[in] handle    Server instance data
+ * @param[in] socket    Socket descriptor
+ * @param[in] frame     Websocket frame
+ * @param[in] callback  Callback invoked after sending data
+ * @param[in] arg       User data passed to provided callback
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : When socket errors occurs
+ *  - ESP_ERR_NO_MEM            : Unable to allocate memory
+ */
+esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame,
+                                   transfer_complete_cb callback, void *arg);
 
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 /** End of WebSocket related stuff

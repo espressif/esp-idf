@@ -1,0 +1,4 @@
+INPUT += \
+         $(PROJECT_PATH)/components/driver/include/driver/temperature_sensor.h \
+         $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32h2/esp_ds.h \
+         $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32h2/esp_hmac.h

@@ -1,21 +1,12 @@
-# Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 import functools
 import json
 import logging
 import os
 import re
+from collections import defaultdict
 from copy import deepcopy
 
 import junit_xml
@@ -23,19 +14,25 @@ from tiny_test_fw import TinyFW, Utility
 
 from .DebugUtils import CustomProcess, GDBBackend, OCDBackend  # noqa: export DebugUtils for users
 from .IDFApp import UT, ComponentUTApp, Example, IDFApp, LoadableElfTestApp, TestApp  # noqa: export all Apps for users
-from .IDFDUT import ESP32C3DUT, ESP32DUT, ESP32QEMUDUT, ESP32S2DUT, ESP8266DUT, IDFDUT  # noqa: export DUTs for users
+from .IDFDUT import (ESP32C3DUT, ESP32C3FPGADUT, ESP32C6DUT, ESP32DUT, ESP32H2DUT,  # noqa: export DUTs for users
+                     ESP32QEMUDUT, ESP32S2DUT, ESP32S3DUT, ESP32S3FPGADUT, ESP8266DUT, IDFDUT)
 from .unity_test_parser import TestFormat, TestResults
 
 # pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
 TARGET_DUT_CLS_DICT = {
     'ESP32': ESP32DUT,
     'ESP32S2': ESP32S2DUT,
+    'ESP32S3': ESP32S3DUT,
     'ESP32C3': ESP32C3DUT,
+    'ESP32C3FPGA': ESP32C3FPGADUT,
+    'ESP32S3FPGA': ESP32S3FPGADUT,
+    'ESP32C6': ESP32C6DUT,
+    'ESP32H2': ESP32H2DUT,
 }
 
 
 try:
-    string_type = basestring
+    string_type = basestring  # type: ignore
 except NameError:
     string_type = str
 
@@ -79,7 +76,11 @@ def local_test_check(decorator_target):
 
     if isinstance(decorator_target, list):
         if idf_target not in decorator_target:
-            raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+            fpga_target = ''.join((idf_target, 'FPGA'))
+            if fpga_target not in decorator_target:
+                raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+            else:
+                idf_target = fpga_target
     else:
         if idf_target != decorator_target:
             raise ValueError('IDF_TARGET set to {}, not equal to decorator target value'.format(idf_target))
@@ -109,7 +110,7 @@ def ci_target_check(func):
     return wrapper
 
 
-def test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs):
+def test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run, **kwargs):
     target = upper_list_or_str(target)
     test_target = local_test_check(target)
     if 'additional_duts' in kwargs:
@@ -121,7 +122,7 @@ def test_func_generator(func, app, target, ci_target, module, execution_time, le
     original_method = TinyFW.test_method(
         app=app, dut=dut, target=target, ci_target=upper_list_or_str(ci_target),
         module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
-        dut_dict=dut_classes, **kwargs
+        dut_dict=dut_classes, nightly_run=nightly_run, **kwargs
     )
     test_func = original_method(func)
     return test_func
@@ -129,7 +130,7 @@ def test_func_generator(func, app, target, ci_target, module, execution_time, le
 
 @ci_target_check
 def idf_example_test(app=Example, target='ESP32', ci_target=None, module='examples', execution_time=1,
-                     level='example', erase_nvs=True, config_name=None, **kwargs):
+                     level='example', erase_nvs=True, config_name=None, nightly_run=False, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
@@ -145,13 +146,14 @@ def idf_example_test(app=Example, target='ESP32', ci_target=None, module='exampl
     :return: test method
     """
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
     return test
 
 
 @ci_target_check
 def idf_unit_test(app=UT, target='ESP32', ci_target=None, module='unit-test', execution_time=1,
-                  level='unit', erase_nvs=True, **kwargs):
+                  level='unit', erase_nvs=True, nightly_run=False, **kwargs):
     """
     decorator for testing idf unit tests (with default values for some keyword args).
 
@@ -165,14 +167,16 @@ def idf_unit_test(app=UT, target='ESP32', ci_target=None, module='unit-test', ex
     :param kwargs: other keyword args
     :return: test method
     """
+
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
     return test
 
 
 @ci_target_check
 def idf_custom_test(app=TestApp, target='ESP32', ci_target=None, module='misc', execution_time=1,
-                    level='integration', erase_nvs=True, config_name=None, **kwargs):
+                    level='integration', erase_nvs=True, config_name=None, nightly_run=False, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -187,14 +191,16 @@ def idf_custom_test(app=TestApp, target='ESP32', ci_target=None, module='misc', 
     :param kwargs: other keyword args
     :return: test method
     """
+
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
     return test
 
 
 @ci_target_check
 def idf_component_unit_test(app=ComponentUTApp, target='ESP32', ci_target=None, module='misc', execution_time=1,
-                            level='integration', erase_nvs=True, config_name=None, **kwargs):
+                            level='integration', erase_nvs=True, config_name=None, nightly_run=False, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -211,7 +217,8 @@ def idf_component_unit_test(app=ComponentUTApp, target='ESP32', ci_target=None, 
     """
 
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
 
     return test
 
@@ -221,16 +228,23 @@ class ComponentUTResult:
     Function Class, parse component unit test results
     """
 
+    results_list = defaultdict(list)   # type: dict[str, list[junit_xml.TestSuite]]
+
+    """
+    For origin unity test cases with macro "TEST", please set "test_format" to "TestFormat.UNITY_FIXTURE_VERBOSE".
+    For IDF unity test cases with macro "TEST CASE", please set "test_format" to "TestFormat.UNITY_BASIC".
+    """
     @staticmethod
-    def parse_result(stdout):
+    def parse_result(stdout, test_format=TestFormat.UNITY_FIXTURE_VERBOSE):
         try:
-            results = TestResults(stdout, TestFormat.UNITY_FIXTURE_VERBOSE)
+            results = TestResults(stdout, test_format)
         except (ValueError, TypeError) as e:
             raise ValueError('Error occurs when parsing the component unit test stdout to JUnit report: ' + str(e))
 
         group_name = results.tests()[0].group()
+        ComponentUTResult.results_list[group_name].append(results.to_junit())
         with open(os.path.join(os.getenv('LOG_PATH', ''), '{}_XUNIT_RESULT.xml'.format(group_name)), 'w') as fw:
-            junit_xml.to_xml_report_file(fw, [results.to_junit()])
+            junit_xml.to_xml_report_file(fw, ComponentUTResult.results_list[group_name])
 
         if results.num_failed():
             # raise exception if any case fails

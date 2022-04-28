@@ -1,21 +1,12 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include "esp_err.h"
 #include "esp_heap_caps.h"
-#include "soc/soc_memory_layout.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +49,20 @@ void heap_caps_enable_nonos_stack_heaps(void);
  *
  * Use heap_caps_add_region_with_caps() to register a region with custom capabilities.
  *
+ * @note Please refer to following example for memory regions allowed for addition to heap based on an existing region
+ * (address range for demonstration purpose only):
+ @verbatim
+       Existing region: 0x1000 <-> 0x3000
+       New region:      0x1000 <-> 0x3000 (Allowed)
+       New region:      0x1000 <-> 0x2000 (Allowed)
+       New region:      0x0000 <-> 0x1000 (Allowed)
+       New region:      0x3000 <-> 0x4000 (Allowed)
+       New region:      0x0000 <-> 0x2000 (NOT Allowed)
+       New region:      0x0000 <-> 0x4000 (NOT Allowed)
+       New region:      0x1000 <-> 0x4000 (NOT Allowed)
+       New region:      0x2000 <-> 0x4000 (NOT Allowed)
+ @endverbatim
+ *
  * @param start Start address of new region.
  * @param end End address of new region.
  *
@@ -71,6 +76,20 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end);
  * @brief Add a region of memory to the collection of heaps at runtime, with custom capabilities.
  *
  * Similar to heap_caps_add_region(), only custom memory capabilities are specified by the caller.
+ *
+ * @note Please refer to following example for memory regions allowed for addition to heap based on an existing region
+ * (address range for demonstration purpose only):
+ @verbatim
+       Existing region: 0x1000 <-> 0x3000
+       New region:      0x1000 <-> 0x3000 (Allowed)
+       New region:      0x1000 <-> 0x2000 (Allowed)
+       New region:      0x0000 <-> 0x1000 (Allowed)
+       New region:      0x3000 <-> 0x4000 (Allowed)
+       New region:      0x0000 <-> 0x2000 (NOT Allowed)
+       New region:      0x0000 <-> 0x4000 (NOT Allowed)
+       New region:      0x1000 <-> 0x4000 (NOT Allowed)
+       New region:      0x2000 <-> 0x4000 (NOT Allowed)
+ @endverbatim
  *
  * @param caps Ordered array of capability masks for the new region, in order of priority. Must have length
  * SOC_MEMORY_TYPE_NO_PRIOS. Does not need to remain valid after the call returns.

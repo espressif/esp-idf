@@ -24,7 +24,7 @@ extern "C" {
  * @param atten Attenuation to use
  * @return Always ESP_OK
  */
-extern esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten);
+extern esp_err_t adc_cal_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten);
 
 #endif
 

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -30,8 +22,7 @@
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
 #include "esp_log.h"
-#include "driver/timer.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_task_wdt.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/crosscore_int.h"
@@ -167,12 +158,12 @@ static void task_wdt_isr(void *arg)
             if (xTaskGetAffinity(twdttask->task_handle)==tskNO_AFFINITY) {
                 cpu=DRAM_STR("CPU 0/1");
             }
-            ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetTaskName(twdttask->task_handle), cpu);
+            ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetName(twdttask->task_handle), cpu);
         }
     }
     ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
     for (int x=0; x<portNUM_PROCESSORS; x++) {
-        ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+        ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
     esp_task_wdt_isr_user_handler();
@@ -184,7 +175,7 @@ static void task_wdt_isr(void *arg)
         abort();
     } else {
 
-#if !CONFIG_IDF_TARGET_ESP32C3 // TODO: ESP32-C3 IDF-2986
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2 // TODO: ESP32-C3 IDF-2986
         int current_core = xPortGetCoreID();
         //Print backtrace of current core
         ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
@@ -226,9 +217,9 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         wdt_hal_init(&twdt_context, TWDT_INSTANCE, TWDT_PRESCALER, true);
         wdt_hal_write_protect_disable(&twdt_context);
         //Configure 1st stage timeout and behavior
-        wdt_hal_config_stage(&twdt_context, WDT_STAGE0, twdt_config->timeout * 1000000 / TWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE0, twdt_config->timeout * (1000000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_INT);
         //Configure 2nd stage timeout and behavior
-        wdt_hal_config_stage(&twdt_context, WDT_STAGE1, 2*twdt_config->timeout * 1000000 / TWDT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM);
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE1, twdt_config->timeout * (2 * 1000000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_RESET_SYSTEM);
         //Enable the WDT
         wdt_hal_enable(&twdt_context);
         wdt_hal_write_protect_enable(&twdt_context);
@@ -240,8 +231,8 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         //Reconfigure hardware timer
         wdt_hal_write_protect_disable(&twdt_context);
         wdt_hal_disable(&twdt_context);
-        wdt_hal_config_stage(&twdt_context, WDT_STAGE0, twdt_config->timeout*1000*1000/TWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);
-        wdt_hal_config_stage(&twdt_context, WDT_STAGE1, 2*twdt_config->timeout*1000*1000/TWDT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM);
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE0, twdt_config->timeout * (1000 * 1000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_INT);
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE1, twdt_config->timeout * (2 * 1000 * 1000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_RESET_SYSTEM);
         wdt_hal_enable(&twdt_context);
         wdt_hal_write_protect_enable(&twdt_context);
     }

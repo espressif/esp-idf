@@ -2,7 +2,7 @@ System Time
 ===========
 
 {IDF_TARGET_RTC_CLK_FRE:default="150kHz", esp32s2="90kHz"}
-{IDF_TARGET_HARDWARE_DESIGN_URL:default="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32s2="`ESP32-S2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_en.pdf#page=10>`_"}
+{IDF_TARGET_HARDWARE_DESIGN_URL:default="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32s2="`ESP32-S2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_en.pdf#page=10>`_", esp32s3="`ESP32-S3 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_en.pdf#page=11>`"}
 
 Overview
 --------
@@ -22,7 +22,7 @@ The settings for the system time source are as follows:
 - High-resolution timer
 - None
 
-It is recommended to stick to the default setting which provides maximum accuracy. If you want to choose a different timer, configure :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_TIME_SYSCALL` in project configuration.
+It is recommended to stick to the default setting which provides maximum accuracy. If you want to choose a different timer, configure :ref:`CONFIG_NEWLIB_TIME_SYSCALL` in project configuration.
 
 
 RTC Clock Source
@@ -30,7 +30,7 @@ RTC Clock Source
 
 The RTC timer has the following clock sources:
 
-- ``Internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` (default): Features lowest deep sleep current consumption and no dependence on any external components. However, as frequency stability is affected by temperature fluctuations, time may drift in both Deep and Light sleep modes.
+- ``Internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` (default): Features the lowest deep sleep current consumption and no dependence on any external components. However, as frequency stability is affected by temperature fluctuations, time may drift in both Deep and Light sleep modes.
 
 - ``External 32kHz crystal``: Requires a 32kHz crystal to be connected to the 32K_XP and 32K_XN pins. Provides better frequency stability at the expense of slightly higher (by 1 uA) Deep sleep current consumption.
 
@@ -38,7 +38,7 @@ The RTC timer has the following clock sources:
 
 - ``Internal 8.5MHz oscillator, divided by 256 (~33kHz)``: Provides better frequency stability than the ``internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` at the expense of higher (by 5 uA) deep sleep current consumption. It also does not require external components.
 
-The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTC_CLK_SRC` in project configuration.
+The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_RTC_CLK_SRC` in project configuration.
 
 More details on wiring requirements for the ``External 32kHz crystal`` and ``External 32kHz oscillator at 32K_XN pin`` sources can be found in Section *Crystal Oscillator* of {IDF_TARGET_HARDWARE_DESIGN_URL}.
 
@@ -99,7 +99,7 @@ To set the current time, you can use the POSIX functions ``settimeofday()`` and 
 A function to use inside the lwIP SNTP library depends on a sync mode for system time. Use the function :cpp:func:`sntp_set_sync_mode` to set one of the following sync modes:
 
 - ``SNTP_SYNC_MODE_IMMED`` (default) updates system time immediately upon receiving a response from the SNTP server after using ``settimeofday()``.
-- ``SNTP_SYNC_MODE_SMOOTH`` updates time smoothly by gradually reducing time error using the funcion ``adjtime()``. If the difference between the SNTP response time and system time is more than 35 minutes, update system time immediately by using ``settimeofday()``.
+- ``SNTP_SYNC_MODE_SMOOTH`` updates time smoothly by gradually reducing time error using the function ``adjtime()``. If the difference between the SNTP response time and system time is more than 35 minutes, update system time immediately by using ``settimeofday()``.
 
 The lwIP SNTP library has API functions for setting a callback function for a certain event. You might need the following functions:
 
@@ -114,7 +114,7 @@ To start synchronization via SNTP, just call the following three functions.
     sntp_setservername(0, "pool.ntp.org");
     sntp_init();
 
-An application with this initialization code will periodically synchronize the time. The time synchronization period is determined by :envvar:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
+An application with this initialization code will periodically synchronize the time. The time synchronization period is determined by :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
 
 A code example that demonstrates the implementation of time synchronization based on the lwIP SNTP library is provided in :example:`protocols/sntp` directory.
 
@@ -128,6 +128,21 @@ To set local timezone, use the following POSIX functions:
 2. Call ``tzset()`` to update C library runtime data for the new time zone.
 
 Once these steps are completed, call the standard C library function ``localtime()``, and it will return correct local time taking into account the time zone offset and daylight saving time.
+
+
+64-bit ``time_t``
+-----------------
+
+ESP-IDF uses 32-bit ``time_t`` type by default. To address Y2K38 issue, you may need to use 64-bit ``time_t`` type when building the application.
+
+Currently this requires building the cross-compiler toolchain from scratch. See the instructions for building the toolchain in :doc:`/get-started/linux-macos-setup`. To enable 64-bit ``time_t`` support in the toolchain, you need to remove the ``--enable-newlib-long-time_t`` option from the ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` file before building the toolchain.
+
+If you need to make the program compatible with both 32-bit and 64-bit ``time_t``, you may use the following methods:
+
+- In C or C++ source files, ``_USE_LONG_TIME_T`` preprocessor macro will be defined if 32-bit ``time_t`` is used. You need to include ``<sys/types.h>`` to make this macro available.
+- In CMake files, ``TIME_T_SIZE`` IDF build property will be set to the size of ``time_t``, in bytes. You may call ``idf_build_get_property(var TIME_T_SIZE)`` to get the value of this property into a CMake variable ``var``. See :ref:`build system API reference <cmake_buildsystem_api>` for more information about ``idf_build_get_property``.
+
+Note that the size of ``time_t`` type also affects the sizes of other types, for example ``struct timeval``, ``struct stat``, ``struct utimbuf``.
 
 
 API Reference

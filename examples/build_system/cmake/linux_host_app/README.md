@@ -13,8 +13,11 @@ There are two major differences to an IDF application built for an ESP chip comp
 
 2. The project-level [CMakeLists.txt](CMakeLists.txt) for Linux is different from that of a normal IDF application for an ESP chip.
    On Linux, there is an additional line `set(COMPONENTS main)`, which clears the common requirements (default dependencies usually included in all IDF applications).
-   This is currently necessary as the Linux-host feature is still under developement.
+   This is currently necessary as the Linux-host feature is still under development.
    Otherwise, a lot of hardware-dependent code would be pulled in.
+
+# Requirements
+Currently, Ruby is required for the mock override of FreeRTOS.
 
 # Build
 Source the IDF environment as usual, then set the Linux target:

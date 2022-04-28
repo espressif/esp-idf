@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +12,7 @@
 #include <sys/unistd.h>
 #include "unity.h"
 #include "esp_log.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
@@ -31,14 +23,33 @@
 #include "test_fatfs_common.h"
 #include "soc/soc_caps.h"
 
-#define SDSPI_MOSI_PIN  15
-#define SDSPI_MISO_PIN  2
-#define SDSPI_CS_PIN    13
-#define SDSPI_CLK_PIN   14
-#define SDSPI_HOST_ID   SPI2_HOST
+#if CONFIG_IDF_TARGET_ESP32
+#define SDSPI_MISO_PIN 2
+#define SDSPI_MOSI_PIN 15
+#define SDSPI_CLK_PIN  14
+#define SDSPI_CS_PIN   13
+#elif CONFIG_IDF_TARGET_ESP32S2
+// Adapted for internal test board ESP-32-S3-USB-OTG-Ev-BOARD_V1.0 (with ESP32-S2-MINI-1 module)
+#define SDSPI_MISO_PIN 37
+#define SDSPI_MOSI_PIN 35
+#define SDSPI_CLK_PIN  36
+#define SDSPI_CS_PIN   34
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define SDSPI_MISO_PIN 6
+#define SDSPI_MOSI_PIN 4
+#define SDSPI_CLK_PIN  5
+#define SDSPI_CS_PIN   1
+#define SPI_DMA_CHAN   SPI_DMA_CH_AUTO
+#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
 
+#ifndef SPI_DMA_CHAN
+#define SPI_DMA_CHAN   1
+#endif //SPI_DMA_CHAN
+#define SDSPI_HOST_ID  SPI2_HOST
 
 #if SOC_SDMMC_HOST_SUPPORTED
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// No runner
 #include "driver/sdmmc_host.h"
 
 
@@ -81,14 +92,14 @@ TEST_CASE("Mount fails cleanly without card inserted", "[fatfs][sd][ignore]")
     HEAP_SIZE_CHECK(heap_size, 0);
 }
 
-TEST_CASE("(SD) can create and write file", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can create and write file", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
     test_teardown();
 }
 
-TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
@@ -96,7 +107,7 @@ TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
-TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
@@ -104,84 +115,91 @@ TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
-TEST_CASE("(SD) pwrite() works well", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) pwrite() works well", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_pwrite_file(test_filename);
     test_teardown();
 }
 
-TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_overwrite_append(test_filename);
     test_teardown();
 }
 
-TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_lseek("/sdcard/seek.txt");
     test_teardown();
 }
 
-TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_truncate_file("/sdcard/truncate.txt");
     test_teardown();
 }
 
-TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can ftruncate", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
+{
+    test_setup();
+    test_fatfs_ftruncate_file("/sdcard/ftrunc.txt");
+    test_teardown();
+}
+
+TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_stat("/sdcard/stat.txt", "/sdcard");
     test_teardown();
 }
 
-TEST_CASE("(SD) utime sets modification time", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) utime sets modification time", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_utime("/sdcard/utime.txt", "/sdcard");
     test_teardown();
 }
 
-TEST_CASE("(SD) unlink removes a file", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) unlink removes a file", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_unlink("/sdcard/unlink.txt");
     test_teardown();
 }
 
-TEST_CASE("(SD) link copies a file, rename moves a file", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) link copies a file, rename moves a file", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_link_rename("/sdcard/link");
     test_teardown();
 }
 
-TEST_CASE("(SD) can create and remove directories", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can create and remove directories", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_mkdir_rmdir("/sdcard/dir");
     test_teardown();
 }
 
-TEST_CASE("(SD) can opendir root directory of FS", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can opendir root directory of FS", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_can_opendir("/sdcard");
     test_teardown();
 }
 
-TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_opendir_readdir_rewinddir("/sdcard/dir");
     test_teardown();
 }
 
-TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_concurrent("/sdcard/f");
@@ -230,7 +248,7 @@ static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool 
     TEST_ESP_OK(esp_vfs_fat_sdmmc_unmount());
 }
 
-TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,
@@ -250,12 +268,12 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
     /* Mount FATFS in SD can WL at the same time. Create a file on each FS */
     wl_handle_t wl_handle = WL_INVALID_HANDLE;
     test_setup();
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &wl_handle));
     unlink(filename_sd);
     unlink(filename_wl);
     test_fatfs_create_file_with_text(filename_sd, str_sd);
     test_fatfs_create_file_with_text(filename_wl, str_wl);
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", wl_handle));
     test_teardown();
 
     /* Check that the file "sd.txt" was created on FS in SD, and has the right data */
@@ -270,14 +288,14 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
     test_teardown();
 
     /* Check that the file "wl.txt" was created on FS in WL, and has the right data */
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &wl_handle));
     TEST_ASSERT_NULL(fopen(filename_sd, "r"));
     f = fopen(filename_wl, "r");
     TEST_ASSERT_NOT_NULL(f);
     TEST_ASSERT_NOT_NULL(fgets(buf, sizeof(buf) - 1, f));
     TEST_ASSERT_EQUAL(0, strcmp(buf, str_wl));
     fclose(f);
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", wl_handle));
 }
 
 /*
@@ -305,9 +323,11 @@ TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-
 }
 #endif // CONFIG_FATFS_API_ENCODING_UTF_8 && CONFIG_FATFS_CODEPAGE == 936
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 #endif  //SDMMC HOST SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C2)
 //no runners
 static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
 
@@ -329,7 +349,7 @@ TEST_CASE("(SDSPI) write/read speed test", "[fatfs][sd][test_env=UT_T1_SPIMODE][
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
-    esp_err_t err = spi_bus_initialize(SDSPI_HOST_ID, &bus_cfg, 1);
+    esp_err_t err = spi_bus_initialize(SDSPI_HOST_ID, &bus_cfg, SPI_DMA_CHAN);
     TEST_ESP_OK(err);
 
     sdspi_speed_test(buf, 4 * 1024, file_size, true);
@@ -373,4 +393,4 @@ static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool 
     TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
 }
 
-#endif //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#endif //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

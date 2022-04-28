@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -282,11 +274,12 @@ static int base_close(esp_transport_handle_t t)
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
     if (ssl && ssl->ssl_initialized) {
         ret = esp_tls_conn_destroy(ssl->tls);
+        ssl->tls = NULL;
         ssl->conn_state = TRANS_SSL_INIT;
         ssl->ssl_initialized = false;
         ssl->sockfd = INVALID_SOCKET;
     } else if (ssl && ssl->sockfd >= 0) {
-        close(ssl->sockfd);
+        ret = close(ssl->sockfd);
         ssl->sockfd = INVALID_SOCKET;
     }
     return ret;
@@ -308,18 +301,19 @@ static int base_destroy(esp_transport_handle_t t)
     return 0;
 }
 
-
 void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.use_global_ca_store = true;
 }
 
+#ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
 void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key)
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.psk_hint_key =  psk_hint_key;
 }
+#endif
 
 void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data, int len)
 {
@@ -370,11 +364,13 @@ void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const c
     ssl->cfg.clientkey_bytes = len;
 }
 
+#if defined(CONFIG_MBEDTLS_SSL_ALPN) || defined(CONFIG_WOLFSSL_HAVE_ALPN)
 void esp_transport_ssl_set_alpn_protocol(esp_transport_handle_t t, const char **alpn_protos)
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.alpn_protos = alpn_protos;
 }
+#endif
 
 void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
 {
@@ -382,17 +378,21 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
     ssl->cfg.skip_common_name = true;
 }
 
+#ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
 void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.use_secure_element = true;
 }
+#endif
 
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*crt_bundle_attach)(void *conf)))
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.crt_bundle_attach = crt_bundle_attach;
 }
+#endif
 
 static int base_get_socket(esp_transport_handle_t t)
 {
@@ -403,11 +403,13 @@ static int base_get_socket(esp_transport_handle_t t)
     return INVALID_SOCKET;
 }
 
+#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
 void esp_transport_ssl_set_ds_data(esp_transport_handle_t t, void *ds_data)
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.ds_data = ds_data;
 }
+#endif
 
 void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)
 {
@@ -436,6 +438,9 @@ esp_transport_handle_t esp_transport_ssl_init(void)
 struct transport_esp_tls* esp_transport_esp_tls_create(void)
 {
     transport_esp_tls_t *transport_esp_tls = calloc(1, sizeof(transport_esp_tls_t));
+    if (transport_esp_tls == NULL) {
+        return NULL;
+    }
     transport_esp_tls->sockfd = INVALID_SOCKET;
     return transport_esp_tls;
 }

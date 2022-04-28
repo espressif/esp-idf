@@ -83,10 +83,4 @@ char *http_utils_join_string(const char *first_str, size_t len_first, const char
  */
 int http_utils_str_starts_with(const char *str, const char *start);
 
-
-#define HTTP_MEM_CHECK(TAG, a, action) if (!(a)) {                                                  \
-        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, "Memory exhausted");                     \
-        action;                                                                                     \
-        }
-
 #endif

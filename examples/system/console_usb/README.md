@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example is similar to the [console example](../console/README.md), but instead of the UART it uses USB CDC for console output.
+This example is similar to the [console example](../console/advanced/README.md), but instead of the UART it uses USB CDC for console output.
 The example uses the [Console Component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html#console) to create an interactive shell.
 
 The interactive shell implemented in this example contains a wide variety of commands, and can act as a basis for applications that require a command-line interface (CLI).
@@ -71,7 +71,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-Enter the `help` command get a full list of all available commands. The following is a sample session of the Console Example where a variety of commands provided by the Console Example are used. Note that GPIO15 is connected to GND to remove the boot log output. 
+Enter the `help` command get a full list of all available commands. The following is a sample session of the Console Example where a variety of commands provided by the Console Example are used. Note that GPIO15 is connected to GND to remove the boot log output.
 
 ```
 This is an example of ESP-IDF console component.
@@ -79,22 +79,22 @@ Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
 esp32s2> help
-help 
+help
   Print the list of registered commands
 
-free 
+free
   Get the current size of free heap memory
 
-heap 
+heap
   Get minimum size of free heap memory that was available during program execution
 
-version 
+version
   Get version of chip and SDK
 
-restart 
+restart
   Software reset of the chip
 
-tasks 
+tasks
   Get information about running tasks
 
 (remaining output of the help command skipped here)

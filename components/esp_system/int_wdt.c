@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -23,10 +15,11 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#include "esp_log.h"
+#include "esp_chip_info.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
-#include "driver/timer.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_int_wdt.h"
 #include "esp_private/system_internal.h"
 #include "hal/cpu_hal.h"
@@ -51,7 +44,7 @@ static wdt_hal_context_t iwdt_context;
  */
 #define IWDT_LIVELOCK_TIMEOUT_MS    (20)
 
-extern uint32_t _l4_intr_livelock_counter, _l4_intr_livelock_max;
+extern uint32_t _lx_intr_livelock_counter, _lx_intr_livelock_max;
 #endif
 
 //Take care: the tick hook can also be called before esp_int_wdt_init() is called.
@@ -70,9 +63,9 @@ static void IRAM_ATTR tick_hook(void)
             wdt_hal_write_protect_disable(&iwdt_context);
             //Reconfigure stage timeouts
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-            _l4_intr_livelock_counter = 0;
+            _lx_intr_livelock_counter = 0;
             wdt_hal_config_stage(&iwdt_context, WDT_STAGE0,
-                                 CONFIG_ESP_INT_WDT_TIMEOUT_MS * 1000 / IWDT_TICKS_PER_US / (_l4_intr_livelock_max + 1), WDT_STAGE_ACTION_INT);                    //Set timeout before interrupt
+                                CONFIG_ESP_INT_WDT_TIMEOUT_MS * 1000 / IWDT_TICKS_PER_US / (_lx_intr_livelock_max + 1), WDT_STAGE_ACTION_INT);                    //Set timeout before interrupt
 #else
             wdt_hal_config_stage(&iwdt_context, WDT_STAGE0, CONFIG_ESP_INT_WDT_TIMEOUT_MS * 1000 / IWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);          //Set timeout before interrupt
 #endif
@@ -116,6 +109,38 @@ void esp_int_wdt_init(void)
     //Enable WDT
     wdt_hal_enable(&iwdt_context);
     wdt_hal_write_protect_enable(&iwdt_context);
+
+
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+
+#define APB_DCRSET      (0x200c)
+#define APB_ITCTRL      (0x3f00)
+
+#define ERI_ADDR(APB)   (0x100000 + (APB))
+
+#define _SYM2STR(x)     # x
+#define SYM2STR(x)      _SYM2STR(x)
+    uint32_t eriadrs, scratch = 0, immediate = 0;
+    if (soc_has_cache_lock_bug()) {
+        if (xPortGetCoreID() != CONFIG_BTDM_CTRL_PINNED_TO_CORE) {
+            __asm__ __volatile__ (
+                    /* Enable Xtensa Debug Module Integration Mode */
+                    "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_ITCTRL)) "\n"
+                    "rer    %[REG], %[ERI]\n"
+                    "movi   %[IMM], 1\n"
+                    "or     %[REG], %[IMM], %[REG]\n"
+                    "wer    %[REG], %[ERI]\n"
+                    /* Enable Xtensa Debug Module BreakIn signal */
+                    "movi   %[ERI], " SYM2STR(ERI_ADDR(APB_DCRSET)) "\n"
+                    "rer    %[REG], %[ERI]\n"
+                    "movi   %[IMM], 0x10000\n"
+                    "or     %[REG], %[IMM], %[REG]\n"
+                    "wer    %[REG], %[ERI]\n"
+                    : [ERI] "=r" (eriadrs), [REG] "+r" (scratch), [IMM] "+r" (immediate)
+                );
+        }
+    }
+#endif
 }
 
 void esp_int_wdt_cpu_init(void)
@@ -123,7 +148,13 @@ void esp_int_wdt_cpu_init(void)
     assert((CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (portTICK_PERIOD_MS << 1)) && "Interrupt watchdog timeout needs to meet twice the RTOS tick period!");
     esp_register_freertos_tick_hook_for_cpu(tick_hook, cpu_hal_get_core_id());
     ESP_INTR_DISABLE(WDT_INT_NUM);
-    intr_matrix_set(cpu_hal_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+
+#if SOC_TIMER_GROUPS > 1
+    esp_rom_route_intr_matrix(cpu_hal_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+#else
+    // TODO: Clean up code for ESP32-C2, IDF-4114
+    ESP_EARLY_LOGW("INT_WDT", "ESP32-C2 only has one timer group");
+#endif
 
     /* Set the type and priority to watch dog interrupts */
 #if SOC_CPU_HAS_FLEXIBLE_INTC
@@ -136,11 +167,11 @@ void esp_int_wdt_cpu_init(void)
      * This is a workaround for issue 3.15 in "ESP32 ECO and workarounds for
      * Bugs" document.
      */
-    _l4_intr_livelock_counter = 0;
+    _lx_intr_livelock_counter = 0;
     if (soc_has_cache_lock_bug()) {
         assert((portTICK_PERIOD_MS << 1) <= IWDT_LIVELOCK_TIMEOUT_MS);
         assert(CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (IWDT_LIVELOCK_TIMEOUT_MS * 3));
-        _l4_intr_livelock_max = CONFIG_ESP_INT_WDT_TIMEOUT_MS / IWDT_LIVELOCK_TIMEOUT_MS - 1;
+        _lx_intr_livelock_max = CONFIG_ESP_INT_WDT_TIMEOUT_MS / IWDT_LIVELOCK_TIMEOUT_MS - 1;
     }
 #endif
 

@@ -13,45 +13,63 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32-elf",
+      "supported_targets": [
+        "esp32"
+      ],
       "version_cmd": [
         "xtensa-esp32-elf-gcc",
         "--version"
       ],
-      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-_]+)\\)\\s*([0-9\\.]+)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "674080a12f9c5ebe5a3a5ce51c6deaeffe6dfb06d6416233df86f25b574e9279",
-            "size": 85731226,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
+            "sha256": "9edd1e77627688f435561922d14299f6a0021ba1f6ff67e472e1108695a69e53",
+            "size": 90569312,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-linux-amd64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "3a21a3e310e6b1e7d7bed1f3e59698a5bd29ed3a5ca79fba9265d7dd2f1e0cd2",
+            "size": 86838362,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-linux-arm64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "6771e011dffa2438ef84ff3474538b4a69df8f9d4cfae3b3707ca31c782ed7db",
-            "size": 83888892,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
+            "sha256": "89313c4c1d8db1b01624f31b58bf3fbe527160569828ac4301e9daa75c52716d",
+            "size": 86187540,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-linux-armel.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "ec07a9c75a0aa4b86496cacf2034154cd4a693b6f317c66a4a122c71fd04a518",
+            "size": 83298212,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-linux-armhf.tar.gz"
           },
           "linux-i686": {
-            "sha256": "076b7e05304e26aa6ec105c9e0dc74addca079bc2cae6e42ee7575c5ded29877",
-            "size": 87715092,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
+            "sha256": "a1f165a836f175daa6fbfde4ca99cb93b377f021fbfc41f79a700bd4df965a9a",
+            "size": 92580267,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "6845f786303b26c4a55ede57487ba65bd25737232fe6104be03f25bb62f4631c",
-            "size": 92424226,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
+            "sha256": "dda3d7a43efd995d9a51d5a5741626dbf915df46078aef0b5aea7163ac82398b",
+            "size": 97807647,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
           },
-          "name": "esp-2020r3-8.4.0",
+          "macos-arm64": {
+            "sha256": "dda3d7a43efd995d9a51d5a5741626dbf915df46078aef0b5aea7163ac82398b",
+            "size": 97807647,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
+          },
+          "name": "esp-2021r2-patch3-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "81cecd5493a3fcf2118977f3fd60bd0a13a4aeac8fe6760d912f96d2c34fab66",
-            "size": 104226379,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win32.zip"
+            "sha256": "fd147592928ef2d7092ba34b01ecd776fe26ba3d7e3f9b6b215a3b46e981ee2c",
+            "size": 116464819,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-win32.zip"
           },
           "win64": {
-            "sha256": "58419852fefb7111fdec056ac2fd7c4bd09c1f4c17610a761a97b788413527cf",
-            "size": 106855139,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32-elf-gcc8_4_0-esp-2020r3-win64.zip"
+            "sha256": "9395315c07de0b9f05c9a6616ba1f05e76ab651053f2f40479163a8e03cfa830",
+            "size": 119511910,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch3-win64.zip"
           }
         }
       ]
@@ -69,45 +87,63 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32s2-elf",
+      "supported_targets": [
+        "esp32s2"
+      ],
       "version_cmd": [
         "xtensa-esp32s2-elf-gcc",
         "--version"
       ],
-      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-_]+)\\)\\s*([0-9\\.]+)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "40fafa47045167feda0cd07827db5207ebfeb4a3b6b24475957a921bc92805ed",
-            "size": 86069526,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
+            "sha256": "a32451a8edc1104b83cd9971178e61826e957d7db9ad9f81798a8969fd5a954e",
+            "size": 90894048,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-linux-amd64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "2ac2c94a533a99a091d2159c678c611c712c494b5f68d97913254712047260f9",
+            "size": 87178224,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-linux-arm64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "6c1efec4c7829202279388ccb388e8a17a34464bc351d677c4f04d95ea4b4ce0",
-            "size": 84254468,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
+            "sha256": "da49afee1e2e03eaab3f492718789442d33b562800e2a892679f95b50be24d14",
+            "size": 86569314,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-linux-armel.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "f2b9b89522f28547c8725a54c4e57e8a35dac56edc26aa8cd607c87a050249ac",
+            "size": 83700311,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-linux-armhf.tar.gz"
           },
           "linux-i686": {
-            "sha256": "bd3a91166206a1a7ff7c572e15389e1938c3cdce588032a5e915be677a945638",
-            "size": 88053499,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
+            "sha256": "36d3c4990a5feb68aa8534463bc9e8ee367fe23886f78e1d726f4411c7571462",
+            "size": 92884013,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "fe19b0c873879d8d89ec040f4db04a3ab27d769d3fd5f55fe59a28b6b111d09c",
-            "size": 92817351,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
+            "sha256": "de9af641678c93775e932ee5ec4f478f8925cfc1ebc22e41adc4fb85430a0c35",
+            "size": 98224709,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
           },
-          "name": "esp-2020r3-8.4.0",
+          "macos-arm64": {
+            "sha256": "de9af641678c93775e932ee5ec4f478f8925cfc1ebc22e41adc4fb85430a0c35",
+            "size": 98224709,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
+          },
+          "name": "esp-2021r2-patch3-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "d078d614ae864ae4a37fcb5b83323af0a5cfdbd8243607664becdd0f977a1e33",
-            "size": 104659541,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-win32.zip"
+            "sha256": "ccf08afe60046f87b0e81ca17dc5073eda68ab5e7522c163dd5b583d713b7b39",
+            "size": 116924759,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-win32.zip"
           },
           "win64": {
-            "sha256": "6ea78b72ec52330b69af91dbe6c77c22bdc827817f044aa30306270453032bb4",
-            "size": 107228353,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2020r3/xtensa-esp32s2-elf-gcc8_4_0-esp-2020r3-win64.zip"
+            "sha256": "37c91490b8fc75e638c23785e261eaf553be2dcd106cf6cff5b76981fa02955b",
+            "size": 119912142,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch3-win64.zip"
           }
         }
       ]
@@ -125,45 +161,113 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "xtensa-esp32s3-elf",
+      "supported_targets": [
+        "esp32s3"
+      ],
       "version_cmd": [
         "xtensa-esp32s3-elf-gcc",
         "--version"
       ],
-      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-zA-Z\\.\\-_]+)\\)\\s*([0-9\\.]+)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "22bf5e63baf3f3f5103ae21bcc35d80cd888d8032095e7b9e8f9631074ac462a",
-            "size": 86029457,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-linux-amd64.tar.gz"
+            "sha256": "59b271d014ff3915b6db1b43b610a45eea15fe5d6877d12cae8a191cc996ed37",
+            "size": 90903617,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-linux-amd64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "7051b32483e61f98606d71c98e372929428a5165df791dcd5830ed9517763152",
+            "size": 87065204,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-linux-arm64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "27f423af3cfb9d8ed7a02173ccd8dc3b0fd3b3e76a92e9ba507121e73bfa5df3",
-            "size": 84120606,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-linux-armel.tar.gz"
+            "sha256": "48c8dbbf96eec691a812327dc580042d9718fe989e60c2111ebfd692ac710081",
+            "size": 86455731,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-linux-armel.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "efc037db5b3565d907c611ef9d17f156080949c0382feeaec86ed7b54d9fa2ae",
+            "size": 83561862,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-linux-armhf.tar.gz"
           },
           "linux-i686": {
-            "sha256": "479a71cfb4b0c0b36371a1aaed2e6095dfc3241937a54f60a1ba115da73ddec5",
-            "size": 88015798,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-linux-i686.tar.gz"
+            "sha256": "552dca3f4302ab7ca88a934b0391200198c9d10a4d8ac413fe604cbf8601f950",
+            "size": 92906274,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "c09b8fcbb840540a3f59429b1bbfbe5abfcacccf7a8a955e4e01e3f50b53a079",
-            "size": 93013216,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-macos.tar.gz"
+            "sha256": "e5af78f05d3af07617805d06ebb45ff2fe9b6aed6970a84c35eea28a5d8d5e53",
+            "size": 98553473,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
           },
-          "name": "esp-2020r3-8.4.0",
+          "macos-arm64": {
+            "sha256": "e5af78f05d3af07617805d06ebb45ff2fe9b6aed6970a84c35eea28a5d8d5e53",
+            "size": 98553473,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
+          },
+          "name": "esp-2021r2-patch3-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "9591fc32896b13d7fe77310afbbff197cbbc20437d316e0e2460c5c50a10d7b5",
-            "size": 104536285,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-win32.zip"
+            "sha256": "1b70163acccc5655449de1d149427a54f384156bd35816ec60c422d76d033f05",
+            "size": 116847008,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-win32.zip"
           },
           "win64": {
-            "sha256": "1caf56e9588214d8f1bc17734680ebab2906da3b5f31095e60407dad170f1221",
-            "size": 107245907,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s3-elf-gcc8_4_0-esp-2020r3-win64.zip"
+            "sha256": "58e58575d1938879fd51e822181e54bcb343aa846eb3fca8f616c2cde7bd0041",
+            "size": 120066269,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch3-win64.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "LLVM for Xtensa (ESP32, ESP32-S2) based on clang",
+      "export_paths": [
+        [
+          "xtensa-esp32-elf-clang",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/llvm-project",
+      "install": "on_request",
+      "license": "Apache-2.0",
+      "name": "xtensa-clang",
+      "supported_targets": [
+        "esp32",
+        "esp32s2"
+      ],
+      "version_cmd": [
+        "clang",
+        "--version"
+      ],
+      "version_regex": "version\\s*([0-9\\.]+)\\s*\\([^\\s]+\\s*(\\w{10}).+\\)",
+      "version_regex_replace": "\\1-\\2",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "d62d9234c702a86ed510777125ee97458204e28877806a73f9de5e41d7b65716",
+            "size": 102954848,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-linux-amd64.tar.xz"
+          },
+          "macos": {
+            "sha256": "6e7413e5fa515e403859ecf5301bdcdc3f8bf12c5de9aecaa11e9f17f32b05db",
+            "size": 89888488,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-macos.tar.xz"
+          },
+          "macos-arm64": {
+            "sha256": "6e7413e5fa515e403859ecf5301bdcdc3f8bf12c5de9aecaa11e9f17f32b05db",
+            "size": 89888488,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-macos.tar.xz"
+          },
+          "name": "12.0.1-d9341b81fc",
+          "status": "recommended",
+          "win64": {
+            "sha256": "e056366959c722367e4144076c5383bd417ea199db5658bb7bb6c95b9aca014b",
+            "size": 177903504,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-win64.zip"
           }
         }
       ]
@@ -181,6 +285,13 @@
       "install": "always",
       "license": "GPL-3.0-with-GCC-exception",
       "name": "riscv32-esp-elf",
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3",
+        "esp32c3",
+        "esp32h2",
+        "esp32c2"
+      ],
       "version_cmd": [
         "riscv32-esp-elf-gcc",
         "--version"
@@ -190,31 +301,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "425454c5c4e2cde5dd2dd3a1d398befc70addf71547840fb6d0ec4b307b08894",
-            "size": 152042971,
-            "url": "https://dl.espressif.com/dl/toolchains/preview/riscv32-esp-elf-gcc8_4_0-crosstool-ng-1.24.0-123-g64eb9ff-linux-amd64.tar.gz"
+            "sha256": "179cbad579790ad35e0f414a18d90017c0f158c397022411a8e9867db2174f15",
+            "size": 106843321,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-linux-amd64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "fb339d476c79c76db8f903b265cab6bb6950d5ed954dec644445252d3378023c",
+            "size": 103277393,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-linux-arm64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "8ae098751b5196ca8a80d832cc9930bc4d639762a6cb22be3cfe0a8d71b2f230",
-            "size": 150801079,
-            "url": "https://dl.espressif.com/dl/toolchains/preview/riscv32-esp-elf-gcc8_4_0-crosstool-ng-1.24.0-123-g64eb9ff-linux-armel.tar.gz"
+            "sha256": "51a6296d8334b7452dba44b2b62e87afd7fd1c74bafa1aa29b1f4ab72cb9e5e0",
+            "size": 103062256,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-linux-armel.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "faa723e2fe84154ea8081ef204d9db51c5b7e5702497dff4f3b33e250e42f776",
+            "size": 100134810,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-linux-armhf.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "fef60f7ef37ffaa50416d8f244cdbd710d6729dae41ef06c4ec0e50a1f3b7dd7",
+            "size": 109460025,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "35b1aef85b7e6b4268774f627e8e835d087bcf8b9972cfb6436614aa2e40d4a9",
-            "size": 158594401,
-            "url": "https://dl.espressif.com/dl/toolchains/preview/riscv32-esp-elf-gcc8_4_0-crosstool-ng-1.24.0-123-g64eb9ff-macos.tar.gz"
+            "sha256": "4aacc1742a76349d790b1ac8e9e9d963daefda5346dbd6741cfe8e7a35a44e4e",
+            "size": 113703959,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
           },
-          "name": "1.24.0.123_64eb9ff-8.4.0",
+          "macos-arm64": {
+            "sha256": "4aacc1742a76349d790b1ac8e9e9d963daefda5346dbd6741cfe8e7a35a44e4e",
+            "size": 113703959,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-macos.tar.gz"
+          },
+          "name": "esp-2021r2-patch3-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "4f576b08620f57c270ac677cc94dce2767fff72d27a539e348d448f63b480d1f",
-            "size": 190014086,
-            "url": "https://dl.espressif.com/dl/toolchains/preview/riscv32-esp-elf-gcc8_4_0-crosstool-ng-1.24.0-123-g64eb9ff-win32.zip"
+            "sha256": "eb2a442d7f551ebeb842995ec372ec4b364314ca2d7aae779399a74972f7d6bc",
+            "size": 144711970,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-win32.zip"
           },
           "win64": {
-            "sha256": "51e392ed88498f3fc4ad07e9ff4b5225f6533b1c363ecd7dd67c10d8d31b6b23",
-            "size": 191565525,
-            "url": "https://dl.espressif.com/dl/toolchains/preview/riscv32-esp-elf-gcc8_4_0-crosstool-ng-1.24.0-123-g64eb9ff-win64.zip"
+            "sha256": "f5607e5187317d521f0474cade83f8eb590f2d165d95c3779b6ce11fbac21d1f",
+            "size": 146606480,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2-patch3/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch3-win64.zip"
           }
         }
       ]
@@ -236,9 +367,13 @@
         {
           "install": "never",
           "platforms": [
-            "linux-i686"
+            "linux-i686",
+            "linux-arm64"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32"
       ],
       "version_cmd": [
         "esp32ulp-elf-as",
@@ -262,6 +397,11 @@
             "size": 8872874,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-macos-2.28.51-esp-20191205.tar.gz"
           },
+          "macos-arm64": {
+            "sha256": "a35d9e7a0445247c7fc9dccd3fbc35682f0fafc28beeb10c94b59466317190c4",
+            "size": 8872874,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-macos-2.28.51-esp-20191205.tar.gz"
+          },
           "name": "2.28.51-esp-20191205",
           "status": "recommended",
           "win32": {
@@ -278,7 +418,7 @@
       ]
     },
     {
-      "description": "Toolchain for ESP32-S2 ULP coprocessor",
+      "description": "Toolchain for ESP32-S2 and ESP32-S3 ULP coprocessors",
       "export_paths": [
         [
           "esp32s2ulp-elf-binutils",
@@ -294,9 +434,14 @@
         {
           "install": "never",
           "platforms": [
-            "linux-i686"
+            "linux-i686",
+            "linux-arm64"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3"
       ],
       "version_cmd": [
         "esp32s2ulp-elf-as",
@@ -316,6 +461,11 @@
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
           },
           "macos": {
+            "sha256": "5a9bb678a5246638cbda303f523d9bb8121a9a24dc01ecb22c21c46c41184155",
+            "size": 8876194,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-macos-2.28.51-esp-20191205.tar.gz"
+          },
+          "macos-arm64": {
             "sha256": "5a9bb678a5246638cbda303f523d9bb8121a9a24dc01ecb22c21c46c41184155",
             "size": 8876194,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-macos-2.28.51-esp-20191205.tar.gz"
@@ -364,11 +514,15 @@
             ]
           ],
           "platforms": [
-            "macos"
+            "macos",
+            "macos-arm64"
           ]
         }
       ],
       "strip_container_dirs": 1,
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "cmake",
         "--version"
@@ -377,26 +531,41 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "12a577aa04b6639766ae908f33cf70baefc11ac4499b8b1c8812d99f05fb6a02",
-            "size": 39517697,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Linux-x86_64.tar.gz"
+            "sha256": "97bf730372f9900b2dfb9206fccbcf92f5c7f3b502148b832e77451aa0f9e0e6",
+            "size": 43877847,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-linux-x86_64.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "77620f99e9d5f39cf4a49294c6a68c89a978ecef144894618974b9958efe3c2a",
+            "size": 45139836,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-linux-aarch64.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "f8bd050c2745f0dcc4b7cef9738bbfef775950a10f5bd377abb0062835e669dc",
+            "size": 13759084,
+            "url": "https://dl.espressif.com/dl/cmake/cmake-3.20.3-Linux-armv7l.tar.gz"
           },
           "macos": {
-            "sha256": "f60e0ef96da48725cd8da7d6abe83cd9501167aa51625c90dd4d31081a631279",
-            "size": 35802699,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Darwin-x86_64.tar.gz"
+            "sha256": "5f72dba3aa5f3800fb29ab6115ae0b31f10bdb2aad66204e14c98f6ac7e6b6ed",
+            "size": 66311879,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-macos-universal.tar.gz"
           },
-          "name": "3.16.4",
+          "macos-arm64": {
+            "sha256": "5f72dba3aa5f3800fb29ab6115ae0b31f10bdb2aad66204e14c98f6ac7e6b6ed",
+            "size": 66311879,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-macos-universal.tar.gz"
+          },
+          "name": "3.20.3",
           "status": "recommended",
           "win32": {
-            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
-            "size": 32812189,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
+            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
+            "size": 36995168,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
           },
           "win64": {
-            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
-            "size": 32812189,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
+            "sha256": "e276cf7fbb3e3e88bc666e183bc3ddaceb143a4c83fb357b1dbb1a26fd6e4ea2",
+            "size": 36995168,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.20.3/cmake-3.20.3-windows-x86_64.zip"
           }
         }
       ]
@@ -424,6 +593,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "openocd",
         "--version"
@@ -432,31 +604,46 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "0973c2503909af3e430b7a2309b6162ca375671ab2b22e37cba5159eea142139",
-            "size": 1773107,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-linux64-0.10.0-esp32-20210401.tar.gz"
+            "sha256": "8d49845d7f0f2f9178e72c694a76e39a6ef3dd219cfccbfc2b8e09fc8d8f1c6e",
+            "size": 2058842,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-linux-amd64-0.11.0-esp32-20220411.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "584e4d10d6efb9985f4212542cfa2a92f89c747b54035bac8aa75b5f5e768e28",
+            "size": 1902060,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-linux-arm64-0.11.0-esp32-20220411.tar.gz"
           },
           "linux-armel": {
-            "sha256": "3703401322cc51f85cb44e3a14a788fdc45883051eac3428b4d7bdf323dee2c7",
-            "size": 1829351,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-armel-0.10.0-esp32-20210401.tar.gz"
+            "sha256": "49189d645d8c482b81d1870766a5795da30a79b352d98803f0054f200174fc5a",
+            "size": 2128366,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-linux-armel-0.11.0-esp32-20220411.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "a538a2b98fd09fb548a9dbfa0b5155364273e1ae37e944d1abfa04cc4e6e0ba2",
+            "size": 2009408,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-linux-armhf-0.11.0-esp32-20220411.tar.gz"
           },
           "macos": {
-            "sha256": "cb9e8d486197fc6e8080fde089fa3e92770f8c7af01971a57d4ca9b424264b63",
-            "size": 1859246,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-macos-0.10.0-esp32-20210401.tar.gz"
+            "sha256": "d718bc24087f796ff06f49fb9052183b302402ab775460b1ebdfc4b5e1768463",
+            "size": 2125935,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-macos-0.11.0-esp32-20220411.tar.gz"
           },
-          "name": "v0.10.0-esp32-20210401",
+          "macos-arm64": {
+            "sha256": "19448f0d4aaafa85c93c86e363ca879e5ccdcfdda42ba5ce4ac3817e9d8eecdb",
+            "size": 2165892,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-macos-arm64-0.11.0-esp32-20220411.tar.gz"
+          },
+          "name": "v0.11.0-esp32-20220411",
           "status": "recommended",
           "win32": {
-            "sha256": "931bc4c4587e0713d4fc4fbc81b9a79c8228268e61fcd14b2bdcb2f8bd519ef9",
-            "size": 2253723,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-win32-0.10.0-esp32-20210401.zip"
+            "sha256": "167e9299fa1d022b493c76332f507f6a6735c7bfec3cf91c54a598b331c78b5f",
+            "size": 2570094,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-win32-0.11.0-esp32-20220411.zip"
           },
           "win64": {
-            "sha256": "931bc4c4587e0713d4fc4fbc81b9a79c8228268e61fcd14b2bdcb2f8bd519ef9",
-            "size": 2253723,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210401/openocd-esp32-win32-0.10.0-esp32-20210401.zip"
+            "sha256": "167e9299fa1d022b493c76332f507f6a6735c7bfec3cf91c54a598b331c78b5f",
+            "size": 2570094,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.11.0-esp32-20220411/openocd-esp32-win32-0.11.0-esp32-20220411.zip"
           }
         }
       ]
@@ -482,6 +669,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "ninja",
         "--version"
@@ -495,6 +685,11 @@
             "url": "https://dl.espressif.com/dl/ninja-1.10.2-linux64.tar.gz"
           },
           "macos": {
+            "sha256": "847bb1ca4bc16d8dba6aeed3ecb5055498b86bc68c364c37583eb5738bb440f1",
+            "size": 240112,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.2-osx.tar.gz"
+          },
+          "macos-arm64": {
             "sha256": "847bb1ca4bc16d8dba6aeed3ecb5055498b86bc68c364c37583eb5738bb440f1",
             "size": 240112,
             "url": "https://dl.espressif.com/dl/ninja-1.10.2-osx.tar.gz"
@@ -517,7 +712,7 @@
         ]
       ],
       "export_vars": {},
-      "info_url": "https://github.com/espressif/esp-idf/tree/master/tools/windows/idf_exe",
+      "info_url": "https://github.com/espressif/idf_py_exe_tool",
       "install": "never",
       "license": "Apache-2.0",
       "name": "idf-exe",
@@ -530,24 +725,27 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "idf.py.exe",
         "-v"
       ],
-      "version_regex": "([0-9.]+)",
+      "version_regex": "v([0-9.]+)",
       "versions": [
         {
-          "name": "1.0.1",
+          "name": "1.0.3",
           "status": "recommended",
           "win32": {
-            "sha256": "53eb6aaaf034cc7ed1a97d5c577afa0f99815b7793905e9408e74012d357d04a",
-            "size": 11297,
-            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.1.zip"
+            "sha256": "7c81ef534c562354a5402ab6b90a6eb1cc8473a9f4a7b7a7f93ebbd23b4a2755",
+            "size": 73562,
+            "url": "https://github.com/espressif/idf_py_exe_tool/releases/download/v1.0.3/idf-exe-v1.0.3.zip"
           },
           "win64": {
-            "sha256": "53eb6aaaf034cc7ed1a97d5c577afa0f99815b7793905e9408e74012d357d04a",
-            "size": 11297,
-            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.1.zip"
+            "sha256": "7c81ef534c562354a5402ab6b90a6eb1cc8473a9f4a7b7a7f93ebbd23b4a2755",
+            "size": 73562,
+            "url": "https://github.com/espressif/idf_py_exe_tool/releases/download/v1.0.3/idf-exe-v1.0.3.zip"
           }
         }
       ]
@@ -556,7 +754,7 @@
       "description": "Ccache (compiler cache)",
       "export_paths": [
         [
-          ""
+          "ccache-4.3-windows-64"
         ]
       ],
       "export_vars": {
@@ -574,6 +772,9 @@
           ]
         }
       ],
+      "supported_targets": [
+        "all"
+      ],
       "version_cmd": [
         "ccache.exe",
         "--version"
@@ -581,12 +782,12 @@
       "version_regex": "ccache version ([0-9.]+)",
       "versions": [
         {
-          "name": "3.7",
+          "name": "4.3",
           "status": "recommended",
           "win64": {
-            "sha256": "37e833f3f354f1145503533e776c1bd44ec2e77ff8a2476a1d2039b0b10c78d6",
-            "size": 142401,
-            "url": "https://dl.espressif.com/dl/ccache-3.7-w64.zip"
+            "sha256": "a9cacae73c3906d8193456328bee74f7748cb1559a32eaced9ee78eadd416105",
+            "size": 1550675,
+            "url": "https://github.com/ccache/ccache/releases/download/v4.3/ccache-4.3-windows-64.zip"
           }
         }
       ]
@@ -610,6 +811,10 @@
             "win64"
           ]
         }
+      ],
+      "supported_targets": [
+        "esp32s2",
+        "esp32s3"
       ],
       "version_cmd": [
         "dfu-util",

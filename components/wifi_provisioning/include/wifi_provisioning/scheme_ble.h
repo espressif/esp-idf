@@ -77,6 +77,29 @@ void wifi_prov_scheme_ble_event_cb_free_bt  (void *user_data, wifi_prov_cb_event
  */
 esp_err_t wifi_prov_scheme_ble_set_service_uuid(uint8_t *uuid128);
 
+/**
+ * @brief   Set manufacturer specific data in scan response
+ *
+ * This must be called before starting provisioning, i.e. before
+ * making a call to wifi_prov_mgr_start_provisioning().
+ *
+ * @note    It is important to understand that length of custom manufacturer
+ *          data should be within limits. The manufacturer data goes into scan
+ *          response along with BLE device name. By default, BLE device name
+ *          length is of 11 Bytes, however it can vary as per application use
+ *          case. So, one has to honour the scan response data size limits i.e.
+ *          (mfg_data_len + 2) < 31 - (device_name_length + 2 ). If the
+ *          mfg_data length exceeds this limit, the length will be truncated.
+ *
+ * @param[in] mfg_data      Custom manufacturer data
+ * @param[in] mfg_data_len  Manufacturer data length
+ *
+ * @return
+ *  - ESP_OK              : Success
+ *  - ESP_ERR_INVALID_ARG : Null argument
+ */
+esp_err_t wifi_prov_scheme_ble_set_mfg_data(uint8_t *mfg_data, ssize_t mfg_data_len);
+
 #ifdef __cplusplus
 }
 #endif

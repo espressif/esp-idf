@@ -20,6 +20,11 @@ SPIFFS partition size is set in partitions_example.csv file. See [Partition Tabl
 
 This example does not require any special hardware, and can be run on any common development board.
 
+### Configure the project
+
+* Open the project configuration menu (`idf.py menuconfig`)
+* Configure SPIFFS settings under "SPIFFS Example menu". See note about `esp_spiffs_check` function on [SPIFFS Filesystem](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/spiffs.html) page.
+
 ### Build and flash
 
 Replace PORT with serial port name:
@@ -48,4 +53,4 @@ I (19584) example: Read from file: 'Hello World!'
 I (19584) example: SPIFFS unmounted
 ```
 
-To erase the contents of SPIFFS partition, run `idf.py erase_flash` command. Then upload the example again as described above.
+To erase the contents of SPIFFS partition, run `idf.py erase-flash` command. Then upload the example again as described above.

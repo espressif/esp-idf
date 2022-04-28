@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -20,7 +12,6 @@
 
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_ota_ops.h"
 
 #include "sdkconfig.h"
 
@@ -41,42 +32,47 @@
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "esp_sleep.h"
+#include "esp_xt_wdt.h"
+
+#if __has_include("esp_ota_ops.h")
+#include "esp_ota_ops.h"
+#define HAS_ESP_OTA 1
+#endif
 
 /***********************************************/
 // Headers for other components init functions
-#include "nvs_flash.h"
-#include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
 #endif
 
+#if CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
+#endif
+
 #include "esp_private/dbg_stubs.h"
+
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
-#include "esp_pthread.h"
-#include "esp_private/usb_console.h"
-#include "esp_vfs_cdcacm.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#endif
 
-#include "brownout.h"
+#include "esp_pthread.h"
+#include "esp_vfs_console.h"
+#include "esp_private/esp_clk.h"
+
+#include "esp_private/brownout.h"
 
 #include "esp_rom_sys.h"
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
 #include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
 #endif
 /***********************************************/
 
@@ -87,9 +83,6 @@
 #if !(SOC_CPU_CORES_NUM > 1) && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     #error "System has been configured to run on multiple cores, but target SoC only has a single core."
 #endif
-
-#define STRINGIFY(s) STRINGIFY2(s)
-#define STRINGIFY2(s) #s
 
 uint64_t g_startup_time = 0;
 
@@ -139,13 +132,28 @@ static IRAM_ATTR void _Unwind_SetNoFunctionContextInstall_Default(unsigned char 
 static const char* TAG = "cpu_start";
 
 /**
+ * This function overwrites a the same function of libsupc++ (part of libstdc++).
+ * Consequently, libsupc++ will then follow our configured exception emergency pool size.
+ *
+ * It will be called even with -fno-exception for user code since the stdlib still uses exceptions.
+ */
+size_t __cxx_eh_arena_size_get(void)
+{
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+    return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
+#else
+    return 0;
+#endif
+}
+
+/**
  * Xtensa gcc is configured to emit a .ctors section, RISC-V gcc is configured with --enable-initfini-array
  * so it emits an .init_array section instead.
  * But the init_priority sections will be sorted for iteration in ascending order during startup.
  * The rest of the init_array sections is sorted for iteration in descending order during startup, however.
  * Hence a different section is generated for the init_priority functions which is looped
  * over in ascending direction instead of descending direction.
- * The RISC-V-specific behavior is dependent on the linker script esp32c3.project.ld.in.
+ * The RISC-V-specific behavior is dependent on the linker script ld/esp32c3/sections.ld.in.
  */
 static void do_global_ctors(void)
 {
@@ -230,8 +238,13 @@ static void do_core_init(void)
        app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
        fail initializing it properly. */
     heap_caps_init();
+
+    // When apptrace module is enabled, there will be SEGGER_SYSVIEW calls in the newlib init.
+    // SEGGER_SYSVIEW relies on apptrace module
+    // apptrace module uses esp_timer_get_time to determine timeout conditions.
+    // esp_timer early initialization is required for esp_timer_get_time to work.
+    esp_timer_early_init();
     esp_newlib_init();
-    esp_newlib_time_init();
 
     if (g_spiram_ok) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
@@ -246,32 +259,22 @@ static void do_core_init(void)
 #endif
     }
 
-#if CONFIG_ESP32_BROWNOUT_DET   || \
-    CONFIG_ESP32S2_BROWNOUT_DET || \
-    CONFIG_ESP32S3_BROWNOUT_DET || \
-    CONFIG_ESP32C3_BROWNOUT_DET
+#if CONFIG_ESP_BROWNOUT_DET
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
 #endif
 
-#ifdef CONFIG_VFS_SUPPORT_IO
-#ifdef CONFIG_ESP_CONSOLE_UART
-    esp_vfs_dev_uart_register();
-    const char *default_stdio_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
-#endif // CONFIG_ESP_CONSOLE_UART
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
-    ESP_ERROR_CHECK(esp_usb_console_init());
-    ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
-    const char *default_stdio_dev = "/dev/cdcacm";
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
-#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    ESP_ERROR_CHECK(esp_vfs_dev_usb_serial_jtag_register());
-    const char *default_stdio_dev = "/dev/usbserjtag";
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-#endif // CONFIG_VFS_SUPPORT_IO
+    esp_newlib_time_init();
+
+#if CONFIG_VFS_SUPPORT_IO
+    // VFS console register.
+    esp_err_t vfs_err = esp_vfs_console_register();
+    assert(vfs_err == ESP_OK && "Failed to register vfs console");
+#endif
 
 #if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+    const static char *default_stdio_dev = "/dev/console/";
     esp_reent_init(_GLOBAL_REENT);
     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
@@ -281,6 +284,28 @@ static void do_core_init(void)
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
 
     esp_err_t err __attribute__((unused));
+
+    err = esp_pthread_init();
+    assert(err == ESP_OK && "Failed to init pthread module!");
+
+    spi_flash_init();
+    /* init default OS-aware flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_default_ops);
+
+    esp_flash_app_init();
+    esp_err_t flash_ret = esp_flash_init_default_chip();
+    assert(flash_ret == ESP_OK);
+    (void)flash_ret;
+
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
+    if (efuse_partition) {
+        esp_efuse_init_virtual_mode_in_flash(efuse_partition->address, efuse_partition->size);
+    }
+#endif
+#endif
 
 #if CONFIG_SECURE_DISABLE_ROM_DL_MODE
     err = esp_efuse_disable_rom_download_mode();
@@ -296,31 +321,6 @@ static void do_core_init(void)
     esp_efuse_disable_basic_rom_console();
 #endif
 
-    // [refactor-todo] move this to secondary init
-#if CONFIG_APPTRACE_ENABLE
-    err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
-#endif
-#if CONFIG_SYSVIEW_ENABLE
-    SEGGER_SYSVIEW_Conf();
-#endif
-
-#if CONFIG_ESP_DEBUG_STUBS_ENABLE
-    esp_dbg_stubs_init();
-#endif
-
-    err = esp_pthread_init();
-    assert(err == ESP_OK && "Failed to init pthread module!");
-
-    spi_flash_init();
-    /* init default OS-aware flash access critical section */
-    spi_flash_guard_set(&g_flash_guard_default_ops);
-
-    esp_flash_app_init();
-    esp_err_t flash_ret = esp_flash_init_default_chip();
-    assert(flash_ret == ESP_OK);
-    (void)flash_ret;
-
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     esp_flash_encryption_init_checks();
 #endif
@@ -328,6 +328,15 @@ static void do_core_init(void)
 #if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
     // Note: in some configs this may read flash, so placed after flash init
     esp_secure_boot_init_checks();
+#endif
+
+#if CONFIG_ESP_XT_WDT
+    esp_xt_wdt_config_t cfg = {
+        .timeout                = CONFIG_ESP_XT_WDT_TIMEOUT,
+        .auto_backup_clk_enable = CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE,
+    };
+    err = esp_xt_wdt_init(&cfg);
+    assert(err == ESP_OK && "Failed to init xtwdt");
 #endif
 }
 
@@ -363,8 +372,9 @@ static void start_cpu0_default(void)
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     int cpu_freq = esp_clk_cpu_freq();
-    ESP_EARLY_LOGI(TAG, "cpu freq: %d", cpu_freq);
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
+#if HAS_ESP_OTA // [refactor-todo] find a better way to handle this.
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
@@ -386,6 +396,7 @@ static void start_cpu0_default(void)
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
     }
+#endif //HAS_ESP_OTA
 
     // Initialize core components and services.
     do_core_init();
@@ -417,12 +428,24 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
 
-#if CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
     // Configure to isolate (disable the Input/Output/Pullup/Pulldown
     // function of the pin) all GPIO pins in sleep state
     esp_sleep_config_gpio_isolate();
     // Enable automatic switching of GPIO configuration
     esp_sleep_enable_gpio_switch(true);
+#endif
+
+#if CONFIG_APPTRACE_ENABLE
+    esp_err_t err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
+#endif
+#if CONFIG_APPTRACE_SV_ENABLE
+    SEGGER_SYSVIEW_Conf();
+#endif
+
+#if CONFIG_ESP_DEBUG_STUBS_ENABLE
+    esp_dbg_stubs_init();
 #endif
 
 #if defined(CONFIG_PM_ENABLE)
@@ -437,16 +460,9 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_apb_backup_dma_lock_init();
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
-#endif
-
-#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
-    if (efuse_partition) {
-        esp_efuse_init(efuse_partition->address, efuse_partition->size);
-    }
 #endif
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS

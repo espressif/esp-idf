@@ -1,6 +1,15 @@
 menu "ESP HTTPS OTA"
 
-    config OTA_ALLOW_HTTP
+    config ESP_HTTPS_OTA_DECRYPT_CB
+        bool "Provide decryption callback"
+        default n
+        help
+            Exposes an additional callback whereby firmware data could be decrypted
+            before being processed by OTA update component. This can help to integrate
+            external encryption related format and removal of such encapsulation layer
+            from firmware image.
+
+    config ESP_HTTPS_OTA_ALLOW_HTTP
         bool "Allow HTTP for OTA (WARNING: ONLY FOR TESTING PURPOSE, READ HELP)"
         default n
         help

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2017 SEGGER Microcontroller GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*********************************************************************
 *                SEGGER Microcontroller GmbH & Co. KG                *
 *                        The Embedded Experts                        *
@@ -76,11 +81,8 @@ Notes:
 *
 **********************************************************************
 */
-#ifndef portSTACK_GROWTH
-  #define portSTACK_GROWTH              ( -1 )
-#endif
 
-#define SYSVIEW_FREERTOS_MAX_NOF_TASKS  CONFIG_SYSVIEW_MAX_TASKS
+#define SYSVIEW_FREERTOS_MAX_NOF_TASKS  CONFIG_APPTRACE_SV_MAX_TASKS
 
 /*********************************************************************
 *
@@ -209,7 +211,57 @@ Notes:
 #define apiID_VEVENTGROUPDELETE                   (72u)
 #define apiID_UXEVENTGROUPGETNUMBER               (73u)
 
-#define traceTASK_NOTIFY_TAKE()                                       SEGGER_SYSVIEW_RecordU32x2(apiFastID_OFFSET + apiID_ULTASKNOTIFYTAKE, xClearCountOnExit, xTicksToWait)
+#ifdef CONFIG_FREERTOS_SMP
+/*
+FreeRTOS SMP has diverged from ESP-IDF FreeRTOS source quite a bit, thus Sysview is out of sync. For now, we just
+define away all of the tracing macros.
+*/
+#define traceTASK_NOTIFY_TAKE( uxIndexToWait )
+#define traceTASK_DELAY()
+#define traceTASK_DELAY_UNTIL( xTimeToWake )
+#define traceTASK_DELETE( pxTCB )
+#define traceTASK_NOTIFY_GIVE_FROM_ISR( uxIndexToNotify )
+#define traceTASK_PRIORITY_INHERIT( pxTCB, uxPriority )
+#define traceTASK_RESUME( pxTCB )
+#define traceINCREASE_TICK_COUNT( xTicksToJump )
+#define traceTASK_SUSPEND( pxTCB )
+#define traceTASK_PRIORITY_DISINHERIT( pxTCB, uxBasePriority )
+#define traceTASK_RESUME_FROM_ISR( pxTCB )
+#define traceTASK_NOTIFY( uxIndexToNotify )
+#define traceTASK_NOTIFY_FROM_ISR( uxIndexToNotify )
+#define traceTASK_NOTIFY_WAIT( uxIndexToWait )
+#define traceQUEUE_CREATE( pxNewQueue )
+#define traceQUEUE_DELETE( pxQueue )
+#define traceQUEUE_PEEK( pxQueue )
+#define traceQUEUE_PEEK_FROM_ISR( pxQueue )
+#define traceQUEUE_PEEK_FROM_ISR_FAILED( pxQueue )
+#define traceQUEUE_RECEIVE( pxQueue )
+#define traceQUEUE_RECEIVE_FAILED( pxQueue )
+#define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+#define traceQUEUE_RECEIVE_FROM_ISR( pxQueue )
+#define traceQUEUE_RECEIVE_FROM_ISR_FAILED( pxQueue )
+#define traceQUEUE_REGISTRY_ADD( xQueue, pcQueueName )
+#define traceQUEUE_SEND( pxQueue )
+#define traceQUEUE_SEND_FAILED( pxQueue )
+#define traceQUEUE_SEND_FROM_ISR( pxQueue )
+#define traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue )
+#define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+#define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+#define traceTASK_CREATE(pxNewTCB)
+#define traceTASK_PRIORITY_SET(pxTask, uxNewPriority)
+#define traceTASK_SWITCHED_IN()
+#define traceMOVED_TASK_TO_READY_STATE(pxTCB)
+#define traceREADDED_TASK_TO_READY_STATE(pxTCB)
+#define traceMOVED_TASK_TO_DELAYED_LIST()
+#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()
+#define traceMOVED_TASK_TO_SUSPENDED_LIST(pxTCB)
+#define traceISR_EXIT_TO_SCHEDULER()
+#define traceISR_EXIT()
+#define traceISR_ENTER(_n_)
+
+#else // CONFIG_FREERTOS_SMP
+
+#define traceTASK_NOTIFY_TAKE( uxIndexToWait )                        SEGGER_SYSVIEW_RecordU32x2(apiFastID_OFFSET + apiID_ULTASKNOTIFYTAKE, xClearCountOnExit, xTicksToWait)
 #define traceTASK_DELAY()                                             SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKDELAY, xTicksToDelay)
 #define traceTASK_DELAY_UNTIL()                                       SEGGER_SYSVIEW_RecordVoid(apiFastID_OFFSET + apiID_VTASKDELAYUNTIL)
 #define traceTASK_DELETE( pxTCB )                                     if (pxTCB != NULL) {                                              \
@@ -217,16 +269,16 @@ Notes:
 						                                                                      SEGGER_SYSVIEW_ShrinkId((U32)pxTCB)); 	\
 					                                                    SYSVIEW_DeleteTask((U32)pxTCB);                                 \
 					                                                  }
-#define traceTASK_NOTIFY_GIVE_FROM_ISR()                              SEGGER_SYSVIEW_RecordU32x2(apiFastID_OFFSET + apiID_VTASKNOTIFYGIVEFROMISR, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB), (U32)pxHigherPriorityTaskWoken)
+#define traceTASK_NOTIFY_GIVE_FROM_ISR( uxIndexToNotify )             SEGGER_SYSVIEW_RecordU32x2(apiFastID_OFFSET + apiID_VTASKNOTIFYGIVEFROMISR, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB), (U32)pxHigherPriorityTaskWoken)
 #define traceTASK_PRIORITY_INHERIT( pxTCB, uxPriority )               SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKPRIORITYINHERIT, (U32)pxMutexHolder)
 #define traceTASK_RESUME( pxTCB )                                     SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKRESUME, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB))
 #define traceINCREASE_TICK_COUNT( xTicksToJump )                      SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKSTEPTICK, xTicksToJump)
 #define traceTASK_SUSPEND( pxTCB )                                    SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKSUSPEND, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB))
 #define traceTASK_PRIORITY_DISINHERIT( pxTCB, uxBasePriority )        SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_XTASKPRIORITYDISINHERIT, (U32)pxMutexHolder)
 #define traceTASK_RESUME_FROM_ISR( pxTCB )                            SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_XTASKRESUMEFROMISR, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB))
-#define traceTASK_NOTIFY()                                            SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XTASKGENERICNOTIFY, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB), ulValue, eAction, (U32)pulPreviousNotificationValue)
-#define traceTASK_NOTIFY_FROM_ISR()                                   SYSVIEW_RecordU32x5(apiFastID_OFFSET + apiID_XTASKGENERICNOTIFYFROMISR, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB), ulValue, eAction, (U32)pulPreviousNotificationValue, (U32)pxHigherPriorityTaskWoken)
-#define traceTASK_NOTIFY_WAIT()                                       SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XTASKNOTIFYWAIT, ulBitsToClearOnEntry, ulBitsToClearOnExit, (U32)pulNotificationValue, xTicksToWait)
+#define traceTASK_NOTIFY( uxIndexToNotify )                           SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XTASKGENERICNOTIFY, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB), ulValue, eAction, (U32)pulPreviousNotificationValue)
+#define traceTASK_NOTIFY_FROM_ISR( uxIndexToNotify )                  SYSVIEW_RecordU32x5(apiFastID_OFFSET + apiID_XTASKGENERICNOTIFYFROMISR, SEGGER_SYSVIEW_ShrinkId((U32)pxTCB), ulValue, eAction, (U32)pulPreviousNotificationValue, (U32)pxHigherPriorityTaskWoken)
+#define traceTASK_NOTIFY_WAIT( uxIndexToWait )                        SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XTASKNOTIFYWAIT, ulBitsToClearOnEntry, ulBitsToClearOnExit, (U32)pulNotificationValue, xTicksToWait)
 
 #define traceQUEUE_CREATE( pxNewQueue )                               SEGGER_SYSVIEW_RecordU32x3(apiFastID_OFFSET + apiID_XQUEUEGENERICCREATE, uxQueueLength, uxItemSize, ucQueueType)
 #define traceQUEUE_DELETE( pxQueue )                                  SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VQUEUEDELETE, SEGGER_SYSVIEW_ShrinkId((U32)pxQueue))
@@ -290,12 +342,12 @@ Notes:
   #define traceTASK_SWITCHED_IN()                   if(prvGetTCBFromHandle(NULL) == xTaskGetIdleTaskHandle()) {           \
                                                       SEGGER_SYSVIEW_OnIdle();                                          \
                                                     } else {                                                            \
-                                                      SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[xPortGetCoreID()]); \
+                                                      SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[cpu_hal_get_core_id()]); \
                                                     }
 #else
   #define traceTASK_SWITCHED_IN()                   {                                                                   \
-                                                      if (memcmp(pxCurrentTCB[xPortGetCoreID()]->pcTaskName, "IDLE", 5) != 0) { \
-                                                        SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[xPortGetCoreID()]);    \
+                                                      if (memcmp(pxCurrentTCB[cpu_hal_get_core_id()]->pcTaskName, "IDLE", 5) != 0) { \
+                                                        SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[cpu_hal_get_core_id()]);    \
                                                       } else {                                                          \
                                                         SEGGER_SYSVIEW_OnIdle();                                        \
                                                       }                                                                 \
@@ -305,13 +357,15 @@ Notes:
 #define traceMOVED_TASK_TO_READY_STATE(pxTCB)       SEGGER_SYSVIEW_OnTaskStartReady((U32)pxTCB)
 #define traceREADDED_TASK_TO_READY_STATE(pxTCB)
 
-#define traceMOVED_TASK_TO_DELAYED_LIST()           SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[xPortGetCoreID()],  (1u << 2))
-#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()  SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[xPortGetCoreID()],  (1u << 2))
+#define traceMOVED_TASK_TO_DELAYED_LIST()           SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[cpu_hal_get_core_id()],  (1u << 2))
+#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()  SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[cpu_hal_get_core_id()],  (1u << 2))
 #define traceMOVED_TASK_TO_SUSPENDED_LIST(pxTCB)    SEGGER_SYSVIEW_OnTaskStopReady((U32)pxTCB,         ((3u << 3) | 3))
 
 #define traceISR_EXIT_TO_SCHEDULER()                SEGGER_SYSVIEW_RecordExitISRToScheduler()
 #define traceISR_EXIT()                             SEGGER_SYSVIEW_RecordExitISR()
 #define traceISR_ENTER(_n_)                         SEGGER_SYSVIEW_RecordEnterISR(_n_)
+
+#endif // CONFIG_FREERTOS_SMP
 
 /*********************************************************************
 *

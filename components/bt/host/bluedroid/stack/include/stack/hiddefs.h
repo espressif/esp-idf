@@ -25,7 +25,8 @@
 #ifndef HIDDEFS_H
 #define HIDDEFS_H
 #include "common/bt_target.h"
-#if (HID_HOST_INCLUDED == TRUE)
+
+#if (HID_HOST_INCLUDED == TRUE || HID_DEV_INCLUDED == TRUE)
 
 #if (SDP_INCLUDED == TRUE)
 #include "stack/sdp_api.h"

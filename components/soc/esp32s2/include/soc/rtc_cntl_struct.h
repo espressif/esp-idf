@@ -19,7 +19,7 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct rtc_cntl_dev_s {
     union {
         struct {
             uint32_t sw_stall_appcpu_c0:  2;             /*{reg_sw_stall_appcpu_c1[5:0]   reg_sw_stall_appcpu_c0[1:0]} == 0x86 will stall APP CPU*/

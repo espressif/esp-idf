@@ -5,11 +5,17 @@
 
 From welcoming people as they arrive at a sporting event to providing information about a nearby museum exhibit, iBeacon opens a new world of possibilities for location awareness, and countless opportunities for interactivity between iOS devices and iBeacon hardware.
 
-## Using Example 
+## How to Use Example
 
-iBeacon is a trademark of Apple Inc.
+Before project configuration and build, be sure to set the correct chip target using:
 
-Before building devices which use iBeacon technology, visit https://developer.apple.com/ibeacon/ to obtain a license.
+```bash
+idf.py set-target <chip_name>
+```
+
+**Note:** *iBeacon is a trademark of Apple Inc.*
+
+Before building devices which use iBeacon technology, visit [Apple iBeacon](https://developer.apple.com/ibeacon/) to obtain a license.
 
 ### iBeacon Mode
 
@@ -23,13 +29,15 @@ Which demo will be run depends on the menuconfig, developers can set it in `iBea
 
 The default mode is iBeacon Sender.
 
-### Menuconfig
-Before compiling the demo，developers also need to configure the project:
+### Configure the project
 
-```c
+Open the project configuration menu: 
+
+```bash
 idf.py menuconfig
 ```
-And then enter `Component config->Bluetooth->Bluedroid Enable`
+
+And then enter `Component config --> Bluetooth --> Bluedroid Enable`
 
 Because the number of peripherals may be very large, developers can enable the **BLE Scan Duplicate Options**, the maximum number of devices in scan duplicate filter depends on the free heap size, when the cache is full, it is cleared.
 
@@ -45,19 +53,14 @@ switch (scan_result->scan_rst.search_evt) {
     default:
     break;
 }
-
 ```
 ### Build and Flash
 
-Build each project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idp.py -p PORT flash monitor
-```
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
 
@@ -113,4 +116,7 @@ I (329203) IBEACON_DEMO: ----------iBeacon Found----------
 I (329203) IBEACON_DEMO: Device address:: 30 ae a4 00 42 82
 I (329203) IBEACON_DEMO: Proximity UUID:: fd a5 06 93 a4 e2 4f b1 af cf c6 eb 07 64 78 25
 ```
- 
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

@@ -6,22 +6,40 @@ This example creates a SSL server and employs a simple Websocket request handler
 
 See the `esp_https_server` component documentation for details.
 
-Before using the example, open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
-`httpd_ws_recv_frame` support two ways to get frame payload.
-* Static buffer -- Allocate maximum expected packet length (either statically or dynamically) and call `httpd_ws_recv_frame()` referencing this buffer and it's size. (Unnecessarily large buffers might cause memory waste)
+### Websocket support in `http_server`
+
+Please refer to the documentation of [Websocket server](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/esp_http_server.html#websocket-server) feature in the documentation,
+or to the description of using websocket handlers in httpd in the [simple ws echo](../../http_server/ws_echo_server/README.md#how-to-use-example) example.
+
+## How to use example
+Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
+
+### Hardware Required
+
+* A development board with ESP32/ESP32-S2/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A USB cable for power supply and programming
+
+### Configure the project
 
 ```
-#define MAX_PAYLOAD_LEN 128
-uint8_t buf[MAX_PAYLOAD_LEN] = { 0 };
-httpd_ws_frame_t ws_pkt;
-ws_pkt.payload = buf;
-httpd_ws_recv_frame(req, &ws_pkt, MAX_PAYLOAD_LEN);
+idf.py menuconfig
 ```
-* Dynamic buffer -- Refer to the examples, which receive websocket data in these three steps:
-   1) Call `httpd_ws_recv_frame()` with zero buffer size
-   2) Allocate the size based on the received packet length
-   3) Call `httpd_ws_recv_frame()` with the allocated buffer
+Open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+idf.py -p PORT flash monitor
+```
+
+(Replace PORT with the name of the serial port to use.)
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
 ## Certificates
 

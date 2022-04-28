@@ -1,19 +1,11 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_attr.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/rtc_periph.h"
 #include "sdkconfig.h"
@@ -54,13 +46,13 @@ esp_err_t IRAM_ATTR esp_cpu_set_watchpoint(int no, void *adr, int size, int flag
 
     switch (flags)
     {
-    case ESP_WATCHPOINT_LOAD:
+    case ESP_CPU_WATCHPOINT_LOAD:
         trigger = WATCHPOINT_TRIGGER_ON_RO;
         break;
-    case ESP_WATCHPOINT_STORE:
+    case ESP_CPU_WATCHPOINT_STORE:
         trigger = WATCHPOINT_TRIGGER_ON_WO;
         break;
-    case ESP_WATCHPOINT_ACCESS:
+    case ESP_CPU_WATCHPOINT_ACCESS:
         trigger = WATCHPOINT_TRIGGER_ON_RW;
         break;
     default:
@@ -78,10 +70,7 @@ void IRAM_ATTR esp_cpu_clear_watchpoint(int no)
 
 bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 {
-#if CONFIG_ESP32_DEBUG_OCDAWARE || \
-    CONFIG_ESP32S2_DEBUG_OCDAWARE || \
-    CONFIG_ESP32S3_DEBUG_OCDAWARE || \
-    CONFIG_ESP32C3_DEBUG_OCDAWARE
+#if CONFIG_ESP_DEBUG_OCDAWARE
     return cpu_ll_is_debugger_attached();
 #else
     return false; // Always return false if "OCD aware" is disabled

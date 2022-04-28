@@ -1,0 +1,4 @@
+# Python package requirements for gdbgui support ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-gdbgui"
+
+gdbgui

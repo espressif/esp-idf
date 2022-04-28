@@ -76,10 +76,9 @@ static void read_efuse_fields(device_desc_t *desc)
 }
 
 
+#ifdef CONFIG_EFUSE_VIRTUAL
 static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t coding_scheme)
 {
-#ifdef CONFIG_EFUSE_VIRTUAL
-
 #if CONFIG_IDF_TARGET_ESP32
     const esp_efuse_coding_scheme_t coding_scheme_for_batch_mode = EFUSE_CODING_SCHEME_3_4;
 #else
@@ -102,8 +101,8 @@ static void write_efuse_fields(device_desc_t *desc, esp_efuse_coding_scheme_t co
     if (coding_scheme == coding_scheme_for_batch_mode) {
         ESP_ERROR_CHECK(esp_efuse_batch_write_commit());
     }
-#endif // CONFIG_EFUSE_VIRTUAL
 }
+#endif // CONFIG_EFUSE_VIRTUAL
 
 
 static esp_efuse_coding_scheme_t get_coding_scheme(void)
@@ -130,7 +129,10 @@ static esp_efuse_coding_scheme_t get_coding_scheme(void)
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Start eFuse example");
+
     esp_efuse_coding_scheme_t coding_scheme = get_coding_scheme();
+    (void) coding_scheme;
 
     device_desc_t device_desc = { 0 };
     read_efuse_fields(&device_desc);

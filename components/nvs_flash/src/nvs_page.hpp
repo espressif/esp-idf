@@ -175,6 +175,7 @@ protected:
         EMPTY   = 0x3, // 0b11, default state after flash erase
         WRITTEN = EMPTY & ~ESB_WRITTEN, // entry was written
         ERASED  = WRITTEN & ~ESB_ERASED, // entry was written and then erased
+        ILLEGAL = 0x1, // only possible if flash is inconsistent
         INVALID = 0x4 // entry is in inconsistent state (write started but ESB_WRITTEN has not been set yet)
     };
 

@@ -4,7 +4,7 @@
 
 This example demonstrates how to use wear levelling library and FATFS library to store files in a partition inside SPI flash. Example does the following steps:
 
-1. Use an "all-in-one" `esp_vfs_fat_spiflash_mount` function to:
+1. Use an "all-in-one" `esp_vfs_fat_spiflash_mount_rw_wl` function to:
     - find a partition in SPI flash,
     - initialize wear levelling library using this partition
     - mount FAT filesystem using FATFS library (and format the filesystem, if the filesystem can not be mounted),
@@ -51,4 +51,4 @@ I (920) example: Unmounting FAT filesystem
 I (1000) example: Done
 ```
 
-To erase the contents of wear levelling partition, run `idf.py erase_flash` command. Then upload the example again as described above.
+To erase the contents of wear levelling partition, run `idf.py erase-flash` command. Then upload the example again as described above.

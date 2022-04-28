@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include "soc/soc.h"
@@ -23,10 +15,11 @@
 #include "soc/extmem_reg.h"
 #include "regi2c_ulp.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
-static const char *TAG = "rtc_init";
+
+__attribute__((unused)) static const char *TAG = "rtc_init";
 
 static void set_ocode_by_efuse(int calib_version);
 static void calibrate_ocode(void);
@@ -66,7 +59,7 @@ void rtc_init(rtc_config_t cfg)
     /* Reset RTC bias to default value (needed if waking up from deep sleep) */
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_SLP, RTC_CNTL_DBIAS_1V10);
-    /* Recover default wait cycle for touch or COCPU after wakeup from deep sleep. */
+    /* Set the wait time to the default value. */
     REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT);
 
     if (cfg.clkctl_init) {
@@ -152,6 +145,11 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO);
     }
+    /* force power down wifi and bt power domain */
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+
+#if !CONFIG_IDF_ENV_FPGA
     if (cfg.cali_ocode) {
         uint32_t rtc_calib_version = 0;
         esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 32);
@@ -161,6 +159,7 @@ void rtc_init(rtc_config_t cfg)
             calibrate_ocode();
         }
     }
+#endif // !CONFIG_IDF_ENV_FPGA
 
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
@@ -183,18 +182,12 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
         result.force = 0;
     }
 #if 0 // ToDo: re-enable the commented codes
-    uint32_t efuse_reg = REG_READ(EFUSE_RD_REPEAT_DATA1_REG);
-    if (efuse_reg & EFUSE_SDIO_FORCE) {
-        // Get configuration from EFUSE
-        result.enable = (efuse_reg & EFUSE_SDIO_XPD_M) >> EFUSE_SDIO_XPD_S;
-        result.tieh = (efuse_reg & EFUSE_SDIO_TIEH_M) >> EFUSE_SDIO_TIEH_S;
-
-        result.drefm = (efuse_reg & EFUSE_SDIO_DREFM_M) >> EFUSE_SDIO_DREFM_S;
-        result.drefl = (efuse_reg & EFUSE_SDIO_DREFL_M) >> EFUSE_SDIO_DREFL_S;
-
-        efuse_reg = REG_READ(EFUSE_RD_REPEAT_DATA0_REG);
-        result.drefh = (efuse_reg & EFUSE_SDIO_DREFH_M) >> EFUSE_SDIO_DREFH_S;
-
+    if (efuse_ll_get_sdio_force()) {
+        result.enable = efuse_ll_get_sdio_xpd();
+        result.tieh = efuse_ll_get_sdio_tieh();
+        result.drefm = efuse_ll_get_sdio_drefm();
+        result.drefl = efuse_ll_get_sdio_drefl();
+        result.drefh = efuse_ll_get_sdio_drefh();
         return result;
     }
 #endif
@@ -237,6 +230,9 @@ static void set_ocode_by_efuse(int calib_version)
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
 }
 
+/**
+ * TODO IDF-4141, this seems influence flash,
+ */
 static void calibrate_ocode(void)
 {
     /*
@@ -280,7 +276,7 @@ static void calibrate_ocode(void)
         if (odone_flag && bg_odone_flag)
             break;
         if (cycle1 >= timeout_cycle) {
-            SOC_LOGW(TAG, "o_code calibration fail");
+            ESP_HW_LOGW(TAG, "o_code calibration fail");
             break;
         }
     }

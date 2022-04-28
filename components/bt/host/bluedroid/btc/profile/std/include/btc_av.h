@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 /*******************************************************************************
@@ -40,6 +32,11 @@ extern bool g_av_with_rc;
 extern bool g_a2dp_on_init;
 // global variable to indicate a2dp is deinitialized
 extern bool g_a2dp_on_deinit;
+// global variable to indicate a2dp source deinitialization is ongoing
+extern bool g_a2dp_source_ongoing_deinit;
+// global variable to indicate a2dp sink deinitialization is ongoing
+extern bool g_a2dp_sink_ongoing_deinit;
+
 /*******************************************************************************
 **  Type definitions for callback functions
 ********************************************************************************/
@@ -74,7 +71,6 @@ typedef enum {
     BTC_AV_SRC_API_REG_DATA_CB_EVT,
 #endif  /* BTC_AV_SRC_INCLUDED */
     BTC_AV_API_MEDIA_CTRL_EVT,
-    BTC_AV_DATAPATH_CTRL_EVT,
 } btc_av_act_t;
 
 /* btc_av_args_t */
@@ -99,8 +95,6 @@ typedef union {
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_API_MEDIA_CTRL_EVT
     esp_a2d_media_ctrl_t ctrl;
-    // BTC_AV_DATAPATH_CTRL_EVT
-    uint32_t dp_evt;
 } btc_av_args_t;
 
 /*******************************************************************************

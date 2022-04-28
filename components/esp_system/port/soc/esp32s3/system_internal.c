@@ -1,17 +1,9 @@
 
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "sdkconfig.h"
@@ -24,15 +16,20 @@
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
 #include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
+#include "soc/soc_memory_layout.h"
 
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
+
+#define ALIGN_DOWN(val, align)  ((val) & ~((align) - 1))
+
+extern int _bss_end;
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -69,6 +66,17 @@ void IRAM_ATTR esp_restart_noos(void)
     // Flush any data left in UART FIFOs
     esp_rom_uart_tx_wait_idle(0);
     esp_rom_uart_tx_wait_idle(1);
+
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    if (esp_ptr_external_ram(esp_cpu_get_sp())) {
+        // If stack_addr is from External Memory (CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY is used)
+        // then need to switch SP to Internal Memory otherwise
+        // we will get the "Cache disabled but cached memory region accessed" error after Cache_Read_Disable.
+        uint32_t new_sp = ALIGN_DOWN(_bss_end, 16);
+        SET_STACK(new_sp);
+    }
+#endif
+
     // Disable cache
     Cache_Disable_ICache();
     Cache_Disable_DCache();
@@ -103,7 +111,7 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
+                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
 
     // Reset dma

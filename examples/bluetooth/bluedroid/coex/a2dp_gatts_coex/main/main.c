@@ -1,10 +1,8 @@
 /*
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 /****************************************************************************
 * The demo shows BLE and classic Bluetooth coexistence. You can use BLE GATT server and classic bluetooth A2DP together.
@@ -693,8 +691,8 @@ void app_main(void)
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
+        .dma_desc_num = 6,
+        .dma_frame_num = 60,
         .intr_alloc_flags = 0,                                                  //Default interrupt priority
         .tx_desc_auto_clear = true                                              //Auto clear tx descriptor on underflow
     };

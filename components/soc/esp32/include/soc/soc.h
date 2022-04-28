@@ -1,16 +1,8 @@
-// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -19,69 +11,14 @@
 #include "esp_assert.h"
 #endif
 
-#include <esp_bit_defs.h>
+#include "esp_bit_defs.h"
+#include "reg_base.h"
 
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
 
 
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
-
-
-#define DR_REG_DPORT_BASE                       0x3ff00000
-#define DR_REG_AES_BASE                         0x3ff01000
-#define DR_REG_RSA_BASE                         0x3ff02000
-#define DR_REG_SHA_BASE                         0x3ff03000
-#define DR_REG_FLASH_MMU_TABLE_PRO              0x3ff10000
-#define DR_REG_FLASH_MMU_TABLE_APP              0x3ff12000
-#define DR_REG_DPORT_END                        0x3ff13FFC
-#define DR_REG_UART_BASE                        0x3ff40000
-#define DR_REG_SPI1_BASE                        0x3ff42000
-#define DR_REG_SPI0_BASE                        0x3ff43000
-#define DR_REG_GPIO_BASE                        0x3ff44000
-#define DR_REG_GPIO_SD_BASE                     0x3ff44f00
-#define DR_REG_FE2_BASE                         0x3ff45000
-#define DR_REG_FE_BASE                          0x3ff46000
-#define DR_REG_FRC_TIMER_BASE                   0x3ff47000
-#define DR_REG_RTCCNTL_BASE                     0x3ff48000
-#define DR_REG_RTCIO_BASE                       0x3ff48400
-#define DR_REG_SENS_BASE                        0x3ff48800
-#define DR_REG_RTC_I2C_BASE                     0x3ff48C00
-#define DR_REG_IO_MUX_BASE                      0x3ff49000
-#define DR_REG_HINF_BASE                        0x3ff4B000
-#define DR_REG_UHCI1_BASE                       0x3ff4C000
-#define DR_REG_I2S_BASE                         0x3ff4F000
-#define DR_REG_UART1_BASE                       0x3ff50000
-#define DR_REG_BT_BASE                          0x3ff51000
-#define DR_REG_I2C_EXT_BASE                     0x3ff53000
-#define DR_REG_UHCI0_BASE                       0x3ff54000
-#define DR_REG_SLCHOST_BASE                     0x3ff55000
-#define DR_REG_RMT_BASE                         0x3ff56000
-#define DR_REG_PCNT_BASE                        0x3ff57000
-#define DR_REG_SLC_BASE                         0x3ff58000
-#define DR_REG_LEDC_BASE                        0x3ff59000
-#define DR_REG_EFUSE_BASE                       0x3ff5A000
-#define DR_REG_SPI_ENCRYPT_BASE                 0x3ff5B000
-#define DR_REG_NRX_BASE                         0x3ff5CC00
-#define DR_REG_BB_BASE                          0x3ff5D000
-#define DR_REG_PWM0_BASE                        0x3ff5E000
-#define DR_REG_TIMERGROUP0_BASE                 0x3ff5F000
-#define DR_REG_TIMERGROUP1_BASE                 0x3ff60000
-#define DR_REG_RTCMEM0_BASE                     0x3ff61000
-#define DR_REG_RTCMEM1_BASE                     0x3ff62000
-#define DR_REG_RTCMEM2_BASE                     0x3ff63000
-#define DR_REG_SPI2_BASE                        0x3ff64000
-#define DR_REG_SPI3_BASE                        0x3ff65000
-#define DR_REG_SYSCON_BASE                      0x3ff66000
-#define DR_REG_APB_CTRL_BASE                    0x3ff66000    /* Old name for SYSCON, to be removed */
-#define DR_REG_I2C1_EXT_BASE                    0x3ff67000
-#define DR_REG_SDMMC_BASE                       0x3ff68000
-#define DR_REG_EMAC_BASE                        0x3ff69000
-#define DR_REG_CAN_BASE                         0x3ff6B000
-#define DR_REG_PWM1_BASE                        0x3ff6C000
-#define DR_REG_I2S1_BASE                        0x3ff6D000
-#define DR_REG_UART2_BASE                       0x3ff6E000
-#define PERIPHS_SPI_ENCRYPT_BASEADDR            DR_REG_SPI_ENCRYPT_BASE
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
@@ -218,7 +155,7 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 26*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ                                APB_CLK_FREQ       //this may be incorrect, please refer to ESP32_DEFAULT_CPU_FREQ_MHZ
+#define  CPU_CLK_FREQ                                APB_CLK_FREQ       //this may be incorrect, please refer to ESP_DEFAULT_CPU_FREQ_MHZ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
 #define  REF_CLK_FREQ                                ( 1000000 )
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
@@ -307,8 +244,8 @@
 #define ETS_GPIO_NMI_SOURCE                     23/**< interrupt of GPIO, NMI*/
 #define ETS_FROM_CPU_INTR0_SOURCE               24/**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
 #define ETS_FROM_CPU_INTR1_SOURCE               25/**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
-#define ETS_FROM_CPU_INTR2_SOURCE               26/**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
-#define ETS_FROM_CPU_INTR3_SOURCE               27/**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+#define ETS_FROM_CPU_INTR2_SOURCE               26/**< interrupt2 generated from a CPU, level*/ /* Used for IPC_ISR */
+#define ETS_FROM_CPU_INTR3_SOURCE               27/**< interrupt3 generated from a CPU, level*/ /* Used for IPC_ISR */
 #define ETS_SPI0_INTR_SOURCE                    28/**< interrupt of SPI0, level, SPI0 is for Cache Access, do not use this*/
 #define ETS_SPI1_INTR_SOURCE                    29/**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
 #define ETS_SPI2_INTR_SOURCE                    30/**< interrupt of SPI2, level*/
@@ -351,6 +288,60 @@
 #define ETS_CACHE_IA_INTR_SOURCE                68/**< interrupt of Cache Invalied Access, LEVEL*/
 #define ETS_MAX_INTR_SOURCE                     69/**< total number of interrupt sources*/
 
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
+//interrupt cpu using table, Please see the core-isa.h
+/*************************************************************************************************************
+ *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
+ *      0                       1               extern level            WMAC                    Reserved
+ *      1                       1               extern level            BT/BLE Host HCI DMA     BT/BLE Host HCI DMA
+ *      2                       1               extern level
+ *      3                       1               extern level
+ *      4                       1               extern level            WBB
+ *      5                       1               extern level
+ *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
+ *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
+ *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
+ *      9                       1               extern level
+ *      10                      1               extern edge
+ *      11                      3               profiling
+ *      12                      1               extern level
+ *      13                      1               extern level
+ *      14                      7               nmi                     Reserved                Reserved
+ *      15                      3               timer                   FreeRTOS Tick(L3)       FreeRTOS Tick(L3)
+ *      16                      5               timer                   Reserved                Reserved
+ *      17                      1               extern level
+ *      18                      1               extern level
+ *      19                      2               extern level
+ *      20                      2               extern level
+ *      21                      2               extern level
+ *      22                      3               extern edge
+ *      23                      3               extern level
+ *      24                      4               extern level
+ *      25                      4               extern level            BT/BLE Controller       BT/BLE Controller
+ *      26                      5               extern level            TG1_WDT & CACHEERR
+ *      27                      3               extern level            Reserved                Reserved
+ *      28                      4               extern edge
+ *      29                      3               software                BT/BLE hli              BT/BLE hli
+ *      30                      4               extern edge             Reserved                Reserved
+ *      31                      5               extern level            IPC_ISR                 IPC_ISR
+ *************************************************************************************************************
+ */
+
+//CPU0 Interrupt number reserved, not touch this.
+#define ETS_WMAC_INUM                           0
+#define ETS_BT_HOST_INUM                        1
+#define ETS_WBB_INUM                            4
+#define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
+#define ETS_FRC1_INUM                           22
+#define ETS_T1_WDT_CACHEERR_INUM                26
+#define ETS_T1_WDT_INUM                         ETS_T1_WDT_CACHEERR_INUM
+#define ETS_MEMACCESS_ERR_INUM                  ETS_T1_WDT_CACHEERR_INUM
+/* backwards compatibility only, use ETS_MEMACCESS_ERR_INUM instead*/
+#define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
+#define ETS_IPC_ISR_INUM                        31
+
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
+
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
@@ -382,7 +373,7 @@
  *      25                      4               extern level            CACHEERR
  *      26                      5               extern level
  *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
+ *      28                      4               extern edge             IPC_ISR                 IPC_ISR
  *      29                      3               software                Reserved                Reserved
  *      30                      4               extern edge             Reserved                Reserved
  *      31                      5               extern level
@@ -399,7 +390,9 @@
 #define ETS_MEMACCESS_ERR_INUM                  25
 /* backwards compatibility only, use ETS_MEMACCESS_ERR_INUM instead*/
 #define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
-#define ETS_DPORT_INUM                          28
+#define ETS_IPC_ISR_INUM                        28
+
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1

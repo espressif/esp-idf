@@ -24,6 +24,11 @@ Initialization of the **esp_local_ctrl** service over BLE transport is performed
                     }
                 }
             },
+            .proto_sec = {
+                .version = PROTOCOM_SEC0,
+                .custom_handle = NULL,
+                .pop = NULL,
+            },
             .handlers = {
                 /* User defined handler functions */
                 .get_prop_values = get_property_values,
@@ -49,10 +54,10 @@ Similarly for HTTPS transport:
         httpd_ssl_config_t https_conf = HTTPD_SSL_CONFIG_DEFAULT();
 
         /* Load server certificate */
-        extern const unsigned char cacert_pem_start[] asm("_binary_cacert_pem_start");
-        extern const unsigned char cacert_pem_end[]   asm("_binary_cacert_pem_end");
-        https_conf.cacert_pem = cacert_pem_start;
-        https_conf.cacert_len = cacert_pem_end - cacert_pem_start;
+        extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
+        extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
+        https_conf.servercert = servercert_start;
+        https_conf.servercert_len = servercert_end - servercert_start;
 
         /* Load server private key */
         extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
@@ -64,6 +69,11 @@ Similarly for HTTPS transport:
             .transport = ESP_LOCAL_CTRL_TRANSPORT_HTTPD,
             .transport_config = {
                 .httpd = &https_conf
+            },
+            .proto_sec = {
+                .version = PROTOCOM_SEC0,
+                .custom_handle = NULL,
+                .pop = NULL,
             },
             .handlers = {
                 /* User defined handler functions */
@@ -79,6 +89,11 @@ Similarly for HTTPS transport:
         /* Start esp_local_ctrl service */
         ESP_ERROR_CHECK(esp_local_ctrl_start(&config));
 
+You may set security for transport in ESP local control using following options:
+
+1. `PROTOCOM_SEC1`: specifies that end to end encryption is used.
+2. `PROTOCOM_SEC0`: specifies that data will be exchanged as a plain text.
+3. `PROTOCOM_SEC_CUSTOM`: you can define your own security requirement. Please note that you will also have to provide `custom_handle` of type `protocomm_security_t *` in this context.
 
 Creating a property
 -------------------

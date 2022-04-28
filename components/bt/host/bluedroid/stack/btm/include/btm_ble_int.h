@@ -394,9 +394,7 @@ tBTM_STATUS btm_ble_start_inquiry (UINT8 mode, UINT8   duration);
 void btm_ble_stop_scan(void);
 void btm_clear_all_pending_le_entry(void);
 
-BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int,
-        UINT32 scan_win, UINT8 addr_type_own,
-        UINT8 scan_filter_policy);
+BOOLEAN btm_ble_send_extended_scan_params(UINT8 scan_type, UINT32 scan_int, UINT32 scan_win, UINT8 addr_type_own, UINT8 scan_filter_policy);
 void btm_ble_stop_inquiry(void);
 void btm_ble_init (void);
 void btm_ble_free (void);
@@ -407,8 +405,7 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced);
 void btm_read_ble_local_supported_states_complete(UINT8 *p, UINT16 evt_len);
 tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
 void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st);
-UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
-                              tBTM_BLE_ADV_DATA *p_data);
+UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst, tBTM_BLE_ADV_DATA *p_data);
 tBTM_STATUS btm_ble_start_adv(void);
 tBTM_STATUS btm_ble_stop_adv(void);
 tBTM_STATUS btm_ble_start_scan(void);

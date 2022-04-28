@@ -50,6 +50,12 @@ extern "C" {
 #define BYTE_ORDER LITTLE_ENDIAN
 #endif // BYTE_ORDER
 
+#define LWIP_DONT_PROVIDE_BYTEORDER_FUNCTIONS
+#define htons(x) __builtin_bswap16(x)
+#define ntohs(x) __builtin_bswap16(x)
+#define htonl(x) __builtin_bswap32(x)
+#define ntohl(x) __builtin_bswap32(x)
+
 #ifndef CONFIG_LWIP_ESP_LWIP_ASSERT
 #define LWIP_NOASSERT 1
 #endif

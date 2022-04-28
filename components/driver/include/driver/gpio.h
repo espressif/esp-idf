@@ -1,39 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
+#include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
-#include <esp_types.h>
-#include <esp_bit_defs.h>
-#include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
-#include "soc/gpio_periph.h"
 #include "hal/gpio_types.h"
-
-// |================================= WARNING ====================================================== |
-// | Including ROM header file in a PUBLIC API file will be REMOVED in the next major release (5.x). |
-// | User should include "esp_rom_gpio.h" in their code if they have to use those ROM API.           |
-// |================================================================================================ |
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/gpio.h"
-#endif
-
-#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
-#include "soc/rtc_io_reg.h"
-#endif
+#include "esp_rom_gpio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,9 +20,11 @@ extern "C" {
 
 #define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
 /// Check whether it is a valid GPIO number
-#define GPIO_IS_VALID_GPIO(gpio_num)        (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0)
+#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
 /// Check whether it can be a valid GPIO number of output mode
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0)
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
 
 
 typedef intr_handle_t gpio_isr_handle_t;
@@ -109,6 +90,8 @@ esp_err_t gpio_intr_enable(gpio_num_t gpio_num);
 /**
  * @brief  Disable GPIO module interrupt signal
  *
+ * @note This function is allowed to be executed when Cache is disabled within ISR context, by enabling `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`
+ *
  * @param  gpio_num GPIO number. If you want to disable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
  * @return
@@ -120,6 +103,8 @@ esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
 
 /**
  * @brief  GPIO set output level
+ *
+ * @note This function is allowed to be executed when Cache is disabled within ISR context, by enabling `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`
  *
  * @param  gpio_num GPIO number. If you want to set the output level of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  level Output level. 0: low ; 1: high
@@ -492,7 +477,8 @@ esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
-#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)        ((gpio_num & ~SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK) == 0)
+#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)    ((gpio_num >= 0) && \
+                                                          (((1ULL << (gpio_num)) & SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK) != 0))
 
 /**
  * @brief Enable GPIO deep-sleep wake-up function.

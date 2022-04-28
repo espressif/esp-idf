@@ -3,9 +3,7 @@
 
 # Simple log test on Linux target
 
-This unit test tests basic functionality of the log component. The test does not use mocks. Instead, it runs the whole implementation of the component on the Linux host. The test framework is CATCH.
-
-*Note that the early log (ESP_EARLY_LOG<X>) functionality has not been ported to Linux since it depends on the ROM component.*
+This unit test tests basic functionality of the log component. The test does not use mocks. Instead, it runs the whole implementation of the component on the Linux host. The test framework is CATCH. For early log, we only perform a compile time test since there's nothing to test on Linux except for the log macros themselves (all the implementation will be in chip ROM).
 
 ## Requirements
 

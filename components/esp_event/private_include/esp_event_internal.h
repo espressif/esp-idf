@@ -15,6 +15,8 @@
 #ifndef ESP_EVENT_INTERNAL_H_
 #define ESP_EVENT_INTERNAL_H_
 
+#include "sys/queue.h"
+#include <stdbool.h>
 #include "esp_event.h"
 #include "stdatomic.h"
 

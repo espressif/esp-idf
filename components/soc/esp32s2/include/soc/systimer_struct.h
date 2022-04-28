@@ -91,6 +91,7 @@ typedef union {
          *  system timer accumulation step when using PLL
          */
         uint32_t timer_pll_step: 10;
+        uint32_t reserved20: 12;
     };
     uint32_t val;
 } systimer_step_reg_t;
@@ -201,6 +202,7 @@ typedef union {
          *  system timer target2 interrupt enable
          */
         uint32_t systimer_int2_ena: 1;
+        uint32_t reserved3: 29;
     };
     uint32_t val;
 } systimer_int_ena_reg_t;
@@ -222,6 +224,7 @@ typedef union {
          *  system timer target2 interrupt raw
          */
         uint32_t systimer_int2_raw: 1;
+        uint32_t reserved3: 29;
     };
     uint32_t val;
 } systimer_int_raw_reg_t;
@@ -243,6 +246,7 @@ typedef union {
          *  system timer target2 interrupt clear
          */
         uint32_t systimer_int2_clr: 1;
+        uint32_t reserved3: 29;
     };
     uint32_t val;
 } systimer_int_clr_reg_t;

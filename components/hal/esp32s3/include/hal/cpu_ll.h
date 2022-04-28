@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdint.h>
@@ -185,7 +177,7 @@ static inline void cpu_ll_waiti(void)
 static inline uint32_t cpu_ll_read_dedic_gpio_in(void)
 {
     uint32_t value = 0;
-    asm volatile("get_gpio_in %0" : "=r"(value) : :);
+    asm volatile("ee.get_gpio_in %0" : "=r"(value) : :);
     return value;
 }
 
@@ -203,12 +195,17 @@ static inline void cpu_ll_write_dedic_gpio_all(uint32_t value)
 
 static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
 {
-    // ToDo: check if ESP32-S3 supports mask write instruction
-    uint32_t orig = 0;
-    asm volatile("rur.gpio_out %0" : "=r"(orig) : :);
-    orig &= ~mask;
-    orig |= value & mask;
-    asm volatile("wur.gpio_out %0"::"r"(orig):);
+    asm volatile("ee.wr_mask_gpio_out %0, %1" : : "r"(value), "r"(mask):);
+}
+
+static inline void cpu_ll_compare_and_set_native(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
+{
+    __asm__ __volatile__ (
+        "WSR 	    %2,SCOMPARE1 \n"
+        "S32C1I     %0, %1, 0	 \n"
+        :"=r"(*set)
+        :"r"(addr), "r"(compare), "0"(*set)
+    );
 }
 
 #ifdef __cplusplus

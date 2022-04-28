@@ -1,46 +1,40 @@
-// Copyright 2016-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-
+#include "esp_attr.h"
 #include "esp_private/pm_trace.h"
 #include "driver/gpio.h"
+#include "soc/soc.h"
+#include "soc/gpio_reg.h"
 
 /* GPIOs to use for tracing of esp_pm events.
  * Two entries in the array for each type, one for each CPU.
  * Feel free to change when debugging.
  */
 static const int DRAM_ATTR s_trace_io[] = {
-#ifndef CONFIG_IDF_TARGET_ESP32C3
-        BIT(4),  BIT(5),  // ESP_PM_TRACE_IDLE
-        BIT(16), BIT(17), // ESP_PM_TRACE_TICK
-        BIT(18), BIT(18), // ESP_PM_TRACE_FREQ_SWITCH
-        BIT(19), BIT(19), // ESP_PM_TRACE_CCOMPARE_UPDATE
-        BIT(25), BIT(26), // ESP_PM_TRACE_ISR_HOOK
-        BIT(27), BIT(27), // ESP_PM_TRACE_SLEEP
+#if !defined(CONFIG_IDF_TARGET_ESP32C3) && !defined(CONFIG_IDF_TARGET_ESP32H2) && !defined(CONFIG_IDF_TARGET_ESP32C2)
+    BIT(4),  BIT(5),  // ESP_PM_TRACE_IDLE
+    BIT(16), BIT(17), // ESP_PM_TRACE_TICK
+    BIT(18), BIT(18), // ESP_PM_TRACE_FREQ_SWITCH
+    BIT(19), BIT(19), // ESP_PM_TRACE_CCOMPARE_UPDATE
+    BIT(25), BIT(26), // ESP_PM_TRACE_ISR_HOOK
+    BIT(27), BIT(27), // ESP_PM_TRACE_SLEEP
 #else
-        BIT(2),  BIT(3),  // ESP_PM_TRACE_IDLE
-        BIT(4),  BIT(5),  // ESP_PM_TRACE_TICK
-        BIT(6),  BIT(6),  // ESP_PM_TRACE_FREQ_SWITCH
-        BIT(7),  BIT(7),  // ESP_PM_TRACE_CCOMPARE_UPDATE
-        BIT(8),  BIT(9),  // ESP_PM_TRACE_ISR_HOOK
-        BIT(18), BIT(18), // ESP_PM_TRACE_SLEEP
+    BIT(2),  BIT(3),  // ESP_PM_TRACE_IDLE
+    BIT(4),  BIT(5),  // ESP_PM_TRACE_TICK
+    BIT(6),  BIT(6),  // ESP_PM_TRACE_FREQ_SWITCH
+    BIT(7),  BIT(7),  // ESP_PM_TRACE_CCOMPARE_UPDATE
+    BIT(8),  BIT(9),  // ESP_PM_TRACE_ISR_HOOK
+    BIT(18), BIT(18), // ESP_PM_TRACE_SLEEP
 #endif
 };
 
 void esp_pm_trace_init(void)
 {
-    for (size_t i = 0; i < sizeof(s_trace_io)/sizeof(s_trace_io[0]); ++i) {
+    for (size_t i = 0; i < sizeof(s_trace_io) / sizeof(s_trace_io[0]); ++i) {
         int io = __builtin_ffs(s_trace_io[i]);
         if (io == 0) {
             continue;

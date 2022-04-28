@@ -1,19 +1,10 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifndef _SOC_PERIPH_DEFS_H_
-#define _SOC_PERIPH_DEFS_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +18,6 @@ typedef enum {
     PERIPH_I2C0_MODULE,
     PERIPH_I2C1_MODULE,
     PERIPH_I2S0_MODULE,
-    PERIPH_I2S1_MODULE,
     PERIPH_TIMG0_MODULE,
     PERIPH_TIMG1_MODULE,
     PERIPH_UHCI0_MODULE,
@@ -51,6 +41,8 @@ typedef enum {
     PERIPH_AES_DMA_MODULE,
     PERIPH_SHA_DMA_MODULE,
     PERIPH_DEDIC_GPIO_MODULE,
+    PERIPH_SARADC_MODULE,
+    PERIPH_TEMPSENSOR_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
 
@@ -86,15 +78,14 @@ typedef enum {
     ETS_DEDICATED_GPIO_INTR_SOURCE,             /**< interrupt of dedicated GPIO, level*/
     ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
     ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
-    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
-    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/
+    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/
 
     ETS_SPI1_INTR_SOURCE = 32,                  /**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
     ETS_SPI2_INTR_SOURCE,                       /**< interrupt of SPI2, level*/
     ETS_SPI3_INTR_SOURCE,                       /**< interrupt of SPI3, level*/
     ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
-    ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
-    ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
+    ETS_UART0_INTR_SOURCE = 37,                 /**< interrupt of UART0, level*/
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/
     ETS_UART2_INTR_SOURCE,                      /**< interrupt of UART2, level*/
     ETS_SDIO_HOST_INTR_SOURCE,                  /**< interrupt of SD/SDIO/MMC HOST, level*/
@@ -152,11 +143,8 @@ typedef enum {
     ETS_DCACHE_SYNC_INTR_SOURCE,                /**< interrupt of data cache sync done, LEVEL*/
     ETS_ICACHE_SYNC_INTR_SOURCE,                /**< interrupt of instruction cache sync done, LEVEL*/
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
-
 } periph_interrput_t;
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _SOC_PERIPH_DEFS_H_ */

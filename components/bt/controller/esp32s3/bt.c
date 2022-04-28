@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -28,7 +20,8 @@
 #include "freertos/portmacro.h"
 #include "xtensa/core-macros.h"
 #include "esp_types.h"
-#include "esp_system.h"
+#include "esp_mac.h"
+#include "esp_random.h"
 #include "esp_task.h"
 #include "esp_attr.h"
 #include "esp_phy_init.h"
@@ -37,14 +30,15 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_ipc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp32c3/clk.h"
 #include "esp_coexist_internal.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+#include "esp_rom_sys.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -277,13 +271,13 @@ extern char _bt_tmp_bss_end;
 static void interrupt_set_wrapper(int32_t cpu_no, int32_t intr_source, int32_t intr_num, int32_t intr_prio);
 static void interrupt_clear_wrapper(int32_t intr_source, int32_t intr_num);
 static void interrupt_handler_set_wrapper(int n, void *fn, void *arg);
-static void IRAM_ATTR interrupt_disable(void);
-static void IRAM_ATTR interrupt_restore(void);
-static void IRAM_ATTR task_yield_from_isr(void);
+static void interrupt_disable(void);
+static void interrupt_restore(void);
+static void task_yield_from_isr(void);
 static void *semphr_create_wrapper(uint32_t max, uint32_t init);
 static void semphr_delete_wrapper(void *semphr);
-static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw);
-static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw);
+static int32_t semphr_take_from_isr_wrapper(void *semphr, void *hptw);
+static int32_t semphr_give_from_isr_wrapper(void *semphr, void *hptw);
 static int32_t  semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
 static int32_t  semphr_give_wrapper(void *semphr);
 static void *mutex_create_wrapper(void);
@@ -293,19 +287,19 @@ static int32_t mutex_unlock_wrapper(void *mutex);
 static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
 static void queue_delete_wrapper(void *queue);
 static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int32_t queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
 static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int32_t queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
 static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
-static bool IRAM_ATTR is_in_isr_wrapper(void);
+static bool is_in_isr_wrapper(void);
 static void *malloc_internal_wrapper(size_t size);
-static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6]);
-static void IRAM_ATTR srand_wrapper(unsigned int seed);
-static int IRAM_ATTR rand_wrapper(void);
-static uint32_t IRAM_ATTR btdm_lpcycles_2_hus(uint32_t cycles, uint32_t *error_corr);
-static uint32_t IRAM_ATTR btdm_hus_2_lpcycles(uint32_t hus);
-static bool IRAM_ATTR btdm_sleep_check_duration(int32_t *slot_cnt);
+static int32_t read_mac_wrapper(uint8_t mac[6]);
+static void srand_wrapper(unsigned int seed);
+static int rand_wrapper(void);
+static uint32_t btdm_lpcycles_2_hus(uint32_t cycles, uint32_t *error_corr);
+static uint32_t btdm_hus_2_lpcycles(uint32_t hus);
+static bool btdm_sleep_check_duration(int32_t *slot_cnt);
 static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles);
 static void btdm_sleep_enter_phase2_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
@@ -407,10 +401,6 @@ static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
 void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
-    // le module power down
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-
     esp_mac_bb_power_down();
 #endif
 }
@@ -418,10 +408,6 @@ void IRAM_ATTR btdm_hw_mac_power_down_wrapper(void)
 void IRAM_ATTR btdm_hw_mac_power_up_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
-    // le module power up
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PD);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_ISO);
-
     esp_mac_bb_power_up();
 #endif
 }
@@ -433,9 +419,21 @@ void IRAM_ATTR btdm_backup_dma_copy_wrapper(uint32_t reg, uint32_t mem_addr, uin
 #endif
 }
 
+static inline void esp_bt_power_domain_on(void)
+{
+    // Bluetooth module power up
+    esp_wifi_bt_power_domain_on();
+}
+
+static inline void esp_bt_power_domain_off(void)
+{
+    // Bluetooth module power down
+    esp_wifi_bt_power_domain_off();
+}
+
 static void interrupt_set_wrapper(int32_t cpu_no, int32_t intr_source, int32_t intr_num, int32_t intr_prio)
 {
-    intr_matrix_set(cpu_no, intr_source, intr_num);
+    esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 }
 
 static void interrupt_clear_wrapper(int32_t intr_source, int32_t intr_num)
@@ -710,10 +708,6 @@ static void btdm_sleep_exit_phase3_wrapper(void)
     }
 #endif
 
-    if(btdm_sleep_clock_sync()) {
-        ESP_LOGE(BT_LOG_TAG, "sleep eco state err\n");
-        assert(0);
-    }
     if (btdm_controller_get_sleep_mode() == ESP_BT_SLEEP_MODE_1) {
         if (s_lp_stat.phy_enabled == 0) {
             esp_phy_enable();
@@ -727,6 +721,12 @@ static void btdm_sleep_exit_phase3_wrapper(void)
     if (s_lp_cntl.wakeup_timer_required && s_lp_stat.wakeup_timer_started) {
         esp_timer_stop(s_btdm_slp_tmr);
         s_lp_stat.wakeup_timer_started = 0;
+    }
+
+    // wait for the sleep state to change
+    // the procedure duration is at micro-second level or less
+    while (btdm_sleep_clock_sync()) {
+        ;
     }
 }
 
@@ -934,6 +934,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
 
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_init();
+#endif
+    esp_bt_power_domain_on();
+
     btdm_controller_mem_init();
 
 #if CONFIG_MAC_BB_PD
@@ -970,7 +975,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
         // configure and initialize resources
         s_lp_cntl.enable = (cfg->sleep_mode == ESP_BT_SLEEP_MODE_1) ? 1 : 0;
-        s_lp_cntl.no_light_sleep = 0;
+        s_lp_cntl.no_light_sleep = 1;
 
         if (s_lp_cntl.enable) {
 #if (CONFIG_MAC_BB_PD)
@@ -1007,38 +1012,36 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
         btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
 
-        // // set default bluetooth sleep clock source
-        // s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL;
+        // set default bluetooth sleep clock source
+        s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #if CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
         // check whether or not EXT_CRYS is working
         if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // set default value
-// #ifdef CONFIG_PM_ENABLE
-//             s_btdm_allow_light_sleep = true;
-// #endif
+            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32 kHz XTAL
+            s_lp_cntl.no_light_sleep = 0;
         } else {
             ESP_LOGW(BT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
                  "light sleep mode will not be able to apply when bluetooth is enabled");
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
         }
 #elif (CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW)
         // check whether or not EXT_CRYS is working
         if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // set default value
+            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // Internal 150 kHz RC oscillator
+            ESP_LOGW(BTDM_LOG_TAG, "Internal 150kHz RC osciallator. The accuracy of this clock is a lot larger than 500ppm which is "
+                 "required in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.");
         } else {
-            ESP_LOGW(BT_LOG_TAG, "Internal 90kHz RC oscillator not detected, fall back to main XTAL as Bluetooth sleep clock\n"
-                 "light sleep mode will not be able to apply when bluetooth is enabled");
-            s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+            ESP_LOGW(BT_LOG_TAG, "Internal 150kHz RC oscillator not detected.");
+            assert(0);
         }
 #else
-        s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+        s_lp_cntl.no_light_sleep = 1;
 #endif
 
         bool select_src_ret __attribute__((unused));
         bool set_div_ret __attribute__((unused));
         if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
             select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
-            set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2);
+            set_div_ret = btdm_lpclk_set_div(esp_clk_xtal_freq() * 2 / MHZ);
             assert(select_src_ret && set_div_ret);
             btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
             btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
@@ -1203,6 +1206,9 @@ esp_err_t esp_bt_controller_deinit(void)
     esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
+
+    esp_bt_power_domain_off();
+
     free(osi_funcs_p);
     osi_funcs_p = NULL;
 

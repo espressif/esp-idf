@@ -1,31 +1,6 @@
 menu "ESP32S3-Specific"
     visible if IDF_TARGET_ESP32S3
 
-    choice ESP32S3_DEFAULT_CPU_FREQ_MHZ
-        prompt "CPU frequency"
-        default ESP32S3_DEFAULT_CPU_FREQ_40 if IDF_ENV_FPGA
-        default ESP32S3_DEFAULT_CPU_FREQ_160 if !IDF_ENV_FPGA
-        help
-            CPU frequency to be set on application startup.
-
-        config ESP32S3_DEFAULT_CPU_FREQ_40
-            bool "40 MHz"
-            depends on IDF_ENV_FPGA
-        config ESP32S3_DEFAULT_CPU_FREQ_80
-            bool "80 MHz"
-        config ESP32S3_DEFAULT_CPU_FREQ_160
-            bool "160 MHz"
-        config ESP32S3_DEFAULT_CPU_FREQ_240
-            bool "240 MHz"
-    endchoice
-
-    config ESP32S3_DEFAULT_CPU_FREQ_MHZ
-        int
-        default 40 if ESP32S3_DEFAULT_CPU_FREQ_40
-        default 80 if ESP32S3_DEFAULT_CPU_FREQ_80
-        default 160 if ESP32S3_DEFAULT_CPU_FREQ_160
-        default 240 if ESP32S3_DEFAULT_CPU_FREQ_240
-
     menu "Cache config"
 
         choice ESP32S3_INSTRUCTION_CACHE_SIZE
@@ -83,8 +58,9 @@ menu "ESP32S3-Specific"
             default 32 if ESP32S3_INSTRUCTION_CACHE_LINE_32B
 
         config ESP32S3_INSTRUCTION_CACHE_WRAP
-            bool "Enable instruction cache wrap mode"
+            bool       ## TODO IDF-4307
             default "n"
+            depends on !SPIRAM_ECC_ENABLE
             help
                 If enabled, instruction cache will use wrap mode to read spi flash or spi ram.
                 The wrap length equals to ESP32S3_INSTRUCTION_CACHE_LINE_SIZE.
@@ -108,7 +84,8 @@ menu "ESP32S3-Specific"
 
         config ESP32S3_DATA_CACHE_SIZE
             hex
-            default 0x4000 if ESP32S3_DATA_CACHE_16KB
+            # For 16KB the actual configuration is 32kb cache, but 16kb will be reserved for heap at startup
+            default 0x8000 if ESP32S3_DATA_CACHE_16KB
             default 0x8000 if ESP32S3_DATA_CACHE_32KB
             default 0x10000 if ESP32S3_DATA_CACHE_64KB
 
@@ -140,16 +117,20 @@ menu "ESP32S3-Specific"
                 depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
             config ESP32S3_DATA_CACHE_LINE_32B
                 bool "32 Bytes"
+            config ESP32S3_DATA_CACHE_LINE_64B
+                bool "64 Bytes"
         endchoice
 
         config ESP32S3_DATA_CACHE_LINE_SIZE
             int
             default 16 if ESP32S3_DATA_CACHE_LINE_16B
             default 32 if ESP32S3_DATA_CACHE_LINE_32B
+            default 64 if ESP32S3_DATA_CACHE_LINE_64B
 
         config ESP32S3_DATA_CACHE_WRAP
-            bool "Enable data cache wrap mode"
+            bool        ## TODO IDF-4307
             default "n"
+            depends on !SPIRAM_ECC_ENABLE
             help
                 If enabled, data cache will use wrap mode to read spi flash or spi ram.
                 The wrap length equals to ESP32S3_DATA_CACHE_LINE_SIZE.
@@ -169,8 +150,23 @@ menu "ESP32S3-Specific"
     menu "SPI RAM config"
         depends on ESP32S3_SPIRAM_SUPPORT
 
+        config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+            bool
+            default "y"
+
+        choice SPIRAM_MODE
+            prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
+            default SPIRAM_MODE_QUAD
+
+            config SPIRAM_MODE_QUAD
+                bool "Quad Mode PSRAM"
+
+            config SPIRAM_MODE_OCT
+                bool "Octal Mode PSRAM"
+        endchoice
+
         choice SPIRAM_TYPE
-            prompt "Type of SPI RAM chip in use"
+            prompt "Type of SPIRAM chip in use"
             default SPIRAM_TYPE_AUTO
 
             config SPIRAM_TYPE_AUTO
@@ -178,12 +174,14 @@ menu "ESP32S3-Specific"
 
             config SPIRAM_TYPE_ESPPSRAM16
                 bool "ESP-PSRAM16 or APS1604"
+                depends on SPIRAM_MODE_QUAD
 
             config SPIRAM_TYPE_ESPPSRAM32
                 bool "ESP-PSRAM32 or IS25WP032"
+                depends on SPIRAM_MODE_QUAD
 
             config SPIRAM_TYPE_ESPPSRAM64
-                bool "ESP-PSRAM64 or LY68L6400"
+                bool "ESP-PSRAM64 , LY68L6400 or APS6408"
         endchoice
 
         config SPIRAM_SIZE
@@ -192,6 +190,8 @@ menu "ESP32S3-Specific"
             default 2097152 if SPIRAM_TYPE_ESPPSRAM16
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
+            default 16777216 if SPIRAM_TYPE_ESPPSRAM128
+            default 33554432 if SPIRAM_TYPE_ESPPSRAM256
             default 0
 
         menu "PSRAM Clock and CS IO for ESP32S3"
@@ -231,18 +231,22 @@ menu "ESP32S3-Specific"
             help
                 Select the speed for the SPI RAM chip.
 
+            config SPIRAM_SPEED_120M
+                depends on SPIRAM_MODE_QUAD
+                bool "120MHz clock speed"
             config SPIRAM_SPEED_80M
                 bool "80MHz clock speed"
             config SPIRAM_SPEED_40M
                 bool "40Mhz clock speed"
-            config SPIRAM_SPEED_26M
-                bool "26Mhz clock speed"
-            config SPIRAM_SPEED_20M
-                bool "20Mhz clock speed"
         endchoice
 
-        # insert non-chip-specific items here
-        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
+        config SPIRAM_SPEED
+            int
+            default 120 if SPIRAM_SPEED_120M
+            default 80 if SPIRAM_SPEED_80M
+            default 40 if SPIRAM_SPEED_40M
+
+        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"      # insert non-chip-specific items here
 
     endmenu
 
@@ -282,175 +286,23 @@ menu "ESP32S3-Specific"
         default 0x0
 
 
-    config ESP32S3_ULP_COPROC_ENABLED
-        bool "Enable Ultra Low Power (ULP) Coprocessor"
-        default "n"
+    config ESP32S3_DEEP_SLEEP_WAKEUP_DELAY
+        int "Extra delay in deep sleep wake stub (in us)"
+        default 2000
+        range 0 5000
         help
-            Set to 'y' if you plan to load a firmware for the coprocessor.
+            When ESP32S3 exits deep sleep, the CPU and the flash chip are powered on
+            at the same time. CPU will run deep sleep stub first, and then
+            proceed to load code from flash. Some flash chips need sufficient
+            time to pass between power on and first read operation. By default,
+            without any extra delay, this time is approximately 900us, although
+            some flash chip types need more than that.
 
-            If this option is enabled, further coprocessor configuration will appear in the Components menu.
+            By default extra delay is set to 2000us. When optimizing startup time
+            for applications which require it, this value may be reduced.
 
-    config ESP32S3_ULP_COPROC_RESERVE_MEM
-        int
-        prompt "RTC slow memory reserved for coprocessor" if ESP32S3_ULP_COPROC_ENABLED
-        default 512 if ESP32S3_ULP_COPROC_ENABLED
-        range 32 8192 if ESP32S3_ULP_COPROC_ENABLED
-        default 0 if !ESP32S3_ULP_COPROC_ENABLED
-        range 0 0 if !ESP32S3_ULP_COPROC_ENABLED
-        help
-            Bytes of memory to reserve for ULP coprocessor firmware & data.
-
-            Data is reserved at the beginning of RTC slow memory.
-
-    config ESP32S3_DEBUG_OCDAWARE
-        bool "Make exception and panic handlers JTAG/OCD aware"
-        default y
-        select FREERTOS_DEBUG_OCDAWARE
-        help
-            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
-            instead of panicking, have the debugger stop on the offending instruction.
-
-    config ESP32S3_DEBUG_STUBS_ENABLE
-        bool "OpenOCD debug stubs"
-        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32S3_TRAX
-        help
-            Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
-            e.g. GCOV data dump.
-
-    config ESP32S3_BROWNOUT_DET
-        bool "Hardware brownout detect & reset"
-        default y
-        help
-            The ESP32-S3 has a built-in brownout detector which can detect if the voltage is lower than
-            a specific value. If this happens, it will reset the chip in order to prevent unintended
-            behaviour.
-
-    choice ESP32S3_BROWNOUT_DET_LVL_SEL
-        prompt "Brownout voltage level"
-        depends on ESP32S3_BROWNOUT_DET
-        default ESP32S3_BROWNOUT_DET_LVL_SEL_7
-        help
-            The brownout detector will reset the chip when the supply voltage is approximately
-            below this level. Note that there may be some variation of brownout voltage level
-            between each ESP3-S3 chip.
-
-            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
-            #of the brownout threshold levels.
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_7
-            bool "2.44V"
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_6
-            bool "2.56V"
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_5
-            bool "2.67V"
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_4
-            bool "2.84V"
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_3
-            bool "2.98V"
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_2
-            bool "3.19V"
-        config ESP32S3_BROWNOUT_DET_LVL_SEL_1
-            bool "3.30V"
-    endchoice
-
-    config ESP32S3_BROWNOUT_DET_LVL
-        int
-        default 1 if ESP32S3_BROWNOUT_DET_LVL_SEL_1
-        default 2 if ESP32S3_BROWNOUT_DET_LVL_SEL_2
-        default 3 if ESP32S3_BROWNOUT_DET_LVL_SEL_3
-        default 4 if ESP32S3_BROWNOUT_DET_LVL_SEL_4
-        default 5 if ESP32S3_BROWNOUT_DET_LVL_SEL_5
-        default 6 if ESP32S3_BROWNOUT_DET_LVL_SEL_6
-        default 7 if ESP32S3_BROWNOUT_DET_LVL_SEL_7
-
-
-        # Note about the use of "FRC1" name: currently FRC1 timer is not used for
-        # high resolution timekeeping anymore. Instead the esp_timer API, implemented
-        # using FRC2 timer, is used.
-        # FRC1 name in the option name is kept for compatibility.
-    choice ESP32S3_TIME_SYSCALL
-        prompt "Timers used for gettimeofday function"
-        default ESP32S3_TIME_SYSCALL_USE_RTC_FRC1
-        help
-            This setting defines which hardware timers are used to
-            implement 'gettimeofday' and 'time' functions in C library.
-
-            - If both high-resolution and RTC timers are used, timekeeping will
-              continue in deep sleep. Time will be reported at 1 microsecond
-              resolution. This is the default, and the recommended option.
-            - If only high-resolution timer is used, gettimeofday will
-              provide time at microsecond resolution.
-              Time will not be preserved when going into deep sleep mode.
-            - If only RTC timer is used, timekeeping will continue in
-              deep sleep, but time will be measured at 6.(6) microsecond
-              resolution. Also the gettimeofday function itself may take
-              longer to run.
-            - If no timers are used, gettimeofday and time functions
-              return -1 and set errno to ENOSYS.
-            - When RTC is used for timekeeping, two RTC_STORE registers are
-              used to keep time in deep sleep mode.
-
-        config ESP32S3_TIME_SYSCALL_USE_RTC_FRC1
-            bool "RTC and high-resolution timer"
-            select ESP_TIME_FUNCS_USE_RTC_TIMER
-            select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_RTC
-            bool "RTC"
-            select ESP_TIME_FUNCS_USE_RTC_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_FRC1
-            bool "High-resolution timer"
-            select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_NONE
-            bool "None"
-            select ESP_TIME_FUNCS_USE_NONE
-    endchoice
-
-    choice ESP32S3_RTC_CLK_SRC
-        prompt "RTC clock source"
-        default ESP32S3_RTC_CLK_SRC_INT_RC
-        help
-            Choose which clock is used as RTC clock source.
-
-        config ESP32S3_RTC_CLK_SRC_INT_RC
-            bool "Internal 150kHz RC oscillator"
-        config ESP32S3_RTC_CLK_SRC_EXT_CRYS
-            bool "External 32kHz crystal"
-            select ESP_SYSTEM_RTC_EXT_XTAL
-        config ESP32S3_RTC_CLK_SRC_EXT_OSC
-            bool "External 32kHz oscillator at 32K_XP pin"
-        config ESP32S3_RTC_CLK_SRC_INT_8MD256
-            bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
-    endchoice
-
-    config ESP32S3_RTC_CLK_CAL_CYCLES
-        int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
-        default 1024 if ESP32S3_RTC_CLK_SRC_INT_RC
-        range 0 27000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
-        range 0 32766 if ESP32S3_RTC_CLK_SRC_INT_RC
-        help
-            When the startup code initializes RTC_SLOW_CLK, it can perform
-            calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
-            frequency. This option sets the number of RTC_SLOW_CLK cycles measured
-            by the calibration routine. Higher numbers increase calibration
-            precision, which may be important for applications which spend a lot of
-            time in deep sleep. Lower numbers reduce startup time.
-
-            When this option is set to 0, clock calibration will not be performed at
-            startup, and approximate clock frequencies will be assumed:
-
-            - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
-            - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
-              In case more value will help improve the definition of the launch of the crystal.
-              If the crystal could not start, it will be switched to internal RC.
-
-    config ESP32S3_NO_BLOBS
-        bool "No Binary Blobs"
-        depends on !BT_ENABLED
-        default n
-        help
-            If enabled, this disables the linking of binary libraries in the application build. Note
-            that after enabling this Wi-Fi/Bluetooth will not work.
+            If you are seeing "flash read err, 1000" message printed to the
+            console after deep sleep reset, try increasing this value.
 
     config ESP32S3_RTCDATA_IN_FAST_MEM
         bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_BT_H__
 #define __ESP_BT_H__
@@ -26,7 +18,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02103310
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02112280
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -137,6 +129,20 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     #define MESH_DUPLICATE_SCAN_CACHE_SIZE          0
 #endif
 
+#ifdef CONFIG_BT_CTRL_AGC_RECORRECT_EN
+#define BT_CTRL_AGC_RECORRECT_EN  CONFIG_BT_CTRL_AGC_RECORRECT_EN
+#else
+#define BT_CTRL_AGC_RECORRECT_EN        0
+#endif
+
+#ifdef CONFIG_BT_CTRL_CODED_AGC_RECORRECT_EN
+#define BT_CTRL_CODED_AGC_RECORRECT  CONFIG_BT_CTRL_CODED_AGC_RECORRECT_EN
+#else
+#define BT_CTRL_CODED_AGC_RECORRECT        0
+#endif
+
+#define AGC_RECORRECT_EN       ((BT_CTRL_AGC_RECORRECT_EN << 0) | (BT_CTRL_CODED_AGC_RECORRECT <<1))
+
 #define CFG_MASK_BIT_SCAN_DUPLICATE_OPTION    (1<<0)
 
 #define CFG_MASK      CFG_MASK_BIT_SCAN_DUPLICATE_OPTION
@@ -170,6 +176,8 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_CTRL_COEX_PHY_CODED_TX_RX_TLIM_EFF, \
     .hw_target_code = BLE_HW_TARGET_CODE_ESP32S3_CHIP_ECO0,                \
     .slave_ce_len_min = SLAVE_CE_LEN_MIN_DEFAULT,                          \
+    .hw_recorrect_en = AGC_RECORRECT_EN,                                   \
+    .cca_thresh = CONFIG_BT_CTRL_HW_CCA_VAL,                               \
 };
 
 #else
@@ -235,6 +243,8 @@ typedef struct {
     uint8_t coex_phy_coded_tx_rx_time_limit;  /*!< limit on max tx/rx time in case of connection using CODED-PHY with Wi-Fi coexistence */
     uint32_t hw_target_code;                /*!< hardware target */
     uint8_t slave_ce_len_min;               /*!< slave minimum ce length*/
+    uint8_t hw_recorrect_en;
+    uint8_t cca_thresh;                     /*!< cca threshold*/
 } esp_bt_controller_config_t;
 
 /**
@@ -511,10 +521,14 @@ void esp_bt_controller_wakeup_request(void);
 int esp_bt_h4tl_eif_io_event_notify(int event);
 
 /**
- * @brief  Get BT MAC address.
- * @return Array pointer of length 6 storing MAC address value.
+ * @brief bt Wi-Fi power domain power on
  */
-uint8_t* esp_bt_get_mac(void);
+void esp_wifi_bt_power_domain_on(void);
+
+/**
+ * @brief bt Wi-Fi power domain power off
+ */
+void esp_wifi_bt_power_domain_off(void);
 
 #ifdef __cplusplus
 }

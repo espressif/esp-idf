@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/param.h>
 #include <esp_log.h>
@@ -81,6 +73,9 @@ static struct ble_gap_adv_params adv_params;
 static char *protocomm_ble_device_name;
 static struct ble_hs_adv_fields adv_data, resp_data;
 
+static uint8_t *protocomm_ble_mfg_data;
+static size_t protocomm_ble_mfg_data_len;
+
 /**********************************************************************
 * Maintain database of uuid_name addresses to free memory afterwards  *
 **********************************************************************/
@@ -126,6 +121,10 @@ typedef struct {
     simple_ble_cb_t *connect_fn;
     /** MTU set callback */
     simple_ble_cb_t *set_mtu_fn;
+    /** BLE bonding */
+    unsigned ble_bonding:1;
+    /** BLE Secure Connection flag */
+    unsigned ble_sm_sc:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -308,7 +307,7 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
 
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
-        ESP_LOGD(TAG, "Read attempeted for Characterstic UUID = %s, attr_handle = %d",
+        ESP_LOGD(TAG, "Read attempted for characteristic UUID = %s, attr_handle = %d",
                  ble_uuid_to_str(ctxt->chr->uuid, buf), attr_handle);
 
         rc = simple_ble_gatts_get_attr_value(attr_handle, &temp_outlen,
@@ -322,6 +321,12 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        /* If empty packet is received, return */
+        if (ctxt->om->om_len == 0) {
+            ESP_LOGD(TAG,"Empty packet");
+            return 0;
+        }
+
         uuid = (uint8_t *) calloc(BLE_UUID128_VAL_LENGTH, sizeof(uint8_t));
         if (!uuid) {
             ESP_LOGE(TAG, "Error allocating memory for 128 bit UUID");
@@ -474,7 +479,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
 {
     ble_cfg_p = (void *)cfg;
     int rc;
-    ESP_LOGD(TAG, "Free mem at start of simple_ble_init %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "Free memory at start of simple_ble_init %d", esp_get_free_heap_size());
 
     ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
     nimble_port_init();
@@ -487,9 +492,10 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
 
     /* Initialize security manager configuration in NimBLE host  */
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO; /* Just Works */
-    ble_hs_cfg.sm_bonding = 1; /* Enable bonding inline with bluedroid */
+    ble_hs_cfg.sm_bonding = cfg->ble_bonding;
     ble_hs_cfg.sm_mitm = 1;
-    ble_hs_cfg.sm_sc = 1; /* Enable secure connection by default */
+    ble_hs_cfg.sm_sc = cfg->ble_sm_sc;
+
     /* Distribute LTK and IRK */
     ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
@@ -511,6 +517,13 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     if (resp_data.name != NULL) {
         resp_data.name_len = strlen(ble_svc_gap_device_name());
         resp_data.name_is_complete = 1;
+    }
+
+    /* Set manufacturer data if protocomm_ble_mfg_data points to valid data */
+    if (protocomm_ble_mfg_data != NULL) {
+        resp_data.mfg_data = protocomm_ble_mfg_data;
+        resp_data.mfg_data_len = protocomm_ble_mfg_data_len;
+        ESP_LOGD(TAG, "Custom manufacturer data length = %d", protocomm_ble_mfg_data_len);
     }
 
     /* XXX Need to have template for store */
@@ -625,9 +638,13 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
     memcpy(&temp_uuid128_name.value[12], &protoble_internal->g_nu_lookup[idx].uuid, 2);
 
     (characteristics + idx)->flags = BLE_GATT_CHR_F_READ |
-                                     BLE_GATT_CHR_F_WRITE |
-                                     BLE_GATT_CHR_F_READ_ENC |
-                                     BLE_GATT_CHR_F_WRITE_ENC;
+                                     BLE_GATT_CHR_F_WRITE ;
+
+#if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
+    (characteristics + idx)->flags |= BLE_GATT_CHR_F_READ_ENC |
+                                      BLE_GATT_CHR_F_WRITE_ENC;
+#endif
+
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
     /* Out of 128 bit UUID, 16 bits from g_nu_lookup table. Currently
@@ -733,9 +750,16 @@ static void protocomm_ble_cleanup(void)
         free(protoble_internal);
         protoble_internal = NULL;
     }
+
     if (protocomm_ble_device_name) {
         free(protocomm_ble_device_name);
         protocomm_ble_device_name = NULL;
+    }
+
+    if (protocomm_ble_mfg_data) {
+        free(protocomm_ble_mfg_data);
+        protocomm_ble_mfg_data = NULL;
+        protocomm_ble_mfg_data_len = 0;
     }
 }
 
@@ -788,7 +812,9 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 {
     /* copy the 128 bit service UUID into local buffer to use as base 128 bit
      * UUID. */
-    memcpy(ble_uuid_base, config->service_uuid, BLE_UUID128_VAL_LENGTH);
+    if (config->service_uuid != NULL) {
+        memcpy(ble_uuid_base, config->service_uuid, BLE_UUID128_VAL_LENGTH);
+    }
 
     if (!pc || !config || !config->device_name || !config->nu_lookup) {
         return ESP_ERR_INVALID_ARG;
@@ -829,11 +855,16 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     /* Store BLE device name internally */
     protocomm_ble_device_name = strdup(config->device_name);
-
     if (protocomm_ble_device_name == NULL) {
         ESP_LOGE(TAG, "Error allocating memory for storing BLE device name");
         protocomm_ble_cleanup();
         return ESP_ERR_NO_MEM;
+    }
+
+    /* Store BLE manufacturer data pointer */
+    if (config->manufacturer_data != NULL) {
+        protocomm_ble_mfg_data = config->manufacturer_data;
+        protocomm_ble_mfg_data_len = config->manufacturer_data_len;
     }
 
     protoble_internal = (_protocomm_ble_internal_t *) calloc(1, sizeof(_protocomm_ble_internal_t));
@@ -883,6 +914,8 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->adv_params      = adv_params;
 
     ble_config->device_name     = protocomm_ble_device_name;
+    ble_config->ble_bonding     = config->ble_bonding;
+    ble_config->ble_sm_sc       = config->ble_sm_sc;
 
     if (populate_gatt_db(&ble_config->gatt_db, config) != 0) {
         ESP_LOGE(TAG, "Error populating GATT Database");

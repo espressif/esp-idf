@@ -32,12 +32,12 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
 /**
  * @brief  Creates new PPP related structure
  *
- * @param[in]    netif_related pointer to internal ppp context instance
+ * @param[in]     esp_netif pointer esp-netif instance
  *
  * @return
  *         - ESP_OK on success
  */
-esp_err_t esp_netif_start_ppp(netif_related_data_t *netif_related);
+esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif);
 
 /**
  * @brief  Data path API to input incoming packets to PPP

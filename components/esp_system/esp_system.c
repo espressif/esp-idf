@@ -1,36 +1,31 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_private/panic_internal.h"
 #include "esp_rom_uart.h"
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/memprot.h"
+#else
+#include "esp_memprot.h"
+#endif
 #endif
 
-#define SHUTDOWN_HANDLERS_NO 4
+#define SHUTDOWN_HANDLERS_NO 5
+
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
 void IRAM_ATTR esp_restart_noos_dig(void)
@@ -86,14 +81,28 @@ void IRAM_ATTR esp_restart(void)
         }
     }
 
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     // Disable scheduler on this core.
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 
     bool digital_reset_needed = false;
-#if CONFIG_ESP_SYSTEM_CONFIG_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_IDF_TARGET_ESP32S2
     if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
         digital_reset_needed = true;
     }
+#else
+    bool is_on = false;
+    if (esp_mprot_is_intr_ena_any(&is_on) != ESP_OK || is_on) {
+        digital_reset_needed = true;
+    } else if (esp_mprot_is_conf_locked_any(&is_on) != ESP_OK || is_on) {
+        digital_reset_needed = true;
+    }
+#endif
 #endif
     if (digital_reset_needed) {
         esp_restart_noos_dig();

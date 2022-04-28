@@ -67,11 +67,12 @@ struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code)
  * @msg: WPS IE contents from Beacon or Probe Response frame
  * Returns: 1 if PBC Registrar is active, 0 if not
  */
-int wps_is_selected_pbc_registrar(const struct wpabuf *msg, u8 *bssid)
+int wps_is_selected_pbc_registrar(const struct wpabuf *msg)
 {
-	struct wps_sm *sm = wps_sm_get();
     struct wps_parse_attr *attr = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
-    int i = 0;
+
+    if (!attr)
+        return 0;
 
     /*
      * In theory, this could also verify that attr.sel_reg_config_methods
@@ -80,33 +81,23 @@ int wps_is_selected_pbc_registrar(const struct wpabuf *msg, u8 *bssid)
      * it is safer to just use Device Password ID here.
      */
 
-    if (wps_parse_msg(msg, attr) < 0) {
-    	os_free(attr);
-    	return 0;
-    }
-
-    if(!attr->selected_registrar || *attr->selected_registrar == 0) {
-    	if (sm->ignore_sel_reg == false) {
-    		os_free(attr);
-    	    return 0;
-    	}
-    	else {
-    	   for (i = 0; i < WPS_MAX_DIS_AP_NUM; i++) {
-    	    	if (0 == os_memcmp(sm->dis_ap_list[i].bssid, bssid, 6)) {
-    	    		wpa_printf(MSG_DEBUG, "discard ap bssid[%02x:%02x:%02x:%02x:%02x:%02x]\n", \
-    	    				bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
-    	    		os_free(attr);
-    	    		return 0;
-    	    	}
-    	   }
-    	}
-    }
-
-    if (!attr->dev_password_id ||
+    if (wps_parse_msg(msg, attr) < 0 ||
+        !attr->selected_registrar || *attr->selected_registrar == 0 ||
+        !attr->dev_password_id ||
         WPA_GET_BE16(attr->dev_password_id) != DEV_PW_PUSHBUTTON) {
-        os_free(attr);
-        return 0;
+            os_free(attr);
+            return 0;
     }
+
+
+#ifdef CONFIG_WPS_STRICT
+    if (!attr->sel_reg_config_methods ||
+        !(WPA_GET_BE16(attr->sel_reg_config_methods) &
+        WPS_CONFIG_PUSHBUTTON)) {
+            os_free(attr);
+            return 0;
+    }
+#endif /* CONFIG_WPS_STRICT */
 
     os_free(attr);
     return 1;
@@ -114,14 +105,8 @@ int wps_is_selected_pbc_registrar(const struct wpabuf *msg, u8 *bssid)
 
 #ifdef CONFIG_WPS_PIN
 
-static int is_selected_pin_registrar(struct wps_parse_attr *attr, u8 *bssid)
+static int is_selected_pin_registrar(struct wps_parse_attr *attr)
 {
-	struct wps_sm *sm = wps_sm_get();
-	int i = 0;
-
-	if (!sm || !bssid){
-		return 0;
-	}
     /*
      * In theory, this could also verify that attr.sel_reg_config_methods
      * includes WPS_CONFIG_LABEL, WPS_CONFIG_DISPLAY, or WPS_CONFIG_KEYPAD,
@@ -131,27 +116,19 @@ static int is_selected_pin_registrar(struct wps_parse_attr *attr, u8 *bssid)
      */
 
     if (!attr->selected_registrar || *attr->selected_registrar == 0) {
-    	if (sm->ignore_sel_reg == false) {
-    		return 0;
-        }
-    	else {
-    		for (i = 0; i < WPS_MAX_DIS_AP_NUM; i++) {
-    		    if (0 == os_memcmp(sm->dis_ap_list[i].bssid, bssid, 6)) {
-    		    	wpa_printf(MSG_DEBUG, "discard ap bssid[%02x:%02x:%02x:%02x:%02x:%02x]\n", \
-    		    	    bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
-    		        return 0;
-    		    }
-    		}
-    	}
+        return 0;
     }
     if (attr->dev_password_id != NULL &&
         WPA_GET_BE16(attr->dev_password_id) == DEV_PW_PUSHBUTTON) {
         return 0;
     }
 #ifdef CONFIG_WPS_STRICT
-    if (!attr->sel_reg_config_methods)
+    if (!attr->sel_reg_config_methods ||
+        !(WPA_GET_BE16(attr->sel_reg_config_methods) &
+        (WPS_CONFIG_LABEL | WPS_CONFIG_DISPLAY | WPS_CONFIG_KEYPAD)))
         return 0;
 #endif /* CONFIG_WPS_STRICT */
+
     return 1;
 }
 
@@ -161,7 +138,7 @@ static int is_selected_pin_registrar(struct wps_parse_attr *attr, u8 *bssid)
  * @msg: WPS IE contents from Beacon or Probe Response frame
  * Returns: 1 if PIN Registrar is active, 0 if not
  */
-int wps_is_selected_pin_registrar(const struct wpabuf *msg, u8 *bssid)
+int wps_is_selected_pin_registrar(const struct wpabuf *msg)
 {
     struct wps_parse_attr *attr;
     int ret;
@@ -175,7 +152,7 @@ int wps_is_selected_pin_registrar(const struct wpabuf *msg, u8 *bssid)
         return 0;
     }
 
-    ret = is_selected_pin_registrar(attr, bssid);
+    ret = is_selected_pin_registrar(attr);
     os_free(attr);
 
     return ret;
@@ -193,20 +170,15 @@ int wps_is_selected_pin_registrar(const struct wpabuf *msg, u8 *bssid)
 int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
                int ver1_compat)
 {
-	struct wps_sm *sm = wps_sm_get();
     struct wps_parse_attr *attr;
     int ret = 0;
     unsigned int i;
     const u8 *pos;
     const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-    if (!sm){
-    	return -10;
-    }
-
     attr = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
     if (attr == NULL) {
-        ret = -99;
+        ret = 0;
         goto _out;
     }
 
@@ -222,7 +194,7 @@ int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
          */
 #ifdef CONFIG_WPS_PIN
 
-        ret = is_selected_pin_registrar(attr, sm->config.bssid);
+        ret = is_selected_pin_registrar(attr);
         goto _out;
 #endif
     }

@@ -6,27 +6,27 @@
 介绍
 ------------
 
-这一程序主要用于量产时为每一设备创建工厂 NVS（非易失性存储器）分区映像。NVS 分区映像由 CSV（逗号分隔值）文件生成，文件中包含了用户提供的配置项及配置值。
+这一程序主要用于量产时为每一设备创建工厂 NVS（非易失性存储器）分区镜像。NVS 分区镜像由 CSV（逗号分隔值）文件生成，文件中包含了用户提供的配置项及配置值。
 
-注意，该程序仅创建用于量产的二进制映像，您需要使用以下工具将映像烧录到设备上：
+注意，该程序仅创建用于量产的二进制镜像，您需要使用以下工具将镜像烧录到设备上：
 
-- esptool.py
-- Flash 下载工具（仅适用于 Windows）
-- 直接烧录程序
+- `esptool.py`_
+- `Flash 下载工具 <https://www.espressif.com/en/support/download/other-tools?keys=flash+download+tools>`_ （仅适用于 Windows）。下载后解压，然后按照 doc 文件夹中的说明操作。
+- 使用定制的生产工具直接烧录程序
 
 
 准备工作
 -------------
 
-**该程序需要用到分区公用程序。** 
+**该程序依赖于 esp-idf 的 NVS 分区程序**
 
 * 操作系统要求：
-    -   Linux、MacOS 或 Windows（标准版） 
+    -   Linux、MacOS 或 Windows（标准版）
 
 * 安装依赖包：
-    -   Python： https://www.python.org/downloads/。 
+    -   `Python <https://www.python.org/downloads/>`_
 
-.. note:: 
+.. note::
 
     使用该程序之前，请确保：
         - Python 路径已添加到 PATH 环境变量中；
@@ -36,7 +36,7 @@
 具体流程
 -----------
 
-.. blockdiag:: 
+.. blockdiag::
 
     blockdiag {
     A [label = "CSV 配置文件"];
@@ -50,33 +50,35 @@
 CSV 配置文件
 ----------------------
 
-CSV 配置文件中包含设备待烧录的配置信息，定义了待烧录的配置项。例如定义 ``firmware_key`` (``key``) 的 ``type`` 为 ``data``，``encoding`` 为 ``hex2bin``。 
-  
+CSV 配置文件中包含设备待烧录的配置信息，定义了待烧录的配置项。
+
 配置文件中数据格式如下（`REPEAT` 标签可选）::
 
-       name1,namespace,    <-- 第一行为 "namespace" 条目
+       name1,namespace,    <-- 第一个条目应该为 "namespace" 类型
        key1,type1,encoding1
        key2,type2,encoding2,REPEAT
-       name2,namespace,    
+       name2,namespace,
        key3,type3,encoding3
        key4,type4,encoding4
 
 .. note:: 文件第一行应始终为 ``namespace`` 条目。
 
-每行应包含三个参数：``key``、``type`` 和 ``encoding``，并以逗号分隔。如果有 ``REPEAT`` 标签，则主 CSV 文件中所有设备此键值均相同。
+每行应包含三个参数：``key``、``type`` 和 ``encoding``，并以逗号分隔。
+如果有 ``REPEAT`` 标签，则主 CSV 文件中所有设备此键值均相同。
 
 *有关各个参数的详细说明，请参阅 NVS 分区生成程序的 README 文件。*
 
-CSV 配置文件示例如下::  
+CSV 配置文件示例如下::
 
-    app,namespace,
-    firmware_key,data,hex2bin
-    serial_no,data,string,REPEAT <-- "serial_no" 被标记为 "REPEAT"
-    device_no,data,i32
+	app,namespace,
+	firmware_key,data,hex2bin
+	serial_no,data,string,REPEAT
+	device_no,data,i32
 
-.. note:: 
 
-    请确保： 
+.. note::
+
+    请确保：
         - 逗号 ',' 前后无空格；
         - CSV 文件每行末尾无空格。
 
@@ -84,14 +86,12 @@ CSV 配置文件示例如下::
 主 CSV 文件
 ---------------------
 
-主 CSV 文件中包含设备待烧录的详细信息，文件中每行均对应一个设备实体。主 CSV 文件中的 ``key`` 应首先在 CSV 配置文件中定义。
-  
-主 CSV 文件的数据格式如下:: 
+主 CSV 文件中包含设备待烧录的详细信息，文件中每行均对应一个设备实体。
 
-    key1,key2,key3,.....
-    value1,value2,value3,.... <-- 对应一个设备实体
-    value4,value5,value6,.... <-- 对应一个设备实体
-    value7,value8,value9,.... <-- 对应一个设备实体
+主 CSV 文件的数据格式如下::
+
+	key1,key2,key3,.....
+	value1,value2,value3,....
 
 .. note:: 文件中键 (``key``) 名应始终置于文件首行。从配置文件中获取的键，在此文件中的排列顺序应与其在配置文件中的排列顺序相同。主 CSV 文件同时可以包含其它列（键），这些列将被视为元数据，而不会编译进最终二进制文件。
 
@@ -104,25 +104,26 @@ CSV 配置文件示例如下::
 
 ``value`` 是与键对应的键值。
 
-主 CSV 文件示例如下:: 
+主 CSV 文件示例如下::
 
-    id,firmware_key,serial_no,device_no 
-    1,1a2b3c4d5e6faabb,A1,101 <-- 对应一个设备实体（在 CSV 配置文件中标记为 `REPEAT` 的键，除第一个条目外，其他均为空）
-    2,1a2b3c4d5e6fccdd,,102   <-- 对应一个设备实体
-    3,1a2b3c4d5e6feeff,,103   <-- 对应一个设备实体 
+	id,firmware_key,serial_no,device_no
+	1,1a2b3c4d5e6faabb,A1,101
+	2,1a2b3c4d5e6fccdd,,102
+	3,1a2b3c4d5e6feeff,,103
 
 .. note:: 如果出现 `REPEAT` 标签，则会在相同目录下生成一个新的主 CSV 文件用作主输入文件，并在每行为带有 `REPEAT` 标签的键插入键值。
 
 量产程序还会创建中间 CSV 文件，NVS 分区程序将使用此 CSV 文件作为输入，然后生成二进制文件。
 
-中间 CSV 文件的格式如下:: 
+中间 CSV 文件的格式如下::
 
-    key,type,encoding,value
-    key,namespace, ,
-    key1,type1,encoding1,value1
-    key2,type2,encoding2,value2
+	key,type,encoding,value
+	key,namespace, ,
+	key1,type1,encoding1,value1
+	key2,type2,encoding2,value2
 
 此步骤将为每一设备生成一个中间 CSV 文件。
+
 
 运行量产程序
 -------------------
@@ -139,7 +140,6 @@ CSV 配置文件示例如下::
 |   1  | -h, --help | 显示帮助信息并退出   |
 +------+------------+----------------------+
 
-
 **命令**：
 
 运行 mfg_gen.py {command} -h 查看更多帮助信息
@@ -152,7 +152,7 @@ CSV 配置文件示例如下::
 |   2  | generate-key |  生成加密密钥 |
 +------+--------------+---------------+
 
-**为每个设备生成工厂映像（默认）**
+**为每个设备生成工厂镜像（默认）**
 
 **使用方法**::
 
@@ -160,7 +160,6 @@ CSV 配置文件示例如下::
                                         [--keyfile KEYFILE] [--inputkey INPUTKEY]
                                         [--outdir OUTDIR]
                                         conf values prefix size
-        
 
 **位置参数**：
 
@@ -198,22 +197,23 @@ CSV 配置文件示例如下::
 | --outdir OUTDIR     | 输出目录，用于存储创建的文件（默认当前目录）                                   |
 +---------------------+--------------------------------------------------------------------------------+
 
-请运行以下命令为每个设备生成工厂映像，量产程序同时提供了一个 CSV 示例文件::
+
+
+请运行以下命令为每个设备生成工厂镜像，量产程序同时提供了一个 CSV 示例文件::
 
     python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000
 
-主 CSV 文件应在 ``file`` 类型下设置一个相对路径，指向运行该程序的当前目录。
+主 CSV 文件应在 ``file`` 类型下设置一个相对路径，相对于运行该程序的当前目录。
 
-**为每个设备生成工厂加密映像**
+**为每个设备生成工厂加密镜像**
 
-运行以下命令为每一设备生成工厂加密映像，量产程序同时提供了一个 CSV 示例文件。
+运行以下命令为每一设备生成工厂加密镜像，量产程序同时提供了一个 CSV 示例文件。
 
 - 通过量产程序生成加密密钥来进行加密::
 
     python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000 --keygen
 
-.. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<prefix>-<fileid>.bin``。
-.. note:: 加密密钥存储于新建文件的 ``keys/`` 目录下，与 NVS 密钥分区结构兼容。更多信息请参考 :ref:`nvs_key_partition`。
+.. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<prefix>-<fileid>.bin``。加密密钥存储于新建文件的 ``keys/`` 目录下，与 NVS 密钥分区结构兼容。更多信息请参考 :ref:`nvs_key_partition`。
 
 - 提供加密密钥用作二进制输入文件来进行加密::
 
@@ -226,7 +226,6 @@ CSV 配置文件示例如下::
         python mfg_gen.py generate-key [-h] [--keyfile KEYFILE] [--outdir OUTDIR]
 
 **可选参数：**
-
 +-------------------+----------------------------------------------+
 |        参数       |                     描述                     |
 +-------------------+----------------------------------------------+
@@ -236,15 +235,14 @@ CSV 配置文件示例如下::
 +-------------------+----------------------------------------------+
 | --outdir OUTDIR   | 输出目录，用于存储创建的文件（默认当前目录） |
 +-------------------+----------------------------------------------+
-    
+
 运行以下命令仅生成加密密钥::
 
     python mfg_gen.py generate-key
 
-.. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<timestamp>.bin``。时间戳格式为：``%m-%d_%H-%M``。
-.. note:: 如需自定义目标文件名，请使用 --keyfile 参数。
+.. note:: 创建的加密密钥格式为 ``<outdir>/keys/keys-<timestamp>.bin``。时间戳格式为：``%m-%d_%H-%M``。如需自定义目标文件名，请使用 --keyfile 参数。
 
-生成的加密密钥二进制文件还可以用于为每个设备的工厂映像加密。
+生成的加密密钥二进制文件还可以用于为每个设备的工厂镜像加密。
 
 ``fileid`` 参数的默认值为 1、2、3...，与主 CSV 文件中的行一一对应，内含设备配置值。
 
@@ -252,5 +250,6 @@ CSV 配置文件示例如下::
 
 - ``bin/`` 存储生成的二进制文件
 - ``csv/`` 存储生成的中间 CSV 文件
-- ``keys/`` 存储加密密钥（创建工厂加密映像时会用到）
+- ``keys/`` 存储加密密钥（创建工厂加密镜像时会用到）
 
+.. _esptool.py: https://github.com/espressif/esptool/#readme

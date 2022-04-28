@@ -35,6 +35,9 @@
 # ifdef CONFIG_ASIO_USE_ESP_OPENSSL
 #  define ASIO_USE_ESP_OPENSSL
 #  define OPENSSL_NO_ENGINE
+#  define ASIO_SSL_DETAIL_OPENSSL_TYPES_HPP
+#  include "openssl_stub.hpp"
+
 # elif CONFIG_ASIO_USE_ESP_WOLFSSL
 #  define ASIO_USE_WOLFSSL
 # endif   // CONFIG_ASIO_USE_ESP_OPENSSL

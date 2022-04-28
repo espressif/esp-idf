@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_SPI_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define SPI_CMD_REG(i)          (REG_SPI_BASE(i) + 0x0)
 /* SPI_USR : R/W/SC ;bitpos:[24] ;default: 1'b0 ; */
@@ -52,20 +52,20 @@ clock domain, which is only used in SPI master mode..*/
 #define SPI_USR_ADDR_VALUE_S  0
 
 #define SPI_CTRL_REG(i)          (REG_SPI_BASE(i) + 0x8)
-/* SPI_WR_BIT_ORDER : R/W ;bitpos:[26] ;default: 1'b0 ; */
+/* SPI_WR_BIT_ORDER : R/W ;bitpos:[26:25] ;default: 2'b0 ; */
 /*description: In command address write-data (MOSI) phases 1: LSB firs 0: MSB first. Can be con
 figured in CONF state..*/
-#define SPI_WR_BIT_ORDER    (BIT(26))
-#define SPI_WR_BIT_ORDER_M  (BIT(26))
-#define SPI_WR_BIT_ORDER_V  0x1
-#define SPI_WR_BIT_ORDER_S  26
-/* SPI_RD_BIT_ORDER : R/W ;bitpos:[25] ;default: 1'b0 ; */
+#define SPI_WR_BIT_ORDER    0x00000003
+#define SPI_WR_BIT_ORDER_M  ((SPI_WR_BIT_ORDER_V)<<(SPI_WR_BIT_ORDER_S))
+#define SPI_WR_BIT_ORDER_V  0x3
+#define SPI_WR_BIT_ORDER_S  25
+/* SPI_RD_BIT_ORDER : R/W ;bitpos:[24:23] ;default: 2'b0 ; */
 /*description: In read-data (MISO) phase 1: LSB first 0: MSB first. Can be configured in CONF s
 tate..*/
-#define SPI_RD_BIT_ORDER    (BIT(25))
-#define SPI_RD_BIT_ORDER_M  (BIT(25))
-#define SPI_RD_BIT_ORDER_V  0x1
-#define SPI_RD_BIT_ORDER_S  25
+#define SPI_RD_BIT_ORDER    0x00000003
+#define SPI_RD_BIT_ORDER_M  ((SPI_RD_BIT_ORDER_V)<<(SPI_RD_BIT_ORDER_S))
+#define SPI_RD_BIT_ORDER_V  0x3
+#define SPI_RD_BIT_ORDER_S  23
 /* SPI_WP_POL : R/W ;bitpos:[21] ;default: 1'b1 ; */
 /*description: Write protect signal output when SPI is idle.  1: output high, 0: output low.  C
 an be configured in CONF state..*/
@@ -158,8 +158,8 @@ ONF state..*/
 #define SPI_FADDR_DUAL_V  0x1
 #define SPI_FADDR_DUAL_S  5
 /* SPI_DUMMY_OUT : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: In the dummy phase the signal level of spi is output by the spi controller. Can
-be configured in CONF state..*/
+/*description: 0: In the dummy phase, the FSPI bus signals are not output. 1: In the dummy phas
+e, the FSPI bus signals are output. Can be configured in CONF state..*/
 #define SPI_DUMMY_OUT    (BIT(3))
 #define SPI_DUMMY_OUT_M  (BIT(3))
 #define SPI_DUMMY_OUT_V  0x1
@@ -426,8 +426,8 @@ the configured bit length in slave mode DMA RX controlled transfer. The register
 
 #define SPI_MISC_REG(i)          (REG_SPI_BASE(i) + 0x20)
 /* SPI_QUAD_DIN_PIN_SWAP : R/W ;bitpos:[31] ;default: 1'b0 ; */
-/*description: 1:  spi quad input swap enable  0:  spi quad input swap disable. Can be configur
-ed in CONF state..*/
+/*description: 1: SPI quad input swap enable, swap FSPID with FSPIQ, swap FSPIWP with FSPIHD. 0
+:  spi quad input swap disable. Can be configured in CONF state..*/
 #define SPI_QUAD_DIN_PIN_SWAP    (BIT(31))
 #define SPI_QUAD_DIN_PIN_SWAP_M  (BIT(31))
 #define SPI_QUAD_DIN_PIN_SWAP_V  0x1
@@ -813,6 +813,20 @@ _vld is cleared by spi_trans_done..*/
 #define SPI_DMA_SLV_SEG_TRANS_EN_M  (BIT(18))
 #define SPI_DMA_SLV_SEG_TRANS_EN_V  0x1
 #define SPI_DMA_SLV_SEG_TRANS_EN_S  18
+/* SPI_DMA_INFIFO_FULL : RO ;bitpos:[1] ;default: 1'b1 ; */
+/*description: Records the status of DMA RX FIFO. 1: DMA RX FIFO is not ready for receiving dat
+a. 0: DMA RX FIFO is ready for receiving data..*/
+#define SPI_DMA_INFIFO_FULL    (BIT(1))
+#define SPI_DMA_INFIFO_FULL_M  (BIT(1))
+#define SPI_DMA_INFIFO_FULL_V  0x1
+#define SPI_DMA_INFIFO_FULL_S  1
+/* SPI_DMA_OUTFIFO_EMPTY : RO ;bitpos:[0] ;default: 1'b1 ; */
+/*description: Records the status of DMA TX FIFO. 1: DMA TX FIFO is not ready for sending data.
+ 0: DMA TX FIFO is ready for sending data..*/
+#define SPI_DMA_OUTFIFO_EMPTY    (BIT(0))
+#define SPI_DMA_OUTFIFO_EMPTY_M  (BIT(0))
+#define SPI_DMA_OUTFIFO_EMPTY_V  0x1
+#define SPI_DMA_OUTFIFO_EMPTY_S  0
 
 #define SPI_DMA_INT_ENA_REG(i)          (REG_SPI_BASE(i) + 0x34)
 /* SPI_APP1_INT_ENA : R/W ;bitpos:[20] ;default: 1'b0 ; */
@@ -1726,7 +1740,7 @@ M. 0: XTAL CLK..*/
 #define SPI_CLK_EN_S  0
 
 #define SPI_DATE_REG(i)          (REG_SPI_BASE(i) + 0xF0)
-/* SPI_DATE : R/W ;bitpos:[27:0] ;default: 28'h2010110 ; */
+/* SPI_DATE : R/W ;bitpos:[27:0] ;default: 28'h2101190 ; */
 /*description: SPI register version..*/
 #define SPI_DATE    0x0FFFFFFF
 #define SPI_DATE_M  ((SPI_DATE_V)<<(SPI_DATE_S))

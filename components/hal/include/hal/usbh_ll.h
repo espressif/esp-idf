@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -21,8 +13,9 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/usbh_struct.h"
-#include "soc/usb_wrap_struct.h"
 #include "hal/usb_types_private.h"
+#include "hal/misc.h"
+
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -159,25 +152,6 @@ typedef struct {
     uint8_t *buffer;
 } usbh_ll_dma_qtd_t;
 
-/* -----------------------------------------------------------------------------
------------------------------- USB Wrap Registers ------------------------------
------------------------------------------------------------------------------ */
-
-/**
- * @brief Configures the internal PHY to operate as HOST
- *
- * @param hw Start address of the USB Wrap registers
- */
-static inline void usbh_ll_internal_phy_conf(usb_wrap_dev_t *hw)
-{
-    //Enable internal PHY
-    hw->otg_conf.pad_enable = 1;
-    hw->otg_conf.phy_sel = 0;
-    //Set pulldowns on D+ and D-
-    hw->otg_conf.pad_pull_override = 1;
-    hw->otg_conf.dp_pulldown = 1;
-    hw->otg_conf.dm_pulldown = 1;
-}
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -328,7 +302,7 @@ static inline void usb_ll_dis_intrs(usbh_dev_t *hw, uint32_t intr_mask)
 static inline void usb_ll_set_rx_fifo_size(usbh_dev_t *hw, uint32_t num_lines)
 {
     //Set size in words
-    hw->grxfsiz_reg.rxfdep = num_lines;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->grxfsiz_reg, rxfdep, num_lines);
 }
 
 // -------------------------- GNPTXFSIZ Register -------------------------------
@@ -337,8 +311,8 @@ static inline void usb_ll_set_nptx_fifo_size(usbh_dev_t *hw, uint32_t addr, uint
 {
     usb_gnptxfsiz_reg_t gnptxfsiz;
     gnptxfsiz.val = hw->gnptxfsiz_reg.val;
-    gnptxfsiz.nptxfstaddr = addr;
-    gnptxfsiz.nptxfdep = num_lines;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(gnptxfsiz, nptxfstaddr, addr);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(gnptxfsiz, nptxfdep, num_lines);
     hw->gnptxfsiz_reg.val = gnptxfsiz.val;
 }
 
@@ -373,8 +347,8 @@ static inline void usbh_ll_set_ptx_fifo_size(usbh_dev_t *hw, uint32_t addr, uint
 {
     usb_hptxfsiz_reg_t hptxfsiz;
     hptxfsiz.val = hw->hptxfsiz_reg.val;
-    hptxfsiz.ptxfstaddr = addr;
-    hptxfsiz.ptxfsize = num_lines;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hptxfsiz, ptxfstaddr, addr);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hptxfsiz, ptxfsize, num_lines);
     hw->hptxfsiz_reg.val = hptxfsiz.val;
 }
 
@@ -437,7 +411,7 @@ static inline void usbh_ll_hcfg_set_fsls_pclk_sel(usbh_dev_t *hw)
 /**
  * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
  *
- * @param hw Start address of the USB Wrap registers
+ * @param hw Start address of the DWC_OTG registers
  * @param speed Speed to initialize the host port at
  */
 static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_priv_speed_t speed)
@@ -473,7 +447,7 @@ static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw, usb_priv_speed_t sp
 
 static inline uint32_t usbh_ll_get_frm_time_rem(usbh_dev_t *hw)
 {
-    return hw->hfnum_reg.frrem;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hfnum_reg, frrem);
 }
 
 static inline uint32_t usbh_ll_get_frm_num(usbh_dev_t *hw)
@@ -485,7 +459,7 @@ static inline uint32_t usbh_ll_get_frm_num(usbh_dev_t *hw)
 
 static inline uint32_t usbh_ll_get_p_tx_queue_top(usbh_dev_t *hw)
 {
-    return hw->hptxsts_reg.ptxqtop;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hptxsts_reg, ptxqtop);
 }
 
 static inline uint32_t usbh_ll_get_p_tx_queue_space_avail(usbh_dev_t *hw)
@@ -495,20 +469,21 @@ static inline uint32_t usbh_ll_get_p_tx_queue_space_avail(usbh_dev_t *hw)
 
 static inline uint32_t usbh_ll_get_p_tx_fifo_space_avail(usbh_dev_t *hw)
 {
-    return hw->hptxsts_reg.ptxfspcavail;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hptxsts_reg, ptxfspcavail);
 }
 
 // ----------------------------- HAINT Register --------------------------------
 
 static inline uint32_t usbh_ll_get_chan_intrs_msk(usbh_dev_t *hw)
 {
-    return hw->haint_reg.haint;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->haint_reg, haint);
 }
 
 // --------------------------- HAINTMSK Register -------------------------------
 
 static inline void usbh_ll_haintmsk_en_chan_intr(usbh_dev_t *hw, uint32_t mask)
 {
+
     hw->haintmsk_reg.val |= mask;
 }
 
@@ -817,31 +792,6 @@ static inline void usbh_ll_chan_set_dma_addr_non_iso(volatile usb_host_chan_regs
     chan->hcdma_reg.non_iso.ctd = qtd_idx;
 }
 
-static inline void usbh_ll_chan_set_dma_addr_iso(volatile usb_host_chan_regs_t *chan,
-                                                void *dmaaddr,
-                                                uint32_t ntd)
-{
-    int n;
-    if (ntd == 2) {
-        n = 4;
-    } else if (ntd == 4) {
-        n = 5;
-    } else if (ntd == 8) {
-        n = 6;
-    } else if (ntd == 16) {
-        n = 7;
-    } else if (ntd == 32) {
-        n = 8;
-    } else {    //ntd == 64
-        n = 9;
-    }
-    //Set HCTSIZi
-    chan->hctsiz_reg.ntd = ntd -1;
-    chan->hctsiz_reg.sched_info = 0xFF;     //Always set to 0xFF for FS
-    //Set HCDMAi
-    chan->hcdma_reg.iso.dmaaddr_ctd = (((uint32_t)dmaaddr) & 0x1FF) << (n-3);   //ctd is set to 0
-}
-
 static inline int usbh_ll_chan_get_ctd(usb_host_chan_regs_t *chan)
 {
     return chan->hcdma_reg.non_iso.ctd;
@@ -850,12 +800,12 @@ static inline int usbh_ll_chan_get_ctd(usb_host_chan_regs_t *chan)
 static inline void usbh_ll_chan_hctsiz_init(volatile usb_host_chan_regs_t *chan)
 {
     chan->hctsiz_reg.dopng = 0;         //Don't do ping
-    chan->hctsiz_reg.sched_info = 0xFF; //Schedinfo is always 0xFF for fullspeed. Not used in Bulk/Ctrl channels
+    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, sched_info, 0xFF); //Schedinfo is always 0xFF for fullspeed. Not used in Bulk/Ctrl channels
 }
 
 static inline void usbh_ll_chan_set_qtd_list_len(volatile usb_host_chan_regs_t *chan, int qtd_list_len)
 {
-    chan->hctsiz_reg.ntd = qtd_list_len - 1;    //Set the length of the descriptor list
+    HAL_FORCE_MODIFY_U32_REG_FIELD(chan->hctsiz_reg, ntd, qtd_list_len - 1);    //Set the length of the descriptor list
 }
 
 // ---------------------------- HCDMABi Register -------------------------------

@@ -30,7 +30,7 @@ static void initialize_filesystem(void)
         .max_files = 4,
         .format_if_mount_failed = true
     };
-    esp_err_t err = esp_vfs_fat_spiflash_mount(MOUNT_PATH, "storage", &mount_config, &wl_handle);
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(MOUNT_PATH, "storage", &mount_config, &wl_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
         return;
@@ -56,6 +56,9 @@ void app_main(void)
 #elif CONFIG_ESP_CONSOLE_USB_CDC
     esp_console_dev_usb_cdc_config_t cdc_config = ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_usb_cdc(&cdc_config, &repl_config, &repl));
+#elif CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+    esp_console_dev_usb_serial_jtag_config_t usbjtag_config = ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&usbjtag_config, &repl_config, &repl));
 #endif
 
     register_i2ctools();

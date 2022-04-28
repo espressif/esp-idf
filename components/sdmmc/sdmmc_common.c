@@ -268,6 +268,7 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
         print_csd = true;
     } else {
         type = (card->ocr & SD_OCR_SDHC_CAP) ? "SDHC/SDXC" : "SDSC";
+        print_csd = true;
     }
     fprintf(stream, "Type: %s\n", type);
     if (card->max_freq_khz < 1000) {
@@ -280,8 +281,13 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
 
     if (print_csd) {
         fprintf(stream, "CSD: ver=%d, sector_size=%d, capacity=%d read_bl_len=%d\n",
-                card->csd.csd_ver,
+                (card->is_mmc ? card->csd.csd_ver : card->csd.csd_ver + 1),
                 card->csd.sector_size, card->csd.capacity, card->csd.read_block_len);
+        if (card->is_mmc) {
+            fprintf(stream, "EXT CSD: bus_width=%d\n", (1 << card->log_bus_width));
+        } else if (!card->is_sdio){ // make sure card is SD
+            fprintf(stream, "SSR: bus_width=%d\n", (card->ssr.cur_bus_width ? 4 : 1));
+        }
     }
     if (print_scr) {
         fprintf(stream, "SCR: sd_spec=%d, bus_width=%d\n", card->scr.sd_spec, card->scr.bus_width);

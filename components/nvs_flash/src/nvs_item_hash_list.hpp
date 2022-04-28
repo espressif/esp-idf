@@ -29,7 +29,7 @@ public:
     ~HashList();
 
     esp_err_t insert(const Item& item, size_t index);
-    void erase(const size_t index, bool itemShouldExist=true);
+    bool erase(const size_t index);
     size_t find(size_t start, const Item& item);
     void clear();
 

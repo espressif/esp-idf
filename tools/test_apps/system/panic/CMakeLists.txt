@@ -2,7 +2,7 @@
 # in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-set(COMPONENTS esptool_py main)
+set(COMPONENTS main espcoredump esp_gdbstub)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project(test_panic)

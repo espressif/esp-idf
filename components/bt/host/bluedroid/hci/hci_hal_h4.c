@@ -177,30 +177,16 @@ bool hci_hal_h4_task_post(uint32_t timeout)
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 static void hci_packet_complete(BT_HDR *packet){
-    uint8_t type, num_handle;
+    uint8_t type;
     uint16_t handle;
-    uint16_t handles[MAX_L2CAP_LINKS + 4];
-    uint16_t num_packets[MAX_L2CAP_LINKS + 4];
+    uint16_t num_packets = 1;
     uint8_t *stream = packet->data + packet->offset;
-    tL2C_LCB  *p_lcb = NULL;
 
     STREAM_TO_UINT8(type, stream);
     if (type == DATA_TYPE_ACL/* || type == DATA_TYPE_SCO*/) {
         STREAM_TO_UINT16(handle, stream);
         handle = handle & HCI_DATA_HANDLE_MASK;
-        p_lcb = l2cu_find_lcb_by_handle(handle);
-        if (p_lcb) {
-            p_lcb->completed_packets++;
-        }
-        if (esp_vhci_host_check_send_available()){
-            num_handle = l2cu_find_completed_packets(handles, num_packets);
-            if (num_handle > 0){
-                btsnd_hcic_host_num_xmitted_pkts (num_handle, handles, num_packets);
-            }
-        } else {
-            //Send HCI_Host_Number_of_Completed_Packets next time.
-        }
-
+        btsnd_hcic_host_num_xmitted_pkts(1, &handle, &num_packets);
     }
 }
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
@@ -243,11 +229,12 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
 {
     uint8_t type, hdr_size;
     uint16_t length;
-    uint8_t *stream = packet->data + packet->offset;
+    uint8_t *stream = NULL;
 
     if (!packet) {
         return;
     }
+    stream = packet->data + packet->offset;
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
     hci_packet_complete(packet);

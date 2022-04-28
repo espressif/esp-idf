@@ -2,9 +2,8 @@ menu "Example Configuration"
 
     choice BLINK_LED
         prompt "Blink LED type"
-        default BLINK_LED_RMT if IDF_TARGET_ESP32C3
-        default BLINK_LED_RMT if IDF_TARGET_ESP32S2
-        default BLINK_LED_GPIO
+        default BLINK_LED_GPIO if IDF_TARGET_ESP32
+        default BLINK_LED_RMT
         help
             Defines the default peripheral for blink example
 
@@ -23,18 +22,19 @@ menu "Example Configuration"
             Set the RMT peripheral channel.
             ESP32 RMT channel from 0 to 7
             ESP32-S2 RMT channel from 0 to 3
+            ESP32-S3 RMT channel from 0 to 3
             ESP32-C3 RMT channel from 0 to 1
 
     config BLINK_GPIO
         int "Blink GPIO number"
-        range 0 34
-        default 8 if IDF_TARGET_ESP32C3
+        range 0 48
+        default 8 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2
         default 18 if IDF_TARGET_ESP32S2
+        default 48 if IDF_TARGET_ESP32S3
         default 5
         help
             GPIO number (IOxx) to blink on and off or the RMT signal for the addressable LED.
             Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
-            GPIOs 35-39 are input-only so cannot be used as outputs.
 
     config BLINK_PERIOD
         int "Blink period in ms"

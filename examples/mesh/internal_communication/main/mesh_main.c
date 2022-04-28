@@ -8,7 +8,7 @@
 */
 #include <string.h>
 #include "esp_wifi.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mesh.h"
@@ -80,7 +80,7 @@ void esp_mesh_p2p_tx_main(void *arg)
             ESP_LOGI(MESH_TAG, "layer:%d, rtableSize:%d, %s", mesh_layer,
                      esp_mesh_get_routing_table_size(),
                      (is_mesh_connected && esp_mesh_is_root()) ? "ROOT" : is_mesh_connected ? "NODE" : "DISCONNECT");
-            vTaskDelay(10 * 1000 / portTICK_RATE_MS);
+            vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
             continue;
         }
         esp_mesh_get_routing_table((mesh_addr_t *) &route_table,
@@ -120,7 +120,7 @@ void esp_mesh_p2p_tx_main(void *arg)
         }
         /* if route_table_size is less than 10, add delay to avoid watchdog in this task. */
         if (route_table_size < 10) {
-            vTaskDelay(1 * 1000 / portTICK_RATE_MS);
+            vTaskDelay(1 * 1000 / portTICK_PERIOD_MS);
         }
     }
     vTaskDelete(NULL);
@@ -245,6 +245,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
         mesh_connected_indicator(mesh_layer);
         is_mesh_connected = true;
         if (esp_mesh_is_root()) {
+            esp_netif_dhcpc_stop(netif_sta);
             esp_netif_dhcpc_start(netif_sta);
         }
         esp_mesh_comm_p2p_start();
@@ -432,6 +433,7 @@ void app_main(void)
     /* mesh softAP */
     ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     cfg.mesh_ap.max_connection = CONFIG_MESH_AP_CONNECTIONS;
+    cfg.mesh_ap.nonmesh_max_connection = CONFIG_MESH_NON_MESH_AP_CONNECTIONS;
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));

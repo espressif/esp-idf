@@ -1,24 +1,16 @@
-
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/dport_access.h"
 #include "soc/i2s_reg.h"
 #include "hal/cpu_hal.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "bootloader_clock.h"
 #include "hal/wdt_hal.h"
 
@@ -26,9 +18,8 @@
 
 #include "esp_log.h"
 
-#include "esp32/clk.h"
-#include "esp32/rom/rtc.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 
 #include "sdkconfig.h"
 
@@ -38,10 +29,10 @@ static const char* TAG = "clk";
  * Larger values increase startup delay. Smaller values may cause false positive
  * detection (i.e. oscillator runs for a few cycles and then stops).
  */
-#define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32_RTC_CLK_CAL_CYCLES
+#define SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
 
-#ifdef CONFIG_ESP32_RTC_XTAL_CAL_RETRY
-#define RTC_XTAL_CAL_RETRY CONFIG_ESP32_RTC_XTAL_CAL_RETRY
+#ifdef CONFIG_RTC_XTAL_CAL_RETRY
+#define RTC_XTAL_CAL_RETRY CONFIG_RTC_XTAL_CAL_RETRY
 #else
 #define RTC_XTAL_CAL_RETRY 1
 #endif
@@ -158,11 +149,11 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
-#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)
+#if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
-#elif defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_OSC)
+#elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
-#elif defined(CONFIG_ESP32_RTC_CLK_SRC_INT_8MD256)
+#elif defined(CONFIG_RTC_CLK_SRC_INT_8MD256)
     select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
@@ -181,7 +172,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     rtc_cpu_freq_config_t new_config;
     rtc_clk_cpu_freq_get_config(&old_config);
     const uint32_t old_freq_mhz = old_config.freq_mhz;
-    const uint32_t new_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ;
+    const uint32_t new_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(new_freq_mhz, &new_config);
     assert(res);
@@ -213,23 +204,22 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     uint32_t wifi_bt_sdio_clk;
 
 #if CONFIG_FREERTOS_UNICORE
-    RESET_REASON rst_reas[1];
+    soc_reset_reason_t rst_reas[1];
 #else
-    RESET_REASON rst_reas[2];
+    soc_reset_reason_t rst_reas[2];
 #endif
 
-    rst_reas[0] = rtc_get_reset_reason(0);
-
+    rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_FREERTOS_UNICORE
-    rst_reas[1] = rtc_get_reset_reason(1);
+    rst_reas[1] = esp_rom_get_reset_reason(1);
 #endif
 
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= TGWDT_CPU_RESET && rst_reas[0] <= RTCWDT_CPU_RESET)
+    if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT)
 #if !CONFIG_FREERTOS_UNICORE
-        || (rst_reas[1] >= TGWDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
+        || (rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_SW || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT)
 #endif
     ) {
         common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);

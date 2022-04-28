@@ -29,6 +29,7 @@
 #include "driver/twai.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
+#include "soc/gpio_sig_map.h" // For TWAI_TX_IDX
 
 /* --------------------- Definitions and static variables ------------------ */
 //Example Configuration

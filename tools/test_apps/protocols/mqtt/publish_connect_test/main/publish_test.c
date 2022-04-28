@@ -17,6 +17,7 @@
 
 #include "esp_log.h"
 #include "mqtt_client.h"
+#include "sdkconfig.h"
 
 static const char *TAG = "PUBLISH_TEST";
 
@@ -32,25 +33,27 @@ static size_t expected_published = 0;
 static size_t actual_published = 0;
 static int qos_test = 0;
 
- #if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN == 1
- static const uint8_t mqtt_eclipse_org_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
- #else
- extern const uint8_t mqtt_eclipse_org_pem_start[]   asm("_binary_mqtt_eclipse_org_pem_start");
- #endif
- extern const uint8_t mqtt_eclipse_org_pem_end[]   asm("_binary_mqtt_eclipse_org_pem_end");
+#if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN == 1
+static const uint8_t mqtt_eclipseprojects_io_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
+#else
+extern const uint8_t mqtt_eclipseprojects_io_pem_start[]   asm("_binary_mqtt_eclipseprojects_io_pem_start");
+#endif
+extern const uint8_t mqtt_eclipseprojects_io_pem_end[]   asm("_binary_mqtt_eclipseprojects_io_pem_end");
 
-static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
+    esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
     static int msg_id = 0;
     static int actual_len = 0;
-    // your_context_t *context = event->context;
     switch (event->event_id) {
+    case MQTT_EVENT_BEFORE_CONNECT:
+        break;
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(mqtt_event_group, CONNECTED_BIT);
         msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCIBE_TOPIC, qos_test);
-        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", CONFIG_EXAMPLE_SUBSCIBE_TOPIC, msg_id);
 
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -76,7 +79,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             msg_id = event->msg_id;
         } else {
             actual_len += event->data_len;
-            // check consisency with msg_id across multiple data events for single msg
+            // check consistency with msg_id across multiple data events for single msg
             if (msg_id != event->msg_id) {
                 ESP_LOGI(TAG, "Wrong msg_id in chunked message %d != %d", msg_id, event->msg_id);
                 abort();
@@ -105,36 +108,24 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         ESP_LOGI(TAG, "Other event id:%d", event->event_id);
         break;
     }
-    return ESP_OK;
 }
 
+typedef enum {NONE, TCP, SSL, WS, WSS} transport_t;
+static transport_t current_transport;
 
-static void mqtt_app_start(void)
+
+void test_init(void)
 {
     mqtt_event_group = xEventGroupCreate();
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        .event_handle = mqtt_event_handler,
-        .cert_pem = (const char *)mqtt_eclipse_org_pem_start,
-    };
-
+    esp_mqtt_client_config_t config = {0};
+    mqtt_client = esp_mqtt_client_init(&config);
+    current_transport = NONE;
+    esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
-    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
 }
 
-void publish_test(const char* line)
+void pattern_setup(char *pattern, int repeat)
 {
-    char pattern[32];
-    char transport[32];
-    int repeat = 0;
-    int enqueue = 0;
-    static bool is_mqtt_init = false;
-
-    if (!is_mqtt_init) {
-        mqtt_app_start();
-        is_mqtt_init = true;
-    }
-    sscanf(line, "%s %s %d %d %d %d", transport, pattern, &repeat, &expected_published, &qos_test, &enqueue);
-    ESP_LOGI(TAG, "PATTERN:%s REPEATED:%d PUBLISHED:%d\n", pattern, repeat, expected_published);
     int pattern_size = strlen(pattern);
     free(expected_data);
     free(actual_data);
@@ -146,29 +137,82 @@ void publish_test(const char* line)
         memcpy(expected_data + i * pattern_size, pattern, pattern_size);
     }
     printf("EXPECTED STRING %.*s, SIZE:%d\n", expected_size, expected_data, expected_size);
-    esp_mqtt_client_stop(mqtt_client);
+}
 
+static void configure_client(char *transport)
+{
+    ESP_LOGI(TAG, "Configuration");
+    transport_t selected_transport;
     if (0 == strcmp(transport, "tcp")) {
-        ESP_LOGI(TAG, "[TCP transport] Startup..");
-        esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_TCP_URI);
+        selected_transport = TCP;
     } else if (0 == strcmp(transport, "ssl")) {
-        ESP_LOGI(TAG, "[SSL transport] Startup..");
-        esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_SSL_URI);
+        selected_transport = SSL;
     } else if (0 == strcmp(transport, "ws")) {
-        ESP_LOGI(TAG, "[WS transport] Startup..");
-        esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WS_URI);
+        selected_transport = WS;
     } else if (0 == strcmp(transport, "wss")) {
-        ESP_LOGI(TAG, "[WSS transport] Startup..");
-        esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WSS_URI);
+        selected_transport = WSS;
     } else {
-        ESP_LOGE(TAG, "Unexpected transport");
+        ESP_LOGE(TAG, "Unexpected transport %s", transport);
         abort();
     }
-    xEventGroupClearBits(mqtt_event_group, CONNECTED_BIT);
-    esp_mqtt_client_start(mqtt_client);
-    ESP_LOGI(TAG, "Note free memory: %d bytes", esp_get_free_heap_size());
-    xEventGroupWaitBits(mqtt_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
 
+
+    if (selected_transport != current_transport) {
+        esp_mqtt_client_config_t config = {0};
+        switch (selected_transport) {
+        case NONE:
+            break;
+        case TCP:
+            ESP_LOGI(TAG, "[TCP transport] Startup..");
+            config.uri = CONFIG_EXAMPLE_BROKER_TCP_URI;
+            break;
+        case SSL:
+            ESP_LOGI(TAG, "[SSL transport] Startup..");
+            config.uri = CONFIG_EXAMPLE_BROKER_SSL_URI;
+            break;
+        case WS:
+            ESP_LOGI(TAG, "[WS transport] Startup..");
+            config.uri = CONFIG_EXAMPLE_BROKER_WS_URI;
+            break;
+        case WSS:
+            ESP_LOGI(TAG, "[WSS transport] Startup..");
+            config.uri = CONFIG_EXAMPLE_BROKER_WSS_URI;
+            break;
+        }
+        if (selected_transport == SSL || selected_transport == WSS) {
+            ESP_LOGI(TAG, "Set certificate");
+            config.cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start;
+        }
+        esp_mqtt_set_config(mqtt_client, &config);
+
+    }
+
+}
+void publish_test(const char *line)
+{
+    char pattern[32];
+    char transport[32];
+    int repeat = 0;
+    int enqueue = 0;
+
+    static bool is_test_init = false;
+    if (!is_test_init) {
+        test_init();
+        is_test_init = true;
+    } else {
+        esp_mqtt_client_stop(mqtt_client);
+    }
+
+    sscanf(line, "%s %s %d %d %d %d", transport, pattern, &repeat, &expected_published, &qos_test, &enqueue);
+    ESP_LOGI(TAG, "PATTERN:%s REPEATED:%d PUBLISHED:%d\n", pattern, repeat, expected_published);
+    pattern_setup(pattern, repeat);
+    xEventGroupClearBits(mqtt_event_group, CONNECTED_BIT);
+    configure_client(transport);
+    esp_mqtt_client_start(mqtt_client);
+
+    ESP_LOGI(TAG, "Note free memory: %d bytes", esp_get_free_heap_size());
+
+    xEventGroupWaitBits(mqtt_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
     for (int i = 0; i < expected_published; i++) {
         int msg_id;
         if (enqueue) {

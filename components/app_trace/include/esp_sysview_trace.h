@@ -12,7 +12,7 @@ extern "C" {
 
 #include <stdarg.h>
 #include "esp_err.h"
-#include "SEGGER_RTT.h" // SEGGER_RTT_ESP32_Flush
+#include "SEGGER_RTT.h" // SEGGER_RTT_ESP_Flush
 #include "esp_app_trace_util.h" // ESP_APPTRACE_TMO_INFINITE
 
 /**
@@ -24,7 +24,7 @@ extern "C" {
  */
 static inline esp_err_t esp_sysview_flush(uint32_t tmo)
 {
-    SEGGER_RTT_ESP32_Flush(0, tmo);
+    SEGGER_RTT_ESP_Flush(0, tmo);
     return ESP_OK;
 }
 

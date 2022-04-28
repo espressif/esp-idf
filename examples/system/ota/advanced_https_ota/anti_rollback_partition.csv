@@ -3,6 +3,6 @@
 nvs,      data, nvs,     ,        0x4000,
 otadata,  data, ota,     ,        0x2000,
 phy_init, data, phy,     ,        0x1000,
+emul_efuse,data,efuse,   ,        0x2000,
 ota_0,    app,  ota_0,   ,        3584K,
 ota_1,    app,  ota_1,   ,        3584K,
-emul_efuse, data, 5, , 0x2000

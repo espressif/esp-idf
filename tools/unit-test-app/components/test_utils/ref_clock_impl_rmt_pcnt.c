@@ -1,16 +1,8 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
  * Some unit test cases need to have access to reliable timestamps even when CPU and APB clock frequencies change over time.
@@ -28,38 +20,71 @@
  */
 
 #include "sdkconfig.h"
+#include "unity.h"
 #include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_intr_alloc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "driver/rmt.h"
+#include "driver/pulse_cnt.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/gpio_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
-#include "hal/pcnt_hal.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 
-#define REF_CLOCK_RMT_CHANNEL 0 // RMT channel 0
-#define REF_CLOCK_PCNT_UNIT 0   // PCNT unit 0 channel 0
-#define REF_CLOCK_GPIO 21       // GPIO used to combine RMT out signal with PCNT input signal
+#if !CONFIG_IDF_TARGET_ESP32
+#error "RMT+PCNT timestamp workaround is only for ESP32"
+#endif
 
+#define REF_CLOCK_RMT_CHANNEL  0  // RMT channel 0
+#define REF_CLOCK_GPIO         21 // GPIO used to combine RMT out signal with PCNT input signal
 #define REF_CLOCK_PRESCALER_MS 30 // PCNT high threshold interrupt fired every 30ms
 
-static void IRAM_ATTR pcnt_isr(void *arg);
-
-static intr_handle_t s_intr_handle;
-static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
+static rmt_hal_context_t s_rmt_hal;
+static pcnt_unit_handle_t s_pcnt_unit;
+static pcnt_channel_handle_t s_pcnt_chan;
 static volatile uint32_t s_milliseconds;
 
-static rmt_hal_context_t s_rmt_hal;
-static pcnt_hal_context_t s_pcnt_hal;
+// RMTMEM address is declared in <target>.peripherals.ld
+extern rmt_mem_t RMTMEM;
+
+static bool on_reach_watch_point(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
+{
+    s_milliseconds += REF_CLOCK_PRESCALER_MS;
+    return false;
+}
 
 void ref_clock_init(void)
 {
-    assert(s_intr_handle == NULL && "ref clock already initialized");
+    // Initialize PCNT
+    pcnt_unit_config_t unit_config = {
+        .high_limit = REF_CLOCK_PRESCALER_MS * 1000,
+        .low_limit = -100, // any minus value is OK, in this case, we don't count down
+    };
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &s_pcnt_unit));
+    pcnt_chan_config_t chan_config = {
+        .edge_gpio_num = REF_CLOCK_GPIO,
+        .level_gpio_num = -1,
+        .flags.io_loop_back = true,
+    };
+    TEST_ESP_OK(pcnt_new_channel(s_pcnt_unit, &chan_config, &s_pcnt_chan));
+    // increase count on both edges
+    TEST_ESP_OK(pcnt_channel_set_edge_action(s_pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
+    // don't care level change
+    TEST_ESP_OK(pcnt_channel_set_level_action(s_pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    // add watch point
+    TEST_ESP_OK(pcnt_unit_add_watch_point(s_pcnt_unit, REF_CLOCK_PRESCALER_MS * 1000));
+    // register watch event
+    pcnt_event_callbacks_t cbs = {
+        .on_reach = on_reach_watch_point,
+    };
+    TEST_ESP_OK(pcnt_unit_register_event_callbacks(s_pcnt_unit, &cbs, NULL));
+    // start pcnt
+    TEST_ESP_OK(pcnt_unit_start(s_pcnt_unit));
 
     // Route RMT output to GPIO matrix
     esp_rom_gpio_connect_out_signal(REF_CLOCK_GPIO, RMT_SIG_OUT0_IDX, false, false);
@@ -75,102 +100,39 @@ void ref_clock_init(void)
         .level1 = 0
     };
 
-    rmt_ll_enable_drive_clock(s_rmt_hal.regs, true);
-#if SOC_RMT_SUPPORT_XTAL
-    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_XTAL, 39, 0, 0); // XTAL(40MHz), rmt_sclk => 1MHz (40/(1+39))
-#elif SOC_RMT_SUPPORT_REF_TICK
-    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_REF, 0, 0, 0); // select REF_TICK (1MHz)
-#endif
-    rmt_hal_tx_set_channel_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
-    rmt_ll_tx_enable_idle(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true); // enable idle output
-    rmt_ll_tx_set_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // idle level: 1
+    rmt_ll_enable_periph_clock(s_rmt_hal.regs, true);
+    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_CLK_SRC_APB_F1M, 1, 1, 0); // select REF_TICK (1MHz)
+    rmt_ll_tx_set_channel_clock_div(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // channel clock = REF_TICK / 1 = 1MHz
+    rmt_ll_tx_fix_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, true); // enable idle output, idle level: 1
     rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
-#if !CONFIG_IDF_TARGET_ESP32
-    rmt_ll_tx_set_carrier_always_on(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
-#endif
-    rmt_hal_set_carrier_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 500000, 0.5); // set carrier to 500KHz
+    rmt_ll_tx_set_carrier_high_low_ticks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, 1);  // set carrier to 1MHz / (1+1) = 500KHz, 50% duty cycle
     rmt_ll_tx_set_carrier_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
-    rmt_ll_enable_mem_access(s_rmt_hal.regs, true);
+    rmt_ll_enable_mem_access_nonfifo(s_rmt_hal.regs, true);
     rmt_ll_tx_reset_pointer(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
     rmt_ll_tx_set_mem_blocks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
-    rmt_ll_write_memory(s_rmt_hal.mem, REF_CLOCK_RMT_CHANNEL, &data, 1, 0);
+    RMTMEM.chan[REF_CLOCK_RMT_CHANNEL].data32[0] = data;
     rmt_ll_tx_enable_loop(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
     rmt_ll_tx_start(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
 
-    // Route signal to PCNT
-    esp_rom_gpio_connect_in_signal(REF_CLOCK_GPIO, PCNT_SIG_CH0_IN0_IDX, false);
-    if (REF_CLOCK_GPIO != 20) {
-        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[REF_CLOCK_GPIO]);
-    } else {
-        PIN_INPUT_ENABLE(PERIPHS_IO_MUX_GPIO20_U);
-    }
-
-    // Initialize PCNT
-    periph_module_enable(PERIPH_PCNT_MODULE);
-    pcnt_hal_init(&s_pcnt_hal, REF_CLOCK_PCNT_UNIT);
-
-    pcnt_ll_set_mode(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_CHANNEL_0,
-                     PCNT_COUNT_INC, PCNT_COUNT_INC,
-                     PCNT_MODE_KEEP, PCNT_MODE_KEEP);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_L_LIM);
-    pcnt_ll_event_enable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_H_LIM);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_ZERO);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_THRES_0);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_THRES_1);
-    pcnt_ll_set_event_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_H_LIM, REF_CLOCK_PRESCALER_MS * 1000);
-
-    // Enable PCNT and wait for it to start counting
-    pcnt_ll_counter_resume(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
-    pcnt_ll_counter_clear(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
-
-    esp_rom_delay_us(10000);
-
-    // Enable interrupt
     s_milliseconds = 0;
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_PCNT_INTR_SOURCE, ESP_INTR_FLAG_IRAM, pcnt_isr, NULL, &s_intr_handle));
-    pcnt_ll_clear_intr_status(s_pcnt_hal.dev, BIT(REF_CLOCK_PCNT_UNIT));
-    pcnt_ll_intr_enable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
 }
 
-static void IRAM_ATTR pcnt_isr(void *arg)
+void ref_clock_deinit(void)
 {
-    portENTER_CRITICAL_ISR(&s_lock);
-    pcnt_ll_clear_intr_status(s_pcnt_hal.dev, BIT(REF_CLOCK_PCNT_UNIT));
-    s_milliseconds += REF_CLOCK_PRESCALER_MS;
-    portEXIT_CRITICAL_ISR(&s_lock);
-}
+    // Deinitialize PCNT
+    TEST_ESP_OK(pcnt_unit_stop(s_pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_remove_watch_point(s_pcnt_unit, REF_CLOCK_PRESCALER_MS * 1000));
+    TEST_ESP_OK(pcnt_del_channel(s_pcnt_chan));
+    TEST_ESP_OK(pcnt_del_unit(s_pcnt_unit));
 
-void ref_clock_deinit()
-{
-    assert(s_intr_handle && "ref clock deinit called without init");
-
-    // Disable interrupt
-    pcnt_ll_intr_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
-    esp_intr_free(s_intr_handle);
-    s_intr_handle = NULL;
-
-    // Disable RMT
+    // Deinitialize RMT
     rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
     periph_module_disable(PERIPH_RMT_MODULE);
-
-    // Disable PCNT
-    pcnt_ll_counter_pause(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
-    periph_module_disable(PERIPH_PCNT_MODULE);
 }
 
-uint64_t ref_clock_get()
+uint64_t ref_clock_get(void)
 {
-    portENTER_CRITICAL(&s_lock);
-    int16_t microseconds = 0;
-    pcnt_ll_get_counter_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, &microseconds);
-    uint32_t milliseconds = s_milliseconds;
-    uint32_t intr_status = 0;
-    pcnt_ll_get_intr_status(s_pcnt_hal.dev, &intr_status);
-    if (intr_status & BIT(REF_CLOCK_PCNT_UNIT)) {
-        // refresh counter value, in case the overflow has happened after reading cnt_val
-        pcnt_ll_get_counter_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, &microseconds);
-        milliseconds += REF_CLOCK_PRESCALER_MS;
-    }
-    portEXIT_CRITICAL(&s_lock);
-    return 1000 * (uint64_t)milliseconds + (uint64_t)microseconds;
+    int microseconds = 0;
+    TEST_ESP_OK(pcnt_unit_get_count(s_pcnt_unit, &microseconds));
+    return 1000 * (uint64_t)s_milliseconds + (uint64_t)microseconds;
 }

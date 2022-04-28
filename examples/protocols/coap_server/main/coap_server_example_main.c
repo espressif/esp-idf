@@ -29,15 +29,10 @@
 
 #include "protocol_examples_common.h"
 
-#if 1
-/* Needed until coap_dtls.h becomes a part of libcoap proper */
-#include "libcoap.h"
-#include "coap_dtls.h"
-#endif
-#include "coap.h"
+#include "coap3/coap.h"
 
 /* The examples use simple Pre-Shared-Key configuration that you can set via
-   'make menuconfig'.
+   'idf.py menuconfig'.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_COAP_PSK_KEY "some-agreed-preshared-key"
@@ -49,7 +44,7 @@
 #define EXAMPLE_COAP_PSK_KEY CONFIG_EXAMPLE_COAP_PSK_KEY
 
 /* The examples use CoAP Logging Level that
-   you can set via 'make menuconfig'.
+   you can set via 'idf.py menuconfig'.
 
    If you'd rather not, just change the below entry to a value
    that is between 0 and 7 with
@@ -67,8 +62,10 @@ static int espressif_data_len = 0;
    Server cert, taken from coap_server.crt
    Server key, taken from coap_server.key
 
-   The PEM, CRT and KEY file are examples taken from the wpa2 enterprise
-   example.
+   The PEM, CRT and KEY file are examples taken from
+   https://github.com/eclipse/californium/tree/master/demo-certs/src/main/resources
+   as the Certificate test (by default) for the coap_client is against the
+   californium server.
 
    To embed it in the app binary, the PEM, CRT and KEY file is named
    in the component.mk COMPONENT_EMBED_TXTFILES variable.
@@ -87,39 +84,42 @@ extern uint8_t server_key_end[]   asm("_binary_coap_server_key_end");
  * The resource handler
  */
 static void
-hnd_espressif_get(coap_context_t *ctx, coap_resource_t *resource,
+hnd_espressif_get(coap_resource_t *resource,
                   coap_session_t *session,
-                  coap_pdu_t *request, coap_binary_t *token,
-                  coap_string_t *query, coap_pdu_t *response)
+                  const coap_pdu_t *request,
+                  const coap_string_t *query,
+                  coap_pdu_t *response)
 {
-    coap_add_data_blocked_response(resource, session, request, response, token,
-                                   COAP_MEDIATYPE_TEXT_PLAIN, 0,
-                                   (size_t)espressif_data_len,
-                                   (const u_char *)espressif_data);
+    coap_pdu_set_code(response, COAP_RESPONSE_CODE_CONTENT);
+    coap_add_data_large_response(resource, session, request, response,
+                                 query, COAP_MEDIATYPE_TEXT_PLAIN, 60, 0,
+                                 (size_t)espressif_data_len,
+                                 (const u_char *)espressif_data,
+                                 NULL, NULL);
 }
 
 static void
-hnd_espressif_put(coap_context_t *ctx,
-                  coap_resource_t *resource,
+hnd_espressif_put(coap_resource_t *resource,
                   coap_session_t *session,
-                  coap_pdu_t *request,
-                  coap_binary_t *token,
-                  coap_string_t *query,
+                  const coap_pdu_t *request,
+                  const coap_string_t *query,
                   coap_pdu_t *response)
 {
     size_t size;
-    unsigned char *data;
+    size_t offset;
+    size_t total;
+    const unsigned char *data;
 
     coap_resource_notify_observers(resource, NULL);
 
     if (strcmp (espressif_data, INITIAL_DATA) == 0) {
-        response->code = COAP_RESPONSE_CODE(201);
+        coap_pdu_set_code(response, COAP_RESPONSE_CODE_CREATED);
     } else {
-        response->code = COAP_RESPONSE_CODE(204);
+        coap_pdu_set_code(response, COAP_RESPONSE_CODE_CHANGED);
     }
 
-    /* coap_get_data() sets size to 0 on error */
-    (void)coap_get_data(request, &size, &data);
+    /* coap_get_data_large() sets size to 0 on error */
+    (void)coap_get_data_large(request, &size, &data, &offset, &total);
 
     if (size == 0) {      /* re-init */
         snprintf(espressif_data, sizeof(espressif_data), INITIAL_DATA);
@@ -131,18 +131,16 @@ hnd_espressif_put(coap_context_t *ctx,
 }
 
 static void
-hnd_espressif_delete(coap_context_t *ctx,
-                     coap_resource_t *resource,
+hnd_espressif_delete(coap_resource_t *resource,
                      coap_session_t *session,
-                     coap_pdu_t *request,
-                     coap_binary_t *token,
-                     coap_string_t *query,
+                     const coap_pdu_t *request,
+                     const coap_string_t *query,
                      coap_pdu_t *response)
 {
     coap_resource_notify_observers(resource, NULL);
     snprintf(espressif_data, sizeof(espressif_data), INITIAL_DATA);
     espressif_data_len = strlen(espressif_data);
-    response->code = COAP_RESPONSE_CODE(202);
+    coap_pdu_set_code(response, COAP_RESPONSE_CODE_DELETED);
 }
 
 #ifdef CONFIG_COAP_MBEDTLS_PKI
@@ -163,6 +161,18 @@ verify_cn_callback(const char *cn,
 }
 #endif /* CONFIG_COAP_MBEDTLS_PKI */
 
+static void
+coap_log_handler (coap_log_t level, const char *message)
+{
+    uint32_t esp_level = ESP_LOG_INFO;
+    char *cp = strchr(message, '\n');
+
+    if (cp)
+        ESP_LOG_LEVEL(esp_level, TAG, "%.*s", (int)(cp-message), message);
+    else
+        ESP_LOG_LEVEL(esp_level, TAG, "%s", message);
+}
+
 static void coap_example_server(void *p)
 {
     coap_context_t *ctx = NULL;
@@ -171,6 +181,7 @@ static void coap_example_server(void *p)
 
     snprintf(espressif_data, sizeof(espressif_data), INITIAL_DATA);
     espressif_data_len = strlen(espressif_data);
+    coap_set_log_handler(coap_log_handler);
     coap_set_log_level(EXAMPLE_COAP_LOG_DEFAULT_LEVEL);
 
     while (1) {
@@ -179,15 +190,16 @@ static void coap_example_server(void *p)
 
         /* Prepare the CoAP server socket */
         coap_address_init(&serv_addr);
-        serv_addr.addr.sin.sin_family      = AF_INET;
-        serv_addr.addr.sin.sin_addr.s_addr = INADDR_ANY;
-        serv_addr.addr.sin.sin_port        = htons(COAP_DEFAULT_PORT);
+        serv_addr.addr.sin6.sin6_family = AF_INET6;
+        serv_addr.addr.sin6.sin6_port   = htons(COAP_DEFAULT_PORT);
 
         ctx = coap_new_context(NULL);
         if (!ctx) {
             ESP_LOGE(TAG, "coap_new_context() failed");
             continue;
         }
+        coap_context_set_block_mode(ctx,
+                                    COAP_BLOCK_USE_LIBCOAP|COAP_BLOCK_SINGLE_BODY);
 #ifdef CONFIG_COAP_MBEDTLS_PSK
         /* Need PSK setup before we set up endpoints */
         coap_context_set_psk(ctx, "CoAP",
@@ -196,6 +208,7 @@ static void coap_example_server(void *p)
 #endif /* CONFIG_COAP_MBEDTLS_PSK */
 
 #ifdef CONFIG_COAP_MBEDTLS_PKI
+        /* Need PKI setup before we set up endpoints */
         unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
         unsigned int server_crt_bytes = server_crt_end - server_crt_start;
         unsigned int server_key_bytes = server_key_end - server_key_start;
@@ -214,7 +227,7 @@ static void coap_example_server(void *p)
              * define what checking actually takes place.
              */
             dtls_pki.verify_peer_cert        = 1;
-            dtls_pki.require_peer_cert       = 1;
+            dtls_pki.check_common_ca         = 1;
             dtls_pki.allow_self_signed       = 1;
             dtls_pki.allow_expired_certs     = 1;
             dtls_pki.cert_chain_validation   = 1;
@@ -256,7 +269,7 @@ static void coap_example_server(void *p)
             /* This is not critical as unencrypted support is still available */
             ESP_LOGI(TAG, "MbedTLS (D)TLS Server Mode not configured");
 #else /* CONFIG_MBEDTLS_TLS_SERVER */
-            serv_addr.addr.sin.sin_port = htons(COAPS_DEFAULT_PORT);
+            serv_addr.addr.sin6.sin6_port = htons(COAPS_DEFAULT_PORT);
             ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_DTLS);
             if (!ep) {
                 ESP_LOGE(TAG, "dtls: coap_new_endpoint() failed");
@@ -267,7 +280,7 @@ static void coap_example_server(void *p)
             /* This is not critical as unencrypted support is still available */
             ESP_LOGI(TAG, "MbedTLS (D)TLS Server Mode not configured");
         }
-#endif /* CONFIG_COAP_MBEDTLS_PSK CONFIG_COAP_MBEDTLS_PKI */
+#endif /* CONFIG_COAP_MBEDTLS_PSK || CONFIG_COAP_MBEDTLS_PKI */
         resource = coap_resource_init(coap_make_str_const("Espressif"), 0);
         if (!resource) {
             ESP_LOGE(TAG, "coap_resource_init() failed");
@@ -280,10 +293,26 @@ static void coap_example_server(void *p)
         coap_resource_set_get_observable(resource, 1);
         coap_add_resource(ctx, resource);
 
+#if defined(CONFIG_EXAMPLE_COAP_MCAST_IPV4) || defined(CONFIG_EXAMPLE_COAP_MCAST_IPV6)
+        esp_netif_t *netif = NULL;
+        for (int i = 0; i < esp_netif_get_nr_of_ifs(); ++i) {
+            char buf[8];
+            netif = esp_netif_next(netif);
+            esp_netif_get_netif_impl_name(netif, buf);
+#if defined(CONFIG_EXAMPLE_COAP_MCAST_IPV4)
+            coap_join_mcast_group_intf(ctx, CONFIG_EXAMPLE_COAP_MULTICAST_IPV4_ADDR, buf);
+#endif /* CONFIG_EXAMPLE_COAP_MCAST_IPV4 */
+#if defined(CONFIG_EXAMPLE_COAP_MCAST_IPV6)
+            /* When adding IPV6 esp-idf requires ifname param to be filled in */
+            coap_join_mcast_group_intf(ctx, CONFIG_EXAMPLE_COAP_MULTICAST_IPV6_ADDR, buf);
+#endif /* CONFIG_EXAMPLE_COAP_MCAST_IPV6 */
+        }
+#endif /* CONFIG_EXAMPLE_COAP_MCAST_IPV4 || CONFIG_EXAMPLE_COAP_MCAST_IPV6 */
+
         wait_ms = COAP_RESOURCE_CHECK_TIME * 1000;
 
         while (1) {
-            int result = coap_run_once(ctx, wait_ms);
+            int result = coap_io_process(ctx, wait_ms);
             if (result < 0) {
                 break;
             } else if (result && (unsigned)result < wait_ms) {

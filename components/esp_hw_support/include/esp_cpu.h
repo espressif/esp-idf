@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_CPU_H
 #define _ESP_CPU_H
@@ -25,9 +17,9 @@
 extern "C" {
 #endif
 
-#define ESP_WATCHPOINT_LOAD 0x40000000
-#define ESP_WATCHPOINT_STORE 0x80000000
-#define ESP_WATCHPOINT_ACCESS 0xC0000000
+#define ESP_CPU_WATCHPOINT_LOAD 0x40000000
+#define ESP_CPU_WATCHPOINT_STORE 0x80000000
+#define ESP_CPU_WATCHPOINT_ACCESS 0xC0000000
 
 typedef uint32_t esp_cpu_ccount_t;
 
@@ -77,13 +69,19 @@ static inline void esp_cpu_set_ccount(esp_cpu_ccount_t val)
 }
 
 /**
+ * @brief Configure CPU to disable access to invalid memory regions
+ *
+ */
+void esp_cpu_configure_region_protection(void);
+
+/**
  * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
  *
  * @param no Watchpoint number. On the ESP32, this can be 0 or 1.
  * @param adr Base address to watch
  * @param size Size of the region, starting at the base address, to watch. Must
  *             be one of 2^n, with n in [0..6].
- * @param flags One of ESP_WATCHPOINT_* flags
+ * @param flags One of ESP_CPU_WATCHPOINT_* flags
  *
  * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
  *

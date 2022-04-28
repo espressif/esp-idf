@@ -1,15 +1,22 @@
-/* mbedTLS SHA performance test
-*/
-#include <string.h>
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * mbedTLS SHA performance test
+ */
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
-#include "sodium/utils.h"
 #include "ccomp_timer.h"
+#include "test_mbedtls_utils.h"
 
 TEST_CASE("mbedtls SHA performance", "[aes]")
 {
@@ -26,11 +33,11 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
 
     mbedtls_sha256_init(&sha256_ctx);
     ccomp_timer_start();
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
     for (int c = 0; c < CALLS; c++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, buf, CALL_SZ));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, buf, CALL_SZ));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
     elapsed_usec = ccomp_timer_stop();
 
     free(buf);
@@ -41,7 +48,7 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
      */
     const char *expected_hash = "c88df2638fb9699abaad05780fa5e0fdb6058f477069040eac8bed3231286275";
     char hash_str[sizeof(sha256) * 2 + 1];
-    sodium_bin2hex(hash_str, sizeof(hash_str), sha256, sizeof(sha256));
+    utils_bin2hex(hash_str, sizeof(hash_str), sha256, sizeof(sha256));
 
     TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
 

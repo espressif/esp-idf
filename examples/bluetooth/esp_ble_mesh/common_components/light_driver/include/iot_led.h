@@ -1,30 +1,18 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __IOT_LED_H__
 #define __IOT_LED_H__
+
+#include "driver/ledc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "driver/ledc.h"
-
-#define HW_TIMER_GROUP (0)                                 /**< Hardware timer group */
-#define HW_TIMER_ID (0)                                    /**< Hardware timer number */
-#define HW_TIMER_DIVIDER (16)                              /**< Hardware timer clock divider */
-#define HW_TIMER_SCALE (TIMER_BASE_CLK / HW_TIMER_DIVIDER) /**< Convert counter value to seconds */
 #define GAMMA_CORRECTION 0.8                               /**< Gamma curve parameter */
 #define GAMMA_TABLE_SIZE 256                               /**< Gamma table size, used for led fade*/
 #define DUTY_SET_CYCLE (20)                                /**< Set duty cycle */

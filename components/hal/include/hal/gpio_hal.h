@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -26,10 +18,6 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_types.h"
-
-#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
-#include "soc/rtc_io_reg.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -215,9 +203,8 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
  *
  * @param hal Context of the HAL layer
  * @param gpio_num GPIO number.
- * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
  */
-#define gpio_hal_wakeup_enable(hal, gpio_num, intr_type) gpio_ll_wakeup_enable((hal)->dev, gpio_num, intr_type)
+#define gpio_hal_wakeup_enable(hal, gpio_num) gpio_ll_wakeup_enable((hal)->dev, gpio_num)
 
 /**
  * @brief Disable GPIO wake-up function.
@@ -324,17 +311,13 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
 /**
   * @brief Force hold digital and rtc gpio pad.
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
-  *
-  * @param hal Context of the HAL layer
-  * */
-#define gpio_hal_force_hold_all(hal) gpio_ll_force_hold_all((hal)->dev)
+  */
+#define gpio_hal_force_hold_all() gpio_ll_force_hold_all()
 
 /**
   * @brief Force unhold digital and rtc gpio pad.
   * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
-  *
-  * @param hal Context of the HAL layer
-  * */
+  */
 #define gpio_hal_force_unhold_all() gpio_ll_force_unhold_all()
 #endif
 

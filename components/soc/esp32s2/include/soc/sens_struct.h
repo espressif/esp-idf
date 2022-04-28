@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct sens_dev_s {
     union {
         struct {
             uint32_t sar1_clk_div:    8;                    /*clock divider*/

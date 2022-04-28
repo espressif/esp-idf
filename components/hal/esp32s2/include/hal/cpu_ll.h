@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 #include <stdint.h>
 
@@ -23,6 +15,7 @@
 #include "xtensa/config/extreg.h"
 #include "esp_bit_defs.h"
 #include "xtensa/config/core.h"
+#include "xtensa/xtruntime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -200,6 +193,27 @@ static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
 static inline void cpu_ll_waiti(void)
 {
     asm volatile ("waiti 0\n");
+}
+
+static inline void cpu_ll_compare_and_set_native(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
+{
+    uint32_t old_value;
+
+    // No S32C1I, so do this by disabling and re-enabling interrupts (slower)
+    uint32_t intlevel;
+    __asm__ __volatile__ ("rsil %0, " XTSTR(XCHAL_EXCM_LEVEL) "\n"
+                          : "=r"(intlevel));
+
+    old_value = *addr;
+    if (old_value == compare) {
+        *addr = *set;
+    }
+
+    __asm__ __volatile__ ("memw \n"
+                          "wsr %0, ps\n"
+                          :: "r"(intlevel));
+
+    *set = old_value;
 }
 
 #ifdef __cplusplus

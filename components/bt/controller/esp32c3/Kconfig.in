@@ -66,6 +66,13 @@ config BT_CTRL_HW_CCA
     help
         It enables HW CCA feature in controller
 
+config BT_CTRL_HW_CCA_VAL
+    int "CCA threshold value"
+    range 20 60
+    default 20
+    help
+        It is the threshold value of HW CCA, if the value is 30, it means CCA threshold is -30 dBm.
+
 config BT_CTRL_HW_CCA_EFF
     int
     default 1 if BT_CTRL_HW_CCA
@@ -349,7 +356,7 @@ menu "MODEM SLEEP Options"
                 other bluetooth low power clock sources.
         config BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
             bool "External 32kHz crystal"
-            depends on ESP32C3_RTC_CLK_SRC_EXT_CRYS
+            depends on RTC_CLK_SRC_EXT_CRYS
             help
                 External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency
                 stability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth
@@ -357,9 +364,10 @@ menu "MODEM SLEEP Options"
 
         config BT_CTRL_LPCLK_SEL_RTC_SLOW
             bool "Internal 150kHz RC oscillator"
-            depends on ESP32C3_RTC_CLK_SRC_INT_RC
+            depends on RTC_CLK_SRC_INT_RC
             help
-                Internal 150kHz RC oscillator.
+                Internal 150kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
+                in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.
 
 
     endchoice
@@ -383,3 +391,16 @@ config BT_CTRL_HCI_TL_EFF
     default 0 if BT_CTRL_HCI_MODE_UART_H4
     default 1 if BT_CTRL_HCI_M0DE_VHCI
     default 1
+
+config BT_CTRL_AGC_RECORRECT_EN
+    bool "Enable HW AGC recorrect"
+    default n
+    help
+        Enable uncoded phy AGC recorrect
+
+config BT_CTRL_CODED_AGC_RECORRECT_EN
+    bool "Enable coded phy AGC recorrect"
+    depends on BT_CTRL_AGC_RECORRECT_EN
+    default n
+    help
+        Enable coded phy AGC recorrect

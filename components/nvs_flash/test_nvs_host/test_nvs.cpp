@@ -313,7 +313,8 @@ TEST_CASE("HashList is cleaned up as soon as items are erased", "[nvs]")
     INFO("Added " << count << " items, " << hashlist.getBlockCount() << " blocks");
     // Remove them in reverse order
     for (size_t i = count; i > 0; --i) {
-        hashlist.erase(i - 1, true);
+        // Make sure that the element existed before it's erased
+        CHECK(hashlist.erase(i - 1) == true);
     }
     CHECK(hashlist.getBlockCount() == 0);
     // Add again
@@ -326,7 +327,7 @@ TEST_CASE("HashList is cleaned up as soon as items are erased", "[nvs]")
     INFO("Added " << count << " items, " << hashlist.getBlockCount() << " blocks");
     // Remove them in the same order
     for (size_t i = 0; i < count; ++i) {
-        hashlist.erase(i, true);
+        CHECK(hashlist.erase(i) == true);
     }
     CHECK(hashlist.getBlockCount() == 0);
 }

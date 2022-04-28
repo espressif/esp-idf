@@ -1,16 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -75,7 +68,7 @@ struct button_dev{
 #define BUTTON_GLITCH_FILTER_TIME_MS   CONFIG_BUTTON_IO_GLITCH_FILTER_TIME_MS
 static const char* TAG = "button";
 
-// static void button_press_cb(xTimerHandle tmr)
+// static void button_press_cb(TimerHandle_t tmr)
 static void button_press_cb(void* tmr)
 {
     #if !USE_ESP_TIMER
@@ -94,7 +87,7 @@ static void button_press_cb(void* tmr)
     }
 }
 
-// static void button_tap_psh_cb(xTimerHandle tmr)
+// static void button_tap_psh_cb(TimerHandle_t tmr)
 static void button_tap_psh_cb(void* tmr)
 {
     #if !USE_ESP_TIMER
@@ -238,7 +231,7 @@ static void button_gpio_isr_handler(void* arg)
 }
 
 #if !USE_ESP_TIMER
-static void button_free_tmr(xTimerHandle* tmr)
+static void button_free_tmr(TimerHandle_t* tmr)
 #else
 static void button_free_tmr(esp_timer_handle_t *tmr)
 #endif
@@ -384,7 +377,7 @@ esp_err_t iot_button_set_evt_cb(button_handle_t btn_handle, button_cb_type_t typ
     if (type == BUTTON_CB_PUSH) {
         btn->tap_psh_cb.arg = arg;
         btn->tap_psh_cb.cb = cb;
-        btn->tap_psh_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_RATE_MS;
+        btn->tap_psh_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_PERIOD_MS;
         btn->tap_psh_cb.pbtn = btn;
         #if !USE_ESP_TIMER
         xTimerChangePeriod(btn->tap_psh_cb.tmr, btn->tap_psh_cb.interval, portMAX_DELAY);
@@ -392,7 +385,7 @@ esp_err_t iot_button_set_evt_cb(button_handle_t btn_handle, button_cb_type_t typ
     } else if (type == BUTTON_CB_RELEASE) {
         btn->tap_rls_cb.arg = arg;
         btn->tap_rls_cb.cb = cb;
-        btn->tap_rls_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_RATE_MS;
+        btn->tap_rls_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_PERIOD_MS;
         btn->tap_rls_cb.pbtn = btn;
         #if !USE_ESP_TIMER
         xTimerChangePeriod(btn->tap_rls_cb.tmr, btn->tap_psh_cb.interval, portMAX_DELAY);
@@ -400,10 +393,10 @@ esp_err_t iot_button_set_evt_cb(button_handle_t btn_handle, button_cb_type_t typ
     } else if (type == BUTTON_CB_TAP) {
         btn->tap_short_cb.arg = arg;
         btn->tap_short_cb.cb = cb;
-        btn->tap_short_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_RATE_MS;
+        btn->tap_short_cb.interval = BUTTON_GLITCH_FILTER_TIME_MS / portTICK_PERIOD_MS;
         btn->tap_short_cb.pbtn = btn;
     } else if (type == BUTTON_CB_SERIAL) {
-        iot_button_set_serial_cb(btn_handle, 1, 1000 / portTICK_RATE_MS, cb, arg);
+        iot_button_set_serial_cb(btn_handle, 1, 1000 / portTICK_PERIOD_MS, cb, arg);
     }
     return ESP_OK;
 }

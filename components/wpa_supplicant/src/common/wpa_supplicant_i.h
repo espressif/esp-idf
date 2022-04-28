@@ -41,6 +41,16 @@ struct rrm_data {
 	u8 dst_addr[ETH_ALEN];
 };
 
+struct wpa_bss_tmp_disallowed {
+	struct dl_list list;
+	u8 bssid[ETH_ALEN];
+#ifndef ESP_SUPPLICANT
+	int rssi_threshold;
+#else
+	esp_timer_handle_t blacklist_timer;
+#endif
+};
+
 #define SSID_MAX_LEN 32
 struct beacon_rep_data {
 	u8 token;
@@ -61,6 +71,7 @@ enum scan_trigger_reason {
 
 struct wpa_supplicant {
 	int disable_btm;
+	unsigned int disable_mbo_oce;
 	/* rrm ie */
 	uint8_t rrm_ie[5];
 	u8 extend_caps[8];
@@ -101,10 +112,58 @@ struct wpa_supplicant {
 	u8 wnm_bss_termination_duration[12];
 	struct neighbor_report *wnm_neighbor_report_elements;
 	struct os_reltime wnm_cand_valid_until;
+#ifdef CONFIG_MBO
+        unsigned int wnm_mbo_trans_reason_present:1;
+        u8 wnm_mbo_transition_reason;
+	/* Multiband operation non-preferred channel */
+	struct wpa_mbo_non_pref_channel {
+		enum mbo_non_pref_chan_reason reason;
+		u8 oper_class;
+		u8 chan;
+		u8 preference;
+	} *non_pref_chan;
+	size_t non_pref_chan_num;
+	u8 mbo_wnm_token;
+	/**
+	 * enable_oce - Enable OCE if it is enabled by user and device also
+	 *              supports OCE.
+	 * User can enable OCE with wpa_config's 'oce' parameter as follows -
+	 *  - Set BIT(0) to enable OCE in non-AP STA mode.
+	 *  - Set BIT(1) to enable OCE in STA-CFON mode.
+	 */
+	u8 enable_oce;
+	struct dl_list bss_tmp_disallowed;
+#endif /* CONFIG_MBO */
 #endif /* CONFIG_WNM */
 	struct rrm_data rrm;
 	struct beacon_rep_data beacon_rep_data;
 	struct os_reltime beacon_rep_scan;
 };
 
-#endif
+struct non_pref_chan_s;
+
+/* MBO functions */
+int wpas_mbo_ie(struct wpa_supplicant *wpa_s, u8 *buf, size_t len,
+		int add_oce_capa);
+const u8 * mbo_attr_from_mbo_ie(const u8 *mbo_ie, enum mbo_attr_id attr);
+const u8 * wpas_mbo_get_bss_attr(struct wpa_bss *bss, enum mbo_attr_id attr);
+const u8 * mbo_get_attr_from_ies(const u8 *ies, size_t ies_len,
+				 enum mbo_attr_id attr);
+void wpas_mbo_scan_ie(struct wpa_supplicant *wpa_s, struct wpabuf *ie);
+void wpas_mbo_ie_trans_req(struct wpa_supplicant *wpa_s, const u8 *ie,
+			   size_t len);
+size_t wpas_mbo_ie_bss_trans_reject(struct wpa_supplicant *wpa_s, u8 *pos,
+				    size_t len,
+				    enum mbo_transition_reject_reason reason);
+void wpas_mbo_update_cell_capa(struct wpa_supplicant *wpa_s, u8 mbo_cell_capa);
+struct wpabuf * mbo_build_anqp_buf(struct wpa_supplicant *wpa_s,
+				   struct wpa_bss *bss, u32 mbo_subtypes);
+void mbo_parse_rx_anqp_resp(struct wpa_supplicant *wpa_s,
+			    struct wpa_bss *bss, const u8 *sa,
+			    const u8 *data, size_t slen);
+void wpas_update_mbo_connect_params(struct wpa_supplicant *wpa_s);
+
+int wpas_mbo_update_non_pref_chan(struct wpa_supplicant *wpa_s,
+				  struct non_pref_chan_s *non_pref_chan);
+
+#endif /* WPA_SUPPLICANT_I_H */

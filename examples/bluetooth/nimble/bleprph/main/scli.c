@@ -1,6 +1,4 @@
 /*
- * Copyright 2019 Espressif Systems (Shanghai) PTE LTD
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -112,7 +110,7 @@ static void scli_task(void *arg)
         i = 0;
         memset(linebuf, 0, sizeof(linebuf));
         do {
-            ret = xQueueReceive(uart_queue, (void * )&event, (portTickType)portMAX_DELAY);
+            ret = xQueueReceive(uart_queue, (void * )&event, (TickType_t)portMAX_DELAY);
             if (ret != pdPASS) {
                 if (stop == 1) {
                     break;

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #include <stdint.h>
@@ -21,8 +13,11 @@
 #include "esp_freertos_hooks.h"
 
 #include "sdkconfig.h"
+
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
+#endif
 
 //We use just a static array here because it's not expected many components will need
 //an idle or tick hook.
@@ -58,9 +53,12 @@ void esp_vApplicationIdleHook(void)
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_idle_hook();
+    esp_pm_impl_waiti();
+#else
+    cpu_hal_waiti();
 #endif
 
-    esp_pm_impl_waiti();
+
 }
 
 esp_err_t esp_register_freertos_idle_hook_for_cpu(esp_freertos_idle_cb_t new_idle_cb, UBaseType_t cpuid)

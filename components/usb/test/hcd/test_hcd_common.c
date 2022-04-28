@@ -1,39 +1,24 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-
-
-
-//Todo: Move all the port and PHY to here
-//Have a separate test file for INTR (HID), ISOC (UVC), and BULK (SCSI)
-//Each test case has a fixed HW device
-//Implements bare minimum for a MOCK protocol
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
-#include "soc/gpio_pins.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/usb_wrap_struct.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_rom_gpio.h"
-#include "hal/usbh_ll.h"
-#include "usb.h"
 #include "hcd.h"
+#include "usb_private.h"
+#include "usb/usb_types_ch9.h"
+#include "test_hcd_common.h"
+#include "test_usb_common.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
@@ -151,25 +136,9 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 // ----------------------------------------------- Driver/Port Related -------------------------------------------------
 
-void test_hcd_force_conn_state(bool connected, TickType_t delay_ticks)
-{
-    vTaskDelay(delay_ticks);
-    usb_wrap_dev_t *wrap = &USB_WRAP;
-    if (connected) {
-        //Swap back to internal PHY that is connected to a device
-        wrap->otg_conf.phy_sel = 0;
-    } else {
-        //Set external PHY input signals to fixed voltage levels mimicking a disconnected state
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VP_IDX, false);
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VM_IDX, false);
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_EXTPHY_RCV_IDX, false);
-        //Swap to the external PHY
-        wrap->otg_conf.phy_sel = 1;
-    }
-}
-
 hcd_port_handle_t test_hcd_setup(void)
 {
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Create a queue for port callback to queue up port events
     QueueHandle_t port_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(port_event_msg_t));
     TEST_ASSERT_NOT_EQUAL(NULL, port_evt_queue);
@@ -180,6 +149,7 @@ hcd_port_handle_t test_hcd_setup(void)
     TEST_ASSERT_EQUAL(ESP_OK, hcd_install(&hcd_config));
     //Initialize a port
     hcd_port_config_t port_config = {
+        .fifo_bias = HCD_PORT_FIFO_BIAS_BALANCED,
         .callback = port_callback,
         .callback_arg = (void *)port_evt_queue,
         .context = (void *)port_evt_queue,
@@ -188,7 +158,7 @@ hcd_port_handle_t test_hcd_setup(void)
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_init(PORT_NUM, &port_config, &port_hdl));
     TEST_ASSERT_NOT_EQUAL(NULL, port_hdl);
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_NOT_POWERED, hcd_port_get_state(port_hdl));
-    test_hcd_force_conn_state(false, 0);    //Force disconnected state on PHY
+    test_usb_set_phy_state(false, 0);    //Force disconnected state on PHY
     return port_hdl;
 }
 
@@ -202,6 +172,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl)
     //Uninstall the HCD
     TEST_ASSERT_EQUAL(ESP_OK, hcd_uninstall());
     vQueueDelete(port_evt_queue);
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
 
 usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
@@ -211,7 +182,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISCONNECTED, hcd_port_get_state(port_hdl));
     //Wait for connection event
     printf("Waiting for connection\n");
-    test_hcd_force_conn_state(true, pdMS_TO_TICKS(100));     //Allow for connected state on PHY
+    test_usb_set_phy_state(true, pdMS_TO_TICKS(100));     //Allow for connected state on PHY
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_CONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_CONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISABLED, hcd_port_get_state(port_hdl));
@@ -240,10 +211,10 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
     }
     //Wait for a safe disconnect
     printf("Waiting for disconnection\n");
-    test_hcd_force_conn_state(false, pdMS_TO_TICKS(100));    //Force disconnected state on PHY
+    test_usb_set_phy_state(false, pdMS_TO_TICKS(100));    //Force disconnected state on PHY
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
-    TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISCONNECTED, hcd_port_get_state(port_hdl));
+    TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));
     //Power down the port
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_POWER_OFF));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_NOT_POWERED, hcd_port_get_state(port_hdl));
@@ -251,7 +222,7 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
 
 // ---------------------------------------------- Pipe Setup/Tear-down -------------------------------------------------
 
-hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_desc_ep_t *ep_desc, uint8_t dev_addr, usb_speed_t dev_speed)
+hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_ep_desc_t *ep_desc, uint8_t dev_addr, usb_speed_t dev_speed)
 {
     //Create a queue for pipe callback to queue up pipe events
     QueueHandle_t pipe_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(pipe_event_msg_t));
@@ -281,70 +252,66 @@ void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
     vQueueDelete(pipe_evt_queue);
 }
 
-usb_irp_t *test_hcd_alloc_irp(int num_iso_packets, size_t data_buffer_size)
+urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
-    //Allocate list of IRPs
-    usb_irp_t *irp = heap_caps_calloc(1, sizeof(usb_irp_t) + (num_iso_packets * sizeof(usb_iso_packet_desc_t)), MALLOC_CAP_DEFAULT);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp);
-    //Allocate data buffer for each IRP and assign them
+    //Allocate a URB and data buffer
+    urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (num_isoc_packets * sizeof(usb_isoc_packet_desc_t)), MALLOC_CAP_DEFAULT);
     uint8_t *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_EQUAL(NULL, urb);
     TEST_ASSERT_NOT_EQUAL(NULL, data_buffer);
-    irp->data_buffer = data_buffer;
-    irp->num_iso_packets = num_iso_packets;
-    return irp;
+    //Initialize URB and underlying transfer structure. Need to cast to dummy due to const fields
+    usb_transfer_dummy_t *transfer_dummy = (usb_transfer_dummy_t *)&urb->transfer;
+    transfer_dummy->data_buffer = data_buffer;
+    transfer_dummy->num_isoc_packets = num_isoc_packets;
+    return urb;
 }
 
-void test_hcd_free_irp(usb_irp_t *irp)
+void test_hcd_free_urb(urb_t *urb)
 {
-    //Free data buffers of each IRP
-    heap_caps_free(irp->data_buffer);
-    //Free the IRP list
-    heap_caps_free(irp);
+    //Free data buffer of the transfer
+    heap_caps_free(urb->transfer.data_buffer);
+    //Free the URB
+    heap_caps_free(urb);
 }
 
-uint8_t test_hcd_enum_devc(hcd_pipe_handle_t default_pipe)
+uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe)
 {
-    //We need to create an IRP for the enumeration control transfers
-    usb_irp_t *irp = heap_caps_calloc(1, sizeof(usb_irp_t), MALLOC_CAP_DEFAULT);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp);
-    //We use a single data buffer for all control transfers during enumerations. 256 bytes should be large enough for most descriptors
-    irp->data_buffer = heap_caps_malloc(sizeof(usb_ctrl_req_t) + 256, MALLOC_CAP_DMA);
-    TEST_ASSERT_NOT_EQUAL(NULL, irp->data_buffer);
-    usb_ctrl_req_t *ctrl_req = (usb_ctrl_req_t *)irp->data_buffer;
+    //We need to create a URB for the enumeration control transfers
+    urb_t *urb = test_hcd_alloc_urb(0, sizeof(usb_setup_packet_t) + 256);
+    usb_setup_packet_t *setup_pkt = (usb_setup_packet_t *)urb->transfer.data_buffer;
 
     //Get the device descriptor (note that device might only return 8 bytes)
-    USB_CTRL_REQ_INIT_GET_DEVC_DESC(ctrl_req);
-    irp->num_bytes = sizeof(usb_desc_devc_t);
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
+    USB_SETUP_PACKET_INIT_GET_DEVICE_DESC(setup_pkt);
+    urb->transfer.num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_device_desc_t);
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
 
     //Update the MPS of the default pipe
-    usb_desc_devc_t *devc_desc = (usb_desc_devc_t *)(irp->data_buffer + sizeof(usb_ctrl_req_t));
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_mps(default_pipe, devc_desc->bMaxPacketSize0));
+    usb_device_desc_t *device_desc = (usb_device_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_mps(default_pipe, device_desc->bMaxPacketSize0));
 
     //Send a set address request
-    USB_CTRL_REQ_INIT_SET_ADDR(ctrl_req, ENUM_ADDR);    //We only support one device for now so use address 1
-    irp->num_bytes = 0;
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
+    USB_SETUP_PACKET_INIT_SET_ADDR(setup_pkt, ENUM_ADDR);    //We only support one device for now so use address 1
+    urb->transfer.num_bytes = sizeof(usb_setup_packet_t);
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
 
     //Update address of default pipe
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_dev_addr(default_pipe, ENUM_ADDR));
 
     //Send a set configuration request
-    USB_CTRL_REQ_INIT_SET_CONFIG(ctrl_req, ENUM_CONFIG);
-    irp->num_bytes = 0;
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    TEST_ASSERT_EQUAL(irp, hcd_irp_dequeue(default_pipe));
-    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, irp->status);
+    USB_SETUP_PACKET_INIT_SET_CONFIG(setup_pkt, ENUM_CONFIG);
+    urb->transfer.num_bytes = sizeof(usb_setup_packet_t);
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    TEST_ASSERT_EQUAL(urb, hcd_urb_dequeue(default_pipe));
+    TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
 
-    //Free IRP
-    heap_caps_free(irp->data_buffer);
-    heap_caps_free(irp);
+    //Free URB
+    test_hcd_free_urb(urb);
     return ENUM_ADDR;
 }

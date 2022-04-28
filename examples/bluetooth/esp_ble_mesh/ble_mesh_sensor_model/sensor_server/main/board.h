@@ -1,11 +1,12 @@
 /* board.h - Board-specific hooks */
 
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
@@ -23,6 +24,10 @@
 #define LED_R GPIO_NUM_8
 #define LED_G GPIO_NUM_8
 #define LED_B GPIO_NUM_8
+#elif defined(CONFIG_BLE_MESH_ESP32S3_DEV)
+#define LED_R GPIO_NUM_47
+#define LED_G GPIO_NUM_47
+#define LED_B GPIO_NUM_47
 #endif
 
 #define LED_ON  1

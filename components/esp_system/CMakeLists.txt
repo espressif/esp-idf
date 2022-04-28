@@ -1,16 +1,18 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs)
+set(srcs "esp_err.c")
 
 if(CONFIG_IDF_ENV_FPGA)
     list(APPEND srcs "fpga_overrides.c")
 endif()
 
 if(BOOTLOADER_BUILD)
-    # Bootloader relies on some Kconfig options defined in esp_system.
-    idf_component_register(SRCS "${srcs}")
+        # "_esp_error_check_failed()" requires spi_flash module
+        # Bootloader relies on some Kconfig options defined in esp_system.
+        idf_component_register(SRCS "${srcs}" REQUIRES spi_flash)
 else()
     list(APPEND srcs "crosscore_int.c"
+            "esp_ipc.c"
             "esp_err.c"
             "freertos_hooks.c"
             "int_wdt.c"
@@ -20,10 +22,16 @@ else()
             "system_time.c"
             "stack_check.c"
             "task_wdt.c"
-            "ubsan.c")
+            "ubsan.c"
+            "xt_wdt.c"
+            "debug_stubs.c")
 
-    if(NOT (${target} STREQUAL "esp32c3") )
-        list(APPEND srcs  "dbg_stubs.c")
+    if(NOT (${target} STREQUAL "esp32c2"))
+        list(APPEND srcs "debug_stubs.c")
+    endif()
+
+    if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+        list(APPEND srcs "eh_frame_parser.c")
     endif()
 
     idf_component_register(SRCS "${srcs}"
@@ -32,8 +40,10 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
-                                    espcoredump esp_phy
+                                    # [refactor-todo] requires "driver" for headers:
+                                    # - rtc_cntl.h
+                                    # - spi_common_internal.h
+                                    pthread bootloader_support efuse driver
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
@@ -53,6 +63,7 @@ else()
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 
+    include(${CMAKE_CURRENT_LIST_DIR}/ld/ld.cmake)
 endif()
 
 if(CONFIG_IDF_ENV_FPGA)
@@ -63,3 +74,24 @@ endif()
 # Force linking UBSAN hooks. If UBSAN is not enabled, the hooks will ultimately be removed
 # due to -ffunction-sections -Wl,--gc-sections options.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __ubsan_include")
+
+
+# [refactor-todo] requirements due to init code, should be removable
+# once link-time registration of component init functions is used.
+if(CONFIG_APPTRACE_ENABLE)
+    idf_component_optional_requires(PRIVATE app_trace)
+endif()
+
+if(CONFIG_ESP_COREDUMP_ENABLE)
+    idf_component_optional_requires(PRIVATE espcoredump)
+endif()
+
+# [refactor-todo] requirement from the panic handler,
+# need to introduce panic "event" concept to remove this dependency (IDF-2194)
+idf_component_optional_requires(PRIVATE esp_gdbstub)
+
+idf_component_optional_requires(PRIVATE app_update)
+
+if(CONFIG_PM_ENABLE)
+    idf_component_optional_requires(PRIVATE pm)
+endif()

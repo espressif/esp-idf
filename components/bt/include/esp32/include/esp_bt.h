@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_BT_H__
 #define __ESP_BT_H__
@@ -24,6 +16,38 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef CONFIG_BT_ENABLED
+
+#define SOC_MEM_BT_DATA_START               0x3ffae6e0
+#define SOC_MEM_BT_DATA_END                 0x3ffaff10
+#define SOC_MEM_BT_EM_START                 0x3ffb0000
+#define SOC_MEM_BT_EM_END                   0x3ffb7cd8
+#define SOC_MEM_BT_EM_BTDM0_START           0x3ffb0000
+#define SOC_MEM_BT_EM_BTDM0_END             0x3ffb09a8
+#define SOC_MEM_BT_EM_BLE_START             0x3ffb09a8
+#define SOC_MEM_BT_EM_BLE_END               0x3ffb1ddc
+#define SOC_MEM_BT_EM_BTDM1_START           0x3ffb1ddc
+#define SOC_MEM_BT_EM_BTDM1_END             0x3ffb2730
+#define SOC_MEM_BT_EM_BREDR_START           0x3ffb2730
+#define SOC_MEM_BT_EM_BREDR_NO_SYNC_END     0x3ffb6388  //Not calculate with synchronize connection support
+#define SOC_MEM_BT_EM_BREDR_END             0x3ffb7cd8  //Calculate with synchronize connection support
+#define SOC_MEM_BT_EM_SYNC0_START           0x3ffb6388
+#define SOC_MEM_BT_EM_SYNC0_END             0x3ffb6bf8
+#define SOC_MEM_BT_EM_SYNC1_START           0x3ffb6bf8
+#define SOC_MEM_BT_EM_SYNC1_END             0x3ffb7468
+#define SOC_MEM_BT_EM_SYNC2_START           0x3ffb7468
+#define SOC_MEM_BT_EM_SYNC2_END             0x3ffb7cd8
+#define SOC_MEM_BT_BSS_START                0x3ffb8000
+#define SOC_MEM_BT_BSS_END                  0x3ffb9a20
+#define SOC_MEM_BT_MISC_START               0x3ffbdb28
+#define SOC_MEM_BT_MISC_END                 0x3ffbdb5c
+
+#define SOC_MEM_BT_EM_PER_SYNC_SIZE         0x870
+
+#define SOC_MEM_BT_EM_BREDR_REAL_END        (SOC_MEM_BT_EM_BREDR_NO_SYNC_END + CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF * SOC_MEM_BT_EM_PER_SYNC_SIZE)
+
+#endif //CONFIG_BT_ENABLED
 
 #define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20200622
 
@@ -117,6 +141,12 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_AUTO_LATENCY_EFF false
 #endif
 
+#ifdef CONFIG_BTDM_CTRL_HLI
+#define BTDM_CTRL_HLI CONFIG_BTDM_CTRL_HLI
+#else
+#define BTDM_CTRL_HLI false
+#endif
+
 #ifdef CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 #define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 #else
@@ -151,6 +181,7 @@ the adv packet will be discarded until the memory is restored. */
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
     .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
+    .hli = BTDM_CTRL_HLI,                                                  \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -192,6 +223,7 @@ typedef struct {
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
     uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
+    bool hli;                               /*!< Using high level interrupt or not */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -351,12 +383,6 @@ esp_err_t esp_bt_controller_disable(void);
  */
 esp_bt_controller_status_t esp_bt_controller_get_status(void);
 
-/**
- * @brief  Get BT MAC address.
- * @return Array pointer of length 6 storing MAC address value.
- */
-uint8_t* esp_bt_get_mac(void);
-
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do
  */
@@ -495,6 +521,16 @@ esp_err_t esp_bt_sleep_disable(void);
  *                  - other  : failed
  */
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
+
+/**
+ * @brief bt Wi-Fi power domain power on
+ */
+void esp_wifi_bt_power_domain_on(void);
+
+/**
+ * @brief bt Wi-Fi power domain power off
+ */
+void esp_wifi_bt_power_domain_off(void);
 
 #ifdef __cplusplus
 }

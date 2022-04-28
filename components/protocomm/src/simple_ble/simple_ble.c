@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <freertos/FreeRTOS.h>
 #include <esp_system.h>
@@ -228,7 +220,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
 
 #ifdef CONFIG_BTDM_CTRL_MODE_BTDM
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
-#elif defined CONFIG_BTDM_CTRL_MODE_BLE_ONLY
+#elif defined CONFIG_BTDM_CTRL_MODE_BLE_ONLY || CONFIG_BT_CTRL_MODE_EFF
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
 #else
     ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
@@ -277,7 +269,13 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     ESP_LOGD(TAG, "Free mem at end of simple_ble_init %d", esp_get_free_heap_size());
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
-    esp_ble_auth_req_t auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;     //bonding with peer device after authentication
+    esp_ble_auth_req_t auth_req= ESP_LE_AUTH_REQ_MITM;
+    if (cfg->ble_bonding) {
+	auth_req |= ESP_LE_AUTH_BOND;     //bonding with peer device after authentication
+    }
+    if (cfg->ble_sm_sc) {
+	auth_req |= ESP_LE_AUTH_REQ_SC_ONLY;
+    }
     esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;           //set the IO capability to No output No input
     uint8_t key_size = 16;      //the key size should be 7~16 bytes
     uint8_t init_key = ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK;

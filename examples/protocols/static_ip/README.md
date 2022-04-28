@@ -21,6 +21,12 @@ Set following parameters under Example Configuration Options:
 
 * Set `Static gateway address` of your device static gateway address.
 
+* Set `Choose DNS server` with `Set manual value as DNS server` or `Use gateway address as DNS server` to configure your DNS server.
+
+* Choose `Set manual value as DNS server` to configure manual DNS server with `Main DNS server address` and `Backup DNS server address`.
+
+* Set `Enable DNS resolve test` to resolve your host which input in `Domain name to resolve`.
+
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
@@ -82,4 +88,5 @@ I (3253) static_ip: connected to ap SSID:myssid password:mypassword
 W (3273) wifi:<ba-add>idx:0 (ifx:0, 34:29:12:43:c5:40), tid:5, ssn:2, winSize:64
 I (3303) wifi:AP's beacon interval = 102400 us, DTIM period = 1
 I (3303) wifi:new:<11,0>, old:<11,2>, ap:<255,255>, sta:<11,0>, prof:1
+I (5203) static_ip: Resolved IPv4 address: 119.9.92.99
 ```

@@ -12,6 +12,7 @@ static void *compute_square(void *arg)
 {
     int *num = (int *) arg;
     *num = (*num) * (*num);
+    vTaskDelay(2); // ensure the test task has time to continue execution
     pthread_exit((void *) num);
     return NULL;
 }

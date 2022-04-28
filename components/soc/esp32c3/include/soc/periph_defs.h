@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -46,6 +38,7 @@ typedef enum {
     PERIPH_GDMA_MODULE,
     PERIPH_SYSTIMER_MODULE,
     PERIPH_SARADC_MODULE,
+    PERIPH_TEMPSENSOR_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
 
@@ -76,7 +69,7 @@ typedef enum {
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
     ETS_TWAI_INTR_SOURCE,                        /**< interrupt of can, level*/
-    ETS_USB_INTR_SOURCE,                        /**< interrupt of USB, level*/
+    ETS_USB_SERIAL_JTAG_INTR_SOURCE,                        /**< interrupt of USB, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller1, level*/
@@ -102,8 +95,8 @@ typedef enum {
     ETS_SHA_INTR_SOURCE,                        /**< interrupt of SHA accelerator, level*/
     ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
     ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
-    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
-    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/
+    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/
     ETS_ASSIST_DEBUG_INTR_SOURCE,               /**< interrupt of Assist debug module, LEVEL*/
     ETS_DMA_APBPERI_PMS_INTR_SOURCE,
     ETS_CORE0_IRAM0_PMS_INTR_SOURCE,

@@ -9,54 +9,9 @@ menu "ESP32-specific"
         default y
         depends on !FREERTOS_UNICORE && ESP32_SPIRAM_SUPPORT
 
-    choice ESP32_REV_MIN
-        prompt "Minimum Supported ESP32 Revision"
-        default ESP32_REV_MIN_0
-        help
-            Minimum revision that ESP-IDF would support.
-            ESP-IDF performs different strategy on different esp32 revision.
-
-        config ESP32_REV_MIN_0
-            bool "Rev 0"
-        config ESP32_REV_MIN_1
-            bool "Rev 1"
-        config ESP32_REV_MIN_2
-            bool "Rev 2"
-        config ESP32_REV_MIN_3
-            bool "Rev 3"
-            select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
-    endchoice
-
-    config ESP32_REV_MIN
-        int
-        default 0 if ESP32_REV_MIN_0
-        default 1 if ESP32_REV_MIN_1
-        default 2 if ESP32_REV_MIN_2
-        default 3 if ESP32_REV_MIN_3
-
     config ESP32_DPORT_WORKAROUND
         bool
         default "y" if !FREERTOS_UNICORE  && ESP32_REV_MIN < 2
-
-    choice ESP32_DEFAULT_CPU_FREQ_MHZ
-        prompt "CPU frequency"
-        default ESP32_DEFAULT_CPU_FREQ_160
-        help
-            CPU frequency to be set on application startup.
-
-        config ESP32_DEFAULT_CPU_FREQ_80
-            bool "80 MHz"
-        config ESP32_DEFAULT_CPU_FREQ_160
-            bool "160 MHz"
-        config ESP32_DEFAULT_CPU_FREQ_240
-            bool "240 MHz"
-    endchoice
-
-    config ESP32_DEFAULT_CPU_FREQ_MHZ
-        int
-        default 80 if ESP32_DEFAULT_CPU_FREQ_80
-        default 160 if ESP32_DEFAULT_CPU_FREQ_160
-        default 240 if ESP32_DEFAULT_CPU_FREQ_240
 
         # Note: to support SPIRAM across multiple chips, check CONFIG_SPIRAM
         # instead
@@ -169,8 +124,129 @@ menu "ESP32-specific"
             config SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
                 bool
                 default "y" if SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+        endmenu
 
+        menu "SPIRAM workaround libraries placement"
+            visible if SPIRAM_CACHE_WORKAROUND
 
+            config SPIRAM_CACHE_LIBJMP_IN_IRAM
+                bool "Put libc's jump related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: longjmp and setjmp.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBMATH_IN_IRAM
+                bool "Put libc's math related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: abs, div, labs, ldiv, quorem, fpclassify,
+                    and nan.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBNUMPARSER_IN_IRAM
+                bool "Put libc's number parsing related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: utoa, itoa, atoi, atol, strtol, and strtoul.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBIO_IN_IRAM
+                bool "Put libc's I/O related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: wcrtomb, fvwrite, wbuf, wsetup, fputwc, wctomb_r,
+                    ungetc, makebuf, fflush, refill, and sccl.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBTIME_IN_IRAM
+                bool "Put libc's time related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: asctime, asctime_r, ctime, ctime_r, lcltime, lcltime_r,
+                    gmtime, gmtime_r, strftime, mktime, tzset_r, tzset, time, gettzinfo, systimes, month_lengths,
+                    timelocal, tzvars, tzlock, tzcalc_limits, and strptime.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBCHAR_IN_IRAM
+                bool "Put libc's characters related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: ctype_, toupper, tolower, toascii, strupr, bzero,
+                    isalnum, isalpha, isascii, isblank, iscntrl, isdigit, isgraph, islower, isprint, ispunct,
+                    isspace, and isupper.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBMEM_IN_IRAM
+                bool "Put libc's memory related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: memccpy, memchr memmove, and memrchr.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBSTR_IN_IRAM
+                bool "Put libc's string related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: strcasecmp, strcasestr, strchr, strcoll,
+                    strcpy, strcspn, strdup, strdup_r, strlcat, strlcpy, strlen, strlwr, strncasecmp,
+                    strncat, strncmp, strncpy, strndup, strndup_r, strrchr, strsep, strspn, strstr,
+                    strtok_r, and strupr.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBRAND_IN_IRAM
+                bool "Put libc's random related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: srand, rand, and rand_r.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBENV_IN_IRAM
+                bool "Put libc's environment related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: environ, envlock, and getenv_r.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBFILE_IN_IRAM
+                bool "Put libc's file related functions in IRAM"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: lock, isatty, fclose, open, close, creat, read,
+                    rshift, sbrk, stdio, syssbrk, sysclose, sysopen, creat, sysread, syswrite, impure, fwalk,
+                    and findfp.
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
+
+            config SPIRAM_CACHE_LIBMISC_IN_IRAM
+                bool "Put libc's miscellaneous functions in IRAM, see help"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default "y"
+                help
+                    The functions affected by this option are: raise and system
+                    Putting these function in IRAM will allow them to be called when flash cache is disabled
+                    but it will also reduce the available size of free IRAM for the user application.
         endmenu
 
         config SPIRAM_BANKSWITCH_ENABLE
@@ -374,217 +450,6 @@ menu "ESP32-specific"
         default 0x4000 if ESP32_MEMMAP_TRACEMEM && !ESP32_MEMMAP_TRACEMEM_TWOBANKS
         default 0x0
 
-
-
-    config ESP32_ULP_COPROC_ENABLED
-        bool "Enable Ultra Low Power (ULP) Coprocessor"
-        default "n"
-        help
-            Set to 'y' if you plan to load a firmware for the coprocessor.
-
-            If this option is enabled, further coprocessor configuration will appear in the Components menu.
-
-    config ESP32_ULP_COPROC_RESERVE_MEM
-        int
-        prompt "RTC slow memory reserved for coprocessor" if ESP32_ULP_COPROC_ENABLED
-        default 512 if ESP32_ULP_COPROC_ENABLED
-        range 32 8192 if ESP32_ULP_COPROC_ENABLED
-        default 0 if !ESP32_ULP_COPROC_ENABLED
-        range 0 0 if !ESP32_ULP_COPROC_ENABLED
-        help
-            Bytes of memory to reserve for ULP coprocessor firmware & data.
-
-            Data is reserved at the beginning of RTC slow memory.
-
-    config ESP32_DEBUG_OCDAWARE
-        bool "Make exception and panic handlers JTAG/OCD aware"
-        default y
-        select FREERTOS_DEBUG_OCDAWARE
-        help
-            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
-            instead of panicking, have the debugger stop on the offending instruction.
-
-    config ESP32_BROWNOUT_DET
-        bool "Hardware brownout detect & reset"
-        default y
-        help
-            The ESP32 has a built-in brownout detector which can detect if the voltage is lower than
-            a specific value. If this happens, it will reset the chip in order to prevent unintended
-            behaviour.
-
-    choice ESP32_BROWNOUT_DET_LVL_SEL
-        prompt "Brownout voltage level"
-        depends on ESP32_BROWNOUT_DET
-        default ESP32_BROWNOUT_DET_LVL_SEL_0
-        help
-            The brownout detector will reset the chip when the supply voltage is approximately
-            below this level. Note that there may be some variation of brownout voltage level
-            between each ESP32 chip.
-
-            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
-            #of the brownout threshold levels.
-        config ESP32_BROWNOUT_DET_LVL_SEL_0
-            bool "2.43V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_1
-            bool "2.48V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_2
-            bool "2.58V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_3
-            bool "2.62V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_4
-            bool "2.67V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_5
-            bool "2.70V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_6
-            bool "2.77V +/- 0.05"
-        config ESP32_BROWNOUT_DET_LVL_SEL_7
-            bool "2.80V +/- 0.05"
-    endchoice
-
-    config ESP32_BROWNOUT_DET_LVL
-        int
-        default 0 if ESP32_BROWNOUT_DET_LVL_SEL_0
-        default 1 if ESP32_BROWNOUT_DET_LVL_SEL_1
-        default 2 if ESP32_BROWNOUT_DET_LVL_SEL_2
-        default 3 if ESP32_BROWNOUT_DET_LVL_SEL_3
-        default 4 if ESP32_BROWNOUT_DET_LVL_SEL_4
-        default 5 if ESP32_BROWNOUT_DET_LVL_SEL_5
-        default 6 if ESP32_BROWNOUT_DET_LVL_SEL_6
-        default 7 if ESP32_BROWNOUT_DET_LVL_SEL_7
-
-    choice ESP32_TIME_SYSCALL
-        prompt "Timers used for gettimeofday function"
-        default ESP32_TIME_SYSCALL_USE_RTC_FRC1
-        help
-            This setting defines which hardware timers are used to
-            implement 'gettimeofday' and 'time' functions in C library.
-
-            - If both high-resolution and RTC timers are used, timekeeping will
-              continue in deep sleep. Time will be reported at 1 microsecond
-              resolution. This is the default, and the recommended option.
-            - If only high-resolution timer is used, gettimeofday will
-              provide time at microsecond resolution.
-              Time will not be preserved when going into deep sleep mode.
-            - If only RTC timer is used, timekeeping will continue in
-              deep sleep, but time will be measured at 6.(6) microsecond
-              resolution. Also the gettimeofday function itself may take
-              longer to run.
-            - If no timers are used, gettimeofday and time functions
-              return -1 and set errno to ENOSYS.
-            - When RTC is used for timekeeping, two RTC_STORE registers are
-              used to keep time in deep sleep mode.
-
-        config ESP32_TIME_SYSCALL_USE_RTC_FRC1
-            bool "RTC and high-resolution timer"
-            select ESP_TIME_FUNCS_USE_RTC_TIMER
-            select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config ESP32_TIME_SYSCALL_USE_RTC
-            bool "RTC"
-            select ESP_TIME_FUNCS_USE_RTC_TIMER
-        config ESP32_TIME_SYSCALL_USE_FRC1
-            bool "High-resolution timer"
-            select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config ESP32_TIME_SYSCALL_USE_NONE
-            bool "None"
-            select ESP_TIME_FUNCS_USE_NONE
-    endchoice
-
-    choice ESP32_RTC_CLK_SRC
-        prompt "RTC clock source"
-        default ESP32_RTC_CLK_SRC_INT_RC
-        help
-            Choose which clock is used as RTC clock source.
-
-            - "Internal 150kHz oscillator" option provides lowest deep sleep current
-              consumption, and does not require extra external components. However
-              frequency stability with respect to temperature is poor, so time may
-              drift in deep/light sleep modes.
-            - "External 32kHz crystal" provides better frequency stability, at the
-              expense of slightly higher (1uA) deep sleep current consumption.
-            - "External 32kHz oscillator" allows using 32kHz clock generated by an
-              external circuit. In this case, external clock signal must be connected
-              to 32K_XN pin. Amplitude should be <1.2V in case of sine wave signal,
-              and <1V in case of square wave signal. Common mode voltage should be
-              0.1 < Vcm < 0.5Vamp, where Vamp is the signal amplitude.
-              Additionally, 1nF capacitor must be connected between 32K_XP pin and
-              ground. 32K_XP pin can not be used as a GPIO in this case.
-            - "Internal 8.5MHz oscillator divided by 256" option results in higher
-              deep sleep current (by 5uA) but has better frequency stability than
-              the internal 150kHz oscillator. It does not require external components.
-
-        config ESP32_RTC_CLK_SRC_INT_RC
-            bool "Internal 150kHz RC oscillator"
-        config ESP32_RTC_CLK_SRC_EXT_CRYS
-            bool "External 32kHz crystal"
-            select ESP_SYSTEM_RTC_EXT_XTAL
-        config ESP32_RTC_CLK_SRC_EXT_OSC
-            bool "External 32kHz oscillator at 32K_XN pin"
-        config ESP32_RTC_CLK_SRC_INT_8MD256
-            bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
-    endchoice
-
-    choice ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_METHOD
-        prompt "Additional current for external 32kHz crystal"
-        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
-        depends on ESP32_REV_MIN <= 1
-        default ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_NONE
-        help
-            With some 32kHz crystal configurations, the X32N and X32P pins may not have enough
-            drive strength to keep the crystal oscillating. Choose the method to provide
-            additional current from touchpad 9 to the external 32kHz crystal. Note that
-            the deep sleep current is slightly high (4-5uA) and the touchpad and the
-            wakeup sources of both touchpad and ULP are not available in method 1 and method 2.
-
-            This problem is fixed in ESP32 ECO 3, so this workaround is not needed. Setting the
-            project configuration to minimum revision ECO3 will disable this option, , allow
-            all wakeup sources, and save some code size.
-
-            - "None" option will not provide additional current to external crystal
-            - "Method 1" option can't ensure 100% to solve the external 32k crystal start failed
-              issue, but the touchpad can work in this method.
-            - "Method 2" option can solve the external 32k issue, but the touchpad can't work
-              in this method.
-
-        config ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_NONE
-            bool "None"
-        config ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-            bool "Method 1"
-        config ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-            bool "Method 2"
-    endchoice
-
-    config ESP32_RTC_CLK_CAL_CYCLES
-        int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32_RTC_CLK_SRC_EXT_CRYS || ESP32_RTC_CLK_SRC_EXT_OSC || ESP32_RTC_CLK_SRC_INT_8MD256
-        default 1024 if ESP32_RTC_CLK_SRC_INT_RC
-        range 0 27000 if ESP32_RTC_CLK_SRC_EXT_CRYS || ESP32_RTC_CLK_SRC_EXT_OSC || ESP32_RTC_CLK_SRC_INT_8MD256
-        range 0 32766 if ESP32_RTC_CLK_SRC_INT_RC
-        help
-            When the startup code initializes RTC_SLOW_CLK, it can perform
-            calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
-            frequency. This option sets the number of RTC_SLOW_CLK cycles measured
-            by the calibration routine. Higher numbers increase calibration
-            precision, which may be important for applications which spend a lot of
-            time in deep sleep. Lower numbers reduce startup time.
-
-            When this option is set to 0, clock calibration will not be performed at
-            startup, and approximate clock frequencies will be assumed:
-
-            - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
-            - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
-              In case more value will help improve the definition of the launch of the crystal.
-              If the crystal could not start, it will be switched to internal RC.
-
-    config ESP32_RTC_XTAL_CAL_RETRY
-        int "Number of attempts to repeat 32k XTAL calibration"
-        default 1
-        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
-        help
-            Number of attempts to repeat 32k XTAL calibration
-            before giving up and switching to the internal RC.
-            Increase this option if the 32k crystal oscillator
-            does not start and switches to internal RC.
-
     config ESP32_DEEP_SLEEP_WAKEUP_DELAY
         int "Extra delay in deep sleep wake stub (in us)"
         default 2000
@@ -644,14 +509,6 @@ menu "ESP32-specific"
             read from the flash.
 
             (Enabling secure boot also disables the BASIC ROM Console by default.)
-
-    config ESP32_NO_BLOBS
-        bool "No Binary Blobs"
-        depends on !BT_ENABLED
-        default n
-        help
-            If enabled, this disables the linking of binary libraries in the application build. Note
-            that after enabling this Wi-Fi/Bluetooth will not work.
 
     config ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
         bool "App compatible with bootloaders before ESP-IDF v2.1"
@@ -719,7 +576,7 @@ menu "ESP32-specific"
         depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
         help
             RAM size dedicated for static variables (.data & .bss sections).
-            Please note that the actual length will be reduced by BT_RESERVE_DRAM if Bluetooth
+            Please note that the actual length will be reduced by BTDM_RESERVE_DRAM if Bluetooth
             controller is enabled.
 
     config ESP32_DPORT_DIS_INTERRUPT_LVL

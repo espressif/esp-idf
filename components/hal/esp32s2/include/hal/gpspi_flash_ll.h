@@ -24,11 +24,13 @@
 
 #include <stdlib.h>
 #include "soc/spi_periph.h"
+#include "soc/spi_struct.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -145,6 +147,16 @@ static inline void gpspi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *bu
 static inline void gpspi_flash_ll_user_start(spi_dev_t *dev)
 {
     dev->cmd.usr = 1;
+}
+
+/**
+ * Set HD pin high when flash work at spi mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ */
+static inline void gpspi_flash_ll_set_hold_pol(spi_dev_t *dev, uint32_t pol_val)
+{
+    // Not support on esp32s2
 }
 
 /**
@@ -347,7 +359,7 @@ static inline void gpspi_flash_ll_set_address(spi_dev_t *dev, uint32_t addr)
 static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
-    dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**

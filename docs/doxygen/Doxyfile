@@ -1,0 +1,287 @@
+# This is Doxygen configuration file
+#
+# Doxygen provides over 260 configuration statements
+# To make this file easier to follow,
+# it contains only statements that are non-default
+#
+# NOTE:
+# It is recommended not to change defaults unless specifically required
+# Test any changes how they affect generated documentation
+# Make sure that correct warnings are generated to flag issues with documented code
+#
+# For the complete list of configuration statements see:
+# http://doxygen.nl/manual/config.html
+
+
+PROJECT_NAME = "IDF Programming Guide"
+
+## The 'INPUT' statement below is used as input by script 'gen-df-input.py'
+## to automatically generate API reference list files heder_file.inc
+## These files are placed in '_inc' directory
+## and used to include in API reference documentation
+
+INPUT = \
+    $(PROJECT_PATH)/components/app_trace/include/esp_app_trace.h \
+    $(PROJECT_PATH)/components/app_trace/include/esp_sysview_trace.h \
+    $(PROJECT_PATH)/components/app_update/include/esp_ota_ops.h \
+    $(PROJECT_PATH)/components/bootloader_support/include/bootloader_random.h \
+    $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
+    $(PROJECT_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
+    $(PROJECT_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_networking_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_provisioning_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_proxy_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_config_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_generic_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_health_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_lighting_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_ag_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
+    $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
+    $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
+    $(PROJECT_PATH)/components/console/esp_console.h \
+    $(PROJECT_PATH)/components/driver/include/driver/adc.h \
+    $(PROJECT_PATH)/components/driver/include/driver/dac_common.h \
+    $(PROJECT_PATH)/components/driver/include/driver/dedic_gpio.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
+    $(PROJECT_PATH)/components/driver/include/driver/i2c.h \
+    $(PROJECT_PATH)/components/driver/include/driver/i2s.h \
+    $(PROJECT_PATH)/components/driver/include/driver/ledc.h \
+    $(PROJECT_PATH)/components/driver/include/driver/rmt.h \
+    $(PROJECT_PATH)/components/driver/include/driver/rtc_io.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sdio_slave.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sdmmc_host.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sdmmc_types.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sdspi_host.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sigmadelta.h \
+    $(PROJECT_PATH)/components/driver/include/driver/spi_common.h \
+    $(PROJECT_PATH)/components/driver/include/driver/spi_master.h \
+    $(PROJECT_PATH)/components/driver/include/driver/spi_slave_hd.h \
+    $(PROJECT_PATH)/components/driver/include/driver/spi_slave.h \
+    $(PROJECT_PATH)/components/driver/include/driver/touch_sensor_common.h \
+    $(PROJECT_PATH)/components/driver/include/driver/twai.h \
+    $(PROJECT_PATH)/components/driver/include/driver/uart.h \
+    $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse.h \
+    $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
+    $(PROJECT_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
+    $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
+    $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
+    $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
+    $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
+    $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
+    $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
+    $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
+    $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
+    $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_async_memcpy.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_chip_info.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_cpu.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_intr_alloc.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_random.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_sleep.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_io.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ops.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_rgb.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
+    $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_netif_ip_addr.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_netif_types.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_netif.h \
+    $(PROJECT_PATH)/components/esp_netif/include/esp_vfs_l2tap.h \
+    $(PROJECT_PATH)/components/esp_phy/include/esp_phy_init.h \
+    $(PROJECT_PATH)/components/esp_pm/include/$(IDF_TARGET)/pm.h \
+    $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
+    $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
+    $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
+    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
+    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
+    $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_int_wdt.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
+    $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
+    $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_mesh.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_now.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_smartconfig.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_default.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_types.h \
+    $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi.h \
+    $(PROJECT_PATH)/components/esp-tls/esp_tls_errors.h \
+    $(PROJECT_PATH)/components/esp-tls/esp_tls.h \
+    $(PROJECT_PATH)/components/fatfs/diskio/diskio_impl.h \
+    $(PROJECT_PATH)/components/fatfs/diskio/diskio_rawflash.h \
+    $(PROJECT_PATH)/components/fatfs/diskio/diskio_sdmmc.h \
+    $(PROJECT_PATH)/components/fatfs/diskio/diskio_wl.h \
+    $(PROJECT_PATH)/components/fatfs/vfs/esp_vfs_fat.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/event_groups.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/message_buffer.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/queue.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/semphr.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/stream_buffer.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
+    $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
+    $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/sigmadelta_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/spi_flash_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/touch_sensor_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
+    $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
+    $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
+    $(PROJECT_PATH)/components/heap/include/esp_heap_trace.h \
+    $(PROJECT_PATH)/components/heap/include/multi_heap.h \
+    $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \
+    $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154.h \
+    $(PROJECT_PATH)/components/log/include/esp_log.h \
+    $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
+    $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
+    $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
+    $(PROJECT_PATH)/components/mdns/include/mdns.h \
+    $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
+    $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
+    $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
+    $(PROJECT_PATH)/components/openthread/include/esp_openthread_border_router.h \
+    $(PROJECT_PATH)/components/openthread/include/esp_openthread_lock.h \
+    $(PROJECT_PATH)/components/openthread/include/esp_openthread_netif_glue.h \
+    $(PROJECT_PATH)/components/openthread/include/esp_openthread_types.h \
+    $(PROJECT_PATH)/components/openthread/include/esp_openthread.h \
+    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
+    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
+    $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
+    $(PROJECT_PATH)/components/protocomm/include/common/protocomm.h \
+    $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security.h \
+    $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security0.h \
+    $(PROJECT_PATH)/components/protocomm/include/security/protocomm_security1.h \
+    $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_ble.h \
+    $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_console.h \
+    $(PROJECT_PATH)/components/protocomm/include/transports/protocomm_httpd.h \
+    $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
+    $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/uart_channel.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_partition.h \
+    $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash.h \
+    $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb_types.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_cdc_acm.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_config.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_console.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/tusb_tasks.h \
+    $(PROJECT_PATH)/components/tinyusb/additions/include/vfs_tinyusb.h \
+    $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
+    $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
+    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs_dev.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs_eventfd.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs_semihost.h \
+    $(PROJECT_PATH)/components/vfs/include/esp_vfs.h \
+    $(PROJECT_PATH)/components/wear_levelling/include/wear_levelling.h \
+    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/manager.h \
+    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
+    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
+    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
+    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
+    $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
+    $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
+
+
+## Target specific headers are in seperate Doxyfile files
+@INCLUDE = $(PROJECT_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)
+
+## Get warnings for functions that have no documentation for their parameters or return value
+##
+WARN_NO_PARAMDOC = YES
+
+## Enable preprocessing and remove __attribute__(...) expressions from the INPUT files
+##
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = \
+    $(ENV_DOXYGEN_DEFINES) \
+    __DOXYGEN__=1 \
+    __attribute__(x)= \
+	_Static_assert()= \
+    IDF_DEPRECATED(X)= \
+    IRAM_ATTR= \
+    configSUPPORT_DYNAMIC_ALLOCATION=1 \
+    configSUPPORT_STATIC_ALLOCATION=1 \
+    configQUEUE_REGISTRY_SIZE=1 \
+    configUSE_RECURSIVE_MUTEXES=1 \
+    configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
+    configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
+    configUSE_APPLICATION_TASK_TAG=1 \
+    configTASKLIST_INCLUDE_COREID=1 \
+    "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
+
+## Do not complain about not having dot
+##
+HAVE_DOT = NO
+
+## Generate XML that is required for Breathe
+##
+GENERATE_XML    = YES
+XML_OUTPUT      = xml
+
+GENERATE_HTML   = NO
+HAVE_DOT        = NO
+GENERATE_LATEX  = NO
+GENERATE_MAN    = YES
+GENERATE_RTF    = NO
+
+## Skip distracting progress messages
+##
+QUIET = YES
+
+## Enable Section Tags for conditional documentation
+##
+ENABLED_SECTIONS += \
+    DOC_EXCLUDE_HEADER_SECTION \   ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
+    DOC_SINGLE_GROUP        ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.

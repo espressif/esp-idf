@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 |
+| ----------------- | ----- | -------- |
 
 # Blink Example With Coverage Info (Gcov)
 
@@ -16,10 +16,10 @@ This example implements a simple blink application but with code coverage enable
 
 ### Hardware Required
 
-To run this example, you need an ESP32 dev board connected to a JTAG adapter, which can come in the following forms:
+To run this example, you need a supported dev board connected to a JTAG adapter, which can come in the following forms:
 
 * [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
-* ESP32 core board (e.g. ESP32-DevKitC) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
+* ESP32 or ESP32-S2 core board (e.g. ESP32-DevKitC, [ESP32-S2-Saola-1](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/hw-reference/esp32s2/user-guide-saola-1-v1.2.html)) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
 
 This example will assume that that an ESP-WROVER-KIT is used.
 
@@ -41,9 +41,9 @@ idf.py menuconfig
 
 The example will enable the following options by default:
 
-* Enable the Application Tracing Module under `Component config -> Application Level Tracing -> Data Destination` by choosing `Trace memory`.
+* Enable the Application Tracing Module under `Component config -> Application Level Tracing -> Data Destination` by choosing `JTAG`.
 * Enable GCOV to host interface under `Component config -> Application Level Tracing -> GCOV to Host Enable`.
-* Enable OpenOCD Debug Stubs under `Component config -> ESP32-specific -> OpenOCD debug stubs`
+* Enable OpenOCD Debug Stubs under `Component config -> ESP System Settings -> OpenOCD debug stubs`
 
 ### Build, Flash, and Run
 

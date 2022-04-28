@@ -1,16 +1,6 @@
 #!/usr/bin/env python
-# Copyright 2020 Espressif Systems (Shanghai) Co., Ltd.
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import argparse
 import hashlib
 import hmac
@@ -46,8 +36,8 @@ csv_filename = esp_ds_data_dir + '/pre_prov.csv'
 bin_filename = esp_ds_data_dir + '/pre_prov.bin'
 expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
 # Targets supported by the script
-supported_targets = {'esp32s2', 'esp32c3'}
-supported_key_size = {'esp32s2':[1024, 2048, 3072, 4096], 'esp32c3':[1024, 2048, 3072]}
+supported_targets = {'esp32s2', 'esp32c3', 'esp32s3'}
+supported_key_size = {'esp32s2':[1024, 2048, 3072, 4096], 'esp32c3':[1024, 2048, 3072], 'esp32s3':[1024, 2048, 3072, 4096]}
 
 
 # @return
@@ -89,7 +79,7 @@ def number_as_bytes(number, pad_bits=None):
 #       privkey         : path to the RSA private key
 #       priv_key_pass   : path to the RSA privaete key password
 #       hmac_key        : HMAC key value ( to calculate DS params)
-#       idf_target      : The target chip for the script (e.g. esp32s2, esp32c3)
+#       idf_target      : The target chip for the script (e.g. esp32s2, esp32c3, esp32s3)
 # @info
 #       The function calculates the encrypted private key parameters.
 #       Consult the DS documentation (available for the ESP32-S2) in the esp-idf programming guide for more details about the variables and calculations.
@@ -263,18 +253,26 @@ def configure_efuse_key_block(args, idf_target):
             key_file.write(new_hmac_key)
         # Burn efuse key
         efuse_burn_key(args, idf_target)
-        # Read fresh summary of the efuse to read the key value from efuse.
-        # If the key read from efuse matches with the key generated
-        # on host then burn_key operation was successfull
-        new_efuse_summary_json = get_efuse_summary_json(args, idf_target)
-        hmac_key_read = new_efuse_summary_json[key_blk]['value']
-        hmac_key_read = bytes.fromhex(hmac_key_read)
-        if new_hmac_key == hmac_key_read:
-            print('Key was successfully written to the efuse (KEY BLOCK %1d)' % (args.efuse_key_id))
+        if args.production is False:
+            # Read fresh summary of the efuse to read the key value from efuse.
+            # If the key read from efuse matches with the key generated
+            # on host then burn_key operation was successfull
+            new_efuse_summary_json = get_efuse_summary_json(args, idf_target)
+            hmac_key_read = new_efuse_summary_json[key_blk]['value']
+            print(hmac_key_read)
+            hmac_key_read = bytes.fromhex(hmac_key_read)
+            if new_hmac_key == hmac_key_read:
+                print('Key was successfully written to the efuse (KEY BLOCK %1d)' % (args.efuse_key_id))
+            else:
+                print('ERROR: Failed to burn the hmac key to efuse (KEY BLOCK %1d),'
+                      '\nPlease execute the script again using a different key id' % (args.efuse_key_id))
+                return None
         else:
-            print('ERROR: Failed to burn the hmac key to efuse (KEY BLOCK %1d),'
-                  '\nPlease execute the script again using a different key id' % (args.efuse_key_id))
-            return None
+            new_efuse_summary_json = get_efuse_summary_json(args, idf_target)
+            if new_efuse_summary_json[key_purpose]['value'] != 'HMAC_DOWN_DIGITAL_SIGNATURE':
+                print('ERROR: Failed to verify the key purpose of the key block{})'.format(args.efuse_key_id))
+                return None
+            hmac_key_read = new_hmac_key
     else:
         # If the efuse key block is redable, then read the key from efuse block and use it for encrypting the RSA private key parameters.
         # If the efuse key block is not redable or it has key purpose set to a different
@@ -297,7 +295,7 @@ def configure_efuse_key_block(args, idf_target):
                   '\nplease execute the script again with a different value of the efuse key id.' % (args.efuse_key_id))
             return None
 
-    # Return the hmac key read from the efuse
+    # Return the hmac key burned into the efuse
     return hmac_key_read
 
 

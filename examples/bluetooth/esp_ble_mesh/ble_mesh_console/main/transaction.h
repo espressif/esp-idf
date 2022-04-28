@@ -1,5 +1,11 @@
-#ifndef __SSC_NIMBLE_TRANSACTION_H__
-#define __SSC_NIMBLE_TRANSACTION_H__
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef _BLE_MESH_CONSOLE_TRANSACTION_H_
+#define _BLE_MESH_CONSOLE_TRANSACTION_H_
 
 /* In esp-idf, bluetooth and wifi stack APIs are async (using callbacks).
  * transaction module provides a common method to let user transfer async APIs to sync transactions.
@@ -85,4 +91,4 @@ esp_err_t transaction_abort(transaction_t *trans, esp_err_t reason);
 #define TRANS_TYPE_BT             0x05
 
 
-#endif /* __SSC_NIMBLE_TRANSACTION_H__ */
+#endif /* _BLE_MESH_CONSOLE_TRANSACTION_H_ */

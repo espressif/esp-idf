@@ -1,0 +1,9 @@
+menu "LWIP-MOCK-CONFIG"
+
+    config LWIP_IPV6
+        bool "Enable IPv6"
+        default y
+        help
+            Enable/disable IPv6
+
+endmenu

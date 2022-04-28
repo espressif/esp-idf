@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -53,7 +45,6 @@ extern "C" {
  * - rtc_sleep: entry into sleep modes
  * - rtc_init: initialization
  */
-
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -260,13 +251,33 @@ bool rtc_clk_8md256_enabled(void);
  * In rev. 0 of ESP32, sdm0 and sdm1 are unused and always set to 0.
  *
  * @param enable  true to enable, false to disable
+ */
+void rtc_clk_apll_enable(bool enable);
+
+/**
+ * @brief Calculate APLL clock coeffifcients
+ *
+ * @param freq  expected APLL frequency
+ * @param o_div  frequency divider, 0..31
  * @param sdm0  frequency adjustment parameter, 0..255
  * @param sdm1  frequency adjustment parameter, 0..255
  * @param sdm2  frequency adjustment parameter, 0..63
- * @param o_div  frequency divider, 0..31
+ *
+ * @return
+ *      - 0 Failed
+ *      - else Sucess
  */
-void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1,
-        uint32_t sdm2, uint32_t o_div);
+uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2);
+
+/**
+ * @brief Set APLL clock coeffifcients
+ *
+ * @param o_div  frequency divider, 0..31
+ * @param sdm0  frequency adjustment parameter, 0..255
+ * @param sdm1  frequency adjustment parameter, 0..255
+ * @param sdm2  frequency adjustment parameter, 0..63
+ */
+void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
@@ -493,6 +504,7 @@ typedef struct rtc_sleep_config_s {
     uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
+    uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t rom_mem_pd_en : 1;         //!< power down main RAM and ROM
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
@@ -513,6 +525,7 @@ typedef struct rtc_sleep_config_s {
  *
  * @param RTC_SLEEP_PD_x flags combined using bitwise OR
  */
+#define is_dslp(pd_flags)   ((pd_flags) & RTC_SLEEP_PD_DIG)
 #define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
     .lslp_mem_inf_fpu = 0, \
     .rtc_mem_inf_fpu = 0, \
@@ -521,13 +534,18 @@ typedef struct rtc_sleep_config_s {
     .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0, \
     .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0, \
     .wifi_pd_en = 0, \
+    .int_8m_pd_en = is_dslp(sleep_flags) ? 1 : ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
     .rom_mem_pd_en = 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_0V90, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_0V90 \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
@@ -540,6 +558,7 @@ typedef struct rtc_sleep_config_s {
 #define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
 #define RTC_SLEEP_PD_XTAL               BIT(6)  //!< Power down main XTAL
+#define RTC_SLEEP_PD_INT_8M             BIT(7)  //!< Power down Internal 8M oscillator
 
 /* Various delays to be programmed into power control state machines */
 #define RTC_CNTL_XTL_BUF_WAIT_SLP_US        (500)

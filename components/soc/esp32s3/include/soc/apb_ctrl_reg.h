@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_APB_CTRL_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define APB_CTRL_SYSCLK_CONF_REG          (DR_REG_APB_CTRL_BASE + 0x0)
 /* APB_CTRL_RST_TICK_CNT : R/W ;bitpos:[12] ;default: 1'b0 ; */
@@ -636,6 +636,14 @@ tes. 3: 2048 bytes..*/
 #define APB_CTRL_RETENTION_INV_CFG_M  ((APB_CTRL_RETENTION_INV_CFG_V)<<(APB_CTRL_RETENTION_INV_CFG_S))
 #define APB_CTRL_RETENTION_INV_CFG_V  0xFFFFFFFF
 #define APB_CTRL_RETENTION_INV_CFG_S  0
+
+#define APB_CTRL_RETENTION_CTRL5_REG          (DR_REG_APB_CTRL_BASE + 0xC8)
+/* APB_CTRL_RETENTION_DISABLE : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/*description: .*/
+#define APB_CTRL_RETENTION_DISABLE    (BIT(0))
+#define APB_CTRL_RETENTION_DISABLE_M  (BIT(0))
+#define APB_CTRL_RETENTION_DISABLE_V  0x1
+#define APB_CTRL_RETENTION_DISABLE_S  0
 
 #define APB_CTRL_DATE_REG          (DR_REG_APB_CTRL_BASE + 0x3FC)
 /* APB_CTRL_DATE : R/W ;bitpos:[31:0] ;default: 32'h2101150 ; */

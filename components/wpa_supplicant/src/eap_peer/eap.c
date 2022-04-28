@@ -35,13 +35,38 @@
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap.h"
 #include "eap_peer/eap_tls.h"
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #ifdef EAP_PEER_METHOD
 #include "eap_peer/eap_methods.h"
 #endif
 
 #include "supplicant_opt.h"
 
+u8 *g_wpa_anonymous_identity;
+int g_wpa_anonymous_identity_len;
+u8 *g_wpa_username;
+int g_wpa_username_len;
+const u8 *g_wpa_client_cert;
+int g_wpa_client_cert_len;
+const u8 *g_wpa_private_key;
+int g_wpa_private_key_len;
+const u8 *g_wpa_private_key_passwd;
+int g_wpa_private_key_passwd_len;
+const u8 *g_wpa_ca_cert;
+int g_wpa_ca_cert_len;
+u8 *g_wpa_password;
+int g_wpa_password_len;
+u8 *g_wpa_new_password;
+int g_wpa_new_password_len;
+char *g_wpa_ttls_phase2_type;
+char *g_wpa_phase1_options;
+u8 *g_wpa_pac_file;
+int g_wpa_pac_file_len;
+bool g_wpa_suiteb_certification;
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+bool g_wpa_default_cert_bundle;
+int (*esp_crt_bundle_attach_fn)(void *conf);
+#endif
 
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_peer_blob_deinit(struct eap_sm *sm);
@@ -49,6 +74,7 @@ void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);
 
 #ifdef EAP_PEER_METHOD
 static struct eap_method *eap_methods = NULL;
+static struct eap_method_type *config_methods;
 
 const struct eap_method * eap_peer_get_eap_method(int vendor, EapType method)
 {
@@ -72,6 +98,33 @@ const struct eap_method * eap_peer_get_methods(size_t *count)
 	return eap_methods;
 }
 
+/**
+ * eap_config_allowed_method - Check whether EAP method is allowed
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @config: EAP configuration
+ * @vendor: Vendor-Id for expanded types or 0 = IETF for legacy types
+ * @method: EAP type
+ * Returns: 1 = allowed EAP method, 0 = not allowed
+ */
+static int eap_config_allowed_method(struct eap_sm *sm,
+				     struct eap_peer_config *config,
+				     int vendor, u32 method)
+{
+	int i;
+	struct eap_method_type *m;
+
+	if (config == NULL || config->eap_methods == NULL)
+		return 1;
+
+	m = config->eap_methods;
+	for (i = 0; m[i].vendor != EAP_VENDOR_IETF ||
+		     m[i].method != EAP_TYPE_NONE; i++) {
+		if (m[i].vendor == vendor && m[i].method == method)
+			return 1;
+	}
+	return 0;
+}
+
 EapType eap_peer_get_type(const char *name, int *vendor)
 {
 	struct eap_method *m;
@@ -84,6 +137,21 @@ EapType eap_peer_get_type(const char *name, int *vendor)
 	*vendor = EAP_VENDOR_IETF;
 	return EAP_TYPE_NONE;
 }
+
+
+/**
+ * eap_allowed_method - Check whether EAP method is allowed
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @vendor: Vendor-Id for expanded types or 0 = IETF for legacy types
+ * @method: EAP type
+ * Returns: 1 = allowed EAP method, 0 = not allowed
+ */
+int eap_allowed_method(struct eap_sm *sm, int vendor, u32 method)
+{
+	return eap_config_allowed_method(sm, eap_get_config(sm), vendor,
+					 method);
+}
+
 
 static int
 eap_allowed_phase2_type(int vendor, int type)
@@ -194,6 +262,21 @@ void eap_peer_unregister_methods(void)
 
 
 
+bool eap_sm_allowMethod(struct eap_sm *sm, int vendor,
+				  EapType method)
+{
+	if (!eap_allowed_method(sm, vendor, method)) {
+		wpa_printf(MSG_DEBUG, "EAP: configuration does not allow: "
+			   "vendor %u method %u", vendor, method);
+		return FALSE;
+	}
+	if (eap_peer_get_eap_method(vendor, method))
+		return TRUE;
+	wpa_printf(MSG_DEBUG, "EAP: not included in build: "
+		   "vendor %u method %u", vendor, method);
+	return FALSE;
+}
+
 int eap_peer_register_methods(void)
 {
 	int ret = 0;
@@ -211,6 +294,13 @@ int eap_peer_register_methods(void)
 #ifdef EAP_MSCHAPv2
 	if (ret == 0)
 		ret = eap_peer_mschapv2_register();
+#endif
+
+#ifndef USE_MBEDTLS_CRYPTO
+#ifdef EAP_FAST
+	if (ret == 0)
+		ret = eap_peer_fast_register();
+#endif
 #endif
 
 #ifdef EAP_PEAP
@@ -435,10 +525,11 @@ int eap_peer_config_init(
 	sm->config.client_cert = (u8 *)sm->blob[0].name;
 	sm->config.private_key = (u8 *)sm->blob[1].name;
 	sm->config.ca_cert = (u8 *)sm->blob[2].name;
-
 	sm->config.ca_path = NULL;
 
 	sm->config.fragment_size = 1400; /* fragment size */
+
+	sm->config.pac_file = (char *) "blob://";
 
 	/* anonymous identity */
 	if (g_wpa_anonymous_identity && g_wpa_anonymous_identity_len > 0) {
@@ -483,6 +574,65 @@ int eap_peer_config_init(
 		sm->config.phase2 = "auth=MSCHAPV2";
 	}
 
+	if (g_wpa_suiteb_certification) {
+		sm->config.flags |= TLS_CONN_SUITEB;
+	}
+
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+	if (g_wpa_default_cert_bundle) {
+		sm->config.flags |= TLS_CONN_USE_DEFAULT_CERT_BUNDLE;
+	}
+#endif
+	/* To be used only for EAP-FAST */
+	if (g_wpa_phase1_options) {
+		sm->config.phase1 = g_wpa_phase1_options;
+	}
+
+	/* Allow methods with correct configuration only */
+	size_t mcount;
+	int allowed_method_count = 0;
+	const struct eap_method *methods;
+
+	if (!config_methods) {
+		methods = eap_peer_get_methods(&mcount);
+		if (methods == NULL) {
+			wpa_printf(MSG_ERROR, "EAP: Set config init: EAP methods not registered.");
+			return -1;
+		}
+
+		// Allocate a buffer large enough to accomodate all the registered methods.
+		config_methods = os_malloc(mcount * sizeof(struct eap_method_type));
+		if (config_methods == NULL) {
+			wpa_printf(MSG_ERROR, "EAP: Set config init: Out of memory, set configured methods failed");
+			return -1;
+		}
+
+		if (g_wpa_username) {
+			//set EAP-PEAP
+			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+			config_methods[allowed_method_count++].method = EAP_TYPE_PEAP;
+			//set EAP-TTLS
+			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+			config_methods[allowed_method_count++].method = EAP_TYPE_TTLS;
+		}
+		if (g_wpa_private_key) {
+			//set EAP-TLS
+			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+			config_methods[allowed_method_count++].method = EAP_TYPE_TLS;
+		}
+#ifndef USE_MBEDTLS_CRYPTO
+		if (g_wpa_pac_file) {
+			//set EAP-FAST
+			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+			config_methods[allowed_method_count++].method = EAP_TYPE_FAST;
+		}
+#endif
+		// Terminate the allowed method list
+		config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+		config_methods[allowed_method_count++].method = EAP_TYPE_NONE;
+		// Set the allowed methods to config
+		sm->config.eap_methods = config_methods;
+	}
 	return 0;
 
 }
@@ -496,6 +646,7 @@ void eap_peer_config_deinit(struct eap_sm *sm)
 	os_free(sm->config.identity);
 	os_free(sm->config.password);
 	os_free(sm->config.new_password);
+	os_free(sm->config.eap_methods);
 	os_bzero(&sm->config, sizeof(struct eap_peer_config));
 }
 
@@ -537,6 +688,17 @@ int eap_peer_blob_init(struct eap_sm *sm)
 		os_strncpy(sm->blob[2].name, CA_CERT_NAME, BLOB_NAME_LEN+1);
 		sm->blob[2].len = g_wpa_ca_cert_len;
 		sm->blob[2].data = g_wpa_ca_cert;
+	}
+
+	if (g_wpa_pac_file && g_wpa_pac_file_len) {
+		sm->blob[3].name = (char *)os_zalloc(sizeof(char) * 8);
+		if (sm->blob[3].name == NULL) {
+			ret = -2;
+			goto _out;
+		}
+		os_strncpy(sm->blob[3].name, "blob://", 8);
+		sm->blob[3].len = g_wpa_pac_file_len;
+		sm->blob[3].data = g_wpa_pac_file;
 	}
 
 	return 0;
@@ -611,6 +773,37 @@ void eap_sm_request_identity(struct eap_sm *sm)
 	eap_sm_request(sm, WPA_CTRL_REQ_EAP_IDENTITY, NULL, 0);
 }
 
+
+/**
+ * eap_sm_request_password - Request password from user (ctrl_iface)
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ *
+ * EAP methods can call this function to request password information for the
+ * current network. This is normally called when the password is not included
+ * in the network configuration. The request will be sent to monitor programs
+ * through the control interface.
+ */
+void eap_sm_request_password(struct eap_sm *sm)
+{
+	eap_sm_request(sm, WPA_CTRL_REQ_EAP_PASSWORD, NULL, 0);
+}
+
+
+/**
+ * eap_sm_request_new_password - Request new password from user (ctrl_iface)
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ *
+ * EAP methods can call this function to request new password information for
+ * the current network. This is normally called when the EAP method indicates
+ * that the current password has expired and password change is required. The
+ * request will be sent to monitor programs through the control interface.
+ */
+void eap_sm_request_new_password(struct eap_sm *sm)
+{
+	eap_sm_request(sm, WPA_CTRL_REQ_EAP_NEW_PASSWORD, NULL, 0);
+}
+
+
 void eap_peer_blob_deinit(struct eap_sm *sm)
 {
 	int i;
@@ -625,6 +818,7 @@ void eap_peer_blob_deinit(struct eap_sm *sm)
 	sm->config.client_cert = NULL;
 	sm->config.private_key = NULL;
 	sm->config.ca_cert = NULL;
+	sm->config.pac_file = NULL;
 }
 
 void eap_sm_abort(struct eap_sm *sm)
@@ -717,6 +911,40 @@ const u8 * eap_get_config_new_password(struct eap_sm *sm, size_t *len)
 	*len = config->new_password_len;
 	return config->new_password;
 }
+
+
+static int eap_copy_buf(u8 **dst, size_t *dst_len,
+			     const u8 *src, size_t src_len)
+{
+	if (src) {
+		*dst = os_memdup(src, src_len);
+		if (*dst == NULL)
+			return -1;
+		*dst_len = src_len;
+	}
+	return 0;
+}
+
+
+/**
+ * eap_set_config_blob - Set or add a named configuration blob
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @blob: New value for the blob
+ *
+ * Adds a new configuration blob or replaces the current value of an existing
+ * blob.
+ */
+void eap_set_config_blob(struct eap_sm *sm, struct wpa_config_blob *blob)
+{
+    if (!sm)
+        return;
+
+    if (eap_copy_buf((u8 **)&sm->blob[3].data, (size_t *)&sm->blob[3].len, blob->data, blob->len) < 0) {
+		wpa_printf(MSG_ERROR, "EAP: Set config blob: Unable to modify the configuration blob");
+    }
+}
+
+
 /**
  * eap_get_config_blob - Get a named configuration blob
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()

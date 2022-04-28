@@ -88,17 +88,17 @@
     * - 名字
       - 描述
     * - ``board/esp32-wrover-kit-3.3v.cfg``
-      - 板载 3.3V 模组（ESP32-WROOM-32，ESP32-WROVER-B，ESP32-WROVER-E）的 ESP-WROVER-KIT 开发板配置文件
+      - 板载 3.3 V 模组（ESP32-WROOM-32，ESP32-WROVER-B，ESP32-WROVER-E）的 ESP-WROVER-KIT 开发板配置文件
     * - ``board/esp32-wrover-kit-1.8v.cfg``
-      - 板载 1.8V 模组（ESP32-WROVER）的 ESP-WROVER-KIT 开发板配置文件
+      - 板载 1.8 V 模组（ESP32-WROVER）的 ESP-WROVER-KIT 开发板配置文件
     * - ``board/esp32-ethernet-kit-3.3v.cfg``
-      - 板载 3.3V 模组（ESP32-WROVER-B / ESP32-WROVER-E）的 ESP-Ethernet-KIT 开发板配置文件
+      - 板载 3.3 V 模组（ESP32-WROVER-B / ESP32-WROVER-E）的 ESP-Ethernet-KIT 开发板配置文件
     * - ``target/esp32.cfg``
       - ESP32 的目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
     * - ``target/esp32-solo-1.cfg``
-      - ESP32-SOLO-1 的目标配置文件，和 ``esp32.cfg`` 的差别在于它仅配置一个 CPU
+      - ESP32-SOLO-1 模组的目标配置文件，和 ``esp32.cfg`` 的差别在于它仅配置一个 CPU
     * - ``interface/ftdi/esp32_devkitj_v1.cfg``
-      - 适用于 ESP-WROVER-KIT 和 ESP-Prog 板子的 JTAG 适配器配置文件
+      - 适用于 ESP-WROVER-KIT 和 ESP-Prog 的 JTAG 适配器配置文件
 
 ---
 
@@ -111,7 +111,7 @@
     * - 名字
       - 描述
     * - ``ESP32_FLASH_VOLTAGE``
-      - 如果 ESP32 模组集成的是 1.8 V 的 Flash，将该变量设置为 ``1.8``，详情请参考 :ref:`jtag-debugging-tip-code-flash-voltage`
+      - 如果 ESP32 模组集成的是 1.8 V 的 flash，将该变量设置为 ``1.8``，详情请参考 :ref:`jtag-debugging-tip-code-flash-voltage`
     * - ``ESP32_ONLYCPU``
       - 对于多核芯片，将该值设置为 ``1`` 可以仅启用单核调试功能
 
@@ -119,11 +119,11 @@
 
 .. jtag-pins
 
-.. list-table:: ESP32 引脚和 JTAG 接口信号
+.. list-table:: ESP32 管脚和 JTAG 接口信号
     :widths: 25 75
     :header-rows: 1
 
-    * - ESP32 引脚
+    * - ESP32 管脚
       - JTAG 信号
     * - MTDO / GPIO15
       - TDO

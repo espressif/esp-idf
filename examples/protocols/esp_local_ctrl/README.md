@@ -28,12 +28,12 @@ Sample output:
 After you've tested the name resolution, run:
 
 ```
-python scripts/esp_local_ctrl.py
+python scripts/esp_local_ctrl.py --sec_ver 0
 ```
 Sample output:
 
 ```
-python scripts/esp_local_ctrl.py
+python scripts/esp_local_ctrl.py --sec_ver 0
 
 ==== Acquiring properties information ====
 

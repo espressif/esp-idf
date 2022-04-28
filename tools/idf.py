@@ -1,26 +1,13 @@
 #!/usr/bin/env python
 #
+# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 # 'idf.py' is a top-level config/build command line tool for ESP-IDF
 #
 # You don't have to use idf.py, you can use cmake directly
 # (or use cmake in an IDE)
-#
-#
-#
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 
 # WARNING: we don't check for Python build-time dependencies until
 # check_environment() function below. If possible, avoid importing
@@ -44,8 +31,15 @@ from pkgutil import iter_modules
 # idf.py extensions. Therefore, pyc file generation is turned off:
 sys.dont_write_bytecode = True
 
-from idf_py_actions.errors import FatalError  # noqa: E402
-from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists, realpath  # noqa: E402
+import python_version_checker  # noqa: E402
+
+try:
+    from idf_py_actions.errors import FatalError  # noqa: E402
+    from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists, realpath  # noqa: E402
+except ImportError:
+    # For example, importing click could cause this.
+    print('Please use idf.py only in an ESP-IDF shell environment.', file=sys.stderr)
+    sys.exit(1)
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
@@ -58,13 +52,18 @@ os.environ['PYTHON'] = sys.executable
 # Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
 PROG = os.getenv('IDF_PY_PROGRAM_NAME', 'idf.py')
 
+# environment variable used during click shell completion run
+SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
+
+# was shell completion invoked?
+SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
+
 
 # function prints warning when autocompletion is not being performed
 # set argument stream to sys.stderr for errors and exceptions
 def print_warning(message, stream=None):
-    stream = stream or sys.stderr
-    if not os.getenv('_IDF.PY_COMPLETE'):
-        print(message, file=stream)
+    if not SHELL_COMPLETE_RUN:
+        print(message, file=stream or sys.stderr)
 
 
 def check_environment():
@@ -93,11 +92,13 @@ def check_environment():
         print_warning('Setting IDF_PATH environment variable: %s' % detected_idf_path)
         os.environ['IDF_PATH'] = detected_idf_path
 
-    # check Python version
-    if sys.version_info[0] < 3:
-        print_warning('WARNING: Support for Python 2 is deprecated and will be removed in future versions.')
-    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print_warning('WARNING: Python 3 versions older than 3.6 are not supported.')
+    try:
+        # The Python compatibility check could have been done earlier (tools/detect_python.{sh,fish}) but PATH is
+        # not set for import at that time. Even if the check would be done before, the same check needs to be done
+        # here as well (for example one can call idf.py from a not properly set-up environment).
+        python_version_checker.check()
+    except RuntimeError as e:
+        raise FatalError(e)
 
     # check Python dependencies
     checks_output.append('Checking Python dependencies...')
@@ -105,7 +106,8 @@ def check_environment():
         out = subprocess.check_output(
             [
                 os.environ['PYTHON'],
-                os.path.join(os.environ['IDF_PATH'], 'tools', 'check_python_dependencies.py'),
+                os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_tools.py'),
+                'check-python-dependencies',
             ],
             env=os.environ,
         )
@@ -529,8 +531,8 @@ def init_cli(verbose_output=None):
             else:
                 if 'app' in actions:
                     print_flashing_message('App', 'app')
-                if 'partition_table' in actions:
-                    print_flashing_message('Partition Table', 'partition_table')
+                if 'partition-table' in actions:
+                    print_flashing_message('Partition Table', 'partition-table')
                 if 'bootloader' in actions:
                     print_flashing_message('Bootloader', 'bootloader')
 
@@ -697,6 +699,14 @@ def init_cli(verbose_output=None):
         except ImportError:
             pass
 
+    # Optional load `pyclang` for additional clang-tidy related functionalities
+    try:
+        from pyclang import idf_extension
+
+        extensions.append(('idf_clang_tidy_ext', idf_extension))
+    except ImportError:
+        pass
+
     for name, extension in extensions:
         try:
             all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
@@ -730,14 +740,21 @@ def signal_handler(_signal, _frame):
 
 
 def main():
-
     # Processing of Ctrl+C event for all threads made by main()
     signal.signal(signal.SIGINT, signal_handler)
 
-    checks_output = check_environment()
-    cli = init_cli(verbose_output=checks_output)
-    # the argument `prog_name` must contain name of the file - not the absolute path to it!
-    cli(sys.argv[1:], prog_name=PROG, complete_var='_IDF.PY_COMPLETE')
+    # Check the environment only when idf.py is invoked regularly from command line.
+    checks_output = None if SHELL_COMPLETE_RUN else check_environment()
+
+    try:
+        cli = init_cli(verbose_output=checks_output)
+    except ImportError:
+        if SHELL_COMPLETE_RUN:
+            pass
+        else:
+            raise
+    else:
+        cli(sys.argv[1:], prog_name=PROG, complete_var=SHELL_COMPLETE_VAR)
 
 
 def _valid_unicode_config():
@@ -786,25 +803,9 @@ def _find_usable_locale():
 
 if __name__ == '__main__':
     try:
-        # On MSYS2 we need to run idf.py with "winpty" in order to be able to cancel the subprocesses properly on
-        # keyboard interrupt (CTRL+C).
-        # Using an own global variable for indicating that we are running with "winpty" seems to be the most suitable
-        # option as os.environment['_'] contains "winpty" only when it is run manually from console.
-        WINPTY_VAR = 'WINPTY'
-        WINPTY_EXE = 'winpty'
-        if ('MSYSTEM' in os.environ) and (not os.environ.get('_', '').endswith(WINPTY_EXE)
-                                          and WINPTY_VAR not in os.environ):
-
-            if 'menuconfig' in sys.argv:
-                # don't use winpty for menuconfig because it will print weird characters
-                main()
-            else:
-                os.environ[WINPTY_VAR] = '1'  # the value is of no interest to us
-                # idf.py calls itself with "winpty" and WINPTY global variable set
-                ret = subprocess.call([WINPTY_EXE, sys.executable] + sys.argv, env=os.environ)
-                if ret:
-                    raise SystemExit(ret)
-
+        if 'MSYSTEM' in os.environ:
+            print_warning('MSys/Mingw is no longer supported. Please follow the getting started guide of the '
+                          'documentation in order to set up a suitiable environment, or continue at your own risk.')
         elif os.name == 'posix' and not _valid_unicode_config():
             # Trying to find best utf-8 locale available on the system and restart python with it
             best_locale = _find_usable_locale()

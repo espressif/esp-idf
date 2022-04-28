@@ -1,5 +1,9 @@
 _Note that this is a template for an ESP-IDF example README.md file. When using this template, replace all these emphasised placeholders with example-specific content._
 
+| Supported Targets | _Supported target, e.g. ESP32_ | _Another supported target, e.g. ESP32-S3_ |
+| ----------------- | ------------------------------ | ----------------------------------------- |
+
+_If the example supports all targets supported by ESP-IDF then the table can be omitted_
 # _Example Title_
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

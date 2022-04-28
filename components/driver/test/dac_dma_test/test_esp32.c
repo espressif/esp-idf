@@ -61,8 +61,8 @@ static void example_i2s_init(void)
         .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
         .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
-        .dma_buf_count = 2,
-        .dma_buf_len = 1024,
+        .dma_desc_num = 2,
+        .dma_frame_num = 1024,
         .use_apll = 0,
     };
     //install and start i2s driver

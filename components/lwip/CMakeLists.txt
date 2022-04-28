@@ -7,10 +7,6 @@ set(include_dirs
     )
 
 set(srcs
-    "apps/dhcpserver/dhcpserver.c"
-    "apps/ping/esp_ping.c"
-    "apps/ping/ping.c"
-    "apps/ping/ping_sock.c"
     "apps/sntp/sntp.c"
     "lwip/src/api/api_lib.c"
     "lwip/src/api/api_msg.c"
@@ -59,7 +55,6 @@ set(srcs
     "lwip/src/core/ipv6/mld6.c"
     "lwip/src/core/ipv6/nd6.c"
     "lwip/src/netif/ethernet.c"
-    "lwip/src/netif/lowpan6.c"
     "lwip/src/netif/slipif.c"
     "lwip/src/netif/ppp/auth.c"
     "lwip/src/netif/ppp/ccp.c"
@@ -90,7 +85,6 @@ set(srcs
     "port/esp32/hooks/lwip_default_hooks.c"
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
-    "port/esp32/netif/dhcp_state.c"
     "port/esp32/netif/wlanif.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
@@ -141,11 +135,26 @@ if(CONFIG_OPENTHREAD_ENABLED)
     list(APPEND srcs "port/esp32/netif/openthreadif.c")
 endif()
 
+if(CONFIG_LWIP_ICMP)
+    list(APPEND srcs
+        "apps/ping/esp_ping.c"
+        "apps/ping/ping.c"
+        "apps/ping/ping_sock.c")
+endif()
+
+if(CONFIG_LWIP_DHCPS)
+    list(APPEND srcs "apps/dhcpserver/dhcpserver.c")
+endif()
+
+if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
+    list(APPEND srcs "port/esp32/netif/dhcp_state.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES esp_eth esp_netif tcpip_adapter nvs_flash openthread)
+                    PRIV_REQUIRES esp_netif)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
@@ -167,3 +176,15 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -Wno-type-limits
 )
+
+if(CONFIG_OPENTHREAD_ENABLED)
+    idf_component_optional_requires(PRIVATE openthread)
+endif()
+
+if(CONFIG_ETH_ENABLED)
+    idf_component_optional_requires(PRIVATE esp_eth)
+endif()
+
+if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
+    idf_component_optional_requires(PRIVATE nvs_flash)
+endif()

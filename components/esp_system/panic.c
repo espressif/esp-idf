@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,9 +11,8 @@
 
 #include "esp_private/system_internal.h"
 #include "esp_private/usb_console.h"
-#include "esp_ota_ops.h"
 
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
 #include "hal/cpu_hal.h"
@@ -34,13 +25,18 @@
 
 #include "sdkconfig.h"
 
+#if __has_include("esp_ota_ops.h")
+#include "esp_ota_ops.h"
+#define HAS_ESP_OTA 1
+#endif
+
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
 #endif
 
 #if CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
 #include "SEGGER_RTT.h"
 #endif
 
@@ -67,8 +63,6 @@ bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
 
 static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
-static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
@@ -164,9 +158,19 @@ void panic_print_dec(int d)
   the risk of somehow halting in the panic handler and not resetting. That is why this routine kills
   all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
   one second.
+
+  We have to do this before we do anything that might cause issues in the WDT interrupt handlers,
+  for example stalling the other core on ESP32 may cause the ESP32_ECO3_CACHE_LOCK_FIX
+  handler to get stuck.
 */
-static void reconfigure_all_wdts(void)
+void esp_panic_handler_reconfigure_wdts(void)
 {
+    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+#if SOC_TIMER_GROUPS >= 2
+	// IDF-3825
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+#endif
+
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     //Reconfigure TWDT (Timer Group 0)
     wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT0_TICK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
@@ -175,10 +179,12 @@ static void reconfigure_all_wdts(void)
     wdt_hal_enable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
+#if SOC_TIMER_GROUPS >= 2
     //Disable IWDT (Timer Group 1)
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
+#endif
 }
 
 /*
@@ -186,16 +192,23 @@ static void reconfigure_all_wdts(void)
 */
 static inline void disable_all_wdts(void)
 {
+    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+#if SOC_TIMER_GROUPS >= 2
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+#endif
+
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     //Task WDT is the Main Watchdog Timer of Timer Group 0
     wdt_hal_write_protect_disable(&wdt0_context);
     wdt_hal_disable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
+#if SOC_TIMER_GROUPS >= 2
     //Interupt WDT is the Main Watchdog Timer of Timer Group 1
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
+#endif
 }
 
 static void print_abort_details(const void *f)
@@ -208,6 +221,10 @@ static void print_abort_details(const void *f)
 // already been done, and panic_info_t has been filled.
 void esp_panic_handler(panic_info_t *info)
 {
+    // The port-level panic handler has already called this, but call it again
+    // to reset the TG0WDT period
+    esp_panic_handler_reconfigure_wdts();
+
     // If the exception was due to an abort, override some of the panic info
     if (g_panic_abort) {
         info->description = NULL;
@@ -266,8 +283,8 @@ void esp_panic_handler(panic_info_t *info)
         panic_print_str(" and returning...\r\n");
         disable_all_wdts();
 #if CONFIG_APPTRACE_ENABLE
-#if CONFIG_SYSVIEW_ENABLE
-        SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#if CONFIG_APPTRACE_SV_ENABLE
+        SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
         esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                                   APPTRACE_ONPANIC_HOST_FLUSH_TMO);
@@ -291,30 +308,31 @@ void esp_panic_handler(panic_info_t *info)
 
     }
 
-    //Feed the watchdogs, so they will give us time to print out debug info
-    reconfigure_all_wdts();
+    esp_panic_handler_reconfigure_wdts(); // Restart WDT again
 
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
+#if HAS_ESP_OTA
     panic_print_str("\r\nELF file SHA256: ");
     char sha256_buf[65];
     esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
     panic_print_str(sha256_buf);
     panic_print_str("\r\n");
+#endif //HAS_ESP_OTA
 
     panic_print_str("\r\n");
 
 #if CONFIG_APPTRACE_ENABLE
     disable_all_wdts();
-#if CONFIG_SYSVIEW_ENABLE
-    SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#if CONFIG_APPTRACE_SV_ENABLE
+    SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
-    reconfigure_all_wdts();
-#endif
+    esp_panic_handler_reconfigure_wdts(); // restore WDT config
+#endif // CONFIG_APPTRACE_ENABLE
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
     disable_all_wdts();
@@ -338,7 +356,8 @@ void esp_panic_handler(panic_info_t *info)
         esp_core_dump_to_uart(info);
 #endif
         s_dumping_core = false;
-        reconfigure_all_wdts();
+
+        esp_panic_handler_reconfigure_wdts();
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -373,21 +392,21 @@ void esp_panic_handler(panic_info_t *info)
 }
 
 
-void __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *details)
+void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) panic_abort(const char *details)
 {
     g_panic_abort = true;
     s_panic_abort_details = (char *) details;
 
 #if CONFIG_APPTRACE_ENABLE
-#if CONFIG_SYSVIEW_ENABLE
-    SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+#if CONFIG_APPTRACE_SV_ENABLE
+    SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
 
-    *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
+    *((volatile int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
     while (1);
 }
 

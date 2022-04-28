@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import re
@@ -33,7 +22,7 @@ def test_examples_protocol_https_mbedtls(env, extra_data):  # type: (tiny_test_f
     app_name = 'https_mbedtls'
     dut1 = env.get_dut(app_name, 'examples/protocols/https_mbedtls', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, 'https-mbedtls.bin')
+    binary_file = os.path.join(dut1.app.binary_path, 'https_mbedtls.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('https_mbedtls_bin_size', '{}KB'.format(bin_size // 1024))
     # start test

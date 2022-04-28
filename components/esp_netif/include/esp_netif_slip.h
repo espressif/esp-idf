@@ -76,4 +76,7 @@ void esp_netif_lwip_slip_raw_output(esp_netif_t *netif, void *buffer, size_t len
  */
 const esp_ip6_addr_t *esp_slip_get_ip6(esp_netif_t *slip_netif);
 
+#ifdef __cplusplus
+}
 #endif
+#endif //_ESP_NETIF_SLIP_H_

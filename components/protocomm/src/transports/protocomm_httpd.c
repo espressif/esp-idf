@@ -1,21 +1,14 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_log.h>
 #include <esp_err.h>
+#include "esp_random.h"
 
 #include <esp_http_server.h>
 
@@ -69,7 +62,6 @@ static esp_err_t common_post_handler(httpd_req_t *req)
          */
         if (strcmp(session_cookie, cookie_buf) == 0) {
             ESP_LOGD(TAG, "Continuing Session %u", cookie_session_id);
-            cur_cookie_session_id = cookie_session_id;
             /* If we reach here, it means that the client supports cookies and so the
              * socket session id would no more be required for checking.
              */
@@ -79,7 +71,6 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     } else if (cur_sock_session_id == sock_session_id) {
         /* If the socket number matches, we assume it to be the same session */
         ESP_LOGD(TAG, "Continuing Socket Session %u", sock_session_id);
-        cur_cookie_session_id = cookie_session_id;
         same_session = true;
     }
     if (!same_session) {
@@ -136,7 +127,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     size_t recv_size = 0;
     while (recv_size < req->content_len) {
         ret = httpd_req_recv(req, req_body + recv_size, req->content_len - recv_size);
-        if (ret < 0) {
+        if (ret <= 0) {
             ret = ESP_FAIL;
             goto out;
         }

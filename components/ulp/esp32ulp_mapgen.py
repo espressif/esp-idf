@@ -7,7 +7,6 @@
 
 from __future__ import print_function
 
-import sys
 from optparse import OptionParser
 
 BASE_ADDR = 0x50000000
@@ -44,10 +43,6 @@ def gen_ld_h_from_sym_riscv(f_sym, f_ld, f_h):
 
 
 def main():
-    if sys.version_info[0] < 3:
-        print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
-    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print('WARNING: Python 3 versions older than 3.6 are not supported.', file=sys.stderr)
     description = ('This application generates .h and .ld files for symbols defined in input file. '
                    'The input symbols file can be generated using nm utility like this: '
                    'esp32-ulp-nm -g -f posix <elf_file> > <symbols_file>')

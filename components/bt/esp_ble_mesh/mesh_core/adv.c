@@ -1,8 +1,8 @@
 /*  Bluetooth Mesh */
 
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileContributor: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,7 +110,7 @@ static void bt_mesh_ble_adv_deinit(void);
 struct bt_mesh_adv_task {
     TaskHandle_t handle;
 #if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
-     CONFIG_SPIRAM_CACHE_WORKAROUND && \
+     (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && \
      CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
     StaticTask_t *task;
     StackType_t *stack;
@@ -639,7 +639,7 @@ void bt_mesh_adv_init(void)
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
 #if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
-     CONFIG_SPIRAM_CACHE_WORKAROUND && \
+    (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && \
      CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
     adv_task.task = heap_caps_calloc(1, sizeof(StaticTask_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
     __ASSERT(adv_task.task, "Failed to create adv thread task");
@@ -648,12 +648,12 @@ void bt_mesh_adv_init(void)
     adv_task.handle = xTaskCreateStaticPinnedToCore(adv_thread, BLE_MESH_ADV_TASK_NAME, BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
                                   BLE_MESH_ADV_TASK_PRIO, adv_task.stack, adv_task.task, BLE_MESH_ADV_TASK_CORE);
     __ASSERT(adv_task.handle, "Failed to create static adv thread");
-#else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
+#else /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
     int ret = xTaskCreatePinnedToCore(adv_thread, BLE_MESH_ADV_TASK_NAME, BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
                                       BLE_MESH_ADV_TASK_PRIO, &adv_task.handle, BLE_MESH_ADV_TASK_CORE);
     __ASSERT(ret == pdTRUE, "Failed to create adv thread");
     (void)ret;
-#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && CONFIG_SPIRAM_CACHE_WORKAROUND && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
+#endif /* CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY */
 }
 
 #if CONFIG_BLE_MESH_DEINIT
@@ -666,7 +666,7 @@ void bt_mesh_adv_deinit(void)
     vTaskDelete(adv_task.handle);
     adv_task.handle = NULL;
 #if (CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC_EXTERNAL && \
-     CONFIG_SPIRAM_CACHE_WORKAROUND && \
+    (CONFIG_SPIRAM_CACHE_WORKAROUND || !CONFIG_IDF_TARGET_ESP32) && \
      CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY)
     heap_caps_free(adv_task.stack);
     adv_task.stack = NULL;

@@ -17,7 +17,6 @@ _This entire section can be deleted if all items are checked._
 * [ ] Release note entry if this is a new public feature, or a fix for an issue introduced in the previous release.
 * [ ] The commit log is clean and ready to merge.
 * [ ] All relevant CI jobs have been run, i.e. jobs which cover the code changed by the MR.
-* [ ] Pipeline with Python 3 has been successfully run, i.e. `@bot ...; with Python3`, if the MR adds or changes Python code.
 
 ---
 

@@ -15,6 +15,7 @@
 #pragma once
 
 #include "esp_err.h"
+#include "esp_netif.h"
 #include "esp_openthread_types.h"
 #include "openthread/instance.h"
 
@@ -25,12 +26,14 @@ extern "C" {
 /**
  * @brief This function initializes the OpenThread network interface glue.
  *
+ * @param[in] config    The platform configuration.
+ *
  * @return
  *      - glue pointer on success
  *      - NULL on failure
  *
  */
-void *esp_openthread_netif_glue_init(void);
+void *esp_openthread_netif_glue_init(const esp_openthread_platform_config_t *config);
 
 /**
  * @brief This function deinitializes the OpenThread network interface glue.
@@ -39,25 +42,13 @@ void *esp_openthread_netif_glue_init(void);
 void esp_openthread_netif_glue_deinit(void);
 
 /**
- * @brief This function updates the netif fds and timeouts to the main loop.
- *
- * @param[inout]    mainloop    The main loop context.
- *
- */
-void esp_openthread_netif_glue_update(esp_openthread_mainloop_context_t *mainloop);
-
-/**
- * @brief This function performs the netif process.
- *
- * @param[in]    instance   The OpenThread instance.
+ * @brief This function acquires the OpenThread netif.
  *
  * @return
- *      - ESP_OK on success
- *      - ESP_FAIL on OpenThread failure
- *      - ESP_ERR_NO_MEM on memory allocation failure
+ *      The OpenThread netif or NULL if not initialzied.
  *
  */
-esp_err_t esp_openthread_netif_glue_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop);
+esp_netif_t *esp_openthread_get_netif(void);
 
 #ifdef __cplusplus
 }

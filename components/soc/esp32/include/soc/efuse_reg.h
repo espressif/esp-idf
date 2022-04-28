@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_REG_H_
 #define _SOC_EFUSE_REG_H_
 
@@ -112,9 +104,11 @@
 #define EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6  0
 #define EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5  1
 #define EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5  2
-#define EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2  4
+#define EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2  4 /* Deprecated: this chip was never mass produced  */
+#define EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH   4
 #define EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4  5
 #define EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302  6
+#define EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3  7
 /* EFUSE_RD_SPI_PAD_CONFIG_HD : RO ;bitpos:[8:4] ;default: 5'b0 ; */
 /*description: read for SPI_pad_config_hd*/
 #define EFUSE_RD_SPI_PAD_CONFIG_HD  0x0000001F
@@ -222,12 +216,11 @@
 #define EFUSE_RD_VOL_LEVEL_HP_INV_M  ((EFUSE_RD_VOL_LEVEL_HP_INV_V)<<(EFUSE_RD_VOL_LEVEL_HP_INV_S))
 #define EFUSE_RD_VOL_LEVEL_HP_INV_V  0x03
 #define EFUSE_RD_VOL_LEVEL_HP_INV_S  22
-/* EFUSE_RD_INST_CONFIG : RO ;bitpos:[27:20] ;default: 8'b0 ; */
-/* Deprecated */
-#define EFUSE_RD_INST_CONFIG  0x000000FF                                              /** Deprecated **/
-#define EFUSE_RD_INST_CONFIG_M  ((EFUSE_RD_INST_CONFIG_V)<<(EFUSE_RD_INST_CONFIG_S))  /** Deprecated **/
-#define EFUSE_RD_INST_CONFIG_V  0xFF                                                  /** Deprecated **/
-#define EFUSE_RD_INST_CONFIG_S  20                                                    /** Deprecated **/
+/* EFUSE_RD_CHIP_VER_REV2 : RO ;bitpos:[20] ;default: 8'b0 ; */
+#define EFUSE_RD_CHIP_VER_REV2  (BIT(20))
+#define EFUSE_RD_CHIP_VER_REV2_M  ((EFUSE_RD_CHIP_VER_REV2_V)<<(EFUSE_RD_CHIP_VER_REV2_S))
+#define EFUSE_RD_CHIP_VER_REV2_V  0x1
+#define EFUSE_RD_CHIP_VER_REV2_S  20
 /* EFUSE_RD_SPI_PAD_CONFIG_CS0 : RO ;bitpos:[19:15] ;default: 5'b0 ; */
 /*description: read for SPI_pad_config_cs0*/
 #define EFUSE_RD_SPI_PAD_CONFIG_CS0  0x0000001F
@@ -1059,6 +1052,9 @@
 #define EFUSE_CLK_SEL0_M  ((EFUSE_CLK_SEL0_V)<<(EFUSE_CLK_SEL0_S))
 #define EFUSE_CLK_SEL0_V  0xFF
 #define EFUSE_CLK_SEL0_S  0
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
 
 #define EFUSE_CONF_REG          (DR_REG_EFUSE_BASE + 0x0fc)
 /* EFUSE_FORCE_NO_WR_RD_DIS : R/W ;bitpos:[16] ;default: 1'h1 ; */

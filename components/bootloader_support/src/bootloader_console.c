@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,19 +20,27 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/ets_sys.h"
+#include "esp32h2/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/ets_sys.h"
+#include "esp32c2/rom/uart.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 
-#ifdef CONFIG_ESP_CONSOLE_UART_NONE
+#ifdef CONFIG_ESP_CONSOLE_NONE
 void bootloader_console_init(void)
 {
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
 }
-#endif // CONFIG_ESP_CONSOLE_UART_NONE
+#endif // CONFIG_ESP_CONSOLE_NONE
 
 #ifdef CONFIG_ESP_CONSOLE_UART
 void bootloader_console_init(void)
@@ -66,12 +74,14 @@ void bootloader_console_init(void)
         gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0RXD_U, PIN_FUNC_GPIO);
         gpio_hal_iomux_func_sel(PERIPHS_IO_MUX_U0TXD_U, PIN_FUNC_GPIO);
         // Route GPIO signals to/from pins
-        const uint32_t tx_idx = uart_periph_signal[uart_num].tx_sig;
-        const uint32_t rx_idx = uart_periph_signal[uart_num].rx_sig;
+        const uint32_t tx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_TX_PIN_IDX);
+        const uint32_t rx_idx = UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_rx_gpio], PIN_FUNC_GPIO);
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[uart_rx_gpio]);
         esp_rom_gpio_pad_pullup_only(uart_rx_gpio);
         esp_rom_gpio_connect_out_signal(uart_tx_gpio, tx_idx, 0, 0);
         esp_rom_gpio_connect_in_signal(uart_rx_gpio, rx_idx, 0);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[uart_tx_gpio], PIN_FUNC_GPIO);
         // Enable the peripheral
         periph_ll_enable_clk_clear_rst(PERIPH_UART0_MODULE + uart_num);
     }

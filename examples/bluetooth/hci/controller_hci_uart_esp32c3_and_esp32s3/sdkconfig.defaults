@@ -1,0 +1,11 @@
+#
+# Automatically generated file. DO NOT EDIT.
+# Espressif IoT Development Framework (ESP-IDF) Project Configuration
+#
+
+CONFIG_BT_ENABLED=y
+CONFIG_BT_CTRL_HCI_MODE_UART_H4=y
+CONFIG_BT_CTRL_HCI_TL=0
+CONFIG_BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP=n
+CONFIG_BT_CTRL_BLE_SCAN_DUPL=n
+# End of deprecated options

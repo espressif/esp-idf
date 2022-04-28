@@ -60,6 +60,6 @@ The :component_file:`NVS page unit test <nvs_flash/host_test/nvs_page_test/main/
 Requirements
 ^^^^^^^^^^^^
 
-Besides the usual IDF requirements and CMock requirements, only the host's ``GCC/g++`` is required.
+.. include:: inc/linux-host-requirements.rst
 
 The host tests have been tested on Ubuntu 20.04 with ``GCC`` version 9 and 10.

@@ -16,16 +16,21 @@
 #define TIME_IS_OUT(start, end, timeout)     (timeout) > ((end)-(start)) ? 0 : 1
 
 //Pin setting
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define GPIO_MOSI 11
 #define GPIO_MISO 13
 #define GPIO_SCLK 12
 #define GPIO_CS   10
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2
+#define GPIO_MOSI    7
+#define GPIO_MISO    2
+#define GPIO_SCLK    6
+#define GPIO_CS      10
+#endif
 
 #define SLAVE_HOST SPI2_HOST
 #define DMA_CHAN   SPI_DMA_CH_AUTO
 #define QUEUE_SIZE 4
-#endif
 
 /**
  * Helper Macros for Master-Slave synchronization, each setting is 4-byte-width
@@ -290,14 +295,14 @@ void app_main(void)
     uint8_t init_value[SOC_SPI_MAXIMUM_BUFFER_SIZE] = {0x0};
     spi_slave_hd_write_buffer(SLAVE_HOST, 0, init_value, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
-    uint32_t send_buf_size = 5000;
-    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_TX_BUF_LEN_REG, (uint8_t *)&send_buf_size, 4);
+    static uint32_t send_buf_size = 5000;
+    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_TX_BUF_LEN_REG, (uint8_t *)&send_buf_size, sizeof(send_buf_size));
 
-    uint32_t recv_buf_size = 120;
-    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_RX_BUF_LEN_REG, (uint8_t *)&recv_buf_size, 4);
+    static uint32_t recv_buf_size = 120;
+    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_RX_BUF_LEN_REG, (uint8_t *)&recv_buf_size, sizeof(recv_buf_size));
 
     uint32_t slave_ready_flag = SLAVE_READY_FLAG;
-    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_READY_FLAG_REG, (uint8_t *)&slave_ready_flag, 4);
+    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_READY_FLAG_REG, (uint8_t *)&slave_ready_flag, sizeof(slave_ready_flag));
 
     xTaskCreate(sender, "sendTask", 4096, &send_buf_size, 1, NULL);
     xTaskCreate(receiver, "recvTask", 4096, &recv_buf_size, 1, NULL);

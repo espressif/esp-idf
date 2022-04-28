@@ -24,4 +24,13 @@ menu "ESP-ASIO"
             bool "wolfSSL (License info in wolfSSL directory README)"
     endchoice
 
+    config ASIO_SSL_BIO_SIZE
+        int "Size of BIO object"
+        default 1024
+        depends on ASIO_SSL_SUPPORT
+        help
+            Size in bytes of SSL-BIO implementation.
+            Reducing the BIO size saves more RAM, but may slow down input output operations due to
+            fragmentation.
+
 endmenu

@@ -74,7 +74,9 @@ def main():
 def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCOL_VERSION):
     config = kconfiglib.Kconfig(kconfig)
     sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get('COMPONENT_SDKCONFIG_RENAMES', '').split()
+    sdkconfig_renames_from_env = os.environ.get('COMPONENT_SDKCONFIG_RENAMES')
+    if sdkconfig_renames_from_env:
+        sdkconfig_renames += sdkconfig_renames_from_env.split(';')
     deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
     f_o = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
     try:
@@ -157,8 +159,8 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
             # V2+ response, separate visibility values
             response = {'version': req['version'], 'values': values_diff, 'ranges': ranges_diff, 'visible': visible_diff}
         if error:
-            for e in error:
-                print('Error: %s' % e, file=sys.stderr)
+            for err in error:
+                print('Error: %s' % err, file=sys.stderr)
             response['error'] = error
         json.dump(response, sys.stdout)
         print('\n')

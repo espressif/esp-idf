@@ -8,12 +8,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/ets_sys.h"
-#endif
+#include "esp_rom_spiflash.h"
 #include "esp_rom_crc.h"
 #include "esp_rom_gpio.h"
 #include "esp_flash_partitions.h"
@@ -22,7 +17,6 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
-#include "soc/soc_memory_layout.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -67,6 +61,8 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         ESP_LOGE(TAG, "mismatch chip ID, expected %d, found %d", chip_id, img_hdr->chip_id);
         err = ESP_FAIL;
     }
+
+#ifndef CONFIG_IDF_ENV_FPGA
     uint8_t revision = bootloader_common_get_chip_revision();
     if (revision < img_hdr->min_chip_rev) {
         /* To fix this error, please update mininum supported chip revision from configuration,
@@ -78,6 +74,8 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         ESP_LOGI(TAG, "chip revision: %d, min. %s chip revision: %d", revision, type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
 #endif
     }
+#endif // CONFIG_IDF_ENV_FPGA
+
     return err;
 }
 
@@ -137,7 +135,8 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
 
 rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 
-#if !IS_BOOTLOADER_BUILD
+#ifndef BOOTLOADER_BUILD
+#include "heap_memory_layout.h"
 /* The app needs to be told this memory is reserved, important if configured to use RTC memory as heap.
 
    Note that keeping this macro here only works when other symbols in this file are referenced by the app, as

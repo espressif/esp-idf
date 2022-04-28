@@ -1,28 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #include <stdio.h>
+
+#include "esp_spi_flash.h"
 
 #include "soc/extmem_reg.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#include "esp32c3/memprot.h"
+#if CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/memprot.h"
+#else
+#include "esp_private/esp_memprot_internal.h"
+#include "esp_memprot.h"
 #endif
+#endif
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#include "esp_private/eh_frame_parser.h"
+#endif
+
 
 #define DIM(array) (sizeof(array)/sizeof(*array))
 
@@ -151,35 +155,62 @@ static inline void print_cache_err_details(const void *frame)
  * explanation of why the panic occured.
  */
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+
+static esp_memp_intr_source_t s_memp_intr = {MEMPROT_TYPE_INVALID, -1};
+
+#define PRINT_MEMPROT_ERROR(err) \
+        panic_print_str("N/A (error "); \
+        panic_print_str(esp_err_to_name(err)); \
+        panic_print_str(")");
+
 static inline void print_memprot_err_details(const void *frame __attribute__((unused)))
 {
+    if (s_memp_intr.mem_type == MEMPROT_TYPE_INVALID && s_memp_intr.core == -1) {
+        panic_print_str("  - no details available -\r\n");
+        return;
+    }
+
     //common memprot fault info
-    mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
-    panic_print_str( "  memory type: ");
-    panic_print_str( esp_memprot_mem_type_to_str(mem_type) );
-    panic_print_str( "\r\n  faulting address: 0x");
-    panic_print_hex( esp_memprot_get_violate_addr(mem_type) );
-    panic_print_str( "\r\n  world:");
-    panic_print_dec( esp_memprot_get_violate_world(mem_type) );
+    panic_print_str("  memory type: ");
+    panic_print_str(esp_mprot_mem_type_to_str(s_memp_intr.mem_type));
 
-    char operation = 0;
-    // IRAM fault: check instruction-fetch flag
-    if ( mem_type == MEMPROT_IRAM0_SRAM ) {
-        if ( esp_memprot_get_violate_loadstore(mem_type) ) {
-            operation = 'X';
-        }
+    panic_print_str("\r\n  faulting address: ");
+    void *faulting_addr;
+    esp_err_t res = esp_mprot_get_violate_addr(s_memp_intr.mem_type, &faulting_addr, &s_memp_intr.core);
+    if (res == ESP_OK) {
+        panic_print_str("0x");
+        panic_print_hex((int)faulting_addr);
+    } else {
+        PRINT_MEMPROT_ERROR(res)
     }
-    // W/R - common
-    if ( operation == 0 ) {
-        operation = esp_memprot_get_violate_wr(mem_type) == MEMPROT_PMS_OP_WRITE ? 'W' : 'R';
+
+    panic_print_str( "\r\n  world: ");
+    esp_mprot_pms_world_t world;
+    res = esp_mprot_get_violate_world(s_memp_intr.mem_type, &world, &s_memp_intr.core);
+    if (res == ESP_OK) {
+        panic_print_str(esp_mprot_pms_world_to_str(world));
+    } else {
+        PRINT_MEMPROT_ERROR(res)
     }
+
     panic_print_str( "\r\n  operation type: ");
-    panic_print_char( operation );
+    uint32_t operation;
+    res = esp_mprot_get_violate_operation(s_memp_intr.mem_type, &operation, &s_memp_intr.core);
+    if (res == ESP_OK) {
+        panic_print_str(esp_mprot_oper_type_to_str(operation));
+    } else {
+        PRINT_MEMPROT_ERROR(res)
+    }
 
-    // DRAM/DMA fault: check byte-enables
-    if ( mem_type == MEMPROT_DRAM0_SRAM ) {
+    if (esp_mprot_has_byte_enables(s_memp_intr.mem_type)) {
         panic_print_str("\r\n  byte-enables: " );
-        panic_print_hex(esp_memprot_get_violate_byte_en(mem_type));
+        uint32_t byte_enables;
+        res = esp_mprot_get_violate_byte_enables(s_memp_intr.mem_type, &byte_enables, &s_memp_intr.core);
+        if (res == ESP_OK) {
+            panic_print_hex(byte_enables);
+        } else {
+            PRINT_MEMPROT_ERROR(res)
+        }
     }
 
     panic_print_str("\r\n");
@@ -268,11 +299,10 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->reason = pseudo_reason[PANIC_RSN_INTWDT_CPU0 + core];
     }
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-    else if ( frame->mcause == ETS_MEMPROT_ERR_INUM ) {
-
-        info->core = esp_memprot_intr_get_cpuid();
+    else if (frame->mcause == ETS_MEMPROT_ERR_INUM) {
         info->reason = pseudo_reason[PANIC_RSN_MEMPROT];
         info->details = print_memprot_err_details;
+        info->core = esp_mprot_get_active_intr(&s_memp_intr) == ESP_OK ? s_memp_intr.core : -1;
     }
 #endif
 }
@@ -315,7 +345,7 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
     info->frame = &regs;
 }
 
-void panic_print_backtrace(const void *frame, int core)
+static void panic_print_basic_backtrace(const void *frame, int core)
 {
     // Basic backtrace
     panic_print_str("\r\nStack memory:\r\n");
@@ -331,6 +361,21 @@ void panic_print_backtrace(const void *frame, int core)
             panic_print_str(y == per_line - 1 ? "\r\n" : " ");
         }
     }
+}
+
+void panic_print_backtrace(const void *frame, int core)
+{
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+    if (!spi_flash_cache_enabled()) {
+        panic_print_str("\r\nWarning: SPI Flash cache is disabled, cannot process eh_frame parsing. "
+                        "Falling back to basic backtrace.\r\n");
+        panic_print_basic_backtrace(frame, core);
+    } else {
+        esp_eh_frame_print_backtrace(frame);
+    }
+#else
+    panic_print_basic_backtrace(frame, core);
+#endif
 }
 
 uint32_t panic_get_address(const void *f)

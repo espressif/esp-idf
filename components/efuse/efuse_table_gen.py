@@ -4,7 +4,7 @@
 #
 # Converts efuse table to header file efuse_table.h.
 #
-# SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
@@ -76,31 +76,33 @@ class FuseTable(list):
 
         # fix up missing bit_start
         last_efuse_block = None
-        for e in res:
-            if last_efuse_block != e.efuse_block:
+        for i in res:
+            if last_efuse_block != i.efuse_block:
                 last_end = 0
-            if e.bit_start is None:
-                e.bit_start = last_end
-            last_end = e.bit_start + e.bit_count
-            last_efuse_block = e.efuse_block
+            if i.bit_start is None:
+                i.bit_start = last_end
+            last_end = i.bit_start + i.bit_count
+            last_efuse_block = i.efuse_block
 
         res.verify_duplicate_name()
 
         # fix up missing field_name
         last_field = None
-        for e in res:
-            if e.field_name == '' and last_field is None:
-                raise InputError('Error at line %d: %s missing field name' % (line_no + 1, e))
-            elif e.field_name == '' and last_field is not None:
-                e.field_name = last_field.field_name
-            last_field = e
+        for i in res:
+            if i.field_name == '' and last_field is None:
+                raise InputError('Error at line %d: %s missing field name' % (line_no + 1, i))
+            elif i.field_name == '' and last_field is not None:
+                i.field_name = last_field.field_name
+            last_field = i
 
         # fill group
         names = [p.field_name for p in res]
         duplicates = set(n for n in names if names.count(n) > 1)
-        if len(duplicates) != 0:
+        for dname in duplicates:
             i_count = 0
             for p in res:
+                if p.field_name != dname:
+                    continue
                 if len(duplicates.intersection([p.field_name])) != 0:
                     p.group = str(i_count)
                     i_count += 1
@@ -479,16 +481,13 @@ def create_output_files(name, output_table, debug):
 
 
 def main():
-    if sys.version_info[0] < 3:
-        print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
-    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print('WARNING: Python 3 versions older than 3.6 are not supported.', file=sys.stderr)
     global quiet
     global max_blk_len
     global idf_target
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
-    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3', 'esp32c3'], default='esp32')
+    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32', 'esp32s2', 'esp32s3', 'esp32c3',
+                        'esp32h2', 'esp32c2'], default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')

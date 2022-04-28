@@ -3,7 +3,6 @@ all: $(TEST_PROGRAM)
 
 SOURCE_FILES = \
 	esp_error_check_stub.cpp \
-	../mock/int/crc.cpp \
 	$(addprefix ../src/, \
 		nvs_types.cpp \
 		nvs_api.cpp \
@@ -31,13 +30,15 @@ SOURCE_FILES = \
 	test_nvs_initialization.cpp \
 	main.cpp
 
+SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c
+
 ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
 COMPILER := clang
 else
 COMPILER := gcc
 endif
 
-CPPFLAGS += -I../include -I../src -I../mock/int -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../hal/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
+CPPFLAGS += -I../include -I../src -I../../esp_rom/include -I../../esp_rom/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../hal/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
 CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET
 CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
@@ -49,14 +50,16 @@ LDFLAGS += -fsanitize=address
 endif
 
 OBJ_FILES = $(SOURCE_FILES:.cpp=.o)
+OBJ_FILES_C = $(SOURCE_FILES_C:.c=.o)
 
 COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 
 $(OBJ_FILES): %.o: %.cpp
+$(OBJ_FILES_C): %.c: %.c
 
-$(TEST_PROGRAM): clean-coverage $(OBJ_FILES)
+$(TEST_PROGRAM): clean-coverage $(OBJ_FILES) $(OBJ_FILES_C)
 	$(MAKE) -C ../../mbedtls/mbedtls/ lib
-	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) ../../mbedtls/mbedtls/library/libmbedcrypto.a
+	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) $(OBJ_FILES_C) ../../mbedtls/mbedtls/library/libmbedcrypto.a
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
@@ -84,7 +87,7 @@ clean-coverage:
 
 clean: clean-coverage
 	$(MAKE) -C ../../mbedtls/mbedtls/ clean
-	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
+	rm -f $(OBJ_FILES) $(OBJ_FILES_C) $(TEST_PROGRAM)
 	rm -f ../nvs_partition_generator/partition_single_page.bin
 	rm -f ../nvs_partition_generator/partition_multipage_blob.bin
 	rm -f ../nvs_partition_generator/partition_encrypted.bin

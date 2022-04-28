@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -29,6 +21,8 @@ extern "C" {
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 {
     switch (periph) {
+    case PERIPH_SARADC_MODULE:
+        return DPORT_APB_SARADC_CLK_EN;
     case PERIPH_LEDC_MODULE:
         return DPORT_LEDC_CLK_EN;
     case PERIPH_UART0_MODULE:
@@ -43,8 +37,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return DPORT_I2C_EXT1_CLK_EN;
     case PERIPH_I2S0_MODULE:
         return DPORT_I2S0_CLK_EN;
-    case PERIPH_I2S1_MODULE:
-        return DPORT_I2S1_CLK_EN;
     case PERIPH_TIMG0_MODULE:
         return DPORT_TIMERGROUP_CLK_EN;
     case PERIPH_TIMG1_MODULE:
@@ -101,6 +93,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
     (void)enable; // unused
 
     switch (periph) {
+    case PERIPH_SARADC_MODULE:
+        return DPORT_APB_SARADC_RST;
     case PERIPH_LEDC_MODULE:
         return DPORT_LEDC_RST;
     case PERIPH_UART0_MODULE:
@@ -115,8 +109,6 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return DPORT_I2C_EXT1_RST;
     case PERIPH_I2S0_MODULE:
         return DPORT_I2S0_RST;
-    case PERIPH_I2S1_MODULE:
-        return DPORT_I2S1_RST;
     case PERIPH_TIMG0_MODULE:
         return DPORT_TIMERGROUP_RST;
     case PERIPH_TIMG1_MODULE:

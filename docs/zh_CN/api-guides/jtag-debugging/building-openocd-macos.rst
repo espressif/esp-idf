@@ -25,6 +25,7 @@ MacOS 环境下从源码编译 OpenOCD
 
 	brew install automake libtool libusb wget gcc@4.9 pkg-config
 
+
 构建 OpenOCD
 =============
 
@@ -46,6 +47,7 @@ MacOS 环境下从源码编译 OpenOCD
     * 有关编译 OpenOCD 的详细信息，请参阅 ``openocd-esp32/README.OSX``。
 
 一旦 ``make`` 过程成功结束，OpenOCD 的可执行文件会被保存到 ``~/esp/openocd-esp32/src/openocd`` 目录中。
+
 
 下一步
 ======

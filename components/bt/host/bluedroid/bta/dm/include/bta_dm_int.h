@@ -26,6 +26,7 @@
 
 #include "common/bt_target.h"
 #include "freertos/semphr.h"
+#include "bta/bta_sys.h"
 #if (BLE_INCLUDED == TRUE && (defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE))
 #include "bta/bta_gatt_api.h"
 #endif
@@ -1480,7 +1481,7 @@ extern tBTA_DM_DI_CB  bta_dm_di_cb;
 #else
 extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 #define bta_dm_di_cb (*bta_dm_di_cb_ptr)
-SemaphoreHandle_t deinit_semaphore;
+extern SemaphoreHandle_t deinit_semaphore;
 #endif
 
 #if BTA_DYNAMIC_MEMORY == FALSE
@@ -1596,6 +1597,11 @@ extern void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data);
 extern void bta_dm_set_encryption(tBTA_DM_MSG *p_data);
 extern void bta_dm_confirm(tBTA_DM_MSG *p_data);
 extern void bta_dm_key_req(tBTA_DM_MSG *p_data);
+
+#if (BTA_HD_INCLUDED == TRUE)
+extern BOOLEAN bta_dm_check_if_only_hd_connected(BD_ADDR peer_addr);
+#endif /* BTA_HD_INCLUDED */
+
 #if (BTM_OOB_INCLUDED == TRUE)
 extern void bta_dm_loc_oob(tBTA_DM_MSG *p_data);
 extern void bta_dm_oob_reply(tBTA_DM_MSG *p_data);

@@ -31,9 +31,11 @@ INCLUDE_DIRS := \
 	xtensa/include \
 	xtensa/esp32/include \
 	soc/esp32/include \
+      	heap/include \
 	soc/include \
 	esp32/include \
 	bootloader_support/include \
+	bootloader_support/bootloader_flash/include \
 	app_update/include \
 	spi_flash/include \
 	hal/include \

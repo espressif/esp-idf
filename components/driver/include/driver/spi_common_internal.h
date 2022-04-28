@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,8 @@ typedef struct spi_bus_lock_dev_t* spi_bus_lock_dev_handle_t;
 
 /// Background operation control function
 typedef void (*bg_ctrl_func_t)(void*);
+
+typedef struct lldesc_s lldesc_t;
 
 /// Attributes of an SPI bus
 typedef struct {
@@ -110,7 +112,7 @@ bool spicommon_periph_in_use(spi_host_device_t host);
 bool spicommon_periph_free(spi_host_device_t host);
 
 /**
- * @brief Alloc DMA for SPI Slave
+ * @brief Alloc DMA for SPI
  *
  * @param host_id                      SPI host ID
  * @param dma_chan                     DMA channel to be used
@@ -122,17 +124,17 @@ bool spicommon_periph_free(spi_host_device_t host);
  *        - ESP_ERR_NO_MEM:        No enough memory
  *        - ESP_ERR_NOT_FOUND:     There is no available DMA channel
  */
-esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
+esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
 
 /**
- * @brief Free DMA for SPI Slave
+ * @brief Free DMA for SPI
  *
  * @param host_id  SPI host ID
  *
  * @return
  *        - ESP_OK: On success
  */
-esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id);
+esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id);
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins
@@ -155,6 +157,8 @@ esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id);
  *              - ``SPICOMMON_BUSFLAG_DUAL``: Make sure both MISO and MOSI are output capable so that DIO mode is capable.
  *              - ``SPICOMMON_BUSFLAG_WPHD`` Make sure WP and HD are set to valid output GPIOs.
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
+ *              - ``SPICOMMON_BUSFLAG_IO4_IO7``: Make sure spi data4 ~ spi data7 are set to valid output GPIOs.
+ *              - ``SPICOMMON_BUSFLAG_OCTAL``: Combination of ``SPICOMMON_BUSFLAG_QUAL`` and ``SPICOMMON_BUSFLAG_IO4_IO7``.
  * @param[out] flags_o A SPICOMMON_BUSFLAG_* flag combination of bus abilities will be written to this address.
  *              Leave to NULL if not needed.
  *              - ``SPICOMMON_BUSFLAG_IOMUX_PINS``: The bus is connected to iomux pins.
@@ -163,6 +167,8 @@ esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id);
  *              - ``SPICOMMON_BUSFLAG_DUAL``: The bus is capable with DIO mode.
  *              - ``SPICOMMON_BUSFLAG_WPHD`` The bus has WP and HD connected.
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
+ *              - ``SPICOMMON_BUSFLAG_IO4_IO7``: The bus has spi data4 ~ spi data7 connected.
+ *              - ``SPICOMMON_BUSFLAG_OCTAL``: Combination of ``SPICOMMON_BUSFLAG_QUAL`` and ``SPICOMMON_BUSFLAG_IO4_IO7``.
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success

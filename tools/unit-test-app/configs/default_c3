@@ -1,3 +1,3 @@
 # This config is split between targets since different component needs to be included
 CONFIG_IDF_TARGET="esp32c3"
-TEST_COMPONENTS=freertos esp32c3 esp_ipc esp_system esp_timer driver heap pthread soc spi_flash vfs
+TEST_COMPONENTS=freertos esp_hw_support esp_ipc esp_system esp_timer driver heap pthread soc spi_flash vfs

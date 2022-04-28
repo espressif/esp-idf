@@ -24,16 +24,16 @@
 
 假设用户有::
 
-    - components/
-                    - my_component/
-                                    - CMakeLists.txt
-                                    - component.mk
-                                    - Kconfig
-                                    - src/
-                                          - my_src1.c
-                                          - my_src2.c
-                                          - my_src3.c
-                                    - my_linker_fragment_file.lf
+    component
+    └── my_component
+        └── CMakeLists.txt
+            ├── component.mk
+            ├── Kconfig
+            ├── src/
+            │   ├── my_src1.c
+            │   ├── my_src2.c
+            │   └── my_src3.c
+            └── my_linker_fragment_file.lf
 
 - 名为 ``my_component`` 的组件，在构建过程中存储为 ``libmy_component.a`` 库文件
 - 库文件包含的三个源文件：``my_src1.c``、``my_src2.c`` 和 ``my_src3.c``，编译后分别为 ``my_src1.o``、``my_src2.o`` 和 ``my_src3.o``
@@ -44,18 +44,6 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 首先，用户需要创建链接器片段文件。链接器片段文件是一个扩展名为 ``.lf`` 的文本文件，想要存放的位置信息会写入该文件内。文件创建成功后，需要将其呈现在构建系统中。ESP-IDF 支持的构建系统指南如下：
-
-Make
-""""
-
-在组件目录的 ``component.mk`` 文件中设置 ``COMPONENT_ADD_LDFRAGMENTS`` 变量的值，使其指向已创建的链接器片段文件。路径可以为绝对路径，也可以为组件目录的相对路径。
-
-.. code-block:: make
-
-    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
-
-CMake
-"""""
 
 在组件目录的 ``CMakeLists.txt`` 文件中，指定 ``idf_component_register`` 调用引数 ``LDFRAGMENTS`` 的值。``LDFRAGMENTS`` 可以为绝对路径，也可为组件目录的相对路径，指向已创建的链接器片段文件。
 
@@ -83,6 +71,7 @@ CMake
 """"""""""""
 
 假设整个 ``my_src1.o`` 目标文件对性能至关重要，所以最好把该文件放在 RAM 中。另外，``my_src2.o`` 目标文件包含从深度睡眠唤醒所需的符号，因此需要将其存放到 RTC 存储器中。
+
 在链接器片段文件中可以写入以下内容：
 
 .. code-block:: none
@@ -136,6 +125,9 @@ CMake
     archive: libmy_component.a
     entries:
         * (rtc)
+
+
+.. _ldgen-conditional-placements :
 
 根据具体配置存放
 """"""""""""""""""""
@@ -237,6 +229,9 @@ CMake
 - 名称：片段名称，指定片段类型的片段名称应唯一。
 - 键值：片段内容。每个片段类型可支持不同的键值和不同的键值语法。
 
+    - 在 :ref:`段 <ldgen-sections-fragment>` 和 :ref:`协议 <ldgen-scheme-fragment>` 中，仅支持 ``entries`` 键。
+    - 在 :ref:`映射 <ldgen-mapping-fragment>` 中，支持 ``archive`` 和 ``entries`` 键。
+
 .. note::
 
     多个片段的类型和名称相同时会引发异常。
@@ -298,23 +293,9 @@ CMake
         key_2:
             value_b
 
-
 **注释**
 
 链接器片段文件中的注释以 ``#`` 开头。和在其他语言中一样，注释提供了有用的描述和资料，在处理过程中会被忽略。
-
-与 ESP-IDF v3.x 链接器脚本片段文件兼容
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
-
-- 必须缩进，缩进不当的文件会产生解析异常；旧版本不强制缩进，但之前的文档和示例均遵循了正确的缩进语法
-- 条件改用 ``if...elif...else`` 结构，可以嵌套检查，将完整片段置于条件内
-- 映射片段和其他片段类型一样，需有名称
-
-链接器脚本生成器可解析 ESP-IDF v3.x 版本中缩进正确的链接器片段文件（如 ESP-IDF v3.x 版本中的本文件所示），依然可以向后兼容此前的映射片段语法（可选名称和条件的旧语法），但是会有弃用警告。用户应换成本文档介绍的新语法，因为旧语法将在未来停用。
-
-请注意，ESP-IDF v3.x 不支持使用 ESP-IDF v4.0 新语法的链接器片段文件。
 
 类型
 """""""
@@ -466,7 +447,7 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
 2. SORT([<sort_by_first>, <sort_by_second>])
 
     在输入段描述中输出 ``SORT_BY_NAME``, ``SORT_BY_ALIGNMENT``, ``SORT_BY_INIT_PRIORITY`` 或 ``SORT``。
-    
+
    ``sort_by_first`` 和 ``sort_by_second`` 的值可以是：``name``、``alignment``、``init_priority``。
 
     如果既没指定 ``sort_by_first`` 也没指定 ``sort_by_second``，则输入段会按照名称排序，如果两者都指定了，那么嵌套排序会遵循 https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html 中的规则。
@@ -494,8 +475,8 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
     # 注意
     # A. entity-scheme 后使用分号
     # B. section2 -> target2 前使用逗号
-    # C. 在 scheme1 条目中 定义 section1 -> target1 和 section2 -> target2 
-    entity1 (scheme1); 
+    # C. 在 scheme1 条目中定义 section1 -> target1 和 section2 -> target2
+    entity1 (scheme1);
         section1 -> target1 KEEP() ALIGN(4, pre, post),
         section2 -> target2 SURROUND(sym) ALIGN(4, post) SORT()
 
@@ -619,4 +600,15 @@ ESP-IDF v4.0 变更了链接器脚本片段文件使用的一些语法：
 
     这是根据默认协议条目 ``iram -> iram0_text`` 生成的规则。默认协议指定了 ``iram -> iram0_text`` 条目，因此生成的规则同样也放在被 ``iram0_text`` 标记的地方。由于该规则是根据默认协议生成的，因此在同一目标下收集的所有规则下排在第一位。
 
-    目前使用的链接器脚本模板是 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，由 ``{IDF_TARGET_PATH_NAME}`` 组件指定，生成的脚本存放在构建目录下。
+    目前使用的链接器脚本模板是 :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`，生成的脚本存放在构建目录下。
+
+.. _ldgen-migrate-lf-grammar :
+
+将链接器脚本片段文件语法迁移至 ESP-IDF v5.0 适应版本
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ESP-IDF v5.0 中将不再支持 ESP-IDF v3.x 中链接器脚本片段文件的旧式语法。在迁移的过程中需注意以下几点：
+
+- 必须缩进，缩进不当的文件会产生解析异常；旧版本不强制缩进，但之前的文档和示例均遵循了正确的缩进语法
+- 条件改用 ``if...elif...else`` 结构，可以参照 :ref:`之前的章节<ldgen-conditional-placements>`
+- 映射片段和其他片段类型一样，需有名称

@@ -1,3 +1,3 @@
-idf_component_register(SRCS "example_spp_vfs_acceptor_demo.c"
+idf_component_register(SRCS "main.c"
                             "spp_task.c"
                     INCLUDE_DIRS ".")

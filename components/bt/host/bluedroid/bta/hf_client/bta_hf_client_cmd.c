@@ -77,6 +77,12 @@ void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA *p_data)
     case BTA_HF_CLIENT_AT_CMD_NREC:
         bta_hf_client_send_at_nrec();
         break;
+    case BTA_HF_CLIENT_AT_CMD_XAPL:
+        bta_hf_client_send_at_xapl(p_val->str, p_val->uint32_val1);
+        break;
+    case BTA_HF_CLIENT_AT_CMD_IPHONEACCEV:
+        bta_hf_client_send_at_iphoneaccev(p_val->uint32_val1, p_val->uint32_val1 == 0 ? FALSE : TRUE);
+        break;
     default:
         APPL_TRACE_ERROR("Default case, %s", __FUNCTION__);
         break;

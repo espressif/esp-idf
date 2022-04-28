@@ -1,0 +1,24 @@
+# Data_type:
+#   primary_address: value
+#   length: value or equation
+#   secondary_address: value if exist
+DRAM:
+  primary_address: 0x3FFB2000
+  length: 3 * 0x2000 + 18 * 0x4000
+  secondary_address: 0x40022000
+CACHE_I_1:
+  primary_address: 0x3F000000
+  length: 0x400000
+CACHE_D:
+  primary_address: 0x3F500000
+  length: 0xA80000
+CACHE_I_2:
+  primary_address: 0x40080000
+  length: 0x780000
+RTC_FAST_D:
+  primary_address: 0x40070000
+  length: 0x2000
+  secondary_address: 0x3FF9E000
+RTC_SLOW_D:
+  primary_address: 0x50000000
+  length: 0x2000

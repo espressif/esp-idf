@@ -6,8 +6,11 @@ components/xtensa/esp32/include/xtensa/config/
 
 components/newlib/platform_include/
 
-components/freertos/include/freertos/
-components/freertos/port/xtensa/include/freertos/
+components/freertos/esp_additions/include/freertos_tasks_c_additions.h
+components/freertos/FreeRTOS-Kernel/include/freertos/
+components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/
+components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 
 components/log/include/esp_log_internal.h
@@ -25,12 +28,7 @@ components/esp32/include/esp32/cache_err_int.h
 components/driver/include/driver/sdmmc_defs.h
 components/driver/include/driver/sdmmc_types.h
 
-components/lwip/include/apps/dhcpserver/dhcpserver_options.h
-components/lwip/include/apps/dhcpserver/dhcpserver.h
-
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
-
-components/vfs/include/sys/dirent.h
 
 components/esp_phy/esp32/include/phy_init_data.h
 
@@ -39,6 +37,7 @@ components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_gd.h
 components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/include/spi_flash_chip_boya.h
+components/spi_flash/include/spi_flash_chip_th.h
 components/spi_flash/include/memspi_host_driver.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_generic.h
@@ -47,13 +46,12 @@ components/bootloader_support/include/esp_app_format.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
+components/wpa_supplicant/esp_supplicant/include/
 
+components/mbedtls/mbedtls/
 components/mbedtls/port/include/
-components/mbedtls/mbedtls/include/mbedtls/
-
-components/coap/
-components/nghttp/
-components/cbor/
+components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
+components/mbedtls/test/
 
 components/esp-tls/private_include/
 
@@ -64,16 +62,12 @@ components/mdns/include/mdns_console.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 
-components/expat/
-
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
 
 components/idf_test/include/idf_performance.h
 
 components/json/cJSON/
-
-components/libsodium/
 
 components/spiffs/include/spiffs_config.h
 
@@ -95,6 +89,9 @@ components/app_trace/include/esp_sysview_trace.h
 components/esp_gdbstub/include/esp_gdbstub.h
 components/openssl/include/platform/ssl_pm.h
 
+components/esp_hw_support/include/esp_memprot.h
+components/esp_hw_support/include/esp_private/esp_memprot_internal.h
+
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
 components/heap/include/esp_heap_task_info.h
@@ -107,15 +104,19 @@ components/esp_common/include/esp_compiler.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
 components/lwip/port/esp32/include/netif/dhcp_state.h
 components/soc/src/esp32/rtc_clk_common.h
-components/esp_hw_support/port/esp32/regi2c_ctrl.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h
+components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/spi_flash.h
 components/esp_rom/include/esp32s2/rom/cache.h
 components/esp_rom/include/esp32s2/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
+components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/efuse.h
+components/esp_rom/include/esp32s3/rom/rtc.h
+components/esp_rom/include/esp32h2/rom/rtc.h
+components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h
@@ -132,12 +133,8 @@ components/esp_event/include/esp_event_base.h
 components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
-components/esp_netif/include/esp_netif_types.h
-components/esp_netif/include/esp_netif_ip_addr.h
 components/esp_netif/include/esp_netif_ppp.h
-components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
 components/bootloader_support/include/bootloader_util.h
-components/tcpip_adapter/include/tcpip_adapter_types.h
 components/console/linenoise/linenoise.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h

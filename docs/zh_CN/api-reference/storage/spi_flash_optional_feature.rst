@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/storage/spi_flash_optional_feature.rst

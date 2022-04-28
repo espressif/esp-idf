@@ -830,7 +830,7 @@ typedef union {
         uint32_t bbleerr: 1;
         uint32_t nakintrpt: 1;
         uint32_t nyetintrpt: 1;
-        uint32_t reserved16: 16;
+        uint32_t reserved15: 17;
     };
     uint32_t val;
 } usb_diepint_reg_t;

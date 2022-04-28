@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /************************************************************************************
  *
@@ -35,6 +27,10 @@
 #include "bta/bta_ag_api.h"
 #endif  ///BTA_AG_INCLUDED == TRUE
 
+#if (BTA_HH_INCLUDED == TRUE)
+#include "bta/bta_hh_api.h"
+#endif  ///BTA_HH_INCLUDED == TRUE
+#include "bta/bta_hd_api.h"
 #include "common/bt_defs.h"
 #include "stack/btm_api.h"
 #include "bta/bta_api.h"
@@ -208,6 +204,56 @@ const char* dump_hf_call_setup_state(esp_hf_call_setup_status_t call_setup_state
 }
 
 #endif // #if (BTA_AG_INCLUDED == TRUE)
+
+#if (BTA_HH_INCLUDED == TRUE)
+const char *dump_hh_event(uint16_t event)
+{
+    switch (event) {
+        CASE_RETURN_STR(BTA_HH_ENABLE_EVT)
+        CASE_RETURN_STR(BTA_HH_DISABLE_EVT)
+        CASE_RETURN_STR(BTA_HH_OPEN_EVT)
+        CASE_RETURN_STR(BTA_HH_CLOSE_EVT)
+        CASE_RETURN_STR(BTA_HH_GET_RPT_EVT)
+        CASE_RETURN_STR(BTA_HH_SET_RPT_EVT)
+        CASE_RETURN_STR(BTA_HH_GET_PROTO_EVT)
+        CASE_RETURN_STR(BTA_HH_SET_PROTO_EVT)
+        CASE_RETURN_STR(BTA_HH_GET_IDLE_EVT)
+        CASE_RETURN_STR(BTA_HH_SET_IDLE_EVT)
+        CASE_RETURN_STR(BTA_HH_GET_DSCP_EVT)
+        CASE_RETURN_STR(BTA_HH_ADD_DEV_EVT)
+        CASE_RETURN_STR(BTA_HH_RMV_DEV_EVT)
+        CASE_RETURN_STR(BTA_HH_VC_UNPLUG_EVT)
+        CASE_RETURN_STR(BTA_HH_DATA_EVT)
+        CASE_RETURN_STR(BTA_HH_API_ERR_EVT)
+        CASE_RETURN_STR(BTA_HH_UPDATE_SCPP_EVT)
+        CASE_RETURN_STR(BTA_HH_DATA_IND_EVT)
+    default:
+        return "UNKNOWN MSG ID";
+    }
+}
+#endif ///BTA_HH_INCLUDED
+
+#if BTA_HD_INCLUDED == TRUE
+const char* dump_hd_event(uint16_t event) {
+  switch (event) {
+    CASE_RETURN_STR(BTA_HD_ENABLE_EVT)
+    CASE_RETURN_STR(BTA_HD_DISABLE_EVT)
+    CASE_RETURN_STR(BTA_HD_REGISTER_APP_EVT)
+    CASE_RETURN_STR(BTA_HD_UNREGISTER_APP_EVT)
+    CASE_RETURN_STR(BTA_HD_OPEN_EVT)
+    CASE_RETURN_STR(BTA_HD_CLOSE_EVT)
+    CASE_RETURN_STR(BTA_HD_GET_REPORT_EVT)
+    CASE_RETURN_STR(BTA_HD_SET_REPORT_EVT)
+    CASE_RETURN_STR(BTA_HD_SET_PROTOCOL_EVT)
+    CASE_RETURN_STR(BTA_HD_INTR_DATA_EVT)
+    CASE_RETURN_STR(BTA_HD_VC_UNPLUG_EVT)
+    //CASE_RETURN_STR(BTA_HD_CONN_STATE_EVT)
+    CASE_RETURN_STR(BTA_HD_API_ERR_EVT)
+    default:
+      return "UNKNOWN MSG ID";
+  }
+}
+#endif ///BTA_HD_INCLUDED
 
 UINT32 devclass2uint(DEV_CLASS dev_class)
 {

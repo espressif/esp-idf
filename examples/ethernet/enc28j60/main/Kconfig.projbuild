@@ -1,5 +1,16 @@
 menu "Example Configuration"
 
+    config EXAMPLE_GPIO_RANGE_MIN
+        int
+        default 0
+
+    config EXAMPLE_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
     config EXAMPLE_ENC28J60_SPI_HOST
         int "SPI Host Number"
         range 0 2
@@ -9,42 +20,68 @@ menu "Example Configuration"
 
     config EXAMPLE_ENC28J60_SCLK_GPIO
         int "SPI SCLK GPIO number"
-        range 0 33
-        default 19
+        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        default 14 if IDF_TARGET_ESP32
+        default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default 6 if IDF_TARGET_ESP32C3
         help
             Set the GPIO number used by SPI SCLK.
 
     config EXAMPLE_ENC28J60_MOSI_GPIO
         int "SPI MOSI GPIO number"
-        range 0 33
-        default 23
+        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        default 13 if IDF_TARGET_ESP32
+        default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default 7 if IDF_TARGET_ESP32C3
         help
             Set the GPIO number used by SPI MOSI.
 
     config EXAMPLE_ENC28J60_MISO_GPIO
         int "SPI MISO GPIO number"
-        range 0 33
-        default 25
+        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        default 12 if IDF_TARGET_ESP32
+        default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default 2 if IDF_TARGET_ESP32C3
         help
             Set the GPIO number used by SPI MISO.
 
     config EXAMPLE_ENC28J60_CS_GPIO
         int "SPI CS GPIO number"
-        range 0 33
-        default 22
+        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        default 15 if IDF_TARGET_ESP32
+        default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             Set the GPIO number used by SPI CS.
 
     config EXAMPLE_ENC28J60_SPI_CLOCK_MHZ
         int "SPI clock speed (MHz)"
         range 5 20
-        default 6
+        default 8
         help
             Set the clock speed (MHz) of SPI interface.
 
     config EXAMPLE_ENC28J60_INT_GPIO
         int "Interrupt GPIO number"
-        default 4
+        range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+        default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         help
             Set the GPIO number used by ENC28J60 interrupt.
+
+    choice EXAMPLE_ENC28J60_DUPLEX_MODE
+        prompt "Duplex Mode"
+        default EXAMPLE_ENC28J60_DUPLEX_HALF
+        help
+            Select ENC28J60 Duplex operation mode.
+
+        config EXAMPLE_ENC28J60_DUPLEX_FULL
+            bool "Full Duplex"
+            help
+                Set ENC28J60 to Full Duplex mode. Do not forget to manually set the remote node (switch, router
+                or Ethernet controller) to full-duplex operation mode too.
+
+        config EXAMPLE_ENC28J60_DUPLEX_HALF
+            bool "Half Duplex"
+            help
+                Set ENC28J60 to Half Duplex mode.
+    endchoice # EXAMPLE_ENC28J60_DUPLEX_MODE
 endmenu

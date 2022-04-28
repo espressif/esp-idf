@@ -1,0 +1,20 @@
+# Python package requirements for ESP-IDF. These are the so called core features which are installed in all systems.
+
+setuptools
+click
+pyserial
+future
+cryptography
+pyparsing
+pyelftools
+idf-component-manager
+esp-coredump
+
+# esptool dependencies (see components/esptool_py/esptool/setup.py)
+reedsolo
+bitstring
+ecdsa
+
+# kconfig and menuconfig dependencies
+kconfiglib
+windows-curses; sys_platform == 'win32'

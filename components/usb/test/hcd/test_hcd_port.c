@@ -1,43 +1,41 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "unity.h"
+#include "esp_rom_sys.h"
 #include "test_utils.h"
+#include "test_usb_common.h"
 #include "test_hcd_common.h"
 
 #define TEST_DEV_ADDR               0
-#define NUM_IRPS                    3
+#define NUM_URBS                    3
 #define TRANSFER_MAX_BYTES          256
-#define IRP_DATA_BUFF_SIZE          (sizeof(usb_ctrl_req_t) + TRANSFER_MAX_BYTES)   //256 is worst case size for configuration descriptors
+#define URB_DATA_BUFF_SIZE          (sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES)   //256 is worst case size for configuration descriptors
+#define POST_ENQUEUE_DELAY_US       10
 
 /*
 Test a port sudden disconnect and port recovery
 
 Purpose: Test that when sudden disconnection happens on an HCD port, the port will
     - Generate the HCD_PORT_EVENT_SUDDEN_DISCONN and be put into the HCD_PORT_STATE_RECOVERY state
-    - Ongoing IRPs and pipes are handled correctly
+    - Pipes can be halted and flushed after a port error
 
 Procedure:
     - Setup the HCD and a port
     - Trigger a port connection
     - Create a default pipe
-    - Start transfers but immediately trigger a disconnect
-    - Check that HCD_PORT_EVENT_SUDDEN_DISCONN event is generated. Handle the event.
-    - Check that default pipe received a HCD_PIPE_EVENT_INVALID event. Pipe state should be invalid. Dequeue IRPs
+    - Start transfers but trigger a disconnect after a short delay
+    - Check that HCD_PORT_EVENT_SUDDEN_DISCONN event is generated. Handle that port event.
+    - Check that the default pipe remains in the HCD_PIPE_STATE_ACTIVE after the port error.
+    - Check that the default pipe can be halted.
+    - Check that the default pipe can be flushed, a HCD_PIPE_EVENT_URB_DONE event should be generated
+    - Check that all URBs can be dequeued.
     - Free default pipe
     - Recover the port
     - Trigger connection and disconnection again (to make sure the port works post recovery)
@@ -50,52 +48,58 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
-    //Allocate some IRPs and initialize their data buffers with control transfers
+    //Allocate some URBs and initialize their data buffers with control transfers
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, TEST_DEV_ADDR, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    usb_irp_t *irp_list[NUM_IRPS];
-    for (int i = 0; i < NUM_IRPS; i++) {
-        irp_list[i] = test_hcd_alloc_irp(0, IRP_DATA_BUFF_SIZE);
+    urb_t *urb_list[NUM_URBS];
+    for (int i = 0; i < NUM_URBS; i++) {
+        urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
         //Initialize with a "Get Config Descriptor request"
-        irp_list[i]->num_bytes = TRANSFER_MAX_BYTES;
-        USB_CTRL_REQ_INIT_GET_CFG_DESC((usb_ctrl_req_t *)irp_list[i]->data_buffer, 0, TRANSFER_MAX_BYTES);
-        irp_list[i]->context = (void *)0xDEADBEEF;
+        urb_list[i]->transfer.num_bytes = sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES;
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
+        urb_list[i]->transfer.context = (void *)0xDEADBEEF;
     }
 
-    //Enqueue IRPs but immediately trigger a disconnect
-    printf("Enqueuing IRPs\n");
-    for (int i = 0; i < NUM_IRPS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp_list[i]));
+    //Enqueue URBs but immediately trigger a disconnect
+    printf("Enqueuing URBs\n");
+    for (int i = 0; i < NUM_URBS; i++) {
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
     }
-    test_hcd_force_conn_state(false, 0);
-    //Disconnect event should have occurred. Handle the event
-    test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_SUDDEN_DISCONN);
-    TEST_ASSERT_EQUAL(HCD_PORT_EVENT_SUDDEN_DISCONN, hcd_port_handle_event(port_hdl));
+    //Add a short delay to let the transfers run for a bit
+    esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
+    test_usb_set_phy_state(false, 0);
+    //Disconnect event should have occurred. Handle the port event
+    test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
+    TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));
     printf("Sudden disconnect\n");
 
-    //Pipe should have received (zero or more HCD_PIPE_EVENT_IRP_DONE) followed by a HCD_PIPE_EVENT_INVALID (MUST OCCUR)
-    int num_pipe_events = test_hcd_get_num_pipe_events(default_pipe);
-    for (int i = 0; i < num_pipe_events - 1; i++) {
-        test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    }
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_INVALID);
-    TEST_ASSERT_EQUAL(hcd_pipe_get_state(default_pipe), HCD_PIPE_STATE_INVALID);
+    //We should be able to halt then flush the pipe
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
+    printf("Pipe halted\n");
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_FLUSH));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    printf("Pipe flushed\n");
 
-    //Dequeue IRPs
-    for (int i = 0; i < NUM_IRPS; i++) {
-        usb_irp_t *irp = hcd_irp_dequeue(default_pipe);
-        TEST_ASSERT_EQUAL(irp_list[i], irp);
-        TEST_ASSERT(irp->status == USB_TRANSFER_STATUS_COMPLETED || irp->status == USB_TRANSFER_STATUS_NO_DEVICE);
-        if (irp->status == USB_TRANSFER_STATUS_COMPLETED) {
-            TEST_ASSERT_GREATER_THAN(0, irp->actual_num_bytes);
+    //Dequeue URBs
+    for (int i = 0; i < NUM_URBS; i++) {
+        urb_t *urb = hcd_urb_dequeue(default_pipe);
+        TEST_ASSERT_EQUAL(urb_list[i], urb);
+        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_NO_DEVICE);
+        if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
+            //We must have transmitted at least the setup packet, but device may return less than bytes requested
+            TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+            TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
         } else {
-            TEST_ASSERT_EQUAL(0, irp->actual_num_bytes);
+            //A failed transfer should 0 actual number of bytes transmitted
+            TEST_ASSERT_EQUAL(0, urb->transfer.actual_num_bytes);
         }
-        TEST_ASSERT_EQUAL(0xDEADBEEF, irp->context);
+        TEST_ASSERT_EQUAL(0xDEADBEEF, urb->transfer.context);
     }
-    //Free IRP list and pipe
-    for (int i = 0; i < NUM_IRPS; i++) {
-        test_hcd_free_irp(irp_list[i]);
+    //Free URB list and pipe
+    for (int i = 0; i < NUM_URBS; i++) {
+        test_hcd_free_urb(urb_list[i]);
     }
     test_hcd_pipe_free(default_pipe);
 
@@ -113,18 +117,20 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
 Test port suspend and resume with active pipes
 
 Purpose:
-    - Test port suspend and resume commands work correctly whilst there are active pipes with ongoing transfers
-    - When suspending, the pipes should be allowed to finish their current ongoing transfer before the bus is suspended.
-    - When resuming, pipes with pending transfer should be started after the bus is resumed.
+    - Test port suspend and resume procedure
+    - When suspending, the pipes should be halted before suspending the port
+    - When resuming, the pipes should remain in the halted state
 
 Procedure:
     - Setup the HCD and a port
     - Trigger a port connection
     - Create a default pipe
-    - Start transfers but suspend the port immediately
+    - Test that port can't be suspended with an active pipe
+    - Halt the default pipe after a short delay
+    - Suspend the port
     - Resume the port
-    - Check that all the IRPs have completed successfully
-    - Cleanup IRPs and default pipe
+    - Check that all the pipe is still halted
+    - Cleanup default pipe
     - Trigger disconnection and teardown
 */
 TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
@@ -133,22 +139,18 @@ TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
-    //Allocate some IRPs and initialize their data buffers with control transfers
+    //Allocate some URBs and initialize their data buffers with control transfers
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, TEST_DEV_ADDR, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    usb_irp_t *irp_list[NUM_IRPS];
-    for (int i = 0; i < NUM_IRPS; i++) {
-        irp_list[i] = test_hcd_alloc_irp(0, IRP_DATA_BUFF_SIZE);
-        //Initialize with a "Get Config Descriptor request"
-        irp_list[i]->num_bytes = TRANSFER_MAX_BYTES;
-        USB_CTRL_REQ_INIT_GET_CFG_DESC((usb_ctrl_req_t *)irp_list[i]->data_buffer, 0, TRANSFER_MAX_BYTES);
-        irp_list[i]->context = (void *)0xDEADBEEF;
-    }
 
-    //Enqueue IRPs but immediately suspend the port
-    printf("Enqueuing IRPs\n");
-    for (int i = 0; i < NUM_IRPS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp_list[i]));
-    }
+    //Test that suspending the port now fails as there is an active pipe
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_SUSPEND));
+
+    //Halt the default pipe before suspending
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
+
+    //Suspend the port
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_SUSPEND));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_SUSPENDED, hcd_port_get_state(port_hdl));
     printf("Suspended\n");
@@ -158,20 +160,12 @@ TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_RESUME));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_ENABLED, hcd_port_get_state(port_hdl));
     printf("Resumed\n");
-    vTaskDelay(pdMS_TO_TICKS(100)); //Give some time for resumed IRPs to complete
-    //Dequeue IRPs
-    for (int i = 0; i < NUM_IRPS; i++) {
-        usb_irp_t *irp = hcd_irp_dequeue(default_pipe);
-        TEST_ASSERT_EQUAL(irp_list[i], irp);
-        TEST_ASSERT_EQUAL(irp->status, USB_TRANSFER_STATUS_COMPLETED);
-        TEST_ASSERT_GREATER_THAN(0, irp->actual_num_bytes);
-        TEST_ASSERT_EQUAL(0xDEADBEEF, irp->context);
-    }
 
-    //Free IRP list and pipe
-    for (int i = 0; i < NUM_IRPS; i++) {
-        test_hcd_free_irp(irp_list[i]);
-    }
+    //Clear the default pipe's halt
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_CLEAR));
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
+    vTaskDelay(pdMS_TO_TICKS(100)); //Give some time for resumed URBs to complete
+
     test_hcd_pipe_free(default_pipe);
     //Cleanup
     test_hcd_wait_for_disconn(port_hdl, false);
@@ -179,18 +173,20 @@ TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
 }
 
 /*
-Test HCD port disable with active pipes
+Test HCD port disable and disconnection
 
 Purpose:
-    - Test that the port disable command works correctly with active pipes
-    - Pipes should be to finish their current ongoing transfer before port is disabled
-    - After disabling the port, all pipes should become invalid.
+    - Test that the port disable command works correctly
+    - Check that port can only be disabled when pipes have been halted
+    - Check that a disconnection after port disable still triggers a HCD_PORT_EVENT_DISCONNECTION event
 
 Procedure:
-    - Setup HCD, a default pipe, and multiple IRPs
-    - Start transfers but immediately disable the port
-    - Check pipe received invalid event
-    - Check that transfer are either done or not executed
+    - Setup HCD, a default pipe, and multiple URBs
+    - Start transfers
+    - Halt the default pipe after a short delay
+    - Check that port can be disabled
+    - Flush the default pipe and cleanup the default pipe
+    - Check that a disconnection still works after disable
     - Teardown
 */
 TEST_CASE("Test HCD port disable", "[hcd][ignore]")
@@ -199,52 +195,62 @@ TEST_CASE("Test HCD port disable", "[hcd][ignore]")
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  //Trigger a connection
     vTaskDelay(pdMS_TO_TICKS(100)); //Short delay send of SOF (for FS) or EOPs (for LS)
 
-    //Allocate some IRPs and initialize their data buffers with control transfers
+    //Allocate some URBs and initialize their data buffers with control transfers
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, TEST_DEV_ADDR, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    usb_irp_t *irp_list[NUM_IRPS];
-    for (int i = 0; i < NUM_IRPS; i++) {
-        irp_list[i] = test_hcd_alloc_irp(0, IRP_DATA_BUFF_SIZE);
+    urb_t *urb_list[NUM_URBS];
+    for (int i = 0; i < NUM_URBS; i++) {
+        urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
         //Initialize with a "Get Config Descriptor request"
-        irp_list[i]->num_bytes = TRANSFER_MAX_BYTES;
-        USB_CTRL_REQ_INIT_GET_CFG_DESC((usb_ctrl_req_t *)irp_list[i]->data_buffer, 0, TRANSFER_MAX_BYTES);
-        irp_list[i]->context = (void *)0xDEADBEEF;
+        urb_list[i]->transfer.num_bytes = sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES;
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
+        urb_list[i]->transfer.context = (void *)0xDEADBEEF;
     }
 
-    //Enqueue IRPs but immediately disable the port
-    printf("Enqueuing IRPs\n");
-    for (int i = 0; i < NUM_IRPS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_irp_enqueue(default_pipe, irp_list[i]));
+    //Enqueue URBs but immediately disable the port
+    printf("Enqueuing URBs\n");
+    for (int i = 0; i < NUM_URBS; i++) {
+        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
     }
+    //Add a short delay to let the transfers run for a bit
+    esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
+    //Halt the default pipe before suspending
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
+    TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
+
+
+    //Check that port can be disabled
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_DISABLE));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISABLED, hcd_port_get_state(port_hdl));
     printf("Disabled\n");
 
-    //Pipe should have received (zero or more HCD_PIPE_EVENT_IRP_DONE) followed by a HCD_PIPE_EVENT_INVALID (MUST OCCUR)
-    int num_pipe_events = test_hcd_get_num_pipe_events(default_pipe);
-    for (int i = 0; i < num_pipe_events - 1; i++) {
-        test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_IRP_DONE);
-    }
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_INVALID);
-
-    //Dequeue IRPs
-    for (int i = 0; i < NUM_IRPS; i++) {
-        usb_irp_t *irp = hcd_irp_dequeue(default_pipe);
-        TEST_ASSERT_EQUAL(irp_list[i], irp);
-        TEST_ASSERT(irp->status == USB_TRANSFER_STATUS_COMPLETED || irp->status == USB_TRANSFER_STATUS_NO_DEVICE);
-        if (irp->status == USB_TRANSFER_STATUS_COMPLETED) {
-            TEST_ASSERT_GREATER_THAN(0, irp->actual_num_bytes);
+    //Flush pipe
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_FLUSH));
+    //Dequeue URBs
+    for (int i = 0; i < NUM_URBS; i++) {
+        urb_t *urb = hcd_urb_dequeue(default_pipe);
+        TEST_ASSERT_EQUAL(urb_list[i], urb);
+        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED ||    //The transfer completed before the pipe halted
+                    urb->transfer.status == USB_TRANSFER_STATUS_CANCELED ||     //The transfer was stopped mid-way by the halt
+                    urb->transfer.status == USB_TRANSFER_STATUS_NO_DEVICE);     //The transfer was never started
+        if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
+            //We must have transmitted at least the setup packet, but device may return less than bytes requested
+            TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+            TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
         } else {
-            TEST_ASSERT_EQUAL(0, irp->actual_num_bytes);
+            //A failed transfer should 0 actual number of bytes transmitted
+            TEST_ASSERT_EQUAL(0, urb->transfer.actual_num_bytes);
         }
-        TEST_ASSERT_EQUAL(0xDEADBEEF, irp->context);
+        TEST_ASSERT_EQUAL(0xDEADBEEF, urb->transfer.context);
     }
 
-    //Free IRP list and pipe
-    for (int i = 0; i < NUM_IRPS; i++) {
-        test_hcd_free_irp(irp_list[i]);
+    //Free URB list and pipe
+    for (int i = 0; i < NUM_URBS; i++) {
+        test_hcd_free_urb(urb_list[i]);
     }
     test_hcd_pipe_free(default_pipe);
-    //Cleanup
+
+    //Trigger a disconnection and cleanup
     test_hcd_wait_for_disconn(port_hdl, true);
     test_hcd_teardown(port_hdl);
 }
@@ -269,7 +275,7 @@ static void concurrent_task(void *arg)
     xSemaphoreTake(sync_sem, portMAX_DELAY);
     vTaskDelay(pdMS_TO_TICKS(10));  //Give a short delay let reset command start in main thread
     //Force a disconnection
-    test_hcd_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
     vTaskDelay(portMAX_DELAY);  //Block forever and wait to be deleted
 }
 
@@ -296,8 +302,8 @@ TEST_CASE("Test HCD port command bailout", "[hcd][ignore]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_RESPONSE, hcd_port_command(port_hdl, HCD_PORT_CMD_RESUME));
 
     //Check that concurrent task triggered a sudden disconnection
-    test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_SUDDEN_DISCONN);
-    TEST_ASSERT_EQUAL(HCD_PORT_EVENT_SUDDEN_DISCONN, hcd_port_handle_event(port_hdl));
+    test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
+    TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));
 
     //Cleanup task and semaphore

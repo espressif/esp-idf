@@ -53,7 +53,7 @@ const mcpwm_signal_conn_t mcpwm_periph_signals = {
                     }
                 }
             },
-            .detectors = {
+            .gpio_faults = {
                 [0] = {
                     .fault_sig = PWM0_F0_IN_IDX
                 },
@@ -75,7 +75,7 @@ const mcpwm_signal_conn_t mcpwm_periph_signals = {
                     .cap_sig = PWM0_CAP2_IN_IDX
                 }
             },
-            .ext_syncers = {
+            .gpio_synchros = {
                 [0] = {
                     .sync_sig = PWM0_SYNC0_IN_IDX
                 },
@@ -122,7 +122,7 @@ const mcpwm_signal_conn_t mcpwm_periph_signals = {
                     }
                 }
             },
-            .detectors = {
+            .gpio_faults = {
                 [0] = {
                     .fault_sig = PWM1_F0_IN_IDX
                 },
@@ -144,7 +144,7 @@ const mcpwm_signal_conn_t mcpwm_periph_signals = {
                     .cap_sig = PWM1_CAP2_IN_IDX
                 }
             },
-            .ext_syncers = {
+            .gpio_synchros = {
                 [0] = {
                     .sync_sig = PWM1_SYNC0_IN_IDX
                 },

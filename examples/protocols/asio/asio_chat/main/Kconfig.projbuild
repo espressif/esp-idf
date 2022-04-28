@@ -1,0 +1,39 @@
+menu "Example Configuration"
+
+    config EXAMPLE_CHAT_SERVER
+        bool "Asio example chat server"
+        default n
+        help
+            This example will setup a chat server, binds it to the specified address
+            and starts listening.
+
+    if EXAMPLE_CHAT_SERVER
+        config EXAMPLE_CHAT_SERVER_BIND_PORT
+            string "Asio example server bind port"
+            default "3344"
+            help
+                Server listener's socket would be bound to this port.
+    endif
+
+    config EXAMPLE_CHAT_CLIENT
+        bool "Asio example chat client"
+        default y
+        help
+            This example will setup an asio chat client.
+            and sends the data.
+
+    if EXAMPLE_CHAT_CLIENT
+        config EXAMPLE_CHAT_CLIENT_CONNECT_ADDRESS
+            string "Client connection address"
+            default "192.168.0.1"
+            help
+                Client's socket would connect to this address/host.
+
+        config EXAMPLE_CHAT_CLIENT_CONNECT_PORT
+            string "Client connection port"
+            default "3344"
+            help
+                Client's connection port.
+    endif
+
+endmenu

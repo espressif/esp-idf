@@ -277,7 +277,7 @@ typedef volatile struct uhci_dev_s {
         };
         uint32_t val;
     } quick_sent;
-    struct{
+    struct {
         uint32_t w_data[2];                                /*This register stores the content of short packet's dword*/
     } q_data[7];
     union {

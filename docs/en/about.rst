@@ -13,13 +13,21 @@ About
 
     This is documentation of `ESP-IDF <https://github.com/espressif/esp-idf>`_, the framework to develop applications for {IDF_TARGET_NAME}.
 
-    The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi module, which integrates a Xtensa® 32-bit LX7 CPU, with up to 600 DMIPS processing power.
+    The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi SoC, which integrates a Xtensa® 32-bit LX7 CPU.
 
-.. only:: esp32c3
+
+.. only:: esp32s3
 
     This is documentation of `ESP-IDF <https://github.com/espressif/esp-idf>`_, the framework to develop applications for {IDF_TARGET_NAME}.
 
-    The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi Bluetooth Low Energy combo, which integrates a 32-bit RISC-V RV32IMC single-core processor.
+    The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi Bluetooth Low Energy combo SoC, which integrates a Xtensa® 32-bit LX7 CPU.
+
+
+.. only:: esp32c3 or esp32c2
+
+    This is documentation of `ESP-IDF <https://github.com/espressif/esp-idf>`_, the framework to develop applications for {IDF_TARGET_NAME}.
+
+    The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi Bluetooth Low Energy combo SoC, which integrates a 32-bit RISC-V RV32IMC single-core processor.
 
 .. figure:: ../_static/about-doc.png
     :align: center
@@ -28,5 +36,4 @@ About
 
     Espressif IoT Integrated Development Framework
 
-The ESP-IDF, Espressif IoT Development Framework, provides toolchain, API, components and workflows to develop applications for {IDF_TARGET_NAME} using Windows, Linux and Mac OS operating systems.
-
+The ESP-IDF, Espressif IoT Development Framework, provides toolchain, API, components and workflows to develop applications for {IDF_TARGET_NAME} using Windows, Linux and macOS operating systems.

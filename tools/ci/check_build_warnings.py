@@ -25,6 +25,7 @@ IGNORE_WARNS = [
         r'library/error\.o',
         r'/.*error\S*\.o',
         r'.*error.*\.c\.obj',
+        r'.*error.*\.c',
         r'.*error.*\.cpp\.obj',
         r'.*error.*\.cxx\.obj',
         r'.*error.*\.cc\.obj',
@@ -35,9 +36,8 @@ IGNORE_WARNS = [
         r'changes choice state',
         r'crosstool_version_check\.cmake',
         r'CryptographyDeprecationWarning',
-        r'Python 3 versions older than 3.6 are not supported.',
-        r'Support for Python 2 is deprecated and will be removed in future versions.',
-        r'Warning: \d+/\d+ app partitions are too small for binary'
+        r'Warning: \d+/\d+ app partitions are too small for binary',
+        r'CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy\)',
     ]
 ]
 

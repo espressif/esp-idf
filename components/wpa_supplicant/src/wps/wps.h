@@ -233,8 +233,8 @@ enum wps_process_res wps_process_msg(struct wps_data *wps,
 
 struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code);
 
-int wps_is_selected_pbc_registrar(const struct wpabuf *msg, u8 *bssid);
-int wps_is_selected_pin_registrar(const struct wpabuf *msg, u8 *bssid);
+int wps_is_selected_pbc_registrar(const struct wpabuf *msg);
+int wps_is_selected_pin_registrar(const struct wpabuf *msg);
 int wps_ap_priority_compar(const struct wpabuf *wps_a,
 			   const struct wpabuf *wps_b);
 int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
@@ -1054,6 +1054,7 @@ struct wps_sm {
 #endif
     u8 discover_ssid_cnt;
     bool ignore_sel_reg;
+    bool wps_pin_war;
     struct discard_ap_list_t dis_ap_list[WPS_MAX_DIS_AP_NUM];
     u8 discard_ap_cnt;
     wifi_sta_config_t config;

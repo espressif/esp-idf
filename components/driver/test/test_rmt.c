@@ -1,9 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 // RMT driver unit test is based on extended NEC protocol
+
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -12,17 +13,19 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "driver/rmt.h"
-#include "ir_tools.h"
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_rom_gpio.h"
+
+#if SOC_RMT_SUPPORTED
+#include "ir_tools.h"
+#include "driver/rmt.h"
 
 #define RMT_RX_CHANNEL_ENCODING_START (SOC_RMT_CHANNELS_PER_GROUP-SOC_RMT_TX_CANDIDATES_PER_GROUP)
 #define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CANDIDATES_PER_GROUP-1)
 
 // CI ONLY: Don't connect any other signals to this GPIO
-#define RMT_DATA_IO (4) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
+#define RMT_DATA_IO (0) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
 
 #define RMT_TESTBENCH_FLAGS_ALWAYS_ON (1<<0)
 #define RMT_TESTBENCH_FLAGS_CARRIER_ON (1<<1)
@@ -161,7 +164,7 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
 #endif
 
 
-    TEST_ESP_OK(rmt_set_tx_carrier(channel, 0, 1, 0, 1));
+    TEST_ESP_OK(rmt_set_tx_carrier(channel, 0, 10, 10, 1));
     TEST_ESP_OK(rmt_set_idle_level(channel, 1, 0));
 
     rmt_clean_testbench(channel, -1);
@@ -595,3 +598,5 @@ TEST_CASE("RMT TX loop", "[rmt]")
     rmt_clean_testbench(tx_channel, rx_channel);
 }
 #endif
+
+#endif // SOC_RMT_SUPPORTED

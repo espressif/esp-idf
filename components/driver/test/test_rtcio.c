@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
 #include "esp_log.h"
 #include "soc/rtc_io_periph.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP32C2)
 
 #define RTCIO_CHECK(condition) TEST_ASSERT_MESSAGE((condition == ESP_OK), "ret is not ESP_OK")
 #define RTCIO_VERIFY(condition, msg) TEST_ASSERT_MESSAGE((condition), msg)
@@ -102,13 +102,13 @@ TEST_CASE("RTCIO input/output test", "[rtcio]")
         for (int i = 0; i < GPIO_PIN_COUNT; i++) {
             if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
                 RTCIO_CHECK( rtc_gpio_set_level(i, level) );
-                vTaskDelay(10 / portTICK_RATE_MS);
+                vTaskDelay(10 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(i) != level) {
                     ESP_LOGE(TAG, "RTCIO input/output test err, gpio%d", i);
                 }
             }
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
     // Deinit rtcio
@@ -152,13 +152,13 @@ TEST_CASE("RTCIO pullup/pulldown test", "[rtcio]")
                     RTCIO_CHECK( rtc_gpio_pullup_dis(s_test_map[i]) );
                     RTCIO_CHECK( rtc_gpio_pulldown_en(s_test_map[i]) );
                 }
-                vTaskDelay(20 / portTICK_RATE_MS);
+                vTaskDelay(20 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(s_test_map[i]) != level) {
                     ESP_LOGE(TAG, "RTCIO pullup/pulldown test err, gpio%d", s_test_map[i]);
                 }
             }
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
     // Deinit rtcio
@@ -194,13 +194,13 @@ TEST_CASE("RTCIO output OD test", "[rtcio]")
         for (int i = 0; i < GPIO_PIN_COUNT; i++) {
             if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
                 RTCIO_CHECK( rtc_gpio_set_level(i, level) );
-                vTaskDelay(10 / portTICK_RATE_MS);
+                vTaskDelay(10 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(i) != level) {
                     ESP_LOGE(TAG, "RTCIO output OD test err, gpio%d", i);
                 }
             }
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
     // Deinit rtcio
@@ -234,10 +234,10 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
     for (int i = 0; i < GPIO_PIN_COUNT; i++) {
         if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
             RTCIO_CHECK( rtc_gpio_hold_en(i) );
-            vTaskDelay(10 / portTICK_RATE_MS);
+            vTaskDelay(10 / portTICK_PERIOD_MS);
             RTCIO_CHECK( rtc_gpio_set_level(i, 0) );
             ESP_LOGI(TAG, "RTCIO output pin hold, then set level 0");
-            vTaskDelay(10 / portTICK_RATE_MS);
+            vTaskDelay(10 / portTICK_PERIOD_MS);
             if (rtc_gpio_get_level(i) == 0) {
                 ESP_LOGE(TAG, "RTCIO hold test err, gpio%d", i);
             }
@@ -258,13 +258,13 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
         for (int i = 0; i < GPIO_PIN_COUNT; i++) {
             if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
                 RTCIO_CHECK( rtc_gpio_set_level(i, level) );
-                vTaskDelay(10 / portTICK_RATE_MS);
+                vTaskDelay(10 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(i) != level) {
                     ESP_LOGE(TAG, "RTCIO output OD test err, gpio%d", i);
                 }
             }
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
 
     // Deinit rtcio

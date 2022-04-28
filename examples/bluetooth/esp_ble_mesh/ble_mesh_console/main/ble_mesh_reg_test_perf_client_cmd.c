@@ -1,21 +1,12 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/FreeRTOSConfig.h"
 
 #include "esp_ble_mesh_networking_api.h"
@@ -70,18 +61,18 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
     ctx.model = profile_context->model;
     ctx.send_rel = 0;
     test_perf_statistics.test_length = profile_context->length;
-
     // create send data
     data = malloc(profile_context->length);
     if (data == NULL) {
         ESP_LOGE(TAG, " %s, %d, malloc fail\n", __func__, __LINE__);
     }
 
-    TRANSACTION_INIT(&trans, TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE,
-                    TRANS_MESH_SEND_MESSAGE_EVT, SEND_MESSAGE_TIMEOUT, &start_time, NULL);
     for (i = 1; i <= profile_context->test_num; i++) {
         ble_mesh_create_send_data((char *)data, profile_context->length, i, profile_context->opcode);
         start_time = esp_timer_get_time();
+        TRANSACTION_INIT(&trans, TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE,
+                    TRANS_MESH_SEND_MESSAGE_EVT, SEND_MESSAGE_TIMEOUT, &start_time, NULL);
+        //tx: data  profile_context->length
         esp_ble_mesh_client_model_send_msg(profile_context->model, &ctx, profile_context->opcode,
                                            profile_context->length, data, 8000, profile_context->need_ack, profile_context->device_role);
         ble_mesh_test_performance_client_model_accumulate_statistics(profile_context->length);
@@ -156,7 +147,6 @@ int ble_mesh_test_performance_client_model_performance(int argc, char **argv)
     }
 
     if (strcmp(test_perf_client_model_statistics.action_type->sval[0], "init") == 0) {
-        init_transactions();
         result = ble_mesh_test_performance_client_model_init(test_perf_client_model_statistics.node_num->ival[0],
                  test_perf_client_model_statistics.test_size->ival[0], test_perf_client_model_statistics.ttl->ival[0]);
         if (result == 0) {

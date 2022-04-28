@@ -21,7 +21,7 @@ ESP-BLE-MESH 的实现和认证基于最新的 `Mesh Profile v1.0.1 <https://www
 
 .. note::
 
-  如果您在寻找 ESP32 基于 Wi-Fi 的 mesh 方案，请查阅乐鑫的另一款产品 ESP-MESH。更多相关信息及文档，请参见 :doc:`ESP-MESH <../../api-reference/network/esp_mesh>`。
+  如果您在寻找 ESP32 基于 Wi-Fi 的 mesh 方案，请查阅乐鑫的另一款产品 ESP-WIFI-MESH。更多相关信息及文档，请参见 :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`。
 
 .. _getting-started-with-ble-mesh:
 

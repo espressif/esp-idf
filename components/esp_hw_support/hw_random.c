@@ -1,16 +1,8 @@
-// Copyright 2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #include <stdint.h>
@@ -20,15 +12,13 @@
 #include "esp_attr.h"
 #include "hal/cpu_hal.h"
 #include "soc/wdev_reg.h"
+#include "esp_private/esp_clk.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
+#if defined CONFIG_IDF_TARGET_ESP32S3
+#define APB_CYCLE_WAIT_NUM (1778) /* If APB clock is 80 MHz, maximum sampling frequency is around 45 KHz*/
+                                  /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
+#else
+#define APB_CYCLE_WAIT_NUM (16)
 #endif
 
 uint32_t IRAM_ATTR esp_random(void)
@@ -59,7 +49,7 @@ uint32_t IRAM_ATTR esp_random(void)
     do {
         ccount = cpu_hal_get_cycle_count();
         result ^= REG_READ(WDEV_RND_REG);
-    } while (ccount - last_ccount < cpu_to_apb_freq_ratio * 16);
+    } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
 }

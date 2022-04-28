@@ -12,9 +12,9 @@ Use should concern these things:
 Application Example
 -------------------
 
-Check :example:`bluetooth/bluedroid/ble` folder in ESP-IDF examples, which contains the following application:
+Check :example:`bluetooth` folder in ESP-IDF examples, which contains the following application:
 
-* This is the BLUFI demo. This demo can set ESP32's wifi to softap/station/softap&station mode and config wifi connections - :example:`bluetooth/bluedroid/ble/blufi`
+* This is the BLUFI demo. This demo can set ESP32's wifi to softap/station/softap&station mode and config wifi connections - :example:`bluetooth/blufi`
 
 API Reference
 -------------

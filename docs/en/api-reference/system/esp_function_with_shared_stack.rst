@@ -15,16 +15,18 @@ passing that function as parameter
 Usage
 -----
 
-:cpp:func:`esp_execute_shared_stack_function` takes four arguments, 
-a mutex object allocated by the caller, which is used to protect if 
-the same function shares its allocated stack, a pointer to the top 
-of stack used to that fuction, the size in bytes of stack and, a pointer
-to a user function where the shared stack space will reside, after calling
-the function, the user defined function will be deferred as a callback
-where functions can be called using the user allocated space without
-taking space from current task stack. 
+:cpp:func:`esp_execute_shared_stack_function` takes four arguments:
 
-The usage may looks like the code below:
+- a mutex object allocated by the caller, which is used to protect if the same function shares its allocated stack
+- a pointer to the top of stack used for that fuction
+- the size of stack in bytes
+- a pointer to the shared stack function
+
+The user defined function will be deferred as a callback
+and can be called using the user allocated space without
+taking space from current task stack.
+
+The usage may look like the code below:
 
 .. code-block:: c
 
@@ -33,8 +35,8 @@ The usage may looks like the code below:
         printf("Executing this printf from external stack! \n");
     }
 
-    //Let's suppose we wanting to call printf using a separated stack space
-    //allowing app to reduce its stack size.
+    //Let's suppose we want to call printf using a separated stack space
+    //allowing the app to reduce its stack size.
     void app_main()
     {
         //Allocate a stack buffer, from heap or as a static form:

@@ -23,8 +23,8 @@ extern "C" {
 typedef volatile struct uart_dev_s {
     union {
         struct {
-            uint8_t rw_byte;                 /*This register stores one byte data  read by rx fifo.*/
-            uint8_t reserved[3];
+            uint32_t rw_byte:          8;           /*This register stores one byte data  read by rx fifo.*/
+            uint32_t reserved:         24;
         };
         uint32_t val;
     } fifo;

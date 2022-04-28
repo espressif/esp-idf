@@ -117,3 +117,18 @@ bool sntp_restart(void)
     }
     return false;
 }
+
+void sntp_set_system_time(uint32_t sec, uint32_t us)
+{
+    struct timeval tv = { .tv_sec = sec, .tv_usec = us };
+    sntp_sync_time(&tv);
+}
+
+void sntp_get_system_time(uint32_t *sec, uint32_t *us)
+{
+    struct timeval tv = { .tv_sec = 0, .tv_usec = 0 };
+    gettimeofday(&tv, NULL);
+    *(sec) = tv.tv_sec;
+    *(us) = tv.tv_usec;
+    sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
+}

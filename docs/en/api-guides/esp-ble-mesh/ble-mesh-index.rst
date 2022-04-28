@@ -18,7 +18,7 @@ ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.
 
 .. note::
 
-  If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-MESH. For more information and documentation see :doc:`ESP-MESH <../../api-reference/network/esp_mesh>`.
+  If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIF-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`.
 
 
 .. _getting-started-with-ble-mesh:

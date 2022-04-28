@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <sys/param.h>
@@ -623,8 +615,10 @@ static bool wifi_prov_mgr_stop_service(bool blocking)
          * released - some duration after - returning from a call to
          * wifi_prov_mgr_stop_provisioning(), like when it is called
          * inside a protocomm handler */
-        assert(xTaskCreate(prov_stop_task, "prov_stop_task", 4096, (void *)1,
-                           tskIDLE_PRIORITY, NULL) == pdPASS);
+        if (xTaskCreate(prov_stop_task, "prov_stop_task", 4096, (void *)1, tskIDLE_PRIORITY, NULL) != pdPASS) {
+            ESP_LOGE(TAG, "Failed to create prov_stop_task!");
+            abort();
+        }
         ESP_LOGD(TAG, "Provisioning scheduled for stopping");
     }
     return true;
@@ -794,14 +788,6 @@ static esp_err_t update_wifi_scan_results(void)
     return ret;
 }
 
-/* DEPRECATED : Event handler for starting/stopping provisioning.
- * To be called from within the context of the main
- * event handler */
-esp_err_t wifi_prov_mgr_event_handler(void *ctx, system_event_t *event)
-{
-    return ESP_OK;
-}
-
 static void wifi_prov_mgr_event_handler_internal(
     void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
@@ -871,6 +857,7 @@ static void wifi_prov_mgr_event_handler_internal(
         case WIFI_REASON_AUTH_FAIL:
         case WIFI_REASON_ASSOC_EXPIRE:
         case WIFI_REASON_HANDSHAKE_TIMEOUT:
+        case WIFI_REASON_MIC_FAILURE:
             ESP_LOGE(TAG, "STA Auth Error");
             prov_ctx->wifi_disconnect_reason = WIFI_PROV_STA_AUTH_ERROR;
             break;
@@ -926,11 +913,17 @@ esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
 
     if (passive) {
         prov_ctx->scan_cfg.scan_type = WIFI_SCAN_TYPE_PASSIVE;
+/* We do not recommend scan configuration modification in Wi-Fi and BT coexistence mode */
+#if !CONFIG_BT_ENABLED
         prov_ctx->scan_cfg.scan_time.passive = period_ms;
+#endif
     } else {
         prov_ctx->scan_cfg.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+/* We do not recommend scan configuration modification in Wi-Fi and BT coexistence mode */
+#if !CONFIG_BT_ENABLED
         prov_ctx->scan_cfg.scan_time.active.min = period_ms;
         prov_ctx->scan_cfg.scan_time.active.max = period_ms;
+#endif
     }
     prov_ctx->channels_per_group = group_channels;
 
@@ -1577,4 +1570,35 @@ esp_err_t wifi_prov_mgr_reset_provisioning(void)
     }
 
     return ret;
+}
+
+esp_err_t wifi_prov_mgr_reset_sm_state_on_failure(void)
+{
+    if (!prov_ctx_lock) {
+        ESP_LOGE(TAG, "Provisioning manager not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ACQUIRE_LOCK(prov_ctx_lock);
+
+    esp_err_t err = ESP_OK;
+    if (prov_ctx->prov_state != WIFI_PROV_STATE_FAIL) {
+        ESP_LOGE(TAG, "Trying reset when not in failure state. Current state: %d", prov_ctx->prov_state);
+        err = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+
+    wifi_config_t wifi_cfg = {0};
+
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set wifi config, 0x%x", err);
+        goto exit;
+    }
+
+    prov_ctx->prov_state = WIFI_PROV_STATE_STARTED;
+
+exit:
+    RELEASE_LOCK(prov_ctx_lock);
+    return err;
 }

@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "common/bt_target.h"
 #include <string.h>
@@ -414,6 +406,59 @@ esp_err_t esp_hf_client_send_dtmf(char code)
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hf_client_args_t), NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
+
+esp_err_t esp_hf_client_send_xapl(char *information, uint32_t features)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (information == NULL || strlen(information) != ESP_BT_HF_AT_SEND_XAPL_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    btc_hf_client_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_HF_CLIENT;
+    msg.act = BTC_HF_CLIENT_SEND_XAPL_EVT;
+
+    memset(&arg, 0, sizeof(btc_hf_client_args_t));
+    strcpy(arg.send_xapl.information, information);
+    arg.send_xapl.features = features;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hf_client_args_t), NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_hf_client_send_iphoneaccev(uint32_t bat_level, bool docked)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (bat_level > 9) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    btc_hf_client_args_t arg;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_HF_CLIENT;
+    msg.act = BTC_HF_CLIENT_SEND_IPHONEACCEV_EVT;
+
+    memset(&arg, 0, sizeof(btc_hf_client_args_t));
+    arg.send_iphoneaccev.bat_level = bat_level;
+    arg.send_iphoneaccev.docked = docked;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_hf_client_args_t), NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 
 esp_err_t esp_hf_client_request_last_voice_tag_number(void)
 {

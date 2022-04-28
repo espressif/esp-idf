@@ -1,16 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 
@@ -121,7 +114,7 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
     tBTA_GATTC *p_dest_data = (tBTA_GATTC *) p_dest;
     tBTA_GATTC *p_src_data = (tBTA_GATTC *) p_src;
 
-    if (!p_src_data || !p_dest_data) {
+    if (!p_src_data || !p_dest_data || !msg) {
         return;
     }
 
@@ -186,7 +179,7 @@ static void btc_gattc_free_req_data(btc_msg_t *msg)
 static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 {
     bt_status_t ret;
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTC;

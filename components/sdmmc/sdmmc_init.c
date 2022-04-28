@@ -112,6 +112,9 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         SDMMC_INIT_STEP(always, sdmmc_init_host_bus_width);
     }
 
+    /* SD card: read SD Status register */
+    SDMMC_INIT_STEP(is_sdmem, sdmmc_init_sd_ssr);
+
     /* Switch to the host to use card->max_freq_khz frequency. */
     SDMMC_INIT_STEP(always, sdmmc_init_host_frequency);
 

@@ -45,7 +45,7 @@ In the `Example Connection Configuration` menu:
 
 In the `Example Configuration` menu:
 
-* Set the URL of the firmware to download in the `Firmware Upgrade URL` option. The format should be `https://<host-ip-address>:<host-port>/<firmware-image-filename>`, e.g. `https://192.168.2.106:8070/hello-world.bin`
+* Set the URL of the firmware to download in the `Firmware Upgrade URL` option. The format should be `https://<host-ip-address>:<host-port>/<firmware-image-filename>`, e.g. `https://192.168.2.106:8070/hello_world.bin`
   * **Note:** The server part of this URL (e.g. `192.168.2.106`) must match the **CN** field used when [generating the certificate and key](#run-https-server)
 
 ### Build and Flash
@@ -68,7 +68,7 @@ After a successful build, we need to create a self-signed certificate and run a 
 * To create a new self-signed certificate and key, run the command `openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365 -nodes`.
   * When prompted for the `Common Name (CN)`, enter the name of the server that the "ESP-Dev-Board" will connect to. When running this example from a development machine, this is probably the IP address. The HTTPS client will check that the `CN` matches the address given in the HTTPS URL.
 * To start the HTTPS server, run the command `openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`.
-* This directory should contain the firmware (e.g. `hello-world.bin`) to be used in the update process. This can be any valid ESP-IDF application, as long as its filename corresponds to the name configured using `Firmware Upgrade URL` in menuconfig. The only difference to flashing a firmware via the serial interface is that the binary is flashed to the `factory` partition, while OTA update use one of the OTA partitions.
+* This directory should contain the firmware (e.g. `hello_world.bin`) to be used in the update process. This can be any valid ESP-IDF application, as long as its filename corresponds to the name configured using `Firmware Upgrade URL` in menuconfig. The only difference to flashing a firmware via the serial interface is that the binary is flashed to the `factory` partition, while OTA update use one of the OTA partitions.
 * **Note:** Make sure incoming access to port *8070* is not prevented by firewall rules.
 * **Note:** Windows users may encounter issues while running `openssl s_server -WWW`, due to CR/LF translation and/or closing the connection prematurely
   (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted images received by the OTA client; others interpret the `0x1a`/`SUB` character in a binary as an escape sequence, i.e. end of file, and close the connection prematurely thus preventing the OTA client from receiving a complete image).
@@ -100,7 +100,7 @@ If you want to rollback to the `factory` app after the upgrade (or to the first 
 ### Output from the HTTPS server
 
 ```bash
-FILE:hello-world.bin
+FILE:hello_world.bin
 ACCEPT
 ```
 
@@ -131,14 +131,14 @@ In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the a
 
 * Check that your PC can ping the "ESP-Dev-Board" using its IP, and that the IP, AP and other configuration settings are correctly configured in menuconfig
 * Check if any firewall software is preventing incoming connections on the PC
-* Check whether you can see the configured file (default `hello-world.bin`), by running the command `curl -v https://<host-ip-address>:<host-port>/<firmware-image-filename>`
+* Check whether you can see the configured file (default `hello_world.bin`), by running the command `curl -v https://<host-ip-address>:<host-port>/<firmware-image-filename>`
 * Try viewing the file listing from a separate host or phone
 
 ### Error "ota_begin error err=0x104"
 
 If you see this error, check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table requires at least 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (for details see [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)) and configure it in menuconfig.
 
-Make sure to run "idf.py erase_flash" after making changes to the partition table.
+Make sure to run "idf.py erase-flash" after making changes to the partition table.
 
 ### Local https server
 
@@ -146,7 +146,7 @@ Running a local https server might be tricky in some cases (due to self signed c
 * Run a plain HTTP server to test the connection. (Note that using a plain http is **not secure** and should only be used for testing)
     - Execute `python -m http.server 8070` in the directory with the firmware image
     - Use http://<host-ip>:8070/<firmware-name> as the firmware upgrade URL
-    - Enable *Allow HTTP for OTA* (`CONFIG_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
+    - Enable *Allow HTTP for OTA* (`CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
 * Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
     - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`
     - `<PORT>` is the server's port, here `8070`
@@ -158,4 +158,17 @@ $ python example_test.py build 8070
 Starting HTTPS server at "https://:8070"
 192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
 ```
-* Publish the firmware image on a public server (e.g. github.com) and copy its root certificate to the `server_certs` directory as `ca_cert.pem`. (The certificate can be downloaded using the `s_client` openssl command if the host includes the root certificate in the chain, e.g. `openssl s_client -showcerts -connect github.com:443 </dev/null`)
+* Publish the firmware image on a public server (e.g. github.com) and copy its root certificate to the `server_certs` directory as `ca_cert.pem`. The certificate can be downloaded using the `s_client` openssl command as shown below:
+
+```
+echo "" | openssl s_client -showcerts -connect raw.githubusercontent.com:443 | sed -n "1,/Root/d; /BEGIN/,/END/p" | openssl x509 -outform PEM >ca_cert.pem
+```
+
+Please note that URL used here is `raw.githubusercontent.com`. This URL allows raw access to files hosted on github.com repository. Additionally, command above copies last certificate from chain of certs as the CA root cert of server.
+
+---
+**NOTE**
+
+For examples using certificate bundle approach (e.g., `simple_ota_example`), it already has most common root certificates and hence there is no need to add any additional certs.
+
+---

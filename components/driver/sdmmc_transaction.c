@@ -73,7 +73,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
 static void fill_dma_descriptors(size_t num_desc);
 static size_t get_free_descriptors_count(void);
-static bool wait_for_busy_cleared(int timeout_ms);
+static bool wait_for_busy_cleared(uint32_t timeout_ms);
 
 esp_err_t sdmmc_host_transaction_handler_init(void)
 {
@@ -404,7 +404,9 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
             case SDMMC_SENDING_CMD:
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
-                    break;      // Need to wait for the CMD_DONE interrupt
+                    // In addition to the error interrupt, CMD_DONE will also be
+                    // reported. It may occur immediately (in the same sdmmc_event_t) or
+                    // be delayed until the next interrupt.
                 }
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_CMD_DONE)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
@@ -460,7 +462,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
     return ESP_OK;
 }
 
-static bool wait_for_busy_cleared(int timeout_ms)
+static bool wait_for_busy_cleared(uint32_t timeout_ms)
 {
     if (timeout_ms == 0) {
         return !sdmmc_host_card_busy();
@@ -470,7 +472,7 @@ static bool wait_for_busy_cleared(int timeout_ms)
      * can only generate Busy Clear Interrupt for data write commands, and waiting
      * for busy clear is mostly needed for other commands such as MMC_SWITCH.
      */
-    int timeout_ticks = (timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+    uint32_t timeout_ticks = (timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
     while (timeout_ticks-- > 0) {
         if (!sdmmc_host_card_busy()) {
             return true;

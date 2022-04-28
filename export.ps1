@@ -6,13 +6,16 @@ $IDF_PATH = $PSScriptRoot
 Write-Output "Setting IDF_PATH: $IDF_PATH"
 $env:IDF_PATH = $IDF_PATH
 
+Write-Output "Checking Python compatibility"
+python $IDF_PATH/tools/python_version_checker.py
+
 Write-Output "Adding ESP-IDF tools to PATH..."
 $OLD_PATH = $env:PATH.split($S) | Select-Object -Unique # array without duplicates
 # using idf_tools.py to get $envars_array to set
 $envars_raw = python $IDF_PATH/tools/idf_tools.py export --format key-value
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
-$envars_array # will be filled like:
+$envars_array = @() # will be filled like:
 #               [
 #                    [vname1, vval1], [vname2, vval2], ...
 #               ]
@@ -21,6 +24,12 @@ foreach ($line  in $envars_raw) {
     $var_name = $pair[0].Trim() # trim spaces on the ends of the name
     $var_val = $pair[1].Trim() # trim spaces on the ends of the val
     $envars_array += (, ($var_name, $var_val))
+}
+
+if ($IsWindows -eq $null) {
+    # $IsWindows was added in PowerShell Core 6 and PowerShell 7 together with multi-platform support. # I.E. if this
+    # internal variable is not set then PowerShell 5 is used and # the platform cannot be # anything else than Windows.
+    $IsWindows = $true
 }
 
 foreach ($pair  in $envars_array) {
@@ -63,8 +72,18 @@ if ($dif_Path -ne $null) {
 
 Write-Output "Checking if Python packages are up to date..."
 
-Start-Process -Wait -NoNewWindow -FilePath "python" -Args "`"$IDF_PATH/tools/check_python_dependencies.py`""
+Start-Process -Wait -NoNewWindow -FilePath "python" -Args "`"$IDF_PATH/tools/idf_tools.py`" check-python-dependencies"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
+
+$uninstall = python $IDF_PATH/tools/idf_tools.py uninstall --dry-run
+
+if (![string]::IsNullOrEmpty($uninstall)){
+    Write-Output ""
+    Write-Output "Detected installed tools that are not currently used by active ESP-IDF version."
+    Write-Output "$uninstall"
+    Write-Output "For free up even more space, remove installation packages of those tools. Use option 'python.exe $IDF_PATH\tools\idf_tools.py uninstall --remove-archives'."
+    Write-Output ""
+}
 
 Write-Output "
 Done! You can now compile ESP-IDF projects.

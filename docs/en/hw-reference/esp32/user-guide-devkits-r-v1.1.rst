@@ -5,6 +5,7 @@ ESP32-DevKitS(-R)
 :link_to_translation:`zh_CN:[中文]`
 
 This user guide provides information on ESP32-DevKitS(-R), an ESP32-based flashing board produced by Espressif. 
+
 ESP32-DevKitS(-R) is a combination of two board names: ESP32-DevKitS and ESP32-DevKitS-R. S stands for springs, and R stands for WROVER.
 
 +-----------------+-------------------+
@@ -134,7 +135,6 @@ Alternative Method
 
 As an alternative, Windows users can flash binaries using the `Flash Download Tool <https://www.espressif.com/en/support/download/other-tools?keys=flash+download+tools>`_. Just download it, unzip it, and follow the instructions inside the *doc* folder.
 
-
     .. note::
          1. To flash binary files, ESP32 should be set to Firmware Download mode. This can be done either by the flash tool automatically, or by holding down the Boot button and tapping the EN button.
          2. After flashing binary files, the Flash Download Tool restarts your ESP32 module and boots the flashed application by default.
@@ -174,7 +174,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF).
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 
 Hardware Reference
@@ -266,4 +266,4 @@ Related Documents
 - `ESP32-SOLO-1 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-solo-1_datasheet_en.pdf>`_ (PDF)
 - `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 - `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
-- `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+- `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 

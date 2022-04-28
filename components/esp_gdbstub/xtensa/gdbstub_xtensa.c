@@ -1,23 +1,17 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_gdbstub_common.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/soc_memory_layout.h"
 #include "xtensa/config/specreg.h"
 #include "sdkconfig.h"
+#include "esp_ipc_isr.h"
+#include "esp_private/crosscore_int.h"
 
 #if !XCHAL_HAVE_WINDOWED
 #warning "gdbstub_xtensa: revisit the implementation for Call0 ABI"
@@ -125,8 +119,101 @@ void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst
 int esp_gdbstub_get_signal(const esp_gdbstub_frame_t *frame)
 {
     const char exccause_to_signal[] = {4, 31, 11, 11, 2, 6, 8, 0, 6, 7, 0, 0, 7, 7, 7, 7};
-    if (frame->exccause > sizeof(exccause_to_signal)) {
+    if (frame->exccause >= sizeof(exccause_to_signal)) {
         return 11;
     }
     return (int) exccause_to_signal[frame->exccause];
+}
+
+/** @brief Init dport for GDB
+ * Init dport for iterprocessor communications
+ * */
+void esp_gdbstub_init_dports(void)
+{
+}
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+static bool stall_started = false;
+#endif
+
+/** @brief GDB stall other CPU
+ * GDB stall other CPU
+ * */
+void esp_gdbstub_stall_other_cpus_start()
+{
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    if (stall_started == false) {
+        esp_ipc_isr_stall_other_cpu();
+        stall_started = true;
+    }
+#endif
+}
+
+/** @brief GDB end stall other CPU
+ * GDB end stall other CPU
+ * */
+void esp_gdbstub_stall_other_cpus_end()
+{
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    if (stall_started == true) {
+        esp_ipc_isr_release_other_cpu();
+        stall_started = false;
+    }
+#endif
+}
+
+/** @brief GDB clear step
+ * GDB clear step registers
+ * */
+void esp_gdbstub_clear_step(void)
+{
+    WSR(ICOUNT, 0);
+    WSR(ICOUNTLEVEL, 0);
+}
+
+/** @brief GDB do step
+ * GDB do one step
+ * */
+void esp_gdbstub_do_step(void)
+{
+    // We have gdbstub uart interrupt, and if we will call step, with ICOUNTLEVEL=2 or higher, from uart interrupt, the
+    // application will hang because it will try to step uart interrupt. That's why we have to set ICOUNTLEVEL=1
+    // If we will stop by the breakpoint inside interrupt, we will handle this interrupt with ICOUNTLEVEL=ps.intlevel+1
+
+    uint32_t level = s_scratch.regfile.ps;
+    level &= 0x7;
+    level += 1;
+
+    WSR(ICOUNTLEVEL, level);
+    WSR(ICOUNT, -2);
+}
+
+/** @brief GDB trigger other CPU
+ * GDB trigger other CPU
+ * */
+void esp_gdbstub_trigger_cpu(void)
+{
+#if !CONFIG_FREERTOS_UNICORE
+    if (0 == cpu_hal_get_core_id()) {
+        esp_crosscore_int_send_gdb_call(1);
+    } else {
+        esp_crosscore_int_send_gdb_call(0);
+    }
+#endif
+}
+
+/** @brief GDB set register in frame
+ * Set register in frame with address to value
+ *
+ * */
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value)
+{
+    switch (reg_index) {
+    case 0:
+        frame->pc = value;
+        break;
+    default:
+        (&frame->a0)[reg_index - 1] = value;
+        break;
+    }
 }

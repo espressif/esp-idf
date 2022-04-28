@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "sdkconfig.h"
+
+/* CPU instruction prefetch padding size for flash mmap scenario */
+_esp_flash_mmap_prefetch_pad_size = 16;
+
+/* CPU instruction prefetch padding size for memory protection scenario */
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_CPU_PREFETCH_PAD_SIZE
+_esp_memprot_prefetch_pad_size = CONFIG_ESP_SYSTEM_MEMPROT_CPU_PREFETCH_PAD_SIZE;
+#else
+_esp_memprot_prefetch_pad_size = 0;
+#endif
+
+/* Memory alignment size for PMS */
+#ifdef CONFIG_ESP_SYSTEM_MEMPROT_MEM_ALIGN_SIZE
+_esp_memprot_align_size = CONFIG_ESP_SYSTEM_MEMPROT_MEM_ALIGN_SIZE;
+#else
+_esp_memprot_align_size = 0;
+#endif

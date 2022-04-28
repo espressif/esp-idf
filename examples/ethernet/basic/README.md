@@ -3,7 +3,7 @@
 
 ## Overview
 
-This example demonstrates basic usage of `Ethernet driver` together with `tcpip_adapter`. The work flow of the example could be as follows:
+This example demonstrates basic usage of `Ethernet driver` together with `esp_netif`. The work flow of the example could be as follows:
 
 1. Install Ethernet driver
 2. Send DHCP requests and wait for a DHCP lease
@@ -17,11 +17,18 @@ If you have a new Ethernet application to go (for example, connect to IoT cloud 
 
 To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports up to four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
 
-Besides that, `esp_eth` component can drive third-party Ethernet module which integrates MAC and PHY and provides common communication interface (e.g. SPI, USB, etc). This example will take the **DM9051** as an example, illustrating how to install the Ethernet driver in the same manner.
+Besides that, `esp_eth` component can drive third-party Ethernet module which integrates MAC and PHY and provides common communication interface (e.g. SPI, USB, etc). This example will take the `DM9051`, `W5500` or `KSZ8851SNL` SPI modules as an example, illustrating how to install the Ethernet driver in the same manner.
+
+The ESP-IDF supports the usage of multiple Ethernet interfaces at a time when external modules are utilized which is also demonstrated by this example. There are several options you can combine:
+   * Internal EMAC and one SPI Ethernet module.
+   * Two SPI Ethernet modules of the same type connected to single SPI interface and accessed by switching appropriate CS.
+   * Internal EMAC and two SPI Ethernet modules of the same type. 
 
 #### Pin Assignment
 
 See common pin assignments for Ethernet examples from [upper level](../README.md#common-pin-assignments).
+
+When using two Ethernet SPI modules at a time, they are to be connected to single SPI interface. Both modules then share data (MOSI/MISO) and CLK signals. However, the CS, interrupt and reset pins need to be connected to separate GPIO for each Ethernet SPI module.
 
 ### Configure the project
 
@@ -51,7 +58,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 I (394) eth_example: Ethernet Started
 I (3934) eth_example: Ethernet Link Up
 I (3934) eth_example: Ethernet HW Addr 30:ae:a4:c6:87:5b
-I (5864) tcpip_adapter: eth ip: 192.168.2.151, mask: 255.255.255.0, gw: 192.168.2.2
+I (5864) esp_netif_handlers: eth ip: 192.168.2.151, mask: 255.255.255.0, gw: 192.168.2.2
 I (5864) eth_example: Ethernet Got IP Address
 I (5864) eth_example: ~~~~~~~~~~~
 I (5864) eth_example: ETHIP:192.168.2.151

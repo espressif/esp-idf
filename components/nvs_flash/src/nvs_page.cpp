@@ -1,22 +1,10 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "nvs_page.hpp"
-#if defined(LINUX_TARGET)
-#include "crc.h"
-#else
 #include <esp_rom_crc.h>
-#endif
 #include <cstdio>
 #include <cstring>
 
@@ -204,6 +192,10 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
         return ESP_ERR_NVS_VALUE_TOO_LONG;
     }
 
+    if ((!isVariableLengthType(datatype)) && dataSize > 8) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     size_t totalSize = ENTRY_SIZE;
     size_t entriesCount = 1;
     if (isVariableLengthType(datatype)) {
@@ -248,7 +240,8 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
             return err;
         }
 
-        size_t left = dataSize / ENTRY_SIZE * ENTRY_SIZE;
+        size_t rest = dataSize % ENTRY_SIZE;
+        size_t left = dataSize - rest;
         if (left > 0) {
             err = writeEntryData(static_cast<const uint8_t*>(data), left);
             if (err != ESP_OK) {
@@ -256,7 +249,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
             }
         }
 
-        size_t tail = dataSize - left;
+        size_t tail = rest;
         if (tail > 0) {
             std::fill_n(item.rawData, ENTRY_SIZE, 0xff);
             memcpy(item.rawData, static_cast<const uint8_t*>(data) + left, tail);
@@ -393,8 +386,9 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, ui
 
 esp_err_t Page::eraseEntryAndSpan(size_t index)
 {
+    uint32_t seq_num;
+    getSeqNumber(seq_num);
     auto state = mEntryTable.get(index);
-    assert(state == EntryState::WRITTEN || state == EntryState::EMPTY);
 
     size_t span = 1;
     if (state == EntryState::WRITTEN) {
@@ -404,7 +398,7 @@ esp_err_t Page::eraseEntryAndSpan(size_t index)
             return rc;
         }
         if (item.calculateCrc32() != item.crc32) {
-            mHashList.erase(index, false);
+            mHashList.erase(index);
             rc = alterEntryState(index, EntryState::ERASED);
             --mUsedEntryCount;
             ++mErasedEntryCount;
@@ -598,6 +592,16 @@ esp_err_t Page::mLoadEntryTable()
             span = 1;
             if (mEntryTable.get(i) == EntryState::ERASED) {
                 lastItemIndex = INVALID_ENTRY;
+                continue;
+            }
+
+            if (mEntryTable.get(i) == EntryState::ILLEGAL) {
+                lastItemIndex = INVALID_ENTRY;
+                auto err = eraseEntryAndSpan(i);
+                if (err != ESP_OK) {
+                    mState = PageState::INVALID;
+                    return err;
+                }
                 continue;
             }
 

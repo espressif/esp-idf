@@ -39,6 +39,10 @@ are not covered by any support period. Sometimes a particular feature is
 marked as "Preview" in a release, which means it is also not covered
 by the support period.
 
+ESP-IDF should be used in an up-to-date software environment. The operating system
+and other third-party tools should be supported by their maintainers.
+ESP-IDF cannot keep compatibility with unsupported third-party tools.
+
 The ESP-IDF Programming Guide has information about the
 [different versions of ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/latest/versions.html)
 (major, minor, bugfix, etc).

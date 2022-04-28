@@ -8,16 +8,16 @@
 
 For different chip and host used, the connections may be different.
 
-|      | ESP32 | ESP32 | ESP32S2 | ESP32C3 |
-| ---- | ----- | ----- | ------- | ------- |
-| Host | SPI1  | HSPI  | FSPI    | SPI2    |
-| VCC  | 3.3V  | 3.3V  | 3.3V    | 3.3V    |
-| GND  | GND   | GND   | GND     | GND     |
-| DO   | 7     | 18    | 37      | 2       |
-| DI   | 8     | 23    | 35      | 7       |
-| SK   | 6     | 19    | 36      | 6       |
-| CS   | 13    | 13    | 34      | 10      |
-| ORG  | GND   | GND   | GND     | GND     |
+|      | ESP32 | ESP32 | ESP32S2 | ESP32C3 | ESP32S3 |
+| ---- | ----- | ----- | ------- | ------- | ------- |
+| Host | SPI1  | HSPI  | FSPI    | SPI2    | SPI2    |
+| VCC  | 3.3V  | 3.3V  | 3.3V    | 3.3V    | 3.3V    |
+| GND  | GND   | GND   | GND     | GND     | GND     |
+| DO   | 7     | 18    | 37      | 2       | 13      |
+| DI   | 8     | 23    | 35      | 7       | 11      |
+| SK   | 6     | 19    | 36      | 6       | 12      |
+| CS   | 13    | 13    | 34      | 10      | 10      |
+| ORG  | GND   | GND   | GND     | GND     | GND     |
 
 ### Notes
 

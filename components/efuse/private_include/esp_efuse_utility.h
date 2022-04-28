@@ -17,6 +17,14 @@ extern "C" {
 #include "sdkconfig.h"
 #include_next "esp_efuse_utility.h"
 
+#define ESP_EFUSE_CHK(ret)       \
+    do                           \
+    {                            \
+        if( ( err = (ret) ) != ESP_OK ) \
+            goto err_exit;        \
+    } while( 0 )
+
+
 /**
  * @brief Structure range address by blocks
  */
@@ -89,6 +97,16 @@ esp_err_t esp_efuse_utility_fill_buff(unsigned int num_reg, esp_efuse_block_t ef
 void esp_efuse_utility_burn_efuses(void);
 
 /**
+ * @brief Chip specific operations to perform the burn of values written to the efuse write registers.
+ *
+ * @note Use esp_efuse_utility_burn_efuses() to burn efuses.
+ *
+ * If CONFIG_EFUSE_VIRTUAL is set, writing will not be performed.
+ * After the function is completed, the writing registers are cleared.
+ */
+void esp_efuse_utility_burn_chip(void);
+
+/**
  * @brief Returns the number of array elements for placing these "bits" in an array with the length of each element equal to "size_of_base".
  */
 int esp_efuse_utility_get_number_of_items(int bits, int size_of_base);
@@ -138,6 +156,38 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme(void);
  * @brief   Efuse read operation: copies data from physical efuses to efuse read registers.
  */
 void esp_efuse_utility_clear_program_registers(void);
+
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+/**
+ * @brief   Writes eFuses to the efuse flash partition.
+ *
+ * Used only when CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH is set.
+ */
+void esp_efuse_utility_write_efuses_to_flash(void);
+
+/**
+ * @brief   Loads efuses from efuse flash partition.
+ *
+ * Used only when CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH is set.
+ */
+bool esp_efuse_utility_load_efuses_from_flash(void);
+
+/**
+ * @brief   Erase efuse flash partition.
+ *
+ * Used only when CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH is set.
+ */
+void esp_efuse_utility_erase_efuses_in_flash(void);
+#endif
+
+/**
+ * @brief Return the address of a particular efuse block's first read register
+ *
+ * @param[in] block Index of efuse block to look up
+ *
+ * @return a numeric read register address of the first word in the block.
+ */
+uint32_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block);
 
 #ifdef __cplusplus
 }

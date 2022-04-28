@@ -13,11 +13,7 @@
 # limitations under the License.
 
 import threading
-
-try:
-    from typing import Optional
-except ImportError:
-    pass
+from typing import Optional
 
 
 class StoppableThread(object):

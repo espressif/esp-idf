@@ -78,5 +78,4 @@ Restarting now.
 
 Restart counter will increment on each run.
 
-To reset the counter, erase the contents of flash memory using `idf.py erase_flash`, then upload the program again as described above.
-
+To reset the counter, erase the contents of flash memory using `idf.py erase-flash`, then upload the program again as described above.

@@ -35,4 +35,47 @@ menu "Example Configuration"
         default "192.168.4.1"
         help
             Set static gateway address.
+
+    choice EXAMPLE_STATIC_DNS_SERVER
+        prompt "Choose DNS server"
+        default EXAMPLE_STATIC_DNS_AUTO
+        help
+            Select auto to make gateway address as DNS server or manual to input your DNS server
+        config EXAMPLE_STATIC_DNS_AUTO
+            bool "Use gateway address as DNS server"
+            help
+                Set DNS server the same as gateway address
+
+        config EXAMPLE_STATIC_DNS_MANUAL
+            bool "Set manual value as DNS server"
+            help
+                Set DNS server with you want
+    endchoice
+
+    config EXAMPLE_STATIC_DNS_SERVER_MAIN
+        string "Main DNS server address"
+        default "192.168.4.1"
+        depends on EXAMPLE_STATIC_DNS_MANUAL
+        help
+            Set main DNS server address.
+
+    config EXAMPLE_STATIC_DNS_SERVER_BACKUP
+        string "Backup DNS server address"
+        default "192.168.4.1"
+        depends on EXAMPLE_STATIC_DNS_MANUAL
+        help
+            Set backup DNS server address. It can be same with the main DNS server address or leave empty.
+
+    config EXAMPLE_STATIC_DNS_RESOLVE_TEST
+        bool "Enable DNS resolve test"
+        default n
+        help
+            Enable it and configure EXAMPLE_STATIC_RESOLVE_DOMAIN to resolve DNS domain name
+
+    config EXAMPLE_STATIC_RESOLVE_DOMAIN
+        string "Domain name to resolve"
+        default "www.espressif.com"
+        depends on EXAMPLE_STATIC_DNS_RESOLVE_TEST
+        help
+            Set domain name for DNS test
 endmenu

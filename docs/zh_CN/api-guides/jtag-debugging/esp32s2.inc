@@ -87,13 +87,13 @@
     * - 名字
       - 描述
     * - ``board/esp32s2-kaluga-1.cfg``
-      - ESP32-S2-Kaluga-1 开发板配置文件，内部已包含 ESP32-S2 目标配置和 JTAG 适配器配置
+      - ESP32-S2-Kaluga-1 开发板配置文件，包含 ESP32-S2 目标配置和 JTAG 适配器配置
     * - ``target/esp32s2.cfg``
       - ESP32-S2 目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
     * - ``interface/ftdi/esp32s2_kaluga_v1.cfg``
       - 适用于 ESP32-S2-Kaluga-1 开发板的 JTAG 适配器配置文件
     * - ``interface/ftdi/esp32_devkitj_v1.cfg``
-      - 适用于 ESP-Prog 板子的 JTAG 适配器配置文件
+      - 适用于 ESP-Prog 板的 JTAG 适配器配置文件
 
 ---
 
@@ -105,11 +105,11 @@
 
 .. jtag-pins
 
-.. list-table:: ESP32-S2 引脚和 JTAG 接口信号
+.. list-table:: ESP32-S2 管脚和 JTAG 接口信号
     :widths: 25 75
     :header-rows: 1
 
-    * - ESP32-S2 引脚
+    * - ESP32-S2 管脚
       - JTAG 信号
     * - MTDO / GPIO40
       - TDO
@@ -155,6 +155,6 @@
 
 .. devkit-hw-config
 
-* 开箱即用，ESP32-S2-Kaluga-1 不需要任何其他硬件配置即可进行 JTAG 调试。 但是，如果遇到问题，请检查 “JTAG” DIP 开关的 2～5 号是否在 “ON” 的位置。
+* 开箱即用，ESP32-S2-Kaluga-1 不需要任何其他硬件配置即可进行 JTAG 调试。 但是，如果遇到问题，请检查标有 TCK、TDO、TDI、TMS 的 “JTAG” DIP 开关（原理图中的 SW5）是否在 “ON” 位置。
 
 ---

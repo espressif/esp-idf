@@ -52,10 +52,6 @@ static const struct dpp_curve_params dpp_curves[] = {
 	{ NULL, 0, 0, 0, 0, NULL, 0, NULL }
 };
 
-void wpa_msg(void *ctx, int level, const char *fmt, ...)
-{
-}
-
 static struct wpabuf *
 gas_build_req(u8 action, u8 dialog_token, size_t size)
 {
@@ -851,7 +847,7 @@ static int dpp_derive_k1(const u8 *Mx, size_t Mx_len, u8 *k1,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info, k1, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -880,7 +876,7 @@ static int dpp_derive_k2(const u8 *Nx, size_t Nx_len, u8 *k2,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info, k2, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -939,7 +935,7 @@ static int dpp_derive_ke(struct dpp_authentication *auth, u8 *ke,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info_ke, ke, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -3942,7 +3938,7 @@ static void dpp_build_legacy_cred_params(struct wpabuf *buf,
 		wpa_snprintf_hex(psk, sizeof(psk),
 				 conf->psk, sizeof(conf->psk));
 		json_add_string(buf, "psk_hex", psk);
-	    os_memset(psk, 0, sizeof(psk));
+		forced_memzero(psk, sizeof(psk));
 	}
 }
 
@@ -4114,6 +4110,8 @@ skip_groups:
 		goto fail;
 
 	signature = os_malloc(2 * curve->prime_len);
+	if (!signature)
+		goto fail;
 	if (dpp_bn2bin_pad(r, signature, curve->prime_len) < 0 ||
 			dpp_bn2bin_pad(s, signature + curve->prime_len,
 				curve->prime_len) < 0)
@@ -4674,6 +4672,7 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 	struct wpabuf *x = NULL, *y = NULL, *a = NULL;
 	struct crypto_ec_group *group;
 	struct crypto_key *pkey = NULL;
+	size_t len;
 
 	token = json_get_member(jwk, "kty");
 	if (!token || token->type != JSON_STRING) {
@@ -4732,9 +4731,10 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 		goto fail;
 	}
 
+	len = wpabuf_len(x);
 	a = wpabuf_concat(x, y);
 	pkey = crypto_ec_set_pubkey_point(group, wpabuf_head(a),
-					  wpabuf_len(x));
+					  len);
 	crypto_ec_deinit((struct crypto_ec *)group);
 	*key_curve = curve;
 
@@ -4973,10 +4973,8 @@ static void dpp_copy_netaccesskey(struct dpp_authentication *auth,
 	unsigned char *der = NULL;
 	int der_len;
 
-	crypto_ec_get_priv_key_der(auth->own_protocol_key, &der, &der_len);
-	if (der_len <= 0) {
+	if (crypto_ec_get_priv_key_der(auth->own_protocol_key, &der, &der_len) < 0)
 		return;
-	}
 	wpabuf_free(auth->net_access_key);
 	auth->net_access_key = wpabuf_alloc_copy(der, der_len);
 	crypto_free_buffer(der);
@@ -5732,7 +5730,7 @@ static int dpp_derive_pmk(const u8 *Nx, size_t Nx_len, u8 *pmk,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info, pmk, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -5937,7 +5935,7 @@ dpp_peer_intro(struct dpp_introduction *intro, const char *own_connector,
 fail:
 	if (ret != DPP_STATUS_OK)
 		os_memset(intro, 0, sizeof(*intro));
-	os_memset(Nx, 0, sizeof(Nx));
+	forced_memzero(Nx, sizeof(Nx));
 	os_free(own_conn);
 	os_free(signed_connector);
 	os_free(info.payload);
@@ -6115,7 +6113,7 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 		    hexstr2bin(key, privkey, privkey_len) < 0)
 			goto fail;
 	}
-	wpa_hexdump(MSG_ERROR, "private key", privkey, privkey_len);
+	wpa_hexdump(MSG_DEBUG, "private key", privkey, privkey_len);
 
 	pk = dpp_keygen(bi, curve, privkey, privkey_len);
 	if (!pk)

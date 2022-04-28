@@ -5,7 +5,7 @@ Linker Script Generation
 Overview
 --------
 
-There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements. 
+There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements.
 
 .. only:: SOC_ULP_SUPPORTED
 
@@ -24,16 +24,16 @@ This section presents a guide for quickly placing code/data to RAM and RTC memor
 
 For this guide, suppose we have the following::
 
-    - components/
-                    - my_component/
-                                    - CMakeLists.txt
-                                    - component.mk
-                                    - Kconfig
-                                    - src/
-                                          - my_src1.c
-                                          - my_src2.c
-                                          - my_src3.c
-                                    - my_linker_fragment_file.lf
+    component
+    └── my_component
+        └── CMakeLists.txt
+            ├── component.mk
+            ├── Kconfig
+            ├── src/
+            │   ├── my_src1.c
+            │   ├── my_src2.c
+            │   └── my_src3.c
+            └── my_linker_fragment_file.lf
 
 - a component named ``my_component`` that is archived as library ``libmy_component.a`` during build
 - three source files archived under the library, ``my_src1.c``, ``my_src2.c`` and ``my_src3.c`` which are compiled as ``my_src1.o``, ``my_src2.o`` and ``my_src3.o``, respectively
@@ -44,18 +44,6 @@ Creating and Specifying a Linker Fragment File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Before anything else, a linker fragment file needs to be created. A linker fragment file is simply a text file with a ``.lf`` extension upon which the desired placements will be written. After creating the file, it is then necessary to present it to the build system. The instructions for the build systems supported by ESP-IDF are as follows:
-
-Make
-""""
-
-In the component's ``component.mk`` file, set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to the path of the created linker fragment file. The path can either be an absolute path or a relative path from the component directory.
-
-.. code-block:: make
-
-    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
-
-CMake
-"""""
 
 In the component's ``CMakeLists.txt`` file, specify argument ``LDFRAGMENTS`` in the ``idf_component_register`` call. The value of ``LDFRAGMENTS`` can either be an absolute path or a relative path from the component directory to the created linker fragment file.
 
@@ -83,7 +71,8 @@ Placing object files
 """"""""""""""""""""
 
 Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM. On the other hand, the entirety of ``my_src2.o`` contains symbols needed coming out of deep sleep, so it needs to be put under RTC memory.
-In the the linker fragment file, we can write:
+
+In the linker fragment file, we can write:
 
 .. code-block:: none
 
@@ -136,6 +125,9 @@ Similarly, this places the entire component in RTC memory:
     archive: libmy_component.a
     entries:
         * (rtc)
+
+
+.. _ldgen-conditional-placements:
 
 Configuration-dependent placements
 """"""""""""""""""""""""""""""""""
@@ -237,6 +229,9 @@ The three fragment types share a common grammar:
 - name: The name of the fragment, should be unique for the specified fragment type.
 - key, value: Contents of the fragment; each fragment type may support different keys and different grammars for the key values.
 
+    - For :ref:`sections<ldgen-sections-fragment>` and :ref:`scheme<ldgen-scheme-fragment>`, the only supported key is ``entries``
+    - For :ref:`mappings<ldgen-mapping-fragment>`, both ``archive`` and ``entries`` are supported.
+
 .. note::
 
     In cases where multiple fragments of the same type and name are encountered, an exception is thrown.
@@ -298,23 +293,9 @@ Condition checking behaves as you would expect an ``if...elseif/elif...else`` bl
         key_2:
             value_b
 
-
 **Comments**
 
 Comment in linker fragment files begin with ``#``. Like in other languages, comment are used to provide helpful descriptions and documentation and are ignored during processing.
-
-Compatibility with ESP-IDF v3.x Linker Script Fragment Files
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-ESP-IDF v4.0 brings some changes to the linker script fragment file grammar:
-
-- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation and examples demonstrates properly indented grammar
-- move to ``if...elif...else`` structure for conditionals, with the ability to nest checks and place entire fragments themselves inside conditionals
-- mapping fragments now requires a name like other fragment types
-
-Linker script generator should be able to parse ESP-IDF v3.x linker fragment files that are indented properly (as demonstrated by the ESP-IDF v3.x version of this document). Backward compatibility with the previous mapping fragment grammar (optional name and the old grammar for conditionals) has also been retained but with a deprecation warning. Users should switch to the newer grammar discussed in this document as support for the old grammar is planned to be removed in the future.
-
-Note that linker fragment files using the new ESP-IDF v4.0 grammar is not supported on ESP-IDF v3.x, however.
 
 Types
 """""
@@ -451,7 +432,7 @@ Example:
     entries:
         * (noflash)
 
-Aside from the entity and scheme, flags can also be specified in an entry. The following flags are supported (note: <> = argument name, [] = optional): 
+Aside from the entity and scheme, flags can also be specified in an entry. The following flags are supported (note: <> = argument name, [] = optional):
 
 1. ALIGN(<alignment>[, pre, post])
 
@@ -466,7 +447,7 @@ Aside from the entity and scheme, flags can also be specified in an entry. The f
 2. SORT([<sort_by_first>, <sort_by_second>])
 
     Emits ``SORT_BY_NAME``, ``SORT_BY_ALIGNMENT``, ``SORT_BY_INIT_PRIORITY`` or ``SORT`` in the input section description.
-    
+
     Possible values for ``sort_by_first`` and ``sort_by_second`` are: ``name``, ``alignment``, ``init_priority``.
 
     If both ``sort_by_first`` and ``sort_by_second`` are not specified, the input sections are sorted by name. If both are specified, then the nested sorting follows the same rules discussed in https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
@@ -494,8 +475,8 @@ When adding flags, the specific ``section -> target`` in the scheme needs to be 
     # Notes:
     # A. semicolon after entity-scheme
     # B. comma before section2 -> target2
-    # C. section1 -> target1 and section2 -> target2 should be defined in entries of scheme1 
-    entity1 (scheme1); 
+    # C. section1 -> target1 and section2 -> target2 should be defined in entries of scheme1
+    entity1 (scheme1);
         section1 -> target1 KEEP() ALIGN(4, pre, post),
         section2 -> target2 SURROUND(sym) ALIGN(4, post) SORT()
 
@@ -532,7 +513,7 @@ Note that ALIGN and SURROUND, as mentioned in the flag descriptions, are order s
 On Symbol-Granularity Placements
 """"""""""""""""""""""""""""""""
 
-Symbol granularity placements is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. ESP-IDF compiles with these flags by default. 
+Symbol granularity placements is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. ESP-IDF compiles with these flags by default.
 If the user opts to remove these flags, then the symbol-granularity placements will not work. Furthermore, even with the presence of these flags, there are still other limitations to keep in mind due to the dependence on the compiler's emitted output sections.
 
 For example, with ``-ffunction-sections``, separate sections are emitted for each function; with section names predictably constructed i.e. ``.text.{func_name}`` and ``.literal.{func_name}``. This is not the case for string literals within the function, as they go to pooled or generated section names.
@@ -619,4 +600,15 @@ Then the corresponding excerpt from the generated linker script will be as follo
 
     Rule generated from the default scheme entry 	``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
 
-    The linker script template currently used is :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`, specified by the ``{IDF_TARGET_PATH_NAME}`` component; the generated output script is put under its build directory.
+    The linker script template currently used is :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.
+
+.. _ldgen-migrate-lf-grammar :
+
+Migrate to ESP-IDF v5.0 Linker Script Fragment Files Grammar
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The old grammar supported in ESP-IDF v3.x would be dropped in ESP-IDF v5.0. Here are a few notes on how to migrate properly:
+
+1. Now indentation is enforced and improperly indented fragment files would generate a runtime parse exception. This was not enforced in the old version but previous documentation and examples demonstrate properly indented grammar.
+2. Migrate the old condition entry to the ``if...elif...else`` structure for conditionals. You can refer to the :ref:`earlier chapter<ldgen-conditional-placements>` for detailed grammar.
+3. mapping fragments now requires a name like other fragment types.

@@ -15,8 +15,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <assert.h>
 #include "soc/systimer_struct.h"
+#include "hal/assert.h"
 
 #define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
 #define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
@@ -120,8 +120,13 @@ __attribute__((always_inline)) static inline void systimer_ll_enable_alarm_perio
 
 __attribute__((always_inline)) static inline void systimer_ll_set_alarm_period(systimer_dev_t *dev, uint32_t alarm_id, uint32_t period)
 {
-    assert(period < (1 << 26));
+    HAL_ASSERT(period < (1 << 26));
     dev->target_conf[alarm_id].target_period = period;
+}
+
+__attribute__((always_inline)) static inline uint32_t systimer_ll_get_alarm_period(systimer_dev_t *dev, uint32_t alarm_id)
+{
+    return dev->target_conf[alarm_id].target_period;
 }
 
 __attribute__((always_inline)) static inline void systimer_ll_apply_alarm_value(systimer_dev_t *dev, uint32_t alarm_id)

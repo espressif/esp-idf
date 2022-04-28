@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "diskio_impl.h"
 #include "ffconf.h"
@@ -23,14 +15,32 @@ static sdmmc_card_t* s_cards[FF_VOLUMES] = { NULL };
 
 static const char* TAG = "diskio_sdmmc";
 
+//Check if SD/MMC card is present
+static DSTATUS ff_sdmmc_card_available(BYTE pdrv)
+{
+    sdmmc_card_t* card = s_cards[pdrv];
+    assert(card);
+    esp_err_t err = sdmmc_get_status(card);
+    if (unlikely(err != ESP_OK)) {
+        ESP_LOGE(TAG, "Check status failed (0x%x)", err);
+        return STA_NOINIT;
+    }
+    return 0;
+}
+
+/**
+*   ff_sdmmc_status() and ff_sdmmc_initialize() return STA_NOINIT when sdmmc_get_status()
+*   fails. This error value is checked throughout the FATFS code.
+*   Both functions return 0 on success.
+*/
 DSTATUS ff_sdmmc_initialize (BYTE pdrv)
 {
-    return 0;
+    return ff_sdmmc_card_available(pdrv);
 }
 
 DSTATUS ff_sdmmc_status (BYTE pdrv)
 {
-    return 0;
+    return ff_sdmmc_card_available(pdrv);
 }
 
 DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
@@ -57,6 +67,23 @@ DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
+#if FF_USE_TRIM
+DRESULT ff_sdmmc_trim (BYTE pdrv, DWORD start_sector, DWORD sector_count)
+{
+    sdmmc_card_t* card = s_cards[pdrv];
+    assert(card);
+    sdmmc_erase_arg_t arg;
+
+    arg = sdmmc_can_discard(card) == ESP_OK ? SDMMC_DISCARD_ARG : SDMMC_ERASE_ARG;
+    esp_err_t err = sdmmc_erase_sectors(card, start_sector, sector_count, arg);
+    if (unlikely(err != ESP_OK)) {
+        ESP_LOGE(TAG, "sdmmc_erase_sectors failed (%d)", err);
+        return RES_ERROR;
+    }
+    return RES_OK;
+}
+#endif //FF_USE_TRIM
+
 DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
 {
     sdmmc_card_t* card = s_cards[pdrv];
@@ -72,6 +99,18 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
             return RES_OK;
         case GET_BLOCK_SIZE:
             return RES_ERROR;
+#if FF_USE_TRIM
+        case CTRL_TRIM:
+            /*
+             * limitation with sector erase when used in SDSPI mode
+             * hence return if host is SPI.
+             */
+            if ((card->host.flags & SDMMC_HOST_FLAG_SPI) != 0) {
+                return RES_ERROR;
+            }
+            return ff_sdmmc_trim (pdrv, *((DWORD*)buff), //start_sector
+                    (*((DWORD*)buff + 1) - *((DWORD*)buff) + 1)); //sector_count
+#endif //FF_USE_TRIM
     }
     return RES_ERROR;
 }

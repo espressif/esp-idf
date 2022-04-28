@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -35,9 +27,8 @@ extern "C" {
 
 void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
-/* Values of RTC_XTAL_FREQ_REG and RTC_APB_FREQ_REG are stored as two copies in
- * lower and upper 16-bit halves. These are the routines to work with such a
- * representation.
+/* Value of RTC_XTAL_FREQ_REG is stored as two copies in lower and upper 16-bit
+ * halves. These are the routines to work with that representation.
  */
 static inline bool clk_val_is_valid(uint32_t val)
 {

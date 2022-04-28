@@ -1,8 +1,8 @@
 /*  Bluetooth Mesh */
 
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,6 +159,23 @@ static void proxy_sar_timeout(struct k_work *work)
 }
 
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
+/**
+ * The following callbacks are used to notify proper information
+ * to the application layer.
+ */
+static proxy_server_connect_cb_t proxy_server_connect_cb;
+static proxy_server_disconnect_cb_t proxy_server_disconnect_cb;
+
+void bt_mesh_proxy_server_set_conn_cb(proxy_server_connect_cb_t cb)
+{
+    proxy_server_connect_cb = cb;
+}
+
+void bt_mesh_proxy_server_set_disconn_cb(proxy_server_disconnect_cb_t cb)
+{
+    proxy_server_disconnect_cb = cb;
+}
+
 /* Next subnet in queue to be advertised */
 static int next_idx;
 
@@ -605,6 +622,10 @@ static void proxy_connected(struct bt_mesh_conn *conn, uint8_t err)
     client->filter_type = NONE;
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     (void)memset(client->filter, 0, sizeof(client->filter));
+
+    if (proxy_server_connect_cb) {
+        proxy_server_connect_cb(conn->handle);
+    }
 #endif
     net_buf_simple_reset(&client->buf);
 }
@@ -621,6 +642,11 @@ static void proxy_disconnected(struct bt_mesh_conn *conn, uint8_t reason)
         struct bt_mesh_proxy_client *client = &clients[i];
 
         if (client->conn == conn) {
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+            if (proxy_server_disconnect_cb) {
+                proxy_server_disconnect_cb(conn->handle, reason);
+            }
+#endif
             if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
                     client->filter_type == PROV) {
                 bt_mesh_pb_gatt_close(conn);

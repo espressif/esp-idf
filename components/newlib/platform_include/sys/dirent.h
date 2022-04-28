@@ -19,10 +19,15 @@
 
 /**
  * This header file provides POSIX-compatible definitions of directory
- * access functions and related data types.
+ * access data types. Starting with newlib 3.3, related functions are defined
+ * in 'dirent.h' bundled with newlib.
  * See http://pubs.opengroup.org/onlinepubs/7908799/xsh/dirent.h.html
  * for reference.
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Opaque directory structure
@@ -57,3 +62,7 @@ void seekdir(DIR* pdir, long loc);
 void rewinddir(DIR* pdir);
 int closedir(DIR* pdir);
 int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
+
+#ifdef __cplusplus
+}
+#endif

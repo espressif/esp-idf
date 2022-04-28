@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __BTC_TASK_H__
 #define __BTC_TASK_H__
@@ -65,6 +57,8 @@ typedef enum {
     BTC_PID_AVRC_CT,
     BTC_PID_AVRC_TG,
     BTC_PID_SPP,
+    BTC_PID_HD,
+    BTC_PID_HH,
 #if (BTC_HF_INCLUDED == TRUE)
     BTC_PID_HF,
 #endif /* BTC_HF_INCLUDED */
@@ -99,6 +93,10 @@ typedef struct {
 
 typedef void (* btc_arg_deep_copy_t)(btc_msg_t *msg, void *dst, void *src);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * transfer an message to another module in the different task.
  * @param  msg       message
@@ -123,5 +121,9 @@ bt_status_t btc_init(void);
 void btc_deinit(void);
 bool btc_check_queue_is_congest(void);
 int get_btc_work_queue_size(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BTC_TASK_H__ */

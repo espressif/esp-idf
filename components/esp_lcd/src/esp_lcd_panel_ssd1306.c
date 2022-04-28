@@ -1,13 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include "sdkconfig.h"
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_interface.h"
@@ -42,7 +46,7 @@ static esp_err_t panel_ssd1306_invert_color(esp_lcd_panel_t *panel, bool invert_
 static esp_err_t panel_ssd1306_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_ssd1306_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_ssd1306_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t panel_ssd1306_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t panel_ssd1306_disp_on_off(esp_lcd_panel_t *panel, bool off);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -56,6 +60,9 @@ typedef struct {
 
 esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel)
 {
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     ssd1306_panel_t *ssd1306 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -84,7 +91,7 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306->base.set_gap = panel_ssd1306_set_gap;
     ssd1306->base.mirror = panel_ssd1306_mirror;
     ssd1306->base.swap_xy = panel_ssd1306_swap_xy;
-    ssd1306->base.disp_off = panel_ssd1306_disp_off;
+    ssd1306->base.disp_on_off = panel_ssd1306_disp_on_off;
     *ret_panel = &(ssd1306->base);
     ESP_LOGD(TAG, "new ssd1306 panel @%p", ssd1306);
 
@@ -130,16 +137,13 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
     esp_lcd_panel_io_handle_t io = ssd1306->io;
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, 8, NULL, 0);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_OFF, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_MEMORY_ADDR_MODE, (uint8_t[]) {
         0x00 // horizontal addressing mode
     }, 1);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CHARGE_PUMP, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CHARGE_PUMP, (uint8_t[]) {
         0x14 // enable charge pump
     }, 1);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_ON, 8, NULL, 0);
-    // SEG/COM will be ON after 100ms after sending DISP_ON command
-    vTaskDelay(pdMS_TO_TICKS(100));
     return ESP_OK;
 }
 
@@ -157,17 +161,17 @@ static esp_err_t panel_ssd1306_draw_bitmap(esp_lcd_panel_t *panel, int x_start, 
     uint8_t page_start = y_start / 8;
     uint8_t page_end = (y_end - 1) / 8;
     // define an area of frame memory where MCU can access
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_COLUMN_RANGE, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_COLUMN_RANGE, (uint8_t[]) {
         (x_start & 0x7F),
         ((x_end - 1) & 0x7F),
     }, 2);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_PAGE_RANGE, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_PAGE_RANGE, (uint8_t[]) {
         (page_start & 0x07),
         (page_end & 0x07),
     }, 2);
     // transfer frame buffer
     size_t len = (y_end - y_start) * (x_end - x_start) * ssd1306->bits_per_pixel / 8;
-    esp_lcd_panel_io_tx_color(io, 0, 0, color_data, len);
+    esp_lcd_panel_io_tx_color(io, 0, color_data, len);
 
     return ESP_OK;
 }
@@ -182,7 +186,7 @@ static esp_err_t panel_ssd1306_invert_color(esp_lcd_panel_t *panel, bool invert_
     } else {
         command = SSD1306_CMD_INVERT_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     return ESP_OK;
 }
 
@@ -197,13 +201,13 @@ static esp_err_t panel_ssd1306_mirror(esp_lcd_panel_t *panel, bool mirror_x, boo
     } else {
         command = SSD1306_CMD_MIRROR_X_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     if (mirror_y) {
         command = SSD1306_CMD_MIRROR_Y_ON;
     } else {
         command = SSD1306_CMD_MIRROR_X_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     return ESP_OK;
 }
 
@@ -220,16 +224,18 @@ static esp_err_t panel_ssd1306_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_
     return ESP_OK;
 }
 
-static esp_err_t panel_ssd1306_disp_off(esp_lcd_panel_t *panel, bool off)
+static esp_err_t panel_ssd1306_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
     esp_lcd_panel_io_handle_t io = ssd1306->io;
     int command = 0;
-    if (off) {
-        command = SSD1306_CMD_DISP_OFF;
-    } else {
+    if (on_off) {
         command = SSD1306_CMD_DISP_ON;
+    } else {
+        command = SSD1306_CMD_DISP_OFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+    // SEG/COM will be ON/OFF after 100ms after sending DISP_ON/OFF command
+    vTaskDelay(pdMS_TO_TICKS(100));
     return ESP_OK;
 }

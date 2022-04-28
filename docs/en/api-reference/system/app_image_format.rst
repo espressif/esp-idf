@@ -11,15 +11,15 @@ An application image consists of the following structures:
  * offset for 2 Segment = offset for 1 Segment + length of 1 Segment + sizeof(:cpp:type:`esp_image_segment_header_t`).
  * ...
 
-The count of each segment is defined in the ``segment_count`` field that is stored in :cpp:type:`esp_image_header_t`. The count cannot be more than :cpp:type:`ESP_IMAGE_MAX_SEGMENTS`.
+The count of each segment is defined in the ``segment_count`` field that is stored in :cpp:type:`esp_image_header_t`. The count cannot be more than :c:macro:`ESP_IMAGE_MAX_SEGMENTS`.
 
 To get the list of your image segments, please run the following command:
 
-::
+.. code-block::
 
    esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/app.bin
 
-::
+.. code-block::
 
 	esptool.py v2.3.1
 	Image version: 1
@@ -40,9 +40,9 @@ To get the list of your image segments, please run the following command:
 	Segment 13: len 0x00000 load 0x50000004 file_offs 0x00089b74 SOC_RTC_DATA
 	Checksum: e8 (valid)Validation Hash: 407089ca0eae2bbf83b4120979d3354b1c938a49cb7a0c997f240474ef2ec76b (valid)
 
-You can also see the information on segments in the IDF logs while your application is booting:
-
-::
+You can also see the information on segments in the ESP-IDF logs while your application is booting:
+	
+.. code-block::
 
 	I (443) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x13ce0 ( 81120) map
 	I (489) esp_image: segment 1: paddr=0x00033d08 vaddr=0x3ff80000 size=0x00000 ( 0) load
@@ -62,12 +62,12 @@ You can also see the information on segments in the IDF logs while your applicat
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
-.. only:: esp32s2 or esp32c3
+.. only:: esp32s2 or esp32s3 or esp32c3
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
-4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from first byte and up to this field. The length of this field is 32 bytes.
+4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from the first byte and up to this field. The length of this field is 32 bytes.
 5. If the options :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to ECDSA then the application image will have additional 68 bytes for an ECDSA signature, which includes:
 
  * version word (4 bytes),
@@ -78,8 +78,9 @@ Application Description
 
 The ``DROM`` segment starts with the :cpp:type:`esp_app_desc_t` structure which carries specific fields describing the application:
 
+ * ``magic_word`` - the magic word for the esp_app_desc structure.
  * ``secure_version`` - see :doc:`Anti-rollback</api-reference/system/ota>`.
- * ``version`` - see :doc:`App version</api-reference/system/system>`. ``*``
+ * ``version`` - see :doc:`App version</api-reference/system/misc_system_api>`. ``*``
  * ``project_name`` is filled from ``PROJECT_NAME``. ``*``
  * ``time`` and ``date`` - compile time and date.
  * ``idf_ver`` - version of ESP-IDF. ``*``
@@ -92,23 +93,18 @@ This structure is useful for identification of images uploaded OTA because it ha
 Adding a Custom Structure to an Application
 -------------------------------------------
 
-Customer also has the opportunity to have similar structure with a fixed offset relative to the beginning of the image.
+Users also have the opportunity to have similar structure with a fixed offset relative to the beginning of the image.
 The following pattern can be used to add a custom structure to your image:
 
-::
+.. code-block::
 
 	const __attribute__((section(".rodata_custom_desc"))) esp_custom_app_desc_t custom_app_desc = { ... }
 
 Offset for custom structure is sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`) + sizeof(:cpp:type:`esp_app_desc_t`).
 
-To guarantee that the custom structure is located in the image even if it is not used, you need to add:
-
- * For Make: add ``COMPONENT_ADD_LDFLAGS += -u custom_app_desc`` into ``component.mk``
- * For Cmake: add ``target_link_libraries(${COMPONENT_TARGET} "-u custom_app_desc")`` into ``CMakeLists.txt``
+To guarantee that the custom structure is located in the image even if it is not used, you need to add ``target_link_libraries(${COMPONENT_TARGET} "-u custom_app_desc")`` into ``CMakeLists.txt``.
 
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_app_format.inc
-
-

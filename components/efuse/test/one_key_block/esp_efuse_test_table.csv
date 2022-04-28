@@ -1,0 +1,34 @@
+# field_name,       |    efuse_block, | bit_start, | bit_count, |comment #
+#                   |    (EFUSE_BLK0  | (0..255)   | (1..256)   |        #
+#                   |     EFUSE_BLK1  |            |            |        #
+#                   |     EFUSE_BLK2  |            |            |        #
+#                   |     EFUSE_BLK3) |            |            |        #
+##########################################################################
+
+# To generate a new source files. Run two commands:
+# cd ~/esp/esp-idf/components/efuse/
+# ./efuse_table_gen.py test/esp_efuse_test_table.csv
+
+TEST1_LEN_8,     EFUSE_BLK3,   0,    8, TEST field
+
+TEST2_LEN_16,    EFUSE_BLK3,  10,   8, TEST field
+,                EFUSE_BLK3,  80,   8, TEST field
+
+TEST3_LEN_6,     EFUSE_BLK3,  22,    6, TEST field
+
+TEST4_LEN_182,   EFUSE_BLK1,  22,   49, TEST field
+,                EFUSE_BLK2, 128,   39, TEST field
+,                EFUSE_BLK1,  71,   17, TEST field
+,                EFUSE_BLK1,  19,    1, TEST field
+,                EFUSE_BLK1,  0,    16, TEST field
+,                EFUSE_BLK2,  0,    17, TEST field
+,                EFUSE_BLK2,  60,   43, TEST field
+
+TEST5_LEN_1,     EFUSE_BLK1,  16,   1, TEST field
+
+TEST6_LEN_17,    EFUSE_BLK1,  17,    1, TEST field
+,                EFUSE_BLK2,  17,    2, TEST field
+,                EFUSE_BLK3,  29,    4, TEST field
+,                EFUSE_BLK2,  31,    3, TEST field
+,                EFUSE_BLK3,  60,    6, TEST field
+,                EFUSE_BLK2,  127,   1, TEST field

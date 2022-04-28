@@ -22,6 +22,7 @@
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/reset_reasons.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -97,6 +98,19 @@ typedef enum {
     RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
     RTCWDT_RTC_RESET       = 16     /**<16, RTC Watch dog reset digital core and rtc module*/
 } RESET_REASON;
+
+// Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h
+_Static_assert((soc_reset_reason_t)POWERON_RESET == RESET_REASON_CHIP_POWER_ON, "POWERON_RESET != RESET_REASON_CHIP_POWER_ON");
+_Static_assert((soc_reset_reason_t)SW_RESET == RESET_REASON_CORE_SW, "SW_RESET != RESET_REASON_CORE_SW");
+_Static_assert((soc_reset_reason_t)DEEPSLEEP_RESET == RESET_REASON_CORE_DEEP_SLEEP, "DEEPSLEEP_RESET != RESET_REASON_CORE_DEEP_SLEEP");
+_Static_assert((soc_reset_reason_t)TG0WDT_SYS_RESET == RESET_REASON_CORE_MWDT0, "TG0WDT_SYS_RESET != RESET_REASON_CORE_MWDT0");
+_Static_assert((soc_reset_reason_t)TG1WDT_SYS_RESET == RESET_REASON_CORE_MWDT1, "TG1WDT_SYS_RESET != RESET_REASON_CORE_MWDT1");
+_Static_assert((soc_reset_reason_t)RTCWDT_SYS_RESET == RESET_REASON_CORE_RTC_WDT, "RTCWDT_SYS_RESET != RESET_REASON_CORE_RTC_WDT");
+_Static_assert((soc_reset_reason_t)TGWDT_CPU_RESET == RESET_REASON_CPU0_MWDT0, "TGWDT_CPU_RESET != RESET_REASON_CPU0_MWDT0");
+_Static_assert((soc_reset_reason_t)SW_CPU_RESET == RESET_REASON_CPU0_SW, "SW_CPU_RESET != RESET_REASON_CPU0_SW");
+_Static_assert((soc_reset_reason_t)RTCWDT_CPU_RESET == RESET_REASON_CPU0_RTC_WDT, "RTCWDT_CPU_RESET != RESET_REASON_CPU0_RTC_WDT");
+_Static_assert((soc_reset_reason_t)RTCWDT_BROWN_OUT_RESET == RESET_REASON_SYS_BROWN_OUT, "RTCWDT_BROWN_OUT_RESET != RESET_REASON_SYS_BROWN_OUT");
+_Static_assert((soc_reset_reason_t)RTCWDT_RTC_RESET == RESET_REASON_SYS_RTC_WDT, "RTCWDT_RTC_RESET != RESET_REASON_SYS_RTC_WDT");
 
 typedef enum {
     NO_SLEEP        = 0,

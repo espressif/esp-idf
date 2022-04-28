@@ -12,7 +12,7 @@
 #include "bignum.h"
 
 #ifdef CONFIG_INTERNAL_LIBTOMMATH
-#include "libtommath.c"
+#include "libtommath.h"
 #else /* CONFIG_INTERNAL_LIBTOMMATH */
 #include <tommath.h>
 #endif /* CONFIG_INTERNAL_LIBTOMMATH */

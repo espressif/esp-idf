@@ -13,7 +13,7 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -23,8 +23,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp_rom_sys.h"
-#include "esp32s3/rom/spi_flash.h"
-#include "esp32s3/rom/cache.h"
+#include "esp_rom_spiflash.h"
 #include "esp32s3/rom/rtc.h"
 
 #include "bootloader_common.h"
@@ -34,6 +33,10 @@
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
+#include "bootloader_soc.h"
+#include "esp_efuse.h"
+#include "hal/mmu_hal.h"
+#include "hal/cache_hal.h"
 
 
 static const char *TAG = "boot.esp32s3";
@@ -70,18 +73,6 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
     }
 }
 
-static void bootloader_reset_mmu(void)
-{
-    Cache_Suspend_DCache();
-    Cache_Invalidate_DCache_All();
-    Cache_MMU_Init();
-
-    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_CORE0_BUS);
-#if !CONFIG_FREERTOS_UNICORE
-    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_CORE1_BUS);
-#endif
-}
-
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
 {
     uint32_t size;
@@ -101,15 +92,25 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     case ESP_IMAGE_FLASH_SIZE_16MB:
         size = 16;
         break;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        size = 32;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        size = 64;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        size = 128;
+        break;
     default:
         size = 2;
     }
-    uint32_t autoload = Cache_Suspend_DCache();
+
+    cache_hal_disable(CACHE_TYPE_ALL);
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    Cache_Resume_DCache(autoload);
+    cache_hal_enable(CACHE_TYPE_ALL);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -138,7 +139,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
         str = "20MHz";
         break;
     }
-    ESP_LOGI(TAG, "SPI Speed      : %s", str);
+    ESP_LOGI(TAG, "Boot SPI Speed : %s", str);
 
     /* SPI mode could have been set to QIO during boot already,
        so test the SPI registers not the flash header */
@@ -174,6 +175,15 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     case ESP_IMAGE_FLASH_SIZE_16MB:
         str = "16MB";
         break;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        str = "32MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        str = "64MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        str = "128MB";
+        break;
     default:
         str = "2MB";
         break;
@@ -198,7 +208,7 @@ static esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();
@@ -264,18 +274,26 @@ static void wdt_reset_info_dump(int cpu)
 static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
-    RESET_REASON rst_reas[2];
+    soc_reset_reason_t rst_reas[2];
 
-    rst_reas[0] = rtc_get_reset_reason(0);
-    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-            rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+    rst_reas[0] = esp_rom_get_reset_reason(0);
+    rst_reas[1] = esp_rom_get_reset_reason(1);
+    if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0 || rst_reas[0] == RESET_REASON_CORE_MWDT1 ||
+        rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+    if (rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0 || rst_reas[1] == RESET_REASON_CORE_MWDT1 ||
+        rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT) {
+        ESP_LOGW(TAG, "APP CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
+#if !CONFIG_FREERTOS_UNICORE
         wdt_reset_info_dump(1);
+#endif
     }
     wdt_reset_cpu0_info_enable();
 }
@@ -287,9 +305,18 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
+static inline void bootloader_ana_reset_config(void)
+{
+    //Enable WDT, BOR, and GLITCH reset
+    bootloader_ana_super_wdt_reset_config(true);
+    bootloader_ana_bod_reset_config(true);
+    bootloader_ana_clock_glitch_reset_config(true);
+}
+
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+    bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
     // protect memory region
     bootloader_init_mem();
@@ -302,8 +329,17 @@ esp_err_t bootloader_init(void)
 #endif
     // clear bss section
     bootloader_clear_bss_section();
-    // reset MMU
-    bootloader_reset_mmu();
+    // init eFuse virtual mode (read eFuses to RAM)
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    esp_efuse_init_virtual_mode_in_ram();
+#endif
+#endif
+    //init cache hal
+    cache_hal_init();
+    //reset mmu
+    mmu_hal_init();
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log
@@ -312,6 +348,11 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
     // update flash ID
     bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        goto err;
+    }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         goto err;

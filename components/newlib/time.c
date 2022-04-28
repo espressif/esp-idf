@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <errno.h>
 #include <stdlib.h>
@@ -36,12 +28,6 @@
 #include "esp_time_impl.h"
 
 #include "sdkconfig.h"
-
-#ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
-_Static_assert(sizeof(time_t) == 8, "The toolchain does not support time_t wide 64-bits");
-#else
-_Static_assert(sizeof(time_t) == 4, "The toolchain supports time_t wide 64-bits. Please enable CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS.");
-#endif
 
 #if !CONFIG_ESP_TIME_FUNCS_USE_NONE
 #define IMPL_NEWLIB_TIME_FUNCS 1

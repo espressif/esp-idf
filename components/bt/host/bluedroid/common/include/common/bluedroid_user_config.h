@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __BLUEDROID_USER_CONFIG_H__
 #define __BLUEDROID_USER_CONFIG_H__
@@ -67,11 +59,25 @@
 #define UC_BT_HFP_CLIENT_ENABLED            FALSE
 #endif
 
+//HID
+#ifdef CONFIG_BT_HID_ENABLED
+#define UC_BT_HID_ENABLED                   CONFIG_BT_HID_ENABLED
+#else
+#define UC_BT_HID_ENABLED                   FALSE
+#endif
+
 //HID HOST(BT)
 #ifdef CONFIG_BT_HID_HOST_ENABLED
 #define UC_BT_HID_HOST_ENABLED           	CONFIG_BT_HID_HOST_ENABLED
 #else
 #define UC_BT_HID_HOST_ENABLED           	FALSE
+#endif
+
+//HID Device(BT)
+#ifdef CONFIG_BT_HID_DEVICE_ENABLED
+#define UC_BT_HID_DEVICE_ENABLED           	CONFIG_BT_HID_DEVICE_ENABLED
+#else
+#define UC_BT_HID_DEVICE_ENABLED           	FALSE
 #endif
 
 //SSP
@@ -120,13 +126,6 @@
 #define UC_BT_GATTC_ENABLE                  FALSE
 #endif
 
-//BLUFI
-#ifdef CONFIG_BT_BLE_BLUFI_ENABLE
-#define UC_BT_BLUFI_ENABLE                  CONFIG_BT_BLE_BLUFI_ENABLE
-#else
-#define UC_BT_BLUFI_ENABLE                  FALSE
-#endif
-
 //GATTC CACHE
 #ifdef CONFIG_BT_GATTC_CACHE_NVS_FLASH
 #define UC_BT_GATTC_CACHE_NVS_FLASH_ENABLED    CONFIG_BT_GATTC_CACHE_NVS_FLASH
@@ -155,7 +154,15 @@
 #define UC_BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE  FALSE
 #endif
 
-#if CONFIG_BT_CTRL_ESP32
+//Device Nane Maximum Length
+#ifdef CONFIG_BT_MAX_DEVICE_NAME_LEN
+#define UC_MAX_LOC_BD_NAME_LEN  CONFIG_BT_MAX_DEVICE_NAME_LEN
+#else
+#define UC_MAX_LOC_BD_NAME_LEN 64
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+
 //BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
 #ifdef CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
 #define UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP  CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
@@ -177,9 +184,9 @@
 #define UC_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD     20
 #endif
 
-#endif //CONFIG_BT_CTRL_ESP32
+#endif //CONFIG_IDF_TARGET_ESP32
 
-#if (CONFIG_BT_CTRL_ESP32C3 || CONFIG_BT_CTRL_ESP32S3)
+#if (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
 //BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
 #ifdef CONFIG_BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
 #define UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP  CONFIG_BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
@@ -201,7 +208,7 @@
 #define UC_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD     20
 #endif
 
-#endif //(CONFIG_BT_CTRL_ESP32C3 || CONFIG_BT_CTRL_ESP32S3)
+#endif //(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
 
 //BT ACL CONNECTIONS
 #ifdef CONFIG_BT_ACL_CONNECTIONS
@@ -372,10 +379,18 @@
 #define UC_BT_LOG_MCA_TRACE_LEVEL           UC_TRACE_LEVEL_WARNING
 #endif
 
-#ifdef CONFIG_BT_LOG_HIDH_TRACE_LEVEL
-#define UC_BT_LOG_HIDH_TRACE_LEVEL           CONFIG_BT_LOG_HIDH_TRACE_LEVEL
+#ifdef CONFIG_BT_LOG_HID_TRACE_LEVEL
+#if UC_BT_HID_HOST_ENABLED
+#define UC_BT_LOG_HIDH_TRACE_LEVEL           CONFIG_BT_LOG_HID_TRACE_LEVEL
+#elif UC_BT_HID_DEVICE_ENABLED
+#define UC_BT_LOG_HIDD_TRACE_LEVEL           CONFIG_BT_LOG_HID_TRACE_LEVEL
+#endif
 #else
+#if UC_BT_HID_HOST_ENABLED
 #define UC_BT_LOG_HIDH_TRACE_LEVEL           UC_TRACE_LEVEL_WARNING
+#elif UC_BT_HID_DEVICE_ENABLED
+#define UC_BT_LOG_HIDD_TRACE_LEVEL           UC_TRACE_LEVEL_WARNING
+#endif
 #endif
 
 #ifdef CONFIG_BT_LOG_APPL_TRACE_LEVEL
@@ -400,12 +415,6 @@
 #define UC_BT_LOG_BTIF_TRACE_LEVEL          CONFIG_BT_LOG_BTIF_TRACE_LEVEL
 #else
 #define UC_BT_LOG_BTIF_TRACE_LEVEL          UC_TRACE_LEVEL_WARNING
-#endif
-
-#ifdef CONFIG_BT_LOG_BLUFI_TRACE_LEVEL
-#define UC_BT_LOG_BLUFI_TRACE_LEVEL         CONFIG_BT_LOG_BLUFI_TRACE_LEVEL
-#else
-#define UC_BT_LOG_BLUFI_TRACE_LEVEL         UC_TRACE_LEVEL_WARNING
 #endif
 
 #endif /* __BLUEDROID_USER_CONFIG_H__ */

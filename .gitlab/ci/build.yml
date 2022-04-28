@@ -1,11 +1,135 @@
 .build_template:
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_ENV_IMAGE
   tags:
     - build
   variables:
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+    # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+  after_script:
+    # Show ccache statistics if enabled globally
+    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
   dependencies: []
+
+.build_pytest_template:
+  extends:
+    - .build_template
+    - .before_script_pytest
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+  variables:
+    PYTHON_VER: 3.7.10
+  artifacts:
+    paths:
+      - "**/build*/size.json"
+      - "**/build*/build.log"
+      - "**/build*/*.bin"
+      - "**/build*/*.elf"
+      - "**/build*/*.map"
+      - "**/build*/flasher_args.json"
+      - "**/build*/config/sdkconfig.json"
+      - "**/build*/bootloader/*.bin"
+      - "**/build*/partition_table/*.bin"
+      - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 3 days
+
+build_pytest_examples_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_examples_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32s2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_examples_esp32s3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32s3
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_examples_esp32c3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32c3
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32s2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32s3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32s3
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32c3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32c3
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_non_test_components_apps:
+  extends:
+    - .build_template
+    - .build_test_apps_template
+    - .rules:build:component_ut
+  variables:
+    IDF_TARGET: all
+    TEST_PREFIX: component_ut
+    TEST_RELATIVE_DIR: component_ut
+
+build_pytest_test_apps_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_test_apps_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32s2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_test_apps_esp32s3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32s3
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_test_apps_esp32c3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32c3
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
 .build_template_app_template:
   extends: .build_template
@@ -13,7 +137,6 @@
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
     BUILD_DIR: "@t/@w"
-    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
     BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
     BUILD_COMMAND_ARGS: ""
   artifacts:
@@ -22,6 +145,7 @@
       - log_template_app/*
       - size_info.txt
       - build_template_app/**/size.json
+    expire_in: 1 week
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
@@ -34,10 +158,6 @@
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     # Only do the default cmake build for each target, remaining part are done in the build_template_app job
     - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-    # Check if there are any stray printf/ets_printf references in WiFi libs
-    - cd components/esp_wifi/lib
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
 
 # build-related-pre-check-jobs ------------------------------------------------
 # Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
@@ -82,6 +202,12 @@ build_ssc_esp32c3:
   variables:
     TARGET_NAME: "ESP32C3"
 
+build_ssc_esp32s3:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32S3"
+
 .build_esp_idf_tests_cmake_template:
   extends: .build_template
   dependencies:  # set dependencies to null to avoid missing artifacts issue
@@ -105,7 +231,7 @@ build_ssc_esp32c3:
     OUTPUT_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/output
     BUILD_SYSTEM: "cmake"
     TEST_TYPE: "unit_test"
-    PYTHON_VER: 3
+    PYTHON_VER: 3.7.10
     LDGEN_CHECK_MAPPING: 1
   script:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
@@ -142,6 +268,13 @@ build_esp_idf_tests_cmake_esp32c3:
   variables:
     IDF_TARGET: esp32c3
 
+build_esp_idf_tests_cmake_esp32c2:
+  extends:
+    - .build_esp_idf_tests_cmake_template
+    - .rules:build:unit_test-esp32c2
+  variables:
+    IDF_TARGET: esp32c2
+
 .build_examples_template:
   extends: .build_template
   dependencies:  # set dependencies to null to avoid missing artifacts issue
@@ -156,33 +289,13 @@ build_esp_idf_tests_cmake_esp32c3:
     TEST_TYPE: example_test
     LOG_PATH: ${CI_PROJECT_DIR}/log_${TEST_PREFIX}
     BUILD_PATH: ${CI_PROJECT_DIR}/build_${TEST_PREFIX}
-    PYTHON_VER: 3
+    PYTHON_VER: 3.7.10
     LDGEN_CHECK_MAPPING: 1
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
-build_examples_make:
-  extends:
-    - .build_examples_template
-    - .rules:build:example_test-esp32
-  # This is a workaround for a rarely encountered issue with building examples in CI.
-  # Probably related to building of Kconfig in 'make clean' stage
-  retry: 1
-  parallel: 8
-  artifacts:
-    paths:
-      - $LOG_PATH
-      - build_${TEST_PREFIX}/*/*/*/build/size.json
-      - $SIZE_INFO_LOCATION
-    when: always
-    expire_in: 4 days
-  variables:
-    BUILD_SYSTEM: make
-    IDF_TARGET: esp32  # currently we only support esp32
-
-# same as above, but for CMake
 .build_examples_cmake_template:
   extends: .build_examples_template
   artifacts:
@@ -208,7 +321,7 @@ build_examples_cmake_esp32:
   extends:
     - .build_examples_cmake_template
     - .rules:build:example_test-esp32
-  parallel: 10
+  parallel: 12
   variables:
     IDF_TARGET: esp32
 
@@ -220,6 +333,14 @@ build_examples_cmake_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
+build_examples_cmake_esp32s3:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32s3
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32s3
+
 build_examples_cmake_esp32c3:
   extends:
     - .build_examples_cmake_template
@@ -227,6 +348,13 @@ build_examples_cmake_esp32c3:
   parallel: 8
   variables:
     IDF_TARGET: esp32c3
+
+build_examples_cmake_esp32h2:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
 
 .build_test_apps_template:
   extends: .build_examples_cmake_template
@@ -241,7 +369,7 @@ build_test_apps_esp32:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32
 
@@ -249,7 +377,7 @@ build_test_apps_esp32s2:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32s2
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32s2
 
@@ -257,7 +385,7 @@ build_test_apps_esp32s3:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32s3
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32s3
 
@@ -265,38 +393,19 @@ build_test_apps_esp32c3:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32c3
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32c3
 
-.build_component_ut_template:
-  extends: .build_test_apps_template
-  variables:
-    TEST_PREFIX: component_ut
-    TEST_RELATIVE_DIR: component_ut
-
-build_component_ut_esp32:
+build_test_apps_esp32c2:
   extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32
+    - .build_test_apps_template
+    - .rules:build:custom_test-esp32c2
   variables:
-    IDF_TARGET: esp32
-
-build_component_ut_esp32s2:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32s2
-  variables:
-    IDF_TARGET: esp32s2
-
-build_component_ut_esp32c3:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32c3
-  variables:
-    IDF_TARGET: esp32c3
+    IDF_TARGET: esp32c2
 
 .test_build_system_template:
+  stage: host_test
   extends:
     - .build_template
     - .rules:build
@@ -309,11 +418,6 @@ build_component_ut_esp32c3:
     - mkdir test_build_system
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
-
-test_build_system:
-  extends: .test_build_system_template
-  variables:
-    SHELL_TEST_SCRIPT: test_build_system.sh
 
 test_build_system_cmake:
   extends: .test_build_system_template
@@ -334,7 +438,8 @@ build_docker:
   extends:
     - .before_script_minimal
     - .rules:build:docker
-  stage: build
+  stage: host_test
+  needs: []
   image: espressif/docker-builder:1
   tags:
     - build_docker_amd64_brno
@@ -343,8 +448,9 @@ build_docker:
   script:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
+    - if [ -n "$LOCAL_GIT_MIRROR" ]; then export LOCAL_CI_REPOSITORY_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"; fi
     - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$PIPELINE_COMMIT_SHA}"
     # Build
     - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
@@ -352,56 +458,12 @@ build_docker:
     # Therefore, build a copy of the example located inside the container.
     - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
 
-.test-on-windows:
-  extends:
-    - .before_script_minimal
-    - .rules:build:windows
-  stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
-  tags:
-    - build
-  script:
-    - cd $TEST_DIR
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
-    - cmake --build .
-
-build_idf_exe:
-  extends: .test-on-windows
-  artifacts:
-    paths:
-      - tools/windows/idf_exe/build/idf-exe-v*.zip
-    expire_in: 4 days
-  variables:
-    TEST_DIR: tools/windows/idf_exe
-
-build_cmdlinerunner:
-  extends: .test-on-windows
-  artifacts:
-    paths:
-      - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
-    expire_in: 4 days
-  variables:
-    TEST_DIR: tools/windows/tool_setup/cmdlinerunner
-
-build_installer:
-  extends: .test-on-windows
-  # using a different stage here to be able to use artifacts from build_cmdlinerunner job
-  stage: host_test
-  image: $CI_DOCKER_REGISTRY/wine-innosetup:2
-  dependencies:  # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - build_cmdlinerunner
-  script:
-    - cd tools/windows/tool_setup/
-    - ./build_installer.sh
-
 # This job builds template app with permutations of targets and optimization levels
 build_template_app:
   extends:
     - .build_template_app_template
     - .rules:build
+  stage: host_test
   needs:
     - job: fast_template_app
       artifacts: false

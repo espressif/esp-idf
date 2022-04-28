@@ -1,32 +1,25 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
-
-
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 
+#include "freertos/FreeRTOS.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
+#include "lwip/err.h"
 #include "lwip/netif.h"
+#include "lwip/pbuf.h"
 #include "netif/openthreadif.h"
+#include "esp_openthread.h"
+#include "esp_openthread_lock.h"
+#include "openthread/error.h"
 #include "openthread/ip6.h"
 #include "openthread/link.h"
+#include "openthread/message.h"
 
 #define OPENTHREAD_IP6_MTU 1280
-
-static void openthread_free_rx_buf_l2(struct netif *netif, void *buf)
-{
-    free(buf);
-}
 
 static err_t openthread_output_ip6(struct netif *netif, struct pbuf *p, const struct ip6_addr *peer_addr)
 {
@@ -58,10 +51,15 @@ static err_t openthread_output_ip6(struct netif *netif, struct pbuf *p, const st
         pbuf_free(q);
     }
     /* Check error */
-    if (unlikely(ret != ESP_OK)) {
-        return ERR_ABRT;
-    } else {
+    switch (ret) {
+    case ESP_ERR_NO_MEM:
+        return ERR_MEM;
+
+    case ESP_OK:
         return ERR_OK;
+
+    default:
+        return ERR_ABRT;
     }
 }
 
@@ -69,24 +67,26 @@ void openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
 {
     struct netif *netif = h;
     struct pbuf *p;
+    otMessage *message = (otMessage *)buffer;
 
     if (unlikely(buffer == NULL || !netif_is_up(netif))) {
-        if (buffer) {
-            openthread_free_rx_buf_l2(netif, buffer);
-        }
         return;
     }
 
-    /* acquire new pbuf, type: PBUF_REF */
-    p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+    /* Allocate LINK buffer in case it's forwarded to WiFi/ETH */
+    p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
     if (p == NULL) {
-        openthread_free_rx_buf_l2(netif, buffer);
+        LWIP_DEBUGF(NETIF_DEBUG, ("Failed to allocate input pbuf for OpenThread netif\n"));
         return;
     }
-    p->payload = buffer;
+
+    if (unlikely(otMessageRead(message, 0, p->payload, len) != OT_ERROR_NONE)) {
+        LWIP_DEBUGF(NETIF_DEBUG, ("Failed to read OpenThread message\n"));
+    }
+
 #if ESP_LWIP
-    p->l2_owner = netif;
-    p->l2_buf = buffer;
+    p->l2_owner = NULL;
+    p->l2_buf = NULL;
 #endif
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
@@ -95,6 +95,34 @@ void openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
     }
     /* the pbuf will be free in upper layer, eg: tcpip_input */
 }
+
+static err_t openthread_netif_multicast_handler(struct netif *netif,
+        const ip6_addr_t *group, enum netif_mac_filter_action action)
+{
+    otError error = OT_ERROR_NONE;
+    otIp6Address multicast_addr;
+
+    memcpy(multicast_addr.mFields.m8, group->addr, sizeof(group->addr));
+    esp_openthread_lock_acquire(portMAX_DELAY);
+    if (action == NETIF_ADD_MAC_FILTER) {
+        error = otIp6SubscribeMulticastAddress(esp_openthread_get_instance(), &multicast_addr);
+    } else {
+        error = otIp6UnsubscribeMulticastAddress(esp_openthread_get_instance(), &multicast_addr);
+    }
+    esp_openthread_lock_release();
+    switch (error) {
+    case OT_ERROR_NONE:
+    case OT_ERROR_ALREADY:
+        return ERR_OK;
+    case OT_ERROR_NO_BUFS:
+        return ERR_MEM;
+    case OT_ERROR_INVALID_ARGS:
+        return ERR_ARG;
+    default:
+        return ERR_IF;
+    }
+}
+
 
 err_t openthread_netif_init(struct netif *netif)
 {
@@ -106,7 +134,8 @@ err_t openthread_netif_init(struct netif *netif)
     netif->flags = NETIF_FLAG_BROADCAST;
     netif->output = NULL;
     netif->output_ip6 = openthread_output_ip6;
-    netif->l2_buffer_free_notify = openthread_free_rx_buf_l2;
+    netif->mld_mac_filter = openthread_netif_multicast_handler;
+    netif->l2_buffer_free_notify = NULL;
     netif_set_link_up(netif);
 
     return ERR_OK;

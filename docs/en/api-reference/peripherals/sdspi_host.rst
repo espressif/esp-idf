@@ -37,10 +37,15 @@ Only the following driver's API functions are normally used by most applications
 
 Other functions are mostly used by the protocol level SD/SDIO/MMC driver via function pointers in the :cpp:type:`sdmmc_host_t` structure. For more details, see :doc:`the SD/SDIO/MMC Driver <../storage/sdmmc>`.
 
+
+
 .. note::
 
     SD over SPI does not support speeds above :c:macro:`SDMMC_FREQ_DEFAULT` due to the limitations of the SPI driver.
+    
+.. warning::
 
+    If you want to share the SPI bus among SD card and other SPI devices, there are some restrictions, see :doc:`sdspi_share`.
 
 .. todo
 
@@ -48,6 +53,14 @@ Other functions are mostly used by the protocol level SD/SDIO/MMC driver via fun
 ..    - Configuration. What are some key points of concern regarding slot configuration.
 ..    - Which function/how is a transaction done?
 ..    - Are there code snippets or corresponding application examples?
+
+Related Docs
+--------------
+
+.. toctree::
+   :maxdepth: 1
+
+   sdspi_share
 
 
 API Reference

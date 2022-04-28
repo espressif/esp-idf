@@ -42,6 +42,7 @@ tBTA_DM_DI_CB       bta_dm_di_cb;
 tBTA_DM_CB  *bta_dm_cb_ptr;
 tBTA_DM_SEARCH_CB *bta_dm_search_cb_ptr;
 tBTA_DM_DI_CB       *bta_dm_di_cb_ptr;
+SemaphoreHandle_t deinit_semaphore;
 #endif
 
 

@@ -2,7 +2,7 @@ ESP32-PICO-KIT V4/V4.1 入门指南
 =======================================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP32-PICO-KIT V4 / V4.1 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-PICO-KIT V4/V4.1 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
 
 本指南仅适用于 ESP32-PICO-KIT V4 和 V4.1。ESP32-PICO-KIT V4.1 与 V4 的最大差别在于桥接器，其中 V4 搭载的 CP2102 USB-to-UART 桥接器最高速率为 1 Mbps，V4.1 搭载的 CP2102N 桥接器最高传输速率 3 Mbps。
 
@@ -12,7 +12,7 @@ ESP32-PICO-KIT V4/V4.1 入门指南
 
 * :ref:`ESP32-PICO-KIT 迷你开发板 <get-started-pico-kit-v4-board-front>`
 * USB 2.0 线（A 型转 Micro-B 型）
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
@@ -20,7 +20,9 @@ ESP32-PICO-KIT V4/V4.1 入门指南
 概述
 ----
 
-ESP32-PICO-KIT 是一款来自 `乐鑫 <https://espressif.com>`_ 的迷你开发板，其核心是具有完整 Wi-Fi 和蓝牙功能的 ESP32 系列 SiP 模组 ESP32-PICO-D4。与其他 ESP32 系列模组相比，ESP32-PICO-D4 模组已完整集成以下外围器件：
+ESP32-PICO-KIT 是一款来自 `乐鑫 <https://espressif.com>`_ 的迷你开发板。
+
+该开发板的核心是具有完整 Wi-Fi 和蓝牙功能的 ESP32 系列 SiP 模组 ESP32-PICO-D4。与其他 ESP32 系列模组相比，ESP32-PICO-D4 模组已完整集成以下外围器件：
 
 - 40 MHz 晶体振荡器
 - 4 MB flash
@@ -35,8 +37,8 @@ ESP32-PICO-KIT 集成了 USB 转 UART 桥接电路，允许开发人员直接通
 
 .. note::
 
-    1. 每排未引出至排针的 3 个管脚已连接至 ESP32-PICO-D4 SiP 模组的内置 flash 模块。更多信息，请见 `相关文档`_ 中的模组技术规格书。
-    2. ESP32-PICO-D4 开发板默认采用排针。
+    1. ESP32-PICO-D4 开发板目前有两种版本，分别采用排针与排母。本指南默认以排针版本为例。
+    2. 每排未引出至排针的 3 个管脚已连接至 ESP32-PICO-D4 SiP 模组的内置 flash 模块。更多信息，请见 `相关文档`_ 中的模组技术规格书。
 
 功能概述
 --------
@@ -60,10 +62,10 @@ ESP32-PICO-KIT 开发板的主要组件、接口及控制方式见下。
 
 .. figure:: ../../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
-    :alt: ESP32-PICO-KIT 开发板布局
+    :alt: ESP32-PICO-KIT 开发板布局（排母版）
     :figclass: align-center
 
-    ESP32-PICO-KIT 开发板布局
+    ESP32-PICO-KIT 开发板布局（排母版）
 
 ESP32-PICO-KIT 开发板的主要组件描述见下表（从左上角起顺时针顺序）。
 
@@ -179,12 +181,12 @@ No.     Name               Type    Function
 
 .. _get-started-pico-kit-v4-pin-notes:
 
-有关上表的说明：
+.. note::
 
-1. 该管脚已连接至 ESP32-PICO-D4 的内置 flash 管脚。
-2. 32.768 kHz 晶振：(a) 输入；(b) 输出。
-3. 该管脚已连接至开发板的 USB 桥接器芯片。
-4. ESP32-PICO-KIT 内置 SPI flash 的工作电压为 3.3V。因此，strapping 管脚 MTDI 在模组上电复位过程中应保持低电平。如连接该管脚，请确保该管脚在复位中不要保持高电平。
+    1. 该管脚已连接至 ESP32-PICO-D4 的内置 flash 管脚。
+    2. 32.768 kHz 晶振：(a) 输入；(b) 输出。
+    3. 该管脚已连接至开发板的 USB 桥接器芯片。
+    4. ESP32-PICO-KIT 内置 SPI flash 的工作电压为 3.3 V。因此，strapping 管脚 MTDI 在模组上电复位过程中应保持低电平。如连接该管脚，请确保该管脚在复位中不要保持高电平。
 
 
 应用程序开发
@@ -202,17 +204,17 @@ ESP32-PICO-KIT 的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")。
 
 .. figure:: ../../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
     :align: center
-    :alt: ESP32-PICO-KIT 尺寸图 -- 背面
+    :alt: ESP32-PICO-KIT 尺寸图 -- 背面（排针版）
     :figclass: align-center
 
-    ESP32-PICO-KIT 尺寸图 -- 背面
+    ESP32-PICO-KIT 尺寸图 -- 背面（排针版）
 
 .. figure:: ../../../_static/esp32-pico-kit-v4-dimensions-side.jpg
     :align: center
-    :alt: ESP32-PICO-KIT V4 尺寸图 -- 侧面
+    :alt: ESP32-PICO-KIT V4 尺寸图 -- 侧面（排针版）
     :figclass: align-center
 
-    ESP32-PICO-KIT 尺寸图 -- 侧面
+    ESP32-PICO-KIT 尺寸图 -- 侧面（排针版）
 
 有关开发板的物理结构细节，请见下方参考设计。
 
@@ -222,7 +224,7 @@ ESP32-PICO-KIT 的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")。
 
 * `ESP32-PICO-KIT V4 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT V4.1 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
-* `ESP32-PICO-KIT 参考设计 <https://www.espressif.com/zh-hans/support/download/documents/development-board?keys=esp32-pico-kit+参考设计>`_ ，内含 OrCAD 原理图、PCB 布局、Gerbers 和 BOM 表。
+* `ESP32-PICO-KIT 参考设计 <https://www.espressif.com/sites/default/files/documentation/esp32-pico-kit_v4.1_20180314_cn.zip>`_ ，内含 OrCAD 原理图、PCB 布局、Gerbers 和 BOM 表
 * `《ESP32-PICO-D4 技术规格书》 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`
 
@@ -231,4 +233,3 @@ ESP32-PICO-KIT 的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")。
     :hidden:
 
     get-started-pico-kit-v3
-

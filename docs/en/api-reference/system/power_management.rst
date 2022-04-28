@@ -32,7 +32,7 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 - ``light_sleep_enable``: Whether the system should automatically enter light sleep when no locks are acquired (``true``/``false``).
 
 
-  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
+  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
 
 .. note::
 
@@ -56,20 +56,23 @@ Power management locks have acquire/release counters. If the lock has been acqui
 
 {IDF_TARGET_NAME} supports three types of locks described in the table below.
 
-============================  ======================================================
-Lock                          Description
-============================  ======================================================
-``ESP_PM_CPU_FREQ_MAX``       Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+.. list-table::
+  :header-rows: 1
+  :widths: 25 60
 
-``ESP_PM_APB_FREQ_MAX``       Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
-
-``ESP_PM_NO_LIGHT_SLEEP``     Disables automatic switching to light sleep.
-============================  ======================================================
+  * - Lock
+    - Description
+  * - ``ESP_PM_CPU_FREQ_MAX``
+    - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+  * - ``ESP_PM_APB_FREQ_MAX``
+    - Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
+  * - ``ESP_PM_NO_LIGHT_SLEEP``
+    - Disables automatic switching to light sleep.
 
 {IDF_TARGET_NAME} Power Management Algorithm
 ---------------------------------------
 
-The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ`.
+The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`.
 
 .. only:: esp32
 
@@ -87,17 +90,21 @@ If none of the locks are acquired, and light sleep is enabled in a call to :cpp:
 
 Light sleep duration will be chosen to wake up the chip before the nearest event (task being unblocked, or timer elapses).
 
+To skip unnecessary wake-up, you can consider initializing an esp_timer with the `skip_unhandled_events` option as true. Timers with this flag will not wake up the system and it helps to reduce consumption.
+
 
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------
 
-When DFS is enabled, the APB frequency can be changed multiple times within a single RTOS tick. The APB frequency change does not affect the work of some peripherals, while other peripherals may have issues. For example, Timer Group peripheral timers will keep counting, however, the speed at which they count will change proportionally to the APB frequency.
+When DFS is enabled, the APB frequency can be changed multiple times within a single RTOS tick. The APB frequency change does not affect the operation of some peripherals, while other peripherals may have issues. For example, Timer Group peripheral timers will keep counting, however, the speed at which they count will change proportionally to the APB frequency.
 
 The following peripherals work normally even when the APB frequency is changing:
 
-- **UART**: if REF_TICK is used as a clock source. See `use_ref_tick` member of :cpp:class:`uart_config_t`.
+- **UART**: if REF_TICK is used as a clock source. See cpp:member:`uart_config_t::use_ref_tick`.
 - **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
-- **RMT**: if REF_TICK or XTAL is used as a clock source. See `flags` member of :cpp:class:`rmt_config_t` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
+- **RMT**: if REF_TICK or XTAL is used as a clock source. See :cpp:member:`rmt_config_t::flags` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
+- **GPTimer**: if APB is used as the clock source. See :cpp:member:`gptimer_config_t::clk_src`.
+- **TSENS**: XTAL or RTC_8M is used as a clock source. So, APB frequency changing will not influence it.
 
 Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
@@ -115,7 +122,7 @@ The following drivers will hold the ``ESP_PM_APB_FREQ_MAX`` lock while the drive
     - **WiFi**: between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, the lock will be released for the periods of time when radio is disabled.
     - **TWAI**: between calls to :cpp:func:`twai_driver_install` and :cpp:func:`twai_driver_uninstall`.
     :SOC_BT_SUPPORTED and esp32: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held, unless :ref:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` option is set to "External 32kHz crystal".
-    :SOC_BT_SUPPORTED and esp32c3: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held.
+    :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held.
 
 The following peripheral drivers are not aware of DFS yet. Applications need to acquire/release locks themselves, when necessary:
 
@@ -123,8 +130,8 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
 
     - PCNT
     - Sigma-delta
-    - Timer group
-    :esp32: - MCPWM
+    - The legacy timer group driver
+    :SOC_MCPWM_SUPPORTED: - MCPWM
 
 API Reference
 -------------

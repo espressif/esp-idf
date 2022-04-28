@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/param.h>
 #include "soc/soc_caps.h"
@@ -18,6 +10,7 @@
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
 #include "hal/clk_gate_ll.h"
+#include "hal/assert.h"
 
 void systimer_hal_init(systimer_hal_context_t *hal)
 {
@@ -174,7 +167,7 @@ void systimer_hal_on_apb_freq_update(systimer_hal_context_t *hal, uint32_t apb_t
     * XTAL_STEP value accordingly.
     */
     if (apb_ticks_per_us != SYSTIMER_LL_TICKS_PER_US) {
-        assert((SYSTIMER_LL_TICKS_PER_US % apb_ticks_per_us) == 0 && "TICK_PER_US should be divisible by APB frequency (in MHz)");
+        HAL_ASSERT((SYSTIMER_LL_TICKS_PER_US % apb_ticks_per_us) == 0 && "TICK_PER_US should be divisible by APB frequency (in MHz)");
         systimer_ll_set_step_for_xtal(hal->dev, SYSTIMER_LL_TICKS_PER_US / apb_ticks_per_us);
     }
 }

@@ -3,7 +3,7 @@ ESP32-DevKitC V4 入门指南
 
 :link_to_translation:`en: [English]`
 
-本指南介绍了如何开始使用 ESP32-DevKitC V4 开发板。有关 ESP32-DevKitC 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-DevKitC V4 开发板。
 
 
 准备工作
@@ -27,18 +27,18 @@ ESP32-DevKitC V4 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的小
 
 - 可选多款 ESP32 模组
 
-   - `ESP32-WROOM-32E <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf>`_
-   - `ESP32-WROOM-32UE <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.pdf>`_
-   - `ESP32-WROOM-32D <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_
-   - `ESP32-WROOM-32U <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_
+   - `ESP32-WROOM-32E <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_cn.pdf>`_
+   - `ESP32-WROOM-32UE <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32e_esp32-wroom-32ue_datasheet_cn.pdf>`_
+   - `ESP32-WROOM-32D <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_
+   - `ESP32-WROOM-32U <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_
    - `ESP32-SOLO-1 <https://www.espressif.com/sites/default/files/documentation/esp32-solo-1_datasheet_en.pdf>`_
-   - `ESP32-WROVER-E <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_
-   - `ESP32-WROVER-IE <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_en.pdf>`_
-
+   - `ESP32-WROVER-E <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_
+   - `ESP32-WROVER-IE <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_
+   - `ESP32-WROOM-DA <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_cn.pdf>`_
 
 - 可选排针或排母
 
-详情请见 `《乐鑫产品订购信息》 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_。
+详情请见 `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__。
 
 
 功能说明
@@ -49,11 +49,10 @@ ESP32-DevKitC V4 开发板的主要组件、接口及控制方式见下。
 .. _get-started-esp32-devkitc-board-front:
 
 .. figure:: ../../../_static/esp32-devkitc-functional-overview.jpg
-	:align: center
-	:alt: ESP32-DevKitC V4（板载 ESP32-WROOM-32）
-	:figclass: align-center
+    :align: center
+    :alt: ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 
-ESP32-DevKitC V4（板载 ESP32-WROOM-32）
+    ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 
 
 .. list-table::
@@ -68,10 +67,10 @@ ESP32-DevKitC V4（板载 ESP32-WROOM-32）
       - 复位按键。
     * - Boot
       - 下载按键。按下 **Boot** 键并保持，同时按一下 **EN** 键（此时不要松开 **Boot** 键）进入“固件下载”模式，通过串口下载固件。
-    * - USB-to-UART 桥接器 | 单芯片 USB-UART 桥接器，可提供高达 3 Mbps 的传输速率。
-      - Micro USB 端口
-    * - USB 接口。
-      - 可用作电路板的供电电源，或连接 PC 和 ESP32-WROOM-32 模组的通信接口。
+    * - USB-to-UART 桥接器 
+      - 单芯片 USB-UART 桥接器，可提供高达 3 Mbps 的传输速率。
+    * -  Micro USB 接口。
+      - USB 接口，可用作电路板的供电电源，或连接 PC 和 ESP32-WROOM-32 模组的通信接口。
     * - 5V Power On LED
       - 开发板通电后（USB 或外部 5 V），该指示灯将亮起。更多信息，请见 `相关文档`_ 中的原理图。
     * - I/O
@@ -83,7 +82,7 @@ ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 
 .. note::
 
-	管脚 GPIO16 和 GPIO17 仅适用于板载 ESP32-WROOM 系列和 ESP32-SOLO-1 的开发板，保留内部使用。
+	管脚 GPIO16 和 GPIO17 仅适用于板载 ESP32-WROOM 系列和 ESP32-SOLO-1 的开发板，板载 ESP32-WROVER 系列开发板的管脚 GPIO16 和 GPIO17 保留内部使用。
 
 
 电源选项
@@ -99,6 +98,76 @@ ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 
 	上述供电模式 **不可同时连接**，否则可能会损坏开发板和/或电源。
 
+排针
+------------
+
+下表列出了开发板两侧排针（J1 和 J3）的名称和功能，排针名称如图 :ref:`get-started-esp32-devkitc-board-front` 中所示，排针编号与 `ESP32-DevKitC V4 原理图`_ (PDF) 一致。
+
+J1
+^^^
+====  ====  =====  ===================================
+编号  名称  类型   功能
+====  ====  =====  ===================================
+1     3V3   P      3.3 V 电源
+2     EN    I      CHIP_PU, Reset
+3     IO36  I      GPIO36, ADC1_CH0, S_VP
+4     IO39  I      GPIO39, ADC1_CH3, S_VN
+5     IO34  I      GPIO34, ADC1_CH6, VDET_1
+6     IO35  I      GPIO35, ADC1_CH7, VDET_2
+7     IO32  I/O    GPIO32, ADC1_CH4, TOUCH_CH9, XTAL_32K_P
+8     IO33  I/O    GPIO33, ADC1_CH5, TOUCH_CH8, XTAL_32K_N
+9     IO25  I/O    GPIO25, ADC1_CH8, DAC_1
+10    IO26  I/O    GPIO26, ADC2_CH9, DAC_2
+11    IO27  I/O    GPIO27, ADC2_CH7, TOUCH_CH7
+12    IO14  I/O    GPIO14, ADC2_CH6, TOUCH_CH6, MTMS
+13    IO12  I/O    GPIO12, ADC2_CH5, TOUCH_CH5, MTDI
+14    GND   G      接地
+15    IO13  I/O    GPIO13, ADC2_CH4, TOUCH_CH4, MTCK
+16    IO9   I/O    GPIO9, D2
+17    IO10  I/O    GPIO10, D3
+18    IO11  I/O    GPIO11, CMD
+19    5V0   P      5 V 电源
+====  ====  =====  ===================================
+
+J3
+^^^
+====  ====  =====  ===================================
+编号  名称  类型   功能
+====  ====  =====  ===================================
+1     GND   G      接地
+2     IO23  I/O    GPIO23
+3     IO22  I/O    GPIO22
+4     IO1   I/O    GPIO1, U0TXD
+5     IO3   I/O    GPIO3, U0RXD
+6     IO21  I/O    GPIO21
+7     GND   G      接地
+8     IO19  I/O    GPIO19
+9     IO18  I/O    GPIO18
+10    IO5   I/O    GPIO5
+11    IO17  I/O    GPIO17
+12    IO16  I/O    GPIO16
+13    IO4   I/O    GPIO4, ADC2_CH0, TOUCH_CH0
+14    IO0   I/O    GPIO0, ADC2_CH1, TOUCH_CH1, Boot
+16    IO2   I/O    GPIO2, ADC2_CH2, TOUCH_CH2
+17    IO15  I/O    GPIO15, ADC2_CH3, TOUCH_CH3, MTDO
+17    IO8   I/O    GPIO8, D1
+18    IO7   I/O    GPIO7, D0
+19    IO6   I/O    GPIO6, SCK
+====  ====  =====  ===================================
+
+    P：电源；
+    I：输入；
+    O：输出。
+
+管脚布局
+^^^^^^^^^^^
+.. figure:: ../../../_static/esp32-devkitC-v4-pinout.png
+    :align: center
+    :scale: 45%
+    :alt: ESP32-DevKitC 管脚布局（点击放大）
+
+    ESP32-DevKitC 管脚布局（点击放大）
+
 
 有关 C15 的提示
 --------------------
@@ -110,13 +179,13 @@ ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 
 用户如果认为 C15 可能影响开发板的使用，则可以将 C15 完全移除。C15 在开发板上的具体位置见下图黄色部分。
 
-.. figure:: ../../../_static/esp32-devkitc-c15-location.png
-	:align: center
-	:alt: C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
-	:figclass: align-center
-	:width: 30%
 
-C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
+.. figure:: ../../../_static/esp32-devkitc-c15-location.png
+    :align: center
+    :alt: C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
+    :width: 30%
+
+    C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
 
 
 应用程序开发
@@ -126,15 +195,16 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 
 现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
+
 开发板尺寸
 -------------
 
 .. figure:: ../../../_static/esp32-devkitc-dimensions-back.jpg
-	:align: center
-	:alt: ESP32-DevKitC 开发板尺寸 -- 仰视图
-	:figclass: align-center
+    :align: center
+    :scale: 80%
+    :alt: ESP32-DevKitC 开发板尺寸（板载 ESP32-WROOM-32 模组）-- 仰视图
 
-ESP32-DevKitC 开发板尺寸 -- 仰视图
+    ESP32-DevKitC 开发板尺寸（板载 ESP32-WROOM-32 模组）-- 仰视图
 
 
 相关文档
@@ -144,9 +214,13 @@ ESP32-DevKitC 开发板尺寸 -- 仰视图
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32D & ESP32-WROOM-32U 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-WROOM-DA 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32_wrover_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
-* `《乐鑫产品订购信息》 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`_
+
+有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。
+
 
 .. toctree::
 	:hidden:

@@ -1,20 +1,29 @@
 menu "LCD and Touch Panel"
     menu "LCD Peripheral Configuration"
-        depends on IDF_TARGET_ESP32S3
-        choice LCD_PERIPH_CLK_SRC
-            prompt "Select clock source for LCD peripheral"
-            default LCD_PERIPH_CLK_SRC_XTAL if PM_ENABLE
-            default LCD_PERIPH_CLK_SRC_PLL160M
+        config LCD_PANEL_IO_FORMAT_BUF_SIZE
+            int "LCD panel io format buffer size"
+            default 32
             help
-                The peripheral clock is where LCD bus clock derives from.
-                Each clock source has its unique feature, e.g.
-                1. XTAL clock can help LCD work stable when DFS is enabled
-                2. PLL160M can achieve higher pixel clock resolution
+                LCD driver allocates an internal buffer to transform the data into a proper format, because of
+                the endian order mismatch. This option is to set the size of the buffer, in bytes.
 
-            config LCD_PERIPH_CLK_SRC_PLL160M
-                bool "PLL_160M clock"
-            config LCD_PERIPH_CLK_SRC_XTAL
-                bool "XTAL clock"
-        endchoice # LCD_PERIPH_CLK_SRC
+        config LCD_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for LCD driver.
+                Note that, this option only controls the LCD driver log, won't affect other drivers.
+
+        if SOC_LCD_RGB_SUPPORTED
+            config LCD_RGB_ISR_IRAM_SAFE
+                bool "RGB LCD ISR IRAM-Safe"
+                default n
+                select GDMA_CTRL_FUNC_IN_IRAM # need to restart GDMA in the LCD ISR
+                help
+                    Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
+                    executable when the cache is disabled (e.g. SPI Flash write).
+                    If you want the LCD driver to keep flushing the screen even when cache ops disabled,
+                    you can enable this option. Note, this will also increase the IRAM usage.
+        endif # SOC_LCD_RGB_SUPPORTED
     endmenu
 endmenu

@@ -12,6 +12,7 @@
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include "soc/soc_caps.h"
+#include "esp_private/wifi.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
@@ -52,6 +53,9 @@ static void test_phy_rtc_init(void)
 
 static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
 {
+    //power up wifi and bt mac bb power domain
+    esp_wifi_power_domain_on();
+
     test_phy_rtc_init();
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -101,6 +105,9 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
 #endif //CONFIG_IDF_TARGET_ESP32C3
 
 #endif //SOC_BT_SUPPORTED
+
+    //power down wifi and bt mac bb power domain
+    esp_wifi_power_domain_off();
 
     TEST_ASSERT( xSemaphoreGive(semphr_done) );
 

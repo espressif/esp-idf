@@ -15,6 +15,16 @@ menu "LWIP"
             could be used to convert network interface index to name
             instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
 
+    config LWIP_TCPIP_CORE_LOCKING
+        bool "Enable tcpip　core locking"
+        default n
+        help
+            If Enable tcpip　core locking,Creates a global mutex that is held
+            during TCPIP thread operations.Can be locked by client code to perform
+            lwIP operations without changing into TCPIP thread using callbacks.
+            See LOCK_TCPIP_CORE() and UNLOCK_TCPIP_CORE().
+
+            If disable tcpip　core locking,TCP IP will perform tasks through context switching．
 
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"
@@ -75,14 +85,7 @@ menu "LWIP"
         bool "Support LWIP socket select() only (DEPRECATED)"
         default n
         help
-            This option is deprecated. Use VFS_SUPPORT_SELECT instead, which is
-            the inverse of this option.
-
-            The virtual filesystem layer of select() redirects sockets to
-            lwip_select() and non-socket file descriptors to their respective driver
-            implementations. If this option is enabled then all calls of select()
-            will be redirected to lwip_select(), therefore, select can be used
-            for sockets only.
+            This option is deprecated. Do not use this option, use VFS_SUPPORT_SELECT instead.
 
     config LWIP_SO_LINGER
         bool "Enable SO_LINGER processing"
@@ -180,32 +183,6 @@ menu "LWIP"
         help
             Enabling this option allows LWIP statistics
 
-    config LWIP_ETHARP_TRUST_IP_MAC
-        bool "Enable LWIP ARP trust"
-        default n
-        help
-            Enabling this option allows ARP table to be updated.
-
-            If this option is enabled, the incoming IP packets cause the ARP table to be
-            updated with the source MAC and IP addresses supplied in the packet.
-            You may want to disable this if you do not trust LAN peers to have the
-            correct addresses, or as a limited approach to attempt to handle
-            spoofing. If disabled, lwIP will need to make a new ARP request if
-            the peer is not already in the ARP table, adding a little latency.
-            The peer *is* in the ARP table if it requested our address before.
-            Also notice that this slows down input processing of every IP packet!
-
-            There are two known issues in real application if this feature is enabled:
-            - The LAN peer may have bug to update the ARP table after the ARP entry is aged out.
-            If the ARP entry on the LAN peer is aged out but failed to be updated, all IP packets
-            sent from LWIP to the LAN peer will be dropped by LAN peer.
-            - The LAN peer may not be trustful, the LAN peer may send IP packets to LWIP with
-            two different MACs, but the same IP address. If this happens, the LWIP has problem
-            to receive IP packets from LAN peer.
-
-            So the recommendation is to disable this option.
-            Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
-
     config LWIP_ESP_GRATUITOUS_ARP
         bool "Send gratuitous ARP periodically"
         default y
@@ -248,6 +225,13 @@ menu "LWIP"
             in the DHCP packets as an option 61)
             Set this option to "y" in order to exclude option 61 from DHCP packets.
 
+    config LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        bool "DHCP: Disable Use of vendor class identification"
+        default y
+        help
+            This option could be used to disable DHCP client vendor class identification.
+            Set this option to "y" in order to exclude option 60 from DHCP packets.
+
     config LWIP_DHCP_RESTORE_LAST_IP
         bool "DHCP: Restore last IP obtained from DHCP server"
         default n
@@ -256,12 +240,30 @@ menu "LWIP"
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
             available, there is no need for sending discovery message to DHCP server and save some time.
 
+    config LWIP_DHCP_OPTIONS_LEN
+        int "DHCP total option length"
+        default 68 if LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        default 108 if !LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        range 68 255
+        help
+            Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
+            options and values. If your code meets LWIP_ASSERT due to option value is too long.
+            Please increase the LWIP_DHCP_OPTIONS_LEN value.
+
     menu "DHCP server"
+
+        config LWIP_DHCPS
+            bool "DHCPS: Enable IPv4 Dynamic Host Configuration Protocol Server (DHCPS)"
+            default y
+            help
+                Enabling this option allows the device to run the DHCP server
+                (to dynamically assign IPv4 addresses to clients).
 
         config LWIP_DHCPS_LEASE_UNIT
             int "Multiplier for lease time, in seconds"
             range 1 3600
             default 60
+            depends on LWIP_DHCPS
             help
                 The DHCP server is calculating lease time multiplying the sent
                 and received times by this number of seconds per unit.
@@ -271,6 +273,7 @@ menu "LWIP"
             int "Maximum number of stations"
             range 1 64
             default 8
+            depends on LWIP_DHCPS
             help
                 The maximum number of DHCP clients that are connected to the server.
                 After this number is exceeded, DHCP server removes of the oldest device
@@ -352,6 +355,25 @@ menu "LWIP"
             Forwarding IPv6 packets between interfaces is only required when acting as
             a router.
 
+    config LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
+        int "Use IPv6 Router Advertisement Recursive DNS Server Option"
+        depends on LWIP_IPV6_AUTOCONFIG
+        default 0
+        help
+            Use IPv6 Router Advertisement Recursive DNS Server Option (as per RFC 6106) to
+            copy a defined maximum number of DNS servers to the DNS module.
+            Set this option to a number of desired DNS servers advertised in the RA protocol.
+            This feature is disabled when set to 0.
+
+    config LWIP_IPV6_DHCP6
+        bool "Enable DHCPv6 stateless address autoconfiguration"
+        depends on LWIP_IPV6_AUTOCONFIG
+        default n
+        help
+            Enable DHCPv6 for IPv6 stateless address autoconfiguration.
+            Note that the dhcpv6 client has to be started using dhcp6_enable_stateless(netif);
+            Note that the stateful address autoconfiguration is not supported.
+
     config LWIP_NETIF_STATUS_CALLBACK
         bool "Enable status callback for network interfaces"
         default n
@@ -365,6 +387,7 @@ menu "LWIP"
             Enabling this option means that if a packet is sent with a destination
             address equal to the interface's own IP address, it will "loop back" and
             be received by this interface.
+            Disabling this option disables support of loopback interface in lwIP
 
     config LWIP_LOOPBACK_MAX_PBUFS
         int "Max queued loopback packets per interface"
@@ -517,17 +540,9 @@ menu "LWIP"
         config LWIP_TCP_SACK_OUT
             bool "Support sending selective acknowledgements"
             default n
+            depends on LWIP_TCP_QUEUE_OOSEQ
             help
                 TCP will support sending selective acknowledgements (SACKs).
-
-        config LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
-            bool "Keep TCP connections when IP changed"
-            default n
-            help
-                This option is enabled when the following scenario happen:
-                network dropped and reconnected, IP changes is like: 192.168.0.2->0.0.0.0->192.168.0.2
-
-                Disable this option to keep consistent with the original LWIP code behavior.
 
 
         choice LWIP_TCP_OVERSIZE
@@ -635,7 +650,7 @@ menu "LWIP"
     config LWIP_TCPIP_TASK_STACK_SIZE
         int "TCP/IP Task Stack Size"
         default 3072
-        # for high log levels, tcpip_adapter API calls can end up
+        # for high log levels, esp_netif API calls can end up
         # a few calls deep and logging there can trigger a stack overflow
         range 2048 65536 if LOG_DEFAULT_LEVEL < 4
         range 2560 65536 if LOG_DEFAULT_LEVEL >= 4
@@ -785,13 +800,21 @@ menu "LWIP"
 
     menu "ICMP"
 
+        config LWIP_ICMP
+            bool "ICMP: Enable ICMP"
+            default y
+            help
+                Enable ICMP module for check network stability
+
         config LWIP_MULTICAST_PING
             bool "Respond to multicast pings"
             default n
+            depends on LWIP_ICMP6 || LWIP_ICMP
 
         config LWIP_BROADCAST_PING
             bool "Respond to broadcast pings"
             default n
+            depends on LWIP_ICMP
 
     endmenu # ICMP
 
@@ -810,7 +833,7 @@ menu "LWIP"
 
     menu "SNTP"
 
-        config LWIP_DHCP_MAX_NTP_SERVERS
+        config LWIP_SNTP_MAX_SERVERS
             int "Maximum number of NTP servers"
             default 1
             range 1 16
@@ -818,6 +841,23 @@ menu "LWIP"
                 Set maximum number of NTP servers used by LwIP SNTP module.
                 First argument of sntp_setserver/sntp_setservername functions
                 is limited to this value.
+
+        config LWIP_DHCP_GET_NTP_SRV
+            bool "Request NTP servers from DHCP"
+            default n
+            help
+                If enabled, LWIP will add 'NTP' to Parameter-Request Option sent via DHCP-request.
+                DHCP server might reply with an NTP server address in option 42.
+                SNTP callback for such replies should be set accordingly (see sntp_servermode_dhcp() func.)
+
+        config LWIP_DHCP_MAX_NTP_SERVERS
+            int "Maximum number of NTP servers aquired via DHCP"
+            default 1
+            range 1 16
+            depends on LWIP_DHCP_GET_NTP_SRV
+            help
+                Set maximum number of NTP servers aquired via DHCP-offer.
+                Should be less or equal to "Maximum number of NTP servers", any extra servers would be just ignored.
 
         config LWIP_SNTP_UPDATE_DELAY
             int "Request interval to update time (ms)"
@@ -928,6 +968,26 @@ menu "LWIP"
 
         endchoice
 
+        choice LWIP_HOOK_IP6_INPUT
+            prompt "IPv6 packet input"
+            depends on LWIP_IPV6
+            default LWIP_HOOK_IP6_INPUT_NONE
+            help
+                Enables custom IPv6 packet input.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_IP6_INPUT_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_IP6_INPUT_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_IP6_INPUT_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
     endmenu # Hooks
 
     menuconfig LWIP_DEBUG
@@ -970,7 +1030,7 @@ menu "LWIP"
 
     config LWIP_ICMP_DEBUG
         bool "Enable ICMP debug messages"
-        depends on LWIP_DEBUG
+        depends on LWIP_DEBUG && LWIP_ICMP
         default n
 
     config LWIP_DHCP_STATE_DEBUG
@@ -995,6 +1055,16 @@ menu "LWIP"
 
     config LWIP_TCP_DEBUG
         bool "Enable TCP debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_SNTP_DEBUG
+        bool "Enable SNTP debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_DNS_DEBUG
+        bool "Enable DNS debug messages"
         depends on LWIP_DEBUG
         default n
 

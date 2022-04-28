@@ -1,17 +1,8 @@
-
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <sys/cdefs.h>
@@ -20,11 +11,9 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "esp32s3/clk.h"
 #include "esp_clk_internal.h"
-#include "esp32s3/rom/ets_sys.h"
-#include "esp32s3/rom/rtc.h"
 #include "esp_rom_uart.h"
+#include "esp_rom_sys.h"
 #include "soc/system_reg.h"
 #include "soc/dport_access.h"
 #include "soc/soc.h"
@@ -33,7 +22,8 @@
 #include "soc/i2s_reg.h"
 #include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 
@@ -43,13 +33,9 @@ static const char *TAG = "clk";
  * Larger values increase startup delay. Smaller values may cause false positive
  * detection (i.e. oscillator runs for a few cycles and then stops).
  */
-#define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32S3_RTC_CLK_CAL_CYCLES
+#define SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
 
-#ifdef CONFIG_ESP32S3_RTC_XTAL_CAL_RETRY
-#define RTC_XTAL_CAL_RETRY CONFIG_ESP32S3_RTC_XTAL_CAL_RETRY
-#else
 #define RTC_XTAL_CAL_RETRY 1
-#endif
 
 /* Lower threshold for a reasonably-looking calibration value for a 32k XTAL.
  * The ideal value (assuming 32768 Hz frequency) is 1000000/32768*(2**19) = 16*10^6.
@@ -77,6 +63,12 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
  __attribute__((weak)) void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
+    soc_reset_reason_t rst_reas;
+    rst_reas = esp_rom_get_reset_reason(0);
+    //When power on, we need to set `cali_ocode` to 1, to do a OCode calibration, which will calibrate the rtc reference voltage to a tested value
+    if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
+        cfg.cali_ocode = 1;
+    }
     rtc_init(cfg);
 
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
@@ -98,11 +90,11 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
-#if defined(CONFIG_ESP32S3_RTC_CLK_SRC_EXT_CRYS)
+#if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
-#elif defined(CONFIG_ESP32S3_RTC_CLK_SRC_EXT_OSC)
+#elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
-#elif defined(CONFIG_ESP32S3_RTC_CLK_SRC_INT_8MD256)
+#elif defined(CONFIG_RTC_CLK_SRC_INT_8MD256)
     select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
@@ -120,7 +112,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     rtc_cpu_freq_config_t old_config, new_config;
     rtc_clk_cpu_freq_get_config(&old_config);
     const uint32_t old_freq_mhz = old_config.freq_mhz;
-    const uint32_t new_freq_mhz = CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ;
+    const uint32_t new_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(new_freq_mhz, &new_config);
     assert(res);
@@ -210,22 +202,24 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     uint32_t common_perip_clk1 = 0;
 
 #if CONFIG_FREERTOS_UNICORE
-    RESET_REASON rst_reas[1];
+    soc_reset_reason_t rst_reas[1];
 #else
-    RESET_REASON rst_reas[2];
+    soc_reset_reason_t rst_reas[2];
 #endif
 
-    rst_reas[0] = rtc_get_reset_reason(0);
+    rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_FREERTOS_UNICORE
-    rst_reas[1] = rtc_get_reset_reason(1);
+    rst_reas[1] = esp_rom_get_reset_reason(1);
 #endif
 
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= TG0WDT_CPU_RESET && rst_reas[0] <= TG0WDT_CPU_RESET && rst_reas[0] != RTCWDT_BROWN_OUT_RESET)
+    if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW ||
+            rst_reas[0] == RESET_REASON_CPU0_RTC_WDT || rst_reas[0] == RESET_REASON_CPU0_MWDT1)
 #if !CONFIG_FREERTOS_UNICORE
-            || (rst_reas[1] >= TG0WDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
+        || (rst_reas[1] == RESET_REASON_CPU1_MWDT0 || rst_reas[1] == RESET_REASON_CPU1_SW ||
+            rst_reas[1] == RESET_REASON_CPU1_RTC_WDT || rst_reas[1] == RESET_REASON_CPU1_MWDT1)
 #endif
        ) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
@@ -234,13 +228,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     } else {
         common_perip_clk = SYSTEM_WDG_CLK_EN |
                            SYSTEM_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
                            SYSTEM_UART_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 1
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
                            SYSTEM_UART1_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 2
+#if CONFIG_ESP_CONSOLE_UART_NUM != 2
                            SYSTEM_UART2_CLK_EN |
 #endif
                            SYSTEM_USB_CLK_EN |
@@ -274,13 +268,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
     common_perip_clk |= SYSTEM_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
                         SYSTEM_UART_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 1
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
                         SYSTEM_UART1_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 2
+#if CONFIG_ESP_CONSOLE_UART_NUM != 2
                         SYSTEM_UART2_CLK_EN |
 #endif
                         SYSTEM_USB_CLK_EN |
@@ -311,6 +305,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     /* Disable WiFi/BT/SDIO clocks. */
     CLEAR_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
     SET_PERI_REG_MASK(SYSTEM_WIFI_CLK_EN_REG, SYSTEM_WIFI_CLK_EN);
+
+    /* Set WiFi light sleep clock source to RTC slow clock */
+    REG_SET_FIELD(SYSTEM_BT_LPCK_DIV_INT_REG, SYSTEM_BT_LPCK_DIV_NUM, 0);
+    CLEAR_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_8M);
+    SET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_RTC_SLOW);
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);

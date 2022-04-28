@@ -114,7 +114,7 @@ BOOLEAN bta_hf_client_add_record(char *p_service_name, UINT8 scn,
 
     /* add profile descriptor list */
     profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
-    version = HFP_VERSION_1_6;
+    version = HFP_VERSION_1_7;
 
     result &= SDP_AddProfileDescriptorList(sdp_handle, profile_uuid, version);
 

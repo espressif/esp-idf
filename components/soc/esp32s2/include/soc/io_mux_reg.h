@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_IO_MUX_REG_H_
 #define _SOC_IO_MUX_REG_H_
 
@@ -138,17 +130,11 @@
 #define IO_MUX_GPIO46_REG	PERIPHS_IO_MUX_GPIO46_U
 
 
-#define FUNC_GPIO_GPIO                              1
 #define PIN_FUNC_GPIO								1
 
 #define GPIO_PAD_PULLDOWN(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
-
-#define U1RXD_GPIO_NUM 18
-#define U1TXD_GPIO_NUM 17
-#define U0RXD_GPIO_NUM 44
-#define U0TXD_GPIO_NUM 43
 
 #define SPI_CS1_GPIO_NUM 26
 #define SPI_HD_GPIO_NUM  27

@@ -1,8 +1,8 @@
 /*  Bluetooth Mesh */
 
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,9 @@ extern "C" {
 #define DEVICE_NAME_SIZE    (BLE_MESH_GAP_ADV_MAX_LEN - 2)
 #endif
 
+typedef void (*proxy_server_connect_cb_t)(uint8_t conn_handle);
+typedef void (*proxy_server_disconnect_cb_t)(uint8_t conn_handle, uint8_t reason);
+
 int bt_mesh_set_device_name(const char *name);
 
 int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, uint8_t type,
@@ -45,6 +48,9 @@ int bt_mesh_proxy_server_send(struct bt_mesh_conn *conn, uint8_t type,
 
 int bt_mesh_proxy_server_prov_enable(void);
 int bt_mesh_proxy_server_prov_disable(bool disconnect);
+
+void bt_mesh_proxy_server_set_conn_cb(proxy_server_connect_cb_t cb);
+void bt_mesh_proxy_server_set_disconn_cb(proxy_server_disconnect_cb_t cb);
 
 int bt_mesh_proxy_server_gatt_enable(void);
 int bt_mesh_proxy_server_gatt_disable(void);

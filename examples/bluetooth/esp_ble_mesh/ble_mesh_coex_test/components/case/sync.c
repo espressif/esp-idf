@@ -1,11 +1,10 @@
-/* ESP BLE Mesh Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * ESP BLE Mesh Example
+ *
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include "sync.h"
 #include "run_tc.h"
@@ -423,7 +422,7 @@ static void handle_sync_timeout(void *arg)
 {
     static bool run_first = true;
     if (run_first == true) {
-        xSemaphoreTake((SemaphoreHandle_t)arg, (portTickType)portMAX_DELAY);
+        xSemaphoreTake((SemaphoreHandle_t)arg, (TickType_t)portMAX_DELAY);
         esp_timer_start_periodic( (esp_timer_handle_t)arg, 1000000);
         run_first = false;
     }

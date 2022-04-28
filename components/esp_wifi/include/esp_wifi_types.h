@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #ifndef __ESP_WIFI_TYPES_H__
@@ -80,6 +72,7 @@ typedef enum {
     WIFI_REASON_ASSOC_NOT_AUTHED         = 9,
     WIFI_REASON_DISASSOC_PWRCAP_BAD      = 10,
     WIFI_REASON_DISASSOC_SUPCHAN_BAD     = 11,
+    WIFI_REASON_BSS_TRANSITION_DISASSOC  = 12,
     WIFI_REASON_IE_INVALID               = 13,
     WIFI_REASON_MIC_FAILURE              = 14,
     WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT   = 15,
@@ -149,6 +142,10 @@ typedef enum {
     WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
     WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
     WIFI_CIPHER_TYPE_SMS4,       /**< the cipher type is SMS4 */
+    WIFI_CIPHER_TYPE_GCMP,       /**< the cipher type is GCMP */
+    WIFI_CIPHER_TYPE_GCMP256,    /**< the cipher type is GCMP-256 */
+    WIFI_CIPHER_TYPE_AES_GMAC128,/**< the cipher type is AES-GMAC-128 */
+    WIFI_CIPHER_TYPE_AES_GMAC256,/**< the cipher type is AES-GMAC-256 */
     WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
 
@@ -218,7 +215,7 @@ typedef enum {
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
-    bool capable;            /**< Advertizes support for Protected Management Frame. Device will prefer to connect in PMF mode if other device also advertizes PMF capability. */
+    bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
     bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
 
@@ -234,6 +231,7 @@ typedef struct {
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
+    wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
 } wifi_ap_config_t;
 
 /** @brief STA configuration settings for the ESP32 */
@@ -250,7 +248,8 @@ typedef struct {
     wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
     uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
-    uint32_t reserved:30;         /**< Reserved for future feature set */
+    uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
+    uint32_t reserved:29;         /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -272,7 +271,8 @@ typedef struct {
     uint32_t phy_11g:1;      /**< bit: 1 flag to identify if 11g mode is enabled or not */
     uint32_t phy_11n:1;      /**< bit: 2 flag to identify if 11n mode is enabled or not */
     uint32_t phy_lr:1;       /**< bit: 3 flag to identify if low rate is enabled or not */
-    uint32_t reserved:28;    /**< bit: 4..31 reserved */
+    uint32_t is_mesh_child:1;/**< bit: 4 flag to identify mesh child */
+    uint32_t reserved:27;    /**< bit: 5..31 reserved */
 } wifi_sta_info_t;
 
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
@@ -344,7 +344,7 @@ typedef struct {
     unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
 #if CONFIG_IDF_TARGET_ESP32
-    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     unsigned :8;                  /**< reserved */
 #endif
@@ -357,14 +357,14 @@ typedef struct {
 #if CONFIG_IDF_TARGET_ESP32S2
     unsigned :32;                 /**< reserved */
 #elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
-    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
     unsigned :32;                 /**< reserved */
 #endif
     unsigned :31;                 /**< reserved */
     unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
 #if CONFIG_IDF_TARGET_ESP32S2
-    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
 #elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     unsigned :32;                 /**< reserved */
@@ -669,12 +669,14 @@ typedef struct {
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
     uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
+    bool is_mesh_child;       /**< flag to identify mesh child */
 } wifi_event_ap_staconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
 typedef struct {
     uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
     uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
+    bool is_mesh_child;       /**< flag to identify mesh child */
 } wifi_event_ap_stadisconnected_t;
 
 /** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */

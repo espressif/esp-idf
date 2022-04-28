@@ -11,8 +11,10 @@ set(asio_sources "asio/asio/src/asio.cpp")
 if(CONFIG_ASIO_SSL_SUPPORT)
     if(CONFIG_ASIO_USE_ESP_OPENSSL)
         list(APPEND asio_sources
-                "asio/asio/src/asio_ssl.cpp"
-                "port/src/esp_asio_openssl_stubs.c")
+                "port/src/asio_ssl_impl.cpp"
+                "port/mbedtls/src/mbedtls_context.cpp"
+                "port/mbedtls/src/mbedtls_engine.cpp")
+        set(asio_priv_includes "port/mbedtls/include")
     endif()
 
     if(CONFIG_ASIO_USE_ESP_WOLFSSL)
@@ -23,6 +25,7 @@ endif()
 
 idf_component_register(SRCS ${asio_sources}
                     INCLUDE_DIRS "asio/asio/include" "port/include"
+                    PRIV_INCLUDE_DIRS ${asio_priv_includes}
                     REQUIRES lwip)
 
 if(CONFIG_ASIO_SSL_SUPPORT)
@@ -35,7 +38,7 @@ if(CONFIG_ASIO_SSL_SUPPORT)
     endif()
 
     if(CONFIG_ASIO_USE_ESP_OPENSSL)
-        idf_component_get_property(esp_openssl openssl COMPONENT_LIB)
-        target_link_libraries(${COMPONENT_LIB} PUBLIC ${esp_openssl})
+        idf_component_get_property(mbedtls mbedtls COMPONENT_LIB)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC ${mbedtls})
     endif()
 endif()

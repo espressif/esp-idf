@@ -16,7 +16,6 @@ This example can be executed on any ESP32 board, the only required interface is 
 
 * Open the project configuration menu (`idf.py menuconfig`)
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
-* When using Make build system, set `Default serial port` under `Serial flasher config`.
 
 Note how to create a PEM certificate for mqtt.eclipseprojects.io:
 

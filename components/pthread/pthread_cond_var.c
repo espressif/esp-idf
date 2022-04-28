@@ -128,7 +128,8 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
         gettimeofday(&cur_time, NULL);
 
         abs_time.tv_sec = to->tv_sec;
-        abs_time.tv_usec = to->tv_nsec / 1000;
+        // Round up nanoseconds to the next microsecond
+        abs_time.tv_usec = (to->tv_nsec + 1000 - 1) / 1000;
 
         if (timercmp(&abs_time, &cur_time, <)) {
             /* As per the pthread spec, if the time has already
@@ -137,14 +138,27 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
             timeout_msec = 0;
         } else {
             timersub(&abs_time, &cur_time, &diff_time);
-            timeout_msec = (diff_time.tv_sec * 1000) + (diff_time.tv_usec / 1000);
+            // Round up timeout microseconds to the next millisecond
+            timeout_msec = (diff_time.tv_sec * 1000) +
+                ((diff_time.tv_usec + 1000 - 1) / 1000);
         }
 
         if (timeout_msec <= 0) {
             return ETIMEDOUT;
         }
 
-        timeout_ticks = timeout_msec / portTICK_PERIOD_MS;
+        // Round up milliseconds to the next tick
+        timeout_ticks = (timeout_msec + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+
+        /* We have to add 1 more tick of delay
+
+           The reason for this is that vTaskDelay(1) will sleep until the start of the next tick,
+           which can be any amount of time up to one tick period. So if we don't add one more tick,
+           we're likely to timeout a small time (< 1 tick period) before the requested timeout.
+           If we add 1 tick then we will timeout a  small time (< 1 tick period) after the
+           requested timeout.
+         */
+        timeout_ticks += 1;
     }
 
     esp_pthread_cond_waiter_t w;

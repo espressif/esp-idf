@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _BLE_MESH_CFG_SRV_MODEL_H_
 #define _BLE_MESH_CFG_SRV_MODEL_H_
@@ -31,7 +23,7 @@ typedef struct {
     uint16_t net_idx;
     uint16_t unicast_addr;
 } ble_mesh_node_config_params;
-ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
+extern ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
 
 extern esp_ble_mesh_prov_t prov;
 
@@ -47,7 +39,7 @@ extern esp_ble_mesh_elem_t config_server_elements[];
 extern esp_ble_mesh_comp_t config_server_comp;
 
 // config client model
-esp_ble_mesh_client_t cfg_cli;
+extern esp_ble_mesh_client_t cfg_cli;
 extern esp_ble_mesh_model_t config_client_models[];
 
 extern esp_ble_mesh_elem_t config_client_elements[];

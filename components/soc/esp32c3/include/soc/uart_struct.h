@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct uart_dev_s {
     union {
         struct {
             uint32_t rw_byte;                 /*a*/

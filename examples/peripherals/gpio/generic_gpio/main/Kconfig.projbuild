@@ -1,0 +1,29 @@
+menu "Example Configuration"
+
+    config GPIO_OUTPUT_0
+        int "GPIO output pin 0"
+        default 18 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        default 8 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+        help
+            GPIO pin number to be used as GPIO_OUTPUT_IO_0.
+
+    config GPIO_OUTPUT_1
+        int "GPIO output pin 1"
+        default 19 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        default 9 if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+        help
+            GPIO pin number to be used as GPIO_OUTPUT_IO_1.
+
+    config GPIO_INPUT_0
+        int "GPIO input pin 0"
+        default 4
+        help
+            GPIO pin number to be used as GPIO_INPUT_IO_0.
+
+    config GPIO_INPUT_1
+        int "GPIO input pin 1"
+        default 5
+        help
+            GPIO pin number to be used as GPIO_INPUT_IO_1.
+
+endmenu

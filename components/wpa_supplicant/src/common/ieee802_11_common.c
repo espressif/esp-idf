@@ -37,6 +37,42 @@ const u8 * get_ie(const u8 *ies, size_t len, u8 eid)
 	return NULL;
 }
 
+const u8 * get_vendor_ie(const u8 *ies, size_t len, u32 vendor_type)
+{
+	const struct element *elem;
+
+	for_each_element_id(elem, WLAN_EID_VENDOR_SPECIFIC, ies, len) {
+		if (elem->datalen >= 4 &&
+				vendor_type == WPA_GET_BE32(elem->data))
+			return &elem->id;
+	}
+
+	return NULL;
+}
+
+size_t mbo_add_ie(u8 *buf, size_t len, const u8 *attr, size_t attr_len)
+{
+	/*
+	 * MBO IE requires 6 bytes without the attributes: EID (1), length (1),
+	 * OUI (3), OUI type (1).
+	 */
+	if (len < 6 + attr_len) {
+		wpa_printf(MSG_DEBUG,
+			   "MBO: Not enough room in buffer for MBO IE: buf len = %zu, attr_len = %zu",
+			   len, attr_len);
+		return 0;
+	}
+
+	*buf++ = WLAN_EID_VENDOR_SPECIFIC;
+	*buf++ = attr_len + 4;
+	WPA_PUT_BE24(buf, OUI_WFA);
+	buf += 3;
+	*buf++ = MBO_OUI_TYPE;
+	os_memcpy(buf, attr, attr_len);
+
+	return 6 + attr_len;
+}
+
 int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 				    size_t nei_rep_len)
 {

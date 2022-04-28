@@ -209,7 +209,7 @@ static struct gattc_profile_inst gl_profile_tab[PROFILE_NUM] = {
 };
 ```
 
-The initialization of the Application Profile table array includes defining the callback functions for each Profile. These are `gattc_profile_a_event_handler()` and `gattc_profile_a_event_handler()` respectively. In addition, the GATT interface is initialized to the default value of `ESP_GATT_IF_NONE`. Later on, when the Application Profile is registered, the BLE stack returns a GATT interface instance to use with that Application Profile. 
+The initialization of the Application Profile table array includes defining the callback function for Profile. It is `gattc_profile_event_handler()`. In addition, the GATT interface is initialized to the default value of `ESP_GATT_IF_NONE`. Later on, when the Application Profile is registered, the BLE stack returns a GATT interface instance to use with that Application Profile. 
 
 The profile registration triggers an `ESP_GATTC_REG_EVT` event, which is handled by the `esp_gattc_cb()` event handler. The handler takes the GATT interface returned by the event and stores it in the profile table:
 

@@ -1,0 +1,14 @@
+menu "esp_eth TEST_APPS Configuration"
+
+    choice TARGET_ETH_PHY_DEVICE
+        prompt "Ethernet peripheral device"
+        default TARGET_ETH_PHY_DEVICE_IP101
+        help
+            Select one of the devices listed here
+
+        config TARGET_ETH_PHY_DEVICE_IP101
+            bool "IP101"
+        config TARGET_ETH_PHY_DEVICE_LAN87XX
+            bool "LAN8720"
+    endchoice
+endmenu

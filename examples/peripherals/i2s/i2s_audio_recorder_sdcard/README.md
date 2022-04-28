@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S3 |
+| ----------------- | ----- | -------- |
 
 # I2S Digital Microphone Recording Example
 
@@ -18,7 +18,7 @@ The audio is recorded into the SDCard using WAVE file format.
 
 ### Hardware Required
 
-* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32 or ESP32S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for power supply and programming
 * A digital microphone (SPK0838HT4H PDM output was used in this example)
 
@@ -28,17 +28,17 @@ The default GPIO configuration is the following:
 
 |Mic        | GPIO   |
 |:---------:|:------:|
-| PDM Clock | GPIO22 |
-| PDM Data  | GPIO23 |
+| PDM Clock | GPIO4 |
+| PDM Data  | GPIO5 |
 
 The SDCard is connected using SPI peripheral.
 
 | SPI  | SDCard |  GPIO  |
 |:----:|:------:|:------:|
-| MISO | DAT0   | GPIO2  |
-| MOSI | CMD    | GPIO15 |
-| SCLK | CLK    | GPIO14 |
-| CS   | CD     | GPIO13 |
+| MISO | DAT0   | GPIO17 |
+| MOSI | CMD    | GPIO16 |
+| SCLK | CLK    | GPIO18 |
+| CS   | CD     | GPIO19 |
 
 To change the GPIO configuration, see the `Example Configuration` from the menuconfig.
 
@@ -75,13 +75,13 @@ Running this example, you will see the Bits per Sample changes every 5 seconds a
 
 ```
 I (361) pdm_rec_example: PDM microphone recording Example start
-I (371) I2S: DMA Malloc info, datalen=blocksize=2048, dma_buf_count=64
+I (371) I2S: DMA Malloc info, datalen=blocksize=2048, dma_desc_num=64
 I (401) I2S: APLL: Req RATE: 44100, real rate: 88199.977, BITS: 16, CLKM: 1, BCK_M: 8, MCLK: 22579194.000, SCLK: 2822399.250000, diva: 1, divb: 0
 I (431) I2S: APLL: Req RATE: 44100, real rate: 88199.977, BITS: 16, CLKM: 1, BCK_M: 8, MCLK: 22579194.000, SCLK: 2822399.250000, diva: 1, divb: 0
 I (431) pdm_rec_example: Initializing SD card
 I (431) pdm_rec_example: Using SDMMC peripheral
-I (441) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
-Name: USD  
+I (441) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+Name: USD
 Type: SDHC/SDXC
 Speed: 20 MHz
 Size: 3813MB

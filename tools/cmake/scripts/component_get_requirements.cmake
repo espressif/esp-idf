@@ -56,8 +56,17 @@ endfunction()
 macro(require_idf_targets)
 endmacro()
 
-macro(idf_component_register)
+macro(idf_component_mock)
     set(options)
+    set(single_value)
+    set(multi_value MOCK_HEADER_FILES INCLUDE_DIRS REQUIRES)
+    cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" "${ARGN}")
+    idf_component_register(REQUIRES ${__REQUIRES} cmock)
+    return()
+endmacro()
+
+macro(idf_component_register)
+    set(options WHOLE_ARCHIVE)
     set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES

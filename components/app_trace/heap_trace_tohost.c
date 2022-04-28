@@ -9,7 +9,7 @@
 #include "esp_heap_trace.h"
 #undef HEAP_TRACE_SRCFILE
 
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
 #include "esp_app_trace.h"
 #include "esp_sysview_trace.h"
 #endif
@@ -18,7 +18,7 @@
 
 #ifdef CONFIG_HEAP_TRACING_TOHOST
 
-#if !CONFIG_SYSVIEW_ENABLE
+#if !CONFIG_APPTRACE_SV_ENABLE
 #error None of the heap tracing backends is enabled! You must enable SystemView compatible tracing to use this feature.
 #endif
 
@@ -34,7 +34,7 @@ esp_err_t heap_trace_init_tohost(void)
 
 esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 {
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
     esp_err_t ret = esp_sysview_heap_trace_start((uint32_t)-1);
     if (ret != ESP_OK) {
         return ret;
@@ -47,7 +47,7 @@ esp_err_t heap_trace_start(heap_trace_mode_t mode_param)
 esp_err_t heap_trace_stop(void)
 {
     esp_err_t ret = ESP_ERR_NOT_SUPPORTED;
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
     ret = esp_sysview_heap_trace_stop();
 #endif
     s_tracing = false;
@@ -80,7 +80,7 @@ static IRAM_ATTR void record_allocation(const heap_trace_record_t *record)
     if (!s_tracing) {
         return;
     }
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
     esp_sysview_heap_trace_alloc(record->address, record->size, record->alloced_by);
 #endif
 }
@@ -95,7 +95,7 @@ static IRAM_ATTR void record_free(void *p, void **callers)
     if (!s_tracing) {
         return;
     }
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
     esp_sysview_heap_trace_free(p, callers);
 #endif
 }

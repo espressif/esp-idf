@@ -16,7 +16,7 @@
 #include "esp_rom_sys.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "sdmmc_private.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"

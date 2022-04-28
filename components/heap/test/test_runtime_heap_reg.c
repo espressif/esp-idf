@@ -3,10 +3,11 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "unity.h"
 #include "esp_heap_caps_init.h"
 #include "esp_system.h"
-#include <stdlib.h>
+#include "heap_memory_layout.h"
 
 
 /* NOTE: This is not a well-formed unit test, it leaks memory */
@@ -69,4 +70,21 @@ TEST_CASE("Add .bss memory to heap region runtime", "[heap][ignore]")
 
     /* Twice add must be failed */
     TEST_ASSERT( (heap_caps_add_region((intptr_t)s_buffer, (intptr_t)s_buffer + BUF_SZ) != ESP_OK) );
+}
+
+extern esp_err_t heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, intptr_t start, intptr_t end);
+
+TEST_CASE("Add heap region address range checks", "[heap]")
+{
+    const intptr_t heap_start = 0x1000;
+    const intptr_t heap_end = 0x3000;
+
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x1000));
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x2000));
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x3000));
+    TEST_ASSERT_TRUE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x3000, 0x4000));
+    TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x2000));
+    TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x0, 0x4000));
+    TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x1000, 0x4000));
+    TEST_ASSERT_FALSE(heap_caps_check_add_region_allowed(heap_start, heap_end, 0x2000, 0x4000));
 }

@@ -20,8 +20,8 @@
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
 #endif
 
-#ifndef BOOTLOADER_BUILD
 static const char *TAG = "flash_encrypt";
+#ifndef BOOTLOADER_BUILD
 
 void esp_flash_encryption_init_checks()
 {
@@ -32,7 +32,7 @@ void esp_flash_encryption_init_checks()
         ESP_LOGE(TAG, "Flash encryption eFuse bit was not enabled in bootloader but CONFIG_SECURE_FLASH_ENC_ENABLED is on");
         abort();
     }
-#endif
+#endif // CONFIG_SECURE_FLASH_CHECK_ENC_EN_IN_APP
 
     // First check is: if Release mode flash encryption & secure boot are enabled then
     // FLASH_CRYPT_CNT *must* be write protected. This will have happened automatically
@@ -65,12 +65,42 @@ void esp_flash_encryption_init_checks()
         ESP_LOGE(TAG, "Mismatch found in security options in bootloader menuconfig and efuse settings. Device is not secure.");
 #else
         ESP_LOGW(TAG, "Flash encryption mode is DEVELOPMENT (not secure)");
-#endif
+#endif // CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
     } else if (mode == ESP_FLASH_ENC_MODE_RELEASE) {
         ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
     }
 }
+#endif // BOOTLOADER_BUILD
+
+/**
+ * This former inlined function must not be defined in the header file anymore.
+ * As it depends on efuse component, any use of it outside of `bootloader_support`,
+ * would require the caller component to include `efuse` as part of its `REQUIRES` or
+ * `PRIV_REQUIRES` entries.
+ * Attribute IRAM_ATTR must be specified for the app build.
+ */
+bool IRAM_ATTR esp_flash_encryption_enabled(void)
+{
+    uint32_t flash_crypt_cnt = 0;
+#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    flash_crypt_cnt = efuse_ll_get_flash_crypt_cnt();
+#else
+#if CONFIG_IDF_TARGET_ESP32
+    esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
+#else
+    esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
 #endif
+#endif
+    /* __builtin_parity is in flash, so we calculate parity inline */
+    bool enabled = false;
+    while (flash_crypt_cnt) {
+        if (flash_crypt_cnt & 1) {
+            enabled = !enabled;
+        }
+        flash_crypt_cnt >>= 1;
+    }
+    return enabled;
+}
 
 void esp_flash_write_protect_crypt_cnt(void)
 {
@@ -82,11 +112,11 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
     bool flash_crypt_cnt_wr_dis = false;
 #if CONFIG_IDF_TARGET_ESP32
     uint8_t dis_dl_enc = 0, dis_dl_dec = 0, dis_dl_cache = 0;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     uint8_t dis_dl_enc = 0;
     uint8_t dis_dl_icache = 0;
     uint8_t dis_dl_dcache = 0;
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     uint8_t dis_dl_enc = 0;
     uint8_t dis_dl_icache = 0;
 #endif
@@ -115,7 +145,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if ( dis_dl_cache && dis_dl_enc && dis_dl_dec ) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
             dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
             dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
             dis_dl_dcache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
@@ -123,7 +153,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if (dis_dl_enc && dis_dl_icache && dis_dl_dcache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
             dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
             dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
 
@@ -137,4 +167,49 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
     }
 
     return mode;
+}
+
+void esp_flash_encryption_set_release_mode(void)
+{
+    esp_flash_enc_mode_t mode = esp_get_flash_encryption_mode();
+    if (mode == ESP_FLASH_ENC_MODE_RELEASE) {
+        return;
+    }
+    if (mode == ESP_FLASH_ENC_MODE_DISABLED) {
+        ESP_LOGE(TAG, "Flash encryption eFuse is not enabled, abort..");
+        abort();
+        return;
+    }
+    // ESP_FLASH_ENC_MODE_DEVELOPMENT -> ESP_FLASH_ENC_MODE_RELEASE
+    esp_efuse_batch_write_begin();
+    if (!esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT)) {
+        size_t flash_crypt_cnt = 0;
+        esp_efuse_read_field_cnt(CRYPT_CNT, &flash_crypt_cnt);
+        if (flash_crypt_cnt != CRYPT_CNT[0]->bit_count) {
+            esp_efuse_write_field_cnt(CRYPT_CNT, CRYPT_CNT[0]->bit_count - flash_crypt_cnt);
+        }
+    }
+#if CONFIG_IDF_TARGET_ESP32
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+#else
+    ESP_LOGE(TAG, "Flash Encryption support not added, abort..");
+    abort();
+#endif
+    esp_efuse_disable_rom_download_mode();
+    esp_efuse_batch_write_commit();
+
+    if (esp_get_flash_encryption_mode() != ESP_FLASH_ENC_MODE_RELEASE) {
+        ESP_LOGE(TAG, "Flash encryption mode is DEVELOPMENT, abort..");
+        abort();
+    }
+    ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
 }

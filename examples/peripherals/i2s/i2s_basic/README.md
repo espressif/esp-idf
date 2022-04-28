@@ -38,15 +38,15 @@ Running this example, you will see the Bits per Sample changes every 5 seconds a
 
 ```
 Test bits=24 free mem=293780, written data=2880
-I2S: DMA Malloc info, datalen=blocksize=480, dma_buf_count=6
+I2S: DMA Malloc info, datalen=blocksize=480, dma_desc_num=6
 I2S: PLL_D2: Req RATE: 36000, real rate: 37878.000, BITS: 24, CLKM: 11, BCK: 8, MCLK: 13837837.838, SCLK: 1818144.000000, diva: 64, divb: 36
 
 Test bits=32 free mem=292336, written data=2880
-I2S: DMA Malloc info, datalen=blocksize=480, dma_buf_count=6
+I2S: DMA Malloc info, datalen=blocksize=480, dma_desc_num=6
 I2S: PLL_D2: Req RATE: 36000, real rate: 36764.000, BITS: 32, CLKM: 17, BCK: 4, MCLK: 9216921.692, SCLK: 2352896.000000, diva: 64, divb: 23
 
 Test bits=16 free mem=293772, written data=1440
-I2S: DMA Malloc info, datalen=blocksize=240, dma_buf_count=6
+I2S: DMA Malloc info, datalen=blocksize=240, dma_desc_num=6
 I2S: PLL_D2: Req RATE: 36000, real rate: 36764.000, BITS: 16, CLKM: 17, BCK: 8, MCLK: 9216921.692, SCLK: 1176448.000000, diva: 64, divb: 23
 ```
 

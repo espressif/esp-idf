@@ -17,7 +17,7 @@
 #include "utils/wpa_debug.h"
 #include "ap/hostapd.h"
 #include "ap/wpa_auth_i.h"
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #include "esp_wifi_types.h"
 
 void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)

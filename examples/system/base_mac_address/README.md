@@ -10,7 +10,7 @@ This example demonstrates the following:
 2. How to set the base MAC address
 3. How to obtain the derived MAC addresses of each network interface
 
-This example utilizes the [MAC Address API](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/system.html#mac-address). 
+This example utilizes the [MAC Address API](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/system.html#mac-address).
 
 ## How to use example
 
@@ -26,7 +26,7 @@ idf.py menuconfig
 
 * To select the storage source of the base MAC address, go to `Example Configuration > Storage location of the base MAC address` where the following options are available:
   * `eFuse BLK0` will cause this example to read the base MAC address from eFuse Block 0 and is selected by default. The `eFuse BLK0` MAC address is factory programmed into each ESP32.
-  * `eFuse BLK3` will cause this example to read the base MAC address from words 1 & 2 of eFuse Block 3. `eFuse BLK3` allows users to use a custom eFuse, but must be burned into the ESP32 using the [espefuse tool](https://github.com/espressif/esptool/wiki/espefuse). Attempting to read `eFuse BLK3` without burning the eFuse will result in an error.
+  * `eFuse BLK3` will cause this example to read the base MAC address from words 1 & 2 of eFuse Block 3. `eFuse BLK3` allows users to use a custom eFuse, but must be burned into the ESP32 using the [espefuse tool](https://docs.espressif.com/projects/esptool/en/latest/espefuse/index.html). Attempting to read `eFuse BLK3` without burning the eFuse will result in an error.
   * `Other external storage` will call a `external_storage_mac_get()` which will merely retrieve an arbitrary base MAC address that is set in software. Users should re-implement `external_storage_mac_get()` to access their chosen external storage (e.g. an I2C Serial EEPROM)
 
 * If `eFuse BLK3` is chosen, the `Behavior when retrieving BLK3 eFuse fails` option may also be selected. When retrieving the base MAC address from `eFuse BLK3` without burning eFuse Block 3, the example can either abort or default to retrieving from eFuse Block 0.

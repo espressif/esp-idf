@@ -1,11 +1,10 @@
 #include "no_warn_host.h"
 #include "lwip/opt.h"
-#include "lwip/def.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
+#include "lwip/timeouts.h"
 #include <string.h>
-#include <stdio.h>
 
 const ip_addr_t ip_addr_any;
 const ip_addr_t ip_addr_broadcast;
@@ -81,11 +80,6 @@ err_t pbuf_take_at(struct pbuf *buf, const void *dataptr, u16_t len, u16_t offse
 struct udp_pcb * udp_new_ip_type(u8_t type)
 {
     return &mock_pcb;
-}
-
-esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
-{
-    return ESP_OK;
 }
 
 struct pbuf * pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
@@ -235,7 +229,20 @@ void * mem_malloc(mem_size_t size)
     return malloc(size);
 }
 
+void * mem_calloc(size_t nr, mem_size_t size)
+{
+    return calloc(nr, size);
+}
+
 void mem_free(void *rmem)
 {
     free(rmem);
+}
+
+void sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
+{
+}
+
+void sys_untimeout(sys_timeout_handler handler, void *arg)
+{
 }

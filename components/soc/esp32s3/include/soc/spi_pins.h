@@ -22,6 +22,9 @@
 #define SPI_IOMUX_PIN_NUM_MISO  31
 #define SPI_IOMUX_PIN_NUM_WP    28
 
+// There are 2 sets of GPIO pins which could be routed to FSPICS0, FSPICLK, FSPID, FSPIQ, FSPIHD, FSPIWP.
+// However, there is only one set of GPIO pins which could be routed to FSPIIO4, FSPIIO5, FSPIIO6, FSPIIO7.
+// As default (when we are not going to use Octal SPI), we make use of SPI2_FUNC_NUM to route one of the 2 sets of GPIO pins to FSPICS0 ~ FSPIWP as follows.
 #define SPI2_FUNC_NUM           4
 #define SPI2_IOMUX_PIN_NUM_HD   9
 #define SPI2_IOMUX_PIN_NUM_CS   10
@@ -29,5 +32,18 @@
 #define SPI2_IOMUX_PIN_NUM_CLK  12
 #define SPI2_IOMUX_PIN_NUM_MISO 13
 #define SPI2_IOMUX_PIN_NUM_WP   14
+
+// When using Octal SPI, we make use of SPI2_FUNC_NUM_OCT to route them as follows.
+#define SPI2_FUNC_NUM_OCT           2
+#define SPI2_IOMUX_PIN_NUM_HD_OCT   33
+#define SPI2_IOMUX_PIN_NUM_CS_OCT   34
+#define SPI2_IOMUX_PIN_NUM_MOSI_OCT 35
+#define SPI2_IOMUX_PIN_NUM_CLK_OCT  36
+#define SPI2_IOMUX_PIN_NUM_MISO_OCT 37
+#define SPI2_IOMUX_PIN_NUM_WP_OCT   38
+#define SPI2_IOMUX_PIN_NUM_IO4_OCT  10
+#define SPI2_IOMUX_PIN_NUM_IO5_OCT  11
+#define SPI2_IOMUX_PIN_NUM_IO6_OCT  12
+#define SPI2_IOMUX_PIN_NUM_IO7_OCT  13
 
 //SPI3 have no iomux pins

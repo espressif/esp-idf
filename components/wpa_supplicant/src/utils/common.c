@@ -547,3 +547,8 @@ const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len)
 	printf_encode(ssid_txt, sizeof(ssid_txt), ssid, ssid_len);
 	return ssid_txt;
 }
+
+void * __hide_aliasing_typecast(void *foo)
+{
+	return foo;
+}

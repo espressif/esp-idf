@@ -20,12 +20,6 @@ partition for all switches performed.
 
 Before running either of the example scripts, it is necessary to build and flash the firmware using the usual means:
 
-Make:
-```bash
-make build flash
-```
-
-CMake:
 ```bash
 idf.py build flash
 ```

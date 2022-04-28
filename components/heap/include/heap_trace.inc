@@ -19,7 +19,7 @@
 /* Encode the CPU ID in the LSB of the ccount value */
 inline static uint32_t get_ccount(void)
 {
-    uint32_t ccount = xthal_get_ccount() & ~3;
+    uint32_t ccount = cpu_hal_get_cycle_count() & ~3;
 #ifndef CONFIG_FREERTOS_UNICORE
     ccount |= xPortGetCoreID();
 #endif

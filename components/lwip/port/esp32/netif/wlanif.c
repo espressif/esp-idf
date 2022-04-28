@@ -54,7 +54,7 @@
 #include "esp_netif_net_stack.h"
 #include "esp_compiler.h"
 
-#if !ESP_L2_TO_L3_COPY
+#ifndef CONFIG_LWIP_L2_TO_L3_COPY
 /**
  * @brief Free resources allocated in L2 layer
  *
@@ -102,7 +102,7 @@ low_level_init(struct netif *netif)
 #endif
 #endif
 
-#if !ESP_L2_TO_L3_COPY
+#ifndef CONFIG_LWIP_L2_TO_L3_COPY
     netif->l2_buffer_free_notify = lwip_netif_wifi_free_rx_buffer;
 #endif
 }
@@ -122,7 +122,7 @@ low_level_init(struct netif *netif)
  *       to become availale since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
-static err_t ESP_IRAM_ATTR
+static err_t
 low_level_output(struct netif *netif, struct pbuf *p)
 {
   esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
@@ -170,7 +170,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
  *
  * @param netif the lwip network interface structure for this ethernetif
  */
-void ESP_IRAM_ATTR
+void
 wlanif_input(void *h, void *buffer, size_t len, void* eb)
 {
   struct netif * netif = h;
@@ -184,7 +184,7 @@ wlanif_input(void *h, void *buffer, size_t len, void* eb)
     return;
   }
 
-#if (ESP_L2_TO_L3_COPY == 1)
+#ifdef CONFIG_LWIP_L2_TO_L3_COPY
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
       esp_netif_free_rx_buffer(esp_netif, eb);
@@ -202,7 +202,7 @@ wlanif_input(void *h, void *buffer, size_t len, void* eb)
   p->payload = buffer;
   p->l2_owner = netif;
   p->l2_buf = eb;
-#endif
+#endif /* CONFIG_LWIP_L2_TO_L3_COPY */
 
   /* full packet send to tcpip_thread to process */
   if (unlikely(netif->input(p, netif) != ERR_OK)) {

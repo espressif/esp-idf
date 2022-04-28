@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -35,8 +27,7 @@
  * used for simple callback functions, which do not take longer than a few
  * microseconds to run.
  *
- * Implementation note: on the ESP32, esp_timer APIs use the "legacy" FRC2
- * timer. Timer callbacks are called from a task running on the PRO CPU.
+ * Timer callbacks are called from a task running on the PRO CPU.
  */
 
 #include <stdint.h>
@@ -83,11 +74,28 @@ typedef struct {
     bool skip_unhandled_events;     //!< Skip unhandled events for periodic timers
 } esp_timer_create_args_t;
 
+
+/**
+ * @brief Minimal initialization of esp_timer
+ *
+ * @note This function is called from startup code. Applications do not need
+ * to call this function before using other esp_timer APIs.
+ *
+ * This function can be called very early in startup process, after this call
+ * only esp_timer_get_time function can be used.
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_timer_early_init(void);
+
 /**
  * @brief Initialize esp_timer library
  *
  * @note This function is called from startup code. Applications do not need
  * to call this function before using other esp_timer APIs.
+ * Before calling this function, esp_timer_early_init must be called by the
+ * startup code.
  *
  * @return
  *      - ESP_OK on success
@@ -196,6 +204,46 @@ int64_t esp_timer_get_time(void);
 int64_t esp_timer_get_next_alarm(void);
 
 /**
+ * @brief Get the timestamp when the next timeout is expected to occur skipping those which have skip_unhandled_events flag
+ * @return Timestamp of the nearest timer event, in microseconds.
+ *         The timebase is the same as for the values returned by esp_timer_get_time.
+ */
+int64_t esp_timer_get_next_alarm_for_wake_up(void);
+
+/**
+ * @brief Get the period of a timer
+ *
+ * This function fetches the timeout period of a timer.
+ *
+ * @note The timeout period is the time interval with which a timer restarts after expiry. For one-shot timers, the
+ * period is 0 as there is no periodicity associated with such timers.
+ *
+ * @param timer timer handle allocated using esp_timer_create
+ * @param period memory to store the timer period value in microseconds
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the arguments are invalid
+ */
+esp_err_t esp_timer_get_period(esp_timer_handle_t timer, uint64_t *period);
+
+/**
+ * @brief Get the expiry time of a one-shot timer
+ *
+ * This function fetches the expiry time of a one-shot timer.
+ *
+ * @note This API returns a valid expiry time only for a one-shot timer. It returns an error if the timer handle passed
+ * to the function is for a periodic timer.
+ *
+ * @param timer timer handle allocated using esp_timer_create
+ * @param expiry memory to store the timeout value in microseconds
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the arguments are invalid
+ *      - ESP_ERR_NOT_SUPPORTED if the timer type is periodic
+ */
+esp_err_t esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry);
+
+/**
  * @brief Dump the list of timers to a stream
  *
  * If CONFIG_ESP_TIMER_PROFILING option is enabled, this prints the list of all
@@ -225,7 +273,7 @@ int64_t esp_timer_get_next_alarm(void);
  */
 esp_err_t esp_timer_dump(FILE* stream);
 
-#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+#if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD || defined __DOXYGEN__
 /**
  * @brief Requests a context switch from a timer callback function.
  *
@@ -233,7 +281,19 @@ esp_err_t esp_timer_dump(FILE* stream);
  * The context switch will be called after all ISR dispatch timers have been processed.
  */
 void esp_timer_isr_dispatch_need_yield(void);
-#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD || defined __DOXYGEN__
+
+/**
+ * @brief Returns status of a timer, active or not
+ *
+ * This function is used to identify if the timer is still active or not.
+ *
+ * @param timer timer handle created using esp_timer_create
+ * @return
+ *      - 1 if timer is still active
+ *      - 0 if timer is not active.
+ */
+bool esp_timer_is_active(esp_timer_handle_t timer);
 
 #ifdef __cplusplus
 }

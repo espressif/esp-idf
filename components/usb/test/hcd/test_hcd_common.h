@@ -1,23 +1,16 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "usb.h"
 #include "hcd.h"
+#include "usb_private.h"
+#include "usb/usb_types_ch9.h"
 
-#define IRP_CONTEXT_VAL ((void *)0xDEADBEEF)
+#define URB_CONTEXT_VAL ((void *)0xDEADBEEF)
 
 // ------------------------------------------------- HCD Event Test ----------------------------------------------------
 
@@ -56,14 +49,6 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl);
 // ----------------------------------------------- Driver/Port Related -------------------------------------------------
 
 /**
- * @brief For the USB PHY into the connected or disconnected state
- *
- * @param connected For into connected state if true, disconnected if false
- * @param delay_ticks Delay in ticks before forcing state
- */
-void test_hcd_force_conn_state(bool connected, TickType_t delay_ticks);
-
-/**
  * @brief Sets up the HCD and initializes an HCD port.
  *
  * @return hcd_port_handle_t Port handle
@@ -80,7 +65,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a connection on an HCD port
  *
- * @note This function will internally call test_hcd_force_conn_state() to allow for a connection
+ * @note This function will internally call test_usb_set_phy_state() to allow for a connection
  *
  * @param port_hdl Port handle
  * @return usb_speed_t Speed of the connected device
@@ -90,7 +75,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a disconnection on an HCD port
  *
- * @note This fucntion will internally call test_hcd_force_conn_state() to force a disconnection
+ * @note This fucntion will internally call test_usb_set_phy_state() to force a disconnection
  *
  * @param port_hdl Port handle
  * @param already_disabled Whether the HCD port is already in the disabled state
@@ -108,7 +93,7 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
  * @param dev_speed Device speed of the pipe
  * @return hcd_pipe_handle_t Pipe handle
  */
-hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_desc_ep_t *ep_desc, uint8_t dev_addr, usb_speed_t dev_speed);
+hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_ep_desc_t *ep_desc, uint8_t dev_addr, usb_speed_t dev_speed);
 
 /**
  * @brief Test the freeing of a pipe
@@ -118,20 +103,20 @@ hcd_pipe_handle_t test_hcd_pipe_alloc(hcd_port_handle_t port_hdl, const usb_desc
 void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl);
 
 /**
- * @brief Allocate an IRP
+ * @brief Allocate a URB
  *
- * @param num_iso_packets Number of isochronous packets
- * @param data_buffer_size Size of the data buffer of the IRP
- * @return usb_irp_t* IRP
+ * @param num_isoc_packets Number of isochronous packets
+ * @param data_buffer_size Size of the data buffer of the URB
+ * @return urb_t* URB
  */
-usb_irp_t *test_hcd_alloc_irp(int num_iso_packets, size_t data_buffer_size);
+urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size);
 
 /**
- * @brief Free an IRP
+ * @brief Free a URB
  *
- * @param irp IRP
+ * @param urb URB
  */
-void test_hcd_free_irp(usb_irp_t *irp);
+void test_hcd_free_urb(urb_t *urb);
 
 // --------------------------------------------------- Enumeration -----------------------------------------------------
 
@@ -148,4 +133,4 @@ void test_hcd_free_irp(usb_irp_t *irp);
  * @param default_pipe The connected device's default pipe
  * @return uint8_t The address of the device after enumeration
  */
-uint8_t test_hcd_enum_devc(hcd_pipe_handle_t default_pipe);
+uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe);

@@ -107,18 +107,14 @@ function(__build_set_default_build_specifications)
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
 
-    list(APPEND c_compile_options   "-std=gnu99"
-                                    "-Wno-old-style-declaration")
+    list(APPEND c_compile_options   "-std=gnu99")
 
     list(APPEND cxx_compile_options "-std=gnu++11")
-
-    list(APPEND link_options "-Wl,--gc-sections")
 
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
     idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
-    idf_build_set_property(LINK_OPTIONS "${link_options}" APPEND)
 endfunction()
 
 #
@@ -126,6 +122,9 @@ endfunction()
 # properties used for the processing phase of the build.
 #
 function(__build_init idf_path)
+
+    set(target ${IDF_TARGET})
+
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to.
     # Must be global so as to be accessible from any subdirectory in custom projects.
     add_library(__idf_build_target STATIC IMPORTED GLOBAL)
@@ -146,17 +145,21 @@ function(__build_init idf_path)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(prefix __PREFIX)
     file(GLOB component_dirs ${idf_path}/components/*)
+    list(SORT component_dirs)
     foreach(component_dir ${component_dirs})
-        get_filename_component(component_dir ${component_dir} ABSOLUTE)
-        __component_dir_quick_check(is_component ${component_dir})
-        if(is_component)
-            __component_add(${component_dir} ${prefix})
+        # A potential component must be a directory
+        if(IS_DIRECTORY ${component_dir})
+            __component_dir_quick_check(is_component ${component_dir})
+            if(is_component)
+                __component_add(${component_dir} ${prefix})
+            endif()
         endif()
     endforeach()
 
-
-    idf_build_get_property(target IDF_TARGET)
-    if(NOT target STREQUAL "linux")
+    if("${target}" STREQUAL "linux")
+        set(requires_common freertos log esp_rom esp_common)
+        idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
+    else()
         # Set components required by all other components in the build
         #
         # - lwip is here so that #include <sys/socket.h> works without any special provisions
@@ -215,13 +218,16 @@ function(__build_expand_requirements component_target)
 
     get_property(reqs TARGET ${component_target} PROPERTY REQUIRES)
     get_property(priv_reqs TARGET ${component_target} PROPERTY PRIV_REQUIRES)
+    __component_get_property(component_name ${component_target} COMPONENT_NAME)
 
     foreach(req ${reqs})
+        depgraph_add_edge(${component_name} ${req} REQUIRES)
         __build_resolve_and_add_req(_component_target ${component_target} ${req} __REQUIRES)
         __build_expand_requirements(${_component_target})
     endforeach()
 
     foreach(req ${priv_reqs})
+        depgraph_add_edge(${component_name} ${req} PRIV_REQUIRES)
         __build_resolve_and_add_req(_component_target ${component_target} ${req} __PRIV_REQUIRES)
         __build_expand_requirements(${_component_target})
     endforeach()
@@ -259,7 +265,7 @@ function(__build_write_properties output_file)
     idf_build_get_property(build_properties __BUILD_PROPERTIES)
     foreach(property ${build_properties})
         idf_build_get_property(val ${property})
-        set(build_properties_text "${build_properties_text}\nset(${property} ${val})")
+        set(build_properties_text "${build_properties_text}\nset(${property} \"${val}\")")
     endforeach()
     file(WRITE ${output_file} "${build_properties_text}")
 endfunction()
@@ -273,7 +279,7 @@ function(__build_check_python)
         idf_build_get_property(python PYTHON)
         idf_build_get_property(idf_path IDF_PATH)
         message(STATUS "Checking Python dependencies...")
-        execute_process(COMMAND "${python}" "${idf_path}/tools/check_python_dependencies.py"
+        execute_process(COMMAND "${python}" "${idf_path}/tools/idf_tools.py" "check-python-dependencies"
             RESULT_VARIABLE result)
         if(result EQUAL 1)
             # check_python_dependencies returns error code 1 on failure
@@ -410,10 +416,8 @@ macro(idf_build_process target)
 
     idf_build_get_property(target IDF_TARGET)
 
-    if(NOT target STREQUAL "linux")
+    if(NOT "${target}" STREQUAL "linux")
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
-    else()
-        idf_build_set_property(__COMPONENT_REQUIRES_COMMON "")
     endif()
 
     # Call for component manager to download dependencies for all components

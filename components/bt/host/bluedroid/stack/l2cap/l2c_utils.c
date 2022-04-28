@@ -112,9 +112,6 @@ tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPOR
                 l2c_link_adjust_allocation();
             }
             p_lcb->link_xmit_data_q = list_new(NULL);
-#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
-            p_lcb->completed_packets = 0;
-#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
             return (p_lcb);
         }
     }
@@ -289,10 +286,6 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         p_lcb->le_sec_pending_q = NULL;
     }
 #endif  ///BLE_INCLUDED == TRUE
-
-#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
-    p_lcb->completed_packets = 0;
-#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 }
 
 
@@ -3203,36 +3196,6 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb)
 }
 
 #endif /* BLE_INCLUDED == TRUE */
-
-#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
-/*******************************************************************************
-**
-** Function         l2cu_find_completed_packets
-**
-** Description      Find the completed packets,
-**                  Then set it to zero
-**
-** Returns          The num of handles
-**
-*******************************************************************************/
-UINT8 l2cu_find_completed_packets(UINT16 *handles, UINT16 *num_packets)
-{
-    UINT8       num = 0;
-    list_node_t *p_node = NULL;
-    tL2C_LCB    *p_lcb  = NULL;
-    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
-        p_lcb = list_node(p_node);
-        if ((p_lcb->in_use) && (p_lcb->completed_packets > 0)) {
-            *(handles++) = p_lcb->handle;
-            *(num_packets++) = p_lcb->completed_packets;
-            num++;
-            p_lcb->completed_packets = 0;
-        }
-    }
-
-    return num;
-}
-#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Functions used by both Full and Light Stack

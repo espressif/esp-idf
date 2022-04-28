@@ -24,9 +24,9 @@
  ******************************************************************************/
 
 #include "common/bt_target.h"
-#include "bta/bta_hh_api.h"
 
 #if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
+#include "bta/bta_hh_api.h"
 
 
 /* max number of device types supported by BTA */

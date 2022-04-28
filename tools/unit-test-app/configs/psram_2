@@ -1,5 +1,5 @@
 CONFIG_IDF_TARGET="esp32"
-TEST_COMPONENTS=esp32 esp_ipc esp_system esp_timer mbedtls spi_flash heap pthread soc
+TEST_COMPONENTS=esp_hw_support esp_ipc esp_system esp_timer mbedtls spi_flash heap pthread soc
 CONFIG_ESP32_SPIRAM_SUPPORT=y
 CONFIG_ESP_INT_WDT_TIMEOUT_MS=800
 CONFIG_SPIRAM_OCCUPY_NO_HOST=y

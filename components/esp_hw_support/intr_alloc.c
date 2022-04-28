@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -76,7 +68,7 @@ struct shared_vector_desc_t {
 
 //Pack using bitfields for better memory use
 struct vector_desc_t {
-    int flags: 16;                          //OR of VECDESC_FLAG_* defines
+    int flags: 16;                          //OR of VECDESC_FL_* defines
     unsigned int cpu: 1;
     unsigned int intno: 5;
     int source: 8;                          //Interrupt mux flags, used when not shared
@@ -106,10 +98,6 @@ static uint32_t non_iram_int_mask[SOC_CPU_CORES_NUM];
 //This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable.
 static uint32_t non_iram_int_disabled[SOC_CPU_CORES_NUM];
 static bool non_iram_int_disabled_flag[SOC_CPU_CORES_NUM];
-
-#if CONFIG_SYSVIEW_ENABLE
-extern uint32_t port_switch_flag[];
-#endif
 
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -415,16 +403,12 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
     while(sh_vec) {
         if (!sh_vec->disabled) {
             if ((sh_vec->statusreg == NULL) || (*sh_vec->statusreg & sh_vec->statusmask)) {
-#if CONFIG_SYSVIEW_ENABLE
                 traceISR_ENTER(sh_vec->source+ETS_INTERNAL_INTR_SOURCE_OFF);
-#endif
                 sh_vec->isr(sh_vec->arg);
-#if CONFIG_SYSVIEW_ENABLE
                 // check if we will return to scheduler or to interrupted task after ISR
-                if (!port_switch_flag[cpu_hal_get_core_id()]) {
+                if (!os_task_switch_is_pended(cpu_hal_get_core_id())) {
                     traceISR_EXIT();
                 }
-#endif
             }
         }
         sh_vec=sh_vec->next;
@@ -432,18 +416,18 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
     portEXIT_CRITICAL_ISR(&spinlock);
 }
 
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
 //Common non-shared isr handler wrapper.
 static void IRAM_ATTR non_shared_intr_isr(void *arg)
 {
     non_shared_isr_arg_t *ns_isr_arg=(non_shared_isr_arg_t*)arg;
     portENTER_CRITICAL_ISR(&spinlock);
     traceISR_ENTER(ns_isr_arg->source+ETS_INTERNAL_INTR_SOURCE_OFF);
-    // FIXME: can we call ISR and check port_switch_flag after releasing spinlock?
-    // when CONFIG_SYSVIEW_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
+    // FIXME: can we call ISR and check os_task_switch_is_pended() after releasing spinlock?
+    // when CONFIG_APPTRACE_SV_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
     ns_isr_arg->isr(ns_isr_arg->isr_arg);
     // check if we will return to scheduler or to interrupted task after ISR
-    if (!port_switch_flag[cpu_hal_get_core_id()]) {
+    if (!os_task_switch_is_pended(cpu_hal_get_core_id())) {
         traceISR_EXIT();
     }
     portEXIT_CRITICAL_ISR(&spinlock);
@@ -469,7 +453,14 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     //ToDo: if we are to allow placing interrupt handlers into the 0x400c0000—0x400c2000 region,
     //we need to make sure the interrupt is connected to the CPU0.
     //CPU1 does not have access to the RTC fast memory through this region.
-    if ((flags & ESP_INTR_FLAG_IRAM) && handler && !esp_ptr_in_iram(handler) && !esp_ptr_in_rtc_iram_fast(handler)) {
+    if ((flags & ESP_INTR_FLAG_IRAM)
+         && handler
+         && !esp_ptr_in_iram(handler)
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        // IDF-3901.
+         && !esp_ptr_in_rtc_iram_fast(handler)
+#endif
+         ) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -539,7 +530,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         //Mark as unusable for other interrupt sources. This is ours now!
         vd->flags=VECDESC_FL_NONSHARED;
         if (handler) {
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
             non_shared_isr_arg_t *ns_isr_arg=malloc(sizeof(non_shared_isr_arg_t));
             if (!ns_isr_arg) {
                 portEXIT_CRITICAL(&spinlock);
@@ -569,7 +560,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         non_iram_int_mask[cpu]|=(1<<intr);
     }
     if (source>=0) {
-        intr_matrix_set(cpu, source, intr);
+        esp_rom_route_intr_matrix(cpu, source, intr);
     }
 
     //Fill return handle data.
@@ -688,7 +679,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
 
     if ((handle->vector_desc->flags&VECDESC_FL_NONSHARED) || free_shared_vector) {
         ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
         if (!free_shared_vector) {
             void *isr_arg = interrupt_controller_hal_get_int_handler_arg(handle->vector_desc->intno);
             if (isr_arg) {
@@ -701,7 +692,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
-        handle->vector_desc->flags&=!(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED);
+        handle->vector_desc->flags&=~(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED|VECDESC_FL_SHARED);
         //Also kill non_iram mask bit.
         non_iram_int_mask[handle->vector_desc->cpu]&=~(1<<(handle->vector_desc->intno));
     }
@@ -744,7 +735,7 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
     }
     if (source >= 0) {
         //Disabled using int matrix; re-connect to enable
-        intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
+        esp_rom_route_intr_matrix(handle->vector_desc->cpu, source, handle->vector_desc->intno);
     } else {
         //Re-enable using cpu int ena reg
         if (handle->vector_desc->cpu!=cpu_hal_get_core_id()) return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
@@ -780,7 +771,7 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     if (source >= 0) {
         if ( disabled ) {
             //Disable using int matrix
-            intr_matrix_set(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
+            esp_rom_route_intr_matrix(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
         }
     } else {
         //Disable using per-cpu regs

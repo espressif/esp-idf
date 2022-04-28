@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,8 +40,8 @@ static const char *TAG = "test_adc";
 
 #define PLATFORM_SELECT            (1)  //0: pxp; 1: chip
 #if (PLATFORM_SELECT == 0)              //PXP platform
-#include "soc/apb_ctrl_reg.h"
-#define SET_BREAK_POINT(flag) REG_WRITE(APB_CTRL_DATE_REG, flag)
+#include "soc/syscon_reg.h"
+#define SET_BREAK_POINT(flag) REG_WRITE(SYSCON_DATE_REG, flag)
 //PXP clk is slower.
 #define SYS_DELAY_TIME_MOM    (1/40)
 #define RTC_SLOW_CLK_FLAG     1     // Slow clock is 32KHz.
@@ -182,7 +182,7 @@ void test_dac_dig_dma_intr_check(dac_digi_convert_mode_t mode)
 
     /* Check interrupt type */
     while (int_mask) {
-        TEST_ASSERT_EQUAL( xQueueReceive(que_dac, &evt, 2000 / portTICK_RATE_MS), pdTRUE );
+        TEST_ASSERT_EQUAL( xQueueReceive(que_dac, &evt, 2000 / portTICK_PERIOD_MS), pdTRUE );
         ESP_LOGI(TAG, "DAC-DMA intr type 0x%x", evt.int_msk);
         if (evt.int_msk & int_mask) {
             int_mask &= (~evt.int_msk);

@@ -48,6 +48,7 @@ typedef struct {
     uint32_t task_stack_size;      //!< repl task stack size
     uint32_t task_priority;        //!< repl task priority
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
+    size_t max_cmdline_length;     //!< maximum length of a command line. If 0, default value will be used
 } esp_console_repl_config_t;
 
 /**
@@ -61,6 +62,7 @@ typedef struct {
         .task_stack_size = 4096,          \
         .task_priority = 2,               \
         .prompt = NULL,                   \
+        .max_cmdline_length = 0,          \
 }
 
 /**
@@ -105,6 +107,21 @@ typedef struct {
 #define ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT() \
 {                                            \
 }
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+/**
+ * @brief Parameters for console device: USB-SERIAL-JTAG
+ *
+ * @note It's an empty structure for now, reserved for future
+ *
+ */
+typedef struct {
+
+} esp_console_dev_usb_serial_jtag_config_t;
+
+#define ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT() {}
+
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 /**
  * @brief initialize console module
@@ -294,7 +311,7 @@ struct esp_console_repl_s {
  * @param[in] repl_config REPL configuration
  * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
  *
- * @note This is a all-in-one function to establish the environment needed for REPL, includes:
+ * @note This is an all-in-one function to establish the environment needed for REPL, includes:
  *       - Install the UART driver on the console UART (8n1, 115200, REF_TICK clock source)
  *       - Configures the stdin/stdout to go through the UART driver
  *       - Initializes linenoise
@@ -331,10 +348,33 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
  */
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
 
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+/**
+ * @brief Establish a console REPL (Read-eval-print loop) environment over USB-SERIAL-JTAG
+ *
+ * @param[in] dev_config USB-SERIAL-JTAG configuration
+ * @param[in] repl_config REPL configuration
+ * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
+ *
+ * @note This is an all-in-one function to establish the environment needed for REPL, includes:
+ *       - Initializes linenoise
+ *       - Spawn new thread to run REPL in the background
+ *
+ * @attention This function is meant to be used in the examples to make the code more compact.
+ *            Applications which use console functionality should be based on
+ *            the underlying linenoise and esp_console functions.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL Parameter error
+ */
+esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+
 /**
  * @brief Start REPL environment
  * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
- * @note Once the REPL got started, it won't be stopped until user call repl->del(repl) to destory the REPL environment.
+ * @note Once the REPL gets started, it won't be stopped until the user calls repl->del(repl) to destroy the REPL environment.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE, if repl has started already

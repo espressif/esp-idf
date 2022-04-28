@@ -15,6 +15,4 @@ The above URLs are all for the master branch latest version. Click the drop-down
 
 # Building Documentation
 
-The documentation build requirements Python 3 and running the wrapper `./build_docs.py` tool. Running `./build_docs.py --help` will give a summary of available options.
-
-See [Documenting Code](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/documenting-code.html) in the ESP-IDF Programming Guide for full information about setting up to build the docs, and how to use the `./build_docs.py` tool.
+The documentation is built using the python package `esp-docs`, which can be installed by running `pip install esp-docs`. Running `build-docs --help` will give a summary of available options. For more information see the `esp-docs` documentation at https://github.com/espressif/esp-docs/blob/master/README.md

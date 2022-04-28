@@ -19,6 +19,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "esp_system.h"
+#include "soc/spi_pins.h"
 
 static const char *TAG = "example";
 
@@ -104,7 +105,6 @@ static esp_flash_t* example_init_ext_flash(void)
         .cs_io_num = VSPI_IOMUX_PIN_NUM_CS,
         .io_mode = SPI_FLASH_DIO,
         .speed = ESP_FLASH_40MHZ,
-        .cs_setup = 1,
     };
 
     ESP_LOGI(TAG, "Initializing external SPI Flash");
@@ -166,7 +166,7 @@ static bool example_mount_fatfs(const char* partition_label)
             .format_if_mount_failed = true,
             .allocation_unit_size = CONFIG_WL_SECTOR_SIZE
     };
-    esp_err_t err = esp_vfs_fat_spiflash_mount(base_path, partition_label, &mount_config, &s_wl_handle);
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(base_path, partition_label, &mount_config, &s_wl_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
         return false;

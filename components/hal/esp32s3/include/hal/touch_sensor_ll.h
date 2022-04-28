@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -24,7 +16,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/touch_sensor_periph.h"
+#include "soc/rtc_cntl_struct.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/sens_struct.h"
 #include "soc/soc_caps.h"
 #include "hal/touch_sensor_types.h"
 
@@ -47,9 +43,9 @@ extern "C" {
 static inline void touch_ll_set_meas_times(uint16_t meas_time)
 {
     //The times of charge and discharge in each measure process of touch channels.
-    RTCCNTL.touch_ctrl1.touch_meas_num = meas_time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num, meas_time);
     //the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD
-    RTCCNTL.touch_ctrl2.touch_xpd_wait = SOC_TOUCH_PAD_MEASURE_WAIT_MAX; //wait volt stable
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl2, touch_xpd_wait, SOC_TOUCH_PAD_MEASURE_WAIT_MAX); //wait volt stable
 }
 
 /**
@@ -59,7 +55,7 @@ static inline void touch_ll_set_meas_times(uint16_t meas_time)
  */
 static inline void touch_ll_get_measure_times(uint16_t *meas_time)
 {
-    *meas_time = RTCCNTL.touch_ctrl1.touch_meas_num;
+    *meas_time = HAL_FORCE_READ_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_meas_num);
 }
 
 /**
@@ -73,7 +69,7 @@ static inline void touch_ll_get_measure_times(uint16_t *meas_time)
 static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
 {
     // touch sensor sleep cycle Time = sleep_cycle / RTC_SLOW_CLK(150k)
-    RTCCNTL.touch_ctrl1.touch_sleep_cycles = sleep_time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_sleep_cycles, sleep_time);
 }
 
 /**
@@ -83,7 +79,7 @@ static inline void touch_ll_set_sleep_time(uint16_t sleep_time)
  */
 static inline void touch_ll_get_sleep_time(uint16_t *sleep_time)
 {
-    *sleep_time = RTCCNTL.touch_ctrl1.touch_sleep_cycles;
+    *sleep_time = HAL_FORCE_READ_U32_REG_FIELD(RTCCNTL.touch_ctrl1, touch_sleep_cycles);
 }
 
 /**
@@ -170,7 +166,11 @@ static inline void touch_ll_get_voltage_attenuation(touch_volt_atten_t *atten)
  */
 static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t slope)
 {
-    RTCIO.touch_pad[touch_num].dac = slope;
+    if (touch_num < TOUCH_PAD_NUM10) {
+        SET_PERI_REG_BITS(RTC_CNTL_TOUCH_DAC_REG, RTC_CNTL_TOUCH_PAD0_DAC_V, slope, (RTC_CNTL_TOUCH_PAD0_DAC_S - touch_num * 3));
+    } else {
+        SET_PERI_REG_BITS(RTC_CNTL_TOUCH_DAC1_REG, RTC_CNTL_TOUCH_PAD10_DAC_V, slope, (RTC_CNTL_TOUCH_PAD10_DAC_S - (touch_num - TOUCH_PAD_NUM10) * 3));
+    }
 }
 
 /**
@@ -185,7 +185,11 @@ static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t s
  */
 static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *slope)
 {
-    *slope = (touch_cnt_slope_t)RTCIO.touch_pad[touch_num].dac;
+    if (touch_num < TOUCH_PAD_NUM10) {
+        *slope = GET_PERI_REG_BITS2(RTC_CNTL_TOUCH_DAC_REG, RTC_CNTL_TOUCH_PAD0_DAC_V, (RTC_CNTL_TOUCH_PAD0_DAC_S - touch_num * 3));
+    } else {
+        *slope = GET_PERI_REG_BITS2(RTC_CNTL_TOUCH_DAC1_REG, RTC_CNTL_TOUCH_PAD10_DAC_V, (RTC_CNTL_TOUCH_PAD10_DAC_S - (touch_num - TOUCH_PAD_NUM10) * 3));
+    }
 }
 
 /**
@@ -409,7 +413,7 @@ static inline void touch_ll_clear_trigger_status_mask(void)
 static inline uint32_t IRAM_ATTR touch_ll_read_raw_data(touch_pad_t touch_num)
 {
     SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_RAW;
-    return SENS.sar_touch_status[touch_num - 1].touch_pad1_data;
+    return SENS.sar_touch_status[touch_num - 1].touch_pad_data;
 }
 
 /**
@@ -486,19 +490,22 @@ static inline touch_pad_t IRAM_ATTR touch_ll_get_current_meas_channel(void)
 static inline void touch_ll_intr_enable(touch_pad_intr_mask_t int_mask)
 {
     if (int_mask & TOUCH_PAD_INTR_MASK_DONE) {
-        RTCCNTL.int_ena.rtc_touch_done = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_done_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_active = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_active_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_inactive = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_inactive_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
-        RTCCNTL.int_ena.rtc_touch_scan_done = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_scan_done_w1ts = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
-        RTCCNTL.int_ena.rtc_touch_timeout = 1;
+        RTCCNTL.int_ena_w1ts.rtc_touch_timeout_w1ts = 1;
+    }
+    if (int_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
+        RTCCNTL.int_ena_w1ts.rtc_touch_approach_loop_done_w1ts = 1;
     }
 }
 
@@ -510,19 +517,22 @@ static inline void touch_ll_intr_enable(touch_pad_intr_mask_t int_mask)
 static inline void touch_ll_intr_disable(touch_pad_intr_mask_t int_mask)
 {
     if (int_mask & TOUCH_PAD_INTR_MASK_DONE) {
-        RTCCNTL.int_ena.rtc_touch_done = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_done_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_ACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_active = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_active_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_INACTIVE) {
-        RTCCNTL.int_ena.rtc_touch_inactive = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_inactive_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
-        RTCCNTL.int_ena.rtc_touch_scan_done = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_scan_done_w1tc = 1;
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
-        RTCCNTL.int_ena.rtc_touch_timeout = 0;
+        RTCCNTL.int_ena_w1tc.rtc_touch_timeout_w1tc = 1;
+    }
+    if (int_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
+        RTCCNTL.int_ena_w1tc.rtc_touch_approach_loop_done_w1tc = 1;
     }
 }
 
@@ -547,6 +557,9 @@ static inline void touch_ll_intr_clear(touch_pad_intr_mask_t int_mask)
     }
     if (int_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         RTCCNTL.int_clr.rtc_touch_timeout = 1;
+    }
+    if (int_mask & TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) {
+        RTCCNTL.int_clr.rtc_touch_approach_loop_done = 1;
     }
 }
 
@@ -574,6 +587,9 @@ static inline uint32_t touch_ll_read_intr_status_mask(void)
     }
     if (intr_st & RTC_CNTL_TOUCH_TIMEOUT_INT_ST_M) {
         intr_msk |= TOUCH_PAD_INTR_MASK_TIMEOUT;
+    }
+    if (intr_st & RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ST_M) {
+        intr_msk |= TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE;
     }
     return (intr_msk & TOUCH_PAD_INTR_MASK_ALL);
 }
@@ -637,7 +653,7 @@ static inline void touch_ll_timeout_get_threshold(uint32_t *threshold)
 static inline void IRAM_ATTR touch_ll_filter_read_smooth(touch_pad_t touch_num, uint32_t *smooth_data)
 {
     SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_SMOOTH;
-    *smooth_data = SENS.sar_touch_status[touch_num - 1].touch_pad1_data;
+    *smooth_data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
 }
 
 /**
@@ -650,7 +666,7 @@ static inline void IRAM_ATTR touch_ll_filter_read_smooth(touch_pad_t touch_num, 
 static inline void IRAM_ATTR touch_ll_read_benchmark(touch_pad_t touch_num, uint32_t *benchmark)
 {
     SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_BENCHMARK;
-    *benchmark = SENS.sar_touch_status[touch_num - 1].touch_pad1_data;
+    *benchmark = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
 }
 
 /**
@@ -745,9 +761,9 @@ static inline void touch_ll_filter_get_debounce(uint32_t *dbc_cnt)
 static inline void touch_ll_filter_set_noise_thres(uint32_t noise_thr)
 {
     RTCCNTL.touch_filter_ctrl.touch_noise_thres = noise_thr;
-    RTCCNTL.touch_filter_ctrl.touch_neg_noise_thres = noise_thr;
-    RTCCNTL.touch_filter_ctrl.touch_neg_noise_limit = 0xF;
-    RTCCNTL.touch_filter_ctrl.touch_hysteresis = 2;
+    RTCCNTL.touch_filter_ctrl.config2 = noise_thr;
+    RTCCNTL.touch_filter_ctrl.config1 = 0xF;
+    RTCCNTL.touch_filter_ctrl.config3 = 2;
 }
 
 /**
@@ -885,7 +901,7 @@ static inline void touch_ll_denoise_get_grade(touch_pad_denoise_grade_t *grade)
  */
 static inline void touch_ll_denoise_read_data(uint32_t *data)
 {
-    *data = SENS.sar_touch_status0.touch_denoise_data;
+    *data =  SENS.sar_touch_denoise.touch_denoise_data;
 }
 
 /************************ Waterproof register setting ************************/
@@ -990,7 +1006,7 @@ static inline void touch_ll_proximity_get_channel_num(touch_pad_t prox_pad[])
  */
 static inline void touch_ll_proximity_set_meas_times(uint32_t times)
 {
-    RTCCNTL.touch_approach.touch_approach_meas_time = times;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(RTCCNTL.touch_approach, touch_approach_meas_time, times);
 }
 
 /**
@@ -1000,7 +1016,7 @@ static inline void touch_ll_proximity_set_meas_times(uint32_t times)
  */
 static inline void touch_ll_proximity_get_meas_times(uint32_t *times)
 {
-    *times = RTCCNTL.touch_approach.touch_approach_meas_time;
+    *times = HAL_FORCE_READ_U32_REG_FIELD(RTCCNTL.touch_approach, touch_approach_meas_time);
 }
 
 /**
@@ -1010,6 +1026,13 @@ static inline void touch_ll_proximity_get_meas_times(uint32_t *times)
  */
 static inline void touch_ll_proximity_read_meas_cnt(touch_pad_t touch_num, uint32_t *cnt)
 {
+    if (SENS.sar_touch_conf.touch_approach_pad0 == touch_num) {
+        *cnt = SENS.sar_touch_appr_status.touch_approach_pad0_cnt;
+    } else if (SENS.sar_touch_conf.touch_approach_pad1 == touch_num) {
+        *cnt = SENS.sar_touch_appr_status.touch_approach_pad1_cnt;
+    } else if (SENS.sar_touch_conf.touch_approach_pad2 == touch_num) {
+        *cnt = SENS.sar_touch_appr_status.touch_approach_pad2_cnt;
+    }
 }
 
 /**
@@ -1107,17 +1130,22 @@ static inline bool touch_ll_sleep_get_approach_status(void)
  */
 static inline void touch_ll_sleep_read_benchmark(uint32_t *benchmark)
 {
+    SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_BENCHMARK;
+    *benchmark = SENS.sar_touch_slp_status.touch_slp_data;
 }
 
 static inline void touch_ll_sleep_read_smooth(uint32_t *smooth_data)
 {
+    SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_SMOOTH;
+    *smooth_data = SENS.sar_touch_slp_status.touch_slp_data;
 }
 
+/* Workaround: Note: sleep pad raw data is not in `sar_touch_slp_status` */
 static inline void touch_ll_sleep_read_data(uint32_t *raw_data)
 {
     uint32_t touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
     SENS.sar_touch_conf.touch_data_sel = TOUCH_LL_READ_RAW;
-    *raw_data = SENS.sar_touch_status[touch_num - 1].touch_pad1_data;
+    *raw_data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
 }
 
 static inline void touch_ll_sleep_reset_benchmark(void)
@@ -1142,6 +1170,7 @@ static inline void touch_ll_sleep_low_power(bool is_low_power)
  */
 static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
 {
+    *debounce = SENS.sar_touch_slp_status.touch_slp_debounce;
 }
 
 /**
@@ -1150,6 +1179,7 @@ static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
  */
 static inline void touch_ll_sleep_read_proximity_cnt(uint32_t *approach_cnt)
 {
+    *approach_cnt = SENS.sar_touch_appr_status.touch_slp_approach_cnt;
 }
 
 /**

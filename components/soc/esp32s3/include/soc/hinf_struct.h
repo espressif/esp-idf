@@ -13,13 +13,14 @@
 // limitations under the License.
 #pragma once
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct hinf_dev_s {
     union {
         struct {
             uint32_t user_id_fn1:  16;

@@ -16,7 +16,7 @@
 Note: This header file contains USB2.0 related types and macros that can be used by code specific to the DWC_OTG
 controller (i.e., the HW specific layers of the USB host stack). Thus, this header is only meant to be used below (and
 including) the HAL layer. For types and macros that are HW implementation agnostic (i.e., HCD layer and above), add them
-to the "usb.h" header instead.
+to the "usb/usb_types_ch9.h" header instead.
 */
 
 #pragma once

@@ -1,9 +1,28 @@
-#include "test_utils.h"
-#include "mqtt_client.h"
-#include "unity.h"
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ *
+ * This test code is in the Public Domain (or CC0 licensed, at your option.)
+ *
+ * Unless required by applicable law or agreed to in writing, this
+ * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.
+ */
+
 #include <sys/time.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "unity.h"
+#include "test_utils.h"
+#include "memory_checks.h"
+#include "mqtt_client.h"
 #include "nvs_flash.h"
 #include "esp_ota_ops.h"
+#include "sdkconfig.h"
+#include "test_mqtt_client_broker.h"
+#include "test_mqtt_connection.h"
+#include "esp_mac.h"
 
 static void test_leak_setup(const char * file, long line)
 {
@@ -11,8 +30,8 @@ static void test_leak_setup(const char * file, long line)
     struct timeval te;
     gettimeofday(&te, NULL); // get current time
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    printf("%s:%ld: time=%ld.%lds, mac:" MACSTR "\n", file, line, te.tv_sec, te.tv_usec, MAC2STR(mac));
-    unity_reset_leak_checks();
+    printf("%s:%ld: time=%jd.%lds, mac:" MACSTR "\n", file, line, (intmax_t)te.tv_sec, te.tv_usec, MAC2STR(mac));
+    test_utils_record_free_mem();
 }
 
 TEST_CASE("mqtt init with invalid url", "[mqtt][leaks=0]")
@@ -68,3 +87,21 @@ TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
 
     esp_mqtt_client_destroy(client);
 }
+
+#if SOC_EMAC_SUPPORTED
+/**
+ * This test cases uses ethernet kit, so build and use it only if EMAC supported
+ */
+TEST_CASE("mqtt broker tests", "[mqtt][test_env=UT_T2_Ethernet]")
+{
+    test_case_uses_tcpip();
+    connect_test_fixture_setup();
+
+    RUN_MQTT_BROKER_TEST(mqtt_connect_disconnect);
+    RUN_MQTT_BROKER_TEST(mqtt_subscribe_publish);
+    RUN_MQTT_BROKER_TEST(mqtt_lwt_clean_disconnect);
+    RUN_MQTT_BROKER_TEST(mqtt_subscribe_payload);
+
+    connect_test_fixture_teardown();
+}
+#endif // SOC_EMAC_SUPPORTED

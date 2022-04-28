@@ -111,12 +111,15 @@ static void btu_hcif_rem_oob_request_evt (UINT8 *p);
 #if (SMP_INCLUDED == TRUE)
 static void btu_hcif_simple_pair_complete_evt (UINT8 *p);
 #endif  ///SMP_INCLUDED == TRUE
+static void btu_hcif_link_supv_to_changed_evt (UINT8 *p);
 #if L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE
 static void btu_hcif_enhanced_flush_complete_evt (void);
 #endif
 
 #if (BTM_SSR_INCLUDED == TRUE)
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len);
+#else
+static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len);
 #endif /* BTM_SSR_INCLUDED == TRUE */
 
 #if BLE_INCLUDED == TRUE
@@ -300,11 +303,13 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     case HCI_ESCO_CONNECTION_CHANGED_EVT:
         btu_hcif_esco_connection_chg_evt (p);
         break;
-#if (BTM_SSR_INCLUDED == TRUE)
     case HCI_SNIFF_SUB_RATE_EVT:
+#if (BTM_SSR_INCLUDED == TRUE)
         btu_hcif_ssr_evt (p, hci_evt_len);
-        break;
+#else
+        btu_hcif_ssr_evt_dump (p, hci_evt_len);
 #endif  /* BTM_SSR_INCLUDED == TRUE */
+        break;
     case HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT:
         btu_hcif_host_support_evt (p);
         break;
@@ -338,6 +343,9 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         btu_hcif_keypress_notif_evt (p);
         break;
 #endif  ///SMP_INCLUDED == TRUE
+    case HCI_LINK_SUPER_TOUT_CHANGED_EVT:
+        btu_hcif_link_supv_to_changed_evt (p);
+        break;
 #if L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE
     case HCI_ENHANCED_FLUSH_COMPLETE_EVT:
         btu_hcif_enhanced_flush_complete_evt ();
@@ -651,6 +659,7 @@ static void btu_hcif_connection_comp_evt (UINT8 *p)
         btm_sco_connected (status, bda, handle, &esco_data);
     }
 #endif /* BTM_SCO_INCLUDED */
+    HCI_TRACE_WARNING("hcif conn complete: hdl 0x%x, st 0x%x", handle, status);
 }
 
 
@@ -707,9 +716,7 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
-    if (reason != HCI_ERR_PEER_USER && reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) {
-        HCI_TRACE_WARNING("DiscCmpl evt: hdl=%d, rsn=0x%x", handle, reason);
-    }
+    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
 
 #if BTM_SCO_INCLUDED == TRUE
     /* If L2CAP doesn't know about it, send it to SCO */
@@ -1554,6 +1561,8 @@ static void btu_hcif_mode_change_evt (UINT8 *p)
     btm_sco_chk_pend_unpark (status, handle);
 #endif
     btm_pm_proc_mode_change (status, handle, current_mode, interval);
+    HCI_TRACE_WARNING("hcif mode change: hdl 0x%x, mode %d, intv %d, status 0x%x",
+                    handle, current_mode, interval, status);
 
     /*
     #if (HID_DEV_INCLUDED == TRUE) && (HID_DEV_PM_INCLUDED == TRUE)
@@ -1575,6 +1584,21 @@ static void btu_hcif_mode_change_evt (UINT8 *p)
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len)
 {
     btm_pm_proc_ssr_evt(p, evt_len);
+}
+#else
+static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len)
+{
+    UINT8       status;
+    UINT16      handle;
+    UINT16      max_tx_lat;
+    UINT16      max_rx_lat;
+
+    STREAM_TO_UINT8 (status, p);
+    STREAM_TO_UINT16 (handle, p);
+    STREAM_TO_UINT16 (max_tx_lat, p);
+    STREAM_TO_UINT16 (max_rx_lat, p);
+
+    HCI_TRACE_WARNING("hcif ssr evt: st 0x%x, hdl 0x%x, tx_lat %d rx_lat %d", status, handle, max_tx_lat, max_rx_lat);
 }
 #endif
 
@@ -1920,6 +1944,27 @@ static void btu_hcif_simple_pair_complete_evt (UINT8 *p)
     btm_simple_pair_complete(p);
 }
 #endif  ///SMP_INCLUDED == TRUE
+
+/*******************************************************************************
+**
+** Function         btu_hcif_link_supv_to_changed_evt
+**
+** Description      Process event HCI_LINK_SUPER_TOUT_CHANGED_EVT
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btu_hcif_link_supv_to_changed_evt (UINT8 *p)
+{
+    UINT16 handle;
+    UINT16 supv_to;
+
+    STREAM_TO_UINT16(handle, p);
+    STREAM_TO_UINT16(supv_to, p);
+
+    HCI_TRACE_WARNING("hcif link supv_to changed: hdl 0x%x, supv_to %d", handle, supv_to);
+}
+
 /*******************************************************************************
 **
 ** Function         btu_hcif_enhanced_flush_complete_evt
@@ -2065,14 +2110,41 @@ static void btu_ble_phy_update_complete_evt(UINT8 *p)
     btm_ble_update_phy_evt(&update_phy);
 }
 
+#if BLE_PRIVACY_SPT == TRUE
+/*******************************************************************************
+**
+** Function         btm_ble_resolve_random_addr_adv_ext
+**
+** Description      resolve random address complete callback.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btm_ble_resolve_random_addr_adv_ext(void *p_rec, void *p)
+{
+    tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
+    BD_ADDR     bda;
+    UINT8       *pp = (UINT8 *)p+4; //jump to the location of bd addr
+    if (match_rec) {
+        // Assign the original address to be the current report address
+        memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
+        BDADDR_TO_STREAM(pp,bda);
+    }
+}
+#endif
+
 static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_EXT_ADV_REPORT ext_adv_report = {0};
     UINT8 num_reports = {0};
+    UINT8 *pp = p;
     //UINT8 legacy_event_type = 0;
     UINT16 evt_type = 0;
     uint8_t addr_type;
     BD_ADDR bda;
+    #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+    BOOLEAN             match = FALSE;
+    #endif
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -2106,12 +2178,17 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 
         STREAM_TO_UINT8(addr_type, p);
         STREAM_TO_BDADDR(bda, p);
-        // if it is an anonymous adv, skip address resolution
-        if(addr_type != 0xFF) {
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-            btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
-#endif
+        if(addr_type != 0xFF) {
+            match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
+            if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
+                btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_adv_ext, pp);
+                //the BDADDR may be updated, so read it again
+                p = p - sizeof(bda);
+                STREAM_TO_BDADDR(bda, p);
+            }
         }
+#endif
         ext_adv_report.addr_type = addr_type;
         memcpy(ext_adv_report.addr, bda, 6);
         STREAM_TO_UINT8(ext_adv_report.primary_phy, p);

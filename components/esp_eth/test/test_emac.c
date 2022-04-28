@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -6,13 +11,10 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_event.h"
+#include "esp_netif.h"
 #include "esp_eth.h"
 #include "esp_log.h"
 #include "esp_http_client.h"
-#include "lwip/inet.h"
-#include "lwip/netdb.h"
-#include "lwip/sockets.h"
-#include "ping/ping_sock.h"
 #include "esp_rom_md5.h"
 #include "soc/soc_caps.h"
 
@@ -24,18 +26,12 @@ static const char *TAG = "esp32_eth_test";
 #define ETH_STOP_BIT BIT(1)
 #define ETH_CONNECT_BIT BIT(2)
 #define ETH_GOT_IP_BIT BIT(3)
-#define ETH_PING_END_BIT BIT(4)
-#define ETH_DOWNLOAD_END_BIT BIT(5)
 
 #define ETH_START_TIMEOUT_MS (10000)
 #define ETH_CONNECT_TIMEOUT_MS (40000)
 #define ETH_STOP_TIMEOUT_MS (10000)
 #define ETH_GET_IP_TIMEOUT_MS (60000)
 #define ETH_DOWNLOAD_END_TIMEOUT_MS (240000)
-#define ETH_PING_DURATION_MS (5000)
-#define ETH_PING_END_TIMEOUT_MS (ETH_PING_DURATION_MS * 2)
-
-#define TEST_ICMP_DESTINATION_DOMAIN_NAME "127.0.0.1"
 
 extern const char dl_espressif_com_root_cert_pem_start[] asm("_binary_dl_espressif_com_root_cert_pem_start");
 extern const char dl_espressif_com_root_cert_pem_end[]   asm("_binary_dl_espressif_com_root_cert_pem_end");
@@ -86,46 +82,6 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     xEventGroupSetBits(eth_event_group, ETH_GOT_IP_BIT);
 }
 
-static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
-{
-    uint8_t ttl;
-    uint16_t seqno;
-    uint32_t elapsed_time, recv_len;
-    ip_addr_t target_addr;
-    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_TTL, &ttl, sizeof(ttl));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_SIZE, &recv_len, sizeof(recv_len));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_TIMEGAP, &elapsed_time, sizeof(elapsed_time));
-    printf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\n",
-           recv_len, inet_ntoa(target_addr.u_addr.ip4), seqno, ttl, elapsed_time);
-}
-
-static void test_on_ping_timeout(esp_ping_handle_t hdl, void *args)
-{
-    uint16_t seqno;
-    ip_addr_t target_addr;
-    esp_ping_get_profile(hdl, ESP_PING_PROF_SEQNO, &seqno, sizeof(seqno));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_IPADDR, &target_addr, sizeof(target_addr));
-    printf("From %s icmp_seq=%d timeout\n", inet_ntoa(target_addr.u_addr.ip4), seqno);
-}
-
-static void test_on_ping_end(esp_ping_handle_t hdl, void *args)
-{
-    EventGroupHandle_t eth_event_group = (EventGroupHandle_t)args;
-    uint32_t transmitted;
-    uint32_t received;
-    uint32_t total_time_ms;
-
-    esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
-    esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
-    printf("%d packets transmitted, %d received, time %dms\n", transmitted, received, total_time_ms);
-    if (transmitted == received) {
-        xEventGroupSetBits(eth_event_group, ETH_PING_END_BIT);
-    }
-}
-
 static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_wait)
 {
     int i = 0;
@@ -136,7 +92,7 @@ static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_
             break;
         }
     }
-    if (i < ms_to_wait / 10) {
+    if (i < ms_to_wait / 100) {
         return ESP_OK;
     } else {
         return ESP_FAIL;
@@ -147,7 +103,8 @@ TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
 {
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     // auto detect PHY address
     phy_config.phy_addr = ESP_ETH_PHY_ADDR_AUTO;
@@ -172,6 +129,187 @@ TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(mac->del(mac));
 }
 
+TEST_CASE("esp32 ethernet speed/duplex/autonegotiation", "[ethernet][test_env=UT_T2_Ethernet]")
+{
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    TEST_ESP_OK(esp_event_loop_create_default());
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+    // auto detect PHY address
+    phy_config.phy_addr = ESP_ETH_PHY_ADDR_AUTO;
+    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
+    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+    esp_eth_handle_t eth_handle = NULL;
+    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+
+    // Set PHY to loopback mode so we do not have to take care about link configuration of the other node.
+    // The reason behind is improbable, however, if the other node was configured to e.g. 100 Mbps and we
+    // tried to change the speed at ESP node to 10 Mbps, we could get into trouble to establish a link.
+    bool loopback_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+
+    // this test only test layer2, so don't need to register input callback (i.e. esp_eth_update_input_path)
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    // wait for connection start
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
+    // wait for connection establish
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    eth_duplex_t exp_duplex;
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex);
+
+    eth_speed_t exp_speed;
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed);
+    // verify autonegotiation result (expecting the best link configuration)
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    bool exp_autoneg_en;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(true, exp_autoneg_en);
+
+    ESP_LOGI(TAG, "try to change autonegotiation when driver is started...");
+    bool auto_nego_en = false;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(true, exp_autoneg_en);
+
+    ESP_LOGI(TAG, "stop the Ethernet driver and...");
+    esp_eth_stop(eth_handle);
+
+    ESP_LOGI(TAG, "try to change speed/duplex prior disabling the autonegotiation...");
+    eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    eth_speed_t speed = ETH_SPEED_10M;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // Disable autonegotiation and change speed to 10 Mbps and duplex to half
+    ESP_LOGI(TAG, "disable the autonegotiation and change the speed/duplex...");
+    auto_nego_en = false;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(false, exp_autoneg_en);
+
+    // set new duplex mode
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    // set new speed
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_HALF, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_10M, exp_speed);
+
+    // Change speed back to 100 Mbps
+    esp_eth_stop(eth_handle);
+    ESP_LOGI(TAG, "change speed again...");
+    speed = ETH_SPEED_100M;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_HALF, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    // Change duplex back to full
+    esp_eth_stop(eth_handle);
+    ESP_LOGI(TAG, "change duplex again...");
+    duplex = ETH_DUPLEX_FULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    ESP_LOGI(TAG, "try to change speed/duplex when driver is started and autonegotiation disabled...");
+    speed = ETH_SPEED_10M;
+    duplex = ETH_DUPLEX_HALF;
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    ESP_LOGI(TAG, "change the speed/duplex to 10 Mbps/half and then enable autonegotiation...");
+    esp_eth_stop(eth_handle);
+    speed = ETH_SPEED_10M;
+    duplex = ETH_DUPLEX_HALF;
+
+    // set new duplex mode
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    // set new speed
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_HALF, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_10M, exp_speed);
+
+    esp_eth_stop(eth_handle);
+    auto_nego_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en);
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(true, exp_autoneg_en);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    // verify autonegotiation result (expecting the best link configuration)
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    /* wait for connection stop */
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    vEventGroupDelete(eth_event_group);
+}
+
 TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
 {
     EventBits_t bits = 0;
@@ -180,7 +318,8 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(esp_event_loop_create_default());
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -218,13 +357,10 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -232,8 +368,11 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
@@ -251,7 +390,6 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
@@ -267,13 +405,10 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -281,8 +416,11 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 
     for (int i = 0; i < 10; i++) {
         // start Ethernet driver
@@ -304,98 +442,6 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
-    esp_netif_destroy(eth_netif);
-    TEST_ESP_OK(esp_event_loop_delete_default());
-    vEventGroupDelete(eth_event_group);
-}
-
-TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")
-{
-    EventBits_t bits = 0;
-    EventGroupHandle_t eth_event_group = xEventGroupCreate();
-    TEST_ASSERT(eth_event_group != NULL);
-    test_case_uses_tcpip();
-    TEST_ESP_OK(esp_event_loop_create_default());
-    // create TCP/IP netif
-    esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
-    esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
-    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
-    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
-    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
-    esp_eth_handle_t eth_handle = NULL;
-    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
-    TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-    // start Ethernet driver
-    TEST_ESP_OK(esp_eth_start(eth_handle));
-    /* wait for IP lease */
-    bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
-    TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
-
-    // Parse IP address
-    ip_addr_t target_addr;
-    struct addrinfo hint;
-    struct addrinfo *res = NULL;
-    memset(&hint, 0, sizeof(hint));
-    memset(&target_addr, 0, sizeof(target_addr));
-    /* convert URL to IP */
-    TEST_ASSERT(getaddrinfo(TEST_ICMP_DESTINATION_DOMAIN_NAME, NULL, &hint, &res) == 0);
-    struct in_addr addr4 = ((struct sockaddr_in *)(res->ai_addr))->sin_addr;
-    inet_addr_to_ip4addr(ip_2_ip4(&target_addr), &addr4);
-    freeaddrinfo(res);
-
-    esp_ping_config_t ping_config = ESP_PING_DEFAULT_CONFIG();
-    ping_config.timeout_ms = 2000;
-    ping_config.target_addr = target_addr;
-    ping_config.count = 0; // ping in infinite mode
-    /* set callback functions */
-    esp_ping_callbacks_t cbs;
-    cbs.on_ping_success = test_on_ping_success;
-    cbs.on_ping_timeout = test_on_ping_timeout;
-    cbs.on_ping_end = test_on_ping_end;
-    cbs.cb_args = eth_event_group;
-
-    esp_ping_handle_t ping;
-    TEST_ESP_OK(esp_ping_new_session(&ping_config, &cbs, &ping));
-    /* start ping */
-    TEST_ESP_OK(esp_ping_start(ping));
-    /* ping for a while */
-    vTaskDelay(pdMS_TO_TICKS(ETH_PING_DURATION_MS));
-    /* stop ping */
-    TEST_ESP_OK(esp_ping_stop(ping));
-    /* wait for end of ping */
-    bits = xEventGroupWaitBits(eth_event_group, ETH_PING_END_BIT, true, true, pdMS_TO_TICKS(ETH_PING_END_TIMEOUT_MS));
-    TEST_ASSERT((bits & ETH_PING_END_BIT) == ETH_PING_END_BIT);
-    /* restart ping */
-    TEST_ESP_OK(esp_ping_start(ping));
-    vTaskDelay(pdMS_TO_TICKS(ETH_PING_DURATION_MS));
-    TEST_ESP_OK(esp_ping_stop(ping));
-    bits = xEventGroupWaitBits(eth_event_group, ETH_PING_END_BIT, true, true, pdMS_TO_TICKS(ETH_PING_END_TIMEOUT_MS));
-    TEST_ASSERT((bits & ETH_PING_END_BIT) == ETH_PING_END_BIT);
-    /* de-initialize ping process */
-    TEST_ESP_OK(esp_ping_delete_session(ping));
-
-    // stop Ethernet driver
-    TEST_ESP_OK(esp_eth_stop(eth_handle));
-    /* wait for connection stop */
-    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
-    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    TEST_ESP_OK(esp_eth_del_netif_glue(glue));
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
-    TEST_ESP_OK(phy->del(phy));
-    TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
@@ -425,13 +471,15 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
     case HTTP_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
         break;
+    case HTTP_EVENT_REDIRECT:
+        ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
+        break;
     }
     return ESP_OK;
 }
 
-static void eth_download_task(void *param)
+static void eth_start_download(void)
 {
-    EventGroupHandle_t eth_event_group = (EventGroupHandle_t)param;
     esp_rom_md5_init(&md5_context);
     esp_http_client_config_t config = {
         .url = "https://dl.espressif.com/dl/misc/2MB.bin",
@@ -444,8 +492,6 @@ static void eth_download_task(void *param)
     TEST_ESP_OK(esp_http_client_perform(client));
     TEST_ESP_OK(esp_http_client_cleanup(client));
     esp_rom_md5_final(digest, &md5_context);
-    xEventGroupSetBits(eth_event_group, ETH_DOWNLOAD_END_BIT);
-    vTaskDelete(NULL);
 }
 
 TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][timeout=240]")
@@ -458,13 +504,10 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     // create TCP/IP netif
     esp_netif_config_t netif_cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
-    // set default handlers to do layer 3 (and up) stuffs
-    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
-    // register user defined event handers
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
-    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -472,18 +515,18 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     // install Ethernet driver
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
     // combine driver with netif
-    void *glue = esp_eth_new_netif_glue(eth_handle);
+    esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
     TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
+    // register user defined event handers
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     // start Ethernet driver
     TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
     bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
 
-    xTaskCreate(eth_download_task, "eth_dl", 4096, eth_event_group, tskIDLE_PRIORITY + 2, NULL);
-    /* wait for download end */
-    bits = xEventGroupWaitBits(eth_event_group, ETH_DOWNLOAD_END_BIT, true, true, pdMS_TO_TICKS(ETH_DOWNLOAD_END_TIMEOUT_MS));
-    TEST_ASSERT_EQUAL(ETH_DOWNLOAD_END_BIT, bits & ETH_DOWNLOAD_END_BIT);
+    eth_start_download();
     // check MD5 digest
     // MD5: df61db8564d145bbe67112aa8ecdccd8
     uint8_t expect_digest[16] = {223, 97, 219, 133, 100, 209, 69, 187, 230, 113, 18, 170, 142, 205, 204, 216};
@@ -506,7 +549,6 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     esp_netif_destroy(eth_netif);
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);

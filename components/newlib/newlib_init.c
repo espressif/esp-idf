@@ -1,17 +1,10 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
+#include "sdkconfig.h"
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -25,8 +18,8 @@
 #include <assert.h>
 #include "esp_newlib.h"
 #include "esp_attr.h"
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "esp_rom_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -36,6 +29,10 @@
 #include "esp32s3/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/libc_stubs.h"
 #endif
 
 static struct _reent s_reent;
@@ -82,7 +79,7 @@ static struct syscall_stub_table s_stub_table = {
     ._write_r = (int (*)(struct _reent *r, int, const void *, int)) &_write_r,
     ._lseek_r = (int (*)(struct _reent *r, int, int, int)) &_lseek_r,
     ._read_r = (int (*)(struct _reent *r, int, void *, int)) &_read_r,
-#if _RETARGETABLE_LOCKING /* TODO: only if RETARGETABLE LOCKING IS IN ROM */
+#if ESP_ROM_HAS_RETARGETABLE_LOCKING
     ._retarget_lock_init = &__retarget_lock_init,
     ._retarget_lock_init_recursive = &__retarget_lock_init_recursive,
     ._retarget_lock_close = &__retarget_lock_close,
@@ -112,7 +109,7 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */
@@ -135,13 +132,17 @@ void esp_newlib_init(void)
     syscall_table_ptr_pro = syscall_table_ptr_app = &s_stub_table;
 #elif CONFIG_IDF_TARGET_ESP32S2
     syscall_table_ptr_pro = &s_stub_table;
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     syscall_table_ptr = &s_stub_table;
 #endif
 
     _GLOBAL_REENT = &s_reent;
 
     environ = malloc(sizeof(char*));
+    if (environ == 0) {
+        // if allocation fails this early in startup process, there's nothing else other than to panic.
+        abort();
+    }
     environ[0] = NULL;
 
     esp_newlib_locks_init();

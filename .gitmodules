@@ -15,18 +15,6 @@
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
 	url = ../../kmackay/micro-ecc.git
 
-[submodule "components/coap/libcoap"]
-	path = components/coap/libcoap
-	url = ../../obgm/libcoap.git
-
-[submodule "components/nghttp/nghttp2"]
-	path = components/nghttp/nghttp2
-	url = ../../nghttp2/nghttp2.git
-
-[submodule "components/libsodium/libsodium"]
-	path = components/libsodium/libsodium
-	url = ../../jedisct1/libsodium.git
-
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
 	url = ../../pellepl/spiffs.git
@@ -42,10 +30,6 @@
 [submodule "components/asio/asio"]
 	path = components/asio/asio
 	url = ../../espressif/asio.git
-
-[submodule "components/expat/expat"]
-	path = components/expat/expat
-	url = ../../libexpat/libexpat.git
 
 [submodule "components/lwip/lwip"]
 	path = components/lwip/lwip
@@ -70,10 +54,6 @@
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
 	url = ../../espressif/esp-nimble.git
-
-[submodule "components/cbor/tinycbor"]
-	path = components/cbor/tinycbor
-	url = ../../intel/tinycbor.git
 
 [submodule "components/esp_wifi/lib"]
 	path = components/esp_wifi/lib
@@ -102,3 +82,15 @@
 [submodule "components/esp_phy/lib"]
 	path = components/esp_phy/lib
 	url = ../../espressif/esp-phy-lib.git
+
+[submodule "components/openthread/lib"]
+	path = components/openthread/lib
+	url = ../../espressif/esp-thread-lib.git
+
+[submodule "components/ieee802154/lib"]
+	path = components/ieee802154/lib
+	url = ../../espressif/esp-ieee802154-lib.git
+
+[submodule "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"]
+	path = components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+	url = ../../espressif/esp32h2-bt-lib.git

@@ -1,21 +1,11 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_bt.h"
 #include "soc/soc.h"
-
-#include "esp_bt_device.h"
 
 #include "test.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -25,15 +15,9 @@
 #include "esp_ble_mesh_generic_model_api.h"
 #include "ble_mesh_console_lib.h"
 #include "ble_mesh_adapter.h"
-
-#include "esp_bt_defs.h"
-#include "provisioner_prov.h"
-
-
+#include "transaction.h"
 #include "esp_ble_mesh_config_model_api.h"
-
 #include "ble_mesh_console_decl.h"
-
 
 typedef struct {
     struct arg_str *static_val;
@@ -55,6 +39,12 @@ typedef struct {
     struct arg_end *end;
 } ble_mesh_comp_t;
 static ble_mesh_comp_t component;
+
+typedef struct {
+    struct arg_int *action;
+    struct arg_end *end;
+} ble_mesh_deinit_t;
+static ble_mesh_deinit_t deinit;
 
 typedef struct {
     struct arg_int *bearer;
@@ -143,6 +133,17 @@ typedef struct {
 } ble_mesh_provisioner_bind_model_t;
 ble_mesh_provisioner_bind_model_t provisioner_local_bind;
 
+typedef struct {
+    struct arg_str *action_type;
+    struct arg_int *enable;
+    struct arg_int *op;
+    struct arg_int *hb_src;
+    struct arg_int *hb_dst;
+    struct arg_int *type;
+    struct arg_end *end;
+} ble_mesh_provisioner_heartbeat_t;
+static ble_mesh_provisioner_heartbeat_t heartbeat;
+
 void ble_mesh_register_cmd(void);
 // Register callback function
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
@@ -158,7 +159,7 @@ void ble_mesh_register_mesh_node(void)
 
 int ble_mesh_register_cb(int argc, char** argv)
 {
-    ESP_LOGE(TAG, "enter %s\n", __func__);
+    ESP_LOGD(TAG, "enter %s\n", __func__);
     ble_mesh_node_init();
     esp_ble_mesh_register_prov_callback(ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(ble_mesh_model_cb);
@@ -290,8 +291,8 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
 #if (CONFIG_BLE_MESH_PROVISIONER)
     case ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT:
         ESP_LOGD(TAG, "Provisioner recv unprovisioned device beacon:");
-        ESP_LOG_BUFFER_HEX("Device UUID %s", param->provisioner_recv_unprov_adv_pkt.dev_uuid, 16);
-        ESP_LOG_BUFFER_HEX("Address %s", param->provisioner_recv_unprov_adv_pkt.addr, 6);
+        ESP_LOG_BUFFER_HEX("Device UUID", param->provisioner_recv_unprov_adv_pkt.dev_uuid, 16);
+        ESP_LOG_BUFFER_HEX("Address", param->provisioner_recv_unprov_adv_pkt.addr, 6);
         ESP_LOGD(TAG, "Address type 0x%x, oob_info 0x%04x, adv_type 0x%x, bearer 0x%x",
             param->provisioner_recv_unprov_adv_pkt.addr_type, param->provisioner_recv_unprov_adv_pkt.oob_info,
             param->provisioner_recv_unprov_adv_pkt.adv_type, param->provisioner_recv_unprov_adv_pkt.bearer);
@@ -336,6 +337,18 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
     case ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT:
         ble_mesh_callback_check_err_code(param->provisioner_add_net_key_comp.err_code, "Provisioner:NetKeyAdd");
         break;
+    case ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->provisioner_enable_heartbeat_recv_comp.err_code, "Provisioner:EnHbRecv");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->provisioner_set_heartbeat_filter_type_comp.err_code, "Provisioner:SetHbFilterType");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT:
+        ble_mesh_callback_check_err_code(param->provisioner_set_heartbeat_filter_info_comp.err_code, "Provisioner:SetHbFilterInfo");
+        break;
+    case ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT:
+        ESP_LOGI(TAG, "Provisioner:HbRecv,OK,%d,%d", param->provisioner_recv_heartbeat.hb_src, param->provisioner_recv_heartbeat.hb_dst);
+        break;
 #endif
     default:
         break;
@@ -347,13 +360,24 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
 {
     uint16_t result;
     uint8_t data[4];
+    esp_err_t outcome = ESP_OK;
+    uint8_t status;
+    uint64_t *start_time = NULL;
+    transaction_t *trans = NULL;
 
     ESP_LOGD(TAG, "enter %s, event=%x\n", __func__, event);
+    do {
+        trans = transaction_get(TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE, trans);
+        if (trans) {
+            start_time = (uint64_t *)trans->input;
+            break;
+        }
+    }while(trans);
 
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.model != NULL && param->model_operation.model->op != NULL) {
-             if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
+            if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
                 ESP_LOGI(TAG, "VendorModel:SetAck,Success,%d", param->model_operation.ctx->recv_ttl);
                 data[0] = param->model_operation.msg[0];
                 data[1] = param->model_operation.msg[1];
@@ -367,9 +391,36 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
             } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET_UNACK) {
                 ESP_LOGI(TAG, "VendorModel:SetUnAck,Success,%d,%d", param->model_operation.ctx->recv_ttl, param->model_operation.length);
                 result = ble_mesh_node_statistics_accumulate(param->model_operation.msg, param->model_operation.length, VENDOR_MODEL_PERF_OPERATION_TYPE_SET_UNACK);
-                if (result == 0) {
-                    esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx,
-                                                       ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS, param->model_operation.length, param->model_operation.msg);
+            }
+            else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET) {
+                ESP_LOGI(TAG, "Node:GetStatus,OK");
+                ble_mesh_node_get_state(status);
+                outcome = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+                         sizeof(status), &status);
+                if (outcome != ESP_OK) {
+                    ESP_LOGE(TAG, "Node:SendMsg,Fal");
+                }
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
+                ble_mesh_node_set_state(param->model_operation.msg[0]);
+                ESP_LOGI(TAG, "Node:SetAck,OK,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
+                outcome = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+                         sizeof(status), param->model_operation.msg);
+                if (outcome != ESP_OK) {
+                    ESP_LOGE(TAG, "Node:SendMsg,Fal");
+                }
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+                ble_mesh_node_set_state(param->model_operation.msg[0]);
+                ESP_LOGI(TAG, "Node:SetUnAck,OK,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
+                ESP_LOGI(TAG, "Node:Status,Success,%d", param->model_operation.length);
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
+                ESP_LOGI(TAG, "VendorModel:SetAck,OK,%d", param->model_operation.ctx->recv_ttl);
+            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS) {
+                if (trans) {
+                    uint64_t current_time = esp_timer_get_time();
+                    outcome = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 1000), param->model_operation.msg,
+                        param->model_operation.ctx->recv_ttl, param->model_operation.length);
+                    transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
                 }
             }
         }
@@ -384,11 +435,23 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
     case ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT:
         ESP_LOGI(TAG, "PublishSend,OK,0x%x,%d,", param->model_publish_comp.model->model_id, param->model_publish_comp.model->pub->msg->len);
         break;
+    case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
+        ESP_LOGI(TAG, "Node:PublishReceive,OK,0x%04X,%d,%d", param->client_recv_publish_msg.opcode, param->client_recv_publish_msg.length, param->client_recv_publish_msg.msg[1]);
+        if (trans) {
+            uint64_t current_time = esp_timer_get_time();
+            outcome = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 2000), param->client_recv_publish_msg.msg,
+                param->client_recv_publish_msg.ctx->recv_ttl, param->client_recv_publish_msg.length);
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
+        }
+        break;
     case ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT:
         ESP_LOGI(TAG, "PublishUpdate,OK");
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
-        ESP_LOGI(TAG, "Node:TimeOut");
+        ESP_LOGI(TAG, "Node:TimeOut, 0x%04X", param->client_send_timeout.opcode);
+        if (trans) {
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
+        }
         break;
     case ESP_BLE_MESH_MODEL_EVT_MAX:
         ESP_LOGI(TAG, "Node:MaxEvt");
@@ -429,6 +492,19 @@ int ble_mesh_power_set(int argc, char **argv)
     return result;
 }
 
+static int get_dev_uuid(uint8_t uuid[16])
+{
+    uint8_t addr[6] = {0};
+
+    extern int get_bd_addr(uint8_t addr[6]);
+    if (get_bd_addr(addr)) {
+        return -1;
+    }
+
+    memcpy(uuid, addr, BD_ADDR_LEN);
+    return 0;
+}
+
 static int ble_mesh_load_oob(int argc, char **argv)
 {
     uint8_t *static_val;
@@ -444,7 +520,9 @@ static int ble_mesh_load_oob(int argc, char **argv)
     //parsing prov
 #if CONFIG_BLE_MESH_NODE
     prov.uuid = dev_uuid;
-    memcpy(dev_uuid, esp_bt_dev_get_address(), BD_ADDR_LEN);
+    if (get_dev_uuid(dev_uuid)) {
+        return 1;
+    }
     if (oob.static_val->count != 0) {
         static_val = malloc(oob.static_val_len->ival[0] + 1);
         if (static_val == NULL) {
@@ -500,7 +578,7 @@ int ble_mesh_init(int argc, char **argv)
         if (device_uuid == NULL) {
             ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
         }
-        err = get_value_string((char *)component.dev_uuid->sval[0], (char *) device_uuid);
+        err = get_value_string((char *)component.dev_uuid->sval[0], (char *)device_uuid);
         if (err == ESP_OK) {
             memcpy(dev_uuid, device_uuid, ESP_BLE_MESH_OCTET16_LEN);
         } else {
@@ -508,7 +586,9 @@ int ble_mesh_init(int argc, char **argv)
             memcpy(dev_uuid, device_uuid, BD_ADDR_LEN);
         }
     } else {
-        memcpy(dev_uuid, esp_bt_dev_get_address(), 6);
+        if (get_dev_uuid(dev_uuid)) {
+            return 1;
+        }
     }
 
     err = esp_ble_mesh_init(&prov, local_component);
@@ -520,6 +600,46 @@ int ble_mesh_init(int argc, char **argv)
     free(device_uuid);
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
+}
+
+int ble_mesh_provisioner_heartbeat(int argc, char** argv)
+{
+    esp_err_t result = ESP_OK;
+    bool enable = 1;
+    uint8_t type = 0;
+    esp_ble_mesh_heartbeat_filter_info_t info;
+    uint8_t op = 0;
+
+    ESP_LOGD(TAG, "enter %s\n", __func__);
+
+    int nerrors = arg_parse(argc, argv, (void **) &heartbeat);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, heartbeat.end, argv[0]);
+        return 1;
+    }
+
+    arg_int_to_value(heartbeat.enable, enable, "enable/disable receiving heartbeat");
+    arg_int_to_value(heartbeat.type, type, "heartbeat filter type");
+    arg_int_to_value(heartbeat.hb_dst, info.hb_dst, "destination address");
+    arg_int_to_value(heartbeat.hb_src, info.hb_src, "source address");
+    arg_int_to_value(heartbeat.op, op, "op");
+
+    if (strcmp(heartbeat.action_type->sval[0], "recv") == 0){
+        result = esp_ble_mesh_provisioner_recv_heartbeat(enable);
+    }else if(strcmp(heartbeat.action_type->sval[0], "type") == 0){
+        result = esp_ble_mesh_provisioner_set_heartbeat_filter_type(type);
+    }else if(strcmp(heartbeat.action_type->sval[0], "info")== 0){
+        result = esp_ble_mesh_provisioner_set_heartbeat_filter_info(op, &info);
+    }
+
+    if(result == ESP_OK){
+        ESP_LOGI(TAG, "provisioner:OK\n");
+    }else{
+        ESP_LOGE(TAG, "provisioner:ERROR\n");
+    }
+
+    ESP_LOGD(TAG, "exit %s\n", __func__);
+    return result;
 }
 
 int ble_mesh_node_enable_bearer(int argc, char **argv)
@@ -546,6 +666,35 @@ int ble_mesh_node_enable_bearer(int argc, char **argv)
         return 1;
     }
 
+    ESP_LOGD(TAG, "exit %s\n", __func__);
+    return err;
+}
+
+int ble_mesh_deinit(int argc, char **argv)
+{
+    int err;
+    esp_ble_mesh_deinit_param_t param = {};
+
+    ESP_LOGD(TAG, "enter %s \n", __func__);
+
+    int nerrors = arg_parse(argc, argv, (void **) &deinit);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, deinit.end, argv[0]);
+        return 1;
+    }
+    if (deinit.action->count != 0) {
+        param.erase_flash = deinit.action->ival[0];
+        err = esp_ble_mesh_deinit(&param);
+        if (err == ESP_OK) {
+            ESP_LOGI(TAG, "Bm:DeInit,OK,%d,\n", deinit.action->ival[0]);
+        }
+        else{
+            ESP_LOGI(TAG, "Bm:DeInit,Fail\n");
+        }
+    }
+    else {
+        return 1;
+    }
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return err;
 }
@@ -630,13 +779,13 @@ int ble_mesh_node_enter_network_auto(int argc, char **argv)
 
     ESP_LOGD(TAG, "enter %s\n", __func__);
 
+    err = get_value_string((char *)node_network_info.net_key->sval[0], (char *)info.net_key);
+    err = get_value_string((char *)node_network_info.dev_key->sval[0], (char *)info.dev_key);
+    err = get_value_string((char *)node_network_info.app_key->sval[0], (char *)info.app_key);
     arg_int_to_value(node_network_info.net_idx, info.net_idx, "network key index");
     arg_int_to_value(node_network_info.unicast_addr, info.unicast_addr, "unicast address");
     arg_int_to_value(node_network_info.app_idx, info.app_idx, "appkey index");
     arg_int_to_value(node_network_info.group_addr, info.group_addr, "group address");
-    err = get_value_string((char *)node_network_info.net_key->sval[0], (char *)info.net_key);
-    err = get_value_string((char *)node_network_info.dev_key->sval[0], (char *)info.dev_key);
-    err = get_value_string((char *)node_network_info.app_key->sval[0], (char *)info.app_key);
 
     err = bt_mesh_device_auto_enter_network(&info);
     if (err == ESP_OK) {
@@ -672,9 +821,15 @@ int ble_mesh_provision_address(int argc, char **argv)
         str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], del_dev.addr);
         arg_int_to_value(provisioner_addr.addr_type, device_addr.addr_type, "address type");
         arg_int_to_value(provisioner_addr.addr_type, del_dev.addr_type, "address type");
-    } else if (provisioner_addr.device_uuid->count != 0) {
-        get_value_string((char *)provisioner_addr.device_uuid->sval[0], (char *)device_addr.uuid);
-        get_value_string((char *)provisioner_addr.device_uuid->sval[0], (char *)del_dev.uuid);
+    }
+    if (provisioner_addr.device_uuid->count != 0) {
+        uint8_t tmp_uuid[16] = {0};
+        err = get_value_string((char *)provisioner_addr.device_uuid->sval[0], (char *)tmp_uuid);
+        if (err != ESP_OK) {
+            str_2_mac((uint8_t *)provisioner_addr.device_uuid->sval[0], tmp_uuid);
+        }
+        memcpy(device_addr.uuid, tmp_uuid, 16);
+        memcpy(del_dev.uuid, tmp_uuid, 16);
         del_dev.flag = BIT(1);
     }
 
@@ -703,7 +858,7 @@ int ble_mesh_provisioner_add_key(int argc, char **argv)
     uint8_t key[16] = {0};
     esp_ble_mesh_prov_data_info_t info = {
         .net_idx = 1,
-        .flag = NET_IDX_FLAG,
+        .flag = PROV_DATA_NET_IDX_FLAG,
     };
     ESP_LOGD(TAG, " enter %s\n", __func__);
 
@@ -858,7 +1013,19 @@ void ble_mesh_register_cmd(void)
         .func = &ble_mesh_init,
         .argtable = &component,
     };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&model_cmd) );
+    ESP_ERROR_CHECK( esp_console_cmd_register(&model_cmd));
+
+    deinit.action = arg_int0("o", NULL, "<action>", "deinit action");
+    deinit.end = arg_end(1);
+
+    const esp_console_cmd_t deinit_cmd = {
+        .command = "bmdeinit",
+        .help = "ble mesh: provisioner/node deinit",
+        .hint = NULL,
+        .func = &ble_mesh_deinit,
+        .argtable = &deinit,
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&deinit_cmd));
 
     provisioner_addr.add_del = arg_str1("z", NULL, "<add/delete>", "action type");
     provisioner_addr.device_addr = arg_str0("d", NULL, "<address>", "device address");
@@ -896,7 +1063,7 @@ void ble_mesh_register_cmd(void)
         .func = &ble_mesh_load_oob,
         .argtable = &oob,
     };
-    ESP_ERROR_CHECK( esp_console_cmd_register(&oob_cmd) );
+    ESP_ERROR_CHECK( esp_console_cmd_register(&oob_cmd));
 
     bearer.bearer = arg_int0("b", NULL, "<bearer>", "supported bearer");
     bearer.enable = arg_int0("e", NULL, "<enable/disable>", "bearers node supported");
@@ -1027,4 +1194,23 @@ void ble_mesh_register_cmd(void)
         .argtable = &node_network_info,
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&node_network_info_cmd));
+
+    heartbeat.action_type = arg_str0("z", NULL, "<action type>", "action type");
+    heartbeat.op = arg_int0("o", NULL, "<heartbeat filter>", "add or remove a heartbeat filter entry");
+    heartbeat.hb_src = arg_int0("s", NULL, "<source address>", "Heartbeat source address");
+    heartbeat.hb_dst = arg_int0("d", NULL, "<destination address>", "Heartbeat destination address");
+    heartbeat.type = arg_int0("t", NULL, "<heartbeat filter>", "set the heartbeat filter type");
+    heartbeat.enable = arg_int0("e", NULL, "<enable/disable>", "enable or disable receiving heartbeat messages");
+    heartbeat.end = arg_end(1);
+
+    const esp_console_cmd_t provisioner_heartbeat_cmd = {
+        .command = "bmphb",
+        .help = "ble mesh provisioner: support recv heartbeat",
+        .hint = NULL,
+        .func = &ble_mesh_provisioner_heartbeat,
+        .argtable = &heartbeat,
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&provisioner_heartbeat_cmd));
+
+    init_transactions();
 }

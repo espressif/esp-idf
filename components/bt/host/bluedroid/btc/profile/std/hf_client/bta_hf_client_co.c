@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "bta/bta_hf_client_co.h"
 #include "hci/hci_audio.h"
@@ -329,9 +321,11 @@ uint32_t bta_hf_client_sco_co_out_data(UINT8 *p_buf)
         return btc_hf_client_outgoing_data_cb_to_app(p_buf, hf_raw_pkt_size);
     } else if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
         // mSBC
+#if (HFP_DYNAMIC_MEMORY == TRUE)
         if(bta_hf_client_co_cb_ptr == NULL) {
             return 0;
         }
+#endif /* HFP_DYNAMIC_MEMORY == TRUE */
         if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE / 2) {
             if (bta_hf_client_co_cb.encode_first_pkt){
                 UINT32 size = btc_hf_client_outgoing_data_cb_to_app((UINT8 *)bta_hf_client_co_cb.encoder.as16PcmBuffer, HF_SBC_ENC_RAW_DATA_SIZE);

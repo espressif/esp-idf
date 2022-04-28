@@ -14,6 +14,10 @@ Notes
  - Currently, SPIFFS does not support directories, it produces a flat structure. If SPIFFS is mounted under ``/spiffs``, then creating a file with the path ``/spiffs/tmp/myfile.txt`` will create a file called ``/tmp/myfile.txt`` in SPIFFS, instead of ``myfile.txt`` in the directory ``/spiffs/tmp``.
  - It is not a real-time stack. One write operation might take much longer than another.
  - For now, it does not detect or handle bad blocks.
+ - SPIFFS is able to reliably utilize only around 75% of assigned partition space.
+ - When the filesystem is running out of space, the garbage collector is trying to find free space by scanning the filesystem multiple times, which can take up to several seconds per write function call, depending on required space. This is caused by the SPIFFS design and the issue has been reported multiple times (e.g. `here <https://github.com/espressif/esp-idf/issues/1737>`_) and in the official `SPIFFS github repository <https://github.com/pellepl/spiffs/issues/>`_. The issue can be partially mitigated by the `SPIFFS configuration <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_.
+ - Deleting a file does not always remove the whole file, which leaves unusable sections throughout the filesystem.
+ - When ESP32 experiences a power loss during a file system operation it could result in SPIFFS corruption. However the file system still might be recovered via ``esp_spiffs_check`` function. More details in the official SPIFFS `FAQ <https://github.com/pellepl/spiffs/wiki/FAQ>`.
 
 Tools
 -----
@@ -39,49 +43,21 @@ These optional arguments correspond to a possible SPIFFS build configuration. To
 
 When the image is created, it can be flashed using ``esptool.py`` or ``parttool.py``.
 
-Aside from invoking the ``spiffsgen.py`` standalone by manually running it from the command line or a script, it is also possible to invoke ``spiffsgen.py`` directly from the build system by calling ``spiffs_create_partition_image``.
-
-Make::
-
-    SPIFFS_IMAGE_FLASH_IN_PROJECT := ...
-    SPIFFS_IMAGE_DEPENDS := ...
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
-
-CMake::
+Aside from invoking the ``spiffsgen.py`` standalone by manually running it from the command line or a script, it is also possible to invoke ``spiffsgen.py`` directly from the build system by calling ``spiffs_create_partition_image``::
 
     spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT] [DEPENDS dep dep dep...])
 
 This is more convenient as the build configuration is automatically passed to the tool, ensuring that the generated image is valid for that build. An example of this is while the *image_size* is required for the standalone invocation, only the *partition* name is required when using ``spiffs_create_partition_image`` -- the image size is automatically obtained from the project's partition table.
 
-Due to the differences in structure between Make and CMake, it is important to note that:
+``spiffs_create_partition_image`` must be called from one of the component CMakeLists.txt files.
 
-- for Make ``spiffs_create_partition_image`` must be called from the project Makefile
-- for CMake ``spiffs_create_partition_image`` must be called from one of the component CMakeLists.txt files
-
-Optionally, user can opt to have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash`` or ``make flash`` by specifying ``FLASH_IN_PROJECT``.  For example,
-
-in Make::
-
-    SPIFFS_IMAGE_FLASH_IN_PROJECT := 1
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
-
-in CMake::
+Optionally, users can opt to have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash`` by specifying ``FLASH_IN_PROJECT``.  For example::
 
     spiffs_create_partition_image(my_spiffs_partition my_folder FLASH_IN_PROJECT)
 
 If FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py``, ``parttool.py``, or a custom build system target.
 
-There are cases where the contents of the base directory itself is generated at build time. Users can use DEPENDS/SPIFFS_IMAGE_DEPENDS to specify targets that should be executed before generating the image.
-
-in Make::
-
-    dep:
-        ...
-
-    SPIFFS_IMAGE_DEPENDS := dep
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
-
-in CMake::
+There are cases where the contents of the base directory itself is generated at build time. Users can use DEPENDS/SPIFFS_IMAGE_DEPENDS to specify targets that should be executed before generating the image::
 
     add_custom_target(dep COMMAND ...)
 
@@ -108,7 +84,6 @@ To pack a folder into a 1-Megabyte image, run::
 To flash the image onto {IDF_TARGET_NAME} at offset 0x110000, run::
 
     python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
-
 
 Notes on which SPIFFS tool to use
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

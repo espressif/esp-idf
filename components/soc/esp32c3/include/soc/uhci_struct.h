@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct uhci_dev_s {
     union {
         struct {
             uint32_t tx_rst:             1;            /*Write 1  then write 0 to this bit to reset decode state machine.*/

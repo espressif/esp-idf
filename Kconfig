@@ -1,12 +1,14 @@
 #
-# For a description of the syntax of this configuration file,
-# see kconfig/kconfig-language.txt.
+# Please run the following command for opening a page with more information about this configuration file:
+# idf.py docs -sp api-reference/kconfig.html
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
+    orsource "./components/soc/$IDF_TARGET/include/soc/Kconfig.soc_caps.in"
+
     config IDF_CMAKE
         bool
-        option env="IDF_CMAKE"
+        default "y"
 
     config IDF_ENV_FPGA
         # This option is for internal use only
@@ -21,6 +23,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "n"
 
+    config IDF_TARGET_ARCH
+        string
+        default "riscv" if IDF_TARGET_ARCH_RISCV
+        default "xtensa" if IDF_TARGET_ARCH_XTENSA
+
     config IDF_TARGET
         # This option records the IDF target when sdkconfig is generated the first time.
         # It is not updated if environment variable $IDF_TARGET changes later, and
@@ -28,6 +35,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         # CONFIG_IDF_TARGET and $IDF_TARGET.
         string
         default "$IDF_TARGET"
+
+    config IDF_TARGET_LINUX
+        bool
+        default "y" if IDF_TARGET="linux"
 
     config IDF_TARGET_ESP32
         bool
@@ -45,22 +56,38 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32s3"
         select IDF_TARGET_ARCH_XTENSA
 
-    choice IDF_TARGET_ESP32S3_BETA_VERSION
-        prompt "ESP32-S3 beta version"
-        depends on IDF_TARGET_ESP32S3
-        default IDF_TARGET_ESP32S3_BETA_VERSION_3
-        help
-            Currently ESP32-S3 has several beta versions for internal use only.
-            Select the one that matches your chip model.
-
-        config IDF_TARGET_ESP32S3_BETA_VERSION_3
-            bool
-            prompt "ESP32-S3 beta3"
-    endchoice
-
     config IDF_TARGET_ESP32C3
         bool
         default "y" if IDF_TARGET="esp32c3"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    config IDF_TARGET_ESP32H2
+        bool
+        default "y" if IDF_TARGET="esp32h2"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+
+    choice IDF_TARGET_ESP32H2_BETA_VERSION
+        prompt "ESP32-H2 beta version"
+        depends on IDF_TARGET_ESP32H2
+        default IDF_TARGET_ESP32H2_BETA_VERSION_1
+        help
+            Currently ESP32-H2 has several beta versions for internal use only.
+            Select the one that matches your chip model.
+
+        config IDF_TARGET_ESP32H2_BETA_VERSION_1
+            bool
+            prompt "ESP32-H2 beta1"
+        config IDF_TARGET_ESP32H2_BETA_VERSION_2
+            bool
+            prompt "ESP32-H2 beta2"
+            select ESPTOOLPY_NO_STUB    # TODO: IDF-4288
+    endchoice
+
+    config IDF_TARGET_ESP32C2
+        bool
+        default "y" if IDF_TARGET="esp32c2"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
@@ -73,61 +100,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0000 if IDF_TARGET_ESP32
         default 0x0002 if IDF_TARGET_ESP32S2
         default 0x0005 if IDF_TARGET_ESP32C3
-        default 0x0006 if IDF_TARGET_ESP32S3
+        default 0x0009 if IDF_TARGET_ESP32S3
+        default 0x000C if IDF_TARGET_ESP32C2
+        default 0x000A if IDF_TARGET_ESP32H2_BETA_VERSION_1
+        default 0x000E if IDF_TARGET_ESP32H2_BETA_VERSION_2 # ESP32H2-TODO: IDF-3475
         default 0xFFFF
 
-    menu "SDK tool configuration"
-        config SDK_TOOLPREFIX
-            string "Compiler toolchain path/prefix"
-            default "xtensa-esp32-elf-" if IDF_TARGET_ESP32
-            default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2
-            default "xtensa-esp32s3-elf-" if IDF_TARGET_ESP32S3
-            default "riscv32-esp-elf-" if IDF_TARGET_ESP32C3
-
-            help
-                The prefix/path that is used to call the toolchain. The default setting assumes
-                a crosstool-ng gcc setup that is in your PATH.
-
-        config SDK_PYTHON
-            string "Python interpreter"
-            depends on !IDF_CMAKE
-            default "python"
-            help
-                The executable name/path that is used to run python.
-
-                (Note: This option is used with the legacy GNU Make build system only.)
-
-        config SDK_MAKE_WARN_UNDEFINED_VARIABLES
-            bool "'make' warns on undefined variables"
-            depends on !IDF_CMAKE
-            default "y"
-            help
-                Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
-                print a warning any time an undefined variable is referenced.
-
-                This option helps find places where a variable reference is misspelled
-                or otherwise missing, but it can be unwanted if you have Makefiles which
-                depend on undefined variables expanding to an empty string.
-
-                (Note: this option is used with the legacy GNU Make build system only.)
-
-        config SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
-            bool "Toolchain supports time_t wide 64-bits"
-            default n
-            help
-                Enable this option in case you have a custom toolchain which supports time_t wide 64-bits.
-                This option checks time_t is 64-bits and disables ROM time functions
-                to use the time functions from the toolchain instead.
-                This option allows resolving the Y2K38 problem.
-                See "Setup Linux Toolchain from Scratch" to build
-                a custom toolchain which supports 64-bits time_t.
-
-                Note: ESP-IDF does not currently come with any pre-compiled toolchain
-                that supports 64-bit wide time_t.
-                This will change in a future major release,
-                but currently 64-bit time_t requires a custom built toolchain.
-
-    endmenu  # SDK tool configuration
 
     menu "Build type"
 
@@ -187,6 +165,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             config APP_BUILD_TYPE_APP_2NDBOOT
                 bool
                 prompt "Default (binary application + 2nd stage bootloader)"
+                depends on !IDF_TARGET_LINUX
                 select APP_BUILD_GENERATE_BINARIES
                 select APP_BUILD_BOOTLOADER
                 select APP_BUILD_USE_FLASH_SECTIONS
@@ -205,6 +184,21 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config APP_BUILD_USE_FLASH_SECTIONS
             bool # Whether to place code/data into memory-mapped flash sections
+
+        config APP_REPRODUCIBLE_BUILD
+            bool "Enable reproducible build"
+            default n
+            select COMPILER_HIDE_PATHS_MACROS
+            help
+                If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
+                automatically. (or will be append if you have one already)
+
+        config APP_NO_BLOBS
+            bool "No Binary Blobs"
+            default n
+            help
+                If enabled, this disables the linking of binary libraries in the application build. Note
+                that after enabling this Wi-Fi/Bluetooth will not work.
 
     endmenu # Build type
 
@@ -283,6 +277,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
+        config COMPILER_OPTIMIZATION_ASSERTION_LEVEL
+            int
+            default 0 if COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
+            default 1 if COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
+            default 2 if COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
+
         config COMPILER_OPTIMIZATION_CHECKS_SILENT
             bool "Disable messages in ESP_RETURN_ON_* and ESP_EXIT_ON_* macros"
             default n
@@ -296,7 +296,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         menuconfig COMPILER_HIDE_PATHS_MACROS
             bool "Replace ESP-IDF and project paths in binaries"
             default y
-            depends on IDF_CMAKE
             help
                 When expanding the __FILE__ and __BASE_FILE__ macros, replace paths inside ESP-IDF
                 with paths relative to the placeholder string "IDF", and convert paths inside the
@@ -393,6 +392,18 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 For C++, this warns about the deprecated conversion from string
                 literals to ``char *``.
 
+        config COMPILER_SAVE_RESTORE_LIBCALLS
+            bool "Enable -msave-restore flag to reduce code size"
+            depends on IDF_TARGET_ARCH_RISCV
+            help
+                Adds -msave-restore to C/C++ compilation flags.
+
+                When this flag is enabled, compiler will call library functions to
+                save/restore registers in function prologues/epilogues. This results
+                in lower overall code size, at the expense of slightly reduced performance.
+
+                This option can be enabled for RISC-V targets only.
+
         config COMPILER_DISABLE_GCC8_WARNINGS
             bool "Disable new warnings introduced in GCC 6 - 8"
             default "n"
@@ -412,22 +423,3 @@ mainmenu "Espressif IoT Development Framework Configuration"
     menu "Component config"
         source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
-
-    menu "Compatibility options"
-        config LEGACY_INCLUDE_COMMON_HEADERS
-            bool "Include headers across components as before IDF v4.0"
-            default n
-            help
-                Soc, esp32, and driver components, the most common
-                components. Some header of these components are included
-                implicitly by headers of other components before IDF v4.0.
-                It's not required for high-level components, but still
-                included through long header chain everywhere.
-
-                This is harmful to the modularity. So it's changed in IDF
-                v4.0.
-
-                You can still include these headers in a legacy way until it
-                is totally deprecated by enable this option.
-
-    endmenu #Compatibility options

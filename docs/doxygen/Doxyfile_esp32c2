@@ -1,0 +1,2 @@
+INPUT += \
+         $(PROJECT_PATH)/components/driver/include/driver/temperature_sensor.h \

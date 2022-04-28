@@ -43,11 +43,11 @@ TEST_CASE("Capabilities aligned allocator test", "[heap]")
     uint32_t *not_permitted_buf = (uint32_t *)heap_caps_aligned_alloc(alignments, (alignments + 137), MALLOC_CAP_EXEC | MALLOC_CAP_32BIT);
     TEST_ASSERT( not_permitted_buf == NULL );
 
-#if CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_ESP32S2_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
     alignments = 0;
     printf("[ALIGNED_ALLOC] Allocating from external memory: \n");
 
-    for(;alignments <= 1024 * 1024; alignments++) {
+    for(;alignments <= 1024 * 512; alignments++) {
         //Now try to take aligned memory from IRAM:
         uint8_t *buf = (uint8_t *)heap_caps_aligned_alloc(alignments, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {
@@ -112,11 +112,10 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
     uint32_t *not_permitted_buf = (uint32_t *)heap_caps_aligned_calloc(alignments, 1, (alignments + 137), MALLOC_CAP_32BIT);
     TEST_ASSERT( not_permitted_buf == NULL );
 
-#if CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_ESP32S2_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
     alignments = 0;
     printf("[ALIGNED_ALLOC] Allocating from external memory: \n");
-
-    for(;alignments <= 1024 * 1024; alignments++) {
+    for(;alignments <= 1024 * 512; alignments++) {
         //Now try to take aligned memory from IRAM:
         uint8_t *buf = (uint8_t *)(uint8_t *)heap_caps_aligned_calloc(alignments, 1, 10*1024, MALLOC_CAP_SPIRAM);
         if(((alignments & (alignments - 1)) != 0) || (!alignments)) {

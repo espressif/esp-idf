@@ -1,16 +1,5 @@
-# Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 """
 Common logic to assign test cases to CI jobs.
@@ -46,9 +35,12 @@ import re
 import yaml
 
 try:
-    from yaml import CLoader as Loader
+    from yaml import CLoader
+    has_cloader = True
 except ImportError:
-    from yaml import Loader as Loader
+    has_cloader = False
+
+from yaml import Loader
 
 from . import CaseConfig, GitlabCIJob, SearchCases, console_log
 
@@ -180,12 +172,15 @@ class AssignTest(object):
     def _parse_gitlab_ci_config(self, ci_config_file):
 
         with open(ci_config_file, 'r') as f:
-            ci_config = yaml.load(f, Loader=Loader)
+            ci_config = yaml.load(f, Loader=CLoader if has_cloader else Loader)
 
         job_list = list()
         for job_name in ci_config:
+            if 'pytest' in job_name:
+                continue
             if self.CI_TEST_JOB_PATTERN.search(job_name) is not None:
                 job_list.extend(self._handle_parallel_attribute(job_name, ci_config[job_name]))
+
         job_list.sort(key=lambda x: x['name'])
         return job_list
 
@@ -319,7 +314,7 @@ class AssignTest(object):
         # failures
         if failed_to_assign:
             console_log('Too many test cases vs jobs to run. '
-                        'Please increase parallel count in tools/ci/config/target-test.yml '
+                        'Please increase parallel count in .gitlab/ci/target-test.yml '
                         'for jobs with specific tags:', 'R')
             failed_group_count = self._count_groups_by_keys(failed_to_assign)
             for tags in failed_group_count:

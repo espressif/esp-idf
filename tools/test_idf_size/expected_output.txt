@@ -1,8 +1,11 @@
 Total sizes:
- DRAM .data size:    9324 bytes
- DRAM .bss  size:    8296 bytes
-Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
-Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
-      Flash code:  146944 bytes
-    Flash rodata:   39580 bytes
-Total image size:~ 234780 bytes (.bin may be padded larger)
+Used static DRAM:   17620 bytes ( 163116 remain, 9.7% used)
+      .data size:    9324 bytes
+      .bss  size:    8296 bytes
+Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)
+      .text size:   37908 bytes
+   .vectors size:    1024 bytes
+Used Flash size :  186524 bytes
+      .text     :  146944 bytes
+      .rodata   :   39580 bytes
+Total image size:  234780 bytes (.bin may be padded larger)

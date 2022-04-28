@@ -11,7 +11,7 @@ Structure
 - If the example has additional functionality, split it logically into separate C or C++ source files under ``main`` and place a corresponding header file in the same directory.
 - If the example has a lot of additional functionality, consider adding a ``components`` directory to the example project and make some example-specific components with library functionality. Only do this if the components are specific to the example, if they're generic or common functionality then they should be added to ESP-IDF itself.
 - The example should have a ``README.md`` file. Use the :idf_file:`template example README <docs/TEMPLATE_EXAMPLE_README.md>` and adapt it for your particular example.
-- Examples should have an ``example_test.py`` file for running an automated example test. If submitting a GitHub Pull Request which includes an example, it's OK not to include this file initially. The details can be discussed as part of the `Pull Request <https://help.github.com/articles/creating-a-pull-request/>`_.
+- Examples should have a ``pytest_<example name>.py`` file for running an automated example test. If submitting a GitHub Pull Request which includes an example, it's OK not to include this file initially. The details can be discussed as part of the `Pull Request <https://help.github.com/articles/creating-a-pull-request/>`_. Please refer to :doc:`IDF Tests with Pytest Guide <esp-idf-tests-with-pytest>` for details.
 
 General Guidelines
 ------------------
@@ -23,7 +23,7 @@ Checklist
 
 Checklist before submitting a new example:
 
-* Example project name (in ``Makefile`` and ``README.md``) uses the word "example". Use "example" instead of "demo", "test" or similar words.
+* Example project name (in ``README.md``) uses the word "example". Use "example" instead of "demo", "test" or similar words.
 * Example does one distinct thing. If the example does more than one thing at a time, split it into two or more examples.
 * Example has a ``README.md`` file which is similar to the :idf_file:`template example README <docs/TEMPLATE_EXAMPLE_README.md>`.
 * Functions and variables in the example are named according to :ref:`naming section of the style guide <style-guide-naming>`. (For non-static names which are only specific to the example's source files, you can use ``example`` or something similar as a prefix.)

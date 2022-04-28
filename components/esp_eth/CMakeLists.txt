@@ -2,13 +2,15 @@ idf_build_get_property(components_to_build BUILD_COMPONENTS)
 
 set(srcs)
 set(include)
-set(priv_requires)
+# As CONFIG_ETH_ENABLED comes from Kconfig, it is not evaluated yet
+# when components are being registered.
+# Thus, always add the (private) requirements, regardless of Kconfig
+set(priv_requires driver log esp_timer)
 
 # If Ethernet disabled in Kconfig, this is a config-only component
 if(CONFIG_ETH_ENABLED)
     set(srcs "src/esp_eth.c" "src/esp_eth_phy.c")
     set(include "include")
-    set(priv_requires "driver" "log" "esp_timer") # require "driver" for using some GPIO APIs
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         # esp_netif related
@@ -23,7 +25,7 @@ if(CONFIG_ETH_ENABLED)
                          "src/esp_eth_phy_dp83848.c"
                          "src/esp_eth_phy_ip101.c"
                          "src/esp_eth_phy_ksz80xx.c"
-                         "src/esp_eth_phy_lan8720.c"
+                         "src/esp_eth_phy_lan87xx.c"
                          "src/esp_eth_phy_rtl8201.c")
     endif()
 

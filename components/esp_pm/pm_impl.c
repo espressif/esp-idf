@@ -1,16 +1,8 @@
-// Copyright 2016-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -31,7 +23,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#if __XTENSA__
+#if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 #include "freertos/xtensa_timer.h"
 #include "xtensa/core-macros.h"
 #endif
@@ -39,6 +31,7 @@
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_private.h"
+#include "esp_private/esp_clk.h"
 
 #include "esp_sleep.h"
 
@@ -46,25 +39,27 @@
 
 // [refactor-todo] opportunity for further refactor
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
 #include "esp32/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
 #include "esp32s2/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
 #include "esp32s3/pm.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
 #include "esp32c3/pm.h"
+#include "driver/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/pm.h"
+#include "driver/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/pm.h"
 #include "driver/gpio.h"
 #endif
 
 #define MHZ (1000000)
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work
  * for the purpose of detecting a deadlock.
  */
@@ -74,7 +69,7 @@
  * than this. This is to prevent setting CCOMPARE below CCOUNT.
  */
 #define CCOMPARE_MIN_CYCLES_IN_FUTURE 1000
-#endif
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 /* When light sleep is used, wake this number of microseconds earlier than
  * the next tick.
@@ -84,18 +79,18 @@
 #if CONFIG_IDF_TARGET_ESP32
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 10
-#define DEFAULT_CPU_FREQ CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S3
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define REF_CLK_DIV_MIN 2
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define REF_CLK_DIV_MIN 2
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -108,8 +103,6 @@ static portMUX_TYPE s_switch_lock = portMUX_INITIALIZER_UNLOCKED;
 static pm_mode_t s_mode = PM_MODE_CPU_MAX;
 /* True when switch is in progress */
 static volatile bool s_is_switching;
-/* When switch is in progress, this is the mode we are switching into */
-static pm_mode_t s_new_mode = PM_MODE_CPU_MAX;
 /* Number of times each mode was locked */
 static size_t s_mode_lock_counts[PM_MODE_COUNT];
 /* Bit mask of locked modes. BIT(i) is set iff s_mode_lock_counts[i] > 0. */
@@ -177,7 +170,7 @@ static const char* s_mode_names[] = {
 };
 #endif // WITH_PROFILING
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 /* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
  * Used in conjunction with cross-core interrupt to update CCOMPARE on the other CPU.
  */
@@ -190,7 +183,7 @@ static uint32_t s_ccount_div;
 static uint32_t s_ccount_mul;
 
 static void update_ccompare(void);
-#endif // __XTENSA__
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 static const char* TAG = "pm";
 
@@ -230,6 +223,10 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const esp_pm_config_esp32s3_t* config = (const esp_pm_config_esp32s3_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C3
     const esp_pm_config_esp32c3_t* config = (const esp_pm_config_esp32c3_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32H2
+    const esp_pm_config_esp32h2_t* config = (const esp_pm_config_esp32h2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32C2
+    const esp_pm_config_esp32c2_t* config = (const esp_pm_config_esp32c2_t*) vconfig;
 #endif
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -251,7 +248,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
         return ESP_ERR_INVALID_ARG;
     }
 
-    int xtal_freq_mhz = (int) rtc_clk_xtal_freq_get();
+    int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
     if (min_freq_mhz < xtal_freq_mhz && min_freq_mhz * MHZ / REF_CLK_FREQ < REF_CLK_DIV_MIN) {
         ESP_LOGW(TAG, "min_freq_mhz should be >= %d", REF_CLK_FREQ * REF_CLK_DIV_MIN / MHZ);
         return ESP_ERR_INVALID_ARG;
@@ -336,6 +333,10 @@ esp_err_t esp_pm_get_configuration(void* vconfig)
     esp_pm_config_esp32s3_t* config = (esp_pm_config_esp32s3_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t* config = (esp_pm_config_esp32c3_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t* config = (esp_pm_config_esp32h2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP32C2
+    esp_pm_config_esp32c2_t* config = (esp_pm_config_esp32c2_t*) vconfig;
 #endif
 
     portENTER_CRITICAL(&s_switch_lock);
@@ -394,7 +395,7 @@ void IRAM_ATTR esp_pm_impl_switch_mode(pm_mode_t mode,
 #endif // WITH_PROFILING
     }
     portEXIT_CRITICAL_SAFE(&s_switch_lock);
-    if (need_switch && new_mode != s_mode) {
+    if (need_switch) {
         do_switch(new_mode);
     }
 }
@@ -414,8 +415,8 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         esp_timer_private_update_apb_freq(apb_ticks_per_us);
     }
 
-#if __XTENSA__
-#if XT_RTOS_TIMER_INT
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+#ifdef XT_RTOS_TIMER_INT
     /* Calculate new tick divisor */
     _xt_tick_divisor = ticks_per_us * MHZ / XT_TICK_PER_SEC;
 #endif
@@ -451,7 +452,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         s_ccount_div = 0;
         ESP_PM_TRACE_EXIT(CCOMPARE_UPDATE, core_id);
     }
-#endif // __XTENSA__
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 }
 
 /**
@@ -469,18 +470,17 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (!s_is_switching) {
             break;
         }
-        if (s_new_mode <= new_mode) {
-            portEXIT_CRITICAL_ISR(&s_switch_lock);
-            return;
-        }
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
         if (s_need_update_ccompare[core_id]) {
             s_need_update_ccompare[core_id] = false;
         }
 #endif
         portEXIT_CRITICAL_ISR(&s_switch_lock);
     } while (true);
-    s_new_mode = new_mode;
+    if (new_mode == s_mode) {
+        portEXIT_CRITICAL_ISR(&s_switch_lock);
+        return;
+    }
     s_is_switching = true;
     bool config_changed = s_config_changed;
     s_config_changed = false;
@@ -518,7 +518,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
     portEXIT_CRITICAL_ISR(&s_switch_lock);
 }
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 /**
  * @brief Calculate new CCOMPARE value based on s_ccount_{mul,div}
  *
@@ -528,6 +528,10 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
  */
 static void IRAM_ATTR update_ccompare(void)
 {
+#if CONFIG_PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+    /* disable level 4 and below */
+    uint32_t irq_status = XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
+#endif
     uint32_t ccount = cpu_hal_get_cycle_count();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
     if ((ccompare - CCOMPARE_MIN_CYCLES_IN_FUTURE) - ccount < UINT32_MAX / 2) {
@@ -538,8 +542,11 @@ static void IRAM_ATTR update_ccompare(void)
             XTHAL_SET_CCOMPARE(XT_TIMER_INDEX, new_ccompare);
         }
     }
+#if CONFIG_PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+    XTOS_RESTORE_INTLEVEL(irq_status);
+#endif
 }
-#endif // __XTENSA__
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 static void IRAM_ATTR leave_idle(void)
 {
@@ -622,7 +629,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
     int core_id = xPortGetCoreID();
     if (!should_skip_light_sleep(core_id)) {
         /* Calculate how much we can sleep */
-        int64_t next_esp_timer_alarm = esp_timer_get_next_alarm();
+        int64_t next_esp_timer_alarm = esp_timer_get_next_alarm_for_wake_up();
         int64_t now = esp_timer_get_time();
         int64_t time_until_next_alarm = next_esp_timer_alarm - now;
         int64_t wakeup_delay_us = portTICK_PERIOD_MS * 1000LL * xExpectedIdleTime;
@@ -645,7 +652,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 /* Adjust RTOS tick count based on the amount of time spent in sleep */
                 vTaskStepTick(slept_ticks);
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
                 /* Trigger tick interrupt, since sleep time was longer
                  * than portTICK_PERIOD_MS. Note that setting INTSET does not
                  * work for timer interrupt, and changing CCOMPARE would clear
@@ -655,7 +662,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
-#elif __riscv
+#else
                 portYIELD_WITHIN_API();
 #endif
             }
@@ -747,7 +754,7 @@ void esp_pm_impl_init(void)
      * This will be modified later by a call to esp_pm_configure.
      */
     rtc_cpu_freq_config_t default_config;
-    if (!rtc_clk_cpu_freq_mhz_to_config(DEFAULT_CPU_FREQ, &default_config)) {
+    if (!rtc_clk_cpu_freq_mhz_to_config(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, &default_config)) {
         assert(false && "unsupported frequency");
     }
     for (size_t i = 0; i < PM_MODE_COUNT; ++i) {
@@ -755,7 +762,7 @@ void esp_pm_impl_init(void)
     }
 
 #ifdef CONFIG_PM_DFS_INIT_AUTO
-    int xtal_freq = (int) rtc_clk_xtal_freq_get();
+    int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
 #if CONFIG_IDF_TARGET_ESP32
     esp_pm_config_esp32_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -764,9 +771,13 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32s3_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP32C2
+    esp_pm_config_esp32c2_t cfg = {
 #endif
-        .max_freq_mhz = DEFAULT_CPU_FREQ,
-        .min_freq_mhz = xtal_freq,
+        .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = xtal_freq_mhz,
     };
 
     esp_pm_configure(&cfg);
@@ -776,7 +787,7 @@ void esp_pm_impl_init(void)
 void esp_pm_impl_idle_hook(void)
 {
     int core_id = xPortGetCoreID();
-    uint32_t state = portENTER_CRITICAL_NESTED();
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
     if (!s_core_idle[core_id]
 #ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
     && !periph_should_skip_light_sleep()
@@ -785,7 +796,7 @@ void esp_pm_impl_idle_hook(void)
         esp_pm_lock_release(s_rtos_lock_handle[core_id]);
         s_core_idle[core_id] = true;
     }
-    portEXIT_CRITICAL_NESTED(state);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
     ESP_PM_TRACE_ENTER(IDLE, core_id);
 }
 
@@ -796,8 +807,8 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     /* Prevent higher level interrupts (than the one this function was called from)
      * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
      */
-    uint32_t state = portENTER_CRITICAL_NESTED();
-#if __XTENSA__ && (portNUM_PROCESSORS == 2)
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+#if defined(CONFIG_FREERTOS_SYSTICK_USES_CCOUNT) && (portNUM_PROCESSORS == 2)
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
         s_need_update_ccompare[core_id] = false;
@@ -806,8 +817,8 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     }
 #else
     leave_idle();
-#endif // portNUM_PROCESSORS == 2
-    portEXIT_CRITICAL_NESTED(state);
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && portNUM_PROCESSORS == 2
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 

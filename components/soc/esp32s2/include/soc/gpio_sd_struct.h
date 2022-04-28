@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct gpio_sd_dev_s {
     union {
         struct {
             uint32_t duty:         8;

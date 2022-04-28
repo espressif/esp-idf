@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: trailing-whitespace
         # note: whitespace exclusions use multiline regex, see https://pre-commit.com/#regular-expressions
@@ -26,12 +26,12 @@ repos:
         args: ['-f=lf']
       - id: double-quote-string-fixer
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 3.9.2
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
   - repo: https://github.com/pycqa/isort
-    rev: 5.6.4
+    rev: 5.9.3
     hooks:
       - id: isort
         name: isort (python)
@@ -71,6 +71,7 @@ repos:
         name: Validate Codeowner File
         entry: tools/ci/check_codeowners.py ci-check
         language: python
+        always_run: true
         files: '\.gitlab/CODEOWNERS'
         pass_filenames: false
       - id: check-rules-yml
@@ -92,11 +93,50 @@ repos:
       - id: mypy-check
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
-        additional_dependencies: ['mypy==0.800', 'mypy-extensions==0.4.3']
+        additional_dependencies:
+          - 'mypy==0.800'
+          - 'mypy-extensions==0.4.3'
         language: python
         types: [python]
+      - id: check-copyright
+        name: Check copyright notices
+        entry: tools/ci/check_copyright.py --verbose --replace
+        additional_dependencies:
+          - 'comment_parser == 1.2.3'
+          - 'thefuzz == 0.19.0'
+          - 'thefuzz[speedup] == 0.19.0; sys_platform != "win32"'
+          # don't depend on python-Levenshtein on Windows, as it requires Microsoft C++ Build Tools to install
+          - 'pyyaml == 5.4.1'
+          - 'pathspec == 0.9.0'
+        language: python
+        files: \.(py|c|h|cpp|hpp|ld|s|S)$
+        require_serial: true
+      - id: check-requirement-files
+        name: Check requirement files
+        entry: tools/ci/check_requirement_files.py
+        additional_dependencies:
+          - 'jsonschema'
+        language: python
+        files: 'tools/requirements.+|tools/requirements/.+'
+        pass_filenames: false
+      - id: check-tools-files-patterns
+        name: Check tools dir files patterns
+        entry: tools/ci/check_tools_files_patterns.py
+        language: python
+        files: '^tools/.+'
+        additional_dependencies:
+          - PyYAML == 5.3.1
+        pass_filenames: false
+      - id: check-generated-soc-caps-kconfig
+        name: Check soc caps kconfig files are generated (based on components/soc/IDF_TARGET/include/soc/soc_caps.h)
+        entry: tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/' 'components/esp_rom/*/'
+        language: python
+        files: 'components/soc/.+/include/soc/.+_caps\.h|components/esp_rom/.+/.+_caps\.h|kconfig\.soc_caps.in'
+        pass_filenames: false
+        additional_dependencies:
+          - pyparsing
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: '(tools\/ci\/executable-list\.txt|tools\/ci\/mypy_ignore_list\.txt)'
+        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'

@@ -105,6 +105,16 @@ typedef int  (tPORT_DATA_CO_CALLBACK) (UINT16 port_handle, UINT8 *p_buf, UINT16 
 
 typedef void (tPORT_CALLBACK) (UINT32 code, UINT16 port_handle);
 
+typedef void (tPORT_MGMT_CALLBACK) (UINT32 code, UINT16 port_handle, void* data);
+
+/**
+ * Define the server port manage callback function argument
+ */
+typedef struct {
+    BOOLEAN accept; /* If upper layer accepts the incoming connection */
+    BOOLEAN ignore_rfc_state; /* If need to ignore rfc state for PORT_CheckConnection */
+} tPORT_MGMT_SR_CALLBACK_ARG;
+
 /*
 ** Define events that registered application can receive in the callback
 */
@@ -219,7 +229,7 @@ extern "C"
 extern int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn,
                                     BOOLEAN is_server, UINT16 mtu,
                                     BD_ADDR bd_addr, UINT16 *p_handle,
-                                    tPORT_CALLBACK *p_mgmt_cb);
+                                    tPORT_MGMT_CALLBACK *p_mgmt_cb);
 
 
 /*******************************************************************************
@@ -310,11 +320,12 @@ extern int PORT_SetEventMask (UINT16 port_handle, UINT32 mask);
 **                  by handle is up and running
 **
 ** Parameters:      handle     - Handle of the port returned in the Open
+**                  ignore_rfc_state - If need to ignore rfc state
 **                  bd_addr    - OUT bd_addr of the peer
 **                  p_lcid     - OUT L2CAP's LCID
 **
 *******************************************************************************/
-extern int PORT_CheckConnection (UINT16 handle, BD_ADDR bd_addr,
+extern int PORT_CheckConnection (UINT16 handle, BOOLEAN ignore_rfc_state, BD_ADDR bd_addr,
                                  UINT16 *p_lcid);
 
 /*******************************************************************************

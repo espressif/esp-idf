@@ -1,6 +1,6 @@
 .pre_check_base_template:
   stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_ENV_IMAGE
   tags:
     - host_test
   dependencies: []
@@ -22,7 +22,7 @@ check_pre_commit_master_release:
     - .check_pre_commit_template
     - .rules:protected
   script:
-    - git diff-tree --no-commit-id --name-only -r $CI_COMMIT_SHA | xargs pre-commit run --files
+    - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
 
 check_pre_commit_MR:
   extends:
@@ -41,31 +41,30 @@ check_version:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
 
-check_examples_cmake_make:
-  extends: .pre_check_job_template
-  script:
-  - python ${IDF_PATH}/tools/ci/check_examples_cmake_make.py
-
 check_rom_api_header:
   extends: .pre_check_job_template
   script:
     - tools/ci/check_examples_rom_header.sh
-    - tools/ci/check_rom_apis.sh
+    - tools/ci/check_api_violation.sh
 
 check_python_style:
   extends:
     - .pre_check_base_template
     - .rules:patterns:python-files
+  variables:
+    PYTHON_VER: 3.7.10
   artifacts:
     when: on_failure
     paths:
       - flake8_output.txt
     expire_in: 1 week
   script:
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
+    - python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
 
 test_check_kconfigs:
   extends: .pre_check_job_template
+  variables:
+    PYTHON_VER: 3.7.10
   artifacts:
     when: on_failure
     paths:
@@ -77,21 +76,26 @@ test_check_kconfigs:
       - tools/*/*/*/Kconfig*.new
     expire_in: 1 week
   script:
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/ci/test_check_kconfigs.py
+    - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
 
-check_wifi_lib_md5:
+check_blobs:
   extends: .pre_check_base_template
   tags:
     - build
   variables:
-    SUBMODULES_TO_FETCH: "components/esp_wifi/lib"
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib"
   script:
+    # Check if Wi-Fi library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
+    - bash $IDF_PATH/tools/ci/check_blobs.sh
 
 check_fuzzer_compilation:
    extends: .pre_check_base_template
-   image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
+   image: $AFL_FUZZER_TEST_IMAGE
    script:
      - cd ${IDF_PATH}/components/lwip/test_afl_host
      - make MODE=dhcp_server
@@ -109,18 +113,53 @@ check_public_headers:
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
+check_soc_component:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  script:
+    - python tools/ci/check_soc_headers_leak.py
+    - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+
+check_esp_err_to_name:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp_common/esp_err_to_name.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/
+    - ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
+
 scan_tests:
   extends:
     - .pre_check_base_template
+    - .before_script_pytest
     - .rules:build:target_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  image: $TARGET_TEST_ENV_IMAGE
   tags:
-    - assign_test
+    - scan_test  # since this job is used for uploading the cache, the runner tags should be unique
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
       - $TEST_APPS_OUTPUT_DIR
       - $COMPONENT_UT_OUTPUT_DIR
+    expire_in: 1 week
+  cache:
+    key: pip-cache
+    paths:
+      - .cache/pip
+    # pull only for most of the use cases since it's cache dir.
+    # Only set "pull-push" policy for "scan_test" since it would **possibly** install all pypi packages
+    policy: pull-push
   variables:
     EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
@@ -128,12 +167,16 @@ scan_tests:
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
     COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
     CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
+    EXTRA_TEST_DIRS: >-
+      examples/bluetooth/esp_ble_mesh/ble_mesh_console
+      examples/bluetooth/hci/controller_hci_uart_esp32
+      examples/wifi/iperf
+    EXTRA_EVALUATE_ARGS: '--evaluate-parallel-count --config "sdkconfig.ci=default" --config "sdkconfig.ci.*=" --config "=default"'
   script:
+    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR --extra_test_dirs $EXTRA_TEST_DIRS $EXTRA_EVALUATE_ARGS
+    - run_cmd python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR $EXTRA_EVALUATE_ARGS
     - set_component_ut_vars
-    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
-    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
-    - run_cmd python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
-    - run_cmd python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
+    - run_cmd python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR --combine-all-targets --except-targets linux $EXTRA_EVALUATE_ARGS
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'
@@ -143,13 +186,6 @@ check_version_tag:
     - .rules:tag:release
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
-
-check_ut_cmake_make:
-  extends: .pre_check_job_template
-  tags:
-    - build
-  script:
-    - tools/ci/check_ut_cmake_make.sh
 
 check_artifacts_expire_time:
   extends: .pre_check_job_template
@@ -161,15 +197,6 @@ check_commit_msg:
   extends: .pre_check_job_template
   script:
     - git status
-    - git log -n10 --oneline
+    - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
     # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
-
-check_tools_file_patterns:
-  extends: .pre_check_job_template
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
-  variables:
-    PYTHON_VER: 3.7.7
-  script:
-    - python tools/ci/check_tools_files_patterns.py
-  allow_failure: true
+    - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'

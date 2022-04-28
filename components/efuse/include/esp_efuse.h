@@ -1,21 +1,37 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include <stdbool.h>
 #include <stdint.h>
+
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 #include_next "esp_efuse.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/secure_boot.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ESP_ERR_EFUSE                              0x1600                     /*!< Base error code for efuse api. */
 #define ESP_OK_EFUSE_CNT                          (ESP_ERR_EFUSE + 0x01)      /*!< OK the required number of bits is set. */
@@ -23,6 +39,7 @@ extern "C" {
 #define ESP_ERR_EFUSE_REPEATED_PROG               (ESP_ERR_EFUSE + 0x03)      /*!< Error repeated programming of programmed bits is strictly forbidden. */
 #define ESP_ERR_CODING                            (ESP_ERR_EFUSE + 0x04)      /*!< Error while a encoding operation. */
 #define ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS      (ESP_ERR_EFUSE + 0x05)      /*!< Error not enough unused key blocks available */
+#define ESP_ERR_DAMAGED_READING                   (ESP_ERR_EFUSE + 0x06)      /*!< Error. Burn or reset was done during a reading operation leads to damage read data. This error is internal to the efuse component and not returned by any public API. */
 
 /**
  * @brief Type definition for an eFuse field
@@ -275,27 +292,6 @@ uint8_t esp_efuse_get_chip_ver(void);
  */
 uint32_t esp_efuse_get_pkg_ver(void);
 
-/**
- * @brief Permanently update values written to the efuse write registers
- *
- * After updating EFUSE_BLKx_WDATAx_REG registers with new values to
- * write, call this function to permanently write them to efuse.
- *
- * @note Setting bits in efuse is permanent, they cannot be unset.
- *
- * @note Due to this restriction you don't need to copy values to
- * Efuse write registers from the matching read registers, bits which
- * are set in the read register but unset in the matching write
- * register will be unchanged when new values are burned.
- *
- * @note This function is not threadsafe, if calling code updates
- * efuse values from multiple tasks then this is caller's
- * responsibility to serialise.
- *
- * After burning new efuses, the read registers are updated to match
- * the new efuse values.
- */
-void esp_efuse_burn_new_values(void);
 
 /**
  *  @brief Reset efuse write registers
@@ -374,24 +370,6 @@ esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme);
 esp_err_t esp_efuse_enable_rom_secure_download_mode(void);
 #endif
 
-/**
- *  @brief Write random data to efuse key block write registers
- *
- * @note Caller is responsible for ensuring efuse
- * block is empty and not write protected, before calling.
- *
- * @note Behaviour depends on coding scheme: a 256-bit key is
- * generated and written for Coding Scheme "None", a 192-bit key
- * is generated, extended to 256-bits by the Coding Scheme,
- * and then writtten for 3/4 Coding Scheme.
- *
- * @note This function does not burn the new values, caller should
- * call esp_efuse_burn_new_values() when ready to do this.
- *
- * @param blk_wdata0_reg Address of the first data write register
- * in the block
- */
-void esp_efuse_write_random_key(uint32_t blk_wdata0_reg);
 
 /**
  *  @brief Return secure_version from efuse field.
@@ -422,16 +400,28 @@ bool esp_efuse_check_secure_version(uint32_t secure_version);
  */
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
 
+#if defined(BOOTLOADER_BUILD) && defined(CONFIG_EFUSE_VIRTUAL) && !defined(CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH)
+/**
+ *  @brief Initializes eFuses API to keep eFuses in RAM.
+ *
+ * This function just copies all eFuses to RAM. IDF eFuse APIs perform all operators with RAM instead of real eFuse.
+ * (Used only in bootloader).
+ */
+void esp_efuse_init_virtual_mode_in_ram(void);
+#endif
+
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 /**
  *  @brief Initializes variables: offset and size to simulate the work of an eFuse.
  *
- * Note: To simulate the work of an eFuse need to set CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE option
+ * Note: To simulate the work of an eFuse need to set CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH option
  * and to add in the partition.csv file a line `efuse_em, data, efuse,   ,   0x2000,`.
  *
  * @param[in] offset The starting address of the partition where the eFuse data will be located.
  * @param[in] size The size of the partition.
  */
-void esp_efuse_init(uint32_t offset, uint32_t size);
+void esp_efuse_init_virtual_mode_in_flash(uint32_t offset, uint32_t size);
+#endif
 
 /**
  *  @brief Set the batch mode of writing fields.
@@ -573,28 +563,43 @@ esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block);
  */
 bool esp_efuse_key_block_unused(esp_efuse_block_t block);
 
-#ifndef CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Find a key block with the particular purpose set.
+ *
+ * @param[in] purpose Purpose to search for.
+ * @param[out] block Pointer in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX which will be set to the key block if found.
+ *                   Can be NULL, if only need to test the key block exists.
+ *
+ * @return
+ *         - True: If found,
+ *         - False: If not found (value at block pointer is unchanged).
+ */
+bool esp_efuse_find_purpose(esp_efuse_purpose_t purpose, esp_efuse_block_t *block);
 
 /**
- * @brief Type of key purpose
+ * @brief Returns a write protection of the key purpose field for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @note For ESP32: no keypurpose, it returns always True.
+ *
+ * @return True: The key purpose is write protected.
+ *         False: The key purpose is writeable.
  */
-typedef enum {
-    ESP_EFUSE_KEY_PURPOSE_USER = 0,
-    ESP_EFUSE_KEY_PURPOSE_RESERVED = 1,
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 = 2,
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 = 3,
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE = 7,
-    ESP_EFUSE_KEY_PURPOSE_HMAC_UP = 8,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0 = 9,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1 = 10,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2 = 11,
-    ESP_EFUSE_KEY_PURPOSE_MAX,
-} esp_efuse_purpose_t;
+bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block);
 
+/**
+ * @brief Returns the current purpose set for an efuse key block.
+ *
+ * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+ *
+ * @return
+ *         - Value: If Successful, it returns the value of the purpose related to the given key block.
+ *         - ESP_EFUSE_KEY_PURPOSE_MAX: Otherwise.
+ */
+esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block);
 
+#if SOC_EFUSE_KEY_PURPOSE_FIELD
 /**
  * @brief Returns a pointer to a key purpose for an efuse key block.
  *
@@ -616,17 +621,6 @@ const esp_efuse_desc_t **esp_efuse_get_purpose_field(esp_efuse_block_t block);
 const esp_efuse_desc_t** esp_efuse_get_key(esp_efuse_block_t block);
 
 /**
- * @brief Returns the current purpose set for an efuse key block.
- *
- * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
- *
- * @return
- *         - Value: If Successful, it returns the value of the purpose related to the given key block.
- *         - ESP_EFUSE_KEY_PURPOSE_MAX: Otherwise.
- */
-esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block);
-
-/**
  * @brief Sets a key purpose for an efuse key block.
  *
  * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
@@ -639,16 +633,6 @@ esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block);
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
  */
 esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t purpose);
-
-/**
- * @brief Returns a write protection of the key purpose field for an efuse key block.
- *
- * @param[in] block A key block in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
- *
- * @return True: The key purpose is write protected.
- *         False: The key purpose is writeable.
- */
-bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block);
 
 /**
  * @brief Sets a write protection of the key purpose field for an efuse key block.
@@ -664,19 +648,6 @@ bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block);
 esp_err_t esp_efuse_set_keypurpose_dis_write(esp_efuse_block_t block);
 
 /**
- * @brief Find a key block with the particular purpose set.
- *
- * @param[in] purpose Purpose to search for.
- * @param[out] block Pointer in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX which will be set to the key block if found.
- *                   Can be NULL, if only need to test the key block exists.
- *
- * @return
- *         - True: If found,
- *         - False: If not found (value at block pointer is unchanged).
- */
-bool esp_efuse_find_purpose(esp_efuse_purpose_t purpose, esp_efuse_block_t *block);
-
-/**
  * @brief Search for an unused key block and return the first one found.
  *
  * See esp_efuse_key_block_unused for a description of an unused key block.
@@ -690,6 +661,9 @@ esp_efuse_block_t esp_efuse_find_unused_key_block(void);
  */
 unsigned esp_efuse_count_unused_key_blocks(void);
 
+#endif // SOC_EFUSE_KEY_PURPOSE_FIELD
+
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 /**
  * @brief Returns the status of the Secure Boot public key digest revocation bit.
  *
@@ -737,6 +711,8 @@ bool esp_efuse_get_write_protect_of_digest_revoke(unsigned num_digest);
  */
 esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest);
 
+#endif // SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+
 /**
  * @brief Program a block of key data to an efuse block
  *
@@ -773,9 +749,21 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits is strictly forbidden.
  *    - ESP_ERR_CODING: Error range of data does not match the coding scheme.
  */
-esp_err_t esp_efuse_write_keys(esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys);
+esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys);
 
-#endif // not CONFIG_IDF_TARGET_ESP32
+
+#if CONFIG_ESP32_REV_MIN_3 || !CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Read key digests from efuse. Any revoked/missing digests will be marked as NULL
+ *
+ * @param[out] trusted_keys The number of digest in range 0..2
+ *
+ * @return
+ *    - ESP_OK: Successful.
+ *    - ESP_FAIL: If trusted_keys is NULL or there is no valid digest.
+ */
+esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys);
+#endif
 
 #ifdef __cplusplus
 }

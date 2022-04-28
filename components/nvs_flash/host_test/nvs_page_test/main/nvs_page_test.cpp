@@ -30,6 +30,8 @@ void test_Page_load_reading_header_fails()
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, page.load(&mock, 0));
+
+    Mockesp_partition_Verify();
 }
 
 void test_Page_load_reading_data_fails()
@@ -44,6 +46,8 @@ void test_Page_load_reading_data_fails()
 
     TEST_ASSERT_EQUAL(Page::PageState::INVALID, page.state());
     TEST_ASSERT_EQUAL(ESP_FAIL, page.load(&mock, 0));
+
+    Mockesp_partition_Verify();
 }
 
 void test_Page_load__uninitialized_page_has_0xfe()
@@ -62,6 +66,8 @@ void test_Page_load__uninitialized_page_has_0xfe()
     TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
 
     TEST_ASSERT_EQUAL(Page::PageState::CORRUPT, page.state());
+
+    Mockesp_partition_Verify();
 }
 
 void test_Page_load__initialized_corrupt_header()
@@ -79,6 +85,60 @@ void test_Page_load__initialized_corrupt_header()
     TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
 
     TEST_ASSERT_EQUAL(Page::PageState::CORRUPT, page.state());
+
+    Mockesp_partition_Verify();
+}
+
+void test_Page_load__corrupt_entry_table()
+{
+    PartitionMockFixture fix;
+
+    // valid header
+    uint8_t raw_header_valid [32] = {0xfe, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xc2, 0x16, 0xdd, 0xdc};
+
+    // entry table with one entry
+    uint8_t raw_entry_table [32];
+
+    uint8_t ns_entry [32] = {0x00, 0x01, 0x01, 0xff, 0x68, 0xc5, 0x3f, 0x0b, 't', 'e', 's', 't', '_', 'n', 's', '\0',
+                '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0', 1, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+    uint8_t raw_header[4] = {0xff, 0xff, 0xff, 0xff};
+    std::fill_n(raw_entry_table, sizeof(raw_entry_table)/sizeof(raw_entry_table[0]), 0);
+    raw_entry_table[0] = 0xfa;
+
+    // read page header
+    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_header_valid, 32);
+
+    // read entry table
+    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_entry_table, 32);
+
+    // read next free entry's header
+    esp_partition_read_raw_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_raw_ReturnArrayThruPtr_dst(raw_header, 4);
+
+    // read namespace entry
+    esp_partition_read_ExpectAnyArgsAndReturn(ESP_OK);
+    esp_partition_read_ReturnArrayThruPtr_dst(ns_entry, 32);
+
+    // we expect a raw word write from the partition in order to change the entry bits to erased (0)
+    esp_partition_write_raw_ExpectAndReturn(&fix.part_mock.partition, 32, nullptr, 4, ESP_OK);
+    esp_partition_write_raw_IgnoreArg_src();
+
+    // corrupt entry table as well as crc of corresponding item
+    raw_entry_table[0] = 0xf6;
+
+    Page page;
+
+    // Page::load() should return ESP_OK, but state has to be corrupt
+    TEST_ASSERT_EQUAL(ESP_OK, page.load(&fix.part_mock, 0));
+
+    TEST_ASSERT_EQUAL(Page::PageState::ACTIVE, page.state());
+    TEST_ASSERT_EQUAL(1, page.getUsedEntryCount());
+
+    Mockesp_partition_Verify();
 }
 
 void test_Page_load_success()
@@ -886,6 +946,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_Page_load_reading_data_fails);
     RUN_TEST(test_Page_load__uninitialized_page_has_0xfe);
     RUN_TEST(test_Page_load__initialized_corrupt_header);
+    RUN_TEST(test_Page_load__corrupt_entry_table);
     RUN_TEST(test_Page_load_success);
     RUN_TEST(test_Page_load_full_page);
     RUN_TEST(test_Page_load__seq_number_0);

@@ -114,7 +114,7 @@ Description of Components
     :scale: 70%
     :alt: ESP32-S2-Kaluga-1 - front
     :figclass: align-center
-
+    
     ESP32-S2-Kaluga-1 - front (click to enlarge)
 
 
@@ -244,7 +244,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 
 Hardware Reference
@@ -319,6 +319,11 @@ If you want to use more than one extension board at the same time, please check 
      - IO11 is multiplexed; IO6 is also multiplexed stopping you from using ESP-LyraT-8311A's pin BT_ADC that is needed to initialize the board's six buttons.
      - **Solution 1**: For ESP-LyraP-TouchA, do not initialize IO6 (PHOTO) and IO11 (NETWORK). Please note that the six buttons on ESP-LyraT-8311A still cannot be used. **Solution 2**: On your ESP-LyraP-LCD32, remove R39, change R41 to 100 Ohm, switch BLCT_L to on. For your ESP-LyraP-TouchA, do not initialize IO11 (NETWORK). If you want to use the six buttons on your ESP-LyraT-8311A, also do not initialize IO6 (PHOTO).
 
+Also, all extension boards and the :ref:`JTAG interface <jtag-debugging-tip-jtag-pins-reconfigured>` share the same pins IO39, IO40, IO41 and IO42. For this reason, the following may disturb the JTAG operation:
+
+* Plugging in any extension board
+* Debugging an application that is using an extension board
+
 
 Known issues
 ============
@@ -367,7 +372,7 @@ Related Documents
     user-guide-esp-lyrat-8311a_v1.2
 
 - `ESP32-S2-WROVER Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf>`_ (PDF)
-- `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+- `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 - :doc:`../../api-guides/jtag-debugging/index`
 
 - `ESP32-S2-Kaluga-1 Schematic <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_SCH_20200424A.pdf>`_ (PDF)

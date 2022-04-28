@@ -1,16 +1,8 @@
-// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -37,6 +29,7 @@ typedef struct {
 #define SPI_FLASH_TRANS_FLAG_BYTE_SWAP      BIT(2)  ///< Used for DTR mode, to swap the bytes of a pair of rising/falling edge
     uint16_t command;           ///< Command to send
     uint8_t dummy_bitlen;       ///< Basic dummy bits to use
+    uint32_t io_mode;           ///< Flash working mode when `SPI_FLASH_IGNORE_BASEIO` is specified.
 } spi_flash_trans_t;
 
 /**
@@ -54,6 +47,7 @@ typedef enum {
     ESP_FLASH_26MHZ,    ///< The flash runs under 26MHz
     ESP_FLASH_40MHZ,    ///< The flash runs under 40MHz
     ESP_FLASH_80MHZ,    ///< The flash runs under 80MHz
+    ESP_FLASH_120MHZ,   ///< The flash runs under 120MHz, 120MHZ can only be used by main flash after timing tuning in system. Do not use this directely in any API.
     ESP_FLASH_SPEED_MAX, ///< The maximum frequency supported by the host is ``ESP_FLASH_SPEED_MAX-1``.
 } esp_flash_speed_t;
 
@@ -71,7 +65,9 @@ typedef enum {
     SPI_FLASH_DIO,    ///< Both address & data transferred using dual I/O
     SPI_FLASH_QOUT,   ///< Data read using quad I/O
     SPI_FLASH_QIO,    ///< Both address & data transferred using quad I/O
-
+#define SPI_FLASH_OPI_FLAG 16    ///< A flag for flash work in opi mode, the io mode below are opi, above are SPI/QSPI mode. DO NOT use this value in any API.
+    SPI_FLASH_OPI_STR = SPI_FLASH_OPI_FLAG,///< Only support on OPI flash, flash read and write under STR mode
+    SPI_FLASH_OPI_DTR,///< Only support on OPI flash, flash read and write under DTR mode
     SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
 } esp_flash_io_mode_t;
 
@@ -176,7 +172,11 @@ struct spi_flash_host_driver_s {
      * Program a page of the flash. Check ``max_write_bytes`` for the maximum allowed writing length.
      */
     void (*program_page)(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length);
-    /** Check whether given buffer can be directly used to write */
+    /**
+     * @brief Check whether the SPI host supports direct write
+     *
+     * When cache is disabled, SPI1 doesn't support directly write when buffer isn't internal.
+     */
     bool (*supports_direct_write)(spi_flash_host_inst_t *host, const void *p);
     /**
      * Slicer for write data. The `program_page` should be called iteratively with the return value
@@ -194,7 +194,11 @@ struct spi_flash_host_driver_s {
      * Read data from the flash. Check ``max_read_bytes`` for the maximum allowed reading length.
      */
     esp_err_t (*read)(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len);
-    /** Check whether given buffer can be directly used to read */
+    /**
+     * @brief Check whether the SPI host supports direct read
+     *
+     * When cache is disabled, SPI1 doesn't support directly read when the given buffer isn't internal.
+     */
     bool (*supports_direct_read)(spi_flash_host_inst_t *host, const void *p);
     /**
      * Slicer for read data. The `read` should be called iteratively with the return value

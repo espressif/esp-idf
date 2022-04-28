@@ -41,6 +41,7 @@ if(NOT __idf_env_set)
     include(kconfig)
     include(component)
     include(utilities)
+    include(depgraph)
     include(targets)
     include(ldgen)
     include(dfu)
@@ -48,6 +49,13 @@ if(NOT __idf_env_set)
     include(version)
 
     __build_init("${idf_path}")
+
+    # Check if IDF_ENV_FPGA environment is set
+    set(env_idf_env_fpga $ENV{IDF_ENV_FPGA})
+    if(${env_idf_env_fpga})
+        idf_build_set_property(__IDF_ENV_FPGA "y")
+        message(NOTICE "IDF_ENV_FPGA is set, building for FPGA environment")
+    endif()
 
     set_property(GLOBAL PROPERTY __IDF_ENV_SET 1)
 endif()

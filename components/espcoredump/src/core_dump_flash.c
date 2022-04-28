@@ -436,6 +436,11 @@ esp_err_t esp_core_dump_image_check(void)
 
 esp_err_t esp_core_dump_image_erase(void)
 {
+    /* If flash is encrypted, we can only write blocks of 16 bytes, let's always
+     * write a 16-byte buffer. */
+    uint32_t helper[4] = { BLANK_COREDUMP_SIZE };
+    _Static_assert(sizeof(helper) % 16 == 0, "esp_partition_write() needs multiple of 16 bytes long buffers");
+
     /* Find the partition that could potentially contain a (previous) core dump. */
     const esp_partition_t *core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
                                                                 ESP_PARTITION_SUBTYPE_DATA_COREDUMP,
@@ -456,9 +461,7 @@ esp_err_t esp_core_dump_image_erase(void)
         return err;
     }
 
-    // Mark core dump as deleted by setting field size
-    const uint32_t blank_size = BLANK_COREDUMP_SIZE;
-    err = esp_partition_write(core_part, 0, &blank_size, sizeof(blank_size));
+    err = esp_partition_write(core_part, 0, helper, sizeof(helper));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to write core dump partition size (%d)!", err);
     }

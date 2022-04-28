@@ -23,7 +23,7 @@
 #define CACHE_WAYS              8
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 13)
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
 #define CACHE_WAYS              8
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 14)
@@ -221,7 +221,7 @@ TEST_CASE("instruction cache hit rate sweep test", "[test_utils][ccomp_timer]")
     for (int i = 0; i <= 100; i += 5)
     {
         t_hr = perform_test_at_hit_rate(i);
-        float error = (abs(t_ref.ccomp - t_hr.ccomp) / (float)t_ref.wall) * 100.0f;
+        float error = (llabs(t_ref.ccomp - t_hr.ccomp) / (float)t_ref.wall) * 100.0f;
 
         ESP_LOGI(TAG, "Hit Rate(%%): %d    Wall Time(us): %lld    Compensated Time(us): %lld    Error(%%): %f", i, (long long)t_hr.wall, (long long)t_hr.ccomp, error);
 

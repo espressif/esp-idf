@@ -20,11 +20,14 @@
 #include "ble_hidd.h"
 #endif /* CONFIG_GATTS_ENABLE */
 
+#if CONFIG_BT_HID_DEVICE_ENABLED
+#include "bt_hidd.h"
+#endif /* CONFIG_BT_HID_DEVICE_ENABLED */
+
 ESP_EVENT_DEFINE_BASE(ESP_HIDD_EVENTS);
 
 esp_err_t esp_hidd_dev_init(const esp_hid_device_config_t *config, esp_hid_transport_t transport, esp_event_handler_t callback, esp_hidd_dev_t **dev_out)
 {
-
     esp_err_t ret = ESP_OK;
     esp_hidd_dev_t *dev = (esp_hidd_dev_t *)calloc(1, sizeof(esp_hidd_dev_t));
     if (dev == NULL) {
@@ -37,6 +40,11 @@ esp_err_t esp_hidd_dev_init(const esp_hid_device_config_t *config, esp_hid_trans
         ret = esp_ble_hidd_dev_init(dev, config, callback);
         break;
 #endif /* CONFIG_GATTS_ENABLE */
+#if CONFIG_BT_HID_DEVICE_ENABLED
+    case ESP_HID_TRANSPORT_BT:
+        ret = esp_bt_hidd_dev_init(dev, config, callback);
+        break;
+#endif /* CONFIG_BT_HID_DEVICE_ENABLED */
     default:
         ret = ESP_FAIL;
         break;
@@ -118,4 +126,30 @@ esp_err_t esp_hidd_dev_event_handler_unregister(esp_hidd_dev_t *dev, esp_event_h
         return ESP_FAIL;
     }
     return dev->event_handler_unregister(dev->dev, callback, event);
+}
+
+/**
+ * The deep copy data append the end of the esp_hidd_event_data_t, move the data pointer to the correct address. This is
+ * a workaround way, it's better to use flexiable array in the interface.
+ */
+void esp_hidd_process_event_data_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                         void *event_data)
+{
+    esp_hidd_event_t event = (esp_hidd_event_t)event_id;
+    esp_hidd_event_data_t *param = (esp_hidd_event_data_t *)event_data;
+
+    switch (event) {
+    case ESP_HIDD_OUTPUT_EVENT:
+        if (param->output.length && param->output.data) {
+            param->output.data = (uint8_t *)param + sizeof(esp_hidd_event_data_t);
+        }
+        break;
+    case ESP_HIDD_FEATURE_EVENT:
+        if (param->feature.length && param->feature.data) {
+            param->feature.data = (uint8_t *)param + sizeof(esp_hidd_event_data_t);
+        }
+        break;
+    default:
+        break;
+    }
 }

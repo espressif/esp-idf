@@ -5,10 +5,10 @@
 This example shows how to use the eFuse API. It demonstrates read and write operations with fields from the common and custom eFuse tables. For more information about eFuse, see the “eFuse Manager” chapter in the documentation and the “eFuse Controller” chapter in ESP32 TRM.
 
 The eFuse is a single bit of non-volatile memory with the restriction that once an eFuse bit is programmed to 1, it can not be reverted to 0.
-The eFuse fields can be useful to store: device types, serial numbers, some system variables, etc. 
+The eFuse fields can be useful to store: device types, serial numbers, some system variables, etc.
 
-Note that the bits already written cannot be reset to the original state. For debugging purposes, the `CONFIG_EFUSE_VIRTUAL` option is provided. This option will block physical burning. All work happens with an array in RAM. 
-In this example, all write operations are wrapped in `#ifdef CONFIG_EFUSE_VIRTUAL ... # endif` to prevent accidental burn while testing the features. 
+Note that the bits already written cannot be reset to the original state. For debugging purposes, the `CONFIG_EFUSE_VIRTUAL` option is provided. This option will block physical burning. All work happens with an array in RAM. Use `CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` to keep eFuse changes after reboots.
+In this example, all write operations are wrapped in `#ifdef CONFIG_EFUSE_VIRTUAL ... # endif` to prevent accidental burn while testing the features.
 
 ## How to use example
 
@@ -157,7 +157,7 @@ I (447) example: Done
 
 ### How to create the new custom table
 
-In the main folder of the example there is a custom eFuse table - `esp_efuse_custom_table.csv`. You can add there some fields and run `idf.py efuse_custom_table`, it will generate all the necessary source files. If all is ok then you will see:
+In the main folder of the example there is a custom eFuse table - `esp_efuse_custom_table.csv`. You can add there some fields and run `idf.py efuse-custom-table`, it will generate all the necessary source files. If all is ok then you will see:
 
 ```
 ...
@@ -181,4 +181,4 @@ idf_component_register(SRCS "efuse_main.c" "esp_efuse_custom_table.c"
                        INCLUDE_DIRS "." "include")
 ```
 
-If you are not sure which eFuse bits are free you can run `idf.py show_efuse_table`. It prints a sorted list of the common and custom tables.
+If you are not sure which eFuse bits are free you can run `idf.py show-efuse-table`. It prints a sorted list of the common and custom tables.

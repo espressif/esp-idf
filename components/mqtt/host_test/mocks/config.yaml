@@ -1,0 +1,23 @@
+        :cmock:
+          :plugins:
+            - expect
+            - expect_any_args
+            - return_thru_ptr
+            - ignore
+            - array
+            - callback
+          :includes_h_pre_orig_header:
+            - FreeRTOS.h
+            - net/if.h
+          :strippables:
+            - '(?:__attribute__\s*\(+.*?\)+)'
+            - '(?:vQueueAddToRegistry\s*\(+.*?\)+)'
+            - '(?:vQueueUnregisterQueue\s*\(+.*?\)+)'
+            - '(?:pcQueueGetName\s*\(+.*?\)+)'
+            - '(?:xQueueTakeMutexRecursive\s*\(+.*?\)+)'
+            - '(?:xQueueGiveMutexRecursive\s*\(+.*?\)+)'
+            - '(?:vTaskSetThreadLocalStoragePointerAndDelCallback\s*\(+.*?\)+)'
+            - '(?:esp_log_writev\s*\(+.*?\)+)'
+            - '(?:esp_restart\s*\(+.*?\)+)'
+            - '(?:esp_system_abort\s*\(+.*?\)+)'
+            - PRIVILEGED_FUNCTION

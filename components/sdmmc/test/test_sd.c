@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +10,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include "sdkconfig.h"
 #include "unity.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
@@ -30,11 +23,18 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
+#include "test_utils.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "soc/gpio_sig_map.h"
+#include "soc/gpio_reg.h"
 
+// Currently no runners for S3
+#define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
+// Currently, no runners for S3
+#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 // Can't test eMMC (slot 0) and PSRAM together
-#ifndef CONFIG_SPIRAM
-#define WITH_EMMC_TEST
-#endif
+#define WITH_EMMC_TEST  (SOC_SDMMC_HOST_SUPPORTED && !CONFIG_SPIRAM && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 
 /* power supply enable pin */
 #define SD_TEST_BOARD_VSEL_EN_GPIO  27
@@ -44,8 +44,6 @@
 #define SD_TEST_BOARD_VSEL_3V3      1
 #define SD_TEST_BOARD_VSEL_1V8      0
 
-#define TEST_SDSPI_DMACHAN 1
-
 /* time to wait for reset / power-on */
 #define SD_TEST_BOARD_PWR_RST_DELAY_MS  5
 #define SD_TEST_BOARD_PWR_ON_DELAY_MS   50
@@ -53,25 +51,24 @@
 /* gpio which is not connected to actual CD pin, used to simulate CD behavior */
 #define CD_WP_TEST_GPIO 18
 
+/* default GPIO selection */
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_35
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_37
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_36
+#define SDSPI_TEST_CS_PIN GPIO_NUM_34
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_4
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_6
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_5
+#define SDSPI_TEST_CS_PIN GPIO_NUM_1
+#else
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_15
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_2
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_14
+#define SDSPI_TEST_CS_PIN GPIO_NUM_13
+#endif
 
-__attribute__((unused)) static void sd_test_board_power_on(void)
-{
-    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, SD_TEST_BOARD_VSEL_3V3);
-    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
-    usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
-    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 1);
-    usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
-}
-
-__attribute__((unused)) static void sd_test_board_power_off(void)
-{
-    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
-    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_INPUT);
-    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, 0);
-    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_INPUT);
-}
 
 TEST_CASE("MMC_RSP_BITS", "[sd]")
 {
@@ -83,7 +80,25 @@ TEST_CASE("MMC_RSP_BITS", "[sd]")
     TEST_ASSERT_EQUAL_HEX32(0x11,  MMC_RSP_BITS(data, 59, 5));
 }
 
-#if SOC_SDMMC_HOST_SUPPORTED
+#if WITH_SD_TEST || WITH_EMMC_TEST
+static void sd_test_board_power_on(void)
+{
+    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, SD_TEST_BOARD_VSEL_3V3);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
+    usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 1);
+    usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
+}
+
+static void sd_test_board_power_off(void)
+{
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_INPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, 0);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_INPUT);
+}
 
 static void probe_sd(int slot, int width, int freq_khz, int ddr)
 {
@@ -117,7 +132,9 @@ static void probe_sd(int slot, int width, int freq_khz, int ddr)
     free(card);
     sd_test_board_power_off();
 }
+#endif //WITH_SD_TEST || WITH_EMMC_TEST
 
+#if WITH_SD_TEST
 TEST_CASE("probe SD, slot 1, 4-bit", "[sd][test_env=UT_T1_SDMODE]")
 {
     probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_PROBING, 0);
@@ -132,7 +149,23 @@ TEST_CASE("probe SD, slot 1, 1-bit", "[sd][test_env=UT_T1_SDMODE]")
     probe_sd(SDMMC_HOST_SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, 0);
 }
 
-#ifdef WITH_EMMC_TEST
+//No runners for slot 0
+TEST_CASE("probe SD, slot 0, 4-bit", "[sd][ignore]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+TEST_CASE("probe SD, slot 0, 1-bit", "[sd][ignore]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, 0);
+}
+#endif //WITH_SD_TEST
+
+#if WITH_EMMC_TEST
 TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC]")
 {
     //Test with SDR
@@ -152,24 +185,20 @@ TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
 }
 #endif // WITH_EMMC_TEST
 
-TEST_CASE("probe SD, slot 0, 4-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
+#if WITH_SDSPI_TEST
+
+#if !WITH_SD_TEST && !WITH_EMMC_TEST
+static void sd_test_board_power_on(void)
 {
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+    // do nothing
 }
 
-TEST_CASE("probe SD, slot 0, 1-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
+static void sd_test_board_power_off(void)
 {
-    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_PROBING, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_DEFAULT, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, 0);
+    // do nothing
 }
-
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
 static void test_sdspi_init_bus(spi_host_device_t host, int mosi_pin, int miso_pin, int clk_pin, int dma_chan)
 {
     spi_bus_config_t bus_config = {
@@ -209,7 +238,7 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     dev_config.gpio_cs = pin_cs;
-    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
@@ -229,6 +258,7 @@ static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_s
     slot_config.gpio_mosi = pin_mosi;
     slot_config.gpio_sck = pin_sck;
     slot_config.gpio_cs = pin_cs;
+    slot_config.dma_channel = SPI_DMA_CH_AUTO;
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
@@ -236,26 +266,30 @@ static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_s
     probe_core(config.slot);
 
     TEST_ESP_OK(sdspi_host_deinit());
+
+    TEST_ESP_OK(spi_bus_free(config.slot));
+
     sd_test_board_power_off();
 }
 
-TEST_CASE("probe SD in SPI mode, slot 1", "[sd][test_env=UT_T1_SPIMODE]")
+TEST_CASE("probe SD in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
-    probe_spi(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
+    probe_spi(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
+    probe_spi_legacy(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
 }
 
-TEST_CASE("probe SD in SPI mode, slot 0", "[sd][test_env=UT_T1_SDCARD][ignore]")
+// No runner for this
+TEST_CASE("probe SD in SPI mode, slot 0", "[sd][ignore]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
     probe_spi_legacy(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
 }
+#endif //WITH_SDSPI_TEST
 
-#endif //DISABLED(ESP32S2)
-
+#if WITH_SD_TEST || WITH_SDSPI_TEST || WITH_EMMC_TEST
 // Fill buffer pointed to by 'dst' with 'count' 32-bit ints generated
 // from 'rand' with the starting value of 'seed'
-__attribute__((unused)) static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
+static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
     srand(seed);
     for (size_t i = 0; i < count; ++i) {
         uint32_t val = rand();
@@ -265,7 +299,7 @@ __attribute__((unused)) static void fill_buffer(uint32_t seed, uint8_t* dst, siz
 
 // Check if the buffer pointed to by 'dst' contains 'count' 32-bit
 // ints generated from 'rand' with the starting value of 'seed'
-__attribute__((unused)) static void check_buffer(uint32_t seed, const uint8_t* src, size_t count) {
+static void check_buffer(uint32_t seed, const uint8_t* src, size_t count) {
     srand(seed);
     for (size_t i = 0; i < count; ++i) {
         uint32_t val;
@@ -274,8 +308,8 @@ __attribute__((unused)) static void check_buffer(uint32_t seed, const uint8_t* s
     }
 }
 
-__attribute__((unused)) static void do_single_write_read_test(sdmmc_card_t* card,
-        size_t start_block, size_t block_count, size_t alignment)
+static void do_single_write_read_test(sdmmc_card_t* card, size_t start_block,
+                    size_t block_count, size_t alignment, bool performance_log)
 {
     size_t block_size = card->csd.sector_size;
     size_t total_size = block_size * block_count;
@@ -307,35 +341,69 @@ __attribute__((unused)) static void do_single_write_read_test(sdmmc_card_t* card
             time_rd, total_size / (time_rd / 1000) / (1024 * 1024));
     check_buffer(start_block, c_buffer, total_size / sizeof(buffer[0]));
     free(buffer);
+
+    if (performance_log) {
+        static const char wr_speed_str[] = "SDMMC_WR_SPEED";
+        static const char rd_speed_str[] = "SDMMC_RD_SPEED";
+        int aligned = ((alignment % 4) == 0)? 1: 0;
+        IDF_LOG_PERFORMANCE(wr_speed_str, "%d, blk_n: %d, aligned: %d",
+                            (int)(total_size * 1000 / time_wr), block_count, aligned);
+        IDF_LOG_PERFORMANCE(rd_speed_str, "%d, blk_n: %d, aligned: %d",
+                            (int)(total_size * 1000 / time_rd), block_count, aligned);
+    }
 }
 
-__attribute__((unused)) static void read_write_test(sdmmc_card_t* card)
+typedef void (*sd_test_func_t)(sdmmc_card_t* card);
+
+static void test_read_write_performance(sdmmc_card_t* card)
 {
     sdmmc_card_print_info(stdout, card);
     printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
-    do_single_write_read_test(card, 0, 1, 4);
-    do_single_write_read_test(card, 0, 4, 4);
-    do_single_write_read_test(card, 1, 16, 4);
-    do_single_write_read_test(card, 16, 32, 4);
-    do_single_write_read_test(card, 48, 64, 4);
-    do_single_write_read_test(card, 128, 128, 4);
-    do_single_write_read_test(card, card->csd.capacity - 64, 32, 4);
-    do_single_write_read_test(card, card->csd.capacity - 64, 64, 4);
-    do_single_write_read_test(card, card->csd.capacity - 8, 1, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 1, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 4, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 8, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 16, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 32, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 64, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 128, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 1, 1);
-    do_single_write_read_test(card, card->csd.capacity/2, 8, 1);
-    do_single_write_read_test(card, card->csd.capacity/2, 128, 1);
+    const int offset = 0;
+    const bool do_log = true;
+    //aligned
+    do_single_write_read_test(card, offset, 1, 4, do_log);
+    do_single_write_read_test(card, offset, 4, 4, do_log);
+    do_single_write_read_test(card, offset, 8, 4, do_log);
+    do_single_write_read_test(card, offset, 16, 4, do_log);
+    do_single_write_read_test(card, offset, 32, 4, do_log);
+    do_single_write_read_test(card, offset, 64, 4, do_log);
+    do_single_write_read_test(card, offset, 128, 4, do_log);
+    //unaligned
+    do_single_write_read_test(card, offset, 1, 1, do_log);
+    do_single_write_read_test(card, offset, 8, 1, do_log);
+    do_single_write_read_test(card, offset, 128, 1, do_log);
 }
 
-#if SOC_SDMMC_HOST_SUPPORTED
-void test_sd_rw_blocks(int slot, int width)
+static void test_read_write_with_offset(sdmmc_card_t* card)
+{
+    sdmmc_card_print_info(stdout, card);
+    printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
+    const bool no_log = false;;
+    //aligned
+    do_single_write_read_test(card, 1, 16, 4, no_log);
+    do_single_write_read_test(card, 16, 32, 4, no_log);
+    do_single_write_read_test(card, 48, 64, 4, no_log);
+    do_single_write_read_test(card, 128, 128, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity - 64, 32, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity - 64, 64, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity - 8, 1, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 1, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 4, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 8, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 16, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 32, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 64, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 128, 4, no_log);
+    //unaligned
+    do_single_write_read_test(card, card->csd.capacity/2, 1, 1, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 8, 1, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 128, 1, no_log);
+}
+#endif //WITH_SD_TEST || WITH_SDSPI_TEST || WITH_EMMC_TEST
+
+#if WITH_SD_TEST || WITH_EMMC_TEST
+void sd_test_rw_blocks(int slot, int width, sd_test_func_t test_func)
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -352,64 +420,104 @@ void test_sd_rw_blocks(int slot, int width)
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
-    read_write_test(card);
+    test_func(card);
     free(card);
     TEST_ESP_OK(sdmmc_host_deinit());
 }
+#endif //WITH_SD_TEST || WITH_EMMC_TEST
 
-TEST_CASE("SDMMC read/write test (SD slot 1)", "[sd][test_env=UT_T1_SDMODE]")
+#if WITH_SD_TEST
+TEST_CASE("SDMMC performance test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
-    test_sd_rw_blocks(1, 4);
+    sd_test_rw_blocks(1, 4, test_read_write_performance);
     sd_test_board_power_off();
 }
 
-#ifdef WITH_EMMC_TEST
-TEST_CASE("SDMMC read/write test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC performance test (SD slot 1, 1 line)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
-    test_sd_rw_blocks(0, 4);
+    sd_test_rw_blocks(1, 1, test_read_write_performance);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC read/write test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC test read/write with offset (SD slot 1)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
-    test_sd_rw_blocks(0, 8);
+    sd_test_rw_blocks(1, 4, test_read_write_with_offset);
+    sd_test_board_power_off();
+}
+#endif //WITH_SD_TEST
+
+#if WITH_EMMC_TEST
+TEST_CASE("SDMMC performance test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_read_write_performance);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_read_write_with_offset);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC performance test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_read_write_performance);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_read_write_with_offset);
     sd_test_board_power_off();
 }
 #endif // WITH_EMMC_TEST
-#endif // SDMMC_HOST_SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
-TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+#if WITH_SDSPI_TEST
+void sdspi_test_rw_blocks(sd_test_func_t test_func)
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    config.slot = handle;
     // This test can only run under 20MHz on ESP32, because the runner connects the card to
     // non-IOMUX pins of HSPI.
 
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
-    read_write_test(card);
+    test_func(card);
     TEST_ESP_OK(sdspi_host_deinit());
     free(card);
     test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
-#if SOC_SDMMC_HOST_SUPPORTED
+TEST_CASE("SDMMC performance (SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+{
+    sdspi_test_rw_blocks(test_read_write_performance);
+}
+
+TEST_CASE("SDMMC test read/write with offset (SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+{
+    sdspi_test_rw_blocks(test_read_write_with_offset);
+}
+#endif //WITH_SDSPI_TEST
+
+#if WITH_SD_TEST
 TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
@@ -447,9 +555,10 @@ TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMO
     TEST_ESP_OK(sdmmc_host_deinit());
     sd_test_board_power_off();
 }
-#endif
+#endif //WITH_SD_TEST
 
-__attribute__((unused)) static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
+#if WITH_SD_TEST || WITH_SDSPI_TEST
+static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
 {
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -473,48 +582,7 @@ __attribute__((unused)) static void test_cd_input(int gpio_cd_num, const sdmmc_h
     free(card);
 }
 
-#if SOC_SDMMC_HOST_SUPPORTED
-TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
-{
-    sd_test_board_power_on();
-    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_cd = CD_WP_TEST_GPIO;
-    TEST_ESP_OK(sdmmc_host_init());
-    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
-
-    test_cd_input(CD_WP_TEST_GPIO, &config);
-
-    TEST_ESP_OK(sdmmc_host_deinit());
-    sd_test_board_power_off();
-}
-#endif
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
-TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
-{
-    sd_test_board_power_on();
-
-    sdspi_dev_handle_t handle;
-    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    dev_config.gpio_cd = CD_WP_TEST_GPIO;
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
-    TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
-
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    config.slot = handle;
-
-    test_cd_input(CD_WP_TEST_GPIO, &config);
-
-    TEST_ESP_OK(sdspi_host_deinit());
-    test_sdspi_deinit_bus(dev_config.host_id);
-    sd_test_board_power_off();
-}
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
-
-__attribute__((unused)) static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
+static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
 {
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -546,8 +614,24 @@ __attribute__((unused)) static void test_wp_input(int gpio_wp_num, const sdmmc_h
     free(data);
     free(card);
 }
+#endif //WITH_SD_TEST || WITH_SDSPI_TEST
 
-#if SOC_SDMMC_HOST_SUPPORTED
+#if WITH_SD_TEST
+TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    slot_config.gpio_cd = CD_WP_TEST_GPIO;
+    TEST_ESP_OK(sdmmc_host_init());
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+
+    test_cd_input(CD_WP_TEST_GPIO, &config);
+
+    TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
+}
+
 TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
@@ -562,23 +646,47 @@ TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
     TEST_ESP_OK(sdmmc_host_deinit());
     sd_test_board_power_off();
 }
-#endif
+#endif //WITH_SD_TEST
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
+#if WITH_SDSPI_TEST
+TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
+{
+    sd_test_board_power_on();
+
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
+    dev_config.gpio_cd = CD_WP_TEST_GPIO;
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
+    TEST_ESP_OK(sdspi_host_init());
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    config.slot = handle;
+
+    test_cd_input(CD_WP_TEST_GPIO, &config);
+
+    TEST_ESP_OK(sdspi_host_deinit());
+    test_sdspi_deinit_bus(dev_config.host_id);
+    sd_test_board_power_off();
+}
+
 TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
     dev_config.gpio_wp = CD_WP_TEST_GPIO;
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = handle;
 
     test_wp_input(CD_WP_TEST_GPIO, &config);
@@ -587,4 +695,529 @@ TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
     test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
+#endif //WITH_SDSPI_TEST
+
+#if WITH_SD_TEST || WITH_EMMC_TEST
+
+#define PATTERN_SEED    0x12345678
+#define FLAG_ERASE_TEST_ADJACENT    (1 << 0)
+#define FLAG_VERIFY_ERASE_STATE     (1 << 1)
+bool do_sanitize_flag = false;
+static void ensure_sector_written(sdmmc_card_t* card, size_t sector,
+        uint8_t *pattern_buf, uint8_t *temp_buf)
+{
+    size_t block_size = card->csd.sector_size;
+    TEST_ESP_OK(sdmmc_write_sectors(card, pattern_buf, sector, 1));
+    memset((void *)temp_buf, 0x00, block_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, temp_buf, sector, 1));
+    check_buffer(PATTERN_SEED, temp_buf, block_size / sizeof(uint32_t));
+}
+
+static void ensure_sector_intact(sdmmc_card_t* card, size_t sector,
+        uint8_t *pattern_buf, uint8_t *temp_buf)
+{
+    size_t block_size = card->csd.sector_size;
+    memset((void *)temp_buf, 0x00, block_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, temp_buf, sector, 1));
+    check_buffer(PATTERN_SEED, temp_buf, block_size / sizeof(uint32_t));
+}
+
+static int32_t ensure_sector_erase(sdmmc_card_t* card, size_t sector,
+        uint8_t *pattern_buf, uint8_t *temp_buf)
+{
+    size_t block_size = card->csd.sector_size;
+    memset((void *)temp_buf, 0, block_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, temp_buf, sector, 1));
+    return memcmp(pattern_buf, temp_buf, block_size);
+}
+
+static void do_single_erase_test(sdmmc_card_t* card, size_t start_block,
+                    size_t block_count, uint8_t flags, sdmmc_erase_arg_t arg)
+{
+    size_t block_size = card->csd.sector_size;
+    uint8_t *temp_buf = NULL;
+    uint8_t *pattern_buf = NULL;
+    size_t end_block = (start_block + block_count - 1);
+
+    /*
+     * To ensure erase is successful/valid
+     * selected blocks after erase should have erase state data pattern
+     * data of blocks adjacent to selected region should remain intact
+     */
+    TEST_ESP_OK((start_block + block_count) > card->csd.capacity);
+
+    pattern_buf = (uint8_t *)heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(pattern_buf);
+    temp_buf = (uint8_t *)heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(temp_buf);
+
+    // create pattern buffer
+    fill_buffer(PATTERN_SEED, pattern_buf, block_size / sizeof(uint32_t));
+
+    // check if it's not the first block of device & write/read/verify pattern
+    if ((flags & FLAG_ERASE_TEST_ADJACENT) && start_block) {
+        ensure_sector_written(card, (start_block - 1), pattern_buf, temp_buf);
+    }
+
+    ensure_sector_written(card, start_block, pattern_buf, temp_buf);
+
+    // check if it's not the last block of device & write/read/verify pattern
+    if ((flags & FLAG_ERASE_TEST_ADJACENT) && (end_block < (card->csd.capacity - 1))) {
+        ensure_sector_written(card, (end_block + 1), pattern_buf, temp_buf);
+    }
+
+    // when block count is 1, start and end block is same, hence skip
+    if (block_count != 1) {
+        ensure_sector_written(card, end_block, pattern_buf, temp_buf);
+    }
+
+    // fill pattern to (start_block + end_block)/2 in the erase range
+    if(block_count > 2) {
+        ensure_sector_written(card, (start_block + end_block)/2, pattern_buf, temp_buf);
+    }
+
+    float total_size = (block_count/1024.0f) * block_size;
+    printf(" %10d |  %10d   |  %8.1f    ", start_block, block_count, total_size);
+    fflush(stdout);
+
+    // erase the blocks
+    struct timeval t_start_er;
+    gettimeofday(&t_start_er, NULL);
+    TEST_ESP_OK(sdmmc_erase_sectors(card, start_block, block_count, arg));
+    if (do_sanitize_flag) {
+        TEST_ESP_OK(sdmmc_mmc_sanitize(card, block_count * 500));
+    }
+    struct timeval t_stop_wr;
+    gettimeofday(&t_stop_wr, NULL);
+    float time_er = 1e3f * (t_stop_wr.tv_sec - t_start_er.tv_sec) + 1e-3f * (t_stop_wr.tv_usec - t_start_er.tv_usec);
+    printf(" |   %8.2f\n", time_er);
+
+    // ensure adjacent blocks are not affected
+    // block before start_block
+    if ((flags & FLAG_ERASE_TEST_ADJACENT) && start_block) {
+        ensure_sector_intact(card, (start_block - 1), pattern_buf, temp_buf);
+    }
+
+    // block after end_block
+    if ((flags & FLAG_ERASE_TEST_ADJACENT) && (end_block < (card->csd.capacity - 1))) {
+        ensure_sector_intact(card, (end_block + 1), pattern_buf, temp_buf);
+    }
+
+    uint8_t erase_mem_byte = 0xFF;
+    // ensure all the blocks are erased and are up to after erase state.
+    if (!card->is_mmc) {
+        erase_mem_byte = card->scr.erase_mem_state ? 0xFF : 0x00;
+    } else {
+        erase_mem_byte = card->ext_csd.erase_mem_state ? 0xFF : 0x00;
+    }
+
+    memset((void *)pattern_buf, erase_mem_byte, block_size);
+
+    // as it is block by block comparison, a time taking process. Really long
+    // when you do erase and verify on complete device.
+    if (flags & FLAG_VERIFY_ERASE_STATE) {
+        for (size_t i  = 0; i < block_count; i++) {
+            if (ensure_sector_erase(card, (start_block + i), pattern_buf, temp_buf)) {
+                printf("Error: Sector %d erase\n", (start_block + i));
+                break;
+            }
+        }
+    }
+
+    free(temp_buf);
+    free(pattern_buf);
+}
+#endif // WITH_SD_TEST || WITH_EMMC_TEST
+
+#if WITH_SDSPI_TEST
+static void test_sdspi_erase_blocks(size_t start_block, size_t block_count)
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
+    TEST_ESP_OK(sdspi_host_init());
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    // This test can only run under 20MHz on ESP32, because the runner connects the card to
+    // non-IOMUX pins of HSPI.
+
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    sdmmc_card_print_info(stdout, card);
+
+    // Ensure discard operation is not supported in sdspi
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, start_block, block_count, SDMMC_DISCARD_ARG));
+
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+    printf("Erasing sectors %d-%d\n", start_block, (start_block + block_count -1));
+    size_t block_size = card->csd.sector_size;
+    uint8_t *pattern_buf = (uint8_t *)heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(pattern_buf);
+    uint8_t *temp_buf = (uint8_t *)heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(temp_buf);
+
+    struct timeval t_start_er;
+    gettimeofday(&t_start_er, NULL);
+    TEST_ESP_OK(sdmmc_erase_sectors(card, start_block, block_count, SDMMC_ERASE_ARG));
+    struct timeval t_stop_wr;
+    gettimeofday(&t_stop_wr, NULL);
+    float time_er = 1e3f * (t_stop_wr.tv_sec - t_start_er.tv_sec) + 1e-3f * (t_stop_wr.tv_usec - t_start_er.tv_usec);
+    printf("Erase duration: %.2fms\n", time_er);
+
+    // nominal delay before re-init card
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    // has to re-init card, after erase operation.
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    printf("Verifying erase state...\n");
+    uint8_t erase_mem_byte = 0xFF;
+    // ensure all the blocks are erased and are up to after erase state.
+    if (!card->is_mmc) {
+        erase_mem_byte = card->scr.erase_mem_state ? 0xFF : 0x00;
+    } else {
+        erase_mem_byte = card->ext_csd.erase_mem_state ? 0xFF : 0x00;
+    }
+
+    memset((void *)pattern_buf, erase_mem_byte, block_size);
+
+    size_t i;
+    for (i = 0; i < block_count; i++) {
+        memset((void *)temp_buf, 0, block_size);
+        TEST_ESP_OK(sdmmc_read_sectors(card, temp_buf, (start_block + i), 1));
+        if (memcmp(pattern_buf, temp_buf, block_size)) {
+            printf("Error: Sector %d erase\n", (start_block + i));
+            break;
+        }
+    }
+    if (i == block_count) {
+        printf("Sectors erase success\n");
+    }
+    TEST_ESP_OK(sdspi_host_deinit());
+    test_sdspi_deinit_bus(dev_config.host_id);
+    free(card);
+    free(temp_buf);
+    free(pattern_buf);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC erase (SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+{
+    test_sdspi_erase_blocks(0, 16);
+}
+#endif // WITH_SDSPI_TEST
+
+#if WITH_SD_TEST
+static void test_sd_erase_blocks(sdmmc_card_t* card)
+{
+    sdmmc_card_print_info(stdout, card);
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+    printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
+    /*
+     * bit-0: verify adjacent blocks of given range
+     * bit-1: verify erase state of blocks in range
+     */
+    uint8_t flags = 0;
+    sdmmc_erase_arg_t arg = SDMMC_ERASE_ARG;
+
+    //check for adjacent blocks and erase state of blocks
+    flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT | (uint8_t)FLAG_VERIFY_ERASE_STATE;
+    do_single_erase_test(card, 1, 16, flags, arg);
+    do_single_erase_test(card, 1, 13, flags, arg);
+    do_single_erase_test(card, 16, 32, flags, arg);
+    do_single_erase_test(card, 48, 64, flags, arg);
+    do_single_erase_test(card, 128, 128, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 64, flags, arg);
+    // single sector erase is failing on different make cards
+    do_single_erase_test(card, card->csd.capacity - 8, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 4, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 8, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 16, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 128, flags, arg);
+#ifdef SDMMC_FULL_ERASE_TEST
+    /*
+     * check for adjacent blocks, do not check erase state of blocks as it is
+     * time taking process to verify all the blocks.
+     */
+    flags &= ~(uint8_t)FLAG_VERIFY_ERASE_STATE; //comment this line to verify after-erase state
+    // erase complete card
+    do_single_erase_test(card, 0, card->csd.capacity, flags, arg);
+#endif //SDMMC_FULL_ERASE_TEST
+}
+
+static void test_sd_discard_blocks(sdmmc_card_t* card)
+{
+    /* MMC discard applies to write blocks */
+    sdmmc_card_print_info(stdout, card);
+    /*
+     * bit-0: verify adjacent blocks of given range
+     * bit-1: verify erase state of blocks in range
+     */
+    uint8_t flags = 0;
+    sdmmc_erase_arg_t arg = SDMMC_DISCARD_ARG;
+
+    /*
+     * This test does run two tests
+     * test-1: check, sdmmc_erase_sectors to return ESP_ERR_NOT_SUPPORTED
+     * when arguments are condition not met. This test runs either the card
+     * supports discard or not.
+     *
+     * test-2: If card supports discard, perform the test accordingly and
+     * validate the behavior.
+     *
+     */
+    uint32_t prev_discard_support = card->ssr.discard_support;
+    // overwrite discard_support as not-supported for -ve test
+    card->ssr.discard_support = 0;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, 0, 32, arg));
+    // restore discard_support
+    card->ssr.discard_support = prev_discard_support;
+    if (sdmmc_can_discard(card) != ESP_OK ) {
+        printf("Card/device do not support discard\n");
+        return;
+    }
+
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+    printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
+    /*
+     * Check for adjacent blocks only.
+     * After discard operation, the original data may be remained partially or
+     * fully accessible to the host dependent on device. Hence do not verify
+     * the erased state of the blocks.
+     */
+    flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT;
+    do_single_erase_test(card, 1, 16, flags, arg);
+    do_single_erase_test(card, 1, 13, flags, arg);
+    do_single_erase_test(card, 16, 32, flags, arg);
+    do_single_erase_test(card, 48, 64, flags, arg);
+    do_single_erase_test(card, 128, 128, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 8, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 4, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 8, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 16, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 128, flags, arg);
+}
+
+TEST_CASE("SDMMC erase test (SD slot 1, 1 line)", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(1, 1, test_sd_erase_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC erase test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(1, 4, test_sd_erase_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC discard test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(1, 4, test_sd_discard_blocks);
+    sd_test_board_power_off();
+}
+#endif //WITH_SD_TEST
+
+#if WITH_EMMC_TEST
+static void test_mmc_sanitize_blocks(sdmmc_card_t* card)
+{
+    /* MMC discard applies to write blocks */
+    sdmmc_card_print_info(stdout, card);
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+
+    if (sdmmc_mmc_can_sanitize(card)) {
+        printf("Card/device do not support sanitize\n");
+        return;
+    }
+    printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
+    /*
+     * bit-0: verify adjacent blocks of given range
+     * bit-1: verify erase state of blocks in range
+     */
+    uint8_t flags = 0;
+    sdmmc_erase_arg_t arg = SDMMC_DISCARD_ARG;
+    do_sanitize_flag = true;
+
+    /*
+     * Check for adjacent blocks only.
+     * After discard operation, the original data may be remained partially or
+     * fully accessible to the host dependent on device. Hence do not verify
+     * the erased state of the blocks.
+     *
+     * Note: After sanitize blocks has to be in erased state
+     */
+    flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT | (uint8_t)FLAG_VERIFY_ERASE_STATE;
+    do_single_erase_test(card, 1, 16, flags, arg);
+    do_single_erase_test(card, 1, 13, flags, arg);
+    do_single_erase_test(card, 16, 32, flags, arg);
+    do_single_erase_test(card, 48, 64, flags, arg);
+    do_single_erase_test(card, 128, 128, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 8, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 4, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 8, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 16, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 128, flags, arg);
+    do_sanitize_flag = false;
+}
+
+static void test_mmc_discard_blocks(sdmmc_card_t* card)
+{
+    /* MMC discard applies to write blocks */
+    sdmmc_card_print_info(stdout, card);
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+
+    sdmmc_erase_arg_t arg = SDMMC_DISCARD_ARG;
+    uint32_t prev_ext_csd = card->ext_csd.rev;
+    // overwrite discard_support as not-supported for -ve test
+    card->ext_csd.rev = 0;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, 0, 32, arg));
+    // restore discard_support
+    card->ext_csd.rev = prev_ext_csd;
+    if (sdmmc_can_discard(card) != ESP_OK) {
+        printf("Card/device do not support discard\n");
+        return;
+    }
+
+    printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
+    /*
+     * bit-0: verify adjacent blocks of given range
+     * bit-1: verify erase state of blocks in range
+     */
+    uint8_t flags = 0;
+
+    /*
+     * Check for adjacent blocks only.
+     * After discard operation, the original data may be remained partially or
+     * fully accessible to the host dependent on device. Hence do not verify
+     * the erased state of the blocks.
+     */
+    flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT;
+    do_single_erase_test(card, 1, 16, flags, arg);
+    do_single_erase_test(card, 1, 13, flags, arg);
+    do_single_erase_test(card, 16, 32, flags, arg);
+    do_single_erase_test(card, 48, 64, flags, arg);
+    do_single_erase_test(card, 128, 128, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 8, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 4, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 8, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 16, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 128, flags, arg);
+}
+
+static void test_mmc_trim_blocks(sdmmc_card_t* card)
+{
+    /* MMC trim applies to write blocks */
+    sdmmc_card_print_info(stdout, card);
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+    sdmmc_erase_arg_t arg = SDMMC_ERASE_ARG;
+    uint8_t prev_sec_feature = card->ext_csd.sec_feature;
+    // overwrite sec_feature
+    card->ext_csd.sec_feature &=  ~(EXT_CSD_SEC_GB_CL_EN);
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, 0, 32, arg));
+    // restore sec_feature
+    card->ext_csd.sec_feature = prev_sec_feature;
+    if (sdmmc_can_trim(card) != ESP_OK) {
+        printf("Card/device do not support trim\n");
+        return;
+    }
+    printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
+    /*
+     * bit-0: verify adjacent blocks of given range
+     * bit-1: verify erase state of blocks in range
+     */
+    uint8_t flags = 0;
+
+    //check for adjacent blocks and erase state of blocks
+    flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT | (uint8_t)FLAG_VERIFY_ERASE_STATE;
+    do_single_erase_test(card, 1, 16, flags, arg);
+    do_single_erase_test(card, 1, 13, flags, arg);
+    do_single_erase_test(card, 16, 32, flags, arg);
+    do_single_erase_test(card, 48, 64, flags, arg);
+    do_single_erase_test(card, 128, 128, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 8, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 4, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 8, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 16, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 128, flags, arg);
+#ifdef SDMMC_FULL_ERASE_TEST
+    /*
+     * check for adjacent blocks, do not check erase state of blocks as it is
+     * time taking process to verify all the blocks.
+     */
+    flags &= ~(uint8_t)FLAG_VERIFY_ERASE_STATE; //comment this line to verify after erase state
+    // erase complete card
+    do_single_erase_test(card, 0, card->csd.capacity, flags, arg);
+#endif //SDMMC_FULL_ERASE_TEST
+}
+
+TEST_CASE("SDMMC trim test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_mmc_trim_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC trim test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_mmc_trim_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC discard test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_mmc_discard_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC discard test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_mmc_discard_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC sanitize test (eMMC slot 0, 4 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_mmc_sanitize_blocks);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC sanitize test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_mmc_sanitize_blocks);
+    sd_test_board_power_off();
+}
+#endif //WITH_EMMC_TEST

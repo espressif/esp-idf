@@ -7,7 +7,7 @@ Overview
 The event loop library allows components to declare events to which other components can register handlers -- code which will
 execute when those events occur. This allows loosely coupled components to attach desired behavior to changes in state of other components
 without application involvement. For instance, a high level connection handling library may subscribe to events produced
-by the wifi subsystem directly and act on those events. This also simplifies event processing by serializing and deferring
+by the Wi-Fi subsystem directly and act on those events. This also simplifies event processing by serializing and deferring
 code execution to another context.
 
 Using ``esp_event`` APIs
@@ -15,7 +15,7 @@ Using ``esp_event`` APIs
 
 There are two objects of concern for users of this library: events and event loops.
 
-Events are occurrences of note. For example, for WiFi, a successful connection to the access point may be an event. 
+Events are occurrences of note. For example, for Wi-Fi, a successful connection to the access point may be an event. 
 Events are referenced using a two part identifier which are discussed more :ref:`here <esp-event-declaring-defining-events>`.
 Event loops are the vehicle by which events get posted by event sources and handled by event handler functions.
 These two appear prominently in the event loop library APIs.
@@ -84,7 +84,7 @@ In code, the flow above may look like as follows:
 Declaring and defining events
 -----------------------------
 
-As mentioned previously, events consists of two-part identifers: the event base and the event ID. The event base identifies an independent group
+As mentioned previously, events consists of two-part identifiers: the event base and the event ID. The event base identifies an independent group
 of events; the event ID identifies the event within that group. Think of the event base and event ID as a
 person's last name and first name, respectively. A last name identifies a family, and the first name identifies a person within that family.
 
@@ -104,7 +104,7 @@ Event base definition:
 
 .. note::
 
-    In IDF, the base identifiers for system events are uppercase and are postfixed with ``_EVENT``. For example, the base for wifi events is declared and defined
+    In IDF, the base identifiers for system events are uppercase and are postfixed with ``_EVENT``. For example, the base for Wi-Fi events is declared and defined
     as ``WIFI_EVENT``, the ethernet event base ``ETHERNET_EVENT``, and so on. The purpose is to have event bases look like constants (although
     they are global variables considering the defintions of macros ``ESP_EVENT_DECLARE_BASE`` and ``ESP_EVENT_DEFINE_BASE``).
 
@@ -126,7 +126,7 @@ Event ID:
 Default Event Loop
 ------------------
 
-The default event loop is a special type of loop used for system events (WiFi events, for example). The handle for this
+The default event loop is a special type of loop used for system events (Wi-Fi events, for example). The handle for this
 loop is hidden from the user. The creation, deletion, handler registration/unregistration and posting of events is done
 through a variant of the APIs for user event loops. The table below enumerates those variants, and the user event
 loops equivalent.
@@ -224,5 +224,3 @@ Related Documents
 
 .. toctree::
     :maxdepth: 1
-
-    Legacy event loop API reference <esp_event_legacy>

@@ -8,7 +8,7 @@
 */
 #include <string.h>
 #include "esp_wifi.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mesh.h"
@@ -213,6 +213,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         if (esp_mesh_is_root()) {
+            esp_netif_dhcpc_stop(netif_sta);
             esp_netif_dhcpc_start(netif_sta);
         }
     }
@@ -322,6 +323,7 @@ void app_main(void)
     /* mesh softAP */
     ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     cfg.mesh_ap.max_connection = CONFIG_MESH_AP_CONNECTIONS;
+    cfg.mesh_ap.nonmesh_max_connection = CONFIG_MESH_NON_MESH_AP_CONNECTIONS;
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));

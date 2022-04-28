@@ -36,8 +36,16 @@ void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 		wpa_dbg(wpa_s, MSG_DEBUG, "Already scanning - Return");
 		return;
 	}
+	if (!wpa_s->current_bss) {
+		wpa_dbg(wpa_s, MSG_INFO, "Current BSS is null - Return");
+		return;
+	}
 	params = os_zalloc(sizeof(*params));
 
+	if (!params) {
+		wpa_printf(MSG_ERROR, "Memory allocation failed");
+		return;
+	}
 	if (wpa_s->wnm_mode) {
 		/* Use the same memory */
 		params->ssids[0].ssid = wpa_s->current_bss->ssid;

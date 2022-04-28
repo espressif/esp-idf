@@ -1,16 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 // Utilities for esp-idf unit tests
@@ -18,8 +11,6 @@
 #include <stdint.h>
 #include <esp_partition.h>
 #include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
 /* include performance pass standards header file */
@@ -47,38 +38,38 @@ extern "C" {
 #define _TEST_PERFORMANCE_ASSERT(ARG) printf("Ignoring performance test [%s]\n", PERFORMANCE_STR(ARG))
 #endif
 
-#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
+#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value, ...)  do { \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__); \
     _TEST_PERFORMANCE_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
-#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
+#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value, ...)  do { \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__); \
     _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
 
 /* Macros to be used when performance is calculated using the cache compensated timer
    will not assert if ccomp not supported */
 #if SOC_CCOMP_TIMER_SUPPORTED
-#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value) \
-    TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)
-#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value) \
-    TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)
+#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value, ...) \
+    TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value, ##__VA_ARGS__)
+#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value, ...) \
+    TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value, ##__VA_ARGS__)
 #else
-#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value);
-#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value);
+#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value, ...) \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__)
+#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value, ...) \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__)
 #endif //SOC_CCOMP_TIMER_SUPPORTED
 
 
 /* @brief macro to print IDF performance
- * @param mode :        performance item name. a string pointer.
+ * @param item :        performance item name. a string pointer.
  * @param value_fmt:    print format and unit of the value, for example: "%02fms", "%dKB"
  * @param value :       the performance value.
 */
-#define IDF_LOG_PERFORMANCE(item, value_fmt, value) \
-    printf("[Performance][%s]: "value_fmt"\n", item, value)
+#define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
+    printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
 
 
 /* Some definitions applicable to Unity running in FreeRTOS */
@@ -118,18 +109,6 @@ uint64_t ref_clock_get(void);
  */
 void test_main(void);
 
-/**
- * @brief Reset automatic leak checking which happens in unit tests.
- *
- * Updates recorded "before" free memory values to the free memory values
- * at time of calling. Resets leak checker if tracing is enabled in
- * config.
- *
- * This can be called if a test case does something which allocates
- * memory on first use, for example.
- *
- * @note Use with care as this can mask real memory leak problems.
- */
 void unity_reset_leak_checks(void);
 
 
@@ -232,47 +211,6 @@ static inline void unity_send_signal(const char* signal_name)
  */
 bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr);
 
-/**
- * @brief Leak for components
- */
-typedef enum {
-    COMP_LEAK_GENERAL = 0,  /**< Leak by default */
-    COMP_LEAK_LWIP,         /**< Leak for LWIP */
-    COMP_LEAK_NVS,          /**< Leak for NVS */
-    COMP_LEAK_ALL,          /**< Use for getting the summary leak level */
-} esp_comp_leak_t;
-
-/**
- * @brief Type of leak
- */
-typedef enum {
-    TYPE_LEAK_WARNING = 0,  /**< Warning level of leak */
-    TYPE_LEAK_CRITICAL,     /**< Critical level of leak */
-    TYPE_LEAK_MAX,          /**< Max number of leak levels */
-} esp_type_leak_t;
-
-/**
- * @brief Set a leak level for the required type and component.
- *
- * @param[in] leak_level Level of leak
- * @param[in] type       Type of leak
- * @param[in] component  Name of component
- *
- * return ESP_OK: Successful.
- *        ESP_ERR_INVALID_ARG: Invalid argument.
- */
-esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type, esp_comp_leak_t component);
-
-/**
- * @brief Get a leak level for the required type and component.
- *
- * @param[in] type       Type of leak.
- * @param[in] component  Name of component. If COMP_LEAK_ALL, then the level will be summarized for all components.
- * return Leak level
- */
-size_t test_utils_get_leak_level(esp_type_leak_t type, esp_comp_leak_t component);
-
-
 typedef struct test_utils_exhaust_memory_record_s *test_utils_exhaust_memory_rec;
 
 /**
@@ -296,14 +234,6 @@ test_utils_exhaust_memory_rec test_utils_exhaust_memory(uint32_t caps, size_t li
  * @param rec Result previously returned from test_utils_exhaust_memory()
  */
 void test_utils_free_exhausted_memory(test_utils_exhaust_memory_rec rec);
-
-
-/**
- * @brief Delete task ensuring dynamic memory (for stack, tcb etc.) gets freed up immediately
- *
- * @param[in] thandle    Handle of task to be deleted (should not be NULL or self handle)
- */
-void test_utils_task_delete(TaskHandle_t thandle);
 
 #ifdef __cplusplus
 }

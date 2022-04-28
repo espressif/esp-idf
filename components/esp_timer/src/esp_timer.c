@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/param.h>
 #include <string.h>
@@ -23,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "soc/spinlock.h"
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
 
@@ -39,6 +30,10 @@
 #include "esp32s3/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rtc.h"
 #endif
 
 #include "sdkconfig.h"
@@ -127,7 +122,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
         args->dispatch_method < 0 || args->dispatch_method >= ESP_TIMER_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_timer_handle_t result = (esp_timer_handle_t) calloc(1, sizeof(*result));
+    esp_timer_handle_t result = (esp_timer_handle_t) heap_caps_calloc(1, sizeof(*result), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     if (result == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -426,6 +421,15 @@ static IRAM_ATTR inline bool is_initialized(void)
     return s_timer_task != NULL;
 }
 
+esp_err_t esp_timer_early_init(void)
+{
+    esp_timer_impl_early_init();
+#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
+    esp_timer_impl_init_system_time();
+#endif
+    return ESP_OK;
+}
+
 esp_err_t esp_timer_init(void)
 {
     esp_err_t err;
@@ -444,10 +448,6 @@ esp_err_t esp_timer_init(void)
     if (err != ESP_OK) {
         goto out;
     }
-
-#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
-    esp_timer_impl_init_system_time();
-#endif
 
     return ESP_OK;
 
@@ -597,4 +597,64 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
         timer_list_unlock(dispatch_method);
     }
     return next_alarm;
+}
+
+int64_t IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
+{
+    int64_t next_alarm = INT64_MAX;
+    for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
+        timer_list_lock(dispatch_method);
+        esp_timer_handle_t it = NULL;
+        LIST_FOREACH(it, &s_timers[dispatch_method], list_entry) {
+            // timers with the SKIP_UNHANDLED_EVENTS flag do not want to wake up CPU from a sleep mode.
+            if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) == 0) {
+                if (next_alarm > it->alarm) {
+                    next_alarm = it->alarm;
+                }
+                break;
+            }
+        }
+        timer_list_unlock(dispatch_method);
+    }
+    return next_alarm;
+}
+
+esp_err_t IRAM_ATTR esp_timer_get_period(esp_timer_handle_t timer, uint64_t *period)
+{
+    if (timer == NULL || period == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+
+    timer_list_lock(dispatch_method);
+    *period = timer->period;
+    timer_list_unlock(dispatch_method);
+
+    return ESP_OK;
+}
+
+esp_err_t IRAM_ATTR esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry)
+{
+    if (timer == NULL || expiry == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (timer->period > 0) {
+        /* Return error for periodic timers */
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+
+    timer_list_lock(dispatch_method);
+    *expiry = timer->alarm;
+    timer_list_unlock(dispatch_method);
+
+    return ESP_OK;
+}
+
+bool esp_timer_is_active(esp_timer_handle_t timer)
+{
+    return timer_armed(timer);
 }

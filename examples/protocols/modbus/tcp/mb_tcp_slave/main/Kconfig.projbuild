@@ -2,7 +2,7 @@ menu "Modbus Example Configuration"
 
     config MB_SLAVE_ADDR
         int "Modbus slave address"
-        range 1 127
+        range 1 255
         default 1
         help
             This is the Modbus slave address in the network.

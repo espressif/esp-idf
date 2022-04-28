@@ -21,7 +21,7 @@
 #pragma once
 
 #if CONFIG_IDF_TARGET_ESP32
-    #error "ESP32 doesn't have a DS peripheral"
+#error "ESP32 doesn't have a DS peripheral"
 #endif
 
 #include <stdint.h>

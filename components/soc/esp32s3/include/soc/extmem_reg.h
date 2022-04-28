@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_EXTMEM_REG_H_
+#define _SOC_EXTMEM_REG_H_
 
+
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define EXTMEM_DCACHE_CTRL_REG          (DR_REG_EXTMEM_BASE + 0x0)
 /* EXTMEM_DCACHE_BLOCKSIZE_MODE : R/W ;bitpos:[4:3] ;default: 2'b0 ; */
@@ -1204,7 +1206,7 @@ thentication fail. 0: invalidate, 1: execute-able, 2: read-able, 4: write-able..
 #define EXTMEM_CORE0_DBUS_TAG_ATTR_S  0
 
 #define EXTMEM_CORE0_DBUS_REJECT_VADDR_REG          (DR_REG_EXTMEM_BASE + 0x104)
-/* EXTMEM_CORE0_DBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/* EXTMEM_CORE0_DBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'hffffffff ; */
 /*description: The bits are used to indicate the virtual address of CPU access dbus when authen
 tication fail..*/
 #define EXTMEM_CORE0_DBUS_VADDR    0xFFFFFFFF
@@ -1236,7 +1238,7 @@ thentication fail. 0: invalidate, 1: execute-able, 2: read-able, 4: write-able..
 #define EXTMEM_CORE0_IBUS_TAG_ATTR_S  0
 
 #define EXTMEM_CORE0_IBUS_REJECT_VADDR_REG          (DR_REG_EXTMEM_BASE + 0x10C)
-/* EXTMEM_CORE0_IBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/* EXTMEM_CORE0_IBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'hffffffff ; */
 /*description: The bits are used to indicate the virtual address of CPU access  ibus when authe
 ntication fail..*/
 #define EXTMEM_CORE0_IBUS_VADDR    0xFFFFFFFF
@@ -1268,7 +1270,7 @@ thentication fail. 0: invalidate, 1: execute-able, 2: read-able, 4: write-able..
 #define EXTMEM_CORE1_DBUS_TAG_ATTR_S  0
 
 #define EXTMEM_CORE1_DBUS_REJECT_VADDR_REG          (DR_REG_EXTMEM_BASE + 0x114)
-/* EXTMEM_CORE1_DBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/* EXTMEM_CORE1_DBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'hffffffff ; */
 /*description: The bits are used to indicate the virtual address of CPU access dbus when authen
 tication fail..*/
 #define EXTMEM_CORE1_DBUS_VADDR    0xFFFFFFFF
@@ -1300,7 +1302,7 @@ thentication fail. 0: invalidate, 1: execute-able, 2: read-able, 4: write-able..
 #define EXTMEM_CORE1_IBUS_TAG_ATTR_S  0
 
 #define EXTMEM_CORE1_IBUS_REJECT_VADDR_REG          (DR_REG_EXTMEM_BASE + 0x11C)
-/* EXTMEM_CORE1_IBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/* EXTMEM_CORE1_IBUS_VADDR : RO ;bitpos:[31:0] ;default: 32'hffffffff ; */
 /*description: The bits are used to indicate the virtual address of CPU access  ibus when authe
 ntication fail..*/
 #define EXTMEM_CORE1_IBUS_VADDR    0xFFFFFFFF
@@ -1370,14 +1372,14 @@ enable, 1: disable.*/
 #define EXTMEM_CACHE_MMU_MEM_FORCE_ON_S  0
 
 #define EXTMEM_CACHE_STATE_REG          (DR_REG_EXTMEM_BASE + 0x130)
-/* EXTMEM_DCACHE_STATE : RO ;bitpos:[23:12] ;default: 12'h0 ; */
+/* EXTMEM_DCACHE_STATE : RO ;bitpos:[23:12] ;default: 12'h001 ; */
 /*description: The bit is used to indicate whether dcache main fsm is in idle state or not. 1:
 in idle state,  0: not in idle state.*/
 #define EXTMEM_DCACHE_STATE    0x00000FFF
 #define EXTMEM_DCACHE_STATE_M  ((EXTMEM_DCACHE_STATE_V)<<(EXTMEM_DCACHE_STATE_S))
 #define EXTMEM_DCACHE_STATE_V  0xFFF
 #define EXTMEM_DCACHE_STATE_S  12
-/* EXTMEM_ICACHE_STATE : RO ;bitpos:[11:0] ;default: 12'h0 ; */
+/* EXTMEM_ICACHE_STATE : RO ;bitpos:[11:0] ;default: 12'h001 ; */
 /*description: The bit is used to indicate whether  icache main fsm is in idle state or not. 1:
  in idle state,  0: not in idle state.*/
 #define EXTMEM_ICACHE_STATE    0x00000FFF
@@ -1658,7 +1660,7 @@ mory on the specified cache..*/
 
 #define EXTMEM_DATE_REG          (DR_REG_EXTMEM_BASE + 0x3FC)
 /* EXTMEM_DATE : R/W ;bitpos:[27:0] ;default: 28'h2012310 ; */
-/*description: Reserved..*/
+/*description: version information..*/
 #define EXTMEM_DATE    0x0FFFFFFF
 #define EXTMEM_DATE_M  ((EXTMEM_DATE_V)<<(EXTMEM_DATE_S))
 #define EXTMEM_DATE_V  0xFFFFFFF
@@ -1668,3 +1670,7 @@ mory on the specified cache..*/
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_EXTMEM_REG_H_ */

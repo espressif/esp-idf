@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "sdkconfig.h"
@@ -25,13 +17,14 @@
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
+#include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/rtc.h"
@@ -103,9 +96,13 @@ void IRAM_ATTR esp_restart_noos(void)
 
     REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
+    // Reset uart0 core first, then reset apb side.
+    // rom will clear this bit, as well as SYSTEM_UART_RST
+    SET_PERI_REG_MASK(UART_CLK_CONF_REG(0), UART_RST_CORE_M);
+
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
-                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST);
+                      SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
     // Reset dma
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);

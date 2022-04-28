@@ -1,31 +1,26 @@
 # internal use only for CI
 # some CI related util functions
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+# SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-import functools
+import io
 import logging
 import os
-import re
 import subprocess
 import sys
+from contextlib import redirect_stdout
+from typing import TYPE_CHECKING, List
 
-IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
+if TYPE_CHECKING:
+    from _pytest.nodes import Function
+
+IDF_PATH = os.path.abspath(
+    os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..'))
+)
 
 
-def get_submodule_dirs(full_path=False):  # type: (bool) -> list
+def get_submodule_dirs(full_path: bool = False) -> List:
     """
     To avoid issue could be introduced by multi-os or additional dependency,
     we use python and git to get this output
@@ -33,9 +28,21 @@ def get_submodule_dirs(full_path=False):  # type: (bool) -> list
     """
     dirs = []
     try:
-        lines = subprocess.check_output(
-            ['git', 'config', '--file', os.path.realpath(os.path.join(IDF_PATH, '.gitmodules')),
-             '--get-regexp', 'path']).decode('utf8').strip().split('\n')
+        lines = (
+            subprocess.check_output(
+                [
+                    'git',
+                    'config',
+                    '--file',
+                    os.path.realpath(os.path.join(IDF_PATH, '.gitmodules')),
+                    '--get-regexp',
+                    'path',
+                ]
+            )
+            .decode('utf8')
+            .strip()
+            .split('\n')
+        )
         for line in lines:
             _, path = line.split(' ')
             if full_path:
@@ -50,7 +57,11 @@ def get_submodule_dirs(full_path=False):  # type: (bool) -> list
 
 def _check_git_filemode(full_path):  # type: (str) -> bool
     try:
-        stdout = subprocess.check_output(['git', 'ls-files', '--stage', full_path]).strip().decode('utf-8')
+        stdout = (
+            subprocess.check_output(['git', 'ls-files', '--stage', full_path])
+            .strip()
+            .decode('utf-8')
+        )
     except subprocess.CalledProcessError:
         return True
 
@@ -60,7 +71,7 @@ def _check_git_filemode(full_path):  # type: (str) -> bool
     return False
 
 
-def is_executable(full_path):  # type: (str) -> bool
+def is_executable(full_path: str) -> bool:
     """
     os.X_OK will always return true on windows. Use git to check file mode.
     :param full_path: file full path
@@ -71,7 +82,7 @@ def is_executable(full_path):  # type: (str) -> bool
     return os.access(full_path, os.X_OK)
 
 
-def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[str]
+def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> List[str]:
     """
     Get the result of git ls-files
     :param path: path to run git ls-files
@@ -79,121 +90,84 @@ def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[
     :return: list of file paths
     """
     try:
-        files = subprocess.check_output(['git', 'ls-files'], cwd=path).decode('utf8').strip().split('\n')
+        # this is a workaround when using under worktree
+        # if you're using worktree, when running git commit a new environment variable GIT_DIR would be declared,
+        # the value should be <origin_repo_path>/.git/worktrees/<worktree name>
+        # This would effect the return value of `git ls-files`, unset this would use the `cwd`value or its parent
+        # folder if no `.git` folder found in `cwd`.
+        workaround_env = os.environ.copy()
+        workaround_env.pop('GIT_DIR', None)
+        files = (
+            subprocess.check_output(['git', 'ls-files'], cwd=path, env=workaround_env)
+            .decode('utf8')
+            .strip()
+            .split('\n')
+        )
     except Exception as e:  # pylint: disable=W0703
         logging.warning(str(e))
         files = []
     return [os.path.join(path, f) for f in files] if full_path else files
 
 
-# this function is a commit from
-# https://github.com/python/cpython/pull/6299/commits/bfd63120c18bd055defb338c075550f975e3bec1
-# In order to solve python https://bugs.python.org/issue9584
-# glob pattern does not support brace expansion issue
-def _translate(pat):  # type: (str) -> str
-    """Translate a shell PATTERN to a regular expression.
-    There is no way to quote meta-characters.
-    """
-    i, n = 0, len(pat)
-    res = ''
-    while i < n:
-        c = pat[i]
-        i = i + 1
-        if c == '*':
-            res = res + '.*'
-        elif c == '?':
-            res = res + '.'
-        elif c == '[':
-            j = i
-            if j < n and pat[j] == '!':
-                j = j + 1
-            if j < n and pat[j] == ']':
-                j = j + 1
-            while j < n and pat[j] != ']':
-                j = j + 1
-            if j >= n:
-                res = res + '\\['
+def is_in_directory(file_path: str, folder: str) -> bool:
+    return os.path.realpath(file_path).startswith(os.path.realpath(folder) + os.sep)
+
+
+class PytestCase:
+    def __init__(self, test_path: str, target: str, config: str, case: str):
+        self.app_path = os.path.dirname(test_path)
+        self.test_path = test_path
+        self.target = target
+        self.config = config
+        self.case = case
+
+    def __repr__(self) -> str:
+        return f'{self.test_path}: {self.target}.{self.config}.{self.case}'
+
+
+class PytestCollectPlugin:
+    def __init__(self, target: str) -> None:
+        self.target = target
+        self.nodes: List[PytestCase] = []
+
+    def pytest_collection_modifyitems(self, items: List['Function']) -> None:
+        for item in items:
+            try:
+                file_path = str(item.path)
+            except AttributeError:
+                # pytest 6.x
+                file_path = item.fspath
+
+            target = self.target
+            if hasattr(item, 'callspec'):
+                config = item.callspec.params.get('config', 'default')
             else:
-                stuff = pat[i:j]
-                if '--' not in stuff:
-                    stuff = stuff.replace('\\', r'\\')
-                else:
-                    chunks = []
-                    k = i + 2 if pat[i] == '!' else i + 1
-                    while True:
-                        k = pat.find('-', k, j)
-                        if k < 0:
-                            break
-                        chunks.append(pat[i:k])
-                        i = k + 1
-                        k = k + 3
-                    chunks.append(pat[i:j])
-                    # Escape backslashes and hyphens for set difference (--).
-                    # Hyphens that create ranges shouldn't be escaped.
-                    stuff = '-'.join(s.replace('\\', r'\\').replace('-', r'\-')
-                                     for s in chunks)
-                # Escape set operations (&&, ~~ and ||).
-                stuff = re.sub(r'([&~|])', r'\\\1', stuff)
-                i = j + 1
-                if stuff[0] == '!':
-                    stuff = '^' + stuff[1:]
-                elif stuff[0] in ('^', '['):
-                    stuff = '\\' + stuff
-                res = '%s[%s]' % (res, stuff)
-        elif c == '{':
-            # Handling of brace expression: '{PATTERN,PATTERN,...}'
-            j = 1
-            while j < n and pat[j] != '}':
-                j = j + 1
-            if j >= n:
-                res = res + '\\{'
+                config = 'default'
+            case_name = item.originalname
+
+            self.nodes.append(PytestCase(file_path, target, config, case_name))
+
+
+def get_pytest_cases(folder: str, target: str) -> List[PytestCase]:
+    import pytest
+    from _pytest.config import ExitCode
+
+    collector = PytestCollectPlugin(target)
+
+    with io.StringIO() as buf:
+        with redirect_stdout(buf):
+            res = pytest.main(['--collect-only', folder, '-q', '--target', target], plugins=[collector])
+        if res.value != ExitCode.OK:
+            if res.value == ExitCode.NO_TESTS_COLLECTED:
+                print(f'WARNING: no pytest app found for target {target} under folder {folder}')
             else:
-                stuff = pat[i:j]
-                i = j + 1
+                print(buf.getvalue())
+                raise RuntimeError('pytest collection failed')
 
-                # Find indices of ',' in pattern excluding r'\,'.
-                # E.g. for r'a\,a,b\b,c' it will be [4, 8]
-                indices = [m.end() for m in re.finditer(r'[^\\],', stuff)]
-
-                # Splitting pattern string based on ',' character.
-                # Also '\,' is translated to ','. E.g. for r'a\,a,b\b,c':
-                # * first_part = 'a,a'
-                # * last_part = 'c'
-                # * middle_part = ['b,b']
-                first_part = stuff[:indices[0] - 1].replace(r'\,', ',')
-                last_part = stuff[indices[-1]:].replace(r'\,', ',')
-                middle_parts = [
-                    stuff[st:en - 1].replace(r'\,', ',')
-                    for st, en in zip(indices, indices[1:])
-                ]
-
-                # creating the regex from splitted pattern. Each part is
-                # recursivelly evaluated.
-                expanded = functools.reduce(
-                    lambda a, b: '|'.join((a, b)),
-                    (_translate(elem) for elem in [first_part] + middle_parts + [last_part])
-                )
-                res = '%s(%s)' % (res, expanded)
-        else:
-            res = res + re.escape(c)
-    return res
+    return collector.nodes
 
 
-def translate(pat):  # type: (str) -> str
-    res = _translate(pat)
-    return r'(?s:%s)\Z' % res
+def get_pytest_app_paths(folder: str, target: str) -> List[str]:
+    nodes = get_pytest_cases(folder, target)
 
-
-magic_check = re.compile('([*?[{])')
-magic_check_bytes = re.compile(b'([*?[{])')
-# cpython github PR 6299 ends here
-
-# Here's the code block we're going to use to monkey patch ``glob`` module and ``fnmatch`` modules
-# DO NOT monkey patch here, only patch where you really needs
-#
-# import glob
-# import fnmatch
-# from idf_ci_utils import magic_check, magic_check_bytes, translate
-# glob.magic_check = magic_check
-# glob.magic_check_bytes = magic_check_bytes
-# fnmatch.translate = translate
+    return list({node.app_path for node in nodes})

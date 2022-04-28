@@ -12,8 +12,8 @@ The following gives an overview of the example:
 1. There is a directory `spiffs_image` from which the SPIFFS filesystem image will be created.
 
 2. The function `spiffs_create_partition_image` is used to specify that a SPIFFS image
-should be created during build for the `storage` partition. For CMake, it is called from [the main component's CMakeLists.txt](./main/CMakeLists.txt);
-for Make, from the [project Makefile](./Makefile). `FLASH_IN_PROJECT` specifies that the created image
+should be created during build for the `storage` partition. It is called from [the main component's CMakeLists.txt](./main/CMakeLists.txt).
+`FLASH_IN_PROJECT` specifies that the created image
 should be flashed on invocation of `idf.py -p PORT flash` together with app, bootloader, partition table, etc.
 For both build systems, the image is created on the example's build directory with the output filename `storage.bin`.
 
@@ -27,13 +27,7 @@ able to read those files.
 
 To run the example, type the following command:
 
-```Makefile
-# Make
-make flash monitor
-```
-or 
 ```CMake
-# CMake
 idf.py -p PORT flash monitor
 ```
 

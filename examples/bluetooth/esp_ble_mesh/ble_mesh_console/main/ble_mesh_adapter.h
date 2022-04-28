@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _BLE_MESH_ADAPTER_H_
 #define _BLE_MESH_ADAPTER_H_
@@ -61,7 +53,7 @@ typedef struct {
     uint16_t *package_index;
     uint8_t  ttl;
 } ble_mesh_performance_statistics_t;
-ble_mesh_performance_statistics_t test_perf_statistics;
+extern ble_mesh_performance_statistics_t test_perf_statistics;
 
 typedef struct {
     uint32_t statistics;
@@ -69,11 +61,11 @@ typedef struct {
     uint16_t *package_index;
     uint32_t total_package_num;
 } ble_mesh_node_statistics_t;
-ble_mesh_node_statistics_t ble_mesh_node_statistics;
+extern ble_mesh_node_statistics_t ble_mesh_node_statistics;
 
 extern SemaphoreHandle_t ble_mesh_node_sema;
 
-#define SEND_MESSAGE_TIMEOUT (30000/portTICK_RATE_MS)
+#define SEND_MESSAGE_TIMEOUT (30000/portTICK_PERIOD_MS)
 
 #define arg_int_to_value(src_msg, dst_msg, message) do { \
     if (src_msg->count != 0) {\

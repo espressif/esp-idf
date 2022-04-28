@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 from threading import Thread
+from typing import Any, Dict, List
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import ensure_build_directory
@@ -82,19 +83,6 @@ def action_extensions(base_actions, project_path):
                 print(e)
                 print('Failed to close/kill {}'.format(target))
             processes[target] = None  # to indicate this has ended
-
-    def _get_commandline_options(ctx):
-        """ Return all the command line options up to first action """
-        # This approach ignores argument parsing done Click
-        result = []
-
-        for arg in sys.argv:
-            if arg in ctx.command.commands_with_aliases:
-                break
-
-            result.append(arg)
-
-        return result
 
     def create_local_gdbinit(gdbinit, elf_file):
         with open(gdbinit, 'w') as f:
@@ -188,6 +176,13 @@ def action_extensions(base_actions, project_path):
         processes['openocd_outfile_name'] = openocd_out_name
         print('OpenOCD started as a background task {}'.format(process.pid))
 
+    def get_gdb_args(gdbinit, project_desc: Dict[str, Any]) -> List[str]:
+        args = ['-x={}'.format(gdbinit)]
+        debug_prefix_gdbinit = project_desc.get('debug_prefix_map_gdbinit')
+        if debug_prefix_gdbinit:
+            args.append('-ix={}'.format(debug_prefix_gdbinit))
+        return args
+
     def gdbui(action, ctx, args, gdbgui_port, gdbinit, require_openocd):
         """
         Asynchronous GDB-UI target
@@ -198,7 +193,17 @@ def action_extensions(base_actions, project_path):
         if gdbinit is None:
             gdbinit = os.path.join(local_dir, 'gdbinit')
             create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc['app_elf']))
-        args = ['gdbgui', '-g', gdb, '--gdb-args="-x={}"'.format(gdbinit)]
+
+        # this is a workaround for gdbgui
+        # gdbgui is using shlex.split for the --gdb-args option. When the input is:
+        # - '"-x=foo -x=bar"', would return ['foo bar']
+        # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
+        # so for one item, use extra double quotes. for more items, use no extra double quotes.
+        gdb_args = get_gdb_args(gdbinit, project_desc)
+        gdb_args = '"{}"'.format(' '.join(gdb_args)) if len(gdb_args) == 1 else ' '.join(gdb_args)
+        args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
+        print(args)
+
         if gdbgui_port is not None:
             args += ['--port', gdbgui_port]
         gdbgui_out_name = os.path.join(local_dir, GDBGUI_OUT_FILE)
@@ -212,7 +217,8 @@ def action_extensions(base_actions, project_path):
             process = subprocess.Popen(args, stdout=gdbgui_out, stderr=subprocess.STDOUT, bufsize=1, env=env)
         except Exception as e:
             print(e)
-            raise FatalError('Error starting gdbgui. Please make sure gdbgui can be started', ctx)
+            raise FatalError('Error starting gdbgui. Please make sure gdbgui has been installed with '
+                             '"install.{sh,bat,ps1,fish} --enable-gdbgui" and can be started.', ctx)
 
         processes['gdbgui'] = process
         processes['gdbgui_outfile'] = gdbgui_out
@@ -278,10 +284,10 @@ def action_extensions(base_actions, project_path):
         if gdbinit is None:
             gdbinit = os.path.join(local_dir, 'gdbinit')
             create_local_gdbinit(gdbinit, elf_file)
-        args = [gdb, '-x={}'.format(gdbinit)]
+        args = [gdb, *get_gdb_args(gdbinit, project_desc)]
         if gdb_tui is not None:
             args += ['-tui']
-        t = Thread(target=run_gdb, args=(args, ))
+        t = Thread(target=run_gdb, args=(args,))
         t.start()
         while True:
             try:
@@ -367,8 +373,28 @@ def action_extensions(base_actions, project_path):
                 'options': [gdbinit, fail_if_openocd_failed],
                 'order_dependencies': ['all', 'flash'],
             },
+            'post-debug': {
+                'callback': post_debug,
+                'help': 'Utility target to read the output of async debug action and stop them.',
+                'options': [
+                    {
+                        'names': ['--block', '--block'],
+                        'help':
+                        ('Set to 1 for blocking the console on the outputs of async debug actions\n'),
+                        'default': 0,
+                    },
+                ],
+                'order_dependencies': [],
+            },
             'post_debug': {
                 'callback': post_debug,
+                'deprecated': {
+                    'since': 'v4.4',
+                    'removed': 'v5.0',
+                    'exit_with_error': True,
+                    'message': 'Have you wanted to run "post-debug" instead?',
+                },
+                'hidden': True,
                 'help': 'Utility target to read the output of async debug action and stop them.',
                 'options': [
                     {

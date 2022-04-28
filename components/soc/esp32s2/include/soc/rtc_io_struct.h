@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct rtc_io_dev_s {
     union {
         struct {
             uint32_t reserved0:        10;

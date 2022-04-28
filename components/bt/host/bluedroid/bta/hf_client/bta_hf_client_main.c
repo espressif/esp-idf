@@ -214,7 +214,7 @@ const UINT8 bta_hf_client_st_closing[][BTA_HF_CLIENT_NUM_COLS] = {
     /* DISC_OK_EVT */           {BTA_HF_CLIENT_IGNORE,         BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
     /* DISC_FAIL_EVT */         {BTA_HF_CLIENT_IGNORE,         BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
     /* SCO_OPEN_EVT */          {BTA_HF_CLIENT_IGNORE,         BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
-    /* SCO_CLOSE_EVT */         {BTA_HF_CLIENT_IGNORE,         BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
+    /* SCO_CLOSE_EVT */         {BTA_HF_CLIENT_SCO_CONN_CLOSE, BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
     /* SEND_AT_CMD_EVT */       {BTA_HF_CLIENT_IGNORE,         BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
     /* CI_SCO_DATA_EVT */       {BTA_HF_CLIENT_IGNORE,         BTA_HF_CLIENT_IGNORE,          BTA_HF_CLIENT_CLOSING_ST},
@@ -232,7 +232,7 @@ const tBTA_HF_CLIENT_ST_TBL bta_hf_client_st_tbl[] = {
     bta_hf_client_st_closing
 };
 
-const char *bta_hf_client_version = "1.6";
+const int bta_hf_client_version = HFP_HF_VERSION_1_7;
 
 /* HF Client control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
@@ -387,7 +387,7 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
     bta_hf_client_cb.p_cback = p_data->api_enable.p_cback;
 
     /* check if mSBC support enabled */
-    if (strcmp(bta_hf_client_version, "1.6") == 0) {
+    if (bta_hf_client_version >= HFP_HF_VERSION_1_6) {
         bta_hf_client_cb.msbc_enabled = TRUE;
     } else{
         bta_hf_client_cb.msbc_enabled = FALSE;

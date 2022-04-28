@@ -7,19 +7,9 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import division, print_function, unicode_literals
 
 import argparse
@@ -73,6 +63,7 @@ SUBTYPES = {
         'coredump': 0x03,
         'nvs_keys': 0x04,
         'efuse': 0x05,
+        'undefined': 0x06,
         'esphttpd': 0x80,
         'fat': 0x81,
         'spiffs': 0x82,
@@ -89,6 +80,16 @@ def get_subtype_as_int(ptype, subtype):
             return int(subtype, 0)
         except TypeError:
             return subtype
+
+
+ALIGNMENT = {
+    APP_TYPE: 0x10000,
+    DATA_TYPE: 0x1000,
+}
+
+
+def get_alignment_for_type(ptype):
+    return ALIGNMENT.get(ptype, ALIGNMENT[DATA_TYPE])
 
 
 quiet = False
@@ -143,8 +144,8 @@ class PartitionTable(list):
                 continue
             try:
                 res.append(PartitionDefinition.from_csv(line, line_no + 1))
-            except InputError as e:
-                raise InputError('Error at line %d: %s' % (line_no + 1, e))
+            except InputError as err:
+                raise InputError('Error at line %d: %s' % (line_no + 1, err))
             except Exception:
                 critical('Unexpected error parsing CSV line %d: %s' % (line_no + 1, line))
                 raise
@@ -160,7 +161,7 @@ class PartitionTable(list):
                     raise InputError('CSV Error: Partitions overlap. Partition at line %d sets offset 0x%x. Previous partition ends 0x%x'
                                      % (e.line_no, e.offset, last_end))
             if e.offset is None:
-                pad_to = 0x10000 if e.type == APP_TYPE else 4
+                pad_to = get_alignment_for_type(e.type)
                 if last_end % pad_to != 0:
                     last_end += pad_to - (last_end % pad_to)
                 e.offset = last_end
@@ -210,10 +211,10 @@ class PartitionTable(list):
 
         # print sorted duplicate partitions by name
         if len(duplicates) != 0:
-            print('A list of partitions that have the same name:')
+            critical('A list of partitions that have the same name:')
             for p in sorted(self, key=lambda x:x.name):
                 if len(duplicates.intersection([p.name])) != 0:
-                    print('%s' % (p.to_csv()))
+                    critical('%s' % (p.to_csv()))
             raise InputError('Partition names must be unique')
 
         # check for overlaps
@@ -225,6 +226,18 @@ class PartitionTable(list):
                 raise InputError('Partition at 0x%x overlaps 0x%x-0x%x' % (p.offset, last.offset, last.offset + last.size - 1))
             last = p
 
+        # check that otadata should be unique
+        otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['ota']]
+        if len(otadata_duplicates) > 1:
+            for p in otadata_duplicates:
+                critical('%s' % (p.to_csv()))
+            raise InputError('Found multiple otadata partitions. Only one partition can be defined with type="data"(1) and subtype="ota"(0).')
+
+        if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
+            p = otadata_duplicates[0]
+            critical('%s' % (p.to_csv()))
+            raise InputError('otadata partition must have size = 0x2000')
+
     def flash_size(self):
         """ Return the size that partitions will occupy in flash
             (ie the offset the last partition ends at)
@@ -234,6 +247,17 @@ class PartitionTable(list):
         except IndexError:
             return 0  # empty table!
         return last.offset + last.size
+
+    def verify_size_fits(self, flash_size_bytes: int) -> None:
+        """ Check that partition table fits into the given flash size.
+            Raises InputError otherwise.
+        """
+        table_size = self.flash_size()
+        if flash_size_bytes < table_size:
+            mb = 1024 * 1024
+            raise InputError('Partitions tables occupies %.1fMB of flash (%d bytes) which does not fit in configured '
+                             "flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
+                             (table_size / mb, table_size, flash_size_bytes / mb))
 
     @classmethod
     def from_binary(cls, b):
@@ -273,11 +297,6 @@ class PartitionTable(list):
 
 class PartitionDefinition(object):
     MAGIC_BYTES = b'\xAA\x50'
-
-    ALIGNMENT = {
-        APP_TYPE: 0x10000,
-        DATA_TYPE: 0x04,
-    }
 
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
@@ -358,7 +377,9 @@ class PartitionDefinition(object):
 
     def parse_subtype(self, strval):
         if strval == '':
-            return 0  # default
+            if self.type == TYPES['app']:
+                raise InputError('App partition cannot have an empty subtype')
+            return SUBTYPES[DATA_TYPE]['undefined']
         return parse_int(strval, SUBTYPES.get(self.type, {}))
 
     def parse_address(self, strval):
@@ -373,10 +394,10 @@ class PartitionDefinition(object):
             raise ValidationError(self, 'Subtype field is not set')
         if self.offset is None:
             raise ValidationError(self, 'Offset field is not set')
-        align = self.ALIGNMENT.get(self.type, 4)
+        align = get_alignment_for_type(self.type)
         if self.offset % align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, align))
-        if self.size % align and secure:
+        if self.size % align and secure and self.type == APP_TYPE:
             raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, align))
         if self.size is None:
             raise ValidationError(self, 'Size field is not set')
@@ -477,7 +498,7 @@ def main():
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
-                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB'])
+                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB'])
     parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
     parser.add_argument('--no-verify', help="Don't verify partition table fields", action='store_true')
     parser.add_argument('--verify', '-v', help='Verify partition table fields (deprecated, this behaviour is '
@@ -503,12 +524,7 @@ def main():
 
     if args.flash_size:
         size_mb = int(args.flash_size.replace('MB', ''))
-        size = size_mb * 1024 * 1024  # flash memory uses honest megabytes!
-        table_size = table.flash_size()
-        if size < table_size:
-            raise InputError("Partitions defined in '%s' occupy %.1fMB of flash (%d bytes) which does not fit in configured "
-                             "flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
-                             (args.input.name, table_size / 1024.0 / 1024.0, table_size, size_mb))
+        table.verify_size_fits(size_mb * 1024 * 1024)
 
     # Make sure that the output directory is created
     output_dir = os.path.abspath(os.path.dirname(args.output))

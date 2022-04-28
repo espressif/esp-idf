@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <sys/param.h>
 #include "esp_mbedtls_dynamic_impl.h"
 
@@ -22,21 +14,21 @@ static const char *TAG = "SSL Server";
 
 static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 {
-    int state = add ? ssl->state : ssl->state - 1;
+    int state = add ? ssl->MBEDTLS_PRIVATE(state) : ssl->MBEDTLS_PRIVATE(state) - 1;
 
-    if (ssl->state == MBEDTLS_SSL_HANDSHAKE_OVER || ssl->handshake == NULL) {
+    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER || ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
         return 0;
     }
 
     if (!add) {
-        if (!ssl->out_left) {
+        if (!ssl->MBEDTLS_PRIVATE(out_left)) {
             CHECK_OK(esp_mbedtls_free_tx_buffer(ssl));
         }
     }
 
     switch (state) {
         case MBEDTLS_SSL_HELLO_REQUEST:
-            ssl->major_ver = MBEDTLS_SSL_MAJOR_VERSION_3;
+            ssl->MBEDTLS_PRIVATE(major_ver) = MBEDTLS_SSL_MAJOR_VERSION_3;
             break;
         case MBEDTLS_SSL_CLIENT_HELLO:
             if (add) {
@@ -57,7 +49,7 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
         case MBEDTLS_SSL_SERVER_CERTIFICATE:
             if (add) {
                 size_t buffer_len = 3;
-                mbedtls_ssl_key_cert *key_cert = ssl->conf->key_cert;
+                mbedtls_ssl_key_cert *key_cert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
 
                 while (key_cert && key_cert->cert) {
                     size_t num;
@@ -136,10 +128,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
             } else {
                 CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
-
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-                esp_mbedtls_free_peer_cert(ssl);
-#endif
             }
             break;
         case MBEDTLS_SSL_CLIENT_FINISHED:

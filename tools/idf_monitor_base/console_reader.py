@@ -14,6 +14,7 @@
 
 
 import os
+import queue
 import time
 
 from serial.tools.miniterm import Console
@@ -21,11 +22,6 @@ from serial.tools.miniterm import Console
 from .console_parser import ConsoleParser
 from .constants import CMD_STOP, TAG_CMD
 from .stoppable_thread import StoppableThread
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue  # type: ignore
 
 
 class ConsoleReader(StoppableThread):

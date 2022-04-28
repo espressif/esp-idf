@@ -34,7 +34,6 @@ typedef struct {
      * automatically assigned by the SPI bus lock.
      */
     int cs_id;
-    uint32_t cs_setup;              ///< (cycles-1) of prepare phase by spi clock
 } esp_flash_spi_device_config_t;
 
 /**

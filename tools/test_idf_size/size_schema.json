@@ -1,0 +1,164 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/espressif/esp-idf/blob/master/tools/size-schema.json",
+    "type": "object",
+    "oneOf": [
+        {
+            "patternProperties": {
+                "^dram_(data|bss|rodata|other|remain|total)$": {
+                    "type": "integer"
+                },
+                "^used_(dram|iram|diram|flash_non_ram)$": {
+                    "type": "integer"
+                },
+                "^used_(dram|iram|diram)_ratio$": {
+                    "type": "number"
+                },
+                "^iram_(vectors|text|other|remain|total)$": {
+                    "type": "integer"
+                },
+                "^diram_(data|bss|rodata|vectors|text|other|remain|total)$": {
+                    "type": "integer"
+                },
+                "^flash_(code|rodata|other)$": {
+                    "type": "integer"
+                },
+                "^total_size$": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "dram_data",
+                "dram_bss",
+                "dram_rodata",
+                "dram_other",
+                "used_dram",
+                "dram_total",
+                "used_dram_ratio",
+                "dram_remain",
+                "iram_vectors",
+                "iram_text",
+                "iram_other",
+                "used_iram",
+                "iram_total",
+                "used_iram_ratio",
+                "iram_remain",
+                "diram_data",
+                "diram_bss",
+                "diram_text",
+                "diram_vectors",
+                "diram_rodata",
+                "diram_other",
+                "diram_total",
+                "used_diram",
+                "used_diram_ratio",
+                "diram_remain",
+                "flash_code",
+                "flash_rodata",
+                "flash_other",
+                "used_flash_non_ram",
+                "total_size"
+            ]
+        },
+        {
+            "patternProperties": {
+                "(\\.a$|\\.o$|\\.obj$|exe)": {
+                    "$ref": "#/$defs/memory_components"
+                }
+            },
+            "additionalProperties": false
+        },
+        {
+            "patternProperties": {
+                "(^\\.dram0\\.(bss|data)$)": {
+                    "$ref": "#/$defs/archive_details"
+                },
+                "(^\\.flash\\.(rodata|text|appdesc|rodata_noload)$)": {
+                    "$ref": "#/$defs/archive_details"
+                },
+                "(^\\.iram0\\.(text|vectors|bss|data)$)": {
+                    "$ref": "#/$defs/archive_details"
+                },
+                "(^\\.rtc\\.(bss|data|text)$)": {
+                    "$ref": "#/$defs/archive_details"
+                },
+                "(^\\.noinit$)": {
+                    "$ref": "#/$defs/archive_details"
+                },
+                "(^\\.rtc_noinit$)": {
+                    "$ref": "#/$defs/archive_details"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                ".dram0.bss",
+                ".dram0.data",
+                ".flash.rodata",
+                ".flash.text",
+                ".iram0.text",
+                ".noinit",
+                ".rtc.bss",
+                ".rtc.data",
+                ".rtc.text",
+                ".rtc_noinit"
+            ]
+        },
+        {
+            "patternProperties": {
+                "(^diff$|^reference$|^current$)": {
+                    "$ref": "#"
+                }
+            },
+            "additionalProperties": false
+        }
+    ],
+    "$defs": {
+        "memory_components": {
+            "type": "object",
+            "properties": {
+                ".dram0.bss": {
+                    "type": "integer"
+                },
+                ".dram0.data": {
+                    "type": "integer"
+                },
+                ".flash.rodata": {
+                    "type": "integer"
+                },
+                ".flash.text": {
+                    "type": "integer"
+                },
+                ".flash.appdesc": {
+                    "type": "integer"
+                },
+                ".iram0.text": {
+                    "type": "integer"
+                },
+                ".iram0.vectors": {
+                    "type": "integer"
+                },
+                ".rtc.data": {
+                    "type": "integer"
+                },
+                "flash_total": {
+                    "type": "integer"
+                },
+                "ram_st_total": {
+                    "type": "integer"
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "flash_total",
+                "ram_st_total"
+            ]
+        },
+        "archive_details": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "integer"
+            }
+        }
+    }
+}

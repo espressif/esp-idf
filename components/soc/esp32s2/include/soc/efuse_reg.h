@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_REG_H_
 #define _SOC_EFUSE_REG_H_
 
@@ -917,18 +909,18 @@ extern "C" {
 #define EFUSE_SPI_PAD_CONF_1_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_3_REG          (DR_REG_EFUSE_BASE + 0x050)
-/* EFUSE_SYS_DATA_PART0_0 : RO ;bitpos:[31:25] ;default: 7'h0 ; */
-/*description: Stores the fist 7 bits of the zeroth part of system data.*/
-#define EFUSE_SYS_DATA_PART0_0  0x0000007F
-#define EFUSE_SYS_DATA_PART0_0_M  ((EFUSE_SYS_DATA_PART0_0_V)<<(EFUSE_SYS_DATA_PART0_0_S))
-#define EFUSE_SYS_DATA_PART0_0_V  0x7F
-#define EFUSE_SYS_DATA_PART0_0_S  25
-/* EFUSE_PKG_VERSION : RO ;bitpos:[24:21] ;default: 4'h0 ; */
-/*description: Package version 0:ESP32-S2, 1:ESP32-S2FH16, 2:ESP32-S2FH32 */
-#define EFUSE_PKG_VERSION  0x0000000F
-#define EFUSE_PKG_VERSION_M  ((EFUSE_PKG_VERSION_V)<<(EFUSE_PKG_VERSION_S))
-#define EFUSE_PKG_VERSION_V  0xF
-#define EFUSE_PKG_VERSION_S  21
+/* EFUSE_PSRAM_VERSION : RO ;bitpos:[31:28] ;default: 4'h0 ; */
+/*description: PSRAM version */
+#define EFUSE_PSRAM_VERSION  0x0000000F
+#define EFUSE_PSRAM_VERSION_M  ((EFUSE_PSRAM_VERSION_V)<<(EFUSE_PSRAM_VERSION_S))
+#define EFUSE_PSRAM_VERSION_V  0xF
+#define EFUSE_PSRAM_VERSION_S  28
+/* EFUSE_FLASH_VERSION : RO ;bitpos:[24:21] ;default: 4'h0 ; */
+/*description: Flash version */
+#define EFUSE_FLASH_VERSION  0x0000000F
+#define EFUSE_FLASH_VERSION_M  ((EFUSE_FLASH_VERSION_V)<<(EFUSE_FLASH_VERSION_S))
+#define EFUSE_FLASH_VERSION_V  0xF
+#define EFUSE_FLASH_VERSION_S  21
 /* EFUSE_WAFER_VERSION : RO ;bitpos:[20:18] ;default: 3'h0 ; */
 /*description: WAFER version 0:A */
 #define EFUSE_WAFER_VERSION  0x00000007
@@ -943,12 +935,18 @@ extern "C" {
 #define EFUSE_SPI_PAD_CONF_2_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_4_REG          (DR_REG_EFUSE_BASE + 0x054)
-/* EFUSE_SYS_DATA_PART0_1 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
+/* EFUSE_SYS_DATA_PART0_1 : RO ;bitpos:[31:4] ;default: 28'h0 ; */
 /*description: Stores the fist 32 bits of the zeroth part of system data.*/
-#define EFUSE_SYS_DATA_PART0_1  0xFFFFFFFF
+#define EFUSE_SYS_DATA_PART0_1  0x0FFFFFFF
 #define EFUSE_SYS_DATA_PART0_1_M  ((EFUSE_SYS_DATA_PART0_1_V)<<(EFUSE_SYS_DATA_PART0_1_S))
-#define EFUSE_SYS_DATA_PART0_1_V  0xFFFFFFFF
-#define EFUSE_SYS_DATA_PART0_1_S  0
+#define EFUSE_SYS_DATA_PART0_1_V  0x0FFFFFFF
+#define EFUSE_SYS_DATA_PART0_1_S  4
+/* EFUSE_PKG_VERSION : RO ;bitpos:[3:0] ;default: 4'h0 ; */
+/*description: Package version */
+#define EFUSE_PKG_VERSION  0x0000000F
+#define EFUSE_PKG_VERSION_M  ((EFUSE_PKG_VERSION_V)<<(EFUSE_PKG_VERSION_S))
+#define EFUSE_PKG_VERSION_V  0xF
+#define EFUSE_PKG_VERSION_S  0
 
 #define EFUSE_RD_MAC_SPI_SYS_5_REG          (DR_REG_EFUSE_BASE + 0x058)
 /* EFUSE_SYS_DATA_PART0_2 : RO ;bitpos:[31:0] ;default: 32'h0 ; */
@@ -1902,7 +1900,7 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_S  0
 
-#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x190)
+#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x18C)
 /* EFUSE_RPT1_RESERVED0_ERR : RO ;bitpos:[31:24] ;default: 8'h0 ; */
 /*description: Reserved.*/
 #define EFUSE_RPT1_RESERVED0_ERR  0x000000FF
@@ -2065,6 +2063,9 @@ extern "C" {
 #define EFUSE_MEM_FORCE_PD_M  (BIT(0))
 #define EFUSE_MEM_FORCE_PD_V  0x1
 #define EFUSE_MEM_FORCE_PD_S  0
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
 
 #define EFUSE_CONF_REG          (DR_REG_EFUSE_BASE + 0x1cc)
 /* EFUSE_OP_CODE : R/W ;bitpos:[15:0] ;default: 16'h0 ; */

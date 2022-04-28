@@ -15,9 +15,11 @@ menu "Core dump"
         config ESP_COREDUMP_ENABLE_TO_FLASH
             bool "Flash"
             depends on !SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+            select FREERTOS_ENABLE_TASK_SNAPSHOT
             select ESP_COREDUMP_ENABLE
         config ESP_COREDUMP_ENABLE_TO_UART
             bool "UART"
+            select FREERTOS_ENABLE_TASK_SNAPSHOT
             select ESP_COREDUMP_ENABLE
         config ESP_COREDUMP_ENABLE_TO_NONE
             bool "None"

@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -28,9 +20,13 @@
 #include "soc/efuse_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
+#include "esp_rom_sys.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "regi2c_dig_reg.h"
+#include "regi2c_bbpll.h"
+#include "esp_hw_log.h"
 #include "rtc_clk_common.h"
+#include "hal/usb_serial_jtag_ll.h"
 #include "sdkconfig.h"
 
 static const char *TAG = "rtc_clk";
@@ -42,7 +38,10 @@ static const char *TAG = "rtc_clk";
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static uint32_t s_cur_pll_freq;
 
+static uint32_t s_apb_freq;
+
 static void rtc_clk_cpu_freq_to_8m(void);
+static bool rtc_clk_set_bbpll_always_on(void);
 
 void rtc_clk_32k_enable_internal(x32k_config_t cfg)
 {
@@ -278,7 +277,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     }
     uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_bbpll_div_7_0 = div7_0;
-    uint8_t i2c_bbpll_dcur = (2 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (1 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
+    uint8_t i2c_bbpll_dcur = (1 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (2 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, i2c_bbpll_lref);
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_OC_DIV_7_0, i2c_bbpll_div_7_0);
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_DR1, dr1);
@@ -307,9 +306,10 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         dbias = DIG_DBIAS_240M;
         per_conf = DPORT_CPUPERIOD_SEL_240;
     } else {
-        SOC_LOGE(TAG, "invalid frequency");
+        ESP_HW_LOGE(TAG, "invalid frequency");
     }
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, dbias);
+    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, dbias);
     wait_dig_dbias_valid(2);
     REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
@@ -369,7 +369,8 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
     uint32_t soc_clk_sel = REG_GET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL);
     if (config->source == RTC_CPU_FREQ_SRC_XTAL) {
         rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
-        if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) {
+        if ((soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) && !rtc_clk_set_bbpll_always_on()) {
+            // We don't turn off the bbpll if some consumers only depends on bbpll
             rtc_clk_bbpll_disable();
         }
     } else if (config->source == RTC_CPU_FREQ_SRC_PLL) {
@@ -380,7 +381,8 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == RTC_CPU_FREQ_SRC_8M) {
         rtc_clk_cpu_freq_to_8m();
-        if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) {
+        if ((soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) && !rtc_clk_set_bbpll_always_on()) {
+            // We don't turn off the bbpll if some consumers only depends on bbpll
             rtc_clk_bbpll_disable();
         }
     }
@@ -417,7 +419,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
             div = 2;
             freq_mhz = 240;
         } else {
-            SOC_LOGE(TAG, "unsupported frequency configuration");
+            ESP_HW_LOGE(TAG, "unsupported frequency configuration");
             return;
         }
         break;
@@ -429,7 +431,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         freq_mhz = source_freq_mhz;
         break;
     default:
-        SOC_LOGE(TAG, "unsupported frequency configuration");
+        ESP_HW_LOGE(TAG, "unsupported frequency configuration");
         return;
     }
     *out_config = (rtc_cpu_freq_config_t) {
@@ -458,7 +460,11 @@ void rtc_clk_cpu_freq_set_xtal(void)
     int freq_mhz = (int) rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
-    rtc_clk_bbpll_disable();
+
+    // We don't turn off the bbpll if some consumers only depends on bbpll
+    if (!rtc_clk_set_bbpll_always_on()) {
+        rtc_clk_bbpll_disable();
+    }
 }
 
 /**
@@ -497,7 +503,7 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
     if (!clk_val_is_valid(xtal_freq_reg)) {
-        SOC_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
+        ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
         return RTC_XTAL_FREQ_40M;
     }
     return reg_val_to_clk_val(xtal_freq_reg);
@@ -510,16 +516,12 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)
 {
-    WRITE_PERI_REG(RTC_APB_FREQ_REG, clk_val_to_reg_val(apb_freq >> 12));
+    s_apb_freq = apb_freq;
 }
 
 uint32_t rtc_clk_apb_freq_get(void)
 {
-    uint32_t freq_hz = reg_val_to_clk_val(READ_PERI_REG(RTC_APB_FREQ_REG)) << 12;
-    // round to the nearest MHz
-    freq_hz += MHZ / 2;
-    uint32_t remainder = freq_hz % MHZ;
-    return freq_hz - remainder;
+    return s_apb_freq;
 }
 
 void rtc_clk_divider_set(uint32_t div)
@@ -546,6 +548,21 @@ void rtc_dig_clk8m_disable(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
     esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
+}
+
+static bool rtc_clk_set_bbpll_always_on(void)
+{
+    /* We just keep the rtc bbpll clock on just under the case that
+    user selects the `RTC_CLOCK_BBPLL_POWER_ON_WITH_USB` as well as
+    the USB_SERIAL_JTAG is connected with PC.
+    */
+    bool is_bbpll_on = false;
+#if CONFIG_RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
+    if (usb_serial_jtag_ll_txfifo_writable() == 1) {
+        is_bbpll_on = true;
+    }
+#endif
+    return is_bbpll_on;
 }
 
 /* Name used in libphy.a:phy_chip_v7.o

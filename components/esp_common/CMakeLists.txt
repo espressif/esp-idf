@@ -1,5 +1,11 @@
 idf_build_get_property(target IDF_TARGET)
 
+if(${target} STREQUAL "linux")
+    # Header only library for linux
+    idf_component_register(INCLUDE_DIRS include)
+    return()
+endif()
+
 list(APPEND srcs "src/esp_err_to_name.c")
 
 # Note: esp_ipc, esp_pm added as a public requirement to keep compatibility as to be located here.
@@ -22,12 +28,12 @@ set(optional_reqs ulp
                     lwip
                     spi_flash
                     wpa_supplicant
-                    tcpip_adapter
                     esp_serial_slave_link
                     esp_netif
                     soc
                     esp-tls
-                    esp_https_ota)
+                    esp_https_ota
+                    esp_hw_support)
 
 idf_build_get_property(build_components BUILD_COMPONENTS)
 foreach(req ${optional_reqs})

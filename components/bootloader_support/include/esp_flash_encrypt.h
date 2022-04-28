@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #ifndef BOOTLOADER_BUILD
 #include "esp_spi_flash.h"
 #endif
-#include "soc/efuse_periph.h"
+#include "hal/efuse_ll.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -39,24 +39,7 @@ typedef enum {
  *
  * @return true if flash encryption is enabled.
  */
-static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void)
-{
-    uint32_t flash_crypt_cnt = 0;
-#if CONFIG_IDF_TARGET_ESP32
-    flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
-#else
-    flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
-#endif
-    /* __builtin_parity is in flash, so we calculate parity inline */
-    bool enabled = false;
-    while (flash_crypt_cnt) {
-        if (flash_crypt_cnt & 1) {
-            enabled = !enabled;
-        }
-        flash_crypt_cnt >>= 1;
-    }
-    return enabled;
-}
+bool esp_flash_encryption_enabled(void);
 
 /* @brief Update on-device flash encryption
  *
@@ -150,6 +133,23 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void);
  *  config in any way
  */
 void esp_flash_encryption_init_checks(void);
+
+/** @brief Set all secure eFuse features related to flash encryption
+ *
+ * @return
+ *  - ESP_OK - Successfully
+ */
+esp_err_t esp_flash_encryption_enable_secure_features(void);
+
+/** @brief Switches Flash Encryption from "Development" to "Release"
+ *
+ * If already in "Release" mode, the function will do nothing.
+ * If flash encryption efuse is not enabled yet then abort.
+ * It burns:
+ *  - "disable encrypt in dl mode"
+ *  - set FLASH_CRYPT_CNT efuse to max
+ */
+void esp_flash_encryption_set_release_mode(void);
 
 #ifdef __cplusplus
 }

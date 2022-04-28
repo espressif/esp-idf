@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdio.h>
 
 #include "sdkconfig.h"
@@ -5,14 +11,10 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "esp_err.h"
-
 #include "transaction.h"
-
-
 #define TAG    "TRANS"
 
 static transaction_t transactions[MAX_TRANSACTION_COUNT];
@@ -178,7 +180,6 @@ esp_err_t transaction_run(transaction_t *trans)
 
     if (trans) {
         start_time = utils_get_system_ts();
-
         // wait for wait events
         while (1) {
             //TODO: we didn't handle ts overflow
@@ -192,7 +193,7 @@ esp_err_t transaction_run(transaction_t *trans)
 
             // trans->event_group and trans->wait_events will not be changed once trans is created, so we don't need protect them
             current_bits = xEventGroupWaitBits(trans->event_group, trans->wait_events | TRANSACTION_ABORT_EVENT,
-                    1, 0, wait_time/portTICK_RATE_MS);
+                    1, 0, wait_time/portTICK_PERIOD_MS);
 
             xSemaphoreTakeRecursive(trans_mutex, portMAX_DELAY);
             trans->current_bits |= current_bits;
@@ -246,7 +247,6 @@ transaction_t *transaction_get(uint8_t type, uint32_t sub_type, transaction_t *s
         }
     }
     xSemaphoreGiveRecursive(trans_mutex);
-
     ESP_LOGV(TAG, "transaction get: %x, %x, %x, %x", type, sub_type, (uint32_t) start, (uint32_t) trans);
     return trans;
 }

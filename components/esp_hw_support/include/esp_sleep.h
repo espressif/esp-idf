@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -49,7 +41,10 @@ typedef enum {
     ESP_PD_DOMAIN_RTC_SLOW_MEM,    //!< RTC slow memory
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
+#if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
+#endif
+    ESP_PD_DOMAIN_RTC8M,           //!< Internal 8M oscillator
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
@@ -92,7 +87,7 @@ typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
  * defined as parameter of the function.
  *
  * @note This function does not modify wake up configuration in RTC.
- *       It will be performed in esp_sleep_start function.
+ *       It will be performed in esp_deep_sleep_start/esp_light_sleep_start function.
  *
  * See docs/sleep-modes.rst for details.
  *
@@ -112,7 +107,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
  *       ext0 wakeup source is used.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
+ *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
  *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_ulp_wakeup(void);
@@ -143,7 +138,7 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
+ *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_touchpad_wakeup(void);
@@ -182,7 +177,8 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
  * into the state given by level argument, the chip will be woken up.
  *
  * @note This function does not modify pin configuration. The pin is
- *       configured in esp_sleep_start, immediately before entering sleep mode.
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
  *
  * @note In revisions 0 and 1 of the ESP32, ext0 wakeup source
  *       can not be used together with touch or ULP wakeup sources.
@@ -209,16 +205,16 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * the chip will be woken up.
  *
  * @note This function does not modify pin configuration. The pins are
- *       configured in esp_sleep_start, immediately before
- *       entering sleep mode.
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
  *
- * @note internal pullups and pulldowns don't work when RTC peripherals are
+ * @note Internal pullups and pulldowns don't work when RTC peripherals are
  *       shut down. In this case, external resistors need to be added.
  *       Alternatively, RTC peripherals (and pullups/pulldowns) may be
  *       kept enabled using esp_sleep_pd_config function.
  *
  * @param mask  bit mask of GPIO numbers which will cause wakeup. Only GPIOs
- *              which are have RTC functionality can be used in this bit map:
+ *              which have RTC functionality can be used in this bit map:
  *              0,2,4,12-15,25-27,32-39.
  * @param mode select logic function used to determine wakeup condition:
  *            - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
@@ -236,16 +232,16 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
 /**
  * @brief Enable wakeup using specific gpio pins
  *
- * This function enables an IO pin to wake the chip from deep sleep
+ * This function enables an IO pin to wake up the chip from deep sleep.
  *
  * @note This function does not modify pin configuration. The pins are
- *       configured in esp_sleep_start, immediately before
- *       entering sleep mode.
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
  *
  * @note You don't need to care to pull-up or pull-down before using this
- *       function, because this will be done in esp_sleep_start based on
- *       param mask you give. BTW, when you use low level to wake up the
- *       chip, we strongly recommand you to add external registors(pull-up).
+ *       function, because this will be done in esp_deep_sleep_start/esp_light_sleep_start
+ *       based on param mask you give. BTW, when you use low level to wake up the
+ *       chip, we strongly recommand you to add external registors (pull-up).
  *
  * @param gpio_pin_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *              which are have RTC functionality can be used in this bit map.
@@ -379,6 +375,8 @@ esp_err_t esp_light_sleep_start(void);
  *     - esp_wifi_stop
  *
  * This function does not return.
+ *
+ * @note The device will wake up immediately if the deep-sleep time is set to 0
  *
  * @param time_in_us  deep-sleep time, unit: microsecond
  */

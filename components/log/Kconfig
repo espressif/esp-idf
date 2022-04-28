@@ -102,8 +102,8 @@ menu "Log output"
               by the tick period. This time will reset after a software reboot.
               e.g. (90000)
 
-            - System time is taken from POSIX time functions which use the ESP32's
-              RTC and FRC1 timers to maintain an accurate time. The system time is
+            - System time is taken from POSIX time functions which use the chip's
+              RTC and high resoultion timers to maintain an accurate time. The system time is
               initialized to 0 on startup, it can be set with an SNTP sync, or with
               POSIX time functions. This time will not reset after a software reboot.
               e.g. (00:01:30.000)

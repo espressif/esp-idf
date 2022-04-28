@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <esp_log.h>
@@ -29,6 +21,9 @@ extern const wifi_prov_scheme_t wifi_prov_scheme_ble;
 
 static uint8_t *custom_service_uuid;
 
+static uint8_t *custom_manufacturer_data;
+static size_t custom_manufacturer_data_len;
+
 static esp_err_t prov_start(protocomm_t *pc, void *config)
 {
     if (!pc) {
@@ -42,6 +37,14 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
     }
 
     protocomm_ble_config_t *ble_config = (protocomm_ble_config_t *) config;
+
+    #if defined(CONFIG_WIFI_PROV_BLE_BONDING)
+   	ble_config->ble_bonding = 1;
+    #endif
+
+    #if defined(CONFIG_WIFI_PROV_BLE_SEC_CONN) || defined(CONFIG_BT_BLUEDROID_ENABLED)
+        ble_config->ble_sm_sc = 1;
+    #endif
 
     /* Start protocomm as BLE service */
     if (protocomm_ble_start(pc, ble_config) != ESP_OK) {
@@ -57,6 +60,23 @@ esp_err_t wifi_prov_scheme_ble_set_service_uuid(uint8_t *uuid128)
         return ESP_ERR_INVALID_ARG;
     }
     custom_service_uuid = uuid128;
+    return ESP_OK;
+}
+
+esp_err_t wifi_prov_scheme_ble_set_mfg_data(uint8_t *mfg_data, ssize_t mfg_data_len)
+{
+    if (!mfg_data || !mfg_data_len) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    custom_manufacturer_data = (uint8_t *) malloc(mfg_data_len);
+    if (custom_manufacturer_data == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for mfg_data");
+        return ESP_ERR_NO_MEM;
+    }
+
+    custom_manufacturer_data_len = mfg_data_len;
+    memcpy(custom_manufacturer_data, mfg_data, mfg_data_len);
     return ESP_OK;
 }
 
@@ -114,6 +134,26 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
     if (custom_service_uuid) {
         memcpy(ble_config->service_uuid, custom_service_uuid, sizeof(ble_config->service_uuid));
     }
+    /* Set manufacturer data if it is provided by app */
+    if (custom_manufacturer_data) {
+        size_t mfg_data_len = custom_manufacturer_data_len;
+        /* Manufacturer Data Length + 2 Byte header + BLE Device name + 2 Byte
+         * header <= 31 Bytes */
+        if (mfg_data_len > (MAX_BLE_MANUFACTURER_DATA_LEN - sizeof(ble_config->device_name) - 2)) {
+            ESP_LOGE(TAG, "Manufacturer data length is more than the max allowed size; expect truncated mfg_data ");
+            /* XXX Does it even make any sense to set truncated mfg_data ? The
+             * only reason to not return failure from here is provisioning
+             * should continue as it is with error prints for mfg_data length */
+            mfg_data_len = MAX_BLE_MANUFACTURER_DATA_LEN - sizeof(ble_config->device_name) - 2;
+        }
+
+        ble_config->manufacturer_data = custom_manufacturer_data;
+        ble_config->manufacturer_data_len = mfg_data_len;
+    } else {
+        ble_config->manufacturer_data = NULL;
+        ble_config->manufacturer_data_len = 0;
+    }
+
     return ESP_OK;
 }
 

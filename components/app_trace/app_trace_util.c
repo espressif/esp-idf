@@ -8,33 +8,42 @@
 #include "freertos/task.h"
 #include "esp_app_trace_util.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////// Locks /////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+#if ESP_APPTRACE_PRINT_LOCK
+static esp_apptrace_lock_t s_log_lock = {.irq_stat = 0, .portmux = portMUX_INITIALIZER_UNLOCKED};
 #endif
+
+int esp_apptrace_log_lock(void)
+{
+#if ESP_APPTRACE_PRINT_LOCK
+    esp_apptrace_tmo_t tmo;
+    esp_apptrace_tmo_init(&tmo, ESP_APPTRACE_TMO_INFINITE);
+    int ret = esp_apptrace_lock_take(&s_log_lock, &tmo);
+    return ret;
+#else
+    return 0;
+#endif
+}
+
+void esp_apptrace_log_unlock(void)
+{
+ #if ESP_APPTRACE_PRINT_LOCK
+    esp_apptrace_lock_give(&s_log_lock);
+#endif
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// TIMEOUT /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-#define ESP_APPTRACE_CPUTICKS2US(_t_, _cpu_freq_)       ((_t_)/(_cpu_freq_/1000000))
-#define ESP_APPTRACE_US2CPUTICKS(_t_, _cpu_freq_)       ((_t_)*(_cpu_freq_/1000000))
-
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo)
 {
-    int cpu_freq = esp_clk_cpu_freq();
-    if (tmo->tmo != ESP_APPTRACE_TMO_INFINITE) {
-        unsigned cur = portGET_RUN_TIME_COUNTER_VALUE();
-        if (tmo->start <= cur) {
-            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(cur - tmo->start, cpu_freq);
-        } else {
-            tmo->elapsed = ESP_APPTRACE_CPUTICKS2US(0xFFFFFFFF - tmo->start + cur, cpu_freq);
-        }
+    if (tmo->tmo != (int64_t)-1) {
+        tmo->elapsed = esp_timer_get_time() - tmo->start;
         if (tmo->elapsed >= tmo->tmo) {
             return ESP_ERR_TIMEOUT;
         }
@@ -51,22 +60,16 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
     int res;
 
     while (1) {
+        //Todo: Replace the current locking mechanism and int_state with portTRY_ENTER_CRITICAL() instead.
         // do not overwrite lock->int_state before we actually acquired the mux
-        unsigned int_state = portENTER_CRITICAL_NESTED();
-        // FIXME: if mux is busy it is not good idea to loop during the whole tmo with disabled IRQs.
-        // So we check mux state using zero tmo, restore IRQs and let others tasks/IRQs to run on this CPU
-        // while we are doing our own tmo check.
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-        bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0, __FUNCTION__, __LINE__);
-#else
-        bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0);
-#endif
+        unsigned int_state = portSET_INTERRUPT_MASK_FROM_ISR();
+        bool success = spinlock_acquire(&lock->mux, 0);
         if (success) {
             lock->int_state = int_state;
             return ESP_OK;
         }
-        portEXIT_CRITICAL_NESTED(int_state);
-        // we can be preempted from this place till the next call (above) to portENTER_CRITICAL_NESTED()
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
+        // we can be preempted from this place till the next call (above) to portSET_INTERRUPT_MASK_FROM_ISR()
         res = esp_apptrace_tmo_check(tmo);
         if (res != ESP_OK) {
             break;
@@ -81,12 +84,8 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
     unsigned int_state = lock->int_state;
     // after call to the following func we can not be sure that lock->int_state
     // is not overwritten by other CPU who has acquired the mux just after we released it. See esp_apptrace_lock_take().
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-    vPortCPUReleaseMutex(&lock->mux, __FUNCTION__, __LINE__);
-#else
-    vPortCPUReleaseMutex(&lock->mux);
-#endif
-    portEXIT_CRITICAL_NESTED(int_state);
+    spinlock_release(&lock->mux);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
     return ESP_OK;
 }
 

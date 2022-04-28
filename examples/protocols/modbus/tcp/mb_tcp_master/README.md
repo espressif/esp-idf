@@ -1,8 +1,11 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Modbus TCP Master Example
 
-This example demonstrates using of FreeModbus stack port implementation for ESP32 as a TCP master device. 
+This example demonstrates using of FreeModbus stack port implementation for ESP32 targets as a TCP master device.
 This implementation is able to read/write values of slave devices connected into Modbus segment. All parameters to be accessed are defined in data dictionary of the modbus master example source file.
-The values represented as characteristics with its name and characteristic CID which are linked into registers of slave devices connected into Modbus segment. 
+The values represented as characteristics with its name and characteristic CID which are linked into registers of slave devices connected into Modbus segment.
 The example implements simple control algorithm and checks parameters from slave device and gets alarm (relay in the slave device) when value of parameter exceeded limit.
 The instances for the modbus parameters are common for master and slave examples and located in `examples/protocols/modbus/mb_example_common` folder.
 
@@ -35,7 +38,7 @@ Modbus multi slave segment connection schematic:
 ```
     MB_DEVICE_ADDR1
     -------------
-    |           |   
+    |           |
     |  Slave 1  |---<>--+
     |           |       |
     -------------       |
@@ -55,11 +58,11 @@ Modbus multi slave segment connection schematic:
 
 ## Hardware required :
 Option 1:
-PC (Modbus TCP Slave application) + ESP32(-S2) development board with modbus_tcp_slave example. 
+PC (Modbus TCP Slave application) + ESP32 based development board with modbus_tcp_slave example.
 
 Option 2:
-Several ESP32(-S2) boards flashed with modbus_tcp_slave example software to represent slave devices. The IP slave addresses for each board have to be configured in `Modbus Example Configuration` menu according to the communication table of example.
-One ESP32(-S2) development board should be flashed with modbus_master example and connected to the same network. All the boards require configuration of network settings as described in `examples/common_components/protocol_examples_common`.
+Several ESP32 based boards flashed with modbus_tcp_slave example software to represent slave devices. The IP slave addresses for each board have to be configured in `Modbus Example Configuration` menu according to the communication table of example.
+One ESP32 based development board should be flashed with modbus_master example and connected to the same network. All the boards require configuration of network settings as described in `examples/common_components/protocol_examples_common`.
 
 ## How to setup and use an example:
 
@@ -88,7 +91,7 @@ Option 1:
 Configure the external Modbus master software according to port configuration parameters used in the example. The Modbus Slave application can be used with this example to emulate slave devices with its parameters. Use official documentation for software to setup emulation of slave devices.
 
 Option 2:
-Other option is to have the modbus_slave example application flashed into ESP32 WROVER KIT board and connect boards together as showed on the Modbus connection schematic above. See the Modbus slave API documentation to configure communication parameters and slave addresses as defined in "Example parameters definition" table above.
+Other option is to have the modbus_slave example application flashed into ESP32 based board and connect boards together as showed on the Modbus connection schematic above. See the Modbus slave API documentation to configure communication parameters and slave addresses as defined in "Example parameters definition" table above.
 
 ### Build and flash software of master device
 Build the project and flash it to the board, then run monitor tool to view serial output:

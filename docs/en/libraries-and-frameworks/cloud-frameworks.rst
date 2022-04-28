@@ -3,6 +3,12 @@ Cloud Frameworks
 
 {IDF_TARGET_NAME} supports multiple cloud frameworks using agents built on top of ESP-IDF. Here are the pointers to various supported cloud frameworks' agents and examples:
 
+
+ESP RainMaker
+-------------
+
+`ESP RainMaker <https://rainmaker.espressif.com/>`_ is a complete solution for accelerated AIoT development. `ESP RainMaker on GitHub <https://github.com/espressif/esp-rainmaker>`_.
+
 AWS IoT
 -------
 

@@ -1,7 +1,7 @@
 Maximizing Execution Speed
 ==========================
 
-{IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE"}
+{IDF_TARGET_CONTROLLER_CORE_CONFIG:default="CONFIG_BT_CTRL_PINNED_TO_CORE", esp32="CONFIG_BTDM_CTRL_PINNED_TO_CORE_CHOICE", esp32s3="CONFIG_BT_CTRL_PINNED_TO_CORE_CHOICE"}
 {IDF_TARGET_RF_TYPE:default="Wi-Fi/BT", esp32s2="Wi-Fi"}
 
 Overview
@@ -42,7 +42,7 @@ Otherwise, one way to measure performance is to augment the code to take timing 
 
         uint64_t end = esp_timer_get_time();
 
-        printf("%u iterations took %ull milliseconds (%ull microseconds per invocation)\n",
+        printf("%u iterations took %llu milliseconds (%llu microseconds per invocation)\n",
                MEASUREMENTS, (end - start)/1000, (end - start)/MEASUREMENTS);
     }
 
@@ -91,8 +91,8 @@ Although standard output is buffered, it's possible for an application to be lim
 .. list::
 
     - Reduce the volume of log output by lowering the app :ref:`CONFIG_LOG_DEFAULT_LEVEL` (the equivalent bootloader setting is :ref:`CONFIG_BOOTLOADER_LOG_LEVEL`). This also reduces the binary size, and saves some CPU time spent on string formatting.
-    :not SOC_USB_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`
-    :SOC_USB_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. (Unless using internal USB-CDC for serial console, in which case the serial throughput doesn't depend on the configured baud rate.)
+    :not SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`
+    :SOC_USB_OTG_SUPPORTED: - Increase the speed of logging output by increasing the :ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`. (Unless using internal USB-CDC for serial console, in which case the serial throughput doesn't depend on the configured baud rate.)
 
 Not Recommended
 ^^^^^^^^^^^^^^^
@@ -116,6 +116,8 @@ The following changes will increase the speed of a chosen part of the firmware a
 
       IRAM is a limited resource, and using more IRAM may reduce available DRAM, so a strategic approach is needed when moving code to IRAM. See :ref:`iram` for more information.
 
+    -  Jump table optimizations can be re-enabled for individual source files that don't need to be placed in IRAM. For hot paths in large switch cases this will improve performance. For instructions on how to add the -fjump-tables -ftree-switch-conversion options when compiling individual source files, see :ref:`component_build_control`
+
 Improving Startup Time
 ----------------------
 
@@ -123,12 +125,12 @@ In addition to the overall performance improvements shown above, the following o
 
 .. list::
 
-   - Minimizing the :ref:`CONFIG_LOG_DEFAULT_LEVEL` and :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` has a large impact on startup time. To enable more logging after the app starts up, set the :ref:`CONFIG_LOG_MAXIMUM_LEVEL` as well and then call :cpp:func:`esp_log_set_level` to restore higher level logs. The :example:`system/startup_time` main function shows how to do this.
+   - Minimizing the :ref:`CONFIG_LOG_DEFAULT_LEVEL` and :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` has a large impact on startup time. To enable more logging after the app starts up, set the :ref:`CONFIG_LOG_MAXIMUM_LEVEL` as well and then call :cpp:func:`esp_log_level_set` to restore higher level logs. The :example:`system/startup_time` main function shows how to do this.
    - If using deep sleep, setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` allows a faster wake from sleep. Note that if using Secure Boot this represents a security compromise, as Secure Boot validation will not be performed on wake.
    - Setting :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON` will skip verifying the binary on every boot from power-on reset. How much time this saves depends on the binary size and the flash settings. Note that this setting carries some risk if the flash becomes corrupt unexpectedly. Read the help text of the :ref:`config item <CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON>` for an explanation and recommendations if using this option.
-   - It's possible to save a small amount of time during boot by disabling RTC slow clock calibration. To do so, set :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTC_CLK_CAL_CYCLES` to 0. Any part of the firmware that uses RTC slow clock as a timing source will be less accurate as a result.
+   - It's possible to save a small amount of time during boot by disabling RTC slow clock calibration. To do so, set :ref:`CONFIG_RTC_CLK_CAL_CYCLES` to 0. Any part of the firmware that uses RTC slow clock as a timing source will be less accurate as a result.
 
-The example project :example:`system/startup_time` is pre-configured to optimize startup time. The files :example_file:`system/startup_time/sdkconfig.defaults` and :example_file:`system/startup_time/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` contain all of these settings. You can append these to the end of your project's own ``sdkconfig`` file to merge the settings, but please read the documentation for each setting first.
+The example project :example:`system/startup_time` is pre-configured to optimize startup time. The file :example_file:`system/startup_time/sdkconfig.defaults` contain all of these settings. You can append these to the end of your project's own ``sdkconfig`` file to merge the settings, but please read the documentation for each setting first.
 
 Task Priorities
 ---------------
@@ -161,8 +163,8 @@ Common priorities are:
         - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`).
         - :doc:`/api-guides/event-handling` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``). This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`, it's possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
         - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``).
-        - :doc:`Wi-Fi Driver </api-guides/wifi>` task has high priority (23).
-        - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2).
+        :SOC_WIFI_SUPPORTED: - :doc:`Wi-Fi Driver </api-guides/wifi>` task has high priority (23).
+        :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2).
         :SOC_BT_SUPPORTED: - :doc:`Bluetooth Controller </api-reference/bluetooth/index>` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``). The Bluetooth Controller needs to respond to requests with low latency, so it should always be close to the highest priority task in the system.
         :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` host task has high priority (21).
         - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the priority is medium-high (15). This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
@@ -178,8 +180,8 @@ Common priorities are:
         - FreeRTOS Timer Task to handle FreeRTOS timer callbacks is created when the scheduler initializes and has minimum task priority (1, :ref:`configurable <CONFIG_FREERTOS_TIMER_TASK_PRIORITY>`). This task is pinned to Core 0.
         - :doc:`/api-guides/event-handling` system task to manage the default system event loop and execute callbacks has high priority (20, ``ESP_TASK_EVENT_PRIO``) and pinned to Core 0. This configuration is only used if the application calls :cpp:func:`esp_event_loop_create_default`, it's possible to call :cpp:func:`esp_event_loop_create` with a custom task configuration instead.
         - :doc:`/api-guides/lwip` TCP/IP task has high priority (18, ``ESP_TASK_TCPIP_PRIO``) and is not pinned to any core (:ref:`configurable<CONFIG_LWIP_TCPIP_TASK_AFFINITY>`).
-        - :doc:`Wi-Fi Driver </api-guides/wifi>` task has high priority (23) and is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP32_WIFI_TASK_CORE_ID>`).
-        - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2) and are not pinned to any core.
+        :SOC_WIFI_SUPPORTED: - :doc:`Wi-Fi Driver </api-guides/wifi>` task has high priority (23) and is pinned to Core 0 by default (:ref:`configurable<CONFIG_ESP32_WIFI_TASK_CORE_ID>`).
+        :SOC_WIFI_SUPPORTED: - Wi-Fi wpa_supplicant component may create dedicated tasks while the Wi-Fi Protected Setup (WPS), WPA2 EAP-TLS, Device Provisioning Protocol (DPP) or BSS Transition Management (BTM) features are in use. These tasks all have low priority (2) and are not pinned to any core.
         :SOC_BT_SUPPORTED: - :doc:`Bluetooth Controller </api-reference/bluetooth/index>` task has high priority (23, ``ESP_TASK_BT_CONTROLLER_PRIO``) and is pinned to Core 0 by default (:ref:`configurable <{IDF_TARGET_CONTROLLER_CORE_CONFIG}>`). The Bluetooth Controller needs to respond to requests with low latency, so it should always be close to the highest priority task assigned to a single CPU.
         :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` host task has high priority (21) and is pinned to Core 0 by default (:ref:`configurable <CONFIG_BT_NIMBLE_PINNED_TO_CORE_CHOICE>`).
         :esp32: - :doc:`Bluedroid Bluetooth Host </api-reference/bluetooth/index>` creates multiple tasks when used:
@@ -232,6 +234,8 @@ To obtain the best performance for a particular interrupt handler:
 Improving Network Speed
 -----------------------
 
-* For Wi-Fi, see :ref:`How-to-improve-Wi-Fi-performance` and :ref:`wifi-buffer-usage`
-* For lwIP TCP/IP (Wi-Fi and Ethernet), see :ref:`lwip-performance`
-* The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to your project ``sdkconfig`` file in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use this information to determine exactly which options are best suited for your app.
+.. list::
+
+    :SOC_WIFI_SUPPORTED: * For Wi-Fi, see :ref:`How-to-improve-Wi-Fi-performance` and :ref:`wifi-buffer-usage`
+    * For lwIP TCP/IP (Wi-Fi and Ethernet), see :ref:`lwip-performance`
+    :SOC_WIFI_SUPPORTED: * The :example:`wifi/iperf` example contains a configuration that is heavily optimized for Wi-Fi TCP/IP throughput. Append the contents of the files :example_file:`wifi/iperf/sdkconfig.defaults`, :example_file:`wifi/iperf/sdkconfig.defaults.{IDF_TARGET_PATH_NAME}` and :example_file:`wifi/iperf/sdkconfig.ci.99` to your project ``sdkconfig`` file in order to add all of these options. Note that some of these options may have trade-offs in terms of reduced debuggability, increased firmware size, increased memory usage, or reduced performance of other features. To get the best result, read the documentation pages linked above and use this information to determine exactly which options are best suited for your app.

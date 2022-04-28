@@ -15,12 +15,24 @@ Open the project configuration menu (`idf.py menuconfig`):
 
 * The time synchronization period is defined by `CONFIG_LWIP_SNTP_UPDATE_DELAY`. This option allows you to set the time synchronization period (default is one hour). This option does not affect this example because after synchronization the program goes into deep sleep for 10 seconds. If you modify this example or use the code from this example, keep in mind that this option will trigger time synchronization. You can change it in `Component config-->LWIP-->SNTP-->Request interval to update time (ms)` menu.
 
-* When using Make build system, set `Default serial port` under `Serial flasher config`.
-
 ## Obtaining time using LwIP SNTP module
 
 When this example boots first time after ESP32 is reset, it connects to WiFi and obtains time using SNTP.
 See `initialize_sntp` function for details.
+
+## Obtaining time using LwIP SNTP-over-DHCP module
+
+NTP server addresses could be automatically acquired via DHCP server option 42. This could be useful on closed environments where public NTPs are not accessible
+or to prefer local servers and reduce traffic to the outer world.
+See following menuconfig options:
+ * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers`
+ * `Component config-->LWIP-->SNTP-->Request NTP servers from DHCP`
+ * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers aquired via DHCP`
+ * `Component config-->LWIP-->Enable LWIP Debug-->Enable SNTP debug messages`
+
+Please note, that `dhcp_set_ntp_servers()` does not only set NTP servers provided by DHCP, but also resets all other NTP server configured before. If you want to keep both manually configured and DHCP obtained NTP servers, please use the API in this order:
+* Enable SNTP-over-DHCP before getting the IP using `sntp_servermode_dhcp()`
+* Set the static NTP servers after receiving the DHCP lease using `sntp_setserver()`
 
 ## Timekeeping
 
@@ -28,11 +40,11 @@ Once time is synchronized, ESP32 will perform timekeeping using built-in timers.
 
 - RTC clock is used to maintain accurate time when chip is in deep sleep mode
 
-- FRC1 timer is used to provide time at microsecond accuracy when ESP32 is running.
+- High-resolution timer is used to provide time at microsecond accuracy when ESP32 is running.
 
 Timekeeping using RTC timer is demonstrated in this example by going into deep sleep mode. After wake up, ESP32 will print current time without connecting to WiFi.
 
-To use this functionality, make sure "Timers used for gettimeofday function" option in "ESP32-specific config" menu of menuconfig is set to "RTC and FRC1" or "RTC".
+To use this functionality, make sure "Timers used for gettimeofday function" option in "ESP32-specific config" menu of menuconfig is set to "RTC and high-resolution timer" or "RTC".
 
 ## Working with time
 
@@ -81,14 +93,14 @@ This example can use 3 time synchronization method:
 ## Adjtime()
 `int adjtime(const struct timeval *delta, struct timeval *outdelta)`
 
-`adjtime()` is a libc function that is called automatically in "smooth" time update mode, but can also be called from custom time synchronization code. 
+`adjtime()` is a libc function that is called automatically in "smooth" time update mode, but can also be called from custom time synchronization code.
 If the time error is less than 35 minutes then `adjtime` function will start smooth adjusting otherwise the return value is -1.
 
 This function speeds up or slows down the system clock in order to make a gradual adjustment. This ensures that the calendar time reported by the system clock is always monotonically increasing, which might not happen if you simply set the clock. If adjusting the system clock by `adjtime()` is already done during the second call `adjtime()`, and the delta of the second call is not NULL, the earlier tuning is stopped, but the already completed part of the adjustment is not canceled.
 
-The delta argument specifies a relative adjustment to be made to the clock time. If negative, the system clock is slowed down for a while until it has lost this much elapsed time. If positive, the system clock is speeded up for a while. 
+The delta argument specifies a relative adjustment to be made to the clock time. If negative, the system clock is slowed down for a while until it has lost this much elapsed time. If positive, the system clock is speeded up for a while.
 
-If the olddelta argument is not a null pointer, the adjtime function returns information about any previous time adjustment that has not yet completed. 
+If the olddelta argument is not a null pointer, the adjtime function returns information about any previous time adjustment that has not yet completed.
 
 The return value is 0 on success and -1 on failure.
 

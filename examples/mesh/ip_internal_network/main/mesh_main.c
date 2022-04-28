@@ -8,7 +8,7 @@
 */
 #include <string.h>
 #include "esp_wifi.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mesh.h"
@@ -167,7 +167,7 @@ void esp_mesh_mqtt_task(void *arg)
                         MACSTR ": sent with err code: %d", i, MAC2STR(s_route_table[i].addr), err);
             }
         }
-        vTaskDelay(2 * 1000 / portTICK_RATE_MS);
+        vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }
@@ -416,6 +416,7 @@ void app_main(void)
     /* mesh softAP */
     ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
     cfg.mesh_ap.max_connection = CONFIG_MESH_AP_CONNECTIONS;
+    cfg.mesh_ap.nonmesh_max_connection = CONFIG_MESH_NON_MESH_AP_CONNECTIONS;
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
            strlen(CONFIG_MESH_AP_PASSWD));
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));

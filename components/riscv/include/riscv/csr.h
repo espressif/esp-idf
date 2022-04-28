@@ -81,6 +81,11 @@ extern "C" {
     RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8); \
     } while(0)
 
+/*Only set PMPCFG entries*/
+#define PMP_ENTRY_CFG_SET(ENTRY, CFG) do {\
+    RV_SET_CSR((CSR_PMPCFG0) + (ENTRY)/4, ((CFG)&0xFF) << (ENTRY%4)*8); \
+    } while(0)
+
 /********************************************************
    Trigger Module register fields (Debug specification)
  ********************************************************/

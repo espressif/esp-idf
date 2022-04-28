@@ -69,8 +69,10 @@ void linenoiseHistoryFree(void);
 void linenoiseClearScreen(void);
 void linenoiseSetMultiLine(int ml);
 void linenoiseSetDumbMode(int set);
+bool linenoiseIsDumbMode(void);
 void linenoisePrintKeyCodes(void);
 void linenoiseAllowEmpty(bool);
+int linenoiseSetMaxLineLen(size_t len);
 
 #ifdef __cplusplus
 }

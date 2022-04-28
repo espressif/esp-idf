@@ -188,7 +188,7 @@ struct t_port_info {
 
     UINT32      ev_mask;                    /* Event mask for the callback */
     tPORT_CALLBACK      *p_callback;        /* Pointer to users callback function */
-    tPORT_CALLBACK      *p_mgmt_callback;   /* Callback function to receive connection up/down */
+    tPORT_MGMT_CALLBACK *p_mgmt_callback;   /* Callback function to receive connection up/down */
     tPORT_DATA_CALLBACK *p_data_callback;   /* Callback function to receive data indications */
     tPORT_DATA_CO_CALLBACK *p_data_co_callback;   /* Callback function with callouts and flowctrl */
     UINT16      credit_tx;                  /* Flow control credits for tx path */

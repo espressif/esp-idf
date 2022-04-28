@@ -1,6 +1,6 @@
 /* HTTP2 GET Example using nghttp2
 
-   Contacts http2.golang.org and executes the GET/PUT requests. A thin API
+   Contacts http2.github.io and executes the GET request. A thin API
    wrapper on top of nghttp2, to properly demonstrate the interactions.
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -22,19 +22,16 @@
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "esp_netif.h"
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
 
 #include "sh2lib.h"
 
-
-extern const uint8_t server_root_cert_pem_start[] asm("_binary_golang_root_cert_pem_start");
-extern const uint8_t server_root_cert_pem_end[]   asm("_binary_golang_root_cert_pem_end");
-
 /* The HTTP/2 server to connect to */
-#define HTTP2_SERVER_URI  "https://http2.golang.org"
+#define HTTP2_SERVER_URI  "https://http2.github.io"
 /* A GET request that keeps streaming current time every second */
-#define HTTP2_STREAMING_GET_PATH  "/clockstream"
-/* A PUT request that echoes whatever we had sent to it */
-#define HTTP2_PUT_PATH            "/ECHO"
+#define HTTP2_STREAMING_GET_PATH  "/index.html"
 
 
 int handle_get_response(struct sh2lib_handle *handle, const char *data, size_t len, int flags)
@@ -104,10 +101,12 @@ static void http2_task(void *args)
 
     /* HTTP2: one connection multiple requests. Do the TLS/TCP connection first */
     printf("Connecting to server\n");
+
     struct sh2lib_config_t cfg = {
         .uri = HTTP2_SERVER_URI,
-        .cacert_buf = server_root_cert_pem_start,
-        .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        .crt_bundle_attach = esp_crt_bundle_attach,
+#endif
     };
     struct sh2lib_handle hd;
 
@@ -120,10 +119,6 @@ static void http2_task(void *args)
 
     /* HTTP GET  */
     sh2lib_do_get(&hd, HTTP2_STREAMING_GET_PATH, handle_get_response);
-
-    /* HTTP PUT  */
-    sh2lib_do_put(&hd, HTTP2_PUT_PATH, send_put_data, handle_echo_response);
-
     while (1) {
         /* Process HTTP2 send/receive */
         if (sh2lib_execute(&hd) < 0) {

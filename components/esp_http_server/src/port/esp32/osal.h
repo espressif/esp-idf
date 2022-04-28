@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,7 @@ static inline void httpd_os_thread_delete(void)
 
 static inline void httpd_os_thread_sleep(int msecs)
 {
-    vTaskDelay(msecs / portTICK_RATE_MS);
+    vTaskDelay(msecs / portTICK_PERIOD_MS);
 }
 
 static inline othread_t httpd_os_thread_handle(void)

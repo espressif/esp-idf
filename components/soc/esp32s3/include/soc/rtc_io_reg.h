@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_RTC_IO_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define RTC_GPIO_OUT_REG          (DR_REG_RTCIO_BASE + 0x0)
 /* RTC_GPIO_OUT_DATA : R/W ;bitpos:[31:10] ;default: 0 ; */

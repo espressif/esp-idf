@@ -8,7 +8,7 @@ menu "Example Configuration"
     config ESP_DPP_BOOTSTRAPPING_KEY
         string "Bootstrapping key"
         help
-            Private key string for DPP Bootstrapping in PEM format.
+            64 hex digits (or 32 bytes) of raw private key for DPP Bootstrapping.
 
     config ESP_DPP_DEVICE_INFO
         string "Additional Device Info"

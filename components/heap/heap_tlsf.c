@@ -801,10 +801,14 @@ void* tlsf_memalign_offs(tlsf_t tlsf, size_t align, size_t size, size_t data_off
     */
 	const size_t size_with_gap = adjust_request_size(adjust + align + gap_minimum - off_adjust, align);
 
-	/*
-	** If alignment is less than or equals base alignment, we're done.
-	** If we requested 0 bytes, return null, as tlsf_malloc(0) does.
-	*/
+    /*
+    ** If alignment is less than or equal to base alignment, we're done, because
+    ** we are guaranteed that the size is at least sizeof(block_header_t), enough
+    ** to store next blocks' metadata. Plus, all pointers allocated will all be
+    ** aligned on a 4-byte bound, so ptr + data_offset will also have this
+    ** alignment constraint. Thus, the gap is not required.
+    ** If we requested 0 bytes, return null, as tlsf_malloc(0) does.
+    */
 	const size_t aligned_size = (adjust && align > ALIGN_SIZE) ? size_with_gap : adjust;
 
 	block_header_t* block = block_locate_free(control, aligned_size);
@@ -820,10 +824,12 @@ void* tlsf_memalign_offs(tlsf_t tlsf, size_t align, size_t size, size_t data_off
 			tlsf_cast(tlsfptr_t, aligned) - tlsf_cast(tlsfptr_t, ptr));
 
        /*
-        ** If gap size is too small or if there is not gap but we need one,
+        ** If gap size is too small or if there is no gap but we need one,
         ** offset to next aligned boundary.
+        ** NOTE: No need for a gap if the alignment required is less than or is
+        ** equal to ALIGN_SIZE.
         */
-		if ((gap && gap < gap_minimum) || (!gap && off_adjust))
+		if ((gap && gap < gap_minimum) || (!gap && off_adjust && align > ALIGN_SIZE))
 		{
 			const size_t gap_remain = gap_minimum - gap;
 			const size_t offset = tlsf_max(gap_remain, align);

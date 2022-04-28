@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -197,6 +189,7 @@ void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size)
     void *result = tlsf_malloc(heap->heap_data, size);
     if(result) {
         heap->free_bytes -= tlsf_block_size(result);
+        heap->free_bytes -= tlsf_alloc_overhead();
         if (heap->free_bytes < heap->minimum_free_bytes) {
             heap->minimum_free_bytes = heap->free_bytes;
         }
@@ -213,10 +206,11 @@ void multi_heap_free_impl(multi_heap_handle_t heap, void *p)
         return;
     }
 
-    assert_valid_block(heap, p);
+    assert_valid_block(heap, block_from_ptr(p));
 
     multi_heap_internal_lock(heap);
     heap->free_bytes += tlsf_block_size(p);
+    heap->free_bytes += tlsf_alloc_overhead();
     tlsf_free(heap->heap_data, p);
     multi_heap_internal_unlock(heap);
 }
@@ -229,7 +223,7 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
         return multi_heap_malloc_impl(heap, size);
     }
 
-    assert_valid_block(heap, p);
+    assert_valid_block(heap, block_from_ptr(p));
 
     if (heap == NULL) {
         return NULL;
@@ -239,6 +233,8 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
     size_t previous_block_size =  tlsf_block_size(p);
     void *result = tlsf_realloc(heap->heap_data, p, size);
     if(result) {
+        /* No need to subtract the tlsf_alloc_overhead() as it has already
+         * been subtracted when allocating the block at first with malloc */
         heap->free_bytes += previous_block_size;
         heap->free_bytes -= tlsf_block_size(result);
         if (heap->free_bytes < heap->minimum_free_bytes) {
@@ -270,6 +266,7 @@ void *multi_heap_aligned_alloc_impl_offs(multi_heap_handle_t heap, size_t size, 
     void *result = tlsf_memalign_offs(heap->heap_data, alignment, size, offset);
     if(result) {
         heap->free_bytes -= tlsf_block_size(result);
+        heap->free_bytes -= tlsf_alloc_overhead();
         if(heap->free_bytes < heap->minimum_free_bytes) {
             heap->minimum_free_bytes = heap->free_bytes;
         }
@@ -360,6 +357,9 @@ static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* use
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 {
+    uint32_t sl_interval;
+    uint32_t overhead;
+
     memset(info, 0, sizeof(multi_heap_info_t));
 
     if (heap == NULL) {
@@ -368,9 +368,15 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 
     multi_heap_internal_lock(heap);
     tlsf_walk_pool(tlsf_get_pool(heap->heap_data), multi_heap_get_info_tlsf, info);
-    info->total_allocated_bytes = (heap->pool_size - tlsf_size()) - heap->free_bytes;
+    /* TLSF has an overhead per block. Calculate the total amount of overhead, it shall not be
+     * part of the allocated bytes */
+    overhead = info->allocated_blocks * tlsf_alloc_overhead();
+    info->total_allocated_bytes = (heap->pool_size - tlsf_size()) - heap->free_bytes - overhead;
     info->minimum_free_bytes = heap->minimum_free_bytes;
     info->total_free_bytes = heap->free_bytes;
-    info->largest_free_block = info->largest_free_block ? 1 << (31 - __builtin_clz(info->largest_free_block)) : 0;
+    if (info->largest_free_block) {
+        sl_interval = (1 << (31 - __builtin_clz(info->largest_free_block))) / SL_INDEX_COUNT;
+        info->largest_free_block = info->largest_free_block & ~(sl_interval - 1);
+    }
     multi_heap_internal_unlock(heap);
 }

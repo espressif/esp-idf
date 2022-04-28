@@ -1,8 +1,8 @@
 /*  Bluetooth Mesh */
 
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,11 +22,11 @@
 #include "provisioner_prov.h"
 #include "provisioner_main.h"
 
-#if defined(CONFIG_BLE_MESH_FAST_PROV)
-#define UNPROVISIONED_INTERVAL     K_SECONDS(3)
+#if defined(CONFIG_BLE_MESH_UNPROVISIONED_BEACON_INTERVAL)
+#define UNPROVISIONED_INTERVAL     K_SECONDS(CONFIG_BLE_MESH_UNPROVISIONED_BEACON_INTERVAL)
 #else
 #define UNPROVISIONED_INTERVAL     K_SECONDS(5)
-#endif /* CONFIG_BLE_MESH_FAST_PROV */
+#endif
 #define PROVISIONED_INTERVAL       K_SECONDS(10)
 
 #define BEACON_TYPE_UNPROVISIONED  0x00

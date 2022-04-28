@@ -1,22 +1,15 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for LEDC (common part)
 
 #include "esp_attr.h"
 #include "hal/ledc_hal.h"
 #include "soc/soc_caps.h"
+#include "hal/assert.h"
 
 void ledc_hal_init(ledc_hal_context_t *hal, ledc_mode_t speed_mode)
 {
@@ -25,37 +18,67 @@ void ledc_hal_init(ledc_hal_context_t *hal, ledc_mode_t speed_mode)
     hal->speed_mode = speed_mode;
 }
 
-void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_clk_cfg_t *clk_cfg)
+static inline ledc_clk_cfg_t ledc_hal_get_slow_clock_helper(ledc_hal_context_t *hal)
 {
-    ledc_clk_src_t clk_src = LEDC_APB_CLK;
-    ledc_hal_get_clock_source(hal, timer_sel, &clk_src);
-    if (clk_src == LEDC_REF_TICK) {
-        *clk_cfg = LEDC_USE_REF_TICK;
-    } else {
-        *clk_cfg = LEDC_USE_APB_CLK;
-        if (hal->speed_mode == LEDC_LOW_SPEED_MODE) {
-            ledc_slow_clk_sel_t slow_clk = LEDC_SLOW_CLK_APB;
-            ledc_hal_get_slow_clk_sel(hal, &slow_clk);
-            if (slow_clk == LEDC_SLOW_CLK_RTC8M) {
-                *clk_cfg = LEDC_USE_RTC8M_CLK;
-#if SOC_LEDC_SUPPORT_XTAL_CLOCK
-            } else if (slow_clk == LEDC_SLOW_CLK_XTAL) {
-                *clk_cfg = LEDC_USE_XTAL_CLK;
+    ledc_slow_clk_sel_t slow_clk;
+    ledc_hal_get_slow_clk_sel(hal, &slow_clk);
+
+    switch (slow_clk) {
+#if SOC_LEDC_SUPPORT_APB_CLOCK
+        case LEDC_SLOW_CLK_APB:
+            return LEDC_USE_APB_CLK;
 #endif
-            }
-        }
+#if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+        case LEDC_SLOW_CLK_PLL_DIV:
+            return LEDC_USE_PLL_DIV_CLK;
+#endif
+        case LEDC_SLOW_CLK_RTC8M:
+            return LEDC_USE_RTC8M_CLK;
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+        case LEDC_SLOW_CLK_XTAL:
+            return LEDC_USE_XTAL_CLK;
+#endif
+        default:
+            // Should never reach here
+            HAL_ASSERT(false && "invalid slow clock source");
+            return LEDC_AUTO_CLK;
     }
 }
 
-void ledc_hal_set_slow_clk(ledc_hal_context_t *hal, ledc_clk_cfg_t clk_cfg)
+void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_clk_cfg_t *clk_cfg)
 {
-    // For low speed channels, if RTC_8MCLK is used as the source clock, the `slow_clk_sel` register should be cleared, otherwise it should be set.
-    ledc_slow_clk_sel_t slow_clk_sel = LEDC_SLOW_CLK_APB;
-#if SOC_LEDC_SUPPORT_XTAL_CLOCK
-    slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? LEDC_SLOW_CLK_RTC8M :
-                                       ((clk_cfg == LEDC_USE_XTAL_CLK) ? LEDC_SLOW_CLK_XTAL : LEDC_SLOW_CLK_APB);
-#else
-    slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? LEDC_SLOW_CLK_RTC8M : LEDC_SLOW_CLK_APB;
+    /* Use the following variable to retrieve the clock source used by the LEDC
+     * hardware controller. */
+    ledc_clk_src_t clk_src;
+
+    /* Clock configuration to return to the driver. */
+    ledc_clk_cfg_t driver_clk = LEDC_AUTO_CLK;
+
+    /* Get the timer-specific mux value. */
+    ledc_hal_get_clock_source(hal, timer_sel, &clk_src);
+#if SOC_LEDC_SUPPORT_REF_TICK
+    if (clk_src == LEDC_REF_TICK) {
+        driver_clk = LEDC_USE_REF_TICK;
+    } else
 #endif
-    ledc_hal_set_slow_clk_sel(hal, slow_clk_sel);
+    {
+        /* If the timer-specific mux is not set to REF_TICK, it either means that:
+        * - The controler is in fast mode, and thus using APB clock (driver_clk
+        *   variable's default value)
+        * - The controler is in slow mode and so, using a global clock,
+        *   so we have to retrieve that clock here.
+        */
+        if (hal->speed_mode == LEDC_LOW_SPEED_MODE) {
+            /* If the source clock used by LEDC hardware is not REF_TICK, it is
+            * necessary to retrieve the global clock source used. */
+            driver_clk = ledc_hal_get_slow_clock_helper(hal);
+        }
+#if SOC_LEDC_SUPPORT_HS_MODE
+        else {
+            driver_clk = LEDC_USE_APB_CLK;
+        }
+#endif
+    }
+
+    *clk_cfg = driver_clk;
 }

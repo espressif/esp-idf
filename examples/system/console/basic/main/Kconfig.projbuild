@@ -1,0 +1,18 @@
+menu "Example Configuration"
+
+    config CONSOLE_STORE_HISTORY
+        bool "Store command history in flash"
+        default y
+        help
+            Linenoise line editing library provides functions to save and load
+            command history. If this option is enabled, initalizes a FAT filesystem
+            and uses it to store command history.
+
+    config CONSOLE_MAX_COMMAND_LINE_LENGTH
+        int "Maximum command line length"
+        default 1024
+        help
+            This value marks the maximum length of a single command line. Once it is
+            reached, no more characters will be accepted by the console.
+
+endmenu

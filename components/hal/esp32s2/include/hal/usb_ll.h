@@ -37,6 +37,6 @@ static inline void usb_ll_int_phy_pullup_conf(bool dp_pu, bool dp_pd, bool dm_pu
     conf.dp_pullup = dp_pu;
     conf.dp_pulldown = dp_pd;
     conf.dm_pullup = dm_pu;
-    conf.dm_pulldown = dp_pd;
+    conf.dm_pulldown = dm_pd;
     USB_WRAP.otg_conf = conf;
 }

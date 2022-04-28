@@ -1,11 +1,10 @@
-/* AliGenie - Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * AliGenie - Example
+ *
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +12,7 @@
 #include <math.h>
 
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "nvs_flash.h"
 
 #include "mbedtls/sha256.h"
@@ -1283,7 +1283,7 @@ void config_triples(void)
     ESP_LOGI(TAG, "authvalue_string: %s", authvalue_string);
 
     uint8_t sha256_out[32] = {0};
-    mbedtls_sha256_ret((const unsigned char *)authvalue_string, strlen(authvalue_string), sha256_out, 0);
+    mbedtls_sha256((const unsigned char *)authvalue_string, strlen(authvalue_string), sha256_out, 0);
     memcpy(static_val, sha256_out, 16);
     provision.static_val = static_val;
 

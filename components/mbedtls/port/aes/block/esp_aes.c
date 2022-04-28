@@ -36,9 +36,8 @@
 
 #include <freertos/FreeRTOS.h>
 
-#include "soc/cpu.h"
 #include <stdio.h>
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
 
 /* AES uses a spinlock mux not a lock as the underlying block operation
