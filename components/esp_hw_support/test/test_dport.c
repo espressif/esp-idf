@@ -138,7 +138,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
 
         esp_rom_uart_tx_wait_idle(uart_num);
         rtc_clk_cpu_freq_set_config(&new_config);
-        uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_APB);
+        uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
         uart_ll_set_baudrate(UART_LL_GET_HW(uart_num), uart_baud);
         /* adjust RTOS ticks */
         _xt_tick_divisor = cpu_freq_mhz * 1000000 / XT_TICK_PER_SEC;
@@ -151,7 +151,7 @@ void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
     // return old freq.
     esp_rom_uart_tx_wait_idle(uart_num);
     rtc_clk_cpu_freq_set_config(&old_config);
-    uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_APB);
+    uart_ll_set_sclk(UART_LL_GET_HW(uart_num), UART_SCLK_DEFAULT);
     uart_ll_set_baudrate(UART_LL_GET_HW(uart_num), uart_baud);
     _xt_tick_divisor = old_config.freq_mhz * 1000000 / XT_TICK_PER_SEC;
 }

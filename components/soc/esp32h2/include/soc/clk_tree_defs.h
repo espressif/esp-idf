@@ -188,6 +188,18 @@ typedef enum {
     TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
 
+///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Type of UART clock source, reserved for the legacy UART driver
+ */
+typedef enum {
+    UART_SCLK_AHB = SOC_MOD_CLK_AHB,     /*!< UART source clock is AHB CLK */
+    UART_SCLK_RTC = SOC_MOD_CLK_RC_FAST, /*!< UART source clock is RC_FAST */
+    UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< UART source clock is XTAL */
+    UART_SCLK_DEFAULT = SOC_MOD_CLK_AHB, /*!< UART source clock default choice is AHB */
+} soc_periph_uart_clk_src_legacy_t;
+
 #ifdef __cplusplus
 }
 #endif

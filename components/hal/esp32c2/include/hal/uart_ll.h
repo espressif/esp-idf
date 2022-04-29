@@ -105,7 +105,7 @@ static inline void uart_ll_set_sclk(uart_dev_t *hw, uart_sclk_t source_clk)
 {
     switch (source_clk) {
         default:
-        case UART_SCLK_APB:
+        case UART_SCLK_PLL_F40M:
             hw->clk_conf.sclk_sel = 1;
             break;
         case UART_SCLK_RTC:
@@ -130,7 +130,7 @@ static inline void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
     switch (hw->clk_conf.sclk_sel) {
         default:
         case 1:
-            *source_clk = UART_SCLK_APB;
+            *source_clk = UART_SCLK_PLL_F40M;
             break;
         case 2:
             *source_clk = UART_SCLK_RTC;
