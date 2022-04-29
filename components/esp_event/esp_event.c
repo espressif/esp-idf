@@ -826,11 +826,23 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     esp_event_post_instance_t post;
+    BaseType_t result = pdFALSE;
     memset((void*)(&post), 0, sizeof(post));
 
     if (event_data != NULL && event_data_size != 0) {
-        // Make persistent copy of event data on heap.
-        void* event_data_copy = calloc(1, event_data_size);
+        // Protect memory allocation to keep it safe with multiple event loop instances
+        result = xSemaphoreTakeRecursive(loop->mutex, ticks_to_wait);
+
+        void* event_data_copy = NULL;
+
+        if (result == pdTRUE) {
+            // Make persistent copy of event data on heap.
+            event_data_copy = calloc(1, event_data_size);
+
+            xSemaphoreGiveRecursive(loop->mutex);
+        } else {
+            return ESP_ERR_TIMEOUT;
+        }
 
         if (event_data_copy == NULL) {
             return ESP_ERR_NO_MEM;
@@ -848,7 +860,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     post.base = event_base;
     post.id = event_id;
 
-    BaseType_t result = pdFALSE;
+    result = pdFALSE;
 
     // Find the task that currently executes the loop. It is safe to query loop->task since it is
     // not mutated since loop creation. ENSURE THIS REMAINS TRUE.
