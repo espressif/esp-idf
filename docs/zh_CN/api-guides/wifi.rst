@@ -1560,7 +1560,9 @@ Wi-Fi 多根天线
 
 四个高电平有效 antenna_select 管脚有多达四个 GPIO 连接。{IDF_TARGET_NAME} 可以通过控制 GPIO[0:3] 选择天线。API :cpp:func:`esp_wifi_set_ant_gpio()` 用于配置 antenna_selects 连接哪些 GPIO。如果 GPIO[x] 连接到 antenna_select[x]，gpio_config->gpio_cfg[x].gpio_select 应设置为 1，且要提供 gpio_config->gpio_cfg[x].gpio_num 的值。
 
-尽管最多支持 16 根天线，发送和接收数据时，最多仅能同时使能两根天线。API :cpp:func:`esp_wifi_set_ant()` 用于配置使能哪根天线。
+Antenna Switch 的具体实现不同，antenna_select[0:3]的输入值中可能存在非法值，即 {IDF_TARGET_NAME} 通过外部天线开关支持的天线数可能小于16根。例如，ESP32-WROOM-DA支持2根天线，使用RTC6603SP作为Antenna Switch，两个高电平有效antenna_select管脚有两个GPIO连接，输入值'0b00'和'0b11'是非法值，'0b01'表示选中天线 0，'0b10'表示选中天线 1。
+
+尽管最多支持 16 根天线，发送和接收数据时，最多仅能同时使能两根天线。API :cpp:func:`esp_wifi_set_ant()` 用于配置使能哪些天线。
 
 使能天线后，选择算法的过程同样可由 :cpp:func:`esp_wifi_set_ant()` 配置。接收/发送数据源的天线模式可以是 WIFI_ANT_MODE_ANT0、WIFI_ANT_MODE_ANT1 或 WIFI_ANT_MODE_AUTO。如果天线模式为 WIFI_ANT_MODE_ANT0，使能的天线 0 用于接收/发送数据。如果天线模式为 WIFI_ANT_MODE_ANT1，使能天线 1 用于接收/发送数据。否则，Wi-Fi 会自动选择使能天线中信号较好的天线。
 
