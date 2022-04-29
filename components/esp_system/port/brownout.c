@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include "esp_private/system_internal.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 
 #include "esp_rom_sys.h"
 
