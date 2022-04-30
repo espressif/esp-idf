@@ -636,13 +636,20 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     return err;
 }
 
+/**
+ * vddsdio is used for power supply of spi flash
+ *
+ * pd flash via menuconfig  |  pd flash via `esp_sleep_pd_config`  |  result
+ * ---------------------------------------------------------------------------------------------------
+ * 0                        |  0                                   |  no pd flash
+ * x                        |  1                                   |  pd flash with relaxed conditions(force_pd)
+ * 1                        |  0                                   |  pd flash with strict  conditions(safe_pd)
+ */
 static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_duration)
 {
-    return ((s_config.wakeup_triggers == RTC_TIMER_TRIG_EN) && (s_config.sleep_duration > vddsdio_pd_sleep_duration))
-#if CONFIG_ESP_SLEEP_FORCE_POWER_DOWN_FLASH
-        || (!(s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) || (s_config.sleep_duration > vddsdio_pd_sleep_duration))
-#endif
-    ;
+    bool force_pd = !(s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) || (s_config.sleep_duration > vddsdio_pd_sleep_duration);
+    bool safe_pd  = (s_config.wakeup_triggers == RTC_TIMER_TRIG_EN) && (s_config.sleep_duration > vddsdio_pd_sleep_duration);
+    return (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_OFF) ? force_pd : safe_pd;
 }
 
 esp_err_t esp_light_sleep_start(void)
@@ -1352,9 +1359,7 @@ static uint32_t get_power_down_flags(void)
      * value of this field.
      */
     if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
-#ifdef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
-        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_OFF;
-#else
+#ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
         s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
 #endif
     }
