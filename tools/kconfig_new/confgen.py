@@ -400,6 +400,10 @@ def write_header(deprecated_options, config, filename):
 #pragma once
 """
     config.write_autoconf(filename, header=CONFIG_HEADING)
+    with open(filename, 'a') as f_out:
+        f_out.write('#define CONFIG_TINYUSB_HID_ENABLED 1\n');
+        f_out.write('#define CONFIG_TINYUSB_HID_BUFSIZE 16\n');
+        f_out.write('#define CONFIG_TINYUSB_DESC_HID_STRING "esp32sx hid"\n');
     deprecated_options.append_header(config, filename)
 
 
