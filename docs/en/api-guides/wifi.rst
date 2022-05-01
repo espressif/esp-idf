@@ -1417,13 +1417,34 @@ An attacker can use eavesdropping and packet injection to send spoofed (de)authe
 
 PMF provides protection against these attacks by encrypting unicast management frames and providing integrity checks for broadcast management frames. These include deauthentication, disassociation and robust management frames. It also provides Secure Association (SA) teardown mechanism to prevent spoofed association/authentication frames from disconnecting already connected clients.
 
-{IDF_TARGET_NAME} supports the following three modes of operation with respect to PMF.
+There are 3 types of PMF configuration modes on both Station and AP side -
+ - PMF Optional
+ - PMF Required
+ - PMF Disabled
 
- - PMF not supported: In this mode, {IDF_TARGET_NAME} indicates to AP that it is not capable of supporting management protection during association. In effect, security in this mode will be equivalent to that in traditional mode.
- - PMF capable, but not required: In this mode, {IDF_TARGET_NAME} indicates to AP that it is capable of supporting PMF. The management protection will be used if AP mandates PMF or is at least capable of supporting PMF.
- - PMF capable and required: In this mode, {IDF_TARGET_NAME} will only connect to AP, if AP supports PMF. If not, {IDF_TARGET_NAME} will refuse to connect to the AP.
+Depending on the PMF configuration on Station and AP side, the resulting connection will behave differently. Below table summarises all possible outcomes.
 
-:cpp:func:`esp_wifi_set_config` can be used to configure PMF mode by setting appropriate flags in `pmf_cfg` parameter. Currently, PMF is supported only in Station mode.
++--------------+------------------------+---------------------------+
+| STA Setting  | AP Setting             |  Outcome                  |
++==============+========================+===========================+
+| PMF Optional |  PMF Optional/Required | Mgmt Frames Protected     |
++--------------+------------------------+---------------------------+
+| PMF Optional |  PMF Disabled          | Mgmt Frames Not Protected |
++--------------+------------------------+---------------------------+
+| PMF Required |  PMF Optional/Required | Mgmt Frames Protected     |
++--------------+------------------------+---------------------------+
+| PMF Required |  PMF Disabled          | STA refuses Connection    |
++--------------+------------------------+---------------------------+
+| PMF Disabled |  PMF Optional/Disabled | Mgmt Frames Not Protected |
++--------------+------------------------+---------------------------+
+| PMF Disabled |  PMF Required          | AP refuses Connection     |
++--------------+------------------------+---------------------------+
+
+{IDF_TARGET_NAME} supports PMF only in Station mode. Station defaults to PMF Optional mode and disabling PMF is not possible. For even higher security, PMF Required mode can be enabled by setting the ``required`` flag in `pmf_cfg` while using the :cpp:func:`esp_wifi_set_config` API. This will result in Station only connecting to a PMF enabled AP and rejecting all other AP's.
+
+.. attention::
+
+    ``capable`` flag in `pmf_cfg` is deprecated and set to true internally. This is to take the additional security benefit of PMF whenever possible.
 
 
 WPA3-Personal

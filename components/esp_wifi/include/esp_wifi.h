@@ -1131,6 +1131,19 @@ esp_err_t esp_wifi_get_inactive_time(wifi_interface_t ifx, uint16_t *sec);
   */
 esp_err_t esp_wifi_statis_dump(uint32_t modules);
 
+/**
+  * @brief      Disable PMF configuration for specified interface
+  *
+  * @attention  This API should be called after esp_wifi_set_config() and before esp_wifi_start().
+  *
+  * @param      ifx  Interface to be configured.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_disable_pmf_config(wifi_interface_t ifx);
+
 #ifdef __cplusplus
 }
 #endif

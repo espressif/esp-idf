@@ -89,12 +89,6 @@ static void initialise_wifi(void)
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = EXAMPLE_WIFI_SSID,
-#if defined(CONFIG_EXAMPLE_WPA3_ENTERPRISE)
-            .pmf_cfg = {
-                .capable = true,
-                .required = false
-            },
-#endif
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
