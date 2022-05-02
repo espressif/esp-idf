@@ -1229,11 +1229,6 @@ typedef struct xSTATIC_TCB
     #endif
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvDummy15[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #ifdef ESP_PLATFORM
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-            void *pvDummaTLSDelCb[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #endif
-        #endif //ESP_PLATFORM
     #endif
     #if ( configGENERATE_RUN_TIME_STATS == 1 )
         uint32_t ulDummy16;
