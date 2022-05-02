@@ -173,7 +173,7 @@ eMBMasterReqWriteMultipleHoldingRegister( UCHAR ucSndAddr,
     UCHAR                 *ucMBFrame;
     USHORT                 usRegIndex = 0;
     eMBMasterReqErrCode    eErrStatus = MB_MRE_NO_ERR;
-
+    ESP_LOGE(MB_PORT_TAG, "regaddr:%u , sndaddr: %u, numreg: %u", usRegAddr, ucSndAddr, usNRegs);
     if ( ucSndAddr > MB_MASTER_TOTAL_SLAVE_NUM ) eErrStatus = MB_MRE_ILL_ARG;
     else if ( xMBMasterRunResTake( lTimeOut ) == FALSE ) eErrStatus = MB_MRE_MASTER_BUSY;
     else

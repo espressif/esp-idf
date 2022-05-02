@@ -373,7 +373,12 @@ static esp_err_t mbc_serial_master_set_request(char* name, mb_param_mode_t mode,
             request->slave_addr = reg_ptr->mb_slave_addr;
             request->reg_start = reg_ptr->mb_reg_start;
             request->reg_size = reg_ptr->mb_size;
-            request->command = mbc_serial_master_get_command(reg_ptr->mb_param_type, mode);
+            if(mode == 1){
+                request->command = 16;
+            }else{
+                request->command = mbc_serial_master_get_command(reg_ptr->mb_param_type, mode);
+            }
+            
             MB_MASTER_CHECK((request->command > 0),
                                 ESP_ERR_INVALID_ARG,
                                 "mb incorrect command or parameter type.");
