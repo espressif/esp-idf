@@ -8,6 +8,8 @@
 */
 #pragma once
 
+#include "esp_eth.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

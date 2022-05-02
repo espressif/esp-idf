@@ -20,3 +20,7 @@ idf_component_register(
         PRIV_INCLUDE_DIRS "private_include"
         REQUIRES ${dependencies}
         PRIV_REQUIRES ${private_dependencies})
+
+if(CONFIG_ETH_ENABLED)
+    idf_component_optional_requires(PRIVATE esp_eth)
+endif()
