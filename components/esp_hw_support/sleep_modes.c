@@ -397,10 +397,14 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 #endif
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ULP_COPROC_ENABLED
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
+#ifdef CONFIG_IDF_TARGET_ESP32
         rtc_hal_ulp_wakeup_enable();
+#else
+        rtc_hal_ulp_int_clear();
+#endif
     }
 #endif
 
