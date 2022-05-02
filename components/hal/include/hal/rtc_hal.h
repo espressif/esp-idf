@@ -54,3 +54,5 @@ void rtc_cntl_hal_enable_cpu_retention(void *addr);
  * Enable wakeup from ULP coprocessor.
  */
 #define rtc_hal_ulp_wakeup_enable()                       rtc_cntl_ll_ulp_wakeup_enable()
+
+#define rtc_hal_ulp_int_clear()                           rtc_cntl_ll_ulp_int_clear()
