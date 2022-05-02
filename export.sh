@@ -18,7 +18,7 @@ __verbose() {
 }
 
 __script_dir(){
-    # shellcheck disable=SC2169,SC2169,SC2039  # unreachable with 'dash'
+    # shellcheck disable=SC2169,SC2169,SC2039,SC3010,SC3028  # unreachable with 'dash'
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # convert possibly relative path to absolute
         script_dir="$(__realpath "${self_path}")"
@@ -48,11 +48,11 @@ __main() {
     # The file doesn't have executable permissions, so this shouldn't really happen.
     # Doing this in case someone tries to chmod +x it and execute...
 
-    # shellcheck disable=SC2128,SC2169,SC2039 # ignore array expansion warning
+    # shellcheck disable=SC2128,SC2169,SC2039,SC3054 # ignore array expansion warning
     if [ -n "${BASH_SOURCE-}" ] && [ "${BASH_SOURCE[0]}" = "${0}" ]
     then
         echo "This script should be sourced, not executed:"
-        # shellcheck disable=SC2039  # reachable only with bash
+        # shellcheck disable=SC2039,SC3054  # reachable only with bash
         echo ". ${BASH_SOURCE[0]}"
         return 1
     fi
@@ -68,9 +68,9 @@ __main() {
         self_path="${(%):-%x}"
     fi
 
-    script_dir=$(__script_dir)
+    script_dir="$(__script_dir)"
     # Since sh or dash shells can't detect script_dir correctly, check if script_dir looks like an IDF directory
-    is_script_dir_esp_idf=$(__is_dir_esp_idf ${script_dir})
+    is_script_dir_esp_idf=$(__is_dir_esp_idf "${script_dir}")
 
     if [ -z "${IDF_PATH}" ]
     then
@@ -95,7 +95,7 @@ __main() {
             export IDF_PATH="${script_dir}"
         fi
         # Check if this path looks like an IDF directory
-        is_idf_path_esp_idf=$(__is_dir_esp_idf ${IDF_PATH})
+        is_idf_path_esp_idf=$(__is_dir_esp_idf "${IDF_PATH}")
         if [ -n "${is_idf_path_esp_idf}" ]
         then
             echo "IDF_PATH is set to '${IDF_PATH}', but it doesn't look like an ESP-IDF directory."
@@ -130,7 +130,7 @@ __main() {
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/partition_table"
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/app_update"
 
-    idf_exports=$("$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" export --add_paths_extras=${IDF_ADD_PATHS_EXTRAS}) || return 1
+    idf_exports=$("$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" export "--add_paths_extras=${IDF_ADD_PATHS_EXTRAS}") || return 1
     eval "${idf_exports}"
     export PATH="${IDF_ADD_PATHS_EXTRAS}:${PATH}"
 
@@ -166,7 +166,7 @@ __main() {
         __verbose ""
         __verbose "Detected installed tools that are not currently used by active ESP-IDF version."
         __verbose "${uninstall}"
-        __verbose "For free up even more space, remove installation packages of those tools. Use option '${ESP_PYTHON} ${IDF_PATH}/tools/idf_tools.py uninstall --remove-archives'."
+        __verbose "To free up even more space, remove installation packages of those tools. Use option '${ESP_PYTHON} ${IDF_PATH}/tools/idf_tools.py uninstall --remove-archives'."
         __verbose ""
     fi
 
@@ -209,7 +209,7 @@ __cleanup() {
 
 __enable_autocomplete() {
     click_version="$(python -c 'import click; print(click.__version__.split(".")[0])')"
-    if [[ click_version -lt 8 ]]
+    if [ "${click_version}" -lt 8 ]
     then
         SOURCE_ZSH=source_zsh
         SOURCE_BASH=source_bash
@@ -224,7 +224,8 @@ __enable_autocomplete() {
     elif [ -n "${BASH_SOURCE-}" ]
     then
         WARNING_MSG="WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
-        [[ ${BASH_VERSINFO[0]} -lt 4 ]] && { echo "$WARNING_MSG"; return; }
+        # shellcheck disable=SC3028,SC3054,SC2086  # code block for 'bash' only
+        [ ${BASH_VERSINFO[0]} -lt 4 ] && { echo "$WARNING_MSG"; return; }
         eval "$(env LANG=en _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "$WARNING_MSG"
     fi
 }
