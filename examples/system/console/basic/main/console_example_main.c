@@ -13,10 +13,6 @@
 #include "esp_log.h"
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
-#include "driver/uart.h"
-#include "linenoise/linenoise.h"
-#include "argtable3/argtable3.h"
-#include "cmd_decl.h"
 #include "esp_vfs_fat.h"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -24,6 +20,9 @@
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC
 #error This example is incompatible with USB CDC console. Please try "console_usb" example instead.
 #endif // CONFIG_ESP_CONSOLE_USB_CDC
+#include "cmd_system.h"
+#include "cmd_wifi.h"
+#include "cmd_nvs.h"
 
 static const char* TAG = "example";
 #define PROMPT_STR CONFIG_IDF_TARGET
