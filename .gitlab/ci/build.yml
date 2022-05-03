@@ -434,6 +434,11 @@ test_build_system_cmake_macos:
   variables:
     SHELL_TEST_SCRIPT: test_build_system_cmake.sh
 
+test_build_system_spaces:
+  extends: .test_build_system_template
+  variables:
+    SHELL_TEST_SCRIPT: test_build_system_spaces.py
+
 build_docker:
   extends:
     - .before_script_minimal

@@ -51,6 +51,7 @@
   - "tools/tools.json"
   - "tools/requirements.json"
   - "tools/ci/test_build_system*.sh"
+  - "tools/ci/test_build_system*.py"
 
 .patterns-custom_test: &patterns-custom_test
   - "components/espcoredump/**/*"
