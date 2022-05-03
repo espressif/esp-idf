@@ -17,9 +17,16 @@ endif()
 
 idf_component_register(SRCS "${mbedtls_srcs}"
     INCLUDE_DIRS "${mbedtls_include_dirs}"
-    REQUIRES lwip
     PRIV_REQUIRES "${priv_requires}"
     )
+
+# Determine the type of mbedtls component library
+if(mbedtls_srcs STREQUAL "")
+    # For no sources in component library we must use "INTERFACE"
+    set(linkage_type INTERFACE)
+else()
+    set(linkage_type PUBLIC)
+endif()
 
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
@@ -103,8 +110,7 @@ endif()
 
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
-set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
-                           "${COMPONENT_DIR}/port/net_sockets.c")
+set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c")
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}
@@ -112,6 +118,15 @@ set(mbedtls_target_sources ${mbedtls_target_sources}
                            "${COMPONENT_DIR}/port/dynamic/esp_ssl_cli.c"
                            "${COMPONENT_DIR}/port/dynamic/esp_ssl_srv.c"
                            "${COMPONENT_DIR}/port/dynamic/esp_ssl_tls.c")
+endif()
+
+# net_sockets.c should only be compiled if BSD socket functions are available.
+# Do this by checking if lwip component is included into the build.
+idf_build_get_property(build_components BUILD_COMPONENTS)
+if(lwip IN_LIST build_components)
+    list(APPEND mbedtls_target_sources "${COMPONENT_DIR}/port/net_sockets.c")
+    idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${lwip_lib})
 endif()
 
 # Add port files to mbedtls targets
@@ -239,14 +254,6 @@ endif()
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver idf::${target})
 set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver idf::${target})
-
-# Link mbedtls libraries to component library
-if(mbedtls_srcs STREQUAL "")
-    # For no sources in component library we must use "INTERFACE"
-    set(linkage_type INTERFACE)
-else()
-    set(linkage_type PUBLIC)
-endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
