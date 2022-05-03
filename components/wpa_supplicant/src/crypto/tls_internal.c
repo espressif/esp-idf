@@ -784,6 +784,7 @@ int tls_get_library_version(char *buf, size_t buf_len)
 void tls_connection_set_success_data(struct tls_connection *conn,
 				     struct wpabuf *data)
 {
+	wpabuf_free(data);
 }
 
 
