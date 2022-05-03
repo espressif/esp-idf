@@ -8,8 +8,6 @@ import os
 import re
 import sys
 
-PYTHON_PACKAGE_RE = re.compile(r'[^<>=~]+')
-
 try:
     import pkg_resources
 except ImportError:
@@ -18,6 +16,14 @@ except ImportError:
           'setting up the required packages.')
     sys.exit(1)
 
+try:
+    from typing import Set
+except ImportError:
+    # This is a script run during the early phase of setting up the environment. So try to avoid failure caused by
+    # Python version incompatibility. The supported Python version is checked elsewhere.
+    pass
+
+PYTHON_PACKAGE_RE = re.compile(r'[^<>=~]+')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ESP-IDF Python package dependency checker')
@@ -55,21 +61,37 @@ if __name__ == '__main__':
                     sys.exit(1)
                 constr_dict[name_m[0]] = con
 
-    # We need to constrain package dependencies as well. So all installed packages need to be checked.
-    # For example package A requires package B. We have only A in our requirements. But the newest version of B could
-    # broke at some time and in that case we add a constraint for B (on the server) but don't have to update the
-    # requirement file (in the ESP-IDF repo).
-    required_set |= set(i.key for i in pkg_resources.working_set)
+    not_satisfied = []  # in string form which will be printed
 
-    not_satisfied = []
-    for requirement in required_set:
-        # If there is a version-specific constraint for the requirement then use it. Otherwise, just use the
-        # requirement as is.
-        to_require = constr_dict.get(requirement, requirement)
-        try:
-            pkg_resources.require(to_require)
-        except pkg_resources.ResolutionError:
-            not_satisfied.append(to_require)
+    # already_checked set is used in order to avoid circular checks which would cause looping.
+    already_checked = set()  # type: Set[pkg_resources.Requirement]
+
+    # required_set contains package names in string form without version constraints. If the package has a constraint
+    # specification (package name + version requirement) then use that instead. new_req_list is used to store
+    # requirements to be checked on each level of breath-first-search of the package dependency tree. The initial
+    # version is the direct dependencies deduced from the requirements arguments of the script.
+    new_req_list = [pkg_resources.Requirement.parse(constr_dict.get(i, i)) for i in required_set]
+
+    while new_req_list:
+        req_list = new_req_list
+        new_req_list = []
+        already_checked.update(req_list)
+        for requirement in req_list:  # check one level of the dependency tree
+            try:
+                dependency_requirements = set(pkg_resources.get_distribution(requirement).requires())
+                # dependency_requirements are the direct dependencies of "requirement". They belong to the next level
+                # of the dependency tree. They will be checked only if they haven't been already. Note that the
+                # version is taken into account as well because packages can have different requirements for a given
+                # Python package. The dependencies need to be checked for all of them because they can be different.
+                new_req_list.extend(dependency_requirements - already_checked)
+            except pkg_resources.ResolutionError as e:
+                not_satisfied.append(' - '.join([str(requirement), str(e)]))
+            except IndexError:
+                # If the requirement is not installed because of a marker (requirement.marker), for example different
+                # operating system or python version, then pkg_resources.get_distribution() will fail with IndexError.
+                # We could avoid this by checking packaging.markers.Marker(requirement.marker).evaluate() but it would
+                # add dependency on packaging.
+                pass
 
     if len(not_satisfied) > 0:
         print('The following Python requirements are not satisfied:')
