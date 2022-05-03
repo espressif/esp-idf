@@ -55,3 +55,18 @@ instead of::
     set(EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} path3")
 
 Defining these variables as CMake lists is compatible with previous IDF versions.
+
+Update usage of target_link_libraries with project_elf
+------------------------------------------------------
+
+ESP-IDF v5.0 fixes issues with CMake variable propagation for components, which caused among others compiler flags and defines applied to one component to be applied to every component in the project.
+
+As a side effect of this ESP-IDF user projects from ESP-IDF v5.0 onwards using ``target_link_libraries`` with ``project_elf`` explicitly and custom CMake projects must specify ``PRIVATE``, ``PUBLIC`` or ``INTERFACE`` arguments. This is a breaking change and is not backwards compatible with previous ESP-IDF versions.
+
+For example::
+
+    target_link_libraries(${project_elf} PRIVATE "-Wl,--wrap=esp_panic_handler")
+
+instead of::
+
+    target_link_libraries(${project_elf} "-Wl,--wrap=esp_panic_handler")
