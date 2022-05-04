@@ -2032,7 +2032,6 @@ examples/ethernet/iperf/main/ethernet_example_main.c
 examples/get-started/blink/example_test.py
 examples/get-started/blink/main/blink_example_main.c
 examples/get-started/hello_world/example_test.py
-examples/get-started/hello_world/main/hello_world_main.c
 examples/get-started/sample_project/main/main.c
 examples/mesh/internal_communication/main/include/mesh_light.h
 examples/mesh/internal_communication/main/mesh_light.c
