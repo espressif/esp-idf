@@ -331,8 +331,10 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     assert(esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE));
 #endif
 
+#ifndef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
     assert(esp_secure_boot_enabled());
     ESP_LOGI(TAG, "Secure boot permanently enabled");
+#endif
 
     return ESP_OK;
 }

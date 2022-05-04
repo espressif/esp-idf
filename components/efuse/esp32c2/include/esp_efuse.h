@@ -44,7 +44,7 @@ typedef enum {
 typedef enum {
     ESP_EFUSE_KEY_PURPOSE_USER              = 0,    /**< whole BLOCK3 */
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY   = 1,    /**< FE uses the whole BLOCK3 (key is 256-bits) */
-    ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY    = 2,    /**< FE uses lower 128-bits of BLOCK3 (key is 128-bits) */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS    = 2,    /**< FE uses lower 128-bits of BLOCK3 (key is 128-bits) */
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2    = 3,    /**< SB uses higher 128-bits of BLOCK3 (key is 128-bits) */
     ESP_EFUSE_KEY_PURPOSE_MAX,                      /**< MAX PURPOSE */
 } esp_efuse_purpose_t;

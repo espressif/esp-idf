@@ -47,10 +47,10 @@ void esp_flash_encryption_init_checks()
             if (flash_crypt_cnt == (1<<(CRYPT_CNT[0]->bit_count))-1) {
                 // If encryption counter is already max, no need to write protect it
                 // (this distinction is important on ESP32 ECO3 where write-procted FLASH_CRYPT_CNT also write-protects UART_DL_DIS)
-                return;
+            } else {
+                ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
+                esp_flash_write_protect_crypt_cnt();
             }
-            ESP_LOGE(TAG, "Flash encryption & Secure Boot together requires FLASH_CRYPT_CNT efuse to be write protected. Fixing now...");
-            esp_flash_write_protect_crypt_cnt();
         }
     }
 #endif // CONFIG_SECURE_BOOT
@@ -110,17 +110,6 @@ void esp_flash_write_protect_crypt_cnt(void)
 esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 {
     bool flash_crypt_cnt_wr_dis = false;
-#if CONFIG_IDF_TARGET_ESP32
-    uint8_t dis_dl_enc = 0, dis_dl_dec = 0, dis_dl_cache = 0;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    uint8_t dis_dl_enc = 0;
-    uint8_t dis_dl_icache = 0;
-    uint8_t dis_dl_dcache = 0;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
-    uint8_t dis_dl_enc = 0;
-    uint8_t dis_dl_icache = 0;
-#endif
-
     esp_flash_enc_mode_t mode = ESP_FLASH_ENC_MODE_DEVELOPMENT;
 
     if (esp_flash_encryption_enabled()) {
@@ -138,27 +127,32 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
         if (flash_crypt_cnt_wr_dis) {
 
 #if CONFIG_IDF_TARGET_ESP32
-            dis_dl_cache = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
-            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
-            dis_dl_dec = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
+            bool dis_dl_cache = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+            bool dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+            bool dis_dl_dec = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
             /* Check if DISABLE_DL_DECRYPT, DISABLE_DL_ENCRYPT & DISABLE_DL_CACHE are set */
             if ( dis_dl_cache && dis_dl_enc && dis_dl_dec ) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
-            dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
-            dis_dl_dcache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
+            bool dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+            bool dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+            bool dis_dl_dcache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
 
             if (dis_dl_enc && dis_dl_icache && dis_dl_dcache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
-            dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
-            dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
-
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+            bool dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+            bool dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
             if (dis_dl_enc && dis_dl_icache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
+#ifdef CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+                // This chip supports two types of key: AES128_DERIVED and AES128.
+                // To be in RELEASE mode, it is important for the AES128_DERIVED key that XTS_KEY_LENGTH_256 be write-protected.
+                bool xts_key_len_256_wr_dis = esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT);
+                mode = (xts_key_len_256_wr_dis) ? ESP_FLASH_ENC_MODE_RELEASE : ESP_FLASH_ENC_MODE_DEVELOPMENT;
+#endif // CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
             }
 #endif
         }
@@ -197,9 +191,15 @@ void esp_flash_encryption_set_release_mode(void)
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
     esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+#ifdef CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+    // For AES128_DERIVED, FE key is 16 bytes and XTS_KEY_LENGTH_256 is 0.
+    // It is important to protect XTS_KEY_LENGTH_256 from further changing it to 1. Set write protection for this bit.
+    // Burning WR_DIS_CRYPT_CNT, blocks further changing of eFuses: DIS_DOWNLOAD_MANUAL_ENCRYPT, SPI_BOOT_CRYPT_CNT, [XTS_KEY_LENGTH_256], SECURE_BOOT_EN.
+    esp_efuse_write_field_bit(WR_DIS_CRYPT_CNT);
+#endif // CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
 #else
     ESP_LOGE(TAG, "Flash Encryption support not added, abort..");
     abort();

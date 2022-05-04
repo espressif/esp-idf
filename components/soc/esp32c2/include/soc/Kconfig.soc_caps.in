@@ -467,9 +467,17 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
-    default n
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+    bool
+    default y
 
 config SOC_UART_NUM
     int
