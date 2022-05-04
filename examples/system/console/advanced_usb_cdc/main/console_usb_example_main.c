@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* USB console example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -15,11 +20,12 @@
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
-#include "cmd_nvs.h"
-#include "cmd_system.h"
 #include "esp_vfs_cdcacm.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "cmd_nvs.h"
+#include "cmd_system.h"
+#include "cmd_wifi.h"
 
 static void initialize_nvs(void)
 {
@@ -80,6 +86,7 @@ void app_main(void)
     register_system_common();
     register_system_sleep();
     register_nvs();
+    register_wifi();
 
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
