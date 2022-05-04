@@ -380,7 +380,7 @@ def rename_with_retry(path_from, path_to):  # type: (str, str) -> None
             os.rename(path_from, path_to)
             return
         except OSError:
-            msg = f'Rename {path_from} to {path_to} failed'
+            msg = 'Rename {} to {} failed'.format(path_from, path_to)
             if retry == retry_count - 1:
                 fatal(msg + '. Antivirus software might be causing this. Disabling it temporarily could solve the issue.')
                 raise
