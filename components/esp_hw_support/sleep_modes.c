@@ -184,6 +184,10 @@ static bool s_light_sleep_wakeup = false;
 static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
+static bool s_adc_tsen_enabled = false;
+//in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
+static bool s_ultra_low_enabled = false;
+
 
 static uint32_t get_power_down_flags(void);
 #if SOC_PM_SUPPORT_EXT_WAKEUP
@@ -469,8 +473,21 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         reject_triggers = s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK;
     }
 
+    //Append some flags in addition to power domains
+    uint32_t sleep_flags = pd_flags;
+    if (s_adc_tsen_enabled) {
+        sleep_flags |= RTC_SLEEP_USE_ADC_TESEN_MONITOR;
+    }
+    if (!s_ultra_low_enabled) {
+        sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
+    }
+    if (rtc_dig_8m_enabled()) {
+        sleep_flags |= RTC_SLEEP_DIG_USE_8M;
+    }
+
     // Enter sleep
-    rtc_sleep_config_t config = RTC_SLEEP_CONFIG_DEFAULT(pd_flags);
+    rtc_sleep_config_t config;
+    rtc_sleep_get_default_config(sleep_flags, &config);
     rtc_sleep_init(config);
 
     // Set state machine time for light sleep
@@ -1354,4 +1371,14 @@ static uint32_t get_power_down_flags(void)
 void esp_deep_sleep_disable_rom_logging(void)
 {
     rtc_suppress_rom_log();
+}
+
+void rtc_sleep_enable_adc_tesn_monitor(bool enable)
+{
+    s_adc_tsen_enabled = enable;
+}
+
+void rtc_sleep_enable_ultra_low(bool enable)
+{
+    s_ultra_low_enabled = enable;
 }

@@ -168,6 +168,49 @@ void rtc_sleep_pmu_init(void)
     left_up_trx_fpu(0);
 }
 
+void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_config)
+{
+    *out_config = (rtc_sleep_config_t) {
+        .lslp_mem_inf_fpu = 0,
+        .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0,
+        .rtc_fastmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_FAST_MEM) ? 1 : 0,
+        .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0,
+        .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0,
+        .dig_ret_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_RET) ? 1 : 0,
+        .bt_pd_en = ((sleep_flags) & RTC_SLEEP_PD_BT) ? 1 : 0,
+        .cpu_pd_en = ((sleep_flags) & RTC_SLEEP_PD_CPU) ? 1 : 0,
+        .int_8m_pd_en = ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0,
+        .dig_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_PERIPH) ? 1 : 0,
+        .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0,
+        .wdt_flashboot_mod_en = 0,
+        .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0,
+        .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1,
+        .deep_slp_reject = 1,
+        .light_slp_reject = 1
+    };
+
+    if ((sleep_flags) & RTC_SLEEP_PD_DIG) {
+        out_config->dig_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->dig_dbias_slp = RTC_CNTL_DBIAS_SLP;
+        out_config->rtc_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->rtc_dbias_slp = RTC_CNTL_DBIAS_SLP;
+
+        out_config->bias_sleep_monitor = RTC_CNTL_BIASSLP_MONITOR_DEFAULT;
+        out_config->bias_sleep_slp = RTC_CNTL_BIASSLP_SLEEP_DEFAULT;
+        out_config->pd_cur_monitor = RTC_CNTL_PD_CUR_MONITOR_DEFAULT;
+        out_config->pd_cur_slp = RTC_CNTL_PD_CUR_SLEEP_DEFAULT;
+    } else {
+        out_config->dig_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->dig_dbias_slp = !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 : RTC_CNTL_DBIAS_SLP;
+        out_config->rtc_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->rtc_dbias_slp = !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 : RTC_CNTL_DBIAS_SLP;
+
+        out_config->bias_sleep_monitor = RTC_CNTL_BIASSLP_MONITOR_DEFAULT;
+        out_config->bias_sleep_slp = RTC_CNTL_BIASSLP_SLEEP_DEFAULT;
+        out_config->pd_cur_monitor = RTC_CNTL_PD_CUR_MONITOR_DEFAULT;
+        out_config->pd_cur_slp = RTC_CNTL_PD_CUR_SLEEP_DEFAULT;
+    }
+}
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
@@ -196,10 +239,10 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_RET_PD_EN);
     }
 
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_MONITOR, RTC_CNTL_BIASSLP_MONITOR_DEFAULT);
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_DEEP_SLP, RTC_CNTL_BIASSLP_SLEEP_DEFAULT);
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_MONITOR, RTC_CNTL_PD_CUR_MONITOR_DEFAULT);
-    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_DEEP_SLP, RTC_CNTL_PD_CUR_SLEEP_DEFAULT);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_MONITOR, cfg.bias_sleep_monitor);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_DEEP_SLP, cfg.bias_sleep_slp);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_MONITOR, cfg.pd_cur_monitor);
+    REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_DEEP_SLP, cfg.pd_cur_slp);
 
     // ESP32-H2 TO-DO: IDF-3693
     if (cfg.deep_slp) {
