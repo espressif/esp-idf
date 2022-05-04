@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -313,6 +305,79 @@ void test_fatfs_truncate_file(const char* filename)
     TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
 
     TEST_ASSERT_EQUAL(0, fclose(f));
+}
+
+void test_fatfs_ftruncate_file(const char* filename)
+{
+    int truncated_len = 0;
+
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char output[sizeof(input)];
+
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    TEST_ASSERT_EQUAL(strlen(input), write(fd, input, strlen(input)));
+
+    // Extending file beyond size is not supported
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(errno, EPERM);
+
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+    TEST_ASSERT_EQUAL(errno, EINVAL);
+
+    // Truncating should succeed
+    const char truncated_1[] = "ABCDEFGHIJ";
+    truncated_len = strlen(truncated_1);
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // open file for reading and validate the content
+    fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    memset(output, 0, sizeof(output));
+
+    TEST_ASSERT_EQUAL(truncated_len, read(fd, output, sizeof(output)));
+
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // further truncate the file
+    fd = open(filename, O_WRONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    // Once truncated, the new file size should be the basis
+    // whether truncation should succeed or not
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, truncated_len + 1));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input)));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(EPERM, errno);
+
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+
+    // Truncating a truncated file should succeed
+    const char truncated_2[] = "ABCDE";
+    truncated_len = strlen(truncated_2);
+
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // open file for reading and validate the content
+    fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    memset(output, 0, sizeof(output));
+
+    TEST_ASSERT_EQUAL(truncated_len, read(fd, output, sizeof(output)));
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
 }
 
 void test_fatfs_stat(const char* filename, const char* root_dir)
