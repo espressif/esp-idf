@@ -155,8 +155,8 @@ A sample CSV file is provided with the utility::
     python nvs_partition_gen.py generate sample_singlepage_blob.csv sample.bin 0x3000
 
 
-To generate only encryption keys:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To generate only encryption key partition:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   **Usage**::
 
         python nvs_partition_gen.py generate-key [-h] [--keyfile KEYFILE]
@@ -168,13 +168,13 @@ To generate only encryption keys:
         +====================+======================================================================+
         | -h, --help         |      show this help message and exit                                 |                                                    
         +--------------------+----------------------------------------------------------------------+
-        | --keyfile KEYFILE  |      Path to output encryption keys file                             |                                         
+        | --keyfile KEYFILE  |      Path to output encryption key partition file                    |
         +--------------------+----------------------------------------------------------------------+
-        | --outdir OUTDIR    |      Output directory to store files created.                        |
+        | --outdir OUTDIR    |      Output directory to store file created.                        |
         |                    |      (Default: current directory)                                    |                                              
         +--------------------+----------------------------------------------------------------------+
 
-You can run the utility to generate only encryption keys using the command below::
+You can run the utility to generate only the encryption key partition using the command below::
 
     python nvs_partition_gen.py generate-key
     
