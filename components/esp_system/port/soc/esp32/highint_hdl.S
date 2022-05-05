@@ -259,7 +259,7 @@ xt_highintx:
 #endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
     /* Check if the cause is the app cpu failing to tick.*/
-    movi    a0, int_wdt_app_cpu_ticked
+    movi    a0, int_wdt_cpu1_ticked
     l32i    a0, a0, 0
     bnez    a0, 2f
     /* It is. Modify cause. */
