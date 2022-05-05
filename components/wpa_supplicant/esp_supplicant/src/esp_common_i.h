@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,9 @@
 #include "utils/includes.h"
 
 struct wpa_funcs;
+extern struct wpa_supplicant g_wpa_supp;
 
-#ifdef ROAMING_SUPPORT
+#ifdef CONFIG_WPA_11KV_SUPPORT
 struct ieee_mgmt_frame {
 	u8 sender[ETH_ALEN];
 	u8 channel;
@@ -38,35 +39,12 @@ enum SIG_SUPPLICANT {
 
 int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data);
 void esp_get_tx_power(uint8_t *tx_power);
+#ifdef CONFIG_MBO
+bool mbo_bss_profile_match(u8 *bssid);
+#endif
+#endif
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
 void esp_set_scan_ie(void);
-void esp_set_assoc_ie(void);
-#else
-
-#include "esp_rrm.h"
-#include "esp_wnm.h"
-#include "esp_mbo.h"
-
-static inline void esp_set_scan_ie(void) { }
-static inline void esp_set_assoc_ie(void) { }
-
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-				      void *cb_ctx)
-{
-	return -1;
-}
-
-int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
-					   const char *btm_candidates,
-					   int cand_list)
-{
-	return -1;
-}
-
-int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
-{
-	return -1;
-}
-#endif
+void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool add_mdie);
 #endif

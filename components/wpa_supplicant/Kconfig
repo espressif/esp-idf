@@ -53,7 +53,7 @@ menu "Supplicant"
             Enabling this may cause inter operability issues with some APs.
 
     config WPA_11KV_SUPPORT
-        bool "Enable 802.11k, 802.11v APIs handling"
+        bool "Enable 802.11k, 802.11v APIs Support"
         default n
         help
             Select this option to enable 802.11k 802.11v APIs(RRM and BTM support).
@@ -77,7 +77,7 @@ menu "Supplicant"
             will be flushed immediately.
 
     config WPA_MBO_SUPPORT
-        bool "Enable MBO support"
+        bool "Enable Multi Band Operation Certification Support"
         default n
         select WPA_11KV_SUPPORT
         select WPA_SCAN_CACHE
@@ -90,5 +90,11 @@ menu "Supplicant"
         select WPA_MBEDTLS_CRYPTO
         help
             Select this option to enable WiFi Easy Connect Support.
+
+    config WPA_11R_SUPPORT
+        bool "Enable 802.11R (Fast Transition)"
+        default n
+        help
+            Select this option to enable WiFi Fast Transition Support.
 
 endmenu

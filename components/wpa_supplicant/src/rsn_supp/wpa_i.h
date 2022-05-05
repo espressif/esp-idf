@@ -1,20 +1,15 @@
 /*
  * Internal WPA/RSN supplicant state machine definitions
- * Copyright (c) 2004-2010, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2018, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  */
 
 #ifndef WPA_I_H
 #define WPA_I_H
 
+extern struct wpa_sm gWpaSm;
 struct install_key {
     int keys_cleared;
     enum wpa_alg alg;
@@ -31,7 +26,6 @@ struct install_key {
 struct wpa_sm {
     u8 pmk[PMK_LEN_MAX];
     size_t pmk_len;
-
     struct wpa_ptk ptk, tptk;
     int ptk_set, tptk_set;
     u8 snonce[WPA_NONCE_LEN];
@@ -42,6 +36,8 @@ struct wpa_sm {
     u8 request_counter[WPA_REPLAY_COUNTER_LEN];
     struct rsn_pmksa_cache *pmksa; /* PMKSA cache */
     struct rsn_pmksa_cache_entry *cur_pmksa; /* current PMKSA entry */
+    u8 ssid[32];
+    size_t ssid_len;
 
     unsigned int pairwise_cipher;
     unsigned int group_cipher;
@@ -91,6 +87,27 @@ struct wpa_sm {
     wifi_pmf_config_t pmf_cfg;
     u8 eapol1_count;
     struct rsn_sppamsdu_sup spp_sup;
+#ifdef CONFIG_IEEE80211R
+    u8 xxkey[PMK_LEN]; /* PSK or the second 256 bits of MSK */
+    size_t xxkey_len;
+    u8 pmk_r0[PMK_LEN];
+    u8 pmk_r0_name[WPA_PMK_NAME_LEN];
+    u8 pmk_r1[PMK_LEN];
+    u8 pmk_r1_name[WPA_PMK_NAME_LEN];
+    u8 mobility_domain[MOBILITY_DOMAIN_ID_LEN];
+    u8 r0kh_id[FT_R0KH_ID_MAX_LEN];
+    size_t r0kh_id_len;
+    u8 r1kh_id[FT_R1KH_ID_LEN];
+    unsigned int ft_completed:1;
+    unsigned int ft_reassoc_completed:1;
+    unsigned int ft_protocol:1;
+    int over_the_ds_in_progress;
+    u8 target_ap[ETH_ALEN]; /* over-the-DS target AP */
+    int set_ptk_after_assoc;
+    u8 mdie_ft_capab; /* FT Capability and Policy from target AP MDIE */
+    u8 *assoc_resp_ies; /* MDIE and FTIE from (Re)Association Response */
+    size_t assoc_resp_ies_len;
+#endif /* CONFIG_IEEE80211R */
 };
 
 /**
@@ -141,6 +158,22 @@ struct wpa_sm {
 
 typedef void (* WPA_SEND_FUNC)(void *buffer, u16 len);
 
+int wpa_sm_update_ft_ies(struct wpa_sm *sm, const u8 *md,
+			 const u8 *ies, size_t ies_len, bool auth_ie);
+
+static inline int wpa_sm_send_ft_action(struct wpa_sm *sm, u8 action,
+					const u8 *target_ap,
+					const u8 *ies, size_t ies_len)
+{
+	return -1;
+}
+
+static inline int wpa_sm_mark_authenticated(struct wpa_sm *sm,
+					    const u8 *target_ap)
+{
+	return 0;
+}
+
 typedef void (* WPA_SET_ASSOC_IE)(u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len);
 
 typedef void (*WPA_INSTALL_KEY) (enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
@@ -151,6 +184,7 @@ typedef int (*WPA_GET_KEY) (u8 *ifx, int *alg, u8 *addt, int *keyidx, u8 *key, s
 typedef void (*WPA_DEAUTH_FUNC)(u8 reason_code);
 
 typedef void (*WPA_NEG_COMPLETE)(void);
+
 
 bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func, \
         WPA_SET_ASSOC_IE set_assoc_ie_func, \
@@ -168,4 +202,7 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode);
 int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
+
+int wpa_derive_ptk_ft(struct wpa_sm *sm, const unsigned char *src_addr,
+                      const struct wpa_eapol_key *key, struct wpa_ptk *ptk);
 #endif /* WPA_I_H */

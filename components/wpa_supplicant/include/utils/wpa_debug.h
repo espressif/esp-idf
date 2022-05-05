@@ -159,8 +159,8 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #define wpa_dbg(...) do {} while(0)
 #endif
 
-#define wpa_auth_logger
-#define wpa_auth_vlogger
+#define wpa_auth_logger(...) do {} while(0)
+#define wpa_auth_vlogger(...) do {} while(0)
 
 /**
  * wpa_msg - Conditional printf for default target and ctrl_iface monitors

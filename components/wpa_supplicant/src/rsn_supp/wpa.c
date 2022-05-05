@@ -29,6 +29,8 @@
 #include "crypto/aes_wrap.h"
 #include "crypto/ccmp.h"
 #include "esp_rom_sys.h"
+#include "common/bss.h"
+#include "esp_common_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -53,12 +55,6 @@ struct wpa_sm gWpaSm;
 u8 assoc_ie_buf[ASSOC_IE_LEN+2];
 
 void set_assoc_ie(u8 * assoc_buf);
-
-static int wpa_sm_set_key(struct install_key *sm, enum wpa_alg alg,
-        u8 *addr, int key_idx, int set_tx,
-        u8 *seq, size_t seq_len,
-        u8 *key, size_t key_len,
-        enum key_flag key_flag);
 
 static int wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, enum key_flag key_flag);
 
@@ -230,8 +226,8 @@ static inline int wpa_sm_ether_send( struct wpa_sm *sm, const u8 *dest, u16 prot
  * @key_mic: Pointer to the buffer to which the EAPOL-Key MIC is written
  */
 void wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
-            int ver, const u8 *dest, u16 proto,
-            u8 *msg, size_t msg_len, u8 *key_mic)
+                        int ver, const u8 *dest, u16 proto,
+                        u8 *msg, size_t msg_len, u8 *key_mic)
 {
     if (is_zero_ether_addr(dest) && is_zero_ether_addr(sm->bssid)) {
         /*
@@ -542,6 +538,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     size_t mic_len, hdrlen, rlen;
     struct wpa_eapol_key *reply;
     struct wpa_eapol_key_192 *reply192;
+    u8 *rsn_ie_buf = NULL;
     u8 *rbuf, *key_mic;
 
     if (wpa_ie == NULL) {
@@ -552,6 +549,43 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
         return -1;
     }
 
+#ifdef CONFIG_IEEE80211R
+    if (wpa_key_mgmt_ft(sm->key_mgmt)) {
+        int res;
+
+        wpa_hexdump(MSG_DEBUG, "WPA: WPA IE before FT processing",
+                    wpa_ie, wpa_ie_len);
+        /*
+         * Add PMKR1Name into RSN IE (PMKID-List) and add MDIE and
+         * FTIE from (Re)Association Response.
+         */
+        rsn_ie_buf = os_malloc(wpa_ie_len + 2 + 2 + PMKID_LEN +
+                               sm->assoc_resp_ies_len);
+        if (rsn_ie_buf == NULL)
+                return -1;
+        os_memcpy(rsn_ie_buf, wpa_ie, wpa_ie_len);
+        res = wpa_insert_pmkid(rsn_ie_buf, &wpa_ie_len,
+                               sm->pmk_r1_name);
+        if (res < 0) {
+            os_free(rsn_ie_buf);
+            return -1;
+        }
+        wpa_hexdump(MSG_DEBUG,
+                    "WPA: WPA IE after PMKID[PMKR1Name] addition into RSNE",
+                    rsn_ie_buf, wpa_ie_len);
+
+        if (sm->assoc_resp_ies) {
+            wpa_hexdump(MSG_DEBUG, "WPA: Add assoc_resp_ies",
+                        sm->assoc_resp_ies,
+                        sm->assoc_resp_ies_len);
+            os_memcpy(rsn_ie_buf + wpa_ie_len, sm->assoc_resp_ies,
+                      sm->assoc_resp_ies_len);
+            wpa_ie_len += sm->assoc_resp_ies_len;
+        }
+
+        wpa_ie = rsn_ie_buf;
+    }
+#endif /* CONFIG_IEEE80211R */
     wpa_hexdump(MSG_MSGDUMP, "WPA: WPA IE for msg 2/4\n", wpa_ie, wpa_ie_len);
 
     mic_len = wpa_mic_len(sm->key_mgmt);
@@ -560,6 +594,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
                   NULL, hdrlen + wpa_ie_len,
                   &rlen, (void *) &reply);
     if (rbuf == NULL) {
+        os_free(rsn_ie_buf);
         return -1;
     }
     reply192 = (struct wpa_eapol_key_192 *) reply;
@@ -585,7 +620,8 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
         os_memcpy(reply + 1, wpa_ie, wpa_ie_len);
     }
 
-    memcpy(reply->key_nonce, nonce, WPA_NONCE_LEN);
+    os_free(rsn_ie_buf);
+    os_memcpy(reply->key_nonce, nonce, WPA_NONCE_LEN);
 
     wpa_printf(MSG_DEBUG, "WPA Send EAPOL-Key 2/4\n");
 
@@ -599,6 +635,10 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
 static int wpa_derive_ptk(struct wpa_sm *sm, const unsigned char *src_addr,
               const struct wpa_eapol_key *key, struct wpa_ptk *ptk)
 {
+#ifdef CONFIG_IEEE80211R
+    if (wpa_key_mgmt_ft(sm->key_mgmt))
+        return wpa_derive_ptk_ft(sm, src_addr, key, ptk);
+#endif /* CONFIG_IEEE80211R */
     return wpa_pmk_to_ptk(sm->pmk, sm->pmk_len, "Pairwise key expansion",
                   sm->own_addr, sm->bssid, sm->snonce,
                   key->key_nonce, ptk, sm->key_mgmt,
@@ -783,7 +823,13 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
          * the target AP.
          */
     }
-
+#ifdef CONFIG_IEEE80211R
+    if (wpa_key_mgmt_ft(sm->key_mgmt)) {
+        /* Prepare for the next transition */
+        wpa_ft_prepare_auth_request(sm, NULL);
+        sm->ft_protocol = 1;
+    }
+#endif /* CONFIG_IEEE80211R */
 }
 
 static int wpa_supplicant_install_gtk(struct wpa_sm *sm,
@@ -1918,6 +1964,9 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
                    "allow invalid version for non-CCMP group "
                    "keys");
             #endif
+        } else if (ver == WPA_KEY_INFO_TYPE_AES_128_CMAC) {
+              wpa_printf(MSG_DEBUG,
+                        "WPA: Interoperability workaround: allow incorrect (should have been HMAC-SHA1), but stronger      (is AES-128-CMAC), descriptor version to be used");
         } else
             goto out;
     }
@@ -2178,6 +2227,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
          sm->key_mgmt = WPA_KEY_MGMT_WAPI_PSK; /* for WAPI PSK */
     } else if (auth_mode == WPA2_AUTH_ENT_SHA384_SUITE_B) {
          sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
+    } else if (auth_mode == WPA2_AUTH_FT_PSK) {
+         sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2251,7 +2302,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 #ifdef CONFIG_SUITEB192
         extern bool g_wpa_suiteb_certification;
         if (g_wpa_suiteb_certification) {
-            if (mgmt_cipher != WIFI_CIPHER_TYPE_AES_GMAC256) {
+            if (sm->mgmt_group_cipher != WPA_CIPHER_BIP_GMAC_256) {
                 wpa_printf(MSG_ERROR, "suite-b 192bit certification, only GMAC256 is supported");
                 return -1;
             }
@@ -2262,12 +2313,45 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         sm->mgmt_group_cipher = WPA_CIPHER_NONE;
     }
 #endif
+#ifdef CONFIG_IEEE80211R
+    if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK) {
+        const u8 *ie, *md = NULL;
+        struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, (uint8_t *)bssid);
+        if (!bss) {
+            return -1;
+        }
+        ie = wpa_bss_get_ie(bss, WLAN_EID_MOBILITY_DOMAIN);
+        if (ie && ie[1] >= MOBILITY_DOMAIN_ID_LEN)
+                md = ie + 2;
+        if (os_memcmp(md, sm->mobility_domain, MOBILITY_DOMAIN_ID_LEN) != 0) {
+            /* Reset Auth IE here */
+            esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
+            esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_REQ);
+            sm->ft_protocol = 0;
+        }
+        wpa_sm_set_ft_params(sm, ie, ie ? 2 + ie[1] : 0);
+    } else {
+        /* Reset FT parameters */
+        wpa_sm_set_ft_params(sm, NULL, 0);
+        esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
+        esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_REQ);
+    }
+#endif
     set_assoc_ie(assoc_ie_buf); /* use static buffer */
     res = wpa_gen_wpa_ie(sm, sm->assoc_wpa_ie, sm->assoc_wpa_ie_len);
     if (res < 0)
         return -1;
     sm->assoc_wpa_ie_len = res;
+    esp_set_assoc_ie((uint8_t *)bssid, NULL, 0, true);
+    os_memset(sm->ssid, 0, sizeof(sm->ssid));
+    os_memcpy(sm->ssid, ssid, ssid_len);
+    sm->ssid_len = ssid_len;
     wpa_set_passphrase(passphrase, ssid, ssid_len);
+#ifdef CONFIG_MBO
+    if (!mbo_bss_profile_match((u8 *)bssid))
+        return -1;
+#endif
+
     return 0;
 }
 
@@ -2310,6 +2394,11 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
         memcpy(sm->pmk, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         sm->pmk_len = PMK_LEN;
     }
+#ifdef CONFIG_IEEE80211R
+    /* Set XXKey to be PSK for FT key derivation */
+    sm->xxkey_len = PMK_LEN;
+    os_memcpy(sm->xxkey, sm->pmk, PMK_LEN);
+#endif /* CONFIG_IEEE80211R */
 }
 
   void
@@ -2328,8 +2417,7 @@ set_assoc_ie(u8 * assoc_buf)
     sm->config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
 }
 
-static int
-wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
+int wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
         u8 *addr, int key_idx, int set_tx,
         u8 *seq, size_t seq_len,
         u8 *key, size_t key_len,
