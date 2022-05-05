@@ -229,11 +229,12 @@ Technically, you can add ``export.sh`` to your shell's profile directly; however
 .. _get-started-build:
 .. _get-started-configure:
 .. _get-started-connect:
-.. _get-started-first-steps:
+.. _get-started-linux-macos-first-steps:
 
 Step 5. First Steps on ESP-IDF
 ==============================
 
+.. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
 Tip: Updating ESP-IDF
