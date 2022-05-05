@@ -10,7 +10,6 @@
 #include <esp_err.h>
 #include <esp_wifi.h>
 
-#include <mdns.h>
 #include <protocomm.h>
 #include <protocomm_httpd.h>
 
@@ -101,26 +100,6 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
         return err;
     }
 
-    /* Add mDNS service for allowing discovery of provisioning
-     * service on the SoftAP network (Optional). Even though
-     * this is an http service we identify it by _esp_wifi_prov so
-     * that application is free to use _http without conflict */
-    err = mdns_service_add("Wi-Fi Provisioning Service", "_esp_wifi_prov", "_tcp",
-                           softap_config->httpd_config.data.config.port, NULL, 0);
-    if (err != ESP_OK) {
-        /* mDNS is not mandatory for provisioning to work,
-         * so print warning and return without failure */
-        ESP_LOGW(TAG, "Error adding mDNS service! Check if mDNS is running");
-    } else {
-        /* Information to identify the roles of the various
-         * protocomm endpoint URIs provided by the service */
-        err |= mdns_service_txt_item_set("_esp_wifi_prov", "_tcp", "version_endpoint", "/proto-ver");
-        err |= mdns_service_txt_item_set("_esp_wifi_prov", "_tcp", "session_endpoint", "/prov-session");
-        err |= mdns_service_txt_item_set("_esp_wifi_prov", "_tcp", "config_endpoint", "/prov-config");
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "Error adding mDNS service text item");
-        }
-    }
     return ESP_OK;
 }
 
@@ -131,7 +110,6 @@ static esp_err_t prov_stop(protocomm_t *pc)
         ESP_LOGW(TAG, "Error occurred while stopping protocomm_httpd");
     }
 
-    mdns_service_remove("_esp_wifi_prov", "_tcp");
     return err;
 }
 
