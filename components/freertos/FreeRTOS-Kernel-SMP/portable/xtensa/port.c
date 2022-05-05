@@ -17,17 +17,17 @@
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
 #include "xtensa/xtruntime.h"
+#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
+#include "esp_private/esp_int_wdt.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_task.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 #include "esp_rom_sys.h"
-#include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_heap_caps_init.h"
 #include "esp_freertos_hooks.h"
-#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
 #include "esp32/spiram.h"                   /* Required by esp_spiram_reserve_dma_pool() */
 #ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
