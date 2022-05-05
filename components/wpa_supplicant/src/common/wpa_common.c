@@ -1045,10 +1045,6 @@ const char * wpa_cipher_txt(int cipher)
  * PTK = PRF-X(PMK, "Pairwise key expansion",
  *             Min(AA, SA) || Max(AA, SA) ||
  *             Min(ANonce, SNonce) || Max(ANonce, SNonce))
- *
- * STK = PRF-X(SMK, "Peer key expansion",
- *             Min(MAC_I, MAC_P) || Max(MAC_I, MAC_P) ||
- *             Min(INonce, PNonce) || Max(INonce, PNonce))
  */
 int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		   const u8 *addr1, const u8 *addr2,
