@@ -149,12 +149,7 @@ void esp_int_wdt_cpu_init(void)
     esp_register_freertos_tick_hook_for_cpu(tick_hook, cpu_hal_get_core_id());
     ESP_INTR_DISABLE(WDT_INT_NUM);
 
-#if SOC_TIMER_GROUPS > 1
     esp_rom_route_intr_matrix(cpu_hal_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
-#else
-    // TODO: Clean up code for ESP32-C2, IDF-4114
-    ESP_EARLY_LOGW("INT_WDT", "ESP32-C2 only has one timer group");
-#endif
 
     /* Set the type and priority to watch dog interrupts */
 #if SOC_CPU_HAS_FLEXIBLE_INTC

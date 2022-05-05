@@ -128,7 +128,7 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
 static void set_ocode_by_efuse(int calib_version)
 {
     // ESP32C2-TODO: IDF-4940
-    abort();
+    ESP_HW_LOGW(TAG, "set_ocode_by_efuse not supported yet");
 }
 
 static void calibrate_ocode(void)

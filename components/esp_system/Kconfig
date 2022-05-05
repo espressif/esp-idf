@@ -366,7 +366,7 @@ menu "ESP System Settings"
 
     config ESP_INT_WDT
         bool "Interrupt watchdog"
-        default y
+        default y if !IDF_TARGET_ESP32C2 # add support in IDF-4114
         help
             This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
             either because a task turned off interrupts and did not turn them on for a long time, or because an
