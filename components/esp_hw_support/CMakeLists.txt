@@ -1,12 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(requires soc)
-set(priv_requires efuse bootloader_support spi_flash)
-if(${target} STREQUAL "esp32")
-     list(APPEND requires efuse)
-endif()
+set(requires soc bootloader_support)
+set(priv_requires efuse spi_flash)
 
-set(srcs "compare_set.c" "cpu_util.c")
+set(srcs "compare_set.c" "cpu_util.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_async_memcpy.c"
                      "esp_clk.c"
@@ -14,6 +11,7 @@ if(NOT BOOTLOADER_BUILD)
                      "hw_random.c"
                      "intr_alloc.c"
                      "mac_addr.c"
+                     "periph_ctrl.c"
                      "sleep_modes.c"
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
@@ -21,6 +19,14 @@ if(NOT BOOTLOADER_BUILD)
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
     endif()
+
+    # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
+    list(APPEND priv_requires driver)
+
+    if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
+        list(APPEND srcs "rtc_wdt.c")
+    endif()
+
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")
@@ -28,7 +34,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include include/soc include/soc/${target}
-                       PRIV_INCLUDE_DIRS port/include
+                       PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"
                        LDFRAGMENTS linker.lf)

@@ -60,3 +60,4 @@ Related Documents
     ../api-reference/template
     contributor-agreement
     copyright-guide
+    esp-idf-tests-with-pytest

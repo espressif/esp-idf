@@ -3,35 +3,19 @@
  *  Uses mbedTLS software implementation for failover when concurrent
  *  SHA operations are in use.
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE LTD
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * SPDX-License-Identifier: Apache-2.0
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
-
 /*
  *  The SHA-512 Secure Hash Standard was published by NIST in 2002.
  *
  *  http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
  */
 
-#if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
-#else
-#include MBEDTLS_CONFIG_FILE
-#endif
+#include <mbedtls/build_info.h>
 
 #if defined(MBEDTLS_SHA512_C) && defined(MBEDTLS_SHA512_ALT)
 
@@ -140,7 +124,7 @@ void mbedtls_sha512_clone( mbedtls_sha512_context *dst,
 /*
  * SHA-512 context setup
  */
-int mbedtls_sha512_starts_ret( mbedtls_sha512_context *ctx, int is384 )
+int mbedtls_sha512_starts( mbedtls_sha512_context *ctx, int is384 )
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -175,14 +159,6 @@ int mbedtls_sha512_starts_ret( mbedtls_sha512_context *ctx, int is384 )
 
     return 0;
 }
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_starts( mbedtls_sha512_context *ctx,
-                            int is384 )
-{
-    mbedtls_sha512_starts_ret( ctx, is384 );
-}
-#endif
 
 /*
  * Round constants
@@ -255,15 +231,6 @@ int mbedtls_internal_sha512_process( mbedtls_sha512_context *ctx, const unsigned
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_process( mbedtls_sha512_context *ctx,
-                             const unsigned char data[128] )
-{
-    mbedtls_internal_sha512_process( ctx, data );
-}
-#endif
-
-
 static void mbedtls_sha512_software_process( mbedtls_sha512_context *ctx, const unsigned char data[128] )
 {
     int i;
@@ -332,7 +299,7 @@ static void mbedtls_sha512_software_process( mbedtls_sha512_context *ctx, const 
 /*
  * SHA-512 process buffer
  */
-int mbedtls_sha512_update_ret( mbedtls_sha512_context *ctx, const unsigned char *input,
+int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
     int ret;
@@ -379,16 +346,6 @@ int mbedtls_sha512_update_ret( mbedtls_sha512_context *ctx, const unsigned char 
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_update( mbedtls_sha512_context *ctx,
-                            const unsigned char *input,
-                            size_t ilen )
-{
-    mbedtls_sha512_update_ret( ctx, input, ilen );
-}
-#endif
-
-
 static const unsigned char sha512_padding[128] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -403,7 +360,7 @@ static const unsigned char sha512_padding[128] = {
 /*
  * SHA-512 final digest
  */
-int mbedtls_sha512_finish_ret( mbedtls_sha512_context *ctx, unsigned char output[64] )
+int mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char *output )
 {
     int ret;
     size_t last, padn;
@@ -420,11 +377,11 @@ int mbedtls_sha512_finish_ret( mbedtls_sha512_context *ctx, unsigned char output
     last = (size_t)( ctx->total[0] & 0x7F );
     padn = ( last < 112 ) ? ( 112 - last ) : ( 240 - last );
 
-    if ( ( ret = mbedtls_sha512_update_ret( ctx, sha512_padding, padn ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha512_update( ctx, sha512_padding, padn ) ) != 0 ) {
         goto out;
     }
 
-    if ( ( ret = mbedtls_sha512_update_ret( ctx, msglen, 16 ) ) != 0 ) {
+    if ( ( ret = mbedtls_sha512_update( ctx, msglen, 16 ) ) != 0 ) {
         goto out;
     }
 
@@ -453,13 +410,5 @@ out:
 
     return ret;
 }
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_finish( mbedtls_sha512_context *ctx,
-                            unsigned char output[64] )
-{
-    mbedtls_sha512_finish_ret( ctx, output );
-}
-#endif
 
 #endif /* MBEDTLS_SHA512_C && MBEDTLS_SHA512_ALT */

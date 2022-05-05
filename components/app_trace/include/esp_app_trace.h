@@ -20,8 +20,8 @@ extern "C" {
 typedef enum {
     ESP_APPTRACE_DEST_JTAG = 1,                         ///< JTAG destination
     ESP_APPTRACE_DEST_TRAX = ESP_APPTRACE_DEST_JTAG, 	///< xxx_TRAX name is obsolete, use more common xxx_JTAG
-    ESP_APPTRACE_DEST_UART0,	                        ///< UART0 destination
-    ESP_APPTRACE_DEST_MAX = ESP_APPTRACE_DEST_UART0,
+    ESP_APPTRACE_DEST_UART,	                            ///< UART destination
+    ESP_APPTRACE_DEST_MAX = ESP_APPTRACE_DEST_UART+1,
     ESP_APPTRACE_DEST_NUM
 } esp_apptrace_dest_t;
 
@@ -36,7 +36,7 @@ esp_err_t esp_apptrace_init(void);
 
 /**
  * @brief Configures down buffer.
- *        @note Needs to be called before initiating any data transfer using esp_apptrace_buffer_get and esp_apptrace_write.
+ *        @note Needs to be called before attempting to receive any data using esp_apptrace_down_buffer_get and esp_apptrace_read.
  *              This function does not protect internal data by lock.
  *
  * @param buf Address of buffer to use for down channel (host to target) data.

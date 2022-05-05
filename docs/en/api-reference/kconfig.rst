@@ -67,7 +67,7 @@ Therefore, several features have been adopted to avoid this:
 1. ``confgen.py`` is used by the tool chain to pre-process ``sdkconfig`` files before anything else, for example
    ``menuconfig``, would read them. As the consequence, the settings for old options will be kept and not ignored.
 2. ``confgen.py`` recursively finds all ``sdkconfig.rename`` files in ESP-IDF directory which contain old and new
-   ``Kconfig`` option names. Old options are replaced by new ones in the ``sdkconfig`` file.
+   ``Kconfig`` option names. Old options are replaced by new ones in the ``sdkconfig`` file. Renames that should only appear for a single target can be placed in a target specific rename file: `sdkconfig.rename.TARGET`, where `TARGET` is the target name, e.g. `sdkconfig.rename.esp32s2`.
 3. ``confgen.py`` post-processes ``sdkconfig`` files and generates all build
    outputs (``sdkconfig.h``, ``sdkconfig.cmake``, ``auto.conf``) by adding a list
    of compatibility statements, i.e. value of the old option is set the value of

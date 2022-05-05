@@ -1,15 +1,20 @@
 .pytest_template:
+  image: $TARGET_TEST_ENV_IMAGE
   stage: target_test
+  timeout: 1 hour
   extends: .before_script_pytest
+  tags: [$TARGET, $ENV_MARKER]
   artifacts:
     when: always
     paths:
       - XUNIT_RESULT.xml
-      - /tmp/pytest-embedded/
+      - pytest_embedded_log/
     reports:
       junit: XUNIT_RESULT.xml
+    expire_in: 1 week
   script:
-    - pytest $TEST_DIR --target $TARGET -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml
+    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    - pytest $TEST_DIR --target $TARGET -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml --known-failure-cases-file known_failure_cases/known_failure_cases.txt
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -23,11 +28,8 @@ example_test_pytest_esp32_generic:
   needs:
     - build_pytest_examples_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: generic
-  tags: # in gitlab 14.1 or later, we can use `parallel: matrix` with the `tags` keyword. https://docs.gitlab.com/ee/ci/jobs/job_control.html#run-a-matrix-of-parallel-trigger-jobs
-    - ESP32
-    - Example_GENERIC
 
 example_test_pytest_esp32s2_generic:
   extends:
@@ -36,11 +38,8 @@ example_test_pytest_esp32s2_generic:
   needs:
     - build_pytest_examples_esp32s2
   variables:
-    TARGET: esp32s2
+    TARGET: ESP32S2
     ENV_MARKER: generic
-  tags:
-    - ESP32S2
-    - Example_GENERIC
 
 example_test_pytest_esp32s3_generic:
   extends:
@@ -49,11 +48,8 @@ example_test_pytest_esp32s3_generic:
   needs:
     - build_pytest_examples_esp32s3
   variables:
-    TARGET: esp32s3
-    ENV_MARKER: generic
-  tags:
-    - ESP32S3
-    - Example_GENERIC
+    TARGET: ESP32S3
+    ENV_MARKER: generic_s3_fixme
 
 example_test_pytest_esp32c3_generic:
   extends:
@@ -62,11 +58,8 @@ example_test_pytest_esp32c3_generic:
   needs:
     - build_pytest_examples_esp32c3
   variables:
-    TARGET: esp32c3
+    TARGET: ESP32C3
     ENV_MARKER: generic
-  tags:
-    - ESP32C3
-    - Example_GENERIC
 
 example_test_pytest_esp32c3_flash_suspend:
   extends:
@@ -75,11 +68,48 @@ example_test_pytest_esp32c3_flash_suspend:
   needs:
     - build_pytest_examples_esp32c3
   variables:
-    TARGET: esp32c3
+    TARGET: ESP32C3
     ENV_MARKER: flash_suspend
-  tags:
-    - ESP32C3_IDF
-    - UT_T1_Flash_Suspend
+
+example_test_pytest_esp32_ethernet_ota:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ethernet_ota
+
+example_test_pytest_esp32_ethernet_ip101:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ip101
+
+example_test_pytest_esp32_flash_encryption:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: flash_encryption
+
+example_test_pytest_esp32c3_flash_encryption:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_esp32c3
+  variables:
+    TARGET: ESP32C3
+    ENV_MARKER: flash_encryption
 
 .pytest_components_dir_template:
   extends: .pytest_template
@@ -93,11 +123,8 @@ component_ut_pytest_esp32_generic:
   needs:
     - build_pytest_components_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: generic
-  tags:
-    - ESP32
-    - COMPONENT_UT_GENERIC
 
 component_ut_pytest_esp32_ip101:
   extends:
@@ -106,24 +133,18 @@ component_ut_pytest_esp32_ip101:
   needs:
     - build_pytest_components_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: ip101
-  tags:
-    - ESP32
-    - COMPONENT_UT_IP101
 
 component_ut_pytest_esp32_lan8720:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:labels-protected:lan8720  # FIXME: IDFCI-1176
   needs:
     - build_pytest_components_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: lan8720
-  tags:
-    - ESP32
-    - COMPONENT_UT_LAN8720
 
 component_ut_pytest_esp32s2_generic:
   extends:
@@ -132,11 +153,8 @@ component_ut_pytest_esp32s2_generic:
   needs:
     - build_pytest_components_esp32s2
   variables:
-    TARGET: esp32s2
+    TARGET: ESP32S2
     ENV_MARKER: generic
-  tags:
-    - ESP32S2
-    - COMPONENT_UT_GENERIC
 
 component_ut_pytest_esp32s3_generic:
   extends:
@@ -145,11 +163,18 @@ component_ut_pytest_esp32s3_generic:
   needs:
     - build_pytest_components_esp32s3
   variables:
-    TARGET: esp32s3
-    ENV_MARKER: generic
-  tags:
-    - ESP32S3
-    - COMPONENT_UT_GENERIC
+    TARGET: ESP32S3
+    ENV_MARKER: generic_s3_fixme
+
+component_ut_pytest_esp32s3_octal_psram:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: octal_psram
 
 component_ut_pytest_esp32c3_generic:
   extends:
@@ -158,11 +183,65 @@ component_ut_pytest_esp32c3_generic:
   needs:
     - build_pytest_components_esp32c3
   variables:
-    TARGET: esp32c3
+    TARGET: ESP32C3
     ENV_MARKER: generic
-  tags:
-    - ESP32C3
-    - COMPONENT_UT_GENERIC
+
+.pytest_test_apps_dir_template:
+  extends: .pytest_template
+  variables:
+    TEST_DIR: tools/test_apps
+
+test_app_test_pytest_esp32_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32
+  needs:
+    - build_pytest_test_apps_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: generic
+    SETUP_TOOLS: "1"  # need gdb
+
+test_app_test_pytest_esp32s2_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s2
+  needs:
+    - build_pytest_test_apps_esp32s2
+  variables:
+    TARGET: ESP32S2
+    ENV_MARKER: generic
+    SETUP_TOOLS: "1"  # need gdb
+
+test_app_test_pytest_esp32s3_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3
+  needs:
+    - build_pytest_test_apps_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: generic_s3_fixme
+
+test_app_test_pytest_esp32c3_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c3
+  needs:
+    - build_pytest_test_apps_esp32c3
+  variables:
+    TARGET: ESP32C3
+    ENV_MARKER: generic
+
+test_app_test_pytest_esp32s2_usb_host:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s2
+  needs:
+    - build_pytest_test_apps_esp32s2
+  variables:
+    TARGET: ESP32S2
+    ENV_MARKER: usb_host
 
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
@@ -173,6 +252,8 @@ component_ut_pytest_esp32c3_generic:
 
 .target_test_job_template:
   stage: target_test
+  timeout: 1 hour
+  image: $TARGET_TEST_ENV_IMAGE
   artifacts:
     when: always
     paths:
@@ -180,9 +261,9 @@ component_ut_pytest_esp32c3_generic:
       - $LOG_PATH
     exclude:
       - .git/**/*
-    expire_in: 1 week
     reports:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
+    expire_in: 1 week
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
@@ -258,6 +339,7 @@ example_test_001A:
 
 example_test_001B:
   extends: .example_test_esp32_template
+  parallel: 2
   tags:
     - ESP32
     - Example_EthKitV1
@@ -270,7 +352,7 @@ example_test_001B_V3:
 
 example_test_001C:
   extends: .example_test_esp32_template
-  parallel: 4
+  parallel: 2
   tags:
     - ESP32
     - Example_GENERIC
@@ -303,7 +385,6 @@ example_test_esp32_WIFI_OTA:
 
 example_test_002:
   extends: .example_test_esp32_template
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox_Basic
@@ -342,7 +423,6 @@ example_test_006:
   extends:
     - .example_test_esp32_template
     - .rules:labels:iperf_stress_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox
@@ -352,12 +432,6 @@ example_test_007:
   tags:
     - ESP32
     - Example_I2C_CCS811_SENSOR
-
-example_test_008A:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_Flash_Encryption
 
 example_test_008B:
   extends: .example_test_esp32_template
@@ -426,16 +500,10 @@ example_test_017:
 
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
-  parallel: 3
+  parallel: 2
   tags:
     - ESP32C3
     - Example_GENERIC
-
-example_test_C3_FLASH_ENC:
-  extends: .example_test_esp32c3_template
-  tags:
-    - ESP32C3
-    - Example_Flash_Encryption
 
 example_test_C3_FLASH_ENC_OTA:
   extends: .example_test_esp32c3_template
@@ -448,12 +516,6 @@ example_test_ESP32_SDSPI:
   tags:
     - ESP32
     - UT_T1_SPIMODE
-
-example_test_S3_GENERIC:
-  extends: .example_test_esp32s3_template
-  tags:
-    - ESP32S3
-    - Example_GENERIC
 
 example_test_ESP32S2_SDSPI:
   extends: .example_test_esp32s2_template
@@ -535,12 +597,9 @@ test_app_test_005:
 
 test_app_test_esp32_generic:
   extends: .test_app_esp32_template
-  parallel: 5
   tags:
     - ESP32
     - Example_GENERIC
-  variables:
-    SETUP_TOOLS: "1"
 
 test_app_test_flash_psram_f4r4:
   extends: .test_app_esp32s3_template
@@ -554,7 +613,7 @@ test_app_test_flash_psram_f4r8:
     - ESP32S3
     - MSPI_F4R8
 
-.test_app_test_flash_psram_f8r8:
+test_app_test_flash_psram_f8r8:
   extends: .test_app_esp32s3_template
   tags:
     - ESP32S3
@@ -599,7 +658,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 15
+  parallel: 21
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -644,13 +703,6 @@ UT_008:
   tags:
     - ESP32_IDF
     - UT_T1_GPIO
-    - psram
-
-UT_012:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_LEDC
     - psram
 
 UT_014:
@@ -736,13 +788,6 @@ UT_036:
     - UT_T1_PSRAMV0
     - psram
 
-# ToDo: re-enable this job when ESP32-S2 LEDC runner installed
-# UT_037:
-#   extends: .unit_test_esp32s2_template
-#   tags:
-#     - ESP32S2_IDF
-#     - UT_T1_LEDC
-
 UT_038:
   extends: .unit_test_esp32s2_template
   parallel: 2
@@ -785,7 +830,7 @@ UT_046:
 
 UT_047:
   extends: .unit_test_esp32s2_template
-  parallel: 6
+  parallel: 13
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -1001,6 +1046,7 @@ IT_011:
 IT_012:
   extends: .integration_test_template
   parallel: 2
+  allow_failure: true  # FIXME: temporary allow failure, IDFCI-1147
   tags:
     - ESP32_IDF
     - SSC_T2_MESH1

@@ -56,6 +56,7 @@ The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience fu
 The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the filesystem and releases the resources acquired by :cpp:func:`esp_vfs_fat_sdmmc_mount`.
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
+.. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
 .. doxygenfunction:: esp_vfs_fat_sdspi_mount
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
@@ -65,10 +66,10 @@ The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the file
 Using FatFs with VFS in read-only mode
 --------------------------------------
 
-The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_rawflash_mount` and :cpp:func:`esp_vfs_fat_rawflash_unmount`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_spiflash_mount_ro` and :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
 
-.. doxygenfunction:: esp_vfs_fat_rawflash_mount
-.. doxygenfunction:: esp_vfs_fat_rawflash_unmount
+.. doxygenfunction:: esp_vfs_fat_spiflash_mount_ro
+.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_ro
 
 
 FatFS disk IO layer
@@ -95,8 +96,7 @@ The tool is used to create filesystem images on a host and populate it with cont
 
 The script is based on the partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) and except for generating partition also initializes wear levelling.
 
-Current implementation supports short file names and FAT12. Long file names, and FAT16 are subjects of the future work.
-
+The latest version supports both short and long file names, FAT12 and FAT16. The long file names are limited to 255 characters, and can contain multiple period (".") characters within the filename and additional characters "+", ",", ";", "=", "[" and also "]". The long files name characters are encoded using utf-16, on the contrary to short file names encoded using utf-8.
 
 Build system integration with FATFS partition generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -111,7 +111,8 @@ If you prefer generating partition without wear levelling support you can use ``
 
 ``fatfs_create_spiflash_image`` respectively ``fatfs_create_rawflash_image`` must be called from project's CMakeLists.txt.
 
-If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support) beware that it supports mounting only in read-only mode in the device.
+If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support), beware that it supports mounting only in read-only mode in the device.
+
 
 The arguments of the function are as follows:
 

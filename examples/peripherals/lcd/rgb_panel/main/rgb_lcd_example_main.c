@@ -54,13 +54,6 @@ static const char *TAG = "example";
 
 extern void example_lvgl_demo_ui(lv_obj_t *scr);
 
-static bool example_notify_lvgl_flush_ready(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *event_data, void *user_data)
-{
-    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_data;
-    lv_disp_flush_ready(disp_driver);
-    return false;
-}
-
 static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
     esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
@@ -70,6 +63,7 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     int offsety2 = area->y2;
     // copy a buffer's content to a specific area of the display
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+    lv_disp_flush_ready(drv);
 }
 
 static void example_increase_lvgl_tick(void *arg)
@@ -95,7 +89,7 @@ void app_main(void)
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16, // RGB565 in parallel mode, thus 16bit in width
         .psram_trans_align = 64,
-        .clk_src = LCD_CLK_SRC_PLL160M,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = EXAMPLE_PIN_NUM_DISP_EN,
         .pclk_gpio_num = EXAMPLE_PIN_NUM_PCLK,
         .vsync_gpio_num = EXAMPLE_PIN_NUM_VSYNC,
@@ -124,17 +118,15 @@ void app_main(void)
             .h_res = EXAMPLE_LCD_H_RES,
             .v_res = EXAMPLE_LCD_V_RES,
             // The following parameters should refer to LCD spec
-            .hsync_back_porch = 68,
+            .hsync_back_porch = 40,
             .hsync_front_porch = 20,
-            .hsync_pulse_width = 5,
-            .vsync_back_porch = 18,
+            .hsync_pulse_width = 1,
+            .vsync_back_porch = 8,
             .vsync_front_porch = 4,
             .vsync_pulse_width = 1,
-            .flags.pclk_active_neg = 1, // RGB data is clocked out on falling edge
+            .flags.pclk_active_neg = true,
         },
         .flags.fb_in_psram = 1, // allocate frame buffer in PSRAM
-        .on_frame_trans_done = example_notify_lvgl_flush_ready,
-        .user_ctx = &disp_drv,
     };
     ESP_ERROR_CHECK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
 

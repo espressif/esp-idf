@@ -98,7 +98,6 @@ The summary output provided by ``idf.py size`` does not give enough detail to fi
              libesp_system.a        245    206       0   3078        0       5990     3817   13336
                 libesp-tls.a          0      4       0      0        0       5637     3524    9165
     [... removed some lines here ...]
-          libtcpip_adapter.a          0     17       0      0        0        216        0     233
                 libesp_rom.a          0      0       0    112        0          0        0     112
                     libcxx.a          0      0       0      0        0         47        0      47
                        (exe)          0      0       0      3        0          3       12      18
@@ -364,6 +363,8 @@ Enabling Nano formatting also reduces the stack usage of each function that call
 
 .. _Newlib README file: https://sourceware.org/newlib/README
 
+.. _minimizing_binary_mbedtls:
+
 mbedTLS features
 @@@@@@@@@@@@@@@@
 
@@ -374,16 +375,15 @@ These include:
 - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
 - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
 - :ref:`CONFIG_MBEDTLS_SHA512_C`
-- :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1`
-- :ref:`CONFIG_MBEDTLS_SSL_PROTO_TLS1_1`
 - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
 - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+- :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
 - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
+- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
 - :ref:`CONFIG_MBEDTLS_CCM_C`
 - :ref:`CONFIG_MBEDTLS_GCM_C`
 - :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
-- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both Server & Client are not needed
+- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
 - Consider disabling some ciphersuites listed in the "TLS Key Exchange Methods" sub-menu (i.e. :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
 
 The help text for each option has some more information.
@@ -400,11 +400,6 @@ The help text for each option has some more information.
 .. note::
 
    Not every combination of mbedTLS compile-time config is tested in ESP-IDF. If you find a combination that fails to compile or function as expected, please report the details on GitHub.
-
-FreeModBus
-@@@@@@@@@@
-
-If using Modbus, enable or disable :ref:`CONFIG_FMB_COMM_MODE_TCP_EN`, :ref:`CONFIG_FMB_COMM_MODE_RTU_EN`, :ref:`CONFIG_FMB_COMM_MODE_ASCII_EN` as applicable for the necessary functionality.
 
 VFS
 @@@

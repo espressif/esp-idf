@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "hal/i2c_hal.h"
 
@@ -79,11 +71,6 @@ void i2c_hal_set_tout(i2c_hal_context_t *hal, int tout_num)
     i2c_ll_set_tout(hal->dev, tout_num);
 }
 
-void i2c_hal_set_slave_addr(i2c_hal_context_t *hal, uint16_t slave_addr, bool addr_10bit_en)
-{
-    i2c_ll_set_slave_addr(hal->dev, slave_addr, addr_10bit_en);
-}
-
 void i2c_hal_set_stop_timing(i2c_hal_context_t *hal, int stop_setup, int stop_hold)
 {
     i2c_ll_set_stop_timing(hal->dev, stop_setup, stop_hold);
@@ -144,24 +131,15 @@ bool i2c_hal_is_master_mode(i2c_hal_context_t *hal)
     return i2c_ll_is_master_mode(hal->dev);
 }
 
-void i2c_hal_get_rxfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
+#if SOC_I2C_SUPPORT_SLAVE
+void i2c_hal_set_slave_addr(i2c_hal_context_t *hal, uint16_t slave_addr, bool addr_10bit_en)
 {
-    *len =  i2c_ll_get_rxfifo_cnt(hal->dev);
-}
-
-void i2c_hal_get_txfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
-{
-    *len =  i2c_ll_get_txfifo_len(hal->dev);
+    i2c_ll_set_slave_addr(hal->dev, slave_addr, addr_10bit_en);
 }
 
 void i2c_hal_enable_slave_tx_it(i2c_hal_context_t *hal)
 {
     i2c_ll_slave_enable_tx_it(hal->dev);
-}
-
-void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal)
-{
-    i2c_ll_slave_disable_tx_it(hal->dev);
 }
 
 void i2c_hal_enable_slave_rx_it(i2c_hal_context_t *hal)
@@ -174,16 +152,6 @@ void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal)
     i2c_ll_slave_disable_rx_it(hal->dev);
 }
 
-void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_sclk_t src_clk)
-{
-    i2c_ll_set_source_clk(hal->dev, src_clk);
-    uint32_t sclk = I2C_LL_CLK_SRC_FREQ(src_clk);
-    i2c_clk_cal_t clk_cal = {0};
-    uint32_t scl_hw_freq = (scl_freq == I2C_CLK_FREQ_MAX) ? (sclk / 20) : (uint32_t)scl_freq; // FREQ_MAX use the highest freq of the chosen clk.
-    i2c_ll_cal_bus_clk(sclk, scl_hw_freq, &clk_cal);
-    i2c_ll_set_bus_timing(hal->dev, &clk_cal);
-}
-
 void i2c_hal_slave_init(i2c_hal_context_t *hal, int i2c_num)
 {
     i2c_ll_slave_init(hal->dev);
@@ -194,6 +162,17 @@ void i2c_hal_slave_init(i2c_hal_context_t *hal, int i2c_num)
     //Reset fifo
     i2c_ll_txfifo_rst(hal->dev);
     i2c_ll_rxfifo_rst(hal->dev);
+}
+#endif
+
+void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_sclk_t src_clk)
+{
+    i2c_ll_set_source_clk(hal->dev, src_clk);
+    uint32_t sclk = I2C_LL_CLK_SRC_FREQ(src_clk);
+    i2c_clk_cal_t clk_cal = {0};
+    uint32_t scl_hw_freq = (scl_freq == I2C_CLK_FREQ_MAX) ? (sclk / 20) : (uint32_t)scl_freq; // FREQ_MAX use the highest freq of the chosen clk.
+    i2c_ll_cal_bus_clk(sclk, scl_hw_freq, &clk_cal);
+    i2c_ll_set_bus_timing(hal->dev, &clk_cal);
 }
 
 void i2c_hal_master_clr_bus(i2c_hal_context_t *hal)
@@ -217,9 +196,4 @@ void i2c_hal_master_init(i2c_hal_context_t *hal, int i2c_num)
     //Reset fifo
     i2c_ll_txfifo_rst(hal->dev);
     i2c_ll_rxfifo_rst(hal->dev);
-}
-
-void i2c_hal_update_config(i2c_hal_context_t *hal)
-{
-    i2c_ll_update(hal->dev);
 }

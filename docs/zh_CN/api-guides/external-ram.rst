@@ -91,7 +91,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_STAR
 
 由于有些内存缓冲器仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部内存池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 标志从该池中分配存储器。
 
-.. only:: esp32 or esp32s2
+.. only:: SOC_SPIRAM_SUPPORTED
 
     .. _external_ram_config_bss:
 
@@ -102,7 +102,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_STAR
 
     启用该选项后，从 {IDF_TARGET_PSRAM_ADDR_START} 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
-    ``EXT_RAM_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
+    ``EXT_RAM_BSS_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
 
     也可以使用链接器片段方案 ``extram_bss`` 将组件或库的 BSS 段放到片外 RAM 中。
 
@@ -129,15 +129,25 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_STAR
 
  * Flash cache 禁用时（比如，正在写入 flash），片外 RAM 将无法访问；同样，对片外 RAM 的读写操作也将导致 cache 访问异常。出于这个原因，ESP-IDF 不会在片外 RAM 中分配任务堆栈（详见下文）。
 
- * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
+ * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。因此，当片外 RAM 启用时，与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
 
- * 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据会挤出 flash cache，可能降低代码执行速度。
+.. only:: SOC_PSRAM_DMA_CAPABLE
 
- * 一般来说，片外 RAM 不可用作任务堆栈存储器。因此 :cpp:func:`xTaskCreate` 及类似函数将始终为堆栈和任务 TCB 分配片上储存器，而 :cpp:func:`xTaskCreateStatic` 类型的函数将检查传递的 Buffer 是否属于片上存储器。
+    注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但在 ESP-IDF 中，尚未提供软件支持。
+
+* 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据会挤出 flash cache，可能降低代码执行速度。
+
+ * 一般来说，片外 RAM 不会用作任务堆栈存储器。:cpp:func:`xTaskCreate` 及类似函数始终会为堆栈和任务 TCB 分配片上储存器。
 
 .. only:: esp32
 
     可以使用 :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` 选项将任务堆栈放入片外存储器。这时，必须使用 :cpp:func:`xTaskCreateStatic` 指定从片外存储器分配的任务堆栈缓冲区，否则任务堆栈将会从片上存储器分配。
+
+
+.. only:: not esp32
+
+    可以使用 :cpp:func:`xTaskCreateStatic` 显式地将任务堆栈放入片外存储器。
+
 
 初始化失败
 =====================

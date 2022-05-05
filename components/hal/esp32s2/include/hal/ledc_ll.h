@@ -12,12 +12,18 @@
 #include "hal/ledc_types.h"
 #include "soc/ledc_periph.h"
 #include "soc/ledc_struct.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_GET_HW()           &LEDC
+
+#define LEDC_LL_DUTY_NUM_MAX       (LEDC_DUTY_NUM_LSCH0_V)
+#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_DUTY_CYCLE_LSCH0_V)
+#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_DUTY_SCALE_LSCH0_V)
+#define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_LSCH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 #define LEDC_LL_GLOBAL_CLOCKS { \
@@ -29,7 +35,7 @@ extern "C" {
                             {\
                                 { \
                                     .clk = LEDC_REF_TICK, \
-                                    .freq = LEDC_REF_CLK_HZ, \
+                                    .freq = REF_CLK_FREQ, \
                                 } \
                             }
 
@@ -71,6 +77,8 @@ static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
         *slow_clk_sel = LEDC_SLOW_CLK_RTC8M;
     } else if (clk_sel_val == 3) {
         *slow_clk_sel = LEDC_SLOW_CLK_XTAL;
+    } else {
+        abort();
     }
 }
 
@@ -163,13 +171,14 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
  * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
  * @param clk_src Timer clock source
  *
+ * @note  REF_TICK can only be used when hw->conf.apb_clk_sel is set to 1 (through ledc_ll_set_slow_clk_sel()).
+ *        This is ensured in the LEDC driver layer.
+ *
  * @return None
  */
 static inline void ledc_ll_set_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t clk_src){
     if (clk_src == LEDC_REF_TICK) {
-        //REF_TICK can only be used when APB is selected.
         hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel = 1;
-        hw->conf.apb_clk_sel = 1;
     } else {
         hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel = 0;
     }

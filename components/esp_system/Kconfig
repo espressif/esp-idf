@@ -1,5 +1,7 @@
 
 menu "ESP System Settings"
+    # Insert chip-specific cpu config
+    rsource "./port/soc/$IDF_TARGET/Kconfig.cpu"
 
     choice ESP_SYSTEM_PANIC
         prompt "Panic handler behaviour"
@@ -34,11 +36,10 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_GDBSTUB_RUNTIME
             bool "GDBStub at runtime"
-            select FREERTOS_UNICORE
             select ESP_GDBSTUB_ENABLED
+            depends on !IDF_TARGET_ESP32C2
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it and to do a debug on runtime.
-                This feature will switch system to single core mode.
     endchoice
 
     config ESP_SYSTEM_SINGLE_CORE_MODE
@@ -49,7 +50,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_RTC_EXT_XTAL
         # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
-        # e.g. It will be selected on when ESP32_RTC_CLK_SRC_EXT_CRYS is on
+        # e.g. It will be selected on when RTC_CLK_SRC_EXT_CRYS is on
         bool
         default n
 
@@ -228,7 +229,6 @@ menu "ESP System Settings"
             depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
-            select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32S3  #ESPTOOL-251
             select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32C3  #ESPTOOL-252
             depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         config ESP_CONSOLE_UART_CUSTOM
@@ -482,6 +482,14 @@ menu "ESP System Settings"
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code
             which does some useful debugging stuff, e.g. GCOV data dump.
 
+    config ESP_DEBUG_OCDAWARE
+        bool "Make exception and panic handlers JTAG/OCD aware"
+        default y
+        select FREERTOS_DEBUG_OCDAWARE
+        help
+            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+            instead of panicking, have the debugger stop on the offending instruction.
+
     choice ESP_SYSTEM_CHECK_INT_LEVEL
         prompt "Interrupt level to use for Interrupt Watchdog and other system checks"
         default ESP_SYSTEM_CHECK_INT_LEVEL_4
@@ -500,6 +508,9 @@ menu "ESP System Settings"
             help
                 Using level 4 interrupt for Interrupt Watchdog and other system checks.
     endchoice
+
+    # Insert chip-specific system config
+    rsource "./port/soc/$IDF_TARGET/Kconfig.system"
 
 endmenu  # ESP System Settings
 

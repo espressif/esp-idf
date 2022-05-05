@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_private/startup_internal.h"    /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
 #include "esp_log.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include "soc/dport_access.h"
 #include "sdkconfig.h"
 
@@ -68,7 +68,7 @@ void esp_startup_start_app_common(void)
 
     esp_crosscore_int_init();
 
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && !CONFIG_IDF_TARGET_ESP32C2
     esp_gdbstub_init();
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,7 +59,7 @@ static SLIST_HEAD(esp_thread_list_head, esp_pthread_entry) s_threads_list
 static pthread_key_t s_pthread_cfg_key;
 
 
-static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
+static int pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
 static void esp_pthread_cfg_key_destructor(void *value)
 {
@@ -236,7 +236,7 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
         if (pthread_cfg->inherit_cfg) {
             if (pthread_cfg->thread_name == NULL) {
                 // Inherit task name from current task.
-                task_name = pcTaskGetTaskName(NULL);
+                task_name = pcTaskGetName(NULL);
             } else {
                 // Inheriting, but new task name.
                 task_name = pthread_cfg->thread_name;

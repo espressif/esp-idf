@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 #define CONFIG_IDF_TARGET_ESP32 1
 #define CONFIG_WL_SECTOR_SIZE 4096

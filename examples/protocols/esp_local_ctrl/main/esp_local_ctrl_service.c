@@ -162,10 +162,10 @@ void start_esp_local_ctrl_service(void)
     httpd_ssl_config_t https_conf = HTTPD_SSL_CONFIG_DEFAULT();
 
     /* Load server certificate */
-    extern const unsigned char cacert_pem_start[] asm("_binary_cacert_pem_start");
-    extern const unsigned char cacert_pem_end[]   asm("_binary_cacert_pem_end");
-    https_conf.cacert_pem = cacert_pem_start;
-    https_conf.cacert_len = cacert_pem_end - cacert_pem_start;
+    extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
+    extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
+    https_conf.servercert = servercert_start;
+    https_conf.servercert_len = servercert_end - servercert_start;
 
     /* Load server private key */
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
@@ -273,7 +273,7 @@ void start_esp_local_ctrl_service(void)
     /* Just for fun, let us keep toggling the value
      * of the boolean property2, every 1 second */
     while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         prop2_value = !prop2_value;
     }
 }

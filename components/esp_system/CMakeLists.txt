@@ -40,8 +40,10 @@ else()
                                     # [refactor-todo] requirements due to init code,
                                     # should be removable once using component init functions
                                     # link-time registration is used.
-                                    esp_pm app_update nvs_flash pthread
-                                    esp_phy efuse
+                                    # [refactor-todo] requires "driver" for headers:
+                                    # - rtc_cntl.h
+                                    # - spi_common_internal.h
+                                    pthread bootloader_support efuse driver
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 
@@ -86,6 +88,10 @@ endif()
 
 # [refactor-todo] requirement from the panic handler,
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
-if(CONFIG_ESP_SYSTEM_PANIC_GDBSTUB)
-    idf_component_optional_requires(PRIVATE esp_gdbstub)
+idf_component_optional_requires(PRIVATE esp_gdbstub)
+
+idf_component_optional_requires(PRIVATE app_update)
+
+if(CONFIG_PM_ENABLE)
+    idf_component_optional_requires(PRIVATE pm)
 endif()

@@ -8,6 +8,3 @@ CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=n
 CONFIG_BTDM_CTRL_MODE_BTDM=n
 CONFIG_BT_BLUEDROID_ENABLED=n
 CONFIG_BT_NIMBLE_ENABLED=y
-
-# Disable backward compatible interface to tcpip_adapter. Use only esp-netif interface.
-CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER=n

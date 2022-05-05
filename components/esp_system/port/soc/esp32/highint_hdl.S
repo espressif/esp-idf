@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #include <xtensa/coreasm.h>
@@ -228,6 +220,8 @@ xt_highintx:
     s32i    a0, sp, XT_STK_PS
     rsr     a0, EPC_X                       /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
+    rsr     a0, EXCSAVE_X                   /* save interruptee's a0 */
+    s32i    a0, sp, XT_STK_A0
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
     #endif
@@ -279,11 +273,6 @@ xt_highintx:
     /* Found the reason, now save it. */
     s32i    a0, sp, XT_STK_EXCCAUSE
 
-    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
-    rsr     a0, EXCSAVE_X                   /* save interruptee's a0 */
-
-    s32i    a0, sp, XT_STK_A0
-
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
     movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
     wsr     a0, PS
@@ -318,7 +307,7 @@ xt_highintx:
     wsr     a2, depc                        /* temp storage */
 
     rsr.ccount  a2
-    addmi   a2, a2, (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ*50)
+    addmi   a2, a2, (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ*50)
     wsr     a2, CCOMPARE2
 
     /* Enable Integration Mode */

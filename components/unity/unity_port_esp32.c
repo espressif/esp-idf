@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <stdbool.h>
 #include "unity.h"
 #include "sdkconfig.h"
 #include "hal/cpu_hal.h"
@@ -28,6 +29,39 @@ void unity_flush(void)
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 
+#define iscontrol(c) ((c) <= '\x1f' || (c) == '\x7f')
+
+static void esp_unity_readline(char* dst, size_t len)
+{
+    /* Read line from console with support for echoing and backspaces */
+    size_t write_index = 0;
+    for (;;) {
+        char c = 0;
+        bool got_char = esp_rom_uart_rx_one_char((uint8_t*)&c) == 0;
+        if (!got_char) {
+          continue;
+        }
+        if (c == '\r' || c == '\n') {
+            /* Add null terminator and return on newline */
+            unity_putc('\n');
+            dst[write_index] = '\0';
+            return;
+        } else if (c == '\b') {
+            if (write_index > 0) {
+                /* Delete previously entered character */
+                write_index--;
+                esp_rom_uart_tx_one_char('\b');
+                esp_rom_uart_tx_one_char(' ');
+                esp_rom_uart_tx_one_char('\b');
+            }
+        } else if (len > 0 && write_index < len - 1 && !iscontrol(c)) {
+            /* Write a max of len - 1 characters to allow for null terminator */
+            unity_putc(c);
+            dst[write_index++] = c;
+        }
+    }
+}
+
 /* To start a unit test from a GDB session without console input,
  * - set a break at unity_gets ('hb unity_gets')
  * - resume the program ('c')
@@ -47,16 +81,11 @@ void unity_gets(char *dst, size_t len)
         memset(unity_input_from_gdb, 0, sizeof(unity_input_from_gdb));
         return;
     }
-    /* esp_rom_uart_rx_string length argument is uint8_t */
-    if (len >= UINT8_MAX) {
-        len = UINT8_MAX;
-    }
     /* Flush anything already in the RX buffer */
     uint8_t ignore;
-    while (esp_rom_uart_rx_one_char(&ignore) == 0) {
-    }
+    while (esp_rom_uart_rx_one_char(&ignore) == 0) { }
     /* Read input */
-    esp_rom_uart_rx_string((uint8_t *) dst, len);
+    esp_unity_readline(dst, len);
 }
 
 void unity_exec_time_start(void)

@@ -14,6 +14,7 @@
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/reset_reasons.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,9 +78,7 @@ typedef enum {
     POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
     RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core*/
     DEEPSLEEP_RESET        =  5,    /**<3, Deep Sleep reset digital core*/
-    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core*/
     TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core*/
-    TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core*/
     RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core*/
     INTRUSION_RESET        = 10,    /**<10, Instrusion tested to reset CPU*/
     TG0WDT_CPU_RESET       = 11,    /**<11, Time Group0 reset CPU*/
@@ -87,9 +86,27 @@ typedef enum {
     RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
     RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
     RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
-    TG1WDT_CPU_RESET       = 17,    /**<11, Time Group1 reset CPU*/
     SUPER_WDT_RESET        = 18,    /**<11, super watchdog reset digital core and rtc module*/
+    GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
+    EFUSE_RESET            = 20,    /**<20, efuse reset digital core*/
+    JTAG_RESET             = 24,    /**<24, jtag reset CPU*/
 } RESET_REASON;
+
+// Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h
+_Static_assert((soc_reset_reason_t)POWERON_RESET == RESET_REASON_CHIP_POWER_ON, "POWERON_RESET != RESET_REASON_CHIP_POWER_ON");
+_Static_assert((soc_reset_reason_t)RTC_SW_SYS_RESET == RESET_REASON_CORE_SW, "RTC_SW_SYS_RESET != RESET_REASON_CORE_SW");
+_Static_assert((soc_reset_reason_t)DEEPSLEEP_RESET == RESET_REASON_CORE_DEEP_SLEEP, "DEEPSLEEP_RESET != RESET_REASON_CORE_DEEP_SLEEP");
+_Static_assert((soc_reset_reason_t)TG0WDT_SYS_RESET == RESET_REASON_CORE_MWDT0, "TG0WDT_SYS_RESET != RESET_REASON_CORE_MWDT0");
+_Static_assert((soc_reset_reason_t)RTCWDT_SYS_RESET == RESET_REASON_CORE_RTC_WDT, "RTCWDT_SYS_RESET != RESET_REASON_CORE_RTC_WDT");
+_Static_assert((soc_reset_reason_t)TG0WDT_CPU_RESET == RESET_REASON_CPU0_MWDT0, "TG0WDT_CPU_RESET != RESET_REASON_CPU0_MWDT0");
+_Static_assert((soc_reset_reason_t)RTC_SW_CPU_RESET == RESET_REASON_CPU0_SW, "RTC_SW_CPU_RESET != RESET_REASON_CPU0_SW");
+_Static_assert((soc_reset_reason_t)RTCWDT_CPU_RESET == RESET_REASON_CPU0_RTC_WDT, "RTCWDT_CPU_RESET != RESET_REASON_CPU0_RTC_WDT");
+_Static_assert((soc_reset_reason_t)RTCWDT_BROWN_OUT_RESET == RESET_REASON_SYS_BROWN_OUT, "RTCWDT_BROWN_OUT_RESET != RESET_REASON_SYS_BROWN_OUT");
+_Static_assert((soc_reset_reason_t)RTCWDT_RTC_RESET == RESET_REASON_SYS_RTC_WDT, "RTCWDT_RTC_RESET != RESET_REASON_SYS_RTC_WDT");
+_Static_assert((soc_reset_reason_t)SUPER_WDT_RESET == RESET_REASON_SYS_SUPER_WDT, "SUPER_WDT_RESET != RESET_REASON_SYS_SUPER_WDT");
+_Static_assert((soc_reset_reason_t)GLITCH_RTC_RESET == RESET_REASON_SYS_CLK_GLITCH, "GLITCH_RTC_RESET != RESET_REASON_SYS_CLK_GLITCH");
+_Static_assert((soc_reset_reason_t)EFUSE_RESET == RESET_REASON_CORE_EFUSE_CRC, "EFUSE_RESET != RESET_REASON_CORE_EFUSE_CRC");
+_Static_assert((soc_reset_reason_t)JTAG_RESET == RESET_REASON_CPU0_JTAG, "JTAG_RESET != RESET_REASON_CPU0_JTAG");
 
 typedef enum {
     NO_SLEEP        = 0,

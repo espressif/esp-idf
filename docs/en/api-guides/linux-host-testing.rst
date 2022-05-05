@@ -60,8 +60,6 @@ The :component_file:`NVS page unit test <nvs_flash/host_test/nvs_page_test/main/
 Requirements
 ^^^^^^^^^^^^
 
-- Installed IDF including all IDF requirements
-- CMock requirements (``Ruby``)
-- ``libbsd``
+.. include:: inc/linux-host-requirements.rst
 
 The host tests have been tested on Ubuntu 20.04 with ``GCC`` version 9 and 10.

@@ -55,7 +55,7 @@ If a function or symbol is not correctly put into IRAM/DRAM, and the interrupt h
 
 .. note::
 
-   When working with string in ISRs, it is not advised to use ``printf`` and other output functions. For debugging purposes, use :cpp:func:`ESP_DRAM_LOGE` and similar macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
+   When working with string in ISRs, it is not advised to use ``printf`` and other output functions. For debugging purposes, use :c:macro:`ESP_DRAM_LOGE` and similar macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
 
 Non-IRAM-Safe Interrupt Handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

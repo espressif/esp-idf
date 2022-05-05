@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -153,13 +153,13 @@ TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
     test_case_uses_tcpip();
     start_wifi_as_sta();
 
-    xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_RATE_MS);
+    xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
 
     TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
                                            100, rx_cb));
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, false));
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_SCAN_DONE_EVENT,
-                               pdTRUE, pdFALSE, 5000 / portTICK_RATE_MS);
+                               pdTRUE, pdFALSE, 5000 / portTICK_PERIOD_MS);
     TEST_ASSERT_TRUE(bits == WIFI_ROC_DONE_EVENT);
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
@@ -167,7 +167,7 @@ TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
     TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
                                            100, rx_cb));
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_SCAN_DONE_EVENT,
-                               pdTRUE, pdFALSE, 5000 / portTICK_RATE_MS);
+                               pdTRUE, pdFALSE, 5000 / portTICK_PERIOD_MS);
     TEST_ASSERT_TRUE(bits == WIFI_SCAN_DONE_EVENT);
 
     stop_wifi();
@@ -181,7 +181,7 @@ static void test_wifi_offchan_tx(void)
 
     test_case_uses_tcpip();
     start_wifi_as_sta();
-    xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_RATE_MS);
+    xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
 
     unity_wait_for_signal_param("Listener mac", mac_str, 19);
 
@@ -220,7 +220,7 @@ static void test_wifi_roc(void)
     test_case_uses_tcpip();
     start_wifi_as_sta();
 
-    xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_RATE_MS);
+    xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(esp_wifi_get_mac(WIFI_IF_STA, mac));
     sprintf(mac_str, MACSTR, MAC2STR(mac));
     unity_send_signal_param("Listener mac", mac_str);

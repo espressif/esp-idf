@@ -749,6 +749,9 @@ extern "C" {
 #define EFUSE_CLK_EN_V  0x00000001U
 #define EFUSE_CLK_EN_S  16
 
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
+
 /** EFUSE_CONF_REG register
  *  eFuse operation mode configuraiton register
  */

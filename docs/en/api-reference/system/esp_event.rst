@@ -224,5 +224,3 @@ Related Documents
 
 .. toctree::
     :maxdepth: 1
-
-    Legacy event loop API reference <esp_event_legacy>

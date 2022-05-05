@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_REG_H_
 #define _SOC_EFUSE_REG_H_
 
@@ -2071,6 +2063,9 @@ extern "C" {
 #define EFUSE_MEM_FORCE_PD_M  (BIT(0))
 #define EFUSE_MEM_FORCE_PD_V  0x1
 #define EFUSE_MEM_FORCE_PD_S  0
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
 
 #define EFUSE_CONF_REG          (DR_REG_EFUSE_BASE + 0x1cc)
 /* EFUSE_OP_CODE : R/W ;bitpos:[15:0] ;default: 16'h0 ; */

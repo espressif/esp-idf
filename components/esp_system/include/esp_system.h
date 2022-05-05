@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,15 +13,6 @@
 #include "esp_attr.h"
 #include "esp_bit_defs.h"
 #include "esp_idf_version.h"
-
-#include "sdkconfig.h"
-
-// For backward compatibility. These headers
-// contains hardware operation functions and definitions
-// that were originally declared in this header.
-#include "esp_mac.h"
-#include "esp_chip_info.h"
-#include "esp_random.h"
 
 #ifdef __cplusplus
 extern "C" {

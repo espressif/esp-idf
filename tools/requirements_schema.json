@@ -1,0 +1,52 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/espressif/esp-idf/blob/master/tools/requirements_schema.json",
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "integer",
+            "description": "Metadata file version"
+        },
+        "features": {
+            "type": "array",
+            "description": "List of features",
+            "items": {
+                "$ref": "#/definitions/featInfo"
+            }
+        }
+    },
+    "required": [
+        "version",
+        "features"
+    ],
+    "definitions": {
+        "featInfo": {
+            "type": "object",
+            "description": "Information about one feature",
+            "properties": {
+                "name" : {
+                    "description": "Feature name",
+                    "type": "string"
+                },
+                "description" : {
+                    "description": "A short description of the feature",
+                    "type": "string"
+                },
+                "optional": {
+                    "description": "The feature is optional if the user can choose to not install it",
+                    "type": "boolean"
+                },
+                "requirement_path": {
+                    "description": "Path to the requirements file with Python packages",
+                    "type": "string",
+                    "pattern": "^tools/requirements/requirements\\..+\\.txt$"
+                }
+            },
+            "required": [
+                "name",
+                "optional",
+                "requirement_path"
+            ]
+        }
+    }
+}

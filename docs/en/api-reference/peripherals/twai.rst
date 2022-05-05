@@ -13,20 +13,10 @@ The Two-Wire Automotive Interface (TWAI) is a real-time serial communication pro
 
 This programming guide is split into the following sections:
 
-    1. :ref:`twai-protocol-summary`
-
-    2. :ref:`signals-lines-and-transceiver`
-
-    3. :ref:`configuration`
-
-    4. :ref:`driver-operation`
-
-    5. :ref:`examples`
-
+.. contents:: Sections
+  :depth: 2
 
 .. --------------------------- Basic TWAI Concepts -----------------------------
-
-.. _twai-protocol-summary:
 
 TWAI Protocol Summary
 ---------------------
@@ -63,10 +53,7 @@ The TWAI protocol implements a feature known as "fault confinement" where a pers
 
 **Bus-Off:** A node becomes Bus-Off when the **TEC becomes greater than or equal to 256**. A Bus-Off node is unable influence the bus in any manner (essentially disconnected from the bus) thus eliminating itself from the bus. A node will remain in the Bus-Off state until it undergoes bus-off recovery.
 
-
 .. ---------------------- Signal Lines and Transceiver -------------------------
-
-.. _signals-lines-and-transceiver:
 
 Signals Lines and Transceiver
 -----------------------------
@@ -90,8 +77,6 @@ The TWAI controller's interface consists of 4 signal lines known as **TX, RX, BU
 
 
 .. ------------------------------ Configuration --------------------------------
-
-.. _configuration:
 
 Driver Configuration
 --------------------
@@ -267,9 +252,22 @@ To place the TWAI driver's ISR, users must do the following:
 .. note::
     When the :ref:`CONFIG_TWAI_ISR_IN_IRAM` option is enabled, the TWAI driver will no longer log any alerts (i.e., the ``TWAI_ALERT_AND_LOG`` flag will not have any effect).
 
-.. ------------------------------- TWAI Driver ---------------------------------
+.. only:: esp32
 
-.. _driver-operation:
+    ESP32 Errata Workarounds
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The ESP32's TWAI controller contains multiple hardware errata (more details about the errata can be found in the `ESP32's ECO document <https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_). Some of these errata are critical, and under specific circumstances, can place the TWAI controller into an unrecoverable state (i.e., the controller gets stuck until it is reset by the CPU).
+
+    The TWAI driver contains software workarounds for these critical errata. With these workarounds, the ESP32 TWAI driver can operate normally, albeit with degraded performance. The degraded performance will affect users in the following ways depending on what particular errata conditions are encountered:
+
+    - The TWAI driver can occasionally drop some received messages.
+    - The TWAI driver can be unresponsive for a short period of time (i.e., will not transmit or ACK for 11 bit times or longer).
+    - If :ref:`CONFIG_TWAI_ISR_IN_IRAM` is enabled, the workarounds will increase IRAM usage by approximately 1KB.
+
+    The software workarounds are enabled by default and it is recommended that users keep this workarounds enabled.
+
+.. ------------------------------- TWAI Driver ---------------------------------
 
 Driver Operation
 ----------------
@@ -353,8 +351,6 @@ These bit field members can also be toggled using the the `flags` member of :cpp
       - Clears all bit fields. Equivalent to a Standard Frame Format (11bit ID) Data Frame.
 
 .. -------------------------------- Examples -----------------------------------
-
-.. _examples:
 
 Examples
 --------

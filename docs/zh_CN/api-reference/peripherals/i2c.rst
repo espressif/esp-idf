@@ -3,7 +3,7 @@ I2C 驱动程序
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp328684="1"}
+{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp32c2="1"}
 
 概述
 ---------
@@ -312,7 +312,7 @@ API 为从机提供以下功能：
 
 如本节末尾所述 :ref:`i2c-api-configure-driver`，函数 :cpp:func:`i2c_param_config` 在初始化 I2C 端口的驱动程序配置时，也会将几个 I2C 通信参数设置为 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定的默认值。 其他一些相关参数已在 I2C 控制器的寄存器中预先配置。
 
-通过调用下表中提供的专用函数，可以将所有这些参数更改为用户自定义值。请注意，时序值是在 APB 时钟周期中定义。APB 的频率在 :cpp:type:`I2C_APB_CLK_FREQ` 中指定。
+通过调用下表中提供的专用函数，可以将所有这些参数更改为用户自定义值。请注意，时序值是在 APB 时钟周期中定义。APB 的频率在 :c:macro:`I2C_APB_CLK_FREQ` 中指定。
 
 .. list-table:: 其他可配置的 I2C 通信参数
    :widths: 65 35

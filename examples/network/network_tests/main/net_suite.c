@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* Net-suite test code
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -8,6 +13,7 @@
 */
 #include <string.h>
 #include "esp_event.h"
+#include "esp_netif.h"
 #include "esp_log.h"
 #include "stdinout.h"
 #include "lwip/err.h"

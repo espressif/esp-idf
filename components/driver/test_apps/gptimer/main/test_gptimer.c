@@ -19,14 +19,10 @@
 #define TEST_ALARM_CALLBACK_ATTR
 #endif // CONFIG_GPTIMER_ISR_IRAM_SAFE
 
-void test_app_include_gptimer(void)
-{
-}
-
 TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 {
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1 * 1000 * 1000,
     };
@@ -63,12 +59,7 @@ TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 
 TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
 {
-    gptimer_clock_source_t test_clk_srcs[] = {
-        GPTIMER_CLK_SRC_APB,
-#if SOC_TIMER_GROUP_SUPPORT_XTAL
-        GPTIMER_CLK_SRC_XTAL,
-#endif // SOC_TIMER_GROUP_SUPPORT_XTAL
-    };
+    gptimer_clock_source_t test_clk_srcs[] = SOC_GPTIMER_CLKS;
 
     // test with various clock sources
     for (size_t i = 0; i < sizeof(test_clk_srcs) / sizeof(test_clk_srcs[0]); i++) {
@@ -126,7 +117,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_stop_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
-    xTaskHandle task_handle = (xTaskHandle)user_data;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     gptimer_stop(timer);
     esp_rom_printf("count=%lld @alarm\n", edata->count_value);
@@ -136,11 +127,11 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_stop_callback(gptimer_ha
 
 TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
 {
-    xTaskHandle task_handle =  xTaskGetCurrentTaskHandle();
+    TaskHandle_t task_handle =  xTaskGetCurrentTaskHandle();
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -199,7 +190,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_reload_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
-    xTaskHandle task_handle = (xTaskHandle)user_data;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     // check if the count value has been reloaded
@@ -210,11 +201,11 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_reload_callback(gptimer_
 
 TEST_CASE("gptimer_auto_reload_on_alarm", "[gptimer]")
 {
-    xTaskHandle task_handle =  xTaskGetCurrentTaskHandle();
+    TaskHandle_t task_handle =  xTaskGetCurrentTaskHandle();
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -251,7 +242,7 @@ TEST_CASE("gptimer_auto_reload_on_alarm", "[gptimer]")
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_normal_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
-    xTaskHandle task_handle = (xTaskHandle)user_data;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     // check the count value at alarm event
@@ -261,11 +252,11 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_normal_callback(gptimer_
 
 TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
 {
-    xTaskHandle task_handle =  xTaskGetCurrentTaskHandle();
+    TaskHandle_t task_handle =  xTaskGetCurrentTaskHandle();
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -311,7 +302,7 @@ TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_update_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
-    xTaskHandle task_handle = (xTaskHandle)user_data;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     gptimer_alarm_config_t alarm_config = {
@@ -324,11 +315,11 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_update_callback(gptimer_
 
 TEST_CASE("gptimer_update_alarm_dynamically", "[gptimer]")
 {
-    xTaskHandle task_handle =  xTaskGetCurrentTaskHandle();
+    TaskHandle_t task_handle =  xTaskGetCurrentTaskHandle();
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -375,7 +366,7 @@ TEST_CASE("gptimer_update_alarm_dynamically", "[gptimer]")
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_count_down_reload_alarm_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
-    xTaskHandle task_handle = (xTaskHandle)user_data;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
     // check if the count value has been reloaded
@@ -386,11 +377,11 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_count_down_reload_alarm_callba
 
 TEST_CASE("gptimer_count_down_reload", "[gptimer]")
 {
-    xTaskHandle task_handle =  xTaskGetCurrentTaskHandle();
+    TaskHandle_t task_handle =  xTaskGetCurrentTaskHandle();
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_DOWN,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -434,7 +425,7 @@ TEST_CASE("gptimer_count_down_reload", "[gptimer]")
 
 TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_overflow_reload_callback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
-    xTaskHandle task_handle = (xTaskHandle)user_data;
+    TaskHandle_t task_handle = (TaskHandle_t)user_data;
     BaseType_t high_task_wakeup;
     // Note: esp_rom_printf can't print value with 64 bit length, so the following print result is meaningless, but as an incidator for test that the alarm has fired
     esp_rom_printf("alarm isr count=%llu\r\n", edata->count_value);
@@ -444,11 +435,11 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_overflow_reload_callback(gptim
 
 TEST_CASE("gptimer_overflow", "[gptimer]")
 {
-    xTaskHandle task_handle =  xTaskGetCurrentTaskHandle();
+    TaskHandle_t task_handle =  xTaskGetCurrentTaskHandle();
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];

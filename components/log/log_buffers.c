@@ -7,9 +7,17 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
 #include "esp_log.h"
-#include "soc/soc_memory_types.h"  // for esp_ptr_byte_accessible
 
+#ifndef CONFIG_IDF_TARGET_LINUX
+#include "esp_memory_utils.h"  // for esp_ptr_byte_accessible
+#else
+static inline bool esp_ptr_byte_accessible(const void* ptr) {
+    (void) ptr;
+    return true;
+}
+#endif // CONFIG_IDF_TARGET_LINUX
 
 //print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex
 #define BYTES_PER_LINE 16

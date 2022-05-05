@@ -1,13 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-
 #include <stdlib.h>
 #include <sys/cdefs.h>
+#include "sdkconfig.h"
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_interface.h"
@@ -29,7 +33,7 @@ static esp_err_t panel_st7789_invert_color(esp_lcd_panel_t *panel, bool invert_c
 static esp_err_t panel_st7789_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_st7789_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t panel_st7789_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t panel_st7789_disp_on_off(esp_lcd_panel_t *panel, bool off);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -45,6 +49,9 @@ typedef struct {
 
 esp_err_t esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp_lcd_panel_dev_config_t *panel_dev_config, esp_lcd_panel_handle_t *ret_panel)
 {
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     st7789_panel_t *st7789 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -95,7 +102,7 @@ esp_err_t esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp
     st7789->base.set_gap = panel_st7789_set_gap;
     st7789->base.mirror = panel_st7789_mirror;
     st7789->base.swap_xy = panel_st7789_swap_xy;
-    st7789->base.disp_off = panel_st7789_disp_off;
+    st7789->base.disp_on_off = panel_st7789_disp_on_off;
     *ret_panel = &(st7789->base);
     ESP_LOGD(TAG, "new st7789 panel @%p", st7789);
 
@@ -155,8 +162,6 @@ static esp_err_t panel_st7789_init(esp_lcd_panel_t *panel)
     esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, (uint8_t[]) {
         st7789->colmod_cal,
     }, 1);
-    // turn on display
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_DISPON, NULL, 0);
 
     return ESP_OK;
 }
@@ -249,15 +254,15 @@ static esp_err_t panel_st7789_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_g
     return ESP_OK;
 }
 
-static esp_err_t panel_st7789_disp_off(esp_lcd_panel_t *panel, bool off)
+static esp_err_t panel_st7789_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 {
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
     esp_lcd_panel_io_handle_t io = st7789->io;
     int command = 0;
-    if (off) {
-        command = LCD_CMD_DISPOFF;
-    } else {
+    if (on_off) {
         command = LCD_CMD_DISPON;
+    } else {
+        command = LCD_CMD_DISPOFF;
     }
     esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     return ESP_OK;

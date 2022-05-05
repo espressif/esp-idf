@@ -10,15 +10,6 @@
 import argparse
 from itertools import chain
 
-try:
-    import python_version_checker
-
-    # check the Python version before it will fail with an exception on syntax or package incompatibility.
-    python_version_checker.check()
-except RuntimeError as e:
-    print(e)
-    raise SystemExit(1)
-
 
 def action_extract_features(args: str) -> None:
     """

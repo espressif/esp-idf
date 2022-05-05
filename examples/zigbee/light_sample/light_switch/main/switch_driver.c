@@ -52,7 +52,7 @@
  * For other possible switch functions (on/off,level up/down,step up/down). User need to implement and create them by themselves
  */
 
-static xQueueHandle gpio_evt_queue = NULL;
+static QueueHandle_t gpio_evt_queue = NULL;
 /* button function pair, should be defined in switch example source file */
 static switch_func_pair_t *switch_func_pair;
 /* call back function pointer */
@@ -123,7 +123,7 @@ static void switch_driver_button_detected(void *arg)
                 evt_flag = false;
                 break;
             }
-            vTaskDelay(10 / portTICK_RATE_MS);
+            vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
 }

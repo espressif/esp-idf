@@ -137,7 +137,7 @@ typedef struct {
 
 struct esp_ble_hidd_dev_s {
     esp_hidd_dev_t             *dev;
-    xSemaphoreHandle            sem;
+    SemaphoreHandle_t            sem;
     esp_event_loop_handle_t     event_loop_handle;
     esp_hid_device_config_t     config;
     uint16_t                    appearance;

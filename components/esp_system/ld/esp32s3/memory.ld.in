@@ -26,7 +26,7 @@
  * 40370000 <- IRAM/Icache -> 40378000 <- D/IRAM (I) -> 403E0000
  *                            3FC88000 <- D/IRAM (D) -> 3FCF0000 <- DRAM/DCache -> 3FD00000
  *
- * Startup code uses the IRAM from 0x403BA000 to 0x403E0000, which is not available for static
+ * Startup code uses the IRAM from 0x403B9000 to 0x403E0000, which is not available for static
  * memory, but can only be used after app starts.
  *
  * D cache use the memory from high address, so when it's configured to 16K/32K, the region
@@ -36,7 +36,7 @@
 
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DIRAM_I_START  0x40378000
-#define SRAM_IRAM_END       0x403BA000
+#define SRAM_IRAM_END       0x403B9000
 #define I_D_SRAM_OFFSET     (SRAM_DIRAM_I_START - SRAM_DRAM_START)
 
 #define SRAM_DRAM_START     0x3FC88000
@@ -90,7 +90,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x800000-0x20
+  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x2000000-0x20
 
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
@@ -115,6 +115,11 @@ MEMORY
 #else
   rtc_slow_seg(RW)  :                org = 0x50000000 , len = 0x2000
 #endif // CONFIG_ULP_COPROC_ENABLED
+  /**
+   * `extern_ram_seg` and `drom0_0_seg` share the same bus and the address region.
+   * A dummy section is used to avoid overlap. See `.ext_ram.dummy` in `sections.ld.in`
+   */
+  extern_ram_seg(RWX) :              org = 0x3c000020 , len = 0x2000000-0x20
 }
 
 #if CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE

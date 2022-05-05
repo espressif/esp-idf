@@ -1,0 +1,2 @@
+dependencies:
+  espressif/esp_encrypted_img: "^2.0.1"

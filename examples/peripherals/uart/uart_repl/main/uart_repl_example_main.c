@@ -112,7 +112,7 @@ static void send_commands(void* arg) {
 
     /* Discard the first messages sent by the console. */
     do {
-        len = uart_read_bytes(DEFAULT_UART_CHANNEL, data, READ_BUF_SIZE, 100 / portTICK_RATE_MS);
+        len = uart_read_bytes(DEFAULT_UART_CHANNEL, data, READ_BUF_SIZE, 100 / portTICK_PERIOD_MS);
     } while (len == 0);
 
     if ( len == -1 ) {
@@ -126,7 +126,7 @@ static void send_commands(void* arg) {
 
     /* Get the answer back from the console, give it some delay. */
     do {
-        len = uart_read_bytes(DEFAULT_UART_CHANNEL, data, READ_BUF_SIZE - 1, 250 / portTICK_RATE_MS);
+        len = uart_read_bytes(DEFAULT_UART_CHANNEL, data, READ_BUF_SIZE - 1, 250 / portTICK_PERIOD_MS);
     } while (len == 0);
 
     if ( len == -1 ) {

@@ -8,6 +8,7 @@
 
 #include "sdkconfig.h"
 #include "lwip/ip_addr.h"
+#include "lwip/err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +82,7 @@ typedef struct {
         dhcps_lease_t dhcps_poll;
 } dhcps_options_t;
 
-typedef void (*dhcps_cb_t)(u8_t client_ip[4], u8_t client_mac[6]);
+typedef void (*dhcps_cb_t)(void* cb_arg, u8_t client_ip[4], u8_t client_mac[6]);
 
 static inline bool dhcps_router_enabled (dhcps_offer_t offer)
 {
@@ -93,14 +94,95 @@ static inline bool dhcps_dns_enabled (dhcps_offer_t offer)
     return (offer & OFFER_DNS) != 0;
 }
 
-void dhcps_start(struct netif *netif, ip4_addr_t ip);
-void dhcps_stop(struct netif *netif);
-void *dhcps_option_info(u8_t op_id, u32_t opt_len);
-void dhcps_set_option_info(u8_t op_id, void *opt_info, u32_t opt_len);
-bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip);
-void dhcps_dns_setserver(const ip_addr_t *dnsserver);
-ip4_addr_t dhcps_dns_getserver(void);
-void dhcps_set_new_lease_cb(dhcps_cb_t cb);
+typedef struct dhcps_t dhcps_t;
+
+/**
+ * @brief Creates new DHCP server object
+ *
+ * @return Pointer to the DHCP server handle on success, NULL on error
+ */
+dhcps_t *dhcps_new(void);
+
+/**
+ * @brief Deletes supplied DHPC server object
+ *
+ * @warning This may not delete the handle immediately if the server wasn't
+ * stopped properly, but mark for deleting once the timer callback occurs
+ *
+ * @param dhcps Pointer to the DHCP handle
+ */
+void dhcps_delete(dhcps_t *dhcps);
+
+/**
+ * @brief Starts the DHCP server on the specified network interface
+ *
+ * @param dhcps Pointer to the DHCP handle
+ * @param netif Pointer to the lwIP's network interface struct
+ * @param ip DHCP server's address
+ * @return ERR_ARG if invalid args, ERR_OK on success
+ */
+err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip);
+
+/**
+ * @brief Stops the DHCP server on the specified netif
+ * @param dhcps Pointer to the DHCP handle
+ * @param netif Pointer to the lwIP's network interface struct
+ * @return ERR_ARG if invalid args, ERR_OK on success
+ */
+err_t dhcps_stop(dhcps_t *dhcps, struct netif *netif);
+
+/**
+ * @brief Gets the DHCP server option info
+ * @param dhcps Pointer to the DHCP handle
+ * @param op_id DHCP message option id
+ * @param opt_len DHCP message option length
+ * @return DHCP message option addr
+ */
+void *dhcps_option_info(dhcps_t *dhcps, u8_t op_id, u32_t opt_len);
+
+/**
+ * @brief Sets the DHCP server option info
+ * @param dhcps Pointer to the DHCP handle
+ * @param op_id DHCP message option id
+ * @param opt_info DHCP message option info
+ * @param opt_len DHCP message option length
+ * @return ERR_ARG if invalid args, ERR_OK on success
+ */
+err_t dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t opt_len);
+
+/**
+ * @brief Tries to find IP address corresponding to the supplied MAC
+ * @param dhcps Pointer to the DHCP handle
+ * @param mac Supplied MAC address
+ * @param ip Pointer to the resultant IP address
+ * @return True if the IP address has been found
+ */
+bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip);
+
+/**
+ * @brief Sets DNS server address for the DHCP server
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_OK on success
+ */
+err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver);
+
+/**
+ * @brief Gets DNS server associated with this DHCP server
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_OK on success
+ */
+err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver);
+
+/**
+ * @brief Sets callback on assigning an IP to the connected client
+ * @param dhcps Pointer to the DHCP handle
+ * @param cb Callback for dhcp server
+ * @param cb_arg Context pointer to be added to the callback
+ * @return ERR_ARG if invalid handle, ERR_OK on success
+ */
+err_t dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb, void* cb_arg);
 
 #ifdef __cplusplus
 }

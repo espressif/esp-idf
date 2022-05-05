@@ -1,11 +1,11 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 | ESP32-C2 | ESP32-H2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # UART RS485 Echo Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This is an example which echoes any data it receives on UART2 back to the sender in the RS485 network.
+This is an example which echoes any data it receives on UART port back to the sender in the RS485 network.
 It uses ESP-IDF UART software driver in RS485 half duplex transmission mode and requires external connection of bus drivers.
 The approach demonstrated in this example can be used in user application to transmit/receive data in RS485 networks.
 
@@ -35,15 +35,15 @@ ESP32 BOARD         |               |   RS-485 side |               |  SERIAL AD
 #### Connect an external RS485 serial interface to an ESP32 board
 Connect a USB-to-RS485 adapter to a computer, then connect the adapter's A/B output lines with the corresponding A/B output lines of the RS485 line driver connected to the ESP32 chip (see figure above).
 ```
-  --------------------------------------------------------------------------------------------------------------------------
-  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for      | External RS485 Driver Pin |
-  |                       |                    |                       | ESP32-S2(S3, C3)      |                           |
-  | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                 | DI                        |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                 | RO                        |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO10                | ~RE/DE                    |
-  | Ground                | n/a                | GND                   | GND                   | GND                       |
-  --------------------------------------------------------------------------------------------------------------------------
+  ------------------------------------------------------------------------------------------------------------------------------
+  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for          | External RS485 Driver Pin |
+  |                       |                    |                       | ESP32-S2(S3, C3, C2, H2)  |                           |
+  | ----------------------|--------------------|-----------------------|---------------------------|---------------------------|
+  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                     | DI                        |
+  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                     | RO                        |
+  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO10                    | ~RE/DE                    |
+  | Ground                | n/a                | GND                   | GND                       | GND                       |
+  ------------------------------------------------------------------------------------------------------------------------------
 ```
 Note: Each target chip has different GPIO pins available for UART connection. Please refer to UART documentation for selected target for more information.
 

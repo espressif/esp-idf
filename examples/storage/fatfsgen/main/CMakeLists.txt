@@ -9,8 +9,22 @@ idf_component_register(SRCS "fatfsgen_example_main.c"
 # the generated image will be raw without wear levelling support.
 # Otherwise it will support wear levelling and thus enable read-write mounting of the image in the device.
 
-if(CONFIG_EXAMPLE_FATFS_MODE_READ_ONLY)
-    fatfs_create_rawflash_image(storage ../fatfs_image FLASH_IN_PROJECT)
+if(CONFIG_FATFS_LFN_NONE)
+    set(image ../fatfs_image)
 else()
-    fatfs_create_spiflash_image(storage ../fatfs_image FLASH_IN_PROJECT)
+    set(image ../fatfs_long_name_image)
+endif()
+
+if(CONFIG_EXAMPLE_FATFS_MODE_READ_ONLY)
+    if(CONFIG_EXAMPLE_FATFS_DEFAULT_DATETIME)
+        fatfs_create_rawflash_image(storage ${image} FLASH_IN_PROJECT)
+    else()
+        fatfs_create_rawflash_image(storage ${image} FLASH_IN_PROJECT PRESERVE_TIME)
+    endif()
+else()
+    if(CONFIG_EXAMPLE_FATFS_DEFAULT_DATETIME)
+        fatfs_create_spiflash_image(storage ${image} FLASH_IN_PROJECT)
+    else()
+        fatfs_create_spiflash_image(storage ${image} FLASH_IN_PROJECT PRESERVE_TIME)
+    endif()
 endif()

@@ -14,10 +14,6 @@
 #include "esp_spi_flash.h"
 #include "soc/soc_caps.h"
 
-void test_app_include_gptimer_iram(void)
-{
-}
-
 #if CONFIG_GPTIMER_ISR_IRAM_SAFE
 
 typedef struct {
@@ -73,7 +69,7 @@ TEST_CASE("gptimer_iram_interrupt_safe", "[gptimer]")
     };
 
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1 * 1000 * 1000,
     };

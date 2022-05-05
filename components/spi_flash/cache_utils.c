@@ -18,23 +18,23 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/cache.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #endif
 #include "esp_rom_spiflash.h"
 #include <soc/soc.h>
@@ -63,8 +63,8 @@ static __attribute__((unused)) const char *TAG = "cache";
 #define DPORT_CACHE_GET_VAL(cpuid) (cpuid == 0) ? DPORT_CACHE_VAL(PRO) : DPORT_CACHE_VAL(APP)
 #define DPORT_CACHE_GET_MASK(cpuid) (cpuid == 0) ? DPORT_CACHE_MASK(PRO) : DPORT_CACHE_MASK(APP)
 
-static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
-static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+static void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+static void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
 static uint32_t s_flash_op_cache_state[2];
 
@@ -112,7 +112,15 @@ void spi_flash_op_unlock(void)
 void IRAM_ATTR spi_flash_op_block_func(void *arg)
 {
     // Disable scheduler on this CPU
+#ifdef CONFIG_FREERTOS_SMP
+    /*
+    Note: FreeRTOS SMP has changed the behavior of scheduler suspension. But the vTaskPreemptionDisable() function should
+    achieve the same affect as before (i.e., prevent the current task from being preempted).
+    */
+    vTaskPreemptionDisable(NULL);
+#else
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
     uint32_t cpuid = (uint32_t) arg;
@@ -128,8 +136,13 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
     // Restore interrupts that aren't located in IRAM
     esp_intr_noniram_enable();
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionEnable(NULL);
+#else
     // Re-enable scheduler
     xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
 }
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
@@ -167,8 +180,13 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
             // Busy loop and wait for spi_flash_op_block_func to disable cache
             // on the other CPU
         }
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionDisable(NULL);
+#else
         // Disable scheduler on the current CPU
         vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
         // Can now set the priority back to the normal one
         vTaskPrioritySet(NULL, old_prio);
         // This is guaranteed to run on CPU <cpuid> because the other CPU is now
@@ -216,7 +234,12 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
     // But esp_intr_noniram_enable has to be called on the same CPU which
     // called esp_intr_noniram_disable
     if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+#else
         xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
     }
     // Release API lock
     spi_flash_op_unlock();
@@ -253,12 +276,26 @@ void spi_flash_init_lock(void)
 
 void spi_flash_op_lock(void)
 {
+#ifdef CONFIG_FREERTOS_SMP
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionDisable(NULL);
+    }
+#else
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 }
 
 void spi_flash_op_unlock(void)
 {
+#ifdef CONFIG_FREERTOS_SMP
+    if (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) {
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+    }
+#else
     xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
 }
 
 
@@ -488,14 +525,14 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 #endif
 
     if (icache_wrap_enable) {
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
         icache_wrap_size = 16;
 #else
         icache_wrap_size = 32;
 #endif
     }
     if (dcache_wrap_enable) {
-#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B
         dcache_wrap_size = 16;
 #else
         dcache_wrap_size = 32;
@@ -525,18 +562,12 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
             spiram_wrap_sizes[1] = dcache_wrap_size;
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        spiram_wrap_sizes[1] = dcache_wrap_size;
-#endif
     } else {
         if (drom0_in_icache) {
             flash_wrap_sizes[0] = icache_wrap_size;
         } else {
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        flash_wrap_sizes[1] = dcache_wrap_size;
-#endif
     }
 #ifdef CONFIG_ESP32S2_SPIRAM_SUPPORT
     spiram_wrap_sizes[1] = dcache_wrap_size;
@@ -585,7 +616,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         return ESP_FAIL;
     }
 
-#ifdef CONFIG_FLASHMODE_QIO
+#ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
     extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
@@ -761,11 +792,11 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     uint32_t instruction_use_spiram = 0;
     uint32_t rodata_use_spiram = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    extern uint32_t esp_spiram_instruction_access_enabled();
+    extern uint32_t esp_spiram_instruction_access_enabled(void);
     instruction_use_spiram = esp_spiram_instruction_access_enabled();
 #endif
 #if CONFIG_SPIRAM_RODATA
-    extern uint32_t esp_spiram_rodata_access_enabled();
+    extern uint32_t esp_spiram_rodata_access_enabled(void);
     rodata_use_spiram = esp_spiram_rodata_access_enabled();
 #endif
 
@@ -780,18 +811,12 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         } else {
             spiram_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        spiram_wrap_sizes[1] = dcache_wrap_size;
-#endif
     } else {
         if (drom0_in_icache) {
             flash_wrap_sizes[0] = icache_wrap_size;
         } else {
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        flash_wrap_sizes[1] = dcache_wrap_size;
-#endif
     }
 #ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
     spiram_wrap_sizes[1] = dcache_wrap_size;
@@ -839,7 +864,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         return ESP_FAIL;
     }
 
-#ifdef CONFIG_FLASHMODE_QIO
+#ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
     extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
@@ -907,7 +932,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
         flash_wrap_size = 32;
     }
 
-#ifdef CONFIG_FLASHMODE_QIO
+#ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
     extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
@@ -916,7 +941,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     }
 #else
     ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
-#endif // CONFIG_FLASHMODE_QIO
+#endif // CONFIG_ESPTOOLPY_FLASHMODE_QIO
 
     extern esp_err_t spi_flash_enable_wrap(uint32_t wrap_size);
     if (flash_support_wrap && flash_wrap_size > 0) {

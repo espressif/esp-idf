@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
 
-#warning Contents of ulp_riscv/ulp_riscv.h have been merged with ulp_riscv_utils.Please include the later to avoid the warning.
-#include "ulp_riscv_utils.h"
+#warning Contents of ulp_riscv/ulp_riscv.h have been deprecated. Please include the header which contains the actual definitions you are trying to use, e.g. "ulp_riscv_register_ops.h".
+#include "../ulp_riscv_register_ops.h"

@@ -12,7 +12,7 @@
 #include "esp_err.h"
 
 #include "esp_log.h"
-#include "esp_system.h"
+#include "esp_chip_info.h"
 
 #include "esp_efuse.h"
 #include "esp_private/cache_err_int.h"
@@ -41,24 +41,20 @@
 #include "esp32s3/dport_access.h"
 #include "esp_memprot.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/cache_memory.h"
 #include "soc/system_reg.h"
 #include "esp32s3/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
-#include "soc/cache_memory.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
-#include "soc/cache_memory.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
-#include "soc/cache_memory.h"
 #include "esp32c2/memprot.h"
 #endif
 
@@ -72,11 +68,10 @@
 #include "hal/gpio_hal.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
-#include "soc/efuse_reg.h"
+#include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
-#include "soc/rtc.h"
-#include "soc/spinlock.h"
+#include "esp_private/esp_clk.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "esp_private/trax.h"
@@ -100,6 +95,11 @@
 #define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
 #endif
 
+//This will be replaced with a kconfig, TODO: IDF-3821
+//Besides, the MMU setting will be abstracted later. So actually we don't need this define in the future
+#define MMU_PAGE_SIZE    0x10000
+//This dependency will be removed in the future
+#include "soc/ext_mem_defs.h"
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
@@ -138,7 +138,7 @@ static void core_intr_matrix_clear(void)
     uint32_t core_id = cpu_hal_get_core_id();
 
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-        intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+        esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
     }
 }
 
@@ -156,10 +156,10 @@ void IRAM_ATTR call_start_cpu1(void)
 
     bootloader_init_mem();
 
-#if CONFIG_ESP_CONSOLE_UART_NONE
+#if CONFIG_ESP_CONSOLE_NONE
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
-#else // CONFIG_ESP_CONSOLE_UART_NONE
+#else // CONFIG_ESP_CONSOLE_NONE
     esp_rom_install_uart_printf();
     esp_rom_uart_set_as_console(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
@@ -363,7 +363,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH
-    bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
+    bool efuse_opflash_en = efuse_ll_get_flash_type();
     if (!efuse_opflash_en) {
         ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();
@@ -389,11 +389,9 @@ void IRAM_ATTR call_start_cpu0(void)
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_spiram_init() != ESP_OK) {
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
-#endif
 #endif
 
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
@@ -405,11 +403,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     }
     //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32
     if (g_spiram_ok) {
         esp_spiram_init_cache();
     }
-#endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
+#endif  //#if CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -439,7 +437,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if CONFIG_SPIRAM_MEMTEST
     //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32
     if (g_spiram_ok) {
         bool ext_ram_ok = esp_spiram_test();
         if (!ext_ram_ok) {
@@ -447,7 +445,7 @@ void IRAM_ATTR call_start_cpu0(void)
             abort();
         }
     }
-#endif  //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
+#endif  //CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif  //CONFIG_SPIRAM_MEMTEST
 
     //TODO: IDF-4382
@@ -544,7 +542,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
 #ifdef CONFIG_ESP_CONSOLE_UART
-    uint32_t clock_hz = rtc_clk_apb_freq_get();
+    uint32_t clock_hz = esp_clk_apb_freq();
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif

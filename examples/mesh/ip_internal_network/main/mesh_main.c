@@ -8,7 +8,7 @@
 */
 #include <string.h>
 #include "esp_wifi.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mesh.h"
@@ -167,7 +167,7 @@ void esp_mesh_mqtt_task(void *arg)
                         MACSTR ": sent with err code: %d", i, MAC2STR(s_route_table[i].addr), err);
             }
         }
-        vTaskDelay(2 * 1000 / portTICK_RATE_MS);
+        vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }

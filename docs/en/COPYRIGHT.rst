@@ -29,11 +29,13 @@ These third party libraries can be included into the application (firmware) prod
 
 * `FreeBSD net80211`_ Copyright (c) 2004-2008 Sam Leffler, Errno Consulting and licensed under the BSD license.
 
-* `argtable3`_ argument parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license.
+* `argtable3`_ argument parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license. argtable3 also includes the following software components. For details, please see argtable3 :component_file:`LICENSE file<console/argtable3/LICENSE>`.
+
+    * C Hash Table library, Copyright (c) 2002, Christopher Clark and licensed under 3-clause BSD license.
+    * The Better String library, Copyright (c) 2014, Paul Hsieh and licensed under 3-clause BSD license.
+    * TCL library, Copyright the Regents of the University of California, Sun Microsystems, Inc., Scriptics Corporation, ActiveState Corporation and other parties, and licensed under TCL/TK License.
 
 * `linenoise`_ line editing library Copyright (c) 2010-2014 Salvatore Sanfilippo, Copyright (c) 2010-2013 Pieter Noordhuis, licensed under 2-clause BSD license.
-
-* `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license as described in :component_file:`LICENSE file <coap/libcoap/LICENSE>` and :component_file:`COPYING file <coap/libcoap/COPYING>` .
 
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
@@ -68,6 +70,8 @@ These third party libraries can be included into the application (firmware) prod
 * `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
 
 * :component:`HTTP Parser <http_parser>` Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file<http_parser/LICENSE.txt>`.
+
+* `SEGGER SystemView`_ target-side library, Copyright (c) 2015-2017  SEGGER Microcontroller GmbH & Co. KG, is licensed under BSD 3-clause license.
 
 Build Tools
 -----------
@@ -159,7 +163,6 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
-.. _libcoap: https://github.com/obgm/libcoap
 .. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
 .. _cJSON: https://github.com/DaveGamble/cJSON
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
@@ -176,3 +179,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
 .. _qrcode: https://github.com/nayuki/QR-Code-generator
 .. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
+.. _SEGGER SystemView: https://www.segger.com/downloads/systemview/

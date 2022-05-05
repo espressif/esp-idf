@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
+#include "esp_random.h"
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
@@ -42,8 +43,13 @@ static void do_deep_sleep_from_app_cpu(void)
 {
     xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
 
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     // keep running some non-IRAM code
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 
     while (true) {
         ;
@@ -76,6 +82,8 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
 
+//NOTE: Explained in IDF-1445 | MR !14996
+#if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 static void test_light_sleep(void* arg)
 {
     vTaskDelay(2);
@@ -131,7 +139,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
     esp_timer_stop(timer);
     esp_timer_delete(timer);
 }
-
+#endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
 #if defined(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL)
 #define MAX_SLEEP_TIME_ERROR_US 200
@@ -514,12 +522,12 @@ static void trigger_deepsleep(void)
     esp_set_time_from_rtc();
 
     // Delay for time error accumulation.
-    vTaskDelay(10000/portTICK_RATE_MS);
+    vTaskDelay(10000/portTICK_PERIOD_MS);
 
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);
     esp_sleep_enable_timer_wakeup(1000);
-    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
+    // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
 }

@@ -1,11 +1,9 @@
-/* LCD tjpgd example
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -146,6 +144,9 @@ void app_main(void)
 
     // Initialize LCD panel
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
+
+    // Turn on the screen
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
     // Swap x and y axis (Different LCD screens may need different options)
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));

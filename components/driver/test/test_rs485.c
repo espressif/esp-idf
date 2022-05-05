@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "test_utils.h"             // unity_send_signal
 #include "driver/uart.h"            // for the uart driver access
 #include "esp_log.h"
-#include "esp_system.h"             // for uint32_t esp_random()
+#include "esp_random.h"             // for uint32_t esp_random()
 
 #define UART_TAG         "Uart"
 #define UART_NUM1        (UART_NUM_1)
@@ -32,9 +32,9 @@
 #define PACKETS_NUMBER  (10)
 
 // Wait timeout for uart driver
-#define PACKET_READ_TICS    (1000 / portTICK_RATE_MS)
+#define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 
 // The table for fast CRC16 calculation
@@ -292,4 +292,4 @@ static void rs485_master(void)
 */
 TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver_RS485][test_env=UT_T2_RS485]", rs485_master, rs485_slave);
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(..)

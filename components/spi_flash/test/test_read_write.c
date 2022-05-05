@@ -17,6 +17,7 @@
 #include <esp_spi_flash.h>
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_spiflash.h"
 #if CONFIG_IDF_TARGET_ESP32

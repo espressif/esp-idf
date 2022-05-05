@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -98,7 +99,7 @@ static void start_mdns_service(void)
     ESP_ERROR_CHECK(mdns_init());
     //set mDNS hostname (required if you want to advertise services)
     ESP_ERROR_CHECK(mdns_hostname_set(hostname));
-    ESP_LOGI(SLAVE_TAG, "mdns hostname set to: [%s]", hostname);
+    ESP_LOGI(TAG, "mdns hostname set to: [%s]", hostname);
 
     //set default mDNS instance name
     ESP_ERROR_CHECK(mdns_instance_name_set(MB_MDNS_INSTANCE("esp32_")));

@@ -37,12 +37,19 @@
  */
 #define SDMMC_DEFAULT_CMD_TIMEOUT_MS  1000   // Max timeout of ordinary commands
 #define SDMMC_WRITE_CMD_TIMEOUT_MS    5000   // Max timeout of write commands
+#define SDMMC_ERASE_BLOCK_TIMEOUT_MS  500    // Max timeout of erase per block
 
 /* Maximum retry/error count for SEND_OP_COND (CMD1).
  * These are somewhat arbitrary, values originate from OpenBSD driver.
  */
 #define SDMMC_SEND_OP_COND_MAX_RETRIES  100
 #define SDMMC_SEND_OP_COND_MAX_ERRORS   3
+
+/* supported arguments for erase command 38 */
+#define SDMMC_SD_ERASE_ARG      0
+#define SDMMC_SD_DISCARD_ARG    1
+#define SDMMC_MMC_TRIM_ARG      1
+#define SDMMC_MMC_DISCARD_ARG   3
 
 /* Functions to send individual commands */
 esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
@@ -78,6 +85,7 @@ esp_err_t sdmmc_check_scr(sdmmc_card_t* card);
 esp_err_t sdmmc_decode_cid(sdmmc_response_t resp, sdmmc_cid_t* out_cid);
 esp_err_t sdmmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd);
 esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr);
+esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr);
 
 /* SDIO specific */
 esp_err_t sdmmc_io_reset(sdmmc_card_t* card);
@@ -108,6 +116,7 @@ esp_err_t sdmmc_init_spi_crc(sdmmc_card_t* card);
 esp_err_t sdmmc_init_io(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_blocklen(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_scr(sdmmc_card_t* card);
+esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card);
 esp_err_t sdmmc_init_sd_wait_data_ready(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_read_cid(sdmmc_card_t* card);

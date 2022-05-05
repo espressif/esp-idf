@@ -5,6 +5,7 @@ Wear Levelling API
 
 Overview
 --------
+
 Most of flash memory and especially SPI flash that is used in {IDF_TARGET_NAME} has a sector-based organization and also has a limited number of erase/modification cycles per memory sector. The wear levelling component helps to distribute wear and tear among sectors more evenly without requiring any attention from the user.
 
 The wear levelling component provides API functions related to reading, writing, erasing, and memory mapping of data in external SPI flash through the partition component. The component also has higher-level API functions which work with the FAT filesystem defined in :doc:`FAT filesystem </api-reference/storage/fatfs>`.
@@ -17,11 +18,11 @@ To save internal memory, the component has two additional modes which both use s
 - **Safety mode.** The data is first saved to flash memory, and after the sector is erased, the data is saved back. If a device is powered off, the data can be recovered as soon as the device boots up.
 
 The default settings are as follows:
+
 - Sector size is 512 bytes
 - Performance mode
 
 You can change the settings through the configuration menu.
-
 
 The wear levelling component does not cache data in RAM. The write and erase functions modify flash directly, and flash contents are consistent when the function returns.
 
@@ -46,4 +47,3 @@ Memory Size
 -----------
 
 The memory size is calculated in the wear levelling module based on partition parameters. The module uses some sectors of flash for internal data.
-

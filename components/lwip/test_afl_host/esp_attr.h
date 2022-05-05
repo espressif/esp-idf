@@ -7,3 +7,4 @@
 #define SSIZE_MAX INT_MAX
 #undef assert
 #define assert(x)
+#define sys_prot_t int

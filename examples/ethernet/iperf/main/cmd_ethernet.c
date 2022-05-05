@@ -15,6 +15,7 @@
 #include "esp_console.h"
 #include "esp_event.h"
 #include "esp_eth.h"
+#include "esp_mac.h"
 #include "driver/gpio.h"
 #include "argtable3/argtable3.h"
 #include "iperf.h"
@@ -70,6 +71,7 @@ static struct {
     struct arg_int *length;
     struct arg_int *interval;
     struct arg_int *time;
+    struct arg_int *bw_limit;
     struct arg_lit *abort;
     struct arg_end *end;
 } iperf_args;
@@ -167,6 +169,16 @@ static int eth_cmd_iperf(int argc, char **argv)
         }
     }
 
+    /* iperf -b */
+    if (iperf_args.bw_limit->count == 0) {
+        cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+    } else {
+        cfg.bw_lim = iperf_args.bw_limit->ival[0];
+        if (cfg.bw_lim <= 0) {
+            cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+        }
+    }
+
     printf("mode=%s-%s sip=%d.%d.%d.%d:%d, dip=%d.%d.%d.%d:%d, interval=%d, time=%d\r\n",
            cfg.flag & IPERF_FLAG_TCP ? "tcp" : "udp",
            cfg.flag & IPERF_FLAG_SERVER ? "server" : "client",
@@ -208,9 +220,10 @@ void register_ethernet(void)
     phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;
     phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO;
 #if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
-    mac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
-    mac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
+    esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 #if CONFIG_EXAMPLE_ETH_PHY_IP101
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
@@ -293,8 +306,6 @@ void register_ethernet(void)
     eth_enc28j60_config_t enc28j60_config = ETH_ENC28J60_DEFAULT_CONFIG(spi_handle);
     enc28j60_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
 
-    mac_config.smi_mdc_gpio_num = -1;  // ENC28J60 doesn't have SMI interface
-    mac_config.smi_mdio_gpio_num = -1;
     esp_eth_mac_t *mac = esp_eth_mac_new_enc28j60(&enc28j60_config, &mac_config);
 
     phy_config.autonego_timeout_ms = 0; // ENC28J60 doesn't support auto-negotiation
@@ -343,6 +354,7 @@ void register_ethernet(void)
     iperf_args.interval = arg_int0("i", "interval", "<interval>",
                                    "seconds between periodic bandwidth reports");
     iperf_args.time = arg_int0("t", "time", "<time>", "time in seconds to transmit for (default 10 secs)");
+    iperf_args.bw_limit = arg_int0("b", "bandwidth", "<bandwidth>", "bandwidth to send at in Mbits/sec");
     iperf_args.abort = arg_lit0("a", "abort", "abort running iperf");
     iperf_args.end = arg_end(1);
     const esp_console_cmd_t iperf_cmd = {

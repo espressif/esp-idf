@@ -2,7 +2,6 @@
    :start-after: devkit-defs
    :end-before: ---
 
-
 Configure |devkit-name| JTAG Interface
 ======================================
 :link_to_translation:`zh_CN:[中文]`
@@ -125,7 +124,6 @@ Manually unloading the driver
    .. warning::
 
       Attempting to use serial over the wrong channel with the FTDI driver will cause a kernel panic. The ESP-WROVER-KIT uses channel A for JTAG and channel B for serial.
-
 
 4. Run OpenOCD:
 

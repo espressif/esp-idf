@@ -1,6 +1,9 @@
 [mapping:hal]
 archive: libhal.a
 entries:
+    mmu_hal (noflash)
+    if IDF_TARGET_ESP32 = n:
+        cache_hal (noflash)
     spi_hal_iram (noflash)
     spi_slave_hal_iram (noflash)
     if UART_ISR_IN_IRAM = y || ESP_PANIC_HANDLER_IRAM = y:
@@ -21,3 +24,5 @@ entries:
         systimer_hal (noflash)
     if GPTIMER_CTRL_FUNC_IN_IRAM = y:
         timer_hal_iram (noflash)
+    if GPIO_CTRL_FUNC_IN_IRAM = y:
+        gpio_hal: gpio_hal_intr_disable (noflash)

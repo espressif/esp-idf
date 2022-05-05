@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1422,7 +1422,7 @@ extern "C" {
 #define RTC_CNTL_XTAL_GLOBAL_FORCE_NOGATING_V  0x00000001U
 #define RTC_CNTL_XTAL_GLOBAL_FORCE_NOGATING_S  28
 /** RTC_CNTL_FAST_CLK_RTC_SEL : R/W; bitpos: [29]; default: 0;
- *  fast_clk_rtc sel. 0: XTAL div 4, 1: CK8M
+ *  fast_clk_rtc sel. 0: XTAL div 2, 1: CK8M
  */
 #define RTC_CNTL_FAST_CLK_RTC_SEL    (BIT(29))
 #define RTC_CNTL_FAST_CLK_RTC_SEL_M  (RTC_CNTL_FAST_CLK_RTC_SEL_V << RTC_CNTL_FAST_CLK_RTC_SEL_S)

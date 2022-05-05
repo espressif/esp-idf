@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "esp_system.h"
+#include "esp_random.h"
 
 #include "mesh_main.h"
 #include "client_common.h"

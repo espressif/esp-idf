@@ -45,6 +45,7 @@ char *addr_str(const void *addr);
 void print_uuid(const ble_uuid_t *uuid);
 void print_conn_desc(const struct ble_gap_conn_desc *desc);
 void print_adv_fields(const struct ble_hs_adv_fields *fields);
+void ext_print_adv_report(const void *param);
 
 /** Peer. */
 struct peer_dsc {

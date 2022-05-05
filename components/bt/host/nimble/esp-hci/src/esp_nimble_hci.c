@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,21 @@
 #include "esp_bt.h"
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
+#include "soc/soc_caps.h"
+
+#if SOC_ESP_NIMBLE_CONTROLLER
+
+/* For Chips not using VHCI, these functions return success */
+esp_err_t esp_nimble_hci_and_controller_init(void)
+{
+    return ESP_OK;
+}
+
+esp_err_t esp_nimble_hci_and_controller_deinit(void)
+{
+    return ESP_OK;
+}
+#else
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
@@ -519,3 +534,4 @@ esp_err_t esp_nimble_hci_and_controller_deinit(void)
 
     return ESP_OK;
 }
+#endif // #if SOC_ESP_NIMBLE_CONTROLLER

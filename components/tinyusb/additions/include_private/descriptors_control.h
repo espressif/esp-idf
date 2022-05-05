@@ -6,49 +6,14 @@
 
 #pragma once
 
-#include <string.h>
-#include "usb_descriptors.h"
+#include "tusb.h"
+#include "tinyusb_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-//------------- HID Report Descriptor -------------//
-#if CFG_TUD_HID
-enum {
-    REPORT_ID_KEYBOARD = 1,
-    REPORT_ID_MOUSE
-};
-#endif
 
-//------------- Configuration Descriptor -------------//
-enum {
-#   if CFG_TUD_CDC
-    ITF_NUM_CDC = 0,
-    ITF_NUM_CDC_DATA,
-#   endif
-
-#   if CFG_TUD_CDC > 1
-    ITF_NUM_CDC1,
-    ITF_NUM_CDC1_DATA,
-#   endif
-
-#   if CFG_TUD_MSC
-    ITF_NUM_MSC,
-#   endif
-
-#   if CFG_TUD_HID
-    ITF_NUM_HID,
-#   endif
-
-    ITF_NUM_TOTAL
-};
-
-enum {
-    TUSB_DESC_TOTAL_LEN = TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + CFG_TUD_MSC * TUD_MSC_DESC_LEN +
-                       CFG_TUD_HID * TUD_HID_DESC_LEN
-};
-
-void tusb_set_descriptor(tusb_desc_device_t *desc, const char **str_desc);
+void tusb_set_descriptor(const tusb_desc_device_t *dev_desc, const char **str_desc, const uint8_t *cfg_desc);
 tusb_desc_device_t *tusb_get_active_desc(void);
 char **tusb_get_active_str_desc(void);
 void tusb_clear_descriptor(void);

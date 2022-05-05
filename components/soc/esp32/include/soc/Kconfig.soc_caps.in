@@ -35,6 +35,10 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
+config SOC_BLUEDROID_SUPPORTED
+    bool
+    default y
+
 config SOC_CLASSIC_BT_SUPPORTED
     bool
     default y
@@ -71,10 +75,6 @@ config SOC_CCOMP_TIMER_SUPPORTED
     bool
     default y
 
-config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    bool
-    default y
-
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
@@ -92,6 +92,30 @@ config SOC_RMT_SUPPORTED
     default y
 
 config SOC_SIGMADELTA_SUPPORTED
+    bool
+    default y
+
+config SOC_SUPPORT_COEXISTENCE
+    bool
+    default y
+
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
+    bool
+    default y
+
+config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
@@ -138,6 +162,10 @@ config SOC_ADC_SAMPLE_FREQ_THRES_LOW
 config SOC_ADC_MAX_BITWIDTH
     int
     default 12
+
+config SOC_SHARED_IDCACHE_SUPPORTED
+    bool
+    default y
 
 config SOC_CPU_BREAKPOINTS_NUM
     int
@@ -187,6 +215,10 @@ config SOC_I2C_FIFO_LEN
     int
     default 32
 
+config SOC_I2C_SUPPORT_SLAVE
+    bool
+    default y
+
 config SOC_I2C_SUPPORT_APB
     bool
     default y
@@ -215,7 +247,15 @@ config SOC_I2S_NUM
     int
     default 2
 
+config SOC_I2S_HW_VERSION_1
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_APLL
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM
     bool
     default y
 
@@ -227,11 +267,19 @@ config SOC_I2S_SUPPORTS_PDM_RX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_ADC_DAC
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_ADC
     bool
     default y
 
 config SOC_I2S_SUPPORTS_DAC
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_LCD_CAMERA
     bool
     default y
 
@@ -248,14 +296,18 @@ config SOC_LCD_I80_SUPPORTED
     default y
 
 config SOC_LCD_I80_BUSES
-    bool
-    default y
+    int
+    default 2
 
 config SOC_LCD_I80_BUS_WIDTH
     int
     default 24
 
 config SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    bool
+    default y
+
+config SOC_LEDC_SUPPORT_APB_CLOCK
     bool
     default y
 
@@ -379,6 +431,10 @@ config SOC_RMT_SUPPORT_REF_TICK
     bool
     default y
 
+config SOC_RMT_SUPPORT_APB
+    bool
+    default y
+
 config SOC_RMT_CHANNEL_CLK_INDEPENDENT
     bool
     default y
@@ -446,6 +502,10 @@ config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 4
+
+config SOC_TIMER_GROUP_SUPPORT_APB
+    bool
+    default y
 
 config SOC_TOUCH_VERSION_1
     bool
@@ -524,6 +584,14 @@ config SOC_AES_SUPPORT_AES_192
     default y
 
 config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_SECURE_BOOT_V1
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
     bool
     default y
 

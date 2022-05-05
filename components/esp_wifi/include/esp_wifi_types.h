@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,7 +215,7 @@ typedef enum {
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
-    bool capable;            /**< Advertizes support for Protected Management Frame. Device will prefer to connect in PMF mode if other device also advertizes PMF capability. */
+    bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
     bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
 
@@ -231,6 +231,7 @@ typedef struct {
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
     wifi_cipher_type_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
+    wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
 } wifi_ap_config_t;
 
 /** @brief STA configuration settings for the ESP32 */
@@ -343,7 +344,7 @@ typedef struct {
     unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
 #if CONFIG_IDF_TARGET_ESP32
-    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     unsigned :8;                  /**< reserved */
 #endif
@@ -356,14 +357,14 @@ typedef struct {
 #if CONFIG_IDF_TARGET_ESP32S2
     unsigned :32;                 /**< reserved */
 #elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
-    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
     unsigned :32;                 /**< reserved */
 #endif
     unsigned :31;                 /**< reserved */
     unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
 #if CONFIG_IDF_TARGET_ESP32S2
-    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
 #elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     unsigned :32;                 /**< reserved */

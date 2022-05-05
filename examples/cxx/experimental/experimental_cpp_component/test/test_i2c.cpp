@@ -55,7 +55,7 @@ struct MasterFixture {
 };
 
 // TODO The I2C driver tests are disabled, so disable them here, too. Probably due to no runners.
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C2)
 
 static void i2c_slave_read_raw_byte(void)
 {

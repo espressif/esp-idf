@@ -5,6 +5,7 @@
 
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -92,6 +93,7 @@ class TestUsage(unittest.TestCase):
 
         print('Using IDF_TOOLS_PATH={}'.format(cls.temp_tools_dir))
         os.environ['IDF_TOOLS_PATH'] = cls.temp_tools_dir
+        cls.idf_env_json = os.path.join(cls.temp_tools_dir, 'idf-env.json')
 
     @classmethod
     def tearDownClass(cls):
@@ -104,20 +106,20 @@ class TestUsage(unittest.TestCase):
         if os.path.isdir(os.path.join(self.temp_tools_dir, 'tools')):
             shutil.rmtree(os.path.join(self.temp_tools_dir, 'tools'))
 
-        if os.path.isfile(os.path.join(self.temp_tools_dir, 'idf-env.json')):
-            os.remove(os.path.join(self.temp_tools_dir, 'idf-env.json'))
+        if os.path.isfile(self.idf_env_json):
+            os.remove(self.idf_env_json)
 
     def assert_tool_installed(self, output, tool, tool_version, tool_archive_name=None):
         if tool_archive_name is None:
             tool_archive_name = tool
         self.assertIn('Installing %s@' % tool + tool_version, output)
-        self.assertIn('Downloading %s' % tool_archive_name, output)
+        self.assertRegex(output, re.compile(rf'Downloading \S+/{tool_archive_name}'))
 
     def assert_tool_not_installed(self, output, tool, tool_version, tool_archive_name=None):
         if tool_archive_name is None:
             tool_archive_name = tool
         self.assertNotIn('Installing %s@' % tool + tool_version, output)
-        self.assertNotIn('Downloading %s' % tool_archive_name, output)
+        self.assertNotRegex(output, re.compile(rf'Downloading \S+/{tool_archive_name}'))
 
     def run_idf_tools_with_action(self, action):
         output_stream = StringIO()
@@ -152,7 +154,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -190,7 +192,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S2_ELF, XTENSA_ESP32S2_ELF_VERSION)
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -224,7 +226,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_not_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -257,7 +259,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -291,7 +293,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S2_ELF, XTENSA_ESP32S2_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -313,6 +315,34 @@ class TestUsage(unittest.TestCase):
                       (self.temp_tools_dir, ESP32S2ULP_VERSION), output)
         self.assertNotIn('%s/tools/xtensa-esp32s2-elf/%s/xtensa-esp32s2-elf/bin' %
                          (self.temp_tools_dir, XTENSA_ESP32S2_ELF_VERSION), output)
+
+    def test_uninstall_option(self):
+        self.run_idf_tools_with_action(['install', '--targets=esp32,esp32c3'])
+        output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
+        self.assertEqual(output, '')
+
+        with open(self.idf_env_json, 'r') as idf_env_file:
+            idf_env_json = json.load(idf_env_file)
+        idf_env_json['idfInstalled'][idf_env_json['idfSelectedId']]['targets'].remove('esp32')
+        with open(self.idf_env_json, 'w') as w:
+            json.dump(idf_env_json, w)
+
+        output = self.run_idf_tools_with_action(['uninstall'])
+        self.assertIn(XTENSA_ESP32_ELF, output)
+        self.assertIn(ESP32ULP, output)
+        output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
+        self.assertEqual(output, '')
+
+    def test_unset(self):
+        self.run_idf_tools_with_action(['install'])
+        self.run_idf_tools_with_action(['export'])
+        self.assertTrue(os.path.isfile(self.idf_env_json), 'File {} was not found. '.format(self.idf_env_json))
+        self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(self.idf_env_json))
+        with open(self.idf_env_json, 'r') as idf_env_file:
+            idf_env_json = json.load(idf_env_file)
+            selected_idf = idf_env_json['idfSelectedId']
+            self.assertIn('unset', idf_env_json['idfInstalled'][selected_idf],
+                          'Unset was not created for active environment in {}.'.format(self.idf_env_json))
 
 
 class TestMaintainer(unittest.TestCase):

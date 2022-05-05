@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
 
@@ -39,10 +28,7 @@ import textwrap
 from io import open
 
 # list files here which should not be parsed
-ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_mock.h'),
-                # tcpip_adapter in compatibility mode from 4.1 (errors reused in esp-netif)
-                os.path.join('components', 'tcpip_adapter', 'include', 'tcpip_adapter_types.h')
-                ]
+ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_mock.h')]
 
 # add directories here which should not be parsed, this is a tuple since it will be used with *.startswith()
 ignore_dirs = (os.path.join('examples'),

@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <string.h>
 #include "unity.h"
-#include "esp_system.h"
+#include "esp_random.h"
 
 /* Note: these are just sanity tests, not the same as
    entropy tests

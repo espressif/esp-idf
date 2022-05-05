@@ -1,10 +1,9 @@
-构建系统（CMake 版）
+构建系统
 ********************
 
 :link_to_translation:`en:[English]`
 
 本文档主要介绍 ESP-IDF 构建系统的实现原理以及 ``组件`` 等相关概念。如需您想了解如何组织和构建新的 ESP-IDF 项目或组件，请阅读本文档。
-
 
 概述
 ====
@@ -32,7 +31,7 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 
 - ``组件`` 是模块化且独立的代码，会被编译成静态库（.a 文件）并链接到应用程序。部分组件由 ESP-IDF 官方提供，其他组件则来源于其它开源项目。
 
-- ``目标`` 特指运行构建后应用程序的硬件设备。ESP-IDF 当前仅支持 ``esp32`` 和 ``esp32s2`` 以及 ``esp32c3`` 这三个硬件目标。
+- ``目标`` 特指运行构建后应用程序的硬件设备。运行 `idf.py --list-targets` 可以查看当前 ESP-IDF 版本中支持目标的完整列表。
 
 请注意，以下内容并不属于项目的组成部分：
 
@@ -83,7 +82,7 @@ idf.py
 
 要实现实现 shell `自动补全 <https://click.palletsprojects.com/shell-completion/>`_，请先确保您安装了 Python 3.5 以及 `click <https://click.palletsprojects.com/>`_ 7.1 及以上版本（:ref:`请参考这里 <get-started-get-prerequisites>`)。
 
-使用 ``export`` 命令来启用 ``idf.py`` 的自动补全功能（:ref:`请参考这里 <get-started-export>`）。按 TAB 键可实现自动补全。输入 “idf.py -” 后按 TAB 键可自动补全选项。
+使用 ``export`` 命令来启用 ``idf.py`` 的自动补全功能（:ref:`请参考这里 <get-started-set-up-env>`）。按 TAB 键可实现自动补全。输入 “idf.py -” 后按 TAB 键可自动补全选项。
 
 未来我们也会支持 PowerShell 的自动补全功能。
 
@@ -193,7 +192,7 @@ idf.py 选项
 设置 Python 解释器
 ------------------
 
-ESP-IDF 适用于所有支持的 Python 版本。即使您系统中默认的 ``python`` 解释器仍是 Python 2.7，ESP-IDF 也可以使用，但建议您升级至 Python 3。
+ESP-IDF 适用于 Python 3.7 以上版本。
 
 ``idf.py`` 和其他的 Python 脚本会使用默认的 Python 解释器运行，如 ``python``。您可以通过 ``python3 $IDF_PATH/tools/idf.py ...`` 命令切换到别的 Python 解释器，或者您可以通过设置 shell 别名或其他脚本来简化该命令。
 
@@ -628,6 +627,8 @@ Spark Plug 组件
 
 ``main`` 组件比较特别，因为它在构建过程中自动依赖所有其他组件。所以不需要向这个组件传递 ``REQUIRES`` 或 ``PRIV_REQUIRES``。有关不再使用 ``main`` 组件时需要更改哪些内容，请参考 :ref:`重命名 main 组件<rename-main>`。
 
+.. _component-common-requirements:
+
 通用组件依赖项
 --------------
 
@@ -1061,11 +1062,7 @@ Flash 参数
 选择目标芯片
 ====================
 
-ESP-IDF 支持多款芯片，它们通过在软件中使用不同的 “目标” (target) 名进行区分，具体对应关系如下：
-
-* ``esp32`` — 适用于 ESP32-D0WD、ESP32-D2WD、ESP32-S0WD (ESP-SOLO)、ESP32-U4WDH、ESP32-PICO-D4
-* ``esp32s2``— 适用于 ESP32-S2
-* ``esp32c3``— 适用于 ESP32-C3
+ESP-IDF 支持多款芯片，运行 `idf.py --list-targets` 可以查看当前 ESP-IDF 版本中支持目标的完整列表。
 
 在构建项目前，请首先根据您的芯片选择正确的软件目标，具体命令为 ``idf.py set-target <target>``。举例 ::
 
@@ -1542,12 +1539,18 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
 
 请参考 :idf_file:`/tools/cmake/project.cmake` 获取更多信息。
 
+
 .. _migrating_from_make:
 
 从 ESP-IDF GNU Make 构建系统迁移到 CMake 构建系统
 =================================================
 
 ESP-IDF CMake 构建系统与旧版的 GNU Make 构建系统在某些方面非常相似，开发者都需要提供 include 目录、源文件等。然而，有一个语法上的区别，即对于 ESP-IDF CMake 构建系统，开发者需要将这些作为参数传递给注册命令 ``idf_component_register``。
+
+自动转换工具
+-------------------------
+
+在 ESP-IDF v4.x 版本中，`tools/cmake/convert_to_cmake.py` 提供了项目自动转换工具。由于该脚本依赖于 `make` 构建系统，所以 v5.0 版本中不包含该脚本。
 
 CMake 中不可用的功能
 --------------------

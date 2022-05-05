@@ -75,11 +75,13 @@ typedef struct{
         struct {
             uint32_t clk_speed;      /*!< I2C clock frequency for master mode, (no higher than 1MHz for now) */
         } master;                    /*!< I2C master config */
+#if SOC_I2C_SUPPORT_SLAVE
         struct {
             uint8_t addr_10bit_en;   /*!< I2C 10bit address mode enable for slave mode */
             uint16_t slave_addr;     /*!< I2C address for slave mode */
             uint32_t maximum_speed;  /*!< I2C expected clock speed from SCL. */
         } slave;                     /*!< I2C slave config */
+#endif // SOC_I2C_SUPPORT_SLAVE
     };
     uint32_t clk_flags;              /*!< Bitwise of ``I2C_SCLK_SRC_FLAG_**FOR_DFS**`` for clk source choice*/
 } i2c_config_t;
@@ -89,9 +91,10 @@ typedef void *i2c_cmd_handle_t;    /*!< I2C command handle  */
 
 /**
  * @brief Install an I2C driver
+ * @note  Not all Espressif chips can support slave mode (e.g. ESP32C2)
  *
  * @param i2c_num I2C port number
- * @param mode I2C mode (either master or slave)
+ * @param mode I2C mode (either master or slave).
  * @param slv_rx_buf_len Receiving buffer size. Only slave mode will use this value, it is ignored in master mode.
  * @param slv_tx_buf_len Sending buffer size. Only slave mode will use this value, it is ignored in master mode.
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values.
@@ -418,6 +421,7 @@ esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle);
  */
 esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait);
 
+#if SOC_I2C_SUPPORT_SLAVE
 /**
  * @brief Write bytes to internal ringbuffer of the I2C slave data. When the TX fifo empty, the ISR will
  *        fill the hardware FIFO with the internal ringbuffer's data.
@@ -450,6 +454,7 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, const uint8_t *data, int size, Ti
  *     - Others(>=0) The number of data bytes read from I2C slave buffer.
  */
 int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t *data, size_t max_size, TickType_t ticks_to_wait);
+#endif // SOC_I2C_SUPPORT_SLAVE
 
 /**
  * @brief Set I2C master clock period

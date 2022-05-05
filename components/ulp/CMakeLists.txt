@@ -18,7 +18,8 @@ if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
             "ulp_fsm/ulp_macro.c")
 
             list(APPEND includes
-                ulp_fsm/include)
+                ulp_fsm/include
+                ulp_fsm/include/${target})
 
     elseif(CONFIG_ULP_COPROC_TYPE_RISCV)
         list(APPEND srcs

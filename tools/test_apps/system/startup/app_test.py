@@ -10,7 +10,7 @@ from ttfw_idf.IDFDUT import ESP32DUT
 
 
 @ttfw_idf.idf_custom_test(env_tag='Example_GENERIC', group='test-apps')
-def test_startup(env, extra_data):
+def test_sys_startup(env, extra_data):
     config_files = glob.glob(os.path.join(os.path.dirname(__file__), 'sdkconfig.ci.*'))
     config_names = [os.path.basename(s).replace('sdkconfig.ci.', '') for s in config_files]
     for name in config_names:
@@ -30,4 +30,4 @@ def test_startup(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_startup()
+    test_sys_startup()

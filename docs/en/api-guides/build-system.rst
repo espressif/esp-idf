@@ -31,7 +31,7 @@ Concepts
 
 - "components" are modular pieces of standalone code which are compiled into static libraries (.a files) and linked into an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. A full list of supported targets in your version if ESP-IDF can be seen by running `idf.py --list-targets`.
+- "Target" is the hardware for which an application is built. A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
 
 Some things are not part of the project:
 
@@ -82,7 +82,7 @@ The command ``idf.py`` supports `shell autocompletion <https://click.palletsproj
 
 In order to make `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
 
-To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-export>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options.
+To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-set-up-env>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options.
 
 The autocomplete support for PowerShell is planned in the future.
 
@@ -192,7 +192,7 @@ For more detailed information about integrating ESP-IDF with CMake into an IDE, 
 Setting up the Python Interpreter
 ---------------------------------
 
-ESP-IDF works well with all supported Python versions. It should work out-of-box even if you have a legacy system where the default ``python`` interpreter is still Python 2.7, however, it is advised to switch to Python 3 if possible.
+ESP-IDF works well with Python version 3.7+.
 
 ``idf.py`` and other Python scripts will run with the default Python interpreter, i.e. ``python``. You can switch to a different one like ``python3 $IDF_PATH/tools/idf.py ...``, or you can set up a shell alias or another script to simplify the command.
 
@@ -527,8 +527,8 @@ Imagine there is a ``car`` component, which uses the ``engine`` component, which
                                          - engine.c
                                          - include/ - engine.h
                                - spark_plug/  - CMakeLists.txt
-                                              - plug.c
-                                              - plug.h
+                                              - spark_plug.c
+                                              - spark_plug.h
 
 Car component
 ^^^^^^^^^^^^^
@@ -626,6 +626,8 @@ Main component requirements
 ---------------------------
 
 The component named ``main`` is special because it automatically requires all other components in the build. So it's not necessary to pass ``REQUIRES`` or ``PRIV_REQUIRES`` to this component. See :ref:`renaming main <rename-main>` for a description of what needs to be changed if no longer using the ``main`` component.
+
+.. _component-common-requirements:
 
 Common component requirements
 -----------------------------
@@ -1060,7 +1062,7 @@ The subproject is inserted as an external project from the top-level project, by
 Selecting the Target
 ====================
 
-ESP-IDF supports multiple targets (chips). A full list of supported targets in your version if ESP-IDF can be seen by running `idf.py --list-targets`.
+ESP-IDF supports multiple targets (chips). A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
 
 To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
 
@@ -1340,7 +1342,8 @@ Set a specified *component*'s :ref:`component property<cmake-component-propertie
                          [EMBED_FILES file1 file2 ...]
                          [EMBED_TXTFILES file1 file2 ...]
                          [KCONFIG kconfig]
-                         [KCONFIG_PROJBUILD kconfig_projbuild])
+                         [KCONFIG_PROJBUILD kconfig_projbuild]
+                         [WHOLE_ARCHIVE])
 
 Register a component to the build system. Much like the ``project()`` CMake command, this should be called from the component's CMakeLists.txt directly (not through a function or macro) and is recommended to be called before any other command. Here are some guidelines on what commands can **not** be called before ``idf_component_register``:
 
@@ -1362,6 +1365,7 @@ The arguments for ``idf_component_register`` include:
   - REQUIRED_IDF_TARGETS - specify the only target the component supports
   - KCONFIG - override the default Kconfig file
   - KCONFIG_PROJBUILD - override the default Kconfig.projbuild file
+  - WHOLE_ARCHIVE - if specified, the component library is surrounded by ``-Wl,--whole-archive``, ``-Wl,--no-whole-archive`` when linked. This has the same effect as setting ``WHOLE_ARCHIVE`` component property.
 
 The following are used for :ref:`embedding data into the component<cmake_embed_data>`, and is considered as source files when determining if a component is config-only. This means that even if the component does not specify source files, a static library is still created internally for the component if it specifies either:
 
@@ -1397,6 +1401,7 @@ These are properties that describe a component. Values of component properties c
 - REQUIRED_IDF_TARGETS - list of targets the component supports; set from ``idf_component_register`` EMBED_TXTFILES argument
 - REQUIRES - list of public component dependencies; set from ``idf_component_register`` REQUIRES argument
 - SRCS - list of component source files; set from SRCS or SRC_DIRS/EXCLUDE_SRCS argument of ``idf_component_register``
+- WHOLE_ARCHIVE - if this property is set to ``TRUE`` (or any boolean "true" CMake value: 1, ``ON``, ``YES``, ``Y``), the component library is surrounded by ``-Wl,--whole-archive``, ``-Wl,--no-whole-archive`` when linked. This can be used to force the linker to include every object file into the executable, even if the object file doesn't resolve any references from the rest of the application. This is commonly used when a component contains plugins or modules which rely on link-time registration. This property is ``FALSE`` by default. It can be set to ``TRUE`` from the component CMakeLists.txt file.
 
 .. _cmake-file-globbing:
 

@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------/
-/  FatFs - Generic FAT Filesystem module  R0.13c                              /
+/  FatFs - Generic FAT Filesystem module  R0.14b                              /
 /-----------------------------------------------------------------------------/
 /
-/ Copyright (C) 2018, ChaN, all right reserved.
+/ Copyright (C) 2021, ChaN, all right reserved.
 /
 / FatFs module is an open source software. Redistribution and use of FatFs in
 / source and binary forms, with or without modification, are permitted provided
@@ -20,7 +20,7 @@
 
 
 #ifndef FF_DEFINED
-#define FF_DEFINED	86604	/* Revision ID */
+#define FF_DEFINED	86631	/* Revision ID */
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,51 +35,57 @@ extern "C" {
 
 /* Integer types used for FatFs API */
 
-#if defined(_WIN32)	/* Main development platform */
+#if defined(_WIN32)		/* Windows VC++ (for development only) */
 #define FF_INTDEF 2
 #include <windows.h>
 typedef unsigned __int64 QWORD;
+#include <float.h>
+#define isnan(v) _isnan(v)
+#define isinf(v) (!_finite(v))
+
 #elif (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(__cplusplus)	/* C99 or later */
 #define FF_INTDEF 2
 #include <stdint.h>
 typedef unsigned int	UINT;	/* int must be 16-bit or 32-bit */
 typedef unsigned char	BYTE;	/* char must be 8-bit */
 typedef uint16_t		WORD;	/* 16-bit unsigned integer */
-typedef uint16_t		WCHAR;	/* 16-bit unsigned integer */
 typedef uint32_t		DWORD;	/* 32-bit unsigned integer */
 typedef uint64_t		QWORD;	/* 64-bit unsigned integer */
+typedef WORD			WCHAR;	/* UTF-16 character type */
+
 #else  	/* Earlier than C99 */
 #define FF_INTDEF 1
 typedef unsigned int	UINT;	/* int must be 16-bit or 32-bit */
 typedef unsigned char	BYTE;	/* char must be 8-bit */
 typedef unsigned short	WORD;	/* 16-bit unsigned integer */
-typedef unsigned short	WCHAR;	/* 16-bit unsigned integer */
 typedef unsigned long	DWORD;	/* 32-bit unsigned integer */
+typedef WORD			WCHAR;	/* UTF-16 character type */
 #endif
 
 
-/* Definitions of volume management */
+/* Type of file size and LBA variables */
 
-#if FF_MULTI_PARTITION		/* Multiple partition configuration */
-typedef struct {
-	BYTE pd;	/* Physical drive number */
-	BYTE pt;	/* Partition: 0:Auto detect, 1-4:Forced partition) */
-} PARTITION;
-extern const PARTITION VolToPart[];	/* Volume - Partition resolution table */
+#if FF_FS_EXFAT
+#if FF_INTDEF != 2
+#error exFAT feature wants C99 or later
+#endif
+typedef QWORD FSIZE_t;
+#if FF_LBA64
+typedef QWORD LBA_t;
+#else
+typedef DWORD LBA_t;
+#endif
+#else
+#if FF_LBA64
+#error exFAT needs to be enabled when enable 64-bit LBA
+#endif
+typedef DWORD FSIZE_t;
+typedef DWORD LBA_t;
 #endif
 
-#if FF_STR_VOLUME_ID
-#ifndef FF_VOLUME_STRS
-extern const char* VolumeStr[FF_VOLUMES];	/* User defied volume ID */
-#endif
-#endif
 
 
-
-/* Type of path name strings on FatFs API */
-
-#ifndef _INC_TCHAR
-#define _INC_TCHAR
+/* Type of path name strings on FatFs API (TCHAR) */
 
 #if FF_USE_LFN && FF_LFN_UNICODE == 1 	/* Unicode in UTF-16 encoding */
 typedef WCHAR TCHAR;
@@ -101,19 +107,22 @@ typedef char TCHAR;
 #define _TEXT(x) x
 #endif
 
+
+
+/* Definitions of volume management */
+
+#if FF_MULTI_PARTITION		/* Multiple partition configuration */
+typedef struct {
+	BYTE pd;	/* Physical drive number */
+	BYTE pt;	/* Partition: 0:Auto detect, 1-4:Forced partition) */
+} PARTITION;
+extern const PARTITION VolToPart[];	/* Volume - Partition mapping table */
 #endif
 
-
-
-/* Type of file size variables */
-
-#if FF_FS_EXFAT
-#if FF_INTDEF != 2
-#error exFAT feature wants C99 or later
+#if FF_STR_VOLUME_ID
+#ifndef FF_VOLUME_STRS
+extern const char* VolumeStr[FF_VOLUMES];	/* User defied volume ID */
 #endif
-typedef QWORD FSIZE_t;
-#else
-typedef DWORD FSIZE_t;
 #endif
 
 
@@ -155,14 +164,14 @@ typedef struct {
 #endif
 	DWORD	n_fatent;		/* Number of FAT entries (number of clusters + 2) */
 	DWORD	fsize;			/* Size of an FAT [sectors] */
-	DWORD	volbase;		/* Volume base sector */
-	DWORD	fatbase;		/* FAT base sector */
-	DWORD	dirbase;		/* Root directory base sector/cluster */
-	DWORD	database;		/* Data base sector */
+	LBA_t	volbase;		/* Volume base sector */
+	LBA_t	fatbase;		/* FAT base sector */
+	LBA_t	dirbase;		/* Root directory base sector/cluster */
+	LBA_t	database;		/* Data base sector */
 #if FF_FS_EXFAT
-	DWORD	bitbase;		/* Allocation bitmap base sector */
+	LBA_t	bitbase;		/* Allocation bitmap base sector */
 #endif
-	DWORD	winsect;		/* Current sector appearing in the win[] */
+	LBA_t	winsect;		/* Current sector appearing in the win[] */
 	BYTE	win[FF_MAX_SS];	/* Disk access window for Directory, FAT (and file data at tiny cfg) */
 } FATFS;
 
@@ -199,9 +208,9 @@ typedef struct {
 	BYTE	err;			/* Abort flag (error code) */
 	FSIZE_t	fptr;			/* File read/write pointer (Zeroed on file open) */
 	DWORD	clust;			/* Current cluster of fpter (invalid when fptr is 0) */
-	DWORD	sect;			/* Sector number appearing in buf[] (0:invalid) */
+	LBA_t	sect;			/* Sector number appearing in buf[] (0:invalid) */
 #if !FF_FS_READONLY
-	DWORD	dir_sect;		/* Sector number containing the directory entry (not used at exFAT) */
+	LBA_t	dir_sect;		/* Sector number containing the directory entry (not used at exFAT) */
 	BYTE*	dir_ptr;		/* Pointer to the directory entry in the win[] (not used at exFAT) */
 #endif
 #if FF_USE_FASTSEEK
@@ -220,7 +229,7 @@ typedef struct {
 	FFOBJID	obj;			/* Object identifier */
 	DWORD	dptr;			/* Current read/write offset */
 	DWORD	clust;			/* Current cluster */
-	DWORD	sect;			/* Current sector (0:Read operation has terminated) */
+	LBA_t	sect;			/* Current sector (0:Read operation has terminated) */
 	BYTE*	dir;			/* Pointer to the directory item in the win[] */
 	BYTE	fn[12];			/* SFN (in/out) {body[8],ext[3],status[1]} */
 #if FF_USE_LFN
@@ -247,6 +256,18 @@ typedef struct {
 	TCHAR	fname[12 + 1];	/* File name */
 #endif
 } FILINFO;
+
+
+
+/* Format parameter structure (MKFS_PARM) */
+
+typedef struct {
+	BYTE fmt;			/* Format option (FM_FAT, FM_FAT32, FM_EXFAT and FM_SFD) */
+	BYTE n_fat;			/* Number of FATs */
+	UINT align;			/* Data area alignment (sector) */
+	UINT n_root;		/* Number of root directory entries */
+	DWORD au_size;		/* Cluster size (byte) */
+} MKFS_PARM;
 
 
 
@@ -307,8 +328,8 @@ FRESULT f_setlabel (const TCHAR* label);							/* Set volume label */
 FRESULT f_forward (FIL* fp, UINT(*func)(const BYTE*,UINT), UINT btf, UINT* bf);	/* Forward data to the stream */
 FRESULT f_expand (FIL* fp, FSIZE_t fsz, BYTE opt);					/* Allocate a contiguous block to the file */
 FRESULT f_mount (FATFS* fs, const TCHAR* path, BYTE opt);			/* Mount/Unmount a logical drive */
-FRESULT f_mkfs (const TCHAR* path, BYTE opt, DWORD au, void* work, UINT len);	/* Create a FAT volume */
-FRESULT f_fdisk (BYTE pdrv, const DWORD* szt, void* work);			/* Divide a physical drive into some partitions */
+FRESULT f_mkfs (const TCHAR* path, const MKFS_PARM* opt, void* work, UINT len);	/* Create a FAT volume */
+FRESULT f_fdisk (BYTE pdrv, const LBA_t ptbl[], void* work);		/* Divide a physical drive into some partitions */
 FRESULT f_setcp (WORD cp);											/* Set current code page */
 int f_putc (TCHAR c, FIL* fp);										/* Put a character to the file */
 int f_puts (const TCHAR* str, FIL* cp);								/* Put a string to the file */
@@ -323,10 +344,6 @@ TCHAR* f_gets (TCHAR* buff, int len, FIL* fp);						/* Get a string from the fil
 #define f_rewinddir(dp) f_readdir((dp), 0)
 #define f_rmdir(path) f_unlink(path)
 #define f_unmount(path) f_mount(0, path, 0)
-
-#ifndef EOF
-#define EOF (-1)
-#endif
 
 
 

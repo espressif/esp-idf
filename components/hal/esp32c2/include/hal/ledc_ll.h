@@ -11,19 +11,26 @@
 
 #include "hal/ledc_types.h"
 #include "soc/ledc_periph.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_GET_HW()           &LEDC
+
+#define LEDC_LL_DUTY_NUM_MAX       (LEDC_DUTY_NUM_CH0_V)
+#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_DUTY_CYCLE_CH0_V)
+#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_DUTY_SCALE_CH0_V)
+#define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_CH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 #define LEDC_LL_GLOBAL_CLOCKS { \
-                                LEDC_SLOW_CLK_APB, \
+                                LEDC_SLOW_CLK_PLL_DIV, \
                                 LEDC_SLOW_CLK_XTAL, \
                                 LEDC_SLOW_CLK_RTC8M, \
                               }
+#define LEDC_LL_PLL_DIV_CLK_FREQ    (60 * 1000000) // PLL_60M_CLK: 60MHz
 
 
 /**
@@ -37,7 +44,7 @@ extern "C" {
 static inline void ledc_ll_set_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t slow_clk_sel)
 {
     uint32_t clk_sel_val = 0;
-    if (slow_clk_sel == LEDC_SLOW_CLK_APB) {
+    if (slow_clk_sel == LEDC_SLOW_CLK_PLL_DIV) {
         clk_sel_val = 1;
     } else if (slow_clk_sel == LEDC_SLOW_CLK_RTC8M) {
         clk_sel_val = 2;
@@ -59,11 +66,13 @@ static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
 {
     uint32_t clk_sel_val = hw->conf.apb_clk_sel;
     if (clk_sel_val == 1) {
-        *slow_clk_sel = LEDC_SLOW_CLK_APB;
+        *slow_clk_sel = LEDC_SLOW_CLK_PLL_DIV;
     } else if (clk_sel_val == 2) {
         *slow_clk_sel = LEDC_SLOW_CLK_RTC8M;
     } else if (clk_sel_val == 3) {
         *slow_clk_sel = LEDC_SLOW_CLK_XTAL;
+    } else {
+        abort();
     }
 }
 
@@ -78,7 +87,7 @@ static inline void ledc_ll_get_slow_clk_sel(ledc_dev_t *hw, ledc_slow_clk_sel_t 
  */
 static inline void ledc_ll_ls_timer_update(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel)
 {
-    hw->timer_group[speed_mode].timer[timer_sel].conf.low_speed_update = 1;
+    hw->timer_group[speed_mode].timer[timer_sel].conf.para_up = 1;
 }
 
 /**
@@ -136,7 +145,7 @@ static inline void ledc_ll_timer_resume(ledc_dev_t *hw, ledc_mode_t speed_mode, 
  */
 static inline void ledc_ll_set_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider)
 {
-    hw->timer_group[speed_mode].timer[timer_sel].conf.clock_divider = clock_divider;
+    hw->timer_group[speed_mode].timer[timer_sel].conf.clk_div = clock_divider;
 }
 
 /**
@@ -151,7 +160,7 @@ static inline void ledc_ll_set_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
  */
 static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t *clock_divider)
 {
-    *clock_divider = hw->timer_group[speed_mode].timer[timer_sel].conf.clock_divider;
+    *clock_divider = hw->timer_group[speed_mode].timer[timer_sel].conf.clk_div;
 }
 
 /**
@@ -166,7 +175,7 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
  */
 static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t *clk_src)
 {
-    *clk_src = LEDC_APB_CLK;
+    *clk_src = LEDC_SCLK;
 }
 
 /**
@@ -181,7 +190,7 @@ static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mo
  */
 static inline void ledc_ll_set_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t duty_resolution)
 {
-    hw->timer_group[speed_mode].timer[timer_sel].conf.duty_resolution = duty_resolution;
+    hw->timer_group[speed_mode].timer[timer_sel].conf.duty_res = duty_resolution;
 }
 
 /**
@@ -196,7 +205,7 @@ static inline void ledc_ll_set_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
  */
 static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t *duty_resolution)
 {
-    *duty_resolution = hw->timer_group[speed_mode].timer[timer_sel].conf.duty_resolution;
+    *duty_resolution = hw->timer_group[speed_mode].timer[timer_sel].conf.duty_res;
 }
 
 /**
@@ -210,7 +219,7 @@ static inline void ledc_ll_get_duty_resolution(ledc_dev_t *hw, ledc_mode_t speed
  */
 static inline void ledc_ll_ls_channel_update(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
-    hw->channel_group[speed_mode].channel[channel_num].conf0.low_speed_update = 1;
+    hw->channel_group[speed_mode].channel[channel_num].conf0.para_up = 1;
 }
 
 /**
@@ -226,7 +235,7 @@ static inline void ledc_ll_ls_channel_update(ledc_dev_t *hw, ledc_mode_t speed_m
 static inline void ledc_ll_get_max_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *max_duty)
 {
     uint32_t timer_sel = hw->channel_group[speed_mode].channel[channel_num].conf0.timer_sel;
-    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution));
+    *max_duty = (1 << (LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_res));
 }
 
 /**
@@ -286,7 +295,7 @@ static inline void ledc_ll_set_duty_int_part(ledc_dev_t *hw, ledc_mode_t speed_m
  */
 static inline void ledc_ll_get_duty(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint32_t *duty_val)
 {
-    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_rd.duty_read >> 4);
+    *duty_val = (hw->channel_group[speed_mode].channel[channel_num].duty_rd.duty_r >> 4);
 }
 
 /**
@@ -422,7 +431,7 @@ static inline void ledc_ll_set_idle_level(ledc_dev_t *hw, ledc_mode_t speed_mode
 static inline void ledc_ll_set_fade_end_intr(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, bool fade_end_intr_en)
 {
     uint32_t value = hw->int_ena.val;
-    uint32_t int_en_base = LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
+    uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
     hw->int_ena.val = fade_end_intr_en ? (value | BIT(int_en_base + channel_num)) : (value & (~(BIT(int_en_base + channel_num))));
 }
 
@@ -439,7 +448,7 @@ static inline void ledc_ll_set_fade_end_intr(ledc_dev_t *hw, ledc_mode_t speed_m
 static inline void ledc_ll_get_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t speed_mode, uint32_t *intr_status)
 {
     uint32_t value = hw->int_st.val;
-    uint32_t int_en_base = LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
+    uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
     *intr_status = (value >> int_en_base) & 0xff;
 }
 
@@ -454,7 +463,7 @@ static inline void ledc_ll_get_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t 
  */
 static inline void ledc_ll_clear_fade_end_intr_status(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num)
 {
-    uint32_t int_en_base = LEDC_DUTY_CHNG_END_LSCH0_INT_ENA_S;
+    uint32_t int_en_base = LEDC_DUTY_CHNG_END_CH0_INT_ENA_S;
     hw->int_clr.val = BIT(int_en_base + channel_num);
 }
 

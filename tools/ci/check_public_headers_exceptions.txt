@@ -6,8 +6,11 @@ components/xtensa/esp32/include/xtensa/config/
 
 components/newlib/platform_include/
 
+components/freertos/esp_additions/include/freertos_tasks_c_additions.h
 components/freertos/FreeRTOS-Kernel/include/freertos/
 components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/
+components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 
 components/log/include/esp_log_internal.h
@@ -45,11 +48,10 @@ components/wpa_supplicant/include/
 components/wpa_supplicant/port/
 components/wpa_supplicant/esp_supplicant/include/
 
+components/mbedtls/mbedtls/
 components/mbedtls/port/include/
-components/mbedtls/mbedtls/include/mbedtls/
-components/mbedtls/mbedtls/include/psa/
-
-components/coap/
+components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
+components/mbedtls/test/
 
 components/esp-tls/private_include/
 
@@ -102,7 +104,6 @@ components/esp_common/include/esp_compiler.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
 components/lwip/port/esp32/include/netif/dhcp_state.h
 components/soc/src/esp32/rtc_clk_common.h
-components/esp_hw_support/port/esp32/regi2c_ctrl.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h
@@ -115,6 +116,7 @@ components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
+components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h
@@ -132,9 +134,7 @@ components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
-components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
 components/bootloader_support/include/bootloader_util.h
-components/tcpip_adapter/include/tcpip_adapter_types.h
 components/console/linenoise/linenoise.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h

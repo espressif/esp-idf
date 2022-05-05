@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,9 +7,9 @@
 /*
  * mbedTLS SHA performance test
  */
-#include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
@@ -33,11 +33,11 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
 
     mbedtls_sha256_init(&sha256_ctx);
     ccomp_timer_start();
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
     for (int c = 0; c < CALLS; c++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, buf, CALL_SZ));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, buf, CALL_SZ));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
     elapsed_usec = ccomp_timer_stop();
 
     free(buf);

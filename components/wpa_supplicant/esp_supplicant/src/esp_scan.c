@@ -19,6 +19,7 @@
 #include "common/ieee802_11_common.h"
 #include "esp_common_i.h"
 #include "common/wnm_sta.h"
+#include "esp_scan_i.h"
 
 extern struct wpa_supplicant g_wpa_supp;
 
@@ -28,11 +29,11 @@ static void scan_done_event_handler(void *arg, STATUS status)
 
 	/* update last scan time */
 	wpa_s->scan_start_tsf = esp_wifi_get_tsf_time(WIFI_IF_STA);
-	if (!wpa_s->scanning) {
+	if (wpa_s->scanning) {
 		wpa_s->type &= ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);
 		esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 	}
-	esp_supplicant_post_evt(SIG_SUPPLICANT_SCAN_DONE, 0);
+	esp_supplicant_handle_scan_done_evt();
 }
 
 static void handle_wnm_scan_done(struct wpa_supplicant *wpa_s)

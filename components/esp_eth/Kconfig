@@ -169,4 +169,12 @@ menu "Ethernet"
             help
                 Number of DMA transmit buffers, each buffer is 1600 bytes.
     endif # ETH_USE_OPENETH
+
+    config ETH_TRANSMIT_MUTEX
+        depends on ETH_ENABLED
+        bool "Enable Transmit Mutex"
+        default n
+        help
+            Prevents multiple accesses when Ethernet interface is used as shared resource and multiple
+            functionalities might try to access it at a time.
 endmenu

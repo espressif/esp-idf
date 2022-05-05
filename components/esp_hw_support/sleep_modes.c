@@ -27,6 +27,7 @@
 
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
+#include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
 
 #include "hal/wdt_hal.h"
 #include "hal/rtc_hal.h"
@@ -85,36 +86,30 @@
 #define RTC_CLK_SRC_CAL_CYCLES      (10)
 
 #ifdef CONFIG_IDF_TARGET_ESP32
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (212)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (60)
 #elif CONFIG_IDF_TARGET_ESP32S2
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (147)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (28)
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (382)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (133)
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #elif CONFIG_IDF_TARGET_ESP32H2
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #elif CONFIG_IDF_TARGET_ESP32C2
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C2_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #endif
 
 #define LIGHT_SLEEP_TIME_OVERHEAD_US        DEFAULT_HARDWARE_OUT_OVERHEAD_US
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-#define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
+#define DEEP_SLEEP_TIME_OVERHEAD_US         (650 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 #else
-#define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / DEFAULT_CPU_FREQ_MHZ)
+#define DEEP_SLEEP_TIME_OVERHEAD_US         (250 + 100 * 240 / CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 #endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && defined(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY)
@@ -319,6 +314,9 @@ static void IRAM_ATTR resume_uarts(void)
     }
 }
 
+/**
+ * These save-restore workaround should be moved to lower layer
+ */
 inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 {
 #if CONFIG_MAC_BB_PD
@@ -330,8 +328,14 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
 #if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
     sleep_enable_memory_retention();
 #endif
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    regi2c_analog_cali_reg_read();
+#endif
 }
 
+/**
+ * These save-restore workaround should be moved to lower layer
+ */
 inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 {
 #if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
@@ -343,12 +347,24 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 #if CONFIG_MAC_BB_PD
     mac_bb_power_up_cb_execute();
 #endif
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    regi2c_analog_cali_reg_write();
+#endif
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
+inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
+
+//TODO: IDF-4813
+bool esp_no_sleep = false;
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
+#if CONFIG_IDF_TARGET_ESP32S3
+    if (esp_no_sleep) {
+        ESP_EARLY_LOGE(TAG, "Sleep cannot be used with Touch/ULP for now.");
+        abort();
+    }
+#endif //CONFIG_IDF_TARGET_ESP32S3
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
     // For deep sleep, wait for the contents of UART FIFO to be sent.
@@ -509,7 +525,7 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     esp_brownout_disable();
 #endif //CONFIG_IDF_TARGET_ESP32S2
 
-    esp_sync_counters_rtc_and_frc();
+    esp_sync_timekeeping_timers();
 
     /* Disable interrupts and stall another core in case another task writes
      * to RTC memory while we calculate RTC memory CRC.
@@ -598,7 +614,7 @@ esp_err_t esp_light_sleep_start(void)
 
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint32_t ccount_at_sleep_start = cpu_ll_get_cycle_count();
-    uint64_t frc_time_at_start = esp_system_get_time();
+    uint64_t high_res_time_at_start = esp_timer_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
     esp_ipc_isr_stall_other_cpu();
@@ -614,7 +630,7 @@ esp_err_t esp_light_sleep_start(void)
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
     uint64_t time_per_us = 1000000ULL;
     s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
-#elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_RC)
+#elif CONFIG_RTC_CLK_SRC_INT_RC && CONFIG_IDF_TARGET_ESP32S2
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
 #else
@@ -698,23 +714,23 @@ esp_err_t esp_light_sleep_start(void)
 
     s_light_sleep_wakeup = true;
 
-    // FRC1 has been clock gated for the duration of the sleep, correct for that.
+    // System timer has been clock gated for the duration of the sleep, correct for that.
 #ifdef CONFIG_IDF_TARGET_ESP32C3
     /**
-     * On esp32c3, rtc_time_get() is non-blocking, esp_system_get_time() is
+     * On esp32c3, rtc_time_get() is non-blocking, esp_timer_get_time() is
      * blocking, and the measurement data shows that this order is better.
      */
-    uint64_t frc_time_at_end = esp_system_get_time();
+    uint64_t high_res_time_at_end = esp_timer_get_time();
     uint64_t rtc_ticks_at_end = rtc_time_get();
 #else
     uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t frc_time_at_end = esp_system_get_time();
+    uint64_t high_res_time_at_end = esp_timer_get_time();
 #endif
 
     uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
-    uint64_t frc_time_diff = frc_time_at_end - frc_time_at_start;
+    uint64_t high_res_time_diff = high_res_time_at_end - high_res_time_at_start;
 
-    int64_t time_diff = rtc_time_diff - frc_time_diff;
+    int64_t time_diff = rtc_time_diff - high_res_time_diff;
     /* Small negative values (up to 1 RTC_SLOW clock period) are possible,
      * for very small values of sleep_duration. Ignore those to keep esp_timer
      * monotonic.
@@ -784,7 +800,7 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 #endif // CONFIG_ULP_COPROC_ENABLED
 
 #if CONFIG_IDF_TARGET_ESP32
-#if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
+#if ((defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
     ESP_LOGE(TAG, "Failed to enable wakeup when provide current to external 32kHz crystal");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
@@ -845,7 +861,7 @@ static void touch_wakeup_prepare(void)
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
-#if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
+#if ((defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
     ESP_LOGE(TAG, "Failed to enable wakeup when provide current to external 32kHz crystal");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
@@ -1277,7 +1293,7 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
     }
 
-#if ((defined CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT))
+#if ((defined CONFIG_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT))
     if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {
         // If enabled EXT1 only and enable the additional current by touch, should be keep RTC_PERIPH power on.
         pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;

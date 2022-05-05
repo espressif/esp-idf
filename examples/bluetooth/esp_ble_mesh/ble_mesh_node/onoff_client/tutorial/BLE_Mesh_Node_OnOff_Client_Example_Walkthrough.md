@@ -205,7 +205,7 @@ static void board_uart_task(void *p)
     uint32_t input;
     
     while (1) { 
-        int len = uart_read_bytes(MESH_UART_NUM, data, UART_BUF_SIZE, 100 / portTICK_RATE_MS);
+        int len = uart_read_bytes(MESH_UART_NUM, data, UART_BUF_SIZE, 100 / portTICK_PERIOD_MS);
         if (len > 0) {
             input = strtoul((const char *)data, NULL, 16);
             remote_addr = input & 0xFFFF;

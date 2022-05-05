@@ -1,0 +1,2 @@
+# Add CI coverage for WPA supplicant debug feature
+CONFIG_WPA_DEBUG_PRINT=y

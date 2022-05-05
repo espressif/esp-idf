@@ -27,6 +27,9 @@ Kconfig 选项 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` 可将 ``spi_flash_*`` �
 Flash 特性支持情况
 -----------------------------------
 
+支持的 Flash 列表
+^^^^^^^^^^^^^^^^^^^^^
+
 不同厂家的 flash 特性有不同的操作方式，因此需要特殊的驱动支持。当前驱动支持大多数厂家 Flash 24 位地址范围内的快速/慢速读，以及二线模式 (DIO / DOUT)，因为他们不需要任何厂家的自定义命令。
 
 当前驱动支持以下厂家/型号的 flash 的四线模式 (QIO/QOUT)：
@@ -39,18 +42,33 @@ Flash 特性支持情况
 6. XMC
 7. BOYA
 
+Flash 可选的功能
+^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+    :hidden:
+
+    spi_flash_optional_feature
+
+有一些功能可能不是所有的 flash 芯片都支持，或不是所有的 ESP 芯片都支持。这些功能包括：
+
 .. only:: esp32s3
 
-    下列芯片支持八线模式 (OPI)：
+    -  OPI flash - 表示 Flash 支持 8 线模式。
 
-    1. MXIC
+-  32 比特地址的 flash 支持 - 通常意味着拥有大于 16MB 内存空间的大容量 flash 需要更长的地址去访问。
 
-    关于如何为具有不同 flash 和 PSRAM 容量的开发板设置 menuconfig，请参考 :ref:`SPI flash 和片外 SPI RAM 设置 <flash-psram-configuration>`。
+.. only:: esp32s3
 
-当前驱动支持以下厂家/型号的 flash 的 32 位地址范围的访问：
+    -  高性能 (HPM) 模式 - 表示 flash 工作频率大于 80MHz 。
 
-1. W25Q256
-2. GD25Q256
+-  flash 的私有ID (unique ID) - 表示 flash 支持它自己的 64-bits 独一无二的 ID 。
+
+.. only:: esp32c3
+
+    -  暂停与恢复 - 表示 flash 可以在读/写的过程中接受暂停/恢复的命令。{IDF_TARGET_NAME} 可以在 flash 正在写/擦除的过程中保持 cache 开启，并能随机读取 flash 中的内容。
+
+如果您想使用这些功能，则需保证 {IDF_TARGET_NAME} 支持这些功能，且产品里所使用的 flash 芯片也要支持这些功能。请参阅 :doc:`spi_flash_optional_feature`，查看更多信息。
 
 如果有需要，也可以自定义 flash 芯片驱动，参见 :doc:`spi_flash_override_driver` 。
 
@@ -81,7 +99,7 @@ SPI Flash 访问 API
 - :cpp:func:`esp_flash_write`：将数据从 RAM 写入到 flash；
 - :cpp:func:`esp_flash_erase_region`：擦除 flash 中指定区域的数据；
 - :cpp:func:`esp_flash_erase_chip`：擦除整个 flash；
-- :cpp:func:`esp_flash_get_chip_size`：返回 menuconfig 中设置的 flash 芯片容量（以字节为单位）。
+- :cpp:func:`spi_flash_get_chip_size`：返回 menuconfig 中设置的 flash 芯片容量（以字节为单位）。
 
 一般来说，请尽量避免对主 SPI flash 芯片直接使用原始 SPI flash 函数，如需对主 SPI flash 芯片进行操作，请使用 :ref:`分区专用函数 <flash-partition-apis>`。
 
@@ -90,7 +108,7 @@ SPI Flash 容量
 
 SPI flash 容量存储于引导程序镜像头部（烧录偏移量为 0x1000）的一个字段。
 
-默认情况下，引导程序写入 flash 时，esptool.py 将引导程序写入 flash 时，会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。您也可以在工程配置中设置 :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
+默认情况下，引导程序写入 flash 时，esptool.py 将引导程序写入 flash 时，会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。您也可以在工程配置中设置 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 
@@ -243,7 +261,9 @@ SPI Flash API 参考
 
 .. include-build-file:: inc/esp_flash_spi_init.inc
 .. include-build-file:: inc/esp_flash.inc
+.. include-build-file:: inc/esp_spi_flash.inc
 .. include-build-file:: inc/spi_flash_types.inc
+.. include-build-file:: inc/esp_flash_err.inc
 
 .. _api-reference-partition-table:
 

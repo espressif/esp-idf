@@ -170,7 +170,7 @@ Finalize Configuration
 
 Once the :cpp:type:`rmt_config_t` structure is populated with parameters, it should be then invoked with :cpp:func:`rmt_config` to make the configuration effective.
 
-The last configuration step is installation of the driver in memory by calling :cpp:func:`rmt_driver_install`. If :cpp:type:`rx_buf_size` parameter of this function is > 0, then a ring buffer for incoming data will be allocated. A default ISR handler will be installed, see a note in `Use Interrupts`_.
+The last configuration step is installation of the driver in memory by calling :cpp:func:`rmt_driver_install`. If `rx_buf_size` parameter of this function is > 0, then a ring buffer for incoming data will be allocated. A default ISR handler will be installed, see a note in `Use Interrupts`_.
 
 Now, depending on how the channel is configured, we are ready to either `Transmit Data`_ or `Receive Data`_. This is described in next two sections.
 
@@ -264,7 +264,7 @@ Transmit Mode Parameters
 .. only:: SOC_RMT_SUPPORT_TX_LOOP_COUNT
 
     * Enable or disable loop count feature to automatically transmit items for N iterations, then trigger an ISR callback - :cpp:func:`rmt_set_tx_loop_count`
-    * Enable automatically stopping when the number of iterations matches the set loop count. Note this is not reliable for target that doesn't support `SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP`. - :cpp:func:`rmt_enable_tx_loop_autostop`
+    * Enable automatically stopping when the number of iterations matches the set loop count. Note this is not reliable for target that doesn't support `SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP`. - :cpp:func:`rmt_enable_tx_loop_autostop`
 
 
 Receive Mode Parameters
@@ -290,8 +290,6 @@ The RMT controller triggers interrupts on four specific events describes below. 
 * The RMT transmitter has finished transmitting the signal - :cpp:func:`rmt_set_tx_intr_en`
 * The number of events the transmitter has sent matches a threshold value :cpp:func:`rmt_set_tx_thr_intr_en`
 * Ownership to the RMT memory block has been violated - :cpp:func:`rmt_set_err_intr_en`
-
-Setting or clearing an interrupt enable mask for specific channels and events may be also done by calling :cpp:func:`rmt_set_intr_enable_mask` or :cpp:func:`rmt_clr_intr_enable_mask`.
 
 When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 

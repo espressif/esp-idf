@@ -10,6 +10,7 @@
 #include "esp_netif_ppp.h"
 #include "esp_netif_slip.h"
 #include "lwip/netif.h"
+#include "dhcpserver/dhcpserver.h"
 
 #ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
 
@@ -101,20 +102,14 @@ struct esp_netif_obj {
     void (*lwip_input_fn)(void *input_netif_handle, void *buffer, size_t len, void *eb);
     void * netif_handle;    // netif impl context (either vanilla lwip-netif or ppp_pcb)
     netif_related_data_t *related_data; // holds additional data for specific netifs
-
+#if ESP_DHCPS
+    dhcps_t *dhcps;
+#endif
     // io driver related
     void* driver_handle;
     esp_err_t (*driver_transmit)(void *h, void *buffer, size_t len);
     esp_err_t (*driver_transmit_wrap)(void *h, void *buffer, size_t len, void *pbuf);
     void (*driver_free_rx_buffer)(void *h, void* buffer);
-#if CONFIG_ESP_NETIF_L2_TAP
-    SemaphoreHandle_t transmit_mutex;
-
-    // L2 manipulation hooks
-    esp_err_t (*transmit_hook)(void *h, void **buffer, size_t *len);
-    void (*post_transmit_hook)(void *h, void *buffer, size_t len);
-    esp_err_t (*receive_hook)(void *h, void *buffer, size_t *len);
-#endif
 
     // dhcp related
     esp_netif_dhcp_status_t dhcpc_status;

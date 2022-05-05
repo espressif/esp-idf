@@ -1,7 +1,7 @@
 /*
  * ESP BLE Mesh Example
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -422,7 +422,7 @@ static void handle_sync_timeout(void *arg)
 {
     static bool run_first = true;
     if (run_first == true) {
-        xSemaphoreTake((SemaphoreHandle_t)arg, (portTickType)portMAX_DELAY);
+        xSemaphoreTake((SemaphoreHandle_t)arg, (TickType_t)portMAX_DELAY);
         esp_timer_start_periodic( (esp_timer_handle_t)arg, 1000000);
         run_first = false;
     }

@@ -13,6 +13,7 @@
 #include "soc/usb_pins.h"
 #include "tinyusb.h"
 #include "descriptors_control.h"
+#include "usb_descriptors.h"
 #include "tusb.h"
 #include "tusb_tasks.h"
 
@@ -21,8 +22,9 @@ static usb_phy_handle_t phy_hdl;
 
 esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
 {
-    tusb_desc_device_t *dev_descriptor;
+    const tusb_desc_device_t *dev_descriptor;
     const char **string_descriptor;
+    const uint8_t *cfg_descriptor;
     ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     // Configure USB PHY
@@ -46,10 +48,11 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
     }
     ESP_RETURN_ON_ERROR(usb_new_phy(&phy_conf, &phy_hdl), TAG, "Install USB PHY failed");
 
-    dev_descriptor = config->descriptor ? config->descriptor : &descriptor_kconfig;
+    dev_descriptor = config->device_descriptor ? config->device_descriptor : &descriptor_dev_kconfig;
     string_descriptor = config->string_descriptor ? config->string_descriptor : descriptor_str_kconfig;
+    cfg_descriptor = config->configuration_descriptor ? config->configuration_descriptor : descriptor_cfg_kconfig;
 
-    tusb_set_descriptor(dev_descriptor, string_descriptor);
+    tusb_set_descriptor(dev_descriptor, string_descriptor, cfg_descriptor);
 
     ESP_RETURN_ON_FALSE(tusb_init(), ESP_FAIL, TAG, "Init TinyUSB stack failed");
 #if !CONFIG_TINYUSB_NO_DEFAULT_TASK

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,7 +73,7 @@ portMUX_TYPE adc_reg_lock = portMUX_INITIALIZER_UNLOCKED;
 ---------------------------------------------------------------*/
 typedef struct adc_digi_context_t {
     uint8_t                         *rx_dma_buf;                //dma buffer
-    adc_hal_context_t               hal;                        //hal context
+    adc_hal_dma_ctx_t               hal;                        //hal context
 #if SOC_GDMA_SUPPORTED
     gdma_channel_handle_t           rx_dma_channel;             //dma rx channel handle
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -102,24 +102,26 @@ extern esp_pm_lock_handle_t adc_digi_arbiter_lock;
 #endif  //CONFIG_PM_ENABLE
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
-uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan, adc_atten_t atten);
+uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten);
 #endif
 
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
 ---------------------------------------------------------------*/
 //Function to address transaction
-static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
+static bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
 
 #if SOC_GDMA_SUPPORTED
-static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+static bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 #else
-static IRAM_ATTR void adc_dma_intr_handler(void *arg);
+static void adc_dma_intr_handler(void *arg);
 #endif
 
-static int8_t adc_digi_get_io_num(uint8_t adc_unit, uint8_t adc_channel)
+static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 {
-    return adc_channel_io_map[adc_unit][adc_channel];
+    assert(adc_unit <= SOC_ADC_PERIPH_NUM);
+    uint8_t adc_n = (adc_unit == ADC_UNIT_1) ? 0 : 1;
+    return adc_channel_io_map[adc_n][adc_channel];
 }
 
 static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
@@ -197,13 +199,13 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 
     //init gpio pins
     if (init_config->adc1_chan_mask) {
-        ret = adc_digi_gpio_init(ADC_NUM_1, init_config->adc1_chan_mask);
+        ret = adc_digi_gpio_init(ADC_UNIT_1, init_config->adc1_chan_mask);
         if (ret != ESP_OK) {
             goto cleanup;
         }
     }
     if (init_config->adc2_chan_mask) {
-        ret = adc_digi_gpio_init(ADC_NUM_2, init_config->adc2_chan_mask);
+        ret = adc_digi_gpio_init(ADC_UNIT_2, init_config->adc2_chan_mask);
         if (ret != ESP_OK) {
             goto cleanup;
         }
@@ -270,7 +272,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     }
 #endif
 
-    adc_hal_config_t config = {
+    adc_hal_dma_config_t config = {
 #if SOC_GDMA_SUPPORTED
         .dev = (void *)GDMA_LL_GET_HW(0),
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -282,14 +284,16 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
         .dma_chan = dma_chan,
         .eof_num = init_config->conv_num_each_intr / ADC_HAL_DATA_LEN_PER_CONV
     };
-    adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
+    adc_hal_dma_ctx_config(&s_adc_digi_ctx->hal, &config);
 
-    //enable SARADC module clock
+    //enable ADC digital part
     periph_module_enable(PERIPH_SARADC_MODULE);
+    //reset ADC digital part
+    periph_module_reset(PERIPH_SARADC_MODULE);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
-    adc_hal_calibration_init(ADC_NUM_1);
-    adc_hal_calibration_init(ADC_NUM_2);
+    adc_hal_calibration_init(ADC_UNIT_1);
+    adc_hal_calibration_init(ADC_UNIT_2);
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
     return ret;
@@ -381,23 +385,22 @@ esp_err_t adc_digi_start(void)
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
         if (s_adc_digi_ctx->use_adc1) {
-            uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc1_atten);
-            adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
+            uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_1, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc1_atten);
+            adc_hal_set_calibration_param(ADC_UNIT_1, cal_val);
         }
         if (s_adc_digi_ctx->use_adc2) {
-            uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc2_atten);
-            adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
+            uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_2, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc2_atten);
+            adc_hal_set_calibration_param(ADC_UNIT_2, cal_val);
         }
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
-        adc_hal_init();
 #if SOC_ADC_ARBITER_SUPPORTED
         adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
         adc_hal_arbiter_config(&config);
 #endif  //#if SOC_ADC_ARBITER_SUPPORTED
 
-        adc_hal_set_controller(ADC_NUM_1, ADC_HAL_CONTINUOUS_READ_MODE);
-        adc_hal_set_controller(ADC_NUM_2, ADC_HAL_CONTINUOUS_READ_MODE);
+        adc_hal_set_controller(ADC_UNIT_1, ADC_HAL_CONTINUOUS_READ_MODE);
+        adc_hal_set_controller(ADC_UNIT_2, ADC_HAL_CONTINUOUS_READ_MODE);
 
         adc_hal_digi_init(&s_adc_digi_ctx->hal);
         adc_hal_digi_controller_config(&s_adc_digi_ctx->hal, &s_adc_digi_ctx->hal_digi_ctrlr_cfg);
@@ -479,7 +482,7 @@ esp_err_t adc_digi_read_bytes(uint8_t *buf, uint32_t length_max, uint32_t *out_l
     uint8_t *data = NULL;
     size_t size = 0;
 
-    ticks_to_wait = timeout_ms / portTICK_RATE_MS;
+    ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
     if (timeout_ms == ADC_MAX_DELAY) {
         ticks_to_wait = portMAX_DELAY;
     }
@@ -600,7 +603,7 @@ esp_err_t adc_digi_controller_configure(const adc_digi_configuration_t *config)
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->pattern_num; i++) {
         const adc_digi_pattern_config_t *pat = &config->adc_pattern[i];
-        if (pat->unit == ADC_NUM_1) {
+        if (pat->unit == ADC_UNIT_1) {
             s_adc_digi_ctx->use_adc1 = 1;
 
             if (s_adc_digi_ctx->adc1_atten == atten_uninitialized) {
@@ -608,7 +611,7 @@ esp_err_t adc_digi_controller_configure(const adc_digi_configuration_t *config)
             } else if (s_adc_digi_ctx->adc1_atten != pat->atten) {
                 return ESP_ERR_INVALID_ARG;
             }
-        } else if (pat->unit == ADC_NUM_2) {
+        } else if (pat->unit == ADC_UNIT_2) {
             //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
             s_adc_digi_ctx->use_adc2 = 1;
 
@@ -637,7 +640,7 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
     uint32_t channel = ADC2_CHANNEL_MAX;
     if (adc_unit == ADC_UNIT_2) {
         for (int i = 0; i < ADC2_CHANNEL_MAX; i++) {
-            if (gpio == ADC_GET_IO_NUM(ADC_NUM_2, i)) {
+            if (gpio == ADC_GET_IO_NUM(ADC_UNIT_2, i)) {
                 channel = i;
                 break;
             }
@@ -648,17 +651,17 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
     }
 
     adc_power_acquire();
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         ADC_ENTER_CRITICAL();
-        adc_hal_vref_output(ADC_NUM_1, channel, true);
+        adc_hal_vref_output(ADC_UNIT_1, channel, true);
         ADC_EXIT_CRITICAL();
-    } else if (adc_unit & ADC_UNIT_2) {
+    } else {    //ADC_UNIT_2
         ADC_ENTER_CRITICAL();
-        adc_hal_vref_output(ADC_NUM_2, channel, true);
+        adc_hal_vref_output(ADC_UNIT_2, channel, true);
         ADC_EXIT_CRITICAL();
     }
 
-    ret = adc_digi_gpio_init(ADC_NUM_2, BIT(channel));
+    ret = adc_digi_gpio_init(ADC_UNIT_2, BIT(channel));
 
     return ret;
 }
@@ -675,14 +678,14 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_NUM_1), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC1 channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC1 channel error");
     ESP_RETURN_ON_FALSE((atten < ADC_ATTEN_MAX), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
 
     esp_err_t ret = ESP_OK;
     s_atten1_single[channel] = atten;
-    ret = adc_digi_gpio_init(ADC_NUM_1, BIT(channel));
+    ret = adc_digi_gpio_init(ADC_UNIT_1, BIT(channel));
 
-    adc_hal_calibration_init(ADC_NUM_1);
+    adc_hal_calibration_init(ADC_UNIT_1);
 
     return ret;
 }
@@ -697,12 +700,12 @@ int adc1_get_raw(adc1_channel_t channel)
     SAR_ADC1_LOCK_ACQUIRE();
 
     adc_atten_t atten = s_atten1_single[channel];
-    uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_1, channel, atten);
-    adc_hal_set_calibration_param(ADC_NUM_1, cal_val);
+    uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_1, channel, atten);
+    adc_hal_set_calibration_param(ADC_UNIT_1, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_atten(ADC_NUM_2, channel, atten);
-    adc_hal_convert(ADC_NUM_1, channel, &raw_out);
+    adc_hal_set_atten(ADC_UNIT_2, channel, atten);
+    adc_hal_convert(ADC_UNIT_1, channel, &raw_out);
     ADC_REG_LOCK_EXIT();
 
     SAR_ADC1_LOCK_RELEASE();
@@ -715,14 +718,14 @@ int adc1_get_raw(adc1_channel_t channel)
 
 esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 {
-    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_NUM_2), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC2 channel error");
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_2), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC2 channel error");
     ESP_RETURN_ON_FALSE((atten <= ADC_ATTEN_11db), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC2 Atten Err");
 
     esp_err_t ret = ESP_OK;
     s_atten2_single[channel] = atten;
-    ret = adc_digi_gpio_init(ADC_NUM_2, BIT(channel));
+    ret = adc_digi_gpio_init(ADC_UNIT_2, BIT(channel));
 
-    adc_hal_calibration_init(ADC_NUM_2);
+    adc_hal_calibration_init(ADC_UNIT_2);
 
     return ret;
 }
@@ -745,12 +748,12 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_hal_arbiter_config(&config);
 
     adc_atten_t atten = s_atten2_single[channel];
-    uint32_t cal_val = adc_get_calibration_offset(ADC_NUM_2, channel, atten);
-    adc_hal_set_calibration_param(ADC_NUM_2, cal_val);
+    uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_2, channel, atten);
+    adc_hal_set_calibration_param(ADC_UNIT_2, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_atten(ADC_NUM_2, channel, atten);
-    ret = adc_hal_convert(ADC_NUM_2, channel, raw_out);
+    adc_hal_set_atten(ADC_UNIT_2, channel, atten);
+    ret = adc_hal_convert(ADC_UNIT_2, channel, raw_out);
     ADC_REG_LOCK_EXIT();
 
     SAR_ADC2_LOCK_RELEASE();
@@ -840,7 +843,7 @@ static uint16_t s_adc_cali_param[SOC_ADC_PERIPH_NUM][ADC_ATTEN_MAX] = {};
 //  1. Semaphore when reading efuse
 //  2. Lock (Spinlock, or Mutex) if we actually do ADC calibration in the future
 //This function shoudn't be called inside critical section or ISR
-uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     if (s_adc_cali_param[adc_n][atten]) {
         ESP_LOGV(ADC_TAG, "Use calibrated val ADC%d atten=%d: %04X", adc_n, atten, s_adc_cali_param[adc_n][atten]);
@@ -872,7 +875,7 @@ uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, a
 }
 
 // Internal function to calibrate PWDET for WiFi
-esp_err_t adc_cal_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+esp_err_t adc_cal_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     adc_hal_calibration_init(adc_n);
     uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten);
@@ -916,7 +919,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
     s_adc_digi_ctx->use_adc2 = 0;
     for (int i = 0; i < config->adc_pattern_len; i++) {
         const adc_digi_pattern_config_t *pat = &s_adc_digi_ctx->hal_digi_ctrlr_cfg.adc_pattern[i];
-        if (pat->unit == ADC_NUM_1) {
+        if (pat->unit == ADC_UNIT_1) {
             s_adc_digi_ctx->use_adc1 = 1;
 
             if (s_adc_digi_ctx->adc1_atten == atten_uninitialized) {
@@ -924,7 +927,7 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
             } else if (s_adc_digi_ctx->adc1_atten != pat->atten) {
                 return ESP_ERR_INVALID_ARG;
             }
-        } else if (pat->unit == ADC_NUM_2) {
+        } else if (pat->unit == ADC_UNIT_2) {
             //See whether ADC2 will be used or not. If yes, the ``sar_adc2_mutex`` should be acquired in the continuous read driver
             s_adc_digi_ctx->use_adc2 = 1;
 

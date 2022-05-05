@@ -13,7 +13,7 @@ set(srcs
     "src/flash_partitions.c"
     "bootloader_flash/src/flash_qio_mode.c"
     "bootloader_flash/src/bootloader_flash_config_${IDF_TARGET}.c"
-    "src/bootloader_efuse_${IDF_TARGET}.c"
+    "src/bootloader_efuse.c"
     )
 
 if(BOOTLOADER_BUILD)

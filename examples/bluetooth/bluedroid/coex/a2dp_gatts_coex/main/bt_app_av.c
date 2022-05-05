@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -45,7 +45,7 @@ static const char *s_a2d_conn_state_str[] = {"Disconnected", "Connecting", "Conn
 static const char *s_a2d_audio_state_str[] = {"Suspended", "Stopped", "Started"};
 static esp_avrc_rn_evt_cap_mask_t s_avrc_peer_rn_cap;
 static _lock_t s_volume_lock;
-static xTaskHandle s_vcs_task_hdl = NULL;
+static TaskHandle_t s_vcs_task_hdl = NULL;
 static uint8_t s_volume = 0;
 static bool s_volume_notify;
 
@@ -314,7 +314,7 @@ static void volume_change_simulation(void *arg)
     ESP_LOGI(BT_RC_TG_TAG, "start volume change simulation");
 
     for (;;) {
-        vTaskDelay(10000 / portTICK_RATE_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
 
         uint8_t volume = (s_volume + 5) & 0x7f;
         volume_set_by_local_host(volume);

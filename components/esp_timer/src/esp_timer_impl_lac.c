@@ -162,7 +162,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
             int64_t delta = (int64_t)alarm.val - (int64_t)now_time;
             if (delta <= 0 && REG_GET_FIELD(INT_ST_REG, TIMG_LACT_INT_ST) == 0) {
                 // new alarm is less than the counter and the interrupt flag is not set
-                offset += abs((int)delta) + TICKS_PER_US * 2;
+                offset += llabs(delta) + TICKS_PER_US * 2;
                 alarm.val = now_time + offset;
             } else {
                 // finish if either (alarm > counter) or the interrupt flag is already set.

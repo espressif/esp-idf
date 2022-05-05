@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -213,7 +213,7 @@ extern const esp_netif_inherent_config_t _g_esp_netif_inherent_slip_config;
 extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
 #endif
 
-#if CONFIG_OPENTHREAD_ENABLED
+#ifdef CONFIG_OPENTHREAD_ENABLED
 /**
 * @brief  Default configuration reference of SLIP client
 */

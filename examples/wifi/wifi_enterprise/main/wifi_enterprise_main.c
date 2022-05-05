@@ -122,15 +122,8 @@ static void initialise_wifi(void)
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = EXAMPLE_WIFI_SSID,
-#if defined(CONFIG_EXAMPLE_WPA3_ENTERPRISE)
-            .pmf_cfg = {
-                .capable = true,
-                .required = false
-            },
-#endif
 #if defined (CONFIG_EXAMPLE_WPA3_192BIT_ENTERPRISE)
             .pmf_cfg = {
-                .capable = true,
                 .required = true
             },
 #endif
@@ -163,6 +156,9 @@ static void initialise_wifi(void)
 #if defined (CONFIG_EXAMPLE_WPA3_192BIT_ENTERPRISE)
     ESP_LOGI(TAG, "Enabling 192 bit certification");
     ESP_ERROR_CHECK(esp_wifi_sta_wpa2_set_suiteb_192bit_certification(true));
+#endif
+#ifdef CONFIG_EXAMPLE_USE_DEFAULT_CERT_BUNDLE
+    ESP_ERROR_CHECK(esp_wifi_sta_wpa2_use_default_cert_bundle(true));
 #endif
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
     ESP_ERROR_CHECK( esp_wifi_start() );

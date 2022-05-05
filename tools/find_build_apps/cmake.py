@@ -63,6 +63,7 @@ class CMakeBuildSystem(BuildSystem):
             build_stderr = log_file
 
         try:
+            os.environ['IDF_TARGET'] = build_item.target
             subprocess.check_call(args, stdout=build_stdout, stderr=build_stderr)
         except subprocess.CalledProcessError as e:
             raise BuildError('Build failed with exit code {}'.format(e.returncode))

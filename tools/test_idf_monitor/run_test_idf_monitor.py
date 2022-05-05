@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
 
@@ -20,6 +9,7 @@ import errno
 import filecmp
 import os
 import pty
+import re
 import socket
 import subprocess
 import sys
@@ -57,6 +47,22 @@ HOST = 'localhost'
 SOCKET_TIMEOUT = 30
 # the test is restarted after failure (idf_monitor has to be killed):
 RETRIES_PER_TEST = 2
+
+COREDUMP_VERSION_REGEX = r'espcoredump\.py v\d+\.[\d\w-]+(\.[\d\w-]+)?'
+
+
+def remove_coredump_version_string(file_path):
+    with open(file_path, 'r') as file:
+        init_text = file.read()
+        modified_text = re.sub(COREDUMP_VERSION_REGEX, '', init_text, re.MULTILINE)
+
+        if not init_text != modified_text:
+            return None
+
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(modified_text.encode())
+
+        return temp_file.name
 
 
 def monitor_timeout(process):
@@ -167,7 +173,10 @@ def test_iteration(runner, test):
         print('\tThe client was closed successfully')
     f1 = IN_DIR + test[2]
     f2 = OUT_DIR + test[2]
+    temp_f1, temp_f2 = remove_coredump_version_string(f1), remove_coredump_version_string(f2)
     print('\tdiff {} {}'.format(f1, f2))
+    if temp_f1 and temp_f2:
+        f1, f2 = temp_f1, temp_f2
     if filecmp.cmp(f1, f2, shallow=False):
         print('\tTest has passed')
     else:

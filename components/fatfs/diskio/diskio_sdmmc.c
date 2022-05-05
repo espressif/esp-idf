@@ -67,6 +67,23 @@ DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
+#if FF_USE_TRIM
+DRESULT ff_sdmmc_trim (BYTE pdrv, DWORD start_sector, DWORD sector_count)
+{
+    sdmmc_card_t* card = s_cards[pdrv];
+    assert(card);
+    sdmmc_erase_arg_t arg;
+
+    arg = sdmmc_can_discard(card) == ESP_OK ? SDMMC_DISCARD_ARG : SDMMC_ERASE_ARG;
+    esp_err_t err = sdmmc_erase_sectors(card, start_sector, sector_count, arg);
+    if (unlikely(err != ESP_OK)) {
+        ESP_LOGE(TAG, "sdmmc_erase_sectors failed (%d)", err);
+        return RES_ERROR;
+    }
+    return RES_OK;
+}
+#endif //FF_USE_TRIM
+
 DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
 {
     sdmmc_card_t* card = s_cards[pdrv];
@@ -82,6 +99,18 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
             return RES_OK;
         case GET_BLOCK_SIZE:
             return RES_ERROR;
+#if FF_USE_TRIM
+        case CTRL_TRIM:
+            /*
+             * limitation with sector erase when used in SDSPI mode
+             * hence return if host is SPI.
+             */
+            if ((card->host.flags & SDMMC_HOST_FLAG_SPI) != 0) {
+                return RES_ERROR;
+            }
+            return ff_sdmmc_trim (pdrv, *((DWORD*)buff), //start_sector
+                    (*((DWORD*)buff + 1) - *((DWORD*)buff) + 1)); //sector_count
+#endif //FF_USE_TRIM
     }
     return RES_ERROR;
 }

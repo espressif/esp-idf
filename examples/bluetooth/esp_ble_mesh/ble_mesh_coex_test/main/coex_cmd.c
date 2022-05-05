@@ -1,7 +1,7 @@
 /*
  * ESP BLE Mesh Example
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
 

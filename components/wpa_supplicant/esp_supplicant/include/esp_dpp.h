@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef ESP_DPP_H
 #define ESP_DPP_H
@@ -79,7 +71,7 @@ void esp_supp_dpp_deinit(void);
   *
   * @param chan_list List of channels device will be available on for listening
   * @param type Bootstrap method type, only QR Code method is supported for now.
-  * @param key (Optional) Private Key used to generate a Bootstrapping Public Key
+  * @param key (Optional) 32 byte Raw Private Key for generating a Bootstrapping Public Key
   * @param info (Optional) Ancilliary Device Information like Serial Number
   *
   * @return

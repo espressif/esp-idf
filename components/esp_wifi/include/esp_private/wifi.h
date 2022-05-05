@@ -6,7 +6,7 @@
 
 /*
  * All the APIs declared here are internal only APIs, it can only be used by
- * espressif internal modules, such as SSC, LWIP, TCPIP adapter etc, espressif
+ * espressif internal modules, such as SSC, LWIP, esp-netif etc, espressif
  * customers are not recommended to use them.
  *
  * If someone really want to use specified APIs declared in here, please contact
@@ -251,6 +251,7 @@ esp_err_t esp_wifi_internal_set_sta_ip(void);
   *
   * @attention 1. If fixed rate is enabled, both management and data frame are transmitted with fixed rate
   * @attention 2. Make sure that the receiver is able to receive the frame with the fixed rate if you want the frame to be received
+  * @attention 3. Not support to set fix rate for espnow and 80211_tx
   *
   * @param  ifx : wifi interface
   * @param  en : false - disable, true - enable

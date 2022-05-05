@@ -24,14 +24,10 @@
 #define TIMER_RESOLUTION_HZ     (1 * 1000 * 1000) // 1MHz resolution
 #define TIMER_ALARM_PERIOD_S    1                 // Alarm period 1s
 
-#if CONFIG_IDF_TARGET_ESP32C3
-#define CPU_FREQ_MHZ            CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
-#endif
-
 #define RECORD_TIME_PREPARE()   uint32_t __t1, __t2
 #define RECORD_TIME_START()     do {__t1 = esp_cpu_get_ccount();} while(0)
 #define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_ccount(); p_time = (__t2 - __t1);} while(0)
-#define GET_US_BY_CCOUNT(t)     ((double)(t)/CPU_FREQ_MHZ)
+#define GET_US_BY_CCOUNT(t)     ((double)(t)/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 
 const static char *TAG = "Example";
 DRAM_ATTR static uint32_t s_t1;
@@ -101,7 +97,7 @@ void app_main(void)
 
     gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = TIMER_RESOLUTION_HZ,
     };

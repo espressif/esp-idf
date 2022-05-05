@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#pragma once
+#ifndef __ESP_RANDOM_H__
+#define __ESP_RANDOM_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -42,3 +43,5 @@ void esp_fill_random(void *buf, size_t len);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __ESP_RANDOM_H__ */

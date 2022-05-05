@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -104,12 +104,12 @@ static int notify_value_count = 0;
 static uint16_t count = SPP_IDX_NB;
 static esp_gattc_db_elem_t *db = NULL;
 static esp_ble_gap_cb_param_t scan_rst;
-static xQueueHandle cmd_reg_queue = NULL;
+static QueueHandle_t cmd_reg_queue = NULL;
 QueueHandle_t spp_uart_queue = NULL;
 
 #ifdef SUPPORT_HEARTBEAT
 static uint8_t  heartbeat_s[9] = {'E','s','p','r','e','s','s','i','f'};
-static xQueueHandle cmd_heartbeat_queue = NULL;
+static QueueHandle_t cmd_heartbeat_queue = NULL;
 #endif
 
 static esp_bt_uuid_t spp_service_uuid = {
@@ -551,7 +551,7 @@ void uart_task(void *pvParameters)
     uart_event_t event;
     for (;;) {
         //Waiting for UART event.
-        if (xQueueReceive(spp_uart_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
+        if (xQueueReceive(spp_uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
             switch (event.type) {
             //Event of UART receving data
             case UART_DATA:

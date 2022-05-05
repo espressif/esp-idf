@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,61 +53,6 @@ typedef enum {
     ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2 = 3,    /**< BLOCK2 */
     ESP_EFUSE_KEY_PURPOSE_MAX,                   /**< MAX PURPOSE*/
 } esp_efuse_purpose_t;
-
-
-/**
- * @brief Permanently update values written to the efuse write registers
- *
- * After updating EFUSE_BLKx_WDATAx_REG registers with new values to
- * write, call this function to permanently write them to efuse.
- *
- * @note Setting bits in efuse is permanent, they cannot be unset.
- *
- * @note Due to this restriction you don't need to copy values to
- * Efuse write registers from the matching read registers, bits which
- * are set in the read register but unset in the matching write
- * register will be unchanged when new values are burned.
- *
- * @note This function is not threadsafe, if calling code updates
- * efuse values from multiple tasks then this is caller's
- * responsibility to serialise.
- *
- * @deprecated Use the batch mode instead of directly call the burn command.
- *
- * After burning new efuses, the read registers are updated to match
- * the new efuse values.
- */
-void esp_efuse_burn_new_values(void) __attribute__ ((deprecated));
-
-/* @brief Write random data to efuse key block write registers
- *
- * @note Caller is responsible for ensuring efuse
- * block is empty and not write protected, before calling.
- *
- * @note Behaviour depends on coding scheme: a 256-bit key is
- * generated and written for Coding Scheme "None", a 192-bit key
- * is generated, extended to 256-bits by the Coding Scheme,
- * and then writtten for 3/4 Coding Scheme.
- *
- * @note This function does not burn the new values, caller should
- * call esp_efuse_burn_new_values() when ready to do this.
- *
- * @deprecated Use the code below instead of this function:
- *
- * @code{c}
- * uint32_t key[8];
- * size_t key_size = 256;
- * if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
- *     key_size = 192;
- * }
- * bootloader_fill_random(key, key_size / 8);
- * esp_efuse_write_block(EFUSE_BLK1, key, 0, key_size);
- * @endcode
- *
- * @param blk_wdata0_reg Address of the first data write register
- * in the block
- */
-void esp_efuse_write_random_key(uint32_t blk_wdata0_reg) __attribute__ ((deprecated));
 
 #ifdef __cplusplus
 }

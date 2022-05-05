@@ -634,7 +634,7 @@ static void queue_set_receiving_task(void *queue_set_handle)
     int no_of_items = BUFFER_SIZE / SMALL_ITEM_SIZE;
     int items_rec_count[NO_OF_RB_TYPES] = {0};
     while (done != pdTRUE) {
-        xQueueSetMemberHandle member = xQueueSelectFromSet(queue_set, TIMEOUT_TICKS);
+        QueueSetMemberHandle_t member = xQueueSelectFromSet(queue_set, TIMEOUT_TICKS);
         //Read from selected ring buffer
         if (xRingbufferCanRead(buffer_handles[0], member) == pdTRUE) {
             //No-split buffer
@@ -764,7 +764,7 @@ TEST_CASE("Test ring buffer ISR", "[esp_ringbuf]")
 
     //Setup timer for ISR
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
     };

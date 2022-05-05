@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,19 +14,10 @@
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
 
-#if CONFIG_ETH_ENABLED
+#ifdef CONFIG_ETH_ENABLED
 #include "esp_eth_netif_glue.h"
 #endif
 
-//
-// Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
-//  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
-//
-#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-#define _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
-#include "tcpip_adapter.h"
-#undef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
-#endif // CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,88 +148,6 @@ esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, vo
  */
 
 /**
- * @defgroup ESP_NETIF_L2_TAP_CTRL ESP-NETIF L2 TAP Control API
- * @brief Functions to control access to ESP-NETIF Data link layer
- */
-
-/** @addtogroup ESP_NETIF_L2_TAP_CTRL
- * @{
- */
-
-/**
- * @brief Add transmit hook callback function reference into ESP-NETIF. This callback function
- *        is then called just prior the ESP-NETIF passes data to network driver.
- *
- * @param[in] esp_netif Handle to esp-netif instance
- * @param[in] hook_fn reference to transmit hook call-back function
- * @return
- *         - ESP_OK - success
- *         - ESP_ERR_INVALID_ARG
- */
-esp_err_t esp_netif_transmit_hook_attach(esp_netif_t *esp_netif, void *hook_fn);
-
-/**
- * @brief Add post transmit hook callback function reference into ESP-NETIF. This callback function
- *        is then called just after the ESP-NETIF passes data to network driver.
- *
- * @note Intention of this function is either to release resources allocated by transmit hook function
- *       or for other use cases such as time stamping, etc.
- *
- * @param[in] esp_netif Handle to esp-netif instance
- * @param[in] hook_fn reference to post transmit hook call-back function
- * @return
- *         - ESP_OK - success
- *         - ESP_ERR_INVALID_ARG
- */
-esp_err_t esp_netif_post_transmit_hook_attach(esp_netif_t *esp_netif, void *hook_fn);
-
-/**
- * @brief Add receive hook callback function reference into ESP-NETIF. This callback function
- *        is then called when network driver receives data.
- *
- * @param[in] esp_netif Handle to esp-netif instance
- * @param[in] hook_fn reference to receive hook callback function
- * @return
- *         - ESP_OK - success
- *         - ESP_ERR_INVALID_ARG
- */
-esp_err_t esp_netif_recv_hook_attach(esp_netif_t *esp_netif, void *hook_fn);
-
-/**
- * @brief Removes reference to previously attachhed transmit hook callback function
- *
- * @param[in] esp_netif Handle to esp-netif instance
- * @return
- *         - ESP_OK - success
- *         - ESP_ERR_INVALID_ARG
- */
-esp_err_t esp_netif_transmit_hook_detach(esp_netif_t *esp_netif);
-
-/**
- * @brief Removes reference to previously attachhed posttransmit hook callback function
- *
- * @param[in] esp_netif Handle to esp-netif instance
- * @return
- *         - ESP_OK - success
- *         - ESP_ERR_INVALID_ARG
- */
-esp_err_t esp_netif_post_transmit_hook_detach(esp_netif_t *esp_netif);
-
-/**
- * @brief Removes reference to previously attachhed receive hook callback function
- *
- * @param[in] esp_netif Handle to esp-netif instance
- * @return
- *         - ESP_OK - success
- *         - ESP_ERR_INVALID_ARG
- */
-esp_err_t esp_netif_recv_hook_detach(esp_netif_t *esp_netif);
-
-/**
- * @}
- */
-
-/**
  * @defgroup ESP_NETIF_LIFECYCLE ESP-NETIF Lifecycle control
  * @brief These APIS define basic building blocks to control network interface lifecycle, i.e.
  * start, stop, set_up or set_down. These functions can be directly used as event handlers
@@ -358,6 +267,18 @@ void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, in
  * @param data
  */
 void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
+
+/**
+ * @brief Manual configuration of the default netif
+ *
+ * This API overrides the automatic configuration of the default interface based on the route_prio
+ * If the selected netif is set default using this API, no other interface could be set-default disregarding
+ * its route_prio number (unless the selected netif gets destroyed)
+ *
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif);
 
 /**
  * @}
@@ -693,9 +614,10 @@ esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
  *
  *   If DHCP server is enabled, the Main DNS Server setting is used by the DHCP server to provide a DNS Server option
  *   to DHCP clients (Wi-Fi stations).
- *   - The default Main DNS server is typically the IP of the Wi-Fi AP interface itself.
+ *   - The default Main DNS server is typically the IP of the DHCP server itself.
  *   - This function can override it by setting server type ESP_NETIF_DNS_MAIN.
- *   - Other DNS Server types are not supported for the Wi-Fi AP interface.
+ *   - Other DNS Server types are not supported for the DHCP server.
+ *   - To propagate the DNS info to client, please stop the DHCP server before using this API.
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in]  type Type of DNS Server to set: ESP_NETIF_DNS_MAIN, ESP_NETIF_DNS_BACKUP, ESP_NETIF_DNS_FALLBACK

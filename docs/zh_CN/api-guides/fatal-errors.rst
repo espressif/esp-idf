@@ -71,7 +71,7 @@
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
-- 如果使能了 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+- 如果使能了 :ref:`CONFIG_ESP_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
 - 如果使能了 :doc:`内核转储 <core_dump>` 功能，系统状态（任务堆栈和寄存器）会被转储到 flash 或者 UART 以供后续分析。
 
@@ -306,6 +306,8 @@ Guru Meditation 错误
 
   - 某些外部设备意外连接到 SPI flash 的管脚上，干扰了 {IDF_TARGET_NAME} 和 SPI flash 之间的通信。
 
+- 在 C++ 代码中，退出 non-void 函数而无返回值被认为是未定义的行为。启用优化后，编译器通常会忽略此类函数的结尾，导致 |ILLEGAL_INSTR_MSG| 异常。默认情况下，ESP-IDF 构建系统启用 ``-Werror=return-type``，这意味着缺少返回语句会被视为编译时错误。但是，如果应用程序项目禁用了编译器警告，可能就无法检测到该问题，在运行时就会出现 |ILLEGAL_INSTR_MSG| 异常。
+
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     InstrFetchProhibited
@@ -400,7 +402,7 @@ Interrupt wdt timeout on CPU0 / CPU1
 掉电
 ^^^^
 
-{IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` 和 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+{IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP_BROWNOUT_DET` 和 :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
 
 当掉电检测器被触发时，会打印如下信息::
 
@@ -508,6 +510,7 @@ UBSAN 输出
     0x400db99c: app_main at main.c:56 (discriminator 1)
 
 UBSAN 报告的错误类型为以下几种：
+
 
 .. list-table::
   :widths: 40 60

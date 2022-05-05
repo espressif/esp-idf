@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
 
 import csv
@@ -396,6 +398,17 @@ app,app, factory, 32K, 1M
             t = gen_esp32part.PartitionTable.from_csv(csv)
             t.verify()
 
+        csv = """
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9420,  0x6000,
+phy_init, data, phy,     ,        0x1000,
+factory,  app,  factory, ,        1M,
+
+"""
+        with self.assertRaisesRegex(gen_esp32part.ValidationError, r'Offset.+not aligned'):
+            t = gen_esp32part.PartitionTable.from_csv(csv)
+            t.verify()
+
     def test_only_one_otadata(self):
         csv_txt = """
 # Name,Type, SubType,Offset,Size
@@ -451,21 +464,16 @@ ota_1,             0,  ota_1,          , 1M,
             self.assertIn('WARNING', sys.stderr.getvalue())
             self.assertIn('partition subtype', sys.stderr.getvalue())
 
-            sys.stderr = io.StringIO()
-            csv_3 = 'nvs, data, nvs, 0x8800, 32k'
-            gen_esp32part.PartitionTable.from_csv(csv_3).verify()
-            self.assertIn('WARNING', sys.stderr.getvalue())
-            self.assertIn('not aligned to 0x1000', sys.stderr.getvalue())
-
-            sys.stderr = io.StringIO()
-            csv_4 = 'factory, app, factory, 0x10000, 0x100100\n' \
-                    'nvs, data, nvs, , 32k'
-            gen_esp32part.PartitionTable.from_csv(csv_4).verify()
-            self.assertIn('WARNING', sys.stderr.getvalue())
-            self.assertIn('not aligned to 0x1000', sys.stderr.getvalue())
-
         finally:
             sys.stderr = sys.__stderr__
+
+    def test_size_error(self):
+        csv_txt = """
+factory, app, factory, 0x10000, 20M
+        """
+        with self.assertRaisesRegex(gen_esp32part.InputError, r'does not fit'):
+            t = gen_esp32part.PartitionTable.from_csv(csv_txt)
+            t.verify_size_fits(16 * 1024 * 1024)
 
 
 class PartToolTests(Py23TestCase):

@@ -58,33 +58,15 @@ The :cpp:type:`mesh_event_id_t` defines all possible ESP-WIFI-MESH events and ca
 Typical use cases of mesh events include using events such as :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, :cpp:enumerator:`IP_EVENT_STA_GOT_IP` and :cpp:enumerator:`IP_EVENT_STA_LOST_IP` can be used to indicate when the root node can and cannot transmit data to the external IP network.
 
 .. warning::
-    When using ESP-WIFI-MESH under self-organized mode, users must ensure that no calls to Wi-Fi API are made. This is due to the fact that the self-organizing mode will internally make Wi-Fi API calls to connect/disconnect/scan etc. **Any Wi-Fi calls from the application (including calls from callbacks and handlers of Wi-Fi events) may interfere with ESP-WIFI-MESH's self-organizing behavior**. Therefore, user's should not call Wi-Fi APIs after :cpp:func:`esp_mesh_start` is called, and before :cpp:func:`esp_mesh_stop` is called.
+    When using ESP-WIFI-MESH under self-organized mode, users must ensure that no calls to Wi-Fi API are made. This is due to the fact that the self-organizing mode will internally make Wi-Fi API calls to connect/disconnect/scan etc. **Any Wi-Fi calls from the application (including calls from callbacks and handlers of Wi-Fi events) may interfere with ESP-WIFI-MESH's self-organizing behavior**. Therefore, users should not call Wi-Fi APIs after :cpp:func:`esp_mesh_start` is called, and before :cpp:func:`esp_mesh_stop` is called.
 
 LwIP & ESP-WIFI-MESH
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The application can access the ESP-WIFI-MESH stack directly without having to go through the LwIP stack. The LwIP stack is only required by the root node to transmit/receive data to/from an external IP network. However, since every node can potentially become the root node (due to automatic root node selection), each node must still initialize the LwIP stack.
 
-**Each node is required to initialize LwIP by calling** :cpp:func:`tcpip_adapter_init`. In order to prevent non-root node access to LwIP, the application should stop the following services after LwIP initialization:
+**Each node that could become root is required to initialize LwIP by calling** :cpp:func:`esp_netif_init`. In order to prevent non-root node access to LwIP, the application should not create or register any network interfaces using esp_netif APIs.
 
-    - DHCP server service on the softAP interface.
-    - DHCP client service on the station interface.
-
-The following code snippet demonstrates how to initialize LwIP for ESP-WIFI-MESH applications.
-
-.. code-block:: c
-
-    /*  tcpip initialization */
-    tcpip_adapter_init();
-    /*
-     * for mesh
-     * stop DHCP server on softAP interface by default
-     * stop DHCP client on station interface by default
-     */
-    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
-    ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
-
-.. note::
 
     ESP-WIFI-MESH requires a root node to be connected with a router. Therefore, in the event that a node becomes the root, **the corresponding handler must start the DHCP client service and immediately obtain an IP address**. Doing so will allow other nodes to begin transmitting/receiving packets to/from the external IP network. However, this step is unnecessary if static IP settings are used.
 
@@ -100,14 +82,7 @@ The prerequisites for starting ESP-WIFI-MESH is to initialize LwIP and Wi-Fi, Th
 
 .. code-block:: c
 
-    tcpip_adapter_init();
-    /*
-     * for mesh
-     * stop DHCP server on softAP interface by default
-     * stop DHCP client on station interface by default
-     */
-    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
-    ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
+    ESP_ERROR_CHECK(esp_netif_init());
 
     /*  event initialization */
     ESP_ERROR_CHECK(esp_event_loop_create_default());

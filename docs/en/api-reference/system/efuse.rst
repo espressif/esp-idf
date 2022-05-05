@@ -1,6 +1,8 @@
 eFuse Manager
 =============
 
+{IDF_TARGET_CODING_SCHEMES:default="Reed-Solomon", esp32="3/4 or Repeat"}
+
 
 Introduction
 ------------
@@ -215,6 +217,12 @@ Supported coding scheme
 
 To write some fields into one block, or different blocks in one time, you need to use ``the batch writing mode``. Firstly set this mode through :cpp:func:`esp_efuse_batch_write_begin` function then write some fields as usual using the ``esp_efuse_write_...`` functions. At the end to burn them, call the :cpp:func:`esp_efuse_batch_write_commit` function. It burns prepared data to the eFuse blocks and disables the ``batch recording mode``.
 
+.. note::
+
+    If there is already pre-written data in the eFuse block using the ``{IDF_TARGET_CODING_SCHEMES}`` encoding scheme, then it is not possible to write anything extra (even if the required bits are empty) without breaking the previous encoding data. This encoding data will be overwritten with new encoding data and completely destroyed (however, the payload eFuses are not damaged). It can be related to: CUSTOM_MAC, SPI_PAD_CONFIG_HD, SPI_PAD_CONFIG_CS, etc. Please contact Espressif to order the required pre-burnt eFuses.
+
+    FOR TESTING ONLY (NOT RECOMMENDED): You can ignore or suppress errors that violate encoding scheme data in order to burn the necessary bits in the eFuse block.
+
 eFuse API
 ---------
 
@@ -369,4 +377,5 @@ esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits 
    .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 
 
-.. include-build-file:: inc/esp_efuse.inc
+.. include-build-file:: inc/components/efuse/{IDF_TARGET_PATH_NAME}/include/esp_efuse.inc
+.. include-build-file:: inc/components/efuse/include/esp_efuse.inc

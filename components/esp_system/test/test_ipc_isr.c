@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,7 @@ static bool volatile s_stop;
 
 static void task_asm(void *arg)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) arg;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
     int val;
     int counter = 0;
     printf("task_asm\n");
@@ -72,7 +72,7 @@ static void task_asm(void *arg)
 
 TEST_CASE("Test ipc_isr two tasks use IPC function calls", "[ipc]")
 {
-    xSemaphoreHandle exit_sema[2];
+    SemaphoreHandle_t exit_sema[2];
     exit_sema[0] = xSemaphoreCreateBinary();
     exit_sema[1] = xSemaphoreCreateBinary();
     s_stop = false;

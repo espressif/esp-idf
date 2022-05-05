@@ -88,6 +88,10 @@ The ``main`` task is one of multiple tasks that are automatically spawned by ESP
           - CPU0 and CPU1
           - 0
           - Idle task created for (and pinned to) each CPU
+    
+    .. note::
+
+        Low priority numbers denote low priority tasks.
 
 Task API
 --------

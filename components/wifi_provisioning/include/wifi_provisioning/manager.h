@@ -1,22 +1,15 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <protocomm.h>
 
 #include "esp_event.h"
+#include "esp_wifi_types.h"
 #include "wifi_provisioning/wifi_config.h"
 
 #ifdef __cplusplus
@@ -483,25 +476,6 @@ esp_err_t wifi_prov_mgr_endpoint_register(const char *ep_name,
  * @param[in] ep_name  Name of the endpoint
  */
 void wifi_prov_mgr_endpoint_unregister(const char *ep_name);
-
-/**
- * @brief   Event handler for provisioning manager
- *
- * This is called from the main event handler and controls the
- * provisioning manager's internal state machine depending on
- * incoming Wi-Fi events
- *
- * @note : This function is DEPRECATED, because events are now
- * handled internally using the event loop library, esp_event.
- * Calling this will do nothing and simply return ESP_OK.
- *
- * @param[in] ctx   Event context data
- * @param[in] event Event info
- *
- * @return
- *  - ESP_OK : Event handled successfully
- */
-esp_err_t wifi_prov_mgr_event_handler(void *ctx, system_event_t *event) __attribute__ ((deprecated));
 
 /**
  * @brief   Get state of Wi-Fi Station during provisioning

@@ -19,7 +19,7 @@
 #include "esp32s2/memprot.h"
 #include "esp_fault.h"
 #include "esp_cpu.h"
-#include "esp32s2/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 
 extern int _iram_text_end;
 extern int _data_start;
@@ -125,18 +125,18 @@ esp_err_t esp_memprot_intr_init(mem_type_prot_t mem_type)
     switch (mem_type) {
     case MEMPROT_IRAM0_SRAM:
     case MEMPROT_IRAM0_RTCFAST:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_iram0_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_iram0_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
         break;
     case MEMPROT_DRAM0_SRAM:
     case MEMPROT_DRAM0_RTCFAST:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_dram0_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_dram0_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
         break;
     case MEMPROT_PERI1_RTCSLOW:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_peri1_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_peri1_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
         break;
     case MEMPROT_PERI2_RTCSLOW_0:
     case MEMPROT_PERI2_RTCSLOW_1:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_peri2_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_peri2_get_intr_source_num(), ETS_MEMACCESS_ERR_INUM);
         break;
     default:
         return ESP_ERR_NOT_SUPPORTED;

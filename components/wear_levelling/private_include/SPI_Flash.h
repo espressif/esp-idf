@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef _SPI_Flash_H_
 #define _SPI_Flash_H_
 

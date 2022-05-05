@@ -623,8 +623,6 @@ You can also use the following SPI flash API functions:
 - :cpp:func:`esp_flash_read` to read raw (encrypted) data which will not be decrypted
 - :cpp:func:`esp_flash_read_encrypted` to read and decrypt data
 
-The ROM function :cpp:func:`SPIRead` can read data without decryption, however, this function is not supported in esp-idf applications.
-
 Data stored using the Non-Volatile Storage (NVS) API is always stored and read decrypted from the perspective of flash encryption. It is up to the library to provide encryption feature if required. Refer to :ref:`NVS Encryption <nvs_encryption>` for more details.
 
 

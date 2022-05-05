@@ -1,4 +1,12 @@
 /*
+ * SPDX-FileCopyrightText: 2017 Amazon.com, Inc. or its affiliates
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
@@ -53,7 +61,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include <xtensa/config/core.h>
 #include <xtensa/xtensa_context.h>
 #include "soc/soc_caps.h"
@@ -133,7 +140,7 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
     pxCode(pvParameters);
     //FreeRTOS tasks should not return. Log the task name and abort.
-    char *pcTaskName = pcTaskGetTaskName(NULL);
+    char *pcTaskName = pcTaskGetName(NULL);
     ESP_LOGE("FreeRTOS", "FreeRTOS Task \"%s\" should not return, Aborting now!", pcTaskName);
     abort();
 }
@@ -352,32 +359,6 @@ void vPortExitCriticalCompliance(portMUX_TYPE *mux)
 void vPortYieldOtherCore( BaseType_t coreid )
 {
     esp_crosscore_int_send_yield( coreid );
-}
-
-extern void _frxt_setup_switch( void );     //Defined in portasm.S
-
-void IRAM_ATTR vPortEvaluateYieldFromISR(int argc, ...)
-{
-    BaseType_t xYield;
-    va_list ap;
-    va_start(ap, argc);
-
-    if (argc) {
-        xYield = (BaseType_t)va_arg(ap, int);
-        va_end(ap);
-    } else {
-        //it is a empty parameter vPortYieldFromISR macro call:
-        va_end(ap);
-        traceISR_EXIT_TO_SCHEDULER();
-        _frxt_setup_switch();
-        return;
-    }
-
-    //Yield exists, so need evaluate it first then switch:
-    if (xYield == pdTRUE) {
-        traceISR_EXIT_TO_SCHEDULER();
-        _frxt_setup_switch();
-    }
 }
 
 // ------------------- Hook Functions ----------------------

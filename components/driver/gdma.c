@@ -20,19 +20,23 @@
 #include "hal/gdma_hal.h"
 #include "hal/gdma_ll.h"
 #include "soc/gdma_periph.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gdma.h"
 
 static const char *TAG = "gdma";
 
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-#define GDMA_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#if CONFIG_GDMA_ISR_IRAM_SAFE || CONFIG_GDMA_CTRL_FUNC_IN_IRAM
 #define GDMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
 #define GDMA_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
-#endif  // CONFIG_GDMA_ISR_IRAM_SAFE
+#endif
+
+#if CONFIG_GDMA_ISR_IRAM_SAFE
+#define GDMA_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#else
+#define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
+#endif
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
@@ -83,6 +87,7 @@ struct gdma_pair_t {
 struct gdma_channel_t {
     gdma_pair_t *pair;  // which pair the channel belongs to
     intr_handle_t intr; // per-channel interrupt handle
+    portMUX_TYPE spinlock;  // channel level spinlock
     gdma_channel_direction_t direction; // channel direction
     int periph_id; // Peripheral instance ID, indicates which peripheral is connected to this GDMA channel
     size_t sram_alignment;  // alignment for memory in SRAM
@@ -196,6 +201,7 @@ search_done:
         *ret_chan = &alloc_rx_channel->base; // return the installed channel
     }
 
+    (*ret_chan)->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     ESP_LOGD(TAG, "new %s channel (%d,%d) at %p", (config->direction == GDMA_CHANNEL_DIRECTION_TX) ? "tx" : "rx",
              group->group_id, pair->pair_id, *ret_chan);
     return ESP_OK;
@@ -385,9 +391,7 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_eof), ESP_ERR_INVALID_ARG, err, TAG, "on_trans_eof not in IRAM");
     }
     if (user_data) {
-        ESP_GOTO_ON_FALSE(esp_ptr_in_dram(user_data) ||
-                          esp_ptr_in_diram_dram(user_data) ||
-                          esp_ptr_in_rtc_dram_fast(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in DRAM");
+        ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_GDMA_ISR_IRAM_SAFE
 
@@ -423,9 +427,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_eof), ESP_ERR_INVALID_ARG, err, TAG, "on_recv_eof not in IRAM");
     }
     if (user_data) {
-        ESP_GOTO_ON_FALSE(esp_ptr_in_dram(user_data) ||
-                          esp_ptr_in_diram_dram(user_data) ||
-                          esp_ptr_in_rtc_dram_fast(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in DRAM");
+        ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_GDMA_ISR_IRAM_SAFE
 
@@ -451,10 +453,11 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
+    portENTER_CRITICAL_SAFE(&dma_chan->spinlock);
     if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
         gdma_ll_rx_set_desc_addr(group->hal.dev, pair->pair_id, desc_base_addr);
         gdma_ll_rx_start(group->hal.dev, pair->pair_id);
@@ -462,6 +465,7 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
         gdma_ll_tx_set_desc_addr(group->hal.dev, pair->pair_id, desc_base_addr);
         gdma_ll_tx_start(group->hal.dev, pair->pair_id);
     }
+    portEXIT_CRITICAL_SAFE(&dma_chan->spinlock);
 
 err:
     return ret;
@@ -472,15 +476,17 @@ esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
+    portENTER_CRITICAL_SAFE(&dma_chan->spinlock);
     if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
         gdma_ll_rx_stop(group->hal.dev, pair->pair_id);
     } else {
         gdma_ll_tx_stop(group->hal.dev, pair->pair_id);
     }
+    portEXIT_CRITICAL_SAFE(&dma_chan->spinlock);
 
 err:
     return ret;
@@ -491,15 +497,17 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan)
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
+    portENTER_CRITICAL_SAFE(&dma_chan->spinlock);
     if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
         gdma_ll_rx_restart(group->hal.dev, pair->pair_id);
     } else {
         gdma_ll_tx_restart(group->hal.dev, pair->pair_id);
     }
+    portEXIT_CRITICAL_SAFE(&dma_chan->spinlock);
 
 err:
     return ret;
@@ -510,15 +518,17 @@ esp_err_t gdma_reset(gdma_channel_handle_t dma_chan)
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
     gdma_group_t *group = NULL;
-    ESP_GOTO_ON_FALSE(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE_ISR(dma_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     pair = dma_chan->pair;
     group = pair->group;
 
+    portENTER_CRITICAL_SAFE(&dma_chan->spinlock);
     if (dma_chan->direction == GDMA_CHANNEL_DIRECTION_RX) {
         gdma_ll_rx_reset_channel(group->hal.dev, pair->pair_id);
     } else {
         gdma_ll_tx_reset_channel(group->hal.dev, pair->pair_id);
     }
+    portEXIT_CRITICAL_SAFE(&dma_chan->spinlock);
 
 err:
     return ret;

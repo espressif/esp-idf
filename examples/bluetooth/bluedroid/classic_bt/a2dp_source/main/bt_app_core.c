@@ -28,8 +28,8 @@ static void bt_app_work_dispatched(bt_app_msg_t *msg);
 /*********************************
  * STATIC VARIABLE DEFINITIONS
  ********************************/
-static xQueueHandle s_bt_app_task_queue = NULL;
-static xTaskHandle s_bt_app_task_handle = NULL;
+static QueueHandle_t s_bt_app_task_queue = NULL;
+static TaskHandle_t s_bt_app_task_handle = NULL;
 
 /*********************************
  * STATIC FUNCTION DEFINITIONS
@@ -41,7 +41,7 @@ static bool bt_app_send_msg(bt_app_msg_t *msg)
         return false;
     }
 
-    if (pdTRUE != xQueueSend(s_bt_app_task_queue, msg, 10 / portTICK_RATE_MS)) {
+    if (pdTRUE != xQueueSend(s_bt_app_task_queue, msg, 10 / portTICK_PERIOD_MS)) {
         ESP_LOGE(BT_APP_CORE_TAG, "%s xQueue send failed", __func__);
         return false;
     }
@@ -62,7 +62,7 @@ static void bt_app_task_handler(void *arg)
 
     for (;;) {
         /* receive message from work queue and handle it */
-        if (pdTRUE == xQueueReceive(s_bt_app_task_queue, &msg, (portTickType)portMAX_DELAY)) {
+        if (pdTRUE == xQueueReceive(s_bt_app_task_queue, &msg, (TickType_t)portMAX_DELAY)) {
             ESP_LOGD(BT_APP_CORE_TAG, "%s, signal: 0x%x, event: 0x%x", __func__, msg.sig, msg.event);
 
             switch (msg.sig) {

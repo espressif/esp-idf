@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,9 @@
 #include "esp_system.h"
 #include "esp32/rom/cache.h"
 #include "sdkconfig.h"
-#include "esp32/himem.h"
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp_himem.h"
 
 #if CONFIG_SPIRAM_BANKSWITCH_ENABLE
 

@@ -84,6 +84,11 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 		params->flags |= TLS_CONN_SUITEB;
 	else
 		params->flags &= (~TLS_CONN_SUITEB);
+
+	if (config->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE)
+		params->flags |= TLS_CONN_USE_DEFAULT_CERT_BUNDLE;
+	else
+		params->flags &= (~TLS_CONN_USE_DEFAULT_CERT_BUNDLE);
 }
 
 static int eap_tls_params_from_conf(struct eap_sm *sm,

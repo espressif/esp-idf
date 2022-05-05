@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,7 @@ TEST_CASE("DAC output (RTC) check by adc", "[dac]")
     printf("adc2_init...\n");
     TEST_ESP_OK( adc2_config_channel_atten( ADC_TEST_CHANNEL_NUM, ADC_TEST_ATTEN ) );
 
-    vTaskDelay(2 * portTICK_RATE_MS);
+    vTaskDelay(2 * portTICK_PERIOD_MS);
 
     printf("start conversion.\n");
     int output_data = 0;
@@ -70,7 +70,7 @@ TEST_CASE("DAC output (RTC) check by adc", "[dac]")
     for (int i = 0; i < DAC_OUT_TIMES; i++) {
         TEST_ESP_OK( dac_output_voltage( DAC_TEST_CHANNEL_NUM, output_data ) );
         output_data += DAC_OUT_STEP;
-        vTaskDelay(2 * portTICK_RATE_MS);
+        vTaskDelay(2 * portTICK_PERIOD_MS);
         TEST_ESP_OK( adc2_get_raw( ADC_TEST_CHANNEL_NUM, ADC_TEST_WIDTH, &read_raw) );
         ESP_LOGI(TAG, "DAC%d - ADC%d", output_data, read_raw);
         if (read_old != 0) {
@@ -110,12 +110,12 @@ TEST_CASE("DAC cw generator output (RTC) check by adc", "[dac]")
     printf("adc2_init...\n");
     TEST_ESP_OK( adc2_config_channel_atten( ADC_TEST_CHANNEL_NUM, ADC_TEST_ATTEN ) );
 
-    vTaskDelay(2 * portTICK_RATE_MS);
+    vTaskDelay(2 * portTICK_PERIOD_MS);
 
     printf("start conversion.\n");
     int read_raw[3] = {0};
     for (int i = 0; i < DAC_TEST_TIMES; i++) {
-        vTaskDelay(10 * portTICK_RATE_MS);
+        vTaskDelay(10 * portTICK_PERIOD_MS);
         TEST_ESP_OK( adc2_get_raw( ADC_TEST_CHANNEL_NUM, ADC_TEST_WIDTH, &read_raw[0]) );
         ESP_LOGI(TAG, "ADC: %d", read_raw[0]);
         /* Should open after dac cali. */

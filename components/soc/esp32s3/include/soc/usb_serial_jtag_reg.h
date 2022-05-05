@@ -1,18 +1,9 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#ifndef _SOC_USB_DEVICE_REG_H_
-#define _SOC_USB_DEVICE_REG_H_
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
 
 
 #ifdef __cplusplus
@@ -20,7 +11,7 @@ extern "C" {
 #endif
 #include "soc.h"
 
-#define USB_SERIAL_JTAG_EP1_REG          (DR_REG_USB_DEVICE_BASE + 0x0)
+#define USB_SERIAL_JTAG_EP1_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x0)
 /* USB_SERIAL_JTAG_RDWR_BYTE : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
 /*description: Write and read byte data to/from UART Tx/Rx FIFO through this field. When USB_DE
 VICE_SERIAL_IN_EMPTY_INT is set, then user can write data (up to 64 bytes) into
@@ -32,7 +23,7 @@ ived, then read data from UART Rx FIFO..*/
 #define USB_SERIAL_JTAG_RDWR_BYTE_V  0xFF
 #define USB_SERIAL_JTAG_RDWR_BYTE_S  0
 
-#define USB_SERIAL_JTAG_EP1_CONF_REG          (DR_REG_USB_DEVICE_BASE + 0x4)
+#define USB_SERIAL_JTAG_EP1_CONF_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x4)
 /* USB_SERIAL_JTAG_SERIAL_OUT_EP_DATA_AVAIL : RO ;bitpos:[2] ;default: 1'b0 ; */
 /*description: 1'b1: Indicate there is data in UART Rx FIFO..*/
 #define USB_SERIAL_JTAG_SERIAL_OUT_EP_DATA_AVAIL    (BIT(2))
@@ -54,7 +45,7 @@ USB Host..*/
 #define USB_SERIAL_JTAG_WR_DONE_V  0x1
 #define USB_SERIAL_JTAG_WR_DONE_S  0
 
-#define USB_SERIAL_JTAG_INT_RAW_REG          (DR_REG_USB_DEVICE_BASE + 0x8)
+#define USB_SERIAL_JTAG_INT_RAW_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x8)
 /* USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT_RAW : R/WTC/SS ;bitpos:[11] ;default: 1'b0 ; */
 /*description: The raw interrupt bit turns to high level when OUT endpoint 2 received packet wi
 th zero palyload..*/
@@ -133,7 +124,7 @@ oint 2 of JTAG..*/
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_RAW_V  0x1
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_RAW_S  0
 
-#define USB_SERIAL_JTAG_INT_ST_REG          (DR_REG_USB_DEVICE_BASE + 0xC)
+#define USB_SERIAL_JTAG_INT_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0xC)
 /* USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT_ST : RO ;bitpos:[11] ;default: 1'b0 ; */
 /*description: The raw interrupt status bit for the USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT interru
 pt..*/
@@ -211,7 +202,7 @@ t..*/
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_ST_V  0x1
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_ST_S  0
 
-#define USB_SERIAL_JTAG_INT_ENA_REG          (DR_REG_USB_DEVICE_BASE + 0x10)
+#define USB_SERIAL_JTAG_INT_ENA_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x10)
 /* USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT_ENA : R/W ;bitpos:[11] ;default: 1'b0 ; */
 /*description: The interrupt enable bit for the USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT interrupt..*/
 #define USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT_ENA    (BIT(11))
@@ -285,7 +276,7 @@ t..*/
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_ENA_V  0x1
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_ENA_S  0
 
-#define USB_SERIAL_JTAG_INT_CLR_REG          (DR_REG_USB_DEVICE_BASE + 0x14)
+#define USB_SERIAL_JTAG_INT_CLR_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x14)
 /* USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT_CLR : WT ;bitpos:[11] ;default: 1'b0 ; */
 /*description: Set this bit to clear the USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT interrupt..*/
 #define USB_SERIAL_JTAG_OUT_EP2_ZERO_PAYLOAD_INT_CLR    (BIT(11))
@@ -359,7 +350,7 @@ t..*/
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_CLR_V  0x1
 #define USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_CLR_S  0
 
-#define USB_SERIAL_JTAG_CONF0_REG          (DR_REG_USB_DEVICE_BASE + 0x18)
+#define USB_SERIAL_JTAG_CONF0_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x18)
 /* USB_SERIAL_JTAG_USB_JTAG_BRIDGE_EN : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: Set this bit usb_jtag, the connection between usb_jtag and internal JTAG is disc
 onnected, and MTMS, MTDI, MTCK are output through GPIO Matrix, MTDO is input thr
@@ -453,7 +444,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_PHY_SEL_V  0x1
 #define USB_SERIAL_JTAG_PHY_SEL_S  0
 
-#define USB_SERIAL_JTAG_TEST_REG          (DR_REG_USB_DEVICE_BASE + 0x1C)
+#define USB_SERIAL_JTAG_TEST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x1C)
 /* USB_SERIAL_JTAG_TEST_RX_DM : RO ;bitpos:[6] ;default: 1'b0 ; */
 /*description: USB D- rx value in test.*/
 #define USB_SERIAL_JTAG_TEST_RX_DM    (BIT(6))
@@ -497,7 +488,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_TEST_ENABLE_V  0x1
 #define USB_SERIAL_JTAG_TEST_ENABLE_S  0
 
-#define USB_SERIAL_JTAG_JFIFO_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x20)
+#define USB_SERIAL_JTAG_JFIFO_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x20)
 /* USB_SERIAL_JTAG_OUT_FIFO_RESET : R/W ;bitpos:[9] ;default: 1'b0 ; */
 /*description: Write 1 to reset JTAG out fifo..*/
 #define USB_SERIAL_JTAG_OUT_FIFO_RESET    (BIT(9))
@@ -547,7 +538,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_IN_FIFO_CNT_V  0x3
 #define USB_SERIAL_JTAG_IN_FIFO_CNT_S  0
 
-#define USB_SERIAL_JTAG_FRAM_NUM_REG          (DR_REG_USB_DEVICE_BASE + 0x24)
+#define USB_SERIAL_JTAG_FRAM_NUM_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x24)
 /* USB_SERIAL_JTAG_SOF_FRAME_INDEX : RO ;bitpos:[10:0] ;default: 11'd0 ; */
 /*description: Frame index of received SOF frame..*/
 #define USB_SERIAL_JTAG_SOF_FRAME_INDEX    0x000007FF
@@ -555,7 +546,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_SOF_FRAME_INDEX_V  0x7FF
 #define USB_SERIAL_JTAG_SOF_FRAME_INDEX_S  0
 
-#define USB_SERIAL_JTAG_IN_EP0_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x28)
+#define USB_SERIAL_JTAG_IN_EP0_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x28)
 /* USB_SERIAL_JTAG_IN_EP0_RD_ADDR : RO ;bitpos:[15:9] ;default: 7'd0 ; */
 /*description: Read data address of IN endpoint 0..*/
 #define USB_SERIAL_JTAG_IN_EP0_RD_ADDR    0x0000007F
@@ -575,7 +566,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_IN_EP0_STATE_V  0x3
 #define USB_SERIAL_JTAG_IN_EP0_STATE_S  0
 
-#define USB_SERIAL_JTAG_IN_EP1_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x2C)
+#define USB_SERIAL_JTAG_IN_EP1_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x2C)
 /* USB_SERIAL_JTAG_IN_EP1_RD_ADDR : RO ;bitpos:[15:9] ;default: 7'd0 ; */
 /*description: Read data address of IN endpoint 1..*/
 #define USB_SERIAL_JTAG_IN_EP1_RD_ADDR    0x0000007F
@@ -595,7 +586,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_IN_EP1_STATE_V  0x3
 #define USB_SERIAL_JTAG_IN_EP1_STATE_S  0
 
-#define USB_SERIAL_JTAG_IN_EP2_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x30)
+#define USB_SERIAL_JTAG_IN_EP2_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x30)
 /* USB_SERIAL_JTAG_IN_EP2_RD_ADDR : RO ;bitpos:[15:9] ;default: 7'd0 ; */
 /*description: Read data address of IN endpoint 2..*/
 #define USB_SERIAL_JTAG_IN_EP2_RD_ADDR    0x0000007F
@@ -615,7 +606,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_IN_EP2_STATE_V  0x3
 #define USB_SERIAL_JTAG_IN_EP2_STATE_S  0
 
-#define USB_SERIAL_JTAG_IN_EP3_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x34)
+#define USB_SERIAL_JTAG_IN_EP3_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x34)
 /* USB_SERIAL_JTAG_IN_EP3_RD_ADDR : RO ;bitpos:[15:9] ;default: 7'd0 ; */
 /*description: Read data address of IN endpoint 3..*/
 #define USB_SERIAL_JTAG_IN_EP3_RD_ADDR    0x0000007F
@@ -635,7 +626,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_IN_EP3_STATE_V  0x3
 #define USB_SERIAL_JTAG_IN_EP3_STATE_S  0
 
-#define USB_SERIAL_JTAG_OUT_EP0_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x38)
+#define USB_SERIAL_JTAG_OUT_EP0_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x38)
 /* USB_SERIAL_JTAG_OUT_EP0_RD_ADDR : RO ;bitpos:[15:9] ;default: 7'd0 ; */
 /*description: Read data address of OUT endpoint 0..*/
 #define USB_SERIAL_JTAG_OUT_EP0_RD_ADDR    0x0000007F
@@ -656,7 +647,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_OUT_EP0_STATE_V  0x3
 #define USB_SERIAL_JTAG_OUT_EP0_STATE_S  0
 
-#define USB_SERIAL_JTAG_OUT_EP1_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x3C)
+#define USB_SERIAL_JTAG_OUT_EP1_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x3C)
 /* USB_SERIAL_JTAG_OUT_EP1_REC_DATA_CNT : RO ;bitpos:[22:16] ;default: 7'd0 ; */
 /*description: Data count in OUT endpoint 1 when one packet is received..*/
 #define USB_SERIAL_JTAG_OUT_EP1_REC_DATA_CNT    0x0000007F
@@ -683,7 +674,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_OUT_EP1_STATE_V  0x3
 #define USB_SERIAL_JTAG_OUT_EP1_STATE_S  0
 
-#define USB_SERIAL_JTAG_OUT_EP2_ST_REG          (DR_REG_USB_DEVICE_BASE + 0x40)
+#define USB_SERIAL_JTAG_OUT_EP2_ST_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x40)
 /* USB_SERIAL_JTAG_OUT_EP2_RD_ADDR : RO ;bitpos:[15:9] ;default: 7'd0 ; */
 /*description: Read data address of OUT endpoint 2..*/
 #define USB_SERIAL_JTAG_OUT_EP2_RD_ADDR    0x0000007F
@@ -704,7 +695,7 @@ ough GPIO Matrix..*/
 #define USB_SERIAL_JTAG_OUT_EP2_STATE_V  0x3
 #define USB_SERIAL_JTAG_OUT_EP2_STATE_S  0
 
-#define USB_SERIAL_JTAG_MISC_CONF_REG          (DR_REG_USB_DEVICE_BASE + 0x44)
+#define USB_SERIAL_JTAG_MISC_CONF_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x44)
 /* USB_SERIAL_JTAG_CLK_EN : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: 1'h1: Force clock on for register. 1'h0: Support clock only when application wri
 tes registers..*/
@@ -713,7 +704,7 @@ tes registers..*/
 #define USB_SERIAL_JTAG_CLK_EN_V  0x1
 #define USB_SERIAL_JTAG_CLK_EN_S  0
 
-#define USB_SERIAL_JTAG_MEM_CONF_REG          (DR_REG_USB_DEVICE_BASE + 0x48)
+#define USB_SERIAL_JTAG_MEM_CONF_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x48)
 /* USB_SERIAL_JTAG_USB_MEM_CLK_EN : R/W ;bitpos:[1] ;default: 1'b1 ; */
 /*description: 1: Force clock on for usb memory..*/
 #define USB_SERIAL_JTAG_USB_MEM_CLK_EN    (BIT(1))
@@ -727,7 +718,7 @@ tes registers..*/
 #define USB_SERIAL_JTAG_USB_MEM_PD_V  0x1
 #define USB_SERIAL_JTAG_USB_MEM_PD_S  0
 
-#define USB_SERIAL_JTAG_DATE_REG          (DR_REG_USB_DEVICE_BASE + 0x80)
+#define USB_SERIAL_JTAG_DATE_REG          (DR_REG_USB_SERIAL_JTAG_BASE + 0x80)
 /* USB_SERIAL_JTAG_DATE : R/W ;bitpos:[31:0] ;default: 32'h2101200 ; */
 /*description: register version..*/
 #define USB_SERIAL_JTAG_DATE    0xFFFFFFFF
@@ -739,7 +730,3 @@ tes registers..*/
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_USB_DEVICE_REG_H_ */

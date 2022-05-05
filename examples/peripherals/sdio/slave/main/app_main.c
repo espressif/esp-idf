@@ -112,7 +112,7 @@ static esp_err_t task_hostint(void)
         sdio_slave_send_host_int(i);
         //check reset for quick response to RESET signal
         if (s_job & JOB_RESET) break;
-        vTaskDelay(500/portTICK_RATE_MS);
+        vTaskDelay(500/portTICK_PERIOD_MS);
     }
     return ESP_OK;
 }

@@ -2,21 +2,11 @@
  *
  * Adapted from the ssl_server example in mbedtls.
  *
- * Original Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- * Additions Copyright (C) Copyright 2019 Espressif Systems (Shanghai) PTE LTD, Apache 2.0 License.
+ * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-FileContributor: 2019-2022 Espressif Systems (Shanghai) CO LTD
  */
 #include "esp_err.h"
 #include "esp_log.h"
@@ -27,14 +17,15 @@
 
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
-#include "mbedtls/certs.h"
 #include "mbedtls/x509.h"
 #include "mbedtls/ssl.h"
+#include "entropy_poll.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/error.h"
 #include "mbedtls/debug.h"
 
 #include "esp_crt_bundle.h"
+#include "esp_random.h"
 
 #include "unity.h"
 #include "test_utils.h"
@@ -91,6 +82,12 @@ static volatile bool exit_flag;
 
 esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint);
 
+static int myrand(void *rng_state, unsigned char *output, size_t len)
+{
+    size_t olen;
+    return mbedtls_hardware_poll(rng_state, output, len, &olen);
+}
+
 esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
     int ret;
@@ -113,7 +110,7 @@ esp_err_t server_setup(mbedtls_endpoint_t *server)
     }
 
     ret =  mbedtls_pk_parse_key( &server->pkey, (const unsigned char *)server_pk_start,
-                                 server_pk_end - server_pk_start, NULL, 0 );
+                                 server_pk_end - server_pk_start, NULL, 0, myrand, NULL );
     if ( ret != 0 ) {
         ESP_LOGE(TAG, "mbedtls_pk_parse_key returned %d", ret );
         return ESP_FAIL;
@@ -160,7 +157,7 @@ void server_task(void *pvParameters)
 {
     int ret;
     mbedtls_endpoint_t server;
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
 
 
     if (server_setup(&server) != ESP_OK) {
@@ -256,7 +253,7 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
     return ESP_OK;
 }
 
-int client_task(const uint8_t *bundle, esp_crt_validate_res_t *res)
+int client_task(const uint8_t *bundle, size_t bundle_size, esp_crt_validate_res_t *res)
 {
     int ret = ESP_FAIL;
 
@@ -272,7 +269,7 @@ int client_task(const uint8_t *bundle, esp_crt_validate_res_t *res)
     esp_crt_bundle_attach(&client.conf);
     if (bundle) {
         /* Set a bundle different from the menuconfig bundle */
-        esp_crt_bundle_set(bundle);
+        esp_crt_bundle_set(bundle, bundle_size);
     }
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
@@ -320,7 +317,7 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    test_case_uses_tcpip();
 
-   xSemaphoreHandle signal_sem = xSemaphoreCreateBinary();
+   SemaphoreHandle_t signal_sem = xSemaphoreCreateBinary();
    TEST_ASSERT_NOT_NULL(signal_sem);
 
    exit_flag = false;
@@ -332,11 +329,11 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
    }
 
    /* Test with default crt bundle that doesnt contain the ca crt */
-   client_task(NULL, &validate_res);
+   client_task(NULL, 0, &validate_res);
    TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_FAIL);
 
    /* Test with bundle that does contain the CA crt */
-   client_task(server_cert_bundle_start, &validate_res);
+   client_task(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start, &validate_res);
    TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_OK);
 
    exit_flag = true;
@@ -392,6 +389,53 @@ TEST_CASE("custom certificate bundle - wrong signature", "[mbedtls]")
     mbedtls_x509_crt_parse(&crt, correct_sig_crt_pem_start, correct_sig_crt_pem_end - correct_sig_crt_pem_start);
     TEST_ASSERT(mbedtls_x509_crt_verify(&crt, NULL, NULL, NULL, &flags, esp_crt_verify_callback, NULL) == 0);
     mbedtls_x509_crt_free(&crt);
+
+    esp_crt_bundle_detach(NULL);
+}
+
+TEST_CASE("custom certificate bundle init API - bound checking", "[mbedtls]")
+{
+
+    uint8_t test_bundle[256] = {0};
+    esp_err_t esp_ret;
+    /* The API should fail with bundle size given as 1 */
+    esp_ret = esp_crt_bundle_set(test_bundle, 1);
+    TEST_ASSERT( esp_ret == ESP_ERR_INVALID_ARG);
+
+    /* Check that the esp_crt_bundle_set API will not accept a bundle
+     * which has more no. of certs than configured in
+     * CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS */
+
+    uint8_t rand;
+    esp_fill_random(&rand, 1);
+    test_bundle[0] = rand;
+
+    /* Make sure that the number of certs will always be greater than
+     * CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS */
+    test_bundle[1] = rand + CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS;
+
+    esp_ret = esp_crt_bundle_set(test_bundle, sizeof(test_bundle));
+    TEST_ASSERT( esp_ret == ESP_ERR_INVALID_ARG);
+
+    /* The API should fail with bundle_size < BUNDLE_HEADER_OFFSET (2) + CRT_HEADER_OFFSET (4) */
+    test_bundle[0] = 0;
+    test_bundle[1] = 1; /* set num_certs = 1 */
+    esp_ret = esp_crt_bundle_set(test_bundle, 5);
+    TEST_ASSERT(esp_ret == ESP_ERR_INVALID_ARG);
+
+    /* Cert number is greater than actual certs present, The API should fail */
+    /* Actual No. of certs present in bundle = 1, setting num_certs to 5 */
+    test_bundle[1] = 5; /* num_certs */
+    test_bundle[3] = 5; /* cert_1_name_len */
+    test_bundle[5] = 10; /* cert_1_pub_key_len */
+    /* Actual bundle size becomes BUNDLE_HEADER_OFFSET (2) + CRT_HEADER_OFFSET (4) + cert_1_name_len(5) + cert_1_pub_key_len(10)
+     * i.e. 21 bytes */
+    esp_ret = esp_crt_bundle_set(test_bundle, 21);
+    TEST_ASSERT(esp_ret == ESP_ERR_INVALID_ARG);
+
+    /* The API should fail if bundle_size < BUNDLE_HEADER_OFFSET (2) + CRT_HEADER_OFFSET (4) + cert_1_name_len(5) + cert_1_pub_key_len(10) */
+    esp_ret = esp_crt_bundle_set(test_bundle, 20);
+    TEST_ASSERT(esp_ret == ESP_ERR_INVALID_ARG);
 
     esp_crt_bundle_detach(NULL);
 }

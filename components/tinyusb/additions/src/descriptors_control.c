@@ -4,48 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include "esp_log.h"
 #include "descriptors_control.h"
 
 static const char *TAG = "tusb_desc";
-static tusb_desc_device_t s_descriptor;
+static tusb_desc_device_t s_device_descriptor;
+static const uint8_t *s_configuration_descriptor;
 static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
 #define MAX_DESC_BUF_SIZE 32
-
-#define EPNUM_MSC ((CFG_TUD_CDC * 2) + 1)
-#define EPNUM_HID (EPNUM_MSC + 1)
-
-#if CFG_TUD_HID //HID Report Descriptor
-uint8_t const desc_hid_report[] = {
-    TUD_HID_REPORT_DESC_KEYBOARD(HID_REPORT_ID(REPORT_ID_KEYBOARD), ),
-    TUD_HID_REPORT_DESC_MOUSE(HID_REPORT_ID(REPORT_ID_MOUSE), )
-};
-#endif
-
-uint8_t const desc_configuration[] = {
-    // interface count, string index, total length, attribute, power in mA
-    TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
-
-#   if CFG_TUD_CDC
-    // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, 64),
-#   endif
-
-#   if CFG_TUD_CDC > 1
-    // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC1, 4, 0x83, 8, 0x04, 0x84, 64),
-#   endif
-
-#   if CFG_TUD_MSC
-    // Interface number, string index, EP Out & EP In address, EP size
-    TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
-#   endif
-
-#   if CFG_TUD_HID
-    // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x80 | EPNUM_HID, 16, 10)
-#   endif
-};
 
 // =============================================================================
 // CALLBACKS
@@ -59,7 +26,7 @@ uint8_t const desc_configuration[] = {
  */
 uint8_t const *tud_descriptor_device_cb(void)
 {
-    return (uint8_t const *)&s_descriptor;
+    return (uint8_t const *)&s_device_descriptor;
 }
 
 /**
@@ -72,7 +39,7 @@ uint8_t const *tud_descriptor_device_cb(void)
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index)
 {
     (void)index; // for multiple configurations
-    return desc_configuration;
+    return s_configuration_descriptor;
 }
 
 static uint16_t _desc_str[MAX_DESC_BUF_SIZE];
@@ -114,25 +81,11 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
     return _desc_str;
 }
 
-/**
- * @brief Invoked when received GET HID REPORT DESCRIPTOR
- * Application returns pointer to descriptor. Descriptor contents must exist
- * long enough for transfer to complete
- *
- * @return uint8_t const*
- */
-#if CFG_TUD_HID
-uint8_t const *tud_hid_descriptor_report_cb(void)
-{
-    return desc_hid_report;
-}
-#endif
-
 // =============================================================================
 // Driver functions
 // =============================================================================
 
-void tusb_set_descriptor(tusb_desc_device_t *dev_desc, const char **str_desc)
+void tusb_set_descriptor(const tusb_desc_device_t *dev_desc, const char **str_desc, const uint8_t *cfg_desc)
 {
     ESP_LOGI(TAG, "\n"
              "┌─────────────────────────────────┐\n"
@@ -165,7 +118,8 @@ void tusb_set_descriptor(tusb_desc_device_t *dev_desc, const char **str_desc)
              dev_desc->idVendor, dev_desc->idProduct, dev_desc->bcdDevice,
              dev_desc->iManufacturer, dev_desc->iProduct, dev_desc->iSerialNumber,
              dev_desc->bNumConfigurations);
-    s_descriptor = *dev_desc;
+    s_device_descriptor = *dev_desc;
+    s_configuration_descriptor = cfg_desc;
 
     if (str_desc != NULL) {
         memcpy(s_str_descriptor, str_desc,
@@ -175,7 +129,7 @@ void tusb_set_descriptor(tusb_desc_device_t *dev_desc, const char **str_desc)
 
 tusb_desc_device_t *tusb_get_active_desc(void)
 {
-    return &s_descriptor;
+    return &s_device_descriptor;
 }
 
 char **tusb_get_active_str_desc(void)
@@ -185,6 +139,6 @@ char **tusb_get_active_str_desc(void)
 
 void tusb_clear_descriptor(void)
 {
-    memset(&s_descriptor, 0, sizeof(s_descriptor));
+    memset(&s_device_descriptor, 0, sizeof(s_device_descriptor));
     memset(&s_str_descriptor, 0, sizeof(s_str_descriptor));
 }

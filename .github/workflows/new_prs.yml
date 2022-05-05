@@ -15,7 +15,7 @@ jobs:
     name: Sync PRs to Jira
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - name: Sync PRs to Jira project
         uses: espressif/github-actions/sync_issues_to_jira@master
         with:

@@ -12,6 +12,6 @@ from pytest_embedded import Dut
     'release',
 ], indirect=True)
 def test_gptimer(dut: Dut) -> None:
-    dut.expect('Press ENTER to see the list of tests')
+    dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('*')
     dut.expect_unity_test_output()

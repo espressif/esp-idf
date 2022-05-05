@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -25,8 +17,9 @@
 #include "wear_levelling.h"
 #include "diskio_wl.h"
 
-static const char *TAG = "vfs_fat_spiflash";
-esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+static const char* TAG = "vfs_fat_spiflash";
+
+esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config,
     wl_handle_t* wl_handle)
@@ -90,7 +83,8 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
                 CONFIG_WL_SECTOR_SIZE,
                 mount_config->allocation_unit_size);
         ESP_LOGI(TAG, "Formatting FATFS partition, allocation unit size=%d", alloc_unit_size);
-        fresult = f_mkfs(drv, FM_ANY | FM_SFD, alloc_unit_size, workbuf, workbuf_size);
+        const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 0, alloc_unit_size};
+        fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
         if (fresult != FR_OK) {
             result = ESP_FAIL;
             ESP_LOGE(TAG, "f_mkfs failed (%d)", fresult);
@@ -115,7 +109,7 @@ fail:
     return result;
 }
 
-esp_err_t esp_vfs_fat_spiflash_unmount(const char *base_path, wl_handle_t wl_handle)
+esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t wl_handle)
 {
     BYTE pdrv = ff_diskio_get_pdrv_wl(wl_handle);
     if (pdrv == 0xff) {
@@ -133,7 +127,8 @@ esp_err_t esp_vfs_fat_spiflash_unmount(const char *base_path, wl_handle_t wl_han
     return err;
 }
 
-esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+
+esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config)
 {
@@ -185,8 +180,7 @@ fail:
     return result;
 }
 
-
-esp_err_t esp_vfs_fat_rawflash_unmount(const char *base_path, const char* partition_label)
+esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label)
 {
     const esp_partition_t *data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
             ESP_PARTITION_SUBTYPE_DATA_FAT, partition_label);
@@ -207,3 +201,18 @@ esp_err_t esp_vfs_fat_rawflash_unmount(const char *base_path, const char* partit
     esp_err_t err = esp_vfs_fat_unregister_path(base_path);
     return err;
 }
+
+
+esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config,
+    wl_handle_t* wl_handle)
+    __attribute__((alias("esp_vfs_fat_spiflash_mount_rw_wl")));
+esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle)
+    __attribute__((alias("esp_vfs_fat_spiflash_unmount_rw_wl")));
+esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config)
+    __attribute__((alias("esp_vfs_fat_spiflash_mount_ro")));
+esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
+    __attribute__((alias("esp_vfs_fat_spiflash_unmount_ro")));

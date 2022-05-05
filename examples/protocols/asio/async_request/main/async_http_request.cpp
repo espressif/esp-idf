@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -96,7 +96,7 @@ public:
      * @tparam completion_handler A callable to act as the final handler for the process.
      * @param host host address
      * @param port port number - due to a limitation on lwip implementation this should be the number not the
-     *                           service name tipically seen in ASIO examples.
+     *                           service name typically seen in ASIO examples.
      *
      * @note The class could be modified to store the completion handler, as a member variable, instead of
      * pass it along asynchronous calls to allow the process to run again completely.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -22,6 +22,7 @@
 #include "sdkconfig.h"
 #include "test_mqtt_client_broker.h"
 #include "test_mqtt_connection.h"
+#include "esp_mac.h"
 
 static void test_leak_setup(const char * file, long line)
 {
@@ -29,7 +30,7 @@ static void test_leak_setup(const char * file, long line)
     struct timeval te;
     gettimeofday(&te, NULL); // get current time
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    printf("%s:%ld: time=%ld.%lds, mac:" MACSTR "\n", file, line, te.tv_sec, te.tv_usec, MAC2STR(mac));
+    printf("%s:%ld: time=%jd.%lds, mac:" MACSTR "\n", file, line, (intmax_t)te.tv_sec, te.tv_usec, MAC2STR(mac));
     test_utils_record_free_mem();
 }
 

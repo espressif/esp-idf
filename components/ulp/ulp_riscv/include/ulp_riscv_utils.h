@@ -96,6 +96,12 @@ void ulp_riscv_timer_resume(void);
  */
 void ulp_riscv_delay_cycles(uint32_t cycles);
 
+/**
+ * @brief Clears the GPIO wakeup interrupt bit
+ *
+ */
+void ulp_riscv_gpio_wakeup_clear(void);
+
 #ifdef __cplusplus
 }
 #endif

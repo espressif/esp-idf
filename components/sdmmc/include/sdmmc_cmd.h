@@ -81,6 +81,84 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         size_t start_sector, size_t sector_count);
 
 /**
+ * Erase given number of sectors from the SD/MMC card
+ *
+ * @note When sdmmc_erase_sectors used with cards in SDSPI mode, it was
+ * observed that card requires re-init after erase operation.
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @param start_sector  sector where to start erase
+ * @param sector_count  number of sectors to erase
+ * @param arg  erase command (CMD38) argument
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes from SDMMC host controller
+ */
+esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
+        size_t sector_count, sdmmc_erase_arg_t arg);
+
+/**
+ * Check if SD/MMC card supports discard
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @return
+ *      - ESP_OK if supported by the card/device
+ *      - ESP_FAIL if not supported by the card/device
+ */
+esp_err_t sdmmc_can_discard(sdmmc_card_t* card);
+
+/**
+ * Check if SD/MMC card supports trim
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @return
+ *      - ESP_OK if supported by the card/device
+ *      - ESP_FAIL if not supported by the card/device
+ */
+esp_err_t sdmmc_can_trim(sdmmc_card_t* card);
+
+/**
+ * Check if SD/MMC card supports sanitize
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @return
+ *      - ESP_OK if supported by the card/device
+ *      - ESP_FAIL if not supported by the card/device
+ */
+esp_err_t sdmmc_mmc_can_sanitize(sdmmc_card_t* card);
+
+/**
+ * Sanitize the data that was unmapped by a Discard command
+ *
+ * @note  Discard command has to precede sanitize operation. To discard, use
+ *        MMC_DICARD_ARG with sdmmc_erase_sectors argument
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @param timeout_ms timeout value in milliseconds required to sanitize the
+ *                   selected range of sectors.
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes from SDMMC host controller
+ */
+esp_err_t sdmmc_mmc_sanitize(sdmmc_card_t* card, uint32_t timeout_ms);
+
+/**
+ * Erase complete SD/MMC card
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes from SDMMC host controller
+ */
+esp_err_t sdmmc_full_erase(sdmmc_card_t* card);
+
+/**
  * Read one byte from an SDIO card using IO_RW_DIRECT (CMD52)
  *
  * @param card  pointer to card information structure previously initialized

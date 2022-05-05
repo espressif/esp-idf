@@ -40,6 +40,13 @@ PROVIDE ( esp_rom_md5_final  = MD5Final );
 PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
+PROVIDE ( esp_rom_route_intr_matrix = intr_matrix_set );
+PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
 
 PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
-PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable);
+PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable );
+
+PROVIDE ( esp_rom_regi2c_read = rom_i2c_readReg );
+PROVIDE ( esp_rom_regi2c_read_mask = rom_i2c_readReg_Mask );
+PROVIDE ( esp_rom_regi2c_write = rom_i2c_writeReg );
+PROVIDE ( esp_rom_regi2c_write_mask = rom_i2c_writeReg_Mask );

@@ -38,7 +38,7 @@ static void timer_test(int flags)
     intr_handle_t inth[SOC_TIMER_GROUP_TOTAL_TIMERS];
 
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
         .flags.intr_shared = (flags & ESP_INTR_FLAG_SHARED) == ESP_INTR_FLAG_SHARED,
@@ -247,7 +247,7 @@ void isr_alloc_free_test(void)
     }
     TEST_ASSERT(ret == ESP_OK);
     xTaskCreatePinnedToCore(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 10, NULL, !xPortGetCoreID());
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT(test_handle == NULL);
     printf("test passed\n");
 }

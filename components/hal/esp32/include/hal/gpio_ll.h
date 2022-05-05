@@ -338,7 +338,7 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
+static inline __attribute__((always_inline)) void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     if (gpio_num < 32) {
         hw->enable_w1ts = (0x1 << gpio_num);
@@ -397,7 +397,7 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, gpio_num_t gpio_n
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
+static inline __attribute__((always_inline)) void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 0;
 }
@@ -463,11 +463,9 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, gpio_num_t gpio_num)
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number.
- * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
  */
-static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num, gpio_int_type_t intr_type)
+static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].int_type = intr_type;
     hw->pin[gpio_num].wakeup_enable = 0x1;
 }
 
@@ -567,7 +565,7 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  * @param  pin_name Pin name to configure
  * @param  func Function to assign to the pin
  */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
+static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
     PIN_FUNC_SELECT(pin_name, func);
 }

@@ -19,7 +19,7 @@ This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en
 ### Hardware Required
 
 * An ESP development board
-* An Intel 8080 interfaced (so called MCU interface or parallel interface) LCD
+* An Intel 8080 interfaced (so called MCU interface or parallel interface) LCD (this example can use ST7789 or NT35510)
 * An USB cable for power supply and programming
 
 ### Hardware Connection
@@ -57,6 +57,8 @@ Especially, please pay attention to the binary signal level used to turn the LCD
 Run `idf.py set-target <target-name>` to select one supported target that can run this example. This step will also apply the default Kconfig configurations into the `sdkconfig` file.
 
 Run `idf.py menuconfig` to open a terminal UI where you can tune specific configuration for this example in the `Example Configuration` menu.
+
+* `i80 LCD controller model`: Choose the LCD model to use by the example. If you choose `NT35510`, there will be another relevant configuration `NT35510 Data Width`, to choose the data line width for your NT35510 LCD module.
 
 * `Allocate color data from PSRAM`: Select this option if you want to allocate the LVGL draw buffers from PSRAM.
 

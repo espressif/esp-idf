@@ -19,7 +19,7 @@ static const char *TAG = "ESP_HIDH";
 
 static esp_hidh_dev_head_t s_esp_hidh_devices;
 static esp_timer_handle_t s_esp_hidh_timer;
-static xSemaphoreHandle s_esp_hidh_devices_semaphore = NULL;
+static SemaphoreHandle_t s_esp_hidh_devices_semaphore = NULL;
 
 static void esp_hidh_dev_delay_free(void *arg);
 

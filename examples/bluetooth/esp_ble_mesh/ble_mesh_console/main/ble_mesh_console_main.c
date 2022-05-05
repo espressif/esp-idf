@@ -11,15 +11,10 @@
 #include "esp_vfs_dev.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-
 #include "esp_vfs_fat.h"
-
 #include "esp_console.h"
-
 #include "ble_mesh_console_decl.h"
 #include "ble_mesh_example_init.h"
-
-#define TAG "ble_mesh_test"
 
 #if CONFIG_STORE_HISTORY
 
@@ -33,7 +28,7 @@ static void initialize_filesystem(void)
         .max_files = 4,
         .format_if_mount_failed = true
     };
-    esp_err_t err = esp_vfs_fat_spiflash_mount(MOUNT_PATH, "storage", &mount_config, &wl_handle);
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(MOUNT_PATH, "storage", &mount_config, &wl_handle);
     if (err != ESP_OK) {
         return;
     }
@@ -62,7 +57,18 @@ void app_main(void)
     initialize_filesystem();
     repl_config.history_save_path = HISTORY_PATH;
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C3
+    repl_config.prompt = "esp32c3>";
+#elif CONFIG_IDF_TARGET_ESP32S3
+    repl_config.prompt = "esp32s3>";
+#elif CONFIG_IDF_TARGET_ESP32H2
+    repl_config.prompt = "esp32h2>";
+#else
     repl_config.prompt = "esp32>";
+#endif
+    printf("!!!ready!!!\n");
+
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 

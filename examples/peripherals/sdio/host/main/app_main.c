@@ -109,7 +109,7 @@ esp_err_t slave_reset(essl_handle_t handle)
         return ret;
     }
 
-    vTaskDelay(500 / portTICK_RATE_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     ret = essl_wait_for_ready(handle, TIMEOUT_MAX);
     ESP_LOGI(TAG, "slave io ready");
     return ret;

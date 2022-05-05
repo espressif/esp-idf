@@ -6,11 +6,11 @@
 
 #include <string.h>
 #include "esp_chip_info.h"
-#include "esp_efuse.h"
+#include "hal/efuse_ll.h"
 
 void esp_chip_info(esp_chip_info_t *out_info)
 {
-    uint32_t pkg_ver = esp_efuse_get_pkg_ver();
+    uint32_t pkg_ver = efuse_ll_get_chip_ver_pkg();
 
     memset(out_info, 0, sizeof(*out_info));
 

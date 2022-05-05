@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -101,11 +101,11 @@ static void tp_example_read_task(void *pvParameter)
     touch_event_t evt = {0};
     static uint8_t guard_mode_flag = 0;
     /* Wait touch sensor init done */
-    vTaskDelay(50 / portTICK_RATE_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     tp_example_set_thresholds();
 
     while (1) {
-        int ret = xQueueReceive(que_touch, &evt, (portTickType)portMAX_DELAY);
+        int ret = xQueueReceive(que_touch, &evt, (TickType_t)portMAX_DELAY);
         if (ret != pdTRUE) {
             continue;
         }

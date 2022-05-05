@@ -43,6 +43,8 @@ Which Version Should I Start With?
 
 - If a required feature is not yet available in a stable release, but you do not want to use the master branch, it is possible to check out a pre-release version or a release branch. It is recommended to start from a stable version and then follow the instructions for :ref:`updating-pre-release` or :ref:`updating-release-branch`.
 
+- If you plan to use another project which is based on ESP-IDF, please check the documentation of that project to determine the version(s) of ESP-IDF it is compatible with.
+
 See :ref:`updating` if you already have a local copy of ESP-IDF and wish to update it.
 
 .. _versioning-scheme:

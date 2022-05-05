@@ -15,6 +15,7 @@ endif()
 
 if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
     list(APPEND srcs "unity_runner.c")
+    list(APPEND srcs "unity_utils_freertos.c")
 endif()
 
 if(CONFIG_UNITY_ENABLE_FIXTURE)

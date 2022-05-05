@@ -1,47 +1,54 @@
-/*******************************************************************************
-Copyright (c) 2006-2015 Cadence Design Systems Inc.
+/*
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
+ * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
-Permission is hereby granted, free of charge, to any person obtaining
-a copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
---------------------------------------------------------------------------------
-
-        XTENSA CONTEXT SAVE AND RESTORE ROUTINES
-
-Low-level Call0 functions for handling generic context save and restore of
-registers not specifically addressed by the interrupt vectors and handlers.
-Those registers (not handled by these functions) are PC, PS, A0, A1 (SP).
-Except for the calls to RTOS functions, this code is generic to Xtensa.
-
-Note that in Call0 ABI, interrupt handlers are expected to preserve the callee-
-save regs (A12-A15), which is always the case if the handlers are coded in C.
-However A12, A13 are made available as scratch registers for interrupt dispatch
-code, so are presumed saved anyway, and are always restored even in Call0 ABI.
-Only A14, A15 are truly handled as callee-save regs.
-
-Because Xtensa is a configurable architecture, this port supports all user
-generated configurations (except restrictions stated in the release notes).
-This is accomplished by conditional compilation using macros and functions
-defined in the Xtensa HAL (hardware adaptation layer) for your configuration.
-Only the processor state included in your configuration is saved and restored,
-including any processor state added by user configuration options or TIE.
-
-*******************************************************************************/
+/*
+ * XTENSA CONTEXT SAVE AND RESTORE ROUTINES
+ *
+ * Low-level Call0 functions for handling generic context save and restore of
+ * registers not specifically addressed by the interrupt vectors and handlers.
+ * Those registers (not handled by these functions) are PC, PS, A0, A1 (SP).
+ * Except for the calls to RTOS functions, this code is generic to Xtensa.
+ *
+ * Note that in Call0 ABI, interrupt handlers are expected to preserve the callee-
+ * save regs (A12-A15), which is always the case if the handlers are coded in C.
+ * However A12, A13 are made available as scratch registers for interrupt dispatch
+ * code, so are presumed saved anyway, and are always restored even in Call0 ABI.
+ * Only A14, A15 are truly handled as callee-save regs.
+ *
+ * Because Xtensa is a configurable architecture, this port supports all user
+ * generated configurations (except restrictions stated in the release notes).
+ * This is accomplished by conditional compilation using macros and functions
+ * defined in the Xtensa HAL (hardware adaptation layer) for your configuration.
+ * Only the processor state included in your configuration is saved and restored,
+ * including any processor state added by user configuration options or TIE.
+ */
 
 /*  Warn nicely if this file gets named with a lowercase .s instead of .S:  */
 #define NOERROR #
@@ -94,10 +101,11 @@ Exit conditions:
     .global _xt_context_save
     .type   _xt_context_save,@function
     .align  4
-	.literal_position
+    .literal_position
     .align  4
 
 _xt_context_save:
+
     s32i    a2,  sp, XT_STK_A2
     s32i    a3,  sp, XT_STK_A3
     s32i    a4,  sp, XT_STK_A4
@@ -239,7 +247,7 @@ Exit conditions:
     .global _xt_context_restore
     .type   _xt_context_restore,@function
     .align  4
-	.literal_position
+    .literal_position
     .align  4
 _xt_context_restore:
 
@@ -358,7 +366,7 @@ Obeys ABI conventions per prototype:
     .global _xt_coproc_init
     .type   _xt_coproc_init,@function
     .align  4
-	.literal_position
+    .literal_position
     .align  4
 _xt_coproc_init:
     ENTRY0
@@ -408,16 +416,16 @@ Obeys ABI conventions per prototype:
     .global _xt_coproc_release
     .type   _xt_coproc_release,@function
     .align  4
-	.literal_position
+    .literal_position
     .align  4
 _xt_coproc_release:
     ENTRY0                                  /* a2 = base of save area */
 
-	getcoreid a5
-	movi    a3, XCHAL_CP_MAX << 2
-	mull    a5, a5, a3
+    getcoreid a5
+    movi    a3, XCHAL_CP_MAX << 2
+    mull    a5, a5, a3
     movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-	add     a3, a3, a5
+    add     a3, a3, a5
 
     addi    a4, a3, XCHAL_CP_MAX << 2       /* a4 = top+1 of owner array */
     movi    a5, 0                           /* a5 = 0 (unowned) */
@@ -463,7 +471,7 @@ Must be called from assembly code only, using CALL0.
     .global     _xt_coproc_savecs
     .type       _xt_coproc_savecs,@function
     .align  4
-	.literal_position
+    .literal_position
     .align      4
 _xt_coproc_savecs:
 
@@ -573,7 +581,7 @@ Must be called from assembly code only, using CALL0.
     .global     _xt_coproc_restorecs
     .type       _xt_coproc_restorecs,@function
     .align  4
-	.literal_position
+    .literal_position
     .align      4
 _xt_coproc_restorecs:
 

@@ -2,9 +2,24 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs "wdt_hal_iram.c"
          "mpu_hal.c"
-         "cpu_hal.c")
+         "cpu_hal.c"
+         "efuse_hal.c"
+         "${target}/efuse_hal.c"
+         "mmu_hal.c")
 
 set(includes "${target}/include" "include" "platform_port/include")
+
+if(NOT ${target} STREQUAL "esp32")
+    list(APPEND srcs "cache_hal.c")
+endif()
+
+if(target STREQUAL "esp32h2")
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        list(APPEND includes "${target}/include/rev1")
+    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        list(APPEND includes "${target}/include/rev2")
+    endif()
+endif()
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
@@ -146,6 +161,7 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
+              "ecc_hal.c"
               "gdma_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
@@ -158,7 +174,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
-                       REQUIRES soc
+                       REQUIRES soc esp_rom
                        PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)
 

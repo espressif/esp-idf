@@ -3,4 +3,4 @@ set(srcs "main.c"
         "misc.c")
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "$ENV{IDF_PATH}/components")
+                    INCLUDE_DIRS ".")

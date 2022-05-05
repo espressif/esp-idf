@@ -38,6 +38,16 @@ static const char *TAG = "example";
 #define EXAMPLE_PIN_NUM_DATA5          11
 #define EXAMPLE_PIN_NUM_DATA6          12
 #define EXAMPLE_PIN_NUM_DATA7          13
+#if CONFIG_EXAMPLE_LCD_I80_BUS_WIDTH > 8
+#define EXAMPLE_PIN_NUM_DATA8          14
+#define EXAMPLE_PIN_NUM_DATA9          15
+#define EXAMPLE_PIN_NUM_DATA10         16
+#define EXAMPLE_PIN_NUM_DATA11         17
+#define EXAMPLE_PIN_NUM_DATA12         18
+#define EXAMPLE_PIN_NUM_DATA13         19
+#define EXAMPLE_PIN_NUM_DATA14         20
+#define EXAMPLE_PIN_NUM_DATA15         21
+#endif
 #define EXAMPLE_PIN_NUM_PCLK           5
 #define EXAMPLE_PIN_NUM_CS             3
 #define EXAMPLE_PIN_NUM_DC             4
@@ -48,8 +58,13 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_H_RES              240
 #define EXAMPLE_LCD_V_RES              280
 // Bit number used to represent command and parameter
+#if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
 #define EXAMPLE_LCD_CMD_BITS           8
 #define EXAMPLE_LCD_PARAM_BITS         8
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
+#define EXAMPLE_LCD_CMD_BITS           16
+#define EXAMPLE_LCD_PARAM_BITS         16
+#endif
 
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 
@@ -98,7 +113,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initialize Intel 8080 bus");
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
-        .clk_src = LCD_CLK_SRC_PLL160M,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .dc_gpio_num = EXAMPLE_PIN_NUM_DC,
         .wr_gpio_num = EXAMPLE_PIN_NUM_PCLK,
         .data_gpio_nums = {
@@ -110,8 +125,18 @@ void app_main(void)
             EXAMPLE_PIN_NUM_DATA5,
             EXAMPLE_PIN_NUM_DATA6,
             EXAMPLE_PIN_NUM_DATA7,
+#if CONFIG_EXAMPLE_LCD_I80_BUS_WIDTH > 8
+            EXAMPLE_PIN_NUM_DATA8,
+            EXAMPLE_PIN_NUM_DATA9,
+            EXAMPLE_PIN_NUM_DATA10,
+            EXAMPLE_PIN_NUM_DATA11,
+            EXAMPLE_PIN_NUM_DATA12,
+            EXAMPLE_PIN_NUM_DATA13,
+            EXAMPLE_PIN_NUM_DATA14,
+            EXAMPLE_PIN_NUM_DATA15,
+#endif
         },
-        .bus_width = 8,
+        .bus_width = CONFIG_EXAMPLE_LCD_I80_BUS_WIDTH,
         .max_transfer_bytes = EXAMPLE_LCD_H_RES * 100 * sizeof(uint16_t),
         .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
         .sram_trans_align = 4,
@@ -135,20 +160,39 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i80(i80_bus, &io_config, &io_handle));
 
-    ESP_LOGI(TAG, "Install LCD driver of st7789");
     esp_lcd_panel_handle_t panel_handle = NULL;
+#if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
+    ESP_LOGI(TAG, "Install LCD driver of st7789");
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
         .color_space = ESP_LCD_COLOR_SPACE_RGB,
         .bits_per_pixel = 16,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
+    ESP_LOGI(TAG, "Install LCD driver of nt35510");
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+        .color_space = ESP_LCD_COLOR_SPACE_BGR,
+        .bits_per_pixel = 16,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
+#endif
 
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
+    // Set inversion, x/y coordinate order, x/y mirror according to your LCD module spec
+#if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
     esp_lcd_panel_invert_color(panel_handle, true);
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
+    esp_lcd_panel_swap_xy(panel_handle, true);
+    esp_lcd_panel_mirror(panel_handle, true, false);
+#endif
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_set_gap(panel_handle, 0, 20);
+
+    // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
     ESP_LOGI(TAG, "Turn on LCD backlight");
     gpio_set_level(EXAMPLE_PIN_NUM_BK_LIGHT, EXAMPLE_LCD_BK_LIGHT_ON_LEVEL);

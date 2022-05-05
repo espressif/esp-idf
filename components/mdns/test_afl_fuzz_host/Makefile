@@ -20,7 +20,7 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/esp_wifi/include \
                  -I$(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel \
                  -I$(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel/include \
-                 -I$(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel/portable/xtensa/include \
+                 -I$(COMPONENTS_DIR)/freertos/esp_additions/include/freertos \
                  -I$(COMPONENTS_DIR)/hal/include \
                  -I$(COMPONENTS_DIR)/hal/esp32/include \
                  -I$(COMPONENTS_DIR)/heap/include \
@@ -33,13 +33,16 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/soc/include \
                  -I$(COMPONENTS_DIR)/soc/esp32/include \
                  -I$(COMPONENTS_DIR)/soc/src/esp32/include \
-                 -I$(COMPONENTS_DIR)/tcpip_adapter/include \
                  -I$(COMPONENTS_DIR)/xtensa/include \
                  -I$(COMPONENTS_DIR)/xtensa/esp32/include \
                  -I$(COMPILER_ICLUDE_DIR)/include
 
 
 MDNS_C_DEPENDENCY_INJECTION=-include mdns_di.h
+ifeq ($(MDNS_NO_SERVICES),on)
+    CFLAGS+=-DMDNS_NO_SERVICES
+endif
+
 ifeq ($(INSTR),off)
     CC=gcc
     CFLAGS+=-DINSTR_IS_OFF

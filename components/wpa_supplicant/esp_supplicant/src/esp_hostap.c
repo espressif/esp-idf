@@ -1,10 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sdkconfig.h"
 #include "utils/includes.h"
 
 #include "utils/common.h"
@@ -27,6 +26,7 @@ void *hostap_init(void)
     u8 mac[6];
     u16 spp_attrubute = 0;
     u8 pairwise_cipher;
+    wifi_pmf_config_t pmf_cfg;
 
     hapd = (struct hostapd_data *)os_zalloc(sizeof(struct hostapd_data));
 
@@ -60,6 +60,16 @@ void *hostap_init(void)
     }
 
     pairwise_cipher = esp_wifi_ap_get_prof_pairwise_cipher_internal();
+
+#ifdef CONFIG_IEEE80211W
+
+    esp_wifi_get_pmf_config_internal(&pmf_cfg, WIFI_IF_AP);
+
+    if (pmf_cfg.required) {
+	pairwise_cipher = WIFI_CIPHER_TYPE_CCMP;
+    }
+#endif /* CONFIG_IEEE80211W */
+
     /* TKIP is compulsory in WPA Mode */
     if (auth_conf->wpa == WPA_PROTO_WPA && pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
         pairwise_cipher = WIFI_CIPHER_TYPE_TKIP_CCMP;
@@ -80,6 +90,18 @@ void *hostap_init(void)
 
     auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
     auth_conf->eapol_version = EAPOL_VERSION;
+
+#ifdef CONFIG_IEEE80211W
+    if (pmf_cfg.required && pmf_cfg.capable) {
+	auth_conf->ieee80211w = MGMT_FRAME_PROTECTION_REQUIRED;
+	auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
+	wpa_printf(MSG_DEBUG, "%s :pmf required", __func__);
+    } else if (pmf_cfg.capable && !pmf_cfg.required) {
+	auth_conf->ieee80211w = MGMT_FRAME_PROTECTION_OPTIONAL;
+	auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
+	wpa_printf(MSG_DEBUG, "%s : pmf optional", __func__);
+    }
+#endif /* CONFIG_IEEE80211W */
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_AP);
     auth_conf->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);

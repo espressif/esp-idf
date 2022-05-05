@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,13 @@
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+#if CONFIG_ETH_TRANSMIT_MUTEX
+/**
+ * @brief Transmit timeout when multiple accesses to network driver
+ */
+#define ESP_ETH_TX_TIMEOUT_MS   250
+#endif
 
 static const char *TAG = "esp_eth";
 
@@ -47,6 +54,9 @@ typedef struct {
     atomic_int ref_count;
     void *priv;
     _Atomic esp_eth_fsm_t fsm;
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    SemaphoreHandle_t transmit_mutex;
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
     esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv);
     esp_err_t (*on_lowlevel_init_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
@@ -187,6 +197,10 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
         .skip_unhandled_events = true
     };
     ESP_GOTO_ON_ERROR(esp_timer_create(&check_link_timer_args, &eth_driver->check_link_timer), err, TAG, "create link timer failed");
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    eth_driver->transmit_mutex = xSemaphoreCreateMutex();
+    ESP_GOTO_ON_FALSE(eth_driver->transmit_mutex, ESP_ERR_NO_MEM, err, TAG, "Failed to create transmit mutex");
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
     atomic_init(&eth_driver->ref_count, 1);
     atomic_init(&eth_driver->fsm, ESP_ETH_FSM_STOP);
     eth_driver->mac = mac;
@@ -219,18 +233,17 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     ESP_LOGD(TAG, "new ethernet driver @%p", eth_driver);
     *out_hdl = eth_driver;
 
-    // for backward compatible to 4.0, and will get removed in 5.0
-#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-    extern esp_err_t tcpip_adapter_compat_start_eth(void *eth_driver);
-    tcpip_adapter_compat_start_eth(eth_driver);
-#endif
-
     return ESP_OK;
 err:
     if (eth_driver) {
         if (eth_driver->check_link_timer) {
             esp_timer_delete(eth_driver->check_link_timer);
         }
+#if CONFIG_ETH_TRANSMIT_MUTEX
+        if (eth_driver->transmit_mutex) {
+            vSemaphoreDelete(eth_driver->transmit_mutex);
+        }
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
         free(eth_driver);
     }
     return ret;
@@ -252,6 +265,9 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl)
     esp_eth_mac_t *mac = eth_driver->mac;
     esp_eth_phy_t *phy = eth_driver->phy;
     ESP_GOTO_ON_ERROR(esp_timer_delete(eth_driver->check_link_timer), err, TAG, "delete link timer failed");
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    vSemaphoreDelete(eth_driver->transmit_mutex);
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
     ESP_GOTO_ON_ERROR(phy->deinit(phy), err, TAG, "deinit phy failed");
     ESP_GOTO_ON_ERROR(mac->deinit(mac), err, TAG, "deinit mac failed");
     free(eth_driver);
@@ -265,7 +281,6 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl)
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     esp_eth_phy_t *phy = eth_driver->phy;
-    esp_eth_mac_t *mac = eth_driver->mac;
     // check if driver has stopped
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_STOP;
     ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_START),
@@ -274,7 +289,6 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl)
     if (eth_driver->auto_nego_en == true) {
         ESP_GOTO_ON_ERROR(phy->autonego_ctrl(phy, ESP_ETH_PHY_AUTONEGO_RESTART, &eth_driver->auto_nego_en), err, TAG, "phy negotiation failed");
     }
-    ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "start mac failed");
     ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(esp_eth_driver_t *), 0),
                       err, TAG, "send ETHERNET_EVENT_START event failed");
     ESP_GOTO_ON_ERROR(phy->get_link(phy), err, TAG, "phy get link status failed");
@@ -332,7 +346,44 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length)
     ESP_GOTO_ON_FALSE(length, ESP_ERR_INVALID_ARG, err, TAG, "buf length can't be zero");
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     esp_eth_mac_t *mac = eth_driver->mac;
+
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    if (xSemaphoreTake(eth_driver->transmit_mutex, pdMS_TO_TICKS(ESP_ETH_TX_TIMEOUT_MS)) == pdFALSE) {
+        return ESP_ERR_TIMEOUT;
+    }
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
     ret = mac->transmit(mac, buf, length);
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    xSemaphoreGive(eth_driver->transmit_mutex);
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+
+    if (atomic_load(&eth_driver->fsm) != ESP_ETH_FSM_START) {
+        ret = ESP_ERR_INVALID_STATE;
+        ESP_LOGD(TAG, "Ethernet is not started");
+        goto err;
+    }
+
+    va_list args;
+    esp_eth_mac_t *mac = eth_driver->mac;
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    if (xSemaphoreTake(eth_driver->transmit_mutex, pdMS_TO_TICKS(ESP_ETH_TX_TIMEOUT_MS)) == pdFALSE) {
+        return ESP_ERR_TIMEOUT;
+    }
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
+    va_start(args, argc);
+    ret = mac->transmit_vargs(mac, argc, args);
+#if CONFIG_ETH_TRANSMIT_MUTEX
+    xSemaphoreGive(eth_driver->transmit_mutex);
+#endif // CONFIG_ETH_TRANSMIT_MUTEX
+    va_end(args);
 err:
     return ret;
 }
@@ -424,7 +475,13 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
 
         break;
     default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown io command: %d", cmd);
+        if (phy->custom_ioctl != NULL && cmd >= ETH_CMD_CUSTOM_PHY_CMDS) {
+            ret = phy->custom_ioctl(phy, cmd, data);
+        } else if (mac->custom_ioctl != NULL && cmd >= ETH_CMD_CUSTOM_MAC_CMDS) {
+            ret = mac->custom_ioctl(mac, cmd, data);
+        } else {
+            ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown io command: %d", cmd);
+        }
         break;
     }
 err:

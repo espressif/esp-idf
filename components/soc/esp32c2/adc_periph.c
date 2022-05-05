@@ -14,6 +14,6 @@ const int adc_channel_io_map[SOC_ADC_PERIPH_NUM][SOC_ADC_MAX_CHANNEL_NUM] = {
     },
     /* ADC2 */
     {
-        ADC2_CHANNEL_0_GPIO_NUM, -1, -1, -1, -1
+        -1, -1, -1, -1, -1
     }
 };

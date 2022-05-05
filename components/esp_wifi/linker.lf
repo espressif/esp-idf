@@ -150,13 +150,6 @@ entries:
         wifi_init:wifi_apb80m_request (noflash)
         wifi_init:wifi_apb80m_release (noflash)
 
-[mapping:driver_wifi_pm]
-archive: libdriver.a
-entries:
-    if ESP_WIFI_SLP_IRAM_OPT =y:
-        periph_ctrl:wifi_module_enable (noflash)
-        periph_ctrl:wifi_module_disable (noflash)
-
 [mapping:esp_timer_wifi_pm]
 archive: libesp_timer.a
 entries:

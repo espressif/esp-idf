@@ -127,6 +127,11 @@ TEST_CASE("adc2 work with wifi","[adc]")
     esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+    /* Restrict the number of buffers to allocate to account for limited memory when running large number of tests */
+    cfg.static_rx_buf_num = 2;
+    cfg.static_tx_buf_num = 2;
+
     TEST_ESP_OK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config = {
         .sta = {
@@ -251,7 +256,7 @@ static void i2s_adc_test(void)
             } else {
                 gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLUP_ONLY);
             }
-            vTaskDelay(200 / portTICK_RATE_MS);
+            vTaskDelay(200 / portTICK_PERIOD_MS);
             // read data from adc, will block until buffer is full
             i2s_read(I2S_NUM_0, (void *)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
 

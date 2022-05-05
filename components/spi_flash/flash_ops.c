@@ -126,7 +126,8 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
    bootloader, partition table, or running application region.
 */
 #if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
-#define CHECK_WRITE_ADDRESS(ADDR, SIZE)
+// Following helps in masking "unused variable" warning
+#define CHECK_WRITE_ADDRESS(ADDR, SIZE) ({(void) guard;})
 #else /* FAILS or ABORTS */
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE) do {                            \
         if (guard && guard->is_safe_write_address && !guard->is_safe_write_address(ADDR, SIZE)) {                       \
@@ -169,9 +170,13 @@ esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     return esp_opiflash_init(rom_spiflash_legacy_data->chip.device_id);
 #else
-    //currently we don't need other setup for initialising Quad Flash
+#if CONFIG_IDF_TARGET_ESP32S3
+    // Currently, only esp32s3 allows high performance mode.
+    return spi_flash_enable_high_performance_mode();
+#else
     return ESP_OK;
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32S3
+#endif // CONFIG_ESPTOOLPY_OCT_FLASH
 }
 
 void spi_flash_init(void)

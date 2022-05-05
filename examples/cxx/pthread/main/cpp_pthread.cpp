@@ -34,7 +34,7 @@ void print_thread_info(const char *extra = nullptr)
     ss << "Core id: " << xPortGetCoreID()
        << ", prio: " << uxTaskPriorityGet(nullptr)
        << ", minimum free stack: " << uxTaskGetStackHighWaterMark(nullptr) << " bytes.";
-    ESP_LOGI(pcTaskGetTaskName(nullptr), "%s", ss.str().c_str());
+    ESP_LOGI(pcTaskGetName(nullptr), "%s", ss.str().c_str());
 }
 
 void thread_func_inherited()
@@ -106,7 +106,7 @@ extern "C" void app_main(void)
         ss << "core id: " << xPortGetCoreID()
            << ", prio: " << uxTaskPriorityGet(nullptr)
            << ", minimum free stack: " << uxTaskGetStackHighWaterMark(nullptr) << " bytes.";
-        ESP_LOGI(pcTaskGetTaskName(nullptr), "%s", ss.str().c_str());
+        ESP_LOGI(pcTaskGetName(nullptr), "%s", ss.str().c_str());
         std::this_thread::sleep_for(sleep_time);
     }
 }

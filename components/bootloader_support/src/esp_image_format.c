@@ -18,7 +18,7 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #include "esp_rom_sys.h"
-#include "soc/soc_memory_types.h"
+#include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"
@@ -789,7 +789,7 @@ static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_
     length = length - unpadded_length;
 
     // Verify checksum
-    WORD_ALIGNED_ATTR uint8_t buf[16];
+    WORD_ALIGNED_ATTR uint8_t buf[16] = {0};
     if (!skip_check_checksum || sha_handle != NULL) {
         CHECK_ERR(bootloader_flash_read(data->start_addr + unpadded_length, buf, length, true));
     }
@@ -921,6 +921,12 @@ int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size)
         return 8 * 1024 * 1024;
     case ESP_IMAGE_FLASH_SIZE_16MB:
         return 16 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        return 32 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        return 64 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        return 128 * 1024 * 1024;
     default:
         return 0;
     }

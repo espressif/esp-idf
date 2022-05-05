@@ -114,7 +114,7 @@ void app_main(void)
     int test_bits = 16;
     while (1) {
         setup_triangle_sine_waves(test_bits);
-        vTaskDelay(5000/portTICK_RATE_MS);
+        vTaskDelay(5000/portTICK_PERIOD_MS);
         test_bits += 8;
         if(test_bits > 32)
             test_bits = 16;

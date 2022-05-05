@@ -33,23 +33,26 @@ idf.py -p PORT flash monitor
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
+### Running with dual USB CDC device
+USB CDC device example [tusb_serial_device example](../../../device/tusb_serial_device)
+can be configured to act as dual CDC device.
+
+In the device example project, enter command `idf.py menuconfig` and set Component config->TinyUSB Stack->Communication Device Class (CDC)->CDC channel Count to `2`.
+
+This settings also changes device's PID, so `EXAMPLE_USB_DEVICE_PID` in [usb-cdc.c](./main/usb-cdc.c) must be changed to `0x4002`.
+
+
 ## Example Output
 
 After the flashing you should see the output at idf monitor:
 
 ```
+...
 I (256) USB-CDC: USB Host installed
 I (256) USB-CDC: Opening CDC ACM device 0x303A:0x4001
-CDC Header Descriptor:
-        bcdCDC: 1.20
-CDC Call Descriptor:
-        bmCapabilities: 0x00
-        bDataInterface: 1
-CDC ACM Descriptor:
-        bmCapabilities: 0x02
-CDC Union Descriptor:
-        bControlInterface: 0
-        bSubordinateInterface[0]: 1
+...
+Device descriptor is printed here
+...
 I (1666) USB-CDC: Data received
 I (1666) USB-CDC: 0x3ffc4c20   41 54 0d                                          |AT.|
 I (2666) USB-CDC: Data received

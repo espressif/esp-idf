@@ -15,14 +15,14 @@ static const char *TAG = "SSL client";
 
 static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 {
-    int state = add ? ssl->state : ssl->state - 1;
+    int state = add ? ssl->MBEDTLS_PRIVATE(state) : ssl->MBEDTLS_PRIVATE(state) - 1;
 
-    if (ssl->state == MBEDTLS_SSL_HANDSHAKE_OVER || ssl->handshake == NULL) {
+    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER || ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
         return 0;
     }
 
     if (!add) {
-        if (!ssl->out_left) {
+        if (!ssl->MBEDTLS_PRIVATE(out_left)) {
             CHECK_OK(esp_mbedtls_free_tx_buffer(ssl));
         }
     }
@@ -61,25 +61,25 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
             if (add) {
                 CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
             } else {
-                if (!ssl->keep_current_message) {
+                if (!ssl->MBEDTLS_PRIVATE(keep_current_message)) {
                     CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
                 }
             }
             break;
         case MBEDTLS_SSL_CERTIFICATE_REQUEST:
             if (add) {
-                if (!ssl->keep_current_message) {
+                if (!ssl->MBEDTLS_PRIVATE(keep_current_message)) {
                     CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
                 }
             } else {
-                if (!ssl->keep_current_message) {
+                if (!ssl->MBEDTLS_PRIVATE(keep_current_message)) {
                     CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
                 }
             }
             break;
         case MBEDTLS_SSL_SERVER_HELLO_DONE:
             if (add) {
-                if (!ssl->keep_current_message) {
+                if (!ssl->MBEDTLS_PRIVATE(keep_current_message)) {
                     CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
                 }
             } else {
@@ -91,7 +91,7 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
         case MBEDTLS_SSL_CLIENT_CERTIFICATE:
             if (add) {
                 size_t buffer_len = 3;
-                mbedtls_ssl_key_cert *key_cert = ssl->conf->key_cert;
+                mbedtls_ssl_key_cert *key_cert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
 
                 while (key_cert && key_cert->cert) {
                     size_t num;

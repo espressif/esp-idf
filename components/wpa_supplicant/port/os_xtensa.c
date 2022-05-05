@@ -27,7 +27,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "esp_system.h"
+#include "esp_random.h"
 #include "utils/common.h"
 #include "mbedtls/platform_util.h"
 

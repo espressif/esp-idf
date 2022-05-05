@@ -264,7 +264,7 @@ const char *osi_thread_name(osi_thread_t *thread)
 {
     assert(thread != NULL);
 
-    return pcTaskGetTaskName(thread->thread_handle);
+    return pcTaskGetName(thread->thread_handle);
 }
 
 int osi_thread_queue_wait_size(osi_thread_t *thread, int wq_idx)

@@ -36,17 +36,10 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 }
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
-/**
- * Example callback function to get the certificate of connected clients,
- * whenever a new SSL connection is created
- *
- * Can also be used to other information like Socket FD, Connection state, etc.
- */
-void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
-{
-    ESP_LOGI(TAG, "Session Created!");
-    const mbedtls_x509_crt *cert;
 
+static void print_peer_cert_info(const mbedtls_ssl_context *ssl)
+{
+    const mbedtls_x509_crt *cert;
     const size_t buf_size = 1024;
     char *buf = calloc(buf_size, sizeof(char));
     if (buf == NULL) {
@@ -54,15 +47,55 @@ void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
         return;
     }
 
-    cert = mbedtls_ssl_get_peer_cert(&user_cb->tls->ssl);
+    // Logging the peer certificate info
+    cert = mbedtls_ssl_get_peer_cert(ssl);
     if (cert != NULL) {
-        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "      ", cert);
+        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "    ", cert);
         ESP_LOGI(TAG, "Peer certificate info:\n%s", buf);
     } else {
         ESP_LOGW(TAG, "Could not obtain the peer certificate!");
     }
 
     free(buf);
+}
+
+/**
+ * Example callback function to get the certificate of connected clients,
+ * whenever a new SSL connection is created and closed
+ *
+ * Can also be used to other information like Socket FD, Connection state, etc.
+ *
+ * NOTE: This callback will not be able to obtain the client certificate if the
+ * following config `Set minimum Certificate Verification mode to Optional` is
+ * not enabled (enabled by default in this example).
+ *
+ * The config option is found here - Component config → ESP-TLS
+ *
+ */
+static void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
+{
+    ESP_LOGI(TAG, "User callback invoked!");
+
+    switch(user_cb->user_cb_state) {
+        case HTTPD_SSL_USER_CB_SESS_CREATE:
+            ESP_LOGD(TAG, "At session creation");
+
+            // Logging the socket FD
+            ESP_LOGI(TAG, "Socket FD: %d", user_cb->tls->sockfd);
+
+            // Logging the current ciphersuite
+            ESP_LOGI(TAG, "Current Ciphersuite: %s", mbedtls_ssl_get_ciphersuite(&user_cb->tls->ssl));
+            break;
+        case HTTPD_SSL_USER_CB_SESS_CLOSE:
+            ESP_LOGD(TAG, "At session close");
+
+            // Logging the peer certificate
+            print_peer_cert_info(&user_cb->tls->ssl);
+            break;
+        default:
+            ESP_LOGE(TAG, "Illegal state!");
+            return;
+    }
 }
 #endif
 
@@ -81,19 +114,19 @@ static httpd_handle_t start_webserver(void)
 
     httpd_ssl_config_t conf = HTTPD_SSL_CONFIG_DEFAULT();
 
-    extern const unsigned char cacert_pem_start[] asm("_binary_cacert_pem_start");
-    extern const unsigned char cacert_pem_end[]   asm("_binary_cacert_pem_end");
-    conf.cacert_pem = cacert_pem_start;
-    conf.cacert_len = cacert_pem_end - cacert_pem_start;
+    extern const unsigned char servercert_start[] asm("_binary_servercert_pem_start");
+    extern const unsigned char servercert_end[]   asm("_binary_servercert_pem_end");
+    conf.servercert = servercert_start;
+    conf.servercert_len = servercert_end - servercert_start;
 
     extern const unsigned char prvtkey_pem_start[] asm("_binary_prvtkey_pem_start");
     extern const unsigned char prvtkey_pem_end[]   asm("_binary_prvtkey_pem_end");
     conf.prvtkey_pem = prvtkey_pem_start;
     conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
-    #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
     conf.user_cb = https_server_user_callback;
-    #endif
+#endif
     esp_err_t ret = httpd_ssl_start(&server, &conf);
     if (ESP_OK != ret) {
         ESP_LOGI(TAG, "Error starting server!");

@@ -7,11 +7,20 @@ if(NOT BOOTLOADER_BUILD)
     list(APPEND priv_requires esp_pm)
 endif()
 
-idf_component_register(SRCS "esp_crt_bundle/esp_crt_bundle.c"
-    INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include"
+set(mbedtls_srcs "")
+set(mbedtls_include_dirs "port/include" "mbedtls/include" "./mbedtls/library")
+
+if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    list(APPEND mbedtls_srcs "esp_crt_bundle/esp_crt_bundle.c")
+    list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
+endif()
+
+idf_component_register(SRCS "${mbedtls_srcs}"
+    INCLUDE_DIRS "${mbedtls_include_dirs}"
     REQUIRES lwip
     PRIV_REQUIRES "${priv_requires}"
     )
+
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     set(bundle_name "x509_crt_bundle")
@@ -21,9 +30,9 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     set(GENERATE_CERT_BUNDLEPY ${python} ${COMPONENT_DIR}/esp_crt_bundle/gen_crt_bundle.py)
 
     if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL)
-        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem ${DEFAULT_CRT_DIR}/cacrt_local.pem)
     elseif(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN)
-        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem)
+        list(APPEND crt_paths ${DEFAULT_CRT_DIR}/cacrt_all.pem ${DEFAULT_CRT_DIR}/cacrt_local.pem)
         list(APPEND args --filter ${DEFAULT_CRT_DIR}/cmn_crt_authorities.csv)
     endif()
 
@@ -59,6 +68,13 @@ endif()
 # Only build mbedtls libraries
 set(ENABLE_TESTING CACHE BOOL OFF)
 set(ENABLE_PROGRAMS CACHE BOOL OFF)
+
+# Use pre-generated source files in mbedtls repository
+set(GEN_FILES CACHE BOOL OFF)
+
+# Make sure mbedtls finds the same Python interpreter as IDF uses
+idf_build_get_property(python PYTHON)
+set(Python3_EXECUTABLE ${python})
 
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_DIR}/port/include")
@@ -102,32 +118,42 @@ endif()
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
 # Choose perihperal type
-if(CONFIG_IDF_TARGET_ESP32)
-    set(SHA_PERIPHERAL_TYPE "parallel_engine")
-    set(AES_PERIPHERAL_TYPE "block")
-else()
-    set(SHA_PERIPHERAL_TYPE "dma")
-    set(AES_PERIPHERAL_TYPE "dma")
+
+if(CONFIG_SOC_SHA_SUPPORTED)
+    if(CONFIG_SOC_SHA_SUPPORT_DMA)
+        set(SHA_PERIPHERAL_TYPE "dma")
+    else()
+        set(SHA_PERIPHERAL_TYPE "parallel_engine")
+    endif()
+endif()
+
+if(CONFIG_SOC_AES_SUPPORTED)
+    if(CONFIG_SOC_AES_SUPPORT_DMA)
+        set(AES_PERIPHERAL_TYPE "dma")
+    else()
+        set(AES_PERIPHERAL_TYPE "block")
+    endif()
 endif()
 
 if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/dma/include")
 
-    if(CONFIG_IDF_TARGET_ESP32S2)
+    if(NOT CONFIG_SOC_SHA_GDMA)
         set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
     else()
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c"
-                         "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
+        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
+
     endif()
     target_sources(mbedcrypto PRIVATE  "${SHA_DMA_SRCS}")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
 
-    if(CONFIG_IDF_TARGET_ESP32S2)
+    if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
-        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c")
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c"
+                         "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
     endif()
 
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
@@ -138,11 +164,18 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
                                   "${COMPONENT_DIR}/port/sha/esp_sha.c"
-                                  "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
+)
+
+if(CONFIG_SOC_AES_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                                   "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
-                                  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
-)
+    )
+endif()
+
+if(CONFIG_SOC_SHA_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c")
+endif()
 
 # CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
@@ -171,6 +204,11 @@ endif()
 
 if(CONFIG_MBEDTLS_HARDWARE_GCM)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
+endif()
+
+if(CONFIG_MBEDTLS_HARDWARE_ECC)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
+                                       "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
 endif()
 
 if(CONFIG_MBEDTLS_ROM_MD5)
@@ -203,7 +241,14 @@ set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver idf::$
 set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver idf::${target})
 
 # Link mbedtls libraries to component library
-target_link_libraries(${COMPONENT_LIB} PUBLIC ${mbedtls_targets})
+if(mbedtls_srcs STREQUAL "")
+    # For no sources in component library we must use "INTERFACE"
+    set(linkage_type INTERFACE)
+else()
+    set(linkage_type PUBLIC)
+endif()
+
+target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     # Link target (e.g. esp32s2) library to component library
@@ -211,11 +256,11 @@ if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES $<LINK_ONLY:${target_lib}>)
     # The linker seems to be unable to resolve all the dependencies without increasing this
     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${target_lib})
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${target_lib})
 endif()
 
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
     idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${cryptoauthlib})
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${cryptoauthlib})
 endif()

@@ -230,6 +230,19 @@ static void usbh_print_cfg_desc(const usb_config_desc_t *cfg_desc)
     printf("bMaxPower %dmA\n", cfg_desc->bMaxPower * 2);
 }
 
+static void print_iad_desc(const usb_iad_desc_t *iad_desc)
+{
+    printf("*** Interface Association Descriptor ***\n");
+    printf("bLength %d\n", iad_desc->bLength);
+    printf("bDescriptorType %d\n", iad_desc->bDescriptorType);
+    printf("bFirstInterface %d\n", iad_desc->bFirstInterface);
+    printf("bInterfaceCount %d\n", iad_desc->bInterfaceCount);
+    printf("bFunctionClass 0x%x\n", iad_desc->bFunctionClass);
+    printf("bFunctionSubClass 0x%x\n", iad_desc->bFunctionSubClass);
+    printf("bFunctionProtocol 0x%x\n", iad_desc->bFunctionProtocol);
+    printf("iFunction %d\n", iad_desc->iFunction);
+}
+
 void usb_print_device_descriptor(const usb_device_desc_t *devc_desc)
 {
     if (devc_desc == NULL) {
@@ -265,14 +278,17 @@ void usb_print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_
 
     do {
         switch (next_desc->bDescriptorType) {
-            case USB_W_VALUE_DT_CONFIG:
+            case USB_B_DESCRIPTOR_TYPE_CONFIGURATION:
                 usbh_print_cfg_desc((const usb_config_desc_t *)next_desc);
                 break;
-            case USB_W_VALUE_DT_INTERFACE:
+            case USB_B_DESCRIPTOR_TYPE_INTERFACE:
                 usbh_print_intf_desc((const usb_intf_desc_t *)next_desc);
                 break;
-            case USB_W_VALUE_DT_ENDPOINT:
+            case USB_B_DESCRIPTOR_TYPE_ENDPOINT:
                 print_ep_desc((const usb_ep_desc_t *)next_desc);
+                break;
+            case USB_B_DESCRIPTOR_TYPE_INTERFACE_ASSOCIATION:
+                print_iad_desc((const usb_iad_desc_t*)next_desc);
                 break;
             default:
                 if(class_specific_cb) {

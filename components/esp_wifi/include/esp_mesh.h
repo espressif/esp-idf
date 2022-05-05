@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  *   Software Stack demonstrated:
@@ -68,14 +60,8 @@
  *
  *  In present implementation, applications are able to access mesh stack directly without having to go through LwIP stack.
  *  Applications use esp_mesh_send() and esp_mesh_recv() to send and receive messages over the mesh network.
- *  In mesh stack design, normal devices don't require LwIP stack. But since IDF hasn't supported system without initializing LwIP stack yet,
- *  applications still need to do LwIP initialization and two more things are required to be done
- *  (1) stop DHCP server on softAP interface by default
- *  (2) stop DHCP client on station interface by default.
- *  Examples:
- *  tcpip_adapter_init();
- *  tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP)；
- *  tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA)；
+ *  In mesh stack design, normal devices don't require LwIP stack, but if any of these devices could be promoted to a root node in runtime,
+ *  (due to automatic or manual topology reconfiguration) the TCP/IP stack should be initialized (for the root code to access external IP network)
  *
  *  Over the mesh network, only the root is able to access external IP network.
  *  In application mesh event handler, once a device becomes a root, start DHCP client immediately whether DHCP is chosen.

@@ -1,0 +1,4 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_OTA_ALLOW_HTTP                               CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP

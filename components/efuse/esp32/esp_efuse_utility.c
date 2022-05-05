@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
+#include "hal/efuse_hal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_log.h"
 #include "assert.h"
@@ -34,33 +35,12 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
     {EFUSE_BLK3_WDATA0_REG, EFUSE_BLK3_WDATA7_REG}     // range address of EFUSE_BLK3
 };
 
-#define EFUSE_CONF_WRITE          0x5A5A /* eFuse_pgm_op_ena, force no rd/wr disable. */
-#define EFUSE_CONF_READ           0x5AA5 /* eFuse_read_op_ena, release force. */
-#define EFUSE_CMD_PGM             0x02   /* Command to program. */
-#define EFUSE_CMD_READ            0x01   /* Command to read. */
-
 #ifndef CONFIG_EFUSE_VIRTUAL
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
     uint32_t apb_freq_mhz = esp_clk_apb_freq() / 1000000;
-    uint32_t clk_sel0, clk_sel1, dac_clk_div;
-    if (apb_freq_mhz <= 26) {
-        clk_sel0 = 250;
-        clk_sel1 = 255;
-        dac_clk_div = 52;
-    } else if (apb_freq_mhz <= 40) {
-        clk_sel0 = 160;
-        clk_sel1 = 255;
-        dac_clk_div = 80;
-    } else {
-        clk_sel0 = 80;
-        clk_sel1 = 128;
-        dac_clk_div = 100;
-    }
-    REG_SET_FIELD(EFUSE_DAC_CONF_REG, EFUSE_DAC_CLK_DIV, dac_clk_div);
-    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL0, clk_sel0);
-    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL1, clk_sel1);
+    efuse_hal_set_timing(apb_freq_mhz);
     return ESP_OK;
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
@@ -68,7 +48,7 @@ static esp_err_t esp_efuse_set_timing(void)
 // Efuse read operation: copies data from physical efuses to efuse read registers.
 void esp_efuse_utility_clear_program_registers(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
+    efuse_hal_clear_program_registers();
 }
 
 // Burn values written to the efuse write registers
@@ -104,12 +84,7 @@ void esp_efuse_utility_burn_chip(void)
 #else
     esp_efuse_set_timing();
     // Permanently update values written to the efuse write registers
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_WRITE);
-    REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_PGM);
-    while (REG_READ(EFUSE_CMD_REG) != 0) {};
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
-    REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_READ);
-    while (REG_READ(EFUSE_CMD_REG) != 0) {};
+    efuse_hal_program(0);
 #endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_reset();
 }

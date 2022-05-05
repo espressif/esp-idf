@@ -94,7 +94,7 @@ void app_main(void)
         .queue_size = 5,
         .task_name = "loop_task", // task will be created
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = 3072,
         .task_core_id = tskNO_AFFINITY
     };
 
@@ -115,9 +115,9 @@ void app_main(void)
     ESP_LOGI(TAG, "starting event source");
 
     // Create the event source task with the same priority as the current task
-    xTaskCreate(task_event_source, "task_event_source", 2048, NULL, uxTaskPriorityGet(NULL), NULL);
+    xTaskCreate(task_event_source, "task_event_source", 3072, NULL, uxTaskPriorityGet(NULL), NULL);
 
     ESP_LOGI(TAG, "starting application task");
     // Create the application task with the same priority as the current task
-    xTaskCreate(application_task, "application_task", 2048, NULL, uxTaskPriorityGet(NULL), NULL);
+    xTaskCreate(application_task, "application_task", 3072, NULL, uxTaskPriorityGet(NULL), NULL);
 }

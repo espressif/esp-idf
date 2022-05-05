@@ -8,7 +8,7 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_io_interface.h"
 
-static __attribute__((unused)) const char *TAG = "lcd_panel.io";
+static const char *TAG = "lcd_panel.io";
 
 esp_err_t esp_lcd_panel_io_tx_param(esp_lcd_panel_io_handle_t io, int lcd_cmd, const void *param, size_t param_size)
 {

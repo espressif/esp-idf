@@ -17,7 +17,8 @@ else()
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
-                        "patches/esp_rom_tjpgd.c")
+                        "patches/esp_rom_tjpgd.c"
+                        "patches/esp_rom_regi2c.c")
     list(APPEND private_required_comp soc hal)
 endif()
 
@@ -170,7 +171,7 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_ESP32C3_REV_MIN_3)
+        if(CONFIG_ESP32C3_REV_MIN_3 OR CONFIG_ESP32C3_REV_MIN_4)
             rom_linker_script("eco3")
         endif()
 

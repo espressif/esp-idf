@@ -1,9 +1,9 @@
-| Supported Targets | ESP32-S2 | ESP32-C3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-C3 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- |
 
 # Temperature Sensor Example
 
-The ESP32-S2 and ESP32-C3 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.    
+The ESP32-S2/C3/S3 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.    
 
 The conversion relationship is the first two columns of the table below. Among them, `offset = 0`(default) is the main measurement option, and other values are extended measurement options.  
 
@@ -21,7 +21,7 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Hardware Required
 
-* A development board with ESP32-S2 or ESP32-C3 SoC (e.g., ESP32-S2-Saola-1, ESP32-S2-DevKitM-1, ESP32-C3-DevKitM-1, etc.)
+* A development board with ESP32-S2/C3/S3 SoC (e.g., ESP32-S2-Saola-1, ESP32-S2-DevKitM-1, ESP32-C3-DevKitM-1, ESP32-S3-WROOM-1, etc.)
 * A USB cable for power supply and programming
 
 ### Build and Flash
@@ -37,15 +37,19 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 ## Example Output
 
 ```
-I (243) TempSensor: Initializing Temperature sensor
-I (243) TempSensor: default dac 2, clk_div 6
-I (243) TempSensor: Config temperature range [-10°C ~ 80°C], error < 1°C
-I (253) TempSensor: Temperature sensor started
-I (1253) TempSensor: Temperature out celsius 27.287399°C
-I (2253) TempSensor: Temperature out celsius 26.848801°C
-I (3253) TempSensor: Temperature out celsius 26.848801°C
-I (4253) TempSensor: Temperature out celsius 27.287399°C
-I (5253) TempSensor: Temperature out celsius 27.287399°C
+I (276) example: Initializing Temperature sensor
+I (276) temperature_sensor: temperature range [-10°C ~ 80°C], error < 1°C
+I (286) example: Temperature sensor started
+I (1286) example: Temperature out celsius 21.64
+I (2286) example: Temperature out celsius 21.64
+I (3286) example: Temperature out celsius 21.64
+I (4286) example: Temperature out celsius 22.08
+I (5286) example: Temperature out celsius 22.08
+I (6286) example: Temperature out celsius 22.08
+I (7286) example: Temperature out celsius 22.08
+I (8286) example: Temperature out celsius 22.08
+I (9286) example: Temperature out celsius 22.08
+
 ```
 
 ## Troubleshooting

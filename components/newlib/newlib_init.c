@@ -139,6 +139,10 @@ void esp_newlib_init(void)
     _GLOBAL_REENT = &s_reent;
 
     environ = malloc(sizeof(char*));
+    if (environ == 0) {
+        // if allocation fails this early in startup process, there's nothing else other than to panic.
+        abort();
+    }
     environ[0] = NULL;
 
     esp_newlib_locks_init();

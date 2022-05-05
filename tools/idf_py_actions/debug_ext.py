@@ -389,8 +389,10 @@ def action_extensions(base_actions, project_path):
             'post_debug': {
                 'callback': post_debug,
                 'deprecated': {
+                    'since': 'v4.4',
                     'removed': 'v5.0',
-                    'message': 'Please use "post-debug" instead.',
+                    'exit_with_error': True,
+                    'message': 'Have you wanted to run "post-debug" instead?',
                 },
                 'hidden': True,
                 'help': 'Utility target to read the output of async debug action and stop them.',

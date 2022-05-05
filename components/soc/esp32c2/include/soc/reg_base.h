@@ -9,6 +9,7 @@
 #define DR_REG_EXTMEM_BASE                      0x600c4000 // CACHE_CONFIG
 #define DR_REG_MMU_TABLE                        0x600c5000
 #define DR_REG_SHA_BASE                         0x6003b000
+#define DR_REG_ECC_MULT_BASE                    0x6003e000
 #define DR_REG_GDMA_BASE                        0x6003f000
 #define DR_REG_ASSIST_DEBUG_BASE                0x600ce000
 #define DR_REG_DEDICATED_GPIO_BASE              0x600cf000

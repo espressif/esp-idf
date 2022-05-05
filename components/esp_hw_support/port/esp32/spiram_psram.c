@@ -3,7 +3,7 @@
 */
 
 /*
- * SPDX-FileCopyrightText: 2013-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,7 +198,7 @@ typedef struct {
     uint32_t dummyBitLen;
 } psram_cmd_t;
 
-static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
+static void psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
 
 static uint8_t s_psram_cs_io = (uint8_t)-1;
 

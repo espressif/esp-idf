@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include "esp_task.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "sdkconfig.h"
 #include "netif/dhcp_state.h"
 #include "sntp/sntp_get_set_time.h"
@@ -1233,6 +1233,15 @@
 #endif
 
 /**
+ * DNS_DEBUG: Enable debugging for DNS.
+ */
+#ifdef CONFIG_LWIP_DNS_DEBUG
+#define DNS_DEBUG                       LWIP_DBG_ON
+#else
+#define DNS_DEBUG                       LWIP_DBG_OFF
+#endif
+
+/**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #define MEMP_DEBUG                      LWIP_DBG_OFF
@@ -1332,6 +1341,7 @@
 #define ESP_LWIP_SELECT                 1
 #define ESP_LWIP_LOCK                   1
 #define ESP_THREAD_PROTECTION           1
+#define ESP_IP_FORWARD                  1
 
 /*
    -----------------------------------------
@@ -1343,7 +1353,7 @@
  */
 #ifdef CONFIG_LWIP_DHCPS
 #define ESP_DHCPS                       1
-#define ESP_DHCPS_TIMER                 1
+#define ESP_DHCPS_TIMER                 0
 #else
 #define ESP_DHCPS                       0
 #define ESP_DHCPS_TIMER                 0

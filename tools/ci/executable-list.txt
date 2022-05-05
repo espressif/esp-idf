@@ -3,7 +3,6 @@ components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_wifi/test_md5/test_md5.sh
-components/espcoredump/espcoredump.py
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
 components/espcoredump/test_apps/build_espcoredump.sh
@@ -60,6 +59,7 @@ tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
+tools/ci/check_requirement_files.py
 tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
@@ -108,6 +108,7 @@ tools/ldgen/test/test_output_commands.py
 tools/mass_mfg/mfg_gen.py
 tools/mkdfu.py
 tools/mkuf2.py
+tools/python_version_checker.py
 tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_idf_monitor/run_test_idf_monitor.py

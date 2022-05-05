@@ -16,7 +16,7 @@ def test_examples_spiffs(env, extra_data):
                    'example: Reading file',
                    'example: Read from file: \'Hello World!\'',
                    'example: SPIFFS unmounted',
-                   timeout=20)
+                   timeout=60)
 
 
 if __name__ == '__main__':

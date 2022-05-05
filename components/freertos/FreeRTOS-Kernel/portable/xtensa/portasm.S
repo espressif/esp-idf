@@ -1,27 +1,32 @@
 /*
-//-----------------------------------------------------------------------------
-// Copyright (c) 2003-2015 Cadence Design Systems, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//-----------------------------------------------------------------------------
-*/
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
+ * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #include "xtensa_rtos.h"
 #include "sdkconfig.h"
@@ -37,16 +42,14 @@
 * parameter "configISR_STACK_SIZE" in FreeRTOSConfig.h
 *******************************************************************************
 */
-
     .data
     .align      16
     .global     port_IntStack
-    .global     port_IntStackTop
-    .global     port_switch_flag
+    .global     port_switch_flag    //Required by sysview_tracing build
 port_IntStack:
-    .space      configISR_STACK_SIZE*portNUM_PROCESSORS		/* This allocates stacks for each individual CPU. */
+    .space      configISR_STACK_SIZE*portNUM_PROCESSORS     /* This allocates stacks for each individual CPU. */
 port_IntStackTop:
-    .word		0
+    .word       0
 port_switch_flag:
     .space      portNUM_PROCESSORS*4 /* One flag for each individual CPU. */
 
@@ -69,24 +72,18 @@ _frxt_setup_switch:
 
     ENTRY(16)
 
-	getcoreid a3
+    getcoreid a3
     movi    a2, port_switch_flag
-	addx4	a2,  a3, a2
-
+    addx4   a2,  a3, a2
     movi    a3, 1
     s32i    a3, a2, 0
 
     RET(16)
 
-
-
-
-
-
 /*
 *******************************************************************************
-* _frxt_int_enter
-* void _frxt_int_enter(void)
+*                                            _frxt_int_enter
+*                                       void _frxt_int_enter(void)
 *
 * Implements the Xtensa RTOS porting layer's XT_RTOS_INT_ENTER function for
 * freeRTOS. Saves the rest of the interrupt context (not already saved).
@@ -116,11 +113,11 @@ _frxt_int_enter:
     Manage nesting directly rather than call the generic IntEnter()
     (in windowed ABI we can't call a C function here anyway because PS.EXCM is still set).
     */
-	getcoreid a4
+    getcoreid a4
     movi    a2,  port_xSchedulerRunning
-	addx4	a2,  a4, a2
+    addx4   a2,  a4, a2
     movi    a3,  port_interruptNesting
-	addx4	a3,  a4, a3
+    addx4   a3,  a4, a3
     l32i    a2,  a2, 0                  /* a2 = port_xSchedulerRunning     */
     beqz    a2,  1f                     /* scheduler not running, no tasks */
     l32i    a2,  a3, 0                  /* a2 = port_interruptNesting      */
@@ -129,14 +126,14 @@ _frxt_int_enter:
     bnei    a2,  1, .Lnested            /* !=0 before incr, so nested      */
 
     movi    a2,  pxCurrentTCB
-	addx4	a2,  a4, a2
+    addx4   a2,  a4, a2
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f
     s32i    a1,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCB->pxTopOfStack = SP */
     movi    a1,  port_IntStack+configISR_STACK_SIZE   /* a1 = top of intr stack for CPU 0  */
     movi    a2,  configISR_STACK_SIZE   /* add configISR_STACK_SIZE * cpu_num to arrive at top of stack for cpu_num */
-	mull	a2,  a4, a2
-	add     a1,  a1, a2					/* for current proc */
+    mull    a2,  a4, a2
+    add     a1,  a1, a2                 /* for current proc */
 
     #ifdef CONFIG_FREERTOS_FPU_IN_ISR
     #if XCHAL_CP_NUM > 0
@@ -161,8 +158,8 @@ _frxt_int_enter:
 
 /*
 *******************************************************************************
-* _frxt_int_exit
-* void _frxt_int_exit(void)
+*                                            _frxt_int_exit
+*                                       void _frxt_int_exit(void)
 *
 * Implements the Xtensa RTOS porting layer's XT_RTOS_INT_EXIT function for
 * FreeRTOS. If required, calls vPortYieldFromInt() to perform task context
@@ -179,11 +176,11 @@ _frxt_int_enter:
     .align  4
 _frxt_int_exit:
 
-	getcoreid a4
+    getcoreid a4
     movi    a2,  port_xSchedulerRunning
-	addx4	a2,  a4, a2
+    addx4   a2,  a4, a2
     movi    a3,  port_interruptNesting
-	addx4	a3,  a4, a3
+    addx4   a3,  a4, a3
     rsil    a0,  XCHAL_EXCM_LEVEL       /* lock out interrupts             */
     l32i    a2,  a2, 0                  /* a2 = port_xSchedulerRunning     */
     beqz    a2,  .Lnoswitch             /* scheduler not running, no tasks */
@@ -202,13 +199,13 @@ _frxt_int_exit:
     #endif
 
     movi    a2,  pxCurrentTCB
-	addx4	a2,  a4, a2
+    addx4   a2,  a4, a2
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f                     /* no task ? go to dispatcher      */
     l32i    a1,  a2, TOPOFSTACK_OFFS    /* SP = pxCurrentTCB->pxTopOfStack */
 
     movi    a2,  port_switch_flag       /* address of switch flag          */
-	addx4	a2,  a4, a2					/* point to flag for this cpu      */
+    addx4   a2,  a4, a2                 /* point to flag for this cpu      */
     l32i    a3,  a2, 0                  /* a3 = port_switch_flag           */
     beqz    a3,  .Lnoswitch             /* flag = 0 means no switch reqd   */
     movi    a3,  0
@@ -430,13 +427,13 @@ _frxt_dispatch:
     #ifdef __XTENSA_CALL0_ABI__
     call0   vTaskSwitchContext  // Get next TCB to resume
     movi    a2, pxCurrentTCB
-	getcoreid a3
-	addx4	a2,  a3, a2
+    getcoreid a3
+    addx4   a2,  a3, a2
     #else
     call4   vTaskSwitchContext  // Get next TCB to resume
     movi    a2, pxCurrentTCB
-	getcoreid a3
-	addx4	a2,  a3, a2
+    getcoreid a3
+    addx4   a2,  a3, a2
     #endif
     l32i    a3,  a2, 0
     l32i    sp,  a3, TOPOFSTACK_OFFS     /* SP = next_TCB->pxTopOfStack;  */
@@ -475,8 +472,8 @@ _frxt_dispatch:
     #if XCHAL_CP_NUM > 0
     /* Restore CPENABLE from task's co-processor save area. */
     movi    a3, pxCurrentTCB            /* cp_state =                       */
-	getcoreid a2
-	addx4	a3,  a2, a3
+    getcoreid a2
+    addx4   a3,  a2, a3
     l32i    a3, a3, 0
     l32i    a2, a3, CP_TOPOFSTACK_OFFS     /* StackType_t                       *pxStack; */
     l16ui   a3, a2, XT_CPENABLE         /* CPENABLE = cp_state->cpenable;   */
@@ -564,8 +561,8 @@ vPortYield:
     #endif
 
     movi    a2,  pxCurrentTCB
-	getcoreid a3
-	addx4	a2,  a3, a2
+    getcoreid a3
+    addx4   a2,  a3, a2
     l32i    a2,  a2, 0                  /* a2 = pxCurrentTCB                */
     movi    a3,  0
     s32i    a3,  sp, XT_SOL_EXIT        /* 0 to flag as solicited frame     */
@@ -615,8 +612,8 @@ vPortYieldFromInt:
     #if XCHAL_CP_NUM > 0
     /* Save CPENABLE in task's co-processor save area, and clear CPENABLE.  */
     movi    a3, pxCurrentTCB            /* cp_state =                       */
-	getcoreid a2
-	addx4	a3,  a2, a3
+    getcoreid a2
+    addx4   a3,  a2, a3
     l32i    a3, a3, 0
 
     l32i    a2, a3, CP_TOPOFSTACK_OFFS
@@ -657,19 +654,19 @@ vPortYieldFromInt:
 _frxt_task_coproc_state:
 
 
-	/* We can use a3 as a scratchpad, the instances of code calling XT_RTOS_CP_STATE don't seem to need it saved. */
-	getcoreid a3
+    /* We can use a3 as a scratchpad, the instances of code calling XT_RTOS_CP_STATE don't seem to need it saved. */
+    getcoreid a3
     movi    a15, port_xSchedulerRunning /* if (port_xSchedulerRunning              */
-	addx4	a15, a3,a15
+    addx4   a15, a3,a15
     l32i    a15, a15, 0
     beqz    a15, 1f
     movi    a15, port_interruptNesting  /* && port_interruptNesting == 0           */
-	addx4	a15, a3, a15
+    addx4   a15, a3, a15
     l32i    a15, a15, 0
     bnez    a15, 1f
 
     movi    a15, pxCurrentTCB
-	addx4	a15, a3, a15
+    addx4   a15, a3, a15
     l32i    a15, a15, 0                 /* && pxCurrentTCB != 0) {                 */
 
     beqz    a15, 2f

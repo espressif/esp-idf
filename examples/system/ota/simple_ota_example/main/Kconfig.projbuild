@@ -7,6 +7,15 @@ menu "Example Configuration"
             URL of server which hosts the firmware
             image.
 
+    config EXAMPLE_USE_CERT_BUNDLE
+        bool "Enable certificate bundle"
+        default y
+        depends on MBEDTLS_CERTIFICATE_BUNDLE
+        help
+            Enable trusted root certificate bundle. This approach allows to have
+            OTA updates functional with any public server without requirement
+            to explicitly add its server certificate.
+
     config EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
         bool
         default y if EXAMPLE_FIRMWARE_UPGRADE_URL = "FROM_STDIN"

@@ -94,9 +94,15 @@ typedef struct {
  * in parallel.
  * It blocks until the signing is finished and then returns the signature.
  *
+ * The function calculates a plain RSA signature with help of the DS peripheral.
+ * The RSA encryption operation is as follows:
+ * Z = XY mod M where,
+ * Z is the signature, X is the input message,
+ * Y and M are the RSA private key parameters.
+ *
  * @note This function locks the HMAC, SHA, AES and RSA components during its entire execution time.
  *
- * @param message the message to be signed; its length is determined by data->rsa_length
+ * @param message the message to be signed; its length should be (data->rsa_length + 1)*4 bytes
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
  * @param key_id the HMAC key ID determining the HMAC key of the HMAC which will be used to decrypt the
  *        signing key data
@@ -123,10 +129,16 @@ esp_err_t esp_ds_sign(const void *message,
  * This function yields a context object which needs to be passed to \c esp_ds_finish_sign() to finish the signing
  * process.
  *
+ * The function calculates a plain RSA signature with help of the DS peripheral.
+ * The RSA encryption operation is as follows:
+ * Z = XY mod M where,
+ * Z is the signature, X is the input message,
+ * Y and M are the RSA private key parameters.
+ *
  * @note This function locks the HMAC, SHA, AES and RSA components, so the user has to ensure to call
  *       \c esp_ds_finish_sign() in a timely manner.
  *
- * @param message the message to be signed; its length is determined by data->rsa_length
+ * @param message the message to be signed; its length should be (data->rsa_length +1 )*4 bytes
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
  * @param key_id the HMAC key ID determining the HMAC key of the HMAC which will be used to decrypt the
  *        signing key data

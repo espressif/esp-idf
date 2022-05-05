@@ -173,13 +173,15 @@ class LinkingSections(object):
         '''
 
         def get_memory_name(split_name: List) -> Tuple[str, str]:
-            memory_name = f'.{split_name[1]}'
+            memory_name = '.{}'.format(split_name[1])
             display_name = section
             for seg_name in ['iram','dram','flash']:
                 if seg_name in split_name[1]:
-                    memory_name = f'.{seg_name}'
+                    memory_name = '.{}'.format(seg_name)
                     seg_name = seg_name.upper() if seg_name != 'flash' else seg_name.capitalize()
-                    display_name = seg_name + ('' if seg_name != 'IRAM' else split_name[1].replace('iram', '')) + f' .{split_name[2]}'
+                    display_name = ''.join([seg_name,
+                                            split_name[1].replace('iram', '') if seg_name == 'IRAM' else '',
+                                            ' .{}'.format(split_name[2]) if len(split_name) > 2 else ''])
             return memory_name, display_name
 
         ordered_name_list = sorted(section_name_list)
@@ -198,7 +200,7 @@ class LinkingSections(object):
             split_name = section.split('.')
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
-                assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
+                assert split_name[0] == '', 'Unexpected section name "{}"'.format(section)
                 memory_name, display_name_list[i] = get_memory_name(split_name)
                 continue
 
@@ -322,7 +324,10 @@ def load_sections(map_file: TextIO) -> Dict:
     RE_FULL_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)\s*(?P<file>.*)$')
 
     # Extract archive and object_file from the file_info field
-    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ ]+\.(o|obj))\)?)')
+    # The object file extention (.obj or .o) is optional including the dot. This is necessary for some third-party
+    # libraries. Since the dot is optional and the search gready the parsing of the object name must stop at ). Hence
+    # the [^ )] part of the regex.
+    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ )]+(\.(o|obj))?)\)?)')
 
     def dump_src_line(src: Dict) -> str:
         return '%s(%s) addr: 0x%08x, size: 0x%x+%d' % (src['sym_name'], src['file'], src['address'], src['size'], src['fill'])
@@ -393,7 +398,7 @@ def load_sections(map_file: TextIO) -> Dict:
 
             # Extract archive and file information
             match_arch_and_file = RE_FILE.match(match_line.group('file'))
-            assert match_arch_and_file
+            assert match_arch_and_file, 'Archive and file information not found for "{}"'.format(match_line.group('file'))
 
             archive = match_arch_and_file.group('archive')
             if archive is None:

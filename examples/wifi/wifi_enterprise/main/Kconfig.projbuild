@@ -1,5 +1,11 @@
 menu "Example Configuration"
 
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "wpa2_test"
+        help
+            SSID (network name) for the example to connect to.
+
     choice
         prompt "Enterprise configuration to be used"
         default EXAMPLE_WPA_WPA2_ENTERPRISE
@@ -15,12 +21,6 @@ menu "Example Configuration"
             select WPA_SUITE_B_192
     endchoice
 
-    config EXAMPLE_WIFI_SSID
-        string "WiFi SSID"
-        default "wpa2_test"
-        help
-            SSID (network name) for the example to connect to.
-
     if EXAMPLE_WPA_WPA2_ENTERPRISE
         config EXAMPLE_VALIDATE_SERVER_CERT
             bool "Validate server"
@@ -33,6 +33,13 @@ menu "Example Configuration"
         config EXAMPLE_VALIDATE_SERVER_CERT
             default y
     endif
+
+    config EXAMPLE_USE_DEFAULT_CERT_BUNDLE
+        bool "Use default cert bundle"
+        depends on EXAMPLE_VALIDATE_SERVER_CERT
+        default n
+        help
+            Use default CA certificate bundle for WPA enterprise connection
 
     choice
         prompt "EAP method for the example to use"

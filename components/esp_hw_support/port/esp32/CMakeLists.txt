@@ -1,5 +1,5 @@
 target_include_directories(${COMPONENT_LIB} PUBLIC .)
-target_include_directories(${COMPONENT_LIB} PRIVATE private_include)
+target_include_directories(${COMPONENT_LIB} PUBLIC private_include)
 
 set(srcs
     "rtc_clk.c"
@@ -8,7 +8,6 @@ set(srcs
     "rtc_pm.c"
     "rtc_sleep.c"
     "rtc_time.c"
-    "rtc_wdt.c"
     "chip_info.c")
 
 if(NOT BOOTLOADER_BUILD)

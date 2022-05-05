@@ -23,7 +23,7 @@
     {IDF_TARGET_NAME} 是一款支持 2.4 GHz Wi-Fi 和低功耗蓝牙的芯片，搭载 Xtensa® 32 位 LX7 处理器。
 
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2
 
     本指南为 {IDF_TARGET_NAME} 官方应用开发框架 `ESP-IDF <https://github.com/espressif/esp-idf>`_ 的配套文档。
 
@@ -37,4 +37,3 @@
     乐鑫物联网综合开发框架
 
 ESP-IDF 即乐鑫物联网开发框架，可为在 Windows、Linux 和 macOS 系统平台上开发 {IDF_TARGET_NAME} 应用程序提供工具链、API、组件和工作流程的支持。
-

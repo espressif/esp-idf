@@ -81,7 +81,7 @@
 #endif
 
 static int s_active_interfaces = 0;
-static xSemaphoreHandle s_semph_get_ip_addrs;
+static SemaphoreHandle_t s_semph_get_ip_addrs;
 static esp_netif_t *s_example_esp_netif = NULL;
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
@@ -379,9 +379,10 @@ static esp_netif_t *eth_start(void)
     phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;
     phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO;
 #if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
-    mac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
-    mac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
-    s_mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;
+    esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;
+    s_mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 #if CONFIG_EXAMPLE_ETH_PHY_IP101
     s_phy = esp_eth_phy_new_ip101(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
@@ -478,11 +479,17 @@ static void eth_stop(void)
     ESP_ERROR_CHECK(esp_eth_stop(s_eth_handle));
     ESP_ERROR_CHECK(esp_eth_del_netif_glue(s_eth_glue));
     ESP_ERROR_CHECK(esp_eth_driver_uninstall(s_eth_handle));
+    s_eth_handle = NULL;
     ESP_ERROR_CHECK(s_phy->del(s_phy));
     ESP_ERROR_CHECK(s_mac->del(s_mac));
 
     esp_netif_destroy(eth_netif);
     s_example_esp_netif = NULL;
+}
+
+esp_eth_handle_t get_example_eth_handle(void)
+{
+    return s_eth_handle;
 }
 
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET

@@ -3,7 +3,7 @@
   stage: host_test
   image: $ESP_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   tags:
     - host_test
   dependencies: []
@@ -104,6 +104,12 @@ test_mdns_fuzzer_on_host:
   variables:
     FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
 
+test_mdns_no_serv_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
+    FUZZER_PARAMS: MDNS_NO_SERVICES=on
+
 test_lwip_dns_fuzzer_on_host:
   extends: .host_fuzzer_test_template
   variables:
@@ -179,6 +185,7 @@ test_idf_monitor:
       - tools/test_idf_monitor/outputs/*
     expire_in: 1 week
   script:
+    - eval $($IDF_PATH/tools/idf_tools.py export)
     - cd ${IDF_PATH}/tools/test_idf_monitor
     - ./run_test_idf_monitor.py
 
@@ -270,6 +277,7 @@ test_espcoredump:
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
+    - eval $($IDF_PATH/tools/idf_tools.py export)
     - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b $IDF_COREDUMP_ELF_TAG
     - cd ${IDF_PATH}/components/espcoredump/test/
     - ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf

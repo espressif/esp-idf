@@ -124,7 +124,7 @@ static void led_action_thread(void *arg)
     struct _led_state led = {0};
 
     while (1) {
-        if (xQueueReceive(led_action_queue, &led, (portTickType)portMAX_DELAY)) {
+        if (xQueueReceive(led_action_queue, &led, (TickType_t)portMAX_DELAY)) {
             ESP_LOGI(TAG, "%s: pin 0x%04x onoff 0x%02x", __func__, led.pin, led.current);
             /* If the node is controlled by phone, add a delay when turn on/off led */
             if (fast_prov_server.primary_role == true) {

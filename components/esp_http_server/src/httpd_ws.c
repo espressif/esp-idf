@@ -143,7 +143,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     /* Generate SHA-1 first and then encode to Base64 */
     size_t key_len = strlen(server_raw_text);
-    mbedtls_sha1_ret((uint8_t *)server_raw_text, key_len, server_key_hash);
+    mbedtls_sha1((uint8_t *)server_raw_text, key_len, server_key_hash);
 
     size_t encoded_len = 0;
     mbedtls_base64_encode((uint8_t *)server_key_encoded, sizeof(server_key_encoded), &encoded_len,

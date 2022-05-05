@@ -68,7 +68,7 @@ struct shared_vector_desc_t {
 
 //Pack using bitfields for better memory use
 struct vector_desc_t {
-    int flags: 16;                          //OR of VECDESC_FLAG_* defines
+    int flags: 16;                          //OR of VECDESC_FL_* defines
     unsigned int cpu: 1;
     unsigned int intno: 5;
     int source: 8;                          //Interrupt mux flags, used when not shared
@@ -560,7 +560,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         non_iram_int_mask[cpu]|=(1<<intr);
     }
     if (source>=0) {
-        intr_matrix_set(cpu, source, intr);
+        esp_rom_route_intr_matrix(cpu, source, intr);
     }
 
     //Fill return handle data.
@@ -692,7 +692,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
-        handle->vector_desc->flags&=!(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED);
+        handle->vector_desc->flags&=~(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED|VECDESC_FL_SHARED);
         //Also kill non_iram mask bit.
         non_iram_int_mask[handle->vector_desc->cpu]&=~(1<<(handle->vector_desc->intno));
     }
@@ -735,7 +735,7 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
     }
     if (source >= 0) {
         //Disabled using int matrix; re-connect to enable
-        intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
+        esp_rom_route_intr_matrix(handle->vector_desc->cpu, source, handle->vector_desc->intno);
     } else {
         //Re-enable using cpu int ena reg
         if (handle->vector_desc->cpu!=cpu_hal_get_core_id()) return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
@@ -771,7 +771,7 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     if (source >= 0) {
         if ( disabled ) {
             //Disable using int matrix
-            intr_matrix_set(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
+            esp_rom_route_intr_matrix(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
         }
     } else {
         //Disable using per-cpu regs

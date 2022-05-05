@@ -231,7 +231,6 @@ SECTIONS
   {
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
 
     mapping[dram0_bss]
 
@@ -288,16 +287,16 @@ SECTIONS
 
   /**
    * This dummy section represents the .flash.text section but in default_rodata_seg.
-   * Thus, it must have its alignement and (at least) its size.
+   * Thus, it must have its alignment and (at least) its size.
    */
   .flash_rodata_dummy (NOLOAD):
   {
-    _flash_rodata_dummy_start = .;
-    /* Start at the same alignement constraint than .flash.text */
+    _flash_rodata_dummy_start = ABSOLUTE(.);
+    /* Start at the same alignment constraint than .flash.text */
     . = ALIGN(ALIGNOF(.flash.text));
     /* Create an empty gap as big as .flash.text section */
     . = . + SIZEOF(.flash.text);
-    /* Prepare the alignement of the section above. Few bytes (0x20) must be
+    /* Prepare the alignment of the section above. Few bytes (0x20) must be
      * added for the mapping header. */
     . = ALIGN(0x10000) + 0x20;
     _rodata_reserved_start = .;
@@ -380,6 +379,25 @@ SECTIONS
     . = ALIGN (4);
     mapping[rodata_noload]
   } > default_rodata_seg
+
+  /**
+   * This section is required to skip flash rodata sections, because `extern_ram_seg`
+   * and `drom0_0_seg` are on the same bus
+   */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . = ORIGIN(extern_ram_seg) + (_rodata_reserved_end - _flash_rodata_dummy_start);
+    . = ALIGN (0x10000);
+  } > extern_ram_seg
+
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.bss (NOLOAD) :
+  {
+    _ext_ram_bss_start = ABSOLUTE(.);
+    mapping[extern_ram]
+    . = ALIGN(4);
+    _ext_ram_bss_end = ABSOLUTE(.);
+  } > extern_ram_seg
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :

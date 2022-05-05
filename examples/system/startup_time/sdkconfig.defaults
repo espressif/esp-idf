@@ -17,3 +17,7 @@ CONFIG_BOOTLOADER_LOG_LEVEL_WARN=y
 # note: the larger the application, the bigger the time saved by
 # from this option
 CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON=y
+
+# Setting option to zero is only recommended if not using sleep modes, or
+# if you don't need accurate sleep times.
+CONFIG_RTC_CLK_CAL_CYCLES=0

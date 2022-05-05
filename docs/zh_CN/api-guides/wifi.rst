@@ -206,7 +206,7 @@ IP_EVENT_GOT_IP6
 ++++++++++++++++++++++++++++++++++++
 当 IPV6 SLAAC 支持自动为 {IDF_TARGET_NAME} 配置一个地址，或 {IDF_TARGET_NAME} 地址发生改变时，将引发此事件。此事件意味着应用程序一切就绪，可以开始任务（如：创建套接字）。
 
-IP_STA_LOST_IP
+IP_EVENT_STA_LOST_IP
 ++++++++++++++++++++++++++++++++++++
 当 IPV4 地址失效时，将引发此事件。
 
@@ -1295,7 +1295,7 @@ Wi-Fi 供应商 IE 配置
 Wi-Fi Easy Connect™ (DPP)
 --------------------------
 
-Wi-Fi Easy Connect\ :sup:`TM`（也称为设备配置协议）是一个安全且标准化的配置协议，用于配置 Wi-Fi 设备。更多信息请参考 :doc:`esp_dpp <../api-reference/network/esp_dpp>`。
+Wi-Fi Easy Connect\ :sup:`TM` （也称为设备配置协议）是一个安全且标准化的配置协议，用于配置 Wi-Fi 设备。更多信息请参考 :doc:`esp_dpp <../api-reference/network/esp_dpp>`。
 
 WPA2-Enterprise
 +++++++++++++++++++++++++++++++++

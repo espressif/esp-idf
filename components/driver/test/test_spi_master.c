@@ -29,7 +29,7 @@
 #include "../cache_utils.h"
 #include "soc/soc_memory_layout.h"
 #include "driver/spi_common_internal.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 
 
 const static char TAG[] = "test_spi";
@@ -93,14 +93,14 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     };
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
-    uint32_t apb_freq_hz = rtc_clk_apb_freq_get();
-    if (apb_freq_hz == (80 * MHZ)) {
+    uint32_t apb_freq_hz = esp_clk_apb_freq();
+    if (apb_freq_hz == (80 * 1000 * 1000)) {
         uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_80;
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
             check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
         }
     } else {
-        TEST_ASSERT(apb_freq_hz == (40 * MHZ));
+        TEST_ASSERT(apb_freq_hz == (40 * 1000 * 1000));
         uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_40;
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
             check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
@@ -1053,7 +1053,7 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_device_handle_t spi;
     spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
-    dev_cfg.clock_speed_hz = 4 * 1000 * 1000;
+    dev_cfg.clock_speed_hz = 1 * 1000 * 1000;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
 
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
@@ -1299,6 +1299,8 @@ static void fd_slave(void)
 TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", "[spi_ms][test_env=Example_SPI_Multi_device]", fd_master, fd_slave);
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
 
+//NOTE: Explained in IDF-1445 | MR !14996
+#if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
@@ -1308,17 +1310,7 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = esp_cpu_get_ccount();}while(0)
 #define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_ccount(); *p_time = (__t2-__t1);}while(0)
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ)
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
-#elif CONFIG_IDF_TARGET_ESP32C2
-#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32C2_DEFAULT_CPU_FREQ_MHZ)
-#endif
+#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 
 static void speed_setup(spi_device_handle_t *spi, bool use_dma)
 {
@@ -1455,3 +1447,4 @@ TEST_CASE("spi_speed", "[spi]")
     master_free_device_bus(spi);
 }
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+#endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)

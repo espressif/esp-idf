@@ -14,17 +14,17 @@
     :SOC_HMAC_SUPPORTED: hmac
     :SOC_DIG_SIGN_SUPPORTED: ds
     i2c
-    i2s
+    :SOC_I2S_SUPPORTED: i2s
     lcd
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_RMT_SUPPORTED: rmt
-    :esp32 or esp32s3: sd_pullup_requirements
+    :SOC_SDMMC_HOST_SUPPORTED: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
     sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
-    sigmadelta
+    :SOC_SIGMADELTA_SUPPORTED: sigmadelta
     spi_master
     spi_slave
     :esp32: secure_element
@@ -32,7 +32,7 @@
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_NUM: touch_pad
     :esp32s2: touch_element
-    twai
+    :SOC_TWAI_SUPPORTED: twai
     uart
     :SOC_USB_OTG_SUPPORTED: usb_device
     :SOC_USB_OTG_SUPPORTED: usb_host

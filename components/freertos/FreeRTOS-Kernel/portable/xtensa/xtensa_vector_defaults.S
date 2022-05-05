@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "xtensa_rtos.h"
 #include "esp_private/panic_reason.h"
@@ -33,6 +25,8 @@ The default behaviour is to just exit the interrupt or call the panic handler on
 
 _xt_debugexception:
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+    s32i    a0, sp, XT_STK_EXIT
+
 #define XT_DEBUGCAUSE_DI        (5)
     getcoreid   a0
 #if (CONFIG_BTDM_CTRL_PINNED_TO_CORE == PRO_CPU_NUM)
@@ -56,7 +50,11 @@ _xt_debugexception:
     wsr     a0,EPC_1
     rsr     a0,(EXCSAVE + XCHAL_DEBUGLEVEL)
     wsr     a0,EXCSAVE_1
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    J   _xt_panic_gdbstub                   /* For gdbstub we make jump */
+#else
     call0   _xt_panic                       /* does not return */
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     rfi     XCHAL_DEBUGLEVEL
 
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)

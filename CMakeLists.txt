@@ -116,6 +116,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     # Multiple cases of attributes unknown to clang, for example
     # __attribute__((optimize("-O3")))
     list(APPEND compile_options "-Wno-unknown-attributes")
+    # Disable Clang warnings for atomic operations with access size
+    # more then 4 bytes
+    list(APPEND compile_options "-Wno-atomic-alignment")
     # Clang also produces many -Wunused-function warnings which GCC doesn't.
     # However these aren't treated as errors.
 endif()
@@ -195,12 +198,19 @@ if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
 endif()
 
 list(APPEND link_options "-fno-lto")
-list(APPEND link_options "-Wl,--warn-common")
 
 if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND link_options "-Wl,-dead_strip")
+    list(APPEND link_options "-Wl,-warn_commons")
 else()
     list(APPEND link_options "-Wl,--gc-sections")
+    list(APPEND link_options "-Wl,--warn-common")
+endif()
+
+# SMP FreeRTOS user provided minimal idle hook. This allows the user to provide
+# their own copy of vApplicationMinimalIdleHook()
+if(CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK)
+    list(APPEND link_options "-Wl,--wrap=vApplicationMinimalIdleHook")
 endif()
 
 # Placing jump tables in flash would cause issues with code that required

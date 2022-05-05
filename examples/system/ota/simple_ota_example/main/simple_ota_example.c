@@ -16,6 +16,9 @@
 #include "esp_https_ota.h"
 #include "protocol_examples_common.h"
 #include "string.h"
+#ifdef CONFIG_EXAMPLE_USE_CERT_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
 
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -88,7 +91,11 @@ void simple_ota_example_task(void *pvParameter)
 #endif
     esp_http_client_config_t config = {
         .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
+#ifdef CONFIG_EXAMPLE_USE_CERT_BUNDLE
+        .crt_bundle_attach = esp_crt_bundle_attach,
+#else
         .cert_pem = (char *)server_cert_pem_start,
+#endif /* CONFIG_EXAMPLE_USE_CERT_BUNDLE */
         .event_handler = _http_event_handler,
         .keep_alive_enable = true,
 #ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_BIND_IF
@@ -114,8 +121,11 @@ void simple_ota_example_task(void *pvParameter)
     config.skip_cert_common_name_check = true;
 #endif
 
+    esp_https_ota_config_t ota_config = {
+        .http_config = &config,
+    };
     ESP_LOGI(TAG, "Attempting to download update from %s", config.url);
-    esp_err_t ret = esp_https_ota(&config);
+    esp_err_t ret = esp_https_ota(&ota_config);
     if (ret == ESP_OK) {
         esp_restart();
     } else {

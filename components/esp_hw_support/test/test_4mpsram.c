@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,7 +72,7 @@ static void test_spi_bus_occupy(spi_host_device_t expected_occupied_host)
 #if CONFIG_SPIRAM_OCCUPY_HSPI_HOST || CONFIG_SPIRAM_OCCUPY_VSPI_HOST
 TEST_CASE("some spi bus occpied by psram", "[psram_4m][test_env=UT_T1_PSRAMV0]")
 {
-// NOTE: this unit test rely on the config that PSRAM of 8MB is used only when CONFIG_SPIRAM_BNKSWITCH_ENABLE is set
+// NOTE: this unit test rely on the config that PSRAM of 8MB is used only when CONFIG_SPIRAM_BANKSWITCH_ENABLE is set
 //currently all 8M psram don't need more SPI peripherals
 #if !CONFIG_SPIRAM || !CONFIG_SPIRAM_SPEED_80M || CONFIG_SPIRAM_BANKSWITCH_ENABLE
 #error unexpected test config, only psram 32MBit ver 0 at 80MHz will trigger the workaround

@@ -42,7 +42,7 @@ menu "SPIFFS Configuration"
     config SPIFFS_GC_MAX_RUNS
         int "Set Maximum GC Runs"
         default 10
-        range 1 255
+        range 1 10000
         help
             Define maximum number of GC runs to perform to reach desired free pages.
 

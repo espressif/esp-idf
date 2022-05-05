@@ -1,16 +1,8 @@
-// Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -30,7 +22,7 @@
 typedef struct {
     int fd;
     int delay_ms;
-    xSemaphoreHandle sem;
+    SemaphoreHandle_t sem;
 } test_task_param_t;
 
 typedef struct {
@@ -40,7 +32,7 @@ typedef struct {
     int maxfds;
     struct timeval *tv;
     int select_ret;
-    xSemaphoreHandle sem;
+    SemaphoreHandle_t sem;
 } test_select_task_param_t;
 
 static const char message[] = "Hello world!";
@@ -591,7 +583,7 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     start_select_task(&param);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
 
@@ -604,7 +596,7 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     start_select_task(&param);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
 

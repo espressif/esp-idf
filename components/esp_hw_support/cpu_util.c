@@ -70,12 +70,7 @@ void IRAM_ATTR esp_cpu_clear_watchpoint(int no)
 
 bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 {
-#if CONFIG_ESP32_DEBUG_OCDAWARE || \
-    CONFIG_ESP32S2_DEBUG_OCDAWARE || \
-    CONFIG_ESP32S3_DEBUG_OCDAWARE || \
-    CONFIG_ESP32C3_DEBUG_OCDAWARE || \
-    CONFIG_ESP32H2_DEBUG_OCDAWARE || \
-    CONFIG_ESP32C2_DEBUG_OCDAWARE
+#if CONFIG_ESP_DEBUG_OCDAWARE
     return cpu_ll_is_debugger_attached();
 #else
     return false; // Always return false if "OCD aware" is disabled

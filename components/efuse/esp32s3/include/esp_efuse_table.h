@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 9444b887379d924049af42806ca71d45
+// md5_digest_table 9ad4ee9f762f38e72cc539962367b6a2
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -100,6 +100,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_PAGE_SIZE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_ECC_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ERR_RST_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CLK[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_Q_D1[];

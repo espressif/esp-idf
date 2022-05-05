@@ -43,7 +43,7 @@
 
 
 
-// Offset between FRC timer and the RTC.
+// Offset between High resolution timer and the RTC.
 // Initialized after reset or light sleep.
 #if defined(CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER) && defined(CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER)
 int64_t s_microseconds_offset = 0;
@@ -119,7 +119,7 @@ void esp_set_time_from_rtc(void)
 #endif // CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER && CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
 }
 
-void esp_sync_counters_rtc_and_frc(void)
+void esp_sync_timekeeping_timers(void)
 {
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) && defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
     struct timeval tv;

@@ -56,7 +56,6 @@
         DIS_DOWNLOAD_ICACHE,              EFUSE_BLK0,   42,    1,     Disable Icache in download mode
         DIS_USB_DEVICE,                   EFUSE_BLK0,   43,    1,     Disable USB_DEVICE
         DIS_FORCE_DOWNLOAD,               EFUSE_BLK0,   44,    1,     Disable force chip go to download mode function
-        DIS_USB,                          EFUSE_BLK0,   45,    1,     Disable USB function
         DIS_TWAI,                         EFUSE_BLK0,   46,    1,     Disable TWAI function
         JTAG_SEL_ENABLE,                  EFUSE_BLK0,   47,    1,     Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.
         SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
@@ -92,14 +91,9 @@
         DIS_DOWNLOAD_MODE,                EFUSE_BLK0,  128,    1,     Disble download mode include boot_mode[3:0] is 0 1 2 3 6 7
         DIS_LEGACY_SPI_BOOT,              EFUSE_BLK0,  129,    1,     Disable_Legcy_SPI_boot mode include boot_mode[3:0] is 4
         UART_PRINT_CHANNEL,               EFUSE_BLK0,  130,    1,     0: UART0. 1: UART1
-        FLASH_ECC_MODE,                   EFUSE_BLK0,  131,    1,     Set this bit to set flsah ecc mode. 0:flash ecc 16to18 byte mode. 1:flash ecc 16to17 byte mode
         DIS_USB_DOWNLOAD_MODE,            EFUSE_BLK0,  132,    1,     Disable download through USB
         ENABLE_SECURITY_DOWNLOAD,         EFUSE_BLK0,  133,    1,     Enable security download mode
         UART_PRINT_CONTROL,               EFUSE_BLK0,  134,    2,     b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
-        PIN_POWER_SELECTION,              EFUSE_BLK0,  136,    1,     GPIO33-GPIO37 power supply selection in ROM code. 0:VDD3P3_CPU. 1:VDD_SPI.
-        FLASH_TYPE,                       EFUSE_BLK0,  137,    1,     Connected Flash interface type. 0: 4 data line. 1: 8 data line
-        FLASH_PAGE_SIZE,                  EFUSE_BLK0,  138,    2,     Flash page size
-        FLASH_ECC_EN,                     EFUSE_BLK0,  140,    1,     Enable ECC for flash boot
         FORCE_SEND_RESUME,                EFUSE_BLK0,  141,    1,     Force ROM code to send a resume command during SPI boot
         SECURE_VERSION,                   EFUSE_BLK0,  142,   16,     Secure version for anti-rollback
         BOOT_DISABLE_FAST_WAKE,           EFUSE_BLK0,  158,    1,     Fast verify on wake option in ROM for Secure Boot

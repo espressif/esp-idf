@@ -14,6 +14,7 @@
 #include "soc/ledc_struct.h"
 #include "driver/gptimer.h"
 #include "driver/ledc.h"
+#include "esp_attr.h"
 #include "iot_led.h"
 #include "esp_log.h"
 
@@ -48,7 +49,7 @@ static DRAM_ATTR iot_light_t *g_light_config = NULL;
 static DRAM_ATTR uint16_t *g_gamma_table = NULL;
 static DRAM_ATTR bool g_hw_timer_started = false;
 
-static IRAM_ATTR bool fade_timercb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
+static bool fade_timercb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
 
 static void iot_timer_start(gptimer_handle_t gptimer)
 {
@@ -149,9 +150,9 @@ static IRAM_ATTR esp_err_t _iot_set_fade_with_time(ledc_mode_t speed_mode, ledc_
     uint32_t precision = (0x1U << duty_resolution);
 
     if (timer_source_clk == LEDC_APB_CLK) {
-        freq = ((uint64_t)LEDC_APB_CLK_HZ << 8) / precision / clock_divider;
+        freq = ((uint64_t)APB_CLK_FREQ << 8) / precision / clock_divider;
     } else {
-        freq = ((uint64_t)LEDC_REF_CLK_HZ << 8) / precision / clock_divider;
+        freq = ((uint64_t)REF_CLK_FREQ << 8) / precision / clock_divider;
     }
 
     if (duty_delta == 0) {
@@ -330,7 +331,7 @@ esp_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
         g_light_config->speed_mode = speed_mode;
 
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = GPTIMER_RESOLUTION_HZ,
         };

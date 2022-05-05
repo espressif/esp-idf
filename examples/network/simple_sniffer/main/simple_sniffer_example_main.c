@@ -64,7 +64,7 @@ static void initialize_filesystem(void)
         .max_files = 4,
         .format_if_mount_failed = true
     };
-    esp_err_t err = esp_vfs_fat_spiflash_mount(HISTORY_MOUNT_POINT, "storage", &mount_config, &wl_handle);
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(HISTORY_MOUNT_POINT, "storage", &mount_config, &wl_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
         return;
@@ -135,9 +135,10 @@ static void initialize_eth(void)
     phy_config.phy_addr = CONFIG_SNIFFER_ETH_PHY_ADDR;
     phy_config.reset_gpio_num = CONFIG_SNIFFER_ETH_PHY_RST_GPIO;
 #if CONFIG_SNIFFER_USE_INTERNAL_ETHERNET
-    mac_config.smi_mdc_gpio_num = CONFIG_SNIFFER_ETH_MDC_GPIO;
-    mac_config.smi_mdio_gpio_num = CONFIG_SNIFFER_ETH_MDIO_GPIO;
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp32_emac_config.smi_mdc_gpio_num = CONFIG_SNIFFER_ETH_MDC_GPIO;
+    esp32_emac_config.smi_mdio_gpio_num = CONFIG_SNIFFER_ETH_MDIO_GPIO;
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 #if CONFIG_SNIFFER_ETH_PHY_IP101
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
 #elif CONFIG_SNIFFER_ETH_PHY_RTL8201

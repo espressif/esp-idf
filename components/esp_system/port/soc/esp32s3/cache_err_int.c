@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 #include "soc/periph_defs.h"
 #include "hal/cpu_hal.h"
 #include "esp32s3/dport_access.h"
-#include "esp32s3/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 
 void esp_cache_err_int_init(void)
 {
@@ -32,7 +32,7 @@ void esp_cache_err_int_init(void)
     // We do not register a handler for the interrupt because it is interrupt
     // level 4 which is not serviceable from C. Instead, xtensa_vectors.S has
     // a call to the panic handler for this interrupt.
-    intr_matrix_set(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_CACHEERR_INUM);
+    esp_rom_route_intr_matrix(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_CACHEERR_INUM);
 
     // Enable invalid cache access interrupt when the cache is disabled.
     // When the interrupt happens, we can not determine the CPU where the
@@ -58,7 +58,7 @@ void esp_cache_err_int_init(void)
                       EXTMEM_ICACHE_SYNC_OP_FAULT_INT_ENA);
 
     if (core_id == PRO_CPU_NUM) {
-        intr_matrix_set(core_id, ETS_CACHE_CORE0_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
+        esp_rom_route_intr_matrix(core_id, ETS_CACHE_CORE0_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
         /* On the hardware side, stat by clearing all the bits reponsible for
          * enabling cache access error interrupts.  */
         SET_PERI_REG_MASK(EXTMEM_CORE0_ACS_CACHE_INT_CLR_REG,
@@ -76,7 +76,7 @@ void esp_cache_err_int_init(void)
                 EXTMEM_CORE0_IBUS_WR_IC_INT_ENA |
                 EXTMEM_CORE0_IBUS_ACS_MSK_IC_INT_ENA);
     } else {
-        intr_matrix_set(core_id, ETS_CACHE_CORE1_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
+        esp_rom_route_intr_matrix(core_id, ETS_CACHE_CORE1_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
 
         /* On the hardware side, stat by clearing all the bits reponsible for
          * enabling cache access error interrupts.  */

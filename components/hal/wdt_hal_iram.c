@@ -41,7 +41,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
         //Enable or disable level interrupt. Edge interrupt is always disabled.
         rwdt_ll_set_edge_intr(hal->rwdt_dev, false);
         rwdt_ll_set_level_intr(hal->rwdt_dev, enable_intr);
-#else   //CONFIG_IDF_TARGET_ESP32S2BETA
+#else
         //Enable or disable chip reset on timeout, and length of chip reset signal
         rwdt_ll_set_chip_reset_width(hal->rwdt_dev, 0);
         rwdt_ll_set_chip_reset_en(hal->rwdt_dev, false);

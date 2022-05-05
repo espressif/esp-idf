@@ -19,6 +19,10 @@
 #include "hal/systimer_ll.h"
 #endif
 
+#ifdef CONFIG_PM_TRACE
+#include "esp_private/pm_trace.h"
+#endif //CONFIG_PM_TRACE
+
 BaseType_t xPortSysTickHandler(void);
 
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
@@ -157,7 +161,9 @@ IRAM_ATTR void SysTickIsrHandler(void *arg)
  */
 BaseType_t xPortSysTickHandler(void)
 {
+#if configBENCHMARK
     portbenchmarkIntLatency();
+#endif //configBENCHMARK
     traceISR_ENTER(SYSTICK_INTR_ID);
     BaseType_t ret = xTaskIncrementTick();
     if(ret != pdFALSE) {

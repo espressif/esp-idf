@@ -40,7 +40,7 @@ void bad_ptr_task(void *pvParameter)
 {
     printf("Task 'bad_ptr_task' start.\n");
     while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         printf("Task 'bad_ptr_task' run.\n");
         bad_ptr_func();
     }
@@ -75,7 +75,7 @@ void unaligned_ptr_task(void *pvParameter)
 {
     printf("Task 'unaligned_ptr_task' start.\n");
     while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         printf("Task 'unaligned_ptr_task' run.\n");
         recur_func();
     }
@@ -86,7 +86,7 @@ void failed_assert_task(void *pvParameter)
 {
     printf("Task 'failed_assert_task' start.\n");
     while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         printf("Task 'failed_assert_task' run.\n");
         if(crash_flags & TCI_FAIL_ASSERT) {
             printf("Assert.\n");

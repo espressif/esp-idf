@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,6 +164,13 @@ typedef struct {
 
 } emac_hal_context_t;
 
+/**
+ * @brief EMAC related configuration
+ */
+typedef struct {
+    eth_mac_dma_burst_len_t dma_burst_len;  /*!< eth-type enum of chosen dma burst-len */
+} emac_hal_dma_config_t;
+
 void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
                    uint8_t **rx_buf, uint8_t **tx_buf);
 
@@ -189,7 +196,7 @@ void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal);
 
-void emac_hal_init_dma_default(emac_hal_context_t *hal);
+void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *hal_config);
 
 void emac_hal_set_speed(emac_hal_context_t *hal, uint32_t speed);
 
@@ -225,7 +232,7 @@ void emac_hal_start(emac_hal_context_t *hal);
  * @param hal EMAC HAL context infostructure
  * @return
  *     - ESP_OK: succeed
-  *    - ESP_ERR_INVALID_STATE: previous frame transmission is not completed. When this error occurs,
+  *    - ESP_ERR_INVALID_STATE: previous frame transmission/reception is not completed. When this error occurs,
   *      wait and reapeat the EMAC stop again.
  */
 esp_err_t emac_hal_stop(emac_hal_context_t *hal);
@@ -233,6 +240,8 @@ esp_err_t emac_hal_stop(emac_hal_context_t *hal);
 uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal);
 
 uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
+
+uint32_t emac_hal_transmit_multiple_buf_frame(emac_hal_context_t *hal, uint8_t **buffs, uint32_t *lengths, uint32_t inbuffs_cnt);
 
 uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain, uint32_t *free_desc);
 

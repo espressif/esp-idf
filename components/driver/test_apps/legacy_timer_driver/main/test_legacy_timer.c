@@ -10,7 +10,7 @@
 #include "esp_system.h"
 #include "unity.h"
 #include "driver/timer.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_sys.h"
 
@@ -298,7 +298,7 @@ TEST_CASE("Timer_init", "[hw_timer]")
 
     // lack one parameter
     timer_config_t config2 = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
@@ -313,7 +313,7 @@ TEST_CASE("Timer_init", "[hw_timer]")
     // Test init 2:  init
     uint64_t set_timer_val = 0x0;
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -355,7 +355,7 @@ TEST_CASE("Timer_init", "[hw_timer]")
 TEST_CASE("Timer_read_counter_value", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -395,7 +395,7 @@ TEST_CASE("Timer_read_counter_value", "[hw_timer]")
 TEST_CASE("Timer_start", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -427,7 +427,7 @@ TEST_CASE("Timer_start", "[hw_timer]")
 TEST_CASE("Timer_pause", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -455,7 +455,7 @@ TEST_CASE("Timer_pause", "[hw_timer]")
 TEST_CASE("Timer_counter_direction", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -492,7 +492,7 @@ TEST_CASE("Timer_counter_direction", "[hw_timer]")
 TEST_CASE("Timer_divider", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -568,7 +568,7 @@ TEST_CASE("Timer_divider", "[hw_timer]")
 TEST_CASE("Timer_enable_alarm", "[hw_timer]")
 {
     timer_config_t config_test = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -621,7 +621,7 @@ TEST_CASE("Timer_set_alarm_value", "[hw_timer]")
 {
     uint64_t alarm_val[SOC_TIMER_GROUP_TOTAL_TIMERS];
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -658,7 +658,7 @@ TEST_CASE("Timer_set_alarm_value", "[hw_timer]")
 TEST_CASE("Timer_auto_reload", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -698,7 +698,7 @@ TEST_CASE("Timer_auto_reload", "[hw_timer]")
 TEST_CASE("Timer_enable_timer_interrupt", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .counter_dir = TIMER_COUNT_UP,
@@ -740,7 +740,7 @@ TEST_CASE("Timer_enable_timer_group_interrupt", "[hw_timer][ignore]")
     intr_handle_t isr_handle = NULL;
     alarm_flag = false;
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -779,7 +779,7 @@ TEST_CASE("Timer_enable_timer_group_interrupt", "[hw_timer][ignore]")
 TEST_CASE("Timer_interrupt_register", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -835,7 +835,7 @@ TEST_CASE("Timer_clock_source", "[hw_timer]")
 {
     // configure clock source as APB clock
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -857,7 +857,7 @@ TEST_CASE("Timer_clock_source", "[hw_timer]")
     // configure clock source as XTAL clock
     all_timer_pause();
     config.clk_src = TIMER_SRC_CLK_XTAL;
-    config.divider = rtc_clk_xtal_freq_get() * 1000000 / TEST_TIMER_RESOLUTION_HZ;
+    config.divider = esp_clk_xtal_freq() / TEST_TIMER_RESOLUTION_HZ;
     all_timer_init(&config, true);
     all_timer_set_alarm_value(1.2 * TEST_TIMER_RESOLUTION_HZ);
 
@@ -878,7 +878,7 @@ TEST_CASE("Timer_ISR_callback", "[hw_timer]")
 {
     alarm_flag = false;
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
@@ -938,7 +938,7 @@ TEST_CASE("Timer_ISR_callback", "[hw_timer]")
 TEST_CASE("Timer_init_deinit_stress_test", "[hw_timer]")
 {
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
@@ -961,7 +961,7 @@ static void timer_group_test_init(void)
     static const uint32_t time_ms = 100;  // Alarm value 100ms.
     static const uint32_t ste_val = time_ms * TEST_TIMER_RESOLUTION_HZ / 1000;
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
@@ -991,7 +991,7 @@ TEST_CASE("Timer_check_reinitialization_sequence", "[hw_timer]")
     // 3 - deinit timer driver
     TEST_ESP_OK(timer_deinit(TIMER_GROUP_0, TIMER_0));
     timer_config_t config = {
-        .clk_src = TIMER_SRC_CLK_APB,
+        .clk_src = TIMER_SRC_CLK_DEFAULT,
         .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_START,
@@ -1006,8 +1006,4 @@ TEST_CASE("Timer_check_reinitialization_sequence", "[hw_timer]")
     vTaskDelay(30 / portTICK_PERIOD_MS);
     // The pending timer interrupt should not be triggered
     TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
-}
-
-void test_app_include_legacy_timer(void)
-{
 }

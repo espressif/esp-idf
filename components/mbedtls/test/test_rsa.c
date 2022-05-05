@@ -1,9 +1,12 @@
 /* mbedTLS RSA functionality tests
-
-   Focus on testing functionality where we use ESP32 hardware
-   accelerated crypto features.
-
-*/
+ *
+ * Focus on testing functionality where we use ESP32 hardware
+ * accelerated crypto features
+ *
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdbool.h>
 #include "esp_system.h"
@@ -11,9 +14,9 @@
 #include "mbedtls/rsa.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/x509_crt.h"
-#include "mbedtls/entropy_poll.h"
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
+#include "entropy_poll.h"
 #include "freertos/FreeRTOS.h"
 #include "unity.h"
 #include "test_utils.h"
@@ -393,7 +396,7 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
 }
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
-static void rsa_key_operations(int keysize, bool check_performance, bool use_blinding, bool generate_new_rsa);
+static void rsa_key_operations(int keysize, bool check_performance, bool generate_new_rsa);
 
 static int myrand(void *rng_state, unsigned char *output, size_t len)
 {
@@ -421,60 +424,59 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 TEST_CASE("test performance RSA key operations", "[bignum]")
 {
     for (int keysize = 2048; keysize <= SOC_RSA_MAX_BIT_LEN; keysize += 1024) {
-        rsa_key_operations(keysize, true, false, false);
+        rsa_key_operations(keysize, true, false);
     }
 }
 
 TEST_CASE("test RSA-3072 calculations", "[bignum]")
 {
     // use pre-genrated keys to make the test run a bit faster
-    rsa_key_operations(3072, false, true, false);
+    rsa_key_operations(3072, false, false);
 }
 
 TEST_CASE("test RSA-2048 calculations", "[bignum]")
 {
     // use pre-genrated keys to make the test run a bit faster
-    rsa_key_operations(2048, false, true, false);
+    rsa_key_operations(2048, false, false);
 }
 
 
 TEST_CASE("test RSA-4096 calculations", "[bignum]")
 {
     // use pre-genrated keys to make the test run a bit faster
-    rsa_key_operations(4096, false, true, false);
+    rsa_key_operations(4096, false, false);
 }
 
 
-static void rsa_key_operations(int keysize, bool check_performance, bool use_blinding, bool generate_new_rsa)
+static void rsa_key_operations(int keysize, bool check_performance, bool generate_new_rsa)
 {
     mbedtls_pk_context clientkey;
     mbedtls_rsa_context rsa;
     unsigned char orig_buf[4096 / 8];
     unsigned char encrypted_buf[4096 / 8];
     unsigned char decrypted_buf[4096 / 8];
-    int public_perf, private_perf;
     int res = 0;
 
     printf("First, orig_buf is encrypted by the public key, and then decrypted by the private key\n");
-    printf("keysize=%d check_performance=%d use_blinding=%d generate_new_rsa=%d\n", keysize, check_performance, use_blinding, generate_new_rsa);
+    printf("keysize=%d check_performance=%d generate_new_rsa=%d\n", keysize, check_performance, generate_new_rsa);
 
     memset(orig_buf, 0xAA, sizeof(orig_buf));
     orig_buf[0] = 0; // Ensure that orig_buf is smaller than rsa.N
     if (generate_new_rsa) {
-        mbedtls_rsa_init(&rsa, MBEDTLS_RSA_PRIVATE, 0);
+        mbedtls_rsa_init(&rsa);
         TEST_ASSERT_EQUAL(0, mbedtls_rsa_gen_key(&rsa, myrand, NULL, keysize, 65537));
     } else {
         mbedtls_pk_init(&clientkey);
 
         switch(keysize) {
         case 4096:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_4096_buf, sizeof(privkey_4096_buf), NULL, 0, myrand, NULL);
             break;
         case 3072:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_3072_buf, sizeof(privkey_3072_buf), NULL, 0);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_3072_buf, sizeof(privkey_3072_buf), NULL, 0, myrand, NULL);
             break;
         case 2048:
-            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0);
+            res = mbedtls_pk_parse_key(&clientkey, (const uint8_t *)privkey_2048_buf, sizeof(privkey_2048_buf), NULL, 0, myrand, NULL);
             break;
         default:
             TEST_FAIL_MESSAGE("unsupported keysize, pass generate_new_rsa=true or update test");
@@ -489,9 +491,11 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     print_rsa_details(&rsa);
 #endif
 
-    TEST_ASSERT_EQUAL(keysize, (int)rsa.len * 8);
-    TEST_ASSERT_EQUAL(keysize, (int)rsa.D.n * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
+    TEST_ASSERT_EQUAL(keysize, (int)rsa.MBEDTLS_PRIVATE(len) * 8);
+    TEST_ASSERT_EQUAL(keysize, (int)rsa.MBEDTLS_PRIVATE(D).MBEDTLS_PRIVATE(n) * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
 
+#ifdef SOC_CCOMP_TIMER_SUPPORTED
+    int public_perf, private_perf;
     ccomp_timer_start();
     res = mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf);
     public_perf = ccomp_timer_stop();
@@ -503,7 +507,7 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     TEST_ASSERT_EQUAL_HEX16(0, -res);
 
     ccomp_timer_start();
-    res =  mbedtls_rsa_private(&rsa, use_blinding?myrand:NULL, NULL, encrypted_buf, decrypted_buf);
+    res =  mbedtls_rsa_private(&rsa, myrand, NULL, encrypted_buf, decrypted_buf);
     private_perf = ccomp_timer_stop();
     TEST_ASSERT_EQUAL_HEX16(0, -res);
 
@@ -514,6 +518,13 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
         TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "%d us", public_perf);
         TEST_PERFORMANCE_CCOMP_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "%d us", private_perf);
     }
+#else
+    res = mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf);
+    TEST_ASSERT_EQUAL_HEX16(0, -res);
+    res =  mbedtls_rsa_private(&rsa, myrand, NULL, encrypted_buf, decrypted_buf);
+    TEST_ASSERT_EQUAL_HEX16(0, -res);
+    TEST_IGNORE_MESSAGE("Performance check skipped! (soc doesn't support ccomp timer)");
+#endif
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(orig_buf, decrypted_buf, keysize / 8, "RSA operation");
 
@@ -539,7 +550,7 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
     esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
 #endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
-    mbedtls_rsa_init(&ctx, MBEDTLS_RSA_PKCS_V15, 0);
+    mbedtls_rsa_init(&ctx);
     mbedtls_ctr_drbg_init(&ctr_drbg);
 
     mbedtls_entropy_init(&entropy);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,7 +193,7 @@ esp_err_t transaction_run(transaction_t *trans)
 
             // trans->event_group and trans->wait_events will not be changed once trans is created, so we don't need protect them
             current_bits = xEventGroupWaitBits(trans->event_group, trans->wait_events | TRANSACTION_ABORT_EVENT,
-                    1, 0, wait_time/portTICK_RATE_MS);
+                    1, 0, wait_time/portTICK_PERIOD_MS);
 
             xSemaphoreTakeRecursive(trans_mutex, portMAX_DELAY);
             trans->current_bits |= current_bits;

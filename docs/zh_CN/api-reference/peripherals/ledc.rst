@@ -1,6 +1,6 @@
 LED PWM 控制器
 ==============
-{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8"}
+{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8", esp32c2="6", esp32h2="6"}
 
 :link_to_translation:`en:[English]`
 
@@ -127,9 +127,57 @@ LED PWM 控制器可在无需 CPU 干预的情况下自动改变占空比，实�
          - 40 MHz
          - 支持动态调频（DFS）功能
 
-    .. note::
+.. only:: esp32c2
 
-        {IDF_TARGET_NAME}的所有定时器共用一个时钟源。因此{IDF_TARGET_NAME}不支持给不同的定时器配置不同的时钟源。
+    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
+       :widths: 10 10 30
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - 时钟功能
+       * - PLL_60M_CLK
+         - 60 MHz
+         - /
+       * - RTC20M_CLK
+         - ~20 MHz
+         - 支持动态调频（DFS）功能，支持Light-sleep模式
+       * - XTAL_CLK
+         - 40 MHz
+         - 支持动态调频（DFS）功能
+
+.. only:: esp32h2
+
+    .. list-table:: {IDF_TARGET_NAME} LEDC 时钟源特性
+       :widths: 10 10 30
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - 时钟功能
+       * - APB_CLK
+         - 96 MHz
+         - /
+       * - RTC8M_CLK
+         - ~8 MHz
+         - 支持动态调频（DFS）功能，支持Light-sleep模式
+       * - XTAL_CLK
+         - 32 MHz
+         - 支持动态调频（DFS）功能
+
+.. note::
+
+    .. only:: not esp32h2
+
+        1. 如果 {IDF_TARGET_NAME} 的定时器选用了RTCxM_CLK作为其时钟源，驱动会通过内部校准来得知这个时钟源的实际频率。这样确保了输出PWM信号频率的精准性。
+
+    .. only:: esp32h2
+
+        1. 如果 {IDF_TARGET_NAME} 的定时器选用了RTC8M_CLK作为其时钟源，LEDC的输出PWM信号频率可能会与设定值有一定偏差。由于{IDF_TARGET_NAME} 的硬件限制，驱动无法通过内部校准得知这个时钟源的实际频率。因此驱动默认使用其理论频率进行计算。
+
+    .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+
+        2. {IDF_TARGET_NAME} 的所有定时器共用一个时钟源。因此 {IDF_TARGET_NAME} 不支持给不同的定时器配置不同的时钟源。
 
 
 .. _ledc-api-configure-channel:

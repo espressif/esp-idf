@@ -228,7 +228,7 @@
 
 4.  ``idf.py gdbgui``
 
-    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。
+    启动 `gdbgui <https://www.gdbgui.com>`_，在浏览器中打开调试器的前端界面。请在运行安装脚本时添加 "--enable-gdbgui" 参数，即运行 ``install.sh --enable-gdbgui``，从而确保支持 “gdbgui” 选项。
 
 
     上述这些命令也可以合并到一起使用，``idf.py`` 会自动将后台进程（比如 openocd）最先运行，交互式进程（比如 GDB，monitor）最后运行。

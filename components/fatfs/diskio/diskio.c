@@ -89,11 +89,11 @@ DSTATUS ff_disk_status (BYTE pdrv)
 {
     return s_impls[pdrv]->status(pdrv);
 }
-DRESULT ff_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
+DRESULT ff_disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count)
 {
     return s_impls[pdrv]->read(pdrv, buff, sector, count);
 }
-DRESULT ff_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
+DRESULT ff_disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count)
 {
     return s_impls[pdrv]->write(pdrv, buff, sector, count);
 }

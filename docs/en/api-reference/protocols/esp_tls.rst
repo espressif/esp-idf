@@ -8,7 +8,9 @@ The ESP-TLS component provides a simplified API interface for accessing the comm
 It supports common scenarios like CA certification validation, SNI, ALPN negotiation, non-blocking connection among others.
 All the configuration can be specified in the ``esp_tls_cfg_t`` data structure. Once done, TLS communication can be conducted using the following APIs:
 
-    * :cpp:func:`esp_tls_conn_new`: for opening a new TLS connection.
+    * :cpp:func:`esp_tls_init`: for initializing the TLS connection handle.
+    * :cpp:func:`esp_tls_conn_new_sync`: for opening a new blocking TLS connection.
+    * :cpp:func:`esp_tls_conn_new_async`: for opening a new non-blocking TLS connection.
     * :cpp:func:`esp_tls_conn_read`: for reading from the connection.
     * :cpp:func:`esp_tls_conn_write`: for writing into the connection.
     * :cpp:func:`esp_tls_conn_destroy`: for freeing up the connection.
@@ -52,6 +54,8 @@ The ESP-TLS provides multiple options for TLS server verification on the client 
     * **psk_hint_key**: To use pre-shared keys for server verification, :ref:`CONFIG_ESP_TLS_PSK_VERIFICATION` should be enabled in the ESP-TLS menuconfig. Then the pointer to PSK hint and key should be provided to the :cpp:type:`esp_tls_cfg_t` structure. The ESP-TLS will use the PSK for server verification only when no other option regarding the server verification is selected.
     * **skip server verification**: This is an insecure option provided in the ESP-TLS for testing purpose. The option can be set by enabling :ref:`CONFIG_ESP_TLS_INSECURE` and :ref:`CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY` in the ESP-TLS menuconfig. When this option is enabled the ESP-TLS will skip server verification by default when no other options for server verification are selected in the :cpp:type:`esp_tls_cfg_t` structure.
       *WARNING:Enabling this option comes with a potential risk of establishing a TLS connection with a server which has a fake identity, provided that the server certificate is not provided either through API or other mechanism like ca_store etc.*
+
+.. _esp_tls_wolfssl:
 
 Underlying SSL/TLS Library Options
 ----------------------------------
@@ -173,3 +177,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_tls.inc
+.. include-build-file:: inc/esp_tls_errors.inc

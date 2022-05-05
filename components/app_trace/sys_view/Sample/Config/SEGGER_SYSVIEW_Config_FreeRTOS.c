@@ -1,3 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2017 SEGGER Microcontroller GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * SPDX-FileContributor: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ */
 /*********************************************************************
 *                SEGGER Microcontroller GmbH & Co. KG                *
 *                        The Embedded Experts                        *
@@ -121,13 +128,7 @@ gptimer_handle_t s_sv_gptimer;
 
 #if TS_USE_CCOUNT
 // CCOUNT is incremented at CPU frequency
-#if CONFIG_IDF_TARGET_ESP32
-#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ * 1000000)
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ * 1000000)
-#endif
+#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #endif // TS_USE_CCOUNT
 
 // System Frequency.
@@ -190,7 +191,7 @@ static void SEGGER_SYSVIEW_TS_Init(void)
      */
 #if TS_USE_TIMERGROUP
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = SYSVIEW_TIMESTAMP_FREQ,
     };

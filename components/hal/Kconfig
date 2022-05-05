@@ -30,4 +30,39 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         default 0 if HAL_ASSERTION_DISABLE
         default 1 if HAL_ASSERTION_SILIENT
         default 2 if HAL_ASSERTION_ENABLE
+
+    choice HAL_LOG_LEVEL
+        bool "HAL layer log verbosity"
+        default HAL_LOG_LEVEL_INFO
+        # If LOG component is linked, one of the following configuration symbol will be defined.
+        # Else, none will be defined, in that case, we need this HAL_LOG_LEVEL symbol.
+        depends on !LOG_DEFAULT_LEVEL_NONE && !LOG_DEFAULT_LEVEL_ERROR && !LOG_DEFAULT_LEVEL_WARN && \
+            !LOG_DEFAULT_LEVEL_INFO && !LOG_DEFAULT_LEVEL_DEBUG && !LOG_DEFAULT_LEVEL_VERBOSE
+
+        help
+            Specify how much output to see in HAL logs.
+
+        config HAL_LOG_LEVEL_NONE
+            bool "No output"
+        config HAL_LOG_LEVEL_ERROR
+            bool "Error"
+        config HAL_LOG_LEVEL_WARN
+            bool "Warning"
+        config HAL_LOG_LEVEL_INFO
+            bool "Info"
+        config HAL_LOG_LEVEL_DEBUG
+            bool "Debug"
+        config HAL_LOG_LEVEL_VERBOSE
+            bool "Verbose"
+    endchoice
+
+    config HAL_LOG_LEVEL
+        int
+        default 0 if HAL_LOG_LEVEL_NONE
+        default 1 if HAL_LOG_LEVEL_ERROR
+        default 2 if HAL_LOG_LEVEL_WARN
+        default 3 if HAL_LOG_LEVEL_INFO
+        default 4 if HAL_LOG_LEVEL_DEBUG
+        default 5 if HAL_LOG_LEVEL_VERBOSE
+
 endmenu

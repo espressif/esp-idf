@@ -73,7 +73,7 @@ As not every transaction requires both writing and reading data, you have a choi
 Driver Usage
 ------------
 
-- Initialize an SPI peripheral as a Device by calling the function cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct :cpp:type:`bus_config`. Set the unused signals to ``-1``.
+- Initialize an SPI peripheral as a Device by calling the function cpp:func:`spi_slave_initialize`. Make sure to set the correct I/O pins in the struct `bus_config`. Set the unused signals to ``-1``.
 
 .. only:: esp32
 
@@ -91,11 +91,11 @@ Driver Usage
 Transaction Data and Master/Slave Length Mismatches
 ---------------------------------------------------
 
-Normally, the data that needs to be transferred to or from a Device is read or written to a chunk of memory indicated by the :cpp:member:`rx_buffer` and :cpp:member:`tx_buffer` members of the :cpp:type:`spi_transaction_t` structure. The SPI driver can be configured to use DMA for transfers, in which case these buffers must be allocated in DMA-capable memory using ``pvPortMallocCaps(size, MALLOC_CAP_DMA)``.
+Normally, the data that needs to be transferred to or from a Device is read or written to a chunk of memory indicated by the :cpp:member:`spi_slave_transaction_t::rx_buffer` and :cpp:member:`spi_slave_transaction_t::tx_buffer`. The SPI driver can be configured to use DMA for transfers, in which case these buffers must be allocated in DMA-capable memory using ``pvPortMallocCaps(size, MALLOC_CAP_DMA)``.
 
-The amount of data that the driver can read or write to the buffers is limited by the member :cpp:member:`spi_transaction_t::length`. However, this member does not define the actual length of an SPI transaction. A transaction's length is determined by a Host which drives the clock and CS lines. The actual length of the transmission can be read only after a transaction is finished from the member :cpp:member:`spi_slave_transaction_t::trans_len`.
+The amount of data that the driver can read or write to the buffers is limited by :cpp:member:`spi_slave_transaction_t::length`. However, this member does not define the actual length of an SPI transaction. A transaction's length is determined by a Host which drives the clock and CS lines. The actual length of the transmission can be read only after a transaction is finished from the member :cpp:member:`spi_slave_transaction_t::trans_len`.
 
-If the length of the transmission is greater than the buffer length, only the initial number of bits specified in the :cpp:member:`length` member will be sent and received. In this case, :cpp:member:`trans_len` is set to :cpp:member:`length` instead of the actual transaction length. To meet the actual transaction length requirements, set :cpp:member:`length` to a value greater than the maximum :cpp:member:`trans_len` expected. If the transmission length is shorter than the buffer length, only the data equal to the length of the buffer will be transmitted.
+If the length of the transmission is greater than the buffer length, only the initial number of bits specified in the :cpp:member:`spi_slave_transaction_t::length` member will be sent and received. In this case, :cpp:member:`spi_slave_transaction_t::trans_len` is set to :cpp:member:`spi_slave_transaction_t::length` instead of the actual transaction length. To meet the actual transaction length requirements, set :cpp:member:`spi_slave_transaction_t::length` to a value greater than the maximum :cpp:member:`spi_slave_transaction_t::trans_len` expected. If the transmission length is shorter than the buffer length, only the data equal to the length of the buffer will be transmitted.
 
 .. only:: esp32
 

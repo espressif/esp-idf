@@ -1,8 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
 
 #include "esp_dpp_i.h"
 #include "esp_dpp.h"
@@ -12,7 +17,8 @@
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
 
-static void *s_dpp_task_hdl = NULL;
+#ifdef CONFIG_DPP
+static TaskHandle_t s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
@@ -184,7 +190,6 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
             os_memcpy(wifi_cfg->sta.password, conf->passphrase,
                       sizeof(wifi_cfg->sta.password));
         if (conf->akm == DPP_AKM_PSK_SAE) {
-            wifi_cfg->sta.pmf_cfg.capable = true;
             wifi_cfg->sta.pmf_cfg.required = true;
         }
     }
@@ -344,9 +349,7 @@ static void esp_dpp_task(void *pvParameters )
 
     for (;;) {
         if (xQueueReceive(s_dpp_evt_queue, &evt, portMAX_DELAY) == pdTRUE) {
-            if (evt->id < SIG_DPP_MAX) {
-                DPP_API_LOCK();
-            } else {
+            if (evt->id >= SIG_DPP_MAX) {
                 os_free(evt);
                 continue;
             }
@@ -389,7 +392,6 @@ static void esp_dpp_task(void *pvParameters )
             }
 
             os_free(evt);
-            DPP_API_UNLOCK();
 
             if (task_del) {
                 break;
@@ -554,27 +556,9 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         }
     }
 
-    if (key) {
-        params->key_len = strlen(key);
-        if (params->key_len) {
-            char prefix[] = "30310201010420";
-            char postfix[] = "a00a06082a8648ce3d030107";
-
-            params->key = os_zalloc(params->key_len +
-                                    sizeof(prefix) + sizeof(postfix));
-            if (!params->key) {
-                os_free(command);
-                ret = ESP_ERR_NO_MEM;
-                goto fail;
-            }
-            sprintf(params->key, "%s%s%s", prefix, key, postfix);
-        }
-    }
-
     sprintf(command, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
             MAC2STR(params->mac), uri_chan_list,
-            params->key_len ? "key=" : "",
-            params->key_len ? params->key : "",
+            key ? "key=" : "", key ? key : "",
             params->info_len ? " info=" : "",
             params->info_len ? params->info : "");
 
@@ -584,10 +568,6 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         if (params->info) {
             os_free(params->info);
             params->info = NULL;
-        }
-        if (params->key) {
-            os_free(params->key);
-            params->key = NULL;
         }
         goto fail;
     }
@@ -631,7 +611,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 
     s_dpp_stop_listening = false;
     s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
-    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, s_dpp_task_hdl);
+    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
     if (ret != pdPASS) {
         wpa_printf(MSG_ERROR, "DPP: failed to create task");
         return ESP_FAIL;
@@ -662,10 +642,6 @@ void esp_supp_dpp_deinit(void)
         os_free(params->info);
         params->info = NULL;
     }
-    if (params->key) {
-        os_free(params->key);
-        params->key = NULL;
-    }
 
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &offchan_event_handler);
@@ -675,3 +651,4 @@ void esp_supp_dpp_deinit(void)
     dpp_global_deinit(s_dpp_ctx.dpp_global);
     esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
 }
+#endif

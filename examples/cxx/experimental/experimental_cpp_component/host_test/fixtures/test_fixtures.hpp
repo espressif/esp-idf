@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -318,6 +318,7 @@ struct I2CMasterFix {
     i2c_port_t port;
 };
 
+#if CONFIG_SOC_I2C_SUPPORT_SLAVE
 struct I2CSlaveFix {
     I2CSlaveFix(CreateAnd flags, i2c_port_t port_arg = 0, size_t buffer_size = 64) : i2c_conf(), port(port_arg)
     {
@@ -344,6 +345,7 @@ struct I2CSlaveFix {
     i2c_config_t i2c_conf;
     i2c_port_t port;
 };
+#endif // CONFIG_SOC_I2C_SUPPORT_SLAVE
 
 struct I2CCmdLinkFix
 {

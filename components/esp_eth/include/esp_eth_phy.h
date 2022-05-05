@@ -226,6 +226,23 @@ struct esp_eth_phy_s {
     esp_err_t (*set_duplex)(esp_eth_phy_t *phy, eth_duplex_t duplex);
 
     /**
+    * @brief Custom IO function of PHY driver. This function is intended to extend common options of esp_eth_ioctl to cover specifics of PHY chip.
+    *
+    * @note This function may not be assigned when the PHY chip supports only most common set of configuration options.
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[in] cmd: IO control command
+    * @param[in, out] data: address of data for `set` command or address where to store the data when used with `get` command
+    *
+    * @return
+    *       - ESP_OK: process io command successfully
+    *       - ESP_ERR_INVALID_ARG: process io command failed because of some invalid argument
+    *       - ESP_FAIL: process io command failed because some other error occurred
+    *       - ESP_ERR_NOT_SUPPORTED: requested feature is not supported
+    */
+    esp_err_t (*custom_ioctl)(esp_eth_phy_t *phy, uint32_t cmd, void *data);
+
+    /**
     * @brief Free memory of Ethernet PHY instance
     *
     * @param[in] phy: Ethernet PHY instance

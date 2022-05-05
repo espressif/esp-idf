@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include "unity.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"
 #elif SOC_SHA_SUPPORT_DMA
@@ -69,7 +70,7 @@ static void test_leak_setup(const char *file, long line)
     struct timeval te;
     gettimeofday(&te, NULL); // get current time
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    printf("%s:%ld: time=%ld.%lds, mac:" MACSTR "\n", file, line, te.tv_sec, te.tv_usec, MAC2STR(mac));
+    printf("%s:%ld: time=%jd.%lds, mac:" MACSTR "\n", file, line, (intmax_t)te.tv_sec, te.tv_usec, MAC2STR(mac));
     // Execute esp_sha operation to allocate internal SHA semaphore memory
     // which is considered as leaked otherwise
     const uint8_t input_buffer[64];

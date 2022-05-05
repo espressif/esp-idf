@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import http.client
@@ -121,7 +121,7 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
     CLIENT_CERT_FILE = 'client_cert.pem'
     CLIENT_KEY_FILE = 'client_key.pem'
 
-    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     ssl_context.verify_mode = ssl.CERT_REQUIRED
     ssl_context.check_hostname = False
     ssl_context.load_verify_locations(cadata=server_cert_pem)
@@ -141,10 +141,12 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
     resp = conn.getresponse()
     dut1.expect('performing session handshake')
     got_resp = resp.read().decode('utf-8')
-    # Close the connection
     if got_resp != success_response:
         Utility.console_log('Response obtained does not match with correct response')
         raise RuntimeError('Failed to test SSL connection')
+
+    # Close the connection
+    conn.close()
 
     Utility.console_log('Checking user callback: Obtaining client certificate...')
 
@@ -158,7 +160,6 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
 
     Utility.console_log('Correct response obtained')
     Utility.console_log('SSL connection test successful\nClosing the connection')
-    conn.close()
 
 
 if __name__ == '__main__':

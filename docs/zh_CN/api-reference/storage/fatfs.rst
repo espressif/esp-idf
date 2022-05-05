@@ -56,6 +56,7 @@ FatFs 与 VFS 和 SD 卡配合使用
 便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_unmount` 用于卸载文件系统并释放从 :cpp:func:`esp_vfs_fat_sdmmc_mount` 函数获取的资源。
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
+.. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
 .. doxygenfunction:: esp_vfs_fat_sdspi_mount
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
@@ -65,10 +66,10 @@ FatFs 与 VFS 和 SD 卡配合使用
 FatFs 与 VFS 配合使用（只读模式下）
 --------------------------------------
 
-头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 也定义了两个便捷函数 :cpp:func:`esp_vfs_fat_rawflash_mount` 和 :cpp:func:`esp_vfs_fat_rawflash_unmount`。上述两个函数分别对 FAT 只读分区执行步骤 1-3 和步骤 7-9。有些数据分区仅在工厂配置时写入一次，之后在整个硬件生命周期内都不会再有任何改动。利用上述两个函数处理这种数据分区非常方便。
+头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 也定义了两个便捷函数 :cpp:func:`esp_vfs_fat_spiflash_mount_ro` 和 :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`。上述两个函数分别对 FAT 只读分区执行步骤 1-3 和步骤 7-9。有些数据分区仅在工厂配置时写入一次，之后在整个硬件生命周期内都不会再有任何改动。利用上述两个函数处理这种数据分区非常方便。
 
-.. doxygenfunction:: esp_vfs_fat_rawflash_mount
-.. doxygenfunction:: esp_vfs_fat_rawflash_unmount
+.. doxygenfunction:: esp_vfs_fat_spiflash_mount_ro
+.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_ro
 
 
 FatFs 磁盘 I/O 层
@@ -95,7 +96,7 @@ FatFs 分区生成器
 
 该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化磨损均衡。
 
-当前支持短文件名和 FAT12。未来计划实现长文件名以及 FAT16。
+目前最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上线是 255 个字符，文件名中可以包含多个 "." 字符以及其他字符如 "+"、","、";"、"="、"[" and also "]" 等。长文件名字符采用 utf-16 编码而短文件名采用 utf-8 编码。
 
 
 构建系统中使用 FatFs 分区生成器
@@ -112,6 +113,7 @@ FatFs 分区生成器
 ``fatfs_create_spiflash_image`` 以及 ``fatfs_create_rawflash_image`` 必须从项目的 CMakeLists.txt 中调用。
 
 如果您决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它支持在设备中以只读模式安装。
+
 
 该函数的参数如下：
 

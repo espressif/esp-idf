@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "inttypes.h"
 #include "unity.h"
 #include "esp_attr.h"
@@ -51,8 +57,7 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 
 #if CONFIG_ESP32_RTCDATA_IN_FAST_MEM   || \
     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM || \
-    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM || \
-    CONFIG_ESP32C3_RTCDATA_IN_FAST_MEM
+    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
     TEST_ASSERT(data_in_segment(&s_rtc_data, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_rodata, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_noinit, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
@@ -111,8 +116,8 @@ TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[spiram]", write_spiram_
 
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-#define TEST_BSS_NUM    256
-static EXT_RAM_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
+#define TEST_BSS_NUM    (256 * 1024)
+static EXT_RAM_BSS_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
 
 TEST_CASE("Test variables placed in external .bss segment", "[ld]")
 {

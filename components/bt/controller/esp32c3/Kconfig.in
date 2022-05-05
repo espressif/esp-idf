@@ -356,7 +356,7 @@ menu "MODEM SLEEP Options"
                 other bluetooth low power clock sources.
         config BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
             bool "External 32kHz crystal"
-            depends on ESP32C3_RTC_CLK_SRC_EXT_CRYS
+            depends on RTC_CLK_SRC_EXT_CRYS
             help
                 External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency
                 stability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth
@@ -364,7 +364,7 @@ menu "MODEM SLEEP Options"
 
         config BT_CTRL_LPCLK_SEL_RTC_SLOW
             bool "Internal 150kHz RC oscillator"
-            depends on ESP32C3_RTC_CLK_SRC_INT_RC
+            depends on RTC_CLK_SRC_INT_RC
             help
                 Internal 150kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
                 in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.

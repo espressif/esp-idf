@@ -200,7 +200,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-arm64", "macos", "win32", "win64"]
+            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-arm64", "macos", "macos-arm64", "win32", "win64"]
           }
         },
         "export_paths": {

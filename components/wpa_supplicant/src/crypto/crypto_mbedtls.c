@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #endif
@@ -25,7 +24,6 @@
 #include "mbedtls/nist_kw.h"
 #include "mbedtls/des.h"
 #include "mbedtls/ccm.h"
-#include "mbedtls/arc4.h"
 
 #include "common.h"
 #include "utils/wpabuf.h"
@@ -36,6 +34,10 @@
 #include "aes_wrap.h"
 #include "crypto.h"
 #include "mbedtls/esp_config.h"
+
+#ifdef MBEDTLS_ARC4_C
+#include "mbedtls/arc4.h"
+#endif
 
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
 			 const u8 *addr[], const size_t *len, u8 *mac)
@@ -400,12 +402,12 @@ static int crypto_init_cipher_ctx(mbedtls_cipher_context_t *ctx,
 		return -1;
 	}
 
-	if (mbedtls_cipher_setkey(ctx, key, cipher_info->key_bitlen,
+	if (mbedtls_cipher_setkey(ctx, key, cipher_info->MBEDTLS_PRIVATE(key_bitlen),
 				 operation) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_setkey returned error");
 		return -1;
 	}
-	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->iv_size) != 0) {
+	if (mbedtls_cipher_set_iv(ctx, iv, cipher_info->MBEDTLS_PRIVATE(iv_size)) != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_cipher_set_iv returned error");
 		return -1;
 	}

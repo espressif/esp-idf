@@ -8,7 +8,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_interface.h"
 
-static __attribute__((unused)) const char *TAG = "lcd_panel";
+static const char *TAG = "lcd_panel";
 
 esp_err_t esp_lcd_panel_reset(esp_lcd_panel_handle_t panel)
 {
@@ -58,8 +58,13 @@ esp_err_t esp_lcd_panel_invert_color(esp_lcd_panel_handle_t panel, bool invert_c
     return panel->invert_color(panel, invert_color_data);
 }
 
-esp_err_t esp_lcd_panel_disp_off(esp_lcd_panel_handle_t panel, bool off)
+esp_err_t esp_lcd_panel_disp_on_off(esp_lcd_panel_handle_t panel, bool on_off)
 {
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel handle");
-    return panel->disp_off(panel, off);
+    return panel->disp_on_off(panel, on_off);
+}
+
+esp_err_t esp_lcd_panel_disp_off(esp_lcd_panel_handle_t panel, bool off)
+{
+    return esp_lcd_panel_disp_on_off(panel, !off);
 }

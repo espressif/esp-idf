@@ -1213,7 +1213,7 @@ Discarded input sections
                 0x0000000000000000       0x22 esp-idf/freertos/libfreertos.a(timers.c.obj)
  .text.xTimerGetExpiryTime
                 0x0000000000000000       0x22 esp-idf/freertos/libfreertos.a(timers.c.obj)
- .text.pcTimerGetTimerName
+ .text.pcTimerGetName
                 0x0000000000000000        0x7 esp-idf/freertos/libfreertos.a(timers.c.obj)
  .text.xTimerIsTimerActive
                 0x0000000000000000       0x24 esp-idf/freertos/libfreertos.a(timers.c.obj)
@@ -7856,7 +7856,7 @@ LOAD /home/xy/.espressif/tools/xtensa-esp32s2-elf/esp-2019r2-8.2.0/xtensa-esp32s
  .literal.__getreent
                 0x0000000040024c8c        0x0 esp-idf/freertos/libfreertos.a(tasks.c.obj)
                                           0x8 (size before relaxing)
- .literal.pcTaskGetTaskName
+ .literal.pcTaskGetName
                 0x0000000040024c8c        0x8 esp-idf/freertos/libfreertos.a(tasks.c.obj)
                                          0x1c (size before relaxing)
  .literal.xTaskGetAffinity
@@ -9108,10 +9108,10 @@ LOAD /home/xy/.espressif/tools/xtensa-esp32s2-elf/esp-2019r2-8.2.0/xtensa-esp32s
                                          0x19 (size before relaxing)
                 0x000000004002b95c                __getreent
  *fill*         0x000000004002b971        0x3
- .text.pcTaskGetTaskName
+ .text.pcTaskGetName
                 0x000000004002b974       0x2a esp-idf/freertos/libfreertos.a(tasks.c.obj)
                                          0x2d (size before relaxing)
-                0x000000004002b974                pcTaskGetTaskName
+                0x000000004002b974                pcTaskGetName
  *fill*         0x000000004002b99e        0x2
  .text.xTaskGetAffinity
                 0x000000004002b9a0       0x10 esp-idf/freertos/libfreertos.a(tasks.c.obj)
@@ -15050,11 +15050,11 @@ opendir                                           esp-idf/vfs/libvfs.a(vfs.c.obj
 panic_handle_pseudo_exception                                      esp-idf/esp32s2/libesp32s2.a(panic.c.obj)
                                                   esp-idf/freertos/libfreertos.a(xtensa_vectors.S.obj)
                                                   esp-idf/esp32s2/libesp32s2.a(dport_panic_highint_hdl.S.obj)
-pcTaskGetTaskName                                 esp-idf/freertos/libfreertos.a(tasks.c.obj)
+pcTaskGetName                                 esp-idf/freertos/libfreertos.a(tasks.c.obj)
                                                   esp-idf/freertos/libfreertos.a(port.c.obj)
                                                   esp-idf/esp32s2/libesp32s2.a(task_wdt.c.obj)
                                                   esp-idf/pthread/libpthread.a(pthread.c.obj)
-pcTimerGetTimerName                               esp-idf/freertos/libfreertos.a(timers.c.obj)
+pcTimerGetName                               esp-idf/freertos/libfreertos.a(timers.c.obj)
 periph_module_disable                             esp-idf/driver/libdriver.a(periph_ctrl.c.obj)
                                                   esp-idf/bootloader_support/libbootloader_support.a(bootloader_random.c.obj)
                                                   esp-idf/driver/libdriver.a(uart.c.obj)

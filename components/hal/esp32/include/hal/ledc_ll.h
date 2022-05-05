@@ -13,7 +13,12 @@
 #include "soc/ledc_periph.h"
 #include "soc/ledc_struct.h"
 
-#define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_GET_HW()           &LEDC
+
+#define LEDC_LL_DUTY_NUM_MAX       (LEDC_DUTY_NUM_LSCH0_V)
+#define LEDC_LL_DUTY_CYCLE_MAX     (LEDC_DUTY_CYCLE_LSCH0_V)
+#define LEDC_LL_DUTY_SCALE_MAX     (LEDC_DUTY_SCALE_LSCH0_V)
+#define LEDC_LL_HPOINT_VAL_MAX     (LEDC_HPOINT_LSCH0_V)
 #define LEDC_LL_FRACTIONAL_BITS    (8)
 #define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
 
@@ -25,7 +30,7 @@
                             {\
                                 { \
                                     .clk = LEDC_REF_TICK, \
-                                    .freq = LEDC_REF_CLK_HZ, \
+                                    .freq = REF_CLK_FREQ, \
                                 } \
                             }
 
@@ -152,6 +157,9 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
  * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
  * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
  * @param clk_src Timer clock source
+ *
+ * @note  REF_TICK can only be used when hw->conf.slow_clk_sel is set to 1 (through ledc_ll_set_slow_clk_sel()).
+ *        This is ensured in the LEDC driver layer.
  *
  * @return None
  */

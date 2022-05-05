@@ -102,8 +102,8 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
     mbedtls_ecdsa_context ecdsa_context;
     mbedtls_ecdsa_init(&ecdsa_context);
 
-    mbedtls_ecp_group_load(&ecdsa_context.grp, MBEDTLS_ECP_DP_SECP256R1);
-    size_t plen = mbedtls_mpi_size(&ecdsa_context.grp.P);
+    mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1);
+    size_t plen = mbedtls_mpi_size(&ecdsa_context.MBEDTLS_PRIVATE(grp).P);
     if (keylen != 2 * plen) {
         ESP_LOGE(TAG, "Incorrect ECDSA key length %d", keylen);
         ret = ESP_FAIL;
@@ -111,11 +111,11 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
     }
 
     /* Extract X and Y components from ECDSA public key */
-    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.Q.X, signature_verification_key_start, plen));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.Q.Y, signature_verification_key_start + plen, plen));
-    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ecdsa_context.Q.Z, 1));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X), signature_verification_key_start, plen));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y), signature_verification_key_start + plen, plen));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ecdsa_context.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Z), 1));
 
-    ret = mbedtls_ecdsa_verify(&ecdsa_context.grp, image_digest, ESP_SECURE_BOOT_DIGEST_LEN, &ecdsa_context.Q, &r, &s);
+    ret = mbedtls_ecdsa_verify(&ecdsa_context.MBEDTLS_PRIVATE(grp), image_digest, ESP_SECURE_BOOT_DIGEST_LEN, &ecdsa_context.MBEDTLS_PRIVATE(Q), &r, &s);
     ESP_LOGD(TAG, "Verification result %d", ret);
 
 cleanup:

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -265,7 +265,7 @@ void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable)
     }
 }
 
-void emac_hal_init_dma_default(emac_hal_context_t *hal)
+void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *hal_config)
 {
     /* DMAOMR Configuration */
     /* Enable Dropping of TCP/IP Checksum Error Frames */
@@ -294,11 +294,10 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal)
     emac_ll_mixed_burst_enable(hal->dma_regs, true);
     /* Enable Address Aligned Beates */
     emac_ll_addr_align_enable(hal->dma_regs, true);
-    /* Use Separate PBL */
-    emac_ll_use_separate_pbl_enable(hal->dma_regs, true);
+    /* Don't use Separate PBL */
+    emac_ll_use_separate_pbl_enable(hal->dma_regs, false);
     /* Set Rx/Tx DMA Burst Length */
-    emac_ll_set_rx_dma_pbl(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_32BEAT);
-    emac_ll_set_prog_burst_len(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_32BEAT);
+    emac_ll_set_prog_burst_len(hal->dma_regs, hal_config->dma_burst_len);
     /* Enable Enhanced Descriptor,8 Words(32 Bytes) */
     emac_ll_enhance_desc_enable(hal->dma_regs, true);
     /* Specifies the number of word to skip between two unchained descriptors (Ring mode) */
@@ -337,17 +336,16 @@ void emac_hal_start(emac_hal_context_t *hal)
 
     /* Flush Transmit FIFO */
     emac_ll_flush_trans_fifo_enable(hal->dma_regs, true);
-    /* Flush Receive FIFO */
-    emac_ll_flush_recv_frame_enable(hal->dma_regs, true);
+
+    /* Start DMA transmission */
+    emac_ll_start_stop_dma_transmit(hal->dma_regs, true);
+    /* Start DMA reception */
+    emac_ll_start_stop_dma_receive(hal->dma_regs, true);
 
     /* Enable transmit state machine of the MAC for transmission on the MII */
     emac_ll_transmit_enable(hal->mac_regs, true);
     /* Enable receive state machine of the MAC for reception from the MII */
     emac_ll_receive_enable(hal->mac_regs, true);
-    /* Start DMA transmission */
-    emac_ll_start_stop_dma_transmit(hal->dma_regs, true);
-    /* Start DMA reception */
-    emac_ll_start_stop_dma_receive(hal->dma_regs, true);
 
     /* Clear all pending interrupts */
     emac_ll_clear_all_pending_intr(hal->dma_regs);
@@ -357,18 +355,24 @@ esp_err_t emac_hal_stop(emac_hal_context_t *hal)
 {
     /* Stop DMA transmission */
     emac_ll_start_stop_dma_transmit(hal->dma_regs, false);
-    /* Stop DMA reception */
-    emac_ll_start_stop_dma_receive(hal->dma_regs, false);
 
     if (emac_ll_transmit_frame_ctrl_status(hal->mac_regs) != 0x0) {
         /* Previous transmit in progress */
         return ESP_ERR_INVALID_STATE;
     }
 
-    /* Disable receive state machine of the MAC for reception from the MII */
-    emac_ll_transmit_enable(hal->mac_regs, false);
     /* Disable transmit state machine of the MAC for transmission on the MII */
     emac_ll_receive_enable(hal->mac_regs, false);
+    /* Disable receive state machine of the MAC for reception from the MII */
+    emac_ll_transmit_enable(hal->mac_regs, false);
+
+    if (emac_ll_receive_read_ctrl_state(hal->mac_regs) != 0x0) {
+        /* Previous receive copy in progress */
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    /* Stop DMA reception */
+    emac_ll_start_stop_dma_receive(hal->dma_regs, false);
 
     /* Disable Ethernet MAC and DMA Interrupt */
     emac_ll_disable_all_intr(hal->dma_regs);
@@ -436,6 +440,94 @@ uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t
 
     /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
     for (size_t i = 0; i < bufcount; i++) {
+        hal->tx_desc->TDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
+        hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->tx_desc->Buffer2NextDescAddr);
+    }
+    emac_ll_transmit_poll_demand(hal->dma_regs, 0);
+    return sentout;
+err:
+    return 0;
+}
+
+uint32_t emac_hal_transmit_multiple_buf_frame(emac_hal_context_t *hal, uint8_t **buffs, uint32_t *lengths, uint32_t buffs_cnt)
+{
+    /* Get the number of Tx buffers to use for the frame */
+    uint32_t dma_bufcount = 0;
+    uint32_t sentout = 0;
+    uint8_t *ptr = buffs[0];
+    uint32_t lastlen = lengths[0];
+    uint32_t avail_len = CONFIG_ETH_DMA_BUFFER_SIZE;
+
+    eth_dma_tx_descriptor_t *desc_iter = hal->tx_desc;
+    /* A frame is transmitted in multiple descriptor */
+    while (dma_bufcount < CONFIG_ETH_DMA_TX_BUFFER_NUM) {
+        /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
+        if (desc_iter->TDES0.Own != EMAC_LL_DMADESC_OWNER_CPU) {
+            goto err;
+        }
+        /* Clear FIRST and LAST segment bits */
+        desc_iter->TDES0.FirstSegment = 0;
+        desc_iter->TDES0.LastSegment = 0;
+        desc_iter->TDES0.InterruptOnComplete = 0;
+        desc_iter->TDES1.TransmitBuffer1Size = 0;
+        if (dma_bufcount == 0) {
+            /* Setting the first segment bit */
+            desc_iter->TDES0.FirstSegment = 1;
+        }
+
+        while (buffs_cnt > 0) {
+            /* Check if input buff data fits to currently available space in the descriptor */
+            if (lastlen < avail_len) {
+                /* copy data from uplayer stack buffer */
+                memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, lastlen);
+                sentout += lastlen;
+                avail_len -= lastlen;
+                desc_iter->TDES1.TransmitBuffer1Size += lastlen;
+
+                /* Update processed input buffers info */
+                buffs_cnt--;
+                ptr = *(++buffs);
+                lastlen = *(++lengths);
+            /* There is only limited available space in the current descriptor, use it all */
+            } else {
+                /* copy data from uplayer stack buffer */
+                memcpy((void *)(desc_iter->Buffer1Addr + (CONFIG_ETH_DMA_BUFFER_SIZE - avail_len)), ptr, avail_len);
+                sentout += avail_len;
+                lastlen -= avail_len;
+                /* If lastlen is not zero, input buff will be fragmented over multiple descriptors */
+                if (lastlen > 0) {
+                    ptr += avail_len;
+                /* Input buff fully fits the descriptor, move to the next input buff */
+                } else {
+                    /* Update processed input buffers info */
+                    buffs_cnt--;
+                    ptr = *(++buffs);
+                    lastlen = *(++lengths);
+                }
+                avail_len = CONFIG_ETH_DMA_BUFFER_SIZE;
+                desc_iter->TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
+                /* The descriptor is full here so exit and use the next descriptor */
+                break;
+            }
+        }
+        /* Increase counter of utilized DMA buffers */
+        dma_bufcount++;
+
+        /* If all input buffers processed, mark as LAST segment and finish the coping */
+        if (buffs_cnt == 0) {
+            /* Setting the last segment bit */
+            desc_iter->TDES0.LastSegment = 1;
+            /* Enable transmit interrupt */
+            desc_iter->TDES0.InterruptOnComplete = 1;
+            break;
+        }
+
+        /* Point to next descriptor */
+        desc_iter = (eth_dma_tx_descriptor_t *)(desc_iter->Buffer2NextDescAddr);
+    }
+
+    /* Set Own bit of the Tx descriptor Status: gives the buffer back to ETHERNET DMA */
+    for (size_t i = 0; i < dma_bufcount; i++) {
         hal->tx_desc->TDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
         hal->tx_desc = (eth_dma_tx_descriptor_t *)(hal->tx_desc->Buffer2NextDescAddr);
     }

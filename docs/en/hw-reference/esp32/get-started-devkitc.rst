@@ -183,7 +183,6 @@ In case these issues occur, please remove the component. The figure below shows 
 .. figure:: ../../../_static/esp32-devkitc-c15-location.png
     :align: center
     :alt: Location of C15 (colored yellow) on ESP32-DevKitC V4 board
-    :figclass: align-center
     :width: 30%
 
     Location of C15 (yellow) on ESP32-DevKitC V4 board

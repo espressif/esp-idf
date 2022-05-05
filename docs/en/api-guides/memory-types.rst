@@ -16,9 +16,9 @@ DRAM (Data RAM)
 
 Non-constant static data (.data) and zero-initialized data (.bss) is placed by the linker into Internal SRAM as data memory. The remaining space in this region is used for the runtime heap.
 
-.. only:: esp32 or esp32s2
+.. only:: SOC_SPIRAM_SUPPORTED
 
-   By applying the ``EXT_RAM_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
+   By applying the ``EXT_RAM_BSS_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
 
 .. only:: esp32
 
@@ -156,7 +156,7 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
     RTC Slow memory
     ^^^^^^^^^^^^^^^
 
-    Global and static variables used by code which runs from RTC memory must be placed into RTC Slow memory. For example :doc:`deep sleep <deep-sleep-stub>` variables can be placed here instead of RTC FAST memory, or code and variables accessed by the :doc:`/api-guides/ulp`.
+    Global and static variables used by code which runs from RTC memory must be placed into RTC Slow memory. For example :doc:`deep sleep <deep-sleep-stub>` variables can be placed here instead of RTC FAST memory, or code and variables accessed by the :doc:`/api-reference/system/ulp`.
 
     The attribute macro named ``RTC_NOINIT_ATTR`` can be used to place data into this type of memory. The values placed into this section keep their value after waking from deep sleep.
 

@@ -18,7 +18,7 @@
 #include "freertos/queue.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "driver/mcpwm.h"
 
 const static char *TAG = "hc-sr04";
@@ -39,7 +39,7 @@ typedef struct {
 static uint32_t cap_val_begin_of_sample = 0;
 static uint32_t cap_val_end_of_sample = 0;
 
-static xQueueHandle cap_queue;
+static QueueHandle_t cap_queue;
 
 /**
  * @brief generate single pulse on Trig pin to activate a new sample
@@ -121,7 +121,7 @@ void app_main(void) {
         uint32_t pulse_count;
         // block and wait for new measurement
         xQueueReceive(cap_queue, &pulse_count, portMAX_DELAY);
-        uint32_t pulse_width_us = pulse_count * (1000000.0 / rtc_clk_apb_freq_get());
+        uint32_t pulse_width_us = pulse_count * (1000000.0 / esp_clk_apb_freq());
         // following formula is based on: https://www.elecrow.com/download/HC_SR04%20Datasheet.pdf
         if (pulse_width_us > 35000) {
             // out of range

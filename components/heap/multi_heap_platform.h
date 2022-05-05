@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +11,6 @@
 
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h" // will be removed in idf v5.0
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#endif
 #include <assert.h>
 
 typedef portMUX_TYPE multi_heap_lock_t;

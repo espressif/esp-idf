@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,8 @@
 #include "freertos/portmacro.h"
 #include "freertos/xtensa_api.h"
 #include "esp_types.h"
-#include "esp_system.h"
+#include "esp_random.h"
+#include "esp_mac.h"
 #include "esp_task.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
@@ -42,6 +43,8 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
+#include "esp_rom_sys.h"
+#include "esp32s2/rom/ets_sys.h"
 
 #define TAG "esp_adapter"
 
@@ -171,7 +174,7 @@ static bool IRAM_ATTR env_is_chip_wrapper(void)
 
 static void set_intr_wrapper(int32_t cpu_no, uint32_t intr_source, uint32_t intr_num, int32_t intr_prio)
 {
-    intr_matrix_set(cpu_no, intr_source, intr_num);
+    esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 }
 
 static void clear_intr_wrapper(uint32_t intr_source, uint32_t intr_num)

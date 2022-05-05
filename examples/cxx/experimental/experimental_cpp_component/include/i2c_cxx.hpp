@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -400,6 +400,7 @@ public:
             size_t read_n_bytes);
 };
 
+#if CONFIG_SOC_I2C_SUPPORT_SLAVE
 /**
  * @brief Responsible for initialization and de-initialization of an I2C slave peripheral.
  */
@@ -451,6 +452,7 @@ public:
      */
     virtual int read_raw(uint8_t* buffer, size_t buffer_len, std::chrono::milliseconds timeout);
 };
+#endif // CONFIG_SOC_I2C_SUPPORT_SLAVE
 
 /**
  * Implementation for simple I2C writes, which can be executed by \c I2CMaster::transfer().

@@ -7,7 +7,7 @@
 #pragma once
 
 #include "soc/sensitive_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "hal/assert.h"
 
 #ifdef __cplusplus

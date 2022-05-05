@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *  We put 2nd bootloader in the high address space (before ROM stack/data/bss).
@@ -6,8 +11,8 @@
 
 MEMORY
 {
-  iram_seg (RWX) :                  org = 0x403CE000, len = 0x2000
-  iram_loader_seg (RWX) :           org = 0x403D0000, len = 0x6000
+  iram_seg (RWX) :                  org = 0x403CE000, len = 0x1600
+  iram_loader_seg (RWX) :           org = 0x403CF600, len = 0x6A00
   dram_seg (RW) :                   org = 0x3FCD6000, len = 0x4000
 }
 
@@ -22,7 +27,7 @@ SECTIONS
     . = ALIGN (16);
     _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
-     *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
+    *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
     *libgcc.a:(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_clock_loader.*(.literal .text .literal.* .text.*)
@@ -31,7 +36,7 @@ SECTIONS
     *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_disable .text.bootloader_random_disable)
     *libbootloader_support.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
-    *libbootloader_support.a:bootloader_efuse_esp32c3.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_efuse.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_utility.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
@@ -47,6 +52,9 @@ SECTIONS
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
     *libhal.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+    *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libhal.a:cache_hal.*(.literal .text .literal.* .text.*)
+    *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)

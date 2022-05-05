@@ -1,10 +1,12 @@
+#include <string.h>
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_wifi_netif.h"
-#include <string.h>
+#include "lwip/netif.h"
+#include "esp_netif_net_stack.h"
 
 
 TEST_CASE("esp_netif: init and destroy", "[esp_netif]")
@@ -352,4 +354,62 @@ TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][
     sta = esp_netif_create_default_wifi_sta();
     TEST_ASSERT_NOT_NULL(sta);
     esp_netif_destroy_default_wifi(sta);
+}
+
+static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
+{
+    return ESP_OK;
+}
+
+TEST_CASE("esp_netif: test routing priority", "[esp_netif]")
+{
+    test_case_uses_tcpip();
+    // interface key has to be a unique identifier
+    const char *if_keys[] = {"if0", "if1", "if2", "if3", "if4", "if5", "if6", "if7", "if8", "if9"};
+    const int nr_of_netifs = sizeof(if_keys) / sizeof(char *);
+    esp_netif_t *netifs[nr_of_netifs];
+    esp_netif_driver_ifconfig_t driver_config = { .handle =  (void*)1, .transmit = dummy_transmit };
+    // create 10 netifs with different route prio
+    int max_prio_i = nr_of_netifs / 2;  // index of netif with maximum route-prio
+    for (int i = 0; i < nr_of_netifs; ++i) {
+        esp_netif_inherent_config_t base_netif_config = { .if_key = if_keys[i],
+                                                          .route_prio = i > max_prio_i ? 0 : i };
+        esp_netif_config_t cfg = {  .base = &base_netif_config,
+                                    .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+                                    .driver = &driver_config };
+        netifs[i] = esp_netif_new(&cfg);
+        TEST_ASSERT_NOT_NULL(netifs[i]);
+        // set the interface up and connected -- to enable the default netif based on route_prio
+        esp_netif_action_start(netifs[i], 0, 0, 0);
+        esp_netif_action_connected(netifs[i], 0, 0, 0);
+    }
+    // route_prio increases with index until max_prio_i -> check this is the default netif
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i]), netif_default);
+    // now we stop the max_prio netif and check the default is on the previous index (max_prio-1)
+    esp_netif_action_stop(netifs[max_prio_i], 0, 0, 0);
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i - 1]), netif_default);
+
+    // now we override the default netif with API (which has route_prio == 0)
+    int override_prio_i = nr_of_netifs - 1;  // last netif to be set-default manually
+    esp_netif_set_default_netif(netifs[override_prio_i]);
+    // check the configured netif is default
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[override_prio_i]), netif_default);
+    // try to start/connect the previously stopped netif with max_prio
+    esp_netif_action_start(netifs[max_prio_i], 0, 0, 0);
+    esp_netif_action_connected(netifs[max_prio_i], 0, 0, 0);
+    // and check the configured netif is still the default
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[override_prio_i]), netif_default);
+    // we destroy the configured default netif
+    esp_netif_destroy(netifs[override_prio_i]);
+    // ...and check the max-prio netif is default now
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i]), netif_default);
+    // stop the max_prio netif, to see the auto-default still works
+    esp_netif_action_stop(netifs[max_prio_i], 0, 0, 0);
+    // ...so the current default is on (max_prio-1)
+    TEST_ASSERT_EQUAL_PTR(esp_netif_get_netif_impl(netifs[max_prio_i - 1]), netif_default);
+    // destroy one by one and check it's been removed
+    for (int i=0; i < override_prio_i; ++i) {
+        esp_netif_destroy(netifs[i]);
+        TEST_ASSERT_FALSE(esp_netif_is_netif_listed(netifs[i]));
+    }
 }

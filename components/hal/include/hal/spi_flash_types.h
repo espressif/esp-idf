@@ -1,16 +1,8 @@
-// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -180,7 +172,11 @@ struct spi_flash_host_driver_s {
      * Program a page of the flash. Check ``max_write_bytes`` for the maximum allowed writing length.
      */
     void (*program_page)(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length);
-    /** Check whether given buffer can be directly used to write */
+    /**
+     * @brief Check whether the SPI host supports direct write
+     *
+     * When cache is disabled, SPI1 doesn't support directly write when buffer isn't internal.
+     */
     bool (*supports_direct_write)(spi_flash_host_inst_t *host, const void *p);
     /**
      * Slicer for write data. The `program_page` should be called iteratively with the return value
@@ -198,7 +194,11 @@ struct spi_flash_host_driver_s {
      * Read data from the flash. Check ``max_read_bytes`` for the maximum allowed reading length.
      */
     esp_err_t (*read)(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len);
-    /** Check whether given buffer can be directly used to read */
+    /**
+     * @brief Check whether the SPI host supports direct read
+     *
+     * When cache is disabled, SPI1 doesn't support directly read when the given buffer isn't internal.
+     */
     bool (*supports_direct_read)(spi_flash_host_inst_t *host, const void *p);
     /**
      * Slicer for read data. The `read` should be called iteratively with the return value

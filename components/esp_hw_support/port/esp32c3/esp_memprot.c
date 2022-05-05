@@ -10,7 +10,7 @@
 #include "esp_intr_alloc.h"
 #include "hal/memprot_ll.h"
 #include "riscv/interrupt.h"
-#include "esp32c3/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "esp_cpu.h"
 #include "esp_fault.h"
 #include "esp_attr.h"
@@ -616,13 +616,13 @@ static esp_err_t esp_mprot_set_intr_matrix(const esp_mprot_mem_t mem_type)
 
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_iram0_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_iram0_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
         break;
     case MEMPROT_TYPE_DRAM0_SRAM:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_dram0_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_dram0_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
         break;
     case MEMPROT_TYPE_IRAM0_RTCFAST:
-        intr_matrix_set(PRO_CPU_NUM, memprot_ll_rtcfast_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
+        esp_rom_route_intr_matrix(PRO_CPU_NUM, memprot_ll_rtcfast_get_intr_source_num(), ETS_MEMPROT_ERR_INUM);
         break;
     default:
         return ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID;

@@ -44,8 +44,8 @@ static void esp_mbedtls_init_ssl_buf(struct esp_mbedtls_ssl_buf *buf, unsigned i
 
 static void esp_mbedtls_parse_record_header(mbedtls_ssl_context *ssl)
 {
-    ssl->in_msgtype =  ssl->in_hdr[0];
-    ssl->in_msglen = (ssl->in_len[0] << 8) | ssl->in_len[1];
+    ssl->MBEDTLS_PRIVATE(in_msgtype) =  ssl->MBEDTLS_PRIVATE(in_hdr)[0];
+    ssl->MBEDTLS_PRIVATE(in_msglen) = (ssl->MBEDTLS_PRIVATE(in_len)[0] << 8) | ssl->MBEDTLS_PRIVATE(in_len)[1];
 }
 
 static int tx_buffer_len(mbedtls_ssl_context *ssl, int len)
@@ -56,92 +56,92 @@ static int tx_buffer_len(mbedtls_ssl_context *ssl, int len)
         return MBEDTLS_SSL_OUT_BUFFER_LEN;
     } else {
         return len + MBEDTLS_SSL_HEADER_LEN
-                   + MBEDTLS_SSL_COMPRESSION_ADD
                    + MBEDTLS_MAX_IV_LENGTH
                    + MBEDTLS_SSL_MAC_ADD
-                   + MBEDTLS_SSL_PADDING_ADD;
+                   + MBEDTLS_SSL_PADDING_ADD
+                   + MBEDTLS_SSL_MAX_CID_EXPANSION;
     }
 }
 
 static void init_tx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
 {
     /**
-     * In mbedtls, ssl->out_msg = ssl->out_buf + offset;
+     * In mbedtls, ssl->MBEDTLS_PRIVATE(out_msg) = ssl->MBEDTLS_PRIVATE(out_buf) + offset;
      */
     if (!buf) {
-        int out_msg_off = (int)ssl->out_msg - (int)ssl->out_buf;
+        int out_msg_off = (int)ssl->MBEDTLS_PRIVATE(out_msg) - (int)ssl->MBEDTLS_PRIVATE(out_buf);
 
         if (!out_msg_off) {
             out_msg_off = MBEDTLS_SSL_HEADER_LEN;
         }
 
-        ssl->out_buf = NULL;
-        ssl->out_ctr = NULL;
-        ssl->out_hdr = NULL;
-        ssl->out_len = NULL;
-        ssl->out_iv  = NULL;
-        ssl->out_msg = (unsigned char *)out_msg_off;
+        ssl->MBEDTLS_PRIVATE(out_buf) = NULL;
+        ssl->MBEDTLS_PRIVATE(out_ctr) = NULL;
+        ssl->MBEDTLS_PRIVATE(out_hdr) = NULL;
+        ssl->MBEDTLS_PRIVATE(out_len) = NULL;
+        ssl->MBEDTLS_PRIVATE(out_iv)  = NULL;
+        ssl->MBEDTLS_PRIVATE(out_msg) = (unsigned char *)out_msg_off;
     } else {
-        int out_msg_off = (int)ssl->out_msg;
+        int out_msg_off = (int)ssl->MBEDTLS_PRIVATE(out_msg);
 
-        ssl->out_buf = buf;
-        ssl->out_ctr = ssl->out_buf;
-        ssl->out_hdr = ssl->out_buf +  8;
-        ssl->out_len = ssl->out_buf + 11;
-        ssl->out_iv  = ssl->out_buf + MBEDTLS_SSL_HEADER_LEN;
-        ssl->out_msg = ssl->out_buf + out_msg_off;
+        ssl->MBEDTLS_PRIVATE(out_buf) = buf;
+        ssl->MBEDTLS_PRIVATE(out_ctr) = ssl->MBEDTLS_PRIVATE(out_buf);
+        ssl->MBEDTLS_PRIVATE(out_hdr) = ssl->MBEDTLS_PRIVATE(out_buf) +  8;
+        ssl->MBEDTLS_PRIVATE(out_len) = ssl->MBEDTLS_PRIVATE(out_buf) + 11;
+        ssl->MBEDTLS_PRIVATE(out_iv)  = ssl->MBEDTLS_PRIVATE(out_buf) + MBEDTLS_SSL_HEADER_LEN;
+        ssl->MBEDTLS_PRIVATE(out_msg) = ssl->MBEDTLS_PRIVATE(out_buf) + out_msg_off;
 
         ESP_LOGV(TAG, "out msg offset is %d", out_msg_off);
     }
 
-    ssl->out_msgtype = 0;
-    ssl->out_msglen = 0;
-    ssl->out_left = 0;
+    ssl->MBEDTLS_PRIVATE(out_msgtype) = 0;
+    ssl->MBEDTLS_PRIVATE(out_msglen) = 0;
+    ssl->MBEDTLS_PRIVATE(out_left) = 0;
 }
 
 static void init_rx_buffer(mbedtls_ssl_context *ssl, unsigned char *buf)
 {
     /**
-     * In mbedtls, ssl->in_msg = ssl->in_buf + offset;
+     * In mbedtls, ssl->MBEDTLS_PRIVATE(in_msg) = ssl->MBEDTLS_PRIVATE(in_buf) + offset;
      */
     if (!buf) {
-        int in_msg_off = (int)ssl->in_msg - (int)ssl->in_buf;
+        int in_msg_off = (int)ssl->MBEDTLS_PRIVATE(in_msg) - (int)ssl->MBEDTLS_PRIVATE(in_buf);
 
         if (!in_msg_off) {
             in_msg_off = MBEDTLS_SSL_HEADER_LEN;
         }
 
-        ssl->in_buf = NULL;
-        ssl->in_ctr = NULL;
-        ssl->in_hdr = NULL;
-        ssl->in_len = NULL;
-        ssl->in_iv  = NULL;
-        ssl->in_msg = (unsigned char *)in_msg_off;
+        ssl->MBEDTLS_PRIVATE(in_buf) = NULL;
+        ssl->MBEDTLS_PRIVATE(in_ctr) = NULL;
+        ssl->MBEDTLS_PRIVATE(in_hdr) = NULL;
+        ssl->MBEDTLS_PRIVATE(in_len) = NULL;
+        ssl->MBEDTLS_PRIVATE(in_iv)  = NULL;
+        ssl->MBEDTLS_PRIVATE(in_msg) = (unsigned char *)in_msg_off;
     } else {
-        int in_msg_off = (int)ssl->in_msg;
+        int in_msg_off = (int)ssl->MBEDTLS_PRIVATE(in_msg);
 
-        ssl->in_buf = buf;
-        ssl->in_ctr = ssl->in_buf;
-        ssl->in_hdr = ssl->in_buf +  8;
-        ssl->in_len = ssl->in_buf + 11;
-        ssl->in_iv  = ssl->in_buf + MBEDTLS_SSL_HEADER_LEN;
-        ssl->in_msg = ssl->in_buf + in_msg_off;
+        ssl->MBEDTLS_PRIVATE(in_buf) = buf;
+        ssl->MBEDTLS_PRIVATE(in_ctr) = ssl->MBEDTLS_PRIVATE(in_buf);
+        ssl->MBEDTLS_PRIVATE(in_hdr) = ssl->MBEDTLS_PRIVATE(in_buf) +  8;
+        ssl->MBEDTLS_PRIVATE(in_len) = ssl->MBEDTLS_PRIVATE(in_buf) + 11;
+        ssl->MBEDTLS_PRIVATE(in_iv)  = ssl->MBEDTLS_PRIVATE(in_buf) + MBEDTLS_SSL_HEADER_LEN;
+        ssl->MBEDTLS_PRIVATE(in_msg) = ssl->MBEDTLS_PRIVATE(in_buf) + in_msg_off;
 
         ESP_LOGV(TAG, "in msg offset is %d", in_msg_off);
     }
 
-    ssl->in_msgtype = 0;
-    ssl->in_msglen = 0;
-    ssl->in_left = 0;
+    ssl->MBEDTLS_PRIVATE(in_msgtype) = 0;
+    ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
+    ssl->MBEDTLS_PRIVATE(in_left) = 0;
 }
 
 static int esp_mbedtls_alloc_tx_buf(mbedtls_ssl_context *ssl, int len)
 {
     struct esp_mbedtls_ssl_buf *esp_buf;
 
-    if (ssl->out_buf) {
-        esp_mbedtls_free_buf(ssl->out_buf);
-        ssl->out_buf = NULL;
+    if (ssl->MBEDTLS_PRIVATE(out_buf)) {
+        esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
+        ssl->MBEDTLS_PRIVATE(out_buf) = NULL;
     }
 
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + len);
@@ -154,11 +154,11 @@ static int esp_mbedtls_alloc_tx_buf(mbedtls_ssl_context *ssl, int len)
 
     esp_mbedtls_init_ssl_buf(esp_buf, len);
     /**
-     * Mark the out_msg offset from ssl->out_buf.
+     * Mark the out_msg offset from ssl->MBEDTLS_PRIVATE(out_buf).
      *
-     * In mbedtls, ssl->out_msg = ssl->out_buf + offset;
+     * In mbedtls, ssl->MBEDTLS_PRIVATE(out_msg) = ssl->MBEDTLS_PRIVATE(out_buf) + offset;
      */
-    ssl->out_msg = (unsigned char *)MBEDTLS_SSL_HEADER_LEN;
+    ssl->MBEDTLS_PRIVATE(out_msg) = (unsigned char *)MBEDTLS_SSL_HEADER_LEN;
 
     init_tx_buffer(ssl, esp_buf->buf);
 
@@ -170,14 +170,14 @@ int esp_mbedtls_setup_tx_buffer(mbedtls_ssl_context *ssl)
     CHECK_OK(esp_mbedtls_alloc_tx_buf(ssl, TX_IDLE_BUFFER_SIZE));
 
     /* mark the out buffer has no data cached */
-    esp_mbedtls_set_buf_state(ssl->out_buf, ESP_MBEDTLS_SSL_BUF_NO_CACHED);
+    esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(out_buf), ESP_MBEDTLS_SSL_BUF_NO_CACHED);
 
     return 0;
 }
 
 void esp_mbedtls_setup_rx_buffer(mbedtls_ssl_context *ssl)
 {
-    ssl->in_msg = ssl->in_buf = NULL;
+    ssl->MBEDTLS_PRIVATE(in_msg) = ssl->MBEDTLS_PRIVATE(in_buf) = NULL;
     init_rx_buffer(ssl, NULL);
 }
 
@@ -188,7 +188,7 @@ int esp_mbedtls_reset_add_tx_buffer(mbedtls_ssl_context *ssl)
 
 int esp_mbedtls_reset_free_tx_buffer(mbedtls_ssl_context *ssl)
 {
-    esp_mbedtls_free_buf(ssl->out_buf);
+    esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
     init_tx_buffer(ssl, NULL);
 
     CHECK_OK(esp_mbedtls_setup_tx_buffer(ssl));
@@ -200,9 +200,9 @@ int esp_mbedtls_reset_add_rx_buffer(mbedtls_ssl_context *ssl)
 {
     struct esp_mbedtls_ssl_buf *esp_buf;
 
-    if (ssl->in_buf) {
-        esp_mbedtls_free_buf(ssl->in_buf);
-        ssl->in_buf = NULL;
+    if (ssl->MBEDTLS_PRIVATE(in_buf)) {
+        esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
+        ssl->MBEDTLS_PRIVATE(in_buf) = NULL;
     }
 
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + MBEDTLS_SSL_IN_BUFFER_LEN);
@@ -215,11 +215,11 @@ int esp_mbedtls_reset_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     esp_mbedtls_init_ssl_buf(esp_buf, MBEDTLS_SSL_IN_BUFFER_LEN);
     /**
-     * Mark the in_msg offset from ssl->in_buf.
+     * Mark the in_msg offset from ssl->MBEDTLS_PRIVATE(in_buf).
      *
-     * In mbedtls, ssl->in_msg = ssl->in_buf + offset;
+     * In mbedtls, ssl->MBEDTLS_PRIVATE(in_msg) = ssl->MBEDTLS_PRIVATE(in_buf) + offset;
      */
-    ssl->in_msg = (unsigned char *)MBEDTLS_SSL_HEADER_LEN;
+    ssl->MBEDTLS_PRIVATE(in_msg) = (unsigned char *)MBEDTLS_SSL_HEADER_LEN;
 
     init_rx_buffer(ssl, esp_buf->buf);
 
@@ -228,7 +228,7 @@ int esp_mbedtls_reset_add_rx_buffer(mbedtls_ssl_context *ssl)
 
 void esp_mbedtls_reset_free_rx_buffer(mbedtls_ssl_context *ssl)
 {
-    esp_mbedtls_free_buf(ssl->in_buf);
+    esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
     init_rx_buffer(ssl, NULL);
 }
 
@@ -241,14 +241,14 @@ int esp_mbedtls_add_tx_buffer(mbedtls_ssl_context *ssl, size_t buffer_len)
 
     ESP_LOGV(TAG, "--> add out");
 
-    if (ssl->out_buf) {
-        if (esp_mbedtls_get_buf_state(ssl->out_buf) == ESP_MBEDTLS_SSL_BUF_CACHED) {
+    if (ssl->MBEDTLS_PRIVATE(out_buf)) {
+        if (esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(out_buf)) == ESP_MBEDTLS_SSL_BUF_CACHED) {
             ESP_LOGV(TAG, "out buffer is not empty");
             ret = 0;
             goto exit;
         } else {
-            memcpy(cache_buf, ssl->out_buf, CACHE_BUFFER_SIZE);
-            esp_mbedtls_free_buf(ssl->out_buf);
+            memcpy(cache_buf, ssl->MBEDTLS_PRIVATE(out_buf), CACHE_BUFFER_SIZE);
+            esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
             init_tx_buffer(ssl, NULL);
             cached = 1;
         }
@@ -269,11 +269,11 @@ int esp_mbedtls_add_tx_buffer(mbedtls_ssl_context *ssl, size_t buffer_len)
     init_tx_buffer(ssl, esp_buf->buf);
 
     if (cached) {
-        memcpy(ssl->out_ctr, cache_buf, COUNTER_SIZE);
-        memcpy(ssl->out_iv, cache_buf + COUNTER_SIZE, CACHE_IV_SIZE);
+        memcpy(ssl->MBEDTLS_PRIVATE(out_ctr), cache_buf, COUNTER_SIZE);
+        memcpy(ssl->MBEDTLS_PRIVATE(out_iv), cache_buf + COUNTER_SIZE, CACHE_IV_SIZE);
     }
 
-    ESP_LOGV(TAG, "ssl->out_buf=%p ssl->out_msg=%p", ssl->out_buf, ssl->out_msg);
+    ESP_LOGV(TAG, "ssl->MBEDTLS_PRIVATE(out_buf)=%p ssl->MBEDTLS_PRIVATE(out_msg)=%p", ssl->MBEDTLS_PRIVATE(out_buf), ssl->MBEDTLS_PRIVATE(out_msg));
 
 exit:
     ESP_LOGV(TAG, "<-- add out");
@@ -290,15 +290,15 @@ int esp_mbedtls_free_tx_buffer(mbedtls_ssl_context *ssl)
 
     ESP_LOGV(TAG, "--> free out");
 
-    if (!ssl->out_buf || (ssl->out_buf && (esp_mbedtls_get_buf_state(ssl->out_buf) == ESP_MBEDTLS_SSL_BUF_NO_CACHED))) {
+    if (!ssl->MBEDTLS_PRIVATE(out_buf) || (ssl->MBEDTLS_PRIVATE(out_buf) && (esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(out_buf)) == ESP_MBEDTLS_SSL_BUF_NO_CACHED))) {
         ret = 0;
         goto exit;
     }
 
-    memcpy(buf, ssl->out_ctr, COUNTER_SIZE);
-    memcpy(buf + COUNTER_SIZE, ssl->out_iv, CACHE_IV_SIZE);
+    memcpy(buf, ssl->MBEDTLS_PRIVATE(out_ctr), COUNTER_SIZE);
+    memcpy(buf + COUNTER_SIZE, ssl->MBEDTLS_PRIVATE(out_iv), CACHE_IV_SIZE);
 
-    esp_mbedtls_free_buf(ssl->out_buf);
+    esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(out_buf));
     init_tx_buffer(ssl, NULL);
 
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + TX_IDLE_BUFFER_SIZE);
@@ -310,7 +310,7 @@ int esp_mbedtls_free_tx_buffer(mbedtls_ssl_context *ssl)
     esp_mbedtls_init_ssl_buf(esp_buf, TX_IDLE_BUFFER_SIZE);
     memcpy(esp_buf->buf, buf, CACHE_BUFFER_SIZE);
     init_tx_buffer(ssl, esp_buf->buf);
-    esp_mbedtls_set_buf_state(ssl->out_buf, ESP_MBEDTLS_SSL_BUF_NO_CACHED);
+    esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(out_buf), ESP_MBEDTLS_SSL_BUF_NO_CACHED);
 exit:
     ESP_LOGV(TAG, "<-- free out");
 
@@ -329,8 +329,8 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     ESP_LOGV(TAG, "--> add rx");
 
-    if (ssl->in_buf) {
-        if (esp_mbedtls_get_buf_state(ssl->in_buf) == ESP_MBEDTLS_SSL_BUF_CACHED) {
+    if (ssl->MBEDTLS_PRIVATE(in_buf)) {
+        if (esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(in_buf)) == ESP_MBEDTLS_SSL_BUF_CACHED) {
             ESP_LOGV(TAG, "in buffer is not empty");
             ret = 0;
             goto exit;
@@ -339,8 +339,8 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
         }
     }
 
-    ssl->in_hdr = msg_head;
-    ssl->in_len = msg_head + 3;
+    ssl->MBEDTLS_PRIVATE(in_hdr) = msg_head;
+    ssl->MBEDTLS_PRIVATE(in_len) = msg_head + 3;
 
     if ((ret = mbedtls_ssl_fetch_input(ssl, mbedtls_ssl_in_hdr_len(ssl))) != 0) {
         if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
@@ -356,16 +356,16 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
 
     esp_mbedtls_parse_record_header(ssl);
 
-    in_left = ssl->in_left;
-    in_msglen = ssl->in_msglen;
+    in_left = ssl->MBEDTLS_PRIVATE(in_left);
+    in_msglen = ssl->MBEDTLS_PRIVATE(in_msglen);
     buffer_len = tx_buffer_len(ssl, in_msglen);
 
     ESP_LOGV(TAG, "message length is %d RX buffer length should be %d left is %d",
-                (int)in_msglen, (int)buffer_len, (int)ssl->in_left);
+                (int)in_msglen, (int)buffer_len, (int)ssl->MBEDTLS_PRIVATE(in_left));
 
     if (cached) {
-        memcpy(cache_buf, ssl->in_buf, 16);
-        esp_mbedtls_free_buf(ssl->in_buf);
+        memcpy(cache_buf, ssl->MBEDTLS_PRIVATE(in_buf), 16);
+        esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
         init_rx_buffer(ssl, NULL);
     }
 
@@ -382,13 +382,13 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     init_rx_buffer(ssl, esp_buf->buf);
 
     if (cached) {
-        memcpy(ssl->in_ctr, cache_buf, 8);
-        memcpy(ssl->in_iv, cache_buf + 8, 8);
+        memcpy(ssl->MBEDTLS_PRIVATE(in_ctr), cache_buf, 8);
+        memcpy(ssl->MBEDTLS_PRIVATE(in_iv), cache_buf + 8, 8);
     }
 
-    memcpy(ssl->in_hdr, msg_head, in_left);
-    ssl->in_left = in_left;
-    ssl->in_msglen = 0;
+    memcpy(ssl->MBEDTLS_PRIVATE(in_hdr), msg_head, in_left);
+    ssl->MBEDTLS_PRIVATE(in_left) = in_left;
+    ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
 
 exit:
     ESP_LOGV(TAG, "<-- add rx");
@@ -407,23 +407,23 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
     /**
      * When have read multi messages once, can't free the input buffer directly.
      */
-    if (!ssl->in_buf || (ssl->in_hslen && (ssl->in_hslen < ssl->in_msglen)) ||
-        (ssl->in_buf && (esp_mbedtls_get_buf_state(ssl->in_buf) == ESP_MBEDTLS_SSL_BUF_NO_CACHED))) {
+    if (!ssl->MBEDTLS_PRIVATE(in_buf) || (ssl->MBEDTLS_PRIVATE(in_hslen) && (ssl->MBEDTLS_PRIVATE(in_hslen) < ssl->MBEDTLS_PRIVATE(in_msglen))) ||
+        (ssl->MBEDTLS_PRIVATE(in_buf) && (esp_mbedtls_get_buf_state(ssl->MBEDTLS_PRIVATE(in_buf)) == ESP_MBEDTLS_SSL_BUF_NO_CACHED))) {
         ret = 0;
         goto exit;
     }
 
     /**
-     * The previous processing is just skipped, so "ssl->in_msglen = 0"
+     * The previous processing is just skipped, so "ssl->MBEDTLS_PRIVATE(in_msglen) = 0"
      */
-    if (!ssl->in_msgtype) {
+    if (!ssl->MBEDTLS_PRIVATE(in_msgtype)) {
         goto exit;
     }
 
-    memcpy(buf, ssl->in_ctr, 8);
-    memcpy(buf + 8, ssl->in_iv, 8);
+    memcpy(buf, ssl->MBEDTLS_PRIVATE(in_ctr), 8);
+    memcpy(buf + 8, ssl->MBEDTLS_PRIVATE(in_iv), 8);
 
-    esp_mbedtls_free_buf(ssl->in_buf);
+    esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
     init_rx_buffer(ssl, NULL);
 
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + 16);
@@ -436,7 +436,7 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
     esp_mbedtls_init_ssl_buf(esp_buf, 16);
     memcpy(esp_buf->buf, buf, 16);
     init_rx_buffer(ssl, esp_buf->buf);
-    esp_mbedtls_set_buf_state(ssl->in_buf, ESP_MBEDTLS_SSL_BUF_NO_CACHED);
+    esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(in_buf), ESP_MBEDTLS_SSL_BUF_NO_CACHED);
 exit:
     ESP_LOGV(TAG, "<-- free rx");
 
@@ -449,10 +449,10 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
     size_t bytes = 0;
 
     while (cert) {
-        bytes += cert->raw.len;
+        bytes += cert->MBEDTLS_PRIVATE(raw).MBEDTLS_PRIVATE(len);
         n++;
 
-        cert = cert->next;
+        cert = cert->MBEDTLS_PRIVATE(next);
     }
 
     *num = n;
@@ -464,15 +464,15 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
 void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
 {
 #ifdef CONFIG_MBEDTLS_DHM_C
-    mbedtls_mpi_free((mbedtls_mpi *)&ssl->conf->dhm_P);
-    mbedtls_mpi_free((mbedtls_mpi *)&ssl->conf->dhm_G);
+    mbedtls_mpi_free((mbedtls_mpi *)&ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(dhm_P));
+    mbedtls_mpi_free((mbedtls_mpi *)&ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(dhm_G));
 #endif /* CONFIG_MBEDTLS_DHM_C */
 }
 
 void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
 {
-    mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->conf;
-    mbedtls_ssl_key_cert *keycert = conf->key_cert, *next;
+    mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->MBEDTLS_PRIVATE(conf);
+    mbedtls_ssl_key_cert *keycert = conf->MBEDTLS_PRIVATE(key_cert), *next;
 
     while (keycert) {
         next = keycert->next;
@@ -484,12 +484,12 @@ void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)
         keycert = next;
     }
 
-    conf->key_cert = NULL;
+    conf->MBEDTLS_PRIVATE(key_cert) = NULL;
 }
 
 void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl)
 {
-    mbedtls_ssl_key_cert *keycert = ssl->conf->key_cert;
+    mbedtls_ssl_key_cert *keycert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
 
     while (keycert) {
         if (keycert->key) {
@@ -502,7 +502,7 @@ void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl)
 
 void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl)
 {
-    mbedtls_ssl_key_cert *keycert = ssl->conf->key_cert;
+    mbedtls_ssl_key_cert *keycert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
 
     while (keycert) {
         if (keycert->cert) {
@@ -517,11 +517,11 @@ void esp_mbedtls_free_keycert_cert(mbedtls_ssl_context *ssl)
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
 void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
 {
-    if (ssl->conf->ca_chain) {
-        mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->conf;
+    if (ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(ca_chain)) {
+        mbedtls_ssl_config *conf = (mbedtls_ssl_config *)ssl->MBEDTLS_PRIVATE(conf);
 
-        mbedtls_x509_crt_free(conf->ca_chain);
-        conf->ca_chain = NULL;
+        mbedtls_x509_crt_free(conf->MBEDTLS_PRIVATE(ca_chain));
+        conf->MBEDTLS_PRIVATE(ca_chain) = NULL;
     }
 }
 #endif /* CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT */

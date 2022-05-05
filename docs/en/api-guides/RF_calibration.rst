@@ -58,3 +58,8 @@ When using a custom partition table, make sure that PHY data partition is includ
 With default partition table, this is done automatically.
 If initialization data is stored in a partition, it has to be flashed there, otherwise runtime error will occur.
 To switch to the initialization data stored in a partition, go to ``menuconfig`` and enable :ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`.
+
+API Reference
+-------------
+
+.. include-build-file:: inc/esp_phy_init.inc

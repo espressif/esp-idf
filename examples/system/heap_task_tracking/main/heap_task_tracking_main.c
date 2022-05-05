@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "esp_heap_task_info.h"
 #include "esp_log.h"
+#include "esp_random.h"
 
 
 #define MAX_TASK_NUM 20                         // Max number of per tasks info that it can store
@@ -39,7 +40,7 @@ static void esp_dump_per_task_heap_info(void)
 
     for (int i = 0 ; i < *heap_info.num_totals; i++) {
         printf("Task: %s -> CAP_8BIT: %d CAP_32BIT: %d\n",
-                heap_info.totals[i].task ? pcTaskGetTaskName(heap_info.totals[i].task) : "Pre-Scheduler allocs" ,
+                heap_info.totals[i].task ? pcTaskGetName(heap_info.totals[i].task) : "Pre-Scheduler allocs" ,
                 heap_info.totals[i].size[0],    // Heap size with CAP_8BIT capabilities
                 heap_info.totals[i].size[1]);   // Heap size with CAP32_BIT capabilities
     }

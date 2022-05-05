@@ -7,6 +7,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "unity.h"
+#include "esp_random.h"
 
 #include "touch_element/touch_element_private.h"
 #include "touch_element/touch_button.h"

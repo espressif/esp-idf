@@ -63,7 +63,7 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
         //Todo: Replace the current locking mechanism and int_state with portTRY_ENTER_CRITICAL() instead.
         // do not overwrite lock->int_state before we actually acquired the mux
         unsigned int_state = portSET_INTERRUPT_MASK_FROM_ISR();
-        bool success = vPortCPUAcquireMutexTimeout(&lock->mux, 0);
+        bool success = spinlock_acquire(&lock->mux, 0);
         if (success) {
             lock->int_state = int_state;
             return ESP_OK;
@@ -84,7 +84,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
     unsigned int_state = lock->int_state;
     // after call to the following func we can not be sure that lock->int_state
     // is not overwritten by other CPU who has acquired the mux just after we released it. See esp_apptrace_lock_take().
-    vPortCPUReleaseMutex(&lock->mux);
+    spinlock_release(&lock->mux);
     portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
     return ESP_OK;
 }

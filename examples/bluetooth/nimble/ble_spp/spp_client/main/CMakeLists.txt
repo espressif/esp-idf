@@ -1,2 +1,2 @@
 idf_component_register(SRCS "main.c" "misc.c" "peer.c"
-                    INCLUDE_DIRS "$ENV{IDF_PATH}/components")
+                    INCLUDE_DIRS ".")

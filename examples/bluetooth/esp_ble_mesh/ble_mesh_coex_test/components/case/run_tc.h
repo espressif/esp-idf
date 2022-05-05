@@ -1,7 +1,7 @@
 /*
  * ESP BLE Mesh Example
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,7 +48,7 @@ typedef struct run_task_msg {
     uint8_t case_id;
 } run_task_msg_t;
 
-extern xQueueHandle xTaskQueue ;
+extern QueueHandle_t xTaskQueue ;
 
 void run_tc_init(void);
 

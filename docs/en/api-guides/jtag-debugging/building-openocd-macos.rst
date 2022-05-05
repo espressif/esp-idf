@@ -25,6 +25,7 @@ Install packages that are required to compile OpenOCD using Homebrew::
 
     brew install automake libtool libusb wget gcc@4.9 pkg-config
 
+
 Build OpenOCD
 =============
 
@@ -47,8 +48,8 @@ Optionally you can add ``sudo make install`` step at the end. Skip it, if you ha
 
 Once ``make`` process is successfully completed, the executable of OpenOCD will be saved in ``~/esp/openocd-esp32/src/openocd`` directory.
 
+
 Next Steps
 ==========
 
 To carry on with debugging environment setup, proceed to section :ref:`jtag-debugging-configuring-target`.
-

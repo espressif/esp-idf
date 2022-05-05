@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "soc/wdev_reg.h"
 
 #ifndef BOOTLOADER_BUILD
-#include "esp_system.h"
+#include "esp_random.h"
 #include "esp_private/periph_ctrl.h"
 
  __attribute__((weak)) void bootloader_fill_random(void *buffer, size_t length)

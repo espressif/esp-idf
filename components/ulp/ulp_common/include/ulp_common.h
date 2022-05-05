@@ -44,6 +44,22 @@ extern "C" {
  */
 esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us);
 
+/**
+ * @brief Stop the ULP timer
+ *
+ * @note This will stop the ULP from waking up if halted, but will not abort any program
+ *       currently executing on the ULP.
+ */
+void ulp_timer_stop(void);
+
+/**
+ * @brief Resume the ULP timer
+ *
+ * @note This will resume an already configured timer, but does no other configuration
+ *
+ */
+void ulp_timer_resume(void);
+
 #ifdef __cplusplus
 }
 #endif
