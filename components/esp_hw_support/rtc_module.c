@@ -18,7 +18,7 @@
 #include "freertos/timers.h"
 #include "esp_intr_alloc.h"
 #include "sys/lock.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
