@@ -620,15 +620,14 @@ BaseType_t xPortSysTickHandler(void)
     portbenchmarkIntLatency();
     traceISR_ENTER(SYSTICK_INTR_ID);
     BaseType_t ret;
+    esp_vApplicationTickHook();
     if (portGET_CORE_ID() == 0) {
-        //Only Core 0 calls xTaskIncrementTick();
+        // FreeRTOS SMP requires that only core 0 calls xTaskIncrementTick()
         ret = xTaskIncrementTick();
     } else {
-        //Manually call the IDF tick hooks
-        esp_vApplicationTickHook();
         ret = pdFALSE;
     }
-    if(ret != pdFALSE) {
+    if (ret != pdFALSE) {
         portYIELD_FROM_ISR();
     } else {
         traceISR_EXIT();
@@ -654,13 +653,6 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
         dest = strcat(dest, str[i]);
     }
     esp_system_abort(buf);
-}
-#endif
-
-#if  (  configUSE_TICK_HOOK > 0 )
-void vApplicationTickHook( void )
-{
-    esp_vApplicationTickHook();
 }
 #endif
 
