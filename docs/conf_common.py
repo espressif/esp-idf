@@ -160,6 +160,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'esp32c3':ESP32C3_DOCS}
 
 extensions += ['sphinx_copybutton',
+               'sphinxcontrib.wavedrom',
                # Note: order is important here, events must
                # be registered by one extension before they can be
                # connected to another extension
@@ -172,6 +173,9 @@ extensions += ['sphinx_copybutton',
                'esp_docs.idf_extensions.gen_idf_tools_links',
                'esp_docs.esp_extensions.run_doxygen',
                ]
+
+# Use wavedrompy as backend, insted of wavedrom-cli
+render_using_wavedrompy = True
 
 # link roles config
 github_repo = 'espressif/esp-idf'
