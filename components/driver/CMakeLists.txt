@@ -88,7 +88,7 @@ if(${target} STREQUAL "esp32")
                      "esp32/dac.c")
 endif()
 
-if(IDF_TARGET STREQUAL "esp32s2")
+if(${target} STREQUAL "esp32s2")
     list(APPEND srcs "dac_common.c"
                      "touch_sensor_common.c"
                      "esp32s2/touch_sensor.c"
@@ -103,7 +103,7 @@ if(${target} STREQUAL "esp32s3")
                      "esp32s3/touch_sensor.c")
 endif()
 
-if(IDF_TARGET STREQUAL "esp32c3")
+if(${target} STREQUAL "esp32c3")
     list(APPEND srcs "esp32c3/adc2_init_cal.c")
 endif()
 

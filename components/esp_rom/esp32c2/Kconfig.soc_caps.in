@@ -26,3 +26,11 @@ config ESP_ROM_GET_CLK_FREQ
 config ESP_ROM_HAS_RVFPLIB
     bool
     default y
+
+config ESP_ROM_HAS_HAL_WDT
+    bool
+    default y
+
+config ESP_ROM_HAS_HAL_SYSTIMER
+    bool
+    default y
