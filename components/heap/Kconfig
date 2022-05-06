@@ -73,6 +73,7 @@ menu "Heap memory debugging"
 
     config HEAP_HAS_ROM_IMPL
         bool
+        depends on IDF_TARGET_ESP32C2
         default y if IDF_TARGET_ESP32C2
 
     config HEAP_ROM_IMPL

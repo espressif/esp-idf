@@ -55,6 +55,7 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_HAS_ROM_IMPL
         bool
+        depends on IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
         default y if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
 
     config SPI_FLASH_ROM_IMPL
