@@ -34,3 +34,7 @@ config ESP_ROM_HAS_HAL_WDT
 config ESP_ROM_HAS_HAL_SYSTIMER
     bool
     default y
+
+config ESP_ROM_HAS_HEAP_TLSF
+    bool
+    default y

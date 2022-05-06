@@ -22,7 +22,7 @@
 /* Defines compile-time configuration macros */
 #include "multi_heap_config.h"
 
-#if (!defined MULTI_HEAP_POISONING) && (!defined CONFIG_HEAP_ROM_IMPL)
+#if (!defined MULTI_HEAP_POISONING) && (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
 /* if no heap poisoning, public API aliases directly to these implementations */
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     __attribute__((alias("multi_heap_malloc_impl")));
@@ -77,7 +77,7 @@ typedef struct multi_heap_info {
     tlsf_t heap_data;
 } heap_t;
 
-#ifdef CONFIG_HEAP_ROM_IMPL
+#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 void _multi_heap_lock(void *lock)
 {
@@ -99,7 +99,7 @@ void multi_heap_in_rom_init(void)
     multi_heap_os_funcs_init(&multi_heap_os_funcs);
 }
 
-#else //#ifndef CONFIG_HEAP_ROM_IMPL
+#else //#ifndef CONFIG_HEAP_TLSF_USE_ROM_IMPL
 
 /* Return true if this block is free. */
 static inline bool is_free(const block_header_t *block)

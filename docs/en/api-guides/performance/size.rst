@@ -421,6 +421,14 @@ VFS
         :CONFIG_ESP_ROM_HAS_HAL_SYSTIMER: * Enabling :ref:`CONFIG_HAL_SYSTIMER_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the systimer HAL driver of ROM implementation.
         :CONFIG_ESP_ROM_HAS_HAL_WDT: * Enabling :ref:`CONFIG_HAL_WDT_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the watchdog HAL driver of ROM implementation.
 
+.. only:: esp32c2
+
+    Heap
+    @@@@
+
+    .. list::
+
+        :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * Enabling :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the TLSF library of ROM implementation.
 
 Bootloader Size
 ---------------

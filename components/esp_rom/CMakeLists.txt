@@ -200,7 +200,7 @@ else() # Regular app build
             rom_linker_script("newlib-nano")
         endif()
 
-        if(CONFIG_HEAP_ROM_IMPL)
+        if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)
             rom_linker_script("heap")
         endif()
     endif()

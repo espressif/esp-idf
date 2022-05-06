@@ -49,7 +49,7 @@ void heap_caps_enable_nonos_stack_heaps(void)
  */
 void heap_caps_init(void)
 {
-#ifdef CONFIG_HEAP_ROM_IMPL
+#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
     extern void multi_heap_in_rom_init(void);
     multi_heap_in_rom_init();
 #endif
