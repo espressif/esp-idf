@@ -61,24 +61,24 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
 esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens);
 
 /**
- * @brief Start temperature measurement.
+ * @brief Enable the temperature sensor
  *
  * @param tsens The handle created by `temperature_sensor_install()`.
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_STATE if temperature sensor is started already.
+ *     - ESP_ERR_INVALID_STATE if temperature sensor is enabled already.
  */
-esp_err_t temperature_sensor_start(temperature_sensor_handle_t tsens);
+esp_err_t temperature_sensor_enable(temperature_sensor_handle_t tsens);
 
 /**
- * @brief Stop temperature sensor measure.
+ * @brief Disable temperature sensor
  *
  * @param tsens The handle created by `temperature_sensor_install()`.
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_STATE if temperature sensor is stopped already.
+ *     - ESP_ERR_INVALID_STATE if temperature sensor is not enabled yet.
  */
-esp_err_t temperature_sensor_stop(temperature_sensor_handle_t tsens);
+esp_err_t temperature_sensor_disable(temperature_sensor_handle_t tsens);
 
 /**
  * @brief Read temperature sensor data that is converted to degrees Celsius.
@@ -88,8 +88,9 @@ esp_err_t temperature_sensor_stop(temperature_sensor_handle_t tsens);
  * @param out_celsius The measure output value.
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG ARG is NULL.
- *     - ESP_ERR_INVALID_STATE The ambient temperature is out of range.
+ *     - ESP_ERR_INVALID_ARG invalid arguments
+ *     - ESP_ERR_INVALID_STATE Temperature sensor is not enabled yet.
+ *     - ESP_FAIL Parse the sensor data into ambient temperature failed (e.g. out of the range).
  */
 esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, float *out_celsius);
 

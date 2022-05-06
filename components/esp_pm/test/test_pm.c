@@ -140,6 +140,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
         .resolution_hz = 1000000, /* 1 us per tick */
     };
     TEST_ESP_OK(gptimer_new_timer(&config, &gptimer));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
     // if GPTimer is clocked from APB, when PM is enabled, the driver will acquire the PM lock
     // causing the auto light sleep doesn't take effect
@@ -174,6 +175,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
     light_sleep_disable();
     TEST_ESP_OK(esp_pm_lock_acquire(gptimer_pm_lock));
     TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 

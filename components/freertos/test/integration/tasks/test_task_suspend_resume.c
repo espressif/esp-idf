@@ -173,6 +173,7 @@ static void test_resume_task_from_isr(int target_core)
     };
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, suspend_task));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
     // wait the timer interrupt fires up
     vTaskDelay(2);
@@ -184,6 +185,7 @@ static void test_resume_task_from_isr(int target_core)
     TEST_ASSERT_UINT32_WITHIN(100, alarm_config.alarm_count, (unsigned)resumed_counter);
 
     // clean up
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 

@@ -83,6 +83,8 @@ void ref_clock_init(void)
         .on_reach = on_reach_watch_point,
     };
     TEST_ESP_OK(pcnt_unit_register_event_callbacks(s_pcnt_unit, &cbs, NULL));
+    // enable pcnt
+    TEST_ESP_OK(pcnt_unit_enable(s_pcnt_unit));
     // start pcnt
     TEST_ESP_OK(pcnt_unit_start(s_pcnt_unit));
 
@@ -121,6 +123,7 @@ void ref_clock_deinit(void)
 {
     // Deinitialize PCNT
     TEST_ESP_OK(pcnt_unit_stop(s_pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_disable(s_pcnt_unit));
     TEST_ESP_OK(pcnt_unit_remove_watch_point(s_pcnt_unit, REF_CLOCK_PRESCALER_MS * 1000));
     TEST_ESP_OK(pcnt_del_channel(s_pcnt_chan));
     TEST_ESP_OK(pcnt_del_unit(s_pcnt_unit));

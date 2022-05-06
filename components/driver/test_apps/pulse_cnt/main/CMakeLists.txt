@@ -1,5 +1,7 @@
 set(srcs "test_app_main.c"
-         "test_pulse_cnt.c")
+         "test_pulse_cnt_simulator.c"
+         "test_pulse_cnt.c"
+         "test_pulse_cnt_iram.c")
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE

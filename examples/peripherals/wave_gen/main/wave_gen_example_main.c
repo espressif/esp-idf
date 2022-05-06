@@ -116,6 +116,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, raw_val));
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_enable(gptimer));
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
     while (1) {

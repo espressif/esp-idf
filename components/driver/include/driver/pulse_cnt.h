@@ -86,7 +86,7 @@ typedef struct {
 /**
  * @brief Create a new PCNT unit, and return the handle
  *
- * @note The newly created PCNT unit is put into the stopped state.
+ * @note The newly created PCNT unit is put in the init state.
  *
  * @param[in] config PCNT unit configuration
  * @param[out] ret_unit Returned PCNT unit handle
@@ -102,13 +102,14 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
 /**
  * @brief Delete the PCNT unit handle
  *
- * @note Users must ensure that the PCNT unit is stopped before deleting the unit. Users can force a working unit into the stopped state via `pcnt_unit_stop()`.
+ * @note A PCNT unit can't be in the enable state when this function is invoked.
+ *       See also `pcnt_unit_disable()` for how to disable a unit.
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @return
  *      - ESP_OK: Delete the PCNT unit successfully
  *      - ESP_ERR_INVALID_ARG: Delete the PCNT unit failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Delete the PCNT unit failed because corresponding PCNT channels and/or watch points are still in working
+ *      - ESP_ERR_INVALID_STATE: Delete the PCNT unit failed because the unit is not in init state or some PCNT channel is still in working
  *      - ESP_FAIL: Delete the PCNT unit failed because of other error
  */
 esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit);
@@ -118,29 +119,63 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit);
  *
  * @note The glitch filter module is clocked from APB, and APB frequency can be changed during DFS, which in return make the filter out of action.
  *       So this function will lazy-install a PM lock internally when the power management is enabled. With this lock, the APB frequency won't be changed.
- *       The PM lock can only be uninstalled in `pcnt_del_unit()`.
+ *       The PM lock can be uninstalled in `pcnt_del_unit()`.
+ * @note This function should be called when the PCNT unit is in the init state (i.e. before calling `pcnt_unit_enable()`)
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] config PCNT filter configuration, set config to NULL means disabling the filter function
  * @return
  *      - ESP_OK: Set glitch filter successfully
  *      - ESP_ERR_INVALID_ARG: Set glitch filter failed because of invalid argument (e.g. glitch width is too big)
+ *      - ESP_ERR_INVALID_STATE: Set glitch filter failed because the unit is not in the init state
  *      - ESP_FAIL: Set glitch filter failed because of other error
  */
 esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch_filter_config_t *config);
 
 /**
+ * @brief Enable the PCNT unit
+ *
+ * @note This function will transit the unit state from init to enable.
+ * @note This function will enable the interrupt service, if it's lazy installed in `pcnt_unit_register_event_callbacks()`.
+ * @note This function will acquire the PM lock if it's lazy installed in `pcnt_unit_set_glitch_filter()`.
+ * @note Enable a PCNT unit doesn't mean to start it. See also `pcnt_unit_start()` for how to start the PCNT counter.
+ *
+ * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
+ * @return
+ *      - ESP_OK: Enable PCNT unit successfully
+ *      - ESP_ERR_INVALID_ARG: Enable PCNT unit failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Enable PCNT unit failed because the unit is already enabled
+ *      - ESP_FAIL: Enable PCNT unit failed because of other error
+ */
+esp_err_t pcnt_unit_enable(pcnt_unit_handle_t unit);
+
+/**
+ * @brief Disable the PCNT unit
+ *
+ * @note This function will do the opposite work to the `pcnt_unit_enable()`
+ * @note Disable a PCNT unit doesn't mean to stop it. See also `pcnt_unit_stop()` for how to stop the PCNT counter.
+ *
+ * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
+ * @return
+ *      - ESP_OK: Disable PCNT unit successfully
+ *      - ESP_ERR_INVALID_ARG: Disable PCNT unit failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Disable PCNT unit failed because the unit is not enabled yet
+ *      - ESP_FAIL: Disable PCNT unit failed because of other error
+ */
+esp_err_t pcnt_unit_disable(pcnt_unit_handle_t unit);
+
+/**
  * @brief Start the PCNT unit, the counter will start to count according to the edge and/or level input signals
  *
- * @note This function will acquire the PM lock when power management is enabled. Also see `pcnt_unit_set_glitch_filter()` for the condition of PM lock installation.
- * @note The number of calls to this function should be equal to the number of calls to `pcnt_unit_stop()`.
+ * @note This function should be called when the unit is in the enable state (i.e. after calling `pcnt_unit_enable()`)
  * @note This function is allowed to run within ISR context
- * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM`, so that it's allowed to be executed when Cache is disabled
+ * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM` is on, so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @return
  *      - ESP_OK: Start PCNT unit successfully
  *      - ESP_ERR_INVALID_ARG: Start PCNT unit failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Start PCNT unit failed because the unit is not enabled yet
  *      - ESP_FAIL: Start PCNT unit failed because of other error
  */
 esp_err_t pcnt_unit_start(pcnt_unit_handle_t unit);
@@ -148,10 +183,8 @@ esp_err_t pcnt_unit_start(pcnt_unit_handle_t unit);
 /**
  * @brief Stop PCNT from counting
  *
- * @note If power management is enabled, this function will release the PM lock acquired in `pcnt_unit_start()`.
- *       Also see `pcnt_unit_set_glitch_filter()` for the condition of PM lock installation.
+ * @note This function should be called when the unit is in the enable state (i.e. after calling `pcnt_unit_enable()`)
  * @note The stop operation won't clear the counter. Also see `pcnt_unit_clear_count()` for how to clear pulse count value.
- * @note The number of calls to this function should be equal to the number of calls to `pcnt_unit_start()`.
  * @note This function is allowed to run within ISR context
  * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM`, so that it is allowed to be executed when Cache is disabled
  *
@@ -159,6 +192,7 @@ esp_err_t pcnt_unit_start(pcnt_unit_handle_t unit);
  * @return
  *      - ESP_OK: Stop PCNT unit successfully
  *      - ESP_ERR_INVALID_ARG: Stop PCNT unit failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Stop PCNT unit failed because the unit is not enabled yet
  *      - ESP_FAIL: Stop PCNT unit failed because of other error
  */
 esp_err_t pcnt_unit_stop(pcnt_unit_handle_t unit);
@@ -196,7 +230,8 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value);
 /**
  * @brief Set event callbacks for PCNT unit
  *
- * @note User can deregister the previous callback by calling this function with an empty `cbs`.
+ * @note User registered callbacks are expected to be runnable within ISR context
+ * @note This function is only allowed to be called when the unit is in the init state (i.e. before calling `pcnt_unit_enable()`)
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] cbs Group of callback functions
@@ -204,14 +239,13 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value);
  * @return
  *      - ESP_OK: Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG: Set event callbacks failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Set event callbacks failed because the unit is not in init state
  *      - ESP_FAIL: Set event callbacks failed because of other error
  */
 esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt_event_callbacks_t *cbs, void *user_data);
 
 /**
  * @brief Add a watch point for PCNT unit, PCNT will generate an event when the counter value reaches the watch point value
- *
- * @note The number of calls to this function should be equal to the number of calls to `pcnt_unit_remove_watch_point()`, otherwise the unit can't be deleted
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] watch_point Value to be watched
@@ -227,8 +261,6 @@ esp_err_t pcnt_unit_add_watch_point(pcnt_unit_handle_t unit, int watch_point);
 /**
  * @brief Remove a watch point for PCNT unit
  *
- * @note The number of calls to this function should be equal to the number of calls to `pcnt_unit_add_watch_point()`, otherwise the unit can't be deleted
- *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] watch_point Watch point value
  * @return
@@ -242,6 +274,8 @@ esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point)
 /**
  * @brief Create PCNT channel for specific unit, each PCNT has several channels associated with it
  *
+ * @note This function should be called when the unit is in init state (i.e. before calling `pcnt_unit_enable()`)
+ *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] config PCNT channel configuration
  * @param[out] ret_chan Returned channel handle
@@ -250,6 +284,7 @@ esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point)
  *      - ESP_ERR_INVALID_ARG: Create PCNT channel failed because of invalid argument
  *      - ESP_ERR_NO_MEM: Create PCNT channel failed because of insufficient memory
  *      - ESP_ERR_NOT_FOUND: Create PCNT channel failed because all PCNT channels are used up and no more free one
+ *      - ESP_ERR_INVALID_STATE: Create PCNT channel failed because the unit is not in the init state
  *      - ESP_FAIL: Create PCNT channel failed because of other error
  */
 esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *config, pcnt_channel_handle_t *ret_chan);

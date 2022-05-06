@@ -72,6 +72,12 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_new_timer(&timer_config, &timers[i]));
         }
+        // start timer before enable should fail
+        TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gptimer_start(timers[0]));
+        printf("enable timers\r\n");
+        for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+            TEST_ESP_OK(gptimer_enable(timers[i]));
+        }
         printf("start timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_start(timers[i]));
@@ -109,6 +115,11 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             TEST_ASSERT_UINT_WITHIN(2000, 40000, value);
         }
+        printf("disable timers\r\n");
+        for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+            TEST_ESP_OK(gptimer_disable(timers[i]));
+        }
+        printf("delete timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ESP_OK(gptimer_del_timer(timers[i]));
         }
@@ -149,6 +160,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
         alarm_config.alarm_count = 100000 * (i + 1);
         TEST_ESP_OK(gptimer_set_alarm_action(timers[i], &alarm_config));
         TEST_ESP_OK(gptimer_register_event_callbacks(timers[i], &cbs, task_handle));
+        TEST_ESP_OK(gptimer_enable(timers[i]));
         TEST_ESP_OK(gptimer_start(timers[i]));
         printf("alarm value for gptimer %d: %llu\r\n", i, alarm_config.alarm_count);
     }
@@ -184,6 +196,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_disable(timers[i]));
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }
@@ -226,16 +239,18 @@ TEST_CASE("gptimer_auto_reload_on_alarm", "[gptimer]")
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_set_alarm_action(timers[i], &alarm_config));
         TEST_ESP_OK(gptimer_register_event_callbacks(timers[i], &cbs, task_handle));
+        TEST_ESP_OK(gptimer_enable(timers[i]));
         TEST_ESP_OK(gptimer_start(timers[i]));
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-        // delete should fail if timer is not stopped
-        TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, gptimer_del_timer(timers[i]));
+        // delete should fail if timer is not disabled
+        TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gptimer_del_timer(timers[i]));
         TEST_ESP_OK(gptimer_stop(timers[i]));
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_disable(timers[i]));
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }
@@ -276,6 +291,7 @@ TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_set_alarm_action(timers[i], &alarm_config));
         TEST_ESP_OK(gptimer_register_event_callbacks(timers[i], &cbs, task_handle));
+        TEST_ESP_OK(gptimer_enable(timers[i]));
         TEST_ESP_OK(gptimer_start(timers[i]));
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
         // no alarm event should trigger again, as auto-reload is not enabled and alarm value hasn't changed in the isr
@@ -296,6 +312,7 @@ TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_disable(timers[i]));
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }
@@ -337,6 +354,7 @@ TEST_CASE("gptimer_update_alarm_dynamically", "[gptimer]")
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_set_alarm_action(timers[i], &alarm_config));
         TEST_ESP_OK(gptimer_register_event_callbacks(timers[i], &cbs, task_handle));
+        TEST_ESP_OK(gptimer_enable(timers[i]));
         TEST_ESP_OK(gptimer_start(timers[i]));
         // check the alarm event for multiple times
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(500)));
@@ -360,6 +378,7 @@ TEST_CASE("gptimer_update_alarm_dynamically", "[gptimer]")
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_disable(timers[i]));
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }
@@ -402,6 +421,7 @@ TEST_CASE("gptimer_count_down_reload", "[gptimer]")
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_set_alarm_action(timers[i], &alarm_config));
         TEST_ESP_OK(gptimer_register_event_callbacks(timers[i], &cbs, task_handle));
+        TEST_ESP_OK(gptimer_enable(timers[i]));
         TEST_ESP_OK(gptimer_start(timers[i]));
         // check twice, as it's a period event
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
@@ -419,6 +439,7 @@ TEST_CASE("gptimer_count_down_reload", "[gptimer]")
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_disable(timers[i]));
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }
@@ -467,12 +488,14 @@ TEST_CASE("gptimer_overflow", "[gptimer]")
         TEST_ESP_OK(gptimer_register_event_callbacks(timers[i], &cbs, task_handle));
         // we start from the reload value
         TEST_ESP_OK(gptimer_set_raw_count(timers[i], reload_at));
+        TEST_ESP_OK(gptimer_enable(timers[i]));
         TEST_ESP_OK(gptimer_start(timers[i]));
         TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(400)));
         TEST_ESP_OK(gptimer_stop(timers[i]));
     }
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
+        TEST_ESP_OK(gptimer_disable(timers[i]));
         TEST_ESP_OK(gptimer_del_timer(timers[i]));
     }
 }

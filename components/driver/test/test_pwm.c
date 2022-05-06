@@ -112,6 +112,7 @@ static void pcnt_setup_testbench(void)
     TEST_ESP_OK(pcnt_new_channel(pcnt_unit_a, &chan_a_config, &pcnt_chan_a));
     TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
     TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan_a, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit_a));
 
     // PWMB <--> PCNT UNIT1
     pcnt_unit_config_t unit_b_config = {
@@ -126,10 +127,13 @@ static void pcnt_setup_testbench(void)
     TEST_ESP_OK(pcnt_new_channel(pcnt_unit_b, &chan_b_config, &pcnt_chan_b));
     TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
     TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit_b));
 }
 
 static void pcnt_tear_testbench(void)
 {
+    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit_a));
+    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit_b));
     TEST_ESP_OK(pcnt_del_channel(pcnt_chan_a));
     TEST_ESP_OK(pcnt_del_channel(pcnt_chan_b));
     TEST_ESP_OK(pcnt_del_unit(pcnt_unit_a));

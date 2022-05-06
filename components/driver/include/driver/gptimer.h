@@ -41,6 +41,7 @@ typedef bool (*gptimer_alarm_cb_t) (gptimer_handle_t timer, const gptimer_alarm_
 /**
  * @brief Group of supported GPTimer callbacks
  * @note The callbacks are all running under ISR environment
+ * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions callbed by it should be placed in IRAM.
  */
 typedef struct {
     gptimer_alarm_cb_t on_alarm; /*!< Timer alarm callback */
@@ -73,7 +74,7 @@ typedef struct {
 /**
  * @brief Create a new General Purpose Timer, and return the handle
  *
- * @note Once a timer is created, it is placed in the stopped state and will not start until `gptimer_start()` is called.
+ * @note The newly created timer is put in the init state.
  *
  * @param[in] config GPTimer configuration
  * @param[out] ret_timer Returned timer handle
@@ -89,13 +90,14 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 /**
  * @brief Delete the GPTimer handle
  *
- * @note A timer must be in a stop state before it can be deleted.
+ * @note A timer can't be in the enable state when this function is invoked.
+ *       See also `gptimer_disable()` for how to disable a timer.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
  * @return
  *      - ESP_OK: Delete GPTimer successfully
  *      - ESP_ERR_INVALID_ARG: Delete GPTimer failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Delete GPTimer failed because the timer has not stopped
+ *      - ESP_ERR_INVALID_STATE: Delete GPTimer failed because the timer is not in init state
  *      - ESP_FAIL: Delete GPTimer failed because of other error
  */
 esp_err_t gptimer_del_timer(gptimer_handle_t timer);
@@ -135,7 +137,8 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
 /**
  * @brief Set callbacks for GPTimer
  *
- * @note The user registered callbacks are expected to be runnable within ISR context
+ * @note User registered callbacks are expected to be runnable within ISR context
+ * @note This function should be called when the timer is in the init state (i.e. before calling `gptimer_enable()`)
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
  * @param[in] cbs Group of callback functions
@@ -143,6 +146,7 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
  * @return
  *      - ESP_OK: Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG: Set event callbacks failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Set event callbacks failed because the timer is not in init state
  *      - ESP_FAIL: Set event callbacks failed because of other error
  */
 esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer_event_callbacks_t *cbs, void *user_data);
@@ -150,7 +154,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 /**
  * @brief Set alarm event actions for GPTimer.
  *
- * @note This function is allowed to run within ISR context
+ * @note This function is allowed to run within ISR context, so that user can set new alarm action immediately in the ISR callback.
  * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
@@ -163,31 +167,65 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_config_t *config);
 
 /**
- * @brief Start GPTimer
+ * @brief Enable GPTimer
  *
+ * @note This function will transit the timer state from init to enable.
+ * @note This function will enable the interrupt service, if it's lazy installed in `gptimer_register_event_callbacks()`.
+ * @note This function will acquire a PM lock, if a specific source clock (e.g. APB) is selected in the `gptimer_config_t`, while `CONFIG_PM_ENABLE` is enabled.
+ * @note Enable a timer doesn't mean to start it. See also `gptimer_start()` for how to make the timer start counting.
+ *
+ * @param[in] timer Timer handle created by `gptimer_new_timer()`
+ * @return
+ *      - ESP_OK: Enable GPTimer successfully
+ *      - ESP_ERR_INVALID_ARG: Enable GPTimer failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Enable GPTimer failed because the timer is already enabled
+ *      - ESP_FAIL: Enable GPTimer failed because of other error
+ */
+esp_err_t gptimer_enable(gptimer_handle_t timer);
+
+/**
+ * @brief Disable GPTimer
+ *
+ * @note This function will do the opposite work to the `gptimer_enable()`
+ * @note Disable a timer doesn't mean to stop it. See also `gptimer_stop()` for how to make the timer stop counting.
+ *
+ * @param[in] timer Timer handle created by `gptimer_new_timer()`
+ * @return
+ *      - ESP_OK: Disable GPTimer successfully
+ *      - ESP_ERR_INVALID_ARG: Disable GPTimer failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Disable GPTimer failed because the timer is not enabled yet
+ *      - ESP_FAIL: Disable GPTimer failed because of other error
+ */
+esp_err_t gptimer_disable(gptimer_handle_t timer);
+
+/**
+ * @brief Start GPTimer (internal counter starts counting)
+ *
+ * @note This function should be called when the timer is in the enable state (i.e. after calling `gptimer_enable()`)
  * @note This function is allowed to run within ISR context
- * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ * @note This function will be placed into IRAM if `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is on, so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
  * @return
  *      - ESP_OK: Start GPTimer successfully
  *      - ESP_ERR_INVALID_ARG: Start GPTimer failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Start GPTimer failed because the timer is not in stop state
+ *      - ESP_ERR_INVALID_STATE: Start GPTimer failed because the timer is not enabled yet
  *      - ESP_FAIL: Start GPTimer failed because of other error
  */
 esp_err_t gptimer_start(gptimer_handle_t timer);
 
 /**
- * @brief Stop GPTimer
+ * @brief Stop GPTimer (internal counter stops counting)
  *
+ * @note This function should be called when the timer is in the enable state (i.e. after calling `gptimer_enable()`)
  * @note This function is allowed to run within ISR context
- * @note This function is allowed to be executed when Cache is disabled, by enabling `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM`
+ * @note This function will be placed into IRAM if `CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` is on, so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
  * @return
  *      - ESP_OK: Stop GPTimer successfully
  *      - ESP_ERR_INVALID_ARG: Stop GPTimer failed because of invalid argument
- *      - ESP_ERR_INVALID_STATE: Stop GPTimer failed because the timer is not in start state
+ *      - ESP_ERR_INVALID_STATE: Stop GPTimer failed because the timer is not enabled yet
  *      - ESP_FAIL: Stop GPTimer failed because of other error
  */
 esp_err_t gptimer_stop(gptimer_handle_t timer);

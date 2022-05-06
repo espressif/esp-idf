@@ -198,6 +198,7 @@ static void SEGGER_SYSVIEW_TS_Init(void)
     // pick any free GPTimer instance
     ESP_ERROR_CHECK(gptimer_new_timer(&config, &s_sv_gptimer));
     /* Start counting */
+    gptimer_enable(s_sv_gptimer);
     gptimer_start(s_sv_gptimer);
 #endif // TS_USE_TIMERGROUP
 }

@@ -63,10 +63,6 @@ static void test_gptimer_start(void *arg)
         .alarm_count = 1000,
     };
     TEST_ESP_OK(gptimer_set_raw_count(gptimer, 0));
-    gptimer_event_callbacks_t cbs = {
-        .on_alarm = on_alarm_sender_cb,
-    };
-    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
     TEST_ESP_OK(gptimer_start(gptimer));
 }
@@ -144,6 +140,11 @@ static void install_gptimer_on_core(void *arg)
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimers[core_id]));
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = on_alarm_sender_cb,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimers[core_id], &cbs, NULL));
+    TEST_ESP_OK(gptimer_enable(gptimers[core_id]));
     test_gptimer_start(gptimers[core_id]);
     xSemaphoreGive(task_delete_semphr);
     vTaskDelete(NULL);
@@ -191,6 +192,7 @@ TEST_CASE("Test Task_Notify", "[freertos]")
     vSemaphoreDelete(task_delete_semphr);
     for (int i = 0; i < portNUM_PROCESSORS; i++) {
         TEST_ESP_OK(gptimer_stop(gptimers[i]));
+        TEST_ESP_OK(gptimer_disable(gptimers[i]));
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
     }
 }
