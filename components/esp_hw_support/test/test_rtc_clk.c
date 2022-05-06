@@ -43,11 +43,14 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rtc.h"
+#include "esp32c2/rom/rtc.h"
 #endif
 
 extern void rtc_clk_select_rtc_slow_clk(void);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 
 #define CALIBRATE_ONE(cali_clk) calibrate_one(cali_clk, #cali_clk)
 

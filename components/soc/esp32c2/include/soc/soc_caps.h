@@ -66,9 +66,6 @@
 /*!< RTC */
 #define SOC_ADC_MAX_BITWIDTH                    (12)
 
-/*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
-#define SOC_APB_BACKUP_DMA              (1)
-
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
@@ -210,6 +207,7 @@
 #define SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
+#define SOC_SYSTIMER_SUPPORTED             1
 #define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
@@ -231,7 +229,7 @@
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   (1U)
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)

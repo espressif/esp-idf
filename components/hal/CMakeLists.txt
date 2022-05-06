@@ -1,13 +1,16 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs "wdt_hal_iram.c"
-         "mpu_hal.c"
+set(srcs "mpu_hal.c"
          "cpu_hal.c"
          "efuse_hal.c"
          "${target}/efuse_hal.c"
          "mmu_hal.c")
 
 set(includes "${target}/include" "include" "platform_port/include")
+
+if(NOT CONFIG_HAL_WDT_ROM_IMPL)
+    list(APPEND srcs "wdt_hal_iram.c")
+endif()
 
 if(NOT ${target} STREQUAL "esp32")
     list(APPEND srcs "cache_hal.c")
@@ -45,6 +48,12 @@ if(NOT BOOTLOADER_BUILD)
         "sha_hal.c"
         "adc_hal.c")
 
+    if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+        if(NOT CONFIG_HAL_SYSTIMER_ROM_IMPL)
+            list(APPEND srcs "systimer_hal.c")
+        endif()
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "dac_hal.c"
@@ -76,7 +85,6 @@ if(NOT BOOTLOADER_BUILD)
                     "pcnt_hal.c"
                     "spi_flash_hal_gpspi.c"
                     "spi_slave_hd_hal.c"
-                    "systimer_hal.c"
                     "touch_sensor_hal.c"
                     "usb_hal.c"
                     "usb_phy_hal.c"
@@ -104,7 +112,6 @@ if(NOT BOOTLOADER_BUILD)
             "pcnt_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
-            "systimer_hal.c"
             "touch_sensor_hal.c"
             "usb_hal.c"
             "usb_phy_hal.c"
@@ -129,7 +136,6 @@ if(NOT BOOTLOADER_BUILD)
               "sigmadelta_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
-              "systimer_hal.c"
               "xt_wdt_hal.c"
               "i2s_hal.c"
               "twai_hal.c"
@@ -149,7 +155,6 @@ if(NOT BOOTLOADER_BUILD)
             "sigmadelta_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
-            "systimer_hal.c"
             "i2s_hal.c"
             "twai_hal.c"
             "twai_hal_iram.c"
@@ -165,7 +170,6 @@ if(NOT BOOTLOADER_BUILD)
               "gdma_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
-              "systimer_hal.c"
               "esp32c2/brownout_hal.c"
               "esp32c2/rtc_cntl_hal.c")
     endif()

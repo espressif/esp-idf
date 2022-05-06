@@ -559,6 +559,10 @@ config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
