@@ -86,6 +86,15 @@ variables:
   # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
   CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.0.txt"
 
+  # Set this variable to repository name of a Python tool you wish to install and test in the context of ESP-IDF CI.
+  # Keep the variable empty when not used.
+  CI_PYTHON_TOOL_REPO: ""
+
+  # Set this variable to the branch of a Python tool repo specified in CI_PYTHON_TOOL_REPO. The
+  # branch name must be without the remote part ("origin/"). Keep the variable empty when not used.
+  # This is used only if CI_PYTHON_TOOL_REPO is not empty.
+  CI_PYTHON_TOOL_BRANCH: ""
+
 cache:
   key: pip-cache
   paths:
@@ -117,6 +126,13 @@ cache:
     mv /tmp/constraint.txt ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
   fi
 
+.download_test_python_tool: &download_test_python_tool |
+  if [[ -n "$CI_PYTHON_TOOL_REPO" ]]; then
+    git clone --quiet --depth=1 -b ${CI_PYTHON_TOOL_BRANCH} https://gitlab-ci-token:${ESPCI_TOKEN}@${GITLAB_HTTPS_HOST}/espressif/${CI_PYTHON_TOOL_REPO}.git
+    pip install ./${CI_PYTHON_TOOL_REPO}
+    rm -rf ${CI_PYTHON_TOOL_REPO}
+  fi
+
 before_script:
   - source tools/ci/utils.sh
   - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
@@ -129,6 +145,7 @@ before_script:
   - $IDF_PATH/tools/idf_tools.py install-python-env
   # install esptool globally, TODO: remove this, IDFCI-1207
   - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  - *download_test_python_tool
 
 # used for check scripts which we want to run unconditionally
 .before_script_no_sync_submodule:
@@ -161,6 +178,7 @@ before_script:
   - *download_test_python_contraint_file
   # TODO: remove this, IDFCI-1207
   - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  - *download_test_python_tool
 
 .before_script_macos:
   before_script:
