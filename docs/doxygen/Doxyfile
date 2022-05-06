@@ -126,7 +126,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
-    $(PROJECT_PATH)/components/esp_system/include/esp_int_wdt.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
