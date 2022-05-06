@@ -17,6 +17,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/i2s.h"
+#include "hal/i2s_hal.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "unity.h"
@@ -181,15 +182,24 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_uninstall(I2S_NUM_0));
 }
 
-TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
+/**
+ * @brief Test mono and stereo mode of I2S by loopback
+ * @note  Only rx channel distinguish left mono and right mono, tx channel does not
+ * @note  1. Check switch mono/stereo by 'i2s_set_clk'
+ *        2. Check rx right mono and left mono (requiring tx works in stereo mode)
+ *        3. Check tx mono (requiring rx works in stereo mode)
+ */
+TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
 {
+#define WRITE_BUF_LEN  2000
+#define READ_BUF_LEN   4000
     // master driver installed and send data
     i2s_config_t master_i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
         .sample_rate = SAMPLE_RATE,
         .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+        .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
+        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 100,
         .use_apll = 0,
@@ -210,47 +220,148 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
         .data_out_num = DATA_OUT_IO,
         .data_in_num = DATA_IN_IO
     };
+    /* Install I2S in duplex mode */
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
+    TEST_ESP_OK(i2s_stop(I2S_NUM_0));
+    /* Config TX as stereo channel directly, because legacy driver can't support config tx&rx separately */
+#if !SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_set_chan_mod(&I2S0, 0);
+#else
+    i2s_ll_tx_set_active_chan_mask(&I2S0, 0x03);
+#endif
+    i2s_ll_tx_enable_mono_mode(&I2S0, false);
+
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_LOOPBACK);
-    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
-    uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
-    size_t i2s_bytes_write = 0;
-    size_t bytes_read = 0;
-    int length = 0;
-    uint8_t *i2s_read_buff = (uint8_t *)malloc(sizeof(uint8_t) * 10000);
+    TEST_ESP_OK(i2s_start(I2S_NUM_0));
 
-    for (int i = 0; i < 100; i++) {
-        data_wr[i] = i + 1;
+    uint16_t *w_buf = calloc(1, WRITE_BUF_LEN);
+    uint16_t *r_buf = calloc(1, READ_BUF_LEN);
+    size_t w_bytes = 0;
+    size_t r_bytes = 0;
+    for (int n = 0; n < WRITE_BUF_LEN / 2; n++) {
+        w_buf[n] = n%100;
     }
-    int flag = 0; // break loop flag
-    int end_position = 0;
-    // write data to slave
-    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t) * 400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
-    while (!flag) {
-        if (length >= 10000 - 500) {
+    /* rx right mono test
+     * tx format: 0x00[L] 0x01[R] 0x02[L] 0x03[R] ...
+     * rx receive: 0x01[R] 0x03[R] ... */
+    TEST_ESP_OK(i2s_write(I2S_NUM_0, w_buf, WRITE_BUF_LEN, &w_bytes, portMAX_DELAY));
+    TEST_ESP_OK(i2s_read(I2S_NUM_0, r_buf, READ_BUF_LEN, &r_bytes, portMAX_DELAY));
+#if CONFIG_IDF_TARGET_ESP32
+    /* The data of tx/rx channels are flipped on ESP32 */
+    for (int n = 0; n < READ_BUF_LEN / 2; n += 2) {
+        int16_t temp = r_buf[n];
+        r_buf[n] = r_buf[n+1];
+        r_buf[n+1] = temp;
+    }
+#endif
+    int i = 0;
+    for (i = 0; (i < READ_BUF_LEN / 2); i++) {
+        if (r_buf[i] == 1) {
+            printf("%d %d %d %d\n%d %d %d %d\n",
+                r_buf[i], r_buf[i+1], r_buf[i+2], r_buf[i+3],
+                r_buf[i+4], r_buf[i+5], r_buf[i+6], r_buf[i+7]);
             break;
         }
-        i2s_read(I2S_NUM_0, i2s_read_buff + length, sizeof(uint8_t) * 500, &bytes_read, 1000 / portMAX_DELAY);
-        if (bytes_read > 0) {
-            for (int i = length; i < length + bytes_read; i++) {
-                if (i2s_read_buff[i] == 100) {
-                    flag = 1;
-                    end_position = i;
-                    break;
-                }
-            }
+    }
+    printf("Data start index: %d\n", i);
+    TEST_ASSERT(i < READ_BUF_LEN / 2 - 50);
+    for (int16_t j = 1; j < 100; j += 2) {
+        TEST_ASSERT_EQUAL_INT16(r_buf[i++], j);
+    }
+    printf("rx right mono test passed\n");
+
+    /* tx/rx stereo test
+     * tx format: 0x00[L] 0x01[R] 0x02[L] 0x03[R] ...
+     * rx receive: 0x00[L] 0x01[R] 0x02[L] 0x03[R] ... */
+    TEST_ESP_OK(i2s_set_clk(I2S_NUM_0, SAMPLE_RATE, SAMPLE_BITS, I2S_CHANNEL_STEREO));
+    TEST_ESP_OK(i2s_write(I2S_NUM_0, w_buf, WRITE_BUF_LEN, &w_bytes, portMAX_DELAY));
+    TEST_ESP_OK(i2s_read(I2S_NUM_0, r_buf, READ_BUF_LEN, &r_bytes, portMAX_DELAY));
+
+    for (i = 0; (i < READ_BUF_LEN / 2); i++) {
+        if (r_buf[i] == 1) {
+            printf("%d %d %d %d\n%d %d %d %d\n",
+                r_buf[i], r_buf[i+1], r_buf[i+2], r_buf[i+3],
+                r_buf[i+4], r_buf[i+5], r_buf[i+6], r_buf[i+7]);
+            break;
         }
-        length = length + bytes_read;
     }
-    // test the read data right or not
-    for (int i = end_position - 99; i <= end_position; i++) {
-        TEST_ASSERT_EQUAL_UINT8((i - end_position + 100), *(i2s_read_buff + i));
+    printf("Data start index: %d\n", i);
+    TEST_ASSERT(i < READ_BUF_LEN / 2 - 100);
+    for (int16_t j = 1; j < 100; j ++) {
+        TEST_ASSERT_EQUAL_INT16(r_buf[i++], j); // receive all number
     }
-    free(data_wr);
-    free(i2s_read_buff);
-    i2s_driver_uninstall(I2S_NUM_0);
+    printf("tx/rx stereo test passed\n");
+
+    /* tx mono rx right mono test
+     * tx format: 0x01[L] 0x01[R] 0x02[L] 0x02[R] ...
+     * rx receive: 0x01[R] 0x02[R] ... */
+    TEST_ESP_OK(i2s_set_clk(I2S_NUM_0, SAMPLE_RATE, I2S_BITS_PER_SAMPLE_32BIT, I2S_CHANNEL_MONO));
+    TEST_ESP_OK(i2s_write(I2S_NUM_0, w_buf, WRITE_BUF_LEN, &w_bytes, portMAX_DELAY));
+    TEST_ESP_OK(i2s_read(I2S_NUM_0, r_buf, READ_BUF_LEN, &r_bytes, portMAX_DELAY));
+
+    for (i = 0; i < READ_BUF_LEN / 2; i++) {
+        if (r_buf[i] == 1) {
+            printf("%d %d %d %d\n%d %d %d %d\n",
+                r_buf[i], r_buf[i+1], r_buf[i+2], r_buf[i+3],
+                r_buf[i+4], r_buf[i+5], r_buf[i+6], r_buf[i+7]);
+            break;
+        }
+    }
+    printf("Data start index: %d\n", i);
+    TEST_ASSERT(i < READ_BUF_LEN / 2 - 100);
+    for (int16_t j = 1; j < 100; j ++) {
+        TEST_ASSERT_EQUAL_INT16(r_buf[i++], j);
+    }
+    printf("tx/rx mono test passed\n");
+
+    /* Reinstalling I2S to test rx left mono */
+    TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
+    master_i2s_config.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT;
+    TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
+    TEST_ESP_OK(i2s_stop(I2S_NUM_0));
+#if !SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_set_chan_mod(&I2S0, 0);
+#else
+    i2s_ll_tx_set_active_chan_mask(&I2S0, 0x03);
+#endif
+    i2s_ll_tx_enable_mono_mode(&I2S0, false);
+    i2s_ll_tx_enable_mono_mode(&I2S0, false);
+
+    TEST_ESP_OK(i2s_start(I2S_NUM_0));
+
+    /* rx left mono test
+     * tx format: 0x00[L] 0x01[R] 0x02[L] 0x03[R] ...
+     * rx receive: 0x00[R] 0x02[R] ... */
+    TEST_ESP_OK(i2s_write(I2S_NUM_0, w_buf, WRITE_BUF_LEN, &w_bytes, portMAX_DELAY));
+    TEST_ESP_OK(i2s_read(I2S_NUM_0, r_buf, READ_BUF_LEN, &r_bytes, portMAX_DELAY));
+#if CONFIG_IDF_TARGET_ESP32
+    /* The data of tx/rx channels are flipped on ESP32 */
+    for (int n = 0; n < READ_BUF_LEN / 2; n += 2) {
+        int16_t temp = r_buf[n];
+        r_buf[n] = r_buf[n+1];
+        r_buf[n+1] = temp;
+    }
+#endif
+    for (i = 0; (i < READ_BUF_LEN / 2); i++) {
+        if (r_buf[i] == 2) {
+            printf("%d %d %d %d\n%d %d %d %d\n",
+                r_buf[i], r_buf[i+1], r_buf[i+2], r_buf[i+3],
+                r_buf[i+4], r_buf[i+5], r_buf[i+6], r_buf[i+7]);
+            break;
+        }
+    }
+    printf("Data start index: %d\n", i);
+    TEST_ASSERT(i < READ_BUF_LEN / 2 - 50);
+    for (int16_t j = 2; j < 100; j += 2) {
+        TEST_ASSERT_EQUAL_INT16(r_buf[i++], j);
+    }
+    printf("rx left mono test passed\n");
+
+    free(w_buf);
+    free(r_buf);
+    TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
 
 #if SOC_I2S_SUPPORTS_TDM

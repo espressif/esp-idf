@@ -772,6 +772,17 @@ static inline void i2s_ll_tx_set_chan_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
+ * @brief Set I2S rx chan mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set rx chan mode
+ */
+static inline void i2s_ll_rx_set_chan_mod(i2s_dev_t *hw, uint32_t val)
+{
+    hw->conf_chan.rx_chan_mod = val;
+}
+
+/**
  * @brief Set I2S tx bits mod
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -804,7 +815,6 @@ static inline void i2s_ll_tx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
     int data_bit = hw->sample_rate_conf.tx_bits_mod;
     hw->fifo_conf.tx_fifo_mod = data_bit <= I2S_BITS_PER_SAMPLE_16BIT ? mono_ena : 2 + mono_ena;
     hw->conf.tx_dma_equal = mono_ena;
-    hw->conf_chan.tx_chan_mod = mono_ena;
 }
 
 /**
@@ -818,7 +828,6 @@ static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
     int data_bit = hw->sample_rate_conf.rx_bits_mod;
     hw->fifo_conf.rx_fifo_mod = data_bit <= I2S_BITS_PER_SAMPLE_16BIT ? mono_ena : 2 + mono_ena;
     hw->conf.rx_dma_equal = mono_ena;
-    hw->conf_chan.rx_chan_mod = mono_ena;
 }
 
 /**
