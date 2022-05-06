@@ -16,22 +16,26 @@ else()
 endif()
 
 idf_component_register(SRCS "src/coexist.c"
-                            "src/lib_printf.c"
-                            "src/mesh_event.c"
-                            "src/phy_init.c"
-                            "src/smartconfig.c"
-                            "src/smartconfig_ack.c"
-                            "src/wifi_init.c"
-                            "src/wifi_default.c"
-                            "src/wifi_netif.c"
-                            "${idf_target}/esp_adapter.c"
-                    INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif driver ${extra_priv_requires}
-                    REQUIRES esp_event
-                    LDFRAGMENTS "${ldfragments}")
+                        "src/lib_printf.c"
+                        "src/mesh_event.c"
+                        "src/phy_init.c"
+                        "src/smartconfig.c"
+                        "src/smartconfig_ack.c"
+                        "src/wifi_init.c"
+                        "src/wifi_default.c"
+                        "src/wifi_netif.c"
+                        "${idf_target}/esp_adapter.c"
+                        "src/phy_override.c"
+            INCLUDE_DIRS "include" "${idf_target}/include"
+            PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif driver ${extra_priv_requires}
+            REQUIRES esp_event
+            LDFRAGMENTS "${ldfragments}")
 
 idf_build_get_property(build_dir BUILD_DIR)
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
+
+# Override functions in PHY lib with the functions in 'phy_override.c'
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u include_esp_phy_override")
 
 if(link_binary_libs)
     if(CONFIG_IDF_TARGET_ESP32)
