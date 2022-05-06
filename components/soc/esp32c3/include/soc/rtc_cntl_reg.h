@@ -308,7 +308,6 @@ extern "C" {
 #define RTC_CNTL_CK8M_WAIT_M  ((RTC_CNTL_CK8M_WAIT_V)<<(RTC_CNTL_CK8M_WAIT_S))
 #define RTC_CNTL_CK8M_WAIT_V  0xFF
 #define RTC_CNTL_CK8M_WAIT_S  6
-#define RTC_CNTL_CK8M_WAIT_DEFAULT  20
 /* RTC_CNTL_CPU_STALL_WAIT : R/W ;bitpos:[5:1] ;default: 5'd1 ; */
 /*description: CPU stall wait cycles in fast_clk_rtc*/
 #define RTC_CNTL_CPU_STALL_WAIT  0x0000001F
