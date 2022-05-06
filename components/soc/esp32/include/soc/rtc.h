@@ -577,6 +577,9 @@ typedef struct rtc_sleep_config_s {
 #define RTC_CNTL_OTHER_BLOCKS_POWERUP_CYCLES    (1)
 #define RTC_CNTL_OTHER_BLOCKS_WAIT_CYCLES       (1)
 
+#define RTC_CNTL_CK8M_WAIT_DEFAULT          20
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT        5
+
 /**
  * @brief Prepare the chip to enter sleep mode
  *
