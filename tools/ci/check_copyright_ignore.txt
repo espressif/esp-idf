@@ -980,7 +980,6 @@ components/lwip/port/esp32/include/arch/vfs_lwip.h
 components/lwip/port/esp32/include/arpa/inet.h
 components/lwip/port/esp32/include/debug/lwip_debug.h
 components/lwip/port/esp32/include/netdb.h
-components/lwip/port/esp32/include/netif/dhcp_state.h
 components/lwip/port/esp32/include/netif/ethernetif.h
 components/lwip/port/esp32/include/netif/openthreadif.h
 components/lwip/port/esp32/include/netif/wlanif.h

@@ -8,17 +8,22 @@
 #ifndef LWIP_HDR_ESP_LWIPOPTS_H
 #define LWIP_HDR_ESP_LWIPOPTS_H
 
-#include <stdlib.h>
+#include "sdkconfig.h"
+#include <string.h>     // For memcpy
+#include <stdlib.h>     // For malloc/free
 #include <unistd.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/select.h>
-#include "esp_task.h"
-#include "esp_random.h"
-#include "sdkconfig.h"
 #include "netif/dhcp_state.h"
 #include "sntp/sntp_get_set_time.h"
+#ifdef __linux__
+#include "esp32_mock.h"
+#else
+#include "esp_task.h"
+#include "esp_random.h"
+#endif // __linux__
 
 
 /*
