@@ -42,6 +42,9 @@
 
 请进入 ``hello_world`` 目录，设置 {IDF_TARGET_NAME} 为目标芯片，然后运行工程配置工具 ``menuconfig``。
 
+Windows
+~~~~~~~
+
 .. code-block:: batch
 
     cd %userprofile%\esp\hello_world
