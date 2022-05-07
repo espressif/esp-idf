@@ -357,6 +357,11 @@ inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t l
 //TODO: IDF-4813
 bool esp_no_sleep = false;
 
+inline static bool is_light_sleep(uint32_t pd_flags)
+{
+    return (pd_flags & RTC_SLEEP_PD_DIG) == 0;
+}
+
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -433,15 +438,11 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 #endif
     uint32_t reject_triggers = 0;
-    if ((pd_flags & RTC_SLEEP_PD_DIG) == 0 && (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN)) {
+    if (is_light_sleep(pd_flags)) {
         /* Light sleep, enable sleep reject for faster return from this function,
          * in case the wakeup is already triggerred.
          */
-#if CONFIG_IDF_TARGET_ESP32
-        reject_triggers = RTC_CNTL_LIGHT_SLP_REJECT_EN_M | RTC_CNTL_GPIO_REJECT_EN_M;
-#else
-        reject_triggers = s_config.wakeup_triggers;
-#endif
+        reject_triggers = s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK;
     }
 
     // Enter sleep
