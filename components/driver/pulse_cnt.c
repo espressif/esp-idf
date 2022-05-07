@@ -293,7 +293,7 @@ esp_err_t pcnt_unit_enable(pcnt_unit_handle_t unit)
 esp_err_t pcnt_unit_disable(pcnt_unit_handle_t unit)
 {
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(unit->fsm = PCNT_UNIT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "unit not in enable state");
+    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "unit not in enable state");
 
     // disable interrupt service
     if (unit->intr) {

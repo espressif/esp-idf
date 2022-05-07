@@ -1975,7 +1975,6 @@ examples/build_system/cmake/multi_config/main/func_prod.c
 examples/build_system/cmake/multi_config/main/multi_config_example_main.c
 examples/common_components/iperf/include/iperf.h
 examples/common_components/iperf/iperf.c
-examples/common_components/led_strip/include/led_strip.h
 examples/common_components/protocol_examples_common/addr_from_stdin.c
 examples/common_components/protocol_examples_common/connect.c
 examples/common_components/protocol_examples_common/include/addr_from_stdin.h
@@ -2073,18 +2072,6 @@ examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_contro
 examples/peripherals/mcpwm/mcpwm_capture_hc_sr04/main/mcpwm_capture_hc_sr04.c
 examples/peripherals/mcpwm/mcpwm_servo_control/main/mcpwm_servo_control_example_main.c
 examples/peripherals/mcpwm/mcpwm_sync_example/main/mcpwm_sync_example.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/include/ir_timings.h
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_nec.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_rc5.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_parser_rmt_nec.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_parser_rmt_rc5.c
-examples/peripherals/rmt/ir_protocols/example_test.py
-examples/peripherals/rmt/ir_protocols/main/ir_protocols_main.c
-examples/peripherals/rmt/led_strip/main/led_strip_main.c
-examples/peripherals/rmt/morse_code/main/morse_code_main.c
-examples/peripherals/rmt/musical_buzzer/components/musical_buzzer/include/musical_buzzer.h
-examples/peripherals/rmt/musical_buzzer/components/musical_buzzer/src/musical_buzzer_rmt.c
-examples/peripherals/rmt/musical_buzzer/main/musical_buzzer_example_main.c
 examples/peripherals/sdio/host/main/app_main.c
 examples/peripherals/sdio/sdio_test.py
 examples/peripherals/sdio/slave/main/app_main.c

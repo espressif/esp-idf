@@ -28,7 +28,7 @@ typedef union {
         unsigned int duration1 : 15; /*!< Duration of level1 */
         unsigned int level1 : 1;     /*!< Level of the second part */
     };
-    unsigned int val; /*!< Equivelent unsigned value for the RMT symbol */
+    unsigned int val; /*!< Equivalent unsigned value for the RMT symbol */
 } rmt_symbol_word_t;
 
 #ifdef __cplusplus

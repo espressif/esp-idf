@@ -1,6 +1,6 @@
 # LED Strip Component
 
-This directory contains an implementation for addressable LEDs using the RMT peripheral.
+This directory contains an implementation for addressable LEDs by different peripherals. Currently only RMT is supported as the led strip backend.
 
 It's compatible with:
 
@@ -9,7 +9,6 @@ It's compatible with:
 
 This component is used as part of the following ESP-IDF examples:
 - [Blink Example](../../get-started/blink).
-- [LED Strip Example](../../peripherals/rmt/led_strip).
 
 To learn more about how to use this component, please check API Documentation from header file [led_strip.h](./include/led_strip.h).
 

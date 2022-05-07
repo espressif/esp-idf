@@ -503,7 +503,7 @@ config SOC_RMT_SUPPORT_TX_SYNCHRO
     bool
     default y
 
-config SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON
+config SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY
     bool
     default y
 
