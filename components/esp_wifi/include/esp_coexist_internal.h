@@ -196,6 +196,12 @@ int coex_schm_curr_phase_idx_set(int idx);
 int coex_schm_curr_phase_idx_get(void);
 
 /**
+ * @brief TODO
+ *
+ */
+int coex_register_start_cb(int (* cb)(void));
+
+/**
  * @brief Register coexistence adapter functions.
  *
  *  @param funcs : coexistence adapter functions

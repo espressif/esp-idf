@@ -1218,7 +1218,7 @@ esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
   *
   * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
   */
-esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
+esp_err_t esp_wifi_connectionless_module_set_wake_interval(uint16_t interval);
 
 /**
   * @brief     configure country

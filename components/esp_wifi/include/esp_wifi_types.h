@@ -607,6 +607,8 @@ typedef enum {
 
     WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
 
+    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
