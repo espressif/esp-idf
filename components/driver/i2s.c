@@ -100,8 +100,9 @@ typedef struct {
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
-    i2s_hal_context_t hal;       /*!< I2S hal context*/
-    i2s_hal_config_t hal_cfg; /*!< I2S hal configurations*/
+    i2s_hal_context_t hal;      /*!< I2S hal context*/
+    i2s_channel_fmt_t   init_chan_fmt;  /*!< The initial channel format while installing, used for keep left or right mono when switch between mono and stereo */
+    i2s_hal_config_t hal_cfg;   /*!< I2S hal configurations*/
 } i2s_obj_t;
 
 static i2s_obj_t *p_i2s[SOC_I2S_NUM];
@@ -1577,11 +1578,18 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         cfg->chan_bits = (bits_cfg >> 16) > cfg->sample_bits ? (bits_cfg >> 16) : cfg->sample_bits;
 #if SOC_I2S_SUPPORTS_TDM
         if (ch & I2S_CHANNEL_MONO) {
-            cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_RIGHT;
-            cfg->chan_mask = I2S_TDM_ACTIVE_CH0; // Only activate one channel in mono
             if (ch >> 16) {
+                cfg->chan_fmt = I2S_CHANNEL_FMT_MULTIPLE;
+                cfg->chan_mask = 1 << __builtin_ctz(ch & 0xFFFF0000); // mono the minimun actived slot
                 cfg->total_chan = i2s_get_max_channel_num(ch);
             } else {
+                if (p_i2s[i2s_num]->init_chan_fmt == I2S_CHANNEL_FMT_ONLY_LEFT) {
+                    cfg->chan_mask = I2S_TDM_ACTIVE_CH1; // left slot mono
+                    cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_LEFT;
+                } else {
+                    cfg->chan_mask = I2S_TDM_ACTIVE_CH0; // right slot mono
+                    cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_RIGHT;
+                }
                 cfg->total_chan = 2;
             }
         } else {
@@ -1598,7 +1606,15 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         }
 #else
         /* Default */
-        cfg->chan_fmt = ch == I2S_CHANNEL_MONO ? I2S_CHANNEL_FMT_ONLY_RIGHT : cfg->chan_fmt;
+        if (ch & I2S_CHANNEL_MONO) {
+            if (p_i2s[i2s_num]->init_chan_fmt == I2S_CHANNEL_FMT_ONLY_LEFT) {
+                cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_LEFT;
+            } else {
+                cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_RIGHT;
+            }
+        } else {
+            cfg->chan_fmt = I2S_CHANNEL_FMT_RIGHT_LEFT;
+        }
         cfg->active_chan = i2s_get_active_channel_num(cfg);
         cfg->total_chan = 2;
 #endif
@@ -1763,6 +1779,7 @@ static esp_err_t i2s_driver_init(i2s_port_t i2s_num, const i2s_config_t *i2s_con
     p_i2s[i2s_num]->fixed_mclk = i2s_config->fixed_mclk;
     p_i2s[i2s_num]->mclk_multiple = i2s_config->mclk_multiple;
     p_i2s[i2s_num]->tx_desc_auto_clear = i2s_config->tx_desc_auto_clear;
+    p_i2s[i2s_num]->init_chan_fmt = i2s_config->channel_format;
 
     /* I2S HAL configuration assignment */
     p_i2s[i2s_num]->hal_cfg.mode = i2s_config->mode;
@@ -1788,7 +1805,10 @@ static esp_err_t i2s_driver_init(i2s_port_t i2s_num, const i2s_config_t *i2s_con
         p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
         p_i2s[i2s_num]->hal_cfg.total_chan = 2;
         break;
-    case I2S_CHANNEL_FMT_ONLY_RIGHT:    // fall through
+    case I2S_CHANNEL_FMT_ONLY_RIGHT:
+        p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH1;
+        p_i2s[i2s_num]->hal_cfg.total_chan = 2;
+        break;
     case I2S_CHANNEL_FMT_ONLY_LEFT:
         p_i2s[i2s_num]->hal_cfg.chan_mask = I2S_TDM_ACTIVE_CH0;
         p_i2s[i2s_num]->hal_cfg.total_chan = 2;
