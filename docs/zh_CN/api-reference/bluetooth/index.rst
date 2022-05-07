@@ -34,4 +34,3 @@ ESP-IDF 目前支持两个主机堆栈。基于 Bluedroid 的堆栈（默认）�
 * :example_file:`GATT 客户端安全性示例 <bluetooth/bluedroid/ble/gatt_security_client/tutorial/Gatt_Security_Client_Example_Walkthrough.md>`
 * :example_file:`GATT 服务端安全性示例 <bluetooth/bluedroid/ble/gatt_security_server/tutorial/Gatt_Security_Server_Example_Walkthrough.md>`
 * :example_file:`GATT 客户端多连接示例 <bluetooth/bluedroid/ble/gattc_multi_connect/tutorial/Gatt_Client_Multi_Connection_Example_Walkthrough.md>`
-
