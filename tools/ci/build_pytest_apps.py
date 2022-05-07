@@ -18,13 +18,13 @@ from idf_ci_utils import IDF_PATH, get_pytest_cases
 try:
     from build_apps import build_apps
     from find_apps import find_builds_for_app
-    from find_build_apps import BuildItem, config_rules_from_str, setup_logging
+    from find_build_apps import BuildItem, CMakeBuildSystem, config_rules_from_str, setup_logging
 except ImportError:
     sys.path.append(os.path.join(IDF_PATH, 'tools'))
 
     from build_apps import build_apps
     from find_apps import find_builds_for_app
-    from find_build_apps import BuildItem, config_rules_from_str, setup_logging
+    from find_build_apps import BuildItem, CMakeBuildSystem, config_rules_from_str, setup_logging
 
 
 def main(args: argparse.Namespace) -> None:
@@ -50,15 +50,16 @@ def main(args: argparse.Namespace) -> None:
     config_rules = config_rules_from_str(args.config or [])
     for app_dir in app_dirs:
         app_dir = os.path.realpath(app_dir)
-        build_items += find_builds_for_app(
-            app_path=app_dir,
-            work_dir=app_dir,
-            build_dir='build_@t_@w',
-            build_log=f'{app_dir}/build_@t_@w/build.log',
-            target_arg=args.target,
-            build_system='cmake',
-            config_rules=config_rules,
-        )
+        if args.target in CMakeBuildSystem.supported_targets(app_dir):
+            build_items += find_builds_for_app(
+                app_path=app_dir,
+                work_dir=app_dir,
+                build_dir='build_@t_@w',
+                build_log=f'{app_dir}/build_@t_@w/build.log',
+                target_arg=args.target,
+                build_system='cmake',
+                config_rules=config_rules,
+            )
 
     modified_build_items = []
     # auto clean up the binaries if no flag --preserve-all
