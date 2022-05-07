@@ -292,7 +292,7 @@ The command-line interface of `parttool.py` has the following structure:
   parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs --output "spiffs.bin"
 
   # Write to partition 'factory' the contents of a file named 'factory.bin'
-  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"
+  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory --input "factory.bin"
 
   # Print the size of default boot partition
   parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size

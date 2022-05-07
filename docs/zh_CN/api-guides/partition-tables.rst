@@ -292,7 +292,7 @@ Python API
   parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs --output "spiffs.bin"
 
   # 将 'factory.bin' 文件中的内容写入到 'factory' 分区
-  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"
+  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory --input "factory.bin"
 
   # 打印默认启动分区的大小
   parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size
