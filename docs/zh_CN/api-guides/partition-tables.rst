@@ -174,7 +174,14 @@ MD5 校验和
 
 二进制格式的分区表中含有一个 MD5 校验和。这个 MD5 校验和是根据分区表内容计算的，可在设备启动阶段，用于验证分区表的完整性。
 
-注意，一些版本较老的启动加载器无法支持 MD5 校验，如果发现 MD5 校验和则将报错 ``invalid magic number 0xebeb``。此时，用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
+.. only:: esp32
+
+    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。对于 :ref:`ESP-IDF v3.1 版本前的引导加载程序 <CONFIG_ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS>`，因为它不支持 MD5 校验，所以无法正常启动并报错 ``invalid magic number 0xebeb``，此时用户可以使用此选项关闭 MD5 校验。
+
+.. only:: not esp32
+
+    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
+
 
 烧写分区表
 ----------
@@ -267,7 +274,7 @@ Python API
   parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs --output "spiffs.bin"
 
   # 将 'factory.bin' 文件中的内容写入到 'factory' 分区
-  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"
+  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory --input "factory.bin"
 
   # 打印默认启动分区的大小
   parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size
