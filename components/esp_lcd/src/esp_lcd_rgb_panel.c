@@ -332,19 +332,21 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
     // convert the frame buffer to 3D array
     int bytes_per_pixel = rgb_panel->data_width / 8;
     int pixels_per_line = rgb_panel->timings.h_res;
+    uint32_t bytes_per_line = bytes_per_pixel * pixels_per_line;
     const uint8_t *from = (const uint8_t *)color_data;
-    uint8_t (*to)[pixels_per_line][bytes_per_pixel] = (uint8_t (*)[pixels_per_line][bytes_per_pixel])rgb_panel->fb;
     // manipulate the frame buffer
-    for (int j = y_start; j < y_end; j++) {
-        for (int i = x_start; i < x_end; i++) {
-            for (int k = 0; k < bytes_per_pixel; k++) {
-                to[j][i][k] = *from++;
-            }
-        }
+    uint32_t copy_bytes_per_line = (x_end - x_start) * bytes_per_pixel;
+    uint8_t *to = rgb_panel->fb + (y_start * pixels_per_line + x_start) * bytes_per_pixel;
+    for (int y = y_start; y < y_end; y++) {
+        memcpy(to, from, copy_bytes_per_line);
+        to += bytes_per_line;
+        from += copy_bytes_per_line;
     }
+
     if (rgb_panel->flags.fb_in_psram) {
         // CPU writes data to PSRAM through DCache, data in PSRAM might not get updated, so write back
-        Cache_WriteBack_Addr((uint32_t)&to[y_start][0][0], (y_end - y_start) * rgb_panel->timings.h_res * bytes_per_pixel);
+        uint32_t bytes_to_flush = (y_end - y_start) * bytes_per_line;
+        Cache_WriteBack_Addr((uint32_t)(rgb_panel->fb + y_start * bytes_per_line), bytes_to_flush);
     }
 
     // restart the new transmission
