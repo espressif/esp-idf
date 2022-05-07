@@ -117,12 +117,13 @@ def is_in_directory(file_path: str, folder: str) -> bool:
 
 
 def to_list(s: Any) -> List[Any]:
-    if isinstance(s, set) or isinstance(s, tuple):
+    if isinstance(s, (set, tuple)):
         return list(s)
-    elif isinstance(s, list):
+
+    if isinstance(s, list):
         return s
-    else:
-        return [s]
+
+    return [s]
 
 
 @dataclass
