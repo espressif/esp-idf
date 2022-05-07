@@ -61,6 +61,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf);
  * @brief LEDC update channel parameters
  * @note  Call this function to activate the LEDC updated parameters.
  *        After ledc_set_duty, we need to call this function to update the settings.
+ *        And the new LEDC parameters don't take effect until the next PWM cycle.
  * @note  ledc_set_duty, ledc_set_duty_with_hpoint and ledc_update_duty are not thread-safe, do not call these functions to
  *        control one LEDC channel in different tasks at the same time.
  *        A thread-safe version of API is ledc_set_duty_and_update
@@ -178,6 +179,9 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
 
 /**
  * @brief LEDC get duty
+ *        This function returns the duty at the present PWM cycle.
+ *        You shouldn't expect the function to return the new duty in the same cycle of calling ledc_update_duty,
+ *        because duty update doesn't take effect until the next cycle.
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel (0-7), select from ledc_channel_t
@@ -360,7 +364,8 @@ void ledc_fade_func_uninstall(void);
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel number
- * @param fade_mode Whether to block until fading done.
+ * @param fade_mode Whether to block until fading done. See ledc_types.h ledc_fade_mode_t for more info.
+ *        Note that this function will not return until fading to the target duty if LEDC_FADE_WAIT_DONE mode is selected.
  *
  * @return
  *     - ESP_OK Success

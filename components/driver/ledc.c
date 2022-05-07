@@ -199,7 +199,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
 static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel, int hpoint_val, int duty_val,
     ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
-    portENTER_CRITICAL(&ledc_spinlock);
+    portENTER_CRITICAL_SAFE(&ledc_spinlock);
     if (hpoint_val >= 0) {
         ledc_hal_set_hpoint(&(p_ledc_obj[speed_mode]->ledc_hal), channel, hpoint_val);
     }
@@ -211,7 +211,7 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
     ledc_hal_set_duty_cycle(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_cycle);
     ledc_hal_set_duty_scale(&(p_ledc_obj[speed_mode]->ledc_hal), channel, duty_scale);
     ledc_ls_channel_update(speed_mode, channel);
-    portEXIT_CRITICAL(&ledc_spinlock);
+    portEXIT_CRITICAL_SAFE(&ledc_spinlock);
     return ESP_OK;
 }
 
@@ -472,8 +472,8 @@ esp_err_t ledc_set_duty_with_hpoint(ledc_mode_t speed_mode, ledc_channel_t chann
                      hpoint,          //uint32_t hpoint_val,
                      duty,           //uint32_t duty_val,
                      1,               //uint32_t increase,
-                     1,               //uint32_t duty_num,
-                     1,               //uint32_t duty_cycle,
+                     0,               //uint32_t duty_num,
+                     0,               //uint32_t duty_cycle,
                      0                //uint32_t duty_scale
                      );
     _ledc_fade_hw_release(speed_mode, channel);
@@ -492,8 +492,8 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
                      LEDC_VAL_NO_CHANGE,
                      duty,           //uint32_t duty_val,
                      1,               //uint32_t increase,
-                     1,               //uint32_t duty_num,
-                     1,               //uint32_t duty_cycle,
+                     0,               //uint32_t duty_num,
+                     0,               //uint32_t duty_cycle,
                      0                //uint32_t duty_scale
                      );
     _ledc_fade_hw_release(speed_mode, channel);
@@ -573,9 +573,9 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
             ledc_calc_fade_end_channel(&intr_status, &channel);
 
             // clear interrupt
-            portENTER_CRITICAL(&ledc_spinlock);
+            portENTER_CRITICAL_ISR(&ledc_spinlock);
             ledc_hal_clear_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), channel);
-            portEXIT_CRITICAL(&ledc_spinlock);
+            portEXIT_CRITICAL_ISR(&ledc_spinlock);
 
             if (s_ledc_fade_rec[speed_mode][channel] == NULL) {
                 //fade object not initialized yet.
@@ -621,9 +621,9 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
                     1,
                     0);
             }
-            portENTER_CRITICAL(&ledc_spinlock);
+            portENTER_CRITICAL_ISR(&ledc_spinlock);
             ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
-            portEXIT_CRITICAL(&ledc_spinlock);
+            portEXIT_CRITICAL_ISR(&ledc_spinlock);
         }
     }
 }
@@ -763,7 +763,10 @@ static void _ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, led
     ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_FADE_END);
     ledc_update_duty(speed_mode, channel);
     if (fade_mode == LEDC_FADE_WAIT_DONE) {
-        xSemaphoreTake(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem, portMAX_DELAY);
+        // Waiting for fade done
+        _ledc_fade_hw_acquire(speed_mode, channel);
+        // Release hardware to support next time fade configure
+        _ledc_fade_hw_release(speed_mode, channel);
     }
 }
 
@@ -805,7 +808,6 @@ esp_err_t ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_f
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_fade_start(speed_mode, channel, fade_mode);
-    _ledc_fade_hw_release(speed_mode, channel);
     return ESP_OK;
 }
 
@@ -842,14 +844,13 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_ARG_CHECK(hpoint <= LEDC_HPOINT_VAL_MAX, "hpoint");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
-    _ledc_op_lock_acquire(speed_mode, channel);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     _ledc_fade_hw_acquire(speed_mode, channel);
-    _ledc_set_fade_with_step(speed_mode, channel, duty, 0, 1);
-    _ledc_fade_start(speed_mode, channel, LEDC_FADE_WAIT_DONE);
+    ledc_duty_config(speed_mode, channel, hpoint, duty, 1, 0, 0, 0);
+    ledc_update_duty(speed_mode, channel);
     _ledc_fade_hw_release(speed_mode, channel);
-    _ledc_op_lock_release(speed_mode, channel);
     return ESP_OK;
 }
 
@@ -865,9 +866,6 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_time(speed_mode, channel, target_duty, max_fade_time_ms);
     _ledc_fade_start(speed_mode, channel, fade_mode);
-    if (fade_mode == LEDC_FADE_WAIT_DONE) {
-        _ledc_fade_hw_release(speed_mode, channel);
-    }
     _ledc_op_lock_release(speed_mode, channel);
     return ESP_OK;
 }
@@ -886,9 +884,6 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_step(speed_mode, channel, target_duty, scale, cycle_num);
     _ledc_fade_start(speed_mode, channel, fade_mode);
-    if (fade_mode == LEDC_FADE_WAIT_DONE) {
-        _ledc_fade_hw_release(speed_mode, channel);
-    }
     _ledc_op_lock_release(speed_mode, channel);
     return ESP_OK;
 }
