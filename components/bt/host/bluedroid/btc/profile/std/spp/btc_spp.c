@@ -540,12 +540,20 @@ static void btc_spp_init(btc_spp_args_t *arg)
 
         if (osi_mutex_new(&spp_local_param.spp_slot_mutex) != 0) {
             BTC_TRACE_ERROR("%s osi_mutex_new failed\n", __func__);
+#if SPP_DYNAMIC_MEMORY == TRUE
+            osi_free(spp_local_param_ptr);
+            spp_local_param_ptr = NULL;
+#endif
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
         if ((spp_local_param.tx_event_group = xEventGroupCreate()) == NULL) {
             BTC_TRACE_ERROR("%s create tx_event_group failed\n", __func__);
             osi_mutex_free(&spp_local_param.spp_slot_mutex);
+#if SPP_DYNAMIC_MEMORY == TRUE
+            osi_free(spp_local_param_ptr);
+            spp_local_param_ptr = NULL;
+#endif
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
