@@ -290,7 +290,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 
     tx_channel->base.direction = RMT_CHANNEL_DIRECTION_TX;
     tx_channel->base.fsm = RMT_FSM_INIT;
-    tx_channel->base.hw_mem_base = &RMTMEM + (channel_id + RMT_TX_CHANNEL_OFFSET_IN_GROUP) * SOC_RMT_MEM_WORDS_PER_CHANNEL;
+    tx_channel->base.hw_mem_base = &RMTMEM.channels[channel_id + RMT_TX_CHANNEL_OFFSET_IN_GROUP].symbols[0];
     tx_channel->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // polymorphic methods
     tx_channel->base.del = rmt_del_tx_channel;
@@ -325,11 +325,11 @@ static esp_err_t rmt_del_tx_channel(rmt_channel_handle_t channel)
 
 esp_err_t rmt_new_sync_manager(const rmt_sync_manager_config_t *config, rmt_sync_manager_handle_t *ret_synchro)
 {
+#if !SOC_RMT_SUPPORT_TX_SYNCHRO
+    ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "sync manager not supported");
+#else
     esp_err_t ret = ESP_OK;
     rmt_sync_manager_t *synchro = NULL;
-#if !SOC_RMT_SUPPORT_TX_SYNCHRO
-    ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "sync manager not supported");
-#else
     ESP_GOTO_ON_FALSE(config && ret_synchro && config->tx_channel_array && config->array_size, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     synchro = heap_caps_calloc(1, sizeof(rmt_sync_manager_t) + sizeof(rmt_channel_handle_t) * config->array_size, RMT_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(synchro, ESP_ERR_NO_MEM, err, TAG, "no mem for sync manager");
@@ -381,7 +381,6 @@ esp_err_t rmt_new_sync_manager(const rmt_sync_manager_config_t *config, rmt_sync
     *ret_synchro = synchro;
     ESP_LOGD(TAG, "new sync manager at %p, with channel mask:%02x", synchro, synchro->channel_mask);
     return ESP_OK;
-#endif // !SOC_RMT_SUPPORT_TX_SYNCHRO
 
 err:
     if (synchro) {
@@ -391,6 +390,7 @@ err:
         free(synchro);
     }
     return ret;
+#endif // !SOC_RMT_SUPPORT_TX_SYNCHRO
 }
 
 esp_err_t rmt_sync_reset(rmt_sync_manager_handle_t synchro)
@@ -470,11 +470,15 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
     rmt_tx_trans_desc_t *t = NULL;
     // acquire one transaction description from ready_queue or done_queue
     if (tx_chan->num_trans_inflight < tx_chan->queue_size) {
-        xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_READY], &t, portMAX_DELAY);
+        ESP_RETURN_ON_FALSE(xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_READY], &t, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "no transaction in the ready queue");
     } else {
-        xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &t, portMAX_DELAY);
+        ESP_RETURN_ON_FALSE(xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &t, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle transaction from done queue failed");
         tx_chan->num_trans_inflight--;
     }
+    // sanity check
+    assert(t);
     // fill in the transaction descriptor
     memset(t, 0, sizeof(rmt_tx_trans_desc_t));
     t->encoder = encoder;
@@ -871,6 +875,8 @@ static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
     }
     // fetch new transaction description from trans_queue
     if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
+        // sanity check
+        assert(trans_desc);
         // update current transaction
         tx_chan->cur_trans = trans_desc;
 
@@ -954,6 +960,8 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
 
     // fetch new transaction description from trans_queue
     if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
+        // sanity check
+        assert(trans_desc);
         tx_chan->cur_trans = trans_desc;
         // clear the loop end status when we're sure there still remains transaction to handle
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel_id));

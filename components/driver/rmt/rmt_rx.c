@@ -272,7 +272,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     // initialize other members of rx channel
     rx_channel->base.direction = RMT_CHANNEL_DIRECTION_RX;
     rx_channel->base.fsm = RMT_FSM_INIT;
-    rx_channel->base.hw_mem_base = &RMTMEM + (channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP) * SOC_RMT_MEM_WORDS_PER_CHANNEL;
+    rx_channel->base.hw_mem_base = &RMTMEM.channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].symbols[0];
     rx_channel->base.spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // polymorphic methods
     rx_channel->base.del = rmt_del_rx_channel;
