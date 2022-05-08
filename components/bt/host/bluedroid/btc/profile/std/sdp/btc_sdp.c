@@ -484,7 +484,53 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec)
     if (!status) {
         SDP_DeleteRecord(sdp_handle);
         sdp_handle = 0;
-        BTC_TRACE_ERROR("%s() FAILED", __func__);
+        BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
+    } else {
+        bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
+        BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    }
+
+    return sdp_handle;
+}
+
+/* Create a PBAP Client SDP record based on information stored in a bluetooth_sdp_pse_record */
+static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec)
+{
+    UINT16              service = UUID_SERVCLASS_PBAP_PCE;
+    UINT16              browse = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
+    bool                status = true;
+    UINT32              sdp_handle = 0;
+
+    BTC_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s", __func__,
+            rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm, rec->hdr.service_name);
+
+    if ((sdp_handle = SDP_CreateRecord()) == 0) {
+        BTC_TRACE_ERROR("%s(): Unable to register PBAP Client Service", __func__);
+        return sdp_handle;
+    }
+
+    /* add service class */
+    status &= SDP_AddServiceClassIdList(sdp_handle, 1, &service);
+
+    /* Add a name entry */
+    status &= SDP_AddAttribute(sdp_handle,
+                    (UINT16)ATTR_ID_SERVICE_NAME,
+                    (UINT8)TEXT_STR_DESC_TYPE,
+                    (UINT32)(rec->hdr.service_name_length + 1),
+                    (UINT8 *)rec->hdr.service_name);
+
+    /* Add in the Bluetooth Profile Descriptor List */
+    status &= SDP_AddProfileDescriptorList(sdp_handle,
+                                     UUID_SERVCLASS_PHONE_ACCESS,
+                                     rec->hdr.profile_version);
+
+    /* Make the service browseable */
+    status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
+
+    if (!status) {
+        SDP_DeleteRecord(sdp_handle);
+        sdp_handle = 0;
+        BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
     } else {
         bta_sys_add_uuid(service);  /* UUID_SERVCLASS_MESSAGE_ACCESS */
         BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
@@ -663,14 +709,15 @@ static int btc_handle_create_record_event(int id)
         case SDP_TYPE_PBAP_PSE:
             handle = add_pbaps_sdp(&record->pse);
             break;
+        case SDP_TYPE_PBAP_PCE:
+            handle = add_pbapc_sdp(&record->pce);
+            break;
         case SDP_TYPE_OPP_SERVER:
             handle = add_opps_sdp(&record->ops);
             break;
         case SDP_TYPE_SAP_SERVER:
             handle = add_saps_sdp(&record->sap);
             break;
-        case SDP_TYPE_PBAP_PCE:
-            // break; not yet supported
         default:
             BTC_TRACE_DEBUG("Record type %d is not supported",record->hdr.type);
             break;
