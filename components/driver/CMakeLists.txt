@@ -25,7 +25,7 @@ endif()
 
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs
-         "adc_common.c"
+         "adc_single.c"
          "adc.c")
 endif()
 

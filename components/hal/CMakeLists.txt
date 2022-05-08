@@ -46,6 +46,7 @@ if(NOT BOOTLOADER_BUILD)
         "soc_hal.c"
         "interrupt_controller_hal.c"
         "sha_hal.c"
+        "adc_hal_common.c"
         "adc_hal.c")
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED)

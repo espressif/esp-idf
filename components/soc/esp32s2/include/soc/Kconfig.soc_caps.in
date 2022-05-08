@@ -159,6 +159,10 @@ config SOC_ADC_MAX_CHANNEL_NUM
     int
     default 10
 
+config SOC_ADC_ATTEN_NUM
+    int
+    default 4
+
 config SOC_ADC_DIGI_CONTROLLER_NUM
     int
     default 2
@@ -179,7 +183,11 @@ config SOC_ADC_SAMPLE_FREQ_THRES_LOW
     int
     default 611
 
-config SOC_ADC_MAX_BITWIDTH
+config SOC_ADC_RTC_MIN_BITWIDTH
+    int
+    default 13
+
+config SOC_ADC_RTC_MAX_BITWIDTH
     int
     default 13
 

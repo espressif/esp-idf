@@ -591,12 +591,12 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
 
     if (config->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
         for (int i = 0; i < config->adc1_pattern_len; i++) {
-            adc_cal_offset(ADC_UNIT_1, config->adc1_pattern[i].channel, config->adc1_pattern[i].atten);
+            adc_cal_offset(ADC_UNIT_1, config->adc1_pattern[i].atten);
         }
     }
     if (config->conv_mode & ADC_CONV_SINGLE_UNIT_2) {
         for (int i = 0; i < config->adc2_pattern_len; i++) {
-            adc_cal_offset(ADC_UNIT_2, config->adc2_pattern[i].channel, config->adc2_pattern[i].atten);
+            adc_cal_offset(ADC_UNIT_2, config->adc2_pattern[i].atten);
         }
     }
 

@@ -76,9 +76,10 @@
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
-#define SOC_ADC_PERIPH_NUM                      (2)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
+#define SOC_ADC_PERIPH_NUM                      (1U)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 0)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
+#define SOC_ADC_ATTEN_NUM                       (4)
 
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
@@ -91,8 +92,8 @@
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
 /*!< RTC */
-#define SOC_ADC_MAX_BITWIDTH                    (12)
-
+#define SOC_ADC_RTC_MIN_BITWIDTH                (12)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)

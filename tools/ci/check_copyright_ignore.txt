@@ -1267,7 +1267,6 @@ components/soc/esp32/sigmadelta_periph.c
 components/soc/esp32/spi_periph.c
 components/soc/esp32/touch_sensor_periph.c
 components/soc/esp32/uart_periph.c
-components/soc/esp32c3/adc_periph.c
 components/soc/esp32c3/gpio_periph.c
 components/soc/esp32c3/i2c_bbpll.h
 components/soc/esp32c3/i2c_periph.c

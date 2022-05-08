@@ -228,9 +228,9 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
 static uint32_t get_calibration_offset(adc_unit_t adc_n, adc_channel_t chan)
 {
     adc_atten_t atten = adc_ll_get_atten(adc_n, chan);
-    extern uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten);
+    extern uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_atten_t atten);
 
-    return adc_get_calibration_offset(adc_n, chan, atten);
+    return adc_get_calibration_offset(adc_n, atten);
 }
 #endif  //SOC_ADC_CALIBRATION_V1_SUPPORTED
 
@@ -250,7 +250,7 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 #if SOC_DAC_SUPPORTED
         dac_hal_rtc_sync_by_adc(false);
 #endif
-        adc_hal_rtc_output_invert(ADC_UNIT_1, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+        adc_oneshot_ll_output_invert(ADC_UNIT_1, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_1));
         adc_ll_set_sar_clk_div(ADC_UNIT_1, ADC_HAL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_1));
 #ifdef CONFIG_IDF_TARGET_ESP32
         adc_ll_hall_disable(); //Disable other peripherals.
@@ -259,7 +259,7 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
     }
     if (adc_unit == ADC_UNIT_2) {
         adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
-        adc_hal_rtc_output_invert(ADC_UNIT_2, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+        adc_oneshot_ll_output_invert(ADC_UNIT_2, ADC_HAL_DATA_INVERT_DEFAULT(ADC_UNIT_2));
         adc_ll_set_sar_clk_div(ADC_UNIT_2, ADC_HAL_SAR_CLK_DIV_DEFAULT(ADC_UNIT_2));
     }
 }
@@ -297,12 +297,12 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 {
     if (adc_unit == ADC_UNIT_1) {
         SARADC1_ENTER();
-        adc_hal_rtc_output_invert(ADC_UNIT_1, inv_en);
+        adc_oneshot_ll_output_invert(ADC_UNIT_1, inv_en);
         SARADC1_EXIT();
     }
     if (adc_unit == ADC_UNIT_2) {
         SARADC2_ENTER();
-        adc_hal_rtc_output_invert(ADC_UNIT_2, inv_en);
+        adc_oneshot_ll_output_invert(ADC_UNIT_2, inv_en);
         SARADC2_EXIT();
     }
 
@@ -311,20 +311,39 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 
 esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit)
 {
+    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "unsupported bit width", ESP_ERR_INVALID_ARG);
+    adc_bitwidth_t bitwidth = 0;
 #if CONFIG_IDF_TARGET_ESP32
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
-#else
-    ADC_CHECK(width_bit == ADC_WIDTH_MAX - 1, "WIDTH ERR: see `adc_bits_width_t` for supported bit width", ESP_ERR_INVALID_ARG);
+    switch(width_bit) {
+        case ADC_WIDTH_BIT_9:
+            bitwidth = ADC_BITWIDTH_9;
+            break;
+        case ADC_WIDTH_BIT_10:
+            bitwidth = ADC_BITWIDTH_10;
+            break;
+        case ADC_WIDTH_BIT_11:
+            bitwidth = ADC_BITWIDTH_11;
+            break;
+        case ADC_WIDTH_BIT_12:
+            bitwidth = ADC_BITWIDTH_12;
+            break;
+        default:
+            abort();
+    }
+#elif CONFIG_IDF_TARGET_ESP32S2
+    bitwidth = ADC_BITWIDTH_13;
+#else   //esp32s3
+    bitwidth = ADC_BITWIDTH_12;
 #endif
 
     if (adc_unit == ADC_UNIT_1) {
         SARADC1_ENTER();
-        adc_hal_rtc_set_output_format(ADC_UNIT_1, width_bit);
+        adc_oneshot_ll_set_output_bits(ADC_UNIT_1, bitwidth);
         SARADC1_EXIT();
     }
     if (adc_unit == ADC_UNIT_2) {
         SARADC2_ENTER();
-        adc_hal_rtc_set_output_format(ADC_UNIT_2, width_bit);
+        adc_oneshot_ll_set_output_bits(ADC_UNIT_2, bitwidth);
         SARADC2_EXIT();
     }
 
@@ -353,12 +372,12 @@ esp_err_t adc_rtc_reset(void)
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
-    ADC_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+    ADC_CHECK(atten < SOC_ADC_ATTEN_NUM, "ADC Atten Err", ESP_ERR_INVALID_ARG);
 
     adc_common_gpio_init(ADC_UNIT_1, channel);
     SARADC1_ENTER();
     adc_rtc_chan_init(ADC_UNIT_1);
-    adc_hal_set_atten(ADC_UNIT_1, channel, atten);
+    adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, atten);
     SARADC1_EXIT();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -370,14 +389,33 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
+    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "unsupported bit width", ESP_ERR_INVALID_ARG);
+    adc_bitwidth_t bitwidth = 0;
 #if CONFIG_IDF_TARGET_ESP32
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
-#else
-    ADC_CHECK(width_bit == ADC_WIDTH_MAX - 1, "WIDTH ERR: see `adc_bits_width_t` for supported bit width", ESP_ERR_INVALID_ARG);
+    switch(width_bit) {
+        case ADC_WIDTH_BIT_9:
+            bitwidth = ADC_BITWIDTH_9;
+            break;
+        case ADC_WIDTH_BIT_10:
+            bitwidth = ADC_BITWIDTH_10;
+            break;
+        case ADC_WIDTH_BIT_11:
+            bitwidth = ADC_BITWIDTH_11;
+            break;
+        case ADC_WIDTH_BIT_12:
+            bitwidth = ADC_BITWIDTH_12;
+            break;
+        default:
+            abort();
+    }
+#elif CONFIG_IDF_TARGET_ESP32S2
+    bitwidth = ADC_BITWIDTH_13;
+#else   //esp32s3
+    bitwidth = ADC_BITWIDTH_12;
 #endif
 
     SARADC1_ENTER();
-    adc_hal_rtc_set_output_format(ADC_UNIT_1, width_bit);
+    adc_oneshot_ll_set_output_bits(ADC_UNIT_1, bitwidth);
     SARADC1_EXIT();
 
     return ESP_OK;
@@ -443,6 +481,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_ll_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
     adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_RTC);    //Set controller
+    adc_oneshot_ll_set_channel(ADC_UNIT_1, channel);
     adc_hal_convert(ADC_UNIT_1, channel, &adc_value);   //Start conversion, For ADC1, the data always valid.
 #if !CONFIG_IDF_TARGET_ESP32
     adc_ll_rtc_reset();    //Reset FSM of rtc controller
@@ -500,7 +539,7 @@ esp_err_t adc2_wifi_release(void)
 esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 {
     ADC_CHANNEL_CHECK(ADC_UNIT_2, channel);
-    ADC_CHECK(atten <= ADC_ATTEN_11db, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
+    ADC_CHECK(atten <= SOC_ADC_ATTEN_NUM, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
 
     adc_common_gpio_init(ADC_UNIT_2, channel);
 
@@ -512,7 +551,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     //avoid collision with other tasks
     SARADC2_ENTER();
     adc_rtc_chan_init(ADC_UNIT_2);
-    adc_hal_set_atten(ADC_UNIT_2, channel, atten);
+    adc_oneshot_ll_set_atten(ADC_UNIT_2, channel, atten);
     SARADC2_EXIT();
 
     SARADC2_RELEASE();
@@ -565,13 +604,32 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 {
     esp_err_t ret = ESP_OK;
     int adc_value = 0;
+    adc_bitwidth_t bitwidth = 0;
 
     ADC_CHECK(raw_out != NULL, "ADC out value err", ESP_ERR_INVALID_ARG);
     ADC_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "unsupported bit width", ESP_ERR_INVALID_ARG);
 #if CONFIG_IDF_TARGET_ESP32
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
-#else
-    ADC_CHECK(width_bit == ADC_WIDTH_MAX - 1, "WIDTH ERR: see `adc_bits_width_t` for supported bit width", ESP_ERR_INVALID_ARG);
+    switch(width_bit) {
+        case ADC_WIDTH_BIT_9:
+            bitwidth = ADC_BITWIDTH_9;
+            break;
+        case ADC_WIDTH_BIT_10:
+            bitwidth = ADC_BITWIDTH_10;
+            break;
+        case ADC_WIDTH_BIT_11:
+            bitwidth = ADC_BITWIDTH_11;
+            break;
+        case ADC_WIDTH_BIT_12:
+            bitwidth = ADC_BITWIDTH_12;
+            break;
+        default:
+            abort();
+    }
+#elif CONFIG_IDF_TARGET_ESP32S2
+    bitwidth = ADC_BITWIDTH_13;
+#else   //esp32s3
+    bitwidth = ADC_BITWIDTH_12;
 #endif
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -598,7 +656,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #ifdef CONFIG_ADC_DISABLE_DAC
     adc2_dac_disable(channel);      //disable other peripherals
 #endif
-    adc_hal_rtc_set_output_format(ADC_UNIT_2, width_bit);
+    adc_oneshot_ll_set_output_bits(ADC_UNIT_2, bitwidth);
 
 #if CONFIG_IDF_TARGET_ESP32
     adc_ll_set_controller(ADC_UNIT_2, ADC_LL_CTRL_RTC);// set controller
@@ -614,6 +672,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 #endif //CONFIG_PM_ENABLE
 #endif //CONFIG_IDF_TARGET_ESP32
 
+    adc_oneshot_ll_set_channel(ADC_UNIT_2, channel);
     ret = adc_hal_convert(ADC_UNIT_2, channel, &adc_value);
     if (ret != ESP_OK) {
         adc_value = -1;

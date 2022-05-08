@@ -85,11 +85,15 @@ config SOC_ADC_MONITOR_SUPPORTED
 
 config SOC_ADC_PERIPH_NUM
     int
-    default 2
+    default 1
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
     default 5
+
+config SOC_ADC_ATTEN_NUM
+    int
+    default 2
 
 config SOC_ADC_DIGI_CONTROLLER_NUM
     int
@@ -119,7 +123,11 @@ config SOC_ADC_SAMPLE_FREQ_THRES_LOW
     int
     default 611
 
-config SOC_ADC_MAX_BITWIDTH
+config SOC_ADC_RTC_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_RTC_MAX_BITWIDTH
     int
     default 12
 
