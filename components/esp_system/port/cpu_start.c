@@ -37,6 +37,7 @@
 #include "esp32s3/rtc.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/spiram.h"
+#include "esp_private/mmu_psram.h"
 #include "esp_memprot.h"
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
@@ -444,26 +445,8 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif  //CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif  //CONFIG_SPIRAM_MEMTEST
 
-    //TODO: IDF-4382
+
 #if CONFIG_IDF_TARGET_ESP32S3
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    extern void instruction_flash_page_info_init(void);
-    instruction_flash_page_info_init();
-#endif
-#if CONFIG_SPIRAM_RODATA
-    extern void rodata_flash_page_info_init(void);
-    rodata_flash_page_info_init();
-#endif
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    extern void esp_spiram_enable_instruction_access(void);
-    esp_spiram_enable_instruction_access();
-#endif
-#if CONFIG_SPIRAM_RODATA
-    extern void esp_spiram_enable_rodata_access(void);
-    esp_spiram_enable_rodata_access();
-#endif
-
     int s_instr_flash2spiram_off = 0;
     int s_rodata_flash2spiram_off = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS

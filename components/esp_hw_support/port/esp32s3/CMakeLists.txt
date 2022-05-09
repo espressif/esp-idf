@@ -18,7 +18,7 @@ if(NOT BOOTLOADER_BUILD)
         "esp_crypto_lock.c")
 
     if(CONFIG_SPIRAM)
-        list(APPEND srcs "spiram.c")
+        list(APPEND srcs "spiram.c" "mmu_psram.c")
 
         if(CONFIG_SPIRAM_MODE_QUAD)
             list(APPEND srcs "spiram_psram.c")

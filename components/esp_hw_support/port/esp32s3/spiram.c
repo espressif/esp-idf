@@ -24,12 +24,14 @@
 #include "spiram_psram.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_ll.h"
+#include "esp_private/mmu_psram.h"
 
 
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #define MMU_PAGE_SIZE (0x10000)
 
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+#define MMU_PAGE_TO_BYTES(page_id)      ((page_id) << 16)
 
 #if CONFIG_SPIRAM_SPEED_40M
 #define PSRAM_SPEED PSRAM_CACHE_S40M
@@ -83,22 +85,57 @@ esp_err_t esp_spiram_init(void)
     ESP_EARLY_LOGI(TAG, "Found %dMB SPI RAM device", psram_physical_size / (1024 * 1024));
     ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 
+    uint32_t psram_available_size = 0;
+    ret = psram_get_available_size(&psram_available_size);
+    assert(ret == ESP_OK);
+
+
+    __attribute__((unused)) uint32_t total_available_size = psram_available_size;
     /**
-     * TODO IDF-4318
-     * Add these feature here:
-     * - Copy Flash text into PSRAM
-     * - Copy Flash rodata into PSRAM
+     * `start_page` is the psram physical address in MMU page size.
+     * MMU page size on ESP32S2 is 64KB
+     * e.g.: psram physical address 16 is in page 0
+     *
+     * Here we plan to copy FLASH instructions to psram physical address 0, which is the No.0 page.
      */
+    uint32_t start_page = 0;
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+    uint32_t used_page = 0;
+#endif
+
+    //------------------------------------Copy Flash .text to PSRAM-------------------------------------//
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    ret = mmu_config_psram_text_segment(start_page, total_available_size, &used_page);
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "No enough psram memory for instructon!");
+        abort();
+    }
+    start_page += used_page;
+    psram_available_size -= MMU_PAGE_TO_BYTES(used_page);
+    ESP_EARLY_LOGV(TAG, "after copy .text, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
+#endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+
+    //------------------------------------Copy Flash .rodata to PSRAM-------------------------------------//
+#if CONFIG_SPIRAM_RODATA
+    ret = mmu_config_psram_rodata_segment(start_page, total_available_size, &used_page);
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "No enough psram memory for rodata!");
+        abort();
+    }
+    start_page += used_page;
+    psram_available_size -= MMU_PAGE_TO_BYTES(used_page);
+    ESP_EARLY_LOGV(TAG, "after copy .rodata, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
+#endif  //#if CONFIG_SPIRAM_RODATA
+
+
+
+
     //----------------------------------Map the PSRAM physical range to MMU-----------------------------//
     uint32_t vaddr_start = 0;
     extern uint32_t _rodata_reserved_end;
     uint32_t rodata_end_aligned = ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, MMU_PAGE_SIZE);
     vaddr_start = rodata_end_aligned;
     ESP_EARLY_LOGV(TAG, "rodata_end_aligned is 0x%x bytes", rodata_end_aligned);
-
-    uint32_t psram_available_size = 0;
-    ret = psram_get_available_size(&psram_available_size);
-    assert(ret == ESP_OK);
 
     if (vaddr_start + psram_available_size > DRAM0_CACHE_ADDRESS_HIGH) {
         //Decide these logics when there's a real PSRAM with larger size
@@ -108,7 +145,7 @@ esp_err_t esp_spiram_init(void)
 
     //On ESP32S3, MMU is shared for both of the cores. Note this when porting `spiram.c`
     uint32_t actual_mapped_len = 0;
-    mmu_hal_map_region(0, MMU_TARGET_PSRAM0, vaddr_start, 0, psram_available_size, &actual_mapped_len);
+    mmu_hal_map_region(0, MMU_TARGET_PSRAM0, vaddr_start, MMU_PAGE_TO_BYTES(start_page), psram_available_size, &actual_mapped_len);
     ESP_EARLY_LOGV(TAG, "actual_mapped_len is 0x%x bytes", actual_mapped_len);
 
     cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, vaddr_start, actual_mapped_len);
@@ -203,108 +240,6 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size)
     uint32_t caps[] = {MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT};
     return heap_caps_add_region_with_caps(caps, (intptr_t) dma_heap, (intptr_t) dma_heap + size);
 }
-
-//TODO IDF-4318
-// static uint32_t pages_for_flash = 0;
-static uint32_t instruction_in_spiram = 0;
-static uint32_t rodata_in_spiram = 0;
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-static int instr_flash2spiram_offs = 0;
-static uint32_t instr_start_page = 0;
-static uint32_t instr_end_page = 0;
-#endif
-
-#if CONFIG_SPIRAM_RODATA
-static int rodata_flash2spiram_offs = 0;
-static uint32_t rodata_start_page = 0;
-static uint32_t rodata_end_page = 0;
-#endif
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
-// Helper macro to make a MMU entry invalid
-#define INVALID_PHY_PAGE          0xffff
-static uint32_t page0_mapped = 0;
-static uint32_t page0_page = INVALID_PHY_PAGE;
-#endif
-
-uint32_t esp_spiram_instruction_access_enabled(void)
-{
-    return instruction_in_spiram;
-}
-
-uint32_t esp_spiram_rodata_access_enabled(void)
-{
-    return rodata_in_spiram;
-}
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-esp_err_t esp_spiram_enable_instruction_access(void)
-{
-    //TODO IDF-4318, `pages_for_flash` will be overwritten, however it influences the psram size to be added to the heap allocator.
-    abort();
-}
-#endif
-
-#if CONFIG_SPIRAM_RODATA
-esp_err_t esp_spiram_enable_rodata_access(void)
-{
-    //TODO IDF-4318, `pages_for_flash` will be overwritten, however it influences the psram size to be added to the heap allocator.
-    abort();
-}
-#endif
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-void instruction_flash_page_info_init(void)
-{
-    uint32_t instr_page_cnt = ((uint32_t)&_instruction_reserved_end - SOC_IROM_LOW + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
-
-    instr_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_IROM_MMU_START);
-    instr_start_page &= MMU_VALID_VAL_MASK;
-    instr_end_page = instr_start_page + instr_page_cnt - 1;
-}
-
-uint32_t IRAM_ATTR instruction_flash_start_page_get(void)
-{
-    return instr_start_page;
-}
-
-uint32_t IRAM_ATTR instruction_flash_end_page_get(void)
-{
-    return instr_end_page;
-}
-
-int IRAM_ATTR instruction_flash2spiram_offset(void)
-{
-    return instr_flash2spiram_offs;
-}
-#endif
-
-#if CONFIG_SPIRAM_RODATA
-void rodata_flash_page_info_init(void)
-{
-    uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - ((uint32_t)&_rodata_reserved_start & ~ (MMU_PAGE_SIZE - 1)) + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
-
-    rodata_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_DROM_MMU_START);
-    rodata_start_page &= MMU_VALID_VAL_MASK;
-    rodata_end_page = rodata_start_page + rodata_page_cnt - 1;
-}
-
-uint32_t IRAM_ATTR rodata_flash_start_page_get(void)
-{
-    return rodata_start_page;
-}
-
-uint32_t IRAM_ATTR rodata_flash_end_page_get(void)
-{
-    return rodata_end_page;
-}
-
-int IRAM_ATTR rodata_flash2spiram_offset(void)
-{
-    return rodata_flash2spiram_offs;
-}
-#endif
 
 /*
  Before flushing the cache, if psram is enabled as a memory-mapped thing, we need to write back the data in the cache to the psram first,

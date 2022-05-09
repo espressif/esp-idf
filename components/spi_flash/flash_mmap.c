@@ -31,6 +31,7 @@
 #include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
+#include "esp_private/mmu_psram.h"
 #include "esp32s3/spiram.h"
 #include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
@@ -51,6 +52,16 @@
 #define DROM0_PAGES_NUM (SOC_MMU_DROM0_PAGES_END - SOC_MMU_DROM0_PAGES_START)
 #define PAGES_LIMIT ((SOC_MMU_IROM0_PAGES_END > SOC_MMU_DROM0_PAGES_END) ? SOC_MMU_IROM0_PAGES_END:SOC_MMU_DROM0_PAGES_END)
 #define INVALID_PHY_PAGE(page_size)                ((page_size) - 1)
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+extern int _instruction_reserved_start;
+extern int _instruction_reserved_end;
+#endif
+
+#if CONFIG_SPIRAM_RODATA
+extern int _rodata_reserved_start;
+extern int _rodata_reserved_end;
+#endif
 
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 

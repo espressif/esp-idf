@@ -14,9 +14,8 @@
 extern "C" {
 #endif
 
-esp_err_t mmu_map_psram(uint32_t start_paddr, uint32_t map_length, uint32_t *out_start_vaddr);
-
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+
 esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
 
 /**
