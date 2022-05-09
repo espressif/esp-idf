@@ -78,8 +78,6 @@ extern "C" {
 #define FLASH_MMU_TABLE ((volatile uint32_t*) DR_REG_MMU_TABLE)
 #define FLASH_MMU_TABLE_SIZE (ICACHE_MMU_SIZE/sizeof(uint32_t))
 
-#define MMU_TABLE_INVALID_VAL 		MMU_INVALID
-#define FLASH_MMU_TABLE_INVALID_VAL DPORT_MMU_TABLE_INVALID_VAL
 /**
  * MMU entry valid bit mask for mapping value. For an entry:
  * valid bit + value bits
