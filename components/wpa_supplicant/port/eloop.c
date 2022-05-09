@@ -29,6 +29,7 @@ struct eloop_timeout {
 struct eloop_data {
 	struct dl_list timeout;
 	ETSTimer eloop_timer;
+	bool eloop_started;
 };
 
 #define ELOOP_LOCK() xSemaphoreTakeRecursive(eloop_data_lock, portMAX_DELAY)
@@ -51,6 +52,7 @@ int eloop_init(void)
 		wpa_printf(MSG_ERROR, "failed to create eloop data loop");
 		return -1;
 	}
+	eloop.eloop_started = true;
 
 	return 0;
 }
@@ -299,6 +301,9 @@ void eloop_destroy(void)
 	struct eloop_timeout *timeout, *prev;
 	struct os_reltime now;
 
+	if (!eloop.eloop_started) {
+		return;
+	}
 	os_get_reltime(&now);
 	dl_list_for_each_safe(timeout, prev, &eloop.timeout,
 			      struct eloop_timeout, list) {
