@@ -36,7 +36,7 @@
 
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DIRAM_I_START  0x40378000
-#define SRAM_IRAM_END       0x403BA000
+#define SRAM_IRAM_END       0x403CC700 /* Please refer to ESP32-S3 bootloader.ld for more information on this */
 #define I_D_SRAM_OFFSET     (SRAM_DIRAM_I_START - SRAM_DRAM_START)
 
 #define SRAM_DRAM_START     0x3FC88000
