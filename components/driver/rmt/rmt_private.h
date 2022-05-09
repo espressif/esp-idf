@@ -49,8 +49,14 @@ extern "C" {
 #define RMT_DMA_NODES_PING_PONG  2  // two nodes ping-pong
 #define RMT_PM_LOCK_NAME_LEN_MAX 16
 
+typedef struct {
+    struct {
+        rmt_symbol_word_t symbols[SOC_RMT_MEM_WORDS_PER_CHANNEL];
+    } channels[SOC_RMT_CHANNELS_PER_GROUP];
+} rmt_block_mem_t;
+
 // RMTMEM address is declared in <target>.peripherals.ld
-extern rmt_symbol_word_t RMTMEM;
+extern rmt_block_mem_t RMTMEM;
 
 typedef enum {
     RMT_CHANNEL_DIRECTION_TX,

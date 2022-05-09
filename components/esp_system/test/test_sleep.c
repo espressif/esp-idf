@@ -191,10 +191,11 @@ TEST_CASE("light sleep duration is correct", "[deepsleep][ignore]")
 TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 {
 #ifndef CONFIG_PM_ENABLE
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
-    uart_sclk_t clk_source = UART_SCLK_REF_TICK;
-#else
-    uart_sclk_t clk_source = UART_SCLK_XTAL;
+    uart_sclk_t clk_source = UART_SCLK_DEFAULT;
+#if SOC_UART_SUPPORT_REF_TICK
+    clk_source = UART_SCLK_REF_TICK;
+#elif SOC_UART_SUPPORT_XTAL_CLK
+    clk_source = UART_SCLK_XTAL;
 #endif
     uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
     uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE);

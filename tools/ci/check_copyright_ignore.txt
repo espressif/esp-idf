@@ -906,7 +906,6 @@ components/hal/include/hal/systimer_hal.h
 components/hal/include/hal/systimer_types.h
 components/hal/include/hal/touch_sensor_hal.h
 components/hal/include/hal/twai_types.h
-components/hal/include/hal/uart_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
@@ -932,7 +931,6 @@ components/hal/test/test_mpu.c
 components/hal/touch_sensor_hal.c
 components/hal/twai_hal.c
 components/hal/twai_hal_iram.c
-components/hal/uart_hal.c
 components/hal/uart_hal_iram.c
 components/hal/usb_hal.c
 components/heap/heap_private.h
@@ -1640,7 +1638,6 @@ components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
-components/vfs/test/test_vfs_uart.c
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
@@ -2106,7 +2103,6 @@ examples/peripherals/twai/twai_network/twai_network_master/main/twai_network_exa
 examples/peripherals/twai/twai_network/twai_network_slave/main/twai_network_example_slave_main.c
 examples/peripherals/twai/twai_self_test/example_test.py
 examples/peripherals/twai/twai_self_test/main/twai_self_test_example_main.c
-examples/peripherals/uart/nmea0183_parser/main/nmea_parser.c
 examples/peripherals/uart/nmea0183_parser/main/nmea_parser_example_main.c
 examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 examples/peripherals/uart/uart_echo/main/uart_echo_example_main.c

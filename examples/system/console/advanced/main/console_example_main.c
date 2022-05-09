@@ -86,9 +86,9 @@ static void initialize_console(void)
             .data_bits = UART_DATA_8_BITS,
             .parity = UART_PARITY_DISABLE,
             .stop_bits = UART_STOP_BITS_1,
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+#if SOC_UART_SUPPORT_REF_TICK
         .source_clk = UART_SCLK_REF_TICK,
-#else
+#elif SOC_UART_SUPPORT_XTAL_CLK
         .source_clk = UART_SCLK_XTAL,
 #endif
     };

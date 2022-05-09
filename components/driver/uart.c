@@ -26,6 +26,7 @@
 #include "esp_private/esp_clk.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
+#include "clk_ctrl_os.h"
 
 #ifdef CONFIG_UART_ISR_IN_IRAM
 #define UART_ISR_ATTR     IRAM_ATTR
@@ -80,10 +81,6 @@ static const char *UART_TAG = "uart";
     .spinlock = portMUX_INITIALIZER_UNLOCKED,\
     .hw_enabled = false,\
 }
-
-#if SOC_UART_SUPPORT_RTC_CLK
-#define RTC_ENABLED(uart_num)    (BIT(uart_num))
-#endif
 
 typedef struct {
     uart_event_type_t type;        /*!< UART TX data type */
@@ -168,34 +165,6 @@ static uart_context_t uart_context[UART_NUM_MAX] = {
 };
 
 static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
-
-#if SOC_UART_SUPPORT_RTC_CLK
-
-static uint8_t rtc_enabled = 0;
-static portMUX_TYPE rtc_num_spinlock = portMUX_INITIALIZER_UNLOCKED;
-
-static void rtc_clk_enable(uart_port_t uart_num)
-{
-    portENTER_CRITICAL(&rtc_num_spinlock);
-    if (!(rtc_enabled & RTC_ENABLED(uart_num))) {
-        rtc_enabled |= RTC_ENABLED(uart_num);
-    }
-    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-    portEXIT_CRITICAL(&rtc_num_spinlock);
-}
-
-static void rtc_clk_disable(uart_port_t uart_num)
-{
-    assert(rtc_enabled & RTC_ENABLED(uart_num));
-
-    portENTER_CRITICAL(&rtc_num_spinlock);
-    rtc_enabled &= ~RTC_ENABLED(uart_num);
-    if (rtc_enabled == 0) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-    }
-    portEXIT_CRITICAL(&rtc_num_spinlock);
-}
-#endif
 
 static void uart_module_enable(uart_port_t uart_num)
 {
@@ -716,7 +685,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uart_module_enable(uart_num);
 #if SOC_UART_SUPPORT_RTC_CLK
     if (uart_config->source_clk == UART_SCLK_RTC) {
-        rtc_clk_enable(uart_num);
+        periph_rtc_dig_clk8m_enable();
     }
 #endif
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -1614,7 +1583,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     uart_sclk_t sclk = 0;
     uart_hal_get_sclk(&(uart_context[uart_num].hal), &sclk);
     if (sclk == UART_SCLK_RTC) {
-        rtc_clk_disable(uart_num);
+        periph_rtc_dig_clk8m_disable();
     }
 #endif
     uart_module_disable(uart_num);
