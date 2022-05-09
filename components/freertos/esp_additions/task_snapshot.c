@@ -116,13 +116,15 @@
 		return NULL;
 	}
 
-	void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
-	{
-		configASSERT( portVALID_TCB_MEM(pxTask) );
-		configASSERT( pxTaskSnapshot != NULL );
+	BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
+{
+		if (portVALID_TCB_MEM(pxTask) == false || pxTaskSnapshot == NULL) {
+			return pdFALSE;
+		}
 		pxTaskSnapshot->pxTCB = (void*) pxTask;
 		pxTaskSnapshot->pxTopOfStack = pxTCBGetTopOfStack((void*) pxTask);
 		pxTaskSnapshot->pxEndOfStack = pxTCBGetEndOfStack((void*) pxTask);
+		return pdTRUE;
 	}
 
 	TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask )
