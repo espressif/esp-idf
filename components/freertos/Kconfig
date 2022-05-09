@@ -183,6 +183,17 @@ menu "FreeRTOS"
             This value must be at least 1. Index 0 is reserved for use by the pthreads API
             thread-local-storage. Other indexes can be used for any desired purpose.
 
+    config FREERTOS_TLSP_DELETION_CALLBACKS
+        bool "Enable thread local storage pointers deletion callbacks"
+        depends on FREERTOS_SMP && (FREERTOS_THREAD_LOCAL_STORAGE_POINTERS > 0)
+        default y
+        help
+            ESP-IDF provides users with the ability to free TLSP memory by registering TLSP deletion callbacks.
+            These callbacks are automatically called by FreeRTOS when a task is deleted.
+            When this option is turned on, the memory reserved for TLSPs in the TCB is doubled
+            to make space for storing the deletion callbacks. If the user does not wish to use TLSP deletion
+            callbacks then this option could be turned off to save space in the TCB memory.
+
     config FREERTOS_IDLE_TASK_STACKSIZE
         int "Idle Task stack size"
         range 768 32768

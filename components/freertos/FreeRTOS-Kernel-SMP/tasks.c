@@ -286,11 +286,6 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvThreadLocalStoragePointers[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #ifdef ESP_PLATFORM
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-            TlsDeleteCallbackFunction_t pvThreadLocalStoragePointersDelCallback[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-        #endif
-        #endif //ESP_PLATFORM
     #endif
 
     #if ( configGENERATE_RUN_TIME_STATS == 1 )
@@ -1544,11 +1539,6 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
         {
             memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
-            #ifdef ESP_PLATFORM
-            #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-                memset ( (void * ) &( pxNewTCB->pvThreadLocalStoragePointersDelCallback[0] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointersDelCallback ) );
-            #endif
-            #endif //ESP_PLATFORM
         }
     #endif
 
@@ -4928,17 +4918,6 @@ static void prvCheckTasksWaitingTermination( void )
 
     static void prvDeleteTCB( TCB_t * pxTCB )
     {
-        #ifdef ESP_PLATFORM
-        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-            for( int x = 0; x < configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
-            {
-                if (pxTCB->pvThreadLocalStoragePointersDelCallback[ x ] != NULL)    //If del cb is set
-                {
-                    pxTCB->pvThreadLocalStoragePointersDelCallback[ x ](x, pxTCB->pvThreadLocalStoragePointers[ x ]);   //Call del cb
-                }
-            }
-        #endif
-        #endif //ESP_PLATFORM
 
         /* This call is required specifically for the TriCore port.  It must be
          * above the vPortFree() calls.  The call is also used by ports/demos that
@@ -6467,19 +6446,6 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
  * ------------------------------------------------------------------------------------------------------------------ */
 
 #ifdef ESP_PLATFORM
-
-#if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
-    void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue , TlsDeleteCallbackFunction_t xDelCallback)
-    {
-        //Set the local storage pointer first
-        vTaskSetThreadLocalStoragePointer(xTaskToSet, xIndex, pvValue);
-        //Set the deletion callback
-        TCB_t * pxTCB;
-        pxTCB = prvGetTCBFromHandle( xTaskToSet );
-        pxTCB->pvThreadLocalStoragePointersDelCallback[ xIndex ] = xDelCallback;
-    }
-#endif
-
 #if ( configUSE_NEWLIB_REENTRANT == 1 )
 //Return global reent struct if FreeRTOS isn't running,
 struct _reent* __getreent(void) {

@@ -342,4 +342,20 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
     return ret;
 }
 
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue, TlsDeleteCallbackFunction_t pvDelCallback)
+    {
+        // Verify that the offsets of pvThreadLocalStoragePointers and pvDummy15 match.
+        // pvDummy15 is part of the StaticTask_t struct and is used to access the TLSPs
+        // while deletion.
+        _Static_assert(offsetof( StaticTask_t, pvDummy15 ) == offsetof( TCB_t, pvThreadLocalStoragePointers ), "Offset of pvDummy15 must match the offset of pvThreadLocalStoragePointers");
+
+        //Set the local storage pointer first
+        vTaskSetThreadLocalStoragePointer( xTaskToSet, xIndex, pvValue );
+
+        //Set the deletion callback at an offset of configNUM_THREAD_LOCAL_STORAGE_POINTERS/2
+        vTaskSetThreadLocalStoragePointer( xTaskToSet, ( xIndex + ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ) ), pvDelCallback );
+    }
+#endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
+
 #endif // CONFIG_FREERTOS_SMP
