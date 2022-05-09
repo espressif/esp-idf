@@ -59,7 +59,7 @@ void dac_dma_hal_trans_start(dac_hal_context_t *hal, lldesc_t *desc)
 void dac_hal_digi_controller_configure(const dac_hal_ctrl_config_t *cfg)
 {
     dac_ll_digi_clk_inv(true);
-    dac_ll_digi_set_convert_mode(cfg->mode);
+    dac_ll_digi_set_convert_mode(cfg->mode == DAC_CONV_ALTER);
     dac_ll_digi_set_trigger_interval(cfg->interval);
     adc_ll_digi_controller_clk_div(cfg->dig_clk.div_num, cfg->dig_clk.div_b, cfg->dig_clk.div_a);
     adc_ll_digi_clk_sel(cfg->dig_clk.use_apll);
@@ -87,7 +87,7 @@ void __attribute__((deprecated)) dac_hal_digi_deinit(void)
 
 void __attribute__((deprecated)) dac_hal_digi_controller_config(const dac_digi_config_t *cfg)
 {
-    dac_ll_digi_set_convert_mode(cfg->mode);
+    dac_ll_digi_set_convert_mode(cfg->mode == DAC_CONV_ALTER);
     dac_ll_digi_set_trigger_interval(cfg->interval);
     adc_ll_digi_controller_clk_div(cfg->dig_clk.div_num, cfg->dig_clk.div_b, cfg->dig_clk.div_a);
     adc_ll_digi_controller_clk_enable(cfg->dig_clk.use_apll);

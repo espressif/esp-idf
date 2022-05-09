@@ -13,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include "esp_err.h"
 #include "driver/gpio.h"
-#include "hal/dac_types.h"
+#include "driver/dac_types_legacy.h"
 
 /**
  * @brief Get the GPIO number of a specific DAC channel.

@@ -125,7 +125,6 @@ if(NOT BOOTLOADER_BUILD)
                     "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
                     "esp32s2/touch_sensor_hal.c"
-                    "esp32s2/dac_hal.c"
                     "usb_dwc_hal.c")
     endif()
 

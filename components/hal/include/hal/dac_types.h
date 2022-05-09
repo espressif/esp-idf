@@ -28,18 +28,6 @@ typedef enum {
     DAC_CW_PHASE_180 = 0x3, /*!< Phase shift +180° */
 } dac_cw_phase_t;
 
-/**
- * @brief Config the cosine wave generator function in DAC module.
- */
-typedef struct {
-    dac_channel_t en_ch;    /*!< Enable the cosine wave generator of DAC channel. */
-    dac_cw_scale_t scale;   /*!< Set the amplitude of the cosine wave generator output. */
-    dac_cw_phase_t phase;   /*!< Set the phase of the cosine wave generator output. */
-    uint32_t freq;          /*!< Set frequency of cosine wave generator output. Range: 130(130Hz) ~ 55000(100KHz). */
-    int8_t offset;          /*!< Set the voltage value of the DC component of the cosine wave generator output.
-                                 Note: Unreasonable settings can cause waveform to be oversaturated. Range: -128 ~ 127. */
-} dac_cw_config_t;
-
 #if CONFIG_IDF_TARGET_ESP32S2
 
 /**
@@ -48,16 +36,7 @@ typedef struct {
 typedef enum {
     DAC_CONV_NORMAL,        /*!< The data in the DMA buffer is simultaneously output to the enable channel of the DAC. */
     DAC_CONV_ALTER,         /*!< The data in the DMA buffer is alternately output to the enable channel of the DAC. */
-    DAC_CONV_MAX
 } dac_digi_convert_mode_t;
-
-/**
- * @brief The type of the DAC DMA link.
-*/
-typedef enum {
-    DAC_DMA_LINK_LINE = BIT(0),        /*!< The link is Linear. */
-    DAC_DMA_LINK_RECURSIVE = BIT(1),   /*!< The link is recursive. */
-} dac_dma_link_type_t;
 
 /**
  * @brief DAC digital controller (DMA mode) configuration parameters.
@@ -70,6 +49,6 @@ typedef struct {
                                     Note: The sampling rate of each channel is also related to the conversion mode (See ``dac_digi_convert_mode_t``) and pattern table settings. */
     adc_digi_clk_t dig_clk;     /*!<DAC digital controller clock divider settings. Refer to ``adc_digi_clk_t``.
                                     Note: The clocks of the DAC digital controller use the ADC digital controller clock divider. */
-} dac_digi_config_t __attribute__((deprecated));
+} dac_digi_config_t;
 
 #endif //CONFIG_IDF_TARGET_ESP32S2

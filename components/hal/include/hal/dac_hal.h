@@ -13,6 +13,7 @@
 #pragma once
 
 #include "hal/dac_ll.h"
+#include "hal/dac_types.h"
 
 /**
  * Power on dac module and start output voltage.
@@ -62,7 +63,7 @@
  *
  * @param cw Configuration.
  */
-void dac_hal_cw_generator_config(dac_cw_config_t *cw);
+// void dac_hal_cw_generator_config(dac_cw_config_t *cw);
 
 /**
  * Enable/disable DAC output data from DMA.

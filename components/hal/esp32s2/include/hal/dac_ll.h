@@ -149,7 +149,7 @@ static inline void dac_ll_cw_set_freq(uint32_t freq)
  * @param channel DAC channel num.
  * @param scale The multiple of the amplitude. The max amplitude is VDD3P3_RTC.
  */
-static inline void dac_ll_cw_set_scale(dac_channel_t channel, dac_cw_scale_t scale)
+static inline void dac_ll_cw_set_scale(dac_channel_t channel, uint32_t scale)
 {
     if (channel == DAC_CHANNEL_1) {
         SENS.sar_dac_ctrl2.dac_scale1 = scale;
@@ -164,7 +164,7 @@ static inline void dac_ll_cw_set_scale(dac_channel_t channel, dac_cw_scale_t sca
  * @param channel DAC channel num.
  * @param scale Phase value.
  */
-static inline void dac_ll_cw_set_phase(dac_channel_t channel, dac_cw_phase_t phase)
+static inline void dac_ll_cw_set_phase(dac_channel_t channel, uint32_t phase)
 {
     if (channel == DAC_CHANNEL_1) {
         SENS.sar_dac_ctrl2.dac_inv1 = phase;
@@ -251,13 +251,9 @@ static inline void dac_ll_digi_trigger_output(bool enable)
  *
  * @param mode Conversion mode select. See ``dac_digi_convert_mode_t``.
  */
-static inline void dac_ll_digi_set_convert_mode(dac_digi_convert_mode_t mode)
+static inline void dac_ll_digi_set_convert_mode(bool is_alternate)
 {
-    if (mode == DAC_CONV_NORMAL) {
-        APB_SARADC.apb_dac_ctrl.apb_dac_alter_mode = 0;
-    } else {
-        APB_SARADC.apb_dac_ctrl.apb_dac_alter_mode = 1;
-    }
+    APB_SARADC.apb_dac_ctrl.apb_dac_alter_mode = is_alternate;
 }
 
 /**

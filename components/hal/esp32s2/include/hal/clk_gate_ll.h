@@ -83,8 +83,6 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return DPORT_CRYPTO_DMA_CLK_EN | DPORT_CRYPTO_SHA_CLK_EN;
     case PERIPH_AES_DMA_MODULE:
         return DPORT_CRYPTO_DMA_CLK_EN | DPORT_CRYPTO_AES_CLK_EN;
-    case PERIPH_SARADC_MODULE:
-        return DPORT_APB_SARADC_CLK_EN_M;
     default:
         return 0;
     }

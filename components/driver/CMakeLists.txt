@@ -99,7 +99,14 @@ if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
 endif()
 
 if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-    list(APPEND srcs "touch_sensor_common.c" "${target}/touch_sensor.c")
+    list(APPEND srcs "touch_sensor_common.c"
+                     "${target}/touch_sensor.c")
+endif()
+
+if(CONFIG_SOC_DAC_SUPPORTED)
+    list(APPEND srcs "dac.c"
+                     "deprecated/dac_common_legacy.c")
+    list(APPEND includes "deprecated/${target}")
 endif()
 
 if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
@@ -107,14 +114,12 @@ if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
 endif()
 
 if(${target} STREQUAL "esp32")
-    list(APPEND srcs "dac_common.c"
-                     "deprecated/adc_i2s_deprecated.c"
-                     "esp32/dac.c")
+    list(APPEND srcs "deprecated/adc_i2s_deprecated.c"
+                     "deprecated/esp32/dac_legacy.c")
 endif()
 
 if(${target} STREQUAL "esp32s2")
-    list(APPEND srcs "dac_common.c"
-                     "esp32s2/dac.c")
+    list(APPEND srcs "deprecated/esp32s2/dac_legacy.c")
 endif()
 
 if(BOOTLOADER_BUILD)

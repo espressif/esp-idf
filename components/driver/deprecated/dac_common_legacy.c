@@ -16,6 +16,7 @@
 #include "driver/dac.h"
 #include "soc/dac_periph.h"
 #include "hal/dac_hal.h"
+#include "hal/dac_types.h"
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 
@@ -116,7 +117,11 @@ esp_err_t dac_cw_generator_config(dac_cw_config_t *cw)
     ESP_RETURN_ON_FALSE(cw, ESP_ERR_INVALID_ARG, TAG, "invalid clock configuration");
 
     portENTER_CRITICAL(&rtc_spinlock);
-    dac_hal_cw_generator_config(cw);
+    dac_ll_cw_set_freq(cw->freq);
+    dac_ll_cw_set_scale(cw->en_ch, cw->scale);
+    dac_ll_cw_set_phase(cw->en_ch, cw->phase);
+    dac_ll_cw_set_dc_offset(cw->en_ch, cw->offset);
+    dac_ll_cw_set_channel(cw->en_ch, true);
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;

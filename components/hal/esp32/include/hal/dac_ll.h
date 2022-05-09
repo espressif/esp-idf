@@ -128,7 +128,7 @@ static inline void dac_ll_cw_set_freq(uint32_t freq)
  * @param channel DAC channel num.
  * @param scale The multiple of the amplitude. The max amplitude is VDD3P3_RTC.
  */
-static inline void dac_ll_cw_set_scale(dac_channel_t channel, dac_cw_scale_t scale)
+static inline void dac_ll_cw_set_scale(dac_channel_t channel, uint32_t scale)
 {
     if (channel == DAC_CHANNEL_1) {
         SENS.sar_dac_ctrl2.dac_scale1 = scale;
@@ -143,7 +143,7 @@ static inline void dac_ll_cw_set_scale(dac_channel_t channel, dac_cw_scale_t sca
  * @param channel DAC channel num.
  * @param scale Phase value.
  */
-static inline void dac_ll_cw_set_phase(dac_channel_t channel, dac_cw_phase_t phase)
+static inline void dac_ll_cw_set_phase(dac_channel_t channel, uint32_t phase)
 {
     if (channel == DAC_CHANNEL_1) {
         SENS.sar_dac_ctrl2.dac_inv1 = phase;
