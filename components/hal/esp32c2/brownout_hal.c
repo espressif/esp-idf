@@ -9,14 +9,7 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_attr.h"
-#include "esp_rom_regi2c.h"
-#if __has_include("esp_private/regi2c_ctrl.h")
-    #include "esp_private/regi2c_ctrl.h"
-#else
-    /* Only write funciton is needed in HAL component */
-    #define REGI2C_WRITE_MASK(block, reg_add, indata) esp_rom_regi2c_write_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
-#endif
-
+#include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_brownout.h"
 
 
