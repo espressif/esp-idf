@@ -226,7 +226,7 @@ def build_time_entry(hour: int, minute: int, sec: int) -> int:
 
     :returns: 16 bit integer number (5 bits for hour, 6 bits for minute and 5 bits for second)
     """
-    assert hour in range(0, 23)
+    assert hour in range(0, 24)
     assert minute in range(0, 60)
     assert sec in range(0, 60)
     return int.from_bytes(TIME_ENTRY.build(dict(hour=hour, minute=minute, second=sec // 2)), 'big')
