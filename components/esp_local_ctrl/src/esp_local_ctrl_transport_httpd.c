@@ -77,8 +77,9 @@ static void stop_httpd_transport(protocomm_t *pc)
 {
     mdns_service_remove("_esp_local_ctrl", "_tcp");
     protocomm_httpd_stop(pc);
-    if (httpd_ssl_stop(server_handle) == ESP_OK)
+    if (httpd_ssl_stop(server_handle) == ESP_OK) {
         server_handle = NULL;
+    }
 }
 
 static esp_err_t copy_httpd_config(esp_local_ctrl_transport_config_t *dest_config, const esp_local_ctrl_transport_config_t *src_config)

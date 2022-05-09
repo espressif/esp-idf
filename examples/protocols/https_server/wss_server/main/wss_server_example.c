@@ -219,8 +219,11 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base,
 {
     httpd_handle_t* server = (httpd_handle_t*) arg;
     if (*server) {
-        if (stop_wss_echo_server(*server) == ESP_OK)
+        if (stop_wss_echo_server(*server) == ESP_OK) {
             *server = NULL;
+        } else {
+            ESP_LOGE(TAG, "Failed to stop https server");
+        }
     }
 }
 

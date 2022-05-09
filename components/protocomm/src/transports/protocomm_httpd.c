@@ -296,8 +296,10 @@ esp_err_t protocomm_httpd_stop(protocomm_t *pc)
         if (!pc_ext_httpd_handle_provided) {
             httpd_handle_t *server_handle = (httpd_handle_t *) pc_httpd->priv;
             esp_err_t ret = httpd_stop(*server_handle);
-            if (ret != ESP_OK)
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to stop http server");
                 return ret;
+            }
             free(server_handle);
         } else {
             pc_ext_httpd_handle_provided = false;
