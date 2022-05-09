@@ -1947,14 +1947,6 @@ examples/bluetooth/nimble/bleprph_wifi_coex/main/bleprph.h
 examples/bluetooth/nimble/bleprph_wifi_coex/main/gatt_svr.c
 examples/bluetooth/nimble/bleprph_wifi_coex/main/main.c
 examples/build_system/cmake/component_manager/main/component_manager.c
-examples/build_system/cmake/idf_as_lib/main.c
-examples/build_system/cmake/idf_as_lib/stubs/esp32/cpu_start.c
-examples/build_system/cmake/idf_as_lib/stubs/esp32/esp_system.h
-examples/build_system/cmake/idf_as_lib/stubs/esp32/flash_ops.c
-examples/build_system/cmake/idf_as_lib/stubs/esp32/system_api.c
-examples/build_system/cmake/idf_as_lib/stubs/freertos/freertos/task.h
-examples/build_system/cmake/idf_as_lib/stubs/freertos/task.c
-examples/build_system/cmake/idf_as_lib/stubs/spi_flash/esp_spi_flash.h
 examples/build_system/cmake/import_lib/main/main.cpp
 examples/build_system/cmake/import_prebuilt/main/main.c
 examples/build_system/cmake/import_prebuilt/prebuilt/components/prebuilt/prebuilt.c
