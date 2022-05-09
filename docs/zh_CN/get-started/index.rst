@@ -158,9 +158,7 @@ IDE
 
 编译第一个工程
 ===================
-..
-    Please translate
 
-If you already have the ESP-IDF installed and not using IDE, you can build your first project from the command line following the :ref:`Start a Project on Windows <get-started-windows-first-steps>` or :ref:`Start a Project on Linux and macOS<get-started-linux-macos-first-steps>`.
+如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
