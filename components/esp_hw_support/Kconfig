@@ -13,7 +13,7 @@ menu "Hardware Settings"
             bool
 
             # Insert chip-specific MAC config
-            rsource "./port/$IDF_TARGET/Kconfig.mac"
+        rsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
 
     menu "Sleep Config"
@@ -74,8 +74,8 @@ menu "Hardware Settings"
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
 
-        # This is used for configure the RTC clock.
         config RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
+            # This is used for configure the RTC clock.
             bool "Keep BBPLL clock always work"
             depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
             default y
