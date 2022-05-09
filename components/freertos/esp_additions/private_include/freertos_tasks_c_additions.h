@@ -162,14 +162,17 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask )
     return pxNextTCB;
 }
 
-void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
+BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot )
 {
-    configASSERT( portVALID_TCB_MEM(pxTask) );
-    configASSERT( pxTaskSnapshot != NULL );
+    if (portVALID_TCB_MEM(pxTask) == false || pxTaskSnapshot == NULL) {
+        return pdFALSE;
+    }
+
     TCB_t *pxTCB = (TCB_t *)pxTask;
     pxTaskSnapshot->pxTCB = pxTCB;
     pxTaskSnapshot->pxTopOfStack = (StackType_t *)pxTCB->pxTopOfStack;
     pxTaskSnapshot->pxEndOfStack = (StackType_t *)pxTCB->pxEndOfStack;
+    return pdTRUE;
 }
 
 UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArrayLength, UBaseType_t * const pxTCBSize )
