@@ -7,22 +7,21 @@ from __future__ import print_function, unicode_literals
 
 import argparse
 import http.client
+import logging
 from builtins import str
-
-from tiny_test_fw import Utility
 
 
 def verbose_print(verbosity, *args):
     if (verbosity):
-        Utility.console_log(''.join(str(elems) for elems in args))
+        logging.info(''.join(str(elems) for elems in args))
 
 
 def test_val(text, expected, received):
     if expected != received:
-        Utility.console_log(' Fail!')
-        Utility.console_log('  [reason] ' + text + ':')
-        Utility.console_log('        expected: ' + str(expected))
-        Utility.console_log('        received: ' + str(received))
+        logging.info(' Fail!')
+        logging.info('  [reason] {} :'.format(text))
+        logging.info('        expected: {}'.format(expected))
+        logging.info('        received: {}'.format(received))
         return False
     return True
 
@@ -253,4 +252,4 @@ if __name__ == '__main__':
         test_put_handler(ip, port, True) and
         test_post_handler(ip, port, msg, True)
     ):
-        Utility.console_log('Failed!')
+        logging.info('Failed!')
