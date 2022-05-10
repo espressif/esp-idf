@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import http.client
+import logging
 import os
 
-import tiny_test_fw
-import ttfw_idf
-from tiny_test_fw import Utility
+import pytest
+from pytest_embedded import Dut
 
 HTTP_OK = 200
 TEST_SERVER = 'http2.github.io'
@@ -22,14 +22,18 @@ def is_test_server_available():  # type: () -> bool
         resp = conn.getresponse()
         return True if resp.status == HTTP_OK else False
     except Exception as msg:
-        Utility.console_log('Exception occurred when connecting to {}: {}'.format(TEST_SERVER, msg))
+        logging.info('Exception occurred when connecting to {}: {}'.format(TEST_SERVER, msg))
         return False
     finally:
         conn.close()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
-def test_examples_protocol_http2_request(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.ethernet
+def test_examples_protocol_http2_request(dut: Dut) -> None:
     """
     steps: |
       1. join AP
@@ -37,25 +41,19 @@ def test_examples_protocol_http2_request(env, extra_data):  # type: (tiny_test_f
       3. send http2 request
       4. send http2 put response
     """
-    dut1 = env.get_dut('http2_request', 'examples/protocols/http2_request', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, 'http2_request.bin')
+    binary_file = os.path.join(dut.app.binary_path, 'http2_request.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance('http2_request_bin_size', '{}KB'.format(bin_size // 1024))
+    logging.info('http2_request_bin_size : {}KB'.format(bin_size // 1024))
     # start the test
     # check if test server is avilable
     test_server_available = is_test_server_available()
     # Skip the test if the server test server (http2.github.io) is not available at the moment.
     if test_server_available:
-        Utility.console_log('test server \"{}\" is available'.format(TEST_SERVER))
-        dut1.start_app()
+        logging.info('test server \"{}\" is available'.format(TEST_SERVER))
         # check for connection
-        dut1.expect('Connection done', timeout=30)
+        dut.expect('Connection done', timeout=30)
         # check for get response
-        dut1.expect('[get-response] Frame fully received')
+        dut.expect('Frame fully received')
     else:
-        Utility.console_log('test server \"{0}\" is not available at the moment.\nSkipping the test with status = success.'.format(TEST_SERVER))
-
-
-if __name__ == '__main__':
-    test_examples_protocol_http2_request()  # pylint: disable=no-value-for-parameter
+        logging.info('test server \"{0}\" is not available at the moment.\nSkipping the test with status = success.'.format(TEST_SERVER))

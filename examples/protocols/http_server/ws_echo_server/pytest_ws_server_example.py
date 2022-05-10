@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import division, print_function, unicode_literals
 
+import logging
 import os
-import re
 
-import ttfw_idf
-from tiny_test_fw import Utility
+import pytest
+from pytest_embedded import Dut
 
 try:
     import websocket
@@ -24,22 +24,22 @@ OPCODE_PONG = 0xa
 
 
 class WsClient:
-    def __init__(self, ip, port):
+    def __init__(self, ip: str, port: int) -> None:
         self.port = port
         self.ip = ip
         self.ws = websocket.WebSocket()
 
-    def __enter__(self):
+    def __enter__(self):    # type: ignore
         self.ws.connect('ws://{}:{}/ws'.format(self.ip, self.port))
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):     # type: ignore
         self.ws.close()
 
-    def read(self):
+    def read(self):     # type: ignore
         return self.ws.recv_data(control_frame=True)
 
-    def write(self, data='', opcode=OPCODE_TEXT):
+    def write(self, data='', opcode=OPCODE_TEXT):   # type: ignore
         if opcode == OPCODE_BIN:
             return self.ws.send_binary(data.encode())
         if opcode == OPCODE_PING:
@@ -47,27 +47,26 @@ class WsClient:
         return self.ws.send(data)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
-def test_examples_protocol_http_ws_echo_server(env, extra_data):
-    # Acquire DUT
-    dut1 = env.get_dut('http_server', 'examples/protocols/http_server/ws_echo_server', dut_class=ttfw_idf.ESP32DUT)
-
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.wifi
+def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
     # Get binary file
-    binary_file = os.path.join(dut1.app.binary_path, 'ws_echo_server.bin')
+    binary_file = os.path.join(dut.app.binary_path, 'ws_echo_server.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance('http_ws_server_bin_size', '{}KB'.format(bin_size // 1024))
+    logging.info('http_ws_server_bin_size : {}KB'.format(bin_size // 1024))
 
-    # Upload binary and start testing
-    Utility.console_log('Starting ws-echo-server test app based on http_server')
-    dut1.start_app()
+    logging.info('Starting ws-echo-server test app based on http_server')
 
     # Parse IP address of STA
-    Utility.console_log('Waiting to connect with AP')
-    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+.\d+.\d+.\d+)'), timeout=60)[0]
-    got_port = dut1.expect(re.compile(r"Starting server on port: '(\d+)'"), timeout=60)[0]
+    logging.info('Waiting to connect with AP')
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+    got_port = dut.expect(r"Starting server on port: '(\d+)'", timeout=30)[1].decode()
 
-    Utility.console_log('Got IP   : ' + got_ip)
-    Utility.console_log('Got Port : ' + got_port)
+    logging.info('Got IP   : {}'.format(got_ip))
+    logging.info('Got Port : {}'.format(got_port))
 
     # Start ws server test
     with WsClient(got_ip, int(got_port)) as ws:
@@ -75,24 +74,21 @@ def test_examples_protocol_http_ws_echo_server(env, extra_data):
         for expected_opcode in [OPCODE_TEXT, OPCODE_BIN, OPCODE_PING]:
             ws.write(data=DATA, opcode=expected_opcode)
             opcode, data = ws.read()
-            Utility.console_log('Testing opcode {}: Received opcode:{}, data:{}'.format(expected_opcode, opcode, data))
+            logging.info('Testing opcode {}: Received opcode:{}, data:{}'.format(expected_opcode, opcode, data))
             data = data.decode()
             if expected_opcode == OPCODE_PING:
-                dut1.expect('Got a WS PING frame, Replying PONG')
+                dut.expect('Got a WS PING frame, Replying PONG')
                 if opcode != OPCODE_PONG or data != DATA:
                     raise RuntimeError('Failed to receive correct opcode:{} or data:{}'.format(opcode, data))
                 continue
-            dut_data = dut1.expect(re.compile(r'Got packet with message: ([A-Za-z0-9_]*)'))[0]
-            dut_opcode = int(dut1.expect(re.compile(r'Packet type: ([0-9]*)'))[0])
-            if opcode != expected_opcode or data != DATA or opcode != dut_opcode or data != dut_data:
+            dut_data = dut.expect(r'Got packet with message: ([A-Za-z0-9_]*)')[1]
+            dut_opcode = dut.expect(r'Packet type: ([0-9]*)')[1].decode()
+
+            if opcode != expected_opcode or data != DATA or opcode != int(dut_opcode) or (data not in str(dut_data)):
                 raise RuntimeError('Failed to receive correct opcode:{} or data:{}'.format(opcode, data))
         ws.write(data='Trigger async', opcode=OPCODE_TEXT)
         opcode, data = ws.read()
-        Utility.console_log('Testing async send: Received opcode:{}, data:{}'.format(opcode, data))
+        logging.info('Testing async send: Received opcode:{}, data:{}'.format(opcode, data))
         data = data.decode()
         if opcode != OPCODE_TEXT or data != 'Async data':
             raise RuntimeError('Failed to receive correct opcode:{} or data:{}'.format(opcode, data))
-
-
-if __name__ == '__main__':
-    test_examples_protocol_http_ws_echo_server()
