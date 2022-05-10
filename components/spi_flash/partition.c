@@ -430,19 +430,32 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
         if (partition->flash_chip != esp_flash_default_chip) {
             return ESP_ERR_NOT_SUPPORTED;
         }
-
-        /* Encrypted partitions need to be read via a cache mapping */
-        const void *buf;
-        spi_flash_mmap_handle_t handle;
-        esp_err_t err;
-
-        err = esp_partition_mmap(partition, src_offset, size,
-                                 SPI_FLASH_MMAP_DATA, &buf, &handle);
-        if (err != ESP_OK) {
-            return err;
+        /*
+         * Encrypted partitions need to be read via a cache mapping.
+         * Mapping and unmapping is expensive so we map the entire partition and keep it mapped
+         * anticipating that it will be reused. We only keep one partition mapped so alternating
+         * reads between encrypted partitions will incur a penalty but hopefully that is uncommon.
+         */
+        static uint32_t s_mapped_partition_end = 0;
+        static const void *s_mapped_vaddr = NULL;
+        static spi_flash_mmap_handle_t s_map_handle = 0;
+        /* Since partitions are non-overlapping, addr + size uniquely identifies a partition. */
+        const uint32_t partition_end = partition->address + partition->size;
+        if (s_mapped_partition_end != partition_end) {
+            if (s_mapped_vaddr != NULL) {
+                spi_flash_munmap(s_map_handle);
+                s_mapped_partition_end = 0;
+                s_mapped_vaddr = NULL;
+                s_map_handle = 0;
+            }
+            esp_err_t err = esp_partition_mmap(
+                partition, 0, partition->size, SPI_FLASH_MMAP_DATA, &s_mapped_vaddr, &s_map_handle);
+            if (err != ESP_OK) {
+                return err;
+            }
+            s_mapped_partition_end = partition_end;
         }
-        memcpy(dst, buf, size);
-        spi_flash_munmap(handle);
+        memcpy(dst, ((const char *) s_mapped_vaddr) + src_offset, size);
         return ESP_OK;
 #else
         return ESP_ERR_NOT_SUPPORTED;
