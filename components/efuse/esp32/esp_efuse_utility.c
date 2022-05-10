@@ -269,7 +269,7 @@ static void read_r_data(esp_efuse_block_t num_block, uint32_t* buf_r_data)
     }
 }
 
-// This function just checkes that given data for blocks will not rise a coding issue during the burn operation.
+// This function just checks that given data for blocks will not raise a coding issue during the burn operation.
 // Encoded data will be set during the burn operation.
 esp_err_t esp_efuse_utility_apply_new_coding_scheme()
 {
