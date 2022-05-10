@@ -81,7 +81,7 @@ def action_extensions(base_actions, project_path):
 
         return result
 
-    def monitor(action, ctx, args, print_filter, monitor_baud, encrypted, timestamps, timestamp_format):
+    def monitor(action, ctx, args, print_filter, monitor_baud, encrypted, no_reset, timestamps, timestamp_format):
         """
         Run idf_monitor.py to watch build output
         """
@@ -92,6 +92,12 @@ def action_extensions(base_actions, project_path):
         monitor_args = [PYTHON, idf_monitor]
 
         if project_desc['target'] != 'linux':
+            if no_reset and args.port is None:
+                msg = ('WARNING: --no-reset is ignored. '
+                       'Please specify the port with the --port argument in order to use this option.')
+                yellow_print(msg)
+                no_reset = False
+
             esp_port = args.port or _get_default_serial_port(args)
             monitor_args += ['-p', esp_port]
 
@@ -131,6 +137,9 @@ def action_extensions(base_actions, project_path):
 
         if encrypted:
             monitor_args += ['--encrypted']
+
+        if no_reset:
+            monitor_args += ['--no-reset']
 
         if timestamps:
             monitor_args += ['--timestamps']
@@ -259,6 +268,12 @@ def action_extensions(base_actions, project_path):
                                  'IDF Monitor will invoke encrypted-flash and encrypted-app-flash targets '
                                  'if this option is set. This option is set by default if IDF Monitor was invoked '
                                  'together with encrypted-flash or encrypted-app-flash target.'),
+                    }, {
+                        'names': ['--no-reset'],
+                        'is_flag': True,
+                        'help': ('Disable reset on monitor startup. '
+                                 'IDF Monitor will not reset the MCU target by toggling DTR/RTS lines on startup '
+                                 'if this option is set.'),
                     }, {
                         'names': ['--timestamps'],
                         'is_flag': True,

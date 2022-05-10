@@ -184,6 +184,15 @@ To decode each address, IDF Monitor runs the following command in the background
 
     Set environment variable ``ESP_MONITOR_DECODE`` to ``0`` or call idf_monitor.py with specific command line option: ``idf_monitor.py --disable-address-decoding`` to disable address decoding.
 
+Reset of the chip target on connect
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The reset of the target chip is performed using DTR and RTS serial lines. For preventing the reset of the target on idf monitor startup call idf_monitor.py with specific command line option: ``idf_monitor.py --no-reset``.
+
+.. note::
+
+    The same behavior can be achieved using ``idf.py monitor`` interface with specific command line option: ``--no-reset``. To prevent the reset on startup is required to call the command with explicitly set port ``idf.py monitor --no-reset -p [PORT]``
+
+
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
