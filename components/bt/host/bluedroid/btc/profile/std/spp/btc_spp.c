@@ -266,7 +266,7 @@ static void spp_free_slot(spp_slot_t *slot)
 
 static inline void btc_spp_cb_to_app(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
-    esp_spp_cb_t *btc_spp_cb = (esp_spp_cb_t *)btc_profile_cb_get(BTC_PID_SPP);
+    esp_spp_cb_t btc_spp_cb = (esp_spp_cb_t)btc_profile_cb_get(BTC_PID_SPP);
     if (btc_spp_cb) {
         btc_spp_cb(event, param);
     }
