@@ -438,7 +438,9 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 #endif
 
 const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy25);
+#endif // ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;
 
 #if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
@@ -555,7 +557,7 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 }
 
 // -------------------- Co-Processor -----------------------
-#if XCHAL_CP_NUM > 0
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
 void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
 
@@ -577,7 +579,7 @@ void vPortCleanUpCoprocArea( void * pxTCB )
     /* If task has live floating point registers somewhere, release them */
     _xt_coproc_release( coproc_area, xCoreID );
 }
-#endif /* XCHAL_CP_NUM > 0 */
+#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
 // ------- Thread Local Storage Pointers Deletion Callbacks -------
 
@@ -695,8 +697,8 @@ void vPortCleanUpTCB ( void *pxTCB )
     vPortTLSPointersDelCb( pxTCB );
 #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
 
-#if XCHAL_CP_NUM > 0
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
     /* Cleanup coproc save area */
     vPortCleanUpCoprocArea( pxTCB );
-#endif /* XCHAL_CP_NUM > 0 */
+#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 }

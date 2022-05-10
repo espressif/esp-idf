@@ -108,7 +108,9 @@
   Please change this when the tcb structure is changed
 */
 .extern pxCurrentTCBs
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 .extern offset_uxCoreAffinityMask
+#endif // ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
 /*
 --------------------------------------------------------------------------------
@@ -947,6 +949,7 @@ _xt_coproc_exc:
     beqz    a15, .L_goto_invalid            /* not in a thread (invalid) */
     #endif
 
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
     /* CP operations are incompatible with unpinned tasks. Thus we pin the task
     to the current running core. */
     movi    a2, pxCurrentTCBs
@@ -960,6 +963,8 @@ _xt_coproc_exc:
     movi    a4, 1
     sll     a4, a4                          /* a4 = uxCoreAffinityMask = (1 << core ID) */
     s32i    a4, a2, 0                       /* Store affinity mask to TCB.uxCoreAffinityMask */
+#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+
 #if CONFIG_FREERTOS_FPU_IN_ISR
 .L_skip_core_pin:
 #endif
