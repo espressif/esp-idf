@@ -95,7 +95,9 @@ def action_extensions(base_actions, project_path):
 
         if project_desc['target'] != 'linux':
             if no_reset and args.port is None:
-                sys.stderr.write('WARNING: --no-reset is ignored. Please specify the port with the --port argument in order to use this option.\n')
+                msg = ('WARNING: --no-reset is ignored. '
+                       'Please specify the port with the --port argument in order to use this option.')
+                yellow_print(msg)
                 no_reset = False
 
             esp_port = args.port or _get_default_serial_port(args)
@@ -269,7 +271,7 @@ def action_extensions(base_actions, project_path):
                                  'if this option is set. This option is set by default if IDF Monitor was invoked '
                                  'together with encrypted-flash or encrypted-app-flash target.'),
                     }, {
-                        'names': ['--no-reset', '-R'],
+                        'names': ['--no-reset'],
                         'is_flag': True,
                         'help': ('Disable reset on monitor startup. '
                                  'IDF Monitor will not reset the MCU target by toggling DTR/RTS lines on startup '

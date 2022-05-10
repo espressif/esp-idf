@@ -18,9 +18,8 @@ def get_parser():  # type: () -> argparse.ArgumentParser
     )
 
     parser.add_argument(
-        '--no-reset', '-R',
+        '--no-reset',
         help='Do not reset the chip on monitor startup',
-        default=False,
         action='store_true'
     )
 

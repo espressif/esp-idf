@@ -193,7 +193,6 @@ class SerialHandler:
             console_reader.stop()
             serial_reader.stop()
         elif cmd == CMD_RESET:
-            self.serial_instance.setDTR(high)  # IO0=HIGH, default state
             self.serial_instance.setRTS(low)  # EN=LOW, chip in reset
             self.serial_instance.setDTR(self.serial_instance.dtr)  # usbser.sys workaround
             time.sleep(reset_delay)
