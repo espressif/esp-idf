@@ -236,7 +236,7 @@ esp_err_t example_handle_config_app_key_add_evt(uint16_t app_idx)
             }
             if (k == ARRAY_SIZE(model->keys)) {
                 ESP_LOGE(TAG, "%s: Vendor model (model_id 0x%04x, cid: 0x%04x) is full of AppKey",
-                         __func__, model->vnd.model_id, model->vnd.company_id);
+                         __func__, model->vnd.vnd_model_id, model->vnd.company_id);
             }
         }
     }

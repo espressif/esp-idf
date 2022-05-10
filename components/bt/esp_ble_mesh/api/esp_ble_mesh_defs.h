@@ -285,7 +285,7 @@ typedef enum {
 #define ESP_BLE_MESH_VENDOR_MODEL(_company, _id, _op, _pub, _user_data) \
 {                                                                       \
     .vnd.company_id = (_company),                                       \
-    .vnd.model_id = (_id),                                              \
+    .vnd.vnd_model_id = (_id),                                              \
     .op = _op,                                                          \
     .pub = _pub,                                                        \
     .keys = { [0 ... (CONFIG_BLE_MESH_MODEL_KEY_COUNT - 1)] =           \
@@ -480,7 +480,7 @@ struct esp_ble_mesh_model {
         const uint16_t model_id; /*!< 16-bit model identifier */
         struct {
             uint16_t company_id; /*!< 16-bit company identifier */
-            uint16_t model_id; /*!< 16-bit model identifier */
+            uint16_t vnd_model_id; /*!< 16-bit vendor model identifier */
         } vnd; /*!< Structure encapsulating a model ID with a company ID */
     };
 

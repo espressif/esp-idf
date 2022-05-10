@@ -330,7 +330,7 @@ esp_err_t genie_model_msg_send(genie_model_msg_t *p_model_msg)
         return err;
     }
 
-    ESP_LOGD(TAG, "p_model: %p, cid: 0x%04x, id: 0x%04x, opcode: 0x%02x, retry: %d", p_model, p_model->vnd.company_id, p_model->vnd.model_id, p_model_msg->opid, p_model_msg->retry);
+    ESP_LOGD(TAG, "p_model: %p, cid: 0x%04x, id: 0x%04x, opcode: 0x%02x, retry: %d", p_model, p_model->vnd.company_id, p_model->vnd.vnd_model_id, p_model_msg->opid, p_model_msg->retry);
 
     if(p_model_msg->tid == 0) {
         p_model_msg->tid = genie_model_msg_gen_tid();
