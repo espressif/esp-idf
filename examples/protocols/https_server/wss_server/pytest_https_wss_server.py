@@ -5,17 +5,16 @@
 
 from __future__ import division, print_function, unicode_literals
 
+import logging
 import os
-import re
 import threading
 import time
 from types import TracebackType
 from typing import Any, Optional
 
-import tiny_test_fw
-import ttfw_idf
+import pytest
 import websocket
-from tiny_test_fw import Utility
+from pytest_embedded import Dut
 
 OPCODE_TEXT = 0x1
 OPCODE_BIN = 0x2
@@ -74,12 +73,12 @@ class wss_client_thread(threading.Thread):
                     if opcode == OPCODE_TEXT:
                         if data == CORRECT_ASYNC_DATA:
                             self.async_response = True
-                            Utility.console_log('Thread {} obtained correct async message'.format(self.name))
+                            logging.info('Thread {} obtained correct async message'.format(self.name))
                     # Keep sending pong to update the keepalive in the server
                     if (time.time() - self.start_time) > 20:
                         break
                 except Exception as e:
-                    Utility.console_log('Failed to connect to the client and read async data')
+                    logging.info('Failed to connect to the client and read async data')
                     self.exc = e  # type: ignore
         if self.async_response is not True:
             self.exc = RuntimeError('Failed to obtain correct async data')  # type: ignore
@@ -98,7 +97,7 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
             thread.start()
             threads.append(thread)
         except OSError:
-            Utility.console_log('Error: unable to start thread')
+            logging.info('Error: unable to start thread')
         # keep delay of 5 seconds between two connections to avoid handshake timeout
         time.sleep(5)
 
@@ -106,76 +105,72 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
         t.join()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
-def test_examples_protocol_https_wss_server(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
-
-    # Acquire DUT
-    dut1 = env.get_dut('https_server', 'examples/protocols/https_server/wss_server', dut_class=ttfw_idf.ESP32DUT)
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.wifi
+def test_examples_protocol_https_wss_server(dut: Dut) -> None:
 
     # Get binary file
-    binary_file = os.path.join(dut1.app.binary_path, 'wss_server.bin')
+    binary_file = os.path.join(dut.app.binary_path, 'wss_server.bin')
     bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance('https_wss_server_bin_size', '{}KB'.format(bin_size // 1024))
+    logging.info('https_wss_server_bin_size : {}KB'.format(bin_size // 1024))
 
-    # Upload binary and start testing
-    Utility.console_log('Starting wss_server test app')
-    dut1.start_app()
+    logging.info('Starting wss_server test app')
 
     # Parse IP address of STA
-    got_port = dut1.expect(re.compile(r'Server listening on port (\d+)'), timeout=60)[0]
-    Utility.console_log('Waiting to connect with AP')
-    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=60)[0]
+    got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
+    logging.info('Waiting to connect with AP')
 
-    Utility.console_log('Got IP   : ' + got_ip)
-    Utility.console_log('Got Port : ' + got_port)
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+
+    logging.info('Got IP   : {}'.format(got_ip))
+    logging.info('Got Port : {}'.format(got_port))
 
     ca_file = os.path.join(os.path.dirname(__file__), 'main', 'certs', 'servercert.pem')
     # Start ws server test
     with WsClient(got_ip, int(got_port), ca_file) as ws:
         # Check for echo
         DATA = 'Espressif'
-        dut1.expect('performing session handshake')
-        client_fd = dut1.expect(re.compile(r'New client connected (\d+)'), timeout=20)[0]
+        dut.expect('performing session handshake')
+        client_fd = int(dut.expect(r'New client connected (\d+)', timeout=30)[1].decode())
         ws.write(data=DATA, opcode=OPCODE_TEXT)
-        dut1.expect(re.compile(r'Received packet with message: {}'.format(DATA)))
+        dut.expect(r'Received packet with message: {}'.format(DATA))
         opcode, data = ws.read()
         data = data.decode('UTF-8')
         if data != DATA:
             raise RuntimeError('Failed to receive the correct echo response')
-        Utility.console_log('Correct echo response obtained from the wss server')
+        logging.info('Correct echo response obtained from the wss server')
 
         # Test for keepalive
-        Utility.console_log('Testing for keep alive (approx time = 20s)')
+        logging.info('Testing for keep alive (approx time = 20s)')
         start_time = time.time()
         while True:
             try:
                 opcode, data = ws.read()
                 if opcode == OPCODE_PING:
                     ws.write(data='Espressif', opcode=OPCODE_PONG)
-                    Utility.console_log('Received PING, replying PONG (to update the keepalive)')
+                    logging.info('Received PING, replying PONG (to update the keepalive)')
                 # Keep sending pong to update the keepalive in the server
                 if (time.time() - start_time) > 20:
                     break
             except Exception:
-                Utility.console_log('Failed the test for keep alive,\nthe client got abruptly disconnected')
+                logging.info('Failed the test for keep alive,\nthe client got abruptly disconnected')
                 raise
 
         # keepalive timeout is 10 seconds so do not respond for (10 + 1) senconds
-        Utility.console_log('Testing if client is disconnected if it does not respond for 10s i.e. keep_alive timeout (approx time = 11s)')
+        logging.info('Testing if client is disconnected if it does not respond for 10s i.e. keep_alive timeout (approx time = 11s)')
         try:
-            dut1.expect('Client not alive, closing fd {}'.format(client_fd), timeout=20)
-            dut1.expect('Client disconnected {}'.format(client_fd))
+            dut.expect('Client not alive, closing fd {}'.format(client_fd), timeout=20)
+            dut.expect('Client disconnected {}'.format(client_fd))
         except Exception:
-            Utility.console_log('ENV_ERROR:Failed the test for keep alive,\nthe connection was not closed after timeout')
+            logging.info('ENV_ERROR:Failed the test for keep alive,\nthe connection was not closed after timeout')
 
         time.sleep(11)
-        Utility.console_log('Passed the test for keep alive')
+        logging.info('Passed the test for keep alive')
 
     # Test keep alive and async response for multiple simultaneous client connections
-    Utility.console_log('Testing for multiple simultaneous client connections (approx time = 30s)')
+    logging.info('Testing for multiple simultaneous client connections (approx time = 30s)')
     test_multiple_client_keep_alive_and_async_response(got_ip, int(got_port), ca_file)
-    Utility.console_log('Passed the test for multiple simultaneous client connections')
-
-
-if __name__ == '__main__':
-    test_examples_protocol_https_wss_server()  # pylint: disable=no-value-for-parameter
+    logging.info('Passed the test for multiple simultaneous client connections')
