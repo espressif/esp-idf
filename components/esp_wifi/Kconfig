@@ -98,7 +98,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_CACHE_TX_BUFFER_NUM
         int "Max number of WiFi cache TX buffers"
-        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
+        depends on SPIRAM
         range 16 128
         default 32
         help
@@ -171,7 +171,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_AMSDU_TX_ENABLED
         bool "WiFi AMSDU TX"
-        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
+        depends on SPIRAM
         default n
         help
             Select this option to enable AMSDU TX feature
@@ -226,7 +226,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
-        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
         default y
         help
             Select this option to place frequently called Wi-Fi library functions in IRAM.
@@ -235,7 +235,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_RX_IRAM_OPT
         bool "WiFi RX IRAM speed optimization"
-        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
         default y
         help
             Select this option to place frequently called Wi-Fi library RX functions in IRAM.

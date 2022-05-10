@@ -1,4 +1,6 @@
 menu "Hardware Settings"
+    orsource "./port/$IDF_TARGET/Kconfig.spiram"
+
     menu "MAC Config"
         config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
             bool
@@ -69,6 +71,26 @@ menu "Hardware Settings"
                 increase during light sleep. If the CS pin of Flash has an external
                 pull-up, you do not need to select this option, otherwise, you
                 should enable this option.
+
+        config ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
+            int "Extra delay in deep sleep wake stub (in us)"
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            default 2000
+            range 0 5000
+            help
+                When the chip exits deep sleep, the CPU and the flash chip are powered on
+                at the same time. CPU will run deep sleep stub first, and then
+                proceed to load code from flash. Some flash chips need sufficient
+                time to pass between power on and first read operation. By default,
+                without any extra delay, this time is approximately 900us, although
+                some flash chip types need more than that.
+
+                By default extra delay is set to 2000us. When optimizing startup time
+                for applications which require it, this value may be reduced.
+
+                If you are seeing "flash read err, 1000" message printed to the
+                console after deep sleep reset, try increasing this value.
+
     endmenu
 
     menu "RTC Clock Config"
