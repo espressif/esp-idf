@@ -48,10 +48,12 @@ static const char* TAG = "phy_init";
 
 static _lock_t s_phy_access_lock;
 
+#if !CONFIG_IDF_TARGET_ESP32C2 // TODO - WIFI-4424
 static DRAM_ATTR struct {
     int     count;  /* power on count of wifi and bt power domain */
     _lock_t lock;
 } s_wifi_bt_pd_controller = { .count = 0 };
+#endif
 
 /* Indicate PHY is calibrated or not */
 static bool s_is_phy_calibrated = false;
@@ -284,26 +286,30 @@ void esp_phy_disable(void)
 
 void IRAM_ATTR esp_wifi_bt_power_domain_on(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32C2 // TODO - WIFI-4424
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (s_wifi_bt_pd_controller.count++ == 0) {
-//        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
 #if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
         SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
         CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_BB_RST | SYSTEM_FE_RST);
 #endif
-  //      CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
+#endif
 }
 
 void esp_wifi_bt_power_domain_off(void)
 {
+#if !CONFIG_IDF_TARGET_ESP32C2 // TODO - WIFI-4424
     _lock_acquire(&s_wifi_bt_pd_controller.lock);
     if (--s_wifi_bt_pd_controller.count == 0) {
-    //    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
-      //  SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_ISO);
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PD);
     }
     _lock_release(&s_wifi_bt_pd_controller.lock);
+#endif
 }
 
 #if CONFIG_MAC_BB_PD

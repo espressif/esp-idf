@@ -196,7 +196,7 @@ int coex_schm_curr_phase_idx_set(int idx);
 int coex_schm_curr_phase_idx_get(void);
 
 /**
- * @brief TODO
+ * @brief TODO - WIFI-4423
  *
  */
 int coex_register_start_cb(int (* cb)(void));

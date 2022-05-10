@@ -30,7 +30,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_BT_SUPPORTED                0 // Enable during bringup, IDF-4357
-#define SOC_WIFI_SUPPORTED              0 // Enable during bringup, IDF-3905
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
