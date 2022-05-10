@@ -386,9 +386,6 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 
-/*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
-#define SOC_WIFI_HW_TSF                 (1)
-
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 #define SOC_MAC_BB_PD_MEM_SIZE          (192*4)
@@ -419,3 +416,8 @@
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+
+/*------------------------------------ WI-FI CAPS ------------------------------------*/
+#define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
+#define SOC_WIFI_FTM_SUPPORT            (1)    /*!< FTM Support */
+#define SOC_WIFI_GCMP_SUPPORT           (1)    /*!< GCMP Support(GCMP128 and GCMP256) */
