@@ -19,6 +19,7 @@
 
 #include <esp_https_server.h>
 #include "esp_tls.h"
+#include "sdkconfig.h"
 
 /* A simple example that demonstrates how to create GET and POST
  * handlers and start an HTTPS server.
