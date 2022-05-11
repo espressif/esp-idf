@@ -795,16 +795,19 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             }
             const rmt_item32_t *pdata = p_rmt->tx_data;
             size_t len_rem = p_rmt->tx_len_rem;
+            rmt_idle_level_t idle_level = rmt_ll_tx_get_idle_level(hal->regs, channel);
+            rmt_item32_t stop_data = (rmt_item32_t) {
+                .level0 = idle_level,
+                .duration0 = 0,
+            };
             if (len_rem >= p_rmt->tx_sub_len) {
                 rmt_fill_memory(channel, pdata, p_rmt->tx_sub_len, p_rmt->tx_offset);
                 p_rmt->tx_data += p_rmt->tx_sub_len;
                 p_rmt->tx_len_rem -= p_rmt->tx_sub_len;
             } else if (len_rem == 0) {
-                rmt_item32_t stop_data = {0};
                 rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_offset);
             } else {
                 rmt_fill_memory(channel, pdata, len_rem, p_rmt->tx_offset);
-                rmt_item32_t stop_data = {0};
                 rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_offset + len_rem);
                 p_rmt->tx_data += len_rem;
                 p_rmt->tx_len_rem -= len_rem;
@@ -1140,7 +1143,11 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t *rmt_item, i
         p_rmt->tx_sub_len = item_sub_len;
     } else {
         rmt_fill_memory(channel, rmt_item, len_rem, 0);
-        rmt_item32_t stop_data = {0};
+        rmt_idle_level_t idle_level = rmt_ll_tx_get_idle_level(rmt_contex.hal.regs, channel);
+        rmt_item32_t stop_data = (rmt_item32_t) {
+            .level0 = idle_level,
+            .duration0 = 0,
+        };
         rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, len_rem);
         p_rmt->tx_len_rem = 0;
     }
@@ -1276,7 +1283,11 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
         p_rmt->tx_sub_len = item_sub_len;
         p_rmt->translator = true;
     } else {
-        rmt_item32_t stop_data = {0};
+        rmt_idle_level_t idle_level = rmt_ll_tx_get_idle_level(rmt_contex.hal.regs, channel);
+        rmt_item32_t stop_data = (rmt_item32_t) {
+            .level0 = idle_level,
+            .duration0 = 0,
+        };
         rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_len_rem);
         p_rmt->tx_len_rem = 0;
         p_rmt->sample_cur = NULL;
