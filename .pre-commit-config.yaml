@@ -102,8 +102,8 @@ repos:
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
         additional_dependencies:
-          - 'mypy==0.800'
-          - 'mypy-extensions==0.4.3'
+          - 'mypy==1.0.1'
+          - 'mypy-extensions==1.0.0'
         exclude: >
           (?x)^(
               .*_pb2.py
