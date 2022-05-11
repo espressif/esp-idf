@@ -14,6 +14,7 @@ Tasks Snapshot
 
 The header ``task_snapshot.h`` has been removed from ``freertos/task.h``. ESP-IDF developers should include ``"freertos/task_snapshot.h``` in case they need tasks snapshot API.
 
+The function :cpp:func:`vTaskGetSnapshot` now returns ``BaseType_t``. Return value shall be ``pdTRUE`` on success and ``pdFALSE`` otherwise.
 
 FreeRTOS Asserts
 ----------------
