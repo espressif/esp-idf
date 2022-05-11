@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/dport_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"

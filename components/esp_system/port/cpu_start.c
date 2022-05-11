@@ -27,17 +27,13 @@
 #include "soc/dport_reg.h"
 #include "esp32/rtc.h"
 #include "esp32/rom/cache.h"
-#include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rtc.h"
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/spiram.h"
 #include "esp32s2/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rtc.h"
 #include "esp32s3/rom/cache.h"
-#include "esp32s3/spiram.h"
-#include "esp_private/mmu_psram.h"
 #include "esp_memprot.h"
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
@@ -55,6 +51,11 @@
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/memprot.h"
+#endif
+
+#if CONFIG_SPIRAM
+#include "esp_psram.h"
+#include "esp_private/esp_psram_extram.h"
 #endif
 
 #include "esp_private/spi_flash_os.h"
@@ -385,7 +386,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
-    if (esp_spiram_init() != ESP_OK) {
+    if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
@@ -399,12 +400,6 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
 #endif
     }
-    //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32
-    if (g_spiram_ok) {
-        esp_spiram_init_cache();
-    }
-#endif  //#if CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -433,26 +428,25 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // SOC_CPU_CORES_NUM > 1
 
 #if CONFIG_SPIRAM_MEMTEST
-    //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32
     if (g_spiram_ok) {
-        bool ext_ram_ok = esp_spiram_test();
+        bool ext_ram_ok = esp_psram_extram_test();
         if (!ext_ram_ok) {
             ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
             abort();
         }
     }
-#endif  //CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif  //CONFIG_SPIRAM_MEMTEST
 
-
+//TODO: IDF-5023, replace with MMU driver
 #if CONFIG_IDF_TARGET_ESP32S3
     int s_instr_flash2spiram_off = 0;
     int s_rodata_flash2spiram_off = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    extern int instruction_flash2spiram_offset(void);
     s_instr_flash2spiram_off = instruction_flash2spiram_offset();
 #endif
 #if CONFIG_SPIRAM_RODATA
+    extern int rodata_flash2spiram_offset(void);
     s_rodata_flash2spiram_off = rodata_flash2spiram_offset();
 #endif
 

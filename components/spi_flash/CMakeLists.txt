@@ -76,3 +76,11 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
         " -fno-inline-small-functions -fno-inline-functions-called-once")
 endif()
+
+if(NOT BOOTLOADER_BUILD)
+    if(CONFIG_SPIRAM)
+        # [refactor-todo]: requires "esp_psram" for few MMU usages in `flash_mmap.c`
+        # will be replaced with MMU requirements
+        idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+endif()

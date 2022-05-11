@@ -12,7 +12,9 @@
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "esp_memory_utils.h"
-#include "esp_private/spiram_private.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#endif
 
 
 bool esp_ptr_dma_ext_capable(const void *p)
@@ -23,7 +25,7 @@ bool esp_ptr_dma_ext_capable(const void *p)
 #if CONFIG_SPIRAM
     intptr_t vaddr_start = 0;
     intptr_t vaddr_end = 0;
-    esp_spiram_get_mapped_range(&vaddr_start, &vaddr_end);
+    esp_psram_extram_get_mapped_range(&vaddr_start, &vaddr_end);
     return (intptr_t)p >= vaddr_start && (intptr_t)p < vaddr_end;
 #else
     return false;
@@ -44,7 +46,7 @@ bool esp_ptr_byte_accessible(const void *p)
 #if CONFIG_SPIRAM
     intptr_t vaddr_start = 0;
     intptr_t vaddr_end = 0;
-    esp_spiram_get_mapped_range(&vaddr_start, &vaddr_end);
+    esp_psram_extram_get_mapped_range(&vaddr_start, &vaddr_end);
     r |= (ip >= vaddr_start && ip < vaddr_end);
 #endif
     return r;
@@ -58,7 +60,7 @@ bool esp_ptr_external_ram(const void *p)
 #if CONFIG_SPIRAM
     intptr_t vaddr_start = 0;
     intptr_t vaddr_end = 0;
-    esp_spiram_get_mapped_range(&vaddr_start, &vaddr_end);
+    esp_psram_extram_get_mapped_range(&vaddr_start, &vaddr_end);
     return (intptr_t)p >= vaddr_start && (intptr_t)p < vaddr_end;
 #else
     return false;
@@ -70,7 +72,7 @@ bool esp_stack_ptr_in_extram(uint32_t sp)
 {
     intptr_t vaddr_start = 0;
     intptr_t vaddr_end = 0;
-    esp_spiram_get_mapped_range(&vaddr_start, &vaddr_end);
+    esp_psram_extram_get_mapped_range(&vaddr_start, &vaddr_end);
     //Check if stack ptr is in between SOC_EXTRAM_DATA_LOW and SOC_EXTRAM_DATA_HIGH, and 16 byte aligned.
     return !(sp < vaddr_start + 0x10 || sp > vaddr_end - 0x10 || ((sp & 0xF) != 0));
 }

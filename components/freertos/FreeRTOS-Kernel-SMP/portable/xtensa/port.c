@@ -28,7 +28,9 @@
 #include "esp_task_wdt.h"
 #include "esp_heap_caps_init.h"
 #include "esp_freertos_hooks.h"
-#include "esp32/spiram.h"                   /* Required by esp_spiram_reserve_dma_pool() */
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"                      /* Required by esp_psram_extram_reserve_dma_pool() */
+#endif
 #ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
 #endif
@@ -181,7 +183,7 @@ static void main_task(void* args)
     // Now we have startup stack RAM available for heap, enable any DMA pool memory
 #if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
     if (g_spiram_ok) {
-        esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+        esp_err_t r = esp_psram_extram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
             abort();

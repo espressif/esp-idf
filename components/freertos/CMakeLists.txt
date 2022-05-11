@@ -165,3 +165,7 @@ if(CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER)
     # Introduce a port wrapper function to avoid including esp_timer.h into the public header
     idf_component_optional_requires(PUBLIC esp_timer)
 endif()
+
+if(CONFIG_SPIRAM)
+    idf_component_optional_requires(PRIVATE esp_psram)
+endif()

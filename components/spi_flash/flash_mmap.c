@@ -24,15 +24,11 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
-#include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp_private/mmu_psram.h"
 #include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
-#include "esp_private/mmu_psram.h"
-#include "esp32s3/spiram.h"
 #include "soc/extmem_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
@@ -40,6 +36,11 @@
 #include "esp32h2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
+#endif
+
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#include "esp_private/mmu.h"
 #endif
 
 #ifndef NDEBUG
@@ -259,7 +260,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
     if (need_flush) {
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_SPIRAM
-        esp_spiram_writeback_cache();
+        esp_psram_extram_writeback_cache();
 #endif // CONFIG_SPIRAM
         Cache_Flush(0);
 #if !CONFIG_FREERTOS_UNICORE
@@ -497,7 +498,7 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
         if (is_page_mapped_in_cache(page, &vaddr)) {
 #if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_SPIRAM
-            esp_spiram_writeback_cache();
+            esp_psram_extram_writeback_cache();
 #endif
             Cache_Flush(0);
 #ifndef CONFIG_FREERTOS_UNICORE

@@ -11,7 +11,7 @@
 #include "soc/soc.h"
 #include "esp_system.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "spiram.h"
+#include "esp_private/esp_psram_extram.h"
 #endif
 #include "test_utils.h"
 
@@ -95,7 +95,7 @@ static void write_spiram_and_reset(void)
     }
     printf("Flushing cache\n");
     // Flush the cache out to SPIRAM before resetting.
-    esp_spiram_writeback_cache();
+    esp_psram_extram_writeback_cache();
 
     printf("Restarting\n");
     // Reset to test that noinit memory is left intact.

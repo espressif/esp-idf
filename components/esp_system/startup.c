@@ -71,13 +71,8 @@
 
 #include "esp_rom_sys.h"
 
-// [refactor-todo] make this file completely target-independent
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/spiram.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
 #endif
 /***********************************************/
 
@@ -253,7 +248,7 @@ static void do_core_init(void)
 
     if (g_spiram_ok) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-        esp_err_t r=esp_spiram_add_to_heapalloc();
+        esp_err_t r=esp_psram_extram_add_to_heap_allocator();
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
             abort();

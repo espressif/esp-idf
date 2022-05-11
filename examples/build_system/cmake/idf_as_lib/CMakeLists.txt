@@ -15,7 +15,7 @@ if("${TARGET}" IN_LIST targets)
                     # although esptool_py does not generate static library,
                     # processing the component is needed for flashing related
                     # targets and file generation
-                    COMPONENTS freertos esptool_py
+                    COMPONENTS freertos esptool_py esp_psram
                     SDKCONFIG ${CMAKE_CURRENT_LIST_DIR}/sdkconfig
                     BUILD_DIR ${CMAKE_BINARY_DIR})
 else()
@@ -33,7 +33,7 @@ add_executable(${elf_file} main.c)
 
 # Link the static libraries to the executable
 if("${TARGET}" IN_LIST targets)
-    target_link_libraries(${elf_file} idf::freertos idf::spi_flash)
+    target_link_libraries(${elf_file} idf::freertos idf::spi_flash idf::esp_psram)
     # Attach additional targets to the executable file for flashing,
     # linker script generation, partition_table generation, etc.
     idf_build_executable(${elf_file})
