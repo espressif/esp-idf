@@ -55,11 +55,12 @@ Iterators allow to list key-value pairs stored in NVS, based on specified partit
 
 There are the following functions available:
 
-- :cpp:func:`nvs_entry_find` returns an opaque handle, which is used in subsequent calls to the :cpp:func:`nvs_entry_next` and :cpp:func:`nvs_entry_info` functions.
-- :cpp:func:`nvs_entry_next` returns iterator to the next key-value pair.
+- :cpp:func:`nvs_entry_find` creates an opaque handle, which is used in subsequent calls to the :cpp:func:`nvs_entry_next` and :cpp:func:`nvs_entry_info` functions.
+- :cpp:func:`nvs_entry_next` advances an iterator to the next key-value pair.
 - :cpp:func:`nvs_entry_info` returns information about each key-value pair
 
-If none or no other key-value pair was found for given criteria, :cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` return NULL. In that case, the iterator does not have to be released. If the iterator is no longer needed, you can release it by using the function :cpp:func:`nvs_release_iterator`.
+In general, all iterators obtained via :cpp:func:`nvs_entry_find` have to be released using :cpp:func:`nvs_release_iterator`, which also tolerates ``NULL`` iterators.
+:cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` will set the given iterator to ``NULL`` or a valid iterator in all cases except a parameter error occured (i.e., return ``ESP_ERR_NVS_NOT_FOUND``). In case of a parameter error, the given iterator will not be modified. Hence, it is best practice to initialize the iterator to ``NULL`` before calling :cpp:func:`nvs_entry_find` to avoid complicated error checking before releasing the iterator.
 
 
 Security, tampering, and robustness

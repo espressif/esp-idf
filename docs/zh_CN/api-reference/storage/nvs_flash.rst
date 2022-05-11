@@ -55,11 +55,12 @@ NVS 迭代器
 
 您可以使用以下函数，执行相关操作：
 
-- ``nvs_entry_find``：返回一个不透明句柄，用于后续调用 ``nvs_entry_next`` 和 ``nvs_entry_info`` 函数；
-- ``nvs_entry_next``：返回指向下一个键值对的迭代器；
+- ``nvs_entry_find``：创建一个不透明句柄，用于后续调用 ``nvs_entry_next`` 和 ``nvs_entry_info`` 函数；
+- ``nvs_entry_next``：让迭代器指向下一个键值对；
 - ``nvs_entry_info``：返回每个键值对的信息。
 
-如果未找到符合标准的键值对，``nvs_entry_find`` 和 ``nvs_entry_next`` 将返回 NULL，此时不必释放迭代器。若不再需要迭代器，可使用 ``nvs_release_iterator`` 释放迭代器。
+总的来说，所有通过 :cpp:func:`nvs_entry_find` 获得的迭代器（包括 ``NULL`` 迭代器）都必须使用 :cpp:func:`nvs_release_iterator` 释放。
+一般情况下，:cpp:func:`nvs_entry_find` 和 :cpp:func:`nvs_entry_next` 会将给定的迭代器设置为 ``NULL`` 或为一个有效的迭代器。但如果出现参数错误（如返回 ``ESP_ERR_NVS_NOT_FOUND``），给定的迭代器不会被修改。因此，在调用 :cpp:func:`nvs_entry_find` 之前最好将迭代器初始化为 ``NULL``，这样可以避免在释放迭代器之前进行复杂的错误检查。
 
 
 安全性、篡改性及鲁棒性
@@ -168,7 +169,7 @@ ESP-IDF :example:`storage` 目录下提供了数个代码示例：
 
 :example:`storage/nvs_rw_blob`　
 
-  演示如何读取及写入 NVS 单个整数值和 Blob（二进制大对象），并在 NVS 中存储这一数值，即便 {IDF_TARGET_NAME} 模组重启也不会消失。
+  演示如何读取及写入 NVS 单个整数值和 BLOB（二进制大对象），并在 NVS 中存储这一数值，即便 {IDF_TARGET_NAME} 模组重启也不会消失。
 
     * value - 记录 {IDF_TARGET_NAME} 模组软重启次数和硬重启次数。
     * blob - 内含记录模组运行次数的表格。此表格将被从 NVS 读取至动态分配的 RAM 上。每次手动软重启后，表格内运行次数即增加一次，新加的运行次数被写入 NVS。下拉 GPIO0 即可手动软重启。
@@ -177,7 +178,7 @@ ESP-IDF :example:`storage` 目录下提供了数个代码示例：
 
 :example:`storage/nvs_rw_value_cxx`
 
-  这个例子与 :example:`storage/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 处理类。
+  这个例子与 :example:`storage/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类。
 
 内部实现
 ---------
