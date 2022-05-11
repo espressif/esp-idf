@@ -66,7 +66,7 @@ typedef struct {
         unsigned int de_idle_high: 1;    /*!< The de signal is high in IDLE state */
         unsigned int pclk_active_neg: 1; /*!< Whether the display data is clocked out at the falling edge of PCLK */
         unsigned int pclk_idle_high: 1;  /*!< The PCLK stays at high level in IDLE phase */
-    } flags;
+    } flags;                             /*!< LCD RGB timing flags */
 } esp_lcd_rgb_timing_t;
 
 /**
@@ -106,7 +106,7 @@ typedef struct {
         unsigned int disp_active_low: 1; /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
         unsigned int relax_on_idle: 1;   /*!< If this flag is enabled, the host won't refresh the LCD if nothing changed in host's frame buffer (this is usefull for LCD with built-in GRAM) */
         unsigned int fb_in_psram: 1;     /*!< If this flag is enabled, the frame buffer will be allocated from PSRAM preferentially */
-    } flags;
+    } flags;                             /*!< LCD RGB panel configuration flags */
 } esp_lcd_rgb_panel_config_t;
 
 /**

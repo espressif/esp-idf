@@ -121,7 +121,7 @@ typedef struct {
         struct {
             uint16_t data:     12;  /*!<ADC real output data info. Resolution: 12 bit. */
             uint16_t channel:   4;  /*!<ADC channel index info. */
-        } type1;
+        } type1;                    /*!<ADC type1 */
         struct {
             uint16_t data:     11;  /*!<ADC real output data info. Resolution: 11 bit. */
             uint16_t channel:   4;  /*!<ADC channel index info. For ESP32-S2:

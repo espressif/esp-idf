@@ -6,12 +6,20 @@
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
+ulp-legacy.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_load_binary (uint32_t load_addr, const uint8_t *program_binary, size_t program_size)'.
+ulp-legacy.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_run (uint32_t entry_point)'.
+ulp-legacy.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_set_wakeup_period (size_t period_index, uint32_t period_us)'.
+README.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_run (uint32_t entry_point)'.
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: uint16_t model_id'.
 esp_bt_defs.inc:line: WARNING: Duplicate C declaration, also defined at api-reference/bluetooth/esp_blufi:line.
 Declaration is '.. c:macro:: ESP_BD_ADDR_LEN'.
 esp_bt_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp_blufi:line.
-Declaration is '.. cpp:type:: uint8_t esp_bd_addr_t [ESP_BD_ADDR_LEN]'.
+Declaration is '.. cpp:type:: uint8_t esp_bd_addr_t [6]'.
 esp_spp_api.inc:line: WARNING: Error in type declaration.
 If typedef-like declaration:
   Type must be either just a name or a typedef-like declaration.

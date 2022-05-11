@@ -12,6 +12,7 @@
 from __future__ import print_function, unicode_literals
 
 import os.path
+import re
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
 

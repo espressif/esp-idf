@@ -25,7 +25,7 @@ typedef enum {
  * @brief Callback data struct, contains the ESP-TLS connection handle
  */
 typedef struct esp_https_server_user_cb_arg {
-    const esp_tls_t *tls;
+    const esp_tls_t *tls;        /*!< ESP-TLS connection handle */
 } esp_https_server_user_cb_arg_t;
 
 /**

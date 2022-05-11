@@ -65,10 +65,10 @@ typedef struct {
     union {
         struct {
             uint8_t address;                    /**< New device's address */
-        } new_dev;
+        } new_dev;                              /**< New device info */
         struct {
             usb_device_handle_t dev_hdl;        /**< The handle of the device that was gone */
-        } dev_gone;
+        } dev_gone;                             /**< Gone device info */
     };
 } usb_host_client_event_msg_t;
 
@@ -120,7 +120,7 @@ typedef struct {
         struct {
             usb_host_client_event_cb_t client_event_callback;   /**< Client's event callback function */
             void *callback_arg;                                 /**< Event callback function argument */
-        } async;
+        } async;                                                /**< Async callback config */
     };
 } usb_host_client_config_t;
 

@@ -327,9 +327,9 @@ typedef enum {
 /**
  * @brief Revokes the old signature digest. To be called in the application after the rollback logic.
  *
- * Relevant for Secure boot v2 on ESP32-S2 where upto 3 key digests can be stored (Key #N-1, Key #N, Key #N+1).
- * When key #N-1 used to sign an app is invalidated, an OTA update is to be sent with an app signed with key #N-1 & Key #N.
- * After successfully booting the OTA app should call this function to revoke Key #N-1.
+ * Relevant for Secure boot v2 on ESP32-S2, ESP32-S3, ESP32-C3 where upto 3 key digests can be stored (Key \#N-1, Key \#N, Key \#N+1).
+ * When key \#N-1 used to sign an app is invalidated, an OTA update is to be sent with an app signed with key \#N-1 & Key \#N.
+ * After successfully booting the OTA app should call this function to revoke Key \#N-1.
  *
  * @param index - The index of the signature block to be revoked
  *

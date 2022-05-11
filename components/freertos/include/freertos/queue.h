@@ -1398,9 +1398,6 @@ BaseType_t xQueueGenericSendFromISR( QueueHandle_t xQueue,
                                      const BaseType_t xCopyPosition ) PRIVILEGED_FUNCTION;
 BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
                               BaseType_t * const pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
-/**@}*/
-/** @endcond */
-
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
