@@ -859,6 +859,10 @@ config SOC_PM_SUPPORT_TAGMEM_PD
     bool
     default y
 
+config SOC_PM_SUPPORT_RTC_PERIPH_PD
+    bool
+    default y
+
 config SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     bool
     default y

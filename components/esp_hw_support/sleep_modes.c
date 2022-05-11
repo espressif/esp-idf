@@ -155,7 +155,16 @@ _Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should 
 
 static sleep_config_t s_config = {
     .pd_options = {
-        ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO, ESP_PD_OPTION_AUTO,
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+        ESP_PD_OPTION_AUTO,
+#endif
+#if SOC_RTC_SLOW_MEM_SUPPORTED
+        ESP_PD_OPTION_AUTO,
+#endif
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        ESP_PD_OPTION_AUTO,
+#endif
+        ESP_PD_OPTION_AUTO,
 #if SOC_PM_SUPPORT_CPU_PD
         ESP_PD_OPTION_AUTO,
 #endif
@@ -962,6 +971,7 @@ static void ext1_wakeup_prepare(void)
         rtcio_hal_input_enable(rtc_pin);
 #endif
 
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
         // Pad configuration depends on RTC_PERIPH state in sleep mode
         if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
@@ -973,6 +983,7 @@ static void ext1_wakeup_prepare(void)
 #endif
             rtcio_hal_hold_enable(rtc_pin);
         }
+#endif
         // Keep track of pins which are processed to bail out early
         rtc_gpio_mask &= ~BIT(rtc_pin);
     }
@@ -1196,6 +1207,7 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
+#if SOC_RTC_FAST_MEM_SUPPORTED
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* RTC_FAST_MEM is needed for deep sleep stub.
        If RTC_FAST_MEM is Auto, keep it powered on, so that deep sleep stub can run.
@@ -1207,7 +1219,9 @@ static uint32_t get_power_down_flags(void)
     /* If RTC_FAST_MEM is used for heap, force RTC_FAST_MEM to be powered on. */
     s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
 #endif
+#endif
 
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
     // RTC_PERIPH is needed for EXT0 wakeup and GPIO wakeup.
     // If RTC_PERIPH is auto, and EXT0/GPIO aren't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
@@ -1224,6 +1238,7 @@ static uint32_t get_power_down_flags(void)
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_OFF;
         }
 #else
+
         if (s_config.wakeup_triggers & RTC_GPIO_TRIG_EN) {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
         } else {
@@ -1231,6 +1246,7 @@ static uint32_t get_power_down_flags(void)
         }
 #endif // SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
     }
+#endif // SOC_PM_SUPPORT_RTC_PERIPH_PD
 
 #if SOC_PM_SUPPORT_CPU_PD
     if (!cpu_domain_pd_allowed()) {
@@ -1242,27 +1258,35 @@ static uint32_t get_power_down_flags(void)
     s_config.pd_options[ESP_PD_DOMAIN_XTAL] = ESP_PD_OPTION_OFF;
 #endif
 
-    const char *option_str[] = {"OFF", "ON", "AUTO(OFF)" /* Auto works as OFF */};
+   const  __attribute__((unused)) char *option_str[] = {"OFF", "ON", "AUTO(OFF)" /* Auto works as OFF */};
     /* This function is called from a critical section, log with ESP_EARLY_LOGD. */
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_EARLY_LOGD(TAG, "RTC_PERIPH: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH]]);
+#endif
 #if SOC_RTC_SLOW_MEM_SUPPORTED
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_MEM: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM]]);
 #endif
+#if SOC_RTC_FAST_MEM_SUPPORTED
     ESP_EARLY_LOGD(TAG, "RTC_FAST_MEM: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM]]);
+#endif
 
     // Prepare flags based on the selected options
     uint32_t pd_flags = 0;
+#if SOC_RTC_FAST_MEM_SUPPORTED
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_RTC_FAST_MEM;
     }
+#endif
 #if SOC_RTC_SLOW_MEM_SUPPORTED
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_RTC_SLOW_MEM;
     }
 #endif
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_RTC_PERIPH;
     }
+#endif
 
 #if SOC_PM_SUPPORT_CPU_PD
     if (s_config.pd_options[ESP_PD_DOMAIN_CPU] != ESP_PD_OPTION_ON) {
@@ -1297,7 +1321,7 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
     }
 
-#if ((defined CONFIG_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT))
+#if ((defined CONFIG_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) && (SOC_PM_SUPPORT_RTC_PERIPH_PD))
     if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {
         // If enabled EXT1 only and enable the additional current by touch, should be keep RTC_PERIPH power on.
         pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;

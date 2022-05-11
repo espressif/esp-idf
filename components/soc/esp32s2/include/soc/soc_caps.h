@@ -378,6 +378,8 @@
 
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD      (1)
+
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
