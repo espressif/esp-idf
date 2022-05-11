@@ -77,7 +77,7 @@ def number_as_bytes(number, pad_bits=None):
 #       key_size        : key size of the RSA private key in bytes.
 # @input
 #       privkey         : path to the RSA private key
-#       priv_key_pass   : path to the RSA privaete key password
+#       priv_key_pass   : path to the RSA private key password
 #       hmac_key        : HMAC key value ( to calculate DS params)
 #       idf_target      : The target chip for the script (e.g. esp32s2, esp32c3, esp32s3)
 # @info
@@ -148,7 +148,8 @@ def calculate_ds_parameters(privkey, priv_key_pass, hmac_key, idf_target):
 # @info
 #       The function makes use of the "espefuse.py" script to read the efuse summary
 def efuse_summary(args, idf_target):
-    os.system('python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip {0} -p {1} summary'.format(idf_target, (args.port)))
+    idf_path = os.getenv('IDF_PATH')
+    os.system('python {0}/components/esptool_py/esptool/espefuse.py --chip {1} -p {2} summary'.format(idf_path, idf_target, (args.port)))
 
 
 # @info
@@ -162,9 +163,10 @@ def efuse_burn_key(args, idf_target):
         # read protection will be enabled as the default behaviour of the command
         key_block_status = ' '
 
-    os.system('python $IDF_PATH/components/esptool_py/esptool/espefuse.py --chip {0} -p {1} burn_key '
-              '{2} {3} HMAC_DOWN_DIGITAL_SIGNATURE {4}'
-              .format((idf_target), (args.port), ('BLOCK_KEY' + str(args.efuse_key_id)), (hmac_key_file), (key_block_status)))
+    idf_path = os.getenv('IDF_PATH')
+    os.system('python {0}/components/esptool_py/esptool/espefuse.py --chip {1} -p {2} burn_key '
+              '{3} {4} HMAC_DOWN_DIGITAL_SIGNATURE {5}'
+              .format(idf_path, (idf_target), (args.port), ('BLOCK_KEY' + str(args.efuse_key_id)), (hmac_key_file), (key_block_status)))
 
 
 # @info
@@ -209,8 +211,9 @@ def generate_nvs_partition(input_filename, output_filename):
 def get_efuse_summary_json(args, idf_target):
     _efuse_summary = None
     try:
-        _efuse_summary = subprocess.check_output(('python $IDF_PATH/components/esptool_py/esptool/espefuse.py '
-                                                  '--chip {0} -p {1} summary --format json'.format(idf_target, (args.port))), shell=True)
+        idf_path = os.getenv('IDF_PATH')
+        _efuse_summary = subprocess.check_output(('python {0}/components/esptool_py/esptool/espefuse.py '
+                                                  '--chip {1} -p {2} summary --format json'.format(idf_path, idf_target, (args.port))), shell=True)
     except subprocess.CalledProcessError as e:
         print((e.output).decode('UTF-8'))
         sys.exit(-1)
