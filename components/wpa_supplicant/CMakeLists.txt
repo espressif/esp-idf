@@ -196,7 +196,7 @@ idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}
                             "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
-                    PRIV_REQUIRES mbedtls esp_timer)
+                    PRIV_REQUIRES mbedtls esp_timer esp_wifi)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE

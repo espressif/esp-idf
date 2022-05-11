@@ -246,6 +246,14 @@ struct esp_netif_config {
 };
 
 /**
+ * @brief DHCP client's addr info (pair of MAC and IP address)
+ */
+typedef struct {
+    uint8_t mac[6];         /**< Clients MAC address */
+    esp_ip4_addr_t ip;      /**< Clients IP address */
+} esp_netif_pair_mac_ip_t;
+
+/**
  * @brief  ESP-NETIF Receive function type
  */
 typedef esp_err_t (*esp_netif_receive_t)(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb);

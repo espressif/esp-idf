@@ -71,18 +71,6 @@ extern "C" {
         .bridge_info = NULL \
 };
 
-#define ESP_NETIF_INHERENT_DEFAULT_OPENTHREAD() \
-    {   \
-        .flags = 0, \
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
-        .get_ip_event = 0,    \
-        .lost_ip_event = 0,   \
-        .if_key = "OT_DEF",  \
-        .if_desc = "openthread",    \
-        .route_prio = 15,     \
-        .bridge_info = NULL \
-};
 
 #define ESP_NETIF_INHERENT_DEFAULT_SLIP() \
     {   \
@@ -199,7 +187,6 @@ extern "C" {
 #endif
 #define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
 #define ESP_NETIF_NETSTACK_DEFAULT_SLIP         _g_esp_netif_netstack_default_slip
-#define ESP_NETIF_NETSTACK_DEFAULT_OPENTHREAD   _g_esp_netif_netstack_default_openthread
 
 //
 // Include default network stacks configs
@@ -232,27 +219,6 @@ extern const esp_netif_inherent_config_t _g_esp_netif_inherent_slip_config;
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
 #endif
-
-#ifdef CONFIG_OPENTHREAD_ENABLED
-/**
-* @brief  Default configuration reference of SLIP client
-*/
-#define ESP_NETIF_DEFAULT_OPENTHREAD()                  \
-    {                                                   \
-        .base = ESP_NETIF_BASE_DEFAULT_OPENTHREAD,      \
-        .driver = NULL,                                 \
-        .stack = ESP_NETIF_NETSTACK_DEFAULT_OPENTHREAD, \
-    }
-
-/**
- * @brief  Default base config (esp-netif inherent) of openthread interface
- */
-#define ESP_NETIF_BASE_DEFAULT_OPENTHREAD       &_g_esp_netif_inherent_openthread_config
-
-extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_openthread;
-extern const esp_netif_inherent_config_t _g_esp_netif_inherent_openthread_config;
-
-#endif // CONFIG_OPENTHREAD_ENABLED
 
 #ifdef __cplusplus
 }

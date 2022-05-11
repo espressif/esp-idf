@@ -10,6 +10,8 @@
 
 #include "esp_check.h"
 #include "esp_netif_lwip_internal.h"
+#include "lwip/esp_netif_net_stack.h"
+
 
 #include "esp_netif.h"
 #include "esp_netif_private.h"
@@ -23,6 +25,7 @@
 #include "lwip/ip6_addr.h"
 #include "lwip/mld6.h"
 #include "lwip/nd6.h"
+#include "lwip/snmp.h"
 #include "lwip/priv/tcpip_priv.h"
 #include "lwip/netif.h"
 #include "lwip/etharp.h"
@@ -1666,6 +1669,36 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
 
 esp_err_t esp_netif_set_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_t *ip_info) _RUN_IN_LWIP_TASK_IF_SUPPORTED(esp_netif_set_ip_info_api, esp_netif, ip_info)
 
+struct array_mac_ip_t {
+    int num;
+    esp_netif_pair_mac_ip_t *mac_ip_pair;
+};
+
+#if CONFIG_LWIP_DHCPS
+static esp_err_t esp_netif_dhcps_get_clients_by_mac_api(esp_netif_api_msg_t *msg)
+{
+    esp_netif_t *netif = msg->esp_netif;
+    struct array_mac_ip_t *params = msg->data;
+    for (int i = 0; i < params->num; i++) {
+        dhcp_search_ip_on_mac(netif->dhcps, params->mac_ip_pair[i].mac, (ip4_addr_t*)&params->mac_ip_pair[i].ip);
+    }
+    return ESP_OK;
+}
+#endif // CONFIG_LWIP_DHCPS
+
+esp_err_t esp_netif_dhcps_get_clients_by_mac(esp_netif_t *esp_netif, int num, esp_netif_pair_mac_ip_t *mac_ip_pair)
+{
+#if CONFIG_LWIP_DHCPS
+    if (esp_netif == NULL || esp_netif->dhcps == NULL || num < 0 || mac_ip_pair == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    struct array_mac_ip_t array_mac_ip = { num, mac_ip_pair };
+    return esp_netif_lwip_ipc_call(esp_netif_dhcps_get_clients_by_mac_api, esp_netif, (void *)&array_mac_ip);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif // CONFIG_LWIP_DHCPS
+}
+
 static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *esp_netif = msg->esp_netif;
@@ -2144,6 +2177,19 @@ esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
     netif_index_to_name(netif_get_index(esp_netif->lwip_netif), name);
     return ESP_OK;
 }
+
+static esp_err_t esp_netif_set_link_speed_api(esp_netif_api_msg_t *msg)
+{
+    uint32_t speed = *((uint32_t*)msg->data);
+    esp_err_t error = ESP_OK;
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, msg->esp_netif);
+    NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, speed);
+    LWIP_UNUSED_ARG(speed);     // Maybe unused if SNMP disabled
+    return error;
+}
+
+esp_err_t esp_netif_set_link_speed(esp_netif_t *esp_netif, uint32_t speed)
+_RUN_IN_LWIP_TASK(esp_netif_set_link_speed_api, esp_netif, &speed)
 
 #if CONFIG_LWIP_IPV6
 

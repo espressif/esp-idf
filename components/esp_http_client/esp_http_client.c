@@ -10,7 +10,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_check.h"
-
+#include "http_parser.h"
 #include "http_header.h"
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"

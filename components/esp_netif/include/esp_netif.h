@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 #include "sdkconfig.h"
-#include "esp_wifi_types.h"
 #include "esp_netif_ip_addr.h"
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
@@ -615,6 +614,19 @@ esp_err_t esp_netif_dhcps_start(esp_netif_t *esp_netif);
  *      - ESP_ERR_ESP_NETIF_IF_NOT_READY
  */
 esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
+
+/**
+ * @brief  Populate IP addresses of clients connected to DHCP server listed by their MAC addresses
+ *
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @param[in] num Number of clients with specified MAC addresses in the array of pairs
+ * @param[in,out] mac_ip_pair Array of pairs of MAC and IP addresses (MAC are inputs, IP outputs)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS on invalid params
+ *      - ESP_ERR_NOT_SUPPORTED if DHCP server not enabled
+ */
+esp_err_t esp_netif_dhcps_get_clients_by_mac(esp_netif_t *esp_netif, int num, esp_netif_pair_mac_ip_t *mac_ip_pair);
 
 /**
  * @}

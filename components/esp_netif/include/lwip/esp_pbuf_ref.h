@@ -7,8 +7,7 @@
  * @file esp_pbuf reference interface file
  */
 
-#ifndef __LWIP_ESP_PBUF_REF_H__
-#define __LWIP_ESP_PBUF_REF_H__
+#pragma once
 
 #include <stddef.h>
 #include "lwip/pbuf.h"
@@ -28,5 +27,3 @@ struct pbuf* esp_pbuf_allocate(esp_netif_t *esp_netif, void *buffer, size_t len,
 #ifdef __cplusplus
 }
 #endif
-
-#endif //__LWIP_ESP_PBUF_REF_H__

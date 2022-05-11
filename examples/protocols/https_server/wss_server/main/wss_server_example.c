@@ -14,6 +14,7 @@
 #include <sys/param.h>
 #include "esp_netif.h"
 #include "esp_eth.h"
+#include "esp_wifi.h"
 #include "protocol_examples_common.h"
 #include "lwip/sockets.h"
 #include <esp_https_server.h>

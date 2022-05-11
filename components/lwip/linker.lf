@@ -78,13 +78,6 @@ entries:
     sys_arch:sys_mbox_post (noflash_text)
     sys_arch:sys_mbox_trypost (noflash_text)
     sys_arch:sys_arch_mbox_fetch (noflash_text)
-    ethernetif:ethernet_low_level_output (noflash_text)
-    ethernetif:ethernetif_input (noflash_text)
-    wlanif:sta_output (noflash_text)
-    wlanif:ap_output (noflash_text)
-    wlanif:wifi_rxcb_sta (noflash_text)
-    wlanif:wifi_rxcb_ap (noflash_text)
-    wlanif:wifi_pbuf_free (noflash_text)
     lwip_default_hooks:ip4_route_src_hook (noflash_text)
 
   if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:

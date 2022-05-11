@@ -62,6 +62,7 @@ examples_and_unit_tests:
 lwip_component:
   include:
     - 'components/lwip/**'
+    - 'components/esp_netif/lwip/**'
   allowed_licenses:
     - Apache-2.0
     - BSD-3-Clause

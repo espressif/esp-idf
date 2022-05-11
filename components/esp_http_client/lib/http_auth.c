@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "esp_netif.h"
 #include "lwip/sockets.h"
 #include "esp_rom_md5.h"
 #include "esp_tls_crypto.h"

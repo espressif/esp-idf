@@ -6,4 +6,4 @@ set(sources src/msc_scsi_bot.c
 idf_component_register( SRCS ${sources}
                         INCLUDE_DIRS include
                         PRIV_INCLUDE_DIRS private_include
-                        REQUIRES usb fatfs )
+                        REQUIRES usb fatfs vfs )

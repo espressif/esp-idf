@@ -9,9 +9,9 @@
  * and the L2 free function esp_netif_free_rx_buffer()
  */
 
-#include "netif/esp_pbuf_ref.h"
-#include "esp_netif_net_stack.h"
 #include "lwip/mem.h"
+#include "lwip/esp_pbuf_ref.h"
+#include "esp_netif_net_stack.h"
 
 /**
  * @brief Specific pbuf structure for pbufs allocated by ESP netif
@@ -37,7 +37,14 @@ static void esp_pbuf_free(struct pbuf *pbuf)
     mem_free(pbuf);
 }
 
-
+/**
+ * @brief Allocate custom pbuf for supplied sp_netif
+ * @param esp_netif esp-netif handle
+ * @param buffer Buffer to allocate
+ * @param len Size of the buffer
+ * @param l2_buff External l2 buffe
+ * @return Custom pbuf pointer on success; NULL if no free heap
+ */
 struct pbuf* esp_pbuf_allocate(esp_netif_t *esp_netif, void *buffer, size_t len, void *l2_buff)
 {
     struct pbuf *p;

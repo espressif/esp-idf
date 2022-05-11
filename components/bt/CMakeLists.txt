@@ -678,8 +678,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES esp_timer
-                PRIV_REQUIRES nvs_flash soc esp_pm esp_phy mbedtls driver
+                REQUIRES esp_timer esp_wifi
+                PRIV_REQUIRES nvs_flash soc esp_pm esp_phy mbedtls driver vfs
                 LDFRAGMENTS "linker.lf")
 
 if(CONFIG_BT_ENABLED)

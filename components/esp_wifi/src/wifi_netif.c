@@ -5,8 +5,6 @@
  */
 #include "esp_wifi.h"
 #include "esp_netif.h"
-#include "esp_netif_net_stack.h"
-#include "netif/wlanif.h"
 #include "esp_log.h"
 #include "esp_private/wifi.h"
 #include "esp_wifi_netif.h"
@@ -19,12 +17,34 @@
 /**
  * @brief WiFi netif driver structure
  */
-typedef struct wifi_netif_driver {
+struct wifi_netif_driver {
     esp_netif_driver_base_t base;
     wifi_interface_t wifi_if;
-}* wifi_netif_driver_t;
+};
 
 static const char* TAG = "wifi_netif";
+
+/**
+ * @brief Local storage for netif handles and callbacks for specific wifi interfaces
+ */
+static esp_netif_receive_t s_wifi_rxcbs[MAX_WIFI_IFS] = { NULL };
+static esp_netif_t *s_wifi_netifs[MAX_WIFI_IFS] = { NULL };
+
+/**
+ * @brief WiFi netif driver IO functions, a thin glue layer
+ *         to the original wifi interface API
+ */
+static esp_err_t wifi_sta_receive(void *buffer, uint16_t len, void *eb)
+{
+    return s_wifi_rxcbs[WIFI_IF_STA](s_wifi_netifs[WIFI_IF_STA], buffer, len, eb);
+}
+
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
+{
+    return s_wifi_rxcbs[WIFI_IF_AP](s_wifi_netifs[WIFI_IF_AP], buffer, len, eb);
+}
+#endif
 
 static void wifi_free(void *h, void* buffer)
 {
@@ -68,6 +88,7 @@ void esp_wifi_destroy_if_driver(wifi_netif_driver_t h)
     if (h) {
         esp_wifi_internal_reg_rxcb(h->wifi_if, NULL);  // ignore the potential error
                                                        // as the wifi might have been already uninitialized
+        s_wifi_netifs[h->wifi_if] = NULL;
     }
     free(h);
 }
@@ -108,6 +129,7 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
         return ESP_ERR_INVALID_ARG;
     }
     wifi_interface_t wifi_interface = ifx->wifi_if;
+    s_wifi_rxcbs[wifi_interface] = fn;
     wifi_rxcb_t rxcb = NULL;
     esp_err_t ret;
 
@@ -115,12 +137,12 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
     {
 
     case WIFI_IF_STA:
-        rxcb = wifi_rxcb_sta;
+        rxcb = wifi_sta_receive;
         break;
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     case WIFI_IF_AP:
-        rxcb = wifi_rxcb_ap;
+        rxcb = wifi_ap_receive;
         break;
 #endif
 
@@ -134,12 +156,10 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
     }
 
     /* Interface must be set before registering Wi-Fi RX callback */
-    set_wifi_netif(wifi_interface, esp_netif_get_netif_impl(arg));
-
+    s_wifi_netifs[wifi_interface] = ifx->base.netif;
     if ((ret = esp_wifi_internal_reg_rxcb(wifi_interface,  rxcb)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_internal_reg_rxcb for if=%d failed with %d", wifi_interface, ret);
         return ESP_ERR_INVALID_STATE;
     }
-
     return ESP_OK;
 }
