@@ -86,6 +86,7 @@ Names of variables holding different certs in :cpp:type:`httpd_ssl_config_t` str
     * :cpp:member:`httpd_ssl_config::cacert_pem` variable inherits role of `client_verify_cert_pem` variable
     * :cpp:member:`httpd_ssl_config::cacert_len` variable inherits role of `client_verify_cert_len` variable
 
+The return type of the :cpp:func:`httpd_ssl_stop` API has been changed to :cpp:type:`esp_err_t` from ``void``.
 
 ESP HTTPS OTA
 --------------

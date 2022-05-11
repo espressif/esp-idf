@@ -160,7 +160,10 @@ esp_err_t httpd_ssl_start(httpd_handle_t *handle, httpd_ssl_config_t *config);
  * Stop the server. Blocks until the server is shut down.
  *
  * @param[in] handle
- * @return success
+ * @return
+ *    - ESP_OK: Server stopped successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_FAIL: Failure to shut down server
  */
 esp_err_t httpd_ssl_stop(httpd_handle_t handle);
 
