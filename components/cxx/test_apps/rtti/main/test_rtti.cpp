@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <typeinfo>
 #include "unity.h"
-#include "memory_checks.h"
+#include "unity_test_utils.h"
 
 /* Note: When first exception (in system) is thrown this test produces memory leaks report (~300 bytes):
    - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
@@ -26,14 +26,13 @@
 
 extern "C" void setUp()
 {
-    test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
-    test_utils_record_free_mem();
+    unity_utils_set_leak_level(0);
+    unity_utils_record_free_mem();
 }
 
 extern "C" void tearDown()
 {
-    size_t leak_level = test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
-    test_utils_finish_and_evaluate_leaks(leak_level, leak_level);
+    unity_utils_evaluate_leaks();
 }
 
 using namespace std;
@@ -97,7 +96,7 @@ TEST_CASE("typeid of function works", "[cxx]")
 
 TEST_CASE("unsuccessful dynamic cast on reference throws exception", "[cxx]")
 {
-    test_utils_set_leak_level(LEAKS, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    unity_utils_set_leak_level(LEAKS);
     bool thrown = false;
     DerivedA derived_a;
     Base &base = derived_a;

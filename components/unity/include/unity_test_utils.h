@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "unity_test_utils_memory.h"
 
 #ifdef __cplusplus
 extern "C" {
