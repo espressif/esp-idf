@@ -258,6 +258,7 @@ PREDEFINED             = \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
     configUSE_APPLICATION_TASK_TAG=1 \
     configTASKLIST_INCLUDE_COREID=1 \
+    portUSING_MPU_WRAPPERS=1 \
     PRIVILEGED_FUNCTION= \
     "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 
@@ -282,6 +283,5 @@ QUIET = YES
 
 ## Enable Section Tags for conditional documentation
 ##
-ENABLED_SECTIONS += \
-    DOC_EXCLUDE_HEADER_SECTION \   ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
-    DOC_SINGLE_GROUP        ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.
+ENABLED_SECTIONS += DOC_EXCLUDE_HEADER_SECTION  ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
+ENABLED_SECTIONS += DOC_SINGLE_GROUP            ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.

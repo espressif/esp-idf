@@ -23,7 +23,7 @@ typedef struct {
     struct {
         uint32_t polarity_active_low: 1; /*!< Specify the polarity of carrier, by default it's modulated to base signal's high level */
         uint32_t always_on: 1;           /*!< If set, the carrier can always exist even there's not transfer undergoing */
-    } flags;
+    } flags;                             /*!< Carrier config flags */
 } rmt_carrier_config_t;
 
 /**

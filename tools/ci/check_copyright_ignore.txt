@@ -1613,10 +1613,7 @@ components/tcp_transport/test/test_transport_fixtures.c
 components/tcp_transport/transport_utils.c
 components/tinyusb/additions/include/tusb_config.h
 components/touch_element/include/touch_element/touch_button.h
-components/touch_element/include/touch_element/touch_element.h
 components/touch_element/include/touch_element/touch_element_private.h
-components/touch_element/include/touch_element/touch_matrix.h
-components/touch_element/include/touch_element/touch_slider.h
 components/touch_element/test/test_touch_button.c
 components/touch_element/test/test_touch_element.c
 components/touch_element/test/test_touch_matrix.c

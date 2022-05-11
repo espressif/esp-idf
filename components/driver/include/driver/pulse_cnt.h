@@ -73,7 +73,7 @@ typedef struct {
         uint32_t invert_edge_input: 1;  /*!< Invert the input edge signal */
         uint32_t invert_level_input: 1; /*!< Invert the input level signal */
         uint32_t io_loop_back: 1;       /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-    } flags;
+    } flags;                            /*!< Channel config flags */
 } pcnt_chan_config_t;
 
 /**

@@ -50,10 +50,10 @@ extern "C" {
 
 /**
  * @brief Root clock
- * Naming convention: SOC_ROOT_CLK_{loc}_{type}_<attr>
+ * Naming convention: SOC_ROOT_CLK_{loc}_{type}_[attr]
  * {loc}: EXT, INT
  * {type}: XTAL, RC
- * <attr> - optional: <frequency>, FAST, SLOW
+ * [attr] - optional: [frequency], FAST, SLOW
  */
 typedef enum {
     SOC_ROOT_CLK_INT_RC_FAST,          /*!< Internal 8MHz RC oscillator */
@@ -93,9 +93,9 @@ typedef enum {
 
 /**
  * @brief Supported clock sources for modules (CPU, peripherials, RTC, etc.)
- * Naming convention: SOC_MOD_CLK_{<upstream>clock_name}_<attr>
- * {<upstream>clock_name}: AHB etc.
- * <attr> - optional: FAST, SLOW, D<divider>, F<freq>
+ * Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
+ * {[upstream]clock_name}: AHB etc.
+ * [attr] - optional: FAST, SLOW, D<divider>, F<freq>
  * @note enum starts from 1, to save 0 for special purpose
  */
 typedef enum {

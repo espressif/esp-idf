@@ -76,7 +76,7 @@ typedef struct {
     rmt_symbol_word_t bit1; /*!< How to represent BIT1 in RMT symbol */
     struct {
         uint32_t msb_first: 1; /*!< Whether to encode MSB bit first */
-    } flags;
+    } flags;                   /*!< Encoder config flag */
 } rmt_bytes_encoder_config_t;
 
 /**

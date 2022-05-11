@@ -94,7 +94,6 @@
 /**
  * TO BE REMOVED
  * Check if adc support digital controller (DMA) mode.
- * @value
  *      - 1 : support;
  *      - 0 : not support;
  */

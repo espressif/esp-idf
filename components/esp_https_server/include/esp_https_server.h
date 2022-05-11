@@ -35,8 +35,8 @@ typedef enum {
  * and the connection state at which the callback is executed
  */
 typedef struct esp_https_server_user_cb_arg {
-    httpd_ssl_user_cb_state_t user_cb_state;
-    esp_tls_t *tls;
+    httpd_ssl_user_cb_state_t user_cb_state; /*!< State of user callback */
+    esp_tls_t *tls;                    /*!< ESP-TLS connection handle */
 } esp_https_server_user_cb_arg_t;
 
 /**
