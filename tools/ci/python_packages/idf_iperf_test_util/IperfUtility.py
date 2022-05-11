@@ -29,7 +29,7 @@ PC_IPERF_TEMP_LOG_FILE = '.tmp_iperf.log'
 class TestResult(object):
     """ record, analysis test result and convert data to output format """
 
-    PC_BANDWIDTH_LOG_PATTERN = re.compile(r'(\d+).0\s*-\s*(\d+).0\s+sec\s+[\d.]+\s+MBytes\s+([\d.]+)\s+Mbits/sec')
+    PC_BANDWIDTH_LOG_PATTERN = re.compile(r'(\d+\.\d+)\s*-\s*(\d+.\d+)\s+sec\s+[\d.]+\s+MBytes\s+([\d.]+)\s+Mbits\/sec')
     DUT_BANDWIDTH_LOG_PATTERN = re.compile(r'(\d+)-\s+(\d+)\s+sec\s+([\d.]+)\s+Mbits/sec')
 
     ZERO_POINT_THRESHOLD = -88  # RSSI, dbm
@@ -96,19 +96,22 @@ class TestResult(object):
         """
         fall_to_0_recorded = 0
         throughput_list = []
-        throughput = 0.0
+        max_throughput = 0.0
         result_list = self.PC_BANDWIDTH_LOG_PATTERN.findall(raw_data)
         if not result_list:
             # failed to find raw data by PC pattern, it might be DUT pattern
             result_list = self.DUT_BANDWIDTH_LOG_PATTERN.findall(raw_data)
 
         for result in result_list:
-            if int(result[1]) - int(result[0]) != 1:
+            t_start = float(result[0])
+            t_end = float(result[1])
+            throughput = float(result[2])
+            if int(t_end - t_start) != 1:
                 # this could be summary, ignore this
                 continue
-            throughput_list.append(float(result[2]))
-            throughput = (throughput if (throughput > float(result[2])) else float(result[2]))
-            if float(result[2]) == 0 and rssi > self.ZERO_POINT_THRESHOLD \
+            throughput_list.append(throughput)
+            max_throughput = max(max_throughput, throughput)
+            if throughput == 0 and rssi > self.ZERO_POINT_THRESHOLD \
                     and fall_to_0_recorded < 1:
                 # throughput fall to 0 error. we only record 1 records for one test
                 self.error_list.append('[Error][fall to 0][{}][att: {}][rssi: {}]: 0 throughput interval: {}-{}'
@@ -116,15 +119,17 @@ class TestResult(object):
                 fall_to_0_recorded += 1
 
         if len(throughput_list) < self.THROUGHPUT_QUALIFY_COUNT:
-            throughput = 0.0
+            self.error_list.append('[Error][Fatal][{}][att: {}][rssi: {}]: Only {} throughput values found, expected at least {}'
+                                   .format(ap_ssid, att, rssi, len(throughput_list), self.THROUGHPUT_QUALIFY_COUNT))
+            max_throughput = 0.0
 
-        if throughput == 0 and rssi > self.ZERO_THROUGHPUT_THRESHOLD:
+        if max_throughput == 0 and rssi > self.ZERO_THROUGHPUT_THRESHOLD:
             self.error_list.append('[Error][Fatal][{}][att: {}][rssi: {}]: No throughput data found'
                                    .format(ap_ssid, att, rssi))
 
-        self._save_result(throughput, ap_ssid, att, rssi, heap_size)
+        self._save_result(max_throughput, ap_ssid, att, rssi, heap_size)
 
-        return throughput
+        return max_throughput
 
     def post_analysis(self):  # type: () -> None
         """
