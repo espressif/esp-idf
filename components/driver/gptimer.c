@@ -450,8 +450,14 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
 #endif // SOC_TIMER_GROUP_SUPPORT_APB
 #if SOC_TIMER_GROUP_SUPPORT_PLL_F40M
     case GPTIMER_CLK_SRC_PLL_F40M:
-        // TODO: decide which kind of PM lock we should use for such clock
         counter_src_hz = 40 * 1000 * 1000;
+#if CONFIG_PM_ENABLE
+        sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
+        // PLL_F40M will be turned off when DFS switches CPU clock source to XTAL
+        ret  = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, timer->pm_lock_name, &timer->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create APB_FREQ_MAX lock failed");
+        ESP_LOGD(TAG, "install APB_FREQ_MAX lock for timer (%d,%d)", timer->group->group_id, timer_id);
+#endif
         break;
 #endif // SOC_TIMER_GROUP_SUPPORT_PLL_F40M
 #if SOC_TIMER_GROUP_SUPPORT_AHB
