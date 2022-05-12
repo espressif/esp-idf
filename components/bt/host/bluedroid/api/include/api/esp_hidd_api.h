@@ -81,7 +81,7 @@ typedef enum {
 } esp_hidd_boot_report_id_t;
 
 /**
- * @breif HID Boot Protocol report size including report ID
+ * @brief HID Boot Protocol report size including report ID
  */
 enum {
     ESP_HIDD_BOOT_REPORT_SIZE_KEYBOARD = 9,          /*!< report size of Boot Protocol keyboard report */

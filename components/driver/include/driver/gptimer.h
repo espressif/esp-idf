@@ -57,7 +57,7 @@ typedef struct {
                                               hence, the step size of each count tick equals to (1 / resolution_hz) seconds */
     struct {
         uint32_t intr_shared: 1;         /*!< Set true, the timer interrupt number can be shared with other peripherals */
-    } flags;
+    } flags;                             /*!< GPTimer config flags*/
 } gptimer_config_t;
 
 /**
@@ -68,7 +68,7 @@ typedef struct {
     uint64_t reload_count; /*!< Alarm reload count value, effect only when `auto_reload_on_alarm` is set to true */
     struct {
         uint32_t auto_reload_on_alarm: 1; /*!< Reload the count value by hardware, immediately at the alarm event */
-    } flags;
+    } flags;                              /*!< Alarm config flags*/
 } gptimer_alarm_config_t;
 
 /**

@@ -37,7 +37,7 @@ typedef struct {
         uint32_t invert_in: 1;    /*!< Whether to invert the incoming RMT channel signal */
         uint32_t with_dma: 1;     /*!< If set, the driver will allocate an RMT channel with DMA capability */
         uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-    } flags;
+    } flags;                      /*!< RX channel config flags */
 } rmt_rx_channel_config_t;
 
 /**

@@ -26,9 +26,9 @@ typedef struct temperature_sensor_obj_t *temperature_sensor_handle_t;
  *       predefined range listed doc ``api-reference/peripherals/Temperature sensor``.
  */
 typedef struct {
-    int range_min;   // the minimum value of the temperature you want to test
-    int range_max;   // the maximum value of the temperature you want to test
-    temperature_sensor_clk_src_t clk_src;  // the clock source of the temperature sensor.
+    int range_min;   /**< the minimum value of the temperature you want to test */
+    int range_max;   /**< the maximum value of the temperature you want to test */
+    temperature_sensor_clk_src_t clk_src;  /**< the clock source of the temperature sensor. */
 } temperature_sensor_config_t;
 
 /**
