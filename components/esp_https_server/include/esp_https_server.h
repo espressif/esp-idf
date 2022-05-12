@@ -36,7 +36,7 @@ typedef enum {
  */
 typedef struct esp_https_server_user_cb_arg {
     httpd_ssl_user_cb_state_t user_cb_state;
-    const esp_tls_t *tls;
+    esp_tls_t *tls;
 } esp_https_server_user_cb_arg_t;
 
 /**

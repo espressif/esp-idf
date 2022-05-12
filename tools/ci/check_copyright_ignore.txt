@@ -1605,7 +1605,6 @@ components/spi_flash/test/test_spi_flash.c
 components/tcp_transport/include/esp_transport_ssl.h
 components/tcp_transport/include/esp_transport_tcp.h
 components/tcp_transport/include/esp_transport_ws.h
-components/tcp_transport/private_include/esp_transport_internal.h
 components/tcp_transport/private_include/esp_transport_utils.h
 components/tcp_transport/test/tcp_transport_fixtures.h
 components/tcp_transport/test/test_transport_basic.c

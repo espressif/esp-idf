@@ -118,7 +118,7 @@ static esp_err_t httpd_ssl_open(httpd_handle_t server, int sockfd)
     httpd_ssl_ctx_t *global_ctx = httpd_get_global_transport_ctx(server);
     assert(global_ctx != NULL);
 
-    esp_tls_t *tls = (esp_tls_t *)calloc(1, sizeof(esp_tls_t));
+    esp_tls_t *tls = esp_tls_init();
     if (!tls) {
         return ESP_ERR_NO_MEM;
     }

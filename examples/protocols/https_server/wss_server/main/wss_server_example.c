@@ -18,6 +18,7 @@
 
 #include <esp_https_server.h>
 #include "keep_alive.h"
+#include "sdkconfig.h"
 
 #if !CONFIG_HTTPD_WS_SUPPORT
 #error This example cannot be used unless HTTPD_WS_SUPPORT is enabled in esp-http-server component configuration

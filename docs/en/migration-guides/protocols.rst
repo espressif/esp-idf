@@ -20,6 +20,7 @@ Most structure fields are now private
 - Appropriate accessor functions (getter/setter) must be used for the same. A temporary workaround would be to use ``MBEDTLS_PRIVATE`` macro (**not recommended**).
 - For more details, refer to the official guide `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md#most-structure-fields-are-now-private>`__.
 
+
 SSL
 ^^^
 - Removed support for TLS 1.0, 1.1 and DTLS 1.0
@@ -103,6 +104,19 @@ ESP-TLS
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+esp_tls_t structure is now private
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the esp-tls handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function please raise an issue on ESP-IDF.
+
+
+The list of newly added getter/setter function is as as follows:
+
+.. list::
+    * :cpp:func:`esp_tls_get_ssl_context` - Obtain the ssl context of the underlying ssl stack from the esp-tls handle.
+
+Function deprecations and recommended alternatives
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Following table summarizes the deprecated functions removed and their alternatives to be used from ESP-IDF v5.0 onwards.
 
 +-----------------------------------+----------------------------------------+
