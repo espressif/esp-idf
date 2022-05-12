@@ -151,8 +151,8 @@ struct osi_funcs_t {
     void (* _task_delete)(void *task_handle);
     bool (* _is_in_isr)(void);
     int (* _cause_sw_intr_to_core)(int core_id, int intr_no);
-    void *(* _malloc)(uint32_t size);
-    void *(* _malloc_internal)(uint32_t size);
+    void *(* _malloc)(size_t size);
+    void *(* _malloc_internal)(size_t size);
     void (* _free)(void *p);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
     void (* _srand)(unsigned int seed);
