@@ -6,6 +6,15 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
+# As this G0 example is not runnable as-is, the map file generated won't some important
+# sections. Thus, in order to prevent IDF from generating a map file at all, specify
+# null device as the destination file.
+if(WIN32)
+    idf_build_set_property(LINK_OPTIONS "-Wl,--Map=NUL" APPEND)
+else()
+    idf_build_set_property(LINK_OPTIONS "-Wl,--Map=/dev/null" APPEND)
+endif()
+
 # Force this project to use only G0 components
 set(all_g0_components esp_rom soc hal esp_common main)  # also <arch>, i.e. xtensa or riscv, will be added below
 set(COMPONENTS ${all_g0_components})
