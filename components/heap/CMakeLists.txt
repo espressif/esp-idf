@@ -3,7 +3,7 @@ set(srcs
     "heap_caps_init.c"
     "multi_heap.c")
 
-if(NOT CONFIG_HEAP_ROM_IMPL)
+if(NOT CONFIG_HEAP_TLSF_USE_ROM_IMPL)
     list(APPEND srcs "heap_tlsf.c")
 endif()
 

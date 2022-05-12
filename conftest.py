@@ -32,8 +32,8 @@ from _pytest.terminal import TerminalReporter
 from pytest_embedded.plugin import apply_count, parse_configuration
 from pytest_embedded.utils import find_by_suffix
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
-PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp32c2']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
+PREVIEW_TARGETS = ['linux', 'esp32h2']
 DEFAULT_SDKCONFIG = 'default'
 
 
@@ -195,16 +195,20 @@ class IdfPytestEmbedded:
         )
 
         self._failed_cases: List[
-            Tuple[str, bool]
-        ] = []  # (test_case_name, is_known_failure_cases)
+            Tuple[str, bool, bool]
+        ] = []  # (test_case_name, is_known_failure_cases, is_xfail)
 
     @property
     def failed_cases(self) -> List[str]:
-        return [case for case, is_known in self._failed_cases if not is_known]
+        return [case for case, is_known, is_xfail in self._failed_cases if not is_known and not is_xfail]
 
     @property
     def known_failure_cases(self) -> List[str]:
-        return [case for case, is_known in self._failed_cases if is_known]
+        return [case for case, is_known, _ in self._failed_cases if is_known]
+
+    @property
+    def xfail_cases(self) -> List[str]:
+        return [case for case, _, is_xfail in self._failed_cases if is_xfail]
 
     @staticmethod
     def _parse_known_failure_cases_file(
@@ -278,7 +282,8 @@ class IdfPytestEmbedded:
         if report.outcome == 'failed':
             test_case_name = item.funcargs.get('test_case_name', '')
             is_known_failure = self._is_known_failure(test_case_name)
-            self._failed_cases.append((test_case_name, is_known_failure))
+            is_xfail = report.keywords.get('xfail', False)
+            self._failed_cases.append((test_case_name, is_known_failure, is_xfail))
 
         return report
 
@@ -326,6 +331,10 @@ class IdfPytestEmbedded:
         if self.known_failure_cases:
             terminalreporter.section('Known failure cases', bold=True, yellow=True)
             terminalreporter.line('\n'.join(self.known_failure_cases))
+
+        if self.xfail_cases:
+            terminalreporter.section('xfail cases', bold=True, yellow=True)
+            terminalreporter.line('\n'.join(self.xfail_cases))
 
         if self.failed_cases:
             terminalreporter.section('Failed cases', bold=True, red=True)

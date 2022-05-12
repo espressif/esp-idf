@@ -411,6 +411,25 @@ VFS
 * :ref:`CONFIG_VFS_SUPPORT_DIR` — can be disabled if the application doesn't use directory related functions, such as ``readdir`` (see the description of this option for the complete list). Applications which only open, read and write specific files and don't need to enumerate or create directories can disable this option, reducing the code size by 0.5 kB or more, depending on the filesystem drivers in use.
 * :ref:`CONFIG_VFS_SUPPORT_IO` — can be disabled if the application doesn't use filesystems or file-like peripheral drivers. This disables all VFS functionality, including the three options mentioned above. When this option is disabled, :doc:`console </api-reference/system/console>` can't be used. Note that the application can still use standard I/O functions with socket file descriptors when this option is disabled. Compared to the default configuration, disabling this option reduces code size by about 9.4 kB.
 
+.. only:: esp32c2
+
+    HAL
+    @@@
+
+    .. list::
+
+        :CONFIG_ESP_ROM_HAS_HAL_SYSTIMER: * Enabling :ref:`CONFIG_HAL_SYSTIMER_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the systimer HAL driver of ROM implementation.
+        :CONFIG_ESP_ROM_HAS_HAL_WDT: * Enabling :ref:`CONFIG_HAL_WDT_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the watchdog HAL driver of ROM implementation.
+
+.. only:: esp32c2
+
+    Heap
+    @@@@
+
+    .. list::
+
+        :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * Enabling :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the TLSF library of ROM implementation.
+
 Bootloader Size
 ---------------
 

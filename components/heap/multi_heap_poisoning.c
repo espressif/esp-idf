@@ -334,7 +334,7 @@ multi_heap_handle_t multi_heap_register(void *start, size_t size)
         memset(start, FREE_FILL_PATTERN, size);
     }
 #endif
-#ifdef CONFIG_HEAP_ROM_IMPL
+#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
     tlsf_poison_fill_pfunc_set(multi_heap_internal_poison_fill_region);
 #endif
     return multi_heap_register_impl(start, size);

@@ -1,7 +1,7 @@
 [mapping:heap]
 archive: libheap.a
 entries:
-    if HEAP_HAS_ROM_IMPL = n || HEAP_ROM_IMPL = n:
+    if HEAP_TLSF_USE_ROM_IMPL = n:
         heap_tlsf (noflash)
     multi_heap (noflash)
     if HEAP_POISONING_DISABLED = n:
