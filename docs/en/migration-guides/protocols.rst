@@ -114,3 +114,11 @@ Following table summarizes the deprecated functions removed and their alternativ
 +-----------------------------------+----------------------------------------+
 
 - The function :cpp:func:`esp_tls_conn_http_new` has now been termed as deprecated. Please use the alternative function :cpp:func:`esp_tls_conn_http_new_sync` (or its asynchronous :cpp:func:`esp_tls_conn_http_new_async`). Note that the alternatives need an additional parameter :cpp:type:`esp_tls_t` which has to be initialized using the :cpp:func:`esp_tls_init` function.
+
+ESP HTTP SERVER
+-----------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``http_server.h`` header is no longer available in ``esp_http_server``. Please use ``esp_http_server.h`` instead.
