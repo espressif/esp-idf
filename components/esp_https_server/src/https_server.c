@@ -306,7 +306,7 @@ esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *conf
 }
 
 /** Stop the server */
-void httpd_ssl_stop(httpd_handle_t handle)
+esp_err_t httpd_ssl_stop(httpd_handle_t handle)
 {
-    httpd_stop(handle);
+    return httpd_stop(handle);
 }

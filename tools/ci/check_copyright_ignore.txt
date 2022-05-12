@@ -472,7 +472,6 @@ components/esp_local_ctrl/src/esp_local_ctrl.c
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
-components/esp_local_ctrl/src/esp_local_ctrl_transport_httpd.c
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
 components/esp_netif/loopback/esp_netif_loopback.c
