@@ -122,8 +122,10 @@ TEST_CASE("IRAM_8BIT capability test", "[heap]")
 
     TEST_ASSERT((((int)ptr)&0xFF000000)==0x40000000);
 
-    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT) == (free_size - heap_caps_get_allocated_size(ptr)));
-    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_32BIT) == (free_size32 - heap_caps_get_allocated_size(ptr)));
+    /* As the heap allocator may present an overhead for allocated blocks,
+     * we need to check that the free heap size is now smaller or equal to the former free size. */
+    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT) <= (free_size - heap_caps_get_allocated_size(ptr)));
+    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_32BIT) <= (free_size32 - heap_caps_get_allocated_size(ptr)));
 
     free(ptr);
 }
