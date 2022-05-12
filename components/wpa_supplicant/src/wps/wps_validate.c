@@ -5,14 +5,13 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
+
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "wps/wps_i.h"
-#include "wps/wps.h"
+#include "wps_i.h"
+#include "wps.h"
 
-
-#ifdef CONFIG_WPS_STRICT
 
 #ifndef WPS_STRICT_ALL
 #define WPS_STRICT_WPS2
@@ -98,9 +97,21 @@ static int wps_validate_response_type(const u8 *response_type, int mandatory)
 static int valid_config_methods(u16 val, int wps2)
 {
 	if (wps2) {
+		if ((val & 0x6000) && !(val & WPS_CONFIG_DISPLAY)) {
+			wpa_printf(MSG_INFO, "WPS-STRICT: Physical/Virtual "
+				   "Display flag without old Display flag "
+				   "set");
+			return 0;
+		}
 		if (!(val & 0x6000) && (val & WPS_CONFIG_DISPLAY)) {
 			wpa_printf(MSG_INFO, "WPS-STRICT: Display flag "
 				   "without Physical/Virtual Display flag");
+			return 0;
+		}
+		if ((val & 0x0600) && !(val & WPS_CONFIG_PUSHBUTTON)) {
+			wpa_printf(MSG_INFO, "WPS-STRICT: Physical/Virtual "
+				   "PushButton flag without old PushButton "
+				   "flag set");
 			return 0;
 		}
 		if (!(val & 0x0600) && (val & WPS_CONFIG_PUSHBUTTON)) {
@@ -213,6 +224,8 @@ static int wps_validate_rf_bands(const u8 *rf_bands, int mandatory)
 		return 0;
 	}
 	if (*rf_bands != WPS_RF_24GHZ && *rf_bands != WPS_RF_50GHZ &&
+	    *rf_bands != WPS_RF_60GHZ &&
+	    *rf_bands != (WPS_RF_24GHZ | WPS_RF_50GHZ | WPS_RF_60GHZ) &&
 	    *rf_bands != (WPS_RF_24GHZ | WPS_RF_50GHZ)) {
 		wpa_printf(MSG_INFO, "WPS-STRICT: Invalid Rf Bands "
 			   "attribute value 0x%x", *rf_bands);
@@ -256,7 +269,7 @@ static int wps_validate_config_error(const u8 *config_error, int mandatory)
 		return 0;
 	}
 	val = WPA_GET_BE16(config_error);
-	if (val > 18) {
+	if (val > 20) {
 		wpa_printf(MSG_INFO, "WPS-STRICT: Invalid Configuration Error "
 			   "attribute value 0x%04x", val);
 		return -1;
@@ -279,7 +292,7 @@ static int wps_validate_dev_password_id(const u8 *dev_password_id,
 		return 0;
 	}
 	val = WPA_GET_BE16(dev_password_id);
-	if (val >= 0x0006 && val <= 0x000f) {
+	if (val >= 0x0008 && val <= 0x000f) {
 		wpa_printf(MSG_INFO, "WPS-STRICT: Invalid Device Password ID "
 			   "attribute value 0x%04x", val);
 		return -1;
@@ -1059,7 +1072,7 @@ _out:
 }
 
 
-static int wps_validate_credential(const u8 *cred[], size_t len[], size_t num,
+static int wps_validate_credential(const u8 *cred[], u16 len[], size_t num,
 				   int mandatory)
 {
 	size_t i;
@@ -2363,4 +2376,3 @@ _out:
 
 	return ret;
 }
-#endif

@@ -14,11 +14,13 @@ struct wps_parse_attr;
 int wps_build_manufacturer(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_model_name(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_model_number(struct wps_device_data *dev, struct wpabuf *msg);
+int wps_build_serial_number(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_dev_name(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_device_attrs(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_os_version(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_vendor_ext_m1(struct wps_device_data *dev, struct wpabuf *msg);
-int wps_build_rf_bands(struct wps_device_data *dev, struct wpabuf *msg);
+int wps_build_rf_bands(struct wps_device_data *dev, struct wpabuf *msg,
+		       u8 rf_band);
 int wps_build_primary_dev_type(struct wps_device_data *dev,
 			       struct wpabuf *msg);
 int wps_build_secondary_dev_type(struct wps_device_data *dev,
@@ -27,11 +29,11 @@ int wps_build_dev_name(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_process_device_attrs(struct wps_device_data *dev,
 			     struct wps_parse_attr *attr);
 int wps_process_os_version(struct wps_device_data *dev, const u8 *ver);
+void wps_process_vendor_ext_m1(struct wps_device_data *dev, const u8 ext);
 int wps_process_rf_bands(struct wps_device_data *dev, const u8 *bands);
-void wps_device_data_dup(struct wps_device_data *dst,
-			 const struct wps_device_data *src);
 void wps_device_data_free(struct wps_device_data *dev);
 int wps_build_vendor_ext(struct wps_device_data *dev, struct wpabuf *msg);
+int wps_build_application_ext(struct wps_device_data *dev, struct wpabuf *msg);
 int wps_build_req_dev_type(struct wps_device_data *dev, struct wpabuf *msg,
 			   unsigned int num_req_dev_types,
 			   const u8 *req_dev_types);

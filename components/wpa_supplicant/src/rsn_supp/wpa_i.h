@@ -10,6 +10,8 @@
 #define WPA_I_H
 
 extern struct wpa_sm gWpaSm;
+#define DEFAULT_EAPOL_VERSION 1
+
 struct install_key {
     int keys_cleared;
     enum wpa_alg alg;

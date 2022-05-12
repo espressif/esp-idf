@@ -40,6 +40,7 @@
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
 #endif
+#include "esp_wpas_glue.h"
 
 #define WPA2_VERSION    "v2.0"
 
@@ -297,74 +298,6 @@ int wpa2_post(uint32_t sig, uint32_t par)
 
 #endif /* USE_WPA2_TASK */
 
-static void wpa2_sendto_wrapper(void *buffer, uint16_t len)
-{
-    esp_wifi_internal_tx(WIFI_IF_STA, buffer, len);
-}
-
-static inline int wpa2_sm_ether_send(struct eap_sm *sm, const u8 *dest, u16 proto,
-                                     const u8 *data, size_t data_len)
-{
-    void *buffer = (void *)(data - sizeof(struct l2_ethhdr));
-    struct l2_ethhdr *eth = NULL;
-
-    if (!buffer) {
-        wpa_printf(MSG_ERROR, "wpa2: invalid data");
-        return ESP_FAIL;
-    } else {
-        eth = (struct l2_ethhdr *)buffer;
-        memcpy(eth->h_dest, dest, ETH_ALEN);
-        memcpy(eth->h_source, sm->ownaddr, ETH_ALEN);
-        eth->h_proto = host_to_be16(proto);
-        wpa2_sendto_wrapper(buffer, sizeof(struct l2_ethhdr) + data_len);
-    }
-
-    return ESP_OK;
-}
-
-u8 *wpa2_sm_alloc_eapol(struct eap_sm *sm, u8 type,
-                        const void *data, u16 data_len,
-                        size_t *msg_len, void **data_pos)
-{
-    void *buffer;
-    struct ieee802_1x_hdr *hdr;
-
-    *msg_len = sizeof(struct ieee802_1x_hdr) + data_len;
-    /* XXX: reserve l2_ethhdr is enough */
-    buffer = os_malloc(*msg_len + sizeof(struct l2_ethhdr));
-
-    if (buffer == NULL) {
-        return NULL;
-    }
-
-    hdr = (struct ieee802_1x_hdr *)((char *)buffer + sizeof(struct l2_ethhdr));
-    hdr->version = 0x01;
-    hdr->type = type;
-    hdr->length = host_to_be16(data_len);
-
-    if (data) {
-        memcpy(hdr + 1, data, data_len);
-    } else {
-        memset(hdr + 1, 0, data_len);
-    }
-
-    if (data_pos) {
-        *data_pos = hdr + 1;
-    }
-
-    return (u8 *) hdr;
-}
-
-
-void wpa2_sm_free_eapol(u8 *buffer)
-{
-    if (buffer != NULL) {
-        buffer = buffer - sizeof(struct l2_ethhdr);
-        os_free(buffer);
-    }
-
-}
-
 int eap_sm_send_eapol(struct eap_sm *sm, struct wpabuf *resp)
 {
     size_t outlen;
@@ -379,15 +312,15 @@ int eap_sm_send_eapol(struct eap_sm *sm, struct wpabuf *resp)
         return WPA_ERR_INVALID_BSSID;
     }
 
-    outbuf = wpa2_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAP_PACKET,
+    outbuf = wpa_alloc_eapol(sm, IEEE802_1X_TYPE_EAP_PACKET,
                                  wpabuf_head_u8(resp), wpabuf_len(resp),
                                  &outlen, NULL);
     if (!outbuf) {
         return ESP_ERR_NO_MEM;
     }
 
-    ret = wpa2_sm_ether_send(sm, bssid, ETH_P_EAPOL, outbuf, outlen);
-    wpa2_sm_free_eapol(outbuf);
+    ret = wpa_ether_send(sm, bssid, ETH_P_EAPOL, outbuf, outlen);
+    wpa_free_eapol(outbuf);
     if (ret) {
         return ESP_FAIL;
     }
@@ -718,14 +651,14 @@ static int wpa2_start_eapol_internal(void)
         return WPA_ERR_INVALID_BSSID;
     }
 
-    buf = wpa2_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_START, (u8 *)"", 0, &len, NULL);
+    buf = wpa_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_START, (u8 *)"", 0, &len, NULL);
     if (!buf) {
         return ESP_FAIL;
     }
 
     wpa2_set_eap_state(WPA2_ENT_EAP_STATE_IN_PROGRESS);
-    wpa2_sm_ether_send(sm, bssid, ETH_P_EAPOL, buf, len);
-    wpa2_sm_free_eapol(buf);
+    wpa_ether_send(sm, bssid, ETH_P_EAPOL, buf, len);
+    wpa_free_eapol(buf);
     return ESP_OK;
 }
 

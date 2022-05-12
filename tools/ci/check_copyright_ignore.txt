@@ -1657,13 +1657,10 @@ components/wifi_provisioning/src/wifi_config.c
 components/wifi_provisioning/src/wifi_provisioning_priv.h
 components/wifi_provisioning/src/wifi_scan.c
 components/wpa_supplicant/esp_supplicant/include/esp_rrm.h
-components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa3.c
 components/wpa_supplicant/esp_supplicant/src/esp_wpa3_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
-components/wpa_supplicant/esp_supplicant/src/esp_wpas_glue.c
-components/wpa_supplicant/esp_supplicant/src/esp_wpas_glue.h
 components/wpa_supplicant/include/utils/wpa_debug.h
 components/wpa_supplicant/include/utils/wpabuf.h
 components/wpa_supplicant/port/include/byteswap.h

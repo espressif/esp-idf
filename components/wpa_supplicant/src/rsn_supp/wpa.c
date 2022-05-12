@@ -191,7 +191,7 @@ static inline int   wpa_sm_get_bssid(struct wpa_sm *sm, u8 *bssid)
 }
 
  /*
- * wpa_ether_send - Send Ethernet frame
+ * wpa_sm_ether_send - Send Ethernet frame
  * @wpa_s: Pointer to wpa_supplicant data
  * @dest: Destination MAC address
  * @proto: Ethertype in host byte order
@@ -199,18 +199,10 @@ static inline int   wpa_sm_get_bssid(struct wpa_sm *sm, u8 *bssid)
  * @len: Frame payload length
  * Returns: >=0 on success, <0 on failure
  */
-static inline int wpa_sm_ether_send( struct wpa_sm *sm, const u8 *dest, u16 proto,
-        const u8 *data, size_t data_len)
+static inline int wpa_sm_ether_send(struct wpa_sm *sm, const u8 *dest, u16 proto,
+                                    const u8 *data, size_t data_len)
 {
-    void *buffer = (void *)(data - sizeof(struct l2_ethhdr));
-    struct l2_ethhdr *eth = (struct l2_ethhdr *)buffer;
-
-    memcpy(eth->h_dest, dest, ETH_ALEN);
-    memcpy(eth->h_source, sm->own_addr, ETH_ALEN);
-    eth->h_proto = host_to_be16(proto);
-    sm->sendto(buffer, sizeof(struct l2_ethhdr) + data_len);
-
-    return 0;
+    return wpa_ether_send(sm, dest, proto, data, data_len);
 }
 
 /**
@@ -2176,7 +2168,7 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
     struct wpa_sm *sm = &gWpaSm;
     u16 spp_attrubute = 0;
 
-    sm->eapol_version = 0x1;   /* DEFAULT_EAPOL_VERSION */
+    sm->eapol_version = DEFAULT_EAPOL_VERSION;   /* DEFAULT_EAPOL_VERSION */
     sm->sendto = snd_func;
     sm->config_assoc_ie = set_assoc_ie_func;
     sm->install_ppkey = ppinstallkey;

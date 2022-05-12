@@ -9,7 +9,7 @@
 #ifndef WPS_ATTR_PARSE_H
 #define WPS_ATTR_PARSE_H
 
-#include "wps/wps.h"
+#include "wps.h"
 
 struct wps_parse_attr {
 	/* fixed length fields */
@@ -47,8 +47,6 @@ struct wps_parse_attr {
 	const u8 *network_idx; /* 1 octet */
 	const u8 *network_key_idx; /* 1 octet */
 	const u8 *mac_addr; /* ETH_ALEN (6) octets */
-	const u8 *key_prov_auto; /* 1 octet (Bool) */
-	const u8 *dot1x_enabled; /* 1 octet (Bool) */
 	const u8 *selected_registrar; /* 1 octet (Bool) */
 	const u8 *request_type; /* 1 octet */
 	const u8 *response_type; /* 1 octet */
@@ -57,50 +55,49 @@ struct wps_parse_attr {
 	const u8 *network_key_shareable; /* 1 octet (Bool) */
 	const u8 *request_to_enroll; /* 1 octet (Bool) */
 	const u8 *ap_channel; /* 2 octets */
+	const u8 *registrar_configuration_methods; /* 2 octets */
 
 	/* variable length fields */
 	const u8 *manufacturer;
-	size_t manufacturer_len;
 	const u8 *model_name;
-	size_t model_name_len;
 	const u8 *model_number;
-	size_t model_number_len;
 	const u8 *serial_number;
-	size_t serial_number_len;
 	const u8 *dev_name;
-	size_t dev_name_len;
 	const u8 *public_key;
-	size_t public_key_len;
 	const u8 *encr_settings;
-	size_t encr_settings_len;
 	const u8 *ssid; /* <= 32 octets */
-	size_t ssid_len;
 	const u8 *network_key; /* <= 64 octets */
-	size_t network_key_len;
-	const u8 *eap_type; /* <= 8 octets */
-	size_t eap_type_len;
-	const u8 *eap_identity; /* <= 64 octets */
-	size_t eap_identity_len;
 	const u8 *authorized_macs; /* <= 30 octets */
-	size_t authorized_macs_len;
 	const u8 *sec_dev_type_list; /* <= 128 octets */
-	size_t sec_dev_type_list_len;
 	const u8 *oob_dev_password; /* 38..54 octets */
-	size_t oob_dev_password_len;
+	u16 manufacturer_len;
+	u16 model_name_len;
+	u16 model_number_len;
+	u16 serial_number_len;
+	u16 dev_name_len;
+	u16 public_key_len;
+	u16 encr_settings_len;
+	u16 ssid_len;
+	u16 network_key_len;
+	u16 authorized_macs_len;
+	u16 sec_dev_type_list_len;
+	u16 oob_dev_password_len;
 
 	/* attributes that can occur multiple times */
 #define MAX_CRED_COUNT 10
-	const u8 *cred[MAX_CRED_COUNT];
-	size_t cred_len[MAX_CRED_COUNT];
-	size_t num_cred;
-
 #define MAX_REQ_DEV_TYPE_COUNT 10
-	const u8 *req_dev_type[MAX_REQ_DEV_TYPE_COUNT];
-	size_t num_req_dev_type;
 
+	unsigned int num_cred;
+	unsigned int num_req_dev_type;
+	unsigned int num_vendor_ext;
+
+	u16 cred_len[MAX_CRED_COUNT];
+	u16 vendor_ext_len[MAX_WPS_PARSE_VENDOR_EXT];
+
+	const u8 *cred[MAX_CRED_COUNT];
+	const u8 *req_dev_type[MAX_REQ_DEV_TYPE_COUNT];
 	const u8 *vendor_ext[MAX_WPS_PARSE_VENDOR_EXT];
-	size_t vendor_ext_len[MAX_WPS_PARSE_VENDOR_EXT];
-	size_t num_vendor_ext;
+	u8 multi_ap_ext;
 };
 
 int wps_parse_msg(const struct wpabuf *msg, struct wps_parse_attr *attr);
