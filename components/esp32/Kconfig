@@ -26,6 +26,10 @@ menu "ESP32-specific"
     menu "SPI RAM config"
         depends on ESP32_SPIRAM_SUPPORT
 
+        config SPIRAM_MODE_QUAD
+            bool
+            default "y"
+
         choice SPIRAM_TYPE
             prompt "Type of SPI RAM chip in use"
             default SPIRAM_TYPE_AUTO
