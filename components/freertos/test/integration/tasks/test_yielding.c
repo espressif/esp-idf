@@ -70,7 +70,7 @@ static void yield_task2(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield must run the next ready task of the same priority", "[freertos]")
+TEST_CASE("Task yield must run the next ready task of the same priority", "[freertos][ignore]")
 {
     /* Reset task count */
     count = 0;
@@ -159,7 +159,7 @@ static void test_task2(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield must not run a blocked task", "[freertos]")
+TEST_CASE("Task yield must not run a blocked task", "[freertos][ignore]")
 {
     /* Reset task count */
     count = 0;
@@ -269,7 +269,7 @@ static void test_critical_task2(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield must not happen when scheduler is suspended", "[freertos]")
+TEST_CASE("Task yield must not happen when scheduler is suspended", "[freertos][ignore]")
 {
     /* Reset task count */
     count = 0;
@@ -333,7 +333,7 @@ static void high_prio_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Lower priority task must yield immediately on creation of higher priority task", "[freertos]")
+TEST_CASE("Lower priority task must yield immediately on creation of higher priority task", "[freertos][ignore]")
 {
     /* Reset task count */
     count = 0;
@@ -389,7 +389,7 @@ static void low_prio_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Lower priority task must yield immediately when the priority of another task is raised", "[freertos]")
+TEST_CASE("Lower priority task must yield immediately when the priority of another task is raised", "[freertos][ignore]")
 {
     /* Reset task count */
     count = 0;
@@ -472,7 +472,7 @@ static void other_core_task2(void *arg)
     while (1) { }
 }
 
-TEST_CASE("Task yield on other core can go through", "[freertos]")
+TEST_CASE("Task yield on other core can go through", "[freertos][ignore]")
 {
     TaskHandle_t other_core_taskhandle1;
     TaskHandle_t other_core_taskhandle2;
@@ -577,7 +577,7 @@ static void other_core_critical_task2(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield on other core must not happen when scheduler is suspended", "[freertos]")
+TEST_CASE("Task yield on other core must not happen when scheduler is suspended", "[freertos][ignore]")
 {
     /* Reset task count */
     count = 0;
