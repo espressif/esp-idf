@@ -8,6 +8,7 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "utils/eloop.h"
 #include "utils/state_machine.h"
 #include "common/ieee802_11_defs.h"
 #include "ap/wpa_auth.h"
@@ -48,9 +49,6 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
 
 static const u32 dot11RSNAConfigGroupUpdateCount = 4;
 static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
-static const u32 eapol_key_timeout_first = 100; /* ms */
-static const u32 eapol_key_timeout_subseq = 1000; /* ms */
-static const u32 eapol_key_timeout_first_group = 500; /* ms */
 
 #define WPA_SM_MAX_INDEX 16
 static void *s_sm_table[WPA_SM_MAX_INDEX];
@@ -1129,7 +1127,6 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
                const u8 *kde, size_t kde_len,
                int keyidx, int encr)
 {
-    int timeout_ms;
     int pairwise = key_info & WPA_KEY_INFO_KEY_TYPE;
     int ctr;
 
@@ -1140,17 +1137,8 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
              keyidx, encr, 0);
 
     ctr = pairwise ? sm->TimeoutCtr : sm->GTimeoutCtr;
-    if (ctr == 1 && wpa_auth->conf.tx_status)
-        timeout_ms = pairwise ? eapol_key_timeout_first :
-            eapol_key_timeout_first_group;
-    else
-        timeout_ms = eapol_key_timeout_subseq;
     if (pairwise && ctr == 1 && !(key_info & WPA_KEY_INFO_MIC))
         sm->pending_1_of_4_timeout = 1;
-    wpa_printf( MSG_DEBUG, "WPA: Use EAPOL-Key timeout of %u ms (retry "
-           "counter %d)\n", timeout_ms, ctr);
-    eloop_register_timeout(timeout_ms / 1000, (timeout_ms % 1000) * 1000,
-                   wpa_send_eapol_timeout, wpa_auth, sm);
     ets_timer_disarm(&sm->resend_eapol);
     ets_timer_setfn(&sm->resend_eapol, (ETSTimerFunc *)resend_eapol_handle, (void*)(sm->index));
     ets_timer_arm(&sm->resend_eapol, 1000, 0);

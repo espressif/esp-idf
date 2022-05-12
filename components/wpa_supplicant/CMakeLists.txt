@@ -1,4 +1,5 @@
 set(srcs "port/os_xtensa.c"
+    "port/eloop.c"
     "src/ap/ap_config.c"
     "src/ap/ieee802_1x.c"
     "src/ap/wpa_auth.c"

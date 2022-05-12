@@ -196,14 +196,4 @@ PRINTF_FORMAT(3, 4);
 typedef void (*wpa_msg_cb_func)(void *ctx, int level, const char *txt,
 				size_t len);
 
-typedef void (*eloop_timeout_handler)(void *eloop_data, void *user_ctx);
-
-int eloop_cancel_timeout(eloop_timeout_handler handler,
-			 void *eloop_data, void *user_data);
-
-int eloop_register_timeout(unsigned int secs, unsigned int usecs,
-			   eloop_timeout_handler handler,
-			   void *eloop_data, void *user_data);
-
-
 #endif /* WPA_DEBUG_H */

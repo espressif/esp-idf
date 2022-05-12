@@ -112,16 +112,4 @@ void  wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len)
 }
 #endif
 
-int  eloop_cancel_timeout(eloop_timeout_handler handler,
-			 void *eloop_data, void *user_data)
-{
-    return 0;
-}
-
-int  eloop_register_timeout(unsigned int secs, unsigned int usecs,
-			   eloop_timeout_handler handler,
-			   void *eloop_data, void *user_data)
-{
-    return 0;
-}
 #endif // ESP_SUPPLICANT
