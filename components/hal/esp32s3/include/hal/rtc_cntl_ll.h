@@ -44,11 +44,6 @@ static inline void rtc_cntl_ll_ext1_clear_wakeup_pins(void)
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_STATUS_CLR);
 }
 
-static inline void rtc_cntl_ll_ulp_wakeup_enable(void)
-{
-    SET_PERI_REG_BITS(RTC_CNTL_STATE0_REG, RTC_CNTL_WAKEUP_ENA_V, 0x800, RTC_CNTL_WAKEUP_ENA_S);
-}
-
 static inline void rtc_cntl_ll_set_tagmem_retention_link_addr(uint32_t link_addr)
 {
     REG_SET_FIELD(APB_CTRL_RETENTION_CTRL1_REG, APB_CTRL_RETENTION_TAG_LINK_ADDR, link_addr);

@@ -40,11 +40,6 @@ static inline void rtc_cntl_ll_ext1_clear_wakeup_pins(void)
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_STATUS_CLR);
 }
 
-static inline void rtc_cntl_ll_ulp_wakeup_enable(void)
-{
-    SET_PERI_REG_BITS(RTC_CNTL_STATE0_REG, RTC_CNTL_WAKEUP_ENA_V, 0x800, RTC_CNTL_WAKEUP_ENA_S);
-}
-
 static inline void rtc_cntl_ll_ulp_int_clear(void)
 {
     REG_SET_BIT(RTC_CNTL_INT_CLR_REG, RTC_CNTL_ULP_CP_INT_CLR);
