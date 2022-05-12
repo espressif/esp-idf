@@ -65,6 +65,7 @@
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (12)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
+#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
