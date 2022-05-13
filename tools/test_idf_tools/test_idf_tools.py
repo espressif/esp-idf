@@ -386,6 +386,13 @@ class TestUsage(unittest.TestCase):
 
 class TestMaintainer(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        idf_path = os.getenv('IDF_PATH')
+        cls.tools_old = os.path.join(idf_path, 'tools/tools.json')
+        cls.tools_new = os.path.join(idf_path, 'tools/tools.new.json')
+        cls.test_tool_name = 'xtensa-esp32-elf'
+
     def test_validation(self):
         idf_tools.main(['validate'])
 
@@ -394,11 +401,87 @@ class TestMaintainer(unittest.TestCase):
         idf_path = os.getenv('IDF_PATH')
         if not idf_path:
             self.fail('IDF_PATH needs to be set to run this test')
-        with open(os.path.join(idf_path, 'tools/tools.json'), 'r') as f:
+        with open(self.tools_old, 'r') as f:
             json_old = f.read()
-        with open(os.path.join(idf_path, 'tools/tools.new.json'), 'r') as f:
+        with open(self.tools_new, 'r') as f:
             json_new = f.read()
         self.assertEqual(json_old, json_new, "Please check 'tools/tools.new.json' to find a cause!")
+
+    def add_version_get_expected_json(self, addition_file, replace=False):
+        with open(self.tools_old, 'r') as f:
+            expected_json = json.load(f)
+        with open(addition_file, 'r') as f:
+            addition_json = json.load(f)
+        for tool in expected_json['tools']:
+            if tool['name'] == self.test_tool_name:
+                if replace:
+                    tool['versions'] = [addition_json]
+                else:
+                    tool['versions'].append(addition_json)
+                return expected_json
+        return None
+
+    def test_add_version_artifact_addition(self):
+        filenames = []
+        with open('add_version/artifact_input.json', 'r') as f:
+            add_tools_info = json.load(f)
+        for tool in add_tools_info:
+            filenames.append(tool['filename'])
+            with open(tool['filename'], 'w') as f:
+                self.addCleanup(os.remove, f.name)
+                f.write('1' * tool['size'])
+        idf_tools.main(
+            [
+                'add-version',
+                '--tool',
+                self.test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                'test',
+                '--artifact-file'
+            ] + filenames
+        )
+        expected_json = self.add_version_get_expected_json('add_version/artifact_expected_addition.json')
+        with open(self.tools_new, 'r') as f1:
+            self.assertEqual(json.load(f1), expected_json, "Please check 'tools/tools.new.json' to find a cause!")
+
+    def test_add_version_checksum_addition(self):
+        idf_tools.main(
+            [
+                'add-version',
+                '--tool',
+                self.test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                'test',
+                '--checksum-file',
+                'add_version/checksum.sha256',
+            ]
+        )
+        expected_json = self.add_version_get_expected_json('add_version/checksum_expected_addition.json')
+        with open(self.tools_new, 'r') as f1:
+            self.assertEqual(json.load(f1), expected_json, "Please check 'tools/tools.new.json' to find a cause!")
+
+    def test_add_version_checksum_with_override(self):
+        idf_tools.main(
+            [
+                'add-version',
+                '--tool',
+                self.test_tool_name,
+                '--url-prefix',
+                'http://test.com',
+                '--version',
+                'test',
+                '--override',
+                '--checksum-file',
+                'add_version/checksum.sha256'
+            ]
+        )
+        expected_json = self.add_version_get_expected_json('add_version/checksum_expected_override.json', True)
+        with open(self.tools_new, 'r') as f1:
+            self.assertEqual(json.load(f1), expected_json, "Please check 'tools/tools.new.json' to find a cause!")
 
 
 if __name__ == '__main__':
