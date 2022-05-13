@@ -2243,7 +2243,6 @@ examples/system/ota/advanced_https_ota/main/ble_helper/include/ble_api.h
 examples/system/ota/native_ota_example/example_test.py
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/example_test.py
-examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/main/otatool_main.c
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/simple_ota_example/example_test.py
