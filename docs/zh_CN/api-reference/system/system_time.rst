@@ -29,6 +29,8 @@
 默认时钟源的时间精度最高，建议使用该配置。此外，用户也可以通过配置选项 :ref:`CONFIG_NEWLIB_TIME_SYSCALL` 来选择其他时钟源。
 
 
+.. _rtc-clock-source-choice:
+
 RTC 定时器时钟源
 -----------------
 

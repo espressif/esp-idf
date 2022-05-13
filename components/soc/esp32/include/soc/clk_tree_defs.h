@@ -37,18 +37,18 @@ extern "C" {
  */
 
 /* With the default value of CK8M_DFREQ = 172, RC_FAST clock frequency is 8.5 MHz +/- 7% */
-#define SOC_CLK_RC_FAST_FREQ_APPROX         8500000
+#define SOC_CLK_RC_FAST_FREQ_APPROX         8500000                             /*!< Approximate RC_FAST_CLK frequency in Hz */
 /* With the default value of DCAP, range is +/- 5% */
-#define SOC_CLK_RC_SLOW_FREQ_APPROX         150000
-#define SOC_CLK_RC_FAST_D256_FREQ_APPROX    (SOC_CLK_RC_FAST_FREQ_APPROX / 256)
-#define SOC_CLK_XTAL32K_FREQ_APPROX         32768
+#define SOC_CLK_RC_SLOW_FREQ_APPROX         150000                              /*!< Approximate RC_SLOW_CLK frequency in Hz */
+#define SOC_CLK_RC_FAST_D256_FREQ_APPROX    (SOC_CLK_RC_FAST_FREQ_APPROX / 256) /*!< Approximate RC_FAST_D256_CLK frequency in Hz */
+#define SOC_CLK_XTAL32K_FREQ_APPROX         32768                               /*!< Approximate XTAL32K_CLK frequency in Hz */
 
+// Naming convention: SOC_ROOT_CLK_{loc}_{type}_[attr]
+// {loc}: EXT, INT
+// {type}: XTAL, RC
+// [attr] - optional: [frequency], FAST, SLOW
 /**
  * @brief Root clock
- * Naming convention: SOC_ROOT_CLK_{loc}_{type}_[attr]
- * {loc}: EXT, INT
- * {type}: XTAL, RC
- * [attr] - optional: [frequency], FAST, SLOW
  */
 typedef enum {
     SOC_ROOT_CLK_INT_RC_FAST,          /*!< Internal 8MHz RC oscillator */
@@ -88,28 +88,29 @@ typedef enum {
     SOC_RTC_FAST_CLK_SRC_RC_FAST = 1,      /*!< Select RC_FAST_CLK as RTC_FAST_CLK source */
 } soc_rtc_fast_clk_src_t;
 
+// Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
+// {[upstream]clock_name}: APB, APLL, (BB)PLL, etc.
+// [attr] - optional: FAST, SLOW, D<divider>, F<freq>
 /**
  * @brief Supported clock sources for modules (CPU, peripherals, RTC, etc.)
- * Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
- * {[upstream]clock_name}: APB, APLL, (BB)PLL, etc.
- * [attr] - optional: FAST, SLOW, D<divider>, F<freq>
+ *
  * @note enum starts from 1, to save 0 for special purpose
  */
 typedef enum {
     // For CPU domain
-    SOC_MOD_CLK_CPU = 1,                       /*< CPU_CLK can be sourced from XTAL, PLL, RC_FAST, or APLL by configuring soc_cpu_clk_src_t */
+    SOC_MOD_CLK_CPU = 1,                       /*!< CPU_CLK can be sourced from XTAL, PLL, RC_FAST, or APLL by configuring soc_cpu_clk_src_t */
     // For RTC domain
-    SOC_MOD_CLK_RTC_FAST = 2,                  /*< RTC_FAST_CLK can be sourced from XTAL_D4 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
-    SOC_MOD_CLK_RTC_SLOW = 3,                  /*< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC_FAST_D256 by configuring soc_rtc_slow_clk_src_t */
+    SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D4 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
+    SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC_FAST_D256 by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
-    SOC_MOD_CLK_APB = 4,                       /*< APB_CLK is highly dependent on the CPU_CLK source */
-    SOC_MOD_CLK_PLL_D2 = 5,                    /*< PLL_D2_CLK is derived from PLL, it has a fixed divider of 2 */
-    SOC_MOD_CLK_XTAL32K = 6,                   /*< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
-    SOC_MOD_CLK_RC_FAST = 7,                   /*< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
-    SOC_MOD_CLK_RC_FAST_D256 = 8,              /*< RC_FAST_D256_CLK comes from the internal 8MHz rc oscillator, divided by 256, and passing a clock gating to the peripherals */
-    SOC_MOD_CLK_XTAL = 9,                      /*< XTAL_CLK comes from the external crystal (2~40MHz) */
-    SOC_MOD_CLK_REF_TICK = 10,                 /*< REF_TICK is derived from APB, it has a fixed frequency of 1MHz even when APB frequency changes */
-    SOC_MOD_CLK_APLL = 11,                     /*< APLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
+    SOC_MOD_CLK_APB,                           /*!< APB_CLK is highly dependent on the CPU_CLK source */
+    SOC_MOD_CLK_PLL_D2,                        /*!< PLL_D2_CLK is derived from PLL, it has a fixed divider of 2 */
+    SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
+    SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
+    SOC_MOD_CLK_RC_FAST_D256,                  /*!< RC_FAST_D256_CLK comes from the internal 8MHz rc oscillator, divided by 256, and passing a clock gating to the peripherals */
+    SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external crystal (2~40MHz) */
+    SOC_MOD_CLK_REF_TICK,                      /*!< REF_TICK is derived from APB, it has a fixed frequency of 1MHz even when APB frequency changes */
+    SOC_MOD_CLK_APLL,                          /*!< APLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
 } soc_module_clk_t;
 
 
@@ -117,6 +118,7 @@ typedef enum {
 
 /**
  * @brief Array initializer for all supported clock sources of GPTimer
+ *
  * The following code can be used to iterate all possible clocks:
  * @code{c}
  * soc_periph_gptimer_clk_src_t gptimer_clks[] = (soc_periph_gptimer_clk_src_t)SOC_GPTIMER_CLKS;
