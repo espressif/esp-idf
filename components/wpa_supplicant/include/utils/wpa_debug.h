@@ -65,12 +65,12 @@ void wpa_debug_print_timestamp(void);
 #define wpa_dbg(ctx, level, fmt, args...) wpa_printf(level, fmt, ##args)
 
 void wpa_dump_mem(char* desc, uint8_t *addr, uint16_t len);
-static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
+static inline void wpa_hexdump_ascii(int level, const char *title, const void *buf, size_t len)
 {
 
 }
 
-static inline void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf, size_t len)
+static inline void wpa_hexdump_ascii_key(int level, const char *title, const void *buf, size_t len)
 {
 }
 
@@ -128,7 +128,7 @@ static inline void wpa_hexdump_buf_key(int level, const char *title,
  * the hex numbers and ASCII characters (for printable range) are shown. 16
  * bytes per line will be shown.
  */
-void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
+void wpa_hexdump_ascii(int level, const char *title, const void *buf,
 		       size_t len);
 
 /**
@@ -145,7 +145,7 @@ void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
  * bytes per line will be shown. This works like wpa_hexdump_ascii(), but by
  * default, does not include secret keys (passwords, etc.) in debug output.
  */
-void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
+void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
 			   size_t len);
 #else
 #define wpa_printf(level,fmt, args...) do {} while(0)

@@ -25,7 +25,7 @@
 #include "crypto/crypto.h"
 
 #include "utils/ext_password.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/eap_i.h"
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap.h"
@@ -717,7 +717,7 @@ static int eap_peer_sm_init(void)
         goto _err;
     }
 
-    sm->ssl_ctx = tls_init();
+    sm->ssl_ctx = tls_init(NULL);
     if (sm->ssl_ctx == NULL) {
         wpa_printf(MSG_WARNING, "SSL: Failed to initialize TLS context.");
         ret = ESP_FAIL;

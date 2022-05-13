@@ -1,6 +1,6 @@
 /*
  * TLSv1 common definitions
- * Copyright (c) 2006-2011, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2006-2014, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -170,6 +170,7 @@ enum {
 #define TLS_EXT_TRUNCATED_HMAC			4 /* RFC 4366 */
 #define TLS_EXT_STATUS_REQUEST			5 /* RFC 4366 */
 #define TLS_EXT_SIGNATURE_ALGORITHMS		13 /* RFC 5246 */
+#define TLS_EXT_STATUS_REQUEST_V2		17 /* RFC 6961 */
 #define TLS_EXT_SESSION_TICKET			35 /* RFC 4507 */
 
 #define TLS_EXT_PAC_OPAQUE TLS_EXT_SESSION_TICKET /* EAP-FAST terminology */

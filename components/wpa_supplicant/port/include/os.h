@@ -185,7 +185,11 @@ int os_unsetenv(const char *name);
  * binary and text files can be read with this function. The caller is
  * responsible for freeing the returned buffer with os_free().
  */
-char * os_readfile(const char *name, size_t *len);
+/* We don't support file reading support */
+static inline char *os_readfile(const char *name, size_t *len)
+{
+	return NULL;
+}
 
 /*
  * The following functions are wrapper for standard ANSI C or POSIX functions.
@@ -249,7 +253,6 @@ char * ets_strdup(const char *s);
 #ifndef os_memcmp_const
 #define os_memcmp_const(s1, s2, n) memcmp((s1), (s2), (n))
 #endif
-
 
 #ifndef os_strlen
 #define os_strlen(s) strlen(s)
@@ -316,7 +319,7 @@ static inline void * os_realloc_array(void *ptr, size_t nmemb, size_t size)
 	return os_realloc(ptr, nmemb * size);
 }
 
-#ifdef USE_MBEDTLS_CRYPTO
+#ifdef CONFIG_CRYPTO_MBEDTLS
 void forced_memzero(void *ptr, size_t len);
 #else
 /* Try to prevent most compilers from optimizing out clearing of memory that

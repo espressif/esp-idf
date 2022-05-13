@@ -11,6 +11,19 @@ menu "Supplicant"
         help
             Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 
+    if WPA_MBEDTLS_CRYPTO
+        config WPA_MBEDTLS_TLS_CLIENT
+            bool "Use MbedTLS TLS client for WiFi Enterprise connection"
+            default y
+            select MBEDTLS_TLS_ENABLED
+            help
+                Select this option to use MbedTLS TLS client for WPA2 enterprise connection.
+                Please note that from MbedTLS-3.0 onwards, MbedTLS does not support SSL-3.0
+                TLS-v1.0, TLS-v1.1 versions. Incase your server is using one of these version,
+                it is advisable to update your server.
+                Please disable this option for compatibilty with older TLS versions.
+    endif
+
     config WPA_WAPI_PSK
         bool "Enable WAPI PSK support"
         default n

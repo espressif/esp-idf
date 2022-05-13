@@ -13,7 +13,7 @@
 #include "crypto.h"
 #include "common/defs.h"
 
-#ifdef USE_MBEDTLS_CRYPTO
+#ifdef CONFIG_CRYPTO_MBEDTLS
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 
@@ -26,12 +26,21 @@
 struct crypto_public_key;
 struct crypto_private_key;
 
+#ifdef DEBUG_PRINT
 static void crypto_dump_verify_info(u32 flags)
 {
 	char dump_buffer[1024];
 
 	mbedtls_x509_crt_verify_info(dump_buffer, 1024, "  ! ", flags );
 	wpa_printf(MSG_ERROR, "%s", dump_buffer);
+}
+#else
+static void crypto_dump_verify_info(u32 flags) { }
+#endif
+
+static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
+{
+	return os_get_random(buf, len);
 }
 
 int crypto_verify_cert(const u8 *cert_start, int certlen, const u8 *ca_cert_start, int ca_certlen)
@@ -110,7 +119,8 @@ struct crypto_private_key *  crypto_private_key_import(const u8 *key,
 
 	mbedtls_pk_init(pkey);
 
-	ret = mbedtls_pk_parse_key(pkey, key, len, (const unsigned char *)passwd, passwd ? os_strlen(passwd) : 0);
+	ret = mbedtls_pk_parse_key(pkey, key, len, (const unsigned char *)passwd,
+			passwd ? os_strlen(passwd) : 0, crypto_rng_wrapper, NULL);
 
 	if (ret < 0) {
 		wpa_printf(MSG_ERROR, "failed to parse private key");
@@ -201,13 +211,13 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 	}
 
 	ret = mbedtls_rsa_pkcs1_encrypt(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random,
-			ctr_drbg, MBEDTLS_RSA_PUBLIC, inlen, in, out);
+					ctr_drbg, inlen, in, out);
 
 	if(ret != 0) {
 		wpa_printf(MSG_ERROR, " failed  !  mbedtls_rsa_pkcs1_encrypt returned -0x%04x", -ret);
 		goto cleanup;
 	}
-	*outlen = mbedtls_pk_rsa(*pkey)->len;
+	*outlen = mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
 
 cleanup:
 	mbedtls_ctr_drbg_free( ctr_drbg );
@@ -246,9 +256,9 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
 	if (ret < 0)
 		goto cleanup;
 
-	i =  mbedtls_pk_rsa(*pkey)->len;
+	i =  mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
 	ret = mbedtls_rsa_rsaes_pkcs1_v15_decrypt(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random,
-			ctr_drbg, MBEDTLS_RSA_PRIVATE, &i, in, out, *outlen);
+			ctr_drbg, &i, in, out, *outlen);
 
 	*outlen = i;
 
@@ -267,17 +277,37 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
 		u8 *out, size_t *outlen)
 {
 	int ret;
+	const char *pers = "rsa_encrypt";
 	mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
+	mbedtls_entropy_context *entropy = os_malloc(sizeof(*entropy));
+	mbedtls_ctr_drbg_context *ctr_drbg = os_malloc(sizeof(*ctr_drbg));
 
-	if((ret = mbedtls_rsa_pkcs1_sign(mbedtls_pk_rsa(*pkey), NULL, NULL, MBEDTLS_RSA_PRIVATE,
-					(mbedtls_pk_rsa(*pkey))->hash_id,
-					inlen, in, out)) != 0 ) {
-		wpa_printf(MSG_ERROR, " failed  ! mbedtls_rsa_pkcs1_sign returned %d", ret );
+	if (!pkey || !entropy || !ctr_drbg) {
+		if (entropy)
+			os_free(entropy);
+		if (ctr_drbg)
+			os_free(ctr_drbg);
 		return -1;
 	}
-	*outlen = mbedtls_pk_rsa(*pkey)->len;
+	mbedtls_ctr_drbg_init( ctr_drbg );
+	mbedtls_entropy_init( entropy );
+	ret = mbedtls_ctr_drbg_seed(ctr_drbg, mbedtls_entropy_func,
+			entropy, (const unsigned char *) pers,
+			strlen(pers));
 
-	return 0;
+	if((ret = mbedtls_rsa_pkcs1_sign(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random, ctr_drbg,
+					(mbedtls_pk_rsa(*pkey))->MBEDTLS_PRIVATE(hash_id),
+					inlen, in, out)) != 0 ) {
+		wpa_printf(MSG_ERROR, " failed  ! mbedtls_rsa_pkcs1_sign returned %d", ret );
+		goto cleanup;
+	}
+	*outlen = mbedtls_pk_rsa(*pkey)->MBEDTLS_PRIVATE(len);
+cleanup:
+	mbedtls_ctr_drbg_free( ctr_drbg );
+	mbedtls_entropy_free( entropy );
+	os_free(entropy);
+	os_free(ctr_drbg);
+	return ret;
 }
 
 
@@ -302,44 +332,69 @@ void  crypto_private_key_free(struct crypto_private_key *key)
 	os_free(pkey);
 }
 
-
 int  crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
 		const u8 *crypt, size_t crypt_len,
 		u8 *plain, size_t *plain_len)
 {
-	const char *pers = "rsa_decrypt";
+	size_t len;
+	u8 *pos;
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
-	mbedtls_ctr_drbg_context ctr_drbg;
-	mbedtls_entropy_context entropy;
-	size_t i;
 
-	mbedtls_entropy_init( &entropy );
-	mbedtls_ctr_drbg_init( &ctr_drbg );
+	len = *plain_len;
+	if (mbedtls_rsa_public(mbedtls_pk_rsa(*pkey), crypt, plain) < 0)
+		return -1;
 
-	int ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func,
-			&entropy, (const unsigned char *) pers,
-			strlen( pers ) );
-	if(ret != 0) {
-		wpa_printf(MSG_ERROR, " failed  ! mbedtls_ctr_drbg_seed returned %d",
-				ret );
-		goto cleanup;
+	/*
+	 * PKCS #1 v1.5, 8.1:
+	 *
+	 * EB = 00 || BT || PS || 00 || D
+	 * BT = 00 or 01
+	 * PS = k-3-||D|| times (00 if BT=00) or (FF if BT=01)
+	 * k = length of modulus in octets
+	 *
+	 * Based on 10.1.3, "The block type shall be 01" for a signature.
+	 */
+
+	if (len < 3 + 8 + 16 /* min hash len */ ||
+	    plain[0] != 0x00 || plain[1] != 0x01) {
+		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
+			   "structure");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+		return -1;
 	}
 
-	i =  mbedtls_pk_rsa(*pkey)->len;
-	ret = mbedtls_rsa_pkcs1_decrypt(mbedtls_pk_rsa(*pkey), mbedtls_ctr_drbg_random,
-			&ctr_drbg, MBEDTLS_RSA_PUBLIC, &i,
-			crypt, plain, *plain_len);
-	if( ret != 0 ) {
-		wpa_printf(MSG_ERROR, " failed ! mbedtls_rsa_pkcs1_decrypt returned %d",
-				ret );
-		goto cleanup;
+	pos = plain + 3;
+	/* BT = 01 */
+	if (plain[2] != 0xff) {
+		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature "
+			   "PS (BT=01)");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+		return -1;
 	}
-	*plain_len = i;
+	while (pos < plain + len && *pos == 0xff)
+		pos++;
 
-cleanup:
-	mbedtls_entropy_free( &entropy );
-	mbedtls_ctr_drbg_free( &ctr_drbg );
+	if (pos - plain - 2 < 8) {
+		/* PKCS #1 v1.5, 8.1: At least eight octets long PS */
+		wpa_printf(MSG_INFO, "LibTomCrypt: Too short signature "
+			   "padding");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+		return -1;
+	}
 
-	return ret;
+	if (pos + 16 /* min hash len */ >= plain + len || *pos != 0x00) {
+		wpa_printf(MSG_INFO, "LibTomCrypt: Invalid signature EB "
+			   "structure (2)");
+		wpa_hexdump_key(MSG_DEBUG, "Signature EB", plain, len);
+		return -1;
+	}
+	pos++;
+	len -= pos - plain;
+
+	/* Strip PKCS #1 header */
+	os_memmove(plain, pos, len);
+	*plain_len = len;
+
+	return 0;
 }
 #endif

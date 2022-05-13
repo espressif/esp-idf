@@ -9,14 +9,6 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_WPA_MBEDTLS_CRYPTO
-#define USE_MBEDTLS_CRYPTO 1
-#else
-#define CONFIG_TLS_INTERNAL_CLIENT
-#define CONFIG_CRYPTO_INTERNAL
-#define CONFIG_TLSV12
-#endif
-
 #if CONFIG_WPA_DEBUG_PRINT
 #define DEBUG_PRINT
 #endif

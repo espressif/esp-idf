@@ -10,6 +10,7 @@
 #define SHA384_H
 
 #define SHA384_MAC_LEN 48
+#define SHA512_MAC_LEN 64
 
 int hmac_sha384_vector(const u8 *key, size_t key_len, size_t num_elem,
 		       const u8 *addr[], const size_t *len, u8 *mac);

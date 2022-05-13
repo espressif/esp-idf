@@ -1,21 +1,19 @@
 /*
  * TLSv1 common routines
- * Copyright (c) 2006-2011, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2006-2014, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
+#include "common.h"
 #include "crypto/md5.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"
-#include "tls/tls.h"
-#include "tls/x509v3.h"
-#include "tls/tlsv1_common.h"
-#include "eap_peer/eap_i.h"
+#include "x509v3.h"
+#include "tlsv1_common.h"
 
 
 /*
@@ -32,35 +30,39 @@ static const struct tls_cipher_suite tls_cipher_suites[] = {
 	  TLS_HASH_MD5 },
 	{ TLS_RSA_WITH_RC4_128_SHA, TLS_KEY_X_RSA, TLS_CIPHER_RC4_128,
 	  TLS_HASH_SHA },
-#ifdef CONFIG_DES
 	{ TLS_RSA_WITH_DES_CBC_SHA, TLS_KEY_X_RSA, TLS_CIPHER_DES_CBC,
 	  TLS_HASH_SHA },
-#endif
-#ifdef CONFIG_DES3
 	{ TLS_RSA_WITH_3DES_EDE_CBC_SHA, TLS_KEY_X_RSA,
 	  TLS_CIPHER_3DES_EDE_CBC, TLS_HASH_SHA },
-#endif
+	{ TLS_DHE_RSA_WITH_DES_CBC_SHA, TLS_KEY_X_DHE_RSA, TLS_CIPHER_DES_CBC,
+	  TLS_HASH_SHA},
+	{ TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, TLS_KEY_X_DHE_RSA,
+	  TLS_CIPHER_3DES_EDE_CBC, TLS_HASH_SHA },
  	{ TLS_DH_anon_WITH_RC4_128_MD5, TLS_KEY_X_DH_anon,
 	  TLS_CIPHER_RC4_128, TLS_HASH_MD5 },
-#ifdef CONFIG_DES
  	{ TLS_DH_anon_WITH_DES_CBC_SHA, TLS_KEY_X_DH_anon,
 	  TLS_CIPHER_DES_CBC, TLS_HASH_SHA },
-#endif
-#ifdef CONFIG_DES3
  	{ TLS_DH_anon_WITH_3DES_EDE_CBC_SHA, TLS_KEY_X_DH_anon,
 	  TLS_CIPHER_3DES_EDE_CBC, TLS_HASH_SHA },
-#endif
 	{ TLS_RSA_WITH_AES_128_CBC_SHA, TLS_KEY_X_RSA, TLS_CIPHER_AES_128_CBC,
 	  TLS_HASH_SHA },
+	{ TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_KEY_X_DHE_RSA,
+	  TLS_CIPHER_AES_128_CBC, TLS_HASH_SHA },
 	{ TLS_DH_anon_WITH_AES_128_CBC_SHA, TLS_KEY_X_DH_anon,
 	  TLS_CIPHER_AES_128_CBC, TLS_HASH_SHA },
 	{ TLS_RSA_WITH_AES_256_CBC_SHA, TLS_KEY_X_RSA, TLS_CIPHER_AES_256_CBC,
 	  TLS_HASH_SHA },
+	{ TLS_DHE_RSA_WITH_AES_256_CBC_SHA, TLS_KEY_X_DHE_RSA,
+	  TLS_CIPHER_AES_256_CBC, TLS_HASH_SHA },
 	{ TLS_DH_anon_WITH_AES_256_CBC_SHA, TLS_KEY_X_DH_anon,
 	  TLS_CIPHER_AES_256_CBC, TLS_HASH_SHA },
 	{ TLS_RSA_WITH_AES_128_CBC_SHA256, TLS_KEY_X_RSA,
 	  TLS_CIPHER_AES_128_CBC, TLS_HASH_SHA256 },
 	{ TLS_RSA_WITH_AES_256_CBC_SHA256, TLS_KEY_X_RSA,
+	  TLS_CIPHER_AES_256_CBC, TLS_HASH_SHA256 },
+	{ TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, TLS_KEY_X_DHE_RSA,
+	  TLS_CIPHER_AES_128_CBC, TLS_HASH_SHA256 },
+	{ TLS_DHE_RSA_WITH_AES_256_CBC_SHA256, TLS_KEY_X_DHE_RSA,
 	  TLS_CIPHER_AES_256_CBC, TLS_HASH_SHA256 },
 	{ TLS_DH_anon_WITH_AES_128_CBC_SHA256, TLS_KEY_X_DH_anon,
 	  TLS_CIPHER_AES_128_CBC, TLS_HASH_SHA256 },
@@ -68,8 +70,7 @@ static const struct tls_cipher_suite tls_cipher_suites[] = {
 	  TLS_CIPHER_AES_256_CBC, TLS_HASH_SHA256 }
 };
 
-#define NUM_ELEMS(a) (sizeof(a) / sizeof((a)[0]))
-#define NUM_TLS_CIPHER_SUITES NUM_ELEMS(tls_cipher_suites)
+#define NUM_TLS_CIPHER_SUITES ARRAY_SIZE(tls_cipher_suites)
 
 
 static const struct tls_cipher_data tls_ciphers[] = {
@@ -83,23 +84,19 @@ static const struct tls_cipher_data tls_ciphers[] = {
 	  CRYPTO_CIPHER_ALG_RC4 },
 	{ TLS_CIPHER_RC4_128,      TLS_CIPHER_STREAM, 16, 16,  0,
 	  CRYPTO_CIPHER_ALG_RC4 },
-#ifdef CONFIG_DES
 	{ TLS_CIPHER_DES40_CBC,    TLS_CIPHER_BLOCK,   5,  8,  8,
 	  CRYPTO_CIPHER_ALG_DES },
 	{ TLS_CIPHER_DES_CBC,      TLS_CIPHER_BLOCK,   8,  8,  8,
 	  CRYPTO_CIPHER_ALG_DES },
-#endif
-#ifdef CONFIG_DES3
 	{ TLS_CIPHER_3DES_EDE_CBC, TLS_CIPHER_BLOCK,  24, 24,  8,
 	  CRYPTO_CIPHER_ALG_3DES },
-#endif
 	{ TLS_CIPHER_AES_128_CBC,  TLS_CIPHER_BLOCK,  16, 16, 16,
 	  CRYPTO_CIPHER_ALG_AES },
 	{ TLS_CIPHER_AES_256_CBC,  TLS_CIPHER_BLOCK,  32, 32, 16,
 	  CRYPTO_CIPHER_ALG_AES }
 };
 
-#define NUM_TLS_CIPHER_DATA NUM_ELEMS(tls_ciphers)
+#define NUM_TLS_CIPHER_DATA ARRAY_SIZE(tls_ciphers)
 
 
 /**
@@ -222,12 +219,13 @@ int tls_verify_hash_init(struct tls_verify_hash *verify)
 		return -1;
 	}
 #ifdef CONFIG_TLSV12
-  verify->sha256_client = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
-  verify->sha256_server = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
-  verify->sha256_cert = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
-
-	if (verify->sha256_client == NULL ||
-		verify->sha256_server == NULL ||
+	verify->sha256_client = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL,
+						 0);
+	verify->sha256_server = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL,
+						 0);
+	verify->sha256_cert = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL,
+					       0);
+	if (verify->sha256_client == NULL || verify->sha256_server == NULL ||
 	    verify->sha256_cert == NULL) {
 		tls_verify_hash_free(verify);
 		return -1;
@@ -254,7 +252,7 @@ void tls_verify_hash_add(struct tls_verify_hash *verify, const u8 *buf,
 	}
 #ifdef CONFIG_TLSV12
 	if (verify->sha256_client)
-	  crypto_hash_update(verify->sha256_client, buf, len);
+		crypto_hash_update(verify->sha256_client, buf, len);
 	if (verify->sha256_server)
 		crypto_hash_update(verify->sha256_server, buf, len);
 	if (verify->sha256_cert)
@@ -351,6 +349,14 @@ int tlsv12_key_x_server_params_hash(u16 tls_version, u8 hash_alg,
 	case TLS_HASH_ALG_SHA256:
 		alg = CRYPTO_HASH_ALG_SHA256;
 		hlen = SHA256_MAC_LEN;
+		break;
+	case TLS_HASH_ALG_SHA384:
+		alg = CRYPTO_HASH_ALG_SHA384;
+		hlen = 48;
+		break;
+	case TLS_HASH_ALG_SHA512:
+		alg = CRYPTO_HASH_ALG_SHA512;
+		hlen = 64;
 		break;
 	default:
 		return -1;
