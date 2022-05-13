@@ -1,11 +1,9 @@
 #define CATCH_CONFIG_MAIN  // This tells the catch header to generate a main
 #include "catch.hpp"
-#include "mqtt_client.h"
 
 extern "C" {
 #include "Mockesp_event.h"
 #include "Mockesp_log.h"
-#include "Mockesp_system.h"
 #include "Mockesp_mac.h"
 #include "Mockesp_transport.h"
 #include "Mockesp_transport_ssl.h"
@@ -20,16 +18,13 @@ extern "C" {
      * The following functions are not directly called but the generation of them
      * from cmock is broken, so we need to define them here.
      */
-    BaseType_t xQueueTakeMutexRecursive(QueueHandle_t xMutex,
-                                        TickType_t xTicksToWait)
+    esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tls_code, int *esp_tls_flags)
     {
-        return 0;
-    }
-    BaseType_t xQueueGiveMutexRecursive(QueueHandle_t xMutex)
-    {
-        return 0;
+        return ESP_OK;
     }
 }
+
+#include "mqtt_client.h"
 
 struct ClientInitializedFixture {
     esp_mqtt_client_handle_t client;
@@ -42,6 +37,8 @@ struct ClientInitializedFixture {
         int event_group;
         uint8_t mac[] = {0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55};
         esp_log_write_Ignore();
+        xQueueTakeMutexRecursive_CMockIgnoreAndReturn(0, true);
+        xQueueGiveMutexRecursive_CMockIgnoreAndReturn(0, true);
         xQueueCreateMutex_ExpectAnyArgsAndReturn(
             reinterpret_cast<QueueHandle_t>(&mtx));
         xEventGroupCreate_IgnoreAndReturn(reinterpret_cast<EventGroupHandle_t>(&event_group));
