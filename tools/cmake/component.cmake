@@ -224,8 +224,8 @@ function(__component_get_requirements)
         message(FATAL_ERROR "${error}")
     endif()
 
-    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
-    if(idf_component_manager AND idf_component_manager EQUAL "1")
+    idf_build_get_property(enable_component_manager __ENABLE_COMPONENT_MANAGER)
+    if(enable_component_manager)
         # Call for component manager once again to inject dependencies
         idf_build_get_property(python PYTHON)
         execute_process(COMMAND ${python}

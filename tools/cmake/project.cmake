@@ -38,6 +38,12 @@ else()
     idf_build_set_property(EXTRA_CMAKE_ARGS "")
 endif()
 
+
+# Enable the component manager for regular projects if not explicitly disabled.
+if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
+    idf_build_set_property(__ENABLE_COMPONENT_MANAGER 1)
+endif()
+
 #
 # Get the project version from either a version file or the Git revision. This is passed
 # to the idf_build_process call. Dependencies are also set here for when the version file
