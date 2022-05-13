@@ -378,3 +378,44 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ESP-IDF 支持 Python 3.7 及以上版本，建议升级操作系统到最新版本从而更新 Python。也可选择从 `sources <https://www.python.org/downloads/>`_ 安装最新版 Python，或使用 Python 管理系统如 `pyenv <https://github.com/pyenv/pyenv>`_ 对版本进行升级管理。
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    ..
+        当在上述行中添加新目标时，请同时更新 windows-start-project.rst 和 linux-macos-start-project.rst 中的列表。
+
+
+    上手板级支持包
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    您可以使用 `板级支持包 (BSP) <https://github.com/espressif/esp-bsp>`_，协助您在开发板上的原型开发。仅需要调用几个函数，便可以完成对特定开发板的初始化。
+
+    一般来说，BSP 支持开发板上所有硬件组件。除了管脚定义和初始化功能外，BSP 还附带如传感器、显示器、音频编解码器等外部元件的驱动程序。
+
+    BSP 通过 `IDF 组件管理器 <../api-guides/tools/idf-component-manager>`_ 发布，您可以前往 `IDF 组件注册器 <https://components.espressif.com>`_ 进行下载。
+
+    .. only:: esp32
+
+        **以下示例演示了如何将 ESP-WROVER-KIT BSP 添加到项目中：**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp_wrover_kit 
+
+    .. only:: esp32s2
+
+        **以下示例演示了如何将 ESP32-S2-Kaluga-Kit BSP 添加到项目中：**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp32_s2_kaluga_kit
+
+    .. only:: esp32s3
+
+        **以下示例演示了如何将 ESP-BOX BSP 添加到项目中：**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp-box 
+
+    更多有关使用 BSP 的示例，请前往 `BSP 示例文件夹 <https://github.com/espressif/esp-bsp/tree/master/examples>`_。

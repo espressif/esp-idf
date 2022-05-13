@@ -82,7 +82,7 @@ ESP-IoT-Solution includes:
 
 
 ESP-Protocols
-----------------
+-------------
 
 `ESP-Protocols <https://github.com/espressif/esp-protocols>`_ repository contains collection of protocol components for ESP-IDF. The code within the ESP-Protocols is organized into separate components, allowing them to be easily integrated into an ESP-IDF project. In addition to that, each component is available in `IDF Component Registry <https://components.espressif.com/>`_.
 
@@ -92,3 +92,8 @@ ESP-Protocols components:
 
 * `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_ is a managed component for `esp-idf` that contains implementation of [WebSocket protocol client](https://datatracker.ietf.org/doc/html/rfc6455) for ESP32, see the `esp_websocket_client documentation <https://espressif.github.io/esp-protocols/esp_websocket_client/index.html>`_.
 
+
+ESP-BSP
+-------
+
+`ESP-BSP <https://github.com/espressif/esp-bsp>`_ repository contains Board Support Packages (BSPs) for various Espressif's and 3rd party development boards. BSPs are useful for quick start on a supported board. Usually they contain pinout definition and helper functions, that will initialize peripherals for the specific board. Additionally, the BSP would contain drivers for external chips populated on the development board, such as sensors, displays, audio codecs etc.

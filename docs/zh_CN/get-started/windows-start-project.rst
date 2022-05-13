@@ -72,3 +72,8 @@ Windows
 .. note::
 
     您终端窗口中显示出的菜单颜色可能会与上图不同。您可以通过选项 ``--style`` 来改变外观。请运行 ``idf.py menuconfig --help`` 命令，获取更多信息。
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    如果您使用的是支持的开发板，可以通过板级支持包 (BSP) 来协助您的开发。更多信息，请见 `其他提示 <#additional-tips>`__。
+    

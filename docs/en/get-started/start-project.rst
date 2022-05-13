@@ -378,3 +378,44 @@ Python compatibility
 ~~~~~~~~~~~~~~~~~~~~
 
 ESP-IDF supports Python 3.7 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    ..
+        When adding new targets to the line above, please update this list in windows-start-project.rst and linux-macos-start-project.rst
+
+
+    Start with Board Support Package
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    To speed up prototyping on some development boards, you can use `Board Support Packages (BSPs) <https://github.com/espressif/esp-bsp>`_, which makes initialization of a particular board as easy as few function calls.
+
+    A BSP typically supports all of the hardware components provided on development board. Apart from the pinout definition and initialization functions, a BSP ships with drivers for the external components such as sensors, displays, audio codecs etc.
+
+    The BSPs are distributed via `IDF Component Manager <../api-guides/tools/idf-component-manager>`_, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
+
+    .. only:: esp32
+
+        **Here's an example of how to add ESP-WROVER-KIT BSP to your project:**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp_wrover_kit 
+
+    .. only:: esp32s2
+
+        **Here's an example of how to add ESP32-S2-Kaluga-Kit BSP to your project:**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp32_s2_kaluga_kit
+
+    .. only:: esp32s3
+
+        **Here's an example of how to add ESP-BOX BSP to your project:**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp-box 
+
+    More examples of BSP usage can be found in `BSP examples folder <https://github.com/espressif/esp-bsp/tree/master/examples>`_.
