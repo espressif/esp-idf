@@ -113,19 +113,6 @@ typedef enum {
 */
 ESP_EVENT_DECLARE_BASE(ETH_EVENT);
 
-/**
-* @brief Detect PHY address
-*
-* @param[in] eth: mediator of Ethernet driver
-* @param[out] detected_addr: a valid address after detection
-* @return
-*       - ESP_OK: detect phy address successfully
-*       - ESP_ERR_INVALID_ARG: invalid parameter
-*       - ESP_ERR_NOT_FOUND: can't detect any PHY device
-*       - ESP_FAIL: detect phy address failed because some error occurred
-*/
-esp_err_t esp_eth_detect_phy_addr(esp_eth_mediator_t *eth, int *detected_addr);
-
 #ifdef __cplusplus
 }
 #endif

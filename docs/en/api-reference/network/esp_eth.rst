@@ -441,13 +441,49 @@ One thing should be kept in mind, is that the pause frame ability will be advert
 
 .. -------------------------------- Examples -----------------------------------
 
-Application Example
--------------------
+Application Examples
+--------------------
 
   * Ethernet basic example: :example:`ethernet/basic`.
   * Ethernet iperf example: :example:`ethernet/iperf`.
   * Ethernet to Wi-Fi AP "router": :example:`ethernet/eth2ap`.
   * Most of protocol examples should also work for Ethernet: :example:`protocols`.
+
+.. ------------------------------ Advanced Topics -------------------------------
+
+.. _advanced-topics:
+
+Advanced Topics
+---------------
+
+Custom PHY Driver
+^^^^^^^^^^^^^^^^^
+
+There are multiple PHY manufactures with their wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies user's actual needs due to either price, features, stock availability etc. 
+
+Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in 22.2.4 Management functions section. It defines provisions of so called “MII Management Interface” for the purposes of controlling the PHY and gathering status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration etc. This basic management functionality is addressed by :component_file:`esp_eth/src/esp_eth_phy_802_3.c` in ESP-IDF and so it makes a creation of new custom PHY chip driver quite a simple task.
+
+.. note::
+    Always consult with PHY datasheet since some PHY chips may not comply with IEEE 802.3, Section 22.2.4. It does not mean you are not able to create a custom PHY driver, it will just require more effort. You will have to define all PHY management functions. 
+
+Majority of PHY management functionality required by the ESP-IDF Ethernet driver is covered by the :component_file:`esp_eth/src/esp_eth_phy_802_3.c` however, the following may require developing chip specific management functions:
+
+    * link status which is almost always chip specific,
+    * chip initialization, even though it is not strictly required, should be customized to at least ensure that expected chip is used and
+    * chip specific features configuration.
+
+**Steps to create custom PHY driver:**
+
+1. Define vendor specific registry layout based on PHY datasheet. See :component_file:`esp_eth/src/esp_eth_phy_ip101.c` as an example.
+2. Prepare derived PHY management object infostructure which
+
+    * must contain at least parent IEEE 802.3 :cpp:class:`phy_802_3_t` object and
+    * optionally contain additional variables needed to support non-IEEE 802.3 or customized functionality. See :component_file:`esp_eth/src/esp_eth_phy_ksz80xx.c` as an example.
+
+3. Define chip specific management call-back functions.
+4. Initialize parent IEEE 802.3 object and re-assign chip specific management call-back functions.
+
+Once you finish the new custom PHY driver implementation, consider sharing it among with other users via `IDF Component Registry <https://components.espressif.com/>`_.
 
 .. ---------------------------- API Reference ----------------------------------
 
@@ -455,7 +491,9 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_eth.inc
+.. include-build-file:: inc/esp_eth_driver.inc
 .. include-build-file:: inc/esp_eth_com.inc
 .. include-build-file:: inc/esp_eth_mac.inc
 .. include-build-file:: inc/esp_eth_phy.inc
+.. include-build-file:: inc/esp_eth_phy_802_3.inc
 .. include-build-file:: inc/esp_eth_netif_glue.inc
