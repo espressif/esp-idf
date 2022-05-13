@@ -253,6 +253,82 @@ static int free_sdp_slot(int id)
     return handle;
 }
 
+/* Create a raw SDP record based on information stored in a bluetooth_sdp_raw_record */
+static int add_raw_sdp(const bluetooth_sdp_record* rec)
+{
+    tSDP_PROTOCOL_ELEM  protoList [2];
+    UINT16              service = 0;
+    UINT16              browse = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
+    bool                status = true;
+    UINT8               temp[4];
+    UINT8*              p_temp = temp;
+    UINT32              sdp_handle = 0;
+
+    BTC_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s", __func__,
+            rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm, rec->hdr.service_name);
+
+    if ((sdp_handle = SDP_CreateRecord()) == 0) {
+        BTC_TRACE_ERROR("%s(): Unable to register raw sdp record", __func__);
+        return sdp_handle;
+    }
+
+    if (rec->hdr.bt_uuid.len == 16) {
+        memcpy(&service, &rec->hdr.bt_uuid.uuid.uuid128[2], sizeof(service));
+    } else if (rec->hdr.bt_uuid.len == 2) {
+        memcpy(&service, &rec->hdr.bt_uuid.uuid.uuid16, sizeof(service));
+    } else if (rec->hdr.bt_uuid.len == 4) {
+        memcpy(&service, &rec->hdr.bt_uuid.uuid.uuid16, sizeof(service));
+    } else {
+        SDP_DeleteRecord(sdp_handle);
+        sdp_handle = 0;
+        return sdp_handle;
+    }
+    /* add service class */
+    status &= SDP_AddServiceClassIdList(sdp_handle, 1, &service);
+    memset( protoList, 0 , 2*sizeof(tSDP_PROTOCOL_ELEM) );
+
+    /* add protocol list, including RFCOMM scn */
+    protoList[0].protocol_uuid = UUID_PROTOCOL_L2CAP;
+    protoList[0].num_params = 0;
+    if (rec->hdr.rfcomm_channel_number < 0) {
+        status &= SDP_AddProtocolList(sdp_handle, 1, protoList);
+    } else {
+        protoList[1].protocol_uuid = UUID_PROTOCOL_RFCOMM;
+        protoList[1].num_params = 1;
+        protoList[1].params[0] = rec->hdr.rfcomm_channel_number;
+        status &= SDP_AddProtocolList(sdp_handle, 2, protoList);
+    }
+
+    /* Add a name entry */
+    status &= SDP_AddAttribute(sdp_handle,
+                    (UINT16)ATTR_ID_SERVICE_NAME,
+                    (UINT8)TEXT_STR_DESC_TYPE,
+                    (UINT32)(rec->hdr.service_name_length + 1),
+                    (UINT8 *)rec->hdr.service_name);
+
+    /* Add the L2CAP PSM if present */
+    if(rec->hdr.l2cap_psm != -1) {
+        p_temp = temp;// The macro modifies p_temp, hence rewind.
+        UINT16_TO_BE_STREAM(p_temp, rec->hdr.l2cap_psm);
+        status &= SDP_AddAttribute(sdp_handle, ATTR_ID_GOEP_L2CAP_PSM,
+                UINT_DESC_TYPE, (UINT32)2, temp);
+    }
+
+    /* Make the service browseable */
+    status &= SDP_AddUuidSequence (sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
+
+    if (!status) {
+        SDP_DeleteRecord(sdp_handle);
+        sdp_handle = 0;
+        BTC_TRACE_ERROR("%s() FAILED, status = %d", __func__, status);
+    } else {
+        bta_sys_add_uuid(service);
+        BTC_TRACE_DEBUG("%s():  SDP Registered (handle 0x%08x)", __func__, sdp_handle);
+    }
+
+    return sdp_handle;
+}
+
 /* Create a MAP MAS SDP record based on information stored in a bluetooth_sdp_mas_record */
 static int add_maps_sdp(const bluetooth_sdp_mas_record* rec)
 {
@@ -700,6 +776,9 @@ static int btc_handle_create_record_event(int id)
     if(sdp_slot != NULL) {
         bluetooth_sdp_record* record = sdp_slot->record_data;
         switch(record->hdr.type) {
+        case SDP_TYPE_RAW:
+            handle = add_raw_sdp(record);
+            break;
         case SDP_TYPE_MAP_MAS:
             handle = add_maps_sdp(&record->mas);
             break;
@@ -842,7 +921,6 @@ static void btc_sdp_deinit(void)
                 BTA_SdpRemoveRecordByUser((void*)handle);
             }
         }
-        // todo
         sdp_disable_handler();
     } while(0);
 

@@ -367,6 +367,10 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
         record->pse.hdr.service_name = (char *)p_attr->attr_value.v.array;
     }
 
+    if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM)) != NULL) {
+        record->hdr.l2cap_psm = p_attr->attr_value.v.u16;
+    }
+
     /* Try to extract an RFCOMM channel */
     if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
         record->pse.hdr.rfcomm_channel_number = pe.params[0];
