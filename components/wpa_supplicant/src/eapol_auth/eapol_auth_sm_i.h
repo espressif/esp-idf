@@ -10,7 +10,6 @@
 #define EAPOL_AUTH_SM_I_H
 
 #include "common/defs.h"
-#include "radius/radius.h"
 
 /* IEEE Std 802.1X-2004, Ch. 8.2 */
 
@@ -156,8 +155,9 @@ struct eapol_state_machine {
 	u8 eap_type_authsrv; /* EAP type of the last EAP packet from
 			      * Authentication server */
 	u8 eap_type_supp; /* EAP type of the last EAP packet from Supplicant */
-	struct radius_class_data radius_class;
+#ifndef CONFIG_NO_RADIUS
 	struct wpabuf *radius_cui; /* Chargeable-User-Identity */
+#endif
 
 	struct eap_sm *eap;
 

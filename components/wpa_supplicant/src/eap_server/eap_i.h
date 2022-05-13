@@ -9,9 +9,9 @@
 #ifndef EAP_I_H
 #define EAP_I_H
 
-#include "wpabuf.h"
+#include "utils/wpabuf.h"
 #include "eap_server/eap.h"
-#include "eap_common/eap_common.h"
+#include "eap_peer/eap_common.h"
 
 /* RFC 4137 - EAP Standalone Authenticator */
 

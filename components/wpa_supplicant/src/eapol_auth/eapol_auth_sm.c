@@ -12,8 +12,8 @@
 #include "eloop.h"
 #include "state_machine.h"
 #include "common/eapol_common.h"
-#include "eap_common/eap_defs.h"
-#include "eap_common/eap_common.h"
+#include "eap_peer/eap_defs.h"
+#include "eap_peer/eap_common.h"
 #include "eap_server/eap.h"
 #include "eapol_auth_sm.h"
 #include "eapol_auth_sm_i.h"
@@ -45,7 +45,7 @@ static void eapol_sm_step_cb(void *eloop_ctx, void *timeout_ctx);
 static void eapol_auth_initialize(struct eapol_state_machine *sm);
 static void eapol_auth_conf_free(struct eapol_auth_config *conf);
 
-
+#ifndef ESP_SUPPLICANT
 static void eapol_auth_logger(struct eapol_authenticator *eapol,
 			      const u8 *addr, eapol_logger_level level,
 			      const char *txt)
@@ -81,7 +81,11 @@ static void eapol_auth_vlogger(struct eapol_authenticator *eapol,
 
 	os_free(format);
 }
+#else
 
+#define eapol_auth_logger(...) do {} while(0)
+#define eapol_auth_vlogger(...) do {} while (0)
+#endif
 
 static void eapol_auth_tx_canned_eap(struct eapol_state_machine *sm,
 				     int success)
@@ -297,8 +301,6 @@ SM_STATE(AUTH_PAE, HELD)
 
 SM_STATE(AUTH_PAE, AUTHENTICATED)
 {
-	char *extra = "";
-
 	if (sm->auth_pae_state == AUTH_PAE_AUTHENTICATING && sm->authSuccess)
 		sm->authAuthSuccessesWhileAuthenticating++;
 
@@ -307,15 +309,6 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 	sm->authPortStatus = Authorized;
 	setPortAuthorized();
 	sm->reAuthCount = 0;
-	if (sm->flags & EAPOL_SM_PREAUTH)
-		extra = " (pre-authentication)";
-	else if (sm->flags & EAPOL_SM_FROM_PMKSA_CACHE)
-		extra = " (PMKSA cache)";
-	eapol_auth_vlogger(sm->eapol, sm->addr, EAPOL_LOGGER_INFO,
-			   "authenticated - EAP type: %d (%s)%s",
-			   sm->eap_type_authsrv,
-			   eap_server_get_name(0, sm->eap_type_authsrv),
-			   extra);
 	sm->eapol->cb.finished(sm->eapol->conf.ctx, sm->sta, 1,
 			       sm->flags & EAPOL_SM_PREAUTH, sm->remediation);
 }
@@ -849,11 +842,11 @@ eapol_auth_alloc(struct eapol_authenticator *eapol, const u8 *addr,
 		if (sm->identity)
 			sm->identity_len = os_strlen(identity);
 	}
+#ifndef CONFIG_NO_RADIUS
 	if (radius_cui)
 		sm->radius_cui = wpabuf_alloc_copy(radius_cui,
 						   os_strlen(radius_cui));
 
-#ifndef CONFIG_NO_RADIUS
 	if (radius_gen_session_id((u8 *) &sm->acct_multi_session_id,
 				  sizeof(sm->acct_multi_session_id)) < 0) {
 		eapol_auth_free(sm);
@@ -875,7 +868,9 @@ void eapol_auth_free(struct eapol_state_machine *sm)
 	if (sm->eap)
 		eap_server_sm_deinit(sm->eap);
 
+#ifndef CONFIG_NO_RADIUS
 	wpabuf_free(sm->radius_cui);
+#endif /* CONFIG_NO_RADIUS */
 	os_free(sm->identity);
 	os_free(sm);
 }
@@ -948,6 +943,7 @@ restart:
 			return;
 		}
 
+#ifndef ESP_SUPPLICANT
 		/* TODO: find a better location for this */
 		if (sm->eap_if->aaaEapResp) {
 			sm->eap_if->aaaEapResp = false;
@@ -961,6 +957,7 @@ restart:
 				wpabuf_head(sm->eap_if->aaaEapRespData),
 				wpabuf_len(sm->eap_if->aaaEapRespData));
 		}
+#endif
 	}
 
 	if (eapol_sm_sta_entry_alive(eapol, addr))

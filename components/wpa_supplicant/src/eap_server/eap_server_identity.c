@@ -123,7 +123,7 @@ static void eap_identity_process(struct eap_sm *sm, void *priv,
 	buf = os_malloc(len * 4 + 1);
 	if (buf) {
 		printf_encode(buf, len * 4 + 1, pos, len);
-		eap_log_msg(sm, "EAP-Response/Identity '%s'", buf);
+		wpa_printf(MSG_DEBUG, "EAP-Response/Identity '%s'", buf);
 		os_free(buf);
 	}
 	if (sm->identity)

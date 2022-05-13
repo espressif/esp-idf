@@ -12,12 +12,12 @@
 #include "eloop.h"
 #include "eap_i.h"
 #include "eap_common/eap_wsc_common.h"
-#include "p2p/p2p.h"
 #include "wps/wps.h"
+#include "esp_wps_i.h"
 
 
 struct eap_wsc_data {
-	enum { START, MESG, FRAG_ACK, WAIT_FRAG_ACK, DONE, FAIL } state;
+	enum { START, MESG, FRAG_ACK, WAIT_FRAG_ACK, DONE, WSC_FAIL } state;
 	int registrar;
 	struct wpabuf *in_buf;
 	struct wpabuf *out_buf;
@@ -28,8 +28,7 @@ struct eap_wsc_data {
 	int ext_reg_timeout;
 };
 
-
-#ifndef CONFIG_NO_STDOUT_DEBUG
+#ifdef DEBUG_PRINT
 static const char * eap_wsc_state_txt(int state)
 {
 	switch (state) {
@@ -43,14 +42,13 @@ static const char * eap_wsc_state_txt(int state)
 		return "WAIT_FRAG_ACK";
 	case DONE:
 		return "DONE";
-	case FAIL:
+	case WSC_FAIL:
 		return "FAIL";
 	default:
 		return "?";
 	}
 }
-#endif /* CONFIG_NO_STDOUT_DEBUG */
-
+#endif
 
 static void eap_wsc_state(struct eap_wsc_data *data, int state)
 {
@@ -61,26 +59,10 @@ static void eap_wsc_state(struct eap_wsc_data *data, int state)
 }
 
 
-static void eap_wsc_ext_reg_timeout(void *eloop_ctx, void *timeout_ctx)
-{
-	struct eap_sm *sm = eloop_ctx;
-	struct eap_wsc_data *data = timeout_ctx;
-
-	if (sm->method_pending != METHOD_PENDING_WAIT)
-		return;
-
-	wpa_printf(MSG_DEBUG, "EAP-WSC: Timeout while waiting for an External "
-		   "Registrar");
-	data->ext_reg_timeout = 1;
-	eap_sm_pending_cb(sm);
-}
-
-
 static void * eap_wsc_init(struct eap_sm *sm)
 {
 	struct eap_wsc_data *data;
 	int registrar;
-	struct wps_config cfg;
 
 	if (sm->identity && sm->identity_len == WSC_ID_REGISTRAR_LEN &&
 	    os_memcmp(sm->identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) ==
@@ -102,52 +84,13 @@ static void * eap_wsc_init(struct eap_sm *sm)
 	data->state = registrar ? START : MESG;
 	data->registrar = registrar;
 
-	os_memset(&cfg, 0, sizeof(cfg));
-	cfg.wps = sm->cfg->wps;
-	cfg.registrar = registrar;
-	if (registrar) {
-		if (!sm->cfg->wps || !sm->cfg->wps->registrar) {
-			wpa_printf(MSG_INFO, "EAP-WSC: WPS Registrar not "
-				   "initialized");
-			os_free(data);
-			return NULL;
-		}
-	} else {
-		if (sm->user == NULL || sm->user->password == NULL) {
-			/*
-			 * In theory, this should not really be needed, but
-			 * Windows 7 uses Registrar mode to probe AP's WPS
-			 * capabilities before trying to use Enrollee and fails
-			 * if the AP does not allow that probing to happen..
-			 */
-			wpa_printf(MSG_DEBUG, "EAP-WSC: No AP PIN (password) "
-				   "configured for Enrollee functionality - "
-				   "allow for probing capabilities (M1)");
-		} else {
-			cfg.pin = sm->user->password;
-			cfg.pin_len = sm->user->password_len;
-		}
-	}
-	cfg.assoc_wps_ie = sm->assoc_wps_ie;
-	cfg.peer_addr = sm->peer_addr;
-#ifdef CONFIG_P2P
-	if (sm->assoc_p2p_ie) {
-		if (!sm->cfg->wps->use_passphrase) {
-			wpa_printf(MSG_DEBUG,
-				   "EAP-WSC: Prefer PSK format for non-6 GHz P2P client");
-			cfg.use_psk_key = 1;
-		}
-		cfg.p2p_dev_addr = p2p_get_go_dev_addr(sm->assoc_p2p_ie);
-	}
-#endif /* CONFIG_P2P */
-	cfg.pbc_in_m1 = sm->cfg->pbc_in_m1;
-	data->wps = wps_init(&cfg);
+	struct wps_sm *wps_sm = wps_sm_get();
+	data->wps = wps_sm->wps;
 	if (data->wps == NULL) {
 		os_free(data);
 		return NULL;
 	}
-	data->fragment_size = sm->cfg->fragment_size > 0 ?
-		sm->cfg->fragment_size : WSC_FRAGMENT_SIZE;
+	data->fragment_size = WSC_FRAGMENT_SIZE;
 
 	return data;
 }
@@ -156,7 +99,6 @@ static void * eap_wsc_init(struct eap_sm *sm)
 static void eap_wsc_reset(struct eap_sm *sm, void *priv)
 {
 	struct eap_wsc_data *data = priv;
-	eloop_cancel_timeout(eap_wsc_ext_reg_timeout, sm, data);
 	wpabuf_free(data->in_buf);
 	wpabuf_free(data->out_buf);
 	wps_deinit(data->wps);
@@ -297,13 +239,13 @@ static int eap_wsc_process_cont(struct eap_wsc_data *data,
 		wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d in "
 			   "fragment (expected %d)",
 			   op_code, data->in_op_code);
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		return -1;
 	}
 
 	if (len > wpabuf_tailroom(data->in_buf)) {
 		wpa_printf(MSG_DEBUG, "EAP-WSC: Fragment overflow");
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		return -1;
 	}
 
@@ -358,9 +300,8 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 	enum wps_process_res res;
 	struct wpabuf tmpbuf;
 
-	eloop_cancel_timeout(eap_wsc_ext_reg_timeout, sm, data);
 	if (data->ext_reg_timeout) {
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		return;
 	}
 
@@ -397,7 +338,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		if (op_code != WSC_FRAG_ACK) {
 			wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d "
 				   "in WAIT_FRAG_ACK state", op_code);
-			eap_wsc_state(data, FAIL);
+			eap_wsc_state(data, WSC_FAIL);
 			return;
 		}
 		wpa_printf(MSG_DEBUG, "EAP-WSC: Fragment acknowledged");
@@ -409,13 +350,13 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 	    op_code != WSC_Done) {
 		wpa_printf(MSG_DEBUG, "EAP-WSC: Unexpected Op-Code %d",
 			   op_code);
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		return;
 	}
 
 	if (data->in_buf &&
 	    eap_wsc_process_cont(data, pos, end - pos, op_code) < 0) {
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		return;
 	}
 
@@ -423,7 +364,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 		if (eap_wsc_process_fragment(data, flags, op_code,
 					     message_length, pos, end - pos) <
 		    0)
-			eap_wsc_state(data, FAIL);
+			eap_wsc_state(data, WSC_FAIL);
 		else
 			eap_wsc_state(data, FRAG_ACK);
 		return;
@@ -440,21 +381,20 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 	case WPS_DONE:
 		wpa_printf(MSG_DEBUG, "EAP-WSC: WPS processing completed "
 			   "successfully - report EAP failure");
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		break;
 	case WPS_CONTINUE:
 		eap_wsc_state(data, MESG);
 		break;
 	case WPS_FAILURE:
 		wpa_printf(MSG_DEBUG, "EAP-WSC: WPS processing failed");
-		eap_wsc_state(data, FAIL);
+		eap_wsc_state(data, WSC_FAIL);
 		break;
 	case WPS_PENDING:
 		eap_wsc_state(data, MESG);
 		sm->method_pending = METHOD_PENDING_WAIT;
-		eloop_cancel_timeout(eap_wsc_ext_reg_timeout, sm, data);
-		eloop_register_timeout(5, 0, eap_wsc_ext_reg_timeout,
-				       sm, data);
+		break;
+	default:
 		break;
 	}
 
@@ -467,7 +407,7 @@ static void eap_wsc_process(struct eap_sm *sm, void *priv,
 static bool eap_wsc_isDone(struct eap_sm *sm, void *priv)
 {
 	struct eap_wsc_data *data = priv;
-	return data->state == FAIL;
+	return data->state == WSC_FAIL;
 }
 
 

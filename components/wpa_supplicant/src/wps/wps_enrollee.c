@@ -152,11 +152,7 @@ static struct wpabuf * wps_build_m1(struct wps_data *wps)
 	    wps_build_wps_state(wps, msg) ||
 	    wps_build_device_attrs(&wps->wps->dev, msg) ||
 	    wps_build_rf_bands(&wps->wps->dev, msg,
-#ifdef ESP_SUPPLICANT
-			       wps->wps->dev.rf_bands) ||
-#else
 			       wps->wps->rf_band_cb(wps->wps->cb_ctx)) ||
-#endif
 	    wps_build_assoc_state(wps, msg) ||
 	    wps_build_dev_password_id(msg, wps->dev_pw_id) ||
 	    wps_build_config_error(msg, WPS_CFG_NO_ERROR) ||
@@ -245,6 +241,7 @@ static struct wpabuf * wps_build_m5(struct wps_data *wps)
 }
 
 
+#ifndef ESP_SUPPLICANT
 static int wps_build_cred_ssid(struct wps_data *wps, struct wpabuf *msg)
 {
 	wpa_printf(MSG_DEBUG, "WPS:  * SSID");
@@ -351,13 +348,12 @@ static int wps_build_cred_mac_addr(struct wps_data *wps, struct wpabuf *msg)
 	wpabuf_put_data(msg, wps->wps->dev.mac_addr, ETH_ALEN);
 	return 0;
 }
-
+#endif
 
 static int wps_build_ap_settings(struct wps_data *wps, struct wpabuf *plain)
 {
-#ifdef DEBUG_PRINT
+#ifndef ESP_SUPPLICANT
 	const u8 *start, *end;
-#endif
 	int ret;
 
 	if (wps->wps->ap_settings) {
@@ -368,22 +364,21 @@ static int wps_build_ap_settings(struct wps_data *wps, struct wpabuf *plain)
 	}
 
 	wpa_printf(MSG_DEBUG, "WPS:  * AP Settings based on current configuration");
-#ifdef DEBUG_PRINT
 	start = wpabuf_put(plain, 0);
-#endif
 	ret = wps_build_cred_ssid(wps, plain) ||
 		wps_build_cred_mac_addr(wps, plain) ||
 		wps_build_cred_auth_type(wps, plain) ||
 		wps_build_cred_encr_type(wps, plain) ||
 		wps_build_cred_network_key(wps, plain);
-#ifdef DEBUG_PRINT
 	end = wpabuf_put(plain, 0);
 
 	wpa_hexdump_key(MSG_DEBUG, "WPS: Plaintext AP Settings",
 			start, end - start);
-#endif
 
 	return ret;
+#else
+	return 0;
+#endif
 }
 
 

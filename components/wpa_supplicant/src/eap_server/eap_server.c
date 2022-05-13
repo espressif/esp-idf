@@ -29,7 +29,9 @@ static int eap_sm_calculateTimeout(struct eap_sm *sm, int retransCount,
 				   int eapSRTT, int eapRTTVAR,
 				   int methodTimeout);
 static void eap_sm_parseEapResp(struct eap_sm *sm, const struct wpabuf *resp);
+#ifndef ESP_SUPPLICANT
 static int eap_sm_getId(const struct wpabuf *data);
+#endif
 static struct wpabuf * eap_sm_buildSuccess(struct eap_sm *sm, u8 id);
 static struct wpabuf * eap_sm_buildFailure(struct eap_sm *sm, u8 id);
 static int eap_sm_nextId(struct eap_sm *sm, int id);
@@ -43,8 +45,6 @@ static bool eap_sm_Policy_doPickUp(struct eap_sm *sm, enum eap_type method);
 
 static int eap_get_erp_send_reauth_start(struct eap_sm *sm)
 {
-	if (sm->eapol_cb->get_erp_send_reauth_start)
-		return sm->eapol_cb->get_erp_send_reauth_start(sm->eapol_ctx);
 	return 0;
 }
 
@@ -120,6 +120,7 @@ static int eap_copy_buf(struct wpabuf **dst, const struct wpabuf *src)
 }
 
 
+#ifndef ESP_SUPPLICANT
 static int eap_copy_data(u8 **dst, size_t *dst_len,
 			 const u8 *src, size_t src_len)
 {
@@ -137,6 +138,7 @@ static int eap_copy_data(u8 **dst, size_t *dst_len,
 		return -1;
 	}
 }
+#endif
 
 #define EAP_COPY(dst, src) \
 	eap_copy_data((dst), (dst ## Len), (src), (src ## Len))
@@ -994,6 +996,7 @@ fail:
 #endif /* CONFIG_ERP */
 
 
+#ifndef ESP_SUPPLICANT
 SM_STATE(EAP, INITIALIZE_PASSTHROUGH)
 {
 	SM_ENTRY(EAP, INITIALIZE_PASSTHROUGH);
@@ -1161,6 +1164,7 @@ SM_STATE(EAP, SUCCESS2)
 	wpa_msg(sm->cfg->msg_ctx, MSG_INFO, WPA_EVENT_EAP_SUCCESS2 MACSTR,
 		MAC2STR(sm->peer_addr));
 }
+#endif
 
 
 SM_STEP(EAP)
@@ -1346,8 +1350,10 @@ SM_STEP(EAP)
 			SM_ENTER(EAP, FAILURE);
 		else if (sm->decision == DECISION_SUCCESS)
 			SM_ENTER(EAP, SUCCESS);
+#ifndef ESP_SUPPLICANT
 		else if (sm->decision == DECISION_PASSTHROUGH)
 			SM_ENTER(EAP, INITIALIZE_PASSTHROUGH);
+#endif
 		else if (sm->decision == DECISION_INITIATE_REAUTH_START)
 			SM_ENTER(EAP, INITIATE_REAUTH_START);
 #ifdef CONFIG_ERP
@@ -1370,7 +1376,7 @@ SM_STEP(EAP)
 		break;
 	case EAP_SUCCESS:
 		break;
-
+#ifndef ESP_SUPPLICANT
 	case EAP_INITIALIZE_PASSTHROUGH:
 		if (sm->currentId == -1)
 			SM_ENTER(EAP, AAA_IDLE);
@@ -1423,6 +1429,10 @@ SM_STEP(EAP)
 		break;
 	case EAP_SUCCESS2:
 		break;
+#else
+	default:
+		break;
+#endif
 	}
 }
 
@@ -1545,6 +1555,7 @@ static void eap_sm_parseEapResp(struct eap_sm *sm, const struct wpabuf *resp)
 }
 
 
+#ifndef ESP_SUPPLICANT
 static int eap_sm_getId(const struct wpabuf *data)
 {
 	const struct eap_hdr *hdr;
@@ -1556,7 +1567,7 @@ static int eap_sm_getId(const struct wpabuf *data)
 	wpa_printf(MSG_DEBUG, "EAP: getId: id=%d", hdr->identifier);
 	return hdr->identifier;
 }
-
+#endif
 
 static struct wpabuf * eap_sm_buildSuccess(struct eap_sm *sm, u8 id)
 {
@@ -1873,6 +1884,7 @@ struct eap_sm * eap_server_sm_init(void *eapol_ctx,
 #ifdef CONFIG_TESTING_OPTIONS
 	sm->tls_test_flags = sess->tls_test_flags;
 #endif /* CONFIG_TESTING_OPTIONS */
+	sm->eap_if.portEnabled = 1;
 
 	wpa_printf(MSG_DEBUG, "EAP: Server state machine created");
 
@@ -1901,9 +1913,11 @@ void eap_server_sm_deinit(struct eap_sm *sm)
 	wpabuf_free(sm->eap_if.eapRespData);
 	os_free(sm->identity);
 	os_free(sm->serial_num);
+#ifndef ESP_SUPPLICANT
 	wpabuf_free(sm->eap_if.aaaEapReqData);
 	wpabuf_free(sm->eap_if.aaaEapRespData);
 	bin_clear_free(sm->eap_if.aaaEapKeyData, sm->eap_if.aaaEapKeyDataLen);
+#endif
 	eap_user_free(sm->user);
 	wpabuf_free(sm->assoc_wps_ie);
 	wpabuf_free(sm->assoc_p2p_ie);

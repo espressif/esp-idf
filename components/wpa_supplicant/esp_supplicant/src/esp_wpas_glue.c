@@ -73,6 +73,28 @@ int wpa_ether_send(void *ctx, const u8 *dest, u16 proto,
     return ESP_OK;
 }
 
+int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,
+		       const u8 *data, size_t data_len)
+{
+    void *buffer = os_malloc(data_len + sizeof(struct l2_ethhdr));
+    struct l2_ethhdr *eth = buffer;
+
+    if (!buffer){
+        wpa_printf( MSG_DEBUG, "send_eapol, buffer=%p\n", buffer);
+        return -1;
+    }
+
+    memcpy(eth->h_dest, sta_addr, ETH_ALEN);
+    memcpy(eth->h_source, source, ETH_ALEN);
+    eth->h_proto = host_to_be16(ETH_P_EAPOL);
+
+    memcpy((char *)buffer + sizeof(struct l2_ethhdr), data, data_len);
+    esp_wifi_internal_tx(WIFI_IF_AP, buffer, sizeof(struct l2_ethhdr) + data_len);
+    os_free(buffer);
+    return 0;
+
+}
+
 u8 *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
                        const void *data, u16 data_len,
                        size_t *msg_len, void **data_pos)

@@ -228,6 +228,39 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 	return 0;
 }
 
+struct wpabuf * ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len,
+					    u32 oui_type)
+{
+	struct wpabuf *buf;
+	const struct element *elem, *found = NULL;
+
+	for_each_element_id(elem, WLAN_EID_VENDOR_SPECIFIC, ies, ies_len) {
+		if (elem->datalen >= 4 &&
+				WPA_GET_BE32(elem->data) == oui_type) {
+			found = elem;
+			break;
+		}
+	}
+
+	if (!found)
+		return NULL; /* No specified vendor IE found */
+
+	buf = wpabuf_alloc(ies_len);
+	if (buf == NULL)
+		return NULL;
+
+	/*
+	 * There may be multiple vendor IEs in the message, so need to
+	 * concatenate their data fields.
+	 */
+	for_each_element_id(elem, WLAN_EID_VENDOR_SPECIFIC, ies, ies_len) {
+		if (elem->datalen >= 4 && WPA_GET_BE32(elem->data) == oui_type)
+			wpabuf_put_data(buf, elem->data + 4, elem->datalen - 4);
+	}
+
+	return buf;
+}
+
 int ieee802_11_ext_capab(const u8 *ie, unsigned int capab)
 {
 	if (!ie || ie[1] <= capab / 8)

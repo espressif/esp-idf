@@ -105,9 +105,16 @@ menu "Supplicant"
             Select this option to enable WiFi Easy Connect Support.
 
     config WPA_11R_SUPPORT
-        bool "Enable 802.11R (Fast Transition)"
+        bool "Enable 802.11R (Fast Transition) Support"
         default n
         help
             Select this option to enable WiFi Fast Transition Support.
+
+    config WPA_WPS_SOFTAP_REGISTRAR
+        bool "Add WPS Registrar support in SoftAP mode"
+        depends on ESP_WIFI_SOFTAP_SUPPORT
+        default n
+        help
+            Select this option to enable WPS registrar support in softAP mode.
 
 endmenu

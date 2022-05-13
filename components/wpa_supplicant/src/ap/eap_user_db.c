@@ -233,10 +233,9 @@ hostapd_get_eap_user(struct hostapd_data *hapd, const u8 *identity,
 		     size_t identity_len, int phase2)
 {
 	const struct hostapd_bss_config *conf = hapd->conf;
-	struct hostapd_eap_user *user = conf->eap_user;
 
 #ifdef CONFIG_WPS
-	if (conf->wps_state && identity_len == WSC_ID_ENROLLEE_LEN &&
+	if (identity_len == WSC_ID_ENROLLEE_LEN &&
 	    os_memcmp(identity, WSC_ID_ENROLLEE, WSC_ID_ENROLLEE_LEN) == 0) {
 		static struct hostapd_eap_user wsc_enrollee;
 		os_memset(&wsc_enrollee, 0, sizeof(wsc_enrollee));
@@ -245,7 +244,7 @@ hostapd_get_eap_user(struct hostapd_data *hapd, const u8 *identity,
 		return &wsc_enrollee;
 	}
 
-	if (conf->wps_state && identity_len == WSC_ID_REGISTRAR_LEN &&
+	if (identity_len == WSC_ID_REGISTRAR_LEN &&
 	    os_memcmp(identity, WSC_ID_REGISTRAR, WSC_ID_REGISTRAR_LEN) == 0) {
 		static struct hostapd_eap_user wsc_registrar;
 		os_memset(&wsc_registrar, 0, sizeof(wsc_registrar));
@@ -258,27 +257,6 @@ hostapd_get_eap_user(struct hostapd_data *hapd, const u8 *identity,
 	}
 #endif /* CONFIG_WPS */
 
-	while (user) {
-		if (!phase2 && user->identity == NULL) {
-			/* Wildcard match */
-			break;
-		}
-
-		if (user->phase2 == !!phase2 && user->wildcard_prefix &&
-		    identity_len >= user->identity_len &&
-		    os_memcmp(user->identity, identity, user->identity_len) ==
-		    0) {
-			/* Wildcard prefix match */
-			break;
-		}
-
-		if (user->phase2 == !!phase2 &&
-		    user->identity_len == identity_len &&
-		    os_memcmp(user->identity, identity, identity_len) == 0)
-			break;
-		user = user->next;
-	}
-
 #ifdef CONFIG_SQLITE
 	if (user == NULL && conf->eap_user_sqlite) {
 		return eap_user_sqlite_get(hapd, identity, identity_len,
@@ -286,5 +264,5 @@ hostapd_get_eap_user(struct hostapd_data *hapd, const u8 *identity,
 	}
 #endif /* CONFIG_SQLITE */
 
-	return user;
+	return NULL;
 }

@@ -11,9 +11,9 @@
 
 #include "common/defs.h"
 #include "utils/list.h"
-#include "eap_common/eap_defs.h"
+#include "eap_peer/eap_defs.h"
 #include "eap_server/eap_methods.h"
-#include "wpabuf.h"
+#include "utils/wpabuf.h"
 
 struct eap_sm;
 
@@ -66,6 +66,7 @@ struct eap_eapol_interface {
 	size_t eapSessionIdLen;
 	bool eapKeyAvailable; /* called keyAvailable in IEEE 802.1X-2004 */
 
+#ifndef ESP_SUPPLICANT
 	/* AAA interface to full authenticator variables */
 	bool aaaEapReq;
 	bool aaaEapNoReq;
@@ -82,6 +83,7 @@ struct eap_eapol_interface {
 	struct wpabuf *aaaEapRespData;
 	/* aaaIdentity -> eap_get_identity() */
 	bool aaaTimeout;
+#endif
 };
 
 struct eap_server_erp_key {
