@@ -27,8 +27,6 @@ typedef struct {
     esp_apptrace_mem_block_t *  mem_blocks;
 } esp_apptrace_riscv_ctrl_block_t;
 
-#define RISCV_APPTRACE_SYSNR    0x64
-
 #define ESP_APPTRACE_RISCV_BLOCK_LEN_MSK         0x7FFFUL
 #define ESP_APPTRACE_RISCV_BLOCK_LEN(_l_)        ((_l_) & ESP_APPTRACE_RISCV_BLOCK_LEN_MSK)
 #define ESP_APPTRACE_RISCV_BLOCK_LEN_GET(_v_)    ((_v_) & ESP_APPTRACE_RISCV_BLOCK_LEN_MSK)
@@ -104,7 +102,7 @@ __attribute__((weak)) int esp_apptrace_advertise_ctrl_block(void *ctrl_block_add
     if (!esp_cpu_in_ocd_debug_mode()) {
         return 0;
     }
-    return (int) semihosting_call_noerrno(RISCV_APPTRACE_SYSNR, (long*)ctrl_block_addr);
+    return (int) semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_APPTRACE_INIT, (long*)ctrl_block_addr);
 }
 
 /* Returns up buffers config.

@@ -153,7 +153,7 @@ void vPortEndScheduler(void)
 
 // ------------------------ Stack --------------------------
 
-static void prvTaskExitError(void)
+__attribute__((noreturn)) static void _prvTaskExitError(void)
 {
     /* A function that implements a task must not exit or attempt to return to
     its caller as there is nothing to return to.  If a task wants to exit it
@@ -164,6 +164,18 @@ static void prvTaskExitError(void)
     configASSERT(uxCriticalNesting == ~0UL);
     portDISABLE_INTERRUPTS();
     abort();
+}
+
+__attribute__((naked)) static void prvTaskExitError(void)
+{
+    asm volatile(".option push\n" \
+                ".option norvc\n" \
+                "nop\n" \
+                ".option pop");
+    /* Task entry's RA will point here. Shifting RA into prvTaskExitError is necessary
+       to make GDB backtrace ending inside that function.
+       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
+    _prvTaskExitError();
 }
 
 StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters)
@@ -228,7 +240,9 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     sp -= RV_STK_FRMSZ;
     RvExcFrame *frame = (RvExcFrame *)sp;
     memset(frame, 0, sizeof(*frame));
-    frame->ra = (UBaseType_t)prvTaskExitError;
+    /* Shifting RA into prvTaskExitError is necessary to make GDB backtrace ending inside that function.
+       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
+    frame->ra = (UBaseType_t)prvTaskExitError + 4/*size of the nop insruction at the beginning of prvTaskExitError*/;
     frame->mepc = (UBaseType_t)pxCode;
     frame->a0 = (UBaseType_t)pvParameters;
     frame->gp = (UBaseType_t)&__global_pointer$;
