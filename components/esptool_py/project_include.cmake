@@ -26,7 +26,7 @@ set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
 
 set(ESPTOOLPY_CHIP "${chip_model}")
 
-set(ESPTOOLPY_FLASH_OPTIONS
+set(ELF2IMAGE_FLASH_OPTIONS
     --flash_mode ${ESPFLASHMODE}
     --flash_freq ${ESPFLASHFREQ}
     --flash_size ${ESPFLASHSIZE}
@@ -59,7 +59,7 @@ if(min_rev)
 endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
-    # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
+    # Set ESPFLASHSIZE to 'detect' *after* ELF2IMAGE_FLASH_OPTIONS are generated,
     # as elf2image can't have 'detect' as an option...
     set(ESPFLASHSIZE detect)
 endif()
@@ -87,7 +87,7 @@ set(PROJECT_BIN "${elf_name}.bin")
 #
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
     add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-        COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${esptool_elf2image_args}
+        COMMAND ${ESPTOOLPY} elf2image ${ELF2IMAGE_FLASH_OPTIONS} ${esptool_elf2image_args}
             -o "${build_dir}/${unsigned_project_binary}" "${elf_dir}/${elf}"
         COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
@@ -183,7 +183,8 @@ if(CONFIG_ESPTOOLPY_NO_STUB)
 endif()
 
 idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
-idf_component_set_property(esptool_py FLASH_SUB_ARGS "${ESPTOOLPY_FLASH_OPTIONS}")
+idf_component_set_property(esptool_py FLASH_SUB_ARGS "--flash_mode ${ESPFLASHMODE} --flash_freq ${ESPFLASHFREQ} \
+--flash_size ${ESPFLASHSIZE}")
 
 function(esptool_py_partition_needs_encryption retencrypted partition_name)
     # Check if encryption is enabled
