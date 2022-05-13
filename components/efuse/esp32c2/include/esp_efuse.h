@@ -24,6 +24,7 @@ typedef enum {
 
     EFUSE_BLK3                 = 3,   /**< Number of eFuse BLOCK3. KEY0. whole block */
     EFUSE_BLK_KEY0             = 3,   /**< Number of eFuse BLOCK3. KEY0. whole block */
+    EFUSE_BLK_SECURE_BOOT      = 3,
     EFUSE_BLK_KEY_MAX          = 4,
 
     EFUSE_BLK_MAX              = 4,   /**< Number of eFuse blocks */
