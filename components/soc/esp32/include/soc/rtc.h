@@ -520,6 +520,8 @@ typedef struct rtc_sleep_config_s {
     uint32_t lslp_meminf_pd : 1;        //!< remove all peripheral force power up flags
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
+    uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
+    uint32_t light_slp_reject : 1;      //!< enable light sleep reject
 } rtc_sleep_config_t;
 
 /**
@@ -553,7 +555,9 @@ typedef struct rtc_sleep_config_s {
                    : RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
-    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
+    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
+    .deep_slp_reject = 1, \
+    .light_slp_reject = 1 \
 };
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
@@ -619,6 +623,12 @@ void rtc_sleep_set_wakeup_time(uint64_t t);
 #define RTC_TOUCH_TRIG_EN   BIT(8)  //!< Touch wakeup
 #define RTC_ULP_TRIG_EN     BIT(9)  //!< ULP wakeup
 #define RTC_BT_TRIG_EN      BIT(10) //!< BT wakeup (light sleep only)
+
+/**
+ * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
+ * esp32 only supports GPIO and SDIO sleep reject sources
+ */
+#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN | RTC_SDIO_TRIG_EN)
 
 /**
  * @brief Enter deep or light sleep mode

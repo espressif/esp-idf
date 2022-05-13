@@ -647,8 +647,8 @@ typedef struct {
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
-    uint32_t deep_slp_reject : 1;
-    uint32_t light_slp_reject : 1;
+    uint32_t deep_slp_reject : 1;       //!< enable deep sleep reject
+    uint32_t light_slp_reject : 1;      //!< enable light sleep reject
 } rtc_sleep_config_t;
 
 /**
@@ -743,6 +743,19 @@ void rtc_sleep_set_wakeup_time(uint64_t t);
 #define RTC_XTAL32K_DEAD_TRIG_EN    BIT(12)
 #define RTC_USB_TRIG_EN             BIT(14)
 #define RTC_BROWNOUT_DET_TRIG_EN    BIT(16)
+
+/**
+ * RTC_SLEEP_REJECT_MASK records sleep reject sources supported by chip
+ */
+#define RTC_SLEEP_REJECT_MASK (RTC_GPIO_TRIG_EN         | \
+                               RTC_TIMER_TRIG_EN        | \
+                               RTC_WIFI_TRIG_EN         | \
+                               RTC_UART0_TRIG_EN        | \
+                               RTC_UART1_TRIG_EN        | \
+                               RTC_BT_TRIG_EN           | \
+                               RTC_XTAL32K_DEAD_TRIG_EN | \
+                               RTC_USB_TRIG_EN          | \
+                               RTC_BROWNOUT_DET_TRIG_EN)
 
 /**
  * @brief Enter deep or light sleep mode
