@@ -447,10 +447,12 @@ macro(idf_build_process target)
 
         # Call for the component manager to prepare remote dependencies
         idf_build_get_property(python PYTHON)
+        idf_build_get_property(component_manager_interface_version __COMPONENT_MANAGER_INTERFACE_VERSION)
         execute_process(COMMAND ${python}
             "-m"
             "idf_component_manager.prepare_components"
             "--project_dir=${project_dir}"
+            "--interface_version=${component_manager_interface_version}"
             "prepare_dependencies"
             "--local_components_list_file=${local_components_list_file}"
             "--managed_components_list_file=${managed_components_list_file}"
