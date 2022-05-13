@@ -32,7 +32,7 @@ struct crypto_ec {
 	mbedtls_ecp_group group;
 };
 
-int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
+static int crypto_rng_wrapper(void *ctx, unsigned char *buf, size_t len)
 {
 	return random_get_bytes(buf, len);
 }

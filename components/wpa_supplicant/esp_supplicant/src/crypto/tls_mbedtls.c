@@ -7,7 +7,7 @@
 #include "utils/includes.h"
 #include "utils/common.h"
 
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "crypto/sha1.h"
 #include "crypto/md5.h"
 #include "crypto/sha256.h"
@@ -608,7 +608,7 @@ exit:
 	return ret;
 }
 
-void *tls_init()
+void *tls_init(const struct tls_config *conf)
 {
 	tls_instance_count++;
 	return &tls_instance_count;
@@ -660,7 +660,7 @@ int tls_connection_established(void *tls_ctx, struct tls_connection *conn)
 	return 0;
 }
 
-int tls_global_set_verify(void *tls_ctx, int check_crl)
+int tls_global_set_verify(void *tls_ctx, int check_crl, int strict)
 {
 	wpa_printf(MSG_INFO, "TLS: global settings are not supported");
 	return -1;

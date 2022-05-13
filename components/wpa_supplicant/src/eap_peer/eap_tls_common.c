@@ -10,7 +10,7 @@
 
 #include "utils/common.h"
 #include "crypto/sha1.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/eap_i.h"
 #include "eap_peer/eap_tls_common.h"
 #include "eap_peer/eap_config.h"
