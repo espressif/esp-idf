@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdbool.h>
@@ -309,17 +301,23 @@ void esp_vfs_dev_cdcacm_set_rx_line_endings(esp_line_endings_t mode)
     s_rx_mode = mode;
 }
 
+static const esp_vfs_t vfs = {
+    .flags = ESP_VFS_FLAG_DEFAULT,
+    .write = &cdcacm_write,
+    .open = &cdcacm_open,
+    .fstat = &cdcacm_fstat,
+    .close = &cdcacm_close,
+    .read = &cdcacm_read,
+    .fcntl = &cdcacm_fcntl,
+    .fsync = &cdcacm_fsync
+};
+
+const esp_vfs_t *esp_vfs_cdcacm_get_vfs(void)
+{
+    return &vfs;
+}
+
 esp_err_t esp_vfs_dev_cdcacm_register(void)
 {
-    const esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &cdcacm_write,
-        .open = &cdcacm_open,
-        .fstat = &cdcacm_fstat,
-        .close = &cdcacm_close,
-        .read = &cdcacm_read,
-        .fcntl = &cdcacm_fcntl,
-        .fsync = &cdcacm_fsync
-    };
     return esp_vfs_register("/dev/cdcacm", &vfs, NULL);
 }
