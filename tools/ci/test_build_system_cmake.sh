@@ -814,6 +814,15 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     ( idf.py build 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
     mv sdkconfig.bak sdkconfig
 
+    print_status "Warning is given if smallest partition is nearly full"
+    clean_build_dir
+    cp ${IDF_PATH}/components/partition_table/partitions_singleapp.csv partitions.csv
+    ${SED} -i "s/factory,  app,  factory, ,        1M/factory,  app,  factory, ,        170K/" partitions.csv
+    echo "CONFIG_PARTITION_TABLE_CUSTOM=y" > sdkconfig
+    ( idf.py build 2>&1 | grep "partition is nearly full" ) || failure "No warning for nearly full smallest partition was given when the condition is fulfilled"
+    rm -f partitions.csv sdkconfig
+    ( idf.py build 2>&1 | grep "partition is nearly full" ) && failure "Warning for nearly full smallest partition was given when the condition is not fulfilled"
+
     print_status "Flash size is correctly set in the bootloader image header"
     # Build with the default 2MB setting
     rm sdkconfig
