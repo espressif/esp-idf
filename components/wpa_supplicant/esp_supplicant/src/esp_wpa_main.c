@@ -260,8 +260,8 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_done = wpa_config_done;
 
     esp_wifi_register_wpa3_cb(wpa_cb);
-    ret = esp_supplicant_common_init(wpa_cb);
     eloop_init();
+    ret = esp_supplicant_common_init(wpa_cb);
 
     if (ret != 0) {
         return ret;
