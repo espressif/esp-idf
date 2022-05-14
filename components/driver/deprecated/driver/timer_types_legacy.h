@@ -17,13 +17,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Frequency of the clock on the input of the timer groups
- * @note  This macro is not correct for Timer Groups with multiple clock sources (e.g. APB, XTAL)
- *        So please don't use it in your application, we keep it here only for backward compatible
- */
-#define TIMER_BASE_CLK _Pragma ("GCC warning \"'TIMER_BASE_CLK' macro is deprecated\"") APB_CLK_FREQ
-
-/**
  * @brief Timer-Group ID
  */
 typedef enum {

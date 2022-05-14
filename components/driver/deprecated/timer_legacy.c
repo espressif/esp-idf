@@ -406,12 +406,6 @@ esp_err_t timer_group_intr_disable(timer_group_t group_num, timer_intr_t disable
     return ESP_OK;
 }
 
-/* This function is deprecated */
-timer_intr_t IRAM_ATTR timer_group_intr_get_in_isr(timer_group_t group_num)
-{
-    return timer_ll_get_intr_status(TIMER_LL_GET_HW(group_num));
-}
-
 uint32_t IRAM_ATTR timer_group_get_intr_status_in_isr(timer_group_t group_num)
 {
     uint32_t intr_status = 0;
@@ -429,12 +423,6 @@ uint32_t IRAM_ATTR timer_group_get_intr_status_in_isr(timer_group_t group_num)
 void IRAM_ATTR timer_group_clr_intr_status_in_isr(timer_group_t group_num, timer_idx_t timer_num)
 {
     timer_ll_clear_intr_status(p_timer_obj[group_num][timer_num]->hal.dev, TIMER_LL_EVENT_ALARM(timer_num));
-}
-
-/* This function is deprecated */
-void IRAM_ATTR timer_group_intr_clr_in_isr(timer_group_t group_num, timer_idx_t timer_num)
-{
-    timer_group_clr_intr_status_in_isr(group_num, timer_num);
 }
 
 void IRAM_ATTR timer_group_enable_alarm_in_isr(timer_group_t group_num, timer_idx_t timer_num)
@@ -460,33 +448,9 @@ void IRAM_ATTR timer_group_set_counter_enable_in_isr(timer_group_t group_num, ti
     p_timer_obj[group_num][timer_num]->counter_en = counter_en;
 }
 
-/* This function is deprecated */
-void IRAM_ATTR timer_group_clr_intr_sta_in_isr(timer_group_t group_num, timer_intr_t intr_mask)
-{
-    for (uint32_t timer_idx = 0; timer_idx < TIMER_MAX; timer_idx++) {
-        if (intr_mask & BIT(timer_idx)) {
-            timer_group_clr_intr_status_in_isr(group_num, timer_idx);
-        }
-    }
-}
-
 bool IRAM_ATTR timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer_idx_t timer_num)
 {
     return p_timer_obj[group_num][timer_num]->auto_reload_en;
-}
-
-esp_err_t IRAM_ATTR timer_spinlock_take(timer_group_t group_num)
-{
-    ESP_RETURN_ON_FALSE(group_num < TIMER_GROUP_MAX, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_GROUP_NUM_ERROR);
-    TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
-    return ESP_OK;
-}
-
-esp_err_t IRAM_ATTR timer_spinlock_give(timer_group_t group_num)
-{
-    ESP_RETURN_ON_FALSE(group_num < TIMER_GROUP_MAX, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_GROUP_NUM_ERROR);
-    TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
-    return ESP_OK;
 }
 
 /**

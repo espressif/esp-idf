@@ -75,12 +75,60 @@ Breaking Changes in Usage
 UART
 ----
 
-- ``uart_isr_register`` and ``uart_isr_free`` have been removed as the UART interrupt handling is closely related to the driver implementation.
++-----------------------------------------------+-----------------------------------------------+----------------------------------------------------------+
+| Removed/Deprecated items                      | Replacement                                   | Remarks                                                  |
++===============================================+===============================================+==========================================================+
+| ``uart_isr_register()``                       | None                                          | UART interrupt handling is implemented by driver itself. |
++-----------------------------------------------+-----------------------------------------------+----------------------------------------------------------+
+| ``uart_isr_free()``                           | None                                          | UART interrupt handling is implemented by driver itself. |
++-----------------------------------------------+-----------------------------------------------+----------------------------------------------------------+
+| ``use_ref_tick`` in :cpp:type:`uart_config_t` | :cpp:member:`uart_config_t::source_clk`       | Select the clock source.                                 |
++-----------------------------------------------+-----------------------------------------------+----------------------------------------------------------+
+| ``uart_enable_pattern_det_intr()``            | :cpp:func:`uart_enable_pattern_det_baud_intr` | Enable pattern detection interrupt.                      |
++-----------------------------------------------+-----------------------------------------------+----------------------------------------------------------+
 
 I2C
 ---
 
-- ``i2c_isr_register`` and ``i2c_isr_free`` have been removed as the I2C interrupt handling is closely related to the driver implementation.
++--------------------------+-------------+---------------------------------------------------------+
+| Removed/Deprecated items | Replacement | Remarks                                                 |
++==========================+=============+=========================================================+
+| ``i2c_isr_register()``   | None        | I2C interrupt handling is implemented by driver itself. |
++--------------------------+-------------+---------------------------------------------------------+
+| ``i2c_isr_register()``   | None        | I2C interrupt handling is implemented by driver itself. |
++--------------------------+-------------+---------------------------------------------------------+
+| ``i2c_opmode_t``         | None        | It's not used anywhere in esp-idf.                      |
++--------------------------+-------------+---------------------------------------------------------+
+
+SPI
+---
+
++--------------------------+----------------------------------+---------------------------------+
+| Removed/Deprecated items | Replacement                      | Remarks                         |
++==========================+==================================+=================================+
+| ``spi_cal_clock()``      | :cpp:func:`spi_get_actual_clock` | Get SPI real working frequency. |
++--------------------------+----------------------------------+---------------------------------+
+
+.. only:: SOC_SDMMC_HOST_SUPPORTED
+
+    SDMMC
+    -----
+
+    +----------------------------+----------------------------------------------+--------------------------+
+    | Removed/Deprecated items   | Replacement                                  | Remarks                  |
+    +============================+==============================================+==========================+
+    | ``sdmmc_host_pullup_en()`` | set ``SDMMC_SLOT_FLAG_INTERNAL_PULLUP`` flag | Enable internal pull up. |
+    |                            | in :cpp:member:`sdmmc_slot_config_t::flags`  |                          |
+    +----------------------------+----------------------------------------------+--------------------------+
+
+LEDC
+-----
+
++------------------------------------------------+----------------------------------------------------+-----------------------------------+
+| Removed/Deprecated items                       | Replacement                                        | Remarks                           |
++================================================+====================================================+===================================+
+| ``bit_num`` in :cpp:type:`ledc_timer_config_t` | :cpp:member:`ledc_timer_config_t::duty_resolution` | Set resolution of the duty cycle. |
++------------------------------------------------+----------------------------------------------------+-----------------------------------+
 
 .. only:: SOC_PCNT_SUPPORTED
 
@@ -189,3 +237,21 @@ LCD
 
 - The LCD panel initialization flow is slightly changed. Now the :cpp:func:`esp_lcd_panel_init` won't turn on the display automatically. User needs to call :cpp:func:`esp_lcd_panel_disp_on_off` to manually turn on the display. Note, this is different from turning on backlight. With this breaking change, user can flush a predefined pattern to the screen before turning on the screen. This can help avoid random noise on the screen after a power on reset.
 - :cpp:func:`esp_lcd_panel_disp_off` is deprecated, please use :cpp:func:`esp_lcd_panel_disp_on_off` instead.
+
+.. only:: SOC_MCPWM_SUPPORTED
+
+    MCPWM
+    -----
+
+    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
+    | Removed/Deprecated items  | Replacement                                       | Remarks                                                   |
+    +===========================+===================================================+===========================================================+
+    | ``mcpwm_capture_enable``  | :cpp:func:`mcpwm_capture_enable_channel`          | Enable capture channel.                                   |
+    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
+    | ``mcpwm_capture_disable`` | :cpp:func:`mcpwm_capture_capture_disable_channel` | Disable capture channel.                                  |
+    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
+    | ``mcpwm_sync_enable``     | :cpp:func:`mcpwm_sync_configure`                  | Configure synchronization.                                |
+    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
+    | ``mcpwm_isr_register``    | By registering event callbacks, e.g.              | MCPWM interrupt handling is implemented by driver itself. |
+    |                           | :cpp:member:`mcpwm_capture_config_t::capture_cb`  |                                                           |
+    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+

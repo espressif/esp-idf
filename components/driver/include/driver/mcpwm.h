@@ -171,16 +171,6 @@ typedef enum {
 } mcpwm_capture_on_edge_t;
 
 /**
- * @brief Interrupt masks for MCPWM capture
- */
-__attribute__ ((deprecated("please use callback function to avoid directly accessing registers")))
-typedef enum {
-    MCPWM_LL_INTR_CAP0 = BIT(27), ///< Capture 0 happened
-    MCPWM_LL_INTR_CAP1 = BIT(28), ///< Capture 1 happened
-    MCPWM_LL_INTR_CAP2 = BIT(29), ///< Capture 2 happened
-} mcpwm_intr_t;
-
-/**
  * @brief Select type of MCPWM counter
  */
 typedef enum {
@@ -740,39 +730,6 @@ esp_err_t mcpwm_fault_set_cyc_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_n
 esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_sig);
 
 /**
- * @brief Initialize capture submodule
- *
- * @note Enabling capture feature would also enable the capture interrupt event,
- *       users have to register an interrupt handler by `mcpwm_isr_register`, and in there, query the capture data.
- * @note The capture timer uses APB_CLK (typically 80MHz) as the count source.
- *
- * @param mcpwm_num set MCPWM unit(0-1)
- * @param cap_edge set capture edge, BIT(0) - negative edge, BIT(1) - positive edge
- * @param cap_sig capture pin, which needs to be enabled
- * @param num_of_pulse Input capture signal prescaling, ranges from 0 to 255, representing prescaling from 1 to 256.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-__attribute__((deprecated("please use mcpwm_capture_enable_channel instead")))
-esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig, mcpwm_capture_on_edge_t cap_edge,
-                               uint32_t num_of_pulse);
-
-/**
- * @brief Disable capture signal
- *
- * @param mcpwm_num set MCPWM unit(0-1)
- * @param cap_sig capture pin, which needs to be disabled
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-__attribute__((deprecated("please use mcpwm_capture_disable_channel instead")))
-esp_err_t mcpwm_capture_disable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
-
-/**
  * @brief Enable capture channel
  *
  * @param mcpwm_num set MCPWM unit(0-1)
@@ -818,24 +775,6 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
  *     Capture signal edge: 1 - positive edge, 2 - negtive edge
  */
 uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
-
-/**
- * @brief Initialize sync submodule and sets the signal that will cause the timer be loaded with pre-defined value
- *
- * @param mcpwm_num set MCPWM unit(0-1)
- * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
- * @param sync_sig set the synchronization input signal
- * @param phase_val phase value in 1/1000 (for 86.7%, phase_val = 867) which timer moves to on sync signal
- *
- * @note Count direction is undefined within this API
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-__attribute__((deprecated("please use mcpwm_sync_configure() instead")))
-esp_err_t mcpwm_sync_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_sync_signal_t sync_sig,
-                            uint32_t phase_val);
 
 /**
  * @brief Initialize sync submodule and sets the signal that will cause the timer be loaded with pre-defined value
@@ -904,26 +843,6 @@ esp_err_t mcpwm_timer_trigger_soft_sync(mcpwm_unit_t mcpwm_num, mcpwm_timer_t ti
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
 esp_err_t mcpwm_sync_invert_gpio_synchro(mcpwm_unit_t mcpwm_num, mcpwm_sync_signal_t sync_sig, bool invert);
-
-/**
- * @brief Register MCPWM interrupt handler, the handler is an ISR.
- *        the handler will be attached to the same CPU core that this function is running on.
- *
- * @param mcpwm_num set MCPWM unit(0-1)
- * @param fn interrupt handler function.
- * @param arg user-supplied argument passed to the handler function.
- * @param intr_alloc_flags flags used to allocate the interrupt. One or multiple (ORred)
- *        ESP_INTR_FLAG_* values. see esp_intr_alloc.h for more info.
- * @param handle pointer to return handle. If non-NULL, a handle for the interrupt will
- *        be returned here.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Function pointer error.
- */
-__attribute__((deprecated("interrupt events are handled by driver, please use callback")))
-esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *arg, int intr_alloc_flags,
-                             intr_handle_t *handle);
 
 #ifdef __cplusplus
 }

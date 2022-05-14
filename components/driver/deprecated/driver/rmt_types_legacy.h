@@ -18,7 +18,6 @@ extern "C" {
 
 #define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
 #define RMT_CHANNEL_FLAGS_INVERT_SIG (1 << 1) /*!< Invert RMT signal */
-#define RMT_CHANNEL_FLAGS_ALWAYS_ON _Pragma ("GCC warning \"'RMT_CHANNEL_FLAGS_ALWAYS_ON' macro is deprecated\"") RMT_CHANNEL_FLAGS_AWARE_DFS
 
 /**
  * @brief Define memory space of each RMT channel (in words = 4 bytes)

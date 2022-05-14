@@ -124,10 +124,7 @@ typedef struct {
     uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
     uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
     uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
-    union {
-        uart_sclk_t source_clk;         /*!< UART source clock selection */
-        bool use_ref_tick  __attribute__((deprecated)); /*!< Deprecated method to select ref tick clock source, set source_clk field instead */
-    };
+    uart_sclk_t source_clk;             /*!< UART source clock selection */
 } uart_config_t;
 
 #ifdef __cplusplus

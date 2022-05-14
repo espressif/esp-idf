@@ -76,16 +76,6 @@ typedef enum {
 /// Use the highest speed that is available for the clock source picked by clk_flags
 #define I2C_CLK_FREQ_MAX                  (-1)
 
-#if CONFIG_IDF_TARGET_ESP32
-typedef enum{
-    I2C_CMD_RESTART = 0,   /*!<I2C restart command */
-    I2C_CMD_WRITE,         /*!<I2C write command */
-    I2C_CMD_READ,          /*!<I2C read command */
-    I2C_CMD_STOP,          /*!<I2C stop command */
-    I2C_CMD_END            /*!<I2C end command */
-} i2c_opmode_t __attribute__((deprecated));
-#endif
-
 #ifdef __cplusplus
 }
 #endif
