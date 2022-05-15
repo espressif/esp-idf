@@ -177,7 +177,7 @@ menu "ESP32S3-Specific"
                 depends on SPIRAM_MODE_QUAD
 
             config SPIRAM_TYPE_ESPPSRAM32
-                bool "ESP-PSRAM32 or IS25WP032"
+                bool "ESP-PSRAM32"
                 depends on SPIRAM_MODE_QUAD
 
             config SPIRAM_TYPE_ESPPSRAM64
