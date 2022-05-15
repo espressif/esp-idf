@@ -1223,7 +1223,6 @@ components/soc/esp32/include/soc/ledc_struct.h
 components/soc/esp32/include/soc/nrx_reg.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
-components/soc/esp32/include/soc/rtc_cntl_reg.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
 components/soc/esp32/include/soc/rtc_io_channel.h

@@ -98,7 +98,6 @@ void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
 {
     if (clk_8m_en) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
-        /* no need to wait once enabled by software */
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CK8M_ENABLE_WAIT_DEFAULT);
         esp_rom_delay_us(DELAY_8M_ENABLE);
     } else {
