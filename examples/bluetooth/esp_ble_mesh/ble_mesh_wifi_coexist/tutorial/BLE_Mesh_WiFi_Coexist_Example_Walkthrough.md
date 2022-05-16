@@ -1,6 +1,6 @@
 # Introduction
 
-This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi function while operating Bluetooth. In this demo, 
+This demo demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi function while operating Bluetooth. In this demo,
 
 * The Wi-Fi function is demonstrated by measuring its transfer rate, using the `iperf` protocol;
 * The Bluetooth function is demonstrated by the fast provisioning function. Details can be seen in `fast_prov_server`.
@@ -15,17 +15,17 @@ Download and flash the `ble_mesh_wifi_coexist` project to your ESP32 development
 1. Connect your development board to the Wi-Fi network by entering the `sta ssid password` command in your serial port tool.
 	- For example, you should enter `sta test_wifi 12345678` if you want to connect your board to a network with a SSID of `test_wifi` and a password of `12345678`.
 
-2. Start a TCP server by entering the `iperf -s -i 3 -t 1000` command in your serial port tool, which prints the current transfer rate of the Wi-Fi network the board connects to. 
+2. Start a TCP server by entering the `iperf -s -i 3 -t 1000` command in your serial port tool, which prints the current transfer rate of the Wi-Fi network the board connects to.
 
-3. Start a TCP client by entering the `iperf -c board_IP_address -i 3 -t 60` command in your PC terminal. 
+3. Start a TCP client by entering the `iperf -c board_IP_address -i 3 -t 60` command in your PC terminal.
 	- For example, you should enter `iperf -c 192.168.10.42 -i 3 -t 60`, if the IP address of your board is 192.168.10.42.
 
 
 Meanwhile, you can use the Bluetooth function during the whole process, for example, controlling the LED indicator on your board.
 
 > Note:
-> 
-> 1. Please use the correct serial port number for connecting your board when entering commands in your serial port tool; 
+>
+> 1. Please use the correct serial port number for connecting your board when entering commands in your serial port tool;
 > 2. Your PC and board should connect to the same Wi-Fi network;
 
 
@@ -50,8 +50,8 @@ The `main` folder mainly implements the BLE Mesh feature.  Details can be seen i
 
 The `components` folder mainly implements the Wi-Fi feature, which allows some basic commands and `iperf-related` test commands.
 
-> Note: 
-> 
+> Note:
+>
 > [Iperf](https://iperf.fr) is a tool for active measurements of the maximum achievable bandwidth on IP networks. It supports tuning of various parameters related to timing, buffers and protocols (TCP, UDP, SCTP with IPv4 and IPv6).
 
 # Example Walkthrough
@@ -158,13 +158,13 @@ This demo calls the `bluetooth_init` function to:
 	ret = esp_bt_controller_init(&bt_cfg);
 	```
 
-	Next, the controller is enabled in BLE Mode. 
+	Next, the controller is enabled in BLE Mode.
 
 	```c
 	ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
 	```
 	The controller should be enabled in `ESP_BT_MODE_BTDM`, if you want to use the dual mode (BLE + BT). There are four Bluetooth modes supported:
-	
+
 	* `ESP_BT_MODE_IDLE`: Bluetooth not running
 	* `ESP_BT_MODE_BLE`: BLE mode
 	* `ESP_BT_MODE_CLASSIC_BT`: BT Classic mode
@@ -180,8 +180,8 @@ This demo calls the `bluetooth_init` function to:
 ### Initializing the BLE Mesh
 
 This demo calls the `ble_mesh_init` function to:
- 
-1. Initialize the board's uuid by setting the `dev_uuid` variable, which is used to distinguish devices when provisioning. 
+
+1. Initialize the board's uuid by setting the `dev_uuid` variable, which is used to distinguish devices when provisioning.
 
 ```c
 static esp_err_t ble_mesh_init(void)
@@ -209,12 +209,12 @@ static esp_err_t ble_mesh_init(void)
 
 	```c
 	ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT,                /*!< Provisioner establish a BLE Mesh link event */
-	
+
 	static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
         esp_ble_mesh_prov_cb_param_t *param)
 	{
    	     esp_err_t err;
-    
+
          switch (event) {
     	  case ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT:
         	ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT");
@@ -235,67 +235,47 @@ static esp_err_t ble_mesh_init(void)
 
 ### Initializing the Wi-Fi Console
 
-This demo calls the `wifi_console_init` function: 
+This demo calls the `wifi_console_init` function:
 
 ```c
     initialise_wifi();
-    initialize_console();
 
-    /* Register commands */
-    esp_console_register_help_command();
+    esp_console_repl_t *repl = NULL;
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    // init console REPL environment
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+
     register_wifi();
+
+    // start console REPL
+    ESP_ERROR_CHECK(esp_console_start_repl(repl));
 ```
 
-1. Initialize the basic Wi-Fi function by calling `initialise_wifi`, which sets 
+1. Initialize the basic Wi-Fi function by calling `initialise_wifi`, which sets
 
 	* the Current Wi-Fi power save type to `WIFI_PS_MIN_MODEM`, which indicates the station wakes up to receive beacon every DTIM period
 	* the Wi-Fi API configuration storage type to `WIFI_STORAGE_RAM`, which indicates all configuration will only be stored in the embedded memory
 	* the Wi-Fi operating mode to `WIFI_MODE_STA`, which allows the board to work in Station mode.
 
 
-2. Initialize the Wi-Fi console by calling the `initialize_console` function.
-3. Enable the `Help` function by calling the `esp_console_register_help_command()`. After that, you can view all the currently supported Wi-Fi commands by entering the `help` command in your serial port tool.
-4. Register the commands by calling the `register_wifi` function. 
+2. Create a UART based console REPL by calling the `esp_console_new_repl_uart` function.
+3. Register the commands by calling the `register_wifi` function.
 	* An example of registering a `restart` command with a `restart()` function to handle this command can be seen below. After the initialization, you can enter the `restart` command in your serial port tool to call the `restart()` function.
-	
-```c
-    static int restart(int argc, char **argv)
-    {
-        ESP_LOGI(TAG, "Restarting");
-        esp_restart();
-    }
-    const esp_console_cmd_t restart_cmd = {
-        .command = "restart",
-        .help = "Restart the program",
-        .hint = NULL,
-        .func = &restart,
-    };
-```
+        ```c
+            static int restart(int argc, char **argv)
+            {
+                ESP_LOGI(TAG, "Restarting");
+                esp_restart();
+            }
+            const esp_console_cmd_t restart_cmd = {
+                .command = "restart",
+                .help = "Restart the program",
+                .hint = NULL,
+                .func = &restart,
+            };
+        ```
 
-Note that the `sta`,`scan`,`ap`,`query`,`iperf`,`restart` and `heap` commands are supported in this demo.
+    Note that the `sta`,`scan`,`ap`,`query`,`iperf`,`restart` and `heap` commands are supported in this demo.
 
-The main program of the Wi-Fi constantly reads data from the command line. The `esp_console_run` function will parse the command entered from your serial port tool, then call the handler function registered for this command.
-
-```c
-    /* Main loop */
-    while (true) {
-        /* Get a line using linenoise.
-         * The line is returned when ENTER is pressed.
-         */
-        char *line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
-        }
-        /* Add the command to the history */
-        linenoiseHistoryAdd(line);
-
-        /* Try to run the command */
-        int ret;
-        esp_err_t err = esp_console_run(line, &ret);
-        ...
-        /* linenoise allocates line buffer on the heap, so need to free it */
-        linenoiseFree(line);
-    }
-    return;
-}
-```
+4. Start the REPL by calling `esp_console_start_repl`. The repl task internally will read data from the command line and then invoke the handler previously registered.
