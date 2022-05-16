@@ -61,6 +61,11 @@
 
 #define LWIP_RAND       esp_random
 
+/**
+ * Include <errno.h> from the standard libraries.
+ */
+#define LWIP_ERRNO_STDINCLUDE   1
+
 /*
    ------------------------------------
    ---------- Memory options ----------

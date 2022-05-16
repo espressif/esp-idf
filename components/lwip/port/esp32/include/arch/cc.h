@@ -35,7 +35,6 @@
 #define __ARCH_CC_H__
 
 #include <stdint.h>
-#include <errno.h>
 #include <assert.h>
 #include <stdio.h>
 
