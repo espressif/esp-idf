@@ -97,6 +97,10 @@ menu "ESP32S2-specific"
             bool
             default "y"
 
+        config SPIRAM_MODE_QUAD
+            bool
+            default "y"
+
         choice SPIRAM_TYPE
             prompt "Type of SPI RAM chip in use"
             default SPIRAM_TYPE_AUTO

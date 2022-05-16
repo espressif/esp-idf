@@ -902,6 +902,22 @@ UT_S3:
     - ESP32S3_IDF
     - UT_T1_1
 
+UT_S3_QUAD_PSRAM:
+  extends: .unit_test_esp32s3_template
+  parallel: 33
+  tags:
+    - ESP32S3_IDF
+    - UT_T1_1
+    - quad_psram
+
+UT_S3_OCTAL_PSRAM:
+  extends: .unit_test_esp32s3_template
+  parallel: 33
+  tags:
+    - ESP32S3_IDF
+    - UT_T1_1
+    - octal_psram
+
 UT_S3_SPI_DUAL:
   extends: .unit_test_esp32s3_template
   tags:
