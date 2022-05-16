@@ -57,6 +57,8 @@ class SerialReader(Reader):
 
                 # Add a delay to meet the requirements of minimal EN low time (2ms for ESP32-C3)
                 time.sleep(MINIMAL_EN_LOW_DELAY)
+            elif not self.reset:
+                self.serial.setDTR(high)  # IO0=HIGH, default state
             self.gdb_exit = False
             self.serial.rts = high             # Set rts/dtr to the working state
             self.serial.dtr = self.serial.dtr   # usbser.sys workaround
