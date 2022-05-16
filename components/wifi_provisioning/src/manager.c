@@ -702,16 +702,17 @@ static esp_err_t update_wifi_scan_results(void)
         goto exit;
     }
 
-    prov_ctx->ap_list[curr_channel] = (wifi_ap_record_t *) calloc(count, sizeof(wifi_ap_record_t));
+    uint16_t get_count = MIN(count, MAX_SCAN_RESULTS);
+    prov_ctx->ap_list[curr_channel] = (wifi_ap_record_t *) calloc(get_count, sizeof(wifi_ap_record_t));
     if (!prov_ctx->ap_list[curr_channel]) {
         ESP_LOGE(TAG, "Failed to allocate memory for AP list");
         goto exit;
     }
-    if (esp_wifi_scan_get_ap_records(&count, prov_ctx->ap_list[curr_channel]) != ESP_OK) {
+    if (esp_wifi_scan_get_ap_records(&get_count, prov_ctx->ap_list[curr_channel]) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get scanned AP records");
         goto exit;
     }
-    prov_ctx->ap_list_len[curr_channel] = count;
+    prov_ctx->ap_list_len[curr_channel] = get_count;
 
     if (prov_ctx->channels_per_group) {
         ESP_LOGD(TAG, "Scan results for channel %d :", curr_channel);
@@ -734,7 +735,7 @@ static esp_err_t update_wifi_scan_results(void)
 
     /* Store results in sorted list */
     {
-        int rc = MIN(count, MAX_SCAN_RESULTS);
+        int rc = get_count;
         int is = MAX_SCAN_RESULTS - rc - 1;
         while (rc > 0 && is >= 0) {
             if (prov_ctx->ap_list_sorted[is]) {
