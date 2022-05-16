@@ -824,6 +824,46 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
  */
 void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
+
+// -------------------------- CLOCK TREE DEFS ALIAS ----------------------------
+// **WARNING**: The following are only for backwards compatibility.
+// Please use the declarations in soc/clk_tree_defs.h instead.
+/**
+ * @brief CPU clock source
+ */
+typedef soc_cpu_clk_src_t rtc_cpu_freq_src_t;
+#define RTC_CPU_FREQ_SRC_XTAL SOC_CPU_CLK_SRC_XTAL  //!< XTAL
+#define RTC_CPU_FREQ_SRC_PLL SOC_CPU_CLK_SRC_PLL    //!< PLL (480M or 320M)
+#define RTC_CPU_FREQ_SRC_8M SOC_CPU_CLK_SRC_RC_FAST //!< Internal 17.5M RTC oscillator
+
+/**
+ * @brief RTC SLOW_CLK frequency values
+ */
+typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
+#define RTC_SLOW_FREQ_RTC SOC_RTC_SLOW_CLK_SRC_RC_SLOW         //!< Internal 150 kHz RC oscillator
+#define RTC_SLOW_FREQ_32K_XTAL SOC_RTC_SLOW_CLK_SRC_XTAL32K    //!< External 32 kHz XTAL
+#define RTC_SLOW_FREQ_8MD256 SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 //!< Internal 17.5 MHz RC oscillator, divided by 256
+
+/**
+ * @brief RTC FAST_CLK frequency values
+ */
+typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
+#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 2
+#define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 17.5 MHz RC oscillator
+
+/* Alias of frequency related macros */
+#define RTC_FAST_CLK_FREQ_APPROX    SOC_CLK_RC_FAST_FREQ_APPROX
+#define RTC_FAST_CLK_FREQ_8M        SOC_CLK_RC_FAST_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_150K      SOC_CLK_RC_SLOW_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_8MD256    SOC_CLK_RC_FAST_D256_FREQ_APPROX
+#define RTC_SLOW_CLK_FREQ_32K       SOC_CLK_XTAL32K_FREQ_APPROX
+
+/* Alias of deprecated function names */
+#define rtc_clk_slow_freq_set(slow_freq) rtc_clk_slow_src_set(slow_freq)
+#define rtc_clk_slow_freq_get() rtc_clk_slow_src_get()
+#define rtc_clk_fast_freq_set(fast_freq) rtc_clk_fast_src_set(fast_freq)
+#define rtc_clk_fast_freq_get() rtc_clk_fast_src_get()
+
 #ifdef __cplusplus
 }
 #endif

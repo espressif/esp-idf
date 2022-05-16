@@ -798,7 +798,3 @@ bool rtc_dig_8m_enabled(void)
  * TODO: update the library to use rtc_clk_xtal_freq_get
  */
 rtc_xtal_freq_t rtc_get_xtal(void) __attribute__((alias("rtc_clk_xtal_freq_get")));
-/* TODO: will be replaced by clk_tree API, unavoidable change to the examples
- *       Aliasing for now, will be added to migration guide
- */
-uint32_t rtc_clk_slow_freq_get_hz(void) __attribute__((alias("rtc_clk_slow_freq_get_hz")));
