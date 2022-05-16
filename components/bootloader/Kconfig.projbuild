@@ -193,6 +193,14 @@ menu "Bootloader config"
             The GPIO must be held low continuously for this period of time after reset
             before a factory reset or test partition boot (as applicable) is performed.
 
+    config BOOTLOADER_REGION_PROTECTION_ENABLE
+        bool "Enable protection for unmapped memory regions"
+        default y
+        help
+            Protects the unmapped memory regions of the entire address space from unintended accesses.
+            This will ensure that an exception will be triggered whenever the CPU performs a memory
+            operation on unmapped regions of the address space.
+
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
         default y
