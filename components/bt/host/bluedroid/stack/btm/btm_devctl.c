@@ -266,7 +266,7 @@ void btm_dev_timeout (TIMER_LIST_ENT  *p_tle)
 ** Returns          void
 **
 *******************************************************************************/
-static void btm_decode_ext_features_page (UINT8 page_number, const UINT8 *p_features)
+static void btm_decode_ext_features_page (UINT8 page_number, const BD_FEATURES p_features)
 {
     BTM_TRACE_DEBUG ("btm_decode_ext_features_page page: %d", page_number);
     switch (page_number) {

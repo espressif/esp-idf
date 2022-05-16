@@ -66,7 +66,7 @@ static UINT8 bta_dm_pin_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_
 static UINT8 bta_dm_new_link_key_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, LINK_KEY key, UINT8 key_type, BOOLEAN sc_support);
 static UINT8 bta_dm_authentication_complete_cback(BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_name, int result);
 #endif  ///SMP_INCLUDED == TRUE
-static void bta_dm_local_name_cback(BD_ADDR bd_addr);
+static void bta_dm_local_name_cback(const BD_ADDR bd_addr);
 static BOOLEAN bta_dm_check_av(UINT16 event);
 static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data);
 
@@ -3265,10 +3265,10 @@ static UINT8 bta_dm_sp_cback (tBTM_SP_EVT event, tBTM_SP_EVT_DATA *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_dm_local_name_cback(UINT8 *p_name)
+static void bta_dm_local_name_cback(const BD_ADDR bd_addr)
 {
     tBTA_DM_SEC sec_event;
-    UNUSED(p_name);
+    UNUSED(bd_addr);
 
     sec_event.enable.status = BTA_SUCCESS;
 
