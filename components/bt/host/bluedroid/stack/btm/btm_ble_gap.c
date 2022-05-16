@@ -108,7 +108,7 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
         {HCI_SUPP_LE_STATES_INIT_MASK, HCI_SUPP_LE_STATES_INIT_OFF}, /* init */
         {HCI_SUPP_LE_STATES_INIT_MASK, HCI_SUPP_LE_STATES_INIT_OFF}, /* master */
         {HCI_SUPP_LE_STATES_SLAVE_MASK, HCI_SUPP_LE_STATES_SLAVE_OFF}, /* slave */
-        {0, 0},                   /* todo: lo du dir adv, not covered ? */
+        {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_MASK, HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_OFF}, /* lo du dir adv */
         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASK, HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_OFF}, /* hi duty dir adv */
         {HCI_SUPP_LE_STATES_NON_CONN_ADV_MASK, HCI_SUPP_LE_STATES_NON_CONN_ADV_OFF},  /* non connectable adv */
         {HCI_SUPP_LE_STATES_PASS_SCAN_MASK, HCI_SUPP_LE_STATES_PASS_SCAN_OFF},   /*  passive scan */
@@ -174,8 +174,8 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
         {0, 0},  /* lo duty cycle adv 40 */
         {0, 0},   /* hi duty cycle adv 39 */
         {0, 0},  /*  non connectable adv */
-        {0, 0},   /* TODO: passive scan, not covered? */
-        {0, 0},  /* TODO:  active scan, not covered? */
+        {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_PASS_SCAN_MASK, HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_PASS_SCAN_OFF},   /* passive scan */
+        {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_ACTIVE_SCAN_MASK, HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_ACTIVE_SCAN_OFF},  /* active scan */
         {0, 0}   /*  scanable adv */
     },
     { /* hi duty cycle adv */
@@ -1527,6 +1527,8 @@ tBTM_STATUS BTM_BleSetAdvParamsAll(UINT16 adv_int_min, UINT16 adv_int_max, UINT8
 
     if (p_dir_bda) {
         memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
+    } else {
+        return BTM_ILLEGAL_VALUE;
     }
 
     BTM_TRACE_EVENT ("update params for an active adv\n");
@@ -1805,8 +1807,10 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
                                                 tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK update_exceptional_list_cmp_cb)
 {
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
-    ble_cb->update_exceptional_list_cmp_cb = update_exceptional_list_cmp_cb;
     tBTM_STATUS status = BTM_NO_RESOURCES;
+
+    ble_cb->update_exceptional_list_cmp_cb = update_exceptional_list_cmp_cb;
+
     if (!controller_get_interface()->supports_ble()) {
         return BTM_ILLEGAL_VALUE;
     }
@@ -1840,9 +1844,6 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
         default:
             //do nothing
             break;
-    }
-    if(status == BTM_ILLEGAL_VALUE) {
-        return status;
     }
 
     status = BTM_VendorSpecificCommand(HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST, 1 + 4 + BD_ADDR_LEN, device_info_array, NULL);

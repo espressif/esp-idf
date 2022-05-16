@@ -47,9 +47,9 @@ void bta_ag_port_cback_1(UINT32 code, UINT16 port_handle);
 void bta_ag_port_cback_2(UINT32 code, UINT16 port_handle);
 void bta_ag_port_cback_3(UINT32 code, UINT16 port_handle);
 
-void bta_ag_mgmt_cback_1(UINT32 code, UINT16 port_handle);
-void bta_ag_mgmt_cback_2(UINT32 code, UINT16 port_handle);
-void bta_ag_mgmt_cback_3(UINT32 code, UINT16 port_handle);
+void bta_ag_mgmt_cback_1(UINT32 code, UINT16 port_handle, void* data);
+void bta_ag_mgmt_cback_2(UINT32 code, UINT16 port_handle, void* data);
+void bta_ag_mgmt_cback_3(UINT32 code, UINT16 port_handle, void* data);
 
 int bta_ag_data_cback_1(UINT16 port_handle, void *p_data, UINT16 len);
 int bta_ag_data_cback_2(UINT16 port_handle, void *p_data, UINT16 len);
@@ -64,7 +64,8 @@ const tBTA_AG_PORT_CBACK bta_ag_port_cback_tbl[] =
     bta_ag_port_cback_3
 };
 
-const tBTA_AG_PORT_CBACK bta_ag_mgmt_cback_tbl[] =
+typedef tPORT_MGMT_CALLBACK *tBTA_AG_MGMT_CBACK;
+const tBTA_AG_MGMT_CBACK bta_ag_mgmt_cback_tbl[] =
 {
     bta_ag_mgmt_cback_1,
     bta_ag_mgmt_cback_2,
@@ -206,9 +207,9 @@ static int bta_ag_data_cback(UINT16 port_handle, void *p_data, UINT16 len, UINT1
 ** Returns          void
 **
 *******************************************************************************/
-void bta_ag_mgmt_cback_1(UINT32 code, UINT16 handle) {bta_ag_mgmt_cback(code, handle, 1);}
-void bta_ag_mgmt_cback_2(UINT32 code, UINT16 handle) {bta_ag_mgmt_cback(code, handle, 2);}
-void bta_ag_mgmt_cback_3(UINT32 code, UINT16 handle) {bta_ag_mgmt_cback(code, handle, 3);}
+void bta_ag_mgmt_cback_1(UINT32 code, UINT16 handle, void* data) {bta_ag_mgmt_cback(code, handle, 1);}
+void bta_ag_mgmt_cback_2(UINT32 code, UINT16 handle, void* data) {bta_ag_mgmt_cback(code, handle, 2);}
+void bta_ag_mgmt_cback_3(UINT32 code, UINT16 handle, void* data) {bta_ag_mgmt_cback(code, handle, 3);}
 void bta_ag_port_cback_1(UINT32 code, UINT16 handle) {bta_ag_port_cback(code, handle, 1);}
 void bta_ag_port_cback_2(UINT32 code, UINT16 handle) {bta_ag_port_cback(code, handle, 2);}
 void bta_ag_port_cback_3(UINT32 code, UINT16 handle) {bta_ag_port_cback(code, handle, 3);}

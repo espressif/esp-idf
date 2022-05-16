@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stdint.h>
@@ -48,7 +40,7 @@ typedef enum {
     PHY_RF_CAL_FULL    = 0x00000002         /*!< Do full RF calibration. Produces best results, but also consumes a lot of time and current. Suggested to be used once. */
 } esp_phy_calibration_mode_t;
 
-#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 /**
  * @brief PHY init data type
  */
@@ -220,7 +212,7 @@ int64_t esp_phy_rf_get_on_ts(void);
 esp_err_t esp_phy_update_country_info(const char *country);
 
 
-#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 /**
  * @brief Apply PHY init bin to PHY
  * @return ESP_OK on success.

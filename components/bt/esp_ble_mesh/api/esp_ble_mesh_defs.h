@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_BLE_MESH_DEFS_H_
 #define _ESP_BLE_MESH_DEFS_H_
@@ -885,6 +877,8 @@ typedef enum {
     ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
     ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
     ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
+    ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT,                    /*!< Proxy Server establishes connection successfully event */
+    ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT,                 /*!< Proxy Server terminates connection successfully event */
     ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT,           /*!< Local model subscribes group address completion event */
     ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT,         /*!< Local model unsubscribes group address completion event */
     ESP_BLE_MESH_DEINIT_MESH_COMP_EVT,                          /*!< De-initialize BLE Mesh stack completion event */
@@ -1467,6 +1461,19 @@ typedef union {
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT
+     */
+    struct ble_mesh_proxy_server_connected_param {
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+    } proxy_server_connected;                   /*!< Event parameter of ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT
+     */
+    struct ble_mesh_proxy_server_disconnected_param {
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint8_t reason;                         /*!< Proxy disconnect reason */
+    } proxy_server_disconnected;                /*!< Event parameter of ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT */
     /**
      * @brief ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT
      */

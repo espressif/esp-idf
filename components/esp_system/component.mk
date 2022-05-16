@@ -39,10 +39,10 @@ sections_ld := $(COMPONENT_BUILD_DIR)/ld/sections.ld
 #specifies its own scripts.
 LINKER_SCRIPTS += $(ld_output) $(sections_ld)
 
-#ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
-#linker will ignore panic_highint_hdl.S as it has no other files depending on any
+#ld_include_highint_hdl is added as an undefined symbol because otherwise the
+#linker will ignore highint_hdl.S as it has no other files depending on any
 #symbols in it.
-COMPONENT_ADD_LDFLAGS += -u ld_include_panic_highint_hdl \
+COMPONENT_ADD_LDFLAGS += -u ld_include_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS)) \
 
 # Preprocess memory.ld.in linker script into memory.ld

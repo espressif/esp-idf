@@ -1,3 +1,5 @@
+#define ESP_OPENSSL_SUPPRESS_LEGACY_WARNING
+
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netdb.h>

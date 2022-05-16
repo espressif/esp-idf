@@ -323,6 +323,7 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
     p_cb->sec_mask  = p_data->api_conn.sec_mask;
     p_cb->mode      = p_data->api_conn.mode;
+    p_cb->new_mode  = p_data->api_conn.mode;
     bta_hh_cb.p_cur = p_cb;
 
 #if (BTA_HH_LE_INCLUDED == TRUE)
@@ -451,6 +452,8 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
             HID_HostRemoveDev( p_cb->incoming_hid_handle);
         }
         conn_dat.status = status;
+        /* check if host initiate the connection*/
+        conn_dat.is_orig = !p_cb->incoming_conn;
         (* bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH *)&conn_dat);
 
         /* move state machine W4_CONN ->IDLE */
@@ -521,6 +524,8 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 
     memset((void *)&conn, 0, sizeof (tBTA_HH_CONN));
     conn.handle = dev_handle;
+    /* check if host initiate the connection*/
+    conn.is_orig = !p_cb->incoming_conn;
     bdcpy(conn.bda, p_cb->addr);
 
     /* increase connection number */
@@ -587,6 +592,7 @@ void bta_hh_open_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     APPL_TRACE_EVENT ("bta_hh_open_act:  Device[%d] connected", dev_handle);
 #endif
 
+    p_cb->incoming_conn = TRUE;
     /* SDP has been done */
     if (p_cb->app_id != 0) {
         bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, p_data);
@@ -594,7 +600,6 @@ void bta_hh_open_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         /*  app_id == 0 indicates an incoming conenction request arrives without SDP
             performed, do it first */
     {
-        p_cb->incoming_conn = TRUE;
         /* store the handle here in case sdp fails - need to disconnect */
         p_cb->incoming_hid_handle = dev_handle;
 
@@ -676,6 +681,11 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     case BTA_HH_SET_IDLE_EVT :
         cback_data.handle  = p_cb->hid_handle;
         cback_data.status = bta_hh_get_trans_status(p_data->hid_cback.data);
+        if (cback_data.status == BTA_HH_OK) {
+            p_cb->mode = p_cb->new_mode;
+        } else {
+            p_cb->new_mode = p_cb->mode;
+        }
         (* bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH *)&cback_data);
         p_cb->w4_evt = 0;
         break;
@@ -684,6 +694,8 @@ void bta_hh_handsk_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     case BTA_HH_OPEN_EVT:
         conn.status = p_data->hid_cback.data ? BTA_HH_ERR_PROTO : BTA_HH_OK;
         conn.handle = p_cb->hid_handle;
+        /* check if host initiate the connection*/
+        conn.is_orig = !p_cb->incoming_conn;
         bdcpy(conn.bda, p_cb->addr);
         (* bta_hh_cb.p_cback)(p_cb->w4_evt, (tBTA_HH *)&conn);
 #if BTA_HH_DEBUG
@@ -787,6 +799,8 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     conn_dat.handle = p_cb->hid_handle;
     conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ?
                       BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
+    /* check if host initiate the connection*/
+    conn_dat.is_orig = !p_cb->incoming_conn;
     bdcpy(conn_dat.bda, p_cb->addr);
     HID_HostCloseDev(p_cb->hid_handle);
 
@@ -836,6 +850,8 @@ void bta_hh_close_act (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         /* Failure in opening connection */
         conn_dat.handle = p_cb->hid_handle;
         conn_dat.status = (reason == HID_ERR_AUTH_FAILED) ? BTA_HH_ERR_AUTH_FAILED : BTA_HH_ERR;
+        /* check if host initiate the connection*/
+        conn_dat.is_orig = !p_cb->incoming_conn;
         bdcpy(conn_dat.bda, p_cb->addr);
         HID_HostCloseDev(p_cb->hid_handle);
 
@@ -1019,7 +1035,9 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 *******************************************************************************/
 void bta_hh_write_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 {
+    tHID_STATUS status;
     tBTA_HH_CBDATA     cbdata = {BTA_HH_OK, 0};
+    tBTA_HH_API_SENDDATA send_data = {BTA_HH_OK, 0, 0};
     UINT16  event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
                     BTA_HH_FST_TRANS_CB_EVT;
 
@@ -1031,25 +1049,33 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
     {
 
         cbdata.handle = p_cb->hid_handle;
+        send_data.handle = p_cb->hid_handle;
 
         /* match up BTE/BTA report/boot mode def */
         if (p_data->api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL) {
+            p_cb->new_mode = p_data->api_sndcmd.param;
             p_data->api_sndcmd.param = ( p_data->api_sndcmd.param == BTA_HH_PROTO_RPT_MODE) ? \
                                        HID_PAR_PROTOCOL_REPORT : HID_PAR_PROTOCOL_BOOT_MODE;
         }
 
-        if (HID_HostWriteDev (p_cb->hid_handle,
-                              p_data->api_sndcmd.t_type,
-                              p_data->api_sndcmd.param,
-                              p_data->api_sndcmd.data,
-                              p_data->api_sndcmd.rpt_id,
-                              p_data->api_sndcmd.p_data) != HID_SUCCESS) {
-            APPL_TRACE_ERROR("HID_HostWriteDev Error ");
+        status = HID_HostWriteDev(p_cb->hid_handle, p_data->api_sndcmd.t_type, p_data->api_sndcmd.param,
+                                  p_data->api_sndcmd.data, p_data->api_sndcmd.rpt_id, p_data->api_sndcmd.p_data);
+        if (status != HID_SUCCESS) {
+            APPL_TRACE_ERROR("HID_HostWriteDev status:%d", status);
             cbdata.status = BTA_HH_ERR;
+            send_data.status = BTA_HH_ERR;
 
-            if (p_data->api_sndcmd.t_type != HID_TRANS_CONTROL &&
-                    p_data->api_sndcmd.t_type != HID_TRANS_DATA) {
-                (* bta_hh_cb.p_cback)(event, (tBTA_HH *)&cbdata);
+            if (p_data->api_sndcmd.t_type != HID_TRANS_CONTROL) {
+                switch (p_data->api_sndcmd.t_type) {
+                case HID_TRANS_DATA:
+                    event = BTA_HH_DATA_EVT;
+                    send_data.reason = status;
+                    (*bta_hh_cb.p_cback)(event, (tBTA_HH *)&send_data);
+                    break;
+                default:
+                    (*bta_hh_cb.p_cback)(event, (tBTA_HH *)&cbdata);
+                    break;
+                }
             } else if (p_data->api_sndcmd.param == BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG) {
                 (* bta_hh_cb.p_cback)(BTA_HH_VC_UNPLUG_EVT, (tBTA_HH *)&cbdata);
             }
@@ -1070,6 +1096,7 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
                 p_cb->w4_evt = event;
                 break;
             case HID_TRANS_DATA:  /* output report */
+                (*bta_hh_cb.p_cback)(BTA_HH_DATA_EVT, (tBTA_HH *)&send_data);
             /* fall through */
             case HID_TRANS_CONTROL:
                 /* no handshake event will be generated */
@@ -1098,7 +1125,6 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
                 bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
             }
         }
-
     }
     return;
 }

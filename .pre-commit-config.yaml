@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: trailing-whitespace
         # note: whitespace exclusions use multiline regex, see https://pre-commit.com/#regular-expressions
@@ -26,12 +26,12 @@ repos:
         args: ['-f=lf']
       - id: double-quote-string-fixer
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 3.9.2
     hooks:
       - id: flake8
         args: ['--config=.flake8', '--tee', '--benchmark']
   - repo: https://github.com/pycqa/isort
-    rev: 5.6.4
+    rev: 5.9.3
     hooks:
       - id: isort
         name: isort (python)
@@ -92,11 +92,21 @@ repos:
       - id: mypy-check
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
-        additional_dependencies: ['mypy==0.800', 'mypy-extensions==0.4.3']
+        additional_dependencies:
+          - 'mypy==0.800'
+          - 'mypy-extensions==0.4.3'
         language: python
         types: [python]
+      - id: check-tools-files-patterns
+        name: Check tools dir files patterns
+        entry: tools/ci/check_tools_files_patterns.py
+        language: python
+        files: '^tools/.+'
+        additional_dependencies:
+          - PyYAML == 5.3.1
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: '(tools\/ci\/executable-list\.txt|tools\/ci\/mypy_ignore_list\.txt)'
+        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt)'

@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "unity.h"
 #include <sys/time.h>
 #include <sys/param.h>
@@ -19,8 +25,6 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
@@ -111,13 +115,13 @@ TEST_CASE("light sleep stress test", "[deepsleep]")
     vSemaphoreDelete(done);
 }
 
+static void timer_func(void* arg)
+{
+    esp_rom_delay_us(50);
+}
+
 TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 {
-    void timer_func(void* arg)
-    {
-        esp_rom_delay_us(50);
-    }
-
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
     esp_sleep_enable_timer_wakeup(1000);
     esp_timer_handle_t timer;
@@ -284,8 +288,10 @@ static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
+#if !CONFIG_IDF_TARGET_ESP32S3
     /* ROM code clears wake stub entry address */
     TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
+#endif
 }
 
 TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
@@ -318,14 +324,20 @@ static void prepare_wake_stub_from_rtc(void)
        a memory capability (as it's an implementation detail). So to test this we need to allocate
        the stack statically.
     */
-    static RTC_FAST_ATTR uint8_t sleep_stack[1024];
+   #define STACK_SIZE 1500
+#if CONFIG_IDF_TARGET_ESP32S3
+    uint8_t *sleep_stack = (uint8_t *)heap_caps_malloc(STACK_SIZE, MALLOC_CAP_RTCRAM);
+    TEST_ASSERT((uint32_t)sleep_stack >= SOC_RTC_DRAM_LOW && (uint32_t)sleep_stack < SOC_RTC_DRAM_HIGH);
+#else
+    static RTC_FAST_ATTR uint8_t sleep_stack[STACK_SIZE];
+#endif
     static RTC_FAST_ATTR StaticTask_t sleep_task;
 
     /* normally BSS like sleep_stack will be cleared on reset, but RTC memory is not cleared on
      * wake from deep sleep. So to ensure unused stack is different if test is re-run without a full reset,
      * fill with some random bytes
      */
-    esp_fill_random(sleep_stack, sizeof(sleep_stack));
+    esp_fill_random(sleep_stack, STACK_SIZE);
 
     /* to make things extra sure, start a periodic timer to write to RTC FAST RAM at high frequency */
     const esp_timer_create_args_t timer_args = {
@@ -339,7 +351,7 @@ static void prepare_wake_stub_from_rtc(void)
     ESP_ERROR_CHECK( esp_timer_start_periodic(timer, 200) );
 
     printf("Creating test task with stack %p\n", sleep_stack);
-    TEST_ASSERT_NOT_NULL(xTaskCreateStatic( (void *)prepare_wake_stub, "sleep", sizeof(sleep_stack), NULL,
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic( (void *)prepare_wake_stub, "sleep", STACK_SIZE, NULL,
                                             UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_FAIL_MESSAGE("Should be asleep by now");
@@ -423,7 +435,7 @@ __attribute__((unused)) static uint32_t get_cause(void)
     return wakeup_cause;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 // Fails on S2 IDF-2903
 
 // This test case verifies deactivation of trigger for wake up sources
@@ -498,7 +510,7 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     // Disable ext0 wakeup source, as this might interfere with other tests
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
 }
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
@@ -536,8 +548,6 @@ static void check_time_deepsleep(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);
-
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 static void gpio_deepsleep_wakeup_config(void)

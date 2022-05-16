@@ -3,6 +3,12 @@ ULP Coprocessor programming
 
 :link_to_translation:`zh_CN:[中文]`
 
+.. only:: esp32s3
+
+    .. warning::
+
+        This feature is not supported in v4.4
+
 .. toctree::
    :maxdepth: 1
 

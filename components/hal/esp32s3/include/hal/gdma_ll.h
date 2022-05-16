@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdint.h>
@@ -81,6 +73,7 @@ static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
 /**
  * @brief Get DMA RX channel interrupt status word
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.int_st.val;
@@ -101,6 +94,7 @@ static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel
 /**
  * @brief Clear DMA RX channel interrupt
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
     dev->channel[channel].in.int_clr.val = mask;
@@ -141,6 +135,7 @@ static inline void gdma_ll_rx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t 
 /**
  * @brief Reset DMA RX channel FSM and FIFO pointer
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].in.conf0.in_rst = 1;
@@ -210,6 +205,7 @@ static inline uint32_t gdma_ll_rx_pop_data(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Set the descriptor link base address for RX channel
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, uint32_t addr)
 {
     dev->channel[channel].in.link.addr = addr;
@@ -218,6 +214,7 @@ static inline void gdma_ll_rx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, u
 /**
  * @brief Start dealing with RX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_start(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].in.link.start = 1;
@@ -226,6 +223,7 @@ static inline void gdma_ll_rx_start(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Stop dealing with RX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_stop(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].in.link.stop = 1;
@@ -234,6 +232,7 @@ static inline void gdma_ll_rx_stop(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Restart a new inlink right after the last descriptor
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_restart(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].in.link.restart = 1;
@@ -258,6 +257,7 @@ static inline bool gdma_ll_rx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Get RX success EOF descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_success_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.suc_eof_des_addr;
@@ -266,6 +266,7 @@ static inline uint32_t gdma_ll_rx_get_success_eof_desc_addr(gdma_dev_t *dev, uin
 /**
  * @brief Get RX error EOF descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.err_eof_des_addr;
@@ -274,6 +275,7 @@ static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint3
 /**
  * @brief Get current RX descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].in.dscr;
@@ -307,6 +309,7 @@ static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channe
 /**
  * @brief Get DMA TX channel interrupt status word
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.int_st.val;
@@ -327,6 +330,7 @@ static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel
 /**
  * @brief Clear DMA TX channel interrupt
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
     dev->channel[channel].out.int_clr.val = mask;
@@ -383,6 +387,7 @@ static inline void gdma_ll_tx_enable_auto_write_back(gdma_dev_t *dev, uint32_t c
 /**
  * @brief Reset DMA TX channel FSM and FIFO pointer
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].out.conf0.out_rst = 1;
@@ -444,6 +449,7 @@ static inline void gdma_ll_tx_push_data(gdma_dev_t *dev, uint32_t channel, uint3
 /**
  * @brief Set the descriptor link base address for TX channel
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, uint32_t addr)
 {
     dev->channel[channel].out.link.addr = addr;
@@ -452,6 +458,7 @@ static inline void gdma_ll_tx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, u
 /**
  * @brief Start dealing with TX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_start(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].out.link.start = 1;
@@ -460,6 +467,7 @@ static inline void gdma_ll_tx_start(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Stop dealing with TX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_stop(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].out.link.stop = 1;
@@ -468,6 +476,7 @@ static inline void gdma_ll_tx_stop(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Restart a new outlink right after the last descriptor
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
 {
     dev->channel[channel].out.link.restart = 1;
@@ -484,6 +493,7 @@ static inline bool gdma_ll_tx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 /**
  * @brief Get TX EOF descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.eof_des_addr;
@@ -492,6 +502,7 @@ static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t ch
 /**
  * @brief Get current TX descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
     return dev->channel[channel].out.dscr;

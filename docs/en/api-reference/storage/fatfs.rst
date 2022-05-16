@@ -84,4 +84,3 @@ They provide implementation of disk I/O functions for SD/MMC cards and can be re
 .. doxygenfunction:: ff_diskio_register_wl_partition
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
-

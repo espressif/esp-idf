@@ -329,4 +329,9 @@ bool esp_spiram_is_initialized(void)
     return s_spiram_inited;
 }
 
+uint8_t esp_spiram_get_cs_io(void)
+{
+    return psram_get_cs_io();
+}
+
 #endif

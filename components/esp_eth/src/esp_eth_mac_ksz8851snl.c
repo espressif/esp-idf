@@ -1,22 +1,10 @@
-// Copyright (c) 2021 Vladimir Chistyakov
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+/*
+ * SPDX-FileCopyrightText: 2021 Vladimir Chistyakov
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2021 Espressif Systems (Shanghai) CO LTD
+ */
 
 #include <string.h>
 #include "esp_log.h"
@@ -231,7 +219,7 @@ static esp_err_t init_set_defaults(emac_ksz8851snl_t *emac)
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDTTR, RXDTTR_INIT_VALUE), err, TAG, "RXDTTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDBCTR, RXDBCTR_INIT_VALUE), err, TAG, "RXDBCTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1,
-                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXBE | RXCR1_RXUE), err, TAG, "RXCR1 write failed");
+                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXBE | RXCR1_RXUE | RXCR1_RXME), err, TAG, "RXCR1 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR2,
                                        (4 << RXCR2_SRDBL_SHIFT) | RXCR2_IUFFP | RXCR2_RXIUFCEZ | RXCR2_UDPLFE | RXCR2_RXICMPFCC), err, TAG, "RXCR2 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RXIPHTOE | RXQCR_RXFCTE | RXQCR_ADRFE), err, TAG, "RXQCR write failed");

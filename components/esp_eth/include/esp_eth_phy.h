@@ -174,6 +174,19 @@ struct esp_eth_phy_s {
     esp_err_t (*advertise_pause_ability)(esp_eth_phy_t *phy, uint32_t ability);
 
     /**
+    * @brief
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[in] enable: enables or disables PHY loopback
+    *
+    * @return
+    *      - ESP_OK: configures PHY instance loopback function successfully
+    *      - ESP_FAIL: PHY instance loopback configuration failed because some error occurred
+    *
+    */
+    esp_err_t (*loopback)(esp_eth_phy_t *phy, bool enable);
+
+    /**
     * @brief Free memory of Ethernet PHY instance
     *
     * @param[in] phy: Ethernet PHY instance

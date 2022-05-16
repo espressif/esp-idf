@@ -130,10 +130,29 @@ typedef enum {
  * @brief MCPWM select sync signal input
  */
 typedef enum {
-    MCPWM_SELECT_SYNC0 = 4,  /*!<Select SYNC0 as input*/
-    MCPWM_SELECT_SYNC1,      /*!<Select SYNC1 as input*/
-    MCPWM_SELECT_SYNC2,      /*!<Select SYNC2 as input*/
+    MCPWM_SELECT_NO_INPUT,        /*!<No sync input selected*/
+    MCPWM_SELECT_TIMER0_SYNC,     /*!<Select software sync signal from timer0 as input*/
+    MCPWM_SELECT_TIMER1_SYNC,     /*!<Select software sync signal from timer1 as input*/
+    MCPWM_SELECT_TIMER2_SYNC,     /*!<Select software sync signal from timer2 as input*/
+    MCPWM_SELECT_GPIO_SYNC0,      /*!<Select GPIO SYNC0 as input*/
+    MCPWM_SELECT_GPIO_SYNC1,      /*!<Select GPIO SYNC1 as input*/
+    MCPWM_SELECT_GPIO_SYNC2,      /*!<Select GPIO SYNC2 as input*/
 } mcpwm_sync_signal_t;
+
+ // backward compatibility
+#define MCPWM_SELCT_SYNC0 MCPWM_SELCT_GPIO_SYNC0
+#define MCPWM_SELCT_SYNC1 MCPWM_SELCT_GPIO_SYNC1
+#define MCPWM_SELCT_SYNC2 MCPWM_SELCT_GPIO_SYNC2
+
+/**
+ * @brief MCPWM timer sync event trigger
+ */
+typedef enum {
+    MCPWM_SWSYNC_SOURCE_SYNCIN,      /*!<the input sync signal will be routed to its sync output path*/
+    MCPWM_SWSYNC_SOURCE_TEZ,         /*!<sync signal generated when timer counts to zero*/
+    MCPWM_SWSYNC_SOURCE_TEP,         /*!<sync signal generated when timer counts to peak*/
+    MCPWM_SWSYNC_SOURCE_DISABLED,    /*!<timer does not generate sync signals*/
+} mcpwm_timer_sync_trigger_t;
 
 /**
  * @brief MCPWM select triggering level of fault signal
@@ -155,7 +174,6 @@ typedef enum {
 /**
  * @brief Interrupt masks for MCPWM capture
  */
-__attribute__ ((deprecated("please use callback function to avoid directly accessing registers")))
 typedef enum {
     MCPWM_LL_INTR_CAP0 = BIT(27), ///< Capture 0 happened
     MCPWM_LL_INTR_CAP1 = BIT(28), ///< Capture 1 happened
@@ -293,6 +311,15 @@ typedef struct {
     cap_isr_cb_t capture_cb;               /*!<User defined capture event callback, running under interrupt context */
     void *user_data;                       /*!<User defined ISR callback function args*/
 } mcpwm_capture_config_t;
+
+/**
+ * @brief MCPWM config sync structure
+ */
+typedef struct {
+    mcpwm_sync_signal_t sync_sig;              /*!<Set sync input signal that will cause timer to sync*/
+    uint32_t timer_val;                        /*!<Counter value to be set after sync, in 0 ~ 999, unit: 1 / 1000 * peak*/
+    mcpwm_timer_direction_t count_direction;   /*!<Counting direction to be set after sync */
+} mcpwm_sync_config_t;
 
 /**
  * @brief This function initializes each gpio signal for MCPWM
@@ -793,19 +820,35 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
 uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
 
 /**
- * @brief Initialize sync submodule
+ * @brief Initialize sync submodule and sets the signal that will cause the timer be loaded with pre-defined value
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
- * @param sync_sig set the synchronization pin, which needs to be enabled
+ * @param sync_sig set the synchronization input signal
  * @param phase_val phase value in 1/1000 (for 86.7%, phase_val = 867) which timer moves to on sync signal
+ *
+ * @note Count direction is undefined within this API
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
+__attribute__((deprecated("please use mcpwm_sync_configure() instead")))
 esp_err_t mcpwm_sync_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_sync_signal_t sync_sig,
                             uint32_t phase_val);
+
+/**
+ * @brief Initialize sync submodule and sets the signal that will cause the timer be loaded with pre-defined value
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ * @param sync_conf sync configuration on this timer
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_sync_configure(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpwm_sync_config_t *sync_conf);
 
 /**
  * @brief Disable sync submodule on given timer
@@ -818,6 +861,49 @@ esp_err_t mcpwm_sync_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcp
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
+
+/**
+ * @brief Set sync output on given timer
+ *        Configures what event triggers MCPWM timer to output a sync signal.
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ * @param trigger set the trigger that will cause the timer to generate a software sync signal.
+ *                Specifically, `MCPWM_SWSYNC_SOURCE_DISABLED` will disable the timer from generating sync signal.
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcpwm_set_timer_sync_output(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_timer_sync_trigger_t trigger);
+
+/**
+ * @brief Trigger a software sync event and sends it to a specific timer.
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ *
+ * @note This software sync event will have the same effect as hw one, except that:
+ *         - On esp32s3 the soft sync event can be routed to its output if `MCPWM_SWSYNC_SOURCE_SYNCIN` is selected via `mcpwm_set_timer_sync_output()`
+ *         - On esp32 there is no such behavior and soft sync event will only take effect on this timer and can not be propagated to others.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Function pointer error.
+ */
+esp_err_t mcpwm_timer_trigger_soft_sync(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
+
+/**
+ * @brief Set external GPIO sync input inverter
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param sync_sig set sync signal of MCPWM, only supports GPIO sync signal
+ * @param invert whether GPIO sync source input is inverted (to get negative edge trigger)
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Function pointer error.
+ */
+esp_err_t mcpwm_sync_invert_gpio_synchro(mcpwm_unit_t mcpwm_num, mcpwm_sync_signal_t sync_sig, bool invert);
 
 /**
  * @brief Register MCPWM interrupt handler, the handler is an ISR.
@@ -835,7 +921,6 @@ esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-__attribute__((deprecated("interrupt events are handled by driver, please use callback")))
 esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *arg, int intr_alloc_flags,
                              intr_handle_t *handle);
 

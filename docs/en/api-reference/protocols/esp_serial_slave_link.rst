@@ -176,7 +176,7 @@ counter.
 Application Example
 -------------------
 
-The example below shows how ESP32 SDIO host and slave communicate with each other. The host use the ESSL SDIO.
+The example below shows how {IDF_TARGET_NAME} SDIO host and slave communicate with each other. The host use the ESSL SDIO.
 
 :example:`peripherals/sdio`.
 

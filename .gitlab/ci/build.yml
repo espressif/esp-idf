@@ -5,6 +5,11 @@
     - build
   variables:
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+    # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+  after_script:
+    # Show ccache statistics if enabled globally
+    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
   dependencies: []
 
 .build_template_app_template:
@@ -34,10 +39,6 @@
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     # Only do the default cmake build for each target, remaining part are done in the build_template_app job
     - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-    # Check if there are any stray printf/ets_printf references in WiFi libs
-    - cd components/esp_wifi/lib
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
 
 # build-related-pre-check-jobs ------------------------------------------------
 # Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
@@ -81,6 +82,12 @@ build_ssc_esp32c3:
   parallel: 3
   variables:
     TARGET_NAME: "ESP32C3"
+
+build_ssc_esp32s3:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32S3"
 
 .build_esp_idf_tests_cmake_template:
   extends: .build_template
@@ -221,6 +228,14 @@ build_examples_cmake_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
+build_examples_cmake_esp32s3:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32s3
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32s3
+
 build_examples_cmake_esp32c3:
   extends:
     - .build_examples_cmake_template
@@ -353,39 +368,15 @@ build_docker:
   script:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
+    - if [ -n "$LOCAL_GIT_MIRROR" ]; then export LOCAL_CI_REPOSITORY_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"; fi
     - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$PIPELINE_COMMIT_SHA}"
     # Build
     - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
     # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
     # Therefore, build a copy of the example located inside the container.
     - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
-
-.test-on-windows:
-  extends:
-    - .before_script_minimal
-    - .rules:build:windows
-  stage: host_test
-  needs: []
-  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
-  tags:
-    - build
-  script:
-    - cd $TEST_DIR
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
-    - cmake --build .
-
-build_idf_exe:
-  extends: .test-on-windows
-  artifacts:
-    paths:
-      - tools/windows/idf_exe/build/idf-exe-v*.zip
-    expire_in: 4 days
-  variables:
-    TEST_DIR: tools/windows/idf_exe
 
 # This job builds template app with permutations of targets and optimization levels
 build_template_app:

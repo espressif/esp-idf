@@ -39,7 +39,7 @@ TEST_CASE("can parse hidReportMap", "[esp_hid]")
     TEST_ASSERT(report_map->reports[1].report_type == ESP_HID_REPORT_TYPE_INPUT);
     TEST_ASSERT(report_map->reports[1].protocol_mode == ESP_HID_PROTOCOL_MODE_BOOT);
     TEST_ASSERT(report_map->reports[1].usage == ESP_HID_USAGE_MOUSE);
-    TEST_ASSERT(report_map->reports[1].value_len == 4);
+    TEST_ASSERT(report_map->reports[1].value_len == 3);
     TEST_ASSERT(report_map->reports[2].report_id == 2);
     TEST_ASSERT(report_map->reports[2].report_type == ESP_HID_REPORT_TYPE_INPUT);
     TEST_ASSERT(report_map->reports[2].protocol_mode == ESP_HID_PROTOCOL_MODE_REPORT);
@@ -89,7 +89,7 @@ TEST_CASE("can parse relMouseReportMap", "[esp_hid]")
     TEST_ASSERT(report_map->reports[1].report_type == ESP_HID_REPORT_TYPE_INPUT);
     TEST_ASSERT(report_map->reports[1].protocol_mode == ESP_HID_PROTOCOL_MODE_BOOT);
     TEST_ASSERT(report_map->reports[1].usage == ESP_HID_USAGE_MOUSE);
-    TEST_ASSERT(report_map->reports[1].value_len == 4);
+    TEST_ASSERT(report_map->reports[1].value_len == 3);
     esp_hid_free_report_map(report_map);
 }
 
@@ -109,7 +109,7 @@ TEST_CASE("can parse absMouseReportMap", "[esp_hid]")
     TEST_ASSERT(report_map->reports[1].report_type == ESP_HID_REPORT_TYPE_INPUT);
     TEST_ASSERT(report_map->reports[1].protocol_mode == ESP_HID_PROTOCOL_MODE_BOOT);
     TEST_ASSERT(report_map->reports[1].usage == ESP_HID_USAGE_MOUSE);
-    TEST_ASSERT(report_map->reports[1].value_len == 4);
+    TEST_ASSERT(report_map->reports[1].value_len == 3);
     esp_hid_free_report_map(report_map);
 }
 

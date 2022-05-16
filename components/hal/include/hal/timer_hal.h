@@ -60,6 +60,15 @@ void timer_hal_init(timer_hal_context_t *hal, timer_group_t group_num, timer_idx
 void timer_hal_get_status_reg_mask_bit(timer_hal_context_t *hal, uint32_t *status_reg, uint32_t *mask_bit);
 
 /**
+ * @brief Reset timer peripheral
+ *
+ * @param hal Context of the HAL layer
+ *
+ * @return None
+ */
+void timer_hal_reset_periph(timer_hal_context_t *hal);
+
+/**
  * @brief Set timer clock prescale value
  *
  * @param hal Context of the HAL layer

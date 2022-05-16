@@ -2,11 +2,18 @@ ULP-RISC-V Coprocessor programming
 ==================================
 :link_to_translation:`zh_CN:[中文]`
 
+.. only:: esp32s3
+
+    .. warning::
+
+        This feature is not supported in v4.4
+
+
 .. toctree::
    :maxdepth: 1
 
 
-The ULP-RISC-V coprocessor is a variant of the ULP, present in ESP32-S2. Similar to ULP, ULP RISC-V coprocessor can perform tasks such as sensor readings while the main CPU stays in low power modes. The main difference from the FSM ULP is this variant can be programmed in C using standard GNU tools. The ULP-RISC-V coprocessor can access the RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. The RISC-V processor is a 32-bit, fixed point machine. Its instruction set is based on RV32IMC which includes hardware multiplication and division, and compressed code.  
+The ULP-RISC-V coprocessor is a variant of the ULP, present in ESP32-S2. Similar to ULP, ULP RISC-V coprocessor can perform tasks such as sensor readings while the main CPU stays in low power modes. The main difference from the FSM ULP is this variant can be programmed in C using standard GNU tools. The ULP-RISC-V coprocessor can access the RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. The RISC-V processor is a 32-bit, fixed point machine. Its instruction set is based on RV32IMC which includes hardware multiplication and division, and compressed code.
 
 Installing the ULP-RISC-V Toolchain
 -----------------------------------
@@ -70,7 +77,7 @@ For example, the ULP-RISC-V program may define a variable ``measurement_count`` 
 
 .. code-block:: c
 
-    volatile int measurement_count; 
+    volatile int measurement_count;
 
     int some_function()
     {

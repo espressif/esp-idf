@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"
@@ -94,25 +100,10 @@ esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
    e.g. OpenOCD flasher stub use own implementation of it. */
 __attribute__((weak)) int esp_apptrace_advertise_ctrl_block(void *ctrl_block_addr)
 {
-    register int sys_nr = RISCV_APPTRACE_SYSNR;
-    register int host_ret = 0;
-
     if (!esp_cpu_in_ocd_debug_mode()) {
         return 0;
     }
-    __asm__ volatile ( \
-        ".option push\n" \
-        ".option norvc\n" \
-        "mv a0, %[sys_nr]\n" \
-        "mv a1, %[arg1]\n" \
-        "slli    zero,zero,0x1f\n" \
-        "ebreak\n" \
-        "srai    zero,zero,0x7\n" \
-        "mv %[host_ret], a0\n" \
-    	".option pop\n" \
-        :[host_ret]"=r"(host_ret)
-        :[sys_nr]"r"(sys_nr),[arg1]"r"(ctrl_block_addr):"a0","a1");
-    return host_ret;
+    return cpu_hal_syscall(RISCV_APPTRACE_SYSNR, (int)ctrl_block_addr, 0, 0, 0, NULL);
 }
 
 /* Returns up buffers config.

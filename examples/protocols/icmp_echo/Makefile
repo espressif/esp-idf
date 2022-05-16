@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := icmp-echo
+PROJECT_NAME := icmp_echo
 
 EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/common_components/protocol_examples_common
 

@@ -302,7 +302,6 @@ typedef enum {
     GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
     GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
     GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
-    GPIO_NUM_22 = 22,   /*!< GPIO22, input and output */
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;

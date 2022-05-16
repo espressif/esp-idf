@@ -489,11 +489,11 @@ This command will compile the application and all ESP-IDF components, then it wi
 
    ... (more lines of build system output)
 
-   [527/527] Generating hello-world.bin
+   [527/527] Generating hello_world.bin
    esptool.py v2.3.1
 
    Project build complete. To flash, run this command:
-   ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
+   ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
    or run 'idf.py -p PORT flash'
 
 If there are no errors, the build will finish by generating the firmware binary .bin files.
@@ -504,7 +504,7 @@ If there are no errors, the build will finish by generating the firmware binary 
 Step 9. Flash onto the Device
 =============================
 
-Flash the binaries that you just built (bootloader.bin, partition-table.bin and hello-world.bin) onto your {IDF_TARGET_NAME} board by running:
+Flash the binaries that you just built (bootloader.bin, partition-table.bin and hello_world.bin) onto your {IDF_TARGET_NAME} board by running:
 
 .. code-block:: bash
 
@@ -551,7 +551,7 @@ When flashing, you will see the output log similar to the following:
     .. code-block:: none
 
         ...
-        esptool.py --chip esp32 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x1000 bootloader/bootloader.bin 0x10000 hello-world.bin
+        esptool.py --chip esp32 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x1000 bootloader/bootloader.bin 0x10000 hello_world.bin
         esptool.py v3.0-dev
         Serial port /dev/ttyUSB0
         Connecting........_
@@ -591,7 +591,7 @@ When flashing, you will see the output log similar to the following:
     .. code-block:: none
 
         ...
-        esptool.py --chip esp32s2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x1000 bootloader/bootloader.bin 0x10000 hello-world.bin
+        esptool.py --chip esp32s2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x1000 bootloader/bootloader.bin 0x10000 hello_world.bin
         esptool.py v3.0-dev
         Serial port /dev/ttyUSB0
         Connecting....
@@ -631,7 +631,7 @@ When flashing, you will see the output log similar to the following:
     .. code-block:: none
 
         ...
-        esptool.py esp32s3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello-world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py esp32s3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
         esptool.py v3.2-dev
         Serial port /dev/ttyUSB0
         Connecting....
@@ -676,7 +676,7 @@ When flashing, you will see the output log similar to the following:
     .. code-block:: none
 
         ...
-        esptool.py --chip esp32c3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x0 bootloader/bootloader.bin 0x10000 hello-world.bin
+        esptool.py --chip esp32c3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin
         esptool.py v3.0
         Serial port /dev/ttyUSB0
         Connecting....
@@ -728,7 +728,7 @@ This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` a
 
     $ idf.py -p /dev/ttyUSB0 monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
-    Executing "python [...]/esp-idf/tools/idf_monitor.py -b 115200 [...]/esp/hello_world/build/hello-world.elf"...
+    Executing "python [...]/esp-idf/tools/idf_monitor.py -b 115200 [...]/esp/hello_world/build/hello_world.elf"...
     --- idf_monitor on /dev/ttyUSB0 115200 ---
     --- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---
     ets Jun  8 2016 00:22:57
@@ -773,6 +773,12 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
     You can combine building, flashing and monitoring into one step by running::
 
        idf.py -p PORT flash monitor
+
+.. only:: esp32s3
+
+    .. note::
+
+        If a board with Octal Flash resets before the second-stage bootloader, please refer to :ref:`Octal Flash Error Handling <flash-psram-error>`
 
 See also:
 

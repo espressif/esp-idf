@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <sys/param.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -93,7 +99,8 @@ static esp_err_t esp_apptrace_membufs_swap(esp_apptrace_membufs_proto_data_t *pr
     if (proto->hw->host_data_pending() && hdr->block_sz > 0) {
         // TODO: add support for multiple blocks from host, currently there is no need for that
         uint8_t *p = proto->blocks[new_block_num].start + proto->blocks[new_block_num].sz;
-        ESP_APPTRACE_LOGD("Recvd %d bytes from host [%x %x %x %x %x %x %x %x .. %x %x %x %x %x %x %x %x]", hdr->block_sz,
+        ESP_APPTRACE_LOGD("Recvd %d bytes from host (@ 0x%x) [%x %x %x %x %x %x %x %x .. %x %x %x %x %x %x %x %x]",
+            hdr->block_sz, proto->blocks[new_block_num].start,
             *(proto->blocks[new_block_num].start+0), *(proto->blocks[new_block_num].start+1),
             *(proto->blocks[new_block_num].start+2), *(proto->blocks[new_block_num].start+3),
             *(proto->blocks[new_block_num].start+4), *(proto->blocks[new_block_num].start+5),

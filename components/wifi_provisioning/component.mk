@@ -7,3 +7,7 @@ ifndef CONFIG_BT_BLUEDROID_ENABLED
         COMPONENT_OBJEXCLUDE := src/scheme_ble.o
     endif
 endif
+
+ifeq ($(CONFIG_ESP_WIFI_SOFTAP_SUPPORT), y)
+    COMPONENT_OBJEXCLUDE += src/scheme_softap.o
+endif

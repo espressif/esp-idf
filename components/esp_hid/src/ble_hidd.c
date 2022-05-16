@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdbool.h>
@@ -38,6 +30,8 @@ static const char *TAG = "BLE_HIDD";
 /// Length of Boot Report Char. Value Maximal Length
 #define HIDD_LE_BOOT_REPORT_MAX_LEN           (8)
 
+typedef hidd_report_item_t hidd_le_report_item_t;
+
 /*
  * UUIDs
  * */
@@ -55,6 +49,7 @@ static const uint8_t s_char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;
 static const uint8_t s_char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 static const uint8_t s_char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_READ;
 static const uint8_t s_char_prop_read_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_READ;
+static const uint8_t s_char_prop_read_write_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_READ;
 //static const uint8_t s_char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_WRITE|ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 
 // Service UUIDs
@@ -125,30 +120,6 @@ enum {
 
     HIDD_LE_IDX_NB,
 };
-
-/* Client Characteristic Configuration value structure */
-typedef union {
-    struct {
-        uint16_t notify_enable: 1;
-        uint16_t indicate_enable: 1;
-        uint16_t reserved: 14;
-    };
-    uint16_t value;
-} hidd_le_ccc_value_t;
-
-typedef struct {
-    uint8_t map_index;      //the index of the report map
-    uint8_t report_id;      //the id of the report
-    uint8_t report_type;    //input, output or feature
-    uint8_t protocol_mode;  //boot or report
-    esp_hid_usage_t usage; //generic, keyboard, mouse, joystick or gamepad
-    uint16_t value_len;     //maximum len of value by report map
-    //used by gatts
-    uint8_t index;          //index of the value in the gatts attr db
-    uint16_t handle;        //obtained once all attributes are registered
-    uint16_t ccc_handle;    //obtained once all attributes are registered
-    hidd_le_ccc_value_t ccc;    //notifications and/or indications enabled
-} hidd_le_report_item_t;
 
 typedef struct {
     esp_gatt_if_t               gatt_if;
@@ -331,8 +302,13 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ, report->value_len, 0, NULL);
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 2, 0, NULL);
+            } else if (report->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
+                //Output Report
+                add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_write_nr);
+                report->index = index;
+                add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, report->value_len, 0, NULL);
             } else {
-                //Output or Feature Report
+                //Feature Report
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write);
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, report->value_len, 0, NULL);
@@ -349,7 +325,7 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
                 }
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 2, 0, NULL);
             } else { //Boot Keyboard Output
-                add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write);
+                add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_write_nr);
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_boot_kb_output_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, HIDD_LE_BOOT_REPORT_MAX_LEN, 0, NULL);
             }
@@ -559,23 +535,43 @@ static void hid_event_handler(esp_ble_hidd_dev_t *dev, int device_index, esp_gat
                 } else {
                     ESP_LOGV(TAG, "HID WRITE %8s %7s %6s id: %d, len: %d", esp_hid_usage_str(map->usage), esp_hid_report_type_str(map->report_type), esp_hid_protocol_mode_str(map->protocol_mode), map->report_id, param->write.len);
 
-                    esp_hidd_event_data_t cb_param = {0};
+                    esp_hidd_event_data_t *p_cb_param = NULL;
+                    size_t event_data_size = sizeof(esp_hidd_event_data_t);
+                    if (param->write.len > 0 && param->write.value) {
+                        event_data_size += param->write.len;
+                    }
+
+                    if ((p_cb_param = (esp_hidd_event_data_t *)malloc(event_data_size)) == NULL) {
+                        ESP_LOGE(TAG, "%s malloc event data failed!", __func__);
+                        break;
+                    }
+                    memset(p_cb_param, 0, event_data_size);
+                    if (param->write.len > 0 && param->write.value) {
+                        memcpy(((uint8_t *)p_cb_param) + sizeof(esp_hidd_event_data_t), param->write.value,
+                               param->write.len);
+                    }
+
                     if (map->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
-                        cb_param.output.dev = dev->dev;
-                        cb_param.output.report_id = map->report_id;
-                        cb_param.output.usage = map->usage;
-                        cb_param.output.length = param->write.len;
-                        cb_param.output.data = param->write.value;
-                        cb_param.output.map_index = device_index;
-                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_OUTPUT_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+                        p_cb_param->output.dev = dev->dev;
+                        p_cb_param->output.report_id = map->report_id;
+                        p_cb_param->output.usage = map->usage;
+                        p_cb_param->output.length = param->write.len;
+                        p_cb_param->output.data = param->write.value; /* move the data pointer in the wrapper loop handler */
+                        p_cb_param->output.map_index = device_index;
+                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_OUTPUT_EVENT, p_cb_param, event_data_size, portMAX_DELAY);
                     } else {
-                        cb_param.feature.dev = dev->dev;
-                        cb_param.feature.report_id = map->report_id;
-                        cb_param.feature.usage = map->usage;
-                        cb_param.feature.length = param->write.len;
-                        cb_param.feature.data = param->write.value;
-                        cb_param.feature.map_index = device_index;
-                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_FEATURE_EVENT, &cb_param, sizeof(esp_hidd_event_data_t), portMAX_DELAY);
+                        p_cb_param->feature.dev = dev->dev;
+                        p_cb_param->feature.report_id = map->report_id;
+                        p_cb_param->feature.usage = map->usage;
+                        p_cb_param->feature.length = param->write.len;
+                        p_cb_param->feature.data = param->write.value; /* move the data pointer in the wrapper loop handler */
+                        p_cb_param->feature.map_index = device_index;
+                        esp_event_post_to(dev->event_loop_handle, ESP_HIDD_EVENTS, ESP_HIDD_FEATURE_EVENT, p_cb_param, event_data_size, portMAX_DELAY);
+                    }
+
+                    if (p_cb_param) {
+                        free(p_cb_param);
+                        p_cb_param = NULL;
                     }
                 }
             }
@@ -852,8 +848,14 @@ static esp_err_t esp_ble_hidd_dev_input_set(void *devp, size_t index, size_t id,
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
+
     if (!dev->connected) {
-        ESP_LOGE(TAG, "Device Not Connected: %d", index);
+        ESP_LOGE(TAG, "%s Device Not Connected", __func__);
+        return ESP_FAIL;
+    }
+
+    if (index >= dev->devices_len) {
+        ESP_LOGE(TAG, "%s index out of range[0-%d]", __func__, dev->devices_len - 1);
         return ESP_FAIL;
     }
 
@@ -878,6 +880,17 @@ static esp_err_t esp_ble_hidd_dev_feature_set(void *devp, size_t index, size_t i
     if (!dev || s_dev != dev) {
         return ESP_FAIL;
     }
+
+    if (!dev->connected) {
+        ESP_LOGE(TAG, "%s Device Not Connected", __func__);
+        return ESP_FAIL;
+    }
+
+    if (index >= dev->devices_len) {
+        ESP_LOGE(TAG, "%s index out of range[0-%d]", __func__, dev->devices_len - 1);
+        return ESP_FAIL;
+    }
+
     hidd_le_report_item_t *p_rpt;
     if ((p_rpt = get_report_by_id_and_type(dev, id, ESP_HID_REPORT_TYPE_FEATURE)) != NULL) {
         ret = esp_ble_gatts_set_attr_value(p_rpt->handle, length, data);
@@ -921,9 +934,11 @@ static esp_err_t esp_ble_hidd_dev_event_handler_unregister(void *devp, esp_event
 
 static void ble_hidd_dev_free(void)
 {
-    ble_hid_free_config(s_dev);
-    free(s_dev);
-    s_dev = NULL;
+    if (s_dev) {
+        ble_hid_free_config(s_dev);
+        free(s_dev);
+        s_dev = NULL;
+    }
 }
 
 esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_config_t *config, esp_event_handler_t callback)
@@ -984,6 +999,12 @@ esp_err_t esp_ble_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_conf
     dev_p->feature_set = esp_ble_hidd_dev_feature_set;
     dev_p->event_handler_register = esp_ble_hidd_dev_event_handler_register;
     dev_p->event_handler_unregister = esp_ble_hidd_dev_event_handler_unregister;
+
+    ret = esp_ble_hidd_dev_event_handler_register(s_dev, esp_hidd_process_event_data_handler, ESP_EVENT_ANY_ID);
+    if (ret != ESP_OK) {
+        ble_hidd_dev_free();
+        return ret;
+    }
 
     if (callback != NULL) {
         ret = esp_ble_hidd_dev_event_handler_register(s_dev, callback, ESP_EVENT_ANY_ID);

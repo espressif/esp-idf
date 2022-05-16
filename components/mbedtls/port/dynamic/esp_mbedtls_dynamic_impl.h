@@ -1,20 +1,14 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _DYNAMIC_IMPL_H_
 #define _DYNAMIC_IMPL_H_
 
 #include <stddef.h>
+#include <string.h>
 #include "mbedtls/ssl.h"
 #include "mbedtls/ssl_internal.h"
 #include "mbedtls/platform.h"
@@ -32,7 +26,7 @@
     TRACE_CHECK(_fn, "state"); \
  \
     if ((_ret = _fn) != 0) { \
-        ESP_LOGV(TAG, "\"%s\" result is -0x%x", # _fn, -_ret); \
+        ESP_LOGV(TAG, "\"%s\" result is %d", # _fn, -_ret); \
         TRACE_CHECK(_fn, "fail"); \
         return _ret; \
     } \
@@ -52,7 +46,7 @@ struct esp_mbedtls_ssl_buf {
     unsigned char buf[];
 };
 
-#define SSL_BUF_HEAD_OFFSET_SIZE offsetof(struct esp_mbedtls_ssl_buf, buf)
+#define SSL_BUF_HEAD_OFFSET_SIZE ((int)offsetof(struct esp_mbedtls_ssl_buf, buf))
 
 void esp_mbedtls_free_buf(unsigned char *buf);
 
@@ -90,12 +84,6 @@ void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl);
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
 void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl);
-#endif
-
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-void esp_mbedtls_free_peer_cert(mbedtls_ssl_context *ssl);
-
-bool esp_mbedtls_ssl_is_rsa(mbedtls_ssl_context *ssl);
 #endif
 
 #endif /* _DYNAMIC_IMPL_H_ */

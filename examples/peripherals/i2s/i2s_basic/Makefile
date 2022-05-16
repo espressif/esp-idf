@@ -3,5 +3,5 @@
 # project subdirectory.
 #
 VERBOSE = 1
-PROJECT_NAME := esp32-i2s-driver-example
+PROJECT_NAME := esp32_i2s_driver_example
 include $(IDF_PATH)/make/project.mk

@@ -281,6 +281,58 @@ A number of configuration items are available to modify the task and the queues 
 - :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
 - :ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`
 
+IPv6 Support
+------------
+
+Both IPv4 and IPv6 are supported as dual stack and enabled by default (IPv6 may be disabled if it's not needed, see :ref:`lwip-ram-usage`).
+IPv6 support is limited to *Stateless Autoconfiguration* only, *Stateful configuration* is not supported in ESP-IDF (not in upstream lwip).
+IPv6 Address configuration is defined by means of these protocols or services:
+
+- **SLAAC** IPv6 Stateless Address Autoconfiguration (RFC-2462)
+- **DHCPv6** Dynamic Host Configuration Protocol for IPv6 (RFC-8415)
+
+None of these two types of address configuration is enabled by default, so the device uses only Link Local addresses or statically defined addresses.
+
+.. _lwip-ivp6-autoconfig:
+
+Stateless Autoconfiguration Process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To enable address autoconfiguration using Router Advertisement protocol please enable:
+
+- :ref:`CONFIG_LWIP_IPV6_AUTOCONFIG`
+
+This configuration option enables IPv6 autoconfiguration for all network interfaces
+(in contrast to the upstream lwIP, where the autoconfiguration needs to be explicitly enabled for each netif with ``netif->ip6_autoconfig_enabled=1``
+
+.. _lwip-ivp6-dhcp6:
+
+DHCPv6
+^^^^^^
+
+DHCPv6 in lwIP is very simple and support only stateless configuration. It could be enabled using:
+
+- :ref:`CONFIG_LWIP_IPV6_DHCP6`
+
+Since the DHCPv6 works only in its stateless configuration, the :ref:`lwip-ivp6-autoconfig` has to be enabled, too, by means of :ref:`CONFIG_LWIP_IPV6_AUTOCONFIG`.
+Moreover, the DHCPv6 needs to be explicitly enabled form the application code using
+
+    dhcp6_enable_stateless(netif);
+
+DNS servers in IPv6 autoconfiguration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to autoconfigure DNS server(s), especially in IPv6 only networks, we have these two options
+
+- Recursive domain name system -- this belongs to the Neighbor Discovery Protocol (NDP), uses :ref:`lwip-ivp6-autoconfig`.
+  Number of servers must be set :ref:`CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS`, this is option is disabled (set to 0) by default.
+
+- DHCPv6 stateless configuration -- uses :ref:`lwip-ivp6-dhcp6` to configure DNS servers. Note that the this configuration
+  assumes IPv6 Router Advertisement Flags (RFC-5175) to be set to
+
+    - Managed Address Configuration Flag = 0
+    - Other Configuration Flag = 1
+
 esp-lwip custom modifications
 -----------------------------
 
@@ -305,6 +357,16 @@ lwIP IGMP and MLD6 features both initialize a timer in order to trigger timeout 
 The default lwIP implementation is to have these timers enabled all the time, even if no timeout events are active. This increases CPU usage and power consumption when using automatic light sleep mode. ``esp-lwip`` default behaviour is to set each timer "on demand" so it is only enabled when an event is pending.
 
 To return to the default lwIP behaviour (always-on timers), disable :ref:`CONFIG_LWIP_TIMERS_ONDEMAND`.
+
+Lwip timers API
++++++++++++++++
+
+When users are not using WiFi, these APIs provide users with the ability to turn off LwIP timer to reduce power consumption.
+
+The following API functions are supported. For full details see :component_file:`lwip/lwip/src/include/lwip/timeouts.h`.
+
+- ``sys_timeouts_init()``
+- ``sys_timeouts_deinit()``
 
 Abort TCP connections when IP changes
 +++++++++++++++++++++++++++++++++++++

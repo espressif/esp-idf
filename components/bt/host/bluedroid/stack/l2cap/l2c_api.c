@@ -1715,13 +1715,9 @@ BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE
             return TRUE;
         }
 
-#if BLE_INCLUDED == TRUE
         (*l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedConn_Cb)
-        (fixed_cid, p_lcb->remote_bd_addr, TRUE, 0, p_lcb->transport);
-#else
-        (*l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedConn_Cb)
-        (fixed_cid, p_lcb->remote_bd_addr, TRUE, 0, BT_TRANSPORT_BR_EDR);
-#endif
+        (fixed_cid, p_lcb->remote_bd_addr, TRUE, 0, transport);
+
         return TRUE;
     }
 
@@ -1980,6 +1976,9 @@ BOOLEAN L2CA_SetFixedChannelTout (BD_ADDR rem_bda, UINT16 fixed_cid, UINT16 idle
         transport = BT_TRANSPORT_LE;
     }
 #endif
+    if (fixed_cid<L2CAP_FIRST_FIXED_CHNL) {
+        return (FALSE);
+    }
 
     /* Is a fixed channel connected to the remote BDA ?*/
     p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, transport);

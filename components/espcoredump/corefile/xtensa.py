@@ -275,3 +275,7 @@ class Esp32Methods(BaseTargetMethods, XtensaMethodsMixin):
 
 class Esp32S2Methods(BaseTargetMethods, XtensaMethodsMixin):
     TARGET = 'esp32s2'
+
+
+class Esp32S3Methods(BaseTargetMethods, XtensaMethodsMixin):
+    TARGET = 'esp32s3'

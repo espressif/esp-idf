@@ -8,30 +8,28 @@
 */
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
+#include <sys/unistd.h>
+#include <sys/stat.h>
+#include "esp_log.h"
+#include "esp_err.h"
+#include "esp_system.h"
+#include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2s.h"
 #include "driver/gpio.h"
-#include "esp_system.h"
-#include <math.h>
-#include "esp_log.h"
-#include <sys/unistd.h>
-#include <sys/stat.h>
-#include "esp_err.h"
-#include "esp_vfs_fat.h"
-#include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
 #include "sdmmc_cmd.h"
 #include "sdkconfig.h"
 
 static const char* TAG = "pdm_rec_example";
 
-#define AUDIO_SAMPLE_SIZE       (CONFIG_EXAMPLE_AUDIO_BIT_SAMPLE * 1024)
-#define SAMPLES_NUM             ((CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE/100) * 2)
-#define BYTE_RATE               (1 * CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE * ((CONFIG_EXAMPLE_AUDIO_BIT_SAMPLE / 8))
-#define FLASH_RECORD_SIZE       (BYTE_RATE * CONFIG_EXAMPLE_REC_TIME))
-#define SD_MOUNT_POINT          "/sdcard"
-#define SPI_DMA_CHAN            (1)
+#define SPI_DMA_CHAN        SPI_DMA_CH_AUTO
+#define NUM_CHANNELS        (1) // For mono recording only!
+#define SD_MOUNT_POINT      "/sdcard"
+#define SAMPLE_SIZE         (CONFIG_EXAMPLE_BIT_SAMPLE * 1024)
+#define BYTE_RATE           (CONFIG_EXAMPLE_SAMPLE_RATE * (CONFIG_EXAMPLE_BIT_SAMPLE / 8)) * NUM_CHANNELS
 
 // When testing SD and SPI modes, keep in mind that once the card has been
 // initialized in SPI mode, it can not be reinitialized in SD mode without
@@ -39,7 +37,7 @@ static const char* TAG = "pdm_rec_example";
 sdmmc_host_t host = SDSPI_HOST_DEFAULT();
 sdmmc_card_t* card;
 
-static int16_t i2s_readraw_buff[AUDIO_SAMPLE_SIZE];
+static int16_t i2s_readraw_buff[SAMPLE_SIZE];
 size_t bytes_read;
 const int WAVE_HEADER_SIZE = 44;
 
@@ -52,16 +50,9 @@ void mount_sdcard(void)
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,
         .max_files = 5,
-        .allocation_unit_size = 16 * 1024
+        .allocation_unit_size = 8 * 1024
     };
     ESP_LOGI(TAG, "Initializing SD card");
-
-    // Use settings defined above to initialize SD card and mount FAT filesystem.
-    // Note: esp_vfs_fat_sdmmc/sdspi_mount is all-in-one convenience functions.
-    // Please check its source code and implement error recovery when developing
-    // production applications.
-
-    ESP_LOGI(TAG, "Using SPI peripheral");
 
     spi_bus_config_t bus_cfg = {
         .mosi_io_num = CONFIG_EXAMPLE_SPI_MOSI_GPIO,
@@ -87,8 +78,7 @@ void mount_sdcard(void)
 
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
-            ESP_LOGE(TAG, "Failed to mount filesystem. "
-                "If you want the card to be formatted, set the EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.");
+            ESP_LOGE(TAG, "Failed to mount filesystem.");
         } else {
             ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                 "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(ret));
@@ -100,39 +90,41 @@ void mount_sdcard(void)
     sdmmc_card_print_info(stdout, card);
 }
 
-void wavHeader(char* wav_header, uint32_t wav_size, uint32_t sample_rate){
+void generate_wav_header(char* wav_header, uint32_t wav_size, uint32_t sample_rate){
 
     // See this for reference: http://soundfile.sapp.org/doc/WaveFormat/
     uint32_t file_size = wav_size + WAVE_HEADER_SIZE - 8;
-    uint32_t byte_rate = 1 * CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE * (CONFIG_EXAMPLE_AUDIO_BIT_SAMPLE / 8);
+    uint32_t byte_rate = BYTE_RATE;
 
-const char set_wav_header[] = {
-    'R','I','F','F', // ChunkID
-    file_size, file_size >> 8, file_size >> 16, file_size >> 24, // ChunkSize
-    'W','A','V','E', // Format
-    'f','m','t',' ', // Subchunk1ID
-    0x10, 0x00, 0x00, 0x00, // Subchunk1Size (16 for PCM)
-    0x01, 0x00, // AudioFormat (1 for PCM)
-    0x01, 0x00, // NumChannels (1 channel)
-    sample_rate, sample_rate >> 8, sample_rate >> 16, sample_rate >> 24, // SampleRate
-    byte_rate, byte_rate >> 8, byte_rate >> 16, byte_rate >> 24, // ByteRate
-    0x02, 0x00, // BlockAlign
-    0x10, 0x00, // BitsPerSample (16 bits)
-    'd','a','t','a', // Subchunk2ID
-    wav_size, wav_size >> 8, wav_size >> 16, wav_size >> 24, // Subchunk2Size
-};
+    const char set_wav_header[] = {
+        'R','I','F','F', // ChunkID
+        file_size, file_size >> 8, file_size >> 16, file_size >> 24, // ChunkSize
+        'W','A','V','E', // Format
+        'f','m','t',' ', // Subchunk1ID
+        0x10, 0x00, 0x00, 0x00, // Subchunk1Size (16 for PCM)
+        0x01, 0x00, // AudioFormat (1 for PCM)
+        0x01, 0x00, // NumChannels (1 channel)
+        sample_rate, sample_rate >> 8, sample_rate >> 16, sample_rate >> 24, // SampleRate
+        byte_rate, byte_rate >> 8, byte_rate >> 16, byte_rate >> 24, // ByteRate
+        0x02, 0x00, // BlockAlign
+        0x10, 0x00, // BitsPerSample (16 bits)
+        'd','a','t','a', // Subchunk2ID
+        wav_size, wav_size >> 8, wav_size >> 16, wav_size >> 24, // Subchunk2Size
+    };
 
     memcpy(wav_header, set_wav_header, sizeof(set_wav_header));
 }
 
-void record_wav(void)
+void record_wav(uint32_t rec_time)
 {
     // Use POSIX and C standard library functions to work with files.
     int flash_wr_size = 0;
     ESP_LOGI(TAG, "Opening file");
 
     char wav_header_fmt[WAVE_HEADER_SIZE];
-    wavHeader(wav_header_fmt, FLASH_RECORD_SIZE, CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE);
+
+    uint32_t flash_rec_time = BYTE_RATE * rec_time;
+    generate_wav_header(wav_header_fmt, flash_rec_time, CONFIG_EXAMPLE_SAMPLE_RATE);
 
     // First check if file exists before creating a new file.
     struct stat st;
@@ -152,9 +144,9 @@ void record_wav(void)
     fwrite(wav_header_fmt, 1, WAVE_HEADER_SIZE, f);
 
     // Start recording
-    while (flash_wr_size < FLASH_RECORD_SIZE) {
+    while (flash_wr_size < flash_rec_time) {
         // Read the RAW samples from the microphone
-        i2s_read(CONFIG_EXAMPLE_I2S_CH, (char *)i2s_readraw_buff, AUDIO_SAMPLE_SIZE, &bytes_read, portMAX_DELAY);
+        i2s_read(CONFIG_EXAMPLE_I2S_CH, (char *)i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, 100);
         // Write the samples to the WAV file
         fwrite(i2s_readraw_buff, 1, bytes_read, f);
         flash_wr_size += bytes_read;
@@ -173,27 +165,32 @@ void record_wav(void)
 
 void init_microphone(void)
 {
+    // Set the I2S configuration as PDM and 16bits per sample
     i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_PDM,
-        .sample_rate = CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE,
+        .sample_rate = CONFIG_EXAMPLE_SAMPLE_RATE,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-        .dma_buf_count = 64,
-        .dma_buf_len = 1024,
-        .use_apll = 1
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL2,
+        .dma_buf_count = 8,
+        .dma_buf_len = 200,
+        .use_apll = 0,
     };
 
-    i2s_pin_config_t pin_config;
-    pin_config.bck_io_num = I2S_PIN_NO_CHANGE;
-    pin_config.ws_io_num = CONFIG_EXAMPLE_I2S_CLK_GPIO;
-    pin_config.data_out_num = I2S_PIN_NO_CHANGE;
-    pin_config.data_in_num = CONFIG_EXAMPLE_I2S_DATA_GPIO;
+    // Set the pinout configuration (set using menuconfig)
+    i2s_pin_config_t pin_config = {
+        .mck_io_num = I2S_PIN_NO_CHANGE,
+        .bck_io_num = I2S_PIN_NO_CHANGE,
+        .ws_io_num = CONFIG_EXAMPLE_I2S_CLK_GPIO,
+        .data_out_num = I2S_PIN_NO_CHANGE,
+        .data_in_num = CONFIG_EXAMPLE_I2S_DATA_GPIO,
+    };
 
-    i2s_driver_install(CONFIG_EXAMPLE_I2S_CH, &i2s_config, 0, NULL);
-    i2s_set_pin(CONFIG_EXAMPLE_I2S_CH, &pin_config);
-    i2s_set_clk(CONFIG_EXAMPLE_I2S_CH, CONFIG_EXAMPLE_AUDIO_SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO);
+    // Call driver installation function before any I2S R/W operation.
+    ESP_ERROR_CHECK( i2s_driver_install(CONFIG_EXAMPLE_I2S_CH, &i2s_config, 0, NULL) );
+    ESP_ERROR_CHECK( i2s_set_pin(CONFIG_EXAMPLE_I2S_CH, &pin_config) );
+    ESP_ERROR_CHECK( i2s_set_clk(CONFIG_EXAMPLE_I2S_CH, CONFIG_EXAMPLE_SAMPLE_RATE, I2S_BITS_PER_SAMPLE_16BIT, I2S_CHANNEL_MONO) );
 }
 
 void app_main(void)
@@ -205,5 +202,7 @@ void app_main(void)
     init_microphone();
     ESP_LOGI(TAG, "Starting recording for %d seconds!", CONFIG_EXAMPLE_REC_TIME);
     // Start Recording
-    record_wav();
+    record_wav(CONFIG_EXAMPLE_REC_TIME);
+    // Stop I2S driver and destroy
+    ESP_ERROR_CHECK( i2s_driver_uninstall(CONFIG_EXAMPLE_I2S_CH) );
 }

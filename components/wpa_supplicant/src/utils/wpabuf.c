@@ -1,6 +1,6 @@
 /*
  * Dynamic data buffer
- * Copyright (c) 2007-2009, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2012, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -72,12 +72,12 @@ int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 
 	if (buf->used + add_len > buf->size) {
 		unsigned char *nbuf;
-		if (buf->ext_data) {
-			nbuf = (unsigned char*)os_realloc(buf->ext_data, buf->used + add_len);
+		if (buf->flags & WPABUF_FLAG_EXT_DATA) {
+			nbuf = os_realloc(buf->buf, buf->used + add_len);
 			if (nbuf == NULL)
 				return -1;
 			memset(nbuf + buf->used, 0, add_len);
-			buf->ext_data = nbuf;
+			buf->buf = nbuf;
 		} else {
 #ifdef WPA_TRACE
 			nbuf = os_realloc(trace, sizeof(struct wpabuf_trace) +
@@ -99,6 +99,7 @@ int wpabuf_resize(struct wpabuf **_buf, size_t add_len)
 			memset(nbuf + sizeof(struct wpabuf) + buf->used, 0,
 				  add_len);
 #endif /* WPA_TRACE */
+			buf->buf = (u8 *) (buf + 1);
 			*_buf = buf;
 		}
 		buf->size = buf->used + add_len;
@@ -130,6 +131,7 @@ struct wpabuf * wpabuf_alloc(size_t len)
 #endif /* WPA_TRACE */
 
 	buf->size = len;
+	buf->buf = (u8 *) (buf + 1);
 	return buf;
 }
 
@@ -151,7 +153,8 @@ struct wpabuf * wpabuf_alloc_ext_data(u8 *data, size_t len)
 
 	buf->size = len;
 	buf->used = len;
-	buf->ext_data = data;
+	buf->buf = data;
+	buf->flags |= WPABUF_FLAG_EXT_DATA;
 
 	return buf;
 }
@@ -191,14 +194,25 @@ void wpabuf_free(struct wpabuf *buf)
 			   trace->magic);
 		abort();
 	}
-	os_free(buf->ext_data);
+	if (buf->flags & WPABUF_FLAG_EXT_DATA)
+		os_free(buf->buf);
 	os_free(trace);
 #else /* WPA_TRACE */
 	if (buf == NULL)
 		return;
-	os_free(buf->ext_data);
+	if (buf->flags & WPABUF_FLAG_EXT_DATA)
+		os_free(buf->buf);
 	os_free(buf);
 #endif /* WPA_TRACE */
+}
+
+
+void wpabuf_clear_free(struct wpabuf *buf)
+{
+	if (buf) {
+		os_memset(wpabuf_mhead(buf), 0, wpabuf_len(buf));
+		wpabuf_free(buf);
+	}
 }
 
 

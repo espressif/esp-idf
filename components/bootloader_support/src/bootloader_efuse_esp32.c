@@ -7,14 +7,14 @@
 #include "bootloader_common.h"
 #include "bootloader_clock.h"
 #include "soc/efuse_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 
 uint8_t bootloader_common_get_chip_revision(void)
 {
     uint8_t eco_bit0, eco_bit1, eco_bit2;
     eco_bit0 = (REG_READ(EFUSE_BLK0_RDATA3_REG) & 0xF000) >> 15;
     eco_bit1 = (REG_READ(EFUSE_BLK0_RDATA5_REG) & 0x100000) >> 20;
-    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 0x80000000) >> 31;
+    eco_bit2 = (REG_READ(SYSCON_DATE_REG) & 0x80000000) >> 31;
     uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
     uint8_t chip_ver = 0;
     switch (combine_value) {
@@ -28,7 +28,7 @@ uint8_t bootloader_common_get_chip_revision(void)
         chip_ver = 2;
         break;
 #if CONFIG_IDF_ENV_FPGA
-    case 4: /* Empty efuses, but APB_CTRL_DATE_REG bit is set */
+    case 4: /* Empty efuses, but SYSCON_DATE_REG bit is set */
         chip_ver = 3;
         break;
 #endif

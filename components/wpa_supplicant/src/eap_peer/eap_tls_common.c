@@ -79,6 +79,11 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 		params->flags |= TLS_CONN_DISABLE_TIME_CHECKS;
 	else
 		params->flags &= (~TLS_CONN_DISABLE_TIME_CHECKS);
+
+	if (config->flags & TLS_CONN_SUITEB)
+		params->flags |= TLS_CONN_SUITEB;
+	else
+		params->flags &= (~TLS_CONN_SUITEB);
 }
 
 static int eap_tls_params_from_conf(struct eap_sm *sm,
@@ -102,6 +107,10 @@ static int eap_tls_params_from_conf(struct eap_sm *sm,
 
 	wpa_printf(MSG_DEBUG, "TLS: using phase1 config options");
 	eap_tls_params_from_conf1(params, config);
+    if (data->eap_type == EAP_TYPE_FAST) {
+        wpa_printf(MSG_DEBUG, "EAP-TYPE == EAP-FAST #####################################");
+        params->flags |= TLS_CONN_EAP_FAST;
+    }
 
 	/*
 	 * Use blob data, if available. Otherwise, leave reference to external
@@ -254,7 +263,7 @@ u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	if (out == NULL)
 		return NULL;
 
-	if (tls_connection_export_key(data->ssl_ctx, data->conn, label, out,
+	if (tls_connection_export_key(data->ssl_ctx, data->conn, label, 0, 0, out,
 				len)) {
 		os_free(out);
 		return NULL;

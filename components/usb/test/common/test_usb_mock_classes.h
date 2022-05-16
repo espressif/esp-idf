@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
 This header contains bare-bone mock implementations of some device classes in order to test various layers of the USB
@@ -28,6 +20,8 @@ extern "C" {
 #endif
 
 // ---------------------------------------------------- MSC SCSI -------------------------------------------------------
+
+const char *MSC_CLIENT_TAG;
 
 /*
 Note: The mock MSC SCSI tests requires that USB flash drive be connected. The flash drive should...
@@ -94,23 +88,14 @@ Configuration Descriptor:
 If you're using a flash driver with different endpoints, modify the endpoint descriptors below.
 */
 
-static const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc = {
-    .bLength = sizeof(usb_ep_desc_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x01,       //EP 1 OUT
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = 64,           //MPS of 64 bytes
-    .bInterval = 1,
-};
-
-static const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc = {
-    .bLength = sizeof(usb_ep_desc_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x82,       //EP 2 IN
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = 64,           //MPS of 64 bytes
-    .bInterval = 1,
-};
+//Constant descriptors
+extern const uint8_t mock_msc_scsi_dev_desc[];
+extern const uint8_t mock_msc_scsi_config_desc[];
+extern const uint8_t mock_msc_scsi_str_desc_manu[];
+extern const uint8_t mock_msc_scsi_str_desc_prod[];
+extern const uint8_t mock_msc_scsi_str_desc_ser_num[];
+extern const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc;
+extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
 
 #define MOCK_MSC_SCSI_DEV_ID_VENDOR     0x125F
 #define MOCK_MSC_SCSI_DEV_ID_PRODUCT    0xc08A
@@ -252,14 +237,8 @@ Device Descriptor:
 
 If you're using another mice with different endpoints, modify the endpoint descriptor below
 */
-static const usb_ep_desc_t mock_hid_mouse_in_ep_desc = {
-    .bLength = sizeof(usb_ep_desc_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x81,       //EP 1 IN
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_INT,
-    .wMaxPacketSize = 4,            //MPS of 4 bytes
-    .bInterval = 10,                //Interval of 10ms
-};
+
+extern  const usb_ep_desc_t mock_hid_mouse_in_ep_desc;
 
 #define MOCK_HID_MOUSE_DEV_ID_VENDOR        0x413C
 #define MOCK_HID_MOUSE_DEV_ID_PRODUCT       0x301A

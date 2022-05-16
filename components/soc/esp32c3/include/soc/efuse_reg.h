@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_REG_H_
 #define _SOC_EFUSE_REG_H_
 
@@ -141,12 +133,12 @@ extern "C" {
 #define EFUSE_DIS_ICACHE_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_V  0x1
 #define EFUSE_DIS_ICACHE_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT : R/W ;bitpos:[7] ;default: 1'b0 ; */
-/*description: Set this bit to disable boot from RTC RAM.*/
-#define EFUSE_DIS_RTC_RAM_BOOT  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_S  7
+/* EFUSE_RPT4_RESERVED5 : R/W ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED5  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_V  0x1
+#define EFUSE_RPT4_RESERVED5_S  7
 /* EFUSE_RD_DIS : R/W ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: Set this bit to disable reading from BlOCK4-10.*/
 #define EFUSE_RD_DIS  0x0000007F
@@ -282,30 +274,12 @@ extern "C" {
 #define EFUSE_FORCE_SEND_RESUME_M  (BIT(13))
 #define EFUSE_FORCE_SEND_RESUME_V  0x1
 #define EFUSE_FORCE_SEND_RESUME_S  13
-/* EFUSE_FLASH_ECC_EN : R/W ;bitpos:[12] ;default: 1'b0 ; */
-/*description: Set 1 to enable ECC for flash boot.*/
-#define EFUSE_FLASH_ECC_EN  (BIT(12))
-#define EFUSE_FLASH_ECC_EN_M  (BIT(12))
-#define EFUSE_FLASH_ECC_EN_V  0x1
-#define EFUSE_FLASH_ECC_EN_S  12
-/* EFUSE_FLASH_PAGE_SIZE : R/W ;bitpos:[11:10] ;default: 2'h0 ; */
-/*description: Set Flash page size.*/
-#define EFUSE_FLASH_PAGE_SIZE  0x00000003
-#define EFUSE_FLASH_PAGE_SIZE_M  ((EFUSE_FLASH_PAGE_SIZE_V)<<(EFUSE_FLASH_PAGE_SIZE_S))
-#define EFUSE_FLASH_PAGE_SIZE_V  0x3
-#define EFUSE_FLASH_PAGE_SIZE_S  10
-/* EFUSE_FLASH_TYPE : R/W ;bitpos:[9] ;default: 1'b0 ; */
-/*description: Set the maximum lines of SPI flash. 0: four lines. 1: eight lines.*/
-#define EFUSE_FLASH_TYPE  (BIT(9))
-#define EFUSE_FLASH_TYPE_M  (BIT(9))
-#define EFUSE_FLASH_TYPE_V  0x1
-#define EFUSE_FLASH_TYPE_S  9
-/* EFUSE_PIN_POWER_SELECTION : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: GPIO33-GPIO37 power supply selection in ROM code. 0: VDD3P3_CPU. 1: VDD_SPI.*/
-#define EFUSE_PIN_POWER_SELECTION  (BIT(8))
-#define EFUSE_PIN_POWER_SELECTION_M  (BIT(8))
-#define EFUSE_PIN_POWER_SELECTION_V  0x1
-#define EFUSE_PIN_POWER_SELECTION_S  8
+/* EFUSE_RPT4_RESERVED7 : R/W ;bitpos:[12:8] ;default: 5'h0 ; */
+/*description: Reserved (used for four backups method).*/
+#define EFUSE_RPT4_RESERVED7  0x0000001F
+#define EFUSE_RPT4_RESERVED7_M  ((EFUSE_RPT4_RESERVED7_V)<<(EFUSE_RPT4_RESERVED7_S))
+#define EFUSE_RPT4_RESERVED7_V  0x1F
+#define EFUSE_RPT4_RESERVED7_S  8
 /* EFUSE_UART_PRINT_CONTROL : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: Set the default UARTboot message output mode. 00: Enabled. 01:
  Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
@@ -325,13 +299,12 @@ extern "C" {
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_M  (BIT(4))
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_V  0x1
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_S  4
-/* EFUSE_FLASH_ECC_MODE : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: Set ECC mode in ROM  0: ROM would Enable Flash ECC 16to18 byte
- mode. 1:ROM would use 16to17 byte mode.*/
-#define EFUSE_FLASH_ECC_MODE  (BIT(3))
-#define EFUSE_FLASH_ECC_MODE_M  (BIT(3))
-#define EFUSE_FLASH_ECC_MODE_V  0x1
-#define EFUSE_FLASH_ECC_MODE_S  3
+/* EFUSE_RPT4_RESERVED8 : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: Reserved (used for four backups method).*/
+#define EFUSE_RPT4_RESERVED8  (BIT(3))
+#define EFUSE_RPT4_RESERVED8_M  (BIT(3))
+#define EFUSE_RPT4_RESERVED8_V  0x1
+#define EFUSE_RPT4_RESERVED8_S  3
 /* EFUSE_UART_PRINT_CHANNEL : R/W ;bitpos:[2] ;default: 1'b0 ; */
 /*description: Selectes the default UART print channel. 0: UART0. 1: UART1.*/
 #define EFUSE_UART_PRINT_CHANNEL  (BIT(2))
@@ -516,12 +489,12 @@ extern "C" {
 #define EFUSE_DIS_ICACHE_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_V  0x1
 #define EFUSE_DIS_ICACHE_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: The value of DIS_RTC_RAM_BOOT.*/
-#define EFUSE_DIS_RTC_RAM_BOOT  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_S  7
+/* EFUSE_RPT4_RESERVED5 : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED5  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_V  0x1
+#define EFUSE_RPT4_RESERVED5_S  7
 /* EFUSE_RD_DIS : RO ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: The value of RD_DIS.*/
 #define EFUSE_RD_DIS  0x0000007F
@@ -654,30 +627,12 @@ extern "C" {
 #define EFUSE_FORCE_SEND_RESUME_M  (BIT(13))
 #define EFUSE_FORCE_SEND_RESUME_V  0x1
 #define EFUSE_FORCE_SEND_RESUME_S  13
-/* EFUSE_FLASH_ECC_EN : RO ;bitpos:[12] ;default: 1'b0 ; */
-/*description: The value of FLASH_ECC_EN.*/
-#define EFUSE_FLASH_ECC_EN  (BIT(12))
-#define EFUSE_FLASH_ECC_EN_M  (BIT(12))
-#define EFUSE_FLASH_ECC_EN_V  0x1
-#define EFUSE_FLASH_ECC_EN_S  12
-/* EFUSE_FLASH_PAGE_SIZE : RO ;bitpos:[11:10] ;default: 2'h0 ; */
-/*description: The value of FLASH_PAGE_SIZE.*/
-#define EFUSE_FLASH_PAGE_SIZE  0x00000003
-#define EFUSE_FLASH_PAGE_SIZE_M  ((EFUSE_FLASH_PAGE_SIZE_V)<<(EFUSE_FLASH_PAGE_SIZE_S))
-#define EFUSE_FLASH_PAGE_SIZE_V  0x3
-#define EFUSE_FLASH_PAGE_SIZE_S  10
-/* EFUSE_FLASH_TYPE : RO ;bitpos:[9] ;default: 1'b0 ; */
-/*description: The value of FLASH_TYPE.*/
-#define EFUSE_FLASH_TYPE  (BIT(9))
-#define EFUSE_FLASH_TYPE_M  (BIT(9))
-#define EFUSE_FLASH_TYPE_V  0x1
-#define EFUSE_FLASH_TYPE_S  9
-/* EFUSE_PIN_POWER_SELECTION : RO ;bitpos:[8] ;default: 1'b0 ; */
-/*description: The value of PIN_POWER_SELECTION.*/
-#define EFUSE_PIN_POWER_SELECTION  (BIT(8))
-#define EFUSE_PIN_POWER_SELECTION_M  (BIT(8))
-#define EFUSE_PIN_POWER_SELECTION_V  0x1
-#define EFUSE_PIN_POWER_SELECTION_S  8
+/* EFUSE_RPT4_RESERVED7 : RO ;bitpos:[12:8] ;default: 5'h0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED7  0x0000001F
+#define EFUSE_RPT4_RESERVED7_M  ((EFUSE_RPT4_RESERVED7_V)<<(EFUSE_RPT4_RESERVED7_S))
+#define EFUSE_RPT4_RESERVED7_V  0x1F
+#define EFUSE_RPT4_RESERVED7_S  8
 /* EFUSE_UART_PRINT_CONTROL : RO ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: The value of UART_PRINT_CONTROL.*/
 #define EFUSE_UART_PRINT_CONTROL  0x00000003
@@ -696,12 +651,12 @@ extern "C" {
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_M  (BIT(4))
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_V  0x1
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_S  4
-/* EFUSE_FLASH_ECC_MODE : RO ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The value of FLASH_ECC_MODE.*/
-#define EFUSE_FLASH_ECC_MODE  (BIT(3))
-#define EFUSE_FLASH_ECC_MODE_M  (BIT(3))
-#define EFUSE_FLASH_ECC_MODE_V  0x1
-#define EFUSE_FLASH_ECC_MODE_S  3
+/* EFUSE_RPT4_RESERVED8 : RO ;bitpos:[3] ;default: 1'b0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED8  (BIT(3))
+#define EFUSE_RPT4_RESERVED8_M  (BIT(3))
+#define EFUSE_RPT4_RESERVED8_V  0x1
+#define EFUSE_RPT4_RESERVED8_S  3
 /* EFUSE_UART_PRINT_CHANNEL : RO ;bitpos:[2] ;default: 1'b0 ; */
 /*description: The value of UART_PRINT_CHANNEL.*/
 #define EFUSE_UART_PRINT_CHANNEL  (BIT(2))
@@ -1486,12 +1441,12 @@ extern "C" {
 #define EFUSE_DIS_ICACHE_ERR_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_ERR_V  0x1
 #define EFUSE_DIS_ICACHE_ERR_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT_ERR : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: If DIS_RTC_RAM_BOOT is 1  then it indicates a programming error.*/
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_S  7
+/* EFUSE_RPT4_RESERVED5_ERR : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved..*/
+#define EFUSE_RPT4_RESERVED5_ERR  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_ERR_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_ERR_V  0x1
+#define EFUSE_RPT4_RESERVED5_ERR_S  7
 /* EFUSE_RD_DIS_ERR : RO ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: If any bit in RD_DIS is 1  then it indicates a programming error.*/
 #define EFUSE_RD_DIS_ERR  0x0000007F
@@ -1624,30 +1579,12 @@ extern "C" {
 #define EFUSE_FORCE_SEND_RESUME_ERR_M  (BIT(13))
 #define EFUSE_FORCE_SEND_RESUME_ERR_V  0x1
 #define EFUSE_FORCE_SEND_RESUME_ERR_S  13
-/* EFUSE_FLASH_ECC_EN : RO ;bitpos:[12] ;default: 1'b0 ; */
-/*description: If FLASH_ECC_EN_ERR is 1  then it indicates a programming error.*/
-#define EFUSE_FLASH_ECC_EN  (BIT(12))
-#define EFUSE_FLASH_ECC_EN_M  (BIT(12))
-#define EFUSE_FLASH_ECC_EN_V  0x1
-#define EFUSE_FLASH_ECC_EN_S  12
-/* EFUSE_FLASH_PAGE_SIZE : RO ;bitpos:[11:10] ;default: 2'h0 ; */
-/*description: If any bits in FLASH_PAGE_SIZE is 1  then it indicates a programming error.*/
-#define EFUSE_FLASH_PAGE_SIZE  0x00000003
-#define EFUSE_FLASH_PAGE_SIZE_M  ((EFUSE_FLASH_PAGE_SIZE_V)<<(EFUSE_FLASH_PAGE_SIZE_S))
-#define EFUSE_FLASH_PAGE_SIZE_V  0x3
-#define EFUSE_FLASH_PAGE_SIZE_S  10
-/* EFUSE_FLASH_TYPE_ERR : RO ;bitpos:[9] ;default: 1'b0 ; */
-/*description: If FLASH_TYPE is 1  then it indicates a programming error.*/
-#define EFUSE_FLASH_TYPE_ERR  (BIT(9))
-#define EFUSE_FLASH_TYPE_ERR_M  (BIT(9))
-#define EFUSE_FLASH_TYPE_ERR_V  0x1
-#define EFUSE_FLASH_TYPE_ERR_S  9
-/* EFUSE_PIN_POWER_SELECTION_ERR : RO ;bitpos:[8] ;default: 1'b0 ; */
-/*description: If PIN_POWER_SELECTION is 1  then it indicates a programming error.*/
-#define EFUSE_PIN_POWER_SELECTION_ERR  (BIT(8))
-#define EFUSE_PIN_POWER_SELECTION_ERR_M  (BIT(8))
-#define EFUSE_PIN_POWER_SELECTION_ERR_V  0x1
-#define EFUSE_PIN_POWER_SELECTION_ERR_S  8
+/* EFUSE_RPT4_RESERVED7_ERR : RO ;bitpos:[12:8] ;default: 5'h0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED7_ERR  0x0000001F
+#define EFUSE_RPT4_RESERVED7_ERR_M  ((EFUSE_RPT4_RESERVED7_ERR_V)<<(EFUSE_RPT4_RESERVED7_ERR_S))
+#define EFUSE_RPT4_RESERVED7_ERR_V  0x1F
+#define EFUSE_RPT4_RESERVED7_ERR_S  8
 /* EFUSE_UART_PRINT_CONTROL_ERR : RO ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: If any bit in UART_PRINT_CONTROL is 1  then it indicates a programming error.*/
 #define EFUSE_UART_PRINT_CONTROL_ERR  0x00000003
@@ -1666,12 +1603,12 @@ extern "C" {
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR_M  (BIT(4))
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR_S  4
-/* EFUSE_FLASH_ECC_MODE_ERR : RO ;bitpos:[3] ;default: 1'b0 ; */
-/*description: If FLASH_ECC_MODE is 1  then it indicates a programming error.*/
-#define EFUSE_FLASH_ECC_MODE_ERR  (BIT(3))
-#define EFUSE_FLASH_ECC_MODE_ERR_M  (BIT(3))
-#define EFUSE_FLASH_ECC_MODE_ERR_V  0x1
-#define EFUSE_FLASH_ECC_MODE_ERR_S  3
+/* EFUSE_RPT4_RESERVED8_ERR : RO ;bitpos:[3] ;default: 1'b0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED8_ERR  (BIT(3))
+#define EFUSE_RPT4_RESERVED8_ERR_M  (BIT(3))
+#define EFUSE_RPT4_RESERVED8_ERR_V  0x1
+#define EFUSE_RPT4_RESERVED8_ERR_S  3
 /* EFUSE_UART_PRINT_CHANNEL_ERR : RO ;bitpos:[2] ;default: 1'b0 ; */
 /*description: If UART_PRINT_CHANNEL is 1  then it indicates a programming error.*/
 #define EFUSE_UART_PRINT_CHANNEL_ERR  (BIT(2))
@@ -1691,7 +1628,7 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_S  0
 
-#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x190)
+#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x18C)
 /* EFUSE_RPT4_RESERVED4_ERR : RO ;bitpos:[23:0] ;default: 24'h0 ; */
 /*description: Reserved.*/
 #define EFUSE_RPT4_RESERVED4_ERR  0x00FFFFFF
@@ -1866,6 +1803,9 @@ extern "C" {
 #define EFUSE_OP_CODE_M  ((EFUSE_OP_CODE_V)<<(EFUSE_OP_CODE_S))
 #define EFUSE_OP_CODE_V  0xFFFF
 #define EFUSE_OP_CODE_S  0
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE  0x5aa5
 
 #define EFUSE_STATUS_REG          (DR_REG_EFUSE_BASE + 0x1D0)
 /* EFUSE_REPEAT_ERR_CNT : RO ;bitpos:[17:10] ;default: 8'h0 ; */

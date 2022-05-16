@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,12 +23,29 @@
 #include "test_fatfs_common.h"
 #include "soc/soc_caps.h"
 
-#define SDSPI_MOSI_PIN  15
-#define SDSPI_MISO_PIN  2
-#define SDSPI_CS_PIN    13
-#define SDSPI_CLK_PIN   14
-#define SDSPI_HOST_ID   SPI2_HOST
+#if CONFIG_IDF_TARGET_ESP32
+#define SDSPI_MISO_PIN 2
+#define SDSPI_MOSI_PIN 15
+#define SDSPI_CLK_PIN  14
+#define SDSPI_CS_PIN   13
+#elif CONFIG_IDF_TARGET_ESP32S2
+// Adapted for internal test board ESP-32-S3-USB-OTG-Ev-BOARD_V1.0 (with ESP32-S2-MINI-1 module)
+#define SDSPI_MISO_PIN 37
+#define SDSPI_MOSI_PIN 35
+#define SDSPI_CLK_PIN  36
+#define SDSPI_CS_PIN   34
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define SDSPI_MISO_PIN 6
+#define SDSPI_MOSI_PIN 4
+#define SDSPI_CLK_PIN  5
+#define SDSPI_CS_PIN   1
+#define SPI_DMA_CHAN   SPI_DMA_CH_AUTO
+#endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
 
+#ifndef SPI_DMA_CHAN
+#define SPI_DMA_CHAN   1
+#endif //SPI_DMA_CHAN
+#define SDSPI_HOST_ID  SPI2_HOST
 
 #if SOC_SDMMC_HOST_SUPPORTED
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
@@ -311,7 +320,7 @@ TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-
 #endif  //SDMMC HOST SUPPORTED
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 //no runners
 static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
 
@@ -333,7 +342,7 @@ TEST_CASE("(SDSPI) write/read speed test", "[fatfs][sd][test_env=UT_T1_SPIMODE][
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
-    esp_err_t err = spi_bus_initialize(SDSPI_HOST_ID, &bus_cfg, 1);
+    esp_err_t err = spi_bus_initialize(SDSPI_HOST_ID, &bus_cfg, SPI_DMA_CHAN);
     TEST_ESP_OK(err);
 
     sdspi_speed_test(buf, 4 * 1024, file_size, true);
@@ -377,4 +386,4 @@ static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool 
     TEST_ESP_OK(esp_vfs_fat_sdcard_unmount(path, card));
 }
 
-#endif //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#endif //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

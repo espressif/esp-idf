@@ -24,7 +24,7 @@ SPI1 Flash 并发约束
 
 请参阅 :ref:`应用程序内存分布 <memory-layout>`，查看 IRAM、DRAM 和 flash cache 的区别。
 
-.. only: not CONFIG_FREERTOS_UNICORE
+.. only:: not CONFIG_FREERTOS_UNICORE
 
     为避免意外读取 flash cache，一个 CPU 在启动 flash 写入或擦除操作时，另一个 CPU 将阻塞，并且在 flash 操作完成前，所有 CPU 上，所有的非 IRAM 安全的中断都会被禁用。
 

@@ -140,19 +140,20 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
 *******************************************************************************/
 void gatt_sec_check_complete(BOOLEAN sec_check_ok, tGATT_CLCB   *p_clcb, UINT8 sec_act)
 {
-    if (p_clcb && p_clcb->p_tcb &&
-        fixed_queue_is_empty(p_clcb->p_tcb->pending_enc_clcb)) {
-        gatt_set_sec_act(p_clcb->p_tcb, GATT_SEC_NONE);
-    }
+    if (p_clcb && p_clcb->p_tcb) {
+        if (fixed_queue_is_empty(p_clcb->p_tcb->pending_enc_clcb)) {
+            gatt_set_sec_act(p_clcb->p_tcb, GATT_SEC_NONE);
+        }
 #if (GATTC_INCLUDED == TRUE)
-    if (!sec_check_ok) {
-        gatt_end_operation(p_clcb, GATT_AUTH_FAIL, NULL);
-    } else if (p_clcb->operation == GATTC_OPTYPE_WRITE) {
-        gatt_act_write(p_clcb, sec_act);
-    } else if (p_clcb->operation == GATTC_OPTYPE_READ) {
-        gatt_act_read(p_clcb, p_clcb->counter);
-    }
+        if (!sec_check_ok) {
+            gatt_end_operation(p_clcb, GATT_AUTH_FAIL, NULL);
+        } else if (p_clcb->operation == GATTC_OPTYPE_WRITE) {
+            gatt_act_write(p_clcb, sec_act);
+        } else if (p_clcb->operation == GATTC_OPTYPE_READ) {
+            gatt_act_read(p_clcb, p_clcb->counter);
+        }
 #endif  ///GATTC_INCLUDED == TRUE
+    }
 }
 /*******************************************************************************
 **

@@ -44,8 +44,8 @@ extern "C" {
  * 2. DDR mode requires the core clock divider (core_clk / div = module_clk) to be power of 2.
  */
 //--------------------------------------FLASH Sampling Mode --------------------------------------//
-#define SPI_TIMING_FLASH_DTR_MODE                   (CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR || CONFIG_ESPTOOLPY_FLASHMODE_OIO_DTR)
-#define SPI_TIMING_FLASH_STR_MODE                   (CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR || !CONFIG_ESPTOOLPY_OCT_FLASH)
+#define SPI_TIMING_FLASH_DTR_MODE                   CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+#define SPI_TIMING_FLASH_STR_MODE                   CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
 //--------------------------------------FLASH Module Clock --------------------------------------//
 #if CONFIG_ESPTOOLPY_FLASHFREQ_20M
 #define SPI_TIMING_FLASH_MODULE_CLOCK               20
@@ -242,6 +242,14 @@ void spi_timing_config_flash_tune_din_num_mode(uint8_t din_mode, uint8_t din_num
 void spi_timing_config_flash_tune_dummy(uint8_t extra_dummy);
 void spi_timing_config_psram_tune_din_num_mode(uint8_t din_mode, uint8_t din_num);
 void spi_timing_config_psram_tune_dummy(uint8_t extra_dummy);
+
+/**
+ * SPI1 register info get APIs. These APIs inform `spi_flash_timing_tuning.c` (driver layer) of the SPI1 flash settings.
+ * In this way, other components (e.g.: esp_flash driver) can get the info from it (`spi_flash_timing_tuning.c`).
+ */
+void spi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time);
+uint32_t spi_timing_config_get_flash_clock_reg(void);
+
 #ifdef __cplusplus
 }
 #endif

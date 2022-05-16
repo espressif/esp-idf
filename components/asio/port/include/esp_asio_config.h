@@ -19,6 +19,11 @@
 # endif   // CONFIG_COMPILER_RTTI
 
 //
+// Supress OpenSSL deprecation warning, when building ASIO
+//
+#define ESP_OPENSSL_SUPPRESS_LEGACY_WARNING
+
+//
 // LWIP compatibility inet and address macros/functions
 //
 # define LWIP_COMPAT_SOCKET_INET 1

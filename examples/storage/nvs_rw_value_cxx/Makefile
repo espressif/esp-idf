@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := nvs-rw-value-cxx
+PROJECT_NAME := nvs_rw_value_cxx
 
 include $(IDF_PATH)/make/project.mk

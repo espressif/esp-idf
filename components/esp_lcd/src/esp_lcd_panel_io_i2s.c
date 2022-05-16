@@ -23,6 +23,7 @@
 #include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
+#include "esp_pm.h"
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_common.h"
@@ -48,7 +49,7 @@ typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
 static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
 static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
 static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io);
-static unsigned long i2s_lcd_select_periph_clock(i2s_hal_context_t *hal);
+static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t src);
 static esp_err_t i2s_lcd_init_dma_link(esp_lcd_i80_bus_handle_t bus);
 static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void i2s_lcd_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
@@ -63,12 +64,16 @@ struct esp_lcd_i80_bus_t {
     int dc_gpio_num;       // GPIO used for DC line
     int wr_gpio_num;       // GPIO used for WR line
     intr_handle_t intr;    // LCD peripheral interrupt handle
+    esp_pm_lock_handle_t pm_lock; // lock APB frequency when necessary
     size_t num_dma_nodes;  // Number of DMA descriptors
     uint8_t *format_buffer;// The driver allocates an internal buffer for DMA to do data format transformer
-    size_t resolution_hz;  // LCD_CLK resolution, determined by selected clock source
+    unsigned long resolution_hz;  // LCD_CLK resolution, determined by selected clock source
     lcd_i80_trans_descriptor_t *cur_trans; // Current transaction
     lcd_panel_io_i80_t *cur_device; // Current working device
     LIST_HEAD(i80_device_list, lcd_panel_io_i80_t) device_list; // Head of i80 device list
+    struct {
+        unsigned int exclusive: 1; // Indicate whether the I80 bus is owned by one device (whose CS GPIO is not assigned) exclusively
+    } flags;
     dma_descriptor_t dma_nodes[]; // DMA descriptor pool, the descriptors are shared by all i80 devices
 };
 
@@ -76,8 +81,8 @@ struct lcd_i80_trans_descriptor_t {
     lcd_panel_io_i80_t *i80_device; // i80 device issuing this transaction
     const void *data;     // Data buffer
     uint32_t data_length; // Data buffer size
-    void *cb_user_data;   // private data used by trans_done_cb
-    bool (*trans_done_cb)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // transaction done callback
+    esp_lcd_panel_io_color_trans_done_cb_t trans_done_cb; // transaction done callback
+    void *user_ctx;   // private data used by trans_done_cb
     struct {
         unsigned int dc_level: 1; // Level of DC line for this transaction
     } flags;
@@ -92,11 +97,11 @@ struct lcd_panel_io_i80_t {
     QueueHandle_t trans_queue; // Transaction queue, transactions in this queue are pending for scheduler to dispatch
     QueueHandle_t done_queue;  // Transaction done queue, transactions in this queue are finished but not recycled by the caller
     size_t queue_size;         // Size of transaction queue
-    size_t num_trans_inflight;  // Number of transactions that are undergoing (the descriptor not recycled yet)
+    size_t num_trans_inflight; // Number of transactions that are undergoing (the descriptor not recycled yet)
     int lcd_cmd_bits;          // Bit width of LCD command
     int lcd_param_bits;        // Bit width of LCD parameter
-    void *cb_user_data;        // private data used when transfer color data
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // color data trans done callback
+    void *user_ctx;            // private data used when transfer color data
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // color data trans done callback
     LIST_ENTRY(lcd_panel_io_i80_t) device_list_entry; // Entry of i80 device list
     struct {
         unsigned int dc_cmd_level: 1;  // Level of DC line in CMD phase
@@ -114,9 +119,9 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
 {
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
-    ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err_arg, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     // although I2S bus supports up to 24 parallel data lines, we restrict users to only use 8 or 16 bit width, due to limited GPIO numbers
-    ESP_GOTO_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG, err_arg,
+    ESP_GOTO_ON_FALSE(bus_config->bus_width == 8 || bus_config->bus_width == 16, ESP_ERR_INVALID_ARG, err,
                       TAG, "invalid bus width:%d", bus_config->bus_width);
     size_t max_transfer_bytes = (bus_config->max_transfer_bytes + 3) & ~0x03; // align up to 4 bytes
 #if SOC_I2S_TRANS_SIZE_ALIGN_WORD
@@ -127,23 +132,25 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     size_t num_dma_nodes = max_transfer_bytes / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
     // DMA descriptors must be placed in internal SRAM
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-    ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, no_mem_bus, TAG, "no mem for i80 bus");
+    ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
     bus->num_dma_nodes = num_dma_nodes;
+    bus->bus_id = -1;
 #if SOC_I2S_TRANS_SIZE_ALIGN_WORD
     // transform format for LCD commands, parameters and color data, so we need a big buffer
     bus->format_buffer = heap_caps_calloc(1, max_transfer_bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
 #else
     // only transform format for LCD parameters, buffer size depends on specific LCD, set at compile time
     bus->format_buffer = heap_caps_calloc(1, CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-#endif
-    ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, no_mem_format, TAG, "no mem for format buffer");
+#endif // SOC_I2S_TRANS_SIZE_ALIGN_WORD
+    ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for format buffer");
     // I2S0 has the LCD mode, but the LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
-    ESP_GOTO_ON_ERROR(i2s_priv_register_object(bus, 0), no_slot, TAG, "register to I2S platform failed");
+    ESP_GOTO_ON_ERROR(i2s_priv_register_object(bus, 0), err, TAG, "register to I2S platform failed");
     bus->bus_id = 0;
     // initialize HAL layer
     i2s_hal_init(&bus->hal, bus->bus_id);
     // set peripheral clock resolution
-    bus->resolution_hz = i2s_lcd_select_periph_clock(&bus->hal);
+    ret = i2s_lcd_select_periph_clock(bus, bus_config->clk_src);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock failed");
     // reset peripheral, DMA channel and FIFO
     i2s_ll_tx_reset(bus->hal.dev);
     i2s_ll_tx_reset_dma(bus->hal.dev);
@@ -154,7 +161,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus->bus_id].irq_id, isr_flags,
                                     (uint32_t)i2s_ll_get_intr_status_reg(bus->hal.dev),
                                     I2S_LL_EVENT_TX_EOF, lcd_default_isr_handler, bus, &bus->intr);
-    ESP_GOTO_ON_ERROR(ret, no_int, TAG, "install interrupt failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     i2s_ll_enable_intr(bus->hal.dev, I2S_LL_EVENT_TX_EOF, false); // disable interrupt temporarily
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);  // clear pending interrupt
     // initialize DMA link
@@ -178,26 +185,32 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_lcd_trigger_quick_trans_done_event(bus);
     // configure GPIO
     ret = i2s_lcd_configure_gpio(bus, bus_config);
-    ESP_GOTO_ON_ERROR(ret, invalid_gpio, TAG, "configure GPIO failed");
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "configure GPIO failed");
     // fill other i80 bus runtime parameters
     LIST_INIT(&bus->device_list); // initialize device list head
     bus->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     bus->dc_gpio_num = bus_config->dc_gpio_num;
     bus->wr_gpio_num = bus_config->wr_gpio_num;
     *ret_bus = bus;
-    ESP_LOGD(TAG, "new i80 bus(%d) @%p, %zu dma nodes, resolution %zuHz", bus->bus_id, bus, bus->num_dma_nodes, bus->resolution_hz);
+    ESP_LOGD(TAG, "new i80 bus(%d) @%p, %zu dma nodes, resolution %luHz", bus->bus_id, bus, bus->num_dma_nodes, bus->resolution_hz);
     return ESP_OK;
 
-invalid_gpio:
-    esp_intr_free(bus->intr);
-no_int:
-    i2s_priv_deregister_object(bus->bus_id);
-no_slot:
-    free(bus->format_buffer);
-no_mem_format:
-    free(bus);
-no_mem_bus:
-err_arg:
+err:
+    if (bus) {
+        if (bus->intr) {
+            esp_intr_free(bus->intr);
+        }
+        if (bus->bus_id >= 0) {
+            i2s_priv_deregister_object(bus->bus_id);
+        }
+        if (bus->format_buffer) {
+            free(bus->format_buffer);
+        }
+        if (bus->pm_lock) {
+            esp_pm_lock_delete(bus->pm_lock);
+        }
+        free(bus);
+    }
     return ret;
 }
 
@@ -207,8 +220,11 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
-    esp_intr_free(bus->intr);
     i2s_priv_deregister_object(bus_id);
+    esp_intr_free(bus->intr);
+    if (bus->pm_lock) {
+        esp_pm_lock_delete(bus->pm_lock);
+    }
     free(bus->format_buffer);
     free(bus);
     ESP_LOGD(TAG, "del i80 bus(%d)", bus_id);
@@ -220,7 +236,17 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
 {
     esp_err_t ret = ESP_OK;
     lcd_panel_io_i80_t *i80_device = NULL;
+    bool bus_exclusive = false;
     ESP_GOTO_ON_FALSE(bus && io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    // check if the bus has been configured as exclusive
+    portENTER_CRITICAL(&bus->spinlock);
+    if (!bus->flags.exclusive) {
+        bus->flags.exclusive = io_config->cs_gpio_num < 0;
+    } else {
+        bus_exclusive = true;
+    }
+    portEXIT_CRITICAL(&bus->spinlock);
+    ESP_GOTO_ON_FALSE(!bus_exclusive, ESP_ERR_INVALID_STATE, err, TAG, "bus has been exclusively owned by device");
     // because we set the I2S's left channel data same to right channel, so f_pclk = f_i2s/pclk_div/2
     uint32_t pclk_prescale = bus->resolution_hz / 2 / io_config->pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= I2S_LL_BCK_MAX_PRESCALE, ESP_ERR_NOT_SUPPORTED, err, TAG,
@@ -248,7 +274,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->dc_levels.dc_data_level = io_config->dc_levels.dc_data_level;
     i80_device->cs_gpio_num = io_config->cs_gpio_num;
     i80_device->on_color_trans_done = io_config->on_color_trans_done;
-    i80_device->cb_user_data = io_config->user_data;
+    i80_device->user_ctx = io_config->user_ctx;
     i80_device->flags.cs_active_high = io_config->flags.cs_active_high;
     i80_device->flags.swap_color_bytes = io_config->flags.swap_color_bytes;
     i80_device->flags.pclk_idle_low = io_config->flags.pclk_idle_low;
@@ -256,10 +282,12 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     i80_device->base.del = panel_io_i80_del;
     i80_device->base.tx_param = panel_io_i80_tx_param;
     i80_device->base.tx_color = panel_io_i80_tx_color;
-    // CS signal is controlled by software
-    gpio_set_level(io_config->cs_gpio_num, !io_config->flags.cs_active_high); // de-assert by default
-    gpio_set_direction(io_config->cs_gpio_num, GPIO_MODE_OUTPUT);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
+    if (io_config->cs_gpio_num >= 0) {
+        // CS signal is controlled by software
+        gpio_set_level(io_config->cs_gpio_num, !io_config->flags.cs_active_high); // de-assert by default
+        gpio_set_direction(io_config->cs_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
+    }
     *ret_io = &(i80_device->base);
     ESP_LOGD(TAG, "new i80 lcd panel io @%p on bus(%d), pclk=%uHz", i80_device, bus->bus_id, i80_device->pclk_hz);
     return ESP_OK;
@@ -452,6 +480,10 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     // delay a while, wait for DMA data beeing feed to I2S FIFO
     // in fact, this is only needed when LCD pixel clock is set too high
     esp_rom_delay_us(1);
+    // increase the pm lock reference count before starting a new transaction
+    if (bus->pm_lock) {
+        esp_pm_lock_acquire(bus->pm_lock);
+    }
     i2s_ll_tx_start(bus->hal.dev);
     // polling the trans done event
     while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
@@ -469,6 +501,10 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         i2s_ll_tx_start(bus->hal.dev);
         // polling the trans done event, but don't clear the event status
         while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
+    }
+    // decrease pm lock reference count
+    if (bus->pm_lock) {
+        esp_pm_lock_release(bus->pm_lock);
     }
     bus->cur_trans = NULL;
     return ESP_OK;
@@ -506,14 +542,22 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
     i2s_ll_start_out_link(bus->hal.dev);
     esp_rom_delay_us(1);
+    // increase the pm lock reference count before starting a new transaction
+    if (bus->pm_lock) {
+        esp_pm_lock_acquire(bus->pm_lock);
+    }
     i2s_ll_tx_start(bus->hal.dev);
     // polling the trans done event
     while (!(i2s_ll_get_intr_status(bus->hal.dev) & I2S_LL_EVENT_TX_EOF)) {}
+    // decrease pm lock reference count
+    if (bus->pm_lock) {
+        esp_pm_lock_release(bus->pm_lock);
+    }
     bus->cur_trans = NULL;
 
     // sending LCD color data to queue
     trans_desc->trans_done_cb = next_device->on_color_trans_done;
-    trans_desc->cb_user_data = next_device->cb_user_data;
+    trans_desc->user_ctx = next_device->user_ctx;
     trans_desc->flags.dc_level = next_device->dc_levels.dc_data_level; // DC level for data transaction
     i2s_lcd_prepare_color_buffer(trans_desc, color, color_size);
     // send transaction to trans_queue
@@ -525,24 +569,30 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     return ESP_OK;
 }
 
-static unsigned long i2s_lcd_select_periph_clock(i2s_hal_context_t *hal)
+static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_clock_source_t src)
 {
-    unsigned long resolution_hz = 0;
-    i2s_clock_src_t clock_source;
-#if CONFIG_LCD_PERIPH_CLK_SRC_PLL160M
-    resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
-    clock_source = I2S_CLK_D2CLK;
-#else
-#error "invalid LCD peripheral clock source"
+    esp_err_t ret = ESP_OK;
+    switch (src) {
+    case LCD_CLK_SRC_PLL160M:
+        bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_D2CLK);
+#if CONFIG_PM_ENABLE
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_bus_lcd", &bus->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
+        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
 #endif
-    i2s_ll_tx_clk_set_src(hal->dev, clock_source);
+        break;
+    default:
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported clock source: %d", src);
+        break;
+    }
     i2s_ll_mclk_div_t clk_cal_config = {
         .mclk_div = LCD_PERIPH_CLOCK_PRE_SCALE,
         .a = 1,
         .b = 0,
     };
-    i2s_ll_tx_set_clk(hal->dev, &clk_cal_config);
-    return resolution_hz;
+    i2s_ll_tx_set_clk(bus->hal.dev, &clk_cal_config);
+    return ret;
 }
 
 static esp_err_t i2s_lcd_init_dma_link(esp_lcd_i80_bus_handle_t bus)
@@ -611,10 +661,12 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
     if (next_device != cur_device) {
         // reconfigure PCLK for the new device
         i2s_ll_tx_set_bck_div_num(bus->hal.dev, next_device->clock_prescale);
-        if (cur_device) { // de-assert current device
+        if (cur_device && cur_device->cs_gpio_num >= 0) { // de-assert current device
             gpio_set_level(cur_device->cs_gpio_num, !cur_device->flags.cs_active_high);
         }
-        gpio_set_level(next_device->cs_gpio_num, next_device->flags.cs_active_high); // select the next device
+        if (next_device->cs_gpio_num >= 0) {
+            gpio_set_level(next_device->cs_gpio_num, next_device->flags.cs_active_high); // select the next device
+        }
         // the WR signal (a.k.a the PCLK) generated by I2S is low level in idle stage
         // but most of 8080 LCDs require the WR line to be in high level during idle stage
         esp_rom_gpio_connect_out_signal(bus->wr_gpio_num, lcd_periph_signals.buses[bus->bus_id].wr_sig, !next_device->flags.pclk_idle_low, false);
@@ -639,9 +691,13 @@ static IRAM_ATTR void lcd_default_isr_handler(void *args)
         // process finished transaction
         if (trans_desc) {
             assert(trans_desc->i80_device == cur_device && "transaction device mismatch");
+            // decrease pm lock reference count
+            if (bus->pm_lock) {
+                esp_pm_lock_release(bus->pm_lock);
+            }
             // device callback
             if (trans_desc->trans_done_cb) {
-                if (trans_desc->trans_done_cb(&cur_device->base, trans_desc->cb_user_data, NULL)) {
+                if (trans_desc->trans_done_cb(&cur_device->base, NULL, trans_desc->user_ctx)) {
                     need_yield = true;
                 }
             }
@@ -679,6 +735,10 @@ static IRAM_ATTR void lcd_default_isr_handler(void *args)
                 i2s_ll_tx_reset(bus->hal.dev); // reset TX engine first
                 i2s_ll_start_out_link(bus->hal.dev);
                 esp_rom_delay_us(1);
+                // increase the pm lock reference count before starting a new transaction
+                if (bus->pm_lock) {
+                    esp_pm_lock_acquire(bus->pm_lock);
+                }
                 i2s_ll_tx_start(bus->hal.dev);
                 break; // exit for-each loop
             }

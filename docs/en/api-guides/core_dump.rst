@@ -1,7 +1,7 @@
 Core Dump
 =========
 
-{IDF_TARGET_ROM_ELF:default="https://dl.espressif.com/dl/esp32_rom.elf", esp32="https://dl.espressif.com/dl/esp32_rom.elf", esp32s2="https://dl.espressif.com/dl/esp32s2_rom.elf", esp32c3="https://dl.espressif.com/dl/esp32c3_rev3_rom.elf"}
+{IDF_TARGET_ROM_ELF:default="https://dl.espressif.com/dl/esp32_rom.elf", esp32="https://dl.espressif.com/dl/esp32_rom.elf", esp32s2="https://dl.espressif.com/dl/esp32s2_rom.elf", esp32s3="https://dl.espressif.com/dl/esp32s3_rom.elf", esp32c3="https://dl.espressif.com/dl/esp32c3_rev3_rom.elf"}
 
 Overview
 --------
@@ -172,7 +172,7 @@ Generic command syntax: ``espcoredump.py [options] command [args]``
 
 :Script Options:
 
-   --chip {auto,esp32,esp32s2,esp32c3}
+   --chip {auto,esp32,esp32s2,esp32s3,esp32c3}
                      Target chip type. Default value is "auto"
 
    --port PORT, -p PORT  Serial port device. Either "chip" or "port" need to be specified to determine the port when you have multi-target connected at the same time.

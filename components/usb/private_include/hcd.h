@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -180,9 +180,10 @@ typedef struct {
  * @brief Installs the Host Controller Driver
  *
  * - Allocates memory and interrupt resources for the HCD and underlying ports
- * - Setups up HCD to use internal PHY
  *
  * @note This function must be called before any other HCD function is called
+ * @note Before calling this function, the Host Controller must already be un-clock gated and reset. The USB PHY
+ *       (internal or external, and associated GPIOs) must already be configured.
  *
  * @param config HCD configuration
  * @retval ESP_OK: HCD successfully installed
@@ -198,6 +199,9 @@ esp_err_t hcd_install(const hcd_config_t *config);
  *
  * Before uninstalling the HCD, the following conditions should be met:
  * - All ports must be uninitialized, all pipes freed
+ *
+ * @note This function will simply free the resources used by the HCD. The underlying Host Controller and USB PHY will
+ *       not be disabled.
  *
  * @retval ESP_OK: HCD successfully uninstalled
  * @retval ESP_ERR_INVALID_STATE: HCD is not in the right condition to be uninstalled

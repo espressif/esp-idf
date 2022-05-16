@@ -99,6 +99,7 @@
 #define HMAC_SET_MESSAGE_END_REG       ((DR_REG_HMAC_BASE) + 0x58)
 #define HMAC_SET_RESULT_FINISH_REG     ((DR_REG_HMAC_BASE) + 0x5c)
 #define HMAC_SET_INVALIDATE_JTAG_REG   ((DR_REG_HMAC_BASE) + 0x60)
+#define HMAC_INVALIDATE_JTAG           BIT(0)
 #define HMAC_SET_INVALIDATE_DS_REG     ((DR_REG_HMAC_BASE) + 0x64)
 #define HMAC_QUERY_ERROR_REG           ((DR_REG_HMAC_BASE) + 0x68)
 #define HMAC_QUERY_BUSY_REG            ((DR_REG_HMAC_BASE) + 0x6c)
@@ -107,6 +108,9 @@
 #define HMAC_RDATA_BASE                ((DR_REG_HMAC_BASE) + 0xC0)
 #define HMAC_SET_MESSAGE_PAD_REG       ((DR_REG_HMAC_BASE) + 0xF0)
 #define HMAC_ONE_BLOCK_REG             ((DR_REG_HMAC_BASE) + 0xF4)
+#define HMAC_SOFT_JTAG_CTRL_REG        ((DR_REG_HMAC_BASE) + 0xF8)
+#define HMAC_SOFT_JTAG_CTRL            BIT((0)
+#define HMAC_WR_JTAG_REG               ((DR_REG_HMAC_BASE) + 0xFC)
 
 /* AES-XTS registers */
 #define AES_XTS_PLAIN_BASE        ((DR_REG_EXT_MEM_ENC) + 0x00)

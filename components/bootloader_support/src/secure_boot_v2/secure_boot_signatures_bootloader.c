@@ -137,10 +137,13 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
 #if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 1
     int sb_result = ets_secure_boot_verify_signature(sig_block, image_digest, trusted.key_digests[0], verified_digest);
 #else
-    ets_secure_boot_key_digests_t trusted_key_digests;
+    ets_secure_boot_key_digests_t trusted_key_digests = {0};
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
         trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
     }
+    // Key revocation happens in ROM bootloader.
+    // Do NOT allow key revocation while verifying application
+    trusted_key_digests.allow_key_revoke = false;
     int sb_result = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_key_digests, verified_digest);
 #endif
     if (sb_result != SB_SUCCESS) {

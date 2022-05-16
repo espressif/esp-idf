@@ -1,17 +1,7 @@
-/**
- * Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifdef ESP_PLATFORM
@@ -631,23 +621,16 @@ int crypto_mod_exp(const uint8_t *base, size_t base_len,
 	mbedtls_mpi_init(&bn_result);
 	mbedtls_mpi_init(&bn_rinv);
 
-	mbedtls_mpi_read_binary(&bn_base, base, base_len);
-	mbedtls_mpi_read_binary(&bn_exp, power, power_len);
-	mbedtls_mpi_read_binary(&bn_modulus, modulus, modulus_len);
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&bn_base, base, base_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&bn_exp, power, power_len));
+	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&bn_modulus, modulus, modulus_len));
 
-	ret = mbedtls_mpi_exp_mod(&bn_result, &bn_base, &bn_exp, &bn_modulus,
-				  &bn_rinv);
-	if (ret < 0) {
-		mbedtls_mpi_free(&bn_base);
-		mbedtls_mpi_free(&bn_exp);
-		mbedtls_mpi_free(&bn_modulus);
-		mbedtls_mpi_free(&bn_result);
-		mbedtls_mpi_free(&bn_rinv);
-		return ret;
-	}
+	MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&bn_result, &bn_base, &bn_exp, &bn_modulus,
+					    &bn_rinv));
 
 	ret = mbedtls_mpi_write_binary(&bn_result, result, *result_len);
 
+cleanup:
 	mbedtls_mpi_free(&bn_base);
 	mbedtls_mpi_free(&bn_exp);
 	mbedtls_mpi_free(&bn_modulus);

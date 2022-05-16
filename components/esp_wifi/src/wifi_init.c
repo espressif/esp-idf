@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <esp_event.h>
 #include <esp_wifi.h>
@@ -23,10 +15,10 @@
 #include "esp_wpa.h"
 #include "esp_netif.h"
 #include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
-#include "driver/adc.h"
 #include "driver/adc2_wifi_private.h"
 #include "esp_coexist_internal.h"
 #include "esp_phy_init.h"
+#include "phy.h"
 
 #if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
@@ -64,7 +56,6 @@ uint64_t g_wifi_feature_caps =
 #endif
 0;
 
-static bool s_wifi_adc_xpd_flag;
 
 static const char* TAG = "wifi_init";
 
@@ -109,6 +100,11 @@ esp_err_t esp_wifi_deinit(void)
         return ESP_ERR_WIFI_NOT_STOPPED;
     }
 
+    if (esp_wifi_internal_reg_rxcb(WIFI_IF_STA,  NULL) != ESP_OK ||
+        esp_wifi_internal_reg_rxcb(WIFI_IF_AP,  NULL) != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to unregister Rx callbacks");
+    }
+
     esp_supplicant_deinit();
     err = esp_wifi_deinit_internal();
     if (err != ESP_OK) {
@@ -133,6 +129,10 @@ esp_err_t esp_wifi_deinit(void)
     esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
     esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
 #endif
+#if CONFIG_IDF_TARGET_ESP32C3
+    phy_init_flag();
+#endif
+    esp_wifi_power_domain_off();
     return err;
 }
 
@@ -177,6 +177,7 @@ static void esp_wifi_config_info(void)
 
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
+    esp_wifi_power_domain_on();
 #ifdef CONFIG_PM_ENABLE
     if (s_wifi_modem_sleep_lock == NULL) {
         esp_err_t err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "wifi",
@@ -237,7 +238,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);
     }
 #endif
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_init();
 #endif
     esp_wifi_set_log_level();
@@ -285,27 +286,15 @@ void wifi_apb80m_release(void)
 }
 #endif //CONFIG_PM_ENABLE
 
-/* Coordinate ADC power with other modules. This overrides the function from PHY lib. */
-// It seems that it is only required on ESP32, but we still compile it for all chips, in case it is
-// called by PHY unexpectedly.
-void set_xpd_sar(bool en)
-{
-    if (s_wifi_adc_xpd_flag == en) {
-        /* ignore repeated calls to set_xpd_sar when the state is already correct */
-        return;
-    }
-
-    s_wifi_adc_xpd_flag = en;
-    if (en) {
-        adc_power_acquire();
-    } else {
-        adc_power_release();
-    }
-}
-
 #ifndef CONFIG_ESP_WIFI_FTM_ENABLE
 void ieee80211_ftm_attach(void)
 {
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+
+#ifndef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+void net80211_softap_funcs_init(void)
+{
 }
 #endif

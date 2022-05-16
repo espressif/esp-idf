@@ -94,7 +94,9 @@ def main():  # type: () -> None
                         help='output path of the scan result')
     parser.add_argument('--exclude', nargs='*',
                         help='Ignore specified directory. Can be used multiple times.')
-    parser.add_argument('--preserve', action='store_true',
+    parser.add_argument('--extra_test_dirs', nargs='*',
+                        help='Additional directories to preserve artifacts for local tests')
+    parser.add_argument('--preserve_all', action='store_true',
                         help='add this flag to preserve artifacts for all apps')
     parser.add_argument('--build-all', action='store_true',
                         help='add this flag to build all apps')
@@ -116,7 +118,8 @@ def main():  # type: () -> None
             output_json([], target, args.build_system, args.output_path)
             SystemExit(0)
 
-    paths = set([os.path.join(str(os.getenv('IDF_PATH')), path) if not os.path.isabs(path) else path for path in args.paths])
+    idf_path = str(os.getenv('IDF_PATH'))
+    paths = set([os.path.join(idf_path, path) if not os.path.isabs(path) else path for path in args.paths])
 
     test_cases = []
     for path in paths:
@@ -126,7 +129,6 @@ def main():  # type: () -> None
             assign = _TestAppsAssignTest(path, args.ci_config_file)
         else:
             raise SystemExit(1)  # which is impossible
-
         test_cases.extend(assign.search_cases())
 
     '''
@@ -150,15 +152,16 @@ def main():  # type: () -> None
 
         if build_test_case_apps:
             scan_info_dict[target]['test_case_apps'] = set()
+            test_dirs = args.extra_test_dirs if args.extra_test_dirs else []
             for case in test_cases:
-                app_dir = case.case_info['app_dir']
-                app_target = case.case_info['target']
-                if app_target.lower() != target.lower():
-                    continue
+                if case.case_info['target'].lower() == target.lower():
+                    test_dirs.append(case.case_info['app_dir'])
+            for app_dir in test_dirs:
+                app_dir = os.path.join(idf_path, app_dir) if not os.path.isabs(app_dir) else app_dir
                 _apps = find_apps(build_system_class, app_dir, True, exclude_apps, target.lower())
                 if _apps:
                     scan_info_dict[target]['test_case_apps'].update(_apps)
-                    exclude_apps.append(app_dir)
+                    exclude_apps.extend(_apps)
         else:
             scan_info_dict[target]['test_case_apps'] = set()
 
@@ -169,7 +172,6 @@ def main():  # type: () -> None
                     find_apps(build_system_class, path, True, exclude_apps, target.lower()))
         else:
             scan_info_dict[target]['standalone_apps'] = set()
-
     test_case_apps_preserve_default = True if build_system == 'cmake' else False
     for target in SUPPORTED_TARGETS:
         apps = []
@@ -178,14 +180,14 @@ def main():  # type: () -> None
                 'app_dir': app_dir,
                 'build_system': args.build_system,
                 'target': target,
-                'preserve': args.preserve or test_case_apps_preserve_default
+                'preserve': args.preserve_all or test_case_apps_preserve_default
             })
         for app_dir in scan_info_dict[target]['standalone_apps']:
             apps.append({
                 'app_dir': app_dir,
                 'build_system': args.build_system,
                 'target': target,
-                'preserve': args.preserve
+                'preserve': args.preserve_all
             })
         output_path = os.path.join(args.output_path, 'scan_{}_{}.json'.format(target.lower(), build_system))
         with open(output_path, 'w') as fw:

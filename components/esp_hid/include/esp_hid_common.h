@@ -126,6 +126,21 @@ typedef enum {
     ESP_HID_COD_MIN_MAX
 } esp_hid_cod_min_t;
 
+/* HID transaction Types */
+typedef enum {
+    ESP_HID_TRANS_HANDSHAKE = 0,
+    ESP_HID_TRANS_CONTROL = 1,
+    ESP_HID_TRANS_GET_REPORT = 4,
+    ESP_HID_TRANS_SET_REPORT = 5,
+    ESP_HID_TRANS_GET_PROTOCOL = 6,
+    ESP_HID_TRANS_SET_PROTOCOL = 7,
+    ESP_HID_TRANS_GET_IDLE = 8,
+    ESP_HID_TRANS_SET_IDLE = 9,
+    ESP_HID_TRANS_DATA = 10,
+    ESP_HID_TRANS_DATAC = 11,
+    ESP_HID_TRANS_MAX
+} esp_hid_trans_type_t;
+
 /**
  * @brief HID report item structure
  */

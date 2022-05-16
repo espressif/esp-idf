@@ -64,7 +64,7 @@
  * used to create a synchronisation point between multiple tasks (a
  * 'rendezvous').
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup EventGroup EventGroup
  * @endcond
  */
@@ -78,7 +78,7 @@
  * xEventGroupCreate() returns an EventGroupHandle_t variable that can then
  * be used as a parameter to other event group functions.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup EventGroupHandle_t EventGroupHandle_t
  * @endcond
  * \ingroup EventGroup
@@ -94,7 +94,7 @@ typedef struct EventGroupDef_t * EventGroupHandle_t;
  * number of bits it holds is set by configUSE_16_BIT_TICKS (16 bits if set to 1,
  * 32 bits if set to 0.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup EventBits_t EventBits_t
  * @endcond
  * \ingroup EventGroup
@@ -102,7 +102,7 @@ typedef struct EventGroupDef_t * EventGroupHandle_t;
 typedef TickType_t               EventBits_t;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  * EventGroupHandle_t xEventGroupCreate( void );
@@ -152,7 +152,7 @@ typedef TickType_t               EventBits_t;
  *      // The event group was created.
  *  }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupCreate xEventGroupCreate
  * @endcond
  * \ingroup EventGroup
@@ -162,7 +162,7 @@ typedef TickType_t               EventBits_t;
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  * EventGroupHandle_t xEventGroupCreateStatic( EventGroupHandle_t * pxEventGroupBuffer );
@@ -217,7 +217,7 @@ typedef TickType_t               EventBits_t;
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  EventBits_t xEventGroupWaitBits(    EventGroupHandle_t xEventGroup,
@@ -307,7 +307,7 @@ typedef TickType_t               EventBits_t;
  *      }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupWaitBits xEventGroupWaitBits
  * @endcond
  * \ingroup EventGroup
@@ -319,7 +319,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
                                  TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToClear );
@@ -372,7 +372,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupClearBits xEventGroupClearBits
  * @endcond
  * \ingroup EventGroup
@@ -381,7 +381,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
                                   const EventBits_t uxBitsToClear ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  BaseType_t xEventGroupClearBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
@@ -432,7 +432,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupClearBitsFromISR xEventGroupClearBitsFromISR
  * @endcond
  * \ingroup EventGroup
@@ -446,7 +446,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
@@ -516,7 +516,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupSetBits xEventGroupSetBits
  * @endcond
  * \ingroup EventGroup
@@ -525,7 +525,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
                                 const EventBits_t uxBitsToSet ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  BaseType_t xEventGroupSetBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet, BaseType_t *pxHigherPriorityTaskWoken );
@@ -595,7 +595,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  *      }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupSetBitsFromISR xEventGroupSetBitsFromISR
  * @endcond
  * \ingroup EventGroup
@@ -610,7 +610,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  EventBits_t xEventGroupSync(    EventGroupHandle_t xEventGroup,
@@ -732,7 +732,7 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  * }
  *
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupSync xEventGroupSync
  * @endcond
  * \ingroup EventGroup
@@ -744,7 +744,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  EventBits_t xEventGroupGetBits( EventGroupHandle_t xEventGroup );
@@ -758,7 +758,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
  *
  * @return The event group bits at the time xEventGroupGetBits() was called.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupGetBits xEventGroupGetBits
  * @endcond
  * \ingroup EventGroup
@@ -766,7 +766,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 #define xEventGroupGetBits( xEventGroup )    xEventGroupClearBits( xEventGroup, 0 )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup );
@@ -779,7 +779,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
  *
  * @return The event group bits at the time xEventGroupGetBitsFromISR() was called.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xEventGroupGetBitsFromISR xEventGroupGetBitsFromISR
  * @endcond
  * \ingroup EventGroup
@@ -787,7 +787,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * event_groups.h
  * @code{c}
  *  void xEventGroupDelete( EventGroupHandle_t xEventGroup );
@@ -802,7 +802,7 @@ EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEG
  */
 void vEventGroupDelete( EventGroupHandle_t xEventGroup ) PRIVILEGED_FUNCTION;
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /* For internal use only. */
 void vEventGroupSetBitsCallback( void * pvEventGroup,

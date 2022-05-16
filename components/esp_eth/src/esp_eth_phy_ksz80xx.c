@@ -327,6 +327,25 @@ err:
     return ret;
 }
 
+static esp_err_t ksz80xx_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
+    esp_eth_mediator_t *eth = ksz80xx->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t ksz80xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -380,6 +399,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
     ksz8041->parent.get_addr = ksz80xx_get_addr;
     ksz8041->parent.set_addr = ksz80xx_set_addr;
     ksz8041->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz8041->parent.loopback = ksz80xx_loopback;
     ksz8041->parent.del = ksz80xx_del;
     return &(ksz8041->parent);
 err:
@@ -409,6 +429,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8081(const eth_phy_config_t *config)
     ksz8081->parent.get_addr = ksz80xx_get_addr;
     ksz8081->parent.set_addr = ksz80xx_set_addr;
     ksz8081->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz8081->parent.loopback = ksz80xx_loopback;
     ksz8081->parent.del = ksz80xx_del;
     return &(ksz8081->parent);
 err:

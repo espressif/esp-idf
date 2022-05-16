@@ -54,15 +54,16 @@ add_custom_target(partition_table_bin DEPENDS "${build_dir}/partition_table/${un
                                               "${build_dir}/partition_table/${final_partition_bin}")
 
 if(EXISTS ${partition_csv})
-    add_custom_target(partition_table
+    add_custom_target(partition-table
                         DEPENDS partition_table_bin
                         ${partition_table_display}
                         VERBATIM)
+    add_deprecated_target_alias(partition_table partition-table)
 else()
     # If the partition input CSV is not found, create a phony partition_table target that
     # fails the build. fail_at_build_time also touches CMakeCache.txt to cause a cmake run next time
     # (to pick up a new CSV if one exists, etc.)
-    fail_at_build_time(partition_table
+    fail_at_build_time(partition-table
         "Partition table CSV ${partition_csv} does not exist."
         "Either change partition table in menuconfig or create this input file.")
 endif()
@@ -81,7 +82,7 @@ if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
             VERBATIM)
     else()
         string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
-        add_custom_command(TARGET partition_table POST_BUILD
+        add_custom_command(TARGET partition-table POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E echo
                 "Partition table built but not signed. Sign partition data before flashing:"
             COMMAND ${CMAKE_COMMAND} -E echo
@@ -89,7 +90,7 @@ if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
             VERBATIM)
     endif()
 elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
-    add_custom_command(TARGET partition_table POST_BUILD
+    add_custom_command(TARGET partition-table POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "Partition table built:"
     VERBATIM)
 endif()
@@ -98,9 +99,10 @@ idf_component_get_property(main_args esptool_py FLASH_ARGS)
 idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
 
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
-    esptool_py_flash_target(partition_table-flash "${main_args}" "${sub_args}")
-    esptool_py_flash_target_image(partition_table-flash partition_table "${PARTITION_TABLE_OFFSET}"
+    esptool_py_flash_target(partition-table-flash "${main_args}" "${sub_args}")
+    esptool_py_flash_target_image(partition-table-flash partition-table "${PARTITION_TABLE_OFFSET}"
                                         "${build_dir}/partition_table/${final_partition_bin}")
-    esptool_py_flash_target_image(flash partition_table "${PARTITION_TABLE_OFFSET}"
+    esptool_py_flash_target_image(flash partition-table "${PARTITION_TABLE_OFFSET}"
                                         "${build_dir}/partition_table/${final_partition_bin}")
+    add_deprecated_target_alias(partition_table-flash partition-table-flash)
 endif()

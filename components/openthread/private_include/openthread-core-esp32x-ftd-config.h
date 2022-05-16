@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -56,21 +48,15 @@
  * verbose log level possible. See `OPENTHREAD_CONFIG_LOG_LEVEL_INIT` to set the initial log level.
  *
  */
-#ifndef OPENTHREAD_CONFIG_LOG_LEVEL
-#if CONFIG_LOG_DEFAULT_LEVEL_NONE
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NONE
-#elif CONFIG_LOG_DEFAULT_LEVEL_ERROR
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_CRIT
-#elif CONFIG_LOG_DEFAULT_LEVEL_WARN
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_WARN
-#elif CONFIG_LOG_DEFAULT_LEVEL_INFO
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_INFO
-#elif CONFIG_LOG_DEFAULT_LEVEL_DEBUG
 #define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
-#elif CONFIG_LOG_DEFAULT_LEVEL_VERBOSE
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
-#endif
-#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE
+ *
+ * Define as 1 to enable dynamic log level control.
+ *
+ */
+#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE 1
 
 #define OPENTHREAD_CONFIG_LOG_API 1
 #define OPENTHREAD_CONFIG_LOG_ARP 1
@@ -95,7 +81,7 @@
  *
  * The number of message buffers in buffer pool
  */
-#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 50
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS
 
 /**
  * @def OPENTHREAD_CONFIG_COAP_API_ENABLE
@@ -124,6 +110,16 @@
  */
 #ifndef OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE
 #define OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_TCP_ENABLE
+ *
+ * Define to 0 to disable TCP
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_TCP_ENABLE
+#define OPENTHREAD_CONFIG_TCP_ENABLE 0
 #endif
 
 #if CONFIG_OPENTHREAD_BORDER_ROUTER
@@ -186,6 +182,16 @@
  */
 #ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE
+ *
+ * Define to 1 to enable DNS-SD Server support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE
+#define OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE 1
 #endif
 
 #endif // CONFIG_OPENTHREAD_BORDER_ROUTER
@@ -363,6 +369,16 @@
 
 #if CONFIG_OPENTHREAD_DIAG
 #define OPENTHREAD_CONFIG_DIAG_ENABLE 1
+#endif
+
+#if CONFIG_OPENTHREAD_SRP_CLIENT
+#ifndef OPENTHREAD_CONFIG_ECDSA_ENABLE
+#define OPENTHREAD_CONFIG_ECDSA_ENABLE 1
+#endif
+
+#ifndef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
+#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
+#endif
 #endif
 
 #if CONFIG_OPENTHREAD_FTD

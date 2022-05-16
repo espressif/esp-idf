@@ -1,7 +1,7 @@
 /*  Bluetooth Mesh */
 
 /*
- * Copyright (c) 2017 Intel Corporation
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */

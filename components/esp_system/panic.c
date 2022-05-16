@@ -399,7 +399,7 @@ void IRAM_ATTR __attribute__((noreturn, no_sanitize_undefined)) panic_abort(cons
 #endif
 #endif
 
-    *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
+    *((volatile int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
     while (1);
 }
 

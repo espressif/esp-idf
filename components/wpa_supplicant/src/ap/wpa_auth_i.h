@@ -202,7 +202,7 @@ int wpa_write_ftie(struct wpa_auth_config *conf, const u8 *r0kh_id,
 		   u8 *buf, size_t len, const u8 *subelem,
 		   size_t subelem_len);
 int wpa_auth_derive_ptk_ft(struct wpa_state_machine *sm, const u8 *pmk,
-			   struct wpa_ptk *ptk, size_t ptk_len);
+			   struct wpa_ptk *ptk);
 struct wpa_ft_pmk_cache * wpa_ft_pmk_cache_init(void);
 void wpa_ft_pmk_cache_deinit(struct wpa_ft_pmk_cache *cache);
 void wpa_ft_install_ptk(struct wpa_state_machine *sm);

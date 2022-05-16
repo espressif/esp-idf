@@ -362,7 +362,7 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 			const u8 *wpa_ie, size_t wpa_ie_len/*,
 			const u8 *mdie, size_t mdie_len*/)
 {
-	struct wpa_ie_data data;
+	struct wpa_ie_data data = {0};
 	int ciphers, key_mgmt, res, version;
 	u32 selector;
 

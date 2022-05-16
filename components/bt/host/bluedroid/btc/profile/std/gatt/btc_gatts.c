@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 
@@ -297,7 +289,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                     break;
             }
             case ESP_GATT_UUID_SEC_SERVICE:{
-                tBTA_GATT_SRVC_ID srvc_id;
+                tBTA_GATT_SRVC_ID srvc_id = {0};
                 esp_gatt_srvc_id_t        esp_srvc_id;
 
                 esp_srvc_id.id.inst_id = srvc_inst_id;
@@ -565,7 +557,7 @@ static void btc_gatts_cb_param_copy_free(btc_msg_t *msg, tBTA_GATTS *p_data)
 static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 {
     bt_status_t status;
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTS;

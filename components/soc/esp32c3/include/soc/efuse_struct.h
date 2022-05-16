@@ -22,7 +22,7 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t rd_dis:                      7;             /*Set this bit to disable reading from BlOCK4-10.*/
-            uint32_t dis_rtc_ram_boot:            1;             /*Set this bit to disable boot from RTC RAM.*/
+            uint32_t rpt4_reserved5:              1;             /*Reserved*/
             uint32_t dis_icache:                  1;             /*Set this bit to disable Icache.*/
             uint32_t dis_usb_jtag:                1;             /*Set this bit to disable function of usb switch to jtag in module of usb device.*/
             uint32_t dis_download_icache:         1;             /*Set this bit to disable Icache in download mode (boot_mode[3:0] is 0  1  2  3  6  7).*/
@@ -76,14 +76,11 @@ typedef volatile struct efuse_dev_s {
             uint32_t dis_download_mode:        1;                /*Set this bit to disable download mode (boot_mode[3:0] = 0  1  2  3  6  7).*/
             uint32_t dis_legacy_spi_boot:      1;                /*Set this bit to disable Legacy SPI boot mode (boot_mode[3:0] = 4).*/
             uint32_t uart_print_channel:       1;                /*Selectes the default UART print channel. 0: UART0. 1: UART1.*/
-            uint32_t flash_ecc_mode:           1;                /*Set ECC mode in ROM  0: ROM would Enable Flash ECC 16to18 byte mode. 1:ROM would use 16to17 byte mode.*/
+            uint32_t rpt4_reserved8:           1;                /*Reserved (used for four backups method).*/
             uint32_t dis_usb_download_mode:    1;                /*Set this bit to disable UART download mode through USB.*/
             uint32_t enable_security_download: 1;                /*Set this bit to enable secure UART download mode.*/
             uint32_t uart_print_control:       2;                /*Set the default UARTboot message output mode. 00: Enabled. 01: Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
-            uint32_t pin_power_selection:      1;                /*GPIO33-GPIO37 power supply selection in ROM code. 0: VDD3P3_CPU. 1: VDD_SPI.*/
-            uint32_t flash_type:               1;                /*Set the maximum lines of SPI flash. 0: four lines. 1: eight lines.*/
-            uint32_t flash_page_size:          2;                /*Set Flash page size.*/
-            uint32_t flash_ecc_en:             1;                /*Set 1 to enable ECC for flash boot.*/
+            uint32_t rpt4_reserved7:           5;                /*Reserved (used for four backups method).*/
             uint32_t force_send_resume:        1;                /*Set this bit to force ROM code to send a resume command during SPI boot.*/
             uint32_t secure_version:          16;                /*Secure version (used by ESP-IDF anti-rollback feature).*/
             uint32_t rpt4_reserved1:           2;                /*Reserved (used for four backups method).*/
@@ -106,7 +103,7 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t rd_dis:                      7;             /*The value of RD_DIS.*/
-            uint32_t dis_rtc_ram_boot:            1;             /*The value of DIS_RTC_RAM_BOOT.*/
+            uint32_t rpt4_reserved5:              1;             /*Reserved*/
             uint32_t dis_icache:                  1;             /*The value of DIS_ICACHE.*/
             uint32_t dis_usb_jtag:                1;             /*The value of DIS_USB_JTAG.*/
             uint32_t dis_download_icache:         1;             /*The value of DIS_DOWNLOAD_ICACHE.*/
@@ -160,14 +157,11 @@ typedef volatile struct efuse_dev_s {
             uint32_t dis_download_mode:        1;                /*The value of DIS_DOWNLOAD_MODE.*/
             uint32_t dis_legacy_spi_boot:      1;                /*The value of DIS_LEGACY_SPI_BOOT.*/
             uint32_t uart_print_channel:       1;                /*The value of UART_PRINT_CHANNEL.*/
-            uint32_t flash_ecc_mode:           1;                /*The value of FLASH_ECC_MODE.*/
+            uint32_t rpt4_reserved8:           1;                /*Reserved.*/
             uint32_t dis_usb_download_mode:    1;                /*The value of DIS_USB_DOWNLOAD_MODE.*/
             uint32_t enable_security_download: 1;                /*The value of ENABLE_SECURITY_DOWNLOAD.*/
             uint32_t uart_print_control:       2;                /*The value of UART_PRINT_CONTROL.*/
-            uint32_t pin_power_selection:      1;                /*The value of PIN_POWER_SELECTION.*/
-            uint32_t flash_type:               1;                /*The value of FLASH_TYPE.*/
-            uint32_t flash_page_size:          2;                /*The value of FLASH_PAGE_SIZE.*/
-            uint32_t flash_ecc_en:             1;                /*The value of FLASH_ECC_EN.*/
+            uint32_t rpt4_reserved7:           5;                /*Reserved.*/
             uint32_t force_send_resume:        1;                /*The value of FORCE_SEND_RESUME.*/
             uint32_t secure_version:          16;                /*The value of SECURE_VERSION.*/
             uint32_t rpt4_reserved1:           2;                /*Reserved.*/
@@ -274,7 +268,7 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t rd_dis_err:                      7;         /*If any bit in RD_DIS is 1  then it indicates a programming error.*/
-            uint32_t dis_rtc_ram_boot_err:            1;         /*If DIS_RTC_RAM_BOOT is 1  then it indicates a programming error.*/
+            uint32_t rpt4_reserved5_err:              1;         /*Reserved.*/
             uint32_t dis_icache_err:                  1;         /*If DIS_ICACHE is 1  then it indicates a programming error.*/
             uint32_t dis_usb_jtag_err:                1;         /*If DIS_USB_JTAG is 1  then it indicates a programming error.*/
             uint32_t dis_download_icache:             1;         /*If DIS_DOWNLOAD_ICACHE is 1  then it indicates a programming error.*/
@@ -328,21 +322,17 @@ typedef volatile struct efuse_dev_s {
             uint32_t dis_download_mode_err:        1;            /*If DIS_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
             uint32_t dis_legacy_spi_boot_err:      1;            /*If DIS_LEGACY_SPI_BOOT is 1  then it indicates a programming error.*/
             uint32_t uart_print_channel_err:       1;            /*If UART_PRINT_CHANNEL is 1  then it indicates a programming error.*/
-            uint32_t flash_ecc_mode_err:           1;            /*If FLASH_ECC_MODE is 1  then it indicates a programming error.*/
+            uint32_t rpt4_reserved8_err:           1;            /*Reserved.*/
             uint32_t dis_usb_download_mode_err:    1;            /*If DIS_USB_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
             uint32_t enable_security_download_err: 1;            /*If ENABLE_SECURITY_DOWNLOAD is 1  then it indicates a programming error.*/
             uint32_t uart_print_control_err:       2;            /*If any bit in UART_PRINT_CONTROL is 1  then it indicates a programming error.*/
-            uint32_t pin_power_selection_err:      1;            /*If PIN_POWER_SELECTION is 1  then it indicates a programming error.*/
-            uint32_t flash_type_err:               1;            /*If FLASH_TYPE is 1  then it indicates a programming error.*/
-            uint32_t flash_page_size:              2;            /*If any bits in FLASH_PAGE_SIZE is 1  then it indicates a programming error.*/
-            uint32_t flash_ecc_en:                 1;            /*If FLASH_ECC_EN_ERR is 1  then it indicates a programming error.*/
+            uint32_t rpt4_reserved7_err:           5;            /*Reserved*/
             uint32_t force_send_resume_err:        1;            /*If FORCE_SEND_RESUME is 1  then it indicates a programming error.*/
             uint32_t secure_version_err:          16;            /*If any bit in SECURE_VERSION is 1  then it indicates a programming error.*/
             uint32_t rpt4_reserved1_err:           2;            /*Reserved.*/
         };
         uint32_t val;
     } rd_repeat_err3;
-    uint32_t reserved_18c;
     union {
         struct {
             uint32_t rpt4_reserved4_err:24;                      /*Reserved.*/
@@ -350,6 +340,7 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_err4;
+    uint32_t reserved_190;
     uint32_t reserved_194;
     uint32_t reserved_198;
     uint32_t reserved_19c;

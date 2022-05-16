@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <errno.h>
@@ -1010,6 +1002,41 @@ static void btc_ble_mesh_proxy_client_filter_status_recv_cb(uint8_t conn_handle,
 }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+static void btc_ble_mesh_proxy_server_connect_cb(uint8_t conn_handle)
+{
+    esp_ble_mesh_prov_cb_param_t mesh_param = {0};
+
+    if (conn_handle >= BLE_MESH_MAX_CONN) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    BT_DBG("%s", __func__);
+
+    mesh_param.proxy_server_connected.conn_handle = conn_handle;
+
+    btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_PROXY_SERVER_CONNECTED_EVT);
+}
+
+static void btc_ble_mesh_proxy_server_disconnect_cb(uint8_t conn_handle, uint8_t reason)
+{
+    esp_ble_mesh_prov_cb_param_t mesh_param = {0};
+
+    if (conn_handle >= BLE_MESH_MAX_CONN) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    BT_DBG("%s", __func__);
+
+    mesh_param.proxy_server_disconnected.conn_handle = conn_handle;
+    mesh_param.proxy_server_disconnected.reason = reason;
+
+    btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_PROXY_SERVER_DISCONNECTED_EVT);
+}
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
+
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
 {
     if (!bt_mesh_is_initialized()) {
@@ -1777,6 +1804,10 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         bt_mesh_proxy_client_set_disconn_cb(btc_ble_mesh_proxy_client_disconnect_cb);
         bt_mesh_proxy_client_set_filter_status_cb(btc_ble_mesh_proxy_client_filter_status_recv_cb);
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
+#if CONFIG_BLE_MESH_GATT_PROXY_SERVER
+        bt_mesh_proxy_server_set_conn_cb(btc_ble_mesh_proxy_server_connect_cb);
+        bt_mesh_proxy_server_set_disconn_cb(btc_ble_mesh_proxy_server_disconnect_cb);
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
         int err_code = bt_mesh_init((struct bt_mesh_prov *)arg->mesh_init.prov,
                                     (struct bt_mesh_comp *)arg->mesh_init.comp);
         /* Give the semaphore when BLE Mesh initialization is finished. */

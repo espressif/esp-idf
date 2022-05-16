@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 3f91b5a37afbcdf1379820626a92e69c
+// md5_digest_table 720eb12a076091cb1a236c15d9fa3308
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -155,10 +155,6 @@ static const esp_efuse_desc_t RD_DIS_SYS_DATA_PART2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // Read protection for EFUSE_BLK10. SYS_DATA_PART2,
 };
 
-static const esp_efuse_desc_t DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // Disable boot from RTC RAM,
-};
-
 static const esp_efuse_desc_t DIS_ICACHE[] = {
     {EFUSE_BLK0, 40, 1}, 	 // Disable Icache,
 };
@@ -177,10 +173,6 @@ static const esp_efuse_desc_t DIS_USB_DEVICE[] = {
 
 static const esp_efuse_desc_t DIS_FORCE_DOWNLOAD[] = {
     {EFUSE_BLK0, 44, 1}, 	 // Disable force chip go to download mode function,
-};
-
-static const esp_efuse_desc_t DIS_USB[] = {
-    {EFUSE_BLK0, 45, 1}, 	 // Disable USB function,
 };
 
 static const esp_efuse_desc_t DIS_CAN[] = {
@@ -299,10 +291,6 @@ static const esp_efuse_desc_t UART_PRINT_CHANNEL[] = {
     {EFUSE_BLK0, 130, 1}, 	 // 0: UART0. 1: UART1,
 };
 
-static const esp_efuse_desc_t FLASH_ECC_MODE[] = {
-    {EFUSE_BLK0, 131, 1}, 	 // Set this bit to set flsah ecc mode. 0:flash ecc 16to18 byte mode. 1:flash ecc 16to17 byte mode,
-};
-
 static const esp_efuse_desc_t DIS_USB_DOWNLOAD_MODE[] = {
     {EFUSE_BLK0, 132, 1}, 	 // Disable download through USB,
 };
@@ -313,22 +301,6 @@ static const esp_efuse_desc_t ENABLE_SECURITY_DOWNLOAD[] = {
 
 static const esp_efuse_desc_t UART_PRINT_CONTROL[] = {
     {EFUSE_BLK0, 134, 2}, 	 // b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.,
-};
-
-static const esp_efuse_desc_t PIN_POWER_SELECTION[] = {
-    {EFUSE_BLK0, 136, 1}, 	 // GPIO33-GPIO37 power supply selection in ROM code. 0:VDD3P3_CPU. 1:VDD_SPI.,
-};
-
-static const esp_efuse_desc_t FLASH_TYPE[] = {
-    {EFUSE_BLK0, 137, 1}, 	 // Connected Flash interface type. 0: 4 data line. 1: 8 data line,
-};
-
-static const esp_efuse_desc_t FLASH_PAGE_SIZE[] = {
-    {EFUSE_BLK0, 138, 2}, 	 // Flash page size,
-};
-
-static const esp_efuse_desc_t FLASH_ECC_EN[] = {
-    {EFUSE_BLK0, 140, 1}, 	 // Enable ECC for flash boot,
 };
 
 static const esp_efuse_desc_t FORCE_SEND_RESUME[] = {
@@ -691,11 +663,6 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[] = {
-    &DIS_RTC_RAM_BOOT[0],    		// Disable boot from RTC RAM
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_DIS_ICACHE[] = {
     &DIS_ICACHE[0],    		// Disable Icache
     NULL
@@ -718,11 +685,6 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DEVICE[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[] = {
     &DIS_FORCE_DOWNLOAD[0],    		// Disable force chip go to download mode function
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_USB[] = {
-    &DIS_USB[0],    		// Disable USB function
     NULL
 };
 
@@ -871,11 +833,6 @@ const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CHANNEL[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_ECC_MODE[] = {
-    &FLASH_ECC_MODE[0],    		// Set this bit to set flsah ecc mode. 0:flash ecc 16to18 byte mode. 1:flash ecc 16to17 byte mode
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DOWNLOAD_MODE[] = {
     &DIS_USB_DOWNLOAD_MODE[0],    		// Disable download through USB
     NULL
@@ -888,26 +845,6 @@ const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[] = {
     &UART_PRINT_CONTROL[0],    		// b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PIN_POWER_SELECTION[] = {
-    &PIN_POWER_SELECTION[0],    		// GPIO33-GPIO37 power supply selection in ROM code. 0:VDD3P3_CPU. 1:VDD_SPI.
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_TYPE[] = {
-    &FLASH_TYPE[0],    		// Connected Flash interface type. 0: 4 data line. 1: 8 data line
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_PAGE_SIZE[] = {
-    &FLASH_PAGE_SIZE[0],    		// Flash page size
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_FLASH_ECC_EN[] = {
-    &FLASH_ECC_EN[0],    		// Enable ECC for flash boot
     NULL
 };
 

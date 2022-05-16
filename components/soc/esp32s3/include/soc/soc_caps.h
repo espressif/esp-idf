@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 // The long term plan is to have a single soc_caps.h for all peripherals.
 // During the refactoring and multichip support development process, we
 // separate these information into periph_caps.h for each peripheral and
@@ -6,6 +12,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_ADC_SUPPORTED               1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
@@ -15,7 +22,9 @@
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
+#define SOC_BT_SUPPORTED                1
 #define SOC_USB_OTG_SUPPORTED           1
+#define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
@@ -30,17 +39,34 @@
 #define SOC_PSRAM_DMA_CAPABLE           1
 #define SOC_XT_WDT_SUPPORTED            1
 
-
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-#define SOC_ADC_PERIPH_NUM              (2)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) (10)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-#define SOC_ADC_MAX_BITWIDTH            (12)
-#define SOC_ADC_SUPPORT_RTC_CTRL        (1)
-#define SOC_ADC_ARBITER_SUPPORTED       (1)
+/*!< SAR ADC Module*/
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_ARBITER_SUPPORTED               1
+#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (24)    //Two pattern table, each contains 12 items. Each item takes 1 byte
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (13)
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (12)
+
+/*!< Calibration */
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)
@@ -74,6 +100,7 @@
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
+#define SOC_DEDIC_GPIO_OUT_AUTO_ENABLE  (1) /*!< Dedicated GPIO output attribution is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 #include "i2c_caps.h"
@@ -100,6 +127,7 @@
 #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
+#define SOC_MCPWM_SWSYNC_CAN_PROPAGATE       (1)    ///< Software sync event can be routed to its output
 #define SOC_MCPWM_BASE_CLK_HZ       (160000000ULL)  ///< Base Clock frequency of 160MHz
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
@@ -112,16 +140,17 @@
 #define SOC_PCNT_THRES_POINT_PER_UNIT (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
-#define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
-#define SOC_RMT_TX_CANDIDATES_PER_GROUP (4)  /*!< Number of channels that capable of Transmit in each group */
-#define SOC_RMT_RX_CANDIDATES_PER_GROUP (4)  /*!< Number of channels that capable of Receive in each group */
-#define SOC_RMT_CHANNELS_PER_GROUP      (8)  /*!< Total 8 channels */
-#define SOC_RMT_MEM_WORDS_PER_CHANNEL   (48) /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
-#define SOC_RMT_SUPPORT_RX_PINGPONG     (1)  /*!< Support Ping-Pong mode on RX path */
-#define SOC_RMT_SUPPORT_RX_DEMODULATION (1)  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
-#define SOC_RMT_SUPPORT_TX_LOOP_COUNT   (1)  /*!< Support transmit specified number of cycles in loop mode */
-#define SOC_RMT_SUPPORT_TX_SYNCHRO      (1)  /*!< Support coordinate a group of TX channels to start simultaneously */
-#define SOC_RMT_SUPPORT_XTAL            (1)  /*!< Support set XTAL clock as the RMT clock source */
+#define SOC_RMT_GROUPS                    (1)  /*!< One RMT group */
+#define SOC_RMT_TX_CANDIDATES_PER_GROUP   (4)  /*!< Number of channels that capable of Transmit in each group */
+#define SOC_RMT_RX_CANDIDATES_PER_GROUP   (4)  /*!< Number of channels that capable of Receive in each group */
+#define SOC_RMT_CHANNELS_PER_GROUP        (8)  /*!< Total 8 channels */
+#define SOC_RMT_MEM_WORDS_PER_CHANNEL     (48) /*!< Each channel owns 48 words memory (1 word = 4 Bytes) */
+#define SOC_RMT_SUPPORT_RX_PINGPONG       (1)  /*!< Support Ping-Pong mode on RX path */
+#define SOC_RMT_SUPPORT_RX_DEMODULATION   (1)  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
+#define SOC_RMT_SUPPORT_TX_LOOP_COUNT     (1)  /*!< Support transmit specified number of cycles in loop mode */
+#define SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP  (1)  /*!< Hardware support of auto-stop in loop mode */
+#define SOC_RMT_SUPPORT_TX_SYNCHRO        (1)  /*!< Support coordinate a group of TX channels to start simultaneously */
+#define SOC_RMT_SUPPORT_XTAL              (1)  /*!< Support set XTAL clock as the RMT clock source */
 
 
 /*-------------------------- LCD CAPS ----------------------------------------*/
@@ -176,6 +205,7 @@
 #define SOC_SPIRAM_SUPPORTED            1
 
 /*-------------------------- SYS TIMER CAPS ----------------------------------*/
+#define SOC_TOUCH_VERSION_2                (1)  // Hardware version of touch sensor
 #define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM             (3)  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO          (32) // Bit width of systimer low part
@@ -192,7 +222,12 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#include "touch_sensor_caps.h"
+#define SOC_TOUCH_SENSOR_NUM                (15) /*! 15 Touch channels */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)  /* Sopport touch proximity channel number. */
+#define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED (1) /*Sopport touch proximity channel measure done interrupt type. */
+
+#define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)  /*!<If set touch threshold max value, The touch sensor can't be in touched status */
+#define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #include "twai_caps.h"
@@ -202,6 +237,7 @@
 
 #define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
+#define SOC_UART_REQUIRE_CORE_RESET (1)
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_PERIPH_NUM 1
@@ -258,6 +294,10 @@
 
 #define SOC_PM_SUPPORT_TAGMEM_PD        (1)
 
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
+
+#define SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY   (1)
+
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
@@ -278,6 +318,9 @@
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
+#define SOC_SPI_MEM_SUPPORT_OPI_MODE                      (1)
+#define SOC_SPI_MEM_SUPPORT_TIME_TUNING                   (1)
+
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
 

@@ -1,16 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #include "freertos/xtensa_context.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -29,13 +22,11 @@
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/rtc_cntl_reg.h"
-#if CONFIG_IDF_TARGET_ESP32S2
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#endif
-#elif CONFIG_IDF_TARGET_ESP32S3
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#include "esp32s3/memprot.h"
+#else
+#include "esp_memprot.h"
 #endif
 #endif
 #endif // CONFIG_IDF_TARGET_ESP32
@@ -44,6 +35,7 @@ void panic_print_registers(const void *f, int core)
 {
     XtExcFrame *frame = (XtExcFrame *) f;
     int *regs = (int *)frame;
+    (void)regs;
 
     const char *sdesc[] = {
         "PC      ", "PS      ", "A0      ", "A1      ", "A2      ", "A3      ", "A4      ", "A5      ",
@@ -115,6 +107,7 @@ static void print_illegal_instruction_details(const void *f)
         return;
     }
     volatile uint32_t *pepc = (uint32_t *)epc;
+    (void)pepc;
 
     panic_print_str("Memory dump at 0x");
     panic_print_hex(epc);
@@ -269,17 +262,13 @@ static inline void print_memprot_err_details(const void *f)
 {
     uint32_t *fault_addr;
     uint32_t op_type, op_subtype;
-    char *operation_type;
+    const char *operation_type;
 
     mem_type_prot_t mem_type = esp_memprot_get_active_intr_memtype();
     if (mem_type != MEMPROT_NONE) {
-#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
         if (esp_memprot_get_fault_status(mem_type, &fault_addr, &op_type, &op_subtype) != ESP_OK) {
             op_type = MEMPROT_OP_INVALID;
         }
-#else
-        esp_memprot_get_fault_status(mem_type, &fault_addr, &op_type, &op_subtype);
-#endif
     }
 
     if (op_type == MEMPROT_OP_INVALID) {
@@ -427,11 +416,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         "Coprocessor exception",
         "Interrupt wdt timeout on CPU0",
         "Interrupt wdt timeout on CPU1",
-#if CONFIG_IDF_TARGET_ESP32
         "Cache disabled but cached memory region accessed",
-#elif CONFIG_IDF_TARGET_ESP32S2
-        "Cache error",
-#endif
     };
 
     info->reason = pseudo_reason[0];
@@ -446,9 +431,11 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->exception = PANIC_EXCEPTION_DEBUG;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2
+    //MV note: ESP32S3 PMS handling?
+
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (frame->exccause == PANIC_RSN_CACHEERR) {
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && CONFIG_IDF_TARGET_ESP32S2
         if ( esp_memprot_is_intr_ena_any() ) {
             info->details = print_memprot_err_details;
             info->reason = "Memory protection fault";

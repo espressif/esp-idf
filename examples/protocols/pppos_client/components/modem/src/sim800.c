@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdlib.h>
 #include <string.h>
 #include "esp_log.h"
@@ -92,6 +84,7 @@ static esp_err_t sim800_set_working_mode(modem_dce_t *dce, modem_mode_t mode)
             DCE_CHECK(dce->state == MODEM_STATE_SUCCESS, "sync failed", err);
         } else {
             DCE_CHECK(dce->state == MODEM_STATE_SUCCESS, "enter command mode failed", err);
+            vTaskDelay(pdMS_TO_TICKS(1000)); // spec: 1s delay after `+++` command
         }
         ESP_LOGD(DCE_TAG, "enter command mode ok");
         dce->mode = MODEM_COMMAND_MODE;

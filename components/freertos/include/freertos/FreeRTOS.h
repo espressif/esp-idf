@@ -53,13 +53,9 @@
 #endif
 /* *INDENT-ON* */
 
-#ifdef ESP_PLATFORM
-/* for likely and unlikely */
-#include "esp_compiler.h"
-#endif // ESP_PLATFORM
-
 /* Application specific configuration options. */
-#include "freertos/FreeRTOSConfig.h"
+#include "FreeRTOSConfig.h"
+
 /* Basic FreeRTOS definitions. */
 #include "projdefs.h"
 
@@ -267,11 +263,11 @@
     #define configASSERT_DEFINED    1
 #endif
 
-/* configPRECONDITION should be resolve to configASSERT.
+/* configPRECONDITION should be defined as configASSERT.
  * The CBMC proofs need a way to track assumptions and assertions.
- * A configPRECONDITION statement should express an implicit invariant or assumption made.
- * A configASSERT statement should express an invariant that must hold explicit before calling
- * the code. */
+ * A configPRECONDITION statement should express an implicit invariant or
+ * assumption made.  A configASSERT statement should express an invariant that must
+ * hold explicit before calling the code. */
 #ifndef configPRECONDITION
     #define configPRECONDITION( X )    configASSERT( X )
     #define configPRECONDITION_DEFINED    0
@@ -281,6 +277,10 @@
 
 #ifndef portMEMORY_BARRIER
     #define portMEMORY_BARRIER()
+#endif
+
+#ifndef portSOFTWARE_BARRIER
+    #define portSOFTWARE_BARRIER()
 #endif
 
 /* The timers module relies on xTaskGetSchedulerState(). */
@@ -488,9 +488,15 @@
     #define traceCREATE_COUNTING_SEMAPHORE_FAILED()
 #endif
 
+#ifndef traceQUEUE_SET_SEND
+    #define traceQUEUE_SET_SEND    traceQUEUE_SEND
+#endif
+
+#ifdef ESP_PLATFORM
 #ifndef traceQUEUE_SEMAPHORE_RECEIVE
     #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
 #endif
+#endif // ESP_PLATFORM
 
 #ifndef traceQUEUE_SEND
     #define traceQUEUE_SEND( pxQueue )
@@ -544,6 +550,7 @@
     #define traceQUEUE_DELETE( pxQueue )
 #endif
 
+#ifdef ESP_PLATFORM
 #ifndef traceQUEUE_GIVE_FROM_ISR
     #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
 #endif
@@ -551,6 +558,7 @@
 #ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
     #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
 #endif
+#endif // ESP_PLATFORM
 
 #ifndef traceTASK_CREATE
     #define traceTASK_CREATE( pxNewTCB )
@@ -677,31 +685,31 @@
 #endif
 
 #ifndef traceTASK_NOTIFY_TAKE_BLOCK
-    #define traceTASK_NOTIFY_TAKE_BLOCK()
+    #define traceTASK_NOTIFY_TAKE_BLOCK( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY_TAKE
-    #define traceTASK_NOTIFY_TAKE()
+    #define traceTASK_NOTIFY_TAKE( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY_WAIT_BLOCK
-    #define traceTASK_NOTIFY_WAIT_BLOCK()
+    #define traceTASK_NOTIFY_WAIT_BLOCK( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY_WAIT
-    #define traceTASK_NOTIFY_WAIT()
+    #define traceTASK_NOTIFY_WAIT( uxIndexToWait )
 #endif
 
 #ifndef traceTASK_NOTIFY
-    #define traceTASK_NOTIFY()
+    #define traceTASK_NOTIFY( uxIndexToNotify )
 #endif
 
 #ifndef traceTASK_NOTIFY_FROM_ISR
-    #define traceTASK_NOTIFY_FROM_ISR()
+    #define traceTASK_NOTIFY_FROM_ISR( uxIndexToNotify )
 #endif
 
 #ifndef traceTASK_NOTIFY_GIVE_FROM_ISR
-    #define traceTASK_NOTIFY_GIVE_FROM_ISR()
+    #define traceTASK_NOTIFY_GIVE_FROM_ISR( uxIndexToNotify )
 #endif
 
 #ifndef traceSTREAM_BUFFER_CREATE_FAILED
@@ -756,6 +764,7 @@
     #define traceSTREAM_BUFFER_RECEIVE_FROM_ISR( xStreamBuffer, xReceivedLength )
 #endif
 
+#ifdef ESP_PLATFORM
 #ifndef traceISR_EXIT_TO_SCHEDULER
     #define traceISR_EXIT_TO_SCHEDULER()
 #endif
@@ -767,6 +776,7 @@
 #ifndef traceISR_ENTER
     #define traceISR_ENTER(_n_)
 #endif
+#endif // ESP_PLATFORM
 
 #ifndef configGENERATE_RUN_TIME_STATS
     #define configGENERATE_RUN_TIME_STATS    0
@@ -890,6 +900,14 @@
     #define configUSE_TASK_NOTIFICATIONS    1
 #endif
 
+#ifndef configTASK_NOTIFICATION_ARRAY_ENTRIES
+    #define configTASK_NOTIFICATION_ARRAY_ENTRIES    1
+#endif
+
+#if configTASK_NOTIFICATION_ARRAY_ENTRIES < 1
+    #error configTASK_NOTIFICATION_ARRAY_ENTRIES must be at least 1
+#endif
+
 #ifndef configUSE_POSIX_ERRNO
     #define configUSE_POSIX_ERRNO    0
 #endif
@@ -906,6 +924,11 @@
 #ifndef configSUPPORT_DYNAMIC_ALLOCATION
     /* Defaults to 1 for backward compatibility. */
     #define configSUPPORT_DYNAMIC_ALLOCATION    1
+#endif
+
+#ifndef configSTACK_ALLOCATION_FROM_SEPARATE_HEAP
+    /* Defaults to 0 for backward compatibility. */
+    #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP   0
 #endif
 
 #ifndef configSTACK_DEPTH_TYPE
@@ -991,7 +1014,7 @@
 
 #ifndef configMIN
 
-/* The application writer has not provided their own MAX macro, so define
+/* The application writer has not provided their own MIN macro, so define
  * the following generic implementation. */
     #define configMIN( a, b )    ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) )
 #endif
@@ -1016,6 +1039,7 @@
     #define pcTimerGetTimerName           pcTimerGetName
     #define pcQueueGetQueueName           pcQueueGetName
     #define vTaskGetTaskInfo              vTaskGetInfo
+    #define xTaskGetIdleRunTimeCounter    ulTaskGetIdleRunTimeCounter
 
 /* Backward compatibility within the scheduler code only - these definitions
  * are not really required but are included for completeness. */
@@ -1122,7 +1146,7 @@
  * data hiding policy, so the real structures used by FreeRTOS to maintain the
  * state of tasks, queues, semaphores, etc. are not accessible to the application
  * code.  However, if the application writer wants to statically allocate such
- * an object then the size of the object needs to be know.  Dummy structures
+ * an object then the size of the object needs to be known.  Dummy structures
  * that are guaranteed to have the same size and alignment requirements of the
  * real objects are used for this purpose.  The dummy list and list item
  * structures below are used for inclusion in such a dummy structure.
@@ -1171,7 +1195,7 @@ typedef struct xSTATIC_LIST
  * strict data hiding policy.  This means the Task structure used internally by
  * FreeRTOS is not accessible to application code.  However, if the application
  * writer wants to statically allocate the memory required to create a task then
- * the size of the task object needs to be know.  The StaticTask_t structure
+ * the size of the task object needs to be known.  The StaticTask_t structure
  * below is provided for this purpose.  Its sizes and alignment requirements are
  * guaranteed to match those of the genuine structure, no matter which
  * architecture is being used, and no matter how the values in FreeRTOSConfig.h
@@ -1217,8 +1241,8 @@ typedef struct xSTATIC_TCB
         struct  _reent xDummy17;
     #endif
     #if ( configUSE_TASK_NOTIFICATIONS == 1 )
-        uint32_t ulDummy18;
-        uint8_t ucDummy19;
+        uint32_t ulDummy18[ configTASK_NOTIFICATION_ARRAY_ENTRIES ];
+        uint8_t ucDummy19[ configTASK_NOTIFICATION_ARRAY_ENTRIES ];
     #endif
     #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 )
         uint8_t uxDummy20;
@@ -1238,7 +1262,7 @@ typedef struct xSTATIC_TCB
  * strict data hiding policy.  This means the Queue structure used internally by
  * FreeRTOS is not accessible to application code.  However, if the application
  * writer wants to statically allocate the memory required to create a queue
- * then the size of the queue object needs to be know.  The StaticQueue_t
+ * then the size of the queue object needs to be known.  The StaticQueue_t
  * structure below is provided for this purpose.  Its sizes and alignment
  * requirements are guaranteed to match those of the genuine structure, no
  * matter which architecture is being used, and no matter how the values in
@@ -1311,7 +1335,7 @@ typedef struct xSTATIC_EVENT_GROUP
  * strict data hiding policy.  This means the software timer structure used
  * internally by FreeRTOS is not accessible to application code.  However, if
  * the application writer wants to statically allocate the memory required to
- * create a software timer then the size of the queue object needs to be know.
+ * create a software timer then the size of the queue object needs to be known.
  * The StaticTimer_t structure below is provided for this purpose.  Its sizes
  * and alignment requirements are guaranteed to match those of the genuine
  * structure, no matter which architecture is being used, and no matter how the
@@ -1339,12 +1363,12 @@ typedef struct xSTATIC_TIMER
  * internally by FreeRTOS is not accessible to application code.  However, if
  * the application writer wants to statically allocate the memory required to
  * create a stream buffer then the size of the stream buffer object needs to be
- * know.  The StaticStreamBuffer_t structure below is provided for this purpose.
- * Its size and alignment requirements are guaranteed to match those of the
- * genuine structure, no matter which architecture is being used, and no matter
- * how the values in FreeRTOSConfig.h are set.  Its contents are somewhat
- * obfuscated in the hope users will recognise that it would be unwise to make
- * direct use of the structure members.
+ * known.  The StaticStreamBuffer_t structure below is provided for this
+ * purpose.  Its size and alignment requirements are guaranteed to match those
+ * of the genuine structure, no matter which architecture is being used, and
+ * no matter how the values in FreeRTOSConfig.h are set.  Its contents are
+ * somewhat obfuscated in the hope users will recognise that it would be unwise
+ * to make direct use of the structure members.
  */
 typedef struct xSTATIC_STREAM_BUFFER
 {

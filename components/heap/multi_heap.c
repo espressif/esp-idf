@@ -360,6 +360,8 @@ static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* use
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 {
+    uint32_t sl_interval;
+
     memset(info, 0, sizeof(multi_heap_info_t));
 
     if (heap == NULL) {
@@ -371,6 +373,9 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
     info->total_allocated_bytes = (heap->pool_size - tlsf_size()) - heap->free_bytes;
     info->minimum_free_bytes = heap->minimum_free_bytes;
     info->total_free_bytes = heap->free_bytes;
-    info->largest_free_block = info->largest_free_block ? 1 << (31 - __builtin_clz(info->largest_free_block)) : 0;
+    if (info->largest_free_block) {
+        sl_interval = (1 << (31 - __builtin_clz(info->largest_free_block))) / SL_INDEX_COUNT;
+        info->largest_free_block = info->largest_free_block & ~(sl_interval - 1);
+    }
     multi_heap_internal_unlock(heap);
 }

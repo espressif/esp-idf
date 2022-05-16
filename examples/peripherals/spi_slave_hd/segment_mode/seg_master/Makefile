@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := spi-slave-hd-seg-master
+PROJECT_NAME := spi_slave_hd_seg_master
 
 include $(IDF_PATH)/make/project.mk

@@ -108,12 +108,9 @@ static void increment32_j0(esp_gcm_context *ctx, uint8_t *j)
 /* Function to xor two data blocks */
 static void xor_data(uint8_t *d, const uint8_t *s)
 {
-    uint32_t *dst = (uint32_t *) d;
-    uint32_t *src = (uint32_t *) s;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
+    for (int i = 0; i < AES_BLOCK_BYTES; i++) {
+        d[i] ^= s[i];
+    }
 }
 
 
@@ -493,7 +490,7 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
 /* Due to restrictions in the hardware (e.g. need to do the whole conversion in one go),
    some combinations of inputs are not supported */
 static bool esp_aes_gcm_input_support_hw_accel(size_t length, const unsigned char *aad, size_t aad_len,
-                                               const unsigned char *input, unsigned char *output)
+                                               const unsigned char *input, unsigned char *output, uint8_t *stream_in)
 {
     bool support_hw_accel = true;
 
@@ -508,9 +505,14 @@ static bool esp_aes_gcm_input_support_hw_accel(size_t length, const unsigned cha
     } else if (!esp_ptr_dma_capable(output) && length > 0) {
         /* output in non internal DMA memory */
         support_hw_accel = false;
+    } else if (!esp_ptr_dma_capable(stream_in)) {
+        /* Stream in (and therefor other descriptors and buffers that come from the stack)
+           in non internal DMA memory */
+        support_hw_accel = false;
     } else if (length == 0) {
         support_hw_accel = false;
     }
+
 
     return support_hw_accel;
 }
@@ -565,7 +567,7 @@ int esp_aes_gcm_crypt_and_tag( esp_gcm_context *ctx,
     unsigned block_bytes = aad_len - stream_bytes;     // bytes which are in a full block
 
     /* Due to hardware limition only certain cases are fully supported in HW */
-    if (!esp_aes_gcm_input_support_hw_accel(length, aad, aad_len, input, output)) {
+    if (!esp_aes_gcm_input_support_hw_accel(length, aad, aad_len, input, output, stream_in)) {
         return esp_aes_gcm_crypt_and_tag_partial_hw(ctx, mode, length, iv, iv_len, aad, aad_len, input, output, tag_len, tag);
     }
 

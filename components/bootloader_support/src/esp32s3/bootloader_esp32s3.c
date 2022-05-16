@@ -34,6 +34,7 @@
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
+#include "bootloader_soc.h"
 #include "esp_efuse.h"
 
 
@@ -296,9 +297,18 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
+static inline void bootloader_ana_reset_config(void)
+{
+    //Enable WDT, BOR, and GLITCH reset
+    bootloader_ana_super_wdt_reset_config(true);
+    bootloader_ana_bod_reset_config(true);
+    bootloader_ana_clock_glitch_reset_config(true);
+}
+
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+    bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
     // protect memory region
     bootloader_init_mem();

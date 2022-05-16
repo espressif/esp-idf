@@ -60,6 +60,9 @@ typedef enum {
 #define ESP_HF_CLIENT_PEER_FEAT_ECC        0x80        /* Enhanced Call Control */
 #define ESP_HF_CLIENT_PEER_FEAT_EXTERR    0x100        /* Extended error codes */
 #define ESP_HF_CLIENT_PEER_FEAT_CODEC     0x200        /* Codec Negotiation */
+/* HFP 1.7+ */
+#define ESP_HF_CLIENT_PEER_FEAT_HF_IND    0x400        /* HF Indicators */
+#define ESP_HF_CLIENT_PEER_FEAT_ESCO_S4   0x800        /* eSCO S4 Setting Supported */
 
 /* CHLD feature masks of AG */
 #define ESP_HF_CLIENT_CHLD_FEAT_REL           0x01       /* 0  Release waiting call or held calls */

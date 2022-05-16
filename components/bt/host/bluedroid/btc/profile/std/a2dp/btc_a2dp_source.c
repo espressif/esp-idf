@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /******************************************************************************
  **
@@ -397,7 +389,7 @@ static UINT64 time_now_us(void)
 {
 #if _POSIX_TIMERS
     struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
+    clock_gettime(CLOCK_MONOTONIC, &ts_now);
     return ((UINT64)ts_now.tv_sec * 1000000L) + ((UINT64)ts_now.tv_nsec / 1000);
 #else
     struct timeval ts_now;
@@ -1579,7 +1571,6 @@ static void btc_a2dp_source_thread_init(UNUSED_ATTR void *context)
 
 static void btc_a2dp_source_thread_cleanup(UNUSED_ATTR void *context)
 {
-    btc_a2dp_control_set_datachnl_stat(FALSE);
     /* Clear media task flag */
     btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_OFF;
 

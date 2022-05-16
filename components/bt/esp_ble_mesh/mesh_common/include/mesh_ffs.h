@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, Wind River Systems, Inc.
- * Copyright (c) 2017, Oticon A/S
+ * SPDX-FileCopyrightText: 2015 Wind River Systems, Inc.
+ * SPDX-FileCopyrightText: 2017 Oticon A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */

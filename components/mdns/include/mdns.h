@@ -187,7 +187,10 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
  * @note The value length of txt items will be automatically decided by strlen
  *
  * @param  instance_name    instance name to set. If NULL,
- *                          global instance name or hostname will be used
+ *                          global instance name or hostname will be used.
+ *                          Note that MDNS_MULTIPLE_INSTANCE config option
+ *                          needs to be enabled for adding multiple instances
+ *                          with the same instance type.
  * @param  service_type     service type (_http, _ftp, etc)
  * @param  proto            service protocol (_tcp, _udp)
  * @param  port             service port
@@ -209,6 +212,9 @@ esp_err_t mdns_service_add(const char * instance_name, const char * service_type
  *
  * @param  instance_name    instance name to set. If NULL,
  *                          global instance name or hostname will be used
+ *                          Note that MDNS_MULTIPLE_INSTANCE config option
+ *                          needs to be enabled for adding multiple instances
+ *                          with the same instance type.
  * @param  service_type     service type (_http, _ftp, etc)
  * @param  proto            service protocol (_tcp, _udp)
  * @param  hostname         service hostname. If NULL, local hostname will be used.
@@ -237,6 +243,22 @@ esp_err_t mdns_service_add_for_host(const char * instance_name, const char * ser
  *     - false  Service not found.
  */
 bool mdns_service_exists(const char * service_type, const char * proto, const char * hostname);
+
+
+/**
+ * @brief  Check whether a service has been added.
+ *
+ * @param  instance         instance name
+ * @param  service_type     service type (_http, _ftp, etc)
+ * @param  proto            service protocol (_tcp, _udp)
+ * @param  hostname         service hostname. If NULL, checks for the local hostname.
+ *
+ * @return
+ *     - true   Correspondding service has been added.
+ *     - false  Service not found.
+ */
+bool mdns_service_exists_with_instance(const char *instance, const char *service_type, const char *proto,
+                                       const char *hostname);
 
 /**
  * @brief  Remove service from mDNS server

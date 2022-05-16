@@ -38,6 +38,10 @@ class CoreDump:
         self.websocket_client = websocket_client
         self.elf_file = elf_file
 
+    @property
+    def in_progress(self) -> bool:
+        return bool(self._coredump_buffer)
+
     def _process_coredump(self):  # type: () -> None
         if self._decode_coredumps != COREDUMP_DECODE_INFO:
             raise NotImplementedError('process_coredump: %s not implemented' % self._decode_coredumps)

@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 | ESP32-S2 |
-| ----------------- | ----- | -------- |
-
 # Building
 Several configurations are provided as `sdkconfig.ci.XXX` and serve as a template. 
 

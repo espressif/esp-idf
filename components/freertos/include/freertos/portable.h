@@ -181,6 +181,13 @@ void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetMinimumEverFreeHeapSize( void ) PRIVILEGED_FUNCTION;
 
+#if( configSTACK_ALLOCATION_FROM_SEPARATE_HEAP == 1 )
+    void *pvPortMallocStack( size_t xSize ) PRIVILEGED_FUNCTION;
+    void vPortFreeStack( void *pv ) PRIVILEGED_FUNCTION;
+#else
+    #define pvPortMallocStack pvPortMalloc
+    #define vPortFreeStack vPortFree
+#endif
 #else  // configUSE_FREERTOS_PROVIDED_HEAP
 
 /*
@@ -209,6 +216,21 @@ BaseType_t xPortStartScheduler( void ) PRIVILEGED_FUNCTION;
  * executing.
  */
 void vPortEndScheduler( void ) PRIVILEGED_FUNCTION;
+
+/*
+ * The structures and methods of manipulating the MPU are contained within the
+ * port layer.
+ *
+ * Fills the xMPUSettings structure with the memory region information
+ * contained in xRegions.
+ */
+#if ( portUSING_MPU_WRAPPERS == 1 )
+    struct xMEMORY_REGION;
+    void vPortStoreTaskMPUSettings( xMPU_SETTINGS * xMPUSettings,
+                                    const struct xMEMORY_REGION * const xRegions,
+                                    StackType_t * pxBottomOfStack,
+                                    uint32_t ulStackDepth ) PRIVILEGED_FUNCTION;
+#endif
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

@@ -18,7 +18,9 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
 
     set(include_dirs
         include
-        port/xtensa/include)
+        include/esp_additions/freertos  # For files with #include "FreeRTOSConfig.h"
+        port/xtensa/include             # For including arch-specific FreeRTOSConfig_arch.h in port/<arch>/include
+        include/esp_additions)          # For files with #include "freertos/FreeRTOSConfig.h"
 
     set(private_include_dirs
         port/xtensa/include/freertos
@@ -33,7 +35,9 @@ elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
 
     set(include_dirs
         include
-        port/riscv/include)
+        include/esp_additions/freertos  # For files with #include "FreeRTOSConfig.h"
+        port/riscv/include              # For including arch-specific FreeRTOSConfig_arch.h in port/<arch>/include
+        include/esp_additions)          # For files with #include "freertos/FreeRTOSConfig.h"
 
     set(private_include_dirs
         port/riscv/include/freertos
@@ -56,9 +60,6 @@ list(APPEND srcs
     "stream_buffer.c"
     "FreeRTOS-openocd.c"
     "freertos_v8_compat.c")
-
-list(APPEND include_dirs
-    "include/esp_additions")
 
 list(APPEND private_include_dirs
     "include/freertos")

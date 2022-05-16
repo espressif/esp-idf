@@ -6,8 +6,9 @@ idf_component_get_property(original_freertos_dir freertos COMPONENT_OVERRIDEN_DI
 
 set(include_dirs
     "${original_freertos_dir}/include"
-    "${original_freertos_dir}/include/freertos" # this is due to the way includes are generated in CMock
     "${original_freertos_dir}/include/esp_additions"
+    "${original_freertos_dir}/include/esp_additions/freertos"
+    "${original_freertos_dir}/include/freertos" # this is due to the way includes are generated in CMock
     "${original_freertos_dir}/port/linux/include")
 
 idf_component_mock(INCLUDE_DIRS ${include_dirs}

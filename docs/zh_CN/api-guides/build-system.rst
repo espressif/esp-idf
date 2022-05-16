@@ -96,12 +96,13 @@ idf.py
 高级命令
 ^^^^^^^^
 
-- ``idf.py app``，``idf.py bootloader``，``idf.py partition_table`` 仅可用于从适用的项目中构建应用程序、引导程序或分区表。
+- ``idf.py app``，``idf.py bootloader``，``idf.py partition-table`` 仅可用于从适用的项目中构建应用程序、引导程序或分区表。
 - ``idf.py app-flash`` 等匹配命令，仅将项目的特定部分烧录至 {IDF_TARGET_NAME}。
-- ``idf.py -p PORT erase_flash`` 会使用 esptool.py 擦除 {IDF_TARGET_NAME} 的整个 Flash。
-- ``idf.py size`` 会打印应用程序相关的大小信息，``idf.py size-components`` 和 ``idf.py size-files`` 这两个命令相似，分别用于打印每个组件或源文件的详细信息。如果您在运行 CMake（或 ``idf.py``）时定义了变量 ``-DOUTPUT_JSON=1``，那么输出的格式会变成 JSON 而不是可读文本。
+- ``idf.py -p PORT erase-flash`` 会使用 esptool.py 擦除 {IDF_TARGET_NAME} 的整个 Flash。
+- ``idf.py size`` 会打印应用程序相关的大小信息，``size-components`` 和 ``size-files`` 这两个命令相似，分别用于打印每个组件或源文件的详细信息。如果您在运行 CMake（或 ``idf.py``）时定义了变量 ``-DOUTPUT_JSON=1``，那么输出的格式会变成 JSON 而不是可读文本。详情请查看 ``idf.py-size``。
 - ``idf.py reconfigure`` 命令会重新运行 CMake_ （即便无需重新运行）。正常使用时，并不需要运行此命令，但当源码树中添加/删除文件后或更改 CMake cache 变量时，此命令会非常有用，例如，``idf.py -DNAME='VALUE' reconfigure`` 会将 CMake cache 中的变量 ``NAME`` 的值设置为 ``VALUE``。
 - ``idf.py python-clean`` 会从 IDF 目录中删除生成的 Python 字节码，Python 字节码可能会在切换 IDF 和 Python 版本时引发问题，因此建议在切换 Python 后运行该命令。
+- ``idf.py docs`` 将在浏览器中直接打开项目目标芯片和对应版本的文档链接。请使用 ``idf.py docs --help`` 查看所有选项。
 
 同时调用多个 ``idf.py`` 命令时，命令的输入顺序并不重要，它们会按照正确的顺序依次执行，并保证每一条命令都生效（即先构建后烧录，先擦除后烧录等）。
 
@@ -363,7 +364,7 @@ ESP-IDF 适用于所有支持的 Python 版本。即使您系统中默认的 ``p
 
 ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进行，这意味着在默认情况下，首先搜索 ESP-IDF 内部组件（``IDF_PATH/components``），然后是 ``EXTRA_COMPONENT_DIRS`` 中的组件，最后是项目组件（``PROJECT_DIR/components``）。如果这些目录中的两个或者多个包含具有相同名字的组件，则使用搜索到的最后一个位置的组件。这就允许将组件复制到项目目录中再修改以覆盖 ESP-IDF 组件，如果使用这种方式，ESP-IDF 目录本身可以保持不变。
 
-.. 注解:: 如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。 
+.. 注解:: 如果在现有项目中通过将组件移动到一个新位置来覆盖它，项目不会自动看到新组件的路径。请运行 ``idf.py reconfigure`` 命令后（或删除项目构建文件夹）再重新构建。
 
 .. _minimum_cmakelists:
 
@@ -449,7 +450,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 .. highlight:: cmake
 
-在编译特定组件的源文件时，可以使用 ``target_compile_options`` 命令来传递编译器选项::
+在编译特定组件的源文件时，可以使用 `target_compile_options`_  函数来传递编译器选项::
 
   target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-variable)
 
@@ -650,12 +651,54 @@ Spark Plug 组件
 
 - 将 ``COMPONENTS`` 设置为所需组件的最小列表，可以显著减少项目的构建时间。
 
+.. _component-circular-dependencies:
+
+循环依赖
+---------------------
+
+一个项目中可能包含组件 A 和组件 B，而组件 A 依赖（``REQUIRES`` 或 ``PRIV_REQUIRES``）组件 B，组件 B 又依赖组件 A。这就是所谓的依赖循环或循环依赖。
+
+CMake 通常会在链接器命令行上重复两次组件库名称来自动处理循环依赖。然而这种方法并不总是有效，还是可能构建失败并出现关于 “Undefined reference to ...” 的链接器错误，这通常是由于引用了循环依赖中某一组件中定义的符号。如果存在较大的循环依赖关系，即 A->B->C->D->A，这种情况极有可能发生。
+
+最好的解决办法是重构组件以消除循环依赖关系。在大多数情况下，没有循环依赖的软件架构具有模块化和分层清晰的特性，并且从长远来看更容易维护。然而，移除循环依赖关系并不容易做到。
+
+要绕过由循环依赖引起的链接器错误，最简单的解决方法是增加其中一个组件库的 CMake `LINK_INTERFACE_MULTIPLICITY`_ 属性。 这会让 CMake 在链接器命令行上对此库及其依赖项重复两次以上。
+
+例如：
+
+.. code-block:: cmake
+
+    set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+
+- 这一行应该放在组件 CMakeLists.txt 文件 ``idf_component_register`` 之后。
+- 可以的话，将此行放置在因依赖其他组件而造成循环依赖的组件中。实际上，该行可以放在循环内的任何一个组件中，但建议将其放置在拥有链接器错误提示信息中显示的源文件的组件中，或是放置在定义了链接器错误提示信息中所提到的符号的组件，先从这些组件开始是个不错的选择。
+- 通常将值增加到 3（默认值是 2）就足够了，但如果不起作用，可以尝试逐步增加这个数字。
+- 注意，增加这个选项会使链接器的命令行变长，链接阶段变慢。
+
+高级解决方法：未定义符号
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+如果只有一两个符号导致循环依赖，而所有其他依赖都是线性的，那么有一种替代方法可以避免链接器错误：在链接时将“反向”依赖所需的特定符号指定为未定义符号。
+
+例如，如果组件 A 依赖于组件 B，但组件 B 也需要引用组件 A 的 ``reverse_ops`` （但不依赖组件 A 中的其他内容），那么你可以在组件 B 的 CMakeLists.txt 中添加如下一行，以在链接时避免这出现循环。
+
+.. code-block:: cmake
+
+    # 该符号是由“组件 A”在链接时提供
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u reverse_ops")
+
+- ``-u`` 参数意味着链接器将始终在链接中包含此符号，而不管依赖项顺序如何。
+- 该行应该放在组件 CMakeLists.txt 文件中的 ``idf_component_register`` 之后。
+- 如果“组件 B”不需要访问“组件 A”的任何头文件，只需链接几个符号，那么这一行可以用来代替 B 对 A 的任何 “REQUIRES”。这样则进一步简化了构建系统中的组件结构。
+
+请参考 `target_link_libraries`_ 文档以了解更多关于此 CMake 函数的信息。
+
 .. _component-requirements-implementation:
 
 构建系统中依赖处理的实现细节
 ----------------------------
 
-- 在 CMake 配置进程的早期阶段会运行 ``expand_requirements.cmake`` 脚本。该脚本会对所有组件的 CMakeLists.txt 文件进行局部的运算，得到一张组件依赖关系图（此图可能会有闭环）。此图用于在构建目录中生成 ``component_depends.cmake`` 文件。
+- 在 CMake 配置进程的早期阶段会运行 ``expand_requirements.cmake`` 脚本。该脚本会对所有组件的 CMakeLists.txt 文件进行局部的运算，得到一张组件依赖关系图（:ref:`此图可能会有闭环 <component-circular-dependencies>`）。此图用于在构建目录中生成 ``component_depends.cmake`` 文件。
 - CMake 主进程会导入该文件，并以此来确定要包含到构建系统中的组件列表（内部使用的 ``BUILD_COMPONENTS`` 变量）。``BUILD_COMPONENTS`` 变量已排好序，依赖组件会排在前面。由于组件依赖关系图中可能存在闭环，因此不能保证每个组件都满足该排序规则。如果给定相同的组件集和依赖关系，那么最终的排序结果应该是确定的。
 - CMake 会将 ``BUILD_COMPONENTS`` 的值以 “Component names:” 的形式打印出来。
 - 然后执行构建系统中包含的每个组件的配置。
@@ -976,6 +1019,8 @@ ExternalProject 的依赖与构建清理
 
 如若需要覆盖此文件的名称或指定多个文件，请设置 ``SDKCONFIG_DEFAULTS`` 环境变量或在顶层 CMakeLists.txt 文件中设置 ``SDKCONFIG_DEFAULTS``。在指定多个文件时，使用分号作为分隔符。未指定完整路径的文件名将以当前项目的相对路径来解析。
 
+一些 IDF 示例中包含了 ``sdkconfig.ci`` 文件。该文件是 CI（持续集成）测试框架的一部分，在正常构建过程中会被忽略。
+
 依赖于硬件目标的 sdkconfig 默认值
 ---------------------------------
 
@@ -1099,7 +1144,7 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
 
 每当使用 ESP-IDF 构建系统时，CMake 变量 ``ESP_PLATFORM`` 都会被设置为 1。如果要在通用的 CMake 代码加入 IDF 特定的代码时，可以采用 ``if (ESP_PLATFORM)`` 的形式加以分隔。
 
-外部库中使用 ESP-IDF 组件 
+外部库中使用 ESP-IDF 组件
 --------------------------
 
 上述示例中假设的是外部库 ``foo`` （或 ``import_lib`` 示例中的 ``tinyxml`` 库）除了常见的 API 如 libc、libstdc++ 等外不需要使用其它 ESP-IDF API。如果外部库需要使用其它 ESP-IDF 组件提供的 API，则需要在外部 CMakeLists.txt 文件中通过添加对库目标 ``idf::<componentname>`` 的依赖关系。
@@ -1109,12 +1154,12 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
   add_library(foo bar.c fizz.cpp buzz.cpp)
 
   if(ESP_PLATFORM)
-    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h 
+    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h
     target_link_libraries(foo PRIVATE idf::spi_flash)
   endif()
 
 
-组件中使用预建库 
+组件中使用预建库
 =================
 
 .. highlight:: cmake
@@ -1151,11 +1196,11 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
   # 导入提供 ESP-IDF CMake 构建系统 API 的 CMake 文件
   include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
 
-  # 在构建中导入 ESP-IDF 组件，可以视作等同 add_subdirectory() 
+  # 在构建中导入 ESP-IDF 组件，可以视作等同 add_subdirectory()
   # 但为 ESP-IDF 构建增加额外的构建过程
   # 具体构建过程
   idf_build_process(esp32)
-  
+
   # 创建项目可执行文件
   # 使用其别名 idf::newlib 将其链接到 newlib 组件
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
@@ -1201,7 +1246,7 @@ idf 构建命令
 
 .. code-block:: none
 
-  idf_build_process(target 
+  idf_build_process(target
                     [PROJECT_DIR project_dir]
                     [PROJECT_VER project_ver]
                     [PROJECT_NAME project_name]
@@ -1331,7 +1376,7 @@ idf 组件命令
 
   - EMBED_FILES - 嵌入组件的二进制文件
   - EMBED_TXTFILES - 嵌入组件的文本文件
-  
+
 .. _cmake-component-properties:
 
 idf 组件属性
@@ -1450,16 +1495,16 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
     :scale: 100%
     :caption: ESP-IDF Build System Process
     :align: center
-    
+
     blockdiag idf-build-system-process {
         初始化 -> 枚举
         枚举 -> 处理
         处理 -> 完成
     }
 
-初始化 
+初始化
 ^^^^^^^
-  
+
  该阶段为构建设置必要的参数。
 
     - 在将 ``idf.cmake`` 导入 ``project.cmake`` 后，将执行以下步骤：
@@ -1495,7 +1540,7 @@ ESP-IDF 构建系统的列表文件位于 :idf:`/tools/cmake` 中。实现构建
 完成
 ^^^^^^^
   该阶段是 ``idf_build_process()`` 剩余的步骤。
-  
+
   - 创建可执行文件并将其链接到组件库中。
   - 生成 project_description.json 等项目元数据文件并且显示所建项目等相关信息。
 
@@ -1583,6 +1628,7 @@ CMake 中不可用的功能
 .. _target_compile_options: https://cmake.org/cmake/help/v3.5/command/target_compile_options.html
 .. _target_link_libraries: https://cmake.org/cmake/help/v3.5/command/target_link_libraries.html#command:target_link_libraries
 .. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.5/variable/CMAKE_TOOLCHAIN_FILE.html
+.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.5/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/

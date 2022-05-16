@@ -1,17 +1,10 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
+#include "sdkconfig.h"
 #include "utils/includes.h"
 
 #include "utils/common.h"
@@ -124,34 +117,27 @@ bool hostap_deinit(void *data)
         return true;
     }
 
-    if (hapd->wpa_auth->wpa_ie != NULL) {
-        os_free(hapd->wpa_auth->wpa_ie);
-    }
-
-    if (hapd->wpa_auth->group != NULL) {
-        os_free(hapd->wpa_auth->group);
-    }
-
     if (hapd->wpa_auth != NULL) {
+        if (hapd->wpa_auth->wpa_ie != NULL) {
+            os_free(hapd->wpa_auth->wpa_ie);
+        }
+        if (hapd->wpa_auth->group != NULL) {
+            os_free(hapd->wpa_auth->group);
+        }
         os_free(hapd->wpa_auth);
     }
 
-    if (hapd->conf->ssid.wpa_psk != NULL) {
-        os_free(hapd->conf->ssid.wpa_psk);
-    }
-
-    if (hapd->conf->ssid.wpa_passphrase != NULL) {
-        os_free(hapd->conf->ssid.wpa_passphrase);
-    }
-
     if (hapd->conf != NULL) {
+        if (hapd->conf->ssid.wpa_psk != NULL) {
+            os_free(hapd->conf->ssid.wpa_psk);
+        }
+        if (hapd->conf->ssid.wpa_passphrase != NULL) {
+            os_free(hapd->conf->ssid.wpa_passphrase);
+        }
         os_free(hapd->conf);
     }
 
-    if (hapd != NULL) {
-        os_free(hapd);
-    }
-
+    os_free(hapd);
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
 
     return true;

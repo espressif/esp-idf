@@ -79,7 +79,7 @@ esp_err_t esp_secure_boot_enable_secure_features(void)
         return err;
     }
 #else
-    ESP_LOGW(TAG, "Not disabling ROM Download mode - SECURITY COMPROMISED");
+    ESP_LOGW(TAG, "UART ROM Download mode kept enabled - SECURITY COMPROMISED");
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS

@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/param.h>
 #include <esp_log.h>
@@ -129,6 +121,8 @@ typedef struct {
     simple_ble_cb_t *connect_fn;
     /** MTU set callback */
     simple_ble_cb_t *set_mtu_fn;
+    /* BLE bonding */
+     unsigned ble_bonding:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -325,6 +319,12 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        /* If empty packet is received, return */
+        if (ctxt->om->om_len == 0) {
+            ESP_LOGD(TAG,"Empty packet");
+            return 0;
+        }
+
         uuid = (uint8_t *) calloc(BLE_UUID128_VAL_LENGTH, sizeof(uint8_t));
         if (!uuid) {
             ESP_LOGE(TAG, "Error allocating memory for 128 bit UUID");
@@ -490,9 +490,10 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
 
     /* Initialize security manager configuration in NimBLE host  */
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO; /* Just Works */
-    ble_hs_cfg.sm_bonding = 1; /* Enable bonding inline with bluedroid */
+    ble_hs_cfg.sm_bonding = cfg->ble_bonding;
     ble_hs_cfg.sm_mitm = 1;
     ble_hs_cfg.sm_sc = 1; /* Enable secure connection by default */
+
     /* Distribute LTK and IRK */
     ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
     ble_hs_cfg.sm_their_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
@@ -907,6 +908,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->adv_params      = adv_params;
 
     ble_config->device_name     = protocomm_ble_device_name;
+    ble_config->ble_bonding     = config->ble_bonding;
 
     if (populate_gatt_db(&ble_config->gatt_db, config) != 0) {
         ESP_LOGE(TAG, "Error populating GATT Database");

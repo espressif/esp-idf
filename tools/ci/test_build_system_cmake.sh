@@ -35,6 +35,9 @@
 
 export PATH="$IDF_PATH/tools:$PATH"  # for idf.py
 
+# Some tests assume that ccache is not enabled
+unset IDF_CCACHE_ENABLE
+
 function run_tests()
 {
     FAILURES=
@@ -150,7 +153,7 @@ function run_tests()
     pushd ${IDF_PATH}/examples/get-started/hello_world
     GIT_COMMITTER_NAME="No One" GIT_COMMITTER_EMAIL="noone@espressif.com" git tag mytag -a -m "mytag" || failure "Git cannot create tag"
     idf.py reconfigure &> log.log || failure "Failed to build"
-    str="App \"hello-world\" version: mytag"
+    str="App \"hello_world\" version: mytag"
     grep "${str}" log.log || { cat log.log ; failure "Project version should be the custom tag"; }
     idf_version=$(idf.py --version)
     if [[ "$idf_version" == *"mytag"* ]]; then
@@ -446,12 +449,6 @@ function run_tests()
     mv CMakeLists.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
-    print_status "Can find toolchain file in component directory"
-    clean_build_dir
-    mv ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake ${IDF_PATH}/components/esp32/
-    (idf.py reconfigure > /dev/null && grep "${IDF_PATH}/components/esp32/toolchain-esp32.cmake" build/CMakeCache.txt) || failure  "Failed to find toolchain file in component directory"
-    mv ${IDF_PATH}/components/esp32/toolchain-esp32.cmake ${IDF_PATH}/tools/cmake/
-
     print_status "Setting EXTRA_COMPONENT_DIRS works"
     clean_build_dir
     (idf.py reconfigure | grep "$PWD/main") || failure  "Failed to verify original `main` directory"
@@ -532,7 +529,7 @@ function run_tests()
     fi
 
     print_status "Displays partition table when executing target partition_table"
-    idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
+    idf.py partition-table | grep -E "# ESP-IDF .+ Partition Table"
     rm -r build
 
     print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
@@ -715,15 +712,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     git checkout CMakeLists.txt
     rm -f log.txt
 
-    print_status "Compiles with dependencies delivered by component manager"
-    clean_build_dir
-    printf "\n#include \"test_component.h\"\n" >> main/main.c
-    printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> main/idf_component.yml
-    idf.py reconfigure build || failure "Build didn't succeed with required components installed by package manager"
-    rm main/idf_component.yml
-    git checkout main/main.c
-
     print_status "Build fails if partitions don't fit in flash"
+    clean_build_dir
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
     ( idf.py build 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
@@ -868,6 +858,17 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py docs --no-browser --language en --version v4.2.1 | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1" || failure "'idf.py docs --no-browser --language en --version v4.2.1' failed"
     idf.py docs --no-browser --language en --version v4.2.1 --target esp32 | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32' failed"
     idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32/get-started" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started' failed"
+
+    print_status "Deprecation warning check"
+    cd ${TESTDIR}/template
+    # click warning
+    idf.py post_debug &> tmp.log
+    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || failure "Missing deprecation warning with command \"post_debug\""
+    rm tmp.log
+    # cmake warning
+    idf.py efuse_common_table &> tmp.log
+    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
+    rm tmp.log
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

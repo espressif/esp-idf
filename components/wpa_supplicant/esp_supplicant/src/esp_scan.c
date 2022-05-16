@@ -1,17 +1,7 @@
-/**
- * Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "utils/includes.h"
@@ -32,8 +22,7 @@
 
 extern struct wpa_supplicant g_wpa_supp;
 
-static void esp_scan_done_event_handler(void* arg, esp_event_base_t event_base,
-					int32_t event_id, void* event_data)
+static void scan_done_event_handler(void *arg, STATUS status)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
@@ -46,7 +35,7 @@ static void esp_scan_done_event_handler(void* arg, esp_event_base_t event_base,
 	esp_supplicant_post_evt(SIG_SUPPLICANT_SCAN_DONE, 0);
 }
 
-static void esp_supp_handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
+static void handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
 {
 	struct wpa_bss *bss = wpa_bss_get_next_bss(wpa_s, wpa_s->current_bss);
 
@@ -64,7 +53,7 @@ static void esp_supp_handle_wnm_scan_done(struct wpa_supplicant *wpa_s)
 	}
 }
 
-static void esp_supp_scan_done_cleanup(struct wpa_supplicant *wpa_s)
+static void scan_done_cleanup(struct wpa_supplicant *wpa_s)
 {
 	uint16_t number = 1;
 	wifi_ap_record_t ap_records;
@@ -84,10 +73,10 @@ void esp_supplicant_handle_scan_done_evt(void)
 	if (wpa_s->scan_reason == REASON_RRM_BEACON_REPORT) {
 		wpas_beacon_rep_scan_process(wpa_s, wpa_s->scan_start_tsf);
 	} else if (wpa_s->scan_reason == REASON_WNM_BSS_TRANS_REQ) {
-		esp_supp_handle_wnm_scan_done(wpa_s);
+		handle_wnm_scan_done(wpa_s);
 	}
 	if (wpa_s->scanning) {
-		esp_supp_scan_done_cleanup(wpa_s);
+		scan_done_cleanup(wpa_s);
 	}
 	wpa_bss_update_end(wpa_s);
 #ifndef SCAN_CACHE_SUPPORTED
@@ -100,8 +89,6 @@ void esp_scan_init(struct wpa_supplicant *wpa_s)
 	wpa_s->scanning = 0;
 	wpa_bss_init(wpa_s);
 	wpa_s->last_scan_res = NULL;
-	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
-			&esp_scan_done_event_handler, NULL);
 }
 
 void esp_scan_deinit(struct wpa_supplicant *wpa_s)
@@ -109,8 +96,6 @@ void esp_scan_deinit(struct wpa_supplicant *wpa_s)
 	wpa_bss_deinit(wpa_s);
 	os_free(wpa_s->last_scan_res);
 	wpa_s->last_scan_res = NULL;
-	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
-			&esp_scan_done_event_handler);
 }
 
 int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
@@ -158,10 +143,7 @@ int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
 	res->level = rssi;
 	os_memcpy(res->tsf_bssid, wpa_s->tsf_bssid, ETH_ALEN);
 	res->parent_tsf = current_tsf - wpa_s->scan_start_tsf;
-	if (type == WLAN_FC_STYPE_PROBE_RESP)
-		res->ie_len = len;
-	else if (type == WLAN_FC_STYPE_BEACON)
-		res->beacon_ie_len = len;
+	res->ie_len = len;
 
 	ptr += sizeof(struct wpa_scan_res);
 
@@ -173,8 +155,8 @@ int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
 	return 0;
 }
 
-static int esp_issue_scan(struct wpa_supplicant *wpa_s,
-			  struct wpa_driver_scan_params *scan_params)
+static int issue_scan(struct wpa_supplicant *wpa_s,
+		      struct wpa_driver_scan_params *scan_params)
 {
 	wifi_scan_config_t *params = NULL;
 	int ret = 0;
@@ -203,9 +185,13 @@ static int esp_issue_scan(struct wpa_supplicant *wpa_s,
 				goto cleanup;
 			}
 			os_memcpy(params->ssid, scan_params->ssids[0].ssid, scan_params->ssids[0].ssid_len);
-			params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
 		} else
+
+		if (scan_params->mode == BEACON_REPORT_MODE_PASSIVE) {
 			params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
+		} else {
+			params->scan_type = WIFI_SCAN_TYPE_ACTIVE;
+		}
 
 		if (scan_params->bssid) {
 			params->bssid = os_zalloc(ETH_ALEN);
@@ -232,8 +218,10 @@ static int esp_issue_scan(struct wpa_supplicant *wpa_s,
 	wpa_s->type |= (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP);
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 
+	typedef void (* scan_done_cb_t)(void *arg, STATUS status);
+	extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
 	/* issue scan */
-	if (esp_wifi_scan_start(params, false) < 0) {
+	if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) < 0) {
 		ret = -1;
 		goto cleanup;
 	}
@@ -260,7 +248,7 @@ cleanup:
 int wpa_supplicant_trigger_scan(struct wpa_supplicant *wpa_s,
 				struct wpa_driver_scan_params *params)
 {
-	return esp_issue_scan(wpa_s, params);
+	return issue_scan(wpa_s, params);
 }
 
 void wpa_scan_results_free(struct wpa_scan_results *res)

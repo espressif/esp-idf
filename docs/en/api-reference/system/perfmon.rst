@@ -1,8 +1,7 @@
 Performance Monitor
 ===================
 
-The Performance Monitor component provides APIs to use {IDF_TARGET_NAME} internal performance counters to profile functions and
-applications.
+The Performance Monitor component provides APIs to use {IDF_TARGET_NAME} internal performance counters to profile functions and applications.
 
 Application Example
 -------------------

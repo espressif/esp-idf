@@ -158,9 +158,9 @@ function(target_linker_script target deptype scriptfiles)
             get_target_property(link_libraries "${target}" LINK_LIBRARIES)
         endif()
 
-        list(FIND "${link_libraries}" "-L ${search_dir}" found_search_dir)
+        list(FIND "${link_libraries}" "-L \"${search_dir}\"" found_search_dir)
         if(found_search_dir EQUAL "-1")  # not already added as a search path
-            target_link_libraries("${target}" "${deptype}" "-L ${search_dir}")
+            target_link_libraries("${target}" "${deptype}" "-L \"${search_dir}\"")
         endif()
 
         target_link_libraries("${target}" "${deptype}" "-T ${scriptname}")
@@ -339,4 +339,17 @@ function(add_subdirectory_if_exists source_dir)
     else()
         message(STATUS "Subdirectory '${abs_dir}' does not exist, skipped.")
     endif()
+endfunction()
+
+
+# add_deprecated_target_alias
+#
+# Creates an alias for exising target and shows deprectation warning
+function(add_deprecated_target_alias old_target new_target)
+    add_custom_target(${old_target}
+        COMMAND ${CMAKE_COMMAND} -E echo
+        "Warning: Command \"${old_target}\" is deprecated and will be removed in the next major release. \
+        Please use \"${new_target}\" instead."
+    )
+    add_dependencies(${old_target} ${new_target})
 endfunction()

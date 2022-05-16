@@ -35,6 +35,7 @@
 #include "gatt_int.h"
 #include "osi/allocator.h"
 #include "osi/mutex.h"
+#include "bta_hh_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -304,7 +305,10 @@ void bta_gattc_deregister(tBTA_GATTC_CB *p_cb, tBTA_GATTC_RCB  *p_clreg)
             bta_gattc_deregister_cmpl(p_clreg);
         }
     } else {
-        APPL_TRACE_ERROR("bta_gattc_deregister Deregister Failedm unknown client cif");
+        APPL_TRACE_ERROR("Deregister Failed unknown client cif");
+#if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
+        bta_hh_cleanup_disable(BTA_HH_OK);
+#endif
     }
 }
 /*******************************************************************************
@@ -490,9 +494,14 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
     tBTA_GATTC_DATA gattc_data;
     BOOLEAN found_app = FALSE;
+    tGATT_TCB *p_tcb;
 
-    tGATT_TCB *p_tcb = gatt_find_tcb_by_addr(p_data->api_conn.remote_bda, BT_TRANSPORT_LE);
-    if(p_tcb && p_clcb && p_data) {
+    if (!p_clcb || !p_data) {
+        return;
+    }
+
+    p_tcb = gatt_find_tcb_by_addr(p_data->api_conn.remote_bda, BT_TRANSPORT_LE);
+    if(p_tcb) {
         found_app = gatt_find_specific_app_in_hold_link(p_tcb, p_clcb->p_rcb->client_if);
     }
     /* open/hold a connection */

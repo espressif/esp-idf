@@ -14,6 +14,9 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
  - 目前，SPIFFS 尚不支持目录，但可以生成扁平结构。如果 SPIFFS 挂载在 ``/spiffs`` 下，在 ``/spiffs/tmp/myfile.txt`` 路径下创建一个文件则会在 SPIFFS 中生成一个名为 ``/tmp/myfile.txt`` 的文件，而不是在 ``/spiffs/tmp`` 下生成名为 ``myfile.txt`` 的文件；
  - SPIFFS 并非实时栈，每次写操作耗时不等；
  - 目前，SPIFFS 尚不支持检测或处理已损坏的块。
+ - SPIFFS 只能稳定地使用约 75% 的指定分区容量。
+ - 当文件系统空间不足时，垃圾收集器会尝试多次扫描文件系统来寻找可用空间。根据所需空间的不同，写操作会被调用多次，每次函数调用将花费几秒。同一操作可能会花费不同时长的问题缘于 SPIFFS 的设计，且已在官方的 `SPIFFS github 仓库 <https://github.com/pellepl/spiffs/issues/>`_ 或是 <https://github.com/espressif/esp-idf/issues/1737>`_ 中被多次报告。这个问题可以通过 `SPIFFS 配置 <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_ 部分缓解。
+ - 被删除文件通常不会被完全清除，会在文件系统中遗留下无法使用的部分。
 
 工具
 -----
@@ -51,7 +54,7 @@ spiffsgen.py
 
     spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT] [DEPENDS dep dep dep...])
 
-在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置自动传递给 ``spiffsgen.py`` 工具，确保生成的镜像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 *image_size* 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 *partition* 参数，镜像大小将直接从工程分区表中获取。
+在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置会自动传递给 ``spiffsgen.py`` 工具，确保生成的镜像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 *image_size* 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 *partition* 参数，镜像大小将直接从工程分区表中获取。
 
 Make 构建系统和 CMake 构建系统结构有所不同，请注意以下几点：
 
@@ -105,10 +108,9 @@ mkspiffs
 
     mkspiffs -c [src_folder] -b 4096 -p 256 -s 0x100000 spiffs.bin
 
-运行以下命令，将镜像烧录到 ESP32（偏移量：0x110000）::
+运行以下命令，将镜像烧录到 {IDF_TARGET_NAME}（偏移量：0x110000）::
 
     python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
-
 
 选择合适的 SPIFFS 工具
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -129,6 +131,7 @@ mkspiffs
 --------
 
 - :doc:`分区表 <../../api-guides/partition-tables>`
+
 
 应用示例
 -------------------

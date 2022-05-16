@@ -9,13 +9,15 @@
    Bluetooth Controller && VHCI <controller_vhci>
    Bluetooth Common <bt_common>
    Bluetooth LE <bt_le>
-   Bluetooth Classic <classic_bt>
+   :SOC_CLASSIC_BT_SUPPORTED: Bluetooth Classic <classic_bt>
    NimBLE <nimble/index>
    ESP-BLE-MESH <esp-ble-mesh>
 
-请点击下方链接，查看 ESP32 蓝牙架构：
+.. only:: esp32
 
-`ESP32 蓝牙架构 (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
+   请点击下方链接，查看 ESP32 蓝牙架构：
+
+   `ESP32 蓝牙架构 (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
 
 蓝牙 API 的示例代码存放于 ESP-IDF :example:`bluetooth/bluedroid` 示例目录下，请查看。
 

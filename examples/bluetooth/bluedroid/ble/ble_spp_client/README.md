@@ -9,7 +9,13 @@
 
   This vendor-specific custom profile is implemented in [spp_client_demo.c](../ble_spp_client/main/spp_client_demo.c) and [spp_server_demo.c](../ble_spp_server/main/ble_spp_server_demo.c).
 
-## Using Examples
+## How to Use Example
+
+Before project configuration and build, be sure to set the correct chip target using:
+
+```bash
+idf.py set-target <chip_name>
+```
 
 ### Initialization
 
@@ -81,15 +87,11 @@
 
 ### Build and Flash
 
-Build each project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idf.py -p PORT flash monitor
-```
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
 
@@ -149,8 +151,9 @@ I (18462) GATTS_SPP_DEMO: event = 5
 I (27652) GATTS_SPP_DEMO: EVT 2, gatts if 3
 I (27652) GATTS_SPP_DEMO: event = 2
 I (27652) GATTS_SPP_DEMO: ESP_GATTS_WRITE_EVT : handle = 2
-
 ```
 if you input data to the Uart terminal, it will be printed in the remote device Uart terminal.
 
+## Troubleshooting
 
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

@@ -1440,7 +1440,7 @@ typedef struct {
     volatile mcpwm_timer_regs_t timer[3];
     volatile mcpwm_timer_synci_cfg_reg_t timer_synci_cfg;
     volatile mcpwm_operator_timersel_reg_t operator_timersel;
-    volatile mcpwm_operator_reg_t operator[3];
+    volatile mcpwm_operator_reg_t operators[3];
     volatile mcpwm_fault_detect_reg_t fault_detect;
     volatile mcpwm_cap_timer_cfg_reg_t cap_timer_cfg;
     volatile mcpwm_cap_timer_phase_reg_t cap_timer_phase;

@@ -11,7 +11,7 @@
 
 /* esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd)
  *
- * It should be called by the CALLX0 command from the handler of High-priority interrupt (4 lvl).
+ * It should be called by the CALLX0 command from the handler of High-priority interrupt.
  * Only these registers [a2, a3, a4] can be used here.
  */
     .section    .iram1, "ax"

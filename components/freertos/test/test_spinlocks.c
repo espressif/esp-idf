@@ -90,7 +90,7 @@ static void task_shared_value_increment(void *ignore)
 TEST_CASE("portMUX cross-core locking", "[freertos]")
 {
     done_sem = xSemaphoreCreateCounting(2, 0);
-    vPortCPUInitializeMutex(&shared_mux);
+    portMUX_INITIALIZE(&shared_mux);
     shared_value = 0;
 
     BENCHMARK_START();
@@ -114,7 +114,7 @@ TEST_CASE("portMUX high contention", "[freertos]")
 {
     const int TOTAL_TASKS = 8; /* half on each core */
     done_sem = xSemaphoreCreateCounting(TOTAL_TASKS, 0);
-    vPortCPUInitializeMutex(&shared_mux);
+    portMUX_INITIALIZE(&shared_mux);
     shared_value = 0;
 
     BENCHMARK_START();

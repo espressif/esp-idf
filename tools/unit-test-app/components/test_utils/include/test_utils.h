@@ -78,7 +78,7 @@ extern "C" {
  * @param value :       the performance value.
 */
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
-    printf("[Performance][%s]: "value_fmt"\n", item, value, ##__VA_ARGS__)
+    printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
 
 
 /* Some definitions applicable to Unity running in FreeRTOS */

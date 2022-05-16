@@ -85,7 +85,7 @@ typedef void * MessageBufferHandle_t;
 /*-----------------------------------------------------------*/
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -139,7 +139,7 @@ typedef void * MessageBufferHandle_t;
  *  }
  *
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferCreate xMessageBufferCreate
  * @endcond
  * \ingroup MessageBufferManagement
@@ -148,7 +148,7 @@ typedef void * MessageBufferHandle_t;
     ( MessageBufferHandle_t ) xStreamBufferGenericCreate( xBufferSizeBytes, ( size_t ) 0, pdTRUE )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -210,7 +210,7 @@ typedef void * MessageBufferHandle_t;
  * }
  *
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferCreateStatic xMessageBufferCreateStatic
  * @endcond
  * \ingroup MessageBufferManagement
@@ -219,7 +219,7 @@ typedef void * MessageBufferHandle_t;
     ( MessageBufferHandle_t ) xStreamBufferGenericCreateStatic( xBufferSizeBytes, 0, pdTRUE, pucMessageBufferStorageArea, pxStaticMessageBuffer )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -314,7 +314,7 @@ typedef void * MessageBufferHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferSend xMessageBufferSend
  * @endcond
  * \ingroup MessageBufferManagement
@@ -323,7 +323,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferSend( ( StreamBufferHandle_t ) xMessageBuffer, pvTxData, xDataLengthBytes, xTicksToWait )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -423,7 +423,7 @@ typedef void * MessageBufferHandle_t;
  *  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferSendFromISR xMessageBufferSendFromISR
  * @endcond
  * \ingroup MessageBufferManagement
@@ -432,7 +432,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferSendFromISR( ( StreamBufferHandle_t ) xMessageBuffer, pvTxData, xDataLengthBytes, pxHigherPriorityTaskWoken )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -516,7 +516,7 @@ typedef void * MessageBufferHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferReceive xMessageBufferReceive
  * @endcond
  * \ingroup MessageBufferManagement
@@ -526,7 +526,7 @@ typedef void * MessageBufferHandle_t;
 
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -622,7 +622,7 @@ typedef void * MessageBufferHandle_t;
  *  portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferReceiveFromISR xMessageBufferReceiveFromISR
  * @endcond
  * \ingroup MessageBufferManagement
@@ -631,7 +631,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferReceiveFromISR( ( StreamBufferHandle_t ) xMessageBuffer, pvRxData, xBufferLengthBytes, pxHigherPriorityTaskWoken )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -654,7 +654,7 @@ typedef void * MessageBufferHandle_t;
     vStreamBufferDelete( ( StreamBufferHandle_t ) xMessageBuffer )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  * @code{c}
  * BaseType_t xMessageBufferIsFull( MessageBufferHandle_t xMessageBuffer ) );
@@ -674,9 +674,9 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferIsFull( ( StreamBufferHandle_t ) xMessageBuffer )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
- * @code{c}{c}
+ * @code{c}
  * BaseType_t xMessageBufferIsEmpty( MessageBufferHandle_t xMessageBuffer ) );
  * @endcode
  * @endcond
@@ -693,7 +693,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferIsEmpty( ( StreamBufferHandle_t ) xMessageBuffer )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  * @code{c}
  * BaseType_t xMessageBufferReset( MessageBufferHandle_t xMessageBuffer );
@@ -712,7 +712,7 @@ typedef void * MessageBufferHandle_t;
  * the message queue to wait for space to become available, or to wait for a
  * a message to be available, then pdFAIL is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferReset xMessageBufferReset
  * @endcond
  * \ingroup MessageBufferManagement
@@ -722,7 +722,7 @@ typedef void * MessageBufferHandle_t;
 
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  * @code{c}
  * size_t xMessageBufferSpaceAvailable( MessageBufferHandle_t xMessageBuffer ) );
@@ -740,7 +740,7 @@ typedef void * MessageBufferHandle_t;
  * architecture, so if xMessageBufferSpacesAvailable() returns 10, then the size
  * of the largest message that can be written to the message buffer is 6 bytes.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferSpaceAvailable xMessageBufferSpaceAvailable
  * @endcond
  * \ingroup MessageBufferManagement
@@ -751,7 +751,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferSpacesAvailable( ( StreamBufferHandle_t ) xMessageBuffer ) /* Corrects typo in original macro name. */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  * @code{c}
  * size_t xMessageBufferNextLengthBytes( MessageBufferHandle_t xMessageBuffer ) );
@@ -767,7 +767,7 @@ typedef void * MessageBufferHandle_t;
  * @return The length (in bytes) of the next message in the message buffer, or 0
  * if the message buffer is empty.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferNextLengthBytes xMessageBufferNextLengthBytes
  * @endcond
  * \ingroup MessageBufferManagement
@@ -776,7 +776,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferNextMessageLengthBytes( ( StreamBufferHandle_t ) xMessageBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -811,7 +811,7 @@ typedef void * MessageBufferHandle_t;
  * @return If a task was removed from the Blocked state then pdTRUE is returned.
  * Otherwise pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferSendCompletedFromISR xMessageBufferSendCompletedFromISR
  * @endcond
  * \ingroup StreamBufferManagement
@@ -820,7 +820,7 @@ typedef void * MessageBufferHandle_t;
     xStreamBufferSendCompletedFromISR( ( StreamBufferHandle_t ) xMessageBuffer, pxHigherPriorityTaskWoken )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -856,7 +856,7 @@ typedef void * MessageBufferHandle_t;
  * @return If a task was removed from the Blocked state then pdTRUE is returned.
  * Otherwise pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xMessageBufferReceiveCompletedFromISR xMessageBufferReceiveCompletedFromISR
  * @endcond
  * \ingroup StreamBufferManagement

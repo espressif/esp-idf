@@ -26,7 +26,7 @@
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/soc.h"
 #include "soc/io_mux_reg.h"
@@ -39,7 +39,7 @@
 
 #if CONFIG_SPIRAM_MODE_QUAD
 #include "soc/rtc.h"
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
 
 static const char* TAG = "psram";
 
@@ -118,8 +118,15 @@ typedef enum {
 typedef esp_rom_spi_cmd_t psram_cmd_t;
 
 static uint32_t s_psram_id = 0;
-static void IRAM_ATTR config_psram_spi_phases(void);
+static void config_psram_spi_phases(void);
 extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
+
+static uint8_t s_psram_cs_io = (uint8_t)-1;
+
+uint8_t psram_get_cs_io(void)
+{
+    return s_psram_cs_io;
+}
 
 static void psram_set_op_mode(int spi_num, psram_cmd_mode_t mode)
 {
@@ -271,7 +278,7 @@ static void psram_read_id(int spi_num, uint32_t* dev_id)
 }
 
 //enter QPI mode
-static void IRAM_ATTR psram_enable_qio_mode(int spi_num)
+static void psram_enable_qio_mode(int spi_num)
 {
     psram_exec_cmd(spi_num, PSRAM_CMD_SPI,
     PSRAM_ENTER_QMODE, 8,             /* command and command bit len*/
@@ -291,7 +298,7 @@ static void psram_set_cs_timing(void)
     SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_M | SPI_MEM_SPI_SMEM_CS_SETUP_M);
 }
 
-static void IRAM_ATTR psram_gpio_config(void)
+static void psram_gpio_config(void)
 {
     //CS1
     uint8_t cs1_io = PSRAM_CS_IO;
@@ -301,6 +308,7 @@ static void IRAM_ATTR psram_gpio_config(void)
         esp_rom_gpio_connect_out_signal(cs1_io, SPICS1_OUT_IDX, 0, 0);
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[cs1_io],  PIN_FUNC_GPIO);
     }
+    s_psram_cs_io = cs1_io;
 
     //WP HD
     uint8_t wp_io = PSRAM_SPIWP_SD3_IO;
@@ -333,7 +341,7 @@ psram_size_t psram_get_size(void)
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
  */
-esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
+esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
 {
     assert(mode < PSRAM_CACHE_MAX && "we don't support any other mode for now.");
 
@@ -375,7 +383,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 }
 
 //Configure PSRAM SPI0 phase related registers here according to the PSRAM chip requirement
-static void IRAM_ATTR config_psram_spi_phases(void)
+static void config_psram_spi_phases(void)
 {
     //Config CMD phase
     CLEAR_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(0), SPI_MEM_USR_SRAM_DIO_M);       //disable dio mode for cache command

@@ -1,16 +1,8 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "sys/param.h"
 #include "esp_timer_impl.h"
@@ -72,9 +64,6 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
-    if (unlikely(s_alarm_handler == NULL)) {
-        return 0;
-    }
     return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK) / SYSTIMER_LL_TICKS_PER_US;
 }
 
@@ -119,6 +108,23 @@ void esp_timer_impl_advance(int64_t time_us)
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
+esp_err_t esp_timer_impl_early_init(void)
+{
+    systimer_hal_init(&systimer_hal);
+
+#if !SOC_SYSTIMER_FIXED_TICKS_US
+    assert(rtc_clk_xtal_freq_get() == 40 && "update the step for xtal to support other XTAL:APB frequency ratios");
+    systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal
+    systimer_hal_set_steps_per_tick(&systimer_hal, 1, 1); // for pll
+#endif
+
+    systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK);
+    systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_ALARM_MODE_ONESHOT);
+    systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_LL_COUNTER_CLOCK);
+
+    return ESP_OK;
+}
+
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
@@ -136,16 +142,6 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (0x%x)", err);
         goto err_intr_alloc;
     }
-
-    systimer_hal_init(&systimer_hal);
-#if !SOC_SYSTIMER_FIXED_TICKS_US
-    assert(rtc_clk_xtal_freq_get() == 40 && "update the step for xtal to support other XTAL:APB frequency ratios");
-    systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal
-    systimer_hal_set_steps_per_tick(&systimer_hal, 1, 1); // for pll
-#endif
-    systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK);
-    systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_ALARM_MODE_ONESHOT);
-    systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_LL_COUNTER_CLOCK);
 
     /* TODO: if SYSTIMER is used for anything else, access to SYSTIMER_INT_ENA_REG has to be
     * protected by a shared spinlock. Since this code runs as part of early startup, this

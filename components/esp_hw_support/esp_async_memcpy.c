@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,8 @@ esp_err_t esp_async_memcpy_install(const async_memcpy_config_t *config, async_me
     // initialize implementation layer
     ret = async_memcpy_impl_init(&mcp_hdl->mcp_impl);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "DMA M2M init failed");
+
+    ESP_LOGD(TAG, "installed memory to memory copy channel at %p", mcp_hdl);
 
     *asmcp = mcp_hdl;
 

@@ -71,6 +71,26 @@ static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk
     return apb_period_n / apbclk_n;
 }
 
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+static inline int extra_dummy_under_timing_tuning(const spi_flash_hal_config_t *cfg)
+{
+    bool main_flash = (cfg->host_id == SPI1_HOST && cfg->cs_num == 0);
+    int extra_dummy = 0;
+    if (main_flash) {
+        /**
+         * For Octal Flash, the dummy is `usr_dummy` + `extra_dummy`, they are in two different regs, we don't touch `extra_dummy` here, so set extra_dummy 0.
+         * Instead, for both Quad and Octal Flash, we use `usr_dummy` and set the whole dummy length (usr_dummy + extra_dummy) to this register.
+         */
+        extra_dummy = cfg->extra_dummy;
+    } else {
+        // TODO: for other flash chips, dummy get logic implement here. Currently, still calculate extra dummy by itself.
+        abort();
+    }
+
+    return extra_dummy;
+}
+#endif //SOC_SPI_MEM_SUPPORT_TIME_TUNING
+
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
     if (!esp_ptr_internal(data_out) && cfg->host_id == SPI1_HOST) {
@@ -87,15 +107,36 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         .inst = data_out->inst, // Keeps the function pointer table
         .spi = spi_flash_ll_get_hw(cfg->host_id),
         .cs_num = cfg->cs_num,
-        .extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, APB_CLK_FREQ/clock_cfg->div),
-        .clock_conf = clock_cfg->clock_reg_val,
         .cs_hold = cfg->cs_hold,
         .cs_setup = cfg->cs_setup,
+        .base_io_mode = cfg->default_io_mode,
     };
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    if (cfg->using_timing_tuning) {
+        data_out->extra_dummy = extra_dummy_under_timing_tuning(cfg);
+        data_out->clock_conf = cfg->clock_config;
+    } else
+#endif // SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    {
+        data_out->extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, APB_CLK_FREQ/clock_cfg->div);
+        data_out->clock_conf = clock_cfg->clock_reg_val;
+    }
+
+
     if (cfg->auto_sus_en) {
         data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND;
         data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
     }
+
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    if (cfg->octal_mode_en) {
+        data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_OCTAL_MODE;
+    }
+
+    if (cfg->default_io_mode == SPI_FLASH_OPI_DTR) {
+        data_out->slicer_flags |= SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR;
+    }
+#endif
 
     HAL_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;

@@ -1,16 +1,9 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -337,7 +330,8 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(lan87xx->reset_gpio_num);
         gpio_set_direction(lan87xx->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan87xx->reset_gpio_num, 0);
-        esp_rom_delay_us(100); // insert min input assert time
+        /* assert nRST signal on LAN87xx a little longer than the minimum specified in datasheet */
+        esp_rom_delay_us(150);
         gpio_set_level(lan87xx->reset_gpio_num, 1);
     }
     return ESP_OK;
@@ -465,6 +459,25 @@ err:
     return ret;
 }
 
+static esp_err_t lan87xx_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+    esp_eth_mediator_t *eth = lan87xx->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t lan87xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -528,6 +541,7 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
     lan87xx->parent.pwrctl = lan87xx_pwrctl;
     lan87xx->parent.get_addr = lan87xx_get_addr;
     lan87xx->parent.set_addr = lan87xx_set_addr;
+    lan87xx->parent.loopback = lan87xx_loopback;
     lan87xx->parent.advertise_pause_ability = lan87xx_advertise_pause_ability;
     lan87xx->parent.del = lan87xx_del;
 

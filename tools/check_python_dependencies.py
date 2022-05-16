@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import os
@@ -39,7 +28,7 @@ def escape_backslash(path):
 if __name__ == '__main__':
     idf_path = os.getenv('IDF_PATH')
 
-    default_requirements_path = os.path.join(idf_path, 'requirements.txt')
+    default_requirements_path = os.path.join(idf_path, 'requirements.txt')  # type: ignore
 
     parser = argparse.ArgumentParser(description='ESP-IDF Python package dependency checker')
     parser.add_argument('--requirements', '-r',
@@ -55,8 +44,10 @@ if __name__ == '__main__':
             # adjustments for options which we use.
             if line.startswith('file://'):
                 line = os.path.basename(line)
+            if line.startswith('--only-binary'):
+                continue
             if line.startswith('-e') and '#egg=' in line:  # version control URLs, take the egg= part at the end only
-                line = re.search(r'#egg=([^\s]+)', line).group(1)
+                line = re.search(r'#egg=([^\s]+)', line).group(1)  # type: ignore
             try:
                 pkg_resources.require(line)
             except Exception:
@@ -76,7 +67,7 @@ if __name__ == '__main__':
                 install_script = 'install.bat'
             else:
                 install_script = 'install.sh'
-            print('To install the missing packages, please run "%s"' % os.path.join(idf_path, install_script))
+            print('To install the missing packages, please run "%s"' % os.path.join(idf_path, install_script))  # type: ignore
         elif sys.platform == 'win32' and os.environ.get('MSYSTEM', None) == 'MINGW32' and '/mingw32/bin/python' in sys.executable:
             print("The recommended way to install a packages is via \"pacman\". Please run \"pacman -Ss <package_name>\" for"
                   ' searching the package database and if found then '

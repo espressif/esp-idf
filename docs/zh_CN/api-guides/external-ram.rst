@@ -112,9 +112,13 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
  * Flash cache 禁用时（比如，正在写入 flash），片外 RAM 将无法访问；同样，对片外 RAM 的读写操作也将导致 cache 访问异常。出于这个原因，ESP-IDF 不会在片外 RAM 中分配任务堆栈（详见下文）。
 
- * 片外 RAM 不能用于储存 DMA 事物描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
+ * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。因此，当片外 RAM 启用时，与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
 
- * 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据可以挤出 flash cache，可能会降低代码执行速度。
+.. only:: SOC_PSRAM_DMA_CAPABLE
+
+    注意，尽管 {IDF_TARGET_NAME} 中已有硬件支持 DMA 与片外 RAM，但在 ESP-IDF 中，尚未提供软件支持。
+
+* 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据会挤出 flash cache，可能降低代码执行速度。
 
  * 一般来说，片外 RAM 不可用作任务堆栈存储器。因此 :cpp:func:`xTaskCreate` 及类似函数将始终为堆栈和任务 TCB 分配片上储存器，而 :cpp:func:`xTaskCreateStatic` 类型的函数将检查传递的 Buffer 是否属于片上存储器。
 

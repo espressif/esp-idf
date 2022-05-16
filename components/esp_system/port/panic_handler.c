@@ -1,16 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #include <stdlib.h>
 
 #include "esp_spi_flash.h"
@@ -32,14 +25,14 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/dport_access.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
+#endif
+
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/memprot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/memprot.h"
+#else
+#include "esp_memprot.h"
+#endif
 #endif
 
 #include "esp_private/panic_internal.h"
@@ -199,7 +192,8 @@ static void panic_handler(void *frame, bool pseudo_excause)
  * This function must always be in IRAM as it is required to
  * re-enable the flash cache.
  */
-static void IRAM_ATTR panic_enable_cache(void) {
+static void IRAM_ATTR panic_enable_cache(void)
+{
     int core_id = cpu_hal_get_core_id();
 
     if (!spi_flash_cache_enabled()) {
@@ -234,10 +228,19 @@ void __attribute__((noreturn)) panic_restart(void)
         digital_reset_needed = true;
     }
 #endif
-#if CONFIG_ESP_SYSTEM_CONFIG_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_IDF_TARGET_ESP32S2
     if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
         digital_reset_needed = true;
     }
+#else
+    bool is_on = false;
+    if (esp_mprot_is_intr_ena_any(&is_on) != ESP_OK || is_on) {
+        digital_reset_needed = true;
+    } else if (esp_mprot_is_conf_locked_any(&is_on) != ESP_OK || is_on) {
+        digital_reset_needed = true;
+    }
+#endif
 #endif
     if (digital_reset_needed) {
         esp_restart_noos_dig();

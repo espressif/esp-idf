@@ -56,14 +56,6 @@ menu "ESP32C3-Specific"
             The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
             instead of panicking, have the debugger stop on the offending instruction.
 
-    config ESP32C3_DEBUG_STUBS_ENABLE
-        bool "OpenOCD debug stubs"
-        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32C3_TRAX
-        help
-            Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
-            e.g. GCOV data dump.
-
     config ESP32C3_BROWNOUT_DET
         bool "Hardware brownout detect & reset"
         depends on !IDF_ENV_FPGA
@@ -191,24 +183,5 @@ menu "ESP32C3-Specific"
         help
             If enabled, this disables the linking of binary libraries in the application build. Note
             that after enabling this Wi-Fi/Bluetooth will not work.
-
-    config ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
-        bool "light sleep GPIO reset workaround"
-        default y
-        select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
-        help
-            ESP32C3 will reset at wake-up if GPIO is received a small electrostatic pulse during
-            light sleep, with specific condition
-
-            - GPIO needs to be configured as input-mode only
-            - The pin receives a small electrostatic pulse, and reset occurs when the pulse
-              voltage is higher than 6 V
-
-            For GPIO set to input mode only, it is not a good practice to leave it open/floating,
-            The hardware design needs to controlled it with determined supply or ground voltage
-            is necessary.
-
-            This option provides a software workaround for this issue. Configure to isolate all
-            GPIO pins in sleep state.
 
 endmenu  # ESP32C3-Specific

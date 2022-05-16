@@ -267,7 +267,8 @@ int tls_global_set_verify(void *tls_ctx, int check_crl)
 
 
 int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
-			      int verify_peer)
+			      int verify_peer, unsigned int flags,
+			      const u8 *session_ctx, size_t session_ctx_len)
 {
 #ifdef CONFIG_TLS_INTERNAL_SERVER
 	if (conn->server)
@@ -275,6 +276,7 @@ int tls_connection_set_verify(void *tls_ctx, struct tls_connection *conn,
 #endif /* CONFIG_TLS_INTERNAL_SERVER */
 	return -1;
 }
+
 
 int tls_connection_get_random(void *tls_ctx, struct tls_connection *conn,
 			    struct tls_random *data)
@@ -290,6 +292,7 @@ int tls_connection_get_random(void *tls_ctx, struct tls_connection *conn,
 	return -1;
 }
 
+
 static int tls_get_keyblock_size(struct tls_connection *conn)
 {
 #ifdef CONFIG_TLS_INTERNAL_CLIENT
@@ -303,8 +306,10 @@ static int tls_get_keyblock_size(struct tls_connection *conn)
 	return -1;
 }
 
+
 static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
-			      const char *label, int server_random_first,
+			      const char *label, const u8 *context,
+			      size_t context_len, int server_random_first,
 			      int skip_keyblock, u8 *out, size_t out_len)
 {
 	int ret = -1, skip = 0;
@@ -320,32 +325,45 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 			return -1;
 		_out = tmp_out;
 	}
+
 #ifdef CONFIG_TLS_INTERNAL_CLIENT
 	if (conn->client) {
 		ret = tlsv1_client_prf(conn->client, label,
-					server_random_first,
-					out, out_len);
+				       server_random_first,
+				       _out, skip + out_len);
 	}
 #endif /* CONFIG_TLS_INTERNAL_CLIENT */
 #ifdef CONFIG_TLS_INTERNAL_SERVER
 	if (conn->server) {
 		ret = tlsv1_server_prf(conn->server, label,
-					server_random_first,
-					out, out_len);
+				       server_random_first,
+				       _out, skip + out_len);
 	}
 #endif /* CONFIG_TLS_INTERNAL_SERVER */
 	if (ret == 0 && skip_keyblock)
 		os_memcpy(out, _out + skip, out_len);
-	wpa_bin_clear_free(tmp_out, skip);
+	bin_clear_free(tmp_out, skip);
 
 	return ret;
 }
 
+
 int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
-			      const char *label, u8 *out, size_t out_len)
+			      const char *label, const u8 *context,
+			      size_t context_len, u8 *out, size_t out_len)
 {
-	return tls_connection_prf(tls_ctx, conn, label, 0, 0, out, out_len);
+	return tls_connection_prf(tls_ctx, conn, label, context, context_len,
+				  0, 0, out, out_len);
 }
+
+
+int tls_connection_get_eap_fast_key(void *tls_ctx, struct tls_connection *conn,
+				    u8 *out, size_t out_len)
+{
+	return tls_connection_prf(tls_ctx, conn, "key expansion", NULL, 0,
+				  1, 1, out, out_len);
+}
+
 
 struct wpabuf * tls_connection_handshake(void *tls_ctx,
 					 struct tls_connection *conn,

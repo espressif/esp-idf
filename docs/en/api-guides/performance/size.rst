@@ -298,6 +298,7 @@ The following configuration options will reduce the final binary size of almost 
     - Don't enable :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS`, :ref:`CONFIG_COMPILER_CXX_RTTI`, or set the :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` to Overall. All of these options are already disabled by default, but they have a large impact on binary size.
     - Disabling :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` will remove the lookup table to translate user-friendly names for error values (see :doc:`/api-guides/error-handling`) in error logs, etc. This saves some binary size, but error values will be printed as integers only.
     - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to "Silent reboot" will save a small amount of binary size, however this is *only* recommended if no one will use UART output to debug the device.
+    :CONFIG_IDF_TARGET_ARCH_RISCV: - Set :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` to reduce binary size by replacing inlined prologues/epilogues with library calls.
 
 .. note::
 
@@ -314,6 +315,7 @@ Wi-Fi
 @@@@@
 
 - Disabling :ref:`CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE` will save some Wi-Fi binary size if WPA3 support is not needed. (Note that WPA3 is mandatory for new Wi-Fi device certifications.)
+- Disabling :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` will save some Wi-Fi binary size if soft-AP support is not needed.
 
 .. only:: esp32
 
@@ -412,7 +414,7 @@ VFS
 * :ref:`CONFIG_VFS_SUPPORT_TERMIOS` — can be disabled if the application doesn't use ``termios`` family of functions. Currently, these functions are implemented only for UART VFS driver. Most applications can disable this option. Disabling this option reduces the code size by about 1.8 kB.
 * :ref:`CONFIG_VFS_SUPPORT_SELECT` — can be disabled if the application doesn't use ``select`` function with file descriptors. Currently, only the UART and eventfd VFS drivers implement ``select`` support. Note that when this option is disabled, ``select`` can still be used for socket file descriptors. Disabling this option reduces the code size by about 2.7 kB.
 * :ref:`CONFIG_VFS_SUPPORT_DIR` — can be disabled if the application doesn't use directory related functions, such as ``readdir`` (see the description of this option for the complete list). Applications which only open, read and write specific files and don't need to enumerate or create directories can disable this option, reducing the code size by 0.5 kB or more, depending on the filesystem drivers in use.
-* :ref:`CONFIG_VFS_SUPPORT_IO` — can be disabled if the application doesn't use filesystems or file-like peripheral drivers. This disables all VFS functionality, including the three options mentioned above. When this option is disabled, :doc:`console </api-reference/system/console>` can't be used. Note that the application can still use standard I/O functions with socket file descriptors when this option is disabled. Compared to the default configuration, disabling this option reduces code size by about 9.4 kB. 
+* :ref:`CONFIG_VFS_SUPPORT_IO` — can be disabled if the application doesn't use filesystems or file-like peripheral drivers. This disables all VFS functionality, including the three options mentioned above. When this option is disabled, :doc:`console </api-reference/system/console>` can't be used. Note that the application can still use standard I/O functions with socket file descriptors when this option is disabled. Compared to the default configuration, disabling this option reduces code size by about 9.4 kB.
 
 Bootloader Size
 ---------------

@@ -27,3 +27,12 @@ _timezone = 0x3ffae0a0;
 _tzname = 0x3ffae030;
 _daylight = 0x3ffae0a4;
 __month_lengths = 0x3ff9609c;
+
+/* These functions don't use time_t, but use other structures which include time_t.
+ * For example, 'struct stat' contains time_t.
+ */
+_isatty_r = 0x40000ea0;
+__sfvwrite_r = 0x4005893c;
+__smakebuf_r = 0x40059108;
+__srefill_r = 0x400593d4;
+__swsetup_r = 0x40058cc8;

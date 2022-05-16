@@ -88,6 +88,9 @@ esp_log_level_t esp_log_level_get(const char* tag);
  * output to some other destination, such as file or network. Returns the original
  * log handler, which may be necessary to return output to the previous destination.
  *
+ * @note Please note that function callback here must be re-entrant as it can be
+ * invoked in parallel from multiple thread context.
+ *
  * @param func new Function used for output. Must have same signature as vprintf.
  *
  * @return func old Function used for output.

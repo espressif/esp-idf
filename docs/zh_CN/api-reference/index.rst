@@ -13,5 +13,6 @@ API 参考
    配网 <provisioning/index>
    存储 <storage/index>
    System <system/index>
+   API Conventions <api-conventions>
    Configuration Options <kconfig>
    Error Codes Reference <error-codes>

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_http_server.h"
+#include "esp_tls.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +20,22 @@ typedef enum {
     HTTPD_SSL_TRANSPORT_SECURE,      // SSL Enabled
     HTTPD_SSL_TRANSPORT_INSECURE     // SSL disabled
 } httpd_ssl_transport_mode_t;
+
+/**
+ * @brief Callback data struct, contains the ESP-TLS connection handle
+ */
+typedef struct esp_https_server_user_cb_arg {
+    const esp_tls_t *tls;
+} esp_https_server_user_cb_arg_t;
+
+/**
+ * @brief Callback function prototype
+ * Can be used to get connection or client information (SSL context)
+ * E.g. Client certificate, Socket FD, Connection state, etc.
+ *
+ * @param user_cb Callback data struct
+ */
+typedef void esp_https_server_user_cb(esp_https_server_user_cb_arg_t *user_cb);
 
 /**
  * HTTPS server config struct
@@ -63,6 +80,12 @@ struct httpd_ssl_config {
 
     /** Port used when transport mode is insecure (default 80) */
     uint16_t port_insecure;
+
+    /** Enable tls session tickets */
+    bool session_tickets;
+
+    /** User callback for esp_https_server */
+    esp_https_server_user_cb *user_cb;
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
@@ -109,6 +132,8 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
+    .session_tickets = false,                     \
+    .user_cb = NULL,                              \
 }
 
 /**

@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := i2s-adc-dac
+PROJECT_NAME := i2s_adc_dac
 
 include $(IDF_PATH)/make/project.mk

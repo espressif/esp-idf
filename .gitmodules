@@ -3,10 +3,6 @@
 # For Espressif's public projects please use '../../espressif/proj', not a '../proj'
 #
 
-[submodule "components/esptool_py/esptool"]
-	path = components/esptool_py/esptool
-	url = ../../espressif/esptool.git
-
 [submodule "components/bt/controller/lib_esp32"]
 	path = components/bt/controller/lib_esp32
         url = ../../espressif/esp32-bt-lib.git
@@ -110,3 +106,7 @@
 [submodule "components/ieee802154/lib"]
 	path = components/ieee802154/lib
 	url = ../../espressif/esp-ieee802154-lib.git
+[submodule "components/esptool_py/esptool"]
+	path = components/esptool_py/esptool
+	url = https://github.com/ci4rail/esptool.git
+	branch = fix_flash_over_slow_ip

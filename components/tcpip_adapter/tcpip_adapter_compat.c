@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_netif.h"
 #include "esp_private/wifi.h"
@@ -51,6 +43,7 @@ static const char* s_netif_keyif[TCPIP_ADAPTER_IF_MAX] = {
 
 static bool s_tcpip_adapter_compat = false;
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 static void wifi_create_and_start_ap(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
     if (s_esp_netifs[TCPIP_ADAPTER_IF_AP] == NULL) {
@@ -62,6 +55,7 @@ static void wifi_create_and_start_ap(void *esp_netif, esp_event_base_t base, int
         s_esp_netifs[TCPIP_ADAPTER_IF_AP] = ap_netif;
     }
 }
+#endif
 
 static void wifi_create_and_start_sta(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
@@ -85,10 +79,13 @@ static inline esp_netif_t * netif_from_if(tcpip_adapter_if_t interface)
                 if (interface == TCPIP_ADAPTER_IF_STA) {
                     wifi_create_and_start_sta(NULL, 0, 0, NULL);
                     s_esp_netifs[interface] = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
-                } else if (interface == TCPIP_ADAPTER_IF_AP) {
+                }
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+                else if (interface == TCPIP_ADAPTER_IF_AP) {
                     wifi_create_and_start_ap(NULL, 0, 0, NULL);
                     s_esp_netifs[interface] = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
                 }
+#endif
             }
         }
         return s_esp_netifs[interface];
@@ -147,10 +144,12 @@ esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb)
     return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_STA), buffer, len, eb);
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb)
 {
     return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_AP), buffer, len, eb);
 }
+#endif
 
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
 {
@@ -161,10 +160,12 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
         if (err != ESP_OK) {
             return err;
         }
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
         err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_START, wifi_create_and_start_ap, NULL);
         if (err != ESP_OK) {
             return err;
         }
+#endif
         _esp_wifi_set_default_wifi_handlers();
     }
     return ESP_OK;
@@ -319,11 +320,13 @@ esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info
                                             mac, ip_info);
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 esp_err_t tcpip_adapter_ap_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
 {
     return tcpip_adapter_compat_start_netif(netif_from_if(TCPIP_ADAPTER_IF_AP),
                                             mac, ip_info);
 }
+#endif
 
 esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
 {

@@ -450,7 +450,7 @@ void vTimerSetTimerID( TimerHandle_t xTimer,
 BaseType_t xTimerIsTimerActive( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * TaskHandle_t xTimerGetTimerDaemonTaskHandle( void );
  * @endcond
  *
@@ -1315,7 +1315,7 @@ TickType_t xTimerGetPeriod( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
  */
 TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /*
  * Functions beyond this part are not part of the public API and are intended
@@ -1339,7 +1339,7 @@ BaseType_t xTimerGenericCommand( TimerHandle_t xTimer,
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
     /**
-     * @cond
+     * @cond !DOC_EXCLUDE_HEADER_SECTION
      * task.h
      * @code{c}
      * void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer, StackType_t ** ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )

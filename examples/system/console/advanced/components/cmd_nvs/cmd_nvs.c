@@ -538,7 +538,7 @@ void register_nvs(void)
         .help = "Set key-value pair in selected namespace.\n"
         "Examples:\n"
         " nvs_set VarName i32 -v 123 \n"
-        " nvs_set VarName srt -v YourString \n"
+        " nvs_set VarName str -v YourString \n"
         " nvs_set VarName blob -v 0123456789abcdef \n",
         .hint = NULL,
         .func = &set_value,

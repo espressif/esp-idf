@@ -18,8 +18,8 @@
 
 static const char *TAG = "PUBLISH_CONNECT_TEST";
 
-void connection_test(const char* line);
-void publish_test(const char* line);
+void connection_test(const char *line);
+void publish_test(const char *line);
 
 static void get_string(char *line, size_t size)
 {

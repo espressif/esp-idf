@@ -34,6 +34,9 @@ void esp_chip_info(esp_chip_info_t* out_info)
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
+    if(package == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3) {
+        out_info->features |= CHIP_FEATURE_EMB_PSRAM;
+    }
 }
 
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX

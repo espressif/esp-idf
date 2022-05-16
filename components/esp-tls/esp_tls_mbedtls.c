@@ -44,7 +44,6 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
-
 /* This function shall return the error message when appropriate log level has been set, otherwise this function shall do nothing */
 static void mbedtls_print_error_msg(int error)
 {
@@ -132,12 +131,48 @@ exit:
 
 }
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+esp_tls_client_session_t *esp_mbedtls_get_client_session(esp_tls_t *tls)
+{
+    if (tls == NULL) {
+        ESP_LOGE(TAG, "esp_tls session context cannot be NULL");
+        return NULL;
+    }
+
+    esp_tls_client_session_t *client_session = (esp_tls_client_session_t*)calloc(1, sizeof(esp_tls_client_session_t));
+    if (client_session == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for client session ctx");
+        return NULL;
+    }
+
+    int ret = mbedtls_ssl_get_session(&tls->ssl, &(client_session->saved_session));
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Error in obtaining the client ssl session");
+        mbedtls_print_error_msg(ret);
+        free(client_session);
+        return NULL;
+    }
+
+    return client_session;
+}
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
 int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
 {
     int ret;
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    if (cfg->client_session != NULL) {
+        ESP_LOGD(TAG, "Reusing the already saved client session context");
+        if ((ret = mbedtls_ssl_set_session(&tls->ssl, &(cfg->client_session->saved_session))) != 0 ) {
+            ESP_LOGE(TAG, " mbedtls_ssl_conf_session returned -0x%04X", -ret);
+            return -1;
+        }
+    }
+#endif
     ret = mbedtls_ssl_handshake(&tls->ssl);
     if (ret == 0) {
         tls->conn_state = ESP_TLS_DONE;
+
 #ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
         esp_ds_release_ds_lock();
 #endif
@@ -198,10 +233,10 @@ ssize_t esp_mbedtls_write(esp_tls_t *tls, const char *data, size_t datalen)
                 mbedtls_print_error_msg(ret);
                 return ret;
             } else {
-                // Exitting the tls-write process as less than desired datalen are writable
+                // Exiting the tls-write process as less than desired datalen are writable
                 ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04X, already written %d, exitting...", -ret, written);
                 mbedtls_print_error_msg(ret);
-                return written;
+                return (written > 0) ? written : ret;
             }
         }
         written += ret;
@@ -368,8 +403,75 @@ static esp_err_t set_global_ca_store(esp_tls_t *tls)
     return ESP_OK;
 }
 
-
 #ifdef CONFIG_ESP_TLS_SERVER
+#ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
+int esp_mbedtls_server_session_ticket_write(void *p_ticket, const mbedtls_ssl_session *session, unsigned char *start, const unsigned char *end, size_t *tlen, uint32_t *lifetime)
+{
+    int ret = mbedtls_ssl_ticket_write(p_ticket, session, start, end, tlen, lifetime);
+#ifndef NDEBUG
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Writing session ticket resulted in error code -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
+    }
+#endif
+    return ret;
+}
+
+int esp_mbedtls_server_session_ticket_parse(void *p_ticket, mbedtls_ssl_session *session, unsigned char *buf, size_t len)
+{
+    int ret = mbedtls_ssl_ticket_parse(p_ticket, session, buf, len);
+#ifndef NDEBUG
+    if (ret != 0) {
+        ESP_LOGD(TAG, "Parsing session ticket resulted in error code -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
+    }
+#endif
+    return ret;
+}
+
+esp_err_t esp_mbedtls_server_session_ticket_ctx_init(esp_tls_server_session_ticket_ctx_t *ctx)
+{
+    if (!ctx) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+    mbedtls_entropy_init(&ctx->entropy);
+    mbedtls_ssl_ticket_init(&ctx->ticket_ctx);
+    int ret;
+    esp_err_t esp_ret;
+    if ((ret = mbedtls_ctr_drbg_seed(&ctx->ctr_drbg,
+                    mbedtls_entropy_func, &ctx->entropy, NULL, 0)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
+        esp_ret = ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
+        goto exit;
+    }
+
+    if((ret = mbedtls_ssl_ticket_setup(&ctx->ticket_ctx,
+                    mbedtls_ctr_drbg_random, &ctx->ctr_drbg,
+                    MBEDTLS_CIPHER_AES_256_GCM,
+                    CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ssl_ticket_setup returned -0x%04X", -ret);
+        mbedtls_print_error_msg(ret);
+        esp_ret = ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED;
+        goto exit;
+    }
+    return ESP_OK;
+exit:
+    esp_mbedtls_server_session_ticket_ctx_free(ctx);
+    return esp_ret;
+}
+
+void esp_mbedtls_server_session_ticket_ctx_free(esp_tls_server_session_ticket_ctx_t *ctx)
+{
+    if (ctx) {
+        mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
+        mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
+        mbedtls_entropy_free(&ctx->entropy);
+    }
+}
+#endif
+
 esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
     assert(cfg != NULL);
@@ -398,7 +500,7 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             return esp_ret;
         }
     } else {
-        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
     }
 
     if (cfg->servercert_buf != NULL && cfg->serverkey_buf != NULL) {
@@ -421,6 +523,18 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
         ESP_LOGE(TAG, "Missing server certificate and/or key");
         return ESP_ERR_INVALID_STATE;
     }
+
+#ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
+    if (cfg->ticket_ctx) {
+        ESP_LOGD(TAG, "Enabling server-side tls session ticket support");
+
+        mbedtls_ssl_conf_session_tickets_cb( &tls->conf,
+                esp_mbedtls_server_session_ticket_write,
+                esp_mbedtls_server_session_ticket_parse,
+                &cfg->ticket_ctx->ticket_ctx );
+    }
+#endif
+
     return ESP_OK;
 }
 #endif /* ! CONFIG_ESP_TLS_SERVER */
@@ -480,6 +594,13 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #endif
     }
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    ESP_LOGD(TAG, "Enabling client-side tls session ticket support");
+    mbedtls_ssl_conf_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
+    mbedtls_ssl_conf_renegotiation(&tls->conf, MBEDTLS_SSL_RENEGOTIATION_ENABLED);
+
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
     if (cfg->crt_bundle_attach != NULL) {
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
         ESP_LOGD(TAG, "Use certificate bundle");
@@ -516,6 +637,10 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #else
         ESP_LOGE(TAG, "psk_hint_key configured but not enabled in menuconfig: Please enable ESP_TLS_PSK_VERIFICATION option");
         return ESP_ERR_INVALID_STATE;
+#endif
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    } else if (cfg->client_session != NULL) {
+        ESP_LOGD(TAG, "Resuing the saved client session");
 #endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY

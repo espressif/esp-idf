@@ -62,6 +62,8 @@ static void rfc_set_port_state(tPORT_STATE *port_pars, MX_FRAME *p_frame);
 *******************************************************************************/
 void rfc_port_sm_execute (tPORT *p_port, UINT16 event, void *p_data)
 {
+    RFCOMM_TRACE_DEBUG("%s st:%d, evt:%d\n", __func__, p_port->rfc.state, event);
+
     if (!p_port) {
         RFCOMM_TRACE_WARNING ("NULL port event %d", event);
         return;
@@ -296,6 +298,11 @@ void rfc_port_sm_term_wait_sec_check (tPORT *p_port, UINT16 event, void *p_data)
         if (*((UINT8 *)p_data) != RFCOMM_SUCCESS) {
             if (p_port->rfc.p_mcb) {
                 rfc_send_dm (p_port->rfc.p_mcb, p_port->dlci, TRUE);
+                if (*((UINT8 *)p_data) == RFCOMM_LOW_RESOURCES) {
+                    port_rfc_closed(p_port, PORT_NO_RESOURCES);
+                } else {
+                    port_rfc_closed(p_port, PORT_UNKNOWN_ERROR);
+                }
             }
         } else {
             rfc_send_ua (p_port->rfc.p_mcb, p_port->dlci);

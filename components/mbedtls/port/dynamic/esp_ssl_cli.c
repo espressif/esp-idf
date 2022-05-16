@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <sys/param.h>
 #include <stdbool.h>
 #include "esp_mbedtls_dynamic_impl.h"
@@ -72,19 +64,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 if (!ssl->keep_current_message) {
                     CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
                 }
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-                /**
-                 * If current ciphersuite is RSA, we should free peer'
-                 * certificate at step  MBEDTLS_SSL_CLIENT_KEY_EXCHANGE.
-                 *
-                 * And if it is other kinds of ciphersuite, we can free
-                 * peer certificate here.
-                 */
-
-                if (esp_mbedtls_ssl_is_rsa(ssl) == false) {
-                    esp_mbedtls_free_peer_cert(ssl);
-                }
-#endif
             }
             break;
         case MBEDTLS_SSL_CERTIFICATE_REQUEST:
@@ -133,12 +112,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 size_t buffer_len = MBEDTLS_SSL_OUT_BUFFER_LEN;
 
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
-            } else {
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-                if (esp_mbedtls_ssl_is_rsa(ssl) == true) {
-                    esp_mbedtls_free_peer_cert(ssl);
-                }
-#endif
             }
             break;
         case MBEDTLS_SSL_CERTIFICATE_VERIFY:

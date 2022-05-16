@@ -84,7 +84,7 @@ endif() # CONFIG_TINYUSB
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes_public}
                        PRIV_INCLUDE_DIRS ${includes_private}
-                       PRIV_REQUIRES "vfs"
+                       PRIV_REQUIRES "vfs" "usb"
                        )
 
 if(CONFIG_TINYUSB)

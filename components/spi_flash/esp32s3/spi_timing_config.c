@@ -358,3 +358,53 @@ void spi_timing_config_psram_tune_dummy(uint8_t extra_dummy)
 }
 
 #endif //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+
+
+/*-------------------------------------------------------------------------------------------------
+ * To let upper lay (spi_flash_timing_tuning.c) to know the necessary timing registers
+ *-------------------------------------------------------------------------------------------------*/
+static bool s_get_cs_setup_enable(void)
+{
+    return REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_SETUP);
+}
+
+static bool s_get_cs_hold_enable(void)
+{
+    return REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD);
+}
+
+/**
+ * Get the SPI1 Flash CS timing setting. The setup time and hold time are both realistic cycles.
+ * @note On ESP32-S3, SPI0/1 share the Flash CS timing registers. Therefore, we should not change these values.
+ * @note This function inform `spi_flash_timing_tuning.c` (driver layer) of the cycle,
+ * and other component (esp_flash driver) should get these cycle and configure the registers accordingly.
+ */
+void spi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time)
+{
+    *setup_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME);
+    *hold_time = REG_GET_FIELD(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME);
+    /**
+     * The logic here is, if setup_en / hold_en is false, then we return the realistic cycle number,
+     * which is 0. If true, then the realistic cycle number is (reg_value + 1)
+     */
+    if (s_get_cs_setup_enable()) {
+        *setup_time += 1;
+    } else {
+        *setup_time = 0;
+    }
+    if (s_get_cs_hold_enable()) {
+        *hold_time += 1;
+    } else {
+        *hold_time = 0;
+    }
+}
+
+/**
+ * Get the SPI1 Flash clock setting.
+ * @note Similarly, this function inform `spi_flash_timing_tuning.c` (driver layer) of the clock setting,
+ * and other component (esp_flash driver) should get these and configure the registers accordingly.
+ */
+uint32_t spi_timing_config_get_flash_clock_reg(void)
+{
+    return READ_PERI_REG(SPI_MEM_CLOCK_REG(1));
+}

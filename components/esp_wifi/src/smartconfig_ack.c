@@ -1,16 +1,8 @@
-// Copyright 2010-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  * After station connects to AP and gets IP address by smartconfig,
@@ -68,9 +60,11 @@ static int sc_ack_send_get_errno(int fd)
     int sock_errno = 0;
     u32_t optlen = sizeof(sock_errno);
 
-    getsockopt(fd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+    if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen) < 0) {
+        return sock_errno;
+    }
 
-    return sock_errno;
+    return 0;
 }
 
 static void sc_ack_send_task(void *pvParameters)
@@ -127,7 +121,15 @@ static void sc_ack_send_task(void *pvParameters)
                 goto _end;
             }
 
-            setsockopt(send_sock, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &optval, sizeof(int));
+            if (setsockopt(send_sock, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(int)) < 0) {
+                ESP_LOGE(TAG,  "setsockopt SO_BROADCAST failed");
+                goto _end;
+            }
+
+            if (setsockopt(send_sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) < 0) {
+                ESP_LOGE(TAG,  "setsockopt SO_REUSEADDR failed");
+                goto _end;
+            }
 
             if (ack->type == SC_TYPE_AIRKISS) {
                 char data = 0;
@@ -148,10 +150,17 @@ static void sc_ack_send_task(void *pvParameters)
                     local_addr.sin_port = htons(SC_ACK_TOUCH_DEVICE_PORT);
                 }
 
-                bind(send_sock, (struct sockaddr *)&local_addr, sockadd_len);
-                setsockopt(send_sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+                if (bind(send_sock, (struct sockaddr *)&local_addr, sockadd_len) < 0) {
+                    ESP_LOGE(TAG,  "socket bind failed");
+                    goto _end;
+                }
+                if (setsockopt(send_sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+                    goto _end;
+                }
 
-                recvfrom(send_sock, &data, 1, 0, (struct sockaddr *)&from, &sockadd_len);
+                if (recvfrom(send_sock, &data, 1, 0, (struct sockaddr *)&from, &sockadd_len) < 0) {
+                    goto _end;
+                }
                 if (from.sin_addr.s_addr != INADDR_ANY) {
                     memcpy(remote_ip, &from.sin_addr, 4);
                     server_addr.sin_addr.s_addr = from.sin_addr.s_addr;
@@ -184,9 +193,7 @@ static void sc_ack_send_task(void *pvParameters)
     }
 
 _end:
-    if ((send_sock >= LWIP_SOCKET_OFFSET) && (send_sock <= (FD_SETSIZE - 1))) {
-        close(send_sock);
-    }
+    close(send_sock);
     free(ack);
     vTaskDelete(NULL);
 }

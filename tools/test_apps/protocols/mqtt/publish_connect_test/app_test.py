@@ -8,6 +8,7 @@ import socket
 import ssl
 import string
 import subprocess
+import sys
 from threading import Event, Thread
 
 import paho.mqtt.client as mqtt
@@ -239,7 +240,74 @@ class TlsServer:
             self.shutdown.set()
 
 
-@ttfw_idf.idf_custom_test(env_tag='Example_WIFI', group='test-apps')
+def connection_tests(dut, cases):
+    ip = get_my_ip()
+    set_server_cert_cn(ip)
+    server_port = 2222
+
+    def teardown_connection_suite():
+        dut.write('conn teardown 0 0')
+
+    def start_connection_case(case, desc):
+        print('Starting {}: {}'.format(case, desc))
+        case_id = cases[case]
+        dut.write('conn {} {} {}'.format(ip, server_port, case_id))
+        dut.expect('Test case:{} started'.format(case_id))
+        return case_id
+
+    for case in ['CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT', 'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_CERT', 'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_DER_CERT']:
+        # All these cases connect to the server with no server verification or with server only verification
+        with TlsServer(server_port):
+            test_nr = start_connection_case(case, 'default server - expect to connect normally')
+            dut.expect('MQTT_EVENT_CONNECTED: Test={}'.format(test_nr), timeout=30)
+        with TlsServer(server_port, refuse_connection=True):
+            test_nr = start_connection_case(case, 'ssl shall connect, but mqtt sends connect refusal')
+            dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
+            dut.expect('MQTT ERROR: 0x5')  # expecting 0x5 ... connection not authorized error
+        with TlsServer(server_port, client_cert=True) as s:
+            test_nr = start_connection_case(case, 'server with client verification - handshake error since client presents no client certificate')
+            dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
+            dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
+            if 'PEER_DID_NOT_RETURN_A_CERTIFICATE' not in s.get_last_ssl_error():
+                raise('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
+
+    for case in ['CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH', 'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD']:
+        # These cases connect to server with both server and client verification (client key might be password protected)
+        with TlsServer(server_port, client_cert=True):
+            test_nr = start_connection_case(case, 'server with client verification - expect to connect normally')
+            dut.expect('MQTT_EVENT_CONNECTED: Test={}'.format(test_nr), timeout=30)
+
+    case = 'CONFIG_EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT'
+    with TlsServer(server_port) as s:
+        test_nr = start_connection_case(case, 'invalid server certificate on default server - expect ssl handshake error')
+        dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
+        dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (TLSV1_ALERT_UNKNOWN_CA)
+        if 'alert unknown ca' not in s.get_last_ssl_error():
+            raise Exception('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
+
+    case = 'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT'
+    with TlsServer(server_port, client_cert=True) as s:
+        test_nr = start_connection_case(case, 'Invalid client certificate on server with client verification - expect ssl handshake error')
+        dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
+        dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (CERTIFICATE_VERIFY_FAILED)
+        if 'CERTIFICATE_VERIFY_FAILED' not in s.get_last_ssl_error():
+            raise Exception('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
+
+    for case in ['CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT', 'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN']:
+        with TlsServer(server_port, use_alpn=True) as s:
+            test_nr = start_connection_case(case, 'server with alpn - expect connect, check resolved protocol')
+            dut.expect('MQTT_EVENT_CONNECTED: Test={}'.format(test_nr), timeout=30)
+            if case == 'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT' and s.get_negotiated_protocol() is None:
+                print(' - client with alpn off, no negotiated protocol: OK')
+            elif case == 'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN' and s.get_negotiated_protocol() == 'mymqtt':
+                print(' - client with alpn on, negotiated protocol resolved: OK')
+            else:
+                raise Exception('Unexpected negotiated protocol {}'.format(s.get_negotiated_protocol()))
+
+    teardown_connection_suite()
+
+
+@ttfw_idf.idf_custom_test(env_tag='Example_EthKitV1', group='test-apps')
 def test_app_protocol_mqtt_publish_connect(env, extra_data):
     """
     steps:
@@ -257,23 +325,41 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
     cases = {}
     publish_cfg = {}
     try:
+
+        # Get connection test cases configuration: symbolic names for test cases
+        for case in ['CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_CERT',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_DER_CERT',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT',
+                     'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN']:
+            cases[case] = dut1.app.get_sdkconfig()[case]
+    except Exception:
+        print('ENV_TEST_FAILURE: Some mandatory CONNECTION test case not found in sdkconfig')
+        raise
+
+    dut1.start_app()
+    esp_ip = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)
+    print('Got IP={}'.format(esp_ip[0]))
+
+    if not os.getenv('MQTT_SKIP_CONNECT_TEST'):
+        connection_tests(dut1,cases)
+
+    #
+    # start publish tests only if enabled in the environment (for weekend tests only)
+    if not os.getenv('MQTT_PUBLISH_TEST'):
+        return
+
+    # Get publish test configuration
+    try:
         def get_host_port_from_dut(dut1, config_option):
             value = re.search(r'\:\/\/([^:]+)\:([0-9]+)', dut1.app.get_sdkconfig()[config_option])
             if value is None:
                 return None, None
             return value.group(1), int(value.group(2))
 
-        # Get connection test cases configuration: symbolic names for test cases
-        for i in ['CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_CERT',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_DER_CERT',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT',
-                  'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN']:
-            cases[i] = dut1.app.get_sdkconfig()[i]
-        # Get publish test configuration
         publish_cfg['publish_topic'] = dut1.app.get_sdkconfig()['CONFIG_EXAMPLE_SUBSCIBE_TOPIC'].replace('"','')
         publish_cfg['subscribe_topic'] = dut1.app.get_sdkconfig()['CONFIG_EXAMPLE_PUBLISH_TOPIC'].replace('"','')
         publish_cfg['broker_host_ssl'], publish_cfg['broker_port_ssl'] = get_host_port_from_dut(dut1, 'CONFIG_EXAMPLE_BROKER_SSL_URI')
@@ -282,79 +368,8 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
         publish_cfg['broker_host_wss'], publish_cfg['broker_port_wss'] = get_host_port_from_dut(dut1, 'CONFIG_EXAMPLE_BROKER_WSS_URI')
 
     except Exception:
-        print('ENV_TEST_FAILURE: Some mandatory test case not found in sdkconfig')
+        print('ENV_TEST_FAILURE: Some mandatory PUBLISH test case not found in sdkconfig')
         raise
-
-    dut1.start_app()
-    esp_ip = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)
-    print('Got IP={}'.format(esp_ip[0]))
-
-    #
-    # start connection test
-    ip = get_my_ip()
-    set_server_cert_cn(ip)
-    server_port = 2222
-
-    def start_connection_case(case, desc):
-        print('Starting {}: {}'.format(case, desc))
-        case_id = cases[case]
-        dut1.write('conn {} {} {}'.format(ip, server_port, case_id))
-        dut1.expect('Test case:{} started'.format(case_id))
-        return case_id
-
-    for case in ['CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT', 'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_CERT', 'CONFIG_EXAMPLE_CONNECT_CASE_SERVER_DER_CERT']:
-        # All these cases connect to the server with no server verification or with server only verification
-        with TlsServer(server_port):
-            test_nr = start_connection_case(case, 'default server - expect to connect normally')
-            dut1.expect('MQTT_EVENT_CONNECTED: Test={}'.format(test_nr), timeout=30)
-        with TlsServer(server_port, refuse_connection=True):
-            test_nr = start_connection_case(case, 'ssl shall connect, but mqtt sends connect refusal')
-            dut1.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-            dut1.expect('MQTT ERROR: 0x5')  # expecting 0x5 ... connection not authorized error
-        with TlsServer(server_port, client_cert=True) as s:
-            test_nr = start_connection_case(case, 'server with client verification - handshake error since client presents no client certificate')
-            dut1.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-            dut1.expect('ESP-TLS ERROR: 0x8010')  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
-            if 'PEER_DID_NOT_RETURN_A_CERTIFICATE' not in s.get_last_ssl_error():
-                raise('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
-
-    for case in ['CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH', 'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD']:
-        # These cases connect to server with both server and client verification (client key might be password protected)
-        with TlsServer(server_port, client_cert=True):
-            test_nr = start_connection_case(case, 'server with client verification - expect to connect normally')
-            dut1.expect('MQTT_EVENT_CONNECTED: Test={}'.format(test_nr), timeout=30)
-
-    case = 'CONFIG_EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT'
-    with TlsServer(server_port) as s:
-        test_nr = start_connection_case(case, 'invalid server certificate on default server - expect ssl handshake error')
-        dut1.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-        dut1.expect('ESP-TLS ERROR: 0x8010')  # expect ... handshake error (TLSV1_ALERT_UNKNOWN_CA)
-        if 'alert unknown ca' not in s.get_last_ssl_error():
-            raise Exception('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
-
-    case = 'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT'
-    with TlsServer(server_port, client_cert=True) as s:
-        test_nr = start_connection_case(case, 'Invalid client certificate on server with client verification - expect ssl handshake error')
-        dut1.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
-        dut1.expect('ESP-TLS ERROR: 0x8010')  # expect ... handshake error (CERTIFICATE_VERIFY_FAILED)
-        if 'CERTIFICATE_VERIFY_FAILED' not in s.get_last_ssl_error():
-            raise Exception('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
-
-    for case in ['CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT', 'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN']:
-        with TlsServer(server_port, use_alpn=True) as s:
-            test_nr = start_connection_case(case, 'server with alpn - expect connect, check resolved protocol')
-            dut1.expect('MQTT_EVENT_CONNECTED: Test={}'.format(test_nr), timeout=30)
-            if case == 'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT' and s.get_negotiated_protocol() is None:
-                print(' - client with alpn off, no negotiated protocol: OK')
-            elif case == 'CONFIG_EXAMPLE_CONNECT_CASE_NO_CERT_ALPN' and s.get_negotiated_protocol() == 'mymqtt':
-                print(' - client with alpn on, negotiated protocol resolved: OK')
-            else:
-                raise Exception('Unexpected negotiated protocol {}'.format(s.get_negotiated_protocol()))
-
-    #
-    # start publish tests only if enabled in the environment (for weekend tests only)
-    if not os.getenv('MQTT_PUBLISH_TEST'):
-        return
 
     def start_publish_case(transport, qos, repeat, published, queue):
         print('Starting Publish test: transport:{}, qos:{}, nr_of_msgs:{}, msg_size:{}, enqueue:{}'
@@ -375,4 +390,4 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_app_protocol_mqtt_publish_connect()
+    test_app_protocol_mqtt_publish_connect(dut=ttfw_idf.ESP32QEMUDUT if sys.argv[1:] == ['qemu'] else ttfw_idf.ESP32DUT)

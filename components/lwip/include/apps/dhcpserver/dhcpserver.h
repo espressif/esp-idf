@@ -17,6 +17,10 @@
 #include "sdkconfig.h"
 #include "lwip/ip_addr.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct dhcps_state{
         s16_t state;
 } dhcps_state;
@@ -91,4 +95,8 @@ void dhcps_dns_setserver(const ip_addr_t *dnsserver);
 ip4_addr_t dhcps_dns_getserver(void);
 void dhcps_set_new_lease_cb(dhcps_cb_t cb);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* __DHCPS_H__ */

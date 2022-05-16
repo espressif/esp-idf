@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  * Soc capabilities file, describing the following chip attributes:
@@ -37,6 +29,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_ADC_SUPPORTED               1
 #define SOC_DAC_SUPPORTED               1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
@@ -62,23 +55,29 @@
 #define SOC_XT_WDT_SUPPORTED            1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-#define SOC_ADC_PERIPH_NUM              (2)
-#define SOC_ADC_PATT_LEN_MAX            (16)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) (10)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-#define SOC_ADC_MAX_BITWIDTH            (13)
-#define SOC_ADC_HW_CALIBRATION_V1       (1) /*!< support HW offset calibration */
+/*!< SAR ADC Module*/
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_ARBITER_SUPPORTED               1
+#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
 
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (32) /*!< Two pattern table, each contains 16 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
-/**
- * Check if adc support digital controller (DMA) mode.
- * @value
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 1)
-#define SOC_ADC_SUPPORT_RTC_CTRL        1
-#define SOC_ADC_ARBITER_SUPPORTED       1
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (13)
+
+/*!< Calibration */
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
@@ -99,18 +98,18 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-S2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT           (1)
-#define SOC_GPIO_PIN_COUNT      (48)
+#define SOC_GPIO_PIN_COUNT      (47)
 
-// On ESP32 those PADs which have RTC functions must set pullup/down/capability via RTC register.
+// On ESP32-S2 those PADs which have RTC functions must set pullup/down/capability via RTC register.
 // On ESP32-S2, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
 // Force hold is a new function of ESP32-S2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
-// 0~47 except from 22~25, 47 are valid
-#define SOC_GPIO_VALID_GPIO_MASK             (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25 | BIT47))
-// GPIO 46, 47 are input only
-#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46 | BIT47))
+// 0~46 except from 22~25 are valid
+#define SOC_GPIO_VALID_GPIO_MASK             (0x7FFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
+// GPIO 46 is input only
+#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46))
 
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
@@ -120,6 +119,7 @@
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 #define SOC_DEDIC_GPIO_ALLOW_REG_ACCESS (1) /*!< Allow access dedicated GPIO channel by register */
 #define SOC_DEDIC_GPIO_HAS_INTERRUPT    (1) /*!< Dedicated GPIO has its own interrupt source */
+#define SOC_DEDIC_GPIO_OUT_AUTO_ENABLE  (1) /*!< Dedicated GPIO output attribution is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-S2 have 2 I2C.
@@ -135,14 +135,19 @@
 #define SOC_I2C_SUPPORT_REF_TICK   (1)
 #define SOC_I2C_SUPPORT_APB        (1)
 
+/*-------------------------- APLL CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED       (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32-S2 have 1 I2S
 #define SOC_I2S_NUM                (1)
 #define SOC_I2S_SUPPORTS_APLL      (1)// ESP32-S2 support APLL
 #define SOC_I2S_SUPPORTS_DMA_EQUAL (1)
-#define SOC_I2S_APLL_MIN_FREQ      (250000000)
-#define SOC_I2S_APLL_MAX_FREQ      (500000000)
-#define SOC_I2S_APLL_MIN_RATE      (10675) //in Hz, I2S Clock rate limited by hardware
 #define SOC_I2S_LCD_I80_VARIANT    (1)
 
 /*-------------------------- LCD CAPS ----------------------------------------*/
@@ -176,7 +181,6 @@
 #define SOC_RMT_RX_CANDIDATES_PER_GROUP (4)  /*!< Number of channels that capable of Receive in each group */
 #define SOC_RMT_CHANNELS_PER_GROUP      (4)  /*!< Total 4 channels */
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL   (64) /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */
-#define SOC_RMT_SUPPORT_RX_PINGPONG     (1)  /*!< Support Ping-Pong mode on RX path */
 #define SOC_RMT_SUPPORT_RX_DEMODULATION (1)  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT   (1)  /*!< Support transmiting specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_SYNCHRO      (1)  /*!< Support coordinate a group of TX channels to start simultaneously */
@@ -235,12 +239,12 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_NUM                (15)    /*! 15 Touch channels */
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)  /* Sopport touch proximity channel number. */
+#define SOC_TOUCH_VERSION_2                 (1)     /*!<Hardware version of touch sensor */
+#define SOC_TOUCH_SENSOR_NUM                (15)    /*!<15 Touch channels */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /* Sopport touch proximity channel number. */
 
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)  /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 #define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
-#define SOC_TOUCH_PAD_WAKE_SUPPORTED        (1)     /*!<Supports waking up from touch pad trigger */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
@@ -331,5 +335,9 @@
 
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
+
+/*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
+#define SOC_COEX_HW_PTI                 (1)
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents

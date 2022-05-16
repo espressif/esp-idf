@@ -154,7 +154,7 @@ static esp_err_t panel_nt35510_init(esp_lcd_panel_t *panel)
     esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT << 8, NULL, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
     esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL << 8, (uint16_t[]) {
-        0
+        nt35510->madctl_val,
     }, 2);
     esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD << 8, (uint16_t[]) {
         nt35510->colmod_cal,

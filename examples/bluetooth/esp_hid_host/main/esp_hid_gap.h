@@ -15,17 +15,36 @@
 #ifndef _ESP_HID_GAP_H_
 #define _ESP_HID_GAP_H_
 
+#define HIDH_IDLE_MODE 0x00
+#define HIDH_BLE_MODE 0x01
+#define HIDH_BT_MODE 0x02
+#define HIDH_BTDM_MODE 0x03
+
+#if CONFIG_BT_HID_HOST_ENABLED
+#if CONFIG_BT_BLE_ENABLED
+#define HID_HOST_MODE HIDH_BTDM_MODE
+#else
+#define HID_HOST_MODE HIDH_BT_MODE
+#endif
+#elif CONFIG_BT_BLE_ENABLED
+#define HID_HOST_MODE HIDH_BLE_MODE
+#else
+#define HID_HOST_MODE HIDH_IDLE_MODE
+#endif
+
 #include "esp_err.h"
 #include "esp_log.h"
 
 #include "esp_bt.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_gap_bt_api.h"
+#include "esp_hid_common.h"
+#if CONFIG_BT_BLE_ENABLED
 #include "esp_gattc_api.h"
 #include "esp_gatt_defs.h"
 #include "esp_gap_ble_api.h"
-#include "esp_gap_bt_api.h"
-#include "esp_hid_common.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

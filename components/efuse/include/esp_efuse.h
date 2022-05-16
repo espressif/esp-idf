@@ -6,11 +6,9 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include <stdbool.h>
 #include <stdint.h>
+
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
@@ -27,6 +25,10 @@ extern "C" {
 #include "esp32s3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/secure_boot.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #define ESP_ERR_EFUSE                              0x1600                     /*!< Base error code for efuse api. */

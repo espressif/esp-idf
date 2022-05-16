@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
+
+#define MSC_ASYNC_CLIENT_MAX_EVENT_MSGS       5
 
 typedef struct {
     int num_sectors_to_read;
@@ -15,3 +17,7 @@ typedef struct {
 } msc_client_test_param_t;
 
 void msc_client_async_seq_task(void *arg);
+
+void msc_client_async_dconn_task(void *arg);
+
+void msc_client_async_enum_task(void *arg);

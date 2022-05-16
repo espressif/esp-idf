@@ -28,7 +28,8 @@ Open the project configuration menu (`idf.py menuconfig`). Then go into `Example
 - Check `Store command history in flash` if you want to save command history into flash (recommend).
 - Select where to save the pcap file in `Select destination to store pcap file` menu item.
   - `SD Card` means saving packets (pcap format) into the SD card you plug in. The default SD card work mode is set to SDMMC for target ESP32 and ESP32S3, but SPI is the only choice for other targets.
-  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Level Tracing -> Data Destination -> Trace memory should be enabled to choose `JTAG (App Trace)` as destination.
+  - `Memory` means saving packets in memory and can parse packets in place.
+  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Level Tracing -> Data Destination -> JTAG should be enabled to choose `JTAG (App Trace)` as destination.
 - Set the mount point in your filesystem in `SD card mount point in the filesystem` menu item. This configuration only takes effect when you choose to save packets into SD card.
 - Set max name length of pcap file in `Max name length of pcap file` menu item.
 - Set the length of sniffer work queue in `Length of sniffer work queue` menu item.
@@ -52,23 +53,20 @@ idf.py -p PORT flash monitor
 
 See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
 
-## Example Output
-
 ### `sniffer` Command Usage
 
-> sniffer  [-f <file>][-i <wlan|eth0|eth1|...>] [-F <mgmt|data|ctrl|misc|mpdu|ampdu>]... [-c <channel>][--stop]
+> sniffer  [-i <wlan|eth0|eth1|...>] [-F <mgmt|data|ctrl|misc|mpdu|ampdu|fcsfail>]... [-c <channel>] [--stop] [-n <num>]
 >   Capture specific packet and store in pcap format
->   -f, --file=<file>  name of the file storing the packets in pcap format
 >   -i, --interface=<wlan|eth0|eth1|...>  which interface to capture packet
->   -F, --filter=<mgmt|data|ctrl|misc|mpdu|ampdu>  filter parameters
+>   -F, --filter=<mgmt|data|ctrl|misc|mpdu|ampdu|fcsfail>  filter parameters
 >   -c, --channel=<channel>  communication channel to use
 >         --stop  stop running sniffer
+>   -n, --number=<num>  the number of the packets to be captured
 
 The `sniffer` command support some important options as follow:
 
-* `-f`: Specify the name of file which will store the packets, default value is `sniffer`, and the resulting file name will be like “snifferX.pcap”, here ‘X’ shows the file’s order.
-* `-i`: Specify the interface to sniffer packets, currently support `wlan` and `eth0`
-* `-c` :Specify the channel to sniffer packet at `wlan` interface
+* `-i`: Specify the interface to sniff packets, currently only support `wlan` and `eth0`
+* `-c`: Specify the channel to sniff packet at `wlan` interface
 * `-F`: Specify the filter condition at `wlan` interface, currently only support following filter conditions, you can select any number of them
   * mgmt: Management packets
   * data: Data packets
@@ -76,65 +74,238 @@ The `sniffer` command support some important options as follow:
   * misc: Other packets
   * mpdu: MPDU packets
   * ampdu: AMPDU packets
+* `-n`: Specify the number of packages to capture in this sniffer job. The sniffer job will stop automatically without using `sniffer --stop` command.
 * `--stop`: Stop sniffer job
 
-### Mount SD Card
+### `pcap` Command Usage When the Destination is `SD Card`
+
+> pcap  -f <file> [--open] [--close] [--summary]
+>   Save and parse pcap file
+>   -f, --file=<file>  name of the file storing the packets in pcap format
+>         --open  open .pcap file
+>        --close  close .pcap file
+>      --summary  option to parse and show the summary of .pcap file
+
+The `pcap` command support some important options as follow:
+
+* `-f`: Specify the name of file which will store the packets or show summary, default value is `sniffer`, and the resulting file name will be like “snifferX.pcap”, here ‘X’ shows the file’s order.
+* `--open`: Option to open a '.pcap' file
+* `--close`: Option to close the '.pcap' file
+* `--summary`: Show the summary of '.pcap' file
+
+### `pcap` Command Usage When the Destination is `Memory`
+
+> pcap  -f <file> [--open] [--close] [--summary]
+>   Save and parse pcap file
+>   -f, --file=<file>  name of the file storing the packets in pcap format
+>         --open  open .pcap file
+>        --close  close .pcap file
+>      --summary  option to parse and show the summary of .pcap file
+
+The `pcap` command support some important options as follow:
+
+* `-f`: Specify the file name to storage packet or show summary
+* `--open`: Option to open a '.pcap' file
+* `--close`: Option to close the '.pcap' file
+* `--summary`: Show the summary of '.pcap' file (needs to be called prior file closing)
+
+### `pcap` Command Usage When the Destination is `JTAG`
+pcap command is not used when destination is JTAG. The pcap session is started automatically with the Sniffer start.
+
+## Example Output
+### Steps for using **SD Card** to storage packages and watch summary
+#### Mount SD Card
 
 ```bash
  =======================================================
- |       Steps to sniffer WiFi packets                 |
+ |         Steps to sniff network packets              |
  |                                                     |
  |  1. Enter 'help' to check all commands usage        |
  |  2. Enter 'mount <device>' to mount filesystem      |
- |  3. Enter 'sniffer' to start capture packets        |
- |  4. Enter 'unmount <device>' to unmount filesystem  |
+ |  3. Enter 'pcap' to create pcap file                |
+ |  4. Enter 'sniffer' to start capture packets        |
+ |  5. Enter 'unmount <device>' to unmount filesystem  |
  |                                                     |
  =======================================================
 
+
+Type 'help' to get the list of commands.
+Use UP/DOWN arrows to navigate through command history.
+Press TAB when typing command name to auto-complete.
 sniffer> mount sd
-I (158912) example: Initializing SD card
-I (158912) example: Using SDMMC peripheral
-I (158912) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-Name: SA16G
+I (12653) example: Initializing SD card
+I (12653) example: Using SDMMC peripheral
+I (12663) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+Name: SC64G
 Type: SDHC/SDXC
 Speed: 20 MHz
-Size: 14832MB
+Size: 60906MB
 ```
 
-### Start Sniffer
+#### Create .pcap file
 
 ```bash
-sniffer> sniffer -f sniffer-example -i wlan -c 2
-I (8946) cmd_sniffer: open file successfully
-W (8966) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
-I (9176) phy: phy_version: 4100, 6fa5e27, Jan 25 2019, 17:02:06, 0, 2
-I (9186) wifi: ic_enable_sniffer
-I (9196) cmd_sniffer: start WiFi promiscuous ok
-sniffer> sniffer --stop
-I (31456) wifi: ic_disable_sniffer
-I (31456) wifi: flush txq
-I (31456) wifi: stop sw txq
-I (31456) wifi: lmac stop hw txq
-I (31456) cmd_sniffer: stop WiFi promiscuous ok
+sniffer> pcap --open -f simple-sniffer
+I (41383) cmd_pcap: open file successfully
 ```
 
-### Unmount SD Card
+#### Start Sniffer (with 10 packages)
+
+```bash
+sniffer> sniffer -i wlan -c 2 -n 10
+I (58153) cmd_sniffer: 10 packages will be captured
+I (58163) phy_init: phy_version 4670,719f9f6,Feb 18 2021,17:07:07
+I (58263) wifi:ic_enable_sniffer
+I (58263) cmd_sniffer: start WiFi promiscuous ok
+I (58303) wifi:ic_disable_sniffer
+I (58303) wifi:flush txq
+I (58303) wifi:stop sw txq
+I (58303) wifi:lmac stop hw txq
+I (58303) cmd_sniffer: stop promiscuous ok
+```
+
+#### Close .pcap file
+
+```bash
+sniffer> pcap --close -f simple-sniffer
+I (80453) cmd_pcap: .pcap file close done
+```
+
+#### Parse '.pcap' file and watch at bash with '--summary' option
+
+```bash
+sniffer> pcap --summary -f simple-sniffer
+I (112833) cmd_pcap: /sdcard/simple-sniffer.pcap is to be parsed
+------------------------------------------------------------------------
+Pcap packet Head:
+------------------------------------------------------------------------
+Magic Number: a1b2c3d4
+Major Version: 2
+Minor Version: 4
+SnapLen: 262144
+LinkType: 105
+------------------------------------------------------------------------
+Packet 0:
+Timestamp (Seconds): 0
+Timestamp (Microseconds): 3670
+Capture Length: 303
+Packet Length: 303
+Packet Type:  0
+Packet Subtype:  5
+Destination:  0  0  0  0 a1  0
+Source:  2 84 56  e  0  0
+------------------------------------------------------------------------
+Packet 1:
+Timestamp (Seconds): 0
+Timestamp (Microseconds): 3670
+Capture Length: 294
+Packet Length: 294
+Packet Type:  0
+Packet Subtype:  5
+Destination:  0  0  0  0 a1  0
+Source:  2 84 56  e  0  0
+------------------------------------------------------------------------
+Packet 2:
+
+...
+
+------------------------------------------------------------------------
+Pcap packet Number: 10
+------------------------------------------------------------------------
+```
+
+#### Unmount SD Card
 
 ```bash
 sniffer> unmount sd
-I (248800) example: Card unmounted
+I (183873) example: Card unmounted
 ```
 
-### Steps for sending packets to host via JTAG interface
-1. Select `JTAG (App Trace)` as the destination of pcap files.
+### Steps for using **memory** to storage packages and watch summary
+#### Open a memory for pcap
+
+```bash
+sniffer> pcap --open -f simple-sniffer
+I (11816) cmd_pcap: open file successfully
+```
+
+#### Sniff 10 packages
+
+```bash
+sniffer> sniffer -i wlan -c 2 -n 10
+I (71086) cmd_sniffer: 10 packages will be captured
+I (71096) phy_init: phy_version 4670,719f9f6,Feb 18 2021,17:07:07
+I (71186) wifi:ic_enable_sniffer
+I (71186) cmd_sniffer: start WiFi promiscuous ok
+I (71246) wifi:ic_disable_sniffer
+I (71246) wifi:flush txq
+I (71256) wifi:stop sw txq
+I (71256) wifi:lmac stop hw txq
+I (71256) cmd_sniffer: stop promiscuous ok
+```
+
+#### Watch the summary of the package captured above
+
+```bash
+sniffer> pcap --summary -f simple-sniffer
+I (93396) cmd_pcap: Memory is to be parsed
+------------------------------------------------------------------------
+Pcap packet Head:
+------------------------------------------------------------------------
+Magic Number: a1b2c3d4
+Major Version: 2
+Minor Version: 4
+SnapLen: 262144
+LinkType: 105
+------------------------------------------------------------------------
+Packet 0:
+Timestamp (Seconds): 0
+Timestamp (Microseconds): 5481
+Capture Length: 266
+Packet Length: 266
+Packet Type:  0
+Packet Subtype:  2
+Destination:  0  0  0  0 a1  0
+Source:  2 8a 69 15  0  0
+------------------------------------------------------------------------
+Packet 1:
+Timestamp (Seconds): 0
+Timestamp (Microseconds): 24405
+Capture Length: 175
+Packet Length: 175
+Packet Type:  0
+Packet Subtype:  f
+Destination:  0  0  0  0 a1  0
+Source:  2 84 55 5f  0  0
+------------------------------------------------------------------------
+Packet 2:
+
+...
+
+------------------------------------------------------------------------
+Pcap packet Number: 10
+------------------------------------------------------------------------
+```
+
+
+#### Close pcap file in memory
+
+```bash
+sniffer> pcap --close -f simple-sniffer
+I (130566) cmd_pcap: free memory successfully
+I (130566) cmd_pcap: .pcap file close done
+```
+
+### Steps for sending packets to host via **JTAG interface**
+
+1. Select `JTAG (App Trace)` as the destination of pcap files in project configuration.
 2. Build & Flash with `idf.py -p PORT flash`
 3. Connect JTAG, run OpenOCD (for more information about how-to please refer to [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html)).
 4. Telnet to localhost with 4444 port: `telnet localhost 4444`.
 5. In the telnet session, run command like `esp32 apptrace start file://sniffer-esp32.pcap 1 -1 20` (more information about this command, please refer to [apptrace command](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#openocd-application-level-tracing-commands)).
-6. Run the example, start sniffer with command `sniffer` (you don't need to specify the filename, because it has been set in step5).
+6. Run the example, start sniffer with `sniffer` command.
 7. Stop sniffer by entering command `sniffer --stop` in the example console.
 8. Stop tracing by entering command `esp32 apptrace stop` in the telnet session.
-
 
 ### Open PCap File in Wireshark
 

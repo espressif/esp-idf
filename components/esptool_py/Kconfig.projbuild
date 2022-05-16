@@ -66,43 +66,41 @@ menu "Serial flasher config"
         bool "Enable Octal Flash"
         default n
 
-    choice ESPTOOLPY_FLASH_VENDOR
-        depends on ESPTOOLPY_OCT_FLASH
-        prompt "Select OPI Flash Vendor"
-        default ESPTOOLPY_FLASH_VENDOR_MXIC
-
-        config ESPTOOLPY_FLASH_VENDOR_MXIC
-            bool "MXIC OPI FLASH(MX25UM25645G)"
-    endchoice
-
-    choice ESPTOOLPY_FLASHMODE_OCT
-        depends on ESPTOOLPY_OCT_FLASH
-        prompt "Flash OPI mode"
-        default ESPTOOLPY_FLASHMODE_OPI_DTR
-
-        config ESPTOOLPY_FLASHMODE_OPI_STR
-            depends on ESPTOOLPY_FLASH_VENDOR_MXIC
-            bool "OPI_STR"
-        config ESPTOOLPY_FLASHMODE_OPI_DTR
-            depends on ESPTOOLPY_FLASH_VENDOR_MXIC
-            bool "OPI_DTR"
-    endchoice
-
     choice ESPTOOLPY_FLASHMODE
         prompt "Flash SPI mode"
         default ESPTOOLPY_FLASHMODE_DIO
+        default ESPTOOLPY_FLASHMODE_OPI if ESPTOOLPY_OCT_FLASH
         help
             Mode the flash chip is flashed in, as well as the default mode for the
             binary to run in.
 
         config ESPTOOLPY_FLASHMODE_QIO
+            depends on !ESPTOOLPY_OCT_FLASH
             bool "QIO"
         config ESPTOOLPY_FLASHMODE_QOUT
+            depends on !ESPTOOLPY_OCT_FLASH
             bool "QOUT"
         config ESPTOOLPY_FLASHMODE_DIO
+            depends on !ESPTOOLPY_OCT_FLASH
             bool "DIO"
         config ESPTOOLPY_FLASHMODE_DOUT
+            depends on !ESPTOOLPY_OCT_FLASH
             bool "DOUT"
+        config ESPTOOLPY_FLASHMODE_OPI
+            depends on ESPTOOLPY_OCT_FLASH
+            bool "OPI"
+    endchoice
+
+    choice ESPTOOLPY_FLASH_SAMPLE_MODE
+        prompt "Flash Sampling Mode"
+        default ESPTOOLPY_FLASH_SAMPLE_MODE_DTR if ESPTOOLPY_OCT_FLASH
+        default ESPTOOLPY_FLASH_SAMPLE_MODE_STR if !ESPTOOLPY_OCT_FLASH
+
+        config ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+            bool "STR Mode"
+        config ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+            depends on ESPTOOLPY_OCT_FLASH
+            bool "DTR Mode"
     endchoice
 
     # Note: we use esptool.py to flash bootloader in
@@ -114,6 +112,11 @@ menu "Serial flasher config"
         default "dio" if ESPTOOLPY_FLASHMODE_QOUT
         default "dio" if ESPTOOLPY_FLASHMODE_DIO
         default "dout" if ESPTOOLPY_FLASHMODE_DOUT
+        # The 1st and 2nd bootloader doesn't support opi mode,
+        # using fastrd instead. For now the ESPTOOL doesn't support
+        # fasted (see ESPTOOL-274), using dout instead. In ROM the flash mode
+        # information get from efuse, so don't care this dout choice.
+        default "dout" if ESPTOOLPY_FLASHMODE_OPI
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
@@ -123,7 +126,7 @@ menu "Serial flasher config"
             The SPI flash frequency to be used.
 
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on ESPTOOLPY_FLASHMODE_OPI_STR || !ESPTOOLPY_OCT_FLASH
+            depends on IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
             bool "120 MHz"
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"

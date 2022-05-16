@@ -158,9 +158,6 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #endif // !CONFIG_IDF_TARGET_ESP32C3
 #endif //CONFIG_SPIRAM
 
-#define TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(name, value, chip) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: %d, flash_chip: %s\n", value, chip);\
-    _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name));
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
 typedef esp_flash_spi_device_config_t flashtest_config_t;
@@ -727,6 +724,7 @@ static void write_large_buffer(const esp_partition_t *part, const uint8_t *sourc
 static void read_and_check(const esp_partition_t *part, const uint8_t *source, size_t length);
 
 // Internal functions for testing, from esp_flash_api.c
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
 esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe);
 esp_err_t esp_flash_get_io_mode(esp_flash_t* chip, bool* qe);
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
@@ -801,16 +799,17 @@ IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(const esp_partition_t* part)
 // `spi_flash_common_set_io_mode` and then run this test.
 FLASH_TEST_CASE_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
 FLASH_TEST_CASE_3_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
+#endif //CONFIG_ESPTOOLPY_OCT_FLASH
 
 void test_permutations_part(const flashtest_config_t* config, esp_partition_t* part, void* source_buf, size_t length)
 {
     if (config->host_id != -1) {
         esp_flash_speed_t speed = ESP_FLASH_SPEED_MIN;
-        while (speed != ESP_FLASH_SPEED_MAX) {
+        while (speed != ESP_FLASH_120MHZ) {
             //test io_mode in the inner loop to test QE set/clear function, since
             //the io mode will switch frequently.
             esp_flash_io_mode_t io_mode = SPI_FLASH_READ_MODE_MIN;
-            while (io_mode != SPI_FLASH_READ_MODE_MAX) {
+            while (io_mode != SPI_FLASH_QIO + 1) {
                 if (io_mode > SPI_FLASH_FASTRD &&
                     !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(config->host_id)) {
                     io_mode++;
@@ -1118,22 +1117,17 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
-#if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#  define CHECK_DATA(bus, suffix, chip) TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##suffix, speed_##suffix, chip)
-#  define CHECK_ERASE(bus, var, chip) TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##ERASE, var, chip)
-#else
-#  define CHECK_DATA(bus, suffix, chip) ((void)speed_##suffix);((void)chip)
-#  define CHECK_ERASE(bus, var, chip)   ((void)var);((void)chip)
-#endif
+#define LOG_DATA(bus, suffix, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus#suffix, "%d, flash_chip: %s", speed_##suffix, chip)
+#define LOG_ERASE(bus, var, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus"ERASE", "%d, flash_chip: %s", var, chip)
 
 // Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
-#define CHECK_PERFORMANCE(bus, chip) do {\
-            CHECK_DATA(bus, WR_4B, chip); \
-            CHECK_DATA(bus, RD_4B, chip); \
-            CHECK_DATA(bus, WR_2KB, chip); \
-            CHECK_DATA(bus, RD_2KB, chip); \
-            CHECK_ERASE(bus, erase_1, chip); \
-            CHECK_ERASE(bus, erase_2, chip); \
+#define LOG_PERFORMANCE(bus, chip) do {\
+            LOG_DATA(bus, WR_4B, chip); \
+            LOG_DATA(bus, RD_4B, chip); \
+            LOG_DATA(bus, WR_2KB, chip); \
+            LOG_DATA(bus, RD_2KB, chip); \
+            LOG_ERASE(bus, erase_1, chip); \
+            LOG_ERASE(bus, erase_2, chip); \
         } while (0)
 
     spi_host_device_t host_id;
@@ -1145,13 +1139,13 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
     get_chip_host(chip, &host_id, &cs_id);
     if (host_id != SPI1_HOST) {
         // Chips on other SPI buses
-        CHECK_PERFORMANCE(EXT_, chip_name);
+        LOG_PERFORMANCE(EXT_, chip_name);
     } else if (cs_id == 0) {
         // Main flash
-        CHECK_PERFORMANCE(,chip_name);
+        LOG_PERFORMANCE(,chip_name);
     } else {
         // Other cs pins on SPI1
-        CHECK_PERFORMANCE(SPI1_, chip_name);
+        LOG_PERFORMANCE(SPI1_, chip_name);
     }
     free(data_to_write);
     free(data_read);

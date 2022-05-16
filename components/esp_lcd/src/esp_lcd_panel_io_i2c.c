@@ -33,9 +33,9 @@ typedef struct {
     int lcd_param_bits;      // Bit width of LCD parameter
     uint32_t control_phase_cmd;  // control byte when transferring command
     uint32_t control_phase_data; // control byte when transferring data
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // User register's callback, invoked when color data trans done
-    void *user_data;             // User's private data, passed directly to callback on_color_trans_done()
-    uint8_t cmdlink_buffer[];     // pre-alloc I2C command link buffer, to be reused in all transactions
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
+    void *user_ctx;             // User's private data, passed directly to callback on_color_trans_done()
+    uint8_t cmdlink_buffer[];   // pre-alloc I2C command link buffer, to be reused in all transactions
 } lcd_panel_io_i2c_t;
 
 esp_err_t esp_lcd_new_panel_io_i2c(esp_lcd_i2c_bus_handle_t bus, const esp_lcd_panel_io_i2c_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
@@ -51,9 +51,9 @@ esp_err_t esp_lcd_new_panel_io_i2c(esp_lcd_i2c_bus_handle_t bus, const esp_lcd_p
     i2c_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
     i2c_panel_io->lcd_param_bits = io_config->lcd_param_bits;
     i2c_panel_io->on_color_trans_done = io_config->on_color_trans_done;
+    i2c_panel_io->user_ctx = io_config->user_ctx;
     i2c_panel_io->control_phase_data = (!io_config->flags.dc_low_on_data) << (io_config->dc_bit_offset);
     i2c_panel_io->control_phase_cmd = (io_config->flags.dc_low_on_data) << (io_config->dc_bit_offset);
-    i2c_panel_io->user_data = io_config->user_data;
     i2c_panel_io->dev_addr = io_config->dev_addr;
     i2c_panel_io->base.del = panel_io_i2c_del;
     i2c_panel_io->base.tx_param = panel_io_i2c_tx_param;
@@ -104,7 +104,7 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
     if (!is_param) {
         // trans done callback
         if (i2c_panel_io->on_color_trans_done) {
-            i2c_panel_io->on_color_trans_done(&(i2c_panel_io->base), i2c_panel_io->user_data, NULL);
+            i2c_panel_io->on_color_trans_done(&(i2c_panel_io->base), NULL, i2c_panel_io->user_ctx);
         }
     }
 

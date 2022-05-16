@@ -1,16 +1,11 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/* OpenThread Border Router Example
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+   This example code is in the Public Domain (or CC0 licensed, at your option.)
+
+   Unless required by applicable law or agreed to in writing, this
+   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+   CONDITIONS OF ANY KIND, either express or implied.
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +19,7 @@
 #include "esp_netif_net_stack.h"
 #include "esp_openthread.h"
 #include "esp_openthread_border_router.h"
+#include "esp_openthread_cli.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
@@ -47,6 +43,7 @@
 #include "openthread/error.h"
 #include "openthread/instance.h"
 #include "openthread/ip6.h"
+#include "openthread/logging.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
 #include "openthread/thread_ftd.h"
@@ -90,6 +87,12 @@ static size_t hex_string_to_binary(const char *hex_string, uint8_t *buf, size_t 
 static void create_config_network(otInstance *instance)
 {
     otOperationalDataset dataset;
+
+    if (otDatasetGetActive(instance, &dataset) == OT_ERROR_NONE) {
+        ESP_LOGI(TAG, "Already has network, skip configuring OpenThread network.");
+        return;
+    }
+
     uint16_t network_name_len = strnlen(CONFIG_OPENTHREAD_NETWORK_NAME, OT_NETWORK_NAME_MAX_SIZE + 1);
 
     assert(network_name_len <= OT_NETWORK_NAME_MAX_SIZE);
@@ -130,6 +133,11 @@ static void create_config_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to register border router.");
         abort();
     }
+    return;
+}
+
+static void launch_openthread_network(otInstance *instance)
+{
     if (otIp6SetEnabled(instance, true) != OT_ERROR_NONE) {
         ESP_LOGE(TAG, "Failed to enable OpenThread IP6 link");
         abort();
@@ -138,7 +146,6 @@ static void create_config_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to enable OpenThread");
         abort();
     }
-    return;
 }
 
 static void ot_task_worker(void *aContext)
@@ -161,10 +168,14 @@ static void ot_task_worker(void *aContext)
     ESP_ERROR_CHECK(esp_openthread_border_router_init(get_example_netif()));
 
     esp_openthread_lock_acquire(portMAX_DELAY);
+    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
+    esp_openthread_cli_init();
     create_config_network(esp_openthread_get_instance());
+    launch_openthread_network(esp_openthread_get_instance());
     esp_openthread_lock_release();
 
     // Run the main loop
+    esp_openthread_cli_create_task();
     esp_openthread_launch_mainloop();
 
     // Clean up
@@ -179,8 +190,9 @@ void app_main(void)
     // Used eventfds:
     // * netif
     // * task queue
+    // * border router
     esp_vfs_eventfd_config_t eventfd_config = {
-        .max_fds = 2,
+        .max_fds = 3,
     };
     ESP_ERROR_CHECK(esp_vfs_eventfd_register(&eventfd_config));
 

@@ -212,6 +212,7 @@
 #define WLAN_EID_FAST_BSS_TRANSITION 55
 #define WLAN_EID_TIMEOUT_INTERVAL 56
 #define WLAN_EID_RIC_DATA 57
+#define WLAN_EID_SUPPORTED_OPERATING_CLASSES 59
 #define WLAN_EID_HT_OPERATION 61
 #define WLAN_EID_SECONDARY_CHANNEL_OFFSET 62
 #define WLAN_EID_WAPI 68
@@ -536,6 +537,13 @@ struct ieee80211_ht_operation {
 /* 2 - Reserved */
 #define WMM_TSPEC_DIRECTION_BI_DIRECTIONAL 3
 
+#define MBO_IE_VENDOR_TYPE 0x506f9a16
+#define OSEN_IE_VENDOR_TYPE 0x506f9a12
+#define MBO_OUI_TYPE 22
+#define OCE_STA BIT(0)
+#define OCE_STA_CFON BIT(1)
+#define OCE_AP BIT(2)
+
 /*
  * WMM Information Element (used in (Re)Association Request frames; may also be
  * used in Beacon frames)
@@ -622,6 +630,45 @@ enum wmm_ac {
 	WMM_AC_NUM = 4
 };
 
+/* MBO v0.0_r19, 4.2: MBO Attributes */
+/* Table 4-5: MBO Attributes */
+/* OCE v0.0.10, Table 4-3: OCE Attributes */
+enum mbo_attr_id {
+	MBO_ATTR_ID_AP_CAPA_IND = 1,
+	MBO_ATTR_ID_NON_PREF_CHAN_REPORT = 2,
+	MBO_ATTR_ID_CELL_DATA_CAPA = 3,
+	MBO_ATTR_ID_ASSOC_DISALLOW = 4,
+	MBO_ATTR_ID_CELL_DATA_PREF = 5,
+	MBO_ATTR_ID_TRANSITION_REASON = 6,
+	MBO_ATTR_ID_TRANSITION_REJECT_REASON = 7,
+	MBO_ATTR_ID_ASSOC_RETRY_DELAY = 8,
+	OCE_ATTR_ID_CAPA_IND = 101,
+	OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT = 102,
+	OCE_ATTR_ID_REDUCED_WAN_METRICS = 103,
+	OCE_ATTR_ID_RNR_COMPLETENESS = 104,
+};
+
+/* MBO v0.0_r19, 4.2.1: MBO AP Capability Indication Attribute */
+/* Table 4-7: MBO AP Capability Indication Field Values */
+#define MBO_AP_CAPA_CELL_AWARE BIT(6)
+
+/* MBO v0.0_r19, 4.2.2: Non-preferred Channel Report Attribute */
+/* Table 4-10: Reason Code Field Values */
+enum mbo_non_pref_chan_reason {
+	MBO_NON_PREF_CHAN_REASON_UNSPECIFIED = 0,
+	MBO_NON_PREF_CHAN_REASON_RSSI = 1,
+	MBO_NON_PREF_CHAN_REASON_EXT_INTERFERENCE = 2,
+	MBO_NON_PREF_CHAN_REASON_INT_INTERFERENCE = 3,
+};
+
+/* MBO v0.0_r19, 4.2.3: Cellular Data Capabilities Attribute */
+/* Table 4-13: Cellular Data Connectivity Field */
+enum mbo_cellular_capa {
+	MBO_CELL_CAPA_AVAILABLE = 1,
+	MBO_CELL_CAPA_NOT_AVAILABLE = 2,
+	MBO_CELL_CAPA_NOT_SUPPORTED = 3,
+};
+
 /* MBO v0.0_r19, 4.2.7: Transition Rejection Reason Code Attribute */
 /* Table 4-21: Transition Rejection Reason Code Field Values */
 enum mbo_transition_reject_reason {
@@ -633,6 +680,12 @@ enum mbo_transition_reject_reason {
 	MBO_TRANSITION_REJECT_REASON_INTERFERENCE = 5,
 	MBO_TRANSITION_REJECT_REASON_SERVICES = 6,
 };
+
+/* OCE v0.0.10, 4.2.1: OCE Capability Indication Attribute */
+#define OCE_RELEASE 1
+#define OCE_RELEASE_MASK (BIT(0) | BIT(1) | BIT(2))
+#define OCE_IS_STA_CFON BIT(3)
+#define OCE_IS_NON_OCE_AP_PRESENT BIT(4)
 
 /* IEEE 802.11v - WNM Action field values */
 enum wnm_action {

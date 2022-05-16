@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -212,6 +212,17 @@ _Static_assert(sizeof(usb_setup_packet_t) == USB_SETUP_PACKET_SIZE, "Size of usb
     (setup_pkt_ptr)->wValue = (alt_setting_num); \
     (setup_pkt_ptr)->wIndex = (intf_num);  \
     (setup_pkt_ptr)->wLength = 0;   \
+})
+
+/**
+ * @brief Initializer for a request to get an string descriptor
+ */
+#define USB_SETUP_PACKET_INIT_GET_STR_DESC(setup_pkt_ptr, string_index, lang_id, desc_len) ({ \
+    (setup_pkt_ptr)->bmRequestType = USB_BM_REQUEST_TYPE_DIR_IN | USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIP_DEVICE; \
+    (setup_pkt_ptr)->bRequest = USB_B_REQUEST_GET_DESCRIPTOR; \
+    (setup_pkt_ptr)->wValue = (USB_W_VALUE_DT_STRING << 8) | ((string_index) & 0xFF); \
+    (setup_pkt_ptr)->wIndex = (lang_id); \
+    (setup_pkt_ptr)->wLength = (desc_len); \
 })
 
 // ---------------- Standard Descriptor --------------------
@@ -454,7 +465,7 @@ _Static_assert(sizeof(usb_ep_desc_t) == USB_EP_DESC_SIZE, "Size of usb_ep_desc_t
 /**
  * @brief Size of a short USB string descriptor in bytes
  */
-#define USB_STR_DESC_SIZE       4
+#define USB_STR_DESC_SIZE       2
 
 /**
  * @brief Structure representing a USB string descriptor
@@ -463,7 +474,7 @@ typedef union {
     struct {
         uint8_t bLength;                    /**< Size of the descriptor in bytes */
         uint8_t bDescriptorType;            /**< STRING Descriptor Type */
-        uint16_t wData[1];                  /**< UTF-16LE encoded */
+        uint16_t wData[];                   /**< UTF-16LE encoded */
     } USB_DESC_ATTR;
     uint8_t val[USB_STR_DESC_SIZE];
 } usb_str_desc_t;

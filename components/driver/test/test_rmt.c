@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 #define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CANDIDATES_PER_GROUP-1)
 
 // CI ONLY: Don't connect any other signals to this GPIO
-#define RMT_DATA_IO (4) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
+#define RMT_DATA_IO (0) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
 
 #define RMT_TESTBENCH_FLAGS_ALWAYS_ON (1<<0)
 #define RMT_TESTBENCH_FLAGS_CARRIER_ON (1<<1)

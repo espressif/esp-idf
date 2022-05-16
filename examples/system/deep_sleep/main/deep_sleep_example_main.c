@@ -211,7 +211,7 @@ void app_main(void)
     touch_pad_config(TOUCH_PAD_NUM9, TOUCH_THRESH_NO_USE);
     calibrate_touch_pad(TOUCH_PAD_NUM8);
     calibrate_touch_pad(TOUCH_PAD_NUM9);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     /* Initialize touch pad peripheral. */
     touch_pad_init();
     /* Only support one touch channel in sleep mode. */

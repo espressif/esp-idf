@@ -22,7 +22,7 @@ check_pre_commit_master_release:
     - .check_pre_commit_template
     - .rules:protected
   script:
-    - git diff-tree --no-commit-id --name-only -r $CI_COMMIT_SHA | xargs pre-commit run --files
+    - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
 
 check_pre_commit_MR:
   extends:
@@ -83,15 +83,20 @@ test_check_kconfigs:
   script:
     - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
 
-check_wifi_lib_md5:
+check_blobs:
   extends: .pre_check_base_template
   tags:
     - build
   variables:
-    SUBMODULES_TO_FETCH: "components/esp_wifi/lib"
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib"
   script:
+    # Check if Wi-Fi library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
+    - bash $IDF_PATH/tools/ci/check_blobs.sh
 
 check_fuzzer_compilation:
    extends: .pre_check_base_template
@@ -157,10 +162,14 @@ scan_tests:
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
     COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
     CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
+    EXTRA_TEST_DIRS: >-
+      examples/bluetooth/esp_ble_mesh/ble_mesh_console
+      examples/bluetooth/hci/controller_hci_uart_esp32
+      examples/wifi/iperf
   script:
     - set_component_ut_vars
     - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
-    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
+    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR --extra_test_dirs $EXTRA_TEST_DIRS
     - run_cmd python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
     - run_cmd python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
 
@@ -190,15 +199,6 @@ check_commit_msg:
   extends: .pre_check_job_template
   script:
     - git status
-    - git log -n10 --oneline
+    - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
     # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
-
-check_tools_file_patterns:
-  extends: .pre_check_job_template
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
-  variables:
-    PYTHON_VER: 3.7.7
-  script:
-    - python tools/ci/check_tools_files_patterns.py
-  allow_failure: true
+    - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'

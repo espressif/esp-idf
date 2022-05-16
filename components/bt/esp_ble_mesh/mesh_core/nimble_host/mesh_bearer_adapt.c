@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
- * Copyright (c) 2015-2016 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: 2015-2016 Intel Corporation
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,7 +88,7 @@ int bt_mesh_host_init(void)
     int rc;
 
     if (init == true) {
-        return 0;
+        return -EALREADY;
     }
 
     rc = btc_init();
@@ -539,7 +539,8 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                 }
             }
         } else if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROXY_VAL) {
-            if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->proxy_notify != NULL) {
+            if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->proxy_notify != NULL &&
+                bt_mesh_gattc_info[i].wr_desc_done) {
                 len = bt_mesh_gattc_conn_cb->proxy_notify(&bt_mesh_gattc_info[i].conn,
                         notif_data, notif_len);
                 if (len < 0) {

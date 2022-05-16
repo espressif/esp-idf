@@ -45,6 +45,8 @@ Which Version Should I Start With?
 
 See :ref:`updating` if you already have a local copy of ESP-IDF and wish to update it.
 
+.. _versioning-scheme:
+
 Versioning Scheme
 -----------------
 

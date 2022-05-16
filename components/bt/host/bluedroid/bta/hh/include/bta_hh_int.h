@@ -243,6 +243,7 @@ typedef struct {
     UINT8               incoming_hid_handle;  /* temporary handle for incoming connection? */
     BOOLEAN             opened;         /* TRUE if device successfully opened HID connection */
     tBTA_HH_PROTO_MODE  mode;           /* protocol mode */
+    tBTA_HH_PROTO_MODE  new_mode;           /* protocol mode */
     tBTA_HH_STATE       state;          /* CB state */
 
 #if (BTA_HH_LE_INCLUDED == TRUE)
@@ -364,6 +365,7 @@ extern void bta_hh_disc_cmpl(void);
 extern tBTA_HH_STATUS bta_hh_read_ssr_param(BD_ADDR bd_addr, UINT16 *p_max_ssr_lat, UINT16 *p_min_ssr_tout);
 
 /* functions for LE HID */
+#if (BTA_HH_LE_INCLUDED == TRUE)
 extern void bta_hh_le_enable(void);
 extern BOOLEAN bta_hh_le_is_hh_gatt_if(tBTA_GATTC_IF client_if);
 extern void bta_hh_le_deregister(void);
@@ -391,6 +393,7 @@ extern void bta_hh_security_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_buf);
 extern void bta_hh_le_update_scpp(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_buf);
 extern void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data);
 extern void bta_hh_ci_load_rpt (tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_buf);
+#endif
 
 #if BTA_HH_DEBUG
 extern void bta_hh_trace_dev_db(void);

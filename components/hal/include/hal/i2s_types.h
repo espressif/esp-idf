@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -52,31 +44,31 @@ typedef enum {
  *
  */
 typedef enum {
-    I2S_CHANNEL_MONO        = (0x01 << 31) | 0x03,  /*!< I2S channel (mono), two channel enabled. In this mode, you only need to send one channel data but the fifo will copy same data for another channel automatically, then both channels will transmit same data. The highest bit is for differentiating I2S_CHANNEL_STEREO since they both use two channels */
-    I2S_CHANNEL_STEREO      = 0x03,                 /*!< I2S channel (stereo), two channel enabled. In this mode, two channels will transmit different data. */
+    I2S_CHANNEL_MONO        = 1,  /*!< I2S channel (mono), one channel activated. In this mode, you only need to send one channel data but the fifo will copy same data for the other unactivated channels automatically, then both channels will transmit same data. */
+    I2S_CHANNEL_STEREO      = 2,  /*!< I2S channel (stereo), two (or more) channels activated. In this mode, these channels will transmit different data. */
 #if SOC_I2S_SUPPORTS_TDM
-    // Bit map of active chan.
+    // Bit map of activated chan.
     // There are 16 channels in TDM mode.
-    // For TX module, only the active channel send the audio data, the inactive channel send a constant(configurable) or will be skiped if 'skip_msk' is set.
-    // For RX module, only receive the audio data in active channels, the data in inactive channels will be ignored.
-    // the bit map of active channel can not exceed (0x1<<total_chan_num).
+    // For TX module, only the activated channel send the audio data, the unactivated channel send a constant(configurable) or will be skiped if 'skip_msk' is set.
+    // For RX module, only receive the audio data in activated channels, the data in unactivated channels will be ignored.
+    // the bit map of activated channel can not exceed the maximum enabled channel number (i.e. 0x10000 << total_chan_num).
     // e.g: active_chan_mask = (I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH3), here the active_chan_number is 2 and total_chan_num is not supposed to be smaller than 4.
-    I2S_TDM_ACTIVE_CH0  = (0x1 << 0),               /*!< I2S channel 0 enabled */
-    I2S_TDM_ACTIVE_CH1  = (0x1 << 1),               /*!< I2S channel 1 enabled */
-    I2S_TDM_ACTIVE_CH2  = (0x1 << 2),               /*!< I2S channel 2 enabled */
-    I2S_TDM_ACTIVE_CH3  = (0x1 << 3),               /*!< I2S channel 3 enabled */
-    I2S_TDM_ACTIVE_CH4  = (0x1 << 4),               /*!< I2S channel 4 enabled */
-    I2S_TDM_ACTIVE_CH5  = (0x1 << 5),               /*!< I2S channel 5 enabled */
-    I2S_TDM_ACTIVE_CH6  = (0x1 << 6),               /*!< I2S channel 6 enabled */
-    I2S_TDM_ACTIVE_CH7  = (0x1 << 7),               /*!< I2S channel 7 enabled */
-    I2S_TDM_ACTIVE_CH8  = (0x1 << 8),               /*!< I2S channel 8 enabled */
-    I2S_TDM_ACTIVE_CH9  = (0x1 << 9),               /*!< I2S channel 9 enabled */
-    I2S_TDM_ACTIVE_CH10 = (0x1 << 10),              /*!< I2S channel 10 enabled */
-    I2S_TDM_ACTIVE_CH11 = (0x1 << 11),              /*!< I2S channel 11 enabled */
-    I2S_TDM_ACTIVE_CH12 = (0x1 << 12),              /*!< I2S channel 12 enabled */
-    I2S_TDM_ACTIVE_CH13 = (0x1 << 13),              /*!< I2S channel 13 enabled */
-    I2S_TDM_ACTIVE_CH14 = (0x1 << 14),              /*!< I2S channel 14 enabled */
-    I2S_TDM_ACTIVE_CH15 = (0x1 << 15),              /*!< I2S channel 15 enabled */
+    I2S_TDM_ACTIVE_CH0  = (0x1 << 16),               /*!< I2S channel 0 activated */
+    I2S_TDM_ACTIVE_CH1  = (0x1 << 17),               /*!< I2S channel 1 activated */
+    I2S_TDM_ACTIVE_CH2  = (0x1 << 18),               /*!< I2S channel 2 activated */
+    I2S_TDM_ACTIVE_CH3  = (0x1 << 19),               /*!< I2S channel 3 activated */
+    I2S_TDM_ACTIVE_CH4  = (0x1 << 20),               /*!< I2S channel 4 activated */
+    I2S_TDM_ACTIVE_CH5  = (0x1 << 21),               /*!< I2S channel 5 activated */
+    I2S_TDM_ACTIVE_CH6  = (0x1 << 22),               /*!< I2S channel 6 activated */
+    I2S_TDM_ACTIVE_CH7  = (0x1 << 23),               /*!< I2S channel 7 activated */
+    I2S_TDM_ACTIVE_CH8  = (0x1 << 24),               /*!< I2S channel 8 activated */
+    I2S_TDM_ACTIVE_CH9  = (0x1 << 25),               /*!< I2S channel 9 activated */
+    I2S_TDM_ACTIVE_CH10 = (0x1 << 26),              /*!< I2S channel 10 activated */
+    I2S_TDM_ACTIVE_CH11 = (0x1 << 27),              /*!< I2S channel 11 activated */
+    I2S_TDM_ACTIVE_CH12 = (0x1 << 28),              /*!< I2S channel 12 activated */
+    I2S_TDM_ACTIVE_CH13 = (0x1 << 29),              /*!< I2S channel 13 activated */
+    I2S_TDM_ACTIVE_CH14 = (0x1 << 30),              /*!< I2S channel 14 activated */
+    I2S_TDM_ACTIVE_CH15 = (0x1 << 31),              /*!< I2S channel 15 activated */
 #endif
 } i2s_channel_t;
 

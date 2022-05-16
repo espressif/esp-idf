@@ -1,4 +1,4 @@
-menu "Example Configuration"
+menu "OpenThread Border Router Example"
 
     config OPENTHREAD_NETWORK_NAME
         string "OpenThread network name"

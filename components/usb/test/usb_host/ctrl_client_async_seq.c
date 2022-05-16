@@ -10,6 +10,7 @@
 #include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "test_usb_common.h"
 #include "ctrl_client.h"
 #include "usb/usb_host.h"
 #include "unity.h"
@@ -32,7 +33,6 @@ Implementation of a control transfer client used for USB Host Tests.
     - Deregister control client
 */
 
-#define MAX(x,y)                        (((x) >= (y)) ? (x) : (y))
 #define CTRL_CLIENT_MAX_EVENT_MSGS      5
 #define NUM_TRANSFER_OBJ                3
 #define MAX_TRANSFER_BYTES              256
@@ -97,9 +97,12 @@ void ctrl_client_async_seq_task(void *arg)
 
     //Register client
     usb_host_client_config_t client_config = {
-        .client_event_callback = ctrl_client_event_cb,
-        .callback_arg = (void *)&ctrl_obj,
+        .is_synchronous = false,
         .max_num_event_msg = CTRL_CLIENT_MAX_EVENT_MSGS,
+        .async = {
+            .client_event_callback = ctrl_client_event_cb,
+            .callback_arg = (void *)&ctrl_obj,
+        },
     };
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_register(&client_config, &ctrl_obj.client_hdl));
 
@@ -153,7 +156,7 @@ void ctrl_client_async_seq_task(void *arg)
                 usb_transfer_t *transfer = ctrl_xfer[ctrl_obj.num_xfer_sent % NUM_TRANSFER_OBJ];
                 USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)transfer->data_buffer, 0, MAX_TRANSFER_BYTES);
                 transfer->num_bytes = sizeof(usb_setup_packet_t) + MAX_TRANSFER_BYTES;
-                transfer->bEndpointAddress = 0;
+                transfer->bEndpointAddress = 0x80;
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit_control(ctrl_obj.client_hdl, transfer));
                 ctrl_obj.num_xfer_sent++;
                 ctrl_obj.next_stage = TEST_STAGE_CTRL_XFER_WAIT;

@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -176,28 +168,28 @@ void i2s_hal_enable_slave_fd_mode(i2s_hal_context_t *hal);
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_start_tx(hal)               i2s_ll_tx_start((hal)->dev)
+void i2s_hal_start_tx(i2s_hal_context_t *hal);
 
 /**
  * @brief Start I2S rx
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_start_rx(hal)               i2s_ll_rx_start((hal)->dev)
+void i2s_hal_start_rx(i2s_hal_context_t *hal);
 
 /**
  * @brief Stop I2S tx
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_stop_tx(hal)                i2s_ll_tx_stop((hal)->dev)
+void i2s_hal_stop_tx(i2s_hal_context_t *hal);
 
 /**
  * @brief Stop I2S rx
  *
  * @param hal Context of the HAL layer
  */
-#define i2s_hal_stop_rx(hal)                i2s_ll_rx_stop((hal)->dev)
+void i2s_hal_stop_rx(i2s_hal_context_t *hal);
 
 /**
  * @brief Set the received data length to trigger `in_suc_eof` interrupt.

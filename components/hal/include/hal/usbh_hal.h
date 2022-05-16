@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -26,7 +18,6 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 #include <stdlib.h>
 #include <stddef.h>
 #include "soc/usbh_struct.h"
-#include "soc/usb_wrap_struct.h"
 #include "hal/usbh_ll.h"
 #include "hal/usb_types_private.h"
 #include "hal/assert.h"
@@ -49,17 +40,6 @@ typedef struct {
     uint32_t nptx_fifo_lines;               /**< Size of the Non-periodic FIFO in terms the number of FIFO lines */
     uint32_t ptx_fifo_lines;                /**< Size of the Periodic FIFO in terms the number of FIFO lines */
 } usbh_hal_fifo_config_t;
-
-// --------------------- HAL States ------------------------
-
-/**
- * @brief Channel states
- */
-typedef enum {
-    USBH_HAL_CHAN_STATE_HALTED = 0,         /**< The channel is halted. No transfer descriptor list is being executed */
-    USBH_HAL_CHAN_STATE_ACTIVE,             /**< The channel is active. A transfer descriptor list is being executed */
-    USBH_HAL_CHAN_STATE_ERROR,              /**< The channel is in the error state */
-} usbh_hal_chan_state_t;
 
 // --------------------- HAL Events ------------------------
 
@@ -153,8 +133,7 @@ typedef struct {
         struct {
             uint32_t active: 1;             /**< Debugging bit to indicate whether channel is enabled */
             uint32_t halt_requested: 1;     /**< A halt has been requested */
-            uint32_t error_pending: 1;      /**< The channel is waiting for the error to be handled */
-            uint32_t reserved: 1;
+            uint32_t reserved: 2;
             uint32_t chan_idx: 4;           /**< The index number of the channel */
             uint32_t reserved24: 24;
         };
@@ -172,7 +151,6 @@ typedef struct {
 typedef struct {
     //Context
     usbh_dev_t *dev;                            /**< Pointer to base address of DWC_OTG registers */
-    usb_wrap_dev_t *wrap_dev;                   /**< Pointer to base address of USB Wrapper registers */
     //Host Port related
     uint32_t *periodic_frame_list;              /**< Pointer to scheduling frame list */
     usb_hal_frame_list_len_t frame_list_len;    /**< Length of the periodic scheduling frame list */
@@ -201,6 +179,7 @@ typedef struct {
  *
  * Entry:
  * - The peripheral must have been reset and clock un-gated
+ * - The USB PHY (internal or external) and associated GPIOs must already be configured
  * - GPIO pins configured
  * - Interrupt allocated but DISABLED (in case of an unknown interupt state)
  * Exit:
@@ -515,7 +494,7 @@ static inline void usbh_hal_disable_debounce_lock(usbh_hal_context_t *hal)
     hal->flags.dbnc_lock_enabled = 0;
     //Clear Conenction and disconenction interrupt in case it triggered again
     usb_ll_intr_clear(hal->dev, USB_LL_INTR_CORE_DISCONNINT);
-    usbh_ll_hprt_intr_clear(hal->dev, USBH_LL_INTR_HPRT_PRTENCHNG);
+    usbh_ll_hprt_intr_clear(hal->dev, USBH_LL_INTR_HPRT_PRTCONNDET);
     //Reenable the hprt (connection) and disconnection interrupts
     usb_ll_en_intrs(hal->dev, USB_LL_INTR_CORE_PRTINT | USB_LL_INTR_CORE_DISCONNINT);
 }
@@ -557,23 +536,6 @@ static inline void *usbh_hal_chan_get_context(usbh_hal_chan_t *chan_obj)
 }
 
 /**
- * @brief Get the current state of a channel
- *
- * @param chan_obj Channel object
- * @return usbh_hal_chan_state_t State of the channel
- */
-static inline usbh_hal_chan_state_t usbh_hal_chan_get_state(usbh_hal_chan_t *chan_obj)
-{
-    if (chan_obj->flags.error_pending) {
-        return USBH_HAL_CHAN_STATE_ERROR;
-    } else if (chan_obj->flags.active) {
-        return USBH_HAL_CHAN_STATE_ACTIVE;
-    } else {
-        return USBH_HAL_CHAN_STATE_HALTED;
-    }
-}
-
-/**
  * @brief Set the endpoint information for a particular channel
  *
  * This should be called when a channel switches target from one EP to another
@@ -602,7 +564,7 @@ void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_ob
 static inline void usbh_hal_chan_set_dir(usbh_hal_chan_t *chan_obj, bool is_in)
 {
     //Cannot change direction whilst channel is still active or in error
-    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active);
     usbh_ll_chan_set_dir(chan_obj->regs, is_in);
 }
 
@@ -621,7 +583,7 @@ static inline void usbh_hal_chan_set_dir(usbh_hal_chan_t *chan_obj, bool is_in)
 static inline void usbh_hal_chan_set_pid(usbh_hal_chan_t *chan_obj, int pid)
 {
     //Cannot change pid whilst channel is still active or in error
-    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active);
     //Update channel object and set the register
     usbh_ll_chan_set_pid(chan_obj->regs, pid);
 }
@@ -638,7 +600,7 @@ static inline void usbh_hal_chan_set_pid(usbh_hal_chan_t *chan_obj, int pid)
  */
 static inline uint32_t usbh_hal_chan_get_pid(usbh_hal_chan_t *chan_obj)
 {
-    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active);
     return usbh_ll_chan_get_pid(chan_obj->regs);
 }
 
@@ -688,6 +650,25 @@ static inline int usbh_hal_chan_get_qtd_idx(usbh_hal_chan_t *chan_obj)
 bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj);
 
 /**
+ * @brief Indicate that a channel is halted after a port error
+ *
+ * When a port error occurs (e.g., discconect, overcurrent):
+ * - Any previously active channels will remain active (i.e., they will not receive a channel interrupt)
+ * - Attempting to disable them using usbh_hal_chan_request_halt() will NOT generate an interrupt for ISOC channels
+ *   (probalby something to do with the periodic scheduling)
+ *
+ * However, the channel's enable bit can be left as 1 since after a port error, a soft reset will be done anyways.
+ * This function simply updates the channels internal state variable to indicate it is halted (thus allowing it to be
+ * freed).
+ *
+ * @param chan_obj Channel object
+ */
+static inline void usbh_hal_chan_mark_halted(usbh_hal_chan_t *chan_obj)
+{
+    chan_obj->flags.active = 0;
+}
+
+/**
  * @brief Get a channel's error
  *
  * @param chan_obj Channel object
@@ -695,20 +676,7 @@ bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj);
  */
 static inline usbh_hal_chan_error_t usbh_hal_chan_get_error(usbh_hal_chan_t *chan_obj)
 {
-    HAL_ASSERT(chan_obj->flags.error_pending);
     return chan_obj->error;
-}
-
-/**
- * @brief Clear a channel of it's error
- *
- * @param chan_obj Channel object
- */
-static inline void usbh_hal_chan_clear_error(usbh_hal_chan_t *chan_obj)
-{
-    //Can only clear error when an error has occurred
-    HAL_ASSERT(chan_obj->flags.error_pending);
-    chan_obj->flags.error_pending = 0;
 }
 
 // -------------------------------------------- Transfer Descriptor List -----------------------------------------------

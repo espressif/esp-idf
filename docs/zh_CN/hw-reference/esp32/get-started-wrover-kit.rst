@@ -2,7 +2,7 @@ ESP-WROVER-KIT V4.1 入门指南
 =========================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
+本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。
 
 
 准备工作
@@ -22,7 +22,7 @@ ESP-WROVER-KIT 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的开�
 
 ESP-WROVER-KIT 开发板已集成了如下组件：
 
-- ESP32-WROVER-B 模组
+- ESP32-WROVER-E 模组
 - LCD 屏
 - MicroSD 卡槽
 
@@ -74,6 +74,9 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 下表将从图片右上角开始，以顺时针顺序介绍图 1 中的主要组件，然后按同样顺序介绍图 2 中的主要组件。
 
+
+
+
 .. list-table::
     :widths: 25 75
     :header-rows: 1
@@ -86,7 +89,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
       - 32.768 kHz 晶振，可提供 Deep-sleep 下使用的低功耗时钟。
     * - 0 欧电阻
       - ESP-WROVER-KIT 开发板设计了一个 0 欧电阻，可在测量 ESP32 系列模组在不同功耗模式下的电流时，直接移除或替换为分流器。
-    * - ESP32-WROVER-B 模组
+    * - ESP32-WROVER-E 模组
       - 这款 ESP32 模组内置 64-Mbit PSRAM，可提供灵活的额外存储空间和数据处理能力。
     * - 诊断 LED 信号灯
       - 本开发板 FT2232 芯片的 GPIO 管脚连接了 4 个红色 LED 信号灯，以备后用。
@@ -165,7 +168,7 @@ ESP32 模组的部分管脚/终端已被板上组件占用或用于外部硬件�
 
 部分管脚具备多个功能，可供板上组件或外部硬件设备同时使用，比如 GPIO0 和 GPIO2。由于管脚限制，一些外围设备不可同时使用，比如，由于 JTAG 和 SD 卡槽需共用部分管脚，因此一些使用 SD 卡功能的应用无法同时进行 JTAG 调试。
 
-其他情况下，不同外设可同时使用。比如，LCD 屏幕和 SD 卡仅共用一个 GPIO21 管脚，可以同时使用。该管脚可为 LCD 屏幕提供 D/C（数据/控制）信号，并用于读取来自 SD 卡槽的 CD 信号（卡检测信号）。如无需使用卡检测功能，开发人员还可以通过移除 R167 来禁用该功能。此时，LCD 和 SD 卡槽可同时使用。
+其他情况下，不同外设可同时使用。比如，LCD 屏幕和 SD 卡仅共用一个 GPIO21 管脚，可以同时使用。该管脚可为 LCD 屏幕提供 D/C（数据/控制）信号，并用于读取来自 SD 卡槽的卡检测信号。如无需使用卡检测功能，开发人员还可以通过移除 R167 来禁用该功能。此时，LCD 和 SD 卡槽可同时使用。
 
 更多外设共享管脚的介绍，请见下一章节中的表格。
 
@@ -251,7 +254,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
 * MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
 * LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
-* PSRAM - ESP32-WROVER-B 的 PSRAM
+* PSRAM - ESP32-WROVER-E 的 PSRAM
 
 
 .. _get-started-esp-wrover-kit-v4.1-xtal:
@@ -368,7 +371,7 @@ MicroSD 卡
 4.    MTMS / GPIO14   CLK
 5.    GPIO2           DATA0
 6.    GPIO4           DATA1
-7.    GPIO21          CD
+7.    GPIO21          Card Detect
 ====  ==============  ===============
 
 
@@ -422,6 +425,12 @@ USB 供电                   使能 UART 通信
 
 现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
+以下链接提供了与 ESP-WROVER-KIT 开发板硬件相关的示例：
+
+* 板上 LCD 示例：:example:`peripherals/spi_master/lcd`
+* SD 卡槽示例： :example:`storage/sd_card`
+* 摄像头示例：https://github.com/espressif/esp32-camera
+
 
 相关文档
 -----------------
@@ -429,7 +438,7 @@ USB 供电                   使能 UART 通信
 * `ESP-WROVER-KIT V4.1 原理图`_ (PDF)
 * `ESP-WROVER-KIT V4.1 布局 <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4.1.dxf>`_ (DXF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF) 
-* `《ESP32-WROVER-B 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-WROVER-E 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-e_esp32-wrover-ie_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../api-guides/jtag-debugging/index`
 * :doc:`../../hw-reference/index`
 

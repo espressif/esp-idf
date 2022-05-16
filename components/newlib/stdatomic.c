@@ -1,16 +1,8 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 //replacement for gcc built-in functions
 
@@ -44,15 +36,15 @@
 
 #if SOC_CPU_CORES_NUM == 1
 
-// Single core SoC: atomics can be implemented using portENTER_CRITICAL_NESTED
-// and portEXIT_CRITICAL_NESTED, which disable and enable interrupts.
+// Single core SoC: atomics can be implemented using portSET_INTERRUPT_MASK_FROM_ISR
+// and portCLEAR_INTERRUPT_MASK_FROM_ISR, which disables and enables interrupts.
 #define _ATOMIC_ENTER_CRITICAL() ({ \
-    unsigned state = portENTER_CRITICAL_NESTED(); \
+    unsigned state = portSET_INTERRUPT_MASK_FROM_ISR(); \
     state; \
 })
 
 #define _ATOMIC_EXIT_CRITICAL(state)   do { \
-    portEXIT_CRITICAL_NESTED(state); \
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state); \
     } while (0)
 
 #else // SOC_CPU_CORES_NUM
@@ -140,11 +132,29 @@ __asm__(".type " # name_ ", @function\n"        \
     return ret; \
 }
 
+#define ADD_FETCH(n, type) type __atomic_add_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr + value; \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
 #define FETCH_SUB(n, type) type __atomic_fetch_sub_ ## n (type* ptr, type value, int memorder) \
 { \
     unsigned state = _ATOMIC_ENTER_CRITICAL(); \
     type ret = *ptr; \
     *ptr = *ptr - value; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define SUB_FETCH(n, type) type __atomic_sub_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr - value; \
+    *ptr = ret; \
     _ATOMIC_EXIT_CRITICAL(state); \
     return ret; \
 }
@@ -158,11 +168,29 @@ __asm__(".type " # name_ ", @function\n"        \
     return ret; \
 }
 
+#define AND_FETCH(n, type) type __atomic_and_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr & value; \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
 #define FETCH_OR(n, type) type __atomic_fetch_or_ ## n (type* ptr, type value, int memorder) \
 { \
     unsigned state = _ATOMIC_ENTER_CRITICAL(); \
     type ret = *ptr; \
     *ptr = *ptr | value; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define OR_FETCH(n, type) type __atomic_or_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr | value; \
+    *ptr = ret; \
     _ATOMIC_EXIT_CRITICAL(state); \
     return ret; \
 }
@@ -176,12 +204,44 @@ __asm__(".type " # name_ ", @function\n"        \
     return ret; \
 }
 
+#define XOR_FETCH(n, type) type __atomic_xor_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr ^ value; \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define FETCH_NAND(n, type) type __atomic_fetch_nand_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr; \
+    *ptr = ~(*ptr & value); \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define NAND_FETCH(n, type) type __atomic_nand_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = ~(*ptr & value); \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
 
 #define SYNC_FETCH_OP(op, n, type) type CLANG_ATOMIC_SUFFIX(__sync_fetch_and_ ## op ##_ ## n) (type* ptr, type value) \
 {                                                                                \
     return __atomic_fetch_ ## op ##_ ## n (ptr, value, __ATOMIC_SEQ_CST);        \
 }                                                                                \
 CLANG_DECLARE_ALIAS( __sync_fetch_and_ ## op ##_ ## n )
+
+#define SYNC_OP_FETCH(op, n, type) type CLANG_ATOMIC_SUFFIX(__sync_ ## op ##_and_fetch_ ## n) (type* ptr, type value) \
+{                                                                                \
+    return __atomic_ ## op ##_fetch_ ## n (ptr, value, __ATOMIC_SEQ_CST);        \
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_ ## op ##_and_fetch_ ## n )
 
 #define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  CLANG_ATOMIC_SUFFIX(__sync_bool_compare_and_swap_ ## n)  (type *ptr, type oldval, type newval) \
 {                                                                                \
@@ -208,6 +268,24 @@ CLANG_DECLARE_ALIAS( __sync_bool_compare_and_swap_ ## n )
 }                                                                                \
 CLANG_DECLARE_ALIAS( __sync_val_compare_and_swap_ ## n )
 
+#define SYNC_LOCK_TEST_AND_SET(n, type) type  CLANG_ATOMIC_SUFFIX(__sync_lock_test_and_set_ ## n)  (type *ptr, type val) \
+{                                                                                \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
+    type ret = *ptr;                                                             \
+    *ptr = val;                                                                  \
+    _ATOMIC_EXIT_CRITICAL(state);                                                \
+    return ret;                                                                  \
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
+
+#define SYNC_LOCK_RELEASE(n, type) void  CLANG_ATOMIC_SUFFIX(__sync_lock_release_ ## n)  (type *ptr) \
+{                                                                                \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
+    *ptr = 0;                                                                    \
+    _ATOMIC_EXIT_CRITICAL(state);                                                \
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_lock_release_ ## n )
+
 
 #if !HAS_ATOMICS_32
 
@@ -223,41 +301,97 @@ FETCH_ADD(1, uint8_t)
 FETCH_ADD(2, uint16_t)
 FETCH_ADD(4, uint32_t)
 
+ADD_FETCH(1, uint8_t)
+ADD_FETCH(2, uint16_t)
+ADD_FETCH(4, uint32_t)
+
 FETCH_SUB(1, uint8_t)
 FETCH_SUB(2, uint16_t)
 FETCH_SUB(4, uint32_t)
+
+SUB_FETCH(1, uint8_t)
+SUB_FETCH(2, uint16_t)
+SUB_FETCH(4, uint32_t)
 
 FETCH_AND(1, uint8_t)
 FETCH_AND(2, uint16_t)
 FETCH_AND(4, uint32_t)
 
+AND_FETCH(1, uint8_t)
+AND_FETCH(2, uint16_t)
+AND_FETCH(4, uint32_t)
+
 FETCH_OR(1, uint8_t)
 FETCH_OR(2, uint16_t)
 FETCH_OR(4, uint32_t)
+
+OR_FETCH(1, uint8_t)
+OR_FETCH(2, uint16_t)
+OR_FETCH(4, uint32_t)
 
 FETCH_XOR(1, uint8_t)
 FETCH_XOR(2, uint16_t)
 FETCH_XOR(4, uint32_t)
 
+XOR_FETCH(1, uint8_t)
+XOR_FETCH(2, uint16_t)
+XOR_FETCH(4, uint32_t)
+
+FETCH_NAND(1, uint8_t)
+FETCH_NAND(2, uint16_t)
+FETCH_NAND(4, uint32_t)
+
+NAND_FETCH(1, uint8_t)
+NAND_FETCH(2, uint16_t)
+NAND_FETCH(4, uint32_t)
+
 SYNC_FETCH_OP(add, 1, uint8_t)
 SYNC_FETCH_OP(add, 2, uint16_t)
 SYNC_FETCH_OP(add, 4, uint32_t)
+
+SYNC_OP_FETCH(add, 1, uint8_t)
+SYNC_OP_FETCH(add, 2, uint16_t)
+SYNC_OP_FETCH(add, 4, uint32_t)
 
 SYNC_FETCH_OP(sub, 1, uint8_t)
 SYNC_FETCH_OP(sub, 2, uint16_t)
 SYNC_FETCH_OP(sub, 4, uint32_t)
 
+SYNC_OP_FETCH(sub, 1, uint8_t)
+SYNC_OP_FETCH(sub, 2, uint16_t)
+SYNC_OP_FETCH(sub, 4, uint32_t)
+
 SYNC_FETCH_OP(and, 1, uint8_t)
 SYNC_FETCH_OP(and, 2, uint16_t)
 SYNC_FETCH_OP(and, 4, uint32_t)
+
+SYNC_OP_FETCH(and, 1, uint8_t)
+SYNC_OP_FETCH(and, 2, uint16_t)
+SYNC_OP_FETCH(and, 4, uint32_t)
 
 SYNC_FETCH_OP(or, 1, uint8_t)
 SYNC_FETCH_OP(or, 2, uint16_t)
 SYNC_FETCH_OP(or, 4, uint32_t)
 
+SYNC_OP_FETCH(or, 1, uint8_t)
+SYNC_OP_FETCH(or, 2, uint16_t)
+SYNC_OP_FETCH(or, 4, uint32_t)
+
 SYNC_FETCH_OP(xor, 1, uint8_t)
 SYNC_FETCH_OP(xor, 2, uint16_t)
 SYNC_FETCH_OP(xor, 4, uint32_t)
+
+SYNC_OP_FETCH(xor, 1, uint8_t)
+SYNC_OP_FETCH(xor, 2, uint16_t)
+SYNC_OP_FETCH(xor, 4, uint32_t)
+
+SYNC_FETCH_OP(nand, 1, uint8_t)
+SYNC_FETCH_OP(nand, 2, uint16_t)
+SYNC_FETCH_OP(nand, 4, uint32_t)
+
+SYNC_OP_FETCH(nand, 1, uint8_t)
+SYNC_OP_FETCH(nand, 2, uint16_t)
+SYNC_OP_FETCH(nand, 4, uint32_t)
 
 SYNC_BOOL_CMP_EXCHANGE(1, uint8_t)
 SYNC_BOOL_CMP_EXCHANGE(2, uint16_t)
@@ -267,13 +401,27 @@ SYNC_VAL_CMP_EXCHANGE(1, uint8_t)
 SYNC_VAL_CMP_EXCHANGE(2, uint16_t)
 SYNC_VAL_CMP_EXCHANGE(4, uint32_t)
 
+
+SYNC_LOCK_TEST_AND_SET(1, uint8_t)
+SYNC_LOCK_TEST_AND_SET(2, uint16_t)
+SYNC_LOCK_TEST_AND_SET(4, uint32_t)
+
+SYNC_LOCK_RELEASE(1, uint8_t)
+SYNC_LOCK_RELEASE(2, uint16_t)
+SYNC_LOCK_RELEASE(4, uint32_t)
+
+// LLVM has not implemented native atomic load/stores for riscv targets without the Atomic extension. LLVM thread: https://reviews.llvm.org/D47553.
+// Even though GCC does transform them, these libcalls need to be available for the case where a LLVM based project links against IDF.
+ATOMIC_LOAD(1, uint8_t)
+ATOMIC_LOAD(2, uint16_t)
+ATOMIC_LOAD(4, uint32_t)
+ATOMIC_STORE(1, uint8_t)
+ATOMIC_STORE(2, uint16_t)
+ATOMIC_STORE(4, uint32_t)
+
 #endif // !HAS_ATOMICS_32
 
 #if !HAS_ATOMICS_64
-
-ATOMIC_LOAD(8, uint64_t)
-
-ATOMIC_STORE(8, uint64_t)
 
 ATOMIC_EXCHANGE(8, uint64_t)
 
@@ -289,6 +437,20 @@ FETCH_OR(8, uint64_t)
 
 FETCH_XOR(8, uint64_t)
 
+FETCH_NAND(8, uint64_t)
+
+ADD_FETCH(8, uint64_t)
+
+SUB_FETCH(8, uint64_t)
+
+AND_FETCH(8, uint64_t)
+
+OR_FETCH(8, uint64_t)
+
+XOR_FETCH(8, uint64_t)
+
+NAND_FETCH(8, uint64_t)
+
 SYNC_FETCH_OP(add, 8, uint64_t)
 
 SYNC_FETCH_OP(sub, 8, uint64_t)
@@ -299,8 +461,30 @@ SYNC_FETCH_OP(or, 8, uint64_t)
 
 SYNC_FETCH_OP(xor, 8, uint64_t)
 
+SYNC_FETCH_OP(nand, 8, uint64_t)
+
+SYNC_OP_FETCH(add, 8, uint64_t)
+
+SYNC_OP_FETCH(sub, 8, uint64_t)
+
+SYNC_OP_FETCH(and, 8, uint64_t)
+
+SYNC_OP_FETCH(or, 8, uint64_t)
+
+SYNC_OP_FETCH(xor, 8, uint64_t)
+
+SYNC_OP_FETCH(nand, 8, uint64_t)
+
 SYNC_BOOL_CMP_EXCHANGE(8, uint64_t)
 
 SYNC_VAL_CMP_EXCHANGE(8, uint64_t)
+
+SYNC_LOCK_TEST_AND_SET(8, uint64_t)
+SYNC_LOCK_RELEASE(8, uint64_t)
+
+// LLVM has not implemented native atomic load/stores for riscv targets without the Atomic extension. LLVM thread: https://reviews.llvm.org/D47553.
+// Even though GCC does transform them, these libcalls need to be available for the case where a LLVM based project links against IDF.
+ATOMIC_LOAD(8, uint64_t)
+ATOMIC_STORE(8, uint64_t)
 
 #endif // !HAS_ATOMICS_64

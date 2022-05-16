@@ -247,7 +247,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
         if( xTimerQueue != NULL )
         {
-            #if ( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_STATIC_ALLOCATION == 0 )
+            #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
                 {
                     StaticTask_t * pxTimerTaskTCBBuffer = NULL;
                     StackType_t * pxTimerTaskStackBuffer = NULL;
@@ -608,7 +608,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         TickType_t xTimeNow;
         BaseType_t xTimerListsWereSwitched;
 
+#ifdef ESP_PLATFORM
         taskENTER_CRITICAL();
+#else
+        vTaskSuspendAll();
+#endif // ESP_PLATFORM
         {
             /* Obtain the time now to make an assessment as to whether the timer
              * has expired or not.  If obtaining the time causes the lists to switch
@@ -622,7 +626,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 /* The tick count has not overflowed, has the timer expired? */
                 if( ( xListWasEmpty == pdFALSE ) && ( xNextExpireTime <= xTimeNow ) )
                 {
+#ifdef ESP_PLATFORM
                     taskEXIT_CRITICAL();
+#else
+                    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
                     prvProcessExpiredTimer( xNextExpireTime, xTimeNow );
                 }
                 else
@@ -642,19 +650,33 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
                     vQueueWaitForMessageRestricted( xTimerQueue, ( xNextExpireTime - xTimeNow ), xListWasEmpty );
 
+#ifdef ESP_PLATFORM // IDF-3755
                     taskEXIT_CRITICAL();
-
-                    /* Yield to wait for either a command to arrive, or the
-                     * block time to expire.  If a command arrived between the
-                     * critical section being exited and this yield then the yield
-                     * will not cause the task to block. */
-                    portYIELD_WITHIN_API();
-
+#else
+                    if( xTaskResumeAll() == pdFALSE )
+#endif // ESP_PLATFORM
+                    {
+                        /* Yield to wait for either a command to arrive, or the
+                         * block time to expire.  If a command arrived between the
+                         * critical section being exited and this yield then the yield
+                         * will not cause the task to block. */
+                        portYIELD_WITHIN_API();
+                    }
+#ifndef ESP_PLATFORM // IDF-3755
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
+#endif // ESP_PLATFORM
                 }
             }
             else
             {
+#ifdef ESP_PLATFORM // IDF-3755
                 taskEXIT_CRITICAL();
+#else
+                ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
             }
         }
     }
@@ -969,10 +991,6 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         /* Check that the list from which active timers are referenced, and the
          * queue used to communicate with the timer service, have been
          * initialised. */
-#ifdef ESP_PLATFORM
-        if( xTimerQueue == NULL ) vPortCPUInitializeMutex( &xTimerMux );
-#endif // ESP_PLATFORM
-
         taskENTER_CRITICAL();
         {
             if( xTimerQueue == NULL )
@@ -986,8 +1004,8 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                     {
                         /* The timer queue is allocated statically in case
                          * configSUPPORT_DYNAMIC_ALLOCATION is 0. */
-                        static StaticQueue_t xStaticTimerQueue; /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
-                        static uint8_t ucStaticTimerQueueStorage[ ( size_t ) configTIMER_QUEUE_LENGTH * sizeof( DaemonTaskMessage_t ) ]; /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
+                        PRIVILEGED_DATA static StaticQueue_t xStaticTimerQueue; /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
+                        PRIVILEGED_DATA static uint8_t ucStaticTimerQueueStorage[ ( size_t ) configTIMER_QUEUE_LENGTH * sizeof( DaemonTaskMessage_t ) ]; /*lint !e956 Ok to declare in this manner to prevent additional conditional compilation guards in other locations. */
 
                         xTimerQueue = xQueueCreateStatic( ( UBaseType_t ) configTIMER_QUEUE_LENGTH, ( UBaseType_t ) sizeof( DaemonTaskMessage_t ), &( ucStaticTimerQueueStorage[ 0 ] ), &xStaticTimerQueue );
                     }

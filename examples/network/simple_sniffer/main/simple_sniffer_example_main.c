@@ -25,8 +25,8 @@
 #endif
 #include "nvs_flash.h"
 #include "sdmmc_cmd.h"
-#include "cmd_system.h"
 #include "cmd_sniffer.h"
+#include "cmd_pcap.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
 #include "driver/spi_master.h"
 #endif // CONFIG_ETH_USE_SPI_ETHERNET
@@ -161,7 +161,7 @@ static void initialize_eth(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_SNIFFER_ETH_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_SNIFFER_ETH_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
 #if CONFIG_SNIFFER_USE_KSZ8851SNL
     spi_device_interface_config_t devcfg = {
@@ -397,18 +397,29 @@ void app_main(void)
     register_mount();
     register_unmount();
 #endif
-    register_sniffer();
-    register_system();
-
+    register_sniffer_cmd();
+    register_pcap_cmd();
+#if CONFIG_SNIFFER_PCAP_DESTINATION_SD
     printf("\n =======================================================\n");
-    printf(" |       Steps to sniffer WiFi packets                 |\n");
+    printf(" |         Steps to sniff network packets              |\n");
     printf(" |                                                     |\n");
     printf(" |  1. Enter 'help' to check all commands usage        |\n");
     printf(" |  2. Enter 'mount <device>' to mount filesystem      |\n");
-    printf(" |  3. Enter 'sniffer' to start capture packets        |\n");
-    printf(" |  4. Enter 'unmount <device>' to unmount filesystem  |\n");
+    printf(" |  3. Enter 'pcap' to create pcap file                |\n");
+    printf(" |  4. Enter 'sniffer' to start capture packets        |\n");
+    printf(" |  5. Enter 'unmount <device>' to unmount filesystem  |\n");
     printf(" |                                                     |\n");
     printf(" =======================================================\n\n");
+#else
+    printf("\n =======================================================\n");
+    printf(" |         Steps to sniff network packets              |\n");
+    printf(" |                                                     |\n");
+    printf(" |  1. Enter 'help' to check all commands' usage       |\n");
+    printf(" |  2. Enter 'pcap' to create pcap file                |\n");
+    printf(" |  3. Enter 'sniffer' to start capture packets        |\n");
+    printf(" |                                                     |\n");
+    printf(" =======================================================\n\n");
+#endif
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));

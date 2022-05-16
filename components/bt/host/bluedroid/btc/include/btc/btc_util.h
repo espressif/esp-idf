@@ -31,7 +31,9 @@
 ********************************************************************************/
 typedef char bdstr_t[18];
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*******************************************************************************
 **  Functions
 ********************************************************************************/
@@ -48,6 +50,14 @@ const char *dump_hf_call_state(esp_hf_call_status_t call_state);
 const char* dump_hf_call_setup_state(esp_hf_call_setup_status_t call_setup_state);
 #endif
 
+#if(BTA_HD_INCLUDED == TRUE)
+const char* dump_hd_event(uint16_t event);
+#endif
+
+#if(BTA_HH_INCLUDED == TRUE)
+const char* dump_hh_event(uint16_t event);
+#endif
+
 UINT32 devclass2uint(DEV_CLASS dev_class);
 void uint2devclass(UINT32 dev, DEV_CLASS dev_class);
 void uuid128_be_to_esp_uuid(esp_bt_uuid_t *u, uint8_t* uuid128);
@@ -57,5 +67,9 @@ void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str);
 esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status);
 esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status);
 esp_bt_status_t btc_bta_status_to_esp_status (uint8_t bta_status);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*  __BTC_UTIL_H__ */

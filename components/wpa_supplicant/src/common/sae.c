@@ -18,15 +18,6 @@
 #include "sae.h"
 #include "esp_wifi_crypto_types.h"
 
-/*TBD Move the this api to proper files once they are taken out of lib*/
-void wpabuf_clear_free(struct wpabuf *buf)
-{
-    if (buf) {
-        os_memset(wpabuf_mhead(buf), 0, wpabuf_len(buf));
-        wpabuf_free(buf);
-    }
-}
-
 int sae_set_group(struct sae_data *sae, int group)
 {
 	struct sae_temporary_data *tmp;
@@ -57,6 +48,7 @@ int sae_set_group(struct sae_data *sae, int group)
 		tmp->prime_len = tmp->dh->prime_len;
 		if (tmp->prime_len > SAE_MAX_PRIME_LEN) {
 			sae_clear_data(sae);
+			os_free(tmp);
 			return ESP_FAIL;
 		}
 
@@ -64,6 +56,7 @@ int sae_set_group(struct sae_data *sae, int group)
 							tmp->prime_len);
 		if (tmp->prime_buf == NULL) {
 			sae_clear_data(sae);
+			os_free(tmp);
 			return ESP_FAIL;
 		}
 		tmp->prime = tmp->prime_buf;
@@ -72,6 +65,7 @@ int sae_set_group(struct sae_data *sae, int group)
 							tmp->dh->order_len);
 		if (tmp->order_buf == NULL) {
 			sae_clear_data(sae);
+			os_free(tmp);
 			return ESP_FAIL;
 		}
 		tmp->order = tmp->order_buf;
@@ -82,6 +76,7 @@ int sae_set_group(struct sae_data *sae, int group)
 	/* Unsupported group */
 	wpa_printf(MSG_DEBUG,
 		   "SAE: Group %d not supported by the crypto library", group);
+        os_free(tmp);
 	return ESP_FAIL;
 }
 
@@ -680,6 +675,7 @@ static int sae_derive_commit(struct sae_data *sae)
 			 * theoretical infinite loop, break out after 100
 			 * attemps.
 			 */
+			crypto_bignum_deinit(mask, 1);
 			return ESP_FAIL;
 		}
 

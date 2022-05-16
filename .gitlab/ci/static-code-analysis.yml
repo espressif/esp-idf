@@ -123,7 +123,7 @@ code_quality_report:
       -Dsonar.branch.name=$CI_COMMIT_REF_NAME
       -Dsonar.cxx.clangtidy.reportPath=$REPORT_PATTERN
       -Dsonar.exclusions=$EXCLUSIONS
-      -Dsonar.gitlab.commit_sha=$CI_COMMIT_SHA
+      -Dsonar.gitlab.commit_sha=$PIPELINE_COMMIT_SHA
       -Dsonar.gitlab.ref_name=$CI_COMMIT_REF_NAME
       -Dsonar.host.url=$SONAR_HOST_URL
       -Dsonar.login=$SONAR_LOGIN

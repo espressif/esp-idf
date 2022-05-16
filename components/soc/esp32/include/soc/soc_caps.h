@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  * Soc capabilities file, describing the following chip attributes:
@@ -60,10 +52,12 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CAPS_ECO_VER_MAX        3
 
+#define SOC_ADC_SUPPORTED           1
 #define SOC_DAC_SUPPORTED           1
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
+#define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
@@ -75,20 +69,34 @@
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-#define SOC_ADC_PERIPH_NUM              (2)
-#define SOC_ADC_PATT_LEN_MAX            (16)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 8: 10)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-#define SOC_ADC_MAX_BITWIDTH            (12)
-
 /**
+ * TO BE REMOVED
  * Check if adc support digital controller (DMA) mode.
  * @value
  *      - 1 : support;
  *      - 0 : not support;
  */
 #define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 0)
-#define SOC_ADC_SUPPORT_RTC_CTRL        1
+
+/*!< SAR ADC Module*/
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (16) //Two pattern table, each contains 16 items. Each item takes 1 byte. But only support ADC1 using DMA mode
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (9)
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (2000)
+
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (12)
+
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #if SOC_CAPS_ECO_VER >= 1
@@ -132,18 +140,23 @@
 
 #define SOC_I2C_SUPPORT_APB     (1)
 
+/*-------------------------- APLL CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED       (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 have 2 I2S
-#define SOC_I2S_NUM                 (2)
+#define SOC_I2S_NUM                 (2U)
+#define SOC_I2S_SUPPORTS_APLL       (1) // ESP32 support APLL
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
 #define SOC_I2S_SUPPORTS_ADC        (1) // ESP32 support ADC and DAC
 #define SOC_I2S_SUPPORTS_DAC        (1)
 
-#define SOC_I2S_SUPPORTS_APLL       (1)// ESP32 support APLL
-#define SOC_I2S_APLL_MIN_FREQ       (250000000)
-#define SOC_I2S_APLL_MAX_FREQ       (500000000)
-#define SOC_I2S_APLL_MIN_RATE       (10675) //in Hz, I2S Clock rate limited by hardware
 #define SOC_I2S_TRANS_SIZE_ALIGN_WORD (1) // I2S DMA transfer size must be aligned to word
 #define SOC_I2S_LCD_I80_VARIANT       (1) // I2S has a special LCD mode that can generate Intel 8080 TX timing
 
@@ -226,11 +239,11 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
+#define SOC_TOUCH_VERSION_1                 (1)     /*!<Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (10)
 
 #define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0)     /*!<If set touch threshold max value, The touch sensor can't be in touched status */
-#define SOC_TOUCH_PAD_WAKE_SUPPORTED        (1)     /*!<Supports waking up from touch pad trigger */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                        2
@@ -282,6 +295,7 @@
 
 /*-------------------------- Power Management CAPS ---------------------------*/
 #define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
+#define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
 
 /* ---------------------------- Compatibility ------------------------------- */
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED

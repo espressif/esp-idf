@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "esp_heap_caps.h"
 #include "hub.h"
 #include "usbh.h"
+#include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 
 static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -146,6 +147,7 @@ typedef struct {
     struct {
         SemaphoreHandle_t event_sem;
         SemaphoreHandle_t mux_lock;
+        usb_phy_handle_t phy_handle;    //Will be NULL if host library is installed with skip_phy_setup
     } constant;
 } host_lib_t;
 
@@ -374,6 +376,21 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     TAILQ_INIT(&host_lib_obj->mux_protected.client_tailq);
     host_lib_obj->constant.event_sem = event_sem;
     host_lib_obj->constant.mux_lock = mux_lock;
+    //Setup the USB PHY if necessary (USB PHY driver will also enable the underlying Host Controller)
+    if (!config->skip_phy_setup) {
+        //Host Library defaults to internal PHY
+        usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_INT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
+            .gpio_conf = NULL,
+        };
+        ret = usb_new_phy(&phy_config, &host_lib_obj->constant.phy_handle);
+         if (ret != ESP_OK) {
+             goto phy_err;
+         }
+    }
     //Install USBH
     usbh_config_t usbh_config = {
         .notif_cb = notif_callback,
@@ -420,6 +437,10 @@ assign_err:
 hub_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
+    if (p_host_lib_obj->constant.phy_handle) {
+        ESP_ERROR_CHECK(usb_del_phy(p_host_lib_obj->constant.phy_handle));
+    }
+phy_err:
 alloc_err:
     if (mux_lock) {
         vSemaphoreDelete(mux_lock);
@@ -444,7 +465,6 @@ esp_err_t usb_host_uninstall(void)
 
     //Stop the root hub
     ESP_ERROR_CHECK(hub_root_stop());
-
     //Uninstall Hub and USBH
     ESP_ERROR_CHECK(hub_uninstall());
     ESP_ERROR_CHECK(usbh_uninstall());
@@ -454,6 +474,10 @@ esp_err_t usb_host_uninstall(void)
     p_host_lib_obj = NULL;
     HOST_EXIT_CRITICAL();
 
+    //If the USB PHY was setup, then delete it
+    if (host_lib_obj->constant.phy_handle) {
+        ESP_ERROR_CHECK(usb_del_phy(host_lib_obj->constant.phy_handle));
+    }
     //Free memory objects
     vSemaphoreDelete(host_lib_obj->constant.mux_lock);
     vSemaphoreDelete(host_lib_obj->constant.event_sem);
@@ -506,6 +530,33 @@ exit:
         *event_flags_ret = event_flags;
     }
     return ret;
+}
+
+esp_err_t usb_host_lib_unblock(void)
+{
+    //All devices must have been freed at this point
+    HOST_ENTER_CRITICAL();
+    HOST_CHECK_FROM_CRIT(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
+    _unblock_lib(false);
+    HOST_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret)
+{
+    HOST_CHECK(info_ret != NULL, ESP_ERR_INVALID_ARG);
+    int num_devs_temp;
+    int num_clients_temp;
+    HOST_ENTER_CRITICAL();
+    HOST_CHECK_FROM_CRIT(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
+    num_clients_temp = p_host_lib_obj->dynamic.flags.num_clients;
+    HOST_EXIT_CRITICAL();
+    usbh_num_devs(&num_devs_temp);
+
+    //Write back return values
+    info_ret->num_devices = num_devs_temp;
+    info_ret->num_clients = num_clients_temp;
+    return ESP_OK;
 }
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
@@ -561,8 +612,13 @@ static void _handle_pending_ep(client_t *client_obj)
 
 esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config, usb_host_client_handle_t *client_hdl_ret)
 {
+    HOST_CHECK(p_host_lib_obj, ESP_ERR_INVALID_STATE);
     HOST_CHECK(client_config != NULL && client_hdl_ret != NULL, ESP_ERR_INVALID_ARG);
-    HOST_CHECK(client_config->client_event_callback != NULL && client_config->max_num_event_msg > 0, ESP_ERR_INVALID_ARG);
+    HOST_CHECK(client_config->max_num_event_msg > 0, ESP_ERR_INVALID_ARG);
+    if (!client_config->is_synchronous) {
+        //Asynchronous clients must provide a
+        HOST_CHECK(client_config->async.client_event_callback != NULL, ESP_ERR_INVALID_ARG);
+    }
 
     esp_err_t ret;
     //Create client object
@@ -579,8 +635,8 @@ esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config
     TAILQ_INIT(&client_obj->mux_protected.interface_tailq);
     TAILQ_INIT(&client_obj->dynamic.done_ctrl_xfer_tailq);
     client_obj->constant.event_sem = event_sem;
-    client_obj->constant.event_callback = client_config->client_event_callback;
-    client_obj->constant.callback_arg = client_config->callback_arg;
+    client_obj->constant.event_callback = client_config->async.client_event_callback;
+    client_obj->constant.callback_arg = client_config->async.callback_arg;
     client_obj->constant.event_msg_queue = event_msg_queue;
 
     //Add client to the host library's list of clients
@@ -819,8 +875,14 @@ esp_err_t usb_host_device_free_all(void)
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
     ret = usbh_dev_mark_all_free();
-    //Wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices free
+    //If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
     return ret;
+}
+
+esp_err_t usb_host_device_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
+{
+    HOST_CHECK(dev_addr_list != NULL && num_dev_ret != NULL, ESP_ERR_INVALID_ARG);
+    return usbh_dev_addr_list_fill(list_len, dev_addr_list, num_dev_ret);
 }
 
 // ------------------------------------------------- Device Requests ---------------------------------------------------
@@ -950,14 +1012,14 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
         if (ret != ESP_OK) {
             goto ep_alloc_err;
         }
-        //Store endpoint object into interface object
+        //Fill the interface object with the allocated endpoints
         intf_obj->constant.endpoints[i] = ep_obj;
     }
     //Add interface object to client (safe because we have already taken the mutex)
     TAILQ_INSERT_TAIL(&client_obj->mux_protected.interface_tailq, intf_obj, mux_protected.tailq_entry);
     //Add each endpoint to the client's endpoint list
     HOST_ENTER_CRITICAL();
-    for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
+    for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
         TAILQ_INSERT_TAIL(&client_obj->dynamic.idle_ep_tailq, intf_obj->constant.endpoints[i], dynamic.tailq_entry);
     }
     HOST_EXIT_CRITICAL();
@@ -967,7 +1029,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
     return ret;
 
 ep_alloc_err:
-    for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
+    for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
         endpoint_free(dev_hdl, intf_obj->constant.endpoints[i]);
         intf_obj->constant.endpoints[i] = NULL;
     }
@@ -1209,7 +1271,9 @@ esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets,
 
 esp_err_t usb_host_transfer_free(usb_transfer_t *transfer)
 {
-    HOST_CHECK(transfer != NULL, ESP_ERR_INVALID_ARG);
+    if (transfer == NULL) {
+        return ESP_OK;
+    }
     urb_t *urb = __containerof(transfer, urb_t, transfer);
     urb_free(urb);
     return ESP_OK;
@@ -1266,7 +1330,8 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
     usb_device_info_t dev_info;
     ESP_ERROR_CHECK(usbh_dev_get_info(dev_hdl, &dev_info));
     HOST_CHECK(transfer_check(transfer, USB_TRANSFER_TYPE_CTRL, dev_info.bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
-    HOST_CHECK(transfer->bEndpointAddress == 0, ESP_ERR_INVALID_ARG);
+    //Control transfers must be targeted at EP 0
+    HOST_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
     //Save client handle into URB
     urb_t *urb_obj = __containerof(transfer, urb_t, transfer);
     urb_obj->usb_host_client = (void *)client_hdl;

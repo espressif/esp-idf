@@ -65,6 +65,10 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
         spi_flash_hal_disable_auto_resume_mode(host);
     }
 #endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    // Always keep the extra dummy on SPI1 is 0, add extra dummy to user dummy
+    spimem_flash_ll_set_extra_dummy((spi_mem_dev_t*)dev, 0);
+#endif
 #else
     gpspi_flash_ll_set_hold_pol(dev, 1);
 #endif //GPSPI_BUILD
@@ -139,7 +143,7 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
         command = trans->command;
         dummy_bitlen = trans->dummy_bitlen;
         if ((trans->flags & SPI_FLASH_TRANS_FLAG_IGNORE_BASEIO) != 0) {
-            io_mode = ((spi_flash_hal_context_t*)host)->base_io_mode;
+            io_mode = trans->io_mode;
         }
     }
 

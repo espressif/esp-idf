@@ -14,6 +14,14 @@ workflow:
     # Disable those non-protected push triggered pipelines
     - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_PIPELINE_SOURCE == "push"'
       when: never
+    # when running merged result pipelines, it would create a temp commit id. use $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA instead of $CI_COMMIT_SHA.
+    # Please use PIPELINE_COMMIT_SHA at all places that require a commit sha
+    - if: $CI_OPEN_MERGE_REQUESTS != null
+      variables:
+        PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+    - if: $CI_OPEN_MERGE_REQUESTS == null
+      variables:
+        PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
     - when: always
 
 variables:
@@ -48,7 +56,7 @@ variables:
 
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v4.4-1-v3"
+  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v4.4-1-v5"
   ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env:v4.4-1"
   AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test:v4.4-1-1"
   CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis:v4.4-1-2"
@@ -60,7 +68,7 @@ variables:
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
-  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v3.1"
+  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
@@ -114,6 +122,12 @@ before_script:
     # Part of tools/ci/setup_python.sh; we don't use pyenv on macOS, so can't run the rest of the script.
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
     - fetch_submodules
+
+default:
+  retry:
+    max: 2
+    # In case of a runner failure we could hop to another one, or a network error could go away.
+    when: runner_system_failure
 
 include:
   - '.gitlab/ci/rules.yml'

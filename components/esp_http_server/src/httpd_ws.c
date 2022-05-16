@@ -16,8 +16,22 @@
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
+#include "freertos/event_groups.h"
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
+
+#define WS_SEND_OK      (1 << 0)
+#define WS_SEND_FAILED  (1 << 1)
+
+typedef struct {
+    httpd_ws_frame_t frame;
+    httpd_handle_t handle;
+    int socket;
+    transfer_complete_cb callback;
+    void *arg;
+    bool blocking;
+    EventGroupHandle_t transfer_done;
+} async_transfer_t;
 
 static const char *TAG="httpd_ws";
 
@@ -482,6 +496,79 @@ httpd_ws_client_info_t httpd_ws_get_fd_info(httpd_handle_t hd, int fd)
     }
     bool is_active_ws = sess->ws_handshake_done && (!sess->ws_close);
     return is_active_ws ? HTTPD_WS_CLIENT_WEBSOCKET : HTTPD_WS_CLIENT_HTTP;
+}
+
+static void httpd_ws_send_cb(void *arg)
+{
+    async_transfer_t *trans = arg;
+
+    esp_err_t err = httpd_ws_send_frame_async(trans->handle, trans->socket, &trans->frame);
+
+    if (trans->blocking) {
+        xEventGroupSetBits(trans->transfer_done, err ? WS_SEND_FAILED : WS_SEND_OK);
+    } else if (trans->callback) {
+        trans->callback(err, trans->socket, trans->arg);
+    }
+
+    free(trans);
+}
+
+esp_err_t httpd_ws_send_data(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame)
+{
+    async_transfer_t *transfer = calloc(1, sizeof(async_transfer_t));
+    if (transfer == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    EventGroupHandle_t transfer_done = xEventGroupCreate();
+    if (!transfer_done) {
+        free(transfer);
+        return ESP_ERR_NO_MEM;
+    }
+
+    transfer->blocking = true;
+    transfer->handle = handle;
+    transfer->socket = socket;
+    transfer->transfer_done = transfer_done;
+    memcpy(&transfer->frame, frame, sizeof(httpd_ws_frame_t));
+
+    esp_err_t err = httpd_queue_work(handle, httpd_ws_send_cb, transfer);
+    if (err != ESP_OK) {
+        vEventGroupDelete(transfer_done);
+        free(transfer);
+        return err;
+    }
+
+    EventBits_t status = xEventGroupWaitBits(transfer_done, WS_SEND_OK | WS_SEND_FAILED,
+                                             pdTRUE, pdFALSE, portMAX_DELAY);
+
+    vEventGroupDelete(transfer_done);
+
+    return (status & WS_SEND_OK) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame,
+                                   transfer_complete_cb callback, void *arg)
+{
+    async_transfer_t *transfer = calloc(1, sizeof(async_transfer_t));
+    if (transfer == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    transfer->arg = arg;
+    transfer->callback = callback;
+    transfer->handle = handle;
+    transfer->socket = socket;
+    memcpy(&transfer->frame, frame, sizeof(httpd_ws_frame_t));
+
+    esp_err_t err = httpd_queue_work(handle, httpd_ws_send_cb, transfer);
+
+    if (err) {
+        free(transfer);
+        return err;
+    }
+
+    return ESP_OK;
 }
 
 #endif /* CONFIG_HTTPD_WS_SUPPORT */

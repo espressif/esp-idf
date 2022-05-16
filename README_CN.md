@@ -6,15 +6,18 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 
 # ESP-IDF 与乐鑫芯片
 
-下表总结了乐鑫芯片在 ESP-IDF 各版本中的支持状态，其中 :green_circle: 代表已支持，:yellow_circle: 代表目前处于预览支持状态。在预览支持阶段，因为新芯片尚未完全添加到构建系统目录，所以一些重要的内容（如文档和技术规格书等）可能会缺失。请确保使用与芯片相匹配的 ESP-IDF 版本。
+下表总结了乐鑫芯片在 ESP-IDF 各版本中的支持状态，其中 ![alt text][supported] 代表已支持，![alt text][preview] 代表目前处于预览支持状态。在预览支持阶段，因为新芯片尚未完全添加到构建系统目录，所以一些重要的内容（如文档和技术规格书等）可能会缺失。请确保使用与芯片相匹配的 ESP-IDF 版本。
 
-|   芯片      |     v3.3       |      v4.0      |       v4.1     |     v4.2       |     v4.3       |     v4.4       |                                                            |
-|:----------- |:-------------: | :-------------:| :-------------:| :-------------:| :-------------:| :-------------:|:---------------------------------------------------------- |
-|ESP32        | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |                                                            |
-|ESP32-S2     |                |                |                | :green_circle: | :green_circle: | :green_circle: |                                                            |
-|ESP32-C3     |                |                |                |                | :green_circle: | :green_circle: |                                                            |
-|ESP32-S3     |                |                |                |                | :yellow_circle:| :green_circle: | [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_S3) |
-|ESP32-H2     |                |                |                |                |                | :yellow_circle:| [芯片发布公告](https://www.espressif.com/zh-hans/news/ESP32_H2) |
+|    芯片     |         v3.3           |          v4.0          |           v4.1         |          v4.2          |         v4.3           |          v4.4          |                                                            |
+|:----------- |:---------------------: | :---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:---------------------------------------------------------- |
+|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-S2     |                        |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-C3     |                        |                        |                        |                        | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-S3     |                        |                        |                        |                        | ![alt text][preview]   | ![alt text][supported] | [芯片发布公告](https://www.espressif.com/en/news/ESP32_S3) |
+|ESP32-H2     |                        |                        |                        |                        |                        | ![alt text][preview]   | [芯片发布公告](https://www.espressif.com/en/news/ESP32_H2) |
+
+[supported]: https://img.shields.io/badge/-%E6%94%AF%E6%8C%81-green "supported"
+[preview]: https://img.shields.io/badge/-%E9%A2%84%E8%A7%88-orange "preview"
 
 对于 2016 年之前发布的乐鑫芯片（包括 ESP8266 和 ESP8285），请参考 [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK)。
 
@@ -53,7 +56,7 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 * 在主机中安装入门指南中提到的构建所依赖的工具。
 * 运行安装脚本来设置构建环境。可为 Windows shell 选择 `install.bat` 或 `install.ps1`，为 Unix shell 选择 `install.sh` 和 `install.fish`。
 * 在使用 ESP-IDF 之前，需要在 shell 中运行导出脚本。Windows 下可运行 `export.bat`，Unix 下可运行 `source export.sh`。
-  
+
 ## 配置项目
 
 * `idf.py set-target <chip_name>` 可将项目的目标芯片设置为 `<chip_name>`。运行 `idf.py set-target`，不用带任何参数，可查看所有支持的目标芯片列表。
@@ -100,9 +103,9 @@ ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodu
 
 ## 擦除 Flash
 
-`idf.py flash` 并不会擦除 flash 上所有的内容，但是有时候我们需要设备恢复到完全擦除的状态，尤其是分区表发生了变化或者 OTA 应用升级时。要擦除整块 flash 请运行 `idf.py erase_flash`。
+`idf.py flash` 并不会擦除 flash 上所有的内容，但是有时候我们需要设备恢复到完全擦除的状态，尤其是分区表发生了变化或者 OTA 应用升级时。要擦除整块 flash 请运行 `idf.py erase-flash`。
 
-这条命令还可以和其余命令整合在一起，`idf.py -p PORT erase_flash flash` 会擦除一切然后重新烧写新的应用程序、引导程序和分区表。
+这条命令还可以和其余命令整合在一起，`idf.py -p PORT erase-flash flash` 会擦除一切然后重新烧写新的应用程序、引导程序和分区表。
 
 # 其它参考资源
 

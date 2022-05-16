@@ -98,6 +98,21 @@ Static initializer constant ``PTHREAD_COND_INITIALIZER`` is supported.
 
 .. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
 
+Read/Write Locks
+^^^^^^^^^^^^^^^^
+
+* ``pthread_rwlock_init()``
+  - The ``attr`` argument is not implemented and is ignored.
+* ``pthread_rwlock_destroy()``
+* ``pthread_rwlock_rdlock()``
+* ``pthread_rwlock_wrlock()``
+* ``pthread_rwlock_unlock()``
+
+Static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
+
+
+.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs. Note also that the current pthread reader-writer-locks implementation is based on the condition variable API. The performance is not optimal when locking only for a minimal amount of time like e.g. accessing a simple variable. In these cases with minimal locking time, a simple mutex might be faster.
+          
 Thread-Specific Data
 ^^^^^^^^^^^^^^^^^^^^
 

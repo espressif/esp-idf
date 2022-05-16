@@ -5,16 +5,51 @@ This example demonstrates the HTTPD server using the WebSocket feature.
 
 ## How to Use Example
 
-The example starts a WS server on a local network, so a WS client is needed to interact with the server (an example test
-ws_server_example_test.py could be used as a simple WS client).
+The example starts a websocket server on a local network. You need a websocket client to interact with the server (an example test
+ws_server_example_test.py could be used as the simple websocket client). If you run ws_server_example_test.py and get
+`ModuleNotFoundError: No module named 'websocket'`, then please install `websocket` by running `python -m pip install websocket-client`.
 
-The server registers WebSocket handler which echoes back the received WebSocket frame. It also demonstrates
+The server registers websocket handler which echoes back the received WebSocket frame. It also demonstrates
 use of asynchronous send, which is triggered on reception of a certain message.
 
-Please note that the WebSocket HTTP server does not automatically fragment messages.
-Each outgoing frame has the FIN flag set by default.
-In case an application wants to send fragmented data, it must be done manually by setting the
-`fragmented` option and using the `final` flag as described in [RFC6455, section 5.4](https://tools.ietf.org/html/rfc6455#section-5.4).
+### Websocket support in `http_server`
+
+Websocket echo server is build on top of the HTTP server component using [Websocket server](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/protocols/esp_http_server.html#websocket-server) configuration.
+This feature is very limited, and a special care must be taken while implementing websocket URI handlers.
+
+#### Configure URI handler
+
+We register the URI handler with the standard API `httpd_register_uri_handler()` with `is_websocket` enabled and other optional parameters:
+
+```c
+static const httpd_uri_t ws_uri_handler_options = {
+        ... // httpd options
+        
+        .is_websocket = true,               // Mandatory: set to `true` to handler websocket protocol
+        .handle_ws_control_frames = false,  // Optional: set to `true` for the handler to receive control packets, too
+        .supported_subprotocol = "chat",    // Optional: set supported subprotocol for this handler
+};
+
+```
+
+#### Implement URI handler
+
+The URI handler is called on every URI request, but also before the websocket handshake, so it is very important to check the request type before reading websocket frame:
+
+```c
+    // beginning of the ws URI handler
+    if (req->method == HTTP_GET) {
+        // action before ws handshake
+        return ESP_OK;
+    }
+    // action after the handshake (read frames)
+```
+
+#### Handling incoming data
+
+To receive websocket frames, use `httpd_ws_recv_frame()` after the websocket handshake, with `httpd_ws_frame_t` parameters set accordingly:
+* `payload` to a valid buffer for the received data
+* `len` set to `0` for the first call of `httpd_ws_recv_frame()`. Note that this value is used to indicate the packet length has been read in the previous call if we use dynamic buffers.
 
 `httpd_ws_recv_frame` support two ways to get frame payload.
 * Static buffer -- Allocate maximum expected packet length (either statically or dynamically) and call `httpd_ws_recv_frame()` referencing this buffer and it's size. (Unnecessarily large buffers might cause memory waste)
@@ -27,9 +62,17 @@ ws_pkt.payload = buf;
 httpd_ws_recv_frame(req, &ws_pkt, MAX_PAYLOAD_LEN);
 ```
 * Dynamic buffer -- Refer to the examples, which receive websocket data in these three steps:
-   1) Call `httpd_ws_recv_frame()` with zero buffer size
-   2) Allocate the size based on the received packet length
-   3) Call `httpd_ws_recv_frame()` with the allocated buffer
+  1) Call `httpd_ws_recv_frame()` with zero buffer size
+  2) Allocate the size based on the received packet length
+  3) Call `httpd_ws_recv_frame()` with the allocated buffer
+
+#### Handling outgoing data
+
+Please note that the WebSocket HTTP server does not automatically fragment messages.
+Each outgoing frame has the FIN flag set by default.
+In case an application wants to send fragmented data, it must be done manually by setting the
+`fragmented` option and using the `final` flag as described in [RFC6455, section 5.4](https://tools.ietf.org/html/rfc6455#section-5.4).
+
 
 ### Hardware Required
 

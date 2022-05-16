@@ -65,9 +65,12 @@ static struct {
     struct arg_str *ip;
     struct arg_lit *server;
     struct arg_lit *udp;
+    struct arg_lit *version;
     struct arg_int *port;
+    struct arg_int *length;
     struct arg_int *interval;
     struct arg_int *time;
+    struct arg_int *bw_limit;
     struct arg_lit *abort;
     struct arg_end *end;
 } iperf_args;
@@ -83,6 +86,9 @@ static int eth_cmd_iperf(int argc, char **argv)
     }
 
     memset(&cfg, 0, sizeof(cfg));
+
+    // ethernet iperf only support IPV4 address
+    cfg.type = IPERF_IP_TYPE_IPV4;
 
     /* iperf -a */
     if (iperf_args.abort->count != 0) {
@@ -102,15 +108,22 @@ static int eth_cmd_iperf(int argc, char **argv)
     }
     /* iperf -c SERVER_ADDRESS */
     else {
-        cfg.dip = esp_ip4addr_aton(iperf_args.ip->sval[0]);
+        cfg.destination_ip4 = esp_ip4addr_aton(iperf_args.ip->sval[0]);
         cfg.flag |= IPERF_FLAG_CLIENT;
     }
+
+    if (iperf_args.length->count == 0) {
+        cfg.len_send_buf = 0;
+    } else {
+        cfg.len_send_buf = iperf_args.length->ival[0];
+    }
+
 
     /* acquiring for ip, could blocked here */
     xEventGroupWaitBits(eth_event_group, GOTIP_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
-    cfg.sip = ip.ip.addr;
-    if (cfg.sip == 0) {
+    cfg.source_ip4 = ip.ip.addr;
+    if (cfg.source_ip4 == 0) {
         return 0;
     }
 
@@ -155,11 +168,23 @@ static int eth_cmd_iperf(int argc, char **argv)
         }
     }
 
+    /* iperf -b */
+    if (iperf_args.bw_limit->count == 0) {
+        cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+    } else {
+        cfg.bw_lim = iperf_args.bw_limit->ival[0];
+        if (cfg.bw_lim <= 0) {
+            cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+        }
+    }
+
     printf("mode=%s-%s sip=%d.%d.%d.%d:%d, dip=%d.%d.%d.%d:%d, interval=%d, time=%d\r\n",
            cfg.flag & IPERF_FLAG_TCP ? "tcp" : "udp",
            cfg.flag & IPERF_FLAG_SERVER ? "server" : "client",
-           cfg.sip & 0xFF, (cfg.sip >> 8) & 0xFF, (cfg.sip >> 16) & 0xFF, (cfg.sip >> 24) & 0xFF, cfg.sport,
-           cfg.dip & 0xFF, (cfg.dip >> 8) & 0xFF, (cfg.dip >> 16) & 0xFF, (cfg.dip >> 24) & 0xFF, cfg.dport,
+           cfg.source_ip4 & 0xFF, (cfg.source_ip4 >> 8) & 0xFF, (cfg.source_ip4 >> 16) & 0xFF,
+           (cfg.source_ip4 >> 24) & 0xFF, cfg.sport,
+           cfg.destination_ip4 & 0xFF, (cfg.destination_ip4 >> 8) & 0xFF,
+           (cfg.destination_ip4 >> 16) & 0xFF, (cfg.destination_ip4 >> 24) & 0xFF, cfg.dport,
            cfg.interval, cfg.time);
 
     iperf_start(&cfg);
@@ -220,7 +245,7 @@ void register_ethernet(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
 #if CONFIG_EXAMPLE_USE_KSZ8851SNL
     spi_device_interface_config_t devcfg = {
@@ -324,11 +349,14 @@ void register_ethernet(void)
                              "run in client mode, connecting to <host>");
     iperf_args.server = arg_lit0("s", "server", "run in server mode");
     iperf_args.udp = arg_lit0("u", "udp", "use UDP rather than TCP");
+    iperf_args.version = arg_lit0("V", "ipv6_domain", "use IPV6 address rather than IPV4");
     iperf_args.port = arg_int0("p", "port", "<port>",
                                "server port to listen on/connect to");
+    iperf_args.length = arg_int0("l", "len", "<length>", "set read/write buffer size");
     iperf_args.interval = arg_int0("i", "interval", "<interval>",
                                    "seconds between periodic bandwidth reports");
     iperf_args.time = arg_int0("t", "time", "<time>", "time in seconds to transmit for (default 10 secs)");
+    iperf_args.bw_limit = arg_int0("b", "bandwidth", "<bandwidth>", "bandwidth to send at in Mbits/sec");
     iperf_args.abort = arg_lit0("a", "abort", "abort running iperf");
     iperf_args.end = arg_end(1);
     const esp_console_cmd_t iperf_cmd = {

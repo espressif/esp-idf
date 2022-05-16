@@ -1,16 +1,8 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -62,6 +54,7 @@ extern "C" {
 #define RTC_BOOT_TIME_LOW_REG   RTC_CNTL_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG  RTC_CNTL_STORE3_REG
 #define RTC_XTAL_FREQ_REG       RTC_CNTL_STORE4_REG
+#define RTC_ENTRY_LENGTH_REG    RTC_CNTL_STORE5_REG
 #define RTC_ENTRY_ADDR_REG      RTC_CNTL_STORE6_REG
 #define RTC_RESET_CAUSE_REG     RTC_CNTL_STORE6_REG
 #define RTC_MEMORY_CRC_REG      RTC_CNTL_STORE7_REG
@@ -92,6 +85,9 @@ typedef enum {
     SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
     GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
     EFUSE_RESET            = 20,    /**<20, efuse reset digital core*/
+    USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core */
+    USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core */
+    POWER_GLITCH_RESET     = 23,    /**<23, power glitch reset digital core and rtc module*/
 } RESET_REASON;
 
 // Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h
@@ -106,9 +102,13 @@ _Static_assert((soc_reset_reason_t)RTC_SW_CPU_RESET == RESET_REASON_CPU0_SW, "RT
 _Static_assert((soc_reset_reason_t)RTCWDT_CPU_RESET == RESET_REASON_CPU0_RTC_WDT, "RTCWDT_CPU_RESET != RESET_REASON_CPU0_RTC_WDT");
 _Static_assert((soc_reset_reason_t)RTCWDT_BROWN_OUT_RESET == RESET_REASON_SYS_BROWN_OUT, "RTCWDT_BROWN_OUT_RESET != RESET_REASON_SYS_BROWN_OUT");
 _Static_assert((soc_reset_reason_t)RTCWDT_RTC_RESET == RESET_REASON_SYS_RTC_WDT, "RTCWDT_RTC_RESET != RESET_REASON_SYS_RTC_WDT");
+_Static_assert((soc_reset_reason_t)TG1WDT_CPU_RESET == RESET_REASON_CPU0_MWDT1, "TG1WDT_CPU_RESET != RESET_REASON_CPU0_MWDT1");
 _Static_assert((soc_reset_reason_t)SUPER_WDT_RESET == RESET_REASON_SYS_SUPER_WDT, "SUPER_WDT_RESET != RESET_REASON_SYS_SUPER_WDT");
 _Static_assert((soc_reset_reason_t)GLITCH_RTC_RESET == RESET_REASON_SYS_CLK_GLITCH, "GLITCH_RTC_RESET != RESET_REASON_SYS_CLK_GLITCH");
 _Static_assert((soc_reset_reason_t)EFUSE_RESET == RESET_REASON_CORE_EFUSE_CRC, "EFUSE_RESET != RESET_REASON_CORE_EFUSE_CRC");
+_Static_assert((soc_reset_reason_t)USB_UART_CHIP_RESET == RESET_REASON_CORE_USB_UART, "USB_UART_CHIP_RESET != RESET_REASON_CORE_USB_UART");
+_Static_assert((soc_reset_reason_t)USB_JTAG_CHIP_RESET == RESET_REASON_CORE_USB_JTAG, "USB_JTAG_CHIP_RESET != RESET_REASON_CORE_USB_JTAG");
+_Static_assert((soc_reset_reason_t)POWER_GLITCH_RESET == RESET_REASON_CORE_PWR_GLITCH, "POWER_GLITCH_RESET != RESET_REASON_CORE_PWR_GLITCH");
 
 typedef enum {
     NO_SLEEP        = 0,
@@ -166,16 +166,31 @@ RESET_REASON rtc_get_reset_reason(int cpu_no);
   */
 WAKEUP_REASON rtc_get_wakeup_cause(void);
 
+typedef void (* esp_rom_wake_func_t)(void);
+
 /**
-  * @brief Get CRC for Fast RTC Memory.
+  * @brief Read stored RTC wake function address
   *
-  * @param  uint32_t start_addr : 0 - 0x7ff for Fast RTC Memory.
+  * Returns pointer to wake address if a value is set in RTC registers, and stored length & CRC all valid.
   *
-  * @param  uint32_t crc_len : 0 - 0x7ff, 0 for 4 byte, 0x7ff for 0x2000 byte.
+  * @param  None
   *
-  * @return uint32_t : CRC32 result
+  * @return esp_rom_wake_func_t : Returns pointer to wake address if a value is set in RTC registers
   */
-uint32_t calc_rtc_memory_crc(uint32_t start_addr, uint32_t crc_len);
+esp_rom_wake_func_t esp_rom_get_rtc_wake_addr(void);
+
+/**
+  * @brief Store new RTC wake function address
+  *
+  * Set a new RTC wake address function. If a non-NULL function pointer is set then the function
+  * memory is calculated and stored also.
+  *
+  * @param entry_addr Address of function. If NULL, length is ignored and all registers are cleared to 0.
+  * @param length of function in RTC fast memory. cannot be larger than RTC Fast memory size.
+  *
+  * @return None
+  */
+void esp_rom_set_rtc_wake_addr(esp_rom_wake_func_t entry_addr, size_t length);
 
 /**
   * @brief Suppress ROM log by setting specific RTC control register.
@@ -194,26 +209,6 @@ static inline void rtc_suppress_rom_log(void)
      */
     REG_SET_BIT(RTC_CNTL_STORE4_REG, RTC_DISABLE_ROM_LOG);
 }
-
-/**
-  * @brief Set CRC of Fast RTC memory 0-0x7ff into RTC STORE7.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void set_rtc_memory_crc(void);
-
-/**
-  * @brief Fetch entry from RTC memory and RTC STORE reg
-  *
-  * @param uint32_t * entry_addr : the address to save entry
-  *
-  * @param RESET_REASON reset_reason : reset reason this time
-  *
-  * @return None
-  */
-void rtc_boot_control(uint32_t *entry_addr, RESET_REASON reset_reason);
 
 /**
   * @brief Software Reset digital core.

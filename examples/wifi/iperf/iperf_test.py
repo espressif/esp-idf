@@ -35,6 +35,7 @@ from tiny_test_fw import DUT, TinyFW, Utility
 # configurations
 RETRY_COUNT_FOR_BEST_PERFORMANCE = 2
 ATTEN_VALUE_LIST = range(0, 60, 2)
+NO_BANDWIDTH_LIMIT = -1  # iperf send bandwith is not limited
 
 CONFIG_NAME_PATTERN = re.compile(r'sdkconfig\.ci\.(.+)')
 
@@ -173,7 +174,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
                                                      pc_iperf_log_file, test_result[config_name])
 
         for _ in range(RETRY_COUNT_FOR_BEST_PERFORMANCE):
-            test_utility.run_all_cases(0)
+            test_utility.run_all_cases(0, NO_BANDWIDTH_LIMIT)
 
         for result_type in test_result[config_name]:
             summary = str(test_result[config_name][result_type])
@@ -234,7 +235,7 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
         for atten_val in ATTEN_VALUE_LIST:
             assert Attenuator.set_att(att_port, atten_val) is True
             try:
-                test_utility.run_all_cases(atten_val)
+                test_utility.run_all_cases(atten_val, NO_BANDWIDTH_LIMIT)
             except AssertionError:
                 break
 
@@ -280,7 +281,7 @@ def test_wifi_throughput_basic(env, extra_data):
 
     # 3. run test for TCP Tx, Rx and UDP Tx, Rx
     for _ in range(RETRY_COUNT_FOR_BEST_PERFORMANCE):
-        test_utility.run_all_cases(0)
+        test_utility.run_all_cases(0, NO_BANDWIDTH_LIMIT)
 
     # 4. log performance and compare with pass standard
     performance_items = []
@@ -335,7 +336,7 @@ def test_softap_throughput_vs_rssi(env, extra_data):
     for atten_val in ATTEN_VALUE_LIST:
         assert Attenuator.set_att(att_port, atten_val) is True
         try:
-            test_utility.run_all_cases(atten_val)
+            test_utility.run_all_cases(atten_val, NO_BANDWIDTH_LIMIT)
         except AssertionError:
             break
 

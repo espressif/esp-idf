@@ -2,13 +2,13 @@ menu "Example Configuration"
 
     config BLINK_GPIO
         int "Blink GPIO number"
-        range 0 34
+        range 0 48
+        default 8 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2
+        default 18 if IDF_TARGET_ESP32S2
+        default 48 if IDF_TARGET_ESP32S3
         default 5
         help
-            GPIO number (IOxx) to blink on and off.
-
+            GPIO number (IOxx) to blink on and off or the RMT signal for the addressable LED.
             Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
-
-            GPIOs 35-39 are input-only so cannot be used as outputs.
 
 endmenu

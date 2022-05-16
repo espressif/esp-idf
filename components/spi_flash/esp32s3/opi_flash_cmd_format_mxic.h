@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC
-#if CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR
-#define OPI_CMD_FORMAT() {   \
+#if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+#if CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+#define OPI_CMD_FORMAT_MXIC() {   \
     .rdid = {              \
         .mode = ESP_ROM_SPIFLASH_OPI_STR_MODE, \
         .cmd_bit_len = 16, \
@@ -93,8 +93,8 @@
     } \
 }
 
-#elif CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
-#define OPI_CMD_FORMAT() {   \
+#elif CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+#define OPI_CMD_FORMAT_MXIC() {   \
     .rdid = {              \
         .mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE, \
         .cmd_bit_len = 16, \
@@ -180,5 +180,5 @@
         .var_dummy_en = 1, \
     } \
 }
-#endif
-#endif
+#endif  // DTR / STR
+#endif  // #if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP

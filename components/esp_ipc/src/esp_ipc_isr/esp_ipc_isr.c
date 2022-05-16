@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
 #include "esp_intr_alloc.h"
+#include "esp_private/esp_ipc_isr.h"
 #include "esp_ipc_isr.h"
 #include "xtensa/core-macros.h"
 #include "sdkconfig.h"
@@ -60,30 +61,16 @@ static void esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ip
 
 /* Initializing IPC_ISR */
 
-static void esp_ipc_isr_init_cpu(void* arg)
+void esp_ipc_isr_init(void)
 {
-    (void) arg;
     const uint32_t cpuid = xPortGetCoreID();
     uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE + cpuid; // ETS_FROM_CPU_INTR2_SOURCE and ETS_FROM_CPU_INTR3_SOURCE
     ESP_INTR_DISABLE(ETS_IPC_ISR_INUM);
     intr_matrix_set(cpuid, intr_source, ETS_IPC_ISR_INUM);
     ESP_INTR_ENABLE(ETS_IPC_ISR_INUM);
 
-    /* If this fails then the minimum stack size for this config is too close to running out */
-    assert(uxTaskGetStackHighWaterMark(NULL) > 128);
-
     if (cpuid != 0) {
         s_stall_state = STALL_STATE_RUNNING;
-    }
-    vTaskDelete(NULL);
-}
-
-void esp_ipc_isr_init(void)
-{
-    for (unsigned i = 0; i < portNUM_PROCESSORS; ++i) {
-        portBASE_TYPE res = xTaskCreatePinnedToCore(esp_ipc_isr_init_cpu, "ipc_isr_init", configMINIMAL_STACK_SIZE, NULL, 5, NULL, i);
-        assert(res == pdTRUE);
-        (void)res;
     }
 }
 
@@ -122,7 +109,7 @@ void esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd);
 void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
 {
     if (s_stall_state == STALL_STATE_RUNNING) {
-        BaseType_t intLvl = portENTER_CRITICAL_NESTED();
+        BaseType_t intLvl = portSET_INTERRUPT_MASK_FROM_ISR();
         const uint32_t cpu_id = xPortGetCoreID();
         if (s_count_of_nested_calls[cpu_id]++ == 0) {
             IPC_ISR_ENTER_CRITICAL();
@@ -133,7 +120,7 @@ void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
         }
 
         /* Interrupts are already disabled by the parent, we're nested here. */
-        portEXIT_CRITICAL_NESTED(intLvl);
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(intLvl);
     }
 }
 
@@ -144,7 +131,7 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
         if (--s_count_of_nested_calls[cpu_id] == 0) {
             esp_ipc_isr_finish_cmd = 1;
             IPC_ISR_EXIT_CRITICAL();
-            portEXIT_CRITICAL_NESTED(s_stored_interrupt_level);
+            portCLEAR_INTERRUPT_MASK_FROM_ISR(s_stored_interrupt_level);
         } else if (s_count_of_nested_calls[cpu_id] < 0) {
             assert(0);
         }
@@ -160,6 +147,7 @@ void IRAM_ATTR esp_ipc_isr_stall_pause(void)
 
 void IRAM_ATTR esp_ipc_isr_stall_abort(void)
 {
+    //Note: We don't enter a critical section here as we are calling this from a panic.
     s_stall_state = STALL_STATE_IDLE;
 }
 

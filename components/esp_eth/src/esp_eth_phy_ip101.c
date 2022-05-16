@@ -349,6 +349,25 @@ err:
     return ret;
 }
 
+static esp_err_t ip101_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
+    esp_eth_mediator_t *eth = ip101->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ip101->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t ip101_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -405,6 +424,7 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     ip101->parent.get_addr = ip101_get_addr;
     ip101->parent.set_addr = ip101_set_addr;
     ip101->parent.advertise_pause_ability = ip101_advertise_pause_ability;
+    ip101->parent.loopback = ip101_loopback;
     ip101->parent.del = ip101_del;
 
     return &(ip101->parent);

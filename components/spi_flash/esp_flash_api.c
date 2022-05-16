@@ -27,6 +27,17 @@
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
 #endif //CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/spi_flash.h"
+#endif
 
 static const char TAG[] = "spi_flash";
 
@@ -58,7 +69,7 @@ static const char TAG[] = "spi_flash";
     } while(0)
 #endif // CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
 
-#define IO_STR_LEN  7
+#define IO_STR_LEN  10
 
 static const char io_mode_str[][IO_STR_LEN] = {
     "slowrd",
@@ -67,9 +78,12 @@ static const char io_mode_str[][IO_STR_LEN] = {
     "dio",
     "qout",
     "qio",
+    [6 ... 15] = "not used", // reserved io mode for future, not used currently.
+    "opi_str",
+    "opi_dtr",
 };
 
-_Static_assert(sizeof(io_mode_str)/IO_STR_LEN == SPI_FLASH_READ_MODE_MAX, "the io_mode_str should be consistent with the esp_flash_io_mode_t defined in spi_flash_ll.h");
+_Static_assert(sizeof(io_mode_str)/IO_STR_LEN == SPI_FLASH_READ_MODE_MAX, "the io_mode_str should be consistent with the esp_flash_io_mode_t defined in spi_flash_types.h");
 
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
 
@@ -236,6 +250,84 @@ esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
     }
 
     if (err == ESP_OK) {
+        // Try to set the flash mode to whatever default mode was chosen
+        err = chip->chip_drv->set_io_mode(chip);
+        if (err == ESP_ERR_FLASH_NO_RESPONSE && !esp_flash_is_quad_mode(chip)) {
+            //some chips (e.g. Winbond) don't support to clear QE, treat as success
+            err = ESP_OK;
+        }
+    }
+    // Done: all fields on 'chip' are initialised
+    return rom_spiflash_api_funcs->end(chip, err);
+}
+
+// Note: This function is only used for internal. Only call this function to initialize the main flash.
+// (flash chip on SPI1 CS0)
+esp_err_t IRAM_ATTR esp_flash_init_main(esp_flash_t *chip)
+{
+    // Chip init flow
+    // 1. Read chip id
+    // 2. (optional) Detect chip vendor
+    // 3. Get basic parameters of the chip (size, dummy count, etc.)
+    // 4. Init chip into desired mode (without breaking the cache!)
+    esp_err_t err = ESP_OK;
+    bool octal_mode = (chip->read_mode >= SPI_FLASH_OPI_FLAG);
+    if (chip == NULL || chip->host == NULL || chip->host->driver == NULL ||
+        ((memspi_host_inst_t*)chip->host)->spi == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    //read chip id
+    // This can indicate the MSPI support OPI, if the flash works on MSPI in OPI mode, we directly bypass read id.
+    uint32_t flash_id = 0;
+    if (octal_mode) {
+        // bypass the reading but get the flash_id from the ROM variable, to avoid resetting the chip to QSPI mode and read the ID again
+        flash_id = g_rom_flashchip.device_id;
+    } else {
+        int retries = 10;
+        do {
+            err = esp_flash_read_chip_id(chip, &flash_id);
+        } while (err == ESP_ERR_FLASH_NOT_INITIALISED && retries-- > 0);
+    }
+
+    if (err != ESP_OK) {
+        return err;
+    }
+    chip->chip_id = flash_id;
+
+    if (!esp_flash_chip_driver_initialized(chip)) {
+        // Detect chip_drv
+        err = detect_spi_flash_chip(chip);
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
+
+    // Detect flash size
+    uint32_t size;
+    err = esp_flash_get_size(chip, &size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failed to get chip size");
+        return err;
+    }
+
+    if (chip->chip_drv->get_chip_caps == NULL) {
+        // chip caps get failed, pass the flash capability check.
+        ESP_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
+    } else {
+        if (((chip->chip_drv->get_chip_caps(chip) & SPI_FLASH_CHIP_CAP_32MB_SUPPORT) == 0) && (size > (16 *1024 * 1024))) {
+            ESP_LOGW(TAG, "Detected flash size > 16 MB, but access beyond 16 MB is not supported for this flash model yet.");
+            size = (16 * 1024 * 1024);
+        }
+    }
+
+    ESP_LOGI(TAG, "flash io: %s", io_mode_str[chip->read_mode]);
+    err = rom_spiflash_api_funcs->start(chip);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (err == ESP_OK && !octal_mode) {
         // Try to set the flash mode to whatever default mode was chosen
         err = chip->chip_drv->set_io_mode(chip);
         if (err == ESP_ERR_FLASH_NO_RESPONSE && !esp_flash_is_quad_mode(chip)) {

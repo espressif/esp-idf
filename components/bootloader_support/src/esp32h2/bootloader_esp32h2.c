@@ -36,6 +36,7 @@
 #include "regi2c_ctrl.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
+#include "bootloader_soc.h"
 
 static const char *TAG = "boot.esp32h2";
 
@@ -257,19 +258,12 @@ static inline void bootloader_hardware_init(void)
 
 }
 
-static inline void bootloader_glitch_reset_disable(void)
+static inline void bootloader_ana_reset_config(void)
 {
-    /*
-      For origin chip & ECO1: only support swt reset;
-      For ECO2: fix brownout reset bug, support swt & brownout reset;
-      For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
-    */
-    uint8_t chip_version = bootloader_common_get_chip_revision();
-    if (chip_version < 2) {
-        REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST);
-    } else if (chip_version == 2) {
-        REG_SET_FIELD(RTC_CNTL_FIB_SEL_REG, RTC_CNTL_FIB_SEL, RTC_CNTL_FIB_SUPER_WDT_RST | RTC_CNTL_FIB_BOR_RST);
-    }
+    //Enable WDT, BOR, and GLITCH reset
+    bootloader_ana_super_wdt_reset_config(true);
+    bootloader_ana_bod_reset_config(true);
+    bootloader_ana_clock_glitch_reset_config(true);
 }
 
 esp_err_t bootloader_init(void)
@@ -277,7 +271,7 @@ esp_err_t bootloader_init(void)
     esp_err_t ret = ESP_OK;
 
     bootloader_hardware_init();
-    bootloader_glitch_reset_disable();
+    bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
     // protect memory region
     bootloader_init_mem();

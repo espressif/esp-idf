@@ -209,7 +209,8 @@ static void parse_ble_read_adv_max_len_response(
 {
 
     uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_MAX_ADV_DATA_LEN, 1 /* bytes after */);
-    STREAM_TO_UINT8(*adv_max_len_ptr, stream);
+    // Size: 2 Octets ; Value: 0x001F – 0x0672 ; Maximum supported advertising data length
+    STREAM_TO_UINT16(*adv_max_len_ptr, stream);
 
     osi_free(response);
 }

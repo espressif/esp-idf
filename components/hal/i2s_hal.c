@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 // The HAL layer for I2S (common part)
@@ -34,25 +26,32 @@ static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mc
     cal->mclk_div = clk_cfg->mclk_div;
     cal->a = 1;
     cal->b = 0;
-    if (!clk_cfg->sclk) {
+
+    uint32_t freq_diff = abs(clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div);
+    if (!freq_diff) {
         return;
     }
-    uint32_t freq_diff = clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div;
+    float decimal = freq_diff / (float)clk_cfg->mclk;
+    // Carry bit if the decimal is greater than 1.0 - 1.0 / (63.0 * 2) = 125.0 / 126.0
+    if (decimal > 125.0 / 126.0) {
+        cal->mclk_div++;
+        return;
+    }
     uint32_t min = ~0;
     for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
-        for (int b = 1; b < a; b++) {
-            ma = freq_diff * a;
-            mb = clk_cfg->mclk * b;
-            if (ma == mb) {
-                cal->a = a;
-                cal->b = b;
-                return;
-            }
-            if (abs((mb - ma)) < min) {
-                cal->a = a;
-                cal->b = b;
-                min = abs(mb - ma);
-            }
+        // Calculate the closest 'b' in this loop, no need to loop 'b' to seek the closest value
+        int b = (int)(a * (freq_diff / (double)clk_cfg->mclk) + 0.5);
+        ma = freq_diff * a;
+        mb = clk_cfg->mclk * b;
+        if (ma == mb) {
+            cal->a = a;
+            cal->b = b;
+            return;
+        }
+        if (abs((mb - ma)) < min) {
+            cal->a = a;
+            cal->b = b;
+            min = abs(mb - ma);
         }
     }
 }
@@ -102,6 +101,15 @@ void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rat
 {
     /* enable pdm tx mode */
     i2s_ll_tx_enable_pdm(hal->dev, true);
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_enable_clock(hal->dev);
+    i2s_ll_tx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
+    i2s_ll_mclk_use_tx_clk(hal->dev);
+    /* Still need to enable the first 2 TDM channel mask to get the correct number of frame */
+    i2s_ll_tx_set_active_chan_mask(hal->dev, I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1);
+#else
+    i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
+#endif
     /* set pdm tx default presacle */
     i2s_ll_tx_set_pdm_prescale(hal->dev, 0);
     /* set pdm tx default sacle of high pass filter */
@@ -138,6 +146,18 @@ void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal)
     i2s_ll_rx_enable_pdm(hal->dev, true);
     /* set pdm rx downsample number */
     i2s_ll_rx_set_pdm_dsr(hal->dev, I2S_PDM_DSR_8S);
+#if !SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
+#endif
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_enable_clock(hal->dev);
+    i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
+    i2s_ll_mclk_use_rx_clk(hal->dev);
+    /* Still need to enable the first 2 TDM channel mask to get the correct number of frame */
+    i2s_ll_rx_set_active_chan_mask(hal->dev, I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1);
+#else
+    i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
+#endif
 }
 #endif // SOC_I2S_SUPPORTS_PDM_RX
 
@@ -152,7 +172,10 @@ void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_tx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
     i2s_ll_mclk_use_tx_clk(hal->dev);
 
-    i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
+    // In TDM mode(more than 2 channels), the ws polarity should be high first.
+    if (hal_cfg->total_chan > 2) {
+        i2s_ll_tx_set_ws_idle_pol(hal->dev, true);
+    }
     i2s_ll_tx_enable_left_align(hal->dev, hal_cfg->left_align);
     i2s_ll_tx_enable_big_endian(hal->dev, hal_cfg->big_edin);
     i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
@@ -174,7 +197,10 @@ void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
     i2s_ll_mclk_use_rx_clk(hal->dev);
 
-    i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
+    // In TDM mode(more than 2 channels), the ws polarity should be high first.
+    if (hal_cfg->total_chan > 2) {
+        i2s_ll_rx_set_ws_idle_pol(hal->dev, true);
+    }
     i2s_ll_rx_enable_left_align(hal->dev, hal_cfg->left_align);
     i2s_ll_rx_enable_big_endian(hal->dev, hal_cfg->big_edin);
     i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
@@ -210,6 +236,7 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     /* Set channel number and valid data bits */
 #if SOC_I2S_SUPPORTS_TDM
     chan_num = hal_cfg->total_chan;
+    i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask >> 16);
     i2s_ll_tx_set_chan_num(hal->dev, chan_num);
 #endif
     i2s_ll_tx_set_sample_bit(hal->dev, chan_bits, data_bits);
@@ -235,6 +262,7 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
 
 #if SOC_I2S_SUPPORTS_TDM
     chan_num = hal_cfg->total_chan;
+    i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask >> 16);
     i2s_ll_rx_set_chan_num(hal->dev, chan_num);
 #endif
     i2s_ll_rx_set_sample_bit(hal->dev, chan_bits, data_bits);
@@ -284,8 +312,8 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         {
             /* Set tx common mode */
             i2s_hal_tx_set_common_mode(hal, hal_cfg);
-            i2s_hal_tx_set_channel_style(hal, hal_cfg);
         }
+        i2s_hal_tx_set_channel_style(hal, hal_cfg);
     }
 
     /* Set configurations for RX mode */
@@ -302,8 +330,8 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         {
             /* Set rx common mode */
             i2s_hal_rx_set_common_mode(hal, hal_cfg);
-            i2s_hal_rx_set_channel_style(hal, hal_cfg);
         }
+        i2s_hal_rx_set_channel_style(hal, hal_cfg);
     }
 
     /* Set configurations for full-duplex mode */
@@ -315,4 +343,24 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
             i2s_hal_enable_slave_fd_mode(hal);
         }
     }
+}
+
+void i2s_hal_start_tx(i2s_hal_context_t *hal)
+{
+    i2s_ll_tx_start(hal->dev);
+}
+
+void i2s_hal_start_rx(i2s_hal_context_t *hal)
+{
+    i2s_ll_rx_start(hal->dev);
+}
+
+void i2s_hal_stop_tx(i2s_hal_context_t *hal)
+{
+    i2s_ll_tx_stop(hal->dev);
+}
+
+void i2s_hal_stop_rx(i2s_hal_context_t *hal)
+{
+    i2s_ll_rx_stop(hal->dev);
 }

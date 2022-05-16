@@ -181,7 +181,9 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t iterator);
 /**
  * @brief Release partition iterator
  *
- * @param iterator Iterator obtained using esp_partition_find. Must be non-NULL.
+ * @param iterator Iterator obtained using esp_partition_find.
+ *                 The iterator is allowed to be NULL, so it is not necessary to check its value
+ *                 before calling this function.
  *
  */
 void esp_partition_iterator_release(esp_partition_iterator_t iterator);

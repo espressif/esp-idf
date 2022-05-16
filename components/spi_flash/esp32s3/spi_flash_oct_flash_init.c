@@ -5,27 +5,33 @@
  */
 
 #include "sdkconfig.h"
+#include "esp_log.h"
 #include "esp_err.h"
 #include "esp_rom_gpio.h"
 #include "esp32s3/rom/gpio.h"
 #include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
+#include "opi_flash_private.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/io_mux_reg.h"
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC
 #include "opi_flash_cmd_format_mxic.h"
-#endif
 
 #define SPI_FLASH_SPI_CMD_WRCR2     0x72
 #define SPI_FLASH_SPI_CMD_RDSR      0x05
 #define SPI_FLASH_SPI_CMD_RDCR      0x15
 #define SPI_FLASH_SPI_CMD_WRSRCR    0x01
 
+/**
+ * Supported Flash chip vendor id
+ */
+#define ESP_FLASH_CHIP_MXIC_OCT     0xC2
+
+const static char *TAG = "Octal Flash";
 // default value is rom_default_spiflash_legacy_flash_func
 extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
 extern int SPI_write_enable(void *spi);
-DRAM_ATTR const esp_rom_opiflash_def_t opiflash_cmd_def = OPI_CMD_FORMAT();
+static uint32_t s_chip_id;
 
 
 static void s_register_rom_function(void)
@@ -46,7 +52,24 @@ static void s_register_rom_function(void)
     rom_spiflash_legacy_funcs = &rom_func;
 }
 
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC
+#if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+/*----------------------------------------------------------------------------------------------------
+                                MXIC Specific Functions
+-----------------------------------------------------------------------------------------------------*/
+static esp_err_t s_probe_mxic_chip(uint32_t chip_id, uint8_t *out_vendor_id)
+{
+    if (chip_id >> 16 != ESP_FLASH_CHIP_MXIC_OCT) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (((chip_id >> 8) & 0xff) != 0x80) {
+        ESP_EARLY_LOGE(TAG, "Detected MXIC Flash, but memory type is not Octal");
+        return ESP_ERR_NOT_FOUND;
+    }
+    *out_vendor_id = ESP_FLASH_CHIP_MXIC_OCT;
+
+    return ESP_OK;
+}
+
 // 0x00: SPI; 0x01: STR OPI;  0x02: DTR OPI
 static void s_set_flash_dtr_str_opi_mode(int spi_num, uint8_t val)
 {
@@ -127,7 +150,8 @@ static void s_set_pin_drive_capability(uint8_t drv)
 
 static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
 {
-    esp_rom_opiflash_legacy_driver_init(&opiflash_cmd_def);
+    static const esp_rom_opiflash_def_t opiflash_cmd_def_mxic = OPI_CMD_FORMAT_MXIC();
+    esp_rom_opiflash_legacy_driver_init(&opiflash_cmd_def_mxic);
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     // increase flash output driver strength
@@ -135,13 +159,13 @@ static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
 
     // STR/DTR specific setting
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-#if CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR
+#if CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
     s_set_pin_drive_capability(3);
     s_set_flash_dtr_str_opi_mode(1, 0x1);
     esp_rom_opiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
     esp_rom_spi_set_dtr_swap_mode(0, false, false);
     esp_rom_spi_set_dtr_swap_mode(1, false, false);
-#else //CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
+#else //CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
     s_set_pin_drive_capability(3);
     s_set_flash_dtr_str_opi_mode(1, 0x2);
     esp_rom_opiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
@@ -149,26 +173,90 @@ static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
     esp_rom_spi_set_dtr_swap_mode(1, true, true);
 #endif
 
-    s_register_rom_function();
     esp_rom_opiflash_wait_idle();
 }
-#endif   // #if CONFIG_FLASH_VENDOR_XXX
+#endif   // #if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
 
-esp_err_t esp_opiflash_init(void)
+static void s_mxic_set_required_regs(uint32_t chip_id)
 {
+    bool is_swap = false;
+#if CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+    is_swap = true;
+#else
+    //STR mode does not need to enable ddr_swap registers
+#endif
+    esp_rom_spi_set_dtr_swap_mode(0, is_swap, is_swap);
+    esp_rom_spi_set_dtr_swap_mode(1, is_swap, is_swap);
+}
+
+
+/*----------------------------------------------------------------------------------------------------
+                                General Functions
+-----------------------------------------------------------------------------------------------------*/
+typedef struct opi_flash_func_t {
+    esp_err_t (*probe)(uint32_t flash_id, uint8_t *out_vendor_id);      //Function pointer for detecting Flash chip vendor
+    void (*init)(esp_rom_spiflash_read_mode_t mode);                    //Function pointer for initialising certain Flash chips
+    void (*regs_set)(uint32_t flash_id);                                //Function pointer for setting required registers, decided by certain flash chips.
+} opi_flash_func_t;
+
+#if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+static const opi_flash_func_t opi_flash_func_mxic = {
+    .probe = &s_probe_mxic_chip,
+    .init = &s_flash_init_mxic,
+    .regs_set = &s_mxic_set_required_regs,
+};
+#endif
+
+static const opi_flash_func_t *registered_chip_funcs[] = {
+#if CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+    &opi_flash_func_mxic,
+#endif
+    NULL,
+};
+
+//To check which Flash chip is used
+static const opi_flash_func_t **s_chip_func = NULL;
+
+esp_err_t esp_opiflash_init(uint32_t chip_id)
+{
+    esp_err_t ret = ESP_FAIL;
     esp_rom_spiflash_read_mode_t mode;
-#if CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR
+#if CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
     mode = ESP_ROM_SPIFLASH_OPI_STR_MODE;
-#elif CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
+#elif CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
     mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
 #else
     mode = ESP_ROM_SPIFLASH_FASTRD_MODE;
 #endif
 
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC
-    s_flash_init_mxic(mode);
-#else
-    abort();
-#endif
+    const opi_flash_func_t **chip_func = &registered_chip_funcs[0];
+
+    uint8_t vendor_id = 0;
+    while (*chip_func) {
+        ret = (*chip_func)->probe(chip_id, &vendor_id);
+        if (ret == ESP_OK) {
+            // Detect this is the supported chip type
+            s_chip_id = chip_id;
+            (*chip_func)->init(mode);
+            s_register_rom_function();
+            break;
+        }
+        chip_func++;
+    }
+    s_chip_func = chip_func;
+
+    if (ret != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "No detected Flash chip, please check the menuconfig to see if the chip is supported");
+        abort();
+    }
+
     return ESP_OK;
+}
+
+/**
+ * Add Flash chip specifically required MSPI register settings here
+ */
+void esp_opiflash_set_required_regs(void)
+{
+    (*s_chip_func)->regs_set(s_chip_id);
 }

@@ -79,7 +79,6 @@
 #define DR_REG_SPI2_BASE                        0x60024000
 #define DR_REG_SPI3_BASE                        0x60025000
 #define DR_REG_SYSCON_BASE                      0x60026000
-#define DR_REG_APB_CTRL_BASE                    0x60026000    /* Old name for SYSCON, to be removed */
 #define DR_REG_I2C1_EXT_BASE                    0x60027000
 #define DR_REG_SDMMC_BASE                       0x60028000
 #define DR_REG_CAN_BASE                         0x6002B000

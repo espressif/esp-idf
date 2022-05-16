@@ -71,7 +71,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
 
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * message_buffer.h
  *
  * @code{c}
@@ -134,7 +134,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferCreate xStreamBufferCreate
  * @endcond
  * \ingroup StreamBufferManagement
@@ -142,7 +142,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
 #define xStreamBufferCreate( xBufferSizeBytes, xTriggerLevelBytes )    xStreamBufferGenericCreate( xBufferSizeBytes, xTriggerLevelBytes, pdFALSE )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -220,7 +220,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  * }
  *
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferCreateStatic xStreamBufferCreateStatic
  * @endcond
  * \ingroup StreamBufferManagement
@@ -229,7 +229,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
     xStreamBufferGenericCreateStatic( xBufferSizeBytes, xTriggerLevelBytes, pdFALSE, pucStreamBufferStorageArea, pxStaticStreamBuffer )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -319,7 +319,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferSend xStreamBufferSend
  * @endcond
  * \ingroup StreamBufferManagement
@@ -330,7 +330,7 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
                           TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -424,7 +424,7 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
  *  taskYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferSendFromISR xStreamBufferSendFromISR
  * @endcond
  * \ingroup StreamBufferManagement
@@ -435,7 +435,7 @@ size_t xStreamBufferSendFromISR( StreamBufferHandle_t xStreamBuffer,
                                  BaseType_t * const pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -517,7 +517,7 @@ size_t xStreamBufferSendFromISR( StreamBufferHandle_t xStreamBuffer,
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferReceive xStreamBufferReceive
  * @endcond
  * \ingroup StreamBufferManagement
@@ -528,7 +528,7 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
                              TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -607,7 +607,7 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
  *  taskYIELD_FROM_ISR( xHigherPriorityTaskWoken );
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferReceiveFromISR xStreamBufferReceiveFromISR
  * @endcond
  * \ingroup StreamBufferManagement
@@ -618,7 +618,7 @@ size_t xStreamBufferReceiveFromISR( StreamBufferHandle_t xStreamBuffer,
                                     BaseType_t * const pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -636,7 +636,7 @@ size_t xStreamBufferReceiveFromISR( StreamBufferHandle_t xStreamBuffer,
  *
  * @param xStreamBuffer The handle of the stream buffer to be deleted.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup vStreamBufferDelete vStreamBufferDelete
  * @endcond
  * \ingroup StreamBufferManagement
@@ -644,7 +644,7 @@ size_t xStreamBufferReceiveFromISR( StreamBufferHandle_t xStreamBuffer,
 void vStreamBufferDelete( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -660,7 +660,7 @@ void vStreamBufferDelete( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTI
  * @return If the stream buffer is full then pdTRUE is returned.  Otherwise
  * pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferIsFull xStreamBufferIsFull
  * @endcond
  * \ingroup StreamBufferManagement
@@ -668,7 +668,7 @@ void vStreamBufferDelete( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTI
 BaseType_t xStreamBufferIsFull( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -684,7 +684,7 @@ BaseType_t xStreamBufferIsFull( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_
  * @return If the stream buffer is empty then pdTRUE is returned.  Otherwise
  * pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferIsEmpty xStreamBufferIsEmpty
  * @endcond
  * \ingroup StreamBufferManagement
@@ -692,7 +692,7 @@ BaseType_t xStreamBufferIsFull( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_
 BaseType_t xStreamBufferIsEmpty( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -711,7 +711,7 @@ BaseType_t xStreamBufferIsEmpty( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED
  * a task blocked waiting to send to or read from the stream buffer then the
  * stream buffer is not reset and pdFAIL is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferReset xStreamBufferReset
  * @endcond
  * \ingroup StreamBufferManagement
@@ -719,7 +719,7 @@ BaseType_t xStreamBufferIsEmpty( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED
 BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -736,7 +736,7 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_F
  * @return The number of bytes that can be written to the stream buffer before
  * the stream buffer would be full.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferSpacesAvailable xStreamBufferSpacesAvailable
  * @endcond
  * \ingroup StreamBufferManagement
@@ -744,7 +744,7 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_F
 size_t xStreamBufferSpacesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -761,7 +761,7 @@ size_t xStreamBufferSpacesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVIL
  * @return The number of bytes that can be read from the stream buffer before
  * the stream buffer would be empty.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferBytesAvailable xStreamBufferBytesAvailable
  * @endcond
  * \ingroup StreamBufferManagement
@@ -769,7 +769,7 @@ size_t xStreamBufferSpacesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVIL
 size_t xStreamBufferBytesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -802,7 +802,7 @@ size_t xStreamBufferBytesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVILE
  * then the trigger level will be updated and pdTRUE is returned.  Otherwise
  * pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferSetTriggerLevel xStreamBufferSetTriggerLevel
  * @endcond
  * \ingroup StreamBufferManagement
@@ -811,7 +811,7 @@ BaseType_t xStreamBufferSetTriggerLevel( StreamBufferHandle_t xStreamBuffer,
                                          size_t xTriggerLevel ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -846,7 +846,7 @@ BaseType_t xStreamBufferSetTriggerLevel( StreamBufferHandle_t xStreamBuffer,
  * @return If a task was removed from the Blocked state then pdTRUE is returned.
  * Otherwise pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferSendCompletedFromISR xStreamBufferSendCompletedFromISR
  * @endcond
  * \ingroup StreamBufferManagement
@@ -855,7 +855,7 @@ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer
                                               BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * stream_buffer.h
  *
  * @code{c}
@@ -891,7 +891,7 @@ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer
  * @return If a task was removed from the Blocked state then pdTRUE is returned.
  * Otherwise pdFALSE is returned.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xStreamBufferReceiveCompletedFromISR xStreamBufferReceiveCompletedFromISR
  * @endcond
  * \ingroup StreamBufferManagement
@@ -899,7 +899,7 @@ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer
 BaseType_t xStreamBufferReceiveCompletedFromISR( StreamBufferHandle_t xStreamBuffer,
                                                  BaseType_t * pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 /* Functions below here are not part of the public API. */
 StreamBufferHandle_t xStreamBufferGenericCreate( size_t xBufferSizeBytes,
                                                  size_t xTriggerLevelBytes,

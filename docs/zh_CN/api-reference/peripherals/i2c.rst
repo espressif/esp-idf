@@ -21,7 +21,7 @@ I2C 具有简单且制造成本低廉等优点，主要用于低速外围设备�
 驱动程序的功能
 ---------------
 
-I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备以下功能： 
+I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备以下功能：
 
 - 在主机模式下读写字节
 - 支持从机模式
@@ -37,7 +37,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 2. :ref:`i2c-api-install-driver`- 激活一个 I2C 控制器的驱动，该控制器可为主机也可为从机
 3. 根据是为主机还是从机配置驱动程序，选择合适的项目
 
-   a) :ref:`i2c-api-master-mode` - 发起通信（主机模式）    
+   a) :ref:`i2c-api-master-mode` - 发起通信（主机模式）
    b) :ref:`i2c-api-slave-mode` - 响应主机消息（从机模式）
 
 4. :ref:`i2c-api-interrupt-handling` - 配置 I2C 中断服务
@@ -148,6 +148,25 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
     1. :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`：当 APB 时钟改变时，时钟的波特率不会改变。
     2. :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`：支持轻度睡眠模式，APB 时钟则不支持。
 
+.. only:: esp32s3
+
+    .. list-table:: {IDF_TARGET_NAME} 时钟源特性
+       :widths: 5 5 50 20
+       :header-rows: 1
+
+       * - 时钟名称
+         - 时钟频率
+         - SCL 的最大频率
+         - 时钟功能
+       * - XTAL 时钟
+         - 40 MHz
+         - 2 MHz
+         - /
+       * - RTC 时钟
+         - 20 MHz
+         - 1 MHz
+         - :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`, :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`
+
 .. only:: esp32c3
 
     .. list-table:: {IDF_TARGET_NAME} 时钟源特性
@@ -185,9 +204,9 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 配置好 I2C 驱动程序后，使用以下参数调用函数 :cpp:func:`i2c_driver_install` 安装驱动程序：
 
 - 端口号，从 :cpp:type:`i2c_port_t` 中二选一
-- 主机或从机模式，从 :cpp:type:`i2c_mode_t` 中选择 
-- （仅限从机模式）分配用于在从机模式下发送和接收数据的缓存区大小。I2C 是一个以主机为中心的总线，数据只能根据主机的请求从从机传输到主机。因此，从机通常有一个发送缓存区，供从应用程序写入数据使用。数据保留在发送缓存区中，由主机自行读取。 
-- 用于分配中断的标志（请参考 ESP_INTR_FLAG_* values in :component_file:`esp_hw_support/include/esp_intr_alloc.h`）
+- 主机或从机模式，从 :cpp:type:`i2c_mode_t` 中选择
+- （仅限从机模式）分配用于在从机模式下发送和接收数据的缓存区大小。I2C 是一个以主机为中心的总线，数据只能根据主机的请求从从机传输到主机。因此，从机通常有一个发送缓存区，供从应用程序写入数据使用。数据保留在发送缓存区中，由主机自行读取。
+- 用于分配中断的标志（请参考 :component_file:`esp_hw_support/include/esp_intr_alloc.h` 中 ESP_INTR_FLAG_* 值）
 
 .. _i2c-api-master-mode:
 
@@ -225,7 +244,7 @@ I2C 驱动程序管理在 I2C 总线上设备的通信，该驱动程序具备�
 
     函数 :cpp:func:`i2c_master_write_byte` 和 :cpp:func:`i2c_master_write` 都有额外的实参，规定主机是否应确认其有无接受到 ACK 位。
 
-2. 通过调用 :cpp:func:`i2c_master_cmd_begin` 来触发 I2C 控制器执行命令链接。一旦开始执行，就不能再修改命令链接。 
+2. 通过调用 :cpp:func:`i2c_master_cmd_begin` 来触发 I2C 控制器执行命令链接。一旦开始执行，就不能再修改命令链接。
 3. 命令发送后，通过调用 :cpp:func:`i2c_cmd_link_delete` 释放命令链接使用的资源。
 
 
@@ -278,7 +297,7 @@ API 为从机提供以下功能：
 
 - :cpp:func:`i2c_slave_write_buffer`
 
-    发送缓存区是用于存储从机要以 FIFO 顺序发送给主机的所有数据。在主机请求接收前，这些数据一直存储在发送缓存区。函数 :cpp:func:`i2c_slave_write_buffer` 有一个参数，用于指定发送缓存区已满时的块时间。这将允许从机应用程序在指定的超时设定内等待发送缓存区中足够的可用空间。 
+    发送缓存区是用于存储从机要以 FIFO 顺序发送给主机的所有数据。在主机请求接收前，这些数据一直存储在发送缓存区。函数 :cpp:func:`i2c_slave_write_buffer` 有一个参数，用于指定发送缓存区已满时的块时间。这将允许从机应用程序在指定的超时设定内等待发送缓存区中足够的可用空间。
 
 在 :example:`peripherals/i2c` 中可找到介绍如何使用这些功能的代码示例。
 
@@ -321,15 +340,15 @@ API 为从机提供以下功能：
      - :cpp:func:`i2c_set_data_mode`
 
 
-上述每个函数都有一个 *_get_* 对应项来检查当前设置的值。例如，调用 :cpp:func:`i2c_get_timeout` 来检查 I2C 超时值。 
+上述每个函数都有一个 *_get_* 对应项来检查当前设置的值。例如，调用 :cpp:func:`i2c_get_timeout` 来检查 I2C 超时值。
 
-要检查在驱动程序配置过程中设置的参数默认值，请参考文件 :component_file:`driver/i2c.c` 并查找带有后缀 ``_DEFAULT`` 的定义。 
+要检查在驱动程序配置过程中设置的参数默认值，请参考文件 :component_file:`driver/i2c.c` 并查找带有后缀 ``_DEFAULT`` 的定义。
 
 通过函数 :cpp:func:`i2c_set_pin` 可以为 SDA 和 SCL 信号选择不同的管脚并改变上拉配置。如果要修改已经输入的值，请使用函数 :cpp:func:`i2c_param_config`。
 
 .. 注解 ::
 
-    {IDF_TARGET_NAME} 的内部上拉电阻范围为几万欧姆，因此在大多数情况下，它们本身不足以用作 I2C 上拉电阻。建议用户使用阻值在 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定范围内的上拉电阻。  
+    {IDF_TARGET_NAME} 的内部上拉电阻范围为几万欧姆，因此在大多数情况下，它们本身不足以用作 I2C 上拉电阻。建议用户使用阻值在 `I2C 总线协议规范 <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_ 规定范围内的上拉电阻。
 
 
 .. _i2c-api-error-handling:
@@ -349,13 +368,14 @@ API 为从机提供以下功能：
 删除驱动程序
 ^^^^^^^^^^^^^
 
-当使用 :cpp:func:`i2c_driver_install` 建立 I2C 通信，一段时间后不再需要 I2C 通信时，可以通过调用 :cpp:func:`i2c_driver_delete` 来移除驱动程序以释放分配的资源。  
+当使用 :cpp:func:`i2c_driver_install` 建立 I2C 通信，一段时间后不再需要 I2C 通信时，可以通过调用 :cpp:func:`i2c_driver_delete` 来移除驱动程序以释放分配的资源。
 
+由于函数 :cpp:func:`i2c_driver_delete` 无法保证线程安全性，请在调用该函数移除驱动程序前务必确保所有的线程都已停止使用驱动程序。
 
 应用示例
 ----------
 
-I2C 主机和从机示例：:example:`peripherals/i2c`
+I2C 主机和从机示例：:example:`peripherals/i2c`。
 
 
 API 参考

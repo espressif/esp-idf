@@ -25,9 +25,6 @@ components/esp32/include/esp32/cache_err_int.h
 components/driver/include/driver/sdmmc_defs.h
 components/driver/include/driver/sdmmc_types.h
 
-components/lwip/include/apps/dhcpserver/dhcpserver_options.h
-components/lwip/include/apps/dhcpserver/dhcpserver.h
-
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
 
 components/esp_phy/esp32/include/phy_init_data.h
@@ -37,6 +34,7 @@ components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_gd.h
 components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/include/spi_flash_chip_boya.h
+components/spi_flash/include/spi_flash_chip_th.h
 components/spi_flash/include/memspi_host_driver.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_generic.h
@@ -49,6 +47,7 @@ components/wpa_supplicant/esp_supplicant/include/
 
 components/mbedtls/port/include/
 components/mbedtls/mbedtls/include/mbedtls/
+components/mbedtls/mbedtls/include/psa/
 
 components/coap/
 components/nghttp/
@@ -135,8 +134,6 @@ components/esp_event/include/esp_event_base.h
 components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
-components/esp_netif/include/esp_netif_types.h
-components/esp_netif/include/esp_netif_ip_addr.h
 components/esp_netif/include/esp_netif_ppp.h
 components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
 components/bootloader_support/include/bootloader_util.h
@@ -151,4 +148,3 @@ components/ulp/include/esp32s2/ulp_riscv.h
 components/lwip/include/apps/sntp/sntp.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
-components/spi_flash/include/spi_flash_private.h

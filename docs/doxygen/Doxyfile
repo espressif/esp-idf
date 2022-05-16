@@ -73,10 +73,15 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_io.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ops.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_rgb.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
-    $(PROJECT_PATH)/components/driver/include/driver/adc_common.h \
-    $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
+    $(PROJECT_PATH)/components/driver/include/driver/adc.h \
     $(PROJECT_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/dac_common.h \
@@ -235,6 +240,7 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
     $(ENV_DOXYGEN_DEFINES) \
+    __DOXYGEN__=1 \
     __attribute__(x)= \
 	_Static_assert()= \
     IDF_DEPRECATED(X)= \
@@ -267,3 +273,9 @@ GENERATE_RTF    = NO
 ## Skip distracting progress messages
 ##
 QUIET = YES
+
+## Enable Section Tags for conditional documentation
+##
+ENABLED_SECTIONS += \
+    DOC_EXCLUDE_HEADER_SECTION \   ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
+    DOC_SINGLE_GROUP        ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.

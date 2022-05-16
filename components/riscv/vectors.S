@@ -267,8 +267,8 @@ _interrupt_handler:
 	#endif
 
 	/* call the C dispatcher */
-	mv      a0, sp		/* argument 1, stack pointer */
-	csrr    a1, mcause	/* argument 2, interrupt number */
+	mv      a0, sp      /* argument 1, stack pointer */
+	mv      a1, s1      /* argument 2, interrupt number (mcause) */
 	/* mask off the interrupt flag of mcause */
 	li	    t0, 0x7fffffff
 	and     a1, a1, t0
@@ -276,7 +276,7 @@ _interrupt_handler:
 
 	/* After dispatch c handler, disable interrupt to make freertos make context switch */
 
-	la t0, 0x8
+	li t0, 0x8
 	csrrc t0, mstatus, t0
 
 	/* restore the interrupt threshold level */

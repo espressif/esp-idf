@@ -9,4 +9,15 @@ menu "NVS"
             the complete NVS data, except the page headers. It requires XTS encryption keys
             to be stored in an encrypted partition. This means enabling flash encryption is
             a pre-requisite for this feature.
+
+    config NVS_COMPATIBLE_PRE_V4_3_ENCRYPTION_FLAG
+        bool "NVS partition encrypted flag compatible with ESP-IDF before v4.3"
+        depends on SECURE_FLASH_ENC_ENABLED
+        help
+            Enabling this will ignore "encrypted" flag for NVS partitions. NVS encryption
+            scheme is different than hardware flash encryption and hence it is not recommended
+            to have "encrypted" flag for NVS partitions. This was not being checked in pre v4.3
+            IDF. Hence, if you have any devices where this flag is kept enabled in partition
+            table then enabling this config will allow to have same behavior as pre v4.3 IDF.
+
 endmenu

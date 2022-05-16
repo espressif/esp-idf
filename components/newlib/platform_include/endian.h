@@ -1,28 +1,3 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-// Copyright 2020 Francesco Giancane <francesco.giancane@accenture.com>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-/*
- * This is a compatibility header for <endian.h>.
- * In xtensa-newlib distribution it is located in <machine/endian.h>
- * but most program expect to be plain <endian.h>.
- */
-
-#ifndef XTENSA_COMPAT_ENDIAN_H_INCLUDED
-#define XTENSA_COMPAT_ENDIAN_H_INCLUDED
-#include <machine/endian.h>
-
 /*
  * All the code below is a rework of
  * https://github.com/freebsd/freebsd/blob/master/sys/sys/endian.h
@@ -32,7 +7,10 @@
  */
 
 /*-
- * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020 Francesco Giancane <francesco.giancane@accenture.com>
+ * SPDX-FileCopyrightText: 2002 Thomas Moestl <tmm@FreeBSD.org>
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD AND Apache-2.0
  *
  * Copyright (c) 2002 Thomas Moestl <tmm@FreeBSD.org>
  * All rights reserved.
@@ -60,6 +38,17 @@
  *
  * $FreeBSD$
  */
+
+#pragma once
+
+#include <stdint.h>
+
+/*
+ * This is a compatibility header for <endian.h>.
+ * In xtensa-newlib distribution it is located in <machine/endian.h>
+ * but most program expect to be plain <endian.h>.
+ */
+#include <machine/endian.h>
 
 /*
  * General byte order swapping functions.
@@ -209,4 +198,3 @@ le64enc(void *pp, uint64_t u)
 	le32enc(p, (uint32_t)(u & 0xffffffffU));
 	le32enc(p + 4, (uint32_t)(u >> 32));
 }
-#endif /* XTENSA_COMPAT_ENDIAN_H_INCLUDED */

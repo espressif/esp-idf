@@ -9,7 +9,8 @@ if(CONFIG_USB_OTG_SUPPORTED)
                      "usb_helpers.c"
                      "usb_host.c"
                      "usb_private.c"
-                     "usbh.c")
+                     "usbh.c"
+                     "usb_phy.c")
     list(APPEND include "include")
     list(APPEND priv_include "private_include")
     list(APPEND priv_require "hal" "driver")

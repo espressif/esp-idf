@@ -42,7 +42,7 @@ if [ -n "$IDF_PATH" ]; then
 fi
 
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
-TOOLCHAIN_ZIP=xtensa-esp32-elf-gcc8_4_0-esp-2021r1-win32.zip
+TOOLCHAIN_ZIP=xtensa-esp32-elf-gcc8_4_0-esp-2021r2-win32.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
 curl -LO --retry 10 https://dl.espressif.com/dl/${TOOLCHAIN_ZIP}

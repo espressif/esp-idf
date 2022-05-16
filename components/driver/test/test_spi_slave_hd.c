@@ -142,7 +142,7 @@ static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callbac
 static void test_hd_init(void** arg)
 {
     TEST_ASSERT(*arg==NULL);
-    *arg = malloc(sizeof(testhd_context_t));
+    *arg = heap_caps_malloc(sizeof(testhd_context_t), MALLOC_CAP_DMA);
     assert(((int)arg%4)==0);
     testhd_context_t* context = (testhd_context_t*)*arg;
     TEST_ASSERT(context!=NULL);

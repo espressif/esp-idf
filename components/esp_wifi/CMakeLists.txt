@@ -18,7 +18,6 @@ if(CONFIG_ESP32_WIFI_ENABLED)
 
     set(srcs
         "src/coexist.c"
-        "src/lib_printf.c"
         "src/mesh_event.c"
         "src/smartconfig.c"
         "src/smartconfig_ack.c"
@@ -39,7 +38,7 @@ if(CONFIG_ESP32_WIFI_ENABLED)
     idf_build_get_property(build_dir BUILD_DIR)
 
     set(target_name "${idf_target}")
-    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
+    target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
 
     if(link_binary_libs)
         set(blobs coexist core espnow mesh net80211 pp smartconfig wapi)

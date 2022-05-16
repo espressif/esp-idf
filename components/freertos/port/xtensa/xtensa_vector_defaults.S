@@ -32,6 +32,21 @@ The default behaviour is to just exit the interrupt or call the panic handler on
     .align      4
 
 _xt_debugexception:
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+#define XT_DEBUGCAUSE_DI        (5)
+    getcoreid   a0
+#if (CONFIG_BTDM_CTRL_PINNED_TO_CORE == PRO_CPU_NUM)
+    beqz    a0, 1f
+#else
+    bnez    a0, 1f
+#endif
+
+    rsr     a0, DEBUGCAUSE
+    extui   a0, a0, XT_DEBUGCAUSE_DI, 1
+    bnez    a0, _xt_debug_di_exc
+1:
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+
     movi    a0,PANIC_RSN_DEBUGEXCEPTION
     wsr     a0,EXCCAUSE
     /* _xt_panic assumes a level 1 exception. As we're
@@ -44,6 +59,66 @@ _xt_debugexception:
     call0   _xt_panic                       /* does not return */
     rfi     XCHAL_DEBUGLEVEL
 
+#if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
+    .align  4
+_xt_debug_di_exc:
+
+    /*
+    The delay time can be calculated by the following formula:
+      T = ceil(0.25 + max(t1, t2)) us
+
+      t1 = 80 / f1, t2 = (1 + 14/N) * 20 / f2
+
+      f1: PSRAM access frequency, unit: MHz.
+      f2: Flash access frequency, unit: MHz.
+
+      When flash is slow/fast read, N = 1.
+      When flash is DOUT/DIO read, N = 2.
+      When flash is QOUT/QIO read, N = 4.
+
+      And after testing, when CPU frequency is 240 MHz, it will take 1us to loop 27 times.
+    */
+#if defined(CONFIG_ESPTOOLPY_FLASHMODE_QIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_QOUT)
+
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a0, 54
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 108
+# else
+    movi    a0, 135
+# endif
+
+#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DIO) || defined(CONFIG_ESPTOOLPY_FLASHMODE_DOUT)
+
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 81
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 135
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a0, 189
+# else
+    movi    a0, 243
+# endif
+
+#else
+    movi    a0, 243
+#endif
+
+1:  addi    a0, a0, -1         /* delay_us(N) */
+    .rept   4
+    nop
+    .endr
+    bnez    a0, 1b
+
+    rsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL
+    rfi     XCHAL_DEBUGLEVEL
+#endif //(CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
 #endif /* Debug exception */
 
 

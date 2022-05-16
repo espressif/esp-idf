@@ -144,4 +144,5 @@ const spi_flash_chip_t esp_flash_chip_gd = {
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
     .read_unique_id = spi_flash_chip_generic_read_unique_id,
     .get_chip_caps = spi_flash_chip_gd_get_caps,
+    .config_host_io_mode = spi_flash_chip_generic_config_host_io_mode,
 };

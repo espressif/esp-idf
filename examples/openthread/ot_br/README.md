@@ -1,4 +1,4 @@
-# OpenThread Border Router example
+# OpenThread Border Router Example
 
 ## Overview
 
@@ -6,9 +6,21 @@ This example demonstrates an [OpenThread border router](https://openthread.io/gu
 
 ## How to use example
 
-### Hardware connection
+### Hardware Required
 
-To run this example, it's used to use an DevKit C board and connect PIN4 and PIN5 to the UART TX and RX port of another 15.4 capable radio co-processor ([RCP](https://openthread.io/platforms/co-processor?hl=en))
+The following SoCs are required to run this example:
+* An ESP32 series Wi-Fi SoC (ESP32, ESP32-C, ESP32-S, etc) loaded with this ot_br example.
+* An ESP32-H2 802.15.4 SoC loaded with [ot_rcp](../ot_rcp) example.
+* Another ESP32-H2 SoC loaded with [ot_cli](../ot_cli) example. Enable `OPENTHREAD_JOINER` option in menuconfig before compiling the example.
+
+Connect the two SoCs via UART, below is an example setup with ESP32 DevKitC and ESP32-H2 DevKitC:
+![thread_br](image/thread-border-router-esp32-esp32h2.jpg)
+
+ESP32 pin | ESP32-H2 pin
+----------|-------------
+   GND    |      G 
+   GPIO4  |      TX      
+   GPIO5  |      RX
 
 ### Configure the project
 
@@ -45,7 +57,7 @@ I(8139) OPENTHREAD:[NOTE]-MLE-----: RLOC16 fffe -> c800
 I(8159) OPENTHREAD:[NOTE]-MLE-----: Role Detached -> Leader
 ```
 
-The device will automatically connect to the configured WiFi and Thread network and act as the border router.
+The device will automatically connect to the configured Wi-Fi and Thread network and act as the border router.
 
 ## Using the border agent feature
 
@@ -57,7 +69,7 @@ Make sure to configure the same PSKc as the one in sdkconfig in ot-commisioner's
 
 ### Connect the commissioner to the border router
 
-Note that the target address `192.168.1.100` shall match the actual WiFi IP address of the device.
+Note that the target address `192.168.1.100` shall match the actual Wi-Fi IP address of the device. `49154` is a port number used by the OT commissioner.
 
 ``` bash
 $ commissioner-cli /usr/local/etc/commissioner/non-ccm-config.json
@@ -149,13 +161,13 @@ The device has now joined the same Thread network based on the key set by the co
 
 ## Bidirectional IPv6 connectivity
 
-The border router will automatically publish the prefix and the route table rule to the WiFi network via ICMPv6 router advertisment packages.
+The border router will automatically publish the prefix and the route table rule to the Wi-Fi network via ICMPv6 router advertisement packages.
 
 ### Host configuration
 
 The automatically configure your host's route table rules you need to set these sysctl options:
 
-Please relace `wlan0` with the real name of your WiFi network interface.
+Please replace `wlan0` with the real name of your Wi-Fi network interface.
 ```
 sudo sysctl -w net/ipv6/conf/wlan0/accept_ra=2
 sudo sysctl -w net/ipv6/conf/wlan0/accept_ra_rt_info_max_plen=128
@@ -164,7 +176,7 @@ sudo sysctl -w net/ipv6/conf/wlan0/accept_ra_rt_info_max_plen=128
 For mobile devices, the route table rules will be automatically configured after iOS 14 and Android 8.1.
 
 
-### Testing IPv6 connecitivity 
+### Testing IPv6 connectivity 
 
 Now in the joining device, check the IP addresses:
 
@@ -190,7 +202,7 @@ PING fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5(fde6:75ff:def4:3bc3:9e9e:3ef:4245:28
 
 ## Service discovery
 
-The newly introduced service registration protocol([SRP](https://datatracker.ietf.org/doc/html/draft-ietf-dnssd-srp-10)) allows devices in the Thread network to register a service. The border router will forward the service to the WiFi network via mDNS.
+The newly introduced service registration protocol([SRP](https://datatracker.ietf.org/doc/html/draft-ietf-dnssd-srp-10)) allows devices in the Thread network to register a service. The border router will forward the service to the Wi-Fi network via mDNS.
 
 Now we'll publish the service `my-service._test._udp` with hostname `test0` and port 12345
 
@@ -205,7 +217,7 @@ Done
 Done
 ```
 
-This service will also become visible on the WiFi network:
+This service will also become visible on the Wi-Fi network:
 
 ```bash
 $ avahi-browse -r _test._udp -t   

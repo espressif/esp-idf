@@ -101,8 +101,8 @@ static void wps_remove_pin(struct wps_uuid_pin *pin)
 static void wps_free_pins(struct dl_list *pins)
 {
 	struct wps_uuid_pin *pin, *prev;
-	dl_list_for_each_safe(pin, prev, pins, struct wps_uuid_pin, list);
-	wps_remove_pin(pin);
+	dl_list_for_each_safe(pin, prev, pins, struct wps_uuid_pin, list)
+		wps_remove_pin(pin);
 }
 
 #endif
@@ -1652,7 +1652,7 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);	// NOLINT(clang-analyzer-unix.Malloc)
 		wps->cred.key_len = wps->new_psk_len;
 	} else if (wps->use_psk_key && wps->wps->psk_set) {
-		char hex[65];
+		char hex[65] = {0};
 		wpa_printf(MSG_DEBUG,  "WPS: Use PSK format for Network Key");
 		os_memcpy(wps->cred.key, hex, 32 * 2);
 		wps->cred.key_len = 32 * 2;

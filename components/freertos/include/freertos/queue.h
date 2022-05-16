@@ -62,7 +62,7 @@ typedef struct QueueDefinition   * QueueSetHandle_t;
  */
 typedef struct QueueDefinition   * QueueSetMemberHandle_t;
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /* For internal use only. */
 #define queueSEND_TO_BACK                     ( ( BaseType_t ) 0 )
@@ -80,7 +80,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
 /** @endcond */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * QueueHandle_t xQueueCreate(
@@ -146,7 +146,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueCreate xQueueCreate
  * @endcond
  * \ingroup QueueManagement
@@ -156,7 +156,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * QueueHandle_t xQueueCreateStatic(
@@ -235,7 +235,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueCreateStatic xQueueCreateStatic
  * @endcond
  * \ingroup QueueManagement
@@ -245,7 +245,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueSendToToFront(
@@ -321,7 +321,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSend xQueueSend
  * @endcond
  * \ingroup QueueManagement
@@ -330,7 +330,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
     xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueSendToBack(
@@ -408,7 +408,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSend xQueueSend
  * @endcond
  * \ingroup QueueManagement
@@ -417,7 +417,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
     xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_BACK )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueSend(
@@ -497,7 +497,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSend xQueueSend
  * @endcond
  * \ingroup QueueManagement
@@ -506,7 +506,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
     xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_BACK )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueOverwrite(
@@ -585,7 +585,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ...
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueOverwrite xQueueOverwrite
  * @endcond
  * \ingroup QueueManagement
@@ -595,7 +595,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
 
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueGenericSend(
@@ -678,7 +678,7 @@ typedef struct QueueDefinition   * QueueSetMemberHandle_t;
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSend xQueueSend
  * @endcond
  * \ingroup QueueManagement
@@ -689,7 +689,7 @@ BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
                               const BaseType_t xCopyPosition ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueuePeek(
@@ -780,7 +780,7 @@ BaseType_t xQueueGenericSend( QueueHandle_t xQueue,
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueuePeek xQueuePeek
  * @endcond
  * \ingroup QueueManagement
@@ -790,7 +790,7 @@ BaseType_t xQueuePeek( QueueHandle_t xQueue,
                        TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueuePeekFromISR(
@@ -820,7 +820,7 @@ BaseType_t xQueuePeek( QueueHandle_t xQueue,
  * @return pdTRUE if an item was successfully received from the queue,
  * otherwise pdFALSE.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueuePeekFromISR xQueuePeekFromISR
  * @endcond
  * \ingroup QueueManagement
@@ -829,7 +829,7 @@ BaseType_t xQueuePeekFromISR( QueueHandle_t xQueue,
                               void * const pvBuffer ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueReceive(
@@ -917,7 +917,7 @@ BaseType_t xQueuePeekFromISR( QueueHandle_t xQueue,
  *  // ... Rest of task code.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueReceive xQueueReceive
  * @endcond
  * \ingroup QueueManagement
@@ -927,7 +927,7 @@ BaseType_t xQueueReceive( QueueHandle_t xQueue,
                           TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * UBaseType_t uxQueueMessagesWaiting( const QueueHandle_t xQueue );
@@ -940,7 +940,7 @@ BaseType_t xQueueReceive( QueueHandle_t xQueue,
  *
  * @return The number of messages available in the queue.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup uxQueueMessagesWaiting uxQueueMessagesWaiting
  * @endcond
  * \ingroup QueueManagement
@@ -948,7 +948,7 @@ BaseType_t xQueueReceive( QueueHandle_t xQueue,
 UBaseType_t uxQueueMessagesWaiting( const QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * UBaseType_t uxQueueSpacesAvailable( const QueueHandle_t xQueue );
@@ -963,7 +963,7 @@ UBaseType_t uxQueueMessagesWaiting( const QueueHandle_t xQueue ) PRIVILEGED_FUNC
  *
  * @return The number of spaces available in the queue.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup uxQueueMessagesWaiting uxQueueMessagesWaiting
  * @endcond
  * \ingroup QueueManagement
@@ -971,7 +971,7 @@ UBaseType_t uxQueueMessagesWaiting( const QueueHandle_t xQueue ) PRIVILEGED_FUNC
 UBaseType_t uxQueueSpacesAvailable( const QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * void vQueueDelete( QueueHandle_t xQueue );
@@ -983,7 +983,7 @@ UBaseType_t uxQueueSpacesAvailable( const QueueHandle_t xQueue ) PRIVILEGED_FUNC
  *
  * @param xQueue A handle to the queue to be deleted.
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup vQueueDelete vQueueDelete
  * @endcond
  * \ingroup QueueManagement
@@ -991,7 +991,7 @@ UBaseType_t uxQueueSpacesAvailable( const QueueHandle_t xQueue ) PRIVILEGED_FUNC
 void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueSendToFrontFromISR(
@@ -1057,7 +1057,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  * }
  * @endcode
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * @endcond
  * \ingroup QueueManagement
@@ -1067,7 +1067,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueSendToBackFromISR(
@@ -1133,7 +1133,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  * }
  * @endcode
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * @endcond
  * \ingroup QueueManagement
@@ -1142,7 +1142,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
     xQueueGenericSendFromISR( ( xQueue ), ( pvItemToQueue ), ( pxHigherPriorityTaskWoken ), queueSEND_TO_BACK )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueOverwriteFromISR(
@@ -1189,7 +1189,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  * void vFunction( void *pvParameters )
  * {
  *  // Create a queue to hold one uint32_t value.  It is strongly
- *  // recommended \*not\* to use xQueueOverwriteFromISR() on queues that can
+ *  // recommended *not* to use xQueueOverwriteFromISR() on queues that can
  *  // contain more than one value, and doing so will trigger an assertion
  *  // if configASSERT() is defined.
  *  xQueue = xQueueCreate( 1, sizeof( uint32_t ) );
@@ -1225,7 +1225,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueOverwriteFromISR xQueueOverwriteFromISR
  * @endcond
  * \ingroup QueueManagement
@@ -1234,7 +1234,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
     xQueueGenericSendFromISR( ( xQueue ), ( pvItemToQueue ), ( pxHigherPriorityTaskWoken ), queueOVERWRITE )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueSendFromISR(
@@ -1304,7 +1304,7 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
  * }
  * @endcode
  *
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueSendFromISR xQueueSendFromISR
  * @endcond
  * \ingroup QueueManagement
@@ -1312,10 +1312,10 @@ void vQueueDelete( QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 #define xQueueSendFromISR( xQueue, pvItemToQueue, pxHigherPriorityTaskWoken ) \
     xQueueGenericSendFromISR( ( xQueue ), ( pvItemToQueue ), ( pxHigherPriorityTaskWoken ), queueSEND_TO_BACK )
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 /**@{*/
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueGenericSendFromISR(
@@ -1402,7 +1402,7 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
 /** @endcond */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * queue. h
  * @code{c}
  * BaseType_t xQueueReceiveFromISR(
@@ -1487,7 +1487,7 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xQueueReceiveFromISR xQueueReceiveFromISR
  * @endcond
  * \ingroup QueueManagement
@@ -1504,7 +1504,7 @@ BaseType_t xQueueIsQueueEmptyFromISR( const QueueHandle_t xQueue ) PRIVILEGED_FU
 BaseType_t xQueueIsQueueFullFromISR( const QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 UBaseType_t uxQueueMessagesWaitingFromISR( const QueueHandle_t xQueue ) PRIVILEGED_FUNCTION;
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 /*
  * The functions defined above are for passing data to and from tasks.  The
  * functions below are the equivalents for passing data to and from
@@ -1778,7 +1778,7 @@ QueueSetMemberHandle_t xQueueSelectFromSet( QueueSetHandle_t xQueueSet,
  */
 QueueSetMemberHandle_t xQueueSelectFromSetFromISR( QueueSetHandle_t xQueueSet ) PRIVILEGED_FUNCTION;
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 
 /* Not public API functions. */
 void vQueueWaitForMessageRestricted( QueueHandle_t xQueue,

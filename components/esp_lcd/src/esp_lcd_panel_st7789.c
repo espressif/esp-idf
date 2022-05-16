@@ -150,7 +150,7 @@ static esp_err_t panel_st7789_init(esp_lcd_panel_t *panel)
     esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
     esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
-        0
+        st7789->madctl_val,
     }, 1);
     esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, (uint8_t[]) {
         st7789->colmod_cal,

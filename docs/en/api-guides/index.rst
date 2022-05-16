@@ -21,6 +21,7 @@ API Guides
     :SOC_SPIRAM_SUPPORTED: External SPI-connected RAM <external-ram>
     Fatal Errors <fatal-errors>
     Flash Encryption <../security/flash-encryption>
+    :esp32s3: Flash and External SPI RAM Configuration <flash_psram_config>
     FreeRTOS SMP Changes <freertos-smp>
     Hardware Abstraction <hardware-abstraction>
     :CONFIG_IDF_TARGET_ARCH_XTENSA: High Level Interrupts <hlinterrupts>

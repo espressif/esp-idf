@@ -28,6 +28,21 @@ def action_extensions(base_actions, project_path):
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
 
+    def size_target(target_name, ctx, args):
+        """
+        Builds the app and then executes a size-related target passed in 'target_name'.
+        `tool_error_handler` handler is used to suppress errors during the build,
+        so size action can run even in case of overflow.
+
+        """
+
+        def tool_error_handler(e):
+            pass
+
+        ensure_build_directory(args, ctx.info_name)
+        run_target('all', args, custom_error_handler=tool_error_handler)
+        run_target(target_name, args)
+
     def list_build_system_targets(target_name, ctx, args):
         """Shows list of targets known to build sytem (make/ninja)"""
         build_target('help', ctx, args)
@@ -359,22 +374,19 @@ def action_extensions(base_actions, project_path):
                 'options': global_options,
             },
             'size': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print basic size information about the app.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'size-components': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print per-component size information.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'size-files': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print per-source-file size information.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'bootloader': {
                 'callback': build_target,
@@ -387,38 +399,78 @@ def action_extensions(base_actions, project_path):
                 'order_dependencies': ['clean', 'fullclean', 'reconfigure'],
                 'options': global_options,
             },
+            'efuse-common-table': {
+                'callback': build_target,
+                'help': 'Generate C-source for IDF\'s eFuse fields. Deprecated alias: "efuse_common_table".',
+                'order_dependencies': ['reconfigure'],
+                'options': global_options,
+            },
             'efuse_common_table': {
                 'callback': build_target,
+                'hidden': True,
                 'help': "Generate C-source for IDF's eFuse fields.",
+                'order_dependencies': ['reconfigure'],
+                'options': global_options,
+            },
+            'efuse-custom-table': {
+                'callback': build_target,
+                'help': 'Generate C-source for user\'s eFuse fields. Deprecated alias: "efuse_custom_table".',
                 'order_dependencies': ['reconfigure'],
                 'options': global_options,
             },
             'efuse_custom_table': {
                 'callback': build_target,
-                'help': "Generate C-source for user's eFuse fields.",
+                'hidden': True,
+                'help': 'Generate C-source for user\'s eFuse fields.',
+                'order_dependencies': ['reconfigure'],
+                'options': global_options,
+            },
+            'show-efuse-table': {
+                'callback': build_target,
+                'help': 'Print eFuse table. Deprecated alias: "show_efuse_table".',
                 'order_dependencies': ['reconfigure'],
                 'options': global_options,
             },
             'show_efuse_table': {
                 'callback': build_target,
+                'hidden': True,
                 'help': 'Print eFuse table.',
+                'order_dependencies': ['reconfigure'],
+                'options': global_options,
+            },
+            'partition-table': {
+                'callback': build_target,
+                'help': 'Build only partition table. Deprecated alias: "parititon_table".',
                 'order_dependencies': ['reconfigure'],
                 'options': global_options,
             },
             'partition_table': {
                 'callback': build_target,
+                'hidden': True,
                 'help': 'Build only partition table.',
                 'order_dependencies': ['reconfigure'],
                 'options': global_options,
             },
             'erase_otadata': {
                 'callback': build_target,
+                'hidden': True,
                 'help': 'Erase otadata partition.',
+                'options': global_options,
+            },
+            'erase-otadata': {
+                'callback': build_target,
+                'help': 'Erase otadata partition. Deprecated alias: "erase_otadata".',
                 'options': global_options,
             },
             'read_otadata': {
                 'callback': build_target,
+                'hidden': True,
                 'help': 'Read otadata partition.',
+                'options': global_options,
+            },
+            'read-otadata': {
+                'callback': build_target,
+                'help': 'Read otadata partition. Deprecated alias: "read_otadata".',
                 'options': global_options,
             },
             'build-system-targets': {

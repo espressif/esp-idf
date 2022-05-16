@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,6 @@
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
-
-#include "esp_rom_sys.h"
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
@@ -196,12 +194,13 @@ typedef struct {
             uint32_t reserved28: 28;
         } ctrl;                             //Control transfer related
         struct {
-            uint32_t zero_len_packet: 1;    //Bulk transfer should add a zero length packet at the end regardless
+            uint32_t zero_len_packet: 1;    //Added a zero length packet, so transfer consists of 2 QTDs
             uint32_t reserved31: 31;
         } bulk;                             //Bulk transfer related
         struct {
-            uint32_t num_qtds: 8;           //Number of transfer descriptors filled
-            uint32_t reserved24: 24;
+            uint32_t num_qtds: 8;           //Number of transfer descriptors filled (excluding zero length packet)
+            uint32_t zero_len_packet: 1;    //Added a zero length packet, so true number descriptors is num_qtds + 1
+            uint32_t reserved23: 23;
         } intr;                             //Interrupt transfer related
         struct {
             uint32_t num_qtds: 8;           //Number of transfer descriptors filled (including NULL descriptors)
@@ -214,7 +213,8 @@ typedef struct {
     union {
         struct {
             uint32_t executing: 1;          //The buffer is currently executing
-            uint32_t reserved7: 7;
+            uint32_t was_canceled: 1;      //Buffer was done due to a cancellation (i.e., a halt request)
+            uint32_t reserved6: 6;
             uint32_t stop_idx: 8;           //The descriptor index when the channel was halted
             hcd_pipe_event_t pipe_event: 8; //The pipe event when the buffer was done
             uint32_t reserved8: 8;
@@ -257,7 +257,7 @@ struct pipe_obj {
     //Pipe status/state/events related
     hcd_pipe_state_t state;
     hcd_pipe_event_t last_event;
-    TaskHandle_t task_waiting_pipe_notif;   //Task handle used for internal pipe events
+    volatile TaskHandle_t task_waiting_pipe_notif;  //Task handle used for internal pipe events. Set by waiter, cleared by notifier
     union {
         struct {
             uint32_t waiting_halt: 1;
@@ -290,7 +290,7 @@ struct port_obj {
     hcd_port_state_t state;
     usb_speed_t speed;
     hcd_port_event_t last_event;
-    TaskHandle_t task_waiting_port_notif;           //Task handle used for internal port events
+    volatile TaskHandle_t task_waiting_port_notif;  //Task handle used for internal port events. Set by waiter, cleared by notifier
     union {
         struct {
             uint32_t event_pending: 1;              //The port has an event that needs to be handled
@@ -423,13 +423,15 @@ static void _buffer_exec_cont(pipe_t *pipe);
  *
  * @param pipe Pipe object
  * @param stop_idx Descriptor index when the buffer stopped execution
- * @param pipe_event Pipe event that caused the buffer to be complete
+ * @param pipe_event Pipe event that caused the buffer to be complete. Use HCD_PIPE_EVENT_NONE for halt request of disconnections
+ * @param canceled Whether the buffer was done due to a canceled (i.e., halt request). Must set pipe_event to HCD_PIPE_EVENT_NONE
  */
-static inline void _buffer_done(pipe_t *pipe, int stop_idx, hcd_pipe_event_t pipe_event)
+static inline void _buffer_done(pipe_t *pipe, int stop_idx, hcd_pipe_event_t pipe_event, bool canceled)
 {
     //Store the stop_idx and pipe_event for later parsing
     dma_buffer_block_t *buffer_done = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     buffer_done->status_flags.executing = 0;
+    buffer_done->status_flags.was_canceled = canceled;
     buffer_done->status_flags.stop_idx = stop_idx;
     buffer_done->status_flags.pipe_event = pipe_event;
     pipe->multi_buffer_control.rd_idx++;
@@ -474,11 +476,11 @@ static void _buffer_parse(pipe_t *pipe);
  * @note This should only be called on pipes do not have any currently executing buffers.
  *
  * @param pipe Pipe object
- * @param cancelled Whether this flush is due to cancellation
+ * @param canceled Whether this flush is due to cancellation
  * @return true One or more buffers were flushed
  * @return false There were no buffers that needed to be flushed
  */
-static bool _buffer_flush_all(pipe_t *pipe, bool cancelled);
+static bool _buffer_flush_all(pipe_t *pipe, bool canceled);
 
 // ------------------------ Pipe ---------------------------
 
@@ -689,22 +691,28 @@ static void _internal_port_event_wait(port_t *port)
     //There must NOT be another thread/task already waiting for an internal event
     assert(port->task_waiting_port_notif == NULL);
     port->task_waiting_port_notif = xTaskGetCurrentTaskHandle();
-    HCD_EXIT_CRITICAL();
-    //Wait to be notified from ISR
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    HCD_ENTER_CRITICAL();
-    port->task_waiting_port_notif = NULL;
+    /* We need to loop as task notifications can come from anywhere. If we this
+    was a port event notification, task_waiting_port_notif will have been cleared
+    by the notifier. */
+    while (port->task_waiting_port_notif != NULL) {
+        HCD_EXIT_CRITICAL();
+        //Wait to be notified from ISR
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        HCD_ENTER_CRITICAL();
+    }
 }
 
 static bool _internal_port_event_notify_from_isr(port_t *port)
 {
     //There must be a thread/task waiting for an internal event
     assert(port->task_waiting_port_notif != NULL);
-    BaseType_t xTaskWoken = pdFALSE;
+    TaskHandle_t task_to_unblock = port->task_waiting_port_notif;
+    //Clear task_waiting_port_notif to indicate to the waiter that the unblock was indeed an port event notification
+    port->task_waiting_port_notif = NULL;
     //Unblock the thread/task waiting for the notification
-    HCD_EXIT_CRITICAL_ISR();
-    vTaskNotifyGiveFromISR(port->task_waiting_port_notif, &xTaskWoken);
-    HCD_ENTER_CRITICAL_ISR();
+    BaseType_t xTaskWoken = pdFALSE;
+    //Note: We don't exit the critical section to be atomic. vTaskNotifyGiveFromISR() doesn't block anyways
+    vTaskNotifyGiveFromISR(task_to_unblock, &xTaskWoken);
     return (xTaskWoken == pdTRUE);
 }
 
@@ -713,28 +721,34 @@ static void _internal_pipe_event_wait(pipe_t *pipe)
     //There must NOT be another thread/task already waiting for an internal event
     assert(pipe->task_waiting_pipe_notif == NULL);
     pipe->task_waiting_pipe_notif = xTaskGetCurrentTaskHandle();
-    HCD_EXIT_CRITICAL();
-    //Wait to be notified from ISR
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    HCD_ENTER_CRITICAL();
-    pipe->task_waiting_pipe_notif = NULL;
+    /* We need to loop as task notifications can come from anywhere. If we this
+    was a pipe event notification, task_waiting_pipe_notif will have been cleared
+    by the notifier. */
+    while (pipe->task_waiting_pipe_notif != NULL) {
+        //Wait to be unblocked by notified
+        HCD_EXIT_CRITICAL();
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        HCD_ENTER_CRITICAL();
+    }
 }
 
 static bool _internal_pipe_event_notify(pipe_t *pipe, bool from_isr)
 {
     //There must be a thread/task waiting for an internal event
     assert(pipe->task_waiting_pipe_notif != NULL);
+    TaskHandle_t task_to_unblock = pipe->task_waiting_pipe_notif;
+    //Clear task_waiting_pipe_notif to indicate to the waiter that the unblock was indeed an pipe event notification
+    pipe->task_waiting_pipe_notif = NULL;
     bool ret;
     if (from_isr) {
         BaseType_t xTaskWoken = pdFALSE;
-        HCD_EXIT_CRITICAL_ISR();
+        //Note: We don't exit the critical section to be atomic. vTaskNotifyGiveFromISR() doesn't block anyways
         //Unblock the thread/task waiting for the pipe notification
-        vTaskNotifyGiveFromISR(pipe->task_waiting_pipe_notif, &xTaskWoken);
-        HCD_ENTER_CRITICAL_ISR();
+        vTaskNotifyGiveFromISR(task_to_unblock, &xTaskWoken);
         ret = (xTaskWoken == pdTRUE);
     } else {
         HCD_EXIT_CRITICAL();
-        xTaskNotifyGive(pipe->task_waiting_pipe_notif);
+        xTaskNotifyGive(task_to_unblock);
         HCD_ENTER_CRITICAL();
         ret = false;
     }
@@ -836,7 +850,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
             event = pipe->last_event;
             //Mark the buffer as done
             int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
-            _buffer_done(pipe, stop_idx, pipe->last_event);
+            _buffer_done(pipe, stop_idx, pipe->last_event, false);
             //First check if there is another buffer we can execute. But we only want to execute if there's still a valid device
             if (_buffer_can_exec(pipe) && pipe->port->flags.conn_dev_ena) {
                 //If the next buffer is filled and ready to execute, execute it
@@ -854,13 +868,12 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
         case USBH_HAL_CHAN_EVENT_ERROR: {
             //Get and store the pipe error event
             usbh_hal_chan_error_t chan_error = usbh_hal_chan_get_error(chan_obj);
-            usbh_hal_chan_clear_error(chan_obj);
             pipe->last_event = pipe_decode_error_event(chan_error);
             event = pipe->last_event;
             pipe->state = HCD_PIPE_STATE_HALTED;
             //Mark the buffer as done with an error
             int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
-            _buffer_done(pipe, stop_idx, pipe->last_event);
+            _buffer_done(pipe, stop_idx, pipe->last_event, false);
             //Parse the buffer
             _buffer_parse(pipe);
             break;
@@ -873,7 +886,7 @@ static hcd_pipe_event_t _intr_hdlr_chan(pipe_t *pipe, usbh_hal_chan_t *chan_obj,
             //Halt request event is triggered when packet is successful completed. But just treat all halted transfers as errors
             pipe->state = HCD_PIPE_STATE_HALTED;
             int stop_idx = usbh_hal_chan_get_qtd_idx(chan_obj);
-            _buffer_done(pipe, stop_idx, HCD_PIPE_EVENT_NONE);
+            _buffer_done(pipe, stop_idx, HCD_PIPE_EVENT_NONE, true);
             //Parse the buffer
             _buffer_parse(pipe);
             //Notify the task waiting for the pipe halt
@@ -1013,20 +1026,6 @@ esp_err_t hcd_install(const hcd_config_t *config)
         goto err;
     }
     s_hcd_obj = p_hcd_obj_dmy;
-    //Set HW prerequisites for each port (there's only one)
-    periph_module_enable(PERIPH_USB_MODULE);
-    periph_module_reset(PERIPH_USB_MODULE);
-    /*
-    Configure GPIOS for Host mode operation using internal PHY
-        - Forces ID to GND for A side
-        - Forces B Valid to GND as we are A side host
-        - Forces VBUS Valid to HIGH
-        - Forces A Valid to HIGH
-    */
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_IDDIG_IN_IDX, false);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_SRP_BVALID_IN_IDX, false);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_AVALID_IN_IDX, false);
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 
@@ -1047,7 +1046,6 @@ esp_err_t hcd_uninstall(void)
         HCD_EXIT_CRITICAL();
         return ESP_ERR_INVALID_STATE;
     }
-    periph_module_disable(PERIPH_USB_MODULE);
     hcd_obj_t *p_hcd_obj_dmy = s_hcd_obj;
     s_hcd_obj = NULL;
     HCD_EXIT_CRITICAL();
@@ -1717,17 +1715,23 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
 static esp_err_t _pipe_cmd_halt(pipe_t *pipe)
 {
     esp_err_t ret;
-    //Pipe must be in the active state in order to be halted
-    if (pipe->state != HCD_PIPE_STATE_ACTIVE) {
-        ret = ESP_ERR_INVALID_STATE;
+
+    //If pipe is already halted, just return.
+    if (pipe->state == HCD_PIPE_STATE_HALTED) {
+        ret = ESP_OK;
         goto exit;
     }
-    //Request that the channel halts
-    if (!usbh_hal_chan_request_halt(pipe->chan_obj)) {
-        //We need to wait for channel to be halted. State will be updated in the ISR
-        pipe->cs_flags.waiting_halt = 1;
-        _internal_pipe_event_wait(pipe);
+    //If the pipe's port is invalid, we just mark the pipe as halted without needing to halt the underlying channel
+    if (pipe->port->flags.conn_dev_ena //Skip halting the underlying channel if the port is invalid
+        && !usbh_hal_chan_request_halt(pipe->chan_obj)) {   //Check if the channel is already halted
+            //Channel is not halted, we need to request and wait for a haltWe need to wait for channel to be halted.
+            pipe->cs_flags.waiting_halt = 1;
+            _internal_pipe_event_wait(pipe);
+            //State should have been updated in the ISR
+            assert(pipe->state == HCD_PIPE_STATE_HALTED);
     } else {
+        //We are already halted, just need to update the state
+        usbh_hal_chan_mark_halted(pipe->chan_obj);
         pipe->state = HCD_PIPE_STATE_HALTED;
     }
     ret = ESP_OK;
@@ -1743,11 +1747,11 @@ static esp_err_t _pipe_cmd_flush(pipe_t *pipe)
         ret = ESP_ERR_INVALID_STATE;
         goto exit;
     }
-    //Cannot have a currently executing buffer
-    assert(!pipe->multi_buffer_control.buffer_is_executing);
+    //If the port is still valid, we are canceling transfers. Otherwise, we are flushing due to a port error
+    bool canceled = pipe->port->flags.conn_dev_ena;
     bool call_pipe_cb;
     //Flush any filled buffers
-    call_pipe_cb = _buffer_flush_all(pipe, true);
+    call_pipe_cb = _buffer_flush_all(pipe, canceled);
     //Move all URBs from the pending tailq to the done tailq
     if (pipe->num_urb_pending > 0) {
         //Process all remaining pending URBs
@@ -1755,14 +1759,14 @@ static esp_err_t _pipe_cmd_flush(pipe_t *pipe)
         TAILQ_FOREACH(urb, &pipe->pending_urb_tailq, tailq_entry) {
             //Update the URB's current state
             urb->hcd_var = URB_HCD_STATE_DONE;
-            //We are canceling the URB. Update its actual_num_bytes and status
+            //URBs were never executed, Update the actual_num_bytes and status
             urb->transfer.actual_num_bytes = 0;
-            urb->transfer.status = USB_TRANSFER_STATUS_CANCELED;
+            urb->transfer.status = (canceled) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
             if (pipe->ep_char.type == USB_PRIV_XFER_TYPE_ISOCHRONOUS) {
                 //Update the URB's isoc packet descriptors as well
                 for (int pkt_idx = 0; pkt_idx < urb->transfer.num_isoc_packets; pkt_idx++) {
                     urb->transfer.isoc_packet_desc[pkt_idx].actual_num_bytes = 0;
-                    urb->transfer.isoc_packet_desc[pkt_idx].status = USB_TRANSFER_STATUS_CANCELED;
+                    urb->transfer.isoc_packet_desc[pkt_idx].status = (canceled) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
                 }
             }
         }
@@ -2011,7 +2015,6 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
     pipe_t *pipe = (pipe_t *)pipe_hdl;
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(pipe->port->port_mux, portMAX_DELAY);
     HCD_ENTER_CRITICAL();
     //Cannot execute pipe commands the pipe is already executing a command, or if the pipe or its port are no longer valid
     if (pipe->cs_flags.reset_lock) {
@@ -2035,7 +2038,6 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
         pipe->cs_flags.pipe_cmd_processing = 0;
     }
     HCD_EXIT_CRITICAL();
-    xSemaphoreGive(pipe->port->port_mux);
     return ret;
 }
 
@@ -2066,8 +2068,8 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t 
         //Not data stage. Fill with an empty descriptor
         usbh_hal_xfer_desc_clear(buffer->xfer_desc_list, 1);
     } else {
-        //Fill data stage
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_setup_packet_t), setup_pkt->wLength,
+        //Fill data stage. Note that we still fill with transfer->num_bytes instead of setup_pkt->wLength as it's possible to require more bytes than wLength
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_setup_packet_t), transfer->num_bytes - sizeof(usb_setup_packet_t),
                                 ((data_stg_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
     }
     //Fill status stage (i.e., a zero length packet). If data stage is skipped, the status stage is always IN.
@@ -2079,46 +2081,68 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t 
     buffer->flags.ctrl.cur_stg = 0;
 }
 
-static inline void _buffer_fill_bulk(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in)
+static inline void _buffer_fill_bulk(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps)
 {
+    //Only add a zero length packet if OUT, flag is set, and transfer length is multiple of EP's MPS
+    //Minor optimization: Do the mod operation last
+    bool zero_len_packet = !is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) && (transfer->num_bytes % mps == 0);
     if (is_in) {
         usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes,
                                 USBH_HAL_XFER_DESC_FLAG_IN | USBH_HAL_XFER_DESC_FLAG_HOC);
-    } else if (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) {
-        //We need to add an extra zero length packet, so two descriptors are used
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, 0);
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
-    } else {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, USBH_HAL_XFER_DESC_FLAG_HOC);
+    } else { //OUT
+        if (zero_len_packet) {
+            //Adding a zero length packet, so two descriptors are used.
+            usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, 0);
+            usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
+        } else {
+            //Zero length packet not required. One descriptor is enough
+            usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, USBH_HAL_XFER_DESC_FLAG_HOC);
+        }
     }
     //Update buffer flags
-    buffer->flags.bulk.zero_len_packet = (is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK)) ? 1 : 0;
+    buffer->flags.bulk.zero_len_packet = zero_len_packet;
 }
 
 static inline void _buffer_fill_intr(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps)
 {
     int num_qtds;
+    int mod_mps = transfer->num_bytes % mps;
+    //Only add a zero length packet if OUT, flag is set, and transfer length is multiple of EP's MPS
+    bool zero_len_packet = !is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) && (mod_mps == 0);
     if (is_in) {
-        assert(transfer->num_bytes % mps == 0);  //IN transfers MUST be integer multiple of MPS
-        num_qtds = transfer->num_bytes / mps;
+        assert(mod_mps == 0);  //IN transfers MUST be integer multiple of MPS
+        num_qtds = transfer->num_bytes / mps;   //Can just floor divide as it's already multiple of MPS
     } else {
-        num_qtds = transfer->num_bytes / mps;    //Floor division for number of MPS packets
-        if (transfer->num_bytes % transfer->num_bytes > 0) {
-            num_qtds++; //For the last shot packet
+        num_qtds = transfer->num_bytes / mps;   //Floor division to get the number of MPS sized packets
+        if (mod_mps > 0) {
+            num_qtds++; //Add a short packet for the remainder
         }
     }
-    assert(num_qtds <= XFER_LIST_LEN_INTR);
-    //Fill all but last descriptor
+    assert((zero_len_packet) ? num_qtds + 1 : num_qtds <= XFER_LIST_LEN_INTR); //Check that the number of QTDs doesn't exceed the QTD list's length
+
+    uint32_t xfer_desc_flags = (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0;
     int bytes_filled = 0;
+    //Fill all but last QTD
     for (int i = 0; i < num_qtds - 1; i++) {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, i, &transfer->data_buffer[bytes_filled], mps, (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0);
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, i, &transfer->data_buffer[bytes_filled], mps, xfer_desc_flags);
         bytes_filled += mps;
     }
-    //Fill in the last descriptor with HOC flag
-    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
-                            ((is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
+    //Fill last QTD and zero length packet
+    if (zero_len_packet) {
+        //Fill in last data packet without HOC flag
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
+                                xfer_desc_flags);
+        //HOC flag goes to zero length packet instead
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
+    } else {
+        //Zero length packet not required. Fill in last QTD with HOC flag
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
+                                xfer_desc_flags | USBH_HAL_XFER_DESC_FLAG_HOC);
+    }
+
     //Update buffer members and flags
     buffer->flags.intr.num_qtds = num_qtds;
+    buffer->flags.intr.zero_len_packet = zero_len_packet;
 }
 
 static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps, int interval, int start_idx)
@@ -2167,6 +2191,7 @@ static void _buffer_fill(pipe_t *pipe)
     //Select the inactive buffer
     assert(pipe->multi_buffer_control.buffer_num_to_exec <= NUM_BUFFERS);
     dma_buffer_block_t *buffer_to_fill = pipe->buffers[pipe->multi_buffer_control.wr_idx];
+    buffer_to_fill->status_flags.val = 0;   //Clear the buffer's status flags
     assert(buffer_to_fill->urb == NULL);
     bool is_in = pipe->ep_char.bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     int mps = pipe->ep_char.mps;
@@ -2203,7 +2228,7 @@ static void _buffer_fill(pipe_t *pipe)
             break;
         }
         case USB_PRIV_XFER_TYPE_BULK: {
-            _buffer_fill_bulk(buffer_to_fill, transfer, is_in);
+            _buffer_fill_bulk(buffer_to_fill, transfer, is_in, mps);
             break;
         }
         case USB_PRIV_XFER_TYPE_INTR: {
@@ -2252,7 +2277,7 @@ static void _buffer_exec(pipe_t *pipe)
         }
         case USB_PRIV_XFER_TYPE_INTR: {
             start_idx = 0;
-            desc_list_len = buffer_to_exec->flags.intr.num_qtds;
+            desc_list_len = (buffer_to_exec->flags.intr.zero_len_packet) ? buffer_to_exec->flags.intr.num_qtds + 1 : buffer_to_exec->flags.intr.num_qtds;
             break;
         }
         default: {
@@ -2372,7 +2397,7 @@ static inline void _buffer_parse_intr(dma_buffer_block_t *buffer, bool is_in, in
             transfer->actual_num_bytes = transfer->num_bytes - last_packet_rem_len;
         }
     } else {
-        //OUT INTR transfers can only complete successfully if all MPS packets have been transmitted. Double check
+        //OUT INTR transfers can only complete successfully if all packets have been transmitted. Double check
         for (int i = 0 ; i < buffer->flags.intr.num_qtds; i++) {
             int rem_len;
             int desc_status;
@@ -2419,16 +2444,13 @@ static inline void _buffer_parse_isoc(dma_buffer_block_t *buffer, bool is_in)
 
 static inline void _buffer_parse_error(dma_buffer_block_t *buffer)
 {
-    //The URB had an error, so we consider that NO bytes were transferred. Set actual_num_bytes to zero
+    //The URB had an error in one of its packet, or a port error), so we the entire URB an error.
     usb_transfer_t *transfer = &buffer->urb->transfer;
     transfer->actual_num_bytes = 0;
-    for (int i = 0; i < transfer->num_isoc_packets; i++) {
-        transfer->isoc_packet_desc[i].actual_num_bytes = 0;
-    }
-    //Update status of URB. Status will depend on the pipe_event
+    //Update the overall status of URB. Status will depend on the pipe_event
     switch (buffer->status_flags.pipe_event) {
         case HCD_PIPE_EVENT_NONE:
-            transfer->status = USB_TRANSFER_STATUS_CANCELED;
+            transfer->status = (buffer->status_flags.was_canceled) ? USB_TRANSFER_STATUS_CANCELED : USB_TRANSFER_STATUS_NO_DEVICE;
             break;
         case HCD_PIPE_EVENT_ERROR_XFER:
             transfer->status = USB_TRANSFER_STATUS_ERROR;
@@ -2496,12 +2518,12 @@ static void _buffer_parse(pipe_t *pipe)
     pipe->multi_buffer_control.buffer_num_to_fill++;
 }
 
-static bool _buffer_flush_all(pipe_t *pipe, bool cancelled)
+static bool _buffer_flush_all(pipe_t *pipe, bool canceled)
 {
     int cur_num_to_mark_done = pipe->multi_buffer_control.buffer_num_to_exec;
     for (int i = 0; i < cur_num_to_mark_done; i++) {
         //Mark any filled buffers as done
-        _buffer_done(pipe, 0, HCD_PIPE_EVENT_NONE);
+        _buffer_done(pipe, 0, HCD_PIPE_EVENT_NONE, canceled);
     }
     int cur_num_to_parse = pipe->multi_buffer_control.buffer_num_to_parse;
     for (int i = 0; i < cur_num_to_parse; i++) {

@@ -1,0 +1,92 @@
+menu "Example Configuration"
+
+    choice
+        prompt "Enterprise configuration to be used"
+        default EXAMPLE_WPA_WPA2_ENTERPRISE
+        config EXAMPLE_WPA_WPA2_ENTERPRISE
+            bool "WPA_WPA2_ENT"
+        config EXAMPLE_WPA3_ENTERPRISE
+            bool "WPA3_ENT"
+        config EXAMPLE_WPA3_192BIT_ENTERPRISE
+            bool "WPA3_192BIT_ENT"
+            depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+    endchoice
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "wpa2_test"
+        help
+            SSID (network name) for the example to connect to.
+
+    if EXAMPLE_WPA_WPA2_ENTERPRISE
+        config EXAMPLE_VALIDATE_SERVER_CERT
+            bool "Validate server"
+            default y
+            help
+                Validate the servers' certificate using CA cert.
+    endif
+
+    if !EXAMPLE_WPA_WPA2_ENTERPRISE
+        config EXAMPLE_VALIDATE_SERVER_CERT
+            default y
+    endif
+
+    choice
+        prompt "EAP method for the example to use"
+        default EXAMPLE_EAP_METHOD_PEAP
+        config EXAMPLE_EAP_METHOD_TLS
+            bool "TLS"
+        config EXAMPLE_EAP_METHOD_PEAP
+            bool "PEAP"
+        config EXAMPLE_EAP_METHOD_TTLS
+            bool "TTLS"
+    endchoice
+
+    config EXAMPLE_EAP_METHOD
+        int
+        default 0 if EXAMPLE_EAP_METHOD_TLS
+        default 1 if EXAMPLE_EAP_METHOD_PEAP
+        default 2 if EXAMPLE_EAP_METHOD_TTLS
+
+    choice
+        prompt "Phase2 method for TTLS"
+        depends on EXAMPLE_EAP_METHOD_TTLS
+        default EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAPV2
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAPV2
+            bool "MSCHAPV2"
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAP
+            bool "MSCHAP"
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_PAP
+            bool "PAP"
+        config EXAMPLE_EAP_METHOD_TTLS_PHASE2_CHAP
+            bool "CHAP"
+    endchoice
+
+    config EXAMPLE_EAP_METHOD_TTLS_PHASE_2
+        int
+        default 1 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAPV2
+        default 2 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_MSCHAP
+        default 3 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_PAP
+        default 4 if EXAMPLE_EAP_METHOD_TTLS_PHASE2_CHAP
+
+    config EXAMPLE_EAP_ID
+        string "EAP ID"
+        default "example@espressif.com"
+        help
+            Identity in phase 1 of EAP procedure.
+
+    config EXAMPLE_EAP_USERNAME
+        string "EAP USERNAME"
+        depends on EXAMPLE_EAP_METHOD_PEAP || EXAMPLE_EAP_METHOD_TTLS
+        default "espressif"
+        help
+            Username for EAP method (PEAP and TTLS).
+
+    config EXAMPLE_EAP_PASSWORD
+        string "EAP PASSWORD"
+        depends on EXAMPLE_EAP_METHOD_PEAP || EXAMPLE_EAP_METHOD_TTLS
+        default "test11"
+        help
+            Password for EAP method (PEAP and TTLS).
+
+endmenu

@@ -328,7 +328,7 @@ esp_err_t uart_enable_rx_intr(uart_port_t uart_num);
 esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 
 /**
- * @brief Disable UART TX interrupt (TX_FULL & TX_TIMEOUT INTERRUPT)
+ * @brief Disable UART TX interrupt (TXFIFO_EMPTY INTERRUPT)
  *
  * @param uart_num  UART port number
  *
@@ -339,7 +339,7 @@ esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
 
 /**
- * @brief Enable UART TX interrupt (TX_FULL & TX_TIMEOUT INTERRUPT)
+ * @brief Enable UART TX interrupt (TXFIFO_EMPTY INTERRUPT)
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable  1: enable; 0: disable

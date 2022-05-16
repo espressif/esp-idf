@@ -509,7 +509,7 @@ void btm_acl_device_down (void)
     BTM_TRACE_DEBUG ("btm_acl_device_down\n");
     for (list_node_t *p_node = list_begin(btm_cb.p_acl_db_list); p_node; p_node = list_next(p_node)) {
        p = list_node(p_node);
-       if (!p && p->in_use) {
+       if (p && p->in_use) {
            BTM_TRACE_DEBUG ("hci_handle=%d HCI_ERR_HW_FAILURE \n", p->hci_handle );
            l2c_link_hci_disc_comp (p->hci_handle, HCI_ERR_HW_FAILURE);
        }
@@ -954,8 +954,10 @@ void btm_read_remote_version_complete (UINT8 *p)
                 if (HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl_cb->peer_le_features)) {
                     uint16_t data_length = controller_get_interface()->get_ble_default_data_packet_length();
                     uint16_t data_txtime = controller_get_interface()->get_ble_default_data_packet_txtime();
-                    p_acl_cb->data_len_updating = true;
-                    btsnd_hcic_ble_set_data_length(p_acl_cb->hci_handle, data_length, data_txtime);
+                    if (data_length != p_acl_cb->data_length_params.tx_len) {
+                        p_acl_cb->data_len_updating = true;
+                        btsnd_hcic_ble_set_data_length(p_acl_cb->hci_handle, data_length, data_txtime);
+                    }
                 }
                 l2cble_notify_le_connection (p_acl_cb->remote_addr);
             } else {

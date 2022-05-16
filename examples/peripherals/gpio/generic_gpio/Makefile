@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := generic-gpio
+PROJECT_NAME := generic_gpio
 
 include $(IDF_PATH)/make/project.mk

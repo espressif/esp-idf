@@ -2,18 +2,20 @@
 ============
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="v2", esp32="v1"}
+
 概述
 ------------
 
 触摸传感器系统由保护覆盖层、触摸电极、绝缘基板和走线组成，保护覆盖层位于最上层，绝缘基板上设有电极及走线。用户触摸覆盖层将产生电容变化，根据电容变化判断此次触摸是否为有效触摸行为。
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
-	ESP32 可最多支持 10 个电容式触摸传感器通道/GPIO。
+	ESP32 最多可支持 10 个电容式触摸传感器通道/GPIO。
 
-.. only:: esp32s2
+.. only:: SOC_TOUCH_VERSION_2
 
-    {IDF_TARGET_NAME} 可最多支持 14 个电容式触摸传感器通道/GPIO。
+    {IDF_TARGET_NAME} 最多可支持 14 个电容式触摸传感器通道/GPIO。
 
 触摸传感器可以以矩阵或滑条等方式组合使用，从而覆盖更大触感区域及更多触感点。触摸传感由软件或专用硬件计时器发起，由有限状态机 (FSM) 硬件控制。
 
@@ -21,7 +23,7 @@
 
 请参考 `触摸传感器应用方案简介 <https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md>`_，查看触摸传感器设计详情和固件开发指南。
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
 	如果想评估触摸传感器的多种应用场景，请查看 `ESP32 触摸功能开发套件 <https://github.com/espressif/esp-dev-kits/blob/master/esp32-sense-kit/docs/esp32_sense_kit_guide_en.md>`_。
 
@@ -59,7 +61,7 @@
 触摸状态测量
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     借助以下两个函数从传感器读取原始数据和滤波后的数据：
 
@@ -72,7 +74,7 @@
 
         使用 :cpp:func:`touch_pad_read_filtered` 之前，需要先调用 `滤波采样`_ 中特定的滤波器函数来初始化并配置该滤波器。
 
-.. only:: esp32s2
+.. only:: SOC_TOUCH_VERSION_2
 
     借助以下函数从传感器读取原始数据：
 
@@ -80,7 +82,7 @@
 
     该函数也可以用于检查触碰和释放触摸传感器时传感器读数变化范围，然后根据这些信息设定触摸传感器的触摸阈值。
 
-请参考应用示例 :example:`peripherals/touch_pad_read`，查看如何使用读取触摸传感器数据。
+请参考应用示例 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`，查看如何使用读取触摸传感器数据。
 
 优化测量
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,7 +117,7 @@
 
 滤波采样
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     如果测量中存在噪声，可以使用提供的 API 函数对采样进行滤波。使用滤波器之前，请先调用 :cpp:func:`touch_pad_filter_start` 启动该滤波器。
 
@@ -123,7 +125,7 @@
 
     如需停止滤波器，请调用 :cpp:func:`touch_pad_filter_stop` 函数。如果不再使用该滤波器，请调用 :cpp:func:`touch_pad_filter_delete` 删除此滤波器。
 
-.. only:: esp32s2
+.. only:: SOC_TOUCH_VERSION_2
 
     如果测量中存在噪声，可以使用提供的 API 函数对采样进行滤波。{IDF_TARGET_NAME} 的触摸功能提供了两套 API 可实现此功能。
 
@@ -139,7 +141,7 @@
 
 用户也可以将硬件触摸监测连接至中断，详细介绍见下一章节。
 
-如果测量中存在噪声，且电容变化幅度较小，硬件触摸监测结果可能就不太理想。如需解决这一问题，不建议使用硬件监测或中断信号，建议用户在自己的应用程序中进行采样滤波，并执行触摸监测。请参考 :example:`peripherals/touch_pad_interrupt`，查看以上两种触摸监测的实现方式。
+如果测量中存在噪声，且电容变化幅度较小，硬件触摸监测结果可能就不太理想。如需解决这一问题，不建议使用硬件监测或中断信号，建议用户在自己的应用程序中进行采样滤波，并执行触摸监测。请参考 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`，查看以上两种触摸监测的实现方式。
 
 中断触发
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -148,7 +150,7 @@
 
 确定监测阈值后就可以在初始化时调用 :cpp:func:`touch_pad_config` 设置此阈值，或在运行时调用 :cpp:func:`touch_pad_set_thresh` 设置此阈值。
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     下一步就是设置如何触发中断。用户可以设置在阈值以下或以上触发中断，具体触发模式由函数 :cpp:func:`touch_pad_set_trigger_mode` 设置。
 
@@ -159,13 +161,13 @@
 
 中断配置完成后，用户可以调用 :cpp:func:`touch_pad_get_status` 查看中断信号来自哪个触摸传感器，也可以调用 :cpp:func:`touch_pad_clear_status` 清除触摸传感器状态信息。
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     .. note::
 
         触摸监测中的中断信号基于原始/未经滤波的采样（对比用户设置的阈值），并在硬件中实现。启用软件滤波 API (请参考 :ref:`touch_pad-api-filtering-of-measurements`）并不会影响这一过程。
 
-.. only:: esp32
+.. only:: SOC_TOUCH_VERSION_1
 
     从睡眠模式唤醒
     ^^^^^^^^^^^^^^^^^^^^^^
@@ -182,8 +184,8 @@
 应用示例
 --------------------
 
-- 触摸传感器读值示例：:example:`peripherals/touch_pad_read`
-- 触摸传感器中断示例：:example:`peripherals/touch_pad_interrupt`
+- 触摸传感器读值示例：:example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`
+- 触摸传感器中断示例：:example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`
 
 .. _touch_pad-api-reference:
 

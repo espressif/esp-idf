@@ -8,6 +8,7 @@
 
 #include "soc/efuse_periph.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "assert.h"
 #include "sdkconfig.h"
 #include <sys/param.h>

@@ -300,4 +300,35 @@ menu "Wi-Fi"
             Select this option to enable power_management for station when disconnected.
             Chip will do modem-sleep when rf module is not in use any more.
 
+    config ESP_WIFI_EXTERNAL_COEXIST_ENABLE
+        bool "WiFi External Coexistence"
+        default n
+        depends on (!BT_ENABLED && (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3))
+        help
+            If enabled, HW External coexistence arbitration is managed by GPIO pins.
+            It can support three types of wired combinations so far which are 1-wired/2-wired/3-wired.
+            User can select GPIO pins in application code with configure interfaces.
+
+            This function depends on BT-off
+            because currently we don't support external coex and internal coex simultaneously.
+
+    config ESP_WIFI_GCMP_SUPPORT
+        bool "WiFi GCMP Support(GCMP128 and GCMP256)"
+        default n
+        depends on (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        help
+            Select this option to enable GCMP support. GCMP support is compulsory for WiFi Suite-B support.
+
+    config ESP_WIFI_GMAC_SUPPORT
+        bool "WiFi GMAC Support(GMAC128 and GMAC256)"
+        default n
+        help
+            Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
+
+    config ESP_WIFI_SOFTAP_SUPPORT
+        bool "WiFi SoftAP Support"
+        default y
+        help
+            WiFi module can be compiled without SoftAP to save code size.
+
 endmenu  # Wi-Fi

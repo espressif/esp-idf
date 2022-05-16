@@ -39,7 +39,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define semSEMAPHORE_QUEUE_ITEM_LENGTH      ( ( uint8_t ) 0U )
 #define semGIVE_BLOCK_TIME                  ( ( TickType_t ) 0U )
 
-/** @cond */
+/** @cond !DOC_EXCLUDE_HEADER_SECTION */
 /**
  * semphr. h
  * @code{c}
@@ -88,7 +88,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup vSemaphoreCreateBinary vSemaphoreCreateBinary
  * @endcond
  * \ingroup Semaphores
@@ -106,7 +106,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /** @endcond */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateBinary( void );
@@ -163,7 +163,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreCreateBinary xSemaphoreCreateBinary
  * @endcond
  * \ingroup Semaphores
@@ -173,7 +173,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateBinaryStatic( StaticSemaphore_t *pxSemaphoreBuffer );
@@ -229,7 +229,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  // Rest of task code goes here.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreCreateBinaryStatic xSemaphoreCreateBinaryStatic
  * @endcond
  * \ingroup Semaphores
@@ -239,7 +239,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * xSemaphoreTake(
@@ -304,7 +304,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreTake xSemaphoreTake
  * @endcond
  * \ingroup Semaphores
@@ -312,6 +312,16 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreTake( xSemaphore, xBlockTime )    xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
 
 /**
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
+ * semphr. h
+ * @code{c}
+ * xSemaphoreTakeRecursive(
+ *                          SemaphoreHandle_t xMutex,
+ *                          TickType_t xBlockTime
+ *                        );
+ * @endcode
+ * @endcond
+ *
  * <i>Macro</i> to recursively obtain, or 'take', a mutex type semaphore.
  * The mutex must have previously been created using a call to
  * xSemaphoreCreateRecursiveMutex();
@@ -393,28 +403,12 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreTakeRecursive xSemaphoreTakeRecursive
  * @endcond
  * \ingroup Semaphores
  */
 #define xSemaphoreTakeRecursive( xMutex, xBlockTime )   xQueueTakeMutexRecursive( ( xMutex ), ( xBlockTime ) )
-
-/** @cond */
-/*
- * xSemaphoreAltTake() is an alternative version of xSemaphoreTake().
- *
- * The source code that implements the alternative (Alt) API is much
- * simpler  because it executes everything from within a critical section.
- * This is  the approach taken by many other RTOSes, but FreeRTOS.org has the
- * preferred fully featured API too.  The fully featured API has more
- * complex  code that takes longer to execute, but makes much less use of
- * critical sections.  Therefore the alternative API sacrifices interrupt
- * responsiveness to gain execution speed, whereas the fully featured API
- * sacrifices execution speed to ensure better interrupt responsiveness.
- */
-#define xSemaphoreAltTake( xSemaphore, xBlockTime )     xQueueAltGenericReceive( ( QueueHandle_t ) ( xSemaphore ), NULL, ( xBlockTime ), pdFALSE )
-/** @endcond */
 
 /**
  * <i>Macro</i> to release a semaphore.  The semaphore must have previously been
@@ -471,7 +465,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreGive xSemaphoreGive
  * @endcond
  * \ingroup Semaphores
@@ -479,7 +473,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreGive( xSemaphore )    xQueueGenericSend( ( QueueHandle_t ) ( xSemaphore ), NULL, semGIVE_BLOCK_TIME, queueSEND_TO_BACK )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * xSemaphoreGiveRecursive( SemaphoreHandle_t xMutex );
@@ -561,29 +555,12 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreGiveRecursive xSemaphoreGiveRecursive
  * @endcond
  * \ingroup Semaphores
  */
 #define xSemaphoreGiveRecursive( xMutex )   xQueueGiveMutexRecursive( ( xMutex ) )
-
-/** @cond */
-/*
- * xSemaphoreAltGive() is an alternative version of xSemaphoreGive().
- *
- * The source code that implements the alternative (Alt) API is much
- * simpler  because it executes everything from within a critical section.
- * This is  the approach taken by many other RTOSes, but FreeRTOS.org has the
- * preferred fully featured API too.  The fully featured API has more
- * complex  code that takes longer to execute, but makes much less use of
- * critical sections.  Therefore the alternative API sacrifices interrupt
- * responsiveness to gain execution speed, whereas the fully featured API
- * sacrifices execution speed to ensure better interrupt responsiveness.
- */
-#define xSemaphoreAltGive( xSemaphore )     xQueueAltGenericSend( ( QueueHandle_t ) ( xSemaphore ), NULL, semGIVE_BLOCK_TIME, queueSEND_TO_BACK )
-
-/** @endcond */
 
 /**
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
@@ -664,7 +641,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreGiveFromISR xSemaphoreGiveFromISR
  * @endcond
  * \ingroup Semaphores
@@ -672,7 +649,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreGiveFromISR( xSemaphore, pxHigherPriorityTaskWoken )    xQueueGiveFromISR( ( QueueHandle_t ) ( xSemaphore ), ( pxHigherPriorityTaskWoken ) )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * xSemaphoreTakeFromISR(
@@ -709,7 +686,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreTakeFromISR( xSemaphore, pxHigherPriorityTaskWoken )    xQueueReceiveFromISR( ( QueueHandle_t ) ( xSemaphore ), NULL, ( pxHigherPriorityTaskWoken ) )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateMutex( void );
@@ -764,7 +741,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreCreateMutex xSemaphoreCreateMutex
  * @endcond
  * \ingroup Semaphores
@@ -774,7 +751,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateMutexStatic( StaticSemaphore_t *pxMutexBuffer );
@@ -831,7 +808,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  // so there is no need to check it.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreCreateMutexStatic xSemaphoreCreateMutexStatic
  * @endcond
  * \ingroup Semaphores
@@ -950,7 +927,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * returned.
  *
  * Example usage:
- * @code
+ * @code{c}
  *  SemaphoreHandle_t xSemaphore;
  *  StaticSemaphore_t xMutexBuffer;
  *
@@ -974,7 +951,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateCounting( UBaseType_t uxMaxCount, UBaseType_t uxInitialCount );
@@ -1050,7 +1027,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  }
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreCreateCounting xSemaphoreCreateCounting
  * @endcond
  * \ingroup Semaphores
@@ -1060,7 +1037,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #endif
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateCountingStatic( UBaseType_t uxMaxCount, UBaseType_t uxInitialCount, StaticSemaphore_t *pxSemaphoreBuffer );
@@ -1141,7 +1118,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *  // is no need to check its value.
  * }
  * @endcode
- * @cond
+ * @cond !DOC_SINGLE_GROUP
  * \defgroup xSemaphoreCreateCountingStatic xSemaphoreCreateCountingStatic
  * @endcond
  * \ingroup Semaphores
@@ -1151,7 +1128,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr. h
  * @code{c}
  * void vSemaphoreDelete( SemaphoreHandle_t xSemaphore );
@@ -1163,7 +1140,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * @param xSemaphore A handle to the semaphore to be deleted.
  *
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * \defgroup vSemaphoreDelete vSemaphoreDelete
  * @endcond
  * \ingroup Semaphores
@@ -1171,7 +1148,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define vSemaphoreDelete( xSemaphore )                   vQueueDelete( ( QueueHandle_t ) ( xSemaphore ) )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr.h
  * @code{c}
  * TaskHandle_t xSemaphoreGetMutexHolder( SemaphoreHandle_t xMutex );
@@ -1190,7 +1167,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreGetMutexHolder( xSemaphore )           xQueueGetMutexHolder( ( xSemaphore ) )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr.h
  * @code{c}
  * TaskHandle_t xSemaphoreGetMutexHolderFromISR( SemaphoreHandle_t xMutex );
@@ -1205,7 +1182,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreGetMutexHolderFromISR( xSemaphore )    xQueueGetMutexHolderFromISR( ( xSemaphore ) )
 
 /**
- * @cond
+ * @cond !DOC_EXCLUDE_HEADER_SECTION
  * semphr.h
  * @code{c}
  * UBaseType_t uxSemaphoreGetCount( SemaphoreHandle_t xSemaphore );

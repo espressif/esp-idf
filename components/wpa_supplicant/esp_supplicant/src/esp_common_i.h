@@ -1,17 +1,7 @@
-/**
- * Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ESP_COMMON_I_H
@@ -47,23 +37,20 @@ enum SIG_SUPPLICANT {
 };
 
 int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data);
-int esp_ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
-			    u32 rssi, u8 channel, u64 current_tsf);
-void esp_set_rm_enabled_ie(void);
 void esp_get_tx_power(uint8_t *tx_power);
-void esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
+int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
+void esp_set_scan_ie(void);
+void esp_set_assoc_ie(void);
 #else
 
 #include "esp_rrm.h"
 #include "esp_wnm.h"
+#include "esp_mbo.h"
 
-static inline void esp_set_rm_enabled_ie(void) {}
-static inline int esp_ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
-			    u32 rssi, u8 channel, u64 current_tsf)
-{
-	return -1;
-}
+static inline void esp_set_scan_ie(void) { }
+static inline void esp_set_assoc_ie(void) { }
+
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
@@ -77,5 +64,9 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 	return -1;
 }
 
+int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
+{
+	return -1;
+}
 #endif
 #endif

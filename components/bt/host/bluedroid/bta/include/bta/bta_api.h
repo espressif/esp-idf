@@ -78,7 +78,7 @@ typedef UINT8 tBTA_STATUS;
 #define BTA_SAP_SERVICE_ID      17          /* SIM Access profile */
 #define BTA_A2DP_SINK_SERVICE_ID        18  /* A2DP Sink */
 #define BTA_AVRCP_SERVICE_ID    19          /* A/V remote control */
-#define BTA_HID_SERVICE_ID      20          /* HID */
+#define BTA_HID_SERVICE_ID      20          /* HID Host*/
 #define BTA_VDP_SERVICE_ID      21          /* Video distribution */
 #define BTA_PBAP_SERVICE_ID     22          /* PhoneBook Access Server*/
 #define BTA_HSP_HS_SERVICE_ID   23          /* HFP HS role */
@@ -1331,8 +1331,8 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #endif
 
 #ifndef BTA_DM_PM_SNIFF2_MAX
-#define BTA_DM_PM_SNIFF2_MAX     180
-#define BTA_DM_PM_SNIFF2_MIN     150
+#define BTA_DM_PM_SNIFF2_MAX     54 //180
+#define BTA_DM_PM_SNIFF2_MIN     30 //150
 #define BTA_DM_PM_SNIFF2_ATTEMPT 4
 #define BTA_DM_PM_SNIFF2_TIMEOUT 1
 #endif
@@ -1345,8 +1345,8 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #endif
 
 #ifndef BTA_DM_PM_SNIFF4_MAX
-#define BTA_DM_PM_SNIFF4_MAX     54
-#define BTA_DM_PM_SNIFF4_MIN     30
+#define BTA_DM_PM_SNIFF4_MAX     18 //54
+#define BTA_DM_PM_SNIFF4_MIN     10 //30
 #define BTA_DM_PM_SNIFF4_ATTEMPT 4
 #define BTA_DM_PM_SNIFF4_TIMEOUT 1
 #endif

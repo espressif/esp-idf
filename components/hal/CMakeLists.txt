@@ -61,6 +61,7 @@ if(NOT BOOTLOADER_BUILD)
                     "systimer_hal.c"
                     "touch_sensor_hal.c"
                     "usb_hal.c"
+                    "usb_phy_hal.c"
                     "xt_wdt_hal.c"
                     "esp32s2/adc_hal.c"
                     "esp32s2/brownout_hal.c"
@@ -83,6 +84,7 @@ if(NOT BOOTLOADER_BUILD)
             "systimer_hal.c"
             "touch_sensor_hal.c"
             "usb_hal.c"
+            "usb_phy_hal.c"
             "xt_wdt_hal.c"
             "esp32s3/brownout_hal.c"
             "esp32s3/hmac_hal.c"
@@ -113,7 +115,6 @@ if(NOT BOOTLOADER_BUILD)
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
             "systimer_hal.c"
-            "esp32h2/adc_hal.c"
             "esp32h2/brownout_hal.c"
             "esp32h2/hmac_hal.c"
             "esp32h2/rtc_cntl_hal.c")

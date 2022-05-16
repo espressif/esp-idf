@@ -1,17 +1,7 @@
-/**
- * Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _ESP_WNM_H
@@ -29,11 +19,13 @@ enum btm_query_reason {
 	REASON_UNSPECIFIED = 0,
 	REASON_FRAME_LOSS = 1,
 	REASON_DELAY = 2,
-	REASON_QOS_CAPACITY = 3,
-	REASON_FIRST_ASSOC = 4,
-	REASON_LOAD_BALALNCE = 5,
-	REASON_BETTER_AP = 6,
-	REASON_CURRENT_DEAUTH = 7,
+	REASON_BANDWIDTH = 3,
+	REASON_LOAD_BALANCE = 4,
+	REASON_RSSI = 5,
+	REASON_RETRANSMISSIONS = 6,
+	REASON_INTERFERENCE = 7,
+	REASON_GRAY_ZONE = 8,
+	REASON_PREMIUM_AP = 9,
 };
 
 /**

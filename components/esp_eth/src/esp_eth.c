@@ -1,16 +1,8 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/cdefs.h>
 #include <stdatomic.h>
@@ -20,6 +12,7 @@
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "soc/soc.h" // TODO: for esp_eth_ioctl API compatibility reasons, will be removed with next major release
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -269,13 +262,11 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl)
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
     esp_eth_phy_t *phy = eth_driver->phy;
-    esp_eth_mac_t *mac = eth_driver->mac;
     // check if driver has stopped
     esp_eth_fsm_t expected_fsm = ESP_ETH_FSM_STOP;
     ESP_GOTO_ON_FALSE(atomic_compare_exchange_strong(&eth_driver->fsm, &expected_fsm, ESP_ETH_FSM_START),
                       ESP_ERR_INVALID_STATE, err, TAG, "driver started already");
     ESP_GOTO_ON_ERROR(phy->negotiate(phy), err, TAG, "phy negotiation failed");
-    ESP_GOTO_ON_ERROR(mac->start(mac), err, TAG, "start mac failed");
     ESP_GOTO_ON_ERROR(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(esp_eth_driver_t *), 0),
                       err, TAG, "send ETHERNET_EVENT_START event failed");
     ESP_GOTO_ON_ERROR(phy->get_link(phy), err, TAG, "phy get link status failed");
@@ -321,6 +312,13 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+
+    if (atomic_load(&eth_driver->fsm) != ESP_ETH_FSM_START) {
+        ret = ESP_ERR_INVALID_STATE;
+        ESP_LOGD(TAG, "Ethernet is not started");
+        goto err;
+    }
+
     ESP_GOTO_ON_FALSE(buf, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf to null");
     ESP_GOTO_ON_FALSE(length, ESP_ERR_INVALID_ARG, err, TAG, "buf length can't be zero");
     ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
@@ -360,8 +358,11 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_ERROR(mac->get_addr(mac, (uint8_t *)data), err, TAG, "get mac address failed");
         break;
     case ETH_CMD_S_PHY_ADDR:
-        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set phy addr to null");
-        ESP_GOTO_ON_ERROR(phy->set_addr(phy, (uint32_t)data), err, TAG, "set phy address failed");
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(phy->set_addr(phy, *(uint32_t *)data), err, TAG, "set phy address failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(phy->set_addr(phy, (uint32_t)data), err, TAG, "set phy address failed");
+        }
         break;
     case ETH_CMD_G_PHY_ADDR:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store phy addr");
@@ -372,15 +373,31 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         *(eth_speed_t *)data = eth_driver->speed;
         break;
     case ETH_CMD_S_PROMISCUOUS:
-        ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, (bool)data), err, TAG, "set promiscuous mode failed");
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, *(bool *)data), err, TAG, "set promiscuous mode failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, (bool)data), err, TAG, "set promiscuous mode failed");
+        }
         break;
     case ETH_CMD_S_FLOW_CTRL:
-        ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, (bool)data), err, TAG, "enable mac flow control failed");
-        ESP_GOTO_ON_ERROR(phy->advertise_pause_ability(phy, (uint32_t)data), err, TAG, "phy advertise pause ability failed");
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, *(bool *)data), err, TAG, "enable mac flow control failed");
+            ESP_GOTO_ON_ERROR(phy->advertise_pause_ability(phy, *(uint32_t *)data), err, TAG, "phy advertise pause ability failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, (bool)data), err, TAG, "enable mac flow control failed");
+            ESP_GOTO_ON_ERROR(phy->advertise_pause_ability(phy, (uint32_t)data), err, TAG, "phy advertise pause ability failed");
+        }
         break;
     case ETH_CMD_G_DUPLEX_MODE:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store duplex value");
         *(eth_duplex_t *)data = eth_driver->duplex;
+        break;
+    case ETH_CMD_S_PHY_LOOPBACK:
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(phy->loopback(phy, *(bool *)data), err, TAG, "configuration of phy loopback mode failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(phy->loopback(phy, (bool)data), err, TAG, "configuration of phy loopback mode failed");
+        }
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown io command: %d", cmd);

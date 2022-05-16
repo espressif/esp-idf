@@ -1,16 +1,5 @@
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import unicode_literals
 
@@ -53,9 +42,9 @@ def main():
     args = parser.parse_args()
 
     serial_instance = serial.serial_for_url(args.port, 115200, do_not_open=True)
-    monitor = idf_monitor.Monitor(serial_instance, args.elf_file, args.print_filter, 'make',
-                                  toolchain_prefix=args.toolchain_prefix, eol='CR',
-                                  decode_panic=args.decode_panic, target=args.target)
+    monitor = idf_monitor.SerialMonitor(serial_instance, args.elf_file, args.print_filter, 'make',
+                                        toolchain_prefix=args.toolchain_prefix, eol='CR',
+                                        decode_panic=args.decode_panic, target=args.target)
     sys.stderr.write('Monitor instance has been created.\n')
     monitor_thread = threading.Thread(target=monitor_serial_reader_state,
                                       args=(monitor.serial_reader, args.serial_alive_file))

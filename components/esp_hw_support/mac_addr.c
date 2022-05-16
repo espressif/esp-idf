@@ -75,8 +75,9 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
         return ESP_ERR_INVALID_MAC;
     }
 #if (ESP_MAC_ADDRESS_LEN == 8)
-    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN - size);
+    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN * 8 - size_bits);
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Reading MAC_EXT failed, error=%d", err);
         return err;
     }
 #endif
@@ -111,8 +112,9 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
         return err;
     }
 #if (ESP_MAC_ADDRESS_LEN == 8)
-    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN - size_bits / 8);
+    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN * 8 - size_bits);
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Reading MAC_EXT failed, error=%d", err);
         return err;
     }
 #endif

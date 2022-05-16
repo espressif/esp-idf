@@ -54,7 +54,7 @@ _xt_panic:
     s32i    a0, sp, XT_STK_A0
 
     /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
-    movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
+    movi    a0, PS_INTLEVEL(XCHAL_DEBUGLEVEL - 2) | PS_UM | PS_WOE
     wsr     a0, PS
 
     //Call panic handler

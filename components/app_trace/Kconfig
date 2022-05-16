@@ -18,11 +18,13 @@ menu "Application Level Tracing"
 
     config APPTRACE_DEST_TRAX
         bool
-        depends on IDF_TARGET_ARCH_XTENSA && !ESP32_TRAX && !ESP32S2_TRAX
+        depends on IDF_TARGET_ARCH_XTENSA && !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
         select ESP32_MEMMAP_TRACEMEM
         select ESP32S2_MEMMAP_TRACEMEM
+        select ESP32S3_MEMMAP_TRACEMEM
         select ESP32_MEMMAP_TRACEMEM_TWOBANKS
         select ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
+        select ESP32S3_MEMMAP_TRACEMEM_TWOBANKS
         default n
         help
             Enables/disable TRAX tracing HW.

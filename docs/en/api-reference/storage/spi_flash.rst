@@ -7,7 +7,7 @@ Overview
 --------
 The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash. The spi_flash component also has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`.
 
-Different from the API before IDF v4.0, the functionality of esp_flash_* APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access to external flashes chips connected to not only SPI0/1 but also other SPI buses like SPI2.
+Different from the API before IDF v4.0, the functionality of `esp_flash_*` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access to external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
 
 .. note::
 
@@ -20,7 +20,7 @@ Different from the API before IDF v4.0, the functionality of esp_flash_* APIs is
     Flash APIs after IDF v4.0 are no longer *atomic*. A writing operation during another on-going read operation, on the overlapped flash address, may cause the return data from the read operation to be partly same as before, and partly updated as new written.
 
 
-Kconfig option :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` can be used to switch ``spi_flash_*`` functions back to the implementation before IDF v4.0. However, the code size may get bigger if you use the new API and the old API the same time.
+Kconfig option :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` can be used to switch ``spi_flash_*`` functions back to the implementation before ESP-IDF v4.0. However, the code size may get bigger if you use the new API and the old API at the same time.
 
 Encrypted reads and writes use the old implementation, even if :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` is not enabled. As such, encrypted flash operations are only supported with the main flash chip (and not with other flash chips, that is on SPI1 with different CS, or on other SPI buses). Reading through cache is only supported on the main flash, which is determined by the HW.
 
@@ -29,7 +29,7 @@ Support for features of flash chips
 
 Flash features of different vendors are operated in different ways and need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
 
-The Quad mode (QIO/QOUT) the following chip types are supported:
+Quad mode (QIO/QOUT) is supported on following chip types:
 
 1. ISSI
 2. GD
@@ -38,6 +38,14 @@ The Quad mode (QIO/QOUT) the following chip types are supported:
 5. Winbond
 6. XMC
 7. BOYA
+
+.. only:: esp32s3
+
+    Octal mode (OPI) are supported on following chip types:
+
+    1. MXIC
+
+    To know how to configure menuconfig for a board with different Flash and PSRAM, please refer to the :ref:`SPI Flash and External SPI RAM Configuration <flash-psram-configuration>`
 
 The 32-bit address range of following chip type is supported:
 
@@ -96,7 +104,7 @@ Concurrency Constraints for flash on SPI1
 
 .. attention::
 
-   The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI Flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) will cause significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
+   The SPI0/1 bus is shared between the instruction & data cache (for firmware execution) and the SPI1 peripheral (controlled by the drivers including this SPI flash driver). Hence, calling SPI Flash API on SPI1 bus (including the main flash) will cause significant influence to the whole system. See :doc:`spi_flash_concurrency` for more details.
 
 .. _flash-partition-apis:
 
@@ -147,11 +155,12 @@ Memory mapping API are declared in ``esp_spi_flash.h`` and ``esp_partition.h``:
 Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap` are as follows:
 
 - :cpp:func:`spi_flash_mmap` must be given a {IDF_TARGET_CACHE_SIZE} aligned physical address.
-- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition, it will adjust the returned pointer to mapped memory as necessary
+- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition, it will adjust the returned pointer to mapped memory as necessary.
 
 Note that since memory mapping happens in pages, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``, regardless of the partition boundary.
 
-.. note:: mmap is supported by cache, so it can only be used on main flash.
+.. note::
+    mmap is supported by cache, so it can only be used on main flash.
 
 SPI Flash Implementation
 ------------------------
@@ -219,13 +228,13 @@ In order to perform some flash operations, it is necessary to make sure that bot
 - In a single-core setup, the SDK does it by disabling interrupts/scheduler before performing the flash operation.
 - In a dual-core setup, this is slightly more complicated as the SDK needs to make sure that the other CPU is not running any code from flash.
 
-When SPI flash API is called on CPU A (can be PRO or APP), start the spi_flash_op_block_func function on CPU B using the esp_ipc_call API. This API wakes up a high priority task on CPU B and tells it to execute a given function, in this case, spi_flash_op_block_func. This function disables cache on CPU B and signals that the cache is disabled by setting the s_flash_op_can_start flag. Then the task on CPU A disables cache as well and proceeds to execute flash operation.
+When SPI flash API is called on CPU A (can be PRO or APP), start the ``spi_flash_op_block_func`` function on CPU B using the ``esp_ipc_call`` API. This API wakes up a high priority task on CPU B and tells it to execute a given function, in this case, ``spi_flash_op_block_func``. This function disables cache on CPU B and signals that the cache is disabled by setting the ``s_flash_op_can_start`` flag. Then the task on CPU A disables cache as well and proceeds to execute flash operation.
 
 While a flash operation is running, interrupts can still run on CPUs A and B. It is assumed that all interrupt code is placed into RAM. Once the interrupt allocation API is added, a flag should be added to request the interrupt to be disabled for the duration of a flash operations.
 
-Once the flash operation is complete, the function on CPU A sets another flag, s_flash_op_complete, to let the task on CPU B know that it can re-enable cache and release the CPU. Then the function on CPU A re-enables the cache on CPU A as well and returns control to the calling code.
+Once the flash operation is complete, the function on CPU A sets another flag, ``s_flash_op_complete``, to let the task on CPU B know that it can re-enable cache and release the CPU. Then the function on CPU A re-enables the cache on CPU A as well and returns control to the calling code.
 
-Additionally, all API functions are protected with a mutex (s_flash_op_mutex).
+Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``).
 
 In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
 
@@ -247,5 +256,3 @@ API Reference - Flash Encrypt
 -----------------------------
 
 .. include-build-file:: inc/esp_flash_encrypt.inc
-
-

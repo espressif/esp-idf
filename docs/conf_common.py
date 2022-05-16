@@ -20,7 +20,29 @@ if os.environ.get('IDF_PATH') is None:
 
 BT_DOCS = ['api-guides/blufi.rst',
            'api-guides/esp-ble-mesh/**',
-           'api-reference/bluetooth/**']
+           'api-reference/bluetooth/bt_le.rst',
+           'api-reference/bluetooth/esp_bt_defs.rst',
+           'api-reference/bluetooth/esp_bt_device.rst',
+           'api-reference/bluetooth/esp_bt_main.rst',
+           'api-reference/bluetooth/bt_common.rst',
+           'api-reference/bluetooth/controller_vhci.rst',
+           'api-reference/bluetooth/esp_gap_ble.rst',
+           'api-reference/bluetooth/esp_gatt_defs.rst',
+           'api-reference/bluetooth/esp_gatts.rst',
+           'api-reference/bluetooth/esp_gattc.rst',
+           'api-reference/bluetooth/esp_blufi.rst',
+           'api-reference/bluetooth/esp-ble-mesh.rst',
+           'api-reference/bluetooth/index.rst',
+           'api-reference/bluetooth/nimble/index.rst']
+
+CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
+                   'api-reference/bluetooth/esp_a2dp.rst',
+                   'api-reference/bluetooth/esp_avrc.rst',
+                   'api-reference/bluetooth/esp_hf_defs.rst',
+                   'api-reference/bluetooth/esp_hf_client.rst',
+                   'api-reference/bluetooth/esp_hf_ag.rst',
+                   'api-reference/bluetooth/esp_spp.rst',
+                   'api-reference/bluetooth/esp_gap_bt.rst']
 
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst']
@@ -86,13 +108,15 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/touch_element.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
-                'api-reference/system/ipc.rst']
+                'api-reference/system/ipc.rst',
+                'api-guides/flash_psram_config.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_CLASSIC_BT_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
                             'SOC_MCPWM_SUPPORTED':MCPWM_DOCS,
@@ -141,9 +165,17 @@ html_context['github_repo'] = 'esp-idf'
 project_slug = 'esp-idf'
 versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
 
-idf_targets = ['esp32', 'esp32s2', 'esp32c3']
+idf_targets = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3']
 languages = ['en', 'zh_CN']
 
 google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
 
 project_homepage = 'https://github.com/espressif/esp-idf'
+
+# Custom added feature to allow redirecting old URLs
+with open('../page_redirects.txt') as f:
+    lines = [re.sub(' +', ' ', line.strip()) for line in f.readlines() if line.strip() != '' and not line.startswith('#')]
+    for line in lines:  # check for well-formed entries
+        if len(line.split(' ')) != 2:
+            raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
+html_redirect_pages = [tuple(line.split(' ')) for line in lines]

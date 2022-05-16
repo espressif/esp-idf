@@ -67,7 +67,9 @@ static const char REQUEST[] = "GET " WEB_URL " HTTP/1.1\r\n"
 */
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
-
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+esp_tls_client_session_t *tls_client_session = NULL;
+#endif
 static void https_get_request(esp_tls_cfg_t cfg)
 {
     char buf[512];
@@ -82,6 +84,12 @@ static void https_get_request(esp_tls_cfg_t cfg)
         goto exit;
     }
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    /* The TLS session is successfully established, now saving the session ctx for reuse */
+    if (tls_client_session == NULL) {
+        tls_client_session = esp_tls_get_client_session(tls);
+    }
+#endif
     size_t written_bytes = 0;
     do {
         ret = esp_tls_conn_write(tls,
@@ -143,6 +151,8 @@ static void https_get_request_using_crt_bundle(void)
     https_get_request(cfg);
 }
 
+
+
 static void https_get_request_using_cacert_buf(void)
 {
     ESP_LOGI(TAG, "https_request using cacert_buf");
@@ -169,6 +179,19 @@ static void https_get_request_using_global_ca_store(void)
     esp_tls_free_global_ca_store();
 }
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+static void https_get_request_using_already_saved_session(void)
+{
+    ESP_LOGI(TAG, "https_request using saved client session");
+    esp_tls_cfg_t cfg = {
+        .client_session = tls_client_session,
+    };
+    https_get_request(cfg);
+    free(tls_client_session);
+    tls_client_session = NULL;
+}
+#endif
+
 static void https_request_task(void *pvparameters)
 {
     ESP_LOGI(TAG, "Start https_request example");
@@ -176,7 +199,9 @@ static void https_request_task(void *pvparameters)
     https_get_request_using_crt_bundle();
     https_get_request_using_cacert_buf();
     https_get_request_using_global_ca_store();
-
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    https_get_request_using_already_saved_session();
+#endif
     ESP_LOGI(TAG, "Finish https_request example");
     vTaskDelete(NULL);
 }

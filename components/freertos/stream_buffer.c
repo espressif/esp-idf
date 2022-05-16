@@ -64,7 +64,9 @@
  * or #defined the notification macros away, then provide default implementations
  * that uses task notifications. */
 /*lint -save -e9026 Function like macros allowed and needed here so they can be overridden. */
+
 #ifndef sbRECEIVE_COMPLETED
+#ifdef ESP_PLATFORM // IDF-3775
     #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
     taskENTER_CRITICAL();                                                 \
     {                                                                     \
@@ -77,6 +79,20 @@
         }                                                                 \
     }                                                                     \
     taskEXIT_CRITICAL();
+#else
+    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
+    vTaskSuspendAll();                                                    \
+    {                                                                     \
+        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
+        {                                                                 \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend, \
+                                  ( uint32_t ) 0,                         \
+                                  eNoAction );                            \
+            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
+        }                                                                 \
+    }                                                                     \
+    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 #endif /* sbRECEIVE_COMPLETED */
 
 #ifndef sbRECEIVE_COMPLETED_FROM_ISR
@@ -104,6 +120,7 @@
  * or #defined the notification macro away, them provide a default implementation
  * that uses task notifications. */
 #ifndef sbSEND_COMPLETED
+#ifdef ESP_PLATFORM // IDF-3755
     #define sbSEND_COMPLETED( pxStreamBuffer )                               \
     taskENTER_CRITICAL();                                                    \
     {                                                                        \
@@ -116,6 +133,20 @@
         }                                                                    \
     }                                                                        \
     taskEXIT_CRITICAL();
+#else
+    #define sbSEND_COMPLETED( pxStreamBuffer )                               \
+    vTaskSuspendAll();                                                       \
+    {                                                                        \
+        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
+        {                                                                    \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive, \
+                                  ( uint32_t ) 0,                            \
+                                  eNoAction );                               \
+            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
+        }                                                                    \
+    }                                                                        \
+    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 #endif /* sbSEND_COMPLETED */
 
 #ifndef sbSEND_COMPLETE_FROM_ISR
@@ -163,7 +194,10 @@ typedef struct StreamBufferDef_t                 /*lint !e9058 Style convention 
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxStreamBufferNumber; /* Used for tracing purposes. */
     #endif
-    portMUX_TYPE xStreamBufferMux;  //Mutex required due to SMP
+#ifdef ESP_PLATFORM
+    /* Mutex required due to SMP. This field shall be the last one of the structure. */
+    portMUX_TYPE xStreamBufferMux;
+#endif // ESP_PLATFORM
 } StreamBuffer_t;
 
 /*
@@ -226,6 +260,17 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
                                           size_t xTriggerLevelBytes,
                                           uint8_t ucFlags ) PRIVILEGED_FUNCTION;
 
+#ifdef ESP_PLATFORM
+/**
+ * Called by xStreamBufferReset() to reset the members of the StreamBuffer, excluding
+ * its spinlock.
+ */
+static void prvResetStreamBufferFields( StreamBuffer_t * const pxStreamBuffer,
+                                        uint8_t * const pucBuffer,
+                                        size_t xBufferSizeBytes,
+                                        size_t xTriggerLevelBytes,
+                                        uint8_t ucFlags ) PRIVILEGED_FUNCTION;
+#endif
 /*-----------------------------------------------------------*/
 
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
@@ -280,7 +325,6 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
         {
             pucAllocatedMemory = NULL;
         }
-
 
         if( pucAllocatedMemory != NULL )
         {
@@ -440,11 +484,23 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer )
         {
             if( pxStreamBuffer->xTaskWaitingToSend == NULL )
             {
-                prvInitialiseNewStreamBuffer( pxStreamBuffer,
-                                              pxStreamBuffer->pucBuffer,
-                                              pxStreamBuffer->xLength,
-                                              pxStreamBuffer->xTriggerLevelBytes,
-                                              pxStreamBuffer->ucFlags );
+                #ifdef ESP_PLATFORM
+                    /* As we just entered a critical section, we must NOT reset the spinlock field.
+                     * Thus, call `prvResetStreamBufferFields` instead of `prvInitialiseNewStreamBuffer`
+                     */
+                    prvResetStreamBufferFields( pxStreamBuffer,
+                                                pxStreamBuffer->pucBuffer,
+                                                pxStreamBuffer->xLength,
+                                                pxStreamBuffer->xTriggerLevelBytes,
+                                                pxStreamBuffer->ucFlags );
+
+                #else  // ESP_PLATFORM
+                    prvInitialiseNewStreamBuffer( pxStreamBuffer,
+                                                  pxStreamBuffer->pucBuffer,
+                                                  pxStreamBuffer->xLength,
+                                                  pxStreamBuffer->xTriggerLevelBytes,
+                                                  pxStreamBuffer->ucFlags );
+                #endif // ESP_PLATFORM
                 xReturn = pdPASS;
 
                 #if ( configUSE_TRACE_FACILITY == 1 )
@@ -538,9 +594,14 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
     size_t xReturn, xSpace = 0;
     size_t xRequiredSpace = xDataLengthBytes;
     TimeOut_t xTimeOut;
+    size_t xMaxReportedSpace = 0;
 
     configASSERT( pvTxData );
     configASSERT( pxStreamBuffer );
+
+    /* The maximum amount of space a stream buffer will ever report is its length
+     * minus 1. */
+    xMaxReportedSpace = pxStreamBuffer->xLength - ( size_t ) 1;
 
     /* This send function is used to write to both message buffers and stream
      * buffers.  If this is a message buffer then the space needed must be
@@ -552,10 +613,33 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
 
         /* Overflow? */
         configASSERT( xRequiredSpace > xDataLengthBytes );
+
+        /* If this is a message buffer then it must be possible to write the
+         * whole message. */
+        if( xRequiredSpace > xMaxReportedSpace )
+        {
+            /* The message would not fit even if the entire buffer was empty,
+             * so don't wait for space. */
+            xTicksToWait = ( TickType_t ) 0;
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
     else
     {
-        mtCOVERAGE_TEST_MARKER();
+        /* If this is a stream buffer then it is acceptable to write only part
+         * of the message to the buffer.  Cap the length to the total length of
+         * the buffer. */
+        if( xRequiredSpace > xMaxReportedSpace )
+        {
+            xRequiredSpace = xMaxReportedSpace;
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
 
     if( xTicksToWait != ( TickType_t ) 0 )
@@ -1266,8 +1350,47 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
     pxStreamBuffer->xLength = xBufferSizeBytes;
     pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
     pxStreamBuffer->ucFlags = ucFlags;
-    vPortCPUInitializeMutex( &pxStreamBuffer->xStreamBufferMux );
+#ifdef ESP_PLATFORM
+    portMUX_INITIALIZE( &pxStreamBuffer->xStreamBufferMux );
+#endif // ESP_PLATFORM
 }
+
+
+#ifdef ESP_PLATFORM
+
+    /** The goal of this function is to (re)set all the fields of the given StreamBuffer, except
+     * its lock.
+     */
+    static void prvResetStreamBufferFields( StreamBuffer_t * const pxStreamBuffer,
+                                            uint8_t * const pucBuffer,
+                                            size_t xBufferSizeBytes,
+                                            size_t xTriggerLevelBytes,
+                                            uint8_t ucFlags )
+    {
+        #if ( configASSERT_DEFINED == 1 )
+            {
+                /* The value written just has to be identifiable when looking at the
+                * memory.  Don't use 0xA5 as that is the stack fill value and could
+                * result in confusion as to what is actually being observed. */
+                const BaseType_t xWriteValue = 0x55;
+                configASSERT( memset( pucBuffer, ( int ) xWriteValue, xBufferSizeBytes ) == pucBuffer );
+            } /*lint !e529 !e438 xWriteValue is only used if configASSERT() is defined. */
+        #endif
+
+        /* Do not include the spinlock in the part to reset!
+         * Thus, make sure the spinlock is the last field of the structure. */
+        _Static_assert( offsetof(StreamBuffer_t, xStreamBufferMux) == sizeof( StreamBuffer_t ) - sizeof(portMUX_TYPE),
+                        "xStreamBufferMux must be the last field of structure StreamBuffer_t" );
+        const size_t erasable = sizeof( StreamBuffer_t ) - sizeof(portMUX_TYPE);
+        ( void ) memset( ( void * ) pxStreamBuffer, 0x00, erasable ); /*lint !e9087 memset() requires void *. */
+        pxStreamBuffer->pucBuffer = pucBuffer;
+        pxStreamBuffer->xLength = xBufferSizeBytes;
+        pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
+        pxStreamBuffer->ucFlags = ucFlags;
+    }
+
+#endif // ESP_PLATFORM
+
 
 #if ( configUSE_TRACE_FACILITY == 1 )
 

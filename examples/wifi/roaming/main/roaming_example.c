@@ -6,6 +6,7 @@
 #include "esp_wifi.h"
 #include "esp_wnm.h"
 #include "esp_rrm.h"
+#include "esp_mbo.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -40,6 +41,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 		esp_wifi_connect();
 	} else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
 		wifi_event_sta_disconnected_t *disconn = event_data;
+		ESP_LOGI(TAG, "station got disconnected reason=%d", disconn->reason);
 		if (disconn->reason == WIFI_REASON_ROAMING) {
 			ESP_LOGI(TAG, "station roaming, do nothing");
 		} else {
@@ -323,6 +325,37 @@ static void esp_bss_rssi_low_handler(void* arg, esp_event_base_t event_base,
 }
 #endif
 
+#if 0
+/* Example code to update channel preference in MBO */
+static void clear_chan_preference()
+{
+	esp_mbo_update_non_pref_chan(NULL);
+}
+
+static void update_chan_preference(void)
+{
+	struct non_pref_chan_s *chans = malloc(sizeof(struct non_pref_chan_s) + 2 * sizeof(struct non_pref_chan));
+	chans->non_pref_chan_num = 2;
+
+	/* first */
+	struct non_pref_chan *chan = &chans->chan[0];
+	chan->reason = NON_PREF_CHAN_REASON_UNSPECIFIED;
+	chan->oper_class = 0x51;
+	chan->chan = 1;
+	chan->preference = 0;
+
+	/* second */
+	chan = &chans->chan[1];
+	chan->reason = NON_PREF_CHAN_REASON_UNSPECIFIED;
+	chan->oper_class = 0x51;
+	chan->chan = 11;
+	chan->preference = 1;
+
+	esp_mbo_update_non_pref_chan(chans);
+	free(chans);
+}
+#endif
+
 static void initialise_wifi(void)
 {
 	ESP_ERROR_CHECK(esp_netif_init());
@@ -348,6 +381,8 @@ static void initialise_wifi(void)
 			.password = EXAMPLE_WIFI_PASSWORD,
 			.rm_enabled =1,
 			.btm_enabled =1,
+			.mbo_enabled =1,
+			.pmf_cfg.capable = 1,
 		},
 	};
 

@@ -22,6 +22,24 @@
 extern "C" {
 #endif
 
+#if __has_include("esp_check.h")
+#include "esp_check.h"
+
+#define MB_RETURN_ON_FALSE(a, err_code, tag, format, ...) ESP_RETURN_ON_FALSE(a, err_code, tag, format __VA_OPT__(,) __VA_ARGS__)
+
+#else
+
+// if cannot include esp_check then use custom check macro
+
+#define MB_RETURN_ON_FALSE(a, err_code, tag, format, ...) do {                                         \
+        if (!(a)) {                                                                              \
+            ESP_LOGE(tag, "%s(%d): " format, __FUNCTION__, __LINE__ __VA_OPT__(,) __VA_ARGS__);        \
+            return err_code;                                                                               \
+        }                                                                                                  \
+} while(0)
+
+#endif
+
 #define MB_CONTROLLER_STACK_SIZE            (CONFIG_FMB_CONTROLLER_STACK_SIZE)   // Stack size for Modbus controller
 #define MB_CONTROLLER_PRIORITY              (CONFIG_FMB_PORT_TASK_PRIO - 1)    // priority of MB controller task
 

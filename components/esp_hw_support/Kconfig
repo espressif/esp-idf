@@ -33,5 +33,56 @@ menu "Hardware Settings"
         config ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
             bool
             default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+        config ESP_SLEEP_GPIO_RESET_WORKAROUND
+            bool "light sleep GPIO reset workaround"
+            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
+            help
+                esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
+                pulse during light sleep, with specific condition
+
+                - GPIO needs to be configured as input-mode only
+                - The pin receives a small electrostatic pulse, and reset occurs when the pulse
+                  voltage is higher than 6 V
+
+                For GPIO set to input mode only, it is not a good practice to leave it open/floating,
+                The hardware design needs to controlled it with determined supply or ground voltage
+                is necessary.
+
+                This option provides a software workaround for this issue. Configure to isolate all
+                GPIO pins in sleep state.
+
+        config ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND
+            bool "PSRAM leakage current workaround in light sleep"
+            depends on SPIRAM
+            help
+                When the CS pin of SPIRAM is not pulled up, the sleep current will
+                increase during light sleep. If the CS pin of SPIRAM has an external
+                pull-up, you do not need to select this option, otherwise, you
+                should enable this option.
+
+        config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+            bool "Flash leakage current workaround in light sleep"
+            help
+                When the CS pin of Flash is not pulled up, the sleep current will
+                increase during light sleep. If the CS pin of Flash has an external
+                pull-up, you do not need to select this option, otherwise, you
+                should enable this option.
+    endmenu
+
+    menu "RTC Clock Config"
+        # This is used for configure the RTC clock.
+        config RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
+            bool "Keep BBPLL clock always work"
+            depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+            default y
+            help
+                When the chip goes sleep or software reset, the clock source would change to XTAL
+                and switch off the BBPLL clock for saving power. However, this might make the
+                USB_SERIAL_JTAG down which depends on BBPLL as its unique clock source.
+                Therefore, this is used for keeping bbpll clock always on when USB_SERIAL_JTAG PORT is using.
+                If you want to use USB_SERIAL_JTAG under sw_reset case or sleep-wakeup case, you shoule select
+                this option. But be aware that this might increase the power consumption.
     endmenu
 endmenu

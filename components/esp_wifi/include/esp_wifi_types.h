@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #ifndef __ESP_WIFI_TYPES_H__
@@ -80,6 +72,7 @@ typedef enum {
     WIFI_REASON_ASSOC_NOT_AUTHED         = 9,
     WIFI_REASON_DISASSOC_PWRCAP_BAD      = 10,
     WIFI_REASON_DISASSOC_SUPCHAN_BAD     = 11,
+    WIFI_REASON_BSS_TRANSITION_DISASSOC  = 12,
     WIFI_REASON_IE_INVALID               = 13,
     WIFI_REASON_MIC_FAILURE              = 14,
     WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT   = 15,
@@ -149,6 +142,10 @@ typedef enum {
     WIFI_CIPHER_TYPE_TKIP_CCMP,  /**< the cipher type is TKIP and CCMP */
     WIFI_CIPHER_TYPE_AES_CMAC128,/**< the cipher type is AES-CMAC-128 */
     WIFI_CIPHER_TYPE_SMS4,       /**< the cipher type is SMS4 */
+    WIFI_CIPHER_TYPE_GCMP,       /**< the cipher type is GCMP */
+    WIFI_CIPHER_TYPE_GCMP256,    /**< the cipher type is GCMP-256 */
+    WIFI_CIPHER_TYPE_AES_GMAC128,/**< the cipher type is AES-GMAC-128 */
+    WIFI_CIPHER_TYPE_AES_GMAC256,/**< the cipher type is AES-GMAC-256 */
     WIFI_CIPHER_TYPE_UNKNOWN,    /**< the cipher type is unknown */
 } wifi_cipher_type_t;
 
@@ -218,7 +215,7 @@ typedef enum {
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
-    bool capable;            /**< Advertizes support for Protected Management Frame. Device will prefer to connect in PMF mode if other device also advertizes PMF capability. */
+    bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
     bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
 
@@ -250,7 +247,8 @@ typedef struct {
     wifi_pmf_config_t pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
     uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
-    uint32_t reserved:30;         /**< Reserved for future feature set */
+    uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
+    uint32_t reserved:29;         /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.

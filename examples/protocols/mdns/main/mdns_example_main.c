@@ -53,6 +53,9 @@ static void initialise_mdns(void)
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
+#if CONFIG_MDNS_MULTIPLE_INSTANCE
+    ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer1", "_http", "_tcp", 80, NULL, 0) );
+#endif
 
 #if CONFIG_MDNS_PUBLISH_DELEGATE_HOST
     char *delegated_hostname;

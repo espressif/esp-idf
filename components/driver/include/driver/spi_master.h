@@ -197,7 +197,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  * @param ticks_to_wait Ticks to wait until there's room in the queue; use portMAX_DELAY to
  *                      never time out.
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_DEVICE_CS_KEEP_LOW flag is specified while
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_TRANS_CS_KEEP_ACTIVE flag is specified while
  *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
  *         - ESP_ERR_TIMEOUT       if there was no room in the queue before ticks_to_wait expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed
@@ -261,7 +261,7 @@ esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *tra
  *              currently only portMAX_DELAY is supported.
  *
  * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_DEVICE_CS_KEEP_LOW flag is specified while
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid. This can happen if SPI_TRANS_CS_KEEP_ACTIVE flag is specified while
  *                                 the bus was not acquired (`spi_device_acquire_bus()` should be called first)
  *         - ESP_ERR_TIMEOUT       if the device cannot get control of the bus before ``ticks_to_wait`` expired
  *         - ESP_ERR_NO_MEM        if allocating DMA-capable temporary buffer failed

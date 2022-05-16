@@ -48,7 +48,6 @@ docs/sanitize_version.py
 docs/test/en/conf.py
 docs/test/test_docs.py
 docs/test/test_sphinx_idf_extensions.py
-docs/zh_CN/conf.py
 examples/bluetooth/nimble/blecent/blecent_test.py
 examples/bluetooth/nimble/blehr/blehr_test.py
 examples/bluetooth/nimble/bleprph/bleprph_test.py
@@ -167,7 +166,6 @@ tools/ci/ci_fetch_submodule.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/normalize_clangtidy_path.py
-tools/ci/python_packages/gitlab_api.py
 tools/ci/python_packages/idf_http_server_test/adder.py
 tools/ci/python_packages/idf_http_server_test/client.py
 tools/ci/python_packages/idf_http_server_test/test.py

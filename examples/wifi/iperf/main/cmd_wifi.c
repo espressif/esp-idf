@@ -19,14 +19,18 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "iperf.h"
+#include "esp_coexist.h"
 
 typedef struct {
     struct arg_str *ip;
     struct arg_lit *server;
     struct arg_lit *udp;
+    struct arg_lit *version;
     struct arg_int *port;
+    struct arg_int *length;
     struct arg_int *interval;
     struct arg_int *time;
+    struct arg_int *bw_limit;
     struct arg_lit *abort;
     struct arg_end *end;
 } wifi_iperf_t;
@@ -47,7 +51,7 @@ static wifi_args_t sta_args;
 static wifi_scan_arg_t scan_args;
 static wifi_args_t ap_args;
 static bool reconnect = true;
-static const char *TAG="cmd_wifi";
+static const char *TAG = "cmd_wifi";
 static esp_netif_t *netif_ap = NULL;
 static esp_netif_t *netif_sta = NULL;
 
@@ -55,8 +59,8 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
 
-static void scan_done_handler(void* arg, esp_event_base_t event_base,
-                              int32_t event_id, void* event_data)
+static void scan_done_handler(void *arg, esp_event_base_t event_base,
+                              int32_t event_id, void *event_data)
 {
     uint16_t sta_number = 0;
     uint8_t i;
@@ -74,8 +78,8 @@ static void scan_done_handler(void* arg, esp_event_base_t event_base,
         return;
     }
 
-    if (esp_wifi_scan_get_ap_records(&sta_number,(wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
-        for(i=0; i<sta_number; i++) {
+    if (esp_wifi_scan_get_ap_records(&sta_number, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
+        for (i = 0; i < sta_number; i++) {
             ESP_LOGI(TAG, "[%s][rssi=%d]", ap_list_buffer[i].ssid, ap_list_buffer[i].rssi);
         }
     }
@@ -83,15 +87,15 @@ static void scan_done_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "sta scan done");
 }
 
-static void got_ip_handler(void* arg, esp_event_base_t event_base,
-                           int32_t event_id, void* event_data)
+static void got_ip_handler(void *arg, esp_event_base_t event_base,
+                           int32_t event_id, void *event_data)
 {
     xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
     xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 }
 
-static void disconnect_handler(void* arg, esp_event_base_t event_base,
-                               int32_t event_id, void* event_data)
+static void disconnect_handler(void *arg, esp_event_base_t event_base,
+                               int32_t event_id, void *event_data)
 {
     if (reconnect) {
         ESP_LOGI(TAG, "sta disconnect, reconnect...");
@@ -123,36 +127,45 @@ void initialise_wifi(void)
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        WIFI_EVENT_SCAN_DONE,
-                                                        &scan_done_handler,
-                                                        NULL,
-                                                        NULL));
+                    WIFI_EVENT_SCAN_DONE,
+                    &scan_done_handler,
+                    NULL,
+                    NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
-                                                        WIFI_EVENT_STA_DISCONNECTED,
-                                                        &disconnect_handler,
-                                                        NULL,
-                                                        NULL));
+                    WIFI_EVENT_STA_DISCONNECTED,
+                    &disconnect_handler,
+                    NULL,
+                    NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT,
-                                                        IP_EVENT_STA_GOT_IP,
-                                                        &got_ip_handler,
-                                                        NULL,
-                                                        NULL));
+                    IP_EVENT_STA_GOT_IP,
+                    &got_ip_handler,
+                    NULL,
+                    NULL));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_NULL) );
     ESP_ERROR_CHECK(esp_wifi_start() );
+
+#if CONFIG_EXTERNAL_COEX_ENABLE
+    esp_external_coex_gpio_set_t gpio_pin;
+    gpio_pin.in_pin0  = 1;
+    gpio_pin.in_pin1  = 2;
+    gpio_pin.out_pin0 = 3;
+
+    ESP_ERROR_CHECK( esp_enable_extern_coex_gpio_pin(EXTERN_COEX_WIRE_3, gpio_pin) );
+#endif
+
     initialized = true;
 }
 
-static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
+static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
 {
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
 
     wifi_config_t wifi_config = { 0 };
-    wifi_config.sta.pmf_cfg.capable = true;
 
-    strlcpy((char*) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strlcpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strlcpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strlcpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     if (bits & CONNECTED_BIT) {
@@ -167,14 +180,14 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
     ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     esp_wifi_connect();
 
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000/portTICK_RATE_MS);
+    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_RATE_MS);
 
     return true;
 }
 
-static int wifi_cmd_sta(int argc, char** argv)
+static int wifi_cmd_sta(int argc, char **argv)
 {
-    int nerrors = arg_parse(argc, argv, (void**) &sta_args);
+    int nerrors = arg_parse(argc, argv, (void **) &sta_args);
 
     if (nerrors != 0) {
         arg_print_errors(stderr, sta_args.end, argv[0]);
@@ -186,7 +199,7 @@ static int wifi_cmd_sta(int argc, char** argv)
     return 0;
 }
 
-static bool wifi_cmd_sta_scan(const char* ssid)
+static bool wifi_cmd_sta_scan(const char *ssid)
 {
     wifi_scan_config_t scan_config = { 0 };
     scan_config.ssid = (uint8_t *) ssid;
@@ -197,9 +210,9 @@ static bool wifi_cmd_sta_scan(const char* ssid)
     return true;
 }
 
-static int wifi_cmd_scan(int argc, char** argv)
+static int wifi_cmd_scan(int argc, char **argv)
 {
-    int nerrors = arg_parse(argc, argv, (void**) &scan_args);
+    int nerrors = arg_parse(argc, argv, (void **) &scan_args);
 
     if (nerrors != 0) {
         arg_print_errors(stderr, scan_args.end, argv[0]);
@@ -216,7 +229,7 @@ static int wifi_cmd_scan(int argc, char** argv)
 }
 
 
-static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
+static bool wifi_cmd_ap_set(const char *ssid, const char *pass)
 {
     wifi_config_t wifi_config = {
         .ap = {
@@ -229,14 +242,14 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
     };
 
     reconnect = false;
-    strlcpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    strlcpy((char *) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
     if (pass) {
         if (strlen(pass) != 0 && strlen(pass) < 8) {
             reconnect = true;
             ESP_LOGE(TAG, "password less than 8");
             return false;
         }
-        strlcpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
+        strlcpy((char *) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
     }
 
     if (strlen(pass) == 0) {
@@ -248,9 +261,9 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
     return true;
 }
 
-static int wifi_cmd_ap(int argc, char** argv)
+static int wifi_cmd_ap(int argc, char **argv)
 {
-    int nerrors = arg_parse(argc, argv, (void**) &ap_args);
+    int nerrors = arg_parse(argc, argv, (void **) &ap_args);
 
     if (nerrors != 0) {
         arg_print_errors(stderr, ap_args.end, argv[0]);
@@ -262,7 +275,7 @@ static int wifi_cmd_ap(int argc, char** argv)
     return 0;
 }
 
-static int wifi_cmd_query(int argc, char** argv)
+static int wifi_cmd_query(int argc, char **argv)
 {
     wifi_config_t cfg;
     wifi_mode_t mode;
@@ -290,7 +303,7 @@ static int wifi_cmd_query(int argc, char** argv)
 static uint32_t wifi_get_local_ip(void)
 {
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-    esp_netif_t * netif = netif_ap;
+    esp_netif_t *netif = netif_ap;
     esp_netif_ip_info_t ip_info;
     wifi_mode_t mode;
 
@@ -303,15 +316,15 @@ static uint32_t wifi_get_local_ip(void)
             ESP_LOGE(TAG, "sta has no IP");
             return 0;
         }
-     }
+    }
 
-     esp_netif_get_ip_info(netif, &ip_info);
-     return ip_info.ip.addr;
+    esp_netif_get_ip_info(netif, &ip_info);
+    return ip_info.ip.addr;
 }
 
-static int wifi_cmd_iperf(int argc, char** argv)
+static int wifi_cmd_iperf(int argc, char **argv)
 {
-    int nerrors = arg_parse(argc, argv, (void**) &iperf_args);
+    int nerrors = arg_parse(argc, argv, (void **) &iperf_args);
     iperf_cfg_t cfg;
 
     if (nerrors != 0) {
@@ -321,13 +334,16 @@ static int wifi_cmd_iperf(int argc, char** argv)
 
     memset(&cfg, 0, sizeof(cfg));
 
+    // now wifi iperf only support IPV4 address
+    cfg.type = IPERF_IP_TYPE_IPV4;
+
     if ( iperf_args.abort->count != 0) {
         iperf_stop();
         return 0;
     }
 
     if ( ((iperf_args.ip->count == 0) && (iperf_args.server->count == 0)) ||
-         ((iperf_args.ip->count != 0) && (iperf_args.server->count != 0)) ) {
+            ((iperf_args.ip->count != 0) && (iperf_args.server->count != 0)) ) {
         ESP_LOGE(TAG, "should specific client/server mode");
         return 0;
     }
@@ -335,12 +351,12 @@ static int wifi_cmd_iperf(int argc, char** argv)
     if (iperf_args.ip->count == 0) {
         cfg.flag |= IPERF_FLAG_SERVER;
     } else {
-        cfg.dip = esp_ip4addr_aton(iperf_args.ip->sval[0]);
+        cfg.destination_ip4 = esp_ip4addr_aton(iperf_args.ip->sval[0]);
         cfg.flag |= IPERF_FLAG_CLIENT;
     }
 
-    cfg.sip = wifi_get_local_ip();
-    if (cfg.sip == 0) {
+    cfg.source_ip4 = wifi_get_local_ip();
+    if (cfg.source_ip4 == 0) {
         return 0;
     }
 
@@ -348,6 +364,12 @@ static int wifi_cmd_iperf(int argc, char** argv)
         cfg.flag |= IPERF_FLAG_TCP;
     } else {
         cfg.flag |= IPERF_FLAG_UDP;
+    }
+
+    if (iperf_args.length->count == 0) {
+        cfg.len_send_buf = 0;
+    } else {
+        cfg.len_send_buf = iperf_args.length->ival[0];
     }
 
     if (iperf_args.port->count == 0) {
@@ -381,12 +403,25 @@ static int wifi_cmd_iperf(int argc, char** argv)
         }
     }
 
+    /* iperf -b */
+    if (iperf_args.bw_limit->count == 0) {
+        cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+    } else {
+        cfg.bw_lim = iperf_args.bw_limit->ival[0];
+        if (cfg.bw_lim <= 0) {
+            cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+        }
+    }
+
+
     ESP_LOGI(TAG, "mode=%s-%s sip=%d.%d.%d.%d:%d, dip=%d.%d.%d.%d:%d, interval=%d, time=%d",
-            cfg.flag&IPERF_FLAG_TCP?"tcp":"udp",
-            cfg.flag&IPERF_FLAG_SERVER?"server":"client",
-            cfg.sip&0xFF, (cfg.sip>>8)&0xFF, (cfg.sip>>16)&0xFF, (cfg.sip>>24)&0xFF, cfg.sport,
-            cfg.dip&0xFF, (cfg.dip>>8)&0xFF, (cfg.dip>>16)&0xFF, (cfg.dip>>24)&0xFF, cfg.dport,
-            cfg.interval, cfg.time);
+             cfg.flag & IPERF_FLAG_TCP ? "tcp" : "udp",
+             cfg.flag & IPERF_FLAG_SERVER ? "server" : "client",
+             cfg.source_ip4 & 0xFF, (cfg.source_ip4 >> 8) & 0xFF, (cfg.source_ip4 >> 16) & 0xFF,
+             (cfg.source_ip4 >> 24) & 0xFF, cfg.sport,
+             cfg.destination_ip4 & 0xFF, (cfg.destination_ip4 >> 8) & 0xFF,
+             (cfg.destination_ip4 >> 16) & 0xFF, (cfg.destination_ip4 >> 24) & 0xFF, cfg.dport,
+             cfg.interval, cfg.time);
 
     iperf_start(&cfg);
 
@@ -448,9 +483,12 @@ void register_wifi(void)
     iperf_args.ip = arg_str0("c", "client", "<ip>", "run in client mode, connecting to <host>");
     iperf_args.server = arg_lit0("s", "server", "run in server mode");
     iperf_args.udp = arg_lit0("u", "udp", "use UDP rather than TCP");
+    iperf_args.version = arg_lit0("V", "ipv6_domain", "use IPV6 address rather than IPV4");
     iperf_args.port = arg_int0("p", "port", "<port>", "server port to listen on/connect to");
+    iperf_args.length = arg_int0("l", "len", "<length>", "Set read/write buffer size");
     iperf_args.interval = arg_int0("i", "interval", "<interval>", "seconds between periodic bandwidth reports");
     iperf_args.time = arg_int0("t", "time", "<time>", "time in seconds to transmit for (default 10 secs)");
+    iperf_args.bw_limit = arg_int0("b", "bandwidth", "<bandwidth>", "bandwidth to send at in Mbits/sec");
     iperf_args.abort = arg_lit0("a", "abort", "abort running iperf");
     iperf_args.end = arg_end(1);
     const esp_console_cmd_t iperf_cmd = {

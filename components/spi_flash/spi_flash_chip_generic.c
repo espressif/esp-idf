@@ -200,9 +200,10 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
     const uint32_t page_size = chip->chip_drv->page_size;
     uint32_t align_address;
     uint8_t temp_buffer[64]; //spiflash hal max length of read no longer than 64byte
+    uint32_t config_io_flags = 0;
 
     // Configure the host, and return
-    err = spi_flash_chip_generic_config_host_io_mode(chip, false);
+    err = chip->chip_drv->config_host_io_mode(chip, config_io_flags);
 
     if (err == ESP_ERR_NOT_SUPPORTED) {
         ESP_LOGE(TAG, "configure host io mode failed - unsupported");
@@ -448,13 +449,14 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
     return (timeout_us > 0) ?  ESP_OK : ESP_ERR_TIMEOUT;
 }
 
-esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, bool addr_32bit)
+esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint32_t flags)
 {
     uint32_t dummy_cyclelen_base;
     uint32_t addr_bitlen;
     uint32_t read_command;
     bool conf_required = false;
     esp_flash_io_mode_t read_mode = chip->read_mode;
+    bool addr_32bit = (flags & SPI_FLASH_CONFIG_IO_MODE_32B_ADDR);
 
     switch (read_mode & 0xFFFF) {
     case SPI_FLASH_QIO:
@@ -553,6 +555,12 @@ esp_err_t spi_flash_chip_generic_read_unique_id(esp_flash_t *chip, uint64_t* fla
     return err;
 }
 
+esp_err_t spi_flash_chip_generic_read_unique_id_none(esp_flash_t *chip, uint64_t* flash_unique_id)
+{
+    // For flash doesn't support read unique id.
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
 spi_flash_caps_t spi_flash_chip_generic_get_caps(esp_flash_t *chip)
 {
     // For generic part flash capability, take the XMC chip as reference.
@@ -609,6 +617,7 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
     .read_unique_id = spi_flash_chip_generic_read_unique_id,
     .get_chip_caps = spi_flash_chip_generic_get_caps,
+    .config_host_io_mode = spi_flash_chip_generic_config_host_io_mode,
 };
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL

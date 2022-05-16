@@ -2,14 +2,16 @@ idf_component_register(SRCS "vfs.c"
                             "vfs_eventfd.c"
                             "vfs_uart.c"
                             "vfs_semihost.c"
+                            "vfs_console.c"
                     INCLUDE_DIRS include
+                    PRIV_INCLUDE_DIRS private_include
                     PRIV_REQUIRES driver)
 
 if(CONFIG_ESP_CONSOLE_USB_CDC)
     target_sources(${COMPONENT_LIB} PRIVATE "vfs_cdcacm.c")
 endif()
 
-if(CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
+if(CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG OR CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG)
     target_sources(${COMPONENT_LIB} PRIVATE "vfs_usb_serial_jtag.c")
 endif()
 

@@ -18,7 +18,7 @@
 #include "esp32s3/rom/cache.h"
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/efuse_reg.h"
 #include "driver/gpio.h"
@@ -27,7 +27,7 @@
 
 #if CONFIG_SPIRAM_MODE_OCT
 #include "soc/rtc.h"
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
 
 #define OPI_PSRAM_SYNC_READ             0x0000
 #define OPI_PSRAM_SYNC_WRITE            0x8080
@@ -38,7 +38,7 @@
 #define OCT_PSRAM_ADDR_BITLEN           32
 #define OCT_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
-#define OCT_PSRAM_CS1_IO                26
+#define OCT_PSRAM_CS1_IO                CONFIG_DEFAULT_PSRAM_CS_IO
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
 #define OCT_PSRAM_CS_HOLD_TIME          3
@@ -99,13 +99,18 @@ typedef struct {
 } opi_psram_mode_reg_t;
 
 static const char* TAG = "opi psram";
-static DRAM_ATTR psram_size_t s_psram_size;
-static void IRAM_ATTR s_config_psram_spi_phases(void);
+static psram_size_t s_psram_size;
+static void s_config_psram_spi_phases(void);
+
+uint8_t psram_get_cs_io(void)
+{
+    return OCT_PSRAM_CS1_IO;
+}
 
 /**
  * Initialise mode registers of the PSRAM
  */
-static void IRAM_ATTR s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_config)
+static void s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_config)
 {
     esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
     int cmd_len = 16;
@@ -140,7 +145,7 @@ static void IRAM_ATTR s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *m
                              false);
 }
 
-static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
+static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
 {
     esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
     int cmd_len = 16;
@@ -148,7 +153,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
     int dummy = OCT_PSRAM_RD_DUMMY_BITLEN;
     int data_bit_len = 16;
 
-    //Read MR0 register
+    //Read MR0~1 register
     esp_rom_opiflash_exec_cmd(spi_num, mode,
                              OPI_PSRAM_REG_READ, cmd_len,
                              0x0, addr_bit_len,
@@ -157,7 +162,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
                              &out_reg->mr0.val, data_bit_len,
                              BIT(1),
                              false);
-    //Read MR2 register
+    //Read MR2~3 register
     esp_rom_opiflash_exec_cmd(spi_num, mode,
                             OPI_PSRAM_REG_READ, cmd_len,
                             0x2, addr_bit_len,
@@ -166,6 +171,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
                             &out_reg->mr2.val, data_bit_len,
                             BIT(1),
                             false);
+    data_bit_len = 8;
     //Read MR4 register
     esp_rom_opiflash_exec_cmd(spi_num, mode,
                             OPI_PSRAM_REG_READ, cmd_len,
@@ -186,7 +192,7 @@ static void IRAM_ATTR s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *ou
                             false);
 }
 
-static void IRAM_ATTR s_print_psram_info(opi_psram_mode_reg_t *reg_val)
+static void s_print_psram_info(opi_psram_mode_reg_t *reg_val)
 {
     ESP_EARLY_LOGI(TAG, "vendor id : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : "UNKNOWN");
     ESP_EARLY_LOGI(TAG, "dev id    : 0x%02x (generation %d)", reg_val->mr2.dev_id, reg_val->mr2.dev_id + 1);
@@ -219,17 +225,17 @@ static void psram_set_cs_timing(void)
     SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_V, OCT_PSRAM_CS_HOLD_DELAY, SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_S);
 }
 
-static void IRAM_ATTR s_init_psram_pins(void)
+static void s_init_psram_pins(void)
 {
     //Set cs1 pin function
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO],  FUNC_SPICS1_SPICS1);
     //Set mspi cs1 drive strength
-    PIN_SET_DRV(IO_MUX_GPIO26_REG, 3);
+    PIN_SET_DRV(GPIO_PIN_MUX_REG[OCT_PSRAM_CS1_IO], 3);
     //Set psram clock pin drive strength
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
 }
 
-esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
+esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
 {
     s_init_psram_pins();
     psram_set_cs_timing();
@@ -239,12 +245,10 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
     //set to variable dummy mode
     SET_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC && CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
     esp_rom_spi_set_dtr_swap_mode(1, false, false);
-#endif
 
     //Set PSRAM read latency and drive strength
-    static DRAM_ATTR opi_psram_mode_reg_t mode_reg = {0};
+    static opi_psram_mode_reg_t mode_reg = {0};
     mode_reg.mr0.lt = 1;
     mode_reg.mr0.read_latency = 2;
     mode_reg.mr0.drive_str = 0;
@@ -257,12 +261,9 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
                    mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_128MBITS :
                    mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_256MBITS : 0;
 
-#if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC && CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
-    esp_rom_spi_set_dtr_swap_mode(1, true, true);
-#endif
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
     spi_timing_psram_tuning();
-    ////Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
+    //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
     spi_timing_enter_mspi_high_speed_mode(true);
 
     /**
@@ -270,13 +271,15 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
      * This function is to restore SPI1 init state.
      */
     spi_flash_set_rom_required_regs();
+    //Flash chip requires MSPI specifically, call this function to set them
+    spi_flash_set_vendor_required_regs();
 
     s_config_psram_spi_phases();
     return ESP_OK;
 }
 
 //Configure PSRAM SPI0 phase related registers here according to the PSRAM chip requirement
-static void IRAM_ATTR s_config_psram_spi_phases(void)
+static void s_config_psram_spi_phases(void)
 {
     //Config Write CMD phase for SPI0 to access PSRAM
     SET_PERI_REG_MASK(SPI_MEM_CACHE_SCTRL_REG(0), SPI_MEM_CACHE_SRAM_USR_WCMD_M);

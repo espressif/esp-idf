@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 #include "soc/adc_periph.h"
@@ -27,20 +33,48 @@ typedef enum {
 } adc_ll_power_t;
 
 typedef enum {
+    ADC_RTC_DATA_OK = 0,
+} adc_ll_rtc_raw_data_t;
+
+typedef enum {
+    ADC_LL_CTRL_RTC   = 0,    ///< For ADC1 and ADC2. Select RTC controller.
+    ADC_LL_CTRL_ULP   = 1,    ///< For ADC1 and ADC2. Select ULP controller.
+    ADC_LL_CTRL_DIG   = 2,    ///< For ADC1 and ADC2. Select DIG controller.
+    ADC_LL_CTRL_PWDET = 3,    ///< For ADC2. Select PWDET controller.
+} adc_ll_controller_t;
+
+/**
+ * @brief ADC digital controller (DMA mode) work mode.
+ *
+ * @note  The conversion mode affects the sampling frequency:
+ *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
+ *        SINGLE_UNIT_2: When the measurement is triggered, only ADC2 is sampled once.
+ *        BOTH_UNIT    : When the measurement is triggered, ADC1 and ADC2 are sampled at the same time.
+ *        ALTER_UNIT   : When the measurement is triggered, ADC1 or ADC2 samples alternately.
+ */
+typedef enum {
+    ADC_LL_DIGI_CONV_ONLY_ADC1  = 0,    // Only use ADC1 for conversion
+    ADC_LL_DIGI_CONV_ONLY_ADC2  = 1,    // Only use ADC2 for conversion
+    ADC_LL_DIGI_CONV_BOTH_UNIT  = 2,    // Use Both ADC1 and ADC2 for conversion simultaneously
+    ADC_LL_DIGI_CONV_ALTER_UNIT = 3     // Use both ADC1 and ADC2 for conversion by turn. e.g. ADC1 -> ADC2 -> ADC1 -> ADC2 .....
+} adc_ll_digi_convert_mode_t;
+
+//Need a unit test for bit_width
+typedef struct {
+    union {
+        struct {
+            uint8_t atten:       2;
+            uint8_t bit_width:   2;  //ADC resolution. 0: 9 bit; 1: 10 bit; 2: 11 bit; 3: 12 bit
+            uint8_t channel:     4;
+        };
+        uint8_t val;
+    };
+} __attribute__((packed)) adc_ll_digi_pattern_table_t;
+
+typedef enum {
     ADC_HALL_CTRL_ULP = 0x0,/*!< Hall sensor controlled by ULP */
     ADC_HALL_CTRL_RTC = 0x1 /*!< Hall sensor controlled by RTC */
 } adc_ll_hall_controller_t ;
-
-typedef enum {
-    ADC_CTRL_RTC = 0,
-    ADC_CTRL_ULP = 1,
-    ADC_CTRL_DIG = 2,
-    ADC2_CTRL_PWDET = 3,
-} adc_hal_controller_t ;
-
-typedef enum {
-    ADC_RTC_DATA_OK = 0,
-} adc_ll_rtc_raw_data_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -86,16 +120,6 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
 }
 
 /**
- * Set adc output data format for digital controller.
- *
- * @param format Output data format, see ``adc_digi_output_format_t``.
- */
-static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format)
-{
-    SYSCON.saradc_ctrl.data_sar_sel = format;
-}
-
-/**
  * Set adc max conversion number for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
  *
@@ -128,21 +152,28 @@ static inline void adc_ll_digi_convert_limit_disable(void)
  * Set adc conversion mode for digital controller.
  *
  * @note ESP32 only support ADC1 single mode.
+ * @note For `data_sar_sel` register:
+ *       1: [15] unit, [14:11] channel, [10:0] data, 11-bit-width at most. Only work under `ADC_LL_DIGI_CONV_BOTH_UNIT` or `ADC_LL_DIGI_CONV_ALTER_UNIT` mode.
+ *       0: [15:12] channel, [11:0] data, 12-bit-width at most. Only work under `ADC_LL_DIGI_CONV_ONLY_ADC1` or `ADC_LL_DIGI_CONV_ONLY_ADC2` mode
  *
- * @param mode Conversion mode select, see ``adc_digi_convert_mode_t``.
+ * @param mode Conversion mode select.
  */
-static inline void adc_ll_digi_set_convert_mode(adc_digi_convert_mode_t mode)
+static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    if (mode == ADC_CONV_SINGLE_UNIT_1) {
+    if (mode == ADC_LL_DIGI_CONV_ONLY_ADC1) {
         SYSCON.saradc_ctrl.work_mode = 0;
         SYSCON.saradc_ctrl.sar_sel = 0;
-    } else if (mode == ADC_CONV_SINGLE_UNIT_2) {
+        SYSCON.saradc_ctrl.data_sar_sel = 0;
+    } else if (mode == ADC_LL_DIGI_CONV_ONLY_ADC2) {
         SYSCON.saradc_ctrl.work_mode = 0;
         SYSCON.saradc_ctrl.sar_sel = 1;
-    } else if (mode == ADC_CONV_BOTH_UNIT) {
+        SYSCON.saradc_ctrl.data_sar_sel = 0;
+    } else if (mode == ADC_LL_DIGI_CONV_BOTH_UNIT) {
         SYSCON.saradc_ctrl.work_mode = 1;
-    } else if (mode == ADC_CONV_ALTER_UNIT) {
+        SYSCON.saradc_ctrl.data_sar_sel = 1;
+    } else if (mode == ADC_LL_DIGI_CONV_ALTER_UNIT) {
         SYSCON.saradc_ctrl.work_mode = 2;
+        SYSCON.saradc_ctrl.data_sar_sel = 1;
     }
 }
 
@@ -163,11 +194,10 @@ static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
 /**
  * Set I2S DMA data source for digital controller.
  *
- * @param src i2s data source, see ``adc_i2s_source_t``.
+ * @param src 1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix
  */
-static inline void adc_ll_digi_set_data_source(adc_i2s_source_t src)
+static inline void adc_ll_digi_set_data_source(bool src)
 {
-    /* 1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix */
     SYSCON.saradc_ctrl.data_to_i2s = src;
 }
 
@@ -199,12 +229,33 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_
  * @param pattern_index Items index. Range: 0 ~ 15.
  * @param pattern Stored conversion rules, see ``adc_digi_pattern_table_t``.
  */
-static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
+static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
 {
     uint32_t tab;
     uint8_t index = pattern_index / 4;
     uint8_t offset = (pattern_index % 4) * 8;
-    if (adc_n == ADC_NUM_1) {
+    adc_ll_digi_pattern_table_t pattern = {0};
+    uint8_t bit_width;
+
+    switch (table.bit_width) {
+        case 9:
+            bit_width = 0x0;
+            break;
+        case 10:
+            bit_width = 0x1;
+            break;
+        case 11:
+            bit_width = 0x2;
+            break;
+        case 12:
+            bit_width = 0x3;
+            break;
+        default:
+            bit_width = 0x3;
+    }
+    pattern.val = (table.atten & 0x3) | ((bit_width) << 2) | ((table.channel & 0xF) << 4);
+
+    if (table.unit == ADC_NUM_1) {
         tab = SYSCON.saradc_sar1_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
@@ -231,6 +282,15 @@ static inline void adc_ll_digi_clear_pattern_table(adc_ll_num_t adc_n)
         SYSCON.saradc_ctrl.sar2_patt_p_clear = 1;
         SYSCON.saradc_ctrl.sar2_patt_p_clear = 0;
     }
+}
+
+/**
+ * Disable clock for ADC digital controller.
+ * @note Not used for esp32
+ */
+static inline void adc_ll_digi_controller_clk_disable(void)
+{
+    //Leave here for compatibility
 }
 
 /*---------------------------------------------------------------
@@ -263,6 +323,20 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
+/**
+ * ADC SAR clock division factor setting. ADC SAR clock divided from `RTC_FAST_CLK`.
+ *
+ * @param div Division factor.
+ */
+static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
+{
+    if (adc_n == ADC_NUM_1) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl, sar1_clk_div, div);
+    } else { // adc_n == ADC_NUM_2
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl2, sar2_clk_div, div);
+    }
+}
+
 /**
  * Set adc output data format for RTC controller.
  *
@@ -398,62 +472,6 @@ static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t ad
     return ADC_RTC_DATA_OK;
 }
 
-/*---------------------------------------------------------------
-                    Common setting
----------------------------------------------------------------*/
-/**
- * Set ADC module power management.
- *
- * @param manage Set ADC power status.
- */
-static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
-{
-    /* Bit1  0:Fsm  1: SW mode
-       Bit0  0:SW mode power down  1: SW mode power on */
-    if (manage == ADC_POWER_SW_ON) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
-    } else if (manage == ADC_POWER_BY_FSM) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
-    } else if (manage == ADC_POWER_SW_OFF) {
-        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
-    }
-}
-
-/**
- * Get ADC module power management.
- *
- * @return
- *      - ADC power status.
- */
-static inline adc_ll_power_t adc_ll_get_power_manage(void)
-{
-    /* Bit1  0:Fsm  1: SW mode
-       Bit0  0:SW mode power down  1: SW mode power on */
-    adc_ll_power_t manage;
-    if (SENS.sar_meas_wait2.force_xpd_sar == SENS_FORCE_XPD_SAR_PU) {
-        manage = ADC_POWER_SW_ON;
-    } else if (SENS.sar_meas_wait2.force_xpd_sar == SENS_FORCE_XPD_SAR_PD) {
-        manage = ADC_POWER_SW_OFF;
-    } else {
-        manage = ADC_POWER_BY_FSM;
-    }
-    return manage;
-}
-
-/**
- * ADC SAR clock division factor setting. ADC SAR clock divided from `RTC_FAST_CLK`.
- *
- * @param div Division factor.
- */
-static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
-{
-    if (adc_n == ADC_NUM_1) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl, sar1_clk_div, div);
-    } else { // adc_n == ADC_NUM_2
-        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl2, sar2_clk_div, div);
-    }
-}
-
 /**
  * Set the attenuation of a particular channel on ADCn.
  */
@@ -482,6 +500,27 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
     }
 }
 
+/*---------------------------------------------------------------
+                    Common setting
+---------------------------------------------------------------*/
+/**
+ * Set ADC module power management.
+ *
+ * @param manage Set ADC power status.
+ */
+static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
+{
+    /* Bit1  0:Fsm  1: SW mode
+       Bit0  0:SW mode power down  1: SW mode power on */
+    if (manage == ADC_POWER_SW_ON) {
+        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+    } else if (manage == ADC_POWER_BY_FSM) {
+        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
+    } else if (manage == ADC_POWER_SW_OFF) {
+        SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
+    }
+}
+
 /**
  * Set ADC module controller.
  * There are five SAR ADC controllers:
@@ -492,25 +531,25 @@ static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t cha
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_hal_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
 {
     if (adc_n == ADC_NUM_1) {
         switch ( ctrl ) {
-        case ADC_CTRL_RTC:
+        case ADC_LL_CTRL_RTC:
             SENS.sar_read_ctrl.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_meas_start1.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start1.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
             SENS.sar_touch_ctrl1.xpd_hall_force     = 1;    // 1: SW control HALL power;        0: ULP FSM control HALL power.
             SENS.sar_touch_ctrl1.hall_phase_force   = 1;    // 1: SW control HALL phase;        0: ULP FSM control HALL phase.
             break;
-        case ADC_CTRL_ULP:
+        case ADC_LL_CTRL_ULP:
             SENS.sar_read_ctrl.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_meas_start1.meas1_start_force  = 0;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start1.sar1_en_pad_force  = 0;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
             SENS.sar_touch_ctrl1.xpd_hall_force     = 0;    // 1: SW control HALL power;        0: ULP FSM control HALL power.
             SENS.sar_touch_ctrl1.hall_phase_force   = 0;    // 1: SW control HALL phase;        0: ULP FSM control HALL phase.
             break;
-        case ADC_CTRL_DIG:
+        case ADC_LL_CTRL_DIG:
             SENS.sar_read_ctrl.sar1_dig_force       = 1;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_meas_start1.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start1.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
@@ -522,28 +561,28 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_hal_controller_
         }
     } else { // adc_n == ADC_NUM_2
         switch ( ctrl ) {
-        case ADC_CTRL_RTC:
+        case ADC_LL_CTRL_RTC:
             SENS.sar_meas_start2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
             SENS.sar_read_ctrl2.sar2_dig_force      = 0;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_read_ctrl2.sar2_pwdet_force    = 0;    // 1: Select power detect control;  0: Select RTC control.
             SYSCON.saradc_ctrl.sar2_mux             = 1;    // 1: Select digital control;       0: Select power detect control.
             break;
-        case ADC_CTRL_ULP:
+        case ADC_LL_CTRL_ULP:
             SENS.sar_meas_start2.meas2_start_force  = 0;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start2.sar2_en_pad_force  = 0;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
             SENS.sar_read_ctrl2.sar2_dig_force      = 0;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_read_ctrl2.sar2_pwdet_force    = 0;    // 1: Select power detect control;  0: Select RTC control.
             SYSCON.saradc_ctrl.sar2_mux             = 1;    // 1: Select digital control;       0: Select power detect control.
             break;
-        case ADC_CTRL_DIG:
+        case ADC_LL_CTRL_DIG:
             SENS.sar_meas_start2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
             SENS.sar_read_ctrl2.sar2_dig_force      = 1;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_read_ctrl2.sar2_pwdet_force    = 0;    // 1: Select power detect control;  0: Select RTC control.
             SYSCON.saradc_ctrl.sar2_mux             = 1;    // 1: Select digital control;       0: Select power detect control.
             break;
-        case ADC2_CTRL_PWDET:   // currently only used by Wi-Fi
+        case ADC_LL_CTRL_PWDET:   // currently only used by Wi-Fi
             SENS.sar_meas_start2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas_start2.sar2_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
             SENS.sar_read_ctrl2.sar2_dig_force      = 0;    // 1: Select digital control;       0: Select RTC control.

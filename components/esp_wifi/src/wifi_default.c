@@ -1,16 +1,9 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "sdkconfig.h"
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "esp_log.h"
@@ -110,6 +103,7 @@ static void wifi_default_action_sta_disconnected(void *arg, esp_event_base_t bas
     }
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 static void wifi_default_action_ap_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     if (s_wifi_netifs[WIFI_IF_AP] != NULL) {
@@ -123,6 +117,7 @@ static void wifi_default_action_ap_stop(void *arg, esp_event_base_t base, int32_
         esp_netif_action_stop(s_wifi_netifs[WIFI_IF_AP], base, event_id, data);
     }
 }
+#endif
 
 static void wifi_default_action_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
@@ -145,8 +140,10 @@ esp_err_t _esp_wifi_clear_default_wifi_handlers(void)
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, wifi_default_action_sta_stop);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, wifi_default_action_sta_connected);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, wifi_default_action_sta_disconnected);
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_START, wifi_default_action_ap_start);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, wifi_default_action_ap_stop);
+#endif
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_default_action_sta_got_ip);
     esp_unregister_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
     wifi_default_handlers_set = false;
@@ -162,6 +159,7 @@ esp_err_t _esp_wifi_set_default_wifi_handlers(void)
         return ESP_OK;
     }
     esp_err_t err;
+
     err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_START, wifi_default_action_sta_start, NULL);
     if (err != ESP_OK) {
         goto fail;
@@ -182,6 +180,7 @@ esp_err_t _esp_wifi_set_default_wifi_handlers(void)
         goto fail;
     }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_AP_START, wifi_default_action_ap_start, NULL);
     if (err != ESP_OK) {
         goto fail;
@@ -191,6 +190,7 @@ esp_err_t _esp_wifi_set_default_wifi_handlers(void)
     if (err != ESP_OK) {
         goto fail;
     }
+#endif
 
     err = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_default_action_sta_got_ip, NULL);
     if (err != ESP_OK) {
@@ -278,7 +278,11 @@ static esp_err_t create_and_attach(wifi_interface_t wifi_if, esp_netif_t* esp_ne
 
 static inline esp_err_t esp_netif_attach_wifi(esp_netif_t *esp_netif, wifi_interface_t wifi_if)
 {
-    if (esp_netif == NULL || (wifi_if != WIFI_IF_STA && wifi_if != WIFI_IF_AP)) {
+    if (esp_netif == NULL || (wifi_if != WIFI_IF_STA
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+    && wifi_if != WIFI_IF_AP
+#endif
+    )) {
         return ESP_ERR_INVALID_ARG;
     }
     s_wifi_netifs[wifi_if] = esp_netif;
@@ -290,16 +294,19 @@ esp_err_t esp_netif_attach_wifi_station(esp_netif_t *esp_netif)
     return esp_netif_attach_wifi(esp_netif, WIFI_IF_STA);
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 esp_err_t esp_netif_attach_wifi_ap(esp_netif_t *esp_netif)
 {
     return esp_netif_attach_wifi(esp_netif, WIFI_IF_AP);
 }
+#endif
 
 
 //
 // Default WiFi creation from user code
 //
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 /**
  * @brief User init default AP (official API)
  */
@@ -312,6 +319,7 @@ esp_netif_t* esp_netif_create_default_wifi_ap(void)
     esp_wifi_set_default_wifi_ap_handlers();
     return netif;
 }
+#endif
 
 /**
  * @brief User init default station (official API)
@@ -347,9 +355,13 @@ esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_
     };
     if (wifi_if == WIFI_IF_STA) {
         cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA;
-    } else if (wifi_if == WIFI_IF_AP) {
+    } else
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+    if (wifi_if == WIFI_IF_AP) {
         cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP;
-    } else {
+    } else
+#endif
+    {
         return NULL;
     }
 
@@ -359,6 +371,7 @@ esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_
     return netif;
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 /**
  * @brief Creates mesh network interfaces based on default STA and AP,
  * but without DHCP, this is to be enabled separately only on root node
@@ -404,3 +417,4 @@ esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, e
     }
     return ESP_OK;
 }
+#endif // CONFIG_ESP_WIFI_SOFTAP_SUPPORT

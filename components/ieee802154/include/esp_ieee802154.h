@@ -193,6 +193,24 @@ void esp_ieee802154_get_extended_address(uint8_t *ext_addr);
 void esp_ieee802154_set_extended_address(const uint8_t *ext_addr);
 
 /**
+ * @brief  Get the device coordinator.
+ *
+ * @return
+ *         - True   The coordinator is enabled.
+ *         - False  The coordinator is disabled.
+ *
+ */
+bool esp_ieee802154_get_coordinator(void);
+
+/**
+ * @brief  Set the device coordinator role.
+ *
+ * @param[in]  enable  The coordinator role to be set.
+ *
+ */
+void esp_ieee802154_set_coordinator(bool enable);
+
+/**
  * @brief  Get the auto frame pending mode.
  *
  * @return  The auto frame pending mode, refer to esp_ieee802154_pending_mode_t.

@@ -17,7 +17,9 @@ set(srcs
     "syscalls.c"
     "termios.c"
     "stdatomic.c"
-    "time.c")
+    "time.c"
+    "sysconf.c"
+    "realpath.c")
 set(include_dirs platform_include)
 
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)

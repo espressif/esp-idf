@@ -1,18 +1,8 @@
-# Copyright 2015-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import queue
+import subprocess
 import sys
 import time
 
@@ -23,10 +13,15 @@ from .output_helpers import red_print, yellow_print
 from .stoppable_thread import StoppableThread
 
 
-class SerialReader(StoppableThread):
+class Reader(StoppableThread):
+    """ Output Reader base class """
+
+
+class SerialReader(Reader):
     """ Read serial data from the serial port and push to the
     event queue, until stopped.
     """
+
     def __init__(self, serial_instance, event_queue):
         #  type: (serial.Serial, queue.Queue) -> None
         super(SerialReader, self).__init__()
@@ -96,3 +91,29 @@ class SerialReader(StoppableThread):
                 self.serial.cancel_read()
             except Exception:  # noqa
                 pass
+
+
+class LinuxReader(Reader):
+    """ Read data from the subprocess that runs runnable and push to the
+    event queue, until stopped.
+    """
+
+    def __init__(self, process, event_queue):
+        #  type: (subprocess.Popen, queue.Queue) -> None
+        super().__init__()
+        self.proc = process
+        self.event_queue = event_queue
+
+        self._stdout = iter(self.proc.stdout.readline, b'')  # type: ignore
+
+    def run(self):  # type: () -> None
+        try:
+            while self.alive:
+                for line in self._stdout:
+                    if line:
+                        self.event_queue.put((TAG_SERIAL, line), False)
+        finally:
+            self.proc.terminate()
+
+    def _cancel(self):  # type: () -> None
+        self.proc.terminate()

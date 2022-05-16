@@ -36,7 +36,7 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t reg_rd_dis                    :    7;  /*Set this bit to disable reading from BlOCK4-10.*/
-            uint32_t reg_dis_rtc_ram_boot          :    1;  /*Set this bit to disable boot from RTC RAM.*/
+            uint32_t reg_rpt4_reserved5            :    1;  /*Reserved*/
             uint32_t reg_dis_icache                :    1;  /*Set this bit to disable Icache.*/
             uint32_t reg_dis_dcache                :    1;  /*Set this bit to disable Dcache.*/
             uint32_t reg_dis_download_icache       :    1;  /*Set this bit to disable Icache in download mode (boot_mode[3:0] is 0, 1, 2, 3, 6, 7).*/
@@ -218,7 +218,7 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t reg_rd_dis_err                :    7;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_dis_rtc_ram_boot_err      :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
+            uint32_t reg_rpt4_reserved5_err        :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_dis_icache_err            :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_dis_dcache_err            :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_dis_download_icache_err   :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
@@ -300,7 +300,6 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_err3;
-    uint32_t reserved_18c;
     union {
         struct {
             uint32_t reg_rpt4_reserved2_err        :    24;  /*If any bits in this filed are 1, then it indicates a programming error.*/
@@ -308,6 +307,7 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_err4;
+    uint32_t reserved_190;
     uint32_t reserved_194;
     uint32_t reserved_198;
     uint32_t reserved_19c;

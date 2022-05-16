@@ -40,7 +40,7 @@
                                                 | MB_EVENT_COILS_WR)
 #define MB_READ_WRITE_MASK                  (MB_READ_MASK | MB_WRITE_MASK)
 
-static const char *SLAVE_TAG = "SLAVE_TEST";
+static const char *TAG = "SLAVE_TEST";
 
 static portMUX_TYPE param_lock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -92,7 +92,7 @@ void app_main(void)
     mb_register_area_descriptor_t reg_area; // Modbus register area descriptor structure
 
     // Set UART log level
-    esp_log_level_set(SLAVE_TAG, ESP_LOG_INFO);
+    esp_log_level_set(TAG, ESP_LOG_INFO);
     void* mbc_slave_handler = NULL;
 
     ESP_ERROR_CHECK(mbc_slave_init(MB_PORT_SERIAL_SLAVE, &mbc_slave_handler)); // Initialization of Modbus controller
@@ -166,8 +166,8 @@ void app_main(void)
     // Set UART driver mode to Half Duplex
     ESP_ERROR_CHECK(uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX));
 
-    ESP_LOGI(SLAVE_TAG, "Modbus slave stack initialized.");
-    ESP_LOGI(SLAVE_TAG, "Start modbus test...");
+    ESP_LOGI(TAG, "Modbus slave stack initialized.");
+    ESP_LOGI(TAG, "Start modbus test...");
 
     // The cycle below will be terminated when parameter holdingRegParams.dataChan0
     // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
@@ -180,7 +180,7 @@ void app_main(void)
         if(event & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD)) {
             // Get parameter information from parameter queue
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "HOLDING %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "HOLDING %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                     rw_str,
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
@@ -198,7 +198,7 @@ void app_main(void)
             }
         } else if (event & MB_EVENT_INPUT_REG_RD) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "INPUT READ (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "INPUT READ (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
                     (uint32_t)reg_info.type,
@@ -206,7 +206,7 @@ void app_main(void)
                     (uint32_t)reg_info.size);
         } else if (event & MB_EVENT_DISCRETE_RD) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "DISCRETE READ (%u us): ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "DISCRETE READ (%u us): ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
                                 (uint32_t)reg_info.type,
@@ -214,7 +214,7 @@ void app_main(void)
                                 (uint32_t)reg_info.size);
         } else if (event & (MB_EVENT_COILS_RD | MB_EVENT_COILS_WR)) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "COILS %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "COILS %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                                 rw_str,
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
@@ -225,7 +225,7 @@ void app_main(void)
         }
     }
     // Destroy of Modbus controller on alarm
-    ESP_LOGI(SLAVE_TAG,"Modbus controller destroyed.");
+    ESP_LOGI(TAG,"Modbus controller destroyed.");
     vTaskDelay(100);
     ESP_ERROR_CHECK(mbc_slave_destroy());
 }

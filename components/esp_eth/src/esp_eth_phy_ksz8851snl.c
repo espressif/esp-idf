@@ -244,6 +244,26 @@ err:
     return ret;
 }
 
+static esp_err_t phy_ksz8851_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
+    esp_eth_mediator_t *eth   = ksz8851->eth;
+
+    uint32_t mbcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1MBCR, &mbcr), err, TAG, "P1MBCR read failed");
+    if (enable) {
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1MBCR, mbcr | P1MBCR_LOCAL_LOOPBACK), err, TAG, "P1MBCR write failed");
+        ESP_LOGD(TAG, "set Local (far-end) loopback");
+    } else {
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1MBCR, mbcr & ~P1MBCR_LOCAL_LOOPBACK), err, TAG, "P1MBCR write failed");
+        ESP_LOGD(TAG, "disabled Local (far-end) loopback");
+    }
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t phy_ksz8851_del(esp_eth_phy_t *phy)
 {
     ESP_LOGD(TAG, "deleting PHY");
@@ -274,6 +294,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8851snl(const eth_phy_config_t *config)
     ksz8851->parent.set_addr                = phy_ksz8851_set_addr;
     ksz8851->parent.get_addr                = phy_ksz8851_get_addr;
     ksz8851->parent.advertise_pause_ability = phy_ksz8851_advertise_pause_ability;
+    ksz8851->parent.loopback                = phy_ksz8851_loopback;
     ksz8851->parent.del                     = phy_ksz8851_del;
     return &(ksz8851->parent);
 err:

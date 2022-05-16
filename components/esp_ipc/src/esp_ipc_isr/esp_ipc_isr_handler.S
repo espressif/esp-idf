@@ -15,14 +15,30 @@
 
 /* High-priority interrupt - IPC_ISR handler */
 
-#define L4_INTR_STACK_SIZE  16
-#define L4_INTR_A0_OFFSET   0
-#define L4_INTR_A2_OFFSET   4
-#define L4_INTR_A3_OFFSET   8
-#define L4_INTR_A4_OFFSET   12
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
+#define LX_INTR_STACK_SIZE  16
+#define LX_INTR_A0_OFFSET   0
+#define LX_INTR_A2_OFFSET   4
+#define LX_INTR_A3_OFFSET   8
+#define LX_INTR_A4_OFFSET   12
+#define EXCSAVE_X           EXCSAVE_5
+#define RFI_X               5
+
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
+
+#define LX_INTR_STACK_SIZE  16
+#define LX_INTR_A0_OFFSET   0
+#define LX_INTR_A2_OFFSET   4
+#define LX_INTR_A3_OFFSET   8
+#define LX_INTR_A4_OFFSET   12
+#define EXCSAVE_X           EXCSAVE_4
+#define RFI_X               4
+
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
+
     .data
-_l4_intr_stack:
-    .space      L4_INTR_STACK_SIZE
+_lx_intr_stack:
+    .space      LX_INTR_STACK_SIZE
     .section .iram1,"ax"
     .global     esp_ipc_isr_handler
     .type       esp_ipc_isr_handler,@function
@@ -30,17 +46,17 @@ _l4_intr_stack:
 esp_ipc_isr_handler:
     /* Allocate exception frame and save minimal context. */
     /* Because the interrupt cause code has protection that only
-       allows one cpu to enter in the IPC_ISR section of the L4
+       allows one cpu to enter in the IPC_ISR section of the LX
        interrupt at one time, there's no need to have two
-       _l4_intr_stack for each cpu */
+       _lx_intr_stack for each cpu */
 
     /* Save A0, A2, A3, A4 so we can use those registers further*/
-    movi    a0, _l4_intr_stack
-    s32i    a2, a0, L4_INTR_A2_OFFSET
-    s32i    a3, a0, L4_INTR_A3_OFFSET
-    s32i    a4, a0, L4_INTR_A4_OFFSET
-    rsr     a2, EXCSAVE_4
-    s32i    a2, a0, L4_INTR_A0_OFFSET
+    movi    a0, _lx_intr_stack
+    s32i    a2, a0, LX_INTR_A2_OFFSET
+    s32i    a3, a0, LX_INTR_A3_OFFSET
+    s32i    a4, a0, LX_INTR_A4_OFFSET
+    rsr     a2, EXCSAVE_X
+    s32i    a2, a0, LX_INTR_A0_OFFSET
 
     /* disable nested iterrupts */
     /* PS.EXCM is changed from 1 to 0 . It allows using usually exception handler instead of the Double exception handler. */
@@ -53,9 +69,14 @@ esp_ipc_isr_handler:
     /*
     * Reset isr interrupt flags
     */
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
+    /* This int is level-triggered and doesn't need clearing.
+       Do nothing here and clear int status by peripheral register later.*/
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
     /* This int is edge-triggered and needs clearing. */
     movi    a3, (1 << ETS_IPC_ISR_INUM)
     wsr     a3, INTCLEAR
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 
     /* get CORE_ID */
     getcoreid   a3
@@ -85,16 +106,16 @@ esp_ipc_isr_handler:
     callx0  a0
 
     /* Done. Restore registers and return. */
-    movi    a0, _l4_intr_stack
-    l32i    a2, a0, L4_INTR_A2_OFFSET
-    l32i    a3, a0, L4_INTR_A3_OFFSET
-    l32i    a4, a0, L4_INTR_A4_OFFSET
+    movi    a0, _lx_intr_stack
+    l32i    a2, a0, LX_INTR_A2_OFFSET
+    l32i    a3, a0, LX_INTR_A3_OFFSET
+    l32i    a4, a0, LX_INTR_A4_OFFSET
 
     /* set the end flag */
     movi    a0, esp_ipc_isr_end_fl
     s32i    a0, a0, 0
 
     /* restore a0 */
-    rsr     a0, EXCSAVE_4
-    /* restores PS from EPS[4] and jumps to the address in EPC[4] */
-    rfi     4
+    rsr     a0, EXCSAVE_X
+    /* restores PS from EPS[X] and jumps to the address in EPC[X] */
+    rfi     RFI_X

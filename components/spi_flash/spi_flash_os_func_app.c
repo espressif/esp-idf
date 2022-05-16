@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdarg.h>
 #include <sys/param.h>  //For max/min
@@ -24,7 +16,7 @@
 #include "hal/spi_types.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
-
+#include "esp_compiler.h"
 #include "esp_rom_sys.h"
 
 #include "driver/spi_common_internal.h"
@@ -140,11 +132,13 @@ static IRAM_ATTR esp_err_t spi1_flash_os_check_yield(void *arg, uint32_t chip_st
 
 static IRAM_ATTR esp_err_t spi1_flash_os_yield(void *arg, uint32_t* out_status)
 {
+    if (likely(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)) {
 #ifdef CONFIG_SPI_FLASH_ERASE_YIELD_TICKS
-    vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+        vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
 #else
-    vTaskDelay(1);
+        vTaskDelay(1);
 #endif
+    }
     on_spi1_yielded((spi1_app_func_arg_t*)arg);
     return ESP_OK;
 }

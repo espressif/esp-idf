@@ -2,6 +2,8 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+**Note:** This example uses an internal implementation of the [modem component](components/modem) that will not be maintained in `v5.0` and this example will be migrated to [esp-modem component](https://components.espressif.com/component/espressif/esp_modem).
+
 ## Overview
 
 A general PPP application consists of two parts: PPP server which is provided by cellular modem module and PPP client which is provided by ESP32 in this example.
@@ -127,5 +129,9 @@ E (626) sim800: sim800_sync(293): send command failed
 E (626) sim800: sim800_init(628): sync failed
 ```
    * Make sure your modem module is in command mode stably before you run this example.
+
+2. Why the modem restarts before switching to PPP mode or while getting operator's information?
+
+   * Make sure the modem device is properly powered. Please consult the device's datasheet for the power requirement (BG96 consumes approximately 200mA while establishing a connection and may restart if powered only from ESP32-WROVER Kit)
 
 (For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)

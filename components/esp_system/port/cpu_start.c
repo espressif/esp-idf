@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -41,13 +33,11 @@
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/spiram.h"
 #include "esp32s2/dport_access.h"
-#include "esp32s2/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rtc.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/spiram.h"
 #include "esp32s3/dport_access.h"
-#include "esp32s3/memprot.h"
 #include "soc/assist_debug_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/system_reg.h"
@@ -56,15 +46,21 @@
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
 #include "soc/cache_memory.h"
-#include "esp32c3/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "soc/cache_memory.h"
-#include "esp32h2/memprot.h"
 #endif
 
-#include "spi_flash_private.h"
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/memprot.h"
+#else
+#include "esp_memprot.h"
+#endif
+#endif
+
+#include "esp_private/spi_flash_os.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
 #include "esp_private/crosscore_int.h"
@@ -80,7 +76,7 @@
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
 
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "trax.h"
 #endif
 
@@ -145,6 +141,15 @@ static volatile bool s_resume_cores;
 // If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
 
+static void core_intr_matrix_clear(void)
+{
+    uint32_t core_id = cpu_hal_get_core_id();
+
+    for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
+        intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+    }
+}
+
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void)
 {
@@ -178,14 +183,16 @@ void IRAM_ATTR call_start_cpu1(void)
     s_cpu_up[1] = true;
     ESP_EARLY_LOGI(TAG, "App cpu up.");
 
+    // Clear interrupt matrix for APP CPU core
+    core_intr_matrix_clear();
+
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
 
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_TRAX_TWOBANKS) || \
+    (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP32S3_TRAX_TWOBANKS)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif
 #endif
 
     s_cpu_inited[1] = true;
@@ -251,16 +258,6 @@ static void start_other_core(void)
     }
 }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-
-static void intr_matrix_clear(void)
-{
-    for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-        intr_matrix_set(0, i, ETS_INVALID_INUM);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        intr_matrix_set(1, i, ETS_INVALID_INUM);
-#endif
-    }
-}
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -365,21 +362,31 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if CONFIG_IDF_TARGET_ESP32S3
     extern int _rodata_reserved_end;
-    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1)/MMU_PAGE_SIZE)*sizeof(uint32_t);
+    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif
 
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 
-    esp_mspi_pin_init();
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
     if (!efuse_opflash_en) {
         ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();
     }
-    esp_opiflash_init();
 #endif
+    esp_mspi_pin_init();
+    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
+    // So we have to read it here in SPI mode, before entering the OPI mode.
+    bootloader_flash_update_id();
+    /**
+     * This function initialise the Flash chip to the user-defined settings.
+     *
+     * In bootloader, we only init Flash (and MSPI) to a preliminary state, for being flexible to
+     * different chips.
+     * In this stage, we re-configure the Flash (and MSPI) to required configuration
+     */
+    spi_flash_init_chip_state();
 #if CONFIG_IDF_TARGET_ESP32S3
     //On other chips, this feature is not provided by HW, or hasn't been tested yet.
     spi_timing_flash_tuning();
@@ -472,12 +479,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num, uint32_t rodata_start, uint32_t rodata_end, int i_off, int ro_off);
-    Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size/sizeof(uint32_t), \
-                            cache_mmu_drom_size/sizeof(uint32_t), \
-                            (uint32_t)&_rodata_reserved_start, \
-                            (uint32_t)&_rodata_reserved_end, \
-                            s_instr_flash2spiram_off, \
-                            s_rodata_flash2spiram_off);
+    Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size / sizeof(uint32_t), \
+                             cache_mmu_drom_size / sizeof(uint32_t), \
+                             (uint32_t)&_rodata_reserved_start, \
+                             (uint32_t)&_rodata_reserved_end, \
+                             s_instr_flash2spiram_off, \
+                             s_rodata_flash2spiram_off);
 #endif
 
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S2_DATA_CACHE_WRAP || \
@@ -503,9 +510,9 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 //Enable trace memory and immediately start trace.
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_ESP32_TRAX_TWOBANKS || CONFIG_ESP32S3_TRAX_TWOBANKS
     trax_enable(TRAX_ENA_PRO_APP);
 #else
     trax_enable(TRAX_ENA_PRO);
@@ -514,7 +521,7 @@ void IRAM_ATTR call_start_cpu0(void)
     trax_enable(TRAX_ENA_PRO);
 #endif
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 
     esp_clk_init();
     esp_perip_clk_init();
@@ -523,7 +530,8 @@ void IRAM_ATTR call_start_cpu0(void)
     // and default RTC-backed system time provider.
     g_startup_time = esp_rtc_get_time_us();
 
-    intr_matrix_clear();
+    // Clear interrupt matrix for PRO CPU core
+    core_intr_matrix_clear();
 
 #ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
 #ifdef CONFIG_ESP_CONSOLE_UART
@@ -544,34 +552,42 @@ void IRAM_ATTR call_start_cpu0(void)
 
     esp_cache_err_int_init();
 
-#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
     // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
     // If such a situation appears, it is likely an malicious attempt to bypass the system safety setup -> print error & reset
+
+#if CONFIG_IDF_TARGET_ESP32S2
     if (esp_memprot_is_locked_any()) {
+#else
+    bool is_locked = false;
+    if (esp_mprot_is_conf_locked_any(&is_locked) != ESP_OK || is_locked) {
+#endif
         ESP_EARLY_LOGE(TAG, "Memprot feature locked after the system reset! Potential safety corruption, rebooting.");
         esp_restart_noos_dig();
     }
+
+    //default configuration of PMS Memprot
     esp_err_t memp_err = ESP_OK;
+#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
-#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
-    memp_err = esp_memprot_set_prot(true, true, NULL);
+    memp_err = esp_memprot_set_prot(PANIC_HNDL_ON, MEMPROT_LOCK, NULL);
 #else
-    esp_memprot_set_prot(true, true, NULL);
+    memp_err = esp_memprot_set_prot(PANIC_HNDL_ON, MEMPROT_UNLOCK, NULL);
 #endif
-#else
-#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
-    memp_err = esp_memprot_set_prot(true, false, NULL);
-#else
-    esp_memprot_set_prot(true, false, NULL);
+#else //CONFIG_IDF_TARGET_ESP32S2 specific end
+    esp_memp_config_t memp_cfg = ESP_MEMPROT_DEFAULT_CONFIG();
+#if !CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+    memp_cfg.lock_feature = false;
 #endif
-#endif
+    memp_err = esp_mprot_set_prot(&memp_cfg);
+#endif //other IDF_TARGETS end
+
     if (memp_err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (error 0x%08X), rebooting.", memp_err);
+        ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (0x%08X: %s), rebooting.", memp_err, esp_err_to_name(memp_err));
         esp_restart_noos_dig();
     }
-#endif
+#endif //CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_ESP_SYSTEM_MEMPROT_TEST
 
-    bootloader_flash_update_id();
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM

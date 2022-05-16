@@ -24,6 +24,7 @@
 #include "freertos/semphr.h"
 #include "esp_event.h"
 #include "sys/queue.h"
+#include "esp_timer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,10 +55,18 @@ struct esp_hidh_dev_s {
 
     esp_hid_device_config_t config;
     esp_hid_usage_t         usage;
-    esp_hid_transport_t     transport; //BT, BLE or USB
-    bool                    connected; //we have all required data to communicate
-    bool                    opened;    //we opened the device manually, else the device connected to us
-    int                     status;    //status of the last command
+    esp_hid_transport_t     transport;      //BT, BLE or USB
+    esp_hid_trans_type_t    trans_type;     //indicate what transaction is going on, new transaction only be allowed after the previous done
+    esp_timer_handle_t      trans_timer;    //transactiion timer
+    uint8_t                 report_type;    //Get_Report tansaction report_type
+    uint8_t                 report_id;      //Get_Report tansaction report_id
+    uint8_t                 protocol_mode;  //device protocol mode
+    bool                    connected;      //we have all required data to communicate
+    bool                    opened;         //we opened the device manually, else the device connected to us
+    bool                    added;          //If lower layer has added the device
+    bool                    is_orig;        //If host initiate the connection
+    bool                    in_use;         //If false, it will be deleted from the devices list.
+    int                     status;         //status of the last command
 
     size_t                  reports_len;
     esp_hidh_dev_report_t   *reports;
@@ -66,10 +75,16 @@ struct esp_hidh_dev_s {
     size_t                  tmp_len;
 
     xSemaphoreHandle        semaphore;
+    xSemaphoreHandle        mutex;
 
     esp_err_t               (*close)        (esp_hidh_dev_t *dev);
     esp_err_t               (*report_write) (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
     esp_err_t               (*report_read)  (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, size_t max_length, uint8_t *value, size_t *value_len);
+    esp_err_t               (*set_report)   (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);
+    esp_err_t               (*get_idle)     (esp_hidh_dev_t *dev);
+    esp_err_t               (*set_idle)     (esp_hidh_dev_t *dev, uint8_t idle_time);
+    esp_err_t               (*get_protocol) (esp_hidh_dev_t *dev);
+    esp_err_t               (*set_protocol) (esp_hidh_dev_t *dev, uint8_t protocol_mode);
     void                    (*dump)         (esp_hidh_dev_t *dev, FILE *fp);
 
 #if CONFIG_BLUEDROID_ENABLED
@@ -80,10 +95,10 @@ struct esp_hidh_dev_s {
 #if CONFIG_BT_HID_HOST_ENABLED
         struct {
             esp_bt_cod_t cod;
-            int handle;
-            uint8_t sub_class;
-            uint8_t app_id;
-            uint16_t attr_mask;
+            uint8_t handle;
+            // uint8_t sub_class;
+            // uint8_t app_id;
+            // uint16_t attr_mask;
         } bt;
 #endif /* CONFIG_BT_HID_HOST_ENABLED */
 #if CONFIG_GATTC_ENABLE
@@ -105,15 +120,24 @@ esp_hidh_dev_t *esp_hidh_dev_malloc(void);
 
 #if CONFIG_BLUEDROID_ENABLED
 esp_hidh_dev_t *esp_hidh_dev_get_by_bda(esp_bd_addr_t bda); //BT/BLE
-esp_hidh_dev_t *esp_hidh_dev_get_by_handle(int handle); //BT Only
+esp_hidh_dev_t *esp_hidh_dev_get_by_handle(uint8_t handle); //Classic Bluetooth Only
 esp_hidh_dev_t *esp_hidh_dev_get_by_conn_id(uint16_t conn_id); //BLE Only
 #endif /* CONFIG_BLUEDROID_ENABLED */
 
+esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_id_type_proto(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t protocol_mode);
 esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_id_and_type(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type);
+esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_len_and_proto(esp_hidh_dev_t *dev, size_t len, int protocol_mode);
 esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_id_and_proto(esp_hidh_dev_t *dev, size_t report_id, int protocol_mode);
+esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_dev_t *dev, int protocol_mode,
+                                                                       size_t len, const uint8_t *data, bool *has_report_id);
 esp_hidh_dev_report_t *esp_hidh_dev_get_report_by_handle(esp_hidh_dev_t *dev, uint16_t handle);  //BLE Only
-
-
+void esp_hidh_process_event_data_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id,
+                                         void *event_data);
+void esp_hidh_dev_lock(esp_hidh_dev_t *dev);
+void esp_hidh_dev_unlock(esp_hidh_dev_t *dev);
+void esp_hidh_dev_wait(esp_hidh_dev_t *dev);
+void esp_hidh_dev_send(esp_hidh_dev_t *dev);
+esp_err_t esp_hidh_dev_free_inner(esp_hidh_dev_t *dev);
 #ifdef __cplusplus
 }
 #endif

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_ADC_CAL_H__
 #define __ESP_ADC_CAL_H__
@@ -30,6 +22,7 @@ typedef enum {
     ESP_ADC_CAL_VAL_EFUSE_VREF = 0,         /**< Characterization based on reference voltage stored in eFuse*/
     ESP_ADC_CAL_VAL_EFUSE_TP = 1,           /**< Characterization based on Two Point values stored in eFuse*/
     ESP_ADC_CAL_VAL_DEFAULT_VREF = 2,       /**< Characterization based on default reference voltage*/
+    ESP_ADC_CAL_VAL_EFUSE_TP_FIT = 3,       /**< Characterization based on Two Point values and fitting curve coefficients stored in eFuse */
     ESP_ADC_CAL_VAL_MAX,
     ESP_ADC_CAL_VAL_NOT_SUPPORTED = ESP_ADC_CAL_VAL_MAX,
 } esp_adc_cal_value_t;
@@ -48,6 +41,7 @@ typedef struct {
     uint32_t vref;                          /**< Vref used by lookup table*/
     const uint32_t *low_curve;              /**< Pointer to low Vref curve of lookup table (NULL if unused)*/
     const uint32_t *high_curve;             /**< Pointer to high Vref curve of lookup table (NULL if unused)*/
+    uint8_t version;                        /**< ADC Calibration */
 } esp_adc_cal_characteristics_t;
 
 /**
@@ -129,8 +123,8 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
  *
  * @return
  *      - ESP_OK: ADC read and converted to mV
- *      - ESP_ERR_TIMEOUT: Error, timed out attempting to read ADC
  *      - ESP_ERR_INVALID_ARG: Error due to invalid arguments
+ *      - ESP_ERR_INVALID_STATE: Reading result is invalid. Try to read again.
  */
 esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel, const esp_adc_cal_characteristics_t *chars, uint32_t *voltage);
 

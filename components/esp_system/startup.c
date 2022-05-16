@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -58,9 +50,7 @@
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
-#include "esp_private/usb_console.h"
-#include "esp_vfs_cdcacm.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "esp_vfs_console.h"
 
 #include "brownout.h"
 
@@ -90,9 +80,6 @@
 #if !(SOC_CPU_CORES_NUM > 1) && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     #error "System has been configured to run on multiple cores, but target SoC only has a single core."
 #endif
-
-#define STRINGIFY(s) STRINGIFY2(s)
-#define STRINGIFY2(s) #s
 
 uint64_t g_startup_time = 0;
 
@@ -248,8 +235,13 @@ static void do_core_init(void)
        app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
        fail initializing it properly. */
     heap_caps_init();
+
+    // When apptrace module is enabled, there will be SEGGER_SYSVIEW calls in the newlib init.
+    // SEGGER_SYSVIEW relies on apptrace module
+    // apptrace module uses esp_timer_get_time to determine timeout conditions.
+    // esp_timer early initialization is required for esp_timer_get_time to work.
+    esp_timer_early_init();
     esp_newlib_init();
-    esp_newlib_time_init();
 
     if (g_spiram_ok) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
@@ -274,23 +266,16 @@ static void do_core_init(void)
     esp_brownout_init();
 #endif
 
-#ifdef CONFIG_VFS_SUPPORT_IO
-#ifdef CONFIG_ESP_CONSOLE_UART
-    esp_vfs_dev_uart_register();
-    const char *default_stdio_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
-#endif // CONFIG_ESP_CONSOLE_UART
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
-    ESP_ERROR_CHECK(esp_usb_console_init());
-    ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
-    const char *default_stdio_dev = "/dev/cdcacm";
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
-#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    ESP_ERROR_CHECK(esp_vfs_dev_usb_serial_jtag_register());
-    const char *default_stdio_dev = "/dev/usbserjtag";
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-#endif // CONFIG_VFS_SUPPORT_IO
+    esp_newlib_time_init();
+
+#if CONFIG_VFS_SUPPORT_IO
+    // VFS console register.
+    esp_err_t vfs_err = esp_vfs_console_register();
+    assert(vfs_err == ESP_OK && "Failed to register vfs console");
+#endif
 
 #if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+    const static char *default_stdio_dev = "/dev/console/";
     esp_reent_init(_GLOBAL_REENT);
     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
@@ -442,7 +427,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
 
-#if CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
     // Configure to isolate (disable the Input/Output/Pullup/Pulldown
     // function of the pin) all GPIO pins in sleep state
     esp_sleep_config_gpio_isolate();
@@ -474,7 +459,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     esp_apb_backup_dma_lock_init();
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
 #endif

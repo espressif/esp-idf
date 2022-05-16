@@ -385,23 +385,11 @@ void app_main(void)
         return;
     }
 
-    ret = esp_blufi_host_init();
+    ret = esp_blufi_host_and_cb_init(&example_callbacks);
     if (ret) {
-        BLUFI_ERROR("%s initialise host failed: %s\n", __func__, esp_err_to_name(ret));
+        BLUFI_ERROR("%s initialise failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
     BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
-
-    ret = esp_blufi_register_callbacks(&example_callbacks);
-    if(ret){
-        BLUFI_ERROR("%s blufi register failed, error code = %x\n", __func__, ret);
-        return;
-    }
-
-    ret = esp_blufi_gap_register_callback();
-    if(ret){
-        BLUFI_ERROR("%s gap register failed, error code = %x\n", __func__, ret);
-        return;
-    }
 }

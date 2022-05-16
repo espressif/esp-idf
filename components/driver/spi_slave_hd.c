@@ -89,7 +89,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     host->dma_enabled = (config->dma_chan != SPI_DMA_DISABLED);
 
     if (host->dma_enabled) {
-        ret = spicommon_slave_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        ret = spicommon_dma_chan_alloc(host_id, config->dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (ret != ESP_OK) {
             goto cleanup;
         }
@@ -241,7 +241,7 @@ esp_err_t spi_slave_hd_deinit(spi_host_device_t host_id)
 
     spicommon_periph_free(host_id);
     if (host->dma_enabled) {
-        spicommon_slave_free_dma(host_id);
+        spicommon_dma_chan_free(host_id);
     }
     free(host);
     spihost[host_id] = NULL;

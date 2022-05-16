@@ -120,6 +120,15 @@ bool bootloader_common_label_search(const char *list, char *label);
 void bootloader_configure_spi_pins(int drv);
 
 /**
+ * @brief Get flash CS IO
+ *
+ * Can be determined by eFuse values, or the default value
+ *
+ * @return Flash CS IO
+ */
+uint8_t bootloader_flash_get_cs_io(void);
+
+/**
  * @brief Calculates a sha-256 for a given partition or returns a appended digest.
  *
  * This function can be used to return the SHA-256 digest of application, bootloader and data partitions.

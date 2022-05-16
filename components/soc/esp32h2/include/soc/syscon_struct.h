@@ -128,7 +128,7 @@ typedef volatile struct syscon_dev_s {
             uint32_t reserved1:         31;
         };
         uint32_t val;
-    } apb_ctrl_sdio_ctrl;
+    } sdio_ctrl;
     union {
         struct {
             uint32_t redcy_sig0: 31;
@@ -245,7 +245,7 @@ typedef volatile struct syscon_dev_s {
             uint32_t reserved1: 31;
         };
         uint32_t val;
-    } apb_ctrlclk_conf;
+    } clk_conf;
     uint32_t reserved_e4;
     uint32_t reserved_e8;
     uint32_t reserved_ec;
@@ -444,7 +444,7 @@ typedef volatile struct syscon_dev_s {
     uint32_t reserved_3f0;
     uint32_t reserved_3f4;
     uint32_t reserved_3f8;
-    uint32_t apb_ctrl_date;                               /*Version control*/
+    uint32_t date;                               /*Version control*/
 } syscon_dev_t;
 extern syscon_dev_t SYSCON;
 #ifdef __cplusplus

@@ -53,7 +53,7 @@ def mqqt_server_sketch(my_ip, port):
     print('server closed')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_mqtt_qos1(env, extra_data):
     global msgid
     """
@@ -76,7 +76,7 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     dut1.start_app()
     # waiting for getting the IP address
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')

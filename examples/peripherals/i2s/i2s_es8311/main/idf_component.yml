@@ -1,0 +1,16 @@
+## IDF Component Manager Manifest File
+## Version of your project. Should conform Semantic Versioning 2.0 rules https://semver.org/
+version: "1.0.0"
+
+dependencies:
+  espressif/es8311: "==0.0.2-alpha"
+  ## Required IDF version
+  idf:
+    version: "^4.4"
+  # # Put list of dependencies here
+  # # For components maintained by Espressif:
+  # component:
+  #   version: "~1.0.0"
+  # # For 3rd party components:
+  # username/component:
+  #   version: "~1.0.0"

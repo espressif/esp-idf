@@ -31,6 +31,7 @@ Contents
 * `Configure`_ a basic functionality of the outputs
 * `Operate`_ the outputs to drive a motor
 * `Adjust`_ how the motor is driven
+* `Synchronize`_ sync timers to work together
 * `Capture`_ external signals to provide additional control over the outputs
 * Use `Fault Handler`_ to detect and manage faults
 * Add a higher frequency `Carrier`_, if output signals are passed through an isolation transformer
@@ -84,14 +85,58 @@ There are couple of ways to adjust a signal on the outputs and changing how the 
 
 * Set specific PWM frequency by calling :cpp:func:`mcpwm_set_frequency`. This may be required to adjust to electrical or mechanical characteristics of particular motor and driver. To check what frequency is set, use function :cpp:func:`mcpwm_get_frequency`.
 * Introduce a dead time between outputs A and B when they are changing the state to reverse direction of the motor rotation. This is to make up for on/off switching delay of the motor driver FETs. The dead time options are defined in :cpp:type:`mcpwm_deadtime_type_t` and enabled by calling :cpp:func:`mcpwm_deadtime_enable`. To disable this functionality call :cpp:func:`mcpwm_deadtime_disable`.
-* Synchronize outputs of operator submodules, e.g. to get raising edge of PWM0A/B and PWM1A/B to start exactly at the same time, or shift them between each other by a given phase. Synchronization is triggered by ``SYNC SIGNALS`` shown on the :ref:`block diagram <mcpwm_block_diagram>` of the MCPWM above, and defined in :cpp:type:`mcpwm_sync_signal_t`. To attach the signal to a GPIO call :cpp:func:`mcpwm_gpio_init`. You can then enable synchronization with function :cpp:func:`mcpwm_sync_enable`. As input parameters provide MCPWM unit, timer to synchronize, the synchronization signal and a phase to delay the timer.
+* Synchronize outputs of operator submodules, e.g. to get raising edge of PWM0A/B and PWM1A/B to start exactly at the same time, or shift them between each other by a given phase. Synchronization is triggered by ``SYNC SIGNALS`` shown on the :ref:`block diagram <mcpwm_block_diagram>` of the MCPWM above, and defined in :cpp:type:`mcpwm_sync_signal_t`. To attach the signal to a GPIO call :cpp:func:`mcpwm_gpio_init`. You can then enable synchronization with function :cpp:func:`mcpwm_sync_configure`. As input parameters provide MCPWM unit, timer to synchronize, the synchronization signal and a phase to delay the timer.
 
 .. note::
 
-    Synchronization signals are referred to using two different enumerations. First one :cpp:type:`mcpwm_io_signals_t` is used together with function :cpp:func:`mcpwm_gpio_init` when selecting a GPIO as the signal input source. The second one :cpp:type:`mcpwm_sync_signal_t` is used when enabling or disabling synchronization with :cpp:func:`mcpwm_sync_enable` or :cpp:func:`mcpwm_sync_disable`.
+    Synchronization signals are referred to using two different enumerations. First one :cpp:type:`mcpwm_io_signals_t` is used together with function :cpp:func:`mcpwm_gpio_init` when selecting a GPIO as the signal input source. The second one :cpp:type:`mcpwm_sync_signal_t` is used when enabling or disabling synchronization with :cpp:func:`mcpwm_sync_configure` or :cpp:func:`mcpwm_sync_disable`.
 
 
 * Vary the pattern of the A/B output signals by getting MCPWM counters to count up, down and up/down (automatically changing the count direction). Respective configuration is done when calling :cpp:func:`mcpwm_init`, as discussed in section `Configure`_, and selecting one of counter types from :cpp:type:`mcpwm_counter_type_t`. For explanation of how A/B PWM output signals are generated, see *{IDF_TARGET_NAME} Technical Reference Manual* > *Motor Control PWM (MCPWM)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mcpwm>`__].
+
+
+Synchronize
+-----------
+
+Each PWM timer has a synchronization input and a synchronization output. The synchronization input can be selected from other timers' synchronization outputs or GPIO signals via the GPIO matrix. Timer's synchronization signal can be generated from either the input sync signal or when the count value reaches peak/zero. Thus, the PWM timers can be chained together with their phase-locked. During synchronization, the PWM timer clock prescaler will reset its counter in order to synchronize the PWM timer clock.
+
+The functionality is enabled in following steps:
+
+1. Make sure the PWM timer and operator are already configured so that sync will inherit its config (count mode, freq and duty).
+2. Enabling sync input of the timer by invoking :cpp:func:`mcpwm_sync_configure`, selecting desired signal input from :cpp:type:`mcpwm_sync_signal_t`, and setting the desired phase range from 0 to 999 which is mapped to 0%~99.9%. 0 means zero phase is applied and output is fired at the same time. And selecting desired counting direction.
+3. Enabling one of sync event source from another timer or from external GPIO input.
+
+To sync with another timer:
+
+Enabling sync output of another timer by invoking :cpp:func:`mcpwm_set_timer_sync_output` and selecting desired event to generate sync output from :cpp:type:`mcpwm_timer_sync_trigger_t`.
+
+To sync with GPIO positive edge input (negative edge requires :cpp:func:`mcpwm_sync_invert_gpio_synchro`):
+
+Configuring GPIOs to act as the sync signal inputs by calling functions :cpp:func:`mcpwm_gpio_init` or :cpp:func:`mcpwm_set_pin`, which were described in section `Configure`_.
+
+It's normal condition that chained sync signal may have tens or even hundreds of nanoseconds of delay between each timer output due to hardware limitation. To sync two timers accurately it is required to have the third timer occupied to produce sync event that can be consumed parallel by other two timer, so that those two timer will have no delay between each other but have the same delay between the timer which provides events. Another solution is introducing an external GPIO event source so that all three timers can be synced together with no delay.
+
+.. only:: SOC_MCPWM_SWSYNC_CAN_PROPAGATE
+
+    Software sync event which triggered on one timer can be propagated to other timers on {IDF_TARGET_NAME}, which can be used as a tricky way to get all three timers synced without any extra requirement.
+
+    .. code-block:: c
+
+        // configure timer0 as trigger source
+        mcpwm_set_timer_sync_output(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_SWSYNC_SOURCE_SYNCIN);
+        mcpwm_sync_config_t sync_conf = {
+            .sync_sig = MCPWM_SELECT_TIMER0_SYNC,
+            .timer_val = 0,
+            .count_direction = MCPWM_TIMER_DIRECTION_UP,
+        };
+        mcpwm_sync_configure(TARGET_MCPWM_UNIT, MCPWM_TIMER_0, &sync_conf);
+        mcpwm_sync_configure(TARGET_MCPWM_UNIT, MCPWM_TIMER_1, &sync_conf);
+        mcpwm_sync_configure(TARGET_MCPWM_UNIT, MCPWM_TIMER_2, &sync_conf);
+        // then send soft sync event to timer0
+        mcpwm_timer_trigger_soft_sync(MCPWM_UNIT_0, MCPWM_TIMER_0);
+
+If not required anymore, the capture functionality may be disabled with :cpp:func:`mcpwm_sync_disable`.
+
 
 Capture
 -------
@@ -178,7 +223,6 @@ Application Example
 
 MCPWM example are located under: :example:`peripherals/mcpwm`:
 
-* Demonstration how to use each submodule of the MCPWM - :example:`peripherals/mcpwm/mcpwm_basic_config`
 * Control of BLDC (brushless DC) motor with hall sensor feedback - :example:`peripherals/mcpwm/mcpwm_bldc_hall_control`
 * Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_brushed_dc_control`
 * Servo motor control - :example:`peripherals/mcpwm/mcpwm_servo_control`

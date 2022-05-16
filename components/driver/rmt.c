@@ -74,6 +74,7 @@ typedef struct {
     size_t tx_sub_len;
     bool translator;
     bool wait_done; //Mark whether wait tx done.
+    bool loop_autostop; // mark whether loop auto-stop is enabled
     rmt_channel_t channel;
     const rmt_item32_t *tx_data;
     xSemaphoreHandle tx_sem;
@@ -892,6 +893,13 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         status &= ~(1 << channel);
         rmt_obj_t *p_rmt = p_rmt_obj[channel];
         if (p_rmt) {
+            if (p_rmt->loop_autostop) {
+#ifndef SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP
+                // hardware doesn't support automatically stop output so driver should stop output here (possibility already overshotted several us)
+                rmt_ll_tx_stop(rmt_contex.hal.regs, channel);
+                rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
+#endif
+            }
             xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
             if (rmt_contex.rmt_tx_end_callback.function) {
                 rmt_contex.rmt_tx_end_callback.function(channel,  rmt_contex.rmt_tx_end_callback.arg);
@@ -1039,6 +1047,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     p_rmt_obj[channel]->tx_offset = 0;
     p_rmt_obj[channel]->tx_sub_len = 0;
     p_rmt_obj[channel]->wait_done = false;
+    p_rmt_obj[channel]->loop_autostop = false;
     p_rmt_obj[channel]->translator = false;
     p_rmt_obj[channel]->sample_to_rmt = NULL;
     if (p_rmt_obj[channel]->tx_sem == NULL) {
@@ -1365,9 +1374,22 @@ esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
 esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
+    ESP_RETURN_ON_FALSE(count <= RMT_LL_MAX_LOOP_COUNT, ESP_ERR_INVALID_ARG, TAG, "Invalid count value");
     RMT_ENTER_CRITICAL();
     rmt_ll_tx_set_loop_count(rmt_contex.hal.regs, channel, count);
     RMT_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t rmt_enable_tx_loop_autostop(rmt_channel_t channel, bool en)
+{
+    ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
+    p_rmt_obj[channel]->loop_autostop = en;
+#if SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP
+    RMT_ENTER_CRITICAL();
+    rmt_ll_tx_enable_loop_autostop(rmt_contex.hal.regs, channel, en);
+    RMT_EXIT_CRITICAL();
+#endif
     return ESP_OK;
 }
 #endif

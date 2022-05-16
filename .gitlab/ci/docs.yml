@@ -8,6 +8,9 @@
   - "tools/kconfig_new/**/*"
   - "CONTRIBUTING.rst"
 
+.patterns-docs-preview: &patterns-docs-preview
+  - "docs/**/*"
+
 .if-protected: &if-protected
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/)'
 
@@ -66,7 +69,7 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32c3"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3"]
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
@@ -128,13 +131,6 @@ build_docs_html_fast:
   variables:
     DOC_BUILDERS: "html"
     DOCS_FAST_BUILD: "yes"
-  # matrix is redefined to include esp32s3 here
-  # that we can build for S3 MRs during bringup phase without
-  # anything being built and published from master branch
-  parallel:
-    matrix:
-      - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3"]
 
 build_docs_pdf:
   extends:
@@ -166,7 +162,7 @@ build_docs_pdf:
   dependencies: []
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
-    - export GIT_VER=$(git describe --always)
+    - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
     - pip install -r docs/requirements.txt
     - deploy-docs
 
@@ -177,6 +173,8 @@ deploy_docs_preview:
   rules:
     - <<: *if-label-build_docs
     - <<: *if-label-docs
+    - <<: *if-dev-push
+      changes: *patterns-docs-preview
   dependencies:
     - build_docs_html_fast
     - build_docs_html_full
@@ -188,7 +186,7 @@ deploy_docs_preview:
     DOCS_DEPLOY_SERVER: "$DOCS_SERVER"
     DOCS_DEPLOY_SERVER_USER: "$DOCS_SERVER_USER"
     DOCS_DEPLOY_PATH: "$DOCS_PATH"
-    DOCS_DEPLOY_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
+    DOCS_DEPLOY_URL_BASE: "https://$DOCS_PREVIEW_SERVER_URL/docs/esp-idf"
 
 # stage: post_deploy
 deploy_docs_production:

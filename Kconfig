@@ -394,6 +394,18 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 For C++, this warns about the deprecated conversion from string
                 literals to ``char *``.
 
+        config COMPILER_SAVE_RESTORE_LIBCALLS
+            bool "Enable -msave-restore flag to reduce code size"
+            depends on IDF_TARGET_ARCH_RISCV
+            help
+                Adds -msave-restore to C/C++ compilation flags.
+
+                When this flag is enabled, compiler will call library functions to
+                save/restore registers in function prologues/epilogues. This results
+                in lower overall code size, at the expense of slightly reduced performance.
+
+                This option can be enabled for RISC-V targets only.
+
         config COMPILER_DISABLE_GCC8_WARNINGS
             bool "Disable new warnings introduced in GCC 6 - 8"
             default "n"

@@ -64,7 +64,7 @@ def check_bootloader(partition_table_offset, bootloader_offset, binary_file):  #
         _fail(msg)
     free_size = max_size - bootloader_size
     print('Bootloader binary size {:#x} bytes. {:#x} bytes ({}%) free.'.format(
-          bootloader_size, free_size, round(free_size * 100 / bootloader_size)))
+          bootloader_size, free_size, round(free_size * 100 / max_size)))
 
 
 def check_partition(ptype, subtype, partition_table_file, bin_file):  # type: (str, str, io.IOBase, IO) -> None

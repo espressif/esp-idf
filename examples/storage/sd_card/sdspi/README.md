@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
+
 # SD Card example (SDSPI)
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -18,39 +21,44 @@ This example support SD (SDSC, SDHC, SDXC) cards.
 
 ## Hardware
 
-### Connections for ESP32 and ESP32-S2
+Pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
+
+It is recommended to get familiar with [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) to understand Pullup/down resistor support and compatibility of various ESP modules and development boards.
+
+This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
+
+### Connections for ESP32
 
 This example runs on ESP-WROVER-KIT boards without any extra modifications required, only the SD card needs to be inserted into the slot.
 
 Other ESP32 development boards need to be connected to SD card as follows:
 
-ESP32(S2) pin | SD card pin | SPI pin | Notes
+ESP32 pin     | SD card pin | SPI pin | Notes
 --------------|-------------|---------|------------
 GPIO2         | D0          | MISO    |
-GPIO13 (MTCK) | D3          | CS      | 
-GPIO14 (MTMS) | CLK         | SCK     | 
-GPIO15 (MTDO) | CMD         | MOSI    | 10k pullup 
+GPIO13 (MTCK) | D3          | CS      |
+GPIO14 (MTMS) | CLK         | SCK     |
+GPIO15 (MTDO) | CMD         | MOSI    | 10k pullup
 
-This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
-
-In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
 Some boards require specific manipulation to enable UART Download mode (GPIO2 low) - eg ESP32-Azure IoT Kit needs KEY_IO0 pressed down for the time of firmware flashing operation (sets IO0 and IO2 low). See troubleshooting section for more details
 
-It is recommended to get familiar with [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) to understand Pullup/down resistor support and compatibility of various ESP modules and development boards.
+### Connections for ESP32S2
 
+ESP32S2 pin   | SD card pin | SPI pin | Notes
+--------------|-------------|---------|------------
+GPIO37        | D0          | MISO    |
+GPIO34        | D3          | CS      |
+GPIO36        | CLK         | SCK     |
+GPIO35        | CMD         | MOSI    | 10k pullup
 
 ### Connections for ESP32-C3
 
-Note that ESP32-C3 doesn't include SD Host peripheral and only supports SD over SPI. Therefore only SCK, MOSI, MISO, CS and ground pins need to be connected.
-
 ESP32-C3 pin  | SD card pin | SPI pin | Notes
 --------------|-------------|---------|------------
-GPIO8         | CLK         | SCK     | 
-GPIO9         | CMD         | MOSI    | 10k pullup
-GPIO18        | D0          | MISO    | 
-GPIO19        | D3          | CS      | 
-
-In SPI mode, pins can be customized. See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
+GPIO5         | CLK         | SCK     |
+GPIO4         | CMD         | MOSI    | 10k pullup
+GPIO6        | D0          | MISO    |
+GPIO1        | D3          | CS      |
 
 ### Build and flash
 
@@ -117,5 +125,3 @@ An attempt to download a new firmware under this conditions may also result in t
 
 to clean your board's flash, then download your firmware properly.
 
-
-  

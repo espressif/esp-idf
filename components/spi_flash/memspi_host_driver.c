@@ -207,19 +207,47 @@ esp_err_t memspi_host_set_write_protect(spi_flash_host_inst_t *host, bool wp)
 // This is the simple case where the hardware has no other requirements than the size and page boundary
 int memspi_host_write_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size)
 {
+    uint32_t slicer_flag = ((spi_flash_hal_context_t*)host)->slicer_flags;
     uint32_t align_addr = address;
+
+    if (slicer_flag & SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR) {
+        if (((align_addr % 2) != 0) && ((len % 2) != 0)) {
+            align_addr -= 1;
+            len += 1;
+        } else if (((align_addr % 2) != 0) && ((len % 2) == 0)) {
+            align_addr -= 1;
+            len += 2;
+        } else if (((align_addr % 2) == 0) && ((len % 2) != 0)) {
+            len += 1;
+        }
+    }
+
     uint32_t end_bound = (align_addr/page_size + 1) * page_size;
     // Shouldn't program cross the page, or longer than SPI_FLASH_HAL_MAX_WRITE_BYTES
     uint32_t max_len = MIN(end_bound - align_addr, SPI_FLASH_HAL_MAX_WRITE_BYTES);
-    *align_address = address;
+    *align_address = align_addr;
     return MIN(max_len, len);
 }
 
 int memspi_host_read_data_slicer(spi_flash_host_inst_t *host, uint32_t address, uint32_t len, uint32_t *align_address, uint32_t page_size)
 {
     // Shouldn't read longer than SPI_FLASH_HAL_MAX_READ_BYTES
+    uint32_t slicer_flag = ((spi_flash_hal_context_t*)host)->slicer_flags;
+    uint32_t align_addr = address;
+
+    if (slicer_flag & SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR) {
+        if (((align_addr % 2) != 0) && ((len % 2) != 0)) {
+            align_addr -= 1;
+            len += 1;
+        } else if (((align_addr % 2) != 0) && ((len % 2) == 0)) {
+            align_addr -= 1;
+            len += 2;
+        } else if (((align_addr % 2) == 0) && ((len % 2) != 0)) {
+            len += 1;
+        }
+    }
     uint32_t max_len = SPI_FLASH_HAL_MAX_READ_BYTES;
-    *align_address = address;
+    *align_address = align_addr;
     return MIN(max_len, len);
 }
 

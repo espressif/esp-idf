@@ -283,71 +283,73 @@ To use a host generated key, take the following steps:
 
 2. Generate a random key by running:
 
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
+  .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-    If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key) need to use the `XTS_AES_256_KEY_1` and `XTS_AES_256_KEY_2` purposes. The espsecure does not support 512-bit key, but it is possible to workaround:
+      If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key):
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key1.bin
+          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key2.bin
+      else if :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-256 (512-bit key):
 
-        # To use encrypt_flash_data with XTS_AES_256 requires combining the two binary files to one 64 byte file
-        cat my_flash_encryption_key1.bin my_flash_encryption_key2.bin > my_flash_encryption_key.bin
+      .. code-block:: bash
 
-    If :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` is AES-128 (256-bit key) need to use the `XTS_AES_128_KEY` purpose.
-
-    .. code-block:: bash
-
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          espsecure.py generate_flash_encryption_key --keylen 512 my_flash_encryption_key.bin
 
 
-.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES_256
+  .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
 3. **Before the first encrypted boot**, burn the key into your device's eFuse using the command below. This action can be done **only once**.
 
-.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
+  .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
+        espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
 
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
+  .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
-  where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
+    where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``. And ``KEYPURPOSE`` is either ``AES_256_KEY_1``, ``XTS_AES_256_KEY_2``, ``XTS_AES_128_KEY``. See `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ for a description of the key purposes.
 
-  AES-128 (256-bit key) - ``XTS_AES_128_KEY``:
+    For AES-128 (256-bit key) - ``XTS_AES_128_KEY``:
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-  AES-256 (512-bit key) - ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``. It is not fully supported yet in espefuse.py and espsecure.py. Need to do the following steps:
+    For AES-256 (512-bit key) - ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``. ``espefuse.py`` supports burning both these two key purposes together with a 512 bit key to two separate key blocks via the virtual key purpose ``XTS_AES_256_KEY``. When this is used ``espefuse.py`` will burn the first 256 bit of the key to the specified ``BLOCK`` and burn the corresponding block key purpose to ``XTS_AES_256_KEY_1``. The last 256 bit of the key will be burned to the first free key block after ``BLOCK`` and the corresponding block key purpose to ``XTS_AES_256_KEY_2``
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      espefuse.py  --port PORT  burn_key BLOCK   my_flash_encryption_key1.bin XTS_AES_256_KEY_1
+        espefuse.py  --port PORT  burn_key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
 
-      espefuse.py  --port PORT  burn_key BLOCK+1 my_flash_encryption_key2.bin XTS_AES_256_KEY_2
+    If you wish to specify exactly which two blocks are used then it is possible to divide key into two 256 bit keys, and manually burn each half with ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2`` as key purposes:
 
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
+    .. code-block:: bash
 
-  .. code-block:: bash
+      split -b 32 my_flash_encryption_key.bin my_flash_encryption_key.bin.
+      espefuse.py  --port PORT  burn_key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
+      espefuse.py  --port PORT  burn_key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
 
-      espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-  where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``.
+  .. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-If the key is not burned and the device is started after enabling flash encryption, the {IDF_TARGET_NAME} will generate a random key that software cannot access or modify.
+    .. code-block:: bash
+
+        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
+
+    where ``BLOCK`` is a free keyblock between ``BLOCK_KEY0`` and ``BLOCK_KEY5``.
+
+  If the key is not burned and the device is started after enabling flash encryption, the {IDF_TARGET_NAME} will generate a random key that software cannot access or modify.
 
 4. In :ref:`project-configuration-menu`, do the following:
 
@@ -875,12 +877,6 @@ Manually encrypting or decrypting files requires the flash encryption key to be 
 
 The key file should be a single raw binary file (example: ``key.bin``).
 
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
-
-    .. note::
-
-       If using AES-XTS-256 then the key file is generated in two parts for programming via ``espefuse.py`` (``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2``). ``espsecure.py`` currently only supports a single key file for encrypt/decrypt, so the individual files used for ``XTS_AES_256_KEY_1`` and ``XTS_AES_256_KEY_2`` should be manually concatenated to create a single file 64 bytes long.
-
 For example, these are the steps to encrypt the file ``build/my-app.bin`` to flash at offset 0x10000. Run espsecure.py as follows:
 
 .. only:: esp32
@@ -962,7 +958,7 @@ The following sections provide some reference information about the operation of
 
   Flash Encryption Algorithm
   ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  
+
   - {IDF_TARGET_NAME} use the XTS-AES block cipher mode with 256 bit or 512 bit key size for flash encryption.
 
   - XTS-AES is a block cipher mode specifically designed for disc encryption and addresses the weaknesses other potential modes (e.g. AES-CTR) have for this use case. A detailed description of the XTS-AES algorithm can be found in `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_.

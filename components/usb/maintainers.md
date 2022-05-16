@@ -24,7 +24,10 @@ stop the remainder of the interrupt transfer.
 
 ## Channel interrupt on port errors
 
-- If there are one or more channels active, and a port error interrupt occurs (such as disconnection, over-current), the active channels will not have an interrupt. Each need to be manually disabled to obtain an interrupt.
+- If there are one or more channels active, and a port error interrupt occurs (such as disconnection, over-current), the active channels will not have an interrupt.
+- The channels will remain active (i.e., `HCCHAR.ChEna` will still be set)
+- Normal methods of disabling the channel (via setting `HCCHAR.ChDis` and waiting for an interrupt) will not work for ISOC channels (the interrupt will never be generated).
+- Therefore, on port errors, just treat all the channels as halted and treat their in-flight transfers as failed. The soft reset that occurs after will reset all the channel's registers.
 
 ## Reset
 
@@ -66,7 +69,6 @@ The HAL layer abstracts the DWC_OTG operating in Host Mode using Internal Scatte
   - If you need to halt the channel early (such as aborting a transfer), call `usbh_hal_chan_request_halt()`
 - In case of a channel error event:
   - Call `usbh_hal_chan_get_error()` to get the specific channel error that occurred
-  - You must call `usbh_hal_chan_clear_error()` after an error to clear the error and allow the channel to continue to be used.
 
 # Host Controller Driver (HCD)
 

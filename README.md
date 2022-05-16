@@ -13,15 +13,18 @@ ESP-IDF is the development framework for Espressif SoCs supported on Windows, Li
 
 # ESP-IDF Release and SoC Compatibility
 
-The following table shows ESP-IDF support of Espressif SoCs where :yellow_circle: and :green_circle: denote preview status and support, respectively. In preview status the build is not yet enabled and some crucial parts could be missing (like documentation, datasheet). Please use an ESP-IDF release where the desired SoC is already supported.
+The following table shows ESP-IDF support of Espressif SoCs where ![alt text][preview] and ![alt text][supported] denote preview status and support, respectively. In preview status the build is not yet enabled and some crucial parts could be missing (like documentation, datasheet). Please use an ESP-IDF release where the desired SoC is already supported.
 
-|Chip         |     v3.3       |      v4.0      |       v4.1     |     v4.2       |     v4.3       |     v4.4       |                                                            |
-|:----------- |:-------------: | :-------------:| :-------------:| :-------------:| :-------------:| :-------------:|:---------------------------------------------------------- |
-|ESP32        | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |                                                            |
-|ESP32-S2     |                |                |                | :green_circle: | :green_circle: | :green_circle: |                                                            |
-|ESP32-C3     |                |                |                |                | :green_circle: | :green_circle: |                                                            |
-|ESP32-S3     |                |                |                |                | :yellow_circle:| :green_circle: | [Announcement](https://www.espressif.com/en/news/ESP32_S3) |
-|ESP32-H2     |                |                |                |                |                | :yellow_circle:| [Announcement](https://www.espressif.com/en/news/ESP32_H2) |
+|Chip         |         v3.3           |          v4.0          |           v4.1         |          v4.2          |         v4.3           |          v4.4          |                                                            |
+|:----------- |:---------------------: | :---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:---------------------------------------------------------- |
+|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-S2     |                        |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-C3     |                        |                        |                        |                        | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-S3     |                        |                        |                        |                        | ![alt text][preview]   | ![alt text][supported] | [Announcement](https://www.espressif.com/en/news/ESP32_S3) |
+|ESP32-H2     |                        |                        |                        |                        |                        | ![alt text][preview]   | [Announcement](https://www.espressif.com/en/news/ESP32_H2) |
+
+[supported]: https://img.shields.io/badge/-supported-green "supported"
+[preview]: https://img.shields.io/badge/-preview-orange "preview"
 
 Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
@@ -107,9 +110,9 @@ After the initial flash, you may just want to build and flash just your app, not
 
 ## Erasing Flash
 
-The `idf.py flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `idf.py erase_flash`.
+The `idf.py flash` target does not erase the entire flash contents. However it is sometimes useful to set the device back to a totally erased state, particularly when making partition table changes or OTA app updates. To erase the entire flash, run `idf.py erase-flash`.
 
-This can be combined with other targets, ie `idf.py -p PORT erase_flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
+This can be combined with other targets, ie `idf.py -p PORT erase-flash flash` will erase everything and then re-flash the new app, bootloader and partition table.
 
 # Resources
 

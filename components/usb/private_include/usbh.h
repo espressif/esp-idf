@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,14 +23,44 @@ extern "C" {
 // ----------------------- Events --------------------------
 
 typedef enum {
-    USBH_EVENT_DEV_NEW,                 /**< A new device has been enumerated and added to the device pool */
-    USBH_EVENT_DEV_GONE,                /**< A device is gone. Clients should close the device */
-    USBH_EVENT_DEV_ALL_FREE,            /**< All devices have been freed */
+    USBH_EVENT_DEV_NEW,             /**< A new device has been enumerated and added to the device pool */
+    USBH_EVENT_DEV_GONE,            /**< A device is gone. Clients should close the device */
+    USBH_EVENT_DEV_ALL_FREE,        /**< All devices have been freed */
 } usbh_event_t;
 
+/**
+ * @brief Hub driver requests
+ *
+ * Various requests of the Hub driver that the USBH can make.
+ */
 typedef enum {
-    USBH_HUB_EVENT_CLEANUP_PORT,        /**< Indicate to the Hub driver that it should clean up the port of a device (occurs after a gone device has been freed) */
-    USBH_HUB_EVENT_DISABLE_PORT,        /**< Indicate to the Hub driver that it should disable the port of a device (occurs after a device has been freed) */
+    USBH_HUB_REQ_PORT_DISABLE,      /**< Request that the Hub driver disable a particular port (occurs after a device
+                                         has been freed). Hub driver should respond with a USBH_HUB_EVENT_PORT_DISABLED */
+    USBH_HUB_REQ_PORT_RECOVER,      /**< Request that the Hub driver recovers a particular port (occurs after a gone
+                                         device has been freed). */
+} usbh_hub_req_t;
+
+/**
+ * @brief Hub driver events for the USBH
+ *
+ * These events as passed by the Hub driver to the USBH via usbh_hub_pass_event()
+ *
+ * USBH_HUB_EVENT_PORT_ERROR:
+ * - The port has encountered an error (such as a sudden disconnection). The device connected to that port is no longer valid.
+ * - The USBH should:
+ *      - Trigger a USBH_EVENT_DEV_GONE
+ *      - Prevent further transfers to the device
+ *      - Trigger the device's cleanup if it is already closed
+ *      - When the last client closes the device via usbh_dev_close(), free the device object and issue a USBH_HUB_REQ_PORT_RECOVER request
+ *
+ * USBH_HUB_EVENT_PORT_DISABLED:
+ * - A previous USBH_HUB_REQ_PORT_DISABLE has completed.
+ * - The USBH should free the device object
+ */
+typedef enum {
+    USBH_HUB_EVENT_PORT_ERROR,      /**< The port has encountered an error (such as a sudden disconnection). The device
+                                         connected to that port should be marked gone. */
+    USBH_HUB_EVENT_PORT_DISABLED,   /**< Previous USBH_HUB_REQ_PORT_DISABLE request completed */
 } usbh_hub_event_t;
 
 // ---------------------- Callbacks ------------------------
@@ -51,9 +81,11 @@ typedef void (*usbh_event_cb_t)(usb_device_handle_t dev_hdl, usbh_event_t usbh_e
 
 /**
  * @brief Callback used by the USBH to request actions from the Hub driver
- * @note This callback is called from within usbh_process()
+ *
+ * The Hub Request Callback allows the USBH to request the Hub actions on a particular port. Conversely, the Hub driver
+ * will indicate completion of some of these requests to the USBH via the usbh_hub_event() funtion.
  */
-typedef void (*usbh_hub_cb_t)(hcd_port_handle_t port_hdl, usbh_hub_event_t hub_event, void *arg);
+typedef void (*usbh_hub_req_cb_t)(hcd_port_handle_t port_hdl, usbh_hub_req_t hub_req, void *arg);
 
 // ----------------------- Objects -------------------------
 
@@ -88,6 +120,8 @@ typedef struct {
  * - This function will internally install the HCD
  * - This must be called before calling any Hub driver functions
  *
+ * @note Before calling this function, the Host Controller must already be un-clock gated and reset. The USB PHY
+ *       (internal or external, and associated GPIOs) must already be configured.
  * @param usbh_config USBH driver configuration
  * @return esp_err_t
  */
@@ -99,6 +133,8 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config);
  * - This function will uninstall the HCD
  * - The Hub driver must be uninstalled before calling this function
  *
+ * @note This function will simply free the resources used by the USBH. The underlying Host Controller and USB PHY will
+ *       not be disabled.
  * @return esp_err_t
  */
 esp_err_t usbh_uninstall(void);
@@ -110,13 +146,38 @@ esp_err_t usbh_uninstall(void);
  * - If blocking, the caller can block until a USB_NOTIF_SOURCE_USBH notification is received before running this
  *   function
  *
+ * @note This function can block
  * @return esp_err_t
  */
 esp_err_t usbh_process(void);
 
+/**
+ * @brief Get the current number of devices
+ *
+ * @note This function can block
+ * @param[out] num_devs_ret Current number of devices
+ * @return esp_err_t
+ */
+esp_err_t usbh_num_devs(int *num_devs_ret);
+
 // ------------------------------------------------ Device Functions ---------------------------------------------------
 
 // --------------------- Device Pool -----------------------
+
+/**
+ * @brief Fill list with address of currently connected devices
+ *
+ * - This function fills the provided list with the address of current connected devices
+ * - Device address can then be used in usbh_dev_open()
+ * - If there are more devices than the list_len, this function will only fill
+ *   up to list_len number of devices.
+ *
+ * @param[in] list_len Length of empty list
+ * @param[inout] dev_addr_list Empty list to be filled
+ * @param[out] num_dev_ret Number of devices filled into list
+ * @return esp_err_t
+ */
+esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
 
 /**
  * @brief Open a device by address
@@ -144,7 +205,9 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl);
  *
  * A device marked as free will not be freed until the last client using the device has called usbh_dev_close()
  *
- * @return esp_err_t
+ * @return
+ *  - ESP_OK: There were no devices to free to begin with. Current state is all free
+ *  - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
  */
 esp_err_t usbh_dev_mark_all_free(void);
 
@@ -164,6 +227,7 @@ esp_err_t usbh_dev_get_addr(usb_device_handle_t dev_hdl, uint8_t *dev_addr);
 /**
  * @brief Get a device's information
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[out] dev_info Device information
  * @return esp_err_t
@@ -186,6 +250,7 @@ esp_err_t usbh_dev_get_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t
  *
  * Simply returns a reference to the internally cached configuration descriptor
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param config_desc_ret
  * @return esp_err_t
@@ -209,6 +274,7 @@ esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
  * Clients that have opened a device must call this function to allocate all endpoints in an interface that is claimed.
  * The pipe handle of the endpoint is returned so that clients can use and control the pipe directly.
  *
+ * @note This function can block
  * @note Default pipes are owned by the USBH. For control transfers, use usbh_dev_submit_ctrl_urb() instead
  * @note Device must be opened by the client first
  *
@@ -224,6 +290,7 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
  *
  * Free an endpoint previously opened by usbh_ep_alloc()
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[in] bEndpointAddress Endpoint's address
  * @return esp_err_t
@@ -235,6 +302,7 @@ esp_err_t usbh_ep_free(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
  *
  * Get the context variable assigned to and endpoint on allocation.
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[in] bEndpointAddress Endpoint's address
  * @param[out] context_ret Context variable
@@ -253,11 +321,11 @@ esp_err_t usbh_ep_get_context(usb_device_handle_t dev_hdl, uint8_t bEndpointAddr
  * - This should only be called after the USBH has already be installed
  *
  * @note Hub Driver only
- * @param[in] hub_callback Hub callback
+ * @param[in] hub_req_callback Hub request callback
  * @param[in] callback_arg Callback argument
  * @return esp_err_t
  */
-esp_err_t usbh_hub_is_installed(usbh_hub_cb_t hub_callback, void *callback_arg);
+esp_err_t usbh_hub_is_installed(usbh_hub_req_cb_t hub_req_callback, void *callback_arg);
 
 /**
  * @brief Indicates to USBH the start of enumeration for a device
@@ -277,48 +345,15 @@ esp_err_t usbh_hub_is_installed(usbh_hub_cb_t hub_callback, void *callback_arg);
 esp_err_t usbh_hub_add_dev(hcd_port_handle_t port_hdl, usb_speed_t dev_speed, usb_device_handle_t *new_dev_hdl, hcd_pipe_handle_t *default_pipe_hdl);
 
 /**
- * @brief Indicate that a device is gone
+ * @brief Indicates to the USBH that a hub event has occurred for a particular device
  *
- * This Hub driver must call this function to indicate that a device is gone. A device is gone when:
- * - It suddenly disconnects
- * - Its upstream port or device has an error or is also gone.
- * Marking a device as gone will:
- * - Trigger a USBH_EVENT_DEV_GONE
- * - Prevent further transfers to the device
- * - Trigger the device's cleanup if it is already closed
- * - When the last client closes the device via usbh_dev_close(), the device's resources will be cleaned up
- *
- * @note Hub Driver only
- * @param[in] dev_hdl Device handle
+ * @param dev_hdl Device handle
+ * @param hub_event Hub event
  * @return esp_err_t
  */
-esp_err_t usbh_hub_mark_dev_gone(usb_device_handle_t dev_hdl);
-
-/**
- * @brief Indicate that a device's port has been disabled
- *
- * - The Hub driver must call this function once it has disabled the port of a particular device
- * - The Hub driver disables a device's port when requested by the USBH via the USBH_HUB_EVENT_DISABLE_PORT
- * - This function will trigger the device's cleanup.
- *
- * @note Hub Driver only
- * @param[in] dev_hdl Device handle
- * @return esp_err_t
- */
-esp_err_t usbh_hub_dev_port_disabled(usb_device_handle_t dev_hdl);
+esp_err_t usbh_hub_pass_event(usb_device_handle_t dev_hdl, usbh_hub_event_t hub_event);
 
 // ----------------- Enumeration Related -------------------
-
-/**
- * @brief Fill the enumerating device's descriptor
- *
- * @note Hub Driver only
- * @note Must call in sequence
- * @param[in] dev_hdl Device handle
- * @param device_desc
- * @return esp_err_t
- */
-esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t *device_desc);
 
 /**
  * @brief Assign the enumerating device's address
@@ -332,10 +367,22 @@ esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_dev
 esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_addr);
 
 /**
+ * @brief Fill the enumerating device's descriptor
+ *
+ * @note Hub Driver only
+ * @note Must call in sequence
+ * @param[in] dev_hdl Device handle
+ * @param device_desc
+ * @return esp_err_t
+ */
+esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t *device_desc);
+
+/**
  * @brief Fill the enumerating device's active configuration descriptor
  *
  * @note Hub Driver only
  * @note Must call in sequence
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param config_desc_full
  * @return esp_err_t
@@ -343,15 +390,16 @@ esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_a
 esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_config_desc_t *config_desc_full);
 
 /**
- * @brief Assign the enumerating device's active configuration number
+ * @brief Fill one of the string descriptors of the enumerating device
  *
  * @note Hub Driver only
  * @note Must call in sequence
- * @param[in] dev_hdl Device handle
- * @param bConfigurationValue
+ * @param dev_hdl Device handle
+ * @param str_desc Pointer to string descriptor
+ * @param select Select which string descriptor. 0/1/2 for Manufacturer/Product/Serial Number string descriptors respecitvely
  * @return esp_err_t
  */
-esp_err_t usbh_hub_enum_fill_config_num(usb_device_handle_t dev_hdl, uint8_t bConfigurationValue);
+esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select);
 
 /**
  * @brief Indicate the device enumeration is completed
@@ -360,6 +408,7 @@ esp_err_t usbh_hub_enum_fill_config_num(usb_device_handle_t dev_hdl, uint8_t bCo
  *
  * @note Hub Driver only
  * @note Must call in sequence
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @return esp_err_t
  */
@@ -373,6 +422,7 @@ esp_err_t usbh_hub_enum_done(usb_device_handle_t dev_hdl);
  *
  * @note Hub Driver only
  * @note Must call in sequence
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @return esp_err_t
  */

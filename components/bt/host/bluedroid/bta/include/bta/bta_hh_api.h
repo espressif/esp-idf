@@ -58,7 +58,8 @@
 #define BTA_HH_VC_UNPLUG_EVT    13      /* virtually unplugged */
 #define BTA_HH_DATA_EVT         15
 #define BTA_HH_API_ERR_EVT      16      /* API error is caught */
-#define BTA_HH_UPDATE_SCPP_EVT  17       /* update scan paramter complete */
+#define BTA_HH_UPDATE_SCPP_EVT  17      /* update scan paramter complete */
+#define BTA_HH_DATA_IND_EVT     18      /* Data on interrupt channel */
 
 typedef UINT16 tBTA_HH_EVT;
 
@@ -131,8 +132,8 @@ enum {
     BTA_HH_ERR_TOD_UNSPT,       /* type of device not supported */
     BTA_HH_ERR_NO_RES,          /* out of system resources */
     BTA_HH_ERR_AUTH_FAILED,     /* authentication fail */
-    BTA_HH_ERR_HDL,
-    BTA_HH_ERR_SEC
+    BTA_HH_ERR_HDL,             /* connection handle error */
+    BTA_HH_ERR_SEC,             /* encryption error */
 };
 typedef UINT8 tBTA_HH_STATUS;
 
@@ -210,6 +211,7 @@ typedef struct {
     BD_ADDR         bda;                /* HID device bd address    */
     tBTA_HH_STATUS  status;             /* operation status         */
     UINT8           handle;             /* device handle            */
+    BOOLEAN         is_orig;            /* indicate if host initiate connection            */
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
     BOOLEAN         le_hid;             /* is LE devices? */
     BOOLEAN         scps_supported;     /* scan parameter service supported */
@@ -257,9 +259,9 @@ typedef struct {
 typedef struct {
     tBTA_HH_BOOT_RPT_ID dev_type;           /* type of device report */
     union {
-        tBTA_HH_KEYBD_RPT   keybd_rpt;      /* keyboard report      */
-        tBTA_HH_MICE_RPT    mice_rpt;       /* mouse report         */
-    }                   data_rpt;
+        tBTA_HH_KEYBD_RPT keybd_rpt;        /* keyboard report      */
+        tBTA_HH_MICE_RPT mice_rpt;          /* mouse report         */
+    } data_rpt;
 } tBTA_HH_BOOT_RPT;
 
 /* handshake data */
@@ -267,12 +269,28 @@ typedef struct {
     tBTA_HH_STATUS  status;                 /* handshake status */
     UINT8           handle;                 /* device handle    */
     union {
-        tBTA_HH_PROTO_MODE      proto_mode; /* GET_PROTO_EVT :protocol mode */
-        BT_HDR                  *p_rpt_data;   /* GET_RPT_EVT   : report data  */
-        UINT8                   idle_rate;  /* GET_IDLE_EVT  : idle rate    */
-    }               rsp_data;
+        tBTA_HH_PROTO_MODE proto_mode;      /* GET_PROTO_EVT :protocol mode */
+        BT_HDR *p_rpt_data;                 /* GET_RPT_EVT   : report data  */
+        UINT8 idle_rate;                    /* GET_IDLE_EVT  : idle rate    */
+    } rsp_data;
 
 } tBTA_HH_HSDATA;
+
+
+/* upper layer send data */
+typedef struct {
+    tBTA_HH_STATUS status;         /* handshake status        */
+    UINT8 handle;                  /* device handle           */
+    UINT8 reason;                  /* send data failed reason */
+} tBTA_HH_API_SENDDATA;
+
+/* interrupt channel data */
+typedef struct {
+    tBTA_HH_STATUS status;         /* handshake status */
+    UINT8 handle;                  /* device handle    */
+    tBTA_HH_PROTO_MODE proto_mode; /* protocol mode    */
+    BT_HDR *p_data;                /* DATA_EVT   : feature report data  */
+} tBTA_HH_INTDATA;
 
 /* union of data associated with HD callback */
 typedef union {
@@ -290,10 +308,12 @@ typedef union {
                                                    BTA_HH_GET_RPT_EVT
                                                    BTA_HH_GET_PROTO_EVT
                                                    BTA_HH_GET_IDLE_EVT */
+    tBTA_HH_API_SENDDATA    send_data;          /* BTA_HH_DATA_EVT */
+    tBTA_HH_INTDATA         int_data;           /* BTA_HH_DATA_IND_EVT */
 } tBTA_HH;
 
 /* BTA HH callback function */
-typedef void (tBTA_HH_CBACK) (tBTA_HH_EVT event, tBTA_HH *p_data);
+typedef void (tBTA_HH_CBACK)(tBTA_HH_EVT event, tBTA_HH *p_data);
 
 
 /*****************************************************************************

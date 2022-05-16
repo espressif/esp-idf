@@ -10,12 +10,20 @@
 #ifndef __IPERF_H_
 #define __IPERF_H_
 
+#include "esp_err.h"
+#include "esp_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "esp_types.h"
-#include "esp_err.h"
+#define IPERF_IP_TYPE_IPV4 0
+#define IPERF_IP_TYPE_IPV6 1
+#define IPERF_TRANS_TYPE_TCP 0
+#define IPERF_TRANS_TYPE_UDP 1
+
+#define IPERF_FLAG_SET(cfg, flag) ((cfg) |= (flag))
+#define IPERF_FLAG_CLR(cfg, flag) ((cfg) &= (~(flag)))
 
 #define IPERF_FLAG_CLIENT (1)
 #define IPERF_FLAG_SERVER (1 << 1)
@@ -25,14 +33,14 @@ extern "C" {
 #define IPERF_DEFAULT_PORT 5001
 #define IPERF_DEFAULT_INTERVAL 3
 #define IPERF_DEFAULT_TIME 30
+#define IPERF_DEFAULT_NO_BW_LIMIT -1
 
 #define IPERF_TRAFFIC_TASK_NAME "iperf_traffic"
-#define IPERF_TRAFFIC_TASK_PRIORITY 10
+#define IPERF_TRAFFIC_TASK_PRIORITY 4
 #define IPERF_TRAFFIC_TASK_STACK 4096
 #define IPERF_REPORT_TASK_NAME "iperf_report"
-#define IPERF_REPORT_TASK_PRIORITY 20
+#define IPERF_REPORT_TASK_PRIORITY 6
 #define IPERF_REPORT_TASK_STACK 4096
-#define IPERF_REPORT_TASK_NAME "iperf_report"
 
 #define IPERF_UDP_TX_LEN (1472)
 #define IPERF_UDP_RX_LEN (16 << 10)
@@ -46,12 +54,21 @@ extern "C" {
 
 typedef struct {
     uint32_t flag;
-    uint32_t dip;
-    uint32_t sip;
+    union {
+        uint32_t destination_ip4;
+        char    *destination_ip6;
+    };
+    union {
+        uint32_t source_ip4;
+        char    *source_ip6;
+    };
+    uint8_t type;
     uint16_t dport;
     uint16_t sport;
     uint32_t interval;
     uint32_t time;
+    uint16_t len_send_buf;
+    int32_t bw_lim;
 } iperf_cfg_t;
 
 esp_err_t iperf_start(iperf_cfg_t *cfg);

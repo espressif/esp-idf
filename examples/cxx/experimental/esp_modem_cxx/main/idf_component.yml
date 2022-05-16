@@ -1,0 +1,7 @@
+targets:
+  - esp32
+  - esp32s2
+description: cmux example of esp_modem
+dependencies:
+  espressif/esp_modem:
+    version: "0.1.9"

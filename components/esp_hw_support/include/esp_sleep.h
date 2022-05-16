@@ -44,6 +44,7 @@ typedef enum {
 #if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
 #endif
+    ESP_PD_DOMAIN_RTC8M,           //!< Internal 8M oscillator
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;

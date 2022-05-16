@@ -53,14 +53,6 @@ menu "ESP32H2-Specific"
             The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
             instead of panicking, have the debugger stop on the offending instruction.
 
-    config ESP32H2_DEBUG_STUBS_ENABLE
-        bool "OpenOCD debug stubs"
-        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32H2_TRAX
-        help
-            Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
-            e.g. GCOV data dump.
-
     config ESP32H2_BROWNOUT_DET
         bool "Hardware brownout detect & reset"
         default y

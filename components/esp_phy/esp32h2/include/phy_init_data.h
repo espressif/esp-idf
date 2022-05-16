@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-// ESP32H2-TODO: IDF-3398
+// There is no init data for H2 right now, could be added when necessary.
 
 #ifdef __cplusplus
 }

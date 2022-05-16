@@ -1,6 +1,8 @@
 OpenSSL-APIs 
 ------------
 
+.. note:: The OpenSSL-API will be discontinued in ESP-IDF from v5.0. Please use ESP-TLS <esp_tls> instead.
+
 The code of this API (located in :component:`openssl` directory), does not contain OpenSSL itself but is intended as a wrapper for applications using the OpenSSL API.
 It uses mbedTLS to do the actual work, so anyone compiling openssl code needs the mbedtls library and header file.
 
