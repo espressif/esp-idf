@@ -152,6 +152,15 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     unsigned char client_key[28] = {0};
 
     const char *user_agent_ptr = (ws->user_agent) ? (ws->user_agent) : "ESP32 Websocket Client";
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+    if (!ws->buffer) {
+        ws->buffer = malloc(WS_BUFFER_SIZE);
+        if (!ws->buffer) {
+            ESP_LOGE(TAG, "Cannot allocate buffer for connect, need-%d", WS_BUFFER_SIZE);
+            return -1;
+        }
+    }
+#endif
 
     size_t outlen = 0;
     esp_crypto_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
@@ -238,6 +247,10 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+    free(ws->buffer);
+    ws->buffer = NULL;
+#endif
     return 0;
 }
 
