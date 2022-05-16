@@ -13,7 +13,7 @@ import sys
 from collections import defaultdict
 from typing import List
 
-from idf_ci_utils import IDF_PATH, get_pytest_cases
+from idf_ci_utils import IDF_PATH, PytestCase, get_pytest_cases
 
 try:
     from build_apps import build_apps
@@ -28,15 +28,16 @@ except ImportError:
 
 
 def main(args: argparse.Namespace) -> None:
-    pytest_cases = []
+    pytest_cases: List[PytestCase] = []
     for path in args.paths:
         pytest_cases += get_pytest_cases(path, args.target)
 
     paths = set()
     app_configs = defaultdict(set)
     for case in pytest_cases:
-        paths.add(case.app_path)
-        app_configs[case.app_path].add(case.config)
+        for app in case.apps:
+            paths.add(app.path)
+            app_configs[app.path].add(app.config)
 
     app_dirs = list(paths)
     if not app_dirs:
