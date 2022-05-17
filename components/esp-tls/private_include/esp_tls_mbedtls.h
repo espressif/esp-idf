@@ -104,6 +104,11 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
  * Internal Callback for mbedtls_get_client_session
  */
 esp_tls_client_session_t *esp_mbedtls_get_client_session(esp_tls_t *tls);
+
+/**
+ * Internal Callback for mbedtls_free_client_session
+ */
+void esp_mbedtls_free_client_session(esp_tls_client_session_t *client_session);
 #endif
 
 /**

@@ -688,6 +688,16 @@ esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, con
  *             NULL     on Failure
  */
 esp_tls_client_session_t *esp_tls_get_client_session(esp_tls_t *tls);
+
+/**
+ * @brief Free the client session
+ *
+ * This function should be called after esp_tls_get_client_session().
+ *
+ * @param[in]  client_session context as esp_tls_client_session_t
+ *
+ */
+void esp_tls_free_client_session(esp_tls_client_session_t *client_session);
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 #ifdef __cplusplus
 }
