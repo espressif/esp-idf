@@ -651,6 +651,7 @@ def init_cli(verbose_output=None):
     @click.option('-C', '--project-dir', default=os.getcwd(), type=click.Path())
     def parse_project_dir(project_dir):
         return realpath(project_dir)
+
     # Set `complete_var` to not existing environment variable name to prevent early cmd completion
     project_dir = parse_project_dir(standalone_mode=False, complete_var='_IDF.PY_COMPLETE_NOT_EXISTING')
 
@@ -676,16 +677,10 @@ def init_cli(verbose_output=None):
             if name.endswith('_ext'):
                 extensions.append((name, import_module(name)))
 
-    # Load component manager if available and not explicitly disabled
-    if os.getenv('IDF_COMPONENT_MANAGER', None) != '0':
-        try:
-            from idf_component_manager import idf_extensions
-
-            extensions.append(('component_manager_ext', idf_extensions))
-            os.environ['IDF_COMPONENT_MANAGER'] = '1'
-
-        except ImportError:
-            pass
+    # Load component manager idf.py extensions if not explicitly disabled
+    if os.getenv('IDF_COMPONENT_MANAGER') != '0':
+        from idf_component_manager import idf_extensions
+        extensions.append(('component_manager_ext', idf_extensions))
 
     for name, extension in extensions:
         try:
@@ -700,7 +695,8 @@ def init_cli(verbose_output=None):
             from idf_ext import action_extensions
         except ImportError:
             print_warning('Error importing extension file idf_ext.py. Skipping.')
-            print_warning("Please make sure that it contains implementation (even if it's empty) of add_action_extensions")
+            print_warning(
+                "Please make sure that it contains implementation (even if it's empty) of add_action_extensions")
 
         try:
             all_actions = merge_action_lists(all_actions, action_extensions(all_actions, project_dir))
