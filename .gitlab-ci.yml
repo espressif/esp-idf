@@ -218,6 +218,7 @@ before_script:
       "pytest-embedded-qemu~=$PYTEST_EMBEDDED_VERSION"
       pytest-rerunfailures
       scapy
+      websocket-client
       -r tools/esp_prov/requirements.txt
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
