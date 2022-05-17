@@ -92,7 +92,7 @@
         "esp32c3"
       ],
       "version_cmd": [
-        "riscv32-esp-elf-gdb",
+        "riscv32-esp-elf-gdb-no-python",
         "--version"
       ],
       "version_regex": "GNU gdb \\(esp-gdb\\) ([a-z0-9.-_]+)",
