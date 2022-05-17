@@ -386,7 +386,7 @@ ssize_t esp_usb_console_read_buf(char *buf, size_t buf_size)
     if (s_cdc_acm_device == NULL) {
         return -1;
     }
-    if (!esp_usb_console_read_available()) {
+    if (esp_usb_console_available_for_read() == 0) {
         return 0;
     }
     int bytes_read = cdc_acm_fifo_read(s_cdc_acm_device, (uint8_t*) buf, buf_size);
@@ -414,12 +414,12 @@ esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_
     return ESP_OK;
 }
 
-bool esp_usb_console_read_available(void)
+ssize_t esp_usb_console_available_for_read(void)
 {
     if (s_cdc_acm_device == NULL) {
-        return false;
+        return -1;
     }
-    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device) > 0;
+    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device);
 }
 
 bool esp_usb_console_write_available(void)
