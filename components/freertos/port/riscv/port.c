@@ -359,6 +359,7 @@ void vPortYieldOtherCore(BaseType_t coreid)
 
 void vPortYieldFromISR( void )
 {
+    traceISR_EXIT_TO_SCHEDULER();
     uxSchedulerRunning = 1;
     xPortSwitchFlag = 1;
 }

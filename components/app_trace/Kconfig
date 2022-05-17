@@ -4,29 +4,44 @@ menu "Application Level Tracing"
         prompt "Data Destination"
         default APPTRACE_DEST_NONE
         help
-            Select destination for application trace: trace memory or none (to disable).
+            Select destination for application trace: JTAG or none (to disable).
 
-        config APPTRACE_DEST_TRAX
-            bool "Trace memory"
+        config APPTRACE_DEST_JTAG
+            bool "JTAG"
+            select APPTRACE_DEST_TRAX if IDF_TARGET_ARCH_XTENSA
+            select APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
             select APPTRACE_ENABLE
+
         config APPTRACE_DEST_NONE
             bool "None"
     endchoice
 
-    config APPTRACE_ENABLE
+    config APPTRACE_DEST_TRAX
         bool
-        depends on !ESP32_TRAX && !ESP32S2_TRAX
+        depends on IDF_TARGET_ARCH_XTENSA && !ESP32_TRAX && !ESP32S2_TRAX
         select ESP32_MEMMAP_TRACEMEM
         select ESP32S2_MEMMAP_TRACEMEM
         select ESP32_MEMMAP_TRACEMEM_TWOBANKS
         select ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
         default n
         help
+            Enables/disable TRAX tracing HW.
+
+    config APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
+        bool
+        default n
+        help
+            Enables/disable swapping memory buffers tracing protocol.
+
+    config APPTRACE_ENABLE
+        bool
+        default n
+        help
             Enables/disable application tracing module.
 
     config APPTRACE_LOCK_ENABLE
         bool
-        default !SYSVIEW_ENABLE
+        default !APPTRACE_SV_ENABLE
         help
             Enables/disable application tracing module internal sync lock.
 
@@ -41,16 +56,23 @@ menu "Application Level Tracing"
 
     config APPTRACE_POSTMORTEM_FLUSH_THRESH
         int "Threshold for flushing last trace data to host on panic"
-        depends on APPTRACE_DEST_TRAX
+        depends on APPTRACE_ENABLE
         range 0 16384
         default 0
         help
             Threshold for flushing last trace data to host on panic in post-mortem mode.
             This is minimal amount of data needed to perform flush. In bytes.
 
+    config APPTRACE_BUF_SIZE
+        int "Size of the apptrace buffer"
+        depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE && !APPTRACE_DEST_TRAX
+        default 16384
+        help
+            Size of the memory buffer for trace data in bytes.
+
     config APPTRACE_PENDING_DATA_SIZE_MAX
         int "Size of the pending data buffer"
-        depends on APPTRACE_DEST_TRAX
+        depends on APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE
         default 0
         help
             Size of the buffer for events in bytes. It is useful for buffering events from
@@ -59,151 +81,151 @@ menu "Application Level Tracing"
 
     menu "FreeRTOS SystemView Tracing"
         depends on APPTRACE_ENABLE
-        config SYSVIEW_ENABLE
+        config APPTRACE_SV_ENABLE
             bool "SystemView Tracing Enable"
             depends on APPTRACE_ENABLE
             default n
             help
                 Enables supporrt for SEGGER SystemView tracing functionality.
 
-        choice SYSVIEW_TS_SOURCE
+        choice APPTRACE_SV_TS_SOURCE
             prompt "Timer to use as timestamp source"
-            depends on SYSVIEW_ENABLE
-            default SYSVIEW_TS_SOURCE_CCOUNT if FREERTOS_UNICORE && !PM_ENABLE
-            default SYSVIEW_TS_SOURCE_TIMER_00 if !FREERTOS_UNICORE && !PM_ENABLE
-            default SYSVIEW_TS_SOURCE_ESP_TIMER if PM_ENABLE
+            depends on APPTRACE_SV_ENABLE
+            default APPTRACE_SV_TS_SOURCE_CCOUNT if FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+            default APPTRACE_SV_TS_SOURCE_TIMER_00 if !FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+            default APPTRACE_SV_TS_SOURCE_ESP_TIMER if PM_ENABLE || IDF_TARGET_ESP32C3
             help
                 SystemView needs to use a hardware timer as the source of timestamps
                 when tracing. This option selects the timer for it.
 
-            config SYSVIEW_TS_SOURCE_CCOUNT
+            config APPTRACE_SV_TS_SOURCE_CCOUNT
                 bool "CPU cycle counter (CCOUNT)"
-                depends on FREERTOS_UNICORE && !PM_ENABLE
+                depends on FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
 
-            config SYSVIEW_TS_SOURCE_TIMER_00
+            config APPTRACE_SV_TS_SOURCE_TIMER_00
                 bool "Timer 0, Group 0"
-                depends on !PM_ENABLE
+                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
 
-            config SYSVIEW_TS_SOURCE_TIMER_01
+            config APPTRACE_SV_TS_SOURCE_TIMER_01
                 bool "Timer 1, Group 0"
-                depends on !PM_ENABLE
+                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
 
-            config SYSVIEW_TS_SOURCE_TIMER_10
+            config APPTRACE_SV_TS_SOURCE_TIMER_10
                 bool "Timer 0, Group 1"
-                depends on !PM_ENABLE
+                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
 
-            config SYSVIEW_TS_SOURCE_TIMER_11
+            config APPTRACE_SV_TS_SOURCE_TIMER_11
                 bool "Timer 1, Group 1"
-                depends on !PM_ENABLE
+                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
 
-            config SYSVIEW_TS_SOURCE_ESP_TIMER
+            config APPTRACE_SV_TS_SOURCE_ESP_TIMER
                 bool "esp_timer high resolution timer"
 
         endchoice
 
-        config SYSVIEW_MAX_TASKS
+        config APPTRACE_SV_MAX_TASKS
             int "Maximum supported tasks"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             range 1 64
             default 16
             help
                 Configures maximum supported tasks in sysview debug
 
-        config SYSVIEW_BUF_WAIT_TMO
+        config APPTRACE_SV_BUF_WAIT_TMO
             int "Trace buffer wait timeout"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default 500
             help
                 Configures timeout (in us) to wait for free space in trace buffer.
                 Set to -1 to wait forever and avoid lost events.
 
-        config SYSVIEW_EVT_OVERFLOW_ENABLE
+        config APPTRACE_SV_EVT_OVERFLOW_ENABLE
             bool "Trace Buffer Overflow Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Trace Buffer Overflow" event.
 
-        config SYSVIEW_EVT_ISR_ENTER_ENABLE
+        config APPTRACE_SV_EVT_ISR_ENTER_ENABLE
             bool "ISR Enter Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "ISR Enter" event.
 
-        config SYSVIEW_EVT_ISR_EXIT_ENABLE
+        config APPTRACE_SV_EVT_ISR_EXIT_ENABLE
             bool "ISR Exit Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "ISR Exit" event.
 
-        config SYSVIEW_EVT_ISR_TO_SCHEDULER_ENABLE
+        config APPTRACE_SV_EVT_ISR_TO_SCHED_ENABLE
             bool "ISR Exit to Scheduler Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "ISR to Scheduler" event.
 
-        config SYSVIEW_EVT_TASK_START_EXEC_ENABLE
+        config APPTRACE_SV_EVT_TASK_START_EXEC_ENABLE
             bool "Task Start Execution Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Task Start Execution" event.
 
-        config SYSVIEW_EVT_TASK_STOP_EXEC_ENABLE
+        config APPTRACE_SV_EVT_TASK_STOP_EXEC_ENABLE
             bool "Task Stop Execution Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Task Stop Execution" event.
 
-        config SYSVIEW_EVT_TASK_START_READY_ENABLE
+        config APPTRACE_SV_EVT_TASK_START_READY_ENABLE
             bool "Task Start Ready State Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Task Start Ready State" event.
 
-        config SYSVIEW_EVT_TASK_STOP_READY_ENABLE
+        config APPTRACE_SV_EVT_TASK_STOP_READY_ENABLE
             bool "Task Stop Ready State Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Task Stop Ready State" event.
 
-        config SYSVIEW_EVT_TASK_CREATE_ENABLE
+        config APPTRACE_SV_EVT_TASK_CREATE_ENABLE
             bool "Task Create Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Task Create" event.
 
-        config SYSVIEW_EVT_TASK_TERMINATE_ENABLE
+        config APPTRACE_SV_EVT_TASK_TERMINATE_ENABLE
             bool "Task Terminate Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Task Terminate" event.
 
-        config SYSVIEW_EVT_IDLE_ENABLE
+        config APPTRACE_SV_EVT_IDLE_ENABLE
             bool "System Idle Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "System Idle" event.
 
-        config SYSVIEW_EVT_TIMER_ENTER_ENABLE
+        config APPTRACE_SV_EVT_TIMER_ENTER_ENABLE
             bool "Timer Enter Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Timer Enter" event.
 
-        config SYSVIEW_EVT_TIMER_EXIT_ENABLE
+        config APPTRACE_SV_EVT_TIMER_EXIT_ENABLE
             bool "Timer Exit Event"
-            depends on SYSVIEW_ENABLE
+            depends on APPTRACE_SV_ENABLE
             default y
             help
                 Enables "Timer Exit" event.
@@ -212,7 +234,7 @@ menu "Application Level Tracing"
 
     config APPTRACE_GCOV_ENABLE
         bool "GCOV to Host Enable"
-        depends on APPTRACE_ENABLE && !SYSVIEW_ENABLE
+        depends on APPTRACE_ENABLE && !APPTRACE_SV_ENABLE
         select ESP_DEBUG_STUBS_ENABLE
         default n
         help

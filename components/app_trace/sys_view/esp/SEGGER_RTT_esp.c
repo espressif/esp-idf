@@ -28,10 +28,10 @@ const static char *TAG = "segger_rtt";
 // size of down channel data buf
 #define SYSVIEW_DOWN_BUF_SIZE   32
 #define SEGGER_STOP_WAIT_TMO    1000000 //us
-#if CONFIG_SYSVIEW_BUF_WAIT_TMO == -1
+#if CONFIG_APPTRACE_SV_BUF_WAIT_TMO == -1
 #define SEGGER_HOST_WAIT_TMO    ESP_APPTRACE_TMO_INFINITE
 #else
-#define SEGGER_HOST_WAIT_TMO    CONFIG_SYSVIEW_BUF_WAIT_TMO
+#define SEGGER_HOST_WAIT_TMO    CONFIG_APPTRACE_SV_BUF_WAIT_TMO
 #endif
 
 static uint8_t s_events_buf[SYSVIEW_EVENTS_BUF_SZ];
@@ -47,7 +47,7 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 
 /*********************************************************************
 *
-*       SEGGER_RTT_ESP32_FlushNoLock()
+*       SEGGER_RTT_ESP_FlushNoLock()
 *
 *  Function description
 *    Flushes buffered events.
@@ -59,7 +59,7 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 *  Return value
 *    None.
 */
-void SEGGER_RTT_ESP32_FlushNoLock(unsigned long min_sz, unsigned long tmo)
+void SEGGER_RTT_ESP_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 {
     esp_err_t res;
     if (s_events_buf_filled > 0) {
@@ -78,7 +78,7 @@ void SEGGER_RTT_ESP32_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 
 /*********************************************************************
 *
-*       SEGGER_RTT_ESP32_Flush()
+*       SEGGER_RTT_ESP_Flush()
 *
 *  Function description
 *    Flushes buffered events.
@@ -90,10 +90,10 @@ void SEGGER_RTT_ESP32_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 *  Return value
 *    None.
 */
-void SEGGER_RTT_ESP32_Flush(unsigned long min_sz, unsigned long tmo)
+void SEGGER_RTT_ESP_Flush(unsigned long min_sz, unsigned long tmo)
 {
     SEGGER_SYSVIEW_LOCK();
-    SEGGER_RTT_ESP32_FlushNoLock(min_sz, tmo);
+    SEGGER_RTT_ESP_FlushNoLock(min_sz, tmo);
     SEGGER_SYSVIEW_UNLOCK();
 }
 
@@ -155,7 +155,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
       ESP_LOGE(TAG, "Too large event %u bytes!", NumBytes);
       return 0;
   }
-  if (xPortGetCoreID()) { // dual core specific code
+  if (cpu_hal_get_core_id()) { // dual core specific code
     // use the highest - 1 bit of event ID to indicate core ID
     // the highest bit can not be used due to event ID encoding method
     // this reduces supported ID range to [0..63] (for 1 byte IDs) plus [128..16383] (for 2 bytes IDs)
@@ -175,7 +175,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
   memcpy(&s_events_buf[s_events_buf_filled], pBuffer, NumBytes);
   s_events_buf_filled += NumBytes;
   if (event_id == SYSVIEW_EVTID_TRACE_STOP) {
-    SEGGER_RTT_ESP32_FlushNoLock(0, SEGGER_STOP_WAIT_TMO);
+    SEGGER_RTT_ESP_FlushNoLock(0, SEGGER_STOP_WAIT_TMO);
   }
   return NumBytes;
 }

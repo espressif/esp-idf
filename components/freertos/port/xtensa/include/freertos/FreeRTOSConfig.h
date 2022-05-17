@@ -343,17 +343,21 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configENABLE_TASK_SNAPSHOT          1
 #endif
 
-#if CONFIG_SYSVIEW_ENABLE
-#ifndef __ASSEMBLER__
-#include "SEGGER_SYSVIEW_FreeRTOS.h"
-#undef INLINE // to avoid redefinition
-#endif /* def __ASSEMBLER__ */
-#endif
-
 #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
 #define configCHECK_MUTEX_GIVEN_BY_OWNER    1
 #else
 #define configCHECK_MUTEX_GIVEN_BY_OWNER    0
 #endif
 
-#endif /* FREERTOS_CONFIG_H */
+#ifndef __ASSEMBLER__
+#if CONFIG_APPTRACE_SV_ENABLE
+#include "SEGGER_SYSVIEW_FreeRTOS.h"
+#undef INLINE // to avoid redefinition
+extern uint32_t port_switch_flag[];
+#define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+#endif
+
+#endif // FREERTOS_CONFIG_XTENSA_H
