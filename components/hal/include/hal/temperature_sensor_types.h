@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc/clk_tree_defs.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,7 +16,11 @@ extern "C" {
 /**
  * @brief temperature sensor clock source
  */
+#if SOC_TEMP_SENSOR_SUPPORTED
 typedef soc_periph_temperature_sensor_clk_src_t temperature_sensor_clk_src_t;
+#else
+typedef int temperature_sensor_clk_src_t;
+#endif // SOC_TEMP_SENSOR_SUPPORTED
 
 #ifdef __cplusplus
 }

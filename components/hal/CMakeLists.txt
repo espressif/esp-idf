@@ -74,8 +74,8 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "i2s_hal.c")
     endif()
 
-    if(CONFIG_SOC_SIGMADELTA_SUPPORTED)
-        list(APPEND srcs "sigmadelta_hal.c")
+    if(CONFIG_SOC_SDM_SUPPORTED)
+        list(APPEND srcs "sdm_hal.c")
     endif()
 
     if(CONFIG_ETH_USE_ESP32_EMAC)
