@@ -38,11 +38,11 @@ FatFs 与 VFS 配合使用
 
 8. 调用 FatFs 函数 ``f_mount`` 并使用 NULL ``FATFS*`` 参数，为与上述编号相同的驱动卸载文件系统；
 
-9. 调用 FatFs 函数 :cpp:func:`ff_diskio_register` 并使用 NULL ``ff_diskio_impl_t*`` 参数和相同的驱动编号，来释放注册的磁盘 I/O 驱动。
+9. 调用 FatFs 函数 :cpp:func:`ff_diskio_register` 并使用 NULL ``ff_diskio_impl_t*`` 参数和相同的驱动编号，来释放注册的磁盘 I/O 驱动；
 
 10. 调用 :cpp:func:`esp_vfs_fat_unregister_path` 并使用文件系统挂载的路径将 FatFs 从 VFS 中移除，并释放步骤 1 中分配的 ``FATFS`` 结构。
 
-便捷函数 ``esp_vfs_fat_sdmmc_mount``， ``esp_vfs_fat_sdspi_mount``， 和 ``esp_vfs_fat_sdmmc_unmount`` 对上述步骤进行了封装，并加入了对 SD 卡初始化的处理。我们将在下一章节详细介绍这两个函数。
+便捷函数 ``esp_vfs_fat_sdmmc_mount``、 ``esp_vfs_fat_sdspi_mount`` 和 ``esp_vfs_fat_sdmmc_unmount`` 对上述步骤进行了封装，并加入了对 SD 卡初始化的处理。我们将在下一章节详细介绍以上函数。
 
 .. doxygenfunction:: esp_vfs_fat_register
 .. doxygenfunction:: esp_vfs_fat_unregister_path
@@ -51,7 +51,7 @@ FatFs 与 VFS 配合使用
 FatFs 与 VFS 和 SD 卡配合使用
 ---------------------------------
 
-头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 定义了两个便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_mount` 和 :cpp:func:`esp_vfs_fat_sdmmc_unmount`。这两个函数分别执行上一章节的步骤 1-3 和步骤 7-9，并初始化 SD 卡，但仅提供有限的错误处理功能。我们鼓励开发人员查看源代码并将更多高级功能集成到产品应用中。
+头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 定义了便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_mount`、 :cpp:func:`esp_vfs_fat_sdspi_mount` 和 :cpp:func:`esp_vfs_fat_sdcard_unmount`。这些函数分别执行上一章节的步骤 1-3 和步骤 7-9，并初始化 SD 卡，但仅提供有限的错误处理功能。我们鼓励开发人员查看源代码，将更多高级功能集成到产品应用中。
 
 便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_unmount` 用于卸载文件系统并释放从 :cpp:func:`esp_vfs_fat_sdmmc_mount` 函数获取的资源。
 
@@ -96,7 +96,7 @@ FatFs 分区生成器
 
 该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化磨损均衡。
 
-目前最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上线是 255 个字符，文件名中可以包含多个 "." 字符以及其他字符如 "+"、","、";"、"="、"[" and also "]" 等。长文件名字符采用 utf-16 编码而短文件名采用 utf-8 编码。
+目前最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 "." 字符以及其他字符如 "+"、","、";"、"="、"[" and also "]" 等。长文件名字符采用 utf-16 编码，而短文件名采用 utf-8 编码。
 
 
 构建系统中使用 FatFs 分区生成器
@@ -112,7 +112,7 @@ FatFs 分区生成器
 
 ``fatfs_create_spiflash_image`` 以及 ``fatfs_create_rawflash_image`` 必须从项目的 CMakeLists.txt 中调用。
 
-如果您决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它支持在设备中以只读模式安装。
+如果您决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它仅支持在设备中以只读模式安装。
 
 
 该函数的参数如下：
@@ -130,3 +130,15 @@ FatFs 分区生成器
 没有指定 FLASH_IN_PROJECT 时也可以生成分区镜像，但是用户需要使用 ``esptool.py`` 或自定义的构建系统目标对其手动烧录。
 
 相关示例请查看 :example:`storage/fatfsgen`。
+
+
+FatFs 分区分析器
+------------------
+
+我们为 FatFs 提供了分区分析器 (:component_file:`fatfsparse.py<fatfs/fatfsparse.py>`)。该工具仍处于开发阶段，提供的功能有限。
+
+目前，FatFs 分区分析器可用于分析由 FatFs 分区生成器 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) 生成的镜像（不支持磨损均衡和长文件名称）以及在主机上生成与 FatFs 卷标相同名称的文件夹结构。
+
+您可以使用::
+
+    ./fatfsparse.py fatfs_image.img
