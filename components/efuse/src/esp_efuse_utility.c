@@ -354,3 +354,29 @@ static bool check_range_of_bits(esp_efuse_block_t blk, int offset_in_bits, int s
     }
     return true;
 }
+
+bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned r_data_len)
+{
+    uint32_t* w_data = (uint32_t*)range_write_addr_blocks[block].start;
+    uint32_t* r_data = (uint32_t*)range_read_addr_blocks[block].start;
+
+    bool correct_written_data = memcmp(w_data, r_data, r_data_len) == 0;
+    if (correct_written_data) {
+        ESP_LOGI(TAG, "BURN BLOCK%d - OK (write block == read block)", block);
+        return true;
+    }
+
+    correct_written_data = true;
+    for (unsigned i = 0; i < r_data_len / 4; i++) {
+        if ((*(r_data + i) & *(w_data + i)) != *(w_data + i)) {
+            correct_written_data = false;
+            break;
+        }
+    }
+    if (correct_written_data) {
+        ESP_LOGI(TAG, "BURN BLOCK%d - OK (all write block bits are set)", block);
+    } else {
+        ESP_LOGE(TAG, "BURN BLOCK%d - ERROR (written bits != read bits)", block);
+    }
+    return correct_written_data;
+}
