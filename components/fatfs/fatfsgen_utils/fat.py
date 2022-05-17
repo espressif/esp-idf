@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+from typing import List
+
 from .cluster import Cluster
 from .exceptions import NoFreeClusterException
-from .fatfs_state import FATFSState
+from .fatfs_state import BootSectorState
 
 
 class FAT:
@@ -11,19 +13,24 @@ class FAT:
     The FAT represents the FAT region in file system. It is responsible for storing clusters
     and chaining them in case we need to extend file or directory to more clusters.
     """
-    def __init__(self,
-                 fatfs_state: FATFSState,
-                 reserved_sectors_cnt: int) -> None:
-        self.fatfs_state = fatfs_state
-        self.reserved_sectors_cnt = reserved_sectors_cnt
 
-        self.clusters = [Cluster(cluster_id=i, fatfs_state=self.fatfs_state) for i in
-                         range(1, self.fatfs_state.clusters)]
+    def allocate_root_dir(self) -> None:
+        """
+        The root directory is implicitly created with the FatFS,
+        its block is on the index 1 (second index) and is allocated implicitly.
+        """
+        self.clusters[Cluster.ROOT_BLOCK_ID].allocate_cluster()
 
-        # update root directory record
-        self.clusters[0].allocate_cluster()
-        # add first reserved cluster
-        self.clusters = [Cluster(cluster_id=Cluster.RESERVED_BLOCK_ID, fatfs_state=self.fatfs_state)] + self.clusters
+    def __init__(self, boot_sector_state: BootSectorState, init_: bool) -> None:
+        self.boot_sector_state = boot_sector_state
+        self.clusters: List[Cluster] = [Cluster(cluster_id=i,
+                                                boot_sector_state=self.boot_sector_state,
+                                                init_=init_) for i in range(self.boot_sector_state.clusters)]
+        if init_:
+            self.allocate_root_dir()
+
+    def parse_fat_sector(self) -> None:
+        pass
 
     def find_free_cluster(self) -> Cluster:
         # finds first empty cluster and allocates it
