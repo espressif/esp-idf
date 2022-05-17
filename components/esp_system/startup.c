@@ -47,10 +47,6 @@
 #include "esp_core_dump.h"
 #endif
 
-#if CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"
-#endif
-
 #include "esp_private/dbg_stubs.h"
 
 #if CONFIG_PM_ENABLE
@@ -446,15 +442,6 @@ static void start_cpu0_default(void)
 
 ESP_SYSTEM_INIT_FN(init_components0, BIT(0), 200)
 {
-
-#if CONFIG_APPTRACE_ENABLE
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
-#endif
-#if CONFIG_APPTRACE_SV_ENABLE
-    SEGGER_SYSVIEW_Conf();
-#endif
-
 #if CONFIG_ESP_DEBUG_STUBS_ENABLE
     esp_dbg_stubs_init();
 #endif

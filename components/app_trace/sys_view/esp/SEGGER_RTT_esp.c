@@ -12,6 +12,7 @@
 
 #include "esp_app_trace.h"
 #include "esp_log.h"
+#include "esp_private/startup_internal.h"
 
 const static char *TAG = "segger_rtt";
 
@@ -287,5 +288,18 @@ int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* p
   esp_apptrace_down_buffer_config(s_down_buf, sizeof(s_down_buf));
   return 0;
 }
+
+/*************************** Init hook ****************************
+ *
+ * This init function is placed here because this port file will be
+ * linked whenever SystemView is used.
+ */
+
+ESP_SYSTEM_INIT_FN(sysview_init, BIT(0), 120)
+{
+    SEGGER_SYSVIEW_Conf();
+    return ESP_OK;
+}
+
 
 /*************************** End of file ****************************/
