@@ -32,9 +32,11 @@ entries:
         freertos_hooks:esp_vApplicationIdleHook (noflash)
     if PM_SLP_IRAM_OPT = y:
         task_wdt:idle_hook_cb (noflash)
-        task_wdt:esp_task_wdt_reset (noflash)
-        task_wdt:find_task_in_twdt_list (noflash)
         task_wdt:reset_hw_timer (noflash)
+        task_wdt:find_entry_and_check_all_reset (noflash)
+        task_wdt:find_entry_from_task_handle_and_check_all_reset (noflash)
+        task_wdt:esp_task_wdt_reset (noflash)
+        task_wdt:esp_task_wdt_reset_user (noflash)
 
 [mapping:esp_timer_pm]
 archive: libesp_timer.a

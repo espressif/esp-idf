@@ -216,8 +216,12 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog
 static void do_task_wdt(void)
 {
     setup_values();
-    esp_task_wdt_init(1, true);
-    esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = 1000,
+        .idle_core_mask = (1 << 0), // Watch core 0 idle
+        .trigger_panic = true,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
     while(1);
 }
 
