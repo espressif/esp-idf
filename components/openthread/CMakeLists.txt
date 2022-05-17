@@ -174,8 +174,21 @@ if(CONFIG_OPENTHREAD_ENABLED)
         endif()
 
     else()
-        add_prebuilt_library(openthread_port "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_port.a"
-                            REQUIRES openthread)
+        if(IDF_TARGET STREQUAL "esp32h2")
+            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+                add_prebuilt_library(openthread_port
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev1/libopenthread_port.a"
+                    REQUIRES openthread)
+            endif()
+            if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+                add_prebuilt_library(openthread_port
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2/libopenthread_port.a"
+                    REQUIRES openthread)
+            endif()
+        else()
+            add_prebuilt_library(openthread_port "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_port.a"
+                                REQUIRES openthread)
+        endif()
         add_prebuilt_library(openthread_br "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_br.a"
                             REQUIRES openthread)
 
