@@ -78,7 +78,6 @@
 /components/cxx/                      @esp-idf-codeowners/system
 /components/driver/                   @esp-idf-codeowners/peripherals
 /components/efuse/                    @esp-idf-codeowners/system
-/components/esp32*/                   @esp-idf-codeowners/system
 /components/esp_adc_cal/              @esp-idf-codeowners/peripherals
 /components/esp_common/               @esp-idf-codeowners/system
 /components/esp_eth/                  @esp-idf-codeowners/network

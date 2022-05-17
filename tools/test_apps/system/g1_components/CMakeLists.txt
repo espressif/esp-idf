@@ -16,7 +16,6 @@ project(g1_components)
 
 set(extra_allowed_components
     ${CONFIG_IDF_TARGET_ARCH}
-    ${CONFIG_IDF_TARGET}
 )
 
 # These components are currently included into "G1" build, but shouldn't.
