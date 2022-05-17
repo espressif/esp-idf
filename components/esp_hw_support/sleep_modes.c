@@ -45,6 +45,7 @@
 #include "esp_private/brownout.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/startup_internal.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -1395,3 +1396,15 @@ void rtc_sleep_enable_ultra_low(bool enable)
 {
     s_ultra_low_enabled = enable;
 }
+
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
+{
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+    return ESP_OK;
+}
+#endif
