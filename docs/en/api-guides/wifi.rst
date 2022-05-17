@@ -1732,6 +1732,18 @@ All of the information in the table can be found in the structure wifi_csi_info_
     - If first_word_invalid field of wifi_csi_info_t is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in {IDF_TARGET_NAME}.
     - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
 
+When imaginary part and real part data of sub-carrier are used, please refer to the table below.
+
++----------------+-------------------+------------------------------+-------------------------+
+| PHY standard   | Sub-carrier range | Pilot sub-carrier            | Sub-carrier(total/data) |
++================+===================+==============================+=========================+
+| 802.11a/g      | -26 to +26        | -21, -7, +7, +21             | 52 total, 48 usable     |
++----------------+-------------------+------------------------------+-------------------------+
+| 802.11n, 20MHz | -28 to +28        | -21, -7, +7, +21             | 56 total, 52 usable     |
++----------------+-------------------+------------------------------+-------------------------+
+| 802.11n, 40MHz | -57 to +57        | -53, -25, -11, +11, +25, +53 | 114 total, 108 usable   |
++----------------+-------------------+------------------------------+-------------------------+
+
 .. note::
 
     - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
