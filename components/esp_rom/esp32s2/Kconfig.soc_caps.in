@@ -18,3 +18,7 @@ config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
 config ESP_ROM_HAS_FLASH_COUNT_PAGES_BUG
     bool
     default y
+
+config ESP_ROM_USB_OTG_NUM
+    int
+    default 3
