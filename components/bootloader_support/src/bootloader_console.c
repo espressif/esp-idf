@@ -95,7 +95,7 @@ void bootloader_console_init(void)
 #endif
 
     esp_rom_uart_usb_acm_init(s_usb_cdc_buf, sizeof(s_usb_cdc_buf));
-    esp_rom_uart_set_as_console(ESP_ROM_UART_USB);
+    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
     esp_rom_install_channel_putc(1, bootloader_console_write_char_usb);
 }
 #endif //CONFIG_ESP_CONSOLE_USB_CDC

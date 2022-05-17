@@ -27,6 +27,7 @@
 #include "hal/soc_hal.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_caps.h"
 #include "esp32s2/rom/usb/usb_dc.h"
 #include "esp32s2/rom/usb/cdc_acm.h"
 #include "esp32s2/rom/usb/usb_dfu.h"
@@ -288,7 +289,8 @@ esp_err_t esp_usb_console_init(void)
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
     /* Install esp_rom_printf handler */
-    ets_install_putc1(&esp_usb_console_write_char);
+    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_install_channel_putc(1, &esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
     return ESP_OK;
