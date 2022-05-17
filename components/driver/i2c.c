@@ -476,6 +476,14 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
 {
     i2c_obj_t *p_i2c = (i2c_obj_t *) arg;
     int i2c_num = p_i2c->i2c_num;
+    // Interrupt protection.
+    // On C3 and S3 targets, the I2C may trigger a spurious interrupt,
+    // in order to detect these false positive, check the I2C's hardware interrupt mask
+    uint32_t int_mask;
+    i2c_hal_get_intsts_mask(&(i2c_context[i2c_num].hal), &int_mask);
+    if (int_mask == 0) {
+        return;
+    }
     i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
     portBASE_TYPE HPTaskAwoken = pdFALSE;
     if (p_i2c->mode == I2C_MODE_MASTER) {
@@ -499,6 +507,9 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
             if (p_i2c->status != I2C_STATUS_ACK_ERROR && p_i2c->status != I2C_STATUS_IDLE) {
                 i2c_master_cmd_begin_static(i2c_num);
             }
+        } else {
+            // Do nothing if there is no proper event.
+            return;
         }
         i2c_cmd_evt_t evt = {
             .type = I2C_CMD_EVT_ALIVE
@@ -596,6 +607,8 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
  **/
 static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 {
+// A workaround for avoiding cause timeout issue when using
+// hardware reset.
 #if !SOC_I2C_SUPPORT_HW_FSM_RST
     int scl_low_period, scl_high_period;
     int scl_start_hold, scl_rstart_setup;
