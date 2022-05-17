@@ -65,7 +65,7 @@ idf.py set-target <chip_name>
 
 ### Receiving Data Wirelessly
 
-  The server will receive this data in the ESP_GATTS_WRITE_EVT event and send data to the Uart terminal by `uart_wrire_bytes` function. For example:
+  The server will receive this data in the ESP_GATTS_WRITE_EVT event and send data to the Uart terminal by `uart_write_bytes` function. For example:
 
     case ESP_GATTS_WRITE_EVT:
             ...
