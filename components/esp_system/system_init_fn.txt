@@ -13,6 +13,9 @@
 #   affinity_expression: bit map of cores the function is executed on
 
 
+# esp_timer has to be initialized early, since it is used by several other components
+100: esp_timer_startup_init in components/esp_timer/src/esp_timer.c on BIT(0)
+
 # the rest of the components which are initialized from startup.c
 # [refactor-todo]: move init calls into respective components
 200: init_components0 in components/esp_system/startup.c on BIT(0)
