@@ -14,6 +14,20 @@ spi_master.inc:line: WARNING: Duplicate C++ declaration, also defined at api-ref
 Declaration is '.. cpp:type:: struct spi_transaction_t spi_transaction_t'.
 spi_slave.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_slave:line.
 Declaration is '.. cpp:type:: struct spi_slave_transaction_t spi_slave_transaction_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:type:: struct esp_mqtt_event_t esp_mqtt_event_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:type:: struct esp_mqtt_client_config_t esp_mqtt_client_config_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:enum:: esp_mqtt_event_id_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:enum:: esp_mqtt_connect_return_code_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:enum:: esp_mqtt_error_type_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:enum:: esp_mqtt_transport_t'.
+mqtt_client.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/protocols/mqtt:line.
+Declaration is '.. cpp:enum:: esp_mqtt_protocol_ver_t'.
 esp_flash.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/spi_flash:line.
 Declaration is '.. cpp:type:: struct esp_flash_t esp_flash_t'.
 wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
