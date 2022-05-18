@@ -473,17 +473,17 @@ macro(project project_name)
     add_dependencies(${project_elf} _project_elf_src)
 
     if(__PROJECT_GROUP_LINK_COMPONENTS)
-        target_link_libraries(${project_elf} "-Wl,--start-group")
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
     endif()
 
     if(test_components)
-        target_link_libraries(${project_elf} "-Wl,--whole-archive")
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--whole-archive")
         foreach(test_component ${test_components})
             if(TARGET ${test_component})
-                target_link_libraries(${project_elf} ${test_component})
+                target_link_libraries(${project_elf} PRIVATE ${test_component})
             endif()
         endforeach()
-        target_link_libraries(${project_elf} "-Wl,--no-whole-archive")
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--no-whole-archive")
     endif()
 
     idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
@@ -496,9 +496,12 @@ macro(project project_name)
         __component_get_property(whole_archive ${build_component_target} WHOLE_ARCHIVE)
         if(whole_archive)
             message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
-            target_link_libraries(${project_elf} "-Wl,--whole-archive" ${build_component} "-Wl,--no-whole-archive")
+            target_link_libraries(${project_elf} PRIVATE
+                                  "-Wl,--whole-archive"
+                                   ${build_component}
+                                   "-Wl,--no-whole-archive")
         else()
-            target_link_libraries(${project_elf} ${build_component})
+            target_link_libraries(${project_elf} PRIVATE ${build_component})
         endif()
     endforeach()
 
@@ -507,7 +510,7 @@ macro(project project_name)
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
         set(idf_target "${IDF_TARGET}")
         string(TOUPPER ${idf_target} idf_target)
-        target_link_libraries(${project_elf} "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
         "-Wl,--Map=\"${mapfile}\"")
         unset(idf_target)
     endif()
