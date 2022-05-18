@@ -45,7 +45,7 @@
 - `custom_test[_esp32/esp32s2/...]`
 - `docker`
 - `docs`
-- `docs_full`, triggers a full docs build, not a fast build which is the CI default. This includes PDF and doxygen generated API documentation.
+- `docs_fast`, triggers a fast docs build, not a full build which is the CI default. This skips PDF build as well as doxygen APIs, reducing the build time by 90+%.
 - `example_test[_esp32/esp32s2/...]`
 - `fuzzer_test`
 - `host_test`

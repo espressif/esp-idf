@@ -23,8 +23,8 @@
 .if-label-docs: &if-label-docs
   if: '$BOT_LABEL_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i'
 
-.if-label-docs_full: &if-label-docs_full
-  if: '$BOT_LABEL_DOCS_FULL || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs_full(?:,[^,\n\r]+)*$/i'
+.if-label-docs_fast: &if-label-docs_fast
+  if: '$BOT_LABEL_DOCS_FAST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs_fast(?:,[^,\n\r]+)*$/i'
 
 .if-dev-push: &if-dev-push
   if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
@@ -34,7 +34,7 @@
     - <<: *if-protected
     - <<: *if-label-build_docs
     - <<: *if-label-docs
-    - <<: *if-label-docs_full
+    - <<: *if-label-docs_fast
     - <<: *if-dev-push
       changes: *patterns-docs
 
@@ -101,8 +101,13 @@ build_docs_html_full:
   extends:
     - .build_docs_build_stage_template
   rules:
+    - <<: *if-label-docs_fast
+      when: never
     - <<: *if-protected
-    - <<: *if-label-docs_full
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+    - <<: *if-dev-push
+      changes: *patterns-docs
   artifacts:
     when: always
     paths:
@@ -116,12 +121,7 @@ build_docs_html_fast:
   extends:
     - .build_docs_build_stage_template
   rules:
-    - <<: *if-label-docs_full
-      when: never
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-    - <<: *if-dev-push
-      changes: *patterns-docs
+    - <<: *if-label-docs_fast
   artifacts:
     when: always
     paths:
@@ -136,8 +136,13 @@ build_docs_pdf:
   extends:
     - .build_docs_build_stage_template
   rules:
+    - <<: *if-label-docs_fast
+      when: never
     - <<: *if-protected
-    - <<: *if-label-docs_full
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+    - <<: *if-dev-push
+      changes: *patterns-docs
   artifacts:
     when: always
     paths:
