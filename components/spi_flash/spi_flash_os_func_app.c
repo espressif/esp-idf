@@ -20,7 +20,7 @@
 #include "esp_rom_sys.h"
 #include "esp_private/spi_flash_os.h"
 
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 
 static const char TAG[] = "spi_flash";
 

@@ -20,7 +20,7 @@
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_heap_caps.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "stdatomic.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"

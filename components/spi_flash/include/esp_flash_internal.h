@@ -8,7 +8,7 @@
 #include "esp_err.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include <driver/spi_common_internal.h>
+#include "esp_private/spi_common_internal.h"
 #include "sdkconfig.h"
 
 #include "esp_flash.h"

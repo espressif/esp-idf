@@ -26,7 +26,7 @@
 #include "sdkconfig.h"
 
 #include "driver/gpio.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "driver/spi_slave.h"
 #include "hal/spi_slave_hal.h"
 

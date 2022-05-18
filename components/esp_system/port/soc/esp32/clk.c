@@ -13,7 +13,7 @@
 #include "bootloader_clock.h"
 #include "hal/wdt_hal.h"
 
-#include "driver/spi_common_internal.h" // [refactor-todo]: for spicommon_periph_in_use
+#include "esp_private/spi_common_internal.h" // [refactor-todo]: for spicommon_periph_in_use
 
 #include "esp_log.h"
 

@@ -6,7 +6,7 @@
 #include "esp_heap_caps.h"
 #include "unity.h"
 #include "esp_log.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32

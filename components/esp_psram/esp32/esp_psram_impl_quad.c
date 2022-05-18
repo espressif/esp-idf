@@ -27,7 +27,7 @@
 #include "soc/spi_periph.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
