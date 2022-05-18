@@ -30,7 +30,7 @@ except ImportError:
 def main(args: argparse.Namespace) -> None:
     pytest_cases: List[PytestCase] = []
     for path in args.paths:
-        pytest_cases += get_pytest_cases(path, args.target)
+        pytest_cases += get_pytest_cases(path, args.target, args.marker_expr)
 
     paths = set()
     app_configs = defaultdict(set)
@@ -94,7 +94,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Build all the pytest apps under specified paths. Will auto remove those non-test apps binaries'
     )
-    parser.add_argument('--target', required=True, help='Build apps for given target.')
+    parser.add_argument(
+        '-t', '--target', required=True, help='Build apps for given target.'
+    )
+    parser.add_argument(
+        '-m',
+        '--marker-expr',
+        default='not host_test',  # host_test apps would be built and tested under the same job
+        help='only build tests matching given mark expression. For example: -m "host_test and generic".',
+    )
     parser.add_argument(
         '--config',
         default=['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default'],
