@@ -1,0 +1,18 @@
+# This file documents the expected order of execution of ESP_SYSTEM_INIT_FN functions.
+#
+# When adding new ESP_SYSTEM_INIT_FN functions or changing init priorities of existing functions,
+# keep this file up to date. This is checked in CI.
+# When adding new functions or changing the priorities, please read the comments and see if
+# they need to be updated to be consistent with the changes you are making.
+#
+# Entries are ordered by the order of execution (i.e. from low priority values to high ones).
+# Each line has the following format:
+#   prio: function_name in path/to/source_file on affinity_expression
+# Where:
+#   prio: priority value (higher value means function is executed later)
+#   affinity_expression: bit map of cores the function is executed on
+
+
+# the rest of the components which are initialized from startup.c
+# [refactor-todo]: move init calls into respective components
+200: init_components0 in components/esp_system/startup.c on BIT(0)
