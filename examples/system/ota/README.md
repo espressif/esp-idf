@@ -74,7 +74,7 @@ After a successful build, we need to create a self-signed certificate and run a 
   (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted images received by the OTA client; others interpret the `0x1a`/`SUB` character in a binary as an escape sequence, i.e. end of file, and close the connection prematurely thus preventing the OTA client from receiving a complete image).
   * We recommend  using the `openssl` binary bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
   Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run openssl's http server command as above.
-  * Alternatively, use any windows based openssl with version `v1.1.1i` or greater built on the `Msys-x86_64` platform, or a simple python https server -- see `start_https_server` in the [example_test](simple_ota_example/example_test.py) script.
+  * Alternatively, use any windows based openssl with version `v1.1.1i` or greater built on the `Msys-x86_64` platform, or a simple python https server -- see `start_https_server` in the [example_test](simple_ota_example/pytest_simple_ota.py) script.
 
 ### Flash Certificate to "ESP-Dev-Board"
 
@@ -147,7 +147,7 @@ Running a local https server might be tricky in some cases (due to self signed c
     - Execute `python -m http.server 8070` in the directory with the firmware image
     - Use http://<host-ip>:8070/<firmware-name> as the firmware upgrade URL
     - Enable *Allow HTTP for OTA* (`CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
-* Start the HTTPS server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
+* Start the HTTPS server using [example_test](simple_ota_example/pytest_simple_ota.py) with two or more parameters: `pytest_simple_ota.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
     - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`
     - `<PORT>` is the server's port, here `8070`
     - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file.
