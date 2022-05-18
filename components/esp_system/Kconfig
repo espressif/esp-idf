@@ -117,6 +117,18 @@ menu "ESP System Settings"
 
     menu "Memory protection"
 
+        config ESP_SYSTEM_PMP_IDRAM_SPLIT
+            bool "Enable IRAM/DRAM split protection"
+            depends on SOC_CPU_IDRAM_SPLIT_USING_PMP
+            default "y"
+            help
+                If enabled, the CPU watches all the memory access and raises an exception in case
+                of any memory violation. This feature automatically splits
+                the SRAM memory, using PMP, into data and instruction segments and sets Read/Execute permissions
+                for the instruction part (below given splitting address) and Read/Write permissions
+                for the data part (above the splitting address). The memory protection is effective
+                on all access through the IRAM0 and DRAM0 buses.
+
         config ESP_SYSTEM_MEMPROT_DEPCHECK
             bool
             default y if IDF_TARGET_ESP32S2
