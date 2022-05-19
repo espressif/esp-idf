@@ -108,54 +108,84 @@ PLATFORM_LINUX_ARMHF = 'linux-armhf'
 PLATFORM_LINUX_ARM64 = 'linux-arm64'
 
 
-# Mappings from various other names these platforms are known as, to the identifiers above.
-# This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
-# definition above.
-# This list also includes various strings used in release archives of xtensa-esp32-elf-gcc, OpenOCD, etc.
-PLATFORM_FROM_NAME = {
-    # Windows
-    PLATFORM_WIN32: PLATFORM_WIN32,
-    'Windows-i686': PLATFORM_WIN32,
-    'Windows-x86': PLATFORM_WIN32,
-    'i686-w64-mingw32': PLATFORM_WIN32,
-    PLATFORM_WIN64: PLATFORM_WIN64,
-    'Windows-x86_64': PLATFORM_WIN64,
-    'Windows-AMD64': PLATFORM_WIN64,
-    'x86_64-w64-mingw32': PLATFORM_WIN64,
-    # macOS
-    PLATFORM_MACOS: PLATFORM_MACOS,
-    'osx': PLATFORM_MACOS,
-    'darwin': PLATFORM_MACOS,
-    'Darwin-x86_64': PLATFORM_MACOS,
-    PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
-    'Darwin-arm64': PLATFORM_MACOS_ARM64,
-    # Linux
-    PLATFORM_LINUX64: PLATFORM_LINUX64,
-    'linux64': PLATFORM_LINUX64,
-    'Linux-x86_64': PLATFORM_LINUX64,
-    'FreeBSD-amd64': PLATFORM_LINUX64,
-    'x86_64-linux-gnu': PLATFORM_LINUX64,
-    PLATFORM_LINUX32: PLATFORM_LINUX32,
-    'linux32': PLATFORM_LINUX32,
-    'Linux-i686': PLATFORM_LINUX32,
-    'FreeBSD-i386': PLATFORM_LINUX32,
-    'i586-linux-gnu': PLATFORM_LINUX32,
-    # armhf must be before armel to avoid mismatching
-    PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
-    'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
-    PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
-    'Linux-arm': PLATFORM_LINUX_ARM32,
-    'Linux-armv7l': PLATFORM_LINUX_ARM32,
-    'arm-linux-gnueabi': PLATFORM_LINUX_ARM32,
-    PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
-    'Linux-arm64': PLATFORM_LINUX_ARM64,
-    'Linux-aarch64': PLATFORM_LINUX_ARM64,
-    'Linux-armv8l': PLATFORM_LINUX_ARM64,
-    'aarch64': PLATFORM_LINUX_ARM64,
-}
+class Platforms:
+    # Mappings from various other names these platforms are known as, to the identifiers above.
+    # This includes strings produced from "platform.system() + '-' + platform.machine()", see PYTHON_PLATFORM
+    # definition above.
+    # This list also includes various strings used in release archives of xtensa-esp32-elf-gcc, OpenOCD, etc.
+    PLATFORM_FROM_NAME = {
+        # Windows
+        PLATFORM_WIN32: PLATFORM_WIN32,
+        'Windows-i686': PLATFORM_WIN32,
+        'Windows-x86': PLATFORM_WIN32,
+        'i686-w64-mingw32': PLATFORM_WIN32,
+        PLATFORM_WIN64: PLATFORM_WIN64,
+        'Windows-x86_64': PLATFORM_WIN64,
+        'Windows-AMD64': PLATFORM_WIN64,
+        'x86_64-w64-mingw32': PLATFORM_WIN64,
+        # macOS
+        PLATFORM_MACOS: PLATFORM_MACOS,
+        'osx': PLATFORM_MACOS,
+        'darwin': PLATFORM_MACOS,
+        'Darwin-x86_64': PLATFORM_MACOS,
+        PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
+        'Darwin-arm64': PLATFORM_MACOS_ARM64,
+        # Linux
+        PLATFORM_LINUX64: PLATFORM_LINUX64,
+        'linux64': PLATFORM_LINUX64,
+        'Linux-x86_64': PLATFORM_LINUX64,
+        'FreeBSD-amd64': PLATFORM_LINUX64,
+        'x86_64-linux-gnu': PLATFORM_LINUX64,
+        PLATFORM_LINUX32: PLATFORM_LINUX32,
+        'linux32': PLATFORM_LINUX32,
+        'Linux-i686': PLATFORM_LINUX32,
+        'FreeBSD-i386': PLATFORM_LINUX32,
+        'i586-linux-gnu': PLATFORM_LINUX32,
+        PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
+        'Linux-arm64': PLATFORM_LINUX_ARM64,
+        'Linux-aarch64': PLATFORM_LINUX_ARM64,
+        'Linux-armv8l': PLATFORM_LINUX_ARM64,
+        'aarch64': PLATFORM_LINUX_ARM64,
+        PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
+        'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
+        PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
+        'arm-linux-gnueabi': PLATFORM_LINUX_ARM32,
+        'Linux-armv7l': PLATFORM_LINUX_ARM32,
+        'Linux-arm': PLATFORM_LINUX_ARM32,
+    }
 
-UNKNOWN_PLATFORM = 'unknown'
-CURRENT_PLATFORM = PLATFORM_FROM_NAME.get(PYTHON_PLATFORM, UNKNOWN_PLATFORM)
+    @staticmethod
+    def get(platform_alias):  # type: (Optional[str]) -> Optional[str]
+        if platform_alias is None:
+            return None
+
+        platform_name = Platforms.PLATFORM_FROM_NAME.get(platform_alias, None)
+
+        # ARM platform may run on armhf hardware but having armel installed packages.
+        # To avoid possible armel/armhf libraries mixing need to define user's
+        # packages architecture to use the same
+        # See note section in https://gcc.gnu.org/onlinedocs/gcc/ARM-Options.html#index-mfloat-abi
+        if platform_name in (PLATFORM_LINUX_ARM32, PLATFORM_LINUX_ARMHF) and 'arm' in platform.machine():
+            # suppose that installed python was built with a right ABI
+            with open(sys.executable, 'rb') as f:
+                if int.from_bytes(f.read(4), sys.byteorder) != int.from_bytes(b'\x7fELF', sys.byteorder):
+                    return platform_name  # ELF magic not found. Use default platform name from PLATFORM_FROM_NAME
+                f.seek(36)  # seek to e_flags (https://man7.org/linux/man-pages/man5/elf.5.html)
+                e_flags = int.from_bytes(f.read(4), sys.byteorder)
+                platform_name = PLATFORM_LINUX_ARMHF if e_flags & 0x400 else PLATFORM_LINUX_ARM32
+        return platform_name
+
+    @staticmethod
+    def get_by_filename(file_name):  # type: (str) -> Optional[str]
+        found_alias = ''
+        for platform_alias in Platforms.PLATFORM_FROM_NAME:
+            # Find the longest alias which matches with file name to avoid mismatching
+            if platform_alias in file_name and len(found_alias) < len(platform_alias):
+                found_alias = platform_alias
+        return Platforms.get(found_alias)
+
+
+CURRENT_PLATFORM = Platforms.get(PYTHON_PLATFORM)
 
 EXPORT_SHELL = 'shell'
 EXPORT_KEY_VALUE = 'key-value'
@@ -499,17 +529,16 @@ class IDFToolVersion(object):
     def add_download(self, platform_name, url, size, sha256):  # type: (str, str, int, str) -> None
         self.downloads[platform_name] = IDFToolDownload(platform_name, url, size, sha256)
 
-    def get_download_for_platform(self, platform_name):  # type: (str) -> Optional[IDFToolDownload]
-        if platform_name in PLATFORM_FROM_NAME.keys():
-            platform_name = PLATFORM_FROM_NAME[platform_name]
-        if platform_name in self.downloads.keys():
+    def get_download_for_platform(self, platform_name):  # type: (Optional[str]) -> Optional[IDFToolDownload]
+        platform_name = Platforms.get(platform_name)
+        if platform_name and platform_name in self.downloads.keys():
             return self.downloads[platform_name]
         if 'any' in self.downloads.keys():
             return self.downloads['any']
         return None
 
     def compatible_with_platform(self, platform_name=PYTHON_PLATFORM):
-        # type: (str) -> bool
+        # type: (Optional[str]) -> bool
         return self.get_download_for_platform(platform_name) is not None
 
     def get_supported_platforms(self):  # type: () -> set[str]
@@ -560,7 +589,7 @@ class IDFTool(object):
     def _update_current_options(self):  # type: () -> None
         self._current_options = IDFToolOptions(*self.options)
         for override in self.platform_overrides:
-            if self._platform not in override['platforms']:
+            if self._platform and self._platform not in override['platforms']:
                 continue
             override_dict = override.copy()
             del override_dict['platforms']
@@ -888,7 +917,7 @@ class IDFTool(object):
             for platform_id, platform_dict in version_dict.items():  # type: ignore
                 if platform_id in ['name', 'status']:
                     continue
-                if platform_id not in PLATFORM_FROM_NAME.keys():
+                if Platforms.get(platform_id) is None:
                     raise RuntimeError('invalid platform %s for tool %s version %s' %
                                        (platform_id, tool_name, version))
 
@@ -1666,11 +1695,11 @@ def apply_github_assets_option(tool_download_obj):  # type: ignore
 
 
 def get_tools_spec_and_platform_info(selected_platform, targets, tools_spec,
-                                     quiet=False):  # type: (str, list[str], list[str], bool) -> Tuple[list[str], Dict[str, IDFTool]]
-    if selected_platform not in PLATFORM_FROM_NAME:
+                                     quiet=False):  # type: (Optional[str], list[str], list[str], bool) -> Tuple[list[str], Dict[str, IDFTool]]
+    selected_platform = Platforms.get(selected_platform)
+    if selected_platform is None:
         fatal(f'unknown platform: {selected_platform}')
         raise SystemExit(1)
-    selected_platform = PLATFORM_FROM_NAME[selected_platform]
 
     # If this function is not called from action_download, but is used just for detecting active tools, info about downloading is unwanted.
     global global_quiet
@@ -1736,7 +1765,7 @@ def action_download(args):  # type: ignore
         tool_spec = '{}@{}'.format(tool_name, tool_version)
 
         info('Downloading {}'.format(tool_spec))
-        apply_url_mirrors(args, tool_obj.versions[tool_version].get_download_for_platform(platform))
+        apply_url_mirrors(args, tool_obj.versions[tool_version].get_download_for_platform(args.platform))
 
         tool_obj.download(tool_version)
 
@@ -2097,11 +2126,7 @@ def action_add_version(args):  # type: ignore
     checksum_info = ChecksumFileParser(tool_name, args.checksum_file) if args.checksum_file else ChecksumCalculator(args.artifact_file)
     for file_size, file_sha256, file_name in checksum_info:
         # Guess which platform this file is for
-        found_platform = None
-        for platform_alias, platform_id in PLATFORM_FROM_NAME.items():
-            if platform_alias in file_name:
-                found_platform = platform_id
-                break
+        found_platform = Platforms.get_by_filename(file_name)
         if found_platform is None:
             info('Could not guess platform for file {}'.format(file_name))
             found_platform = TODO_MESSAGE
@@ -2427,7 +2452,7 @@ def main(argv):  # type: (list[str]) -> None
                   'Please set IDF_TOOLS_PATH to a directory with an ASCII name, or switch to Python 3.')
             raise SystemExit(1)
 
-    if CURRENT_PLATFORM == UNKNOWN_PLATFORM:
+    if CURRENT_PLATFORM is None:
         fatal('Platform {} appears to be unsupported'.format(PYTHON_PLATFORM))
         raise SystemExit(1)
 
