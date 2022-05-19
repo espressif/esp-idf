@@ -16,6 +16,7 @@
 #include "soc/apb_ctrl_reg.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_brownout.h"
+#include "esp_attr.h"
 
 #define I2C_RTC_WIFI_CLK_EN (APB_CTRL_WIFI_CLK_EN_REG)
 
@@ -164,4 +165,25 @@ void i2c_rtc_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uin
             | ((temp & I2C_RTC_DATA_V) << I2C_RTC_DATA_S);
     REG_WRITE(I2C_RTC_CONFIG2, temp);
     while (REG_GET_BIT(I2C_RTC_CONFIG2, I2C_RTC_BUSY));
+}
+
+/**
+ * Restore regi2c analog calibration related configuration registers.
+ * This is a workaround, and is fixed on later chips
+ */
+
+static DRAM_ATTR uint8_t reg_val[REGI2C_ANA_CALI_BYTE_NUM];
+
+void IRAM_ATTR regi2c_analog_cali_reg_read(void)
+{
+    for (int i = 0; i < REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        reg_val[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+    }
+}
+
+void IRAM_ATTR regi2c_analog_cali_reg_write(void)
+{
+    for (int i = 0; i < REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        regi2c_ctrl_write_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i, reg_val[i]);
+    }
 }
