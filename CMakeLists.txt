@@ -119,6 +119,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     # Multiple cases of attributes unknown to clang, for example
     # __attribute__((optimize("-O3")))
     list(APPEND compile_options "-Wno-unknown-attributes")
+    # Disable Clang warnings for atomic operations with access size
+    # more then 4 bytes
+    list(APPEND compile_options "-Wno-atomic-alignment")
     # Clang also produces many -Wunused-function warnings which GCC doesn't.
     # However these aren't treated as errors.
 endif()
