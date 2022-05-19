@@ -377,6 +377,10 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
     }
     unsigned written = 0;
     res = f_write(file, data, size, &written);
+    if (((written == 0) && (size != 0)) && (res == 0)) {
+        errno = ENOSPC;
+        return -1;
+    }
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
         errno = fresult_to_errno(res);
@@ -461,6 +465,10 @@ static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, o
 
     unsigned wr = 0;
     f_res = f_write(file, src, size, &wr);
+    if (((wr == 0) && (size != 0)) && (f_res == 0)) {
+        errno = ENOSPC;
+        return -1;
+    }
     if (f_res == FR_OK) {
         ret = wr;
     } else {
