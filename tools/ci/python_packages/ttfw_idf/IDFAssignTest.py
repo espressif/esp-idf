@@ -126,6 +126,7 @@ class UnitTestGroup(IDFCaseGroup):
         'esp32': 'ESP32DUT',
         'esp32s2': 'ESP32S2DUT',
         'esp32s3': 'ESP32S3DUT',
+        'esp32c2': 'ESP32C2DUT',
         'esp32c3': 'ESP32C3DUT',
         'esp8266': 'ESP8266DUT',
     }
