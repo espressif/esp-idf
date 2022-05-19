@@ -419,7 +419,7 @@ After trace data are collected, users can use a special tool to visualize the re
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
-    Unfortunately, SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, users can select ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` in menuconfig Pro or App to choose which CPU has to be traced. 
+    Unfortunately, SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} with JTAG interfaces in the dual-core mode, two files are generated: one for PRO CPU and another for APP CPU. Users can load each file into separate instances of the tool. For tracing over UART, users can select ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` in menuconfig Pro or App to choose which CPU has to be traced.
 
 It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately, there is an Eclipse plugin called *Impulse* which can load several trace files, thus making it possible to inspect events from both cores in one view. Also, this plugin has no limitation of 1,000,000 events as compared to the free version of SystemView.
 
@@ -444,7 +444,7 @@ Good instructions on how to install, configure, and visualize data in Impulse fr
     6. Double-click the created port. View for this port should open.
     7. Click the ``Start/Stop Streaming`` button. Data should be loaded.
     8. Use the ``Zoom Out``, ``Zoom In`` and ``Zoom Fit`` buttons to inspect data.
-    9. For settings measurement cursors and other features, please see `Impulse documentation <https://toem.de/index.php/projects/impulse>`_).
+    9. For settings measurement cursors and other features, please see `Impulse documentation <https://toem.de/index.php/products/impulse>`_).
 
     .. note::
 
@@ -459,7 +459,7 @@ Gcov (Source Code Coverage)
 Basics of Gcov and Gcovr
 """"""""""""""""""""""""
 
-Source code coverage is data indicating the count and frequency of every program execution path that has been taken within a program's runtime. `Gcov <https://en.wikipedia.org/wiki/Gcov>`_ is a GCC tool that, when used in concert with the compiler, can generate log files indicating the execution count of each line of a source file. The `Gcovr <https://gcovr.com>`_ tool is a utility for managing Gcov and generating summarized code coverage results.
+Source code coverage is data indicating the count and frequency of every program execution path that has been taken within a program's runtime. `Gcov <https://en.wikipedia.org/wiki/Gcov>`_ is a GCC tool that, when used in concert with the compiler, can generate log files indicating the execution count of each line of a source file. The `Gcovr <https://gcovr.com/>`_ tool is a utility for managing Gcov and generating summarized code coverage results.
 
 Generally, using Gcov to compile and run programs on the host will undergo these steps:
 
@@ -516,7 +516,7 @@ The dumping of code coverage data can be done multiple times throughout an appli
 
 ESP-IDF supports two methods of dumping code coverage data form the target to the host:
 
-* Instant Run-Time Dumpgit 
+* Instant Run-Time Dumpgit
 * Hard-coded Dump
 
 Instant Run-Time Dump
@@ -553,7 +553,7 @@ Generating Coverage Report
 
 Once the code coverage data has been dumped, the ``.gcno``, ``.gcda`` and the source files can be used to generate a code coverage report. A code coverage report is simply a report indicating the number of times each line in a source file has been executed.
 
-Both Gcov and Gcovr can be used to generate code coverage reports. Gcov is provided along with the Xtensa toolchain, whilst Gcovr may need to be installed separately. For details on how to use Gcov or Gcovr, refer to `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ and `Gcovr documentation <http://gcovr.com/>`_.
+Both Gcov and Gcovr can be used to generate code coverage reports. Gcov is provided along with the Xtensa toolchain, whilst Gcovr may need to be installed separately. For details on how to use Gcov or Gcovr, refer to `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ and `Gcovr documentation <https://gcovr.com/>`_.
 
 Adding Gcovr Build Target to Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

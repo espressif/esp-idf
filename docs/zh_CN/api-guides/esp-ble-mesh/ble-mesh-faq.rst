@@ -530,11 +530,13 @@ ESP-BLE-MESH 常见问题手册
 3.2 Wi-Fi 和 ESP-BLE-MESH 共存时，为什么 Wi-Fi 吞吐量很低？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    未搭载 PSRAM 的 `ESP32-DevKitC <../../hw-reference/get-started-devkitc>`_ 开发板，Wi-Fi 和 ESP-BLE-MESH 共存可以正常运行，但是吞吐率较低。当 Wi-Fi 和 ESP-BLE-MESH 共存时，搭载 PSRAM 的 ESP32-DevKitC 速率可以稳定在 1 Mbps 以上。
+    .. only:: esp32
+
+        未搭载 PSRAM 的 :doc:`ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>` 开发板，Wi-Fi 和 ESP-BLE-MESH 共存可以正常运行，但是吞吐率较低。当 Wi-Fi 和 ESP-BLE-MESH 共存时，搭载 PSRAM 的 ESP32-DevKitC 速率可以稳定在 1 Mbps 以上。
 
     应使能 menuconfig 中的一些配置来支持 PSRAM。
 
-        - :code:`ESP32-specific --> Support for external,SPI-connected RAM --> Try to allocate memories of Wi-Fi and LWIP...`
+        - :code:`{IDF_TARGET_NAME}-specific --> Support for external,SPI-connected RAM --> Try to allocate memories of Wi-Fi and LWIP...`
         - :code:`Bluetooth --> Bluedriod Enable --> BT/BLE will first malloc the memory from the PSRAM`
         - :code:`Bluetooth --> Bluedriod Enable --> Use dynamic memory allocation in BT/BLE stack.`
         - :code:`Bluetooth --> Blutooth controller --> BLE full scan feature supported.`

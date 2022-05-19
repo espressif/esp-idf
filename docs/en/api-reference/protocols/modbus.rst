@@ -4,7 +4,7 @@ ESP-Modbus
 The Espressif ESP-Modbus Library (esp-modbus) supports Modbus communication in the networks based on RS485, Wi-Fi, Ethernet interfaces.
 The ESP-IDF component `freemodbus` has been moved from ESP-IDF since version v5.0 to a separate repository:
 
-* `ESP-Modbus component on GitHub <https://www.github.com/espressif/esp-modbus>`__
+* `ESP-Modbus component on GitHub <https://github.com/espressif/esp-modbus>`__
 
 Hosted Documentation
 --------------------

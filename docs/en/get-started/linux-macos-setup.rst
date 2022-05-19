@@ -265,7 +265,7 @@ Related Documents
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/
-.. _ccache: https://ccache.samba.org/
+.. _ccache: https://ccache.dev/
 .. _homebrew: https://brew.sh/
 .. _MacPorts: https://www.macports.org/install.php
 .. _Catalina 10.15 release notes: https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes

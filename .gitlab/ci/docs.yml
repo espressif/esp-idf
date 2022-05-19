@@ -233,5 +233,4 @@ check_doc_links:
   script:
     - cd docs
     - pip install -U -r requirements.txt
-    # At the moment this check will always fail due to multiple known limitations, ignore result
-    - build-docs -t $DOCTGT -l $DOCLANG linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }
+    - build-docs -t $DOCTGT -l $DOCLANG linkcheck

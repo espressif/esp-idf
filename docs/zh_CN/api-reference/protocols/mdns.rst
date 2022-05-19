@@ -7,7 +7,7 @@ mDNS 服务
 
 mDNS 是一种组播 UDP 服务，用来提供本地网络服务和主机发现。
 
-绝大多数的操作系统默认都会安装 mDNS 服务，或者提供单独的安装包。``Mac OS`` 默认会安装名为 ``Bonjour`` 的服务（该服务基于 mDNS），此外 Apple 还发布了适用于 Windows 系统的安装程序，可以在 `官方支持 <https://support.apple.com/downloads/bonjour%2520for%2520windows>`_ 找到。在 ``Linux`` 上，mDNS 服务由 `avahi <https://github.com/lathiat/avahi>`_ 提供，通常也会被默认安装。
+绝大多数的操作系统默认都会安装 mDNS 服务，或者提供单独的安装包。``Mac OS`` 默认会安装名为 ``Bonjour`` 的服务（该服务基于 mDNS），此外 Apple 还发布了适用于 Windows 系统的安装程序，可以在 `官方支持 <https://support.apple.com/downloads/bonjour-for-windows>`_ 找到。在 ``Linux`` 上，mDNS 服务由 `avahi <https://github.com/lathiat/avahi>`_ 提供，通常也会被默认安装。
 
 mDNS 属性
 ^^^^^^^^^

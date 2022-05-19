@@ -285,4 +285,4 @@ Kconfig 配置项 :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` 可以改变这个默认�
 4.  请将 ``openocd_log.txt`` 和 ``gdb_log.txt`` 文件附在你的问题报告中。
 
 
-.. _OpenOCD 参考手册: http://openocd.org/doc/html/index.html
+.. _OpenOCD 参考手册: https://openocd.org/doc/html/index.html

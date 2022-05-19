@@ -13,8 +13,8 @@
 
 以下是乐鑫 {IDF_TARGET_NAME} 开发板驱动程序的链接：
 
-* CP210x: `CP210x USB 至 UART 桥 VCP 驱动程序 <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
-* FTDI: `FTDI 虚拟 COM 端口驱动程序 <https://www.ftdichip.com/Drivers/VCP.htm>`_
+* CP210x: `CP210x USB 至 UART 桥 VCP 驱动程序 <https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers>`_
+* FTDI: `FTDI 虚拟 COM 端口驱动程序 <https://ftdichip.com/drivers/vcp-drivers/>`_
 
 以上驱动仅供参考，请参考开发板用户指南，查看开发板具体使用的 USB 转串口芯片。一般情况下，当 {IDF_TARGET_NAME} 开发板与 PC 连接时，对应驱动程序应该已经被打包在操作系统中，并已经自动安装。
 

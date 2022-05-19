@@ -41,7 +41,7 @@ Description of Components
 
     ESP32-S2-DevKitC-1 - front
 
-The key components of the board are described in a clockwise direction. 
+The key components of the board are described in a clockwise direction.
 
 .. list-table::
    :widths: 30 70
@@ -54,7 +54,7 @@ The key components of the board are described in a clockwise direction.
    * - 3.3 V Power On LED
      - Turns on when the USB power is connected to the board.
    * - USB-to-UART Bridge
-     - Single USB-to-UART bridge chip provides transfer rates up to 3 Mbps.     
+     - Single USB-to-UART bridge chip provides transfer rates up to 3 Mbps.
    * - Pin Headers
      - All available GPIO pins (except for the SPI bus for flash) are broken out to the pin headers on the board. For details, please see :ref:`user-guide-s2-devkitc-1-v1-header-blocks`.
    * - ESP32-S2 USB Port
@@ -64,7 +64,7 @@ The key components of the board are described in a clockwise direction.
    * - Boot Button
      - Download button. Holding down **Boot** and then pressing **Reset** initiates Firmware Download mode for downloading firmware through the serial port.
    * - USB-to-UART Port
-     - A Micro-USB port used for power supply to the board, for flashing applications to the chip, as well as the communication with the chip via the on-board USB-to-UART bridge.   
+     - A Micro-USB port used for power supply to the board, for flashing applications to the chip, as well as the communication with the chip via the on-board USB-to-UART bridge.
    * - RGB LED
      - Addressable RGB LED, driven by GPIO18.
    * - 5 V to 3.3 V LDO
@@ -105,7 +105,7 @@ Retail orders
 
 If you order a few samples, each ESP32-S2-DevKitC-1 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 Wholesale Orders
 ^^^^^^^^^^^^^^^^
@@ -141,15 +141,15 @@ There are three mutually exclusive ways to provide power to the board:
 
 .. _user-guide-s2-devkitc-1-v1-header-blocks:
 
-Header Block 
-------------- 
- 
-The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J1 and J3). The pin header names are shown in :ref:`user-guide-s2-devkitc-1-v1-board-front`. The numbering is the same as in the `ESP32-S2-DevKitC-1 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-S2-DEVKITC-1_V1_20210508.pdf>`_ (PDF). 
+Header Block
+-------------
 
-J1 
-^^^ 
+The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J1 and J3). The pin header names are shown in :ref:`user-guide-s2-devkitc-1-v1-board-front`. The numbering is the same as in the `ESP32-S2-DevKitC-1 Schematic <https://dl.espressif.com/dl/schematics/SCH_ESP32-S2-DEVKITC-1_V1_20210508.pdf>`_ (PDF).
+
+J1
+^^^
 ===  ====  ==========  ==========================================================================
-No.  Name  Type [#]_    Function 
+No.  Name  Type [#]_    Function
 ===  ====  ==========  ==========================================================================
 1    3V3    P           3.3 V power supply
 2    3V3    P           3.3 V power supply
@@ -173,13 +173,13 @@ No.  Name  Type [#]_    Function
 20   14     I/O/T       RTC_GPIO14, GPIO14, TOUCH14, ADC2_CH3, FSPIWP, FSPIDQS
 21   5V     P           5 V power supply
 22   G      G           Ground
-===  ====  ==========  ========================================================================== 
- 
- 
-J3 
-^^^ 
-===  ====  =====   ============================================================ 
-No.  Name  Type    Function 
+===  ====  ==========  ==========================================================================
+
+
+J3
+^^^
+===  ====  =====   ============================================================
+No.  Name  Type    Function
 ===  ====  =====   ============================================================
 1    G     G       Ground
 2    TX    I/O/T   U0TXD, GPIO43, CLK_OUT1
@@ -204,8 +204,8 @@ No.  Name  Type    Function
 21   G     G       Ground
 22   G     G       Ground
 ===  ====  =====   ============================================================
- 
-.. [#] P: Power supply; I: Input; O: Output; T: High impedance. 
+
+.. [#] P: Power supply; I: Input; O: Output; T: High impedance.
 
 Pin Layout
 ^^^^^^^^^^^
@@ -216,7 +216,7 @@ Pin Layout
     :figclass: align-center
 
     ESP32-S2-DevKitC-1 Pin Layout (click to enlarge)
-    
+
 Hardware Revision Details
 =========================
 

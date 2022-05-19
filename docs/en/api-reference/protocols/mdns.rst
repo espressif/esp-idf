@@ -7,7 +7,7 @@ Overview
 
 mDNS is a multicast UDP service that is used to provide local network service and host discovery.
 
-mDNS is installed by default on most operating systems or is available as separate package. On ``Mac OS`` it is installed by default and is called ``Bonjour``. Apple releases an installer for ``Windows`` that can be found `on Apple's support page <https://support.apple.com/downloads/bonjour%2520for%2520windows>`_. On ``Linux``, mDNS is provided by `avahi <https://github.com/lathiat/avahi>`_ and is usually installed by default.
+mDNS is installed by default on most operating systems or is available as separate package. On ``Mac OS`` it is installed by default and is called ``Bonjour``. Apple releases an installer for ``Windows`` that can be found `on Apple's support page <https://support.apple.com/downloads/bonjour-for-windows>`_. On ``Linux``, mDNS is provided by `avahi <https://github.com/lathiat/avahi>`_ and is usually installed by default.
 
 mDNS Properties
 ^^^^^^^^^^^^^^^

@@ -12,7 +12,7 @@ Bluetooth API
     controller_vhci
     esp-ble-mesh
     nimble/index
-    
+
 ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) supports classic Bluetooth as well as BLE. On the other hand, Apache NimBLE based stack is BLE only. For users to make a choice:
 
 * For usecases involving classic Bluetooth as well as BLE, Bluedroid should be used.
@@ -22,7 +22,7 @@ ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) 
 
     For the overview of the ESP32 Bluetooth stack architecture, follow the links below:
 
-       * `ESP32 Bluetooth Architecture (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf>`_
+       * `ESP32 Bluetooth Architecture (PDF) <https://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf>`_
 
 Code examples for this API section are provided in the :example:`bluetooth/bluedroid` directory of ESP-IDF examples.
 

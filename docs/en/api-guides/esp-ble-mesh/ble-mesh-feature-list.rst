@@ -123,11 +123,11 @@ Mesh Applications
     * :example_file:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
     * :example_file:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_fast_provision>`
-    * `Demo Video <http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.4_Demo_Fast_Provision/ESP32_BLE_Mesh_Fast_Provision.mp4>`__
+    * `Demo Video <https://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.4_Demo_Fast_Provision/ESP32_BLE_Mesh_Fast_Provision.mp4>`__
 * ESP-BLE-MESH and Wi-Fi Coexistence
     * :example_file:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`
-    * `Demo Video <http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.5_Demo_Coexistence/ESP_BLE_MESH_%26_WIFI_Coexistence.mp4>`__
+    * `Demo Video <https://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.5_Demo_Coexistence/ESP_BLE_MESH_%26_WIFI_Coexistence.mp4>`__
 * ESP-BLE-MESH Console Commands
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_console>`
 

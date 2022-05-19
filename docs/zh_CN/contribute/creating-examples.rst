@@ -11,7 +11,7 @@
 -  如果该示例项目的子任务比较多，请根据逻辑将其拆分为 ``main`` 目录下的多个 C 或者 C++ 源文件，并将对应的头文件也放在同一目录下。
 -  如果该示例项目具有多种功能，可以考虑在项目中增加一个 ``components`` 子目录，通过库功能，将示例项目的不同功能划分为不同的组件。注意，如果该组件提供的功能相对完整，且具有一定的通用性，则应该将它们添加到 ESP-IDF 的 ``components`` 目录中，使其成为 ESP-IDF 的一部分。
 -  示例项目需要包含一个 ``README.md`` 文件，建议使用 :idf_file:`示例项目 README 模板 <docs/TEMPLATE_EXAMPLE_README.md>` ，并根据项目实际情况进行修改。
--  示例项目需要包含一个 ``example_test.py`` 文件，用于进行自动化测试。如果在 GitHub 上初次提交 Pull Request 时，可以先不包含这个脚本文件。具体细节，请见有关 `Pull Request <https://help.github.com/articles/creating-a-pull-request/>`_ 的相关内容。
+-  示例项目需要包含一个 ``example_test.py`` 文件，用于进行自动化测试。如果在 GitHub 上初次提交 Pull Request 时，可以先不包含这个脚本文件。具体细节，请见有关 `Pull Request <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`_ 的相关内容。
 
 一般准则
 --------

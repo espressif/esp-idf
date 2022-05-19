@@ -21,7 +21,7 @@ Useful Links
 
 * To develop applications using Arduino platform, refer to `Arduino core for the ESP32, ESP32-S2 and ESP32-C3 <https://github.com/espressif/arduino-esp32#readme>`_.
 
-* Several `books <https://www.espressif.com/en/support/iot-college/books-new>`_ have been written about ESP32 and they are listed on `Espressif <https://www.espressif.com/en/support/iot-college/books-new>`__ web site.
+* Several `books <https://www.espressif.com/en/ecosystem/community-engagement/books>`_ have been written about ESP32 and they are listed on `Espressif <https://www.espressif.com/en/ecosystem/community-engagement/books>`__ web site.
 
 * If you're interested in contributing to ESP-IDF, please check the :doc:`contribute/index`.
 

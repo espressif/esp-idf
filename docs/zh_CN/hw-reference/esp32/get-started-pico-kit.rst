@@ -225,7 +225,7 @@ ESP32-PICO-KIT 的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")。
 * `ESP32-PICO-KIT V4 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT V4.1 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT 参考设计 <https://www.espressif.com/sites/default/files/documentation/esp32-pico-kit_v4.1_20180314_cn.zip>`_ ，内含 OrCAD 原理图、PCB 布局、Gerbers 和 BOM 表
-* `《ESP32-PICO-D4 技术规格书》 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-PICO-D4 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`
 
 

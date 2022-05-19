@@ -22,7 +22,7 @@ ESP-IDF 目前支持两个主机堆栈。基于 Bluedroid 的堆栈（默认）�
 
     请点击下方链接，查看 ESP32 蓝牙架构：
 
-      * `ESP32 蓝牙架构 (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
+      * `ESP32 蓝牙架构 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
 
 蓝牙 API 的示例代码存放于 ESP-IDF 示例项目的 :example:`bluetooth/bluedroid` 目录下。
 
