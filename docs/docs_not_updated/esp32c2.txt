@@ -59,7 +59,6 @@ api-guides/external-ram
 api-guides/ulp-risc-v
 api-guides/hardware-abstraction
 api-guides/wifi-security
-api-guides/index
 api-guides/openthread
 api-guides/unit-tests-legacy
 api-guides/fatal-errors
@@ -87,11 +86,7 @@ api-reference/storage/index
 api-reference/peripherals/adc
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/lcd
-api-reference/peripherals/secure_element
 api-reference/peripherals/temp_sensor
-api-reference/peripherals/spi_slave_hd
-api-reference/peripherals/i2c
-api-reference/peripherals/index
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth
@@ -159,7 +154,6 @@ api-reference/bluetooth/index
 api-reference/bluetooth/esp_gap_ble
 api-reference/bluetooth/classic_bt
 api-reference/error-codes
-api-reference/index
 api-reference/protocols/icmp_echo
 api-reference/protocols/esp_serial_slave_link
 api-reference/protocols/mqtt
@@ -177,16 +171,3 @@ api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
 security/flash-encryption
-security/secure-boot-v2
-get-started/establish-serial-connection
-get-started/macos-setup-scratch
-get-started/vscode-setup
-get-started/linux-setup-scratch
-get-started/eclipse-setup
-get-started/windows-setup
-get-started/toolchain-setup-scratch
-get-started/windows-setup-scratch
-get-started/linux-setup
-get-started/index
-get-started/windows-setup-update
-get-started/macos-setup
