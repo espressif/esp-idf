@@ -429,8 +429,7 @@ esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle);
 /**
  * @brief Send all the queued commands on the I2C bus, in master mode.
  *        The task will be blocked until all the commands have been sent out.
- *        The I2C APIs are not thread-safe, if you want to use one I2C port in different tasks,
- *        you need to take care of the multi-thread issue.
+ *        The I2C port is protected by mutex, so this function is thread-safe.
  *        This function shall only be called in I2C master mode.
  *
  * @param i2c_num I2C port number
