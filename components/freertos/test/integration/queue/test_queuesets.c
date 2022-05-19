@@ -10,134 +10,178 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "freertos/idf_additions.h"
 #include "unity.h"
+#include "test_utils.h"
+
+#define QUEUE_LEN       4
+
+static void allocate_resources(int num_queues, int queue_len, QueueHandle_t *queue_list_ret, QueueSetHandle_t *queue_set_ret)
+{
+    // Create queue set
+    *queue_set_ret = xQueueCreateSet(num_queues * queue_len);
+    TEST_ASSERT_NOT_EQUAL(NULL, *queue_set_ret);
+    // Create queues and add them to the queue set
+    for (int i = 0; i < num_queues; i++) {
+        queue_list_ret[i] = xQueueCreate(queue_len, sizeof(BaseType_t));
+        TEST_ASSERT_NOT_EQUAL(NULL, queue_list_ret[i]);
+        TEST_ASSERT_EQUAL(pdPASS, xQueueAddToSet(queue_list_ret[i], *queue_set_ret));
+    }
+}
+
+static void free_resources(int num_queues, QueueHandle_t *queue_list, QueueSetHandle_t queue_set)
+{
+    // Remove queues form queue set and delete the queues
+    for (int i = 0; i < num_queues; i++) {
+        TEST_ASSERT_EQUAL(pdPASS, xQueueRemoveFromSet(queue_list[i], queue_set));
+        vQueueDelete(queue_list[i]);
+    }
+    vQueueDelete(queue_set);
+}
 
 /*
- * Basic queue set tests. Multiple queues are added to a queue set then each
- * queue is filled in a sequential order. The members returned from the queue
- * set must adhered to the order in which the queues were filled.
- */
-#define NO_OF_QUEUES            5
-#define QUEUE_LEN               4
-#define ITEM_SIZE               sizeof(uint32_t)
+Test queue sets basic
 
-static QueueHandle_t handles[NO_OF_QUEUES];
-static QueueSetHandle_t set_handle;
+Purpose:
+    - Test that queue set works as expected
+
+Procedure:
+    - Create NUM_QUEUES queues and add them to the same queue set
+    - Fill each queue sequentially with QUEUE_LEN items
+
+Expected:
+    - Each call to xQueueSend() should generate a member in the queue set
+    - The order of the members should match the order in which xQueueSend() was called
+    - The item sent by the xQueueSend() is correct when read
+*/
+
+#define NUM_QUEUES      5
 
 TEST_CASE("Test Queue sets", "[freertos]")
 {
-    //Create queue set, queues, and add queues to queue set
-    set_handle = xQueueCreateSet(NO_OF_QUEUES * QUEUE_LEN);
-    for (int i = 0; i < NO_OF_QUEUES; i++) {
-        handles[i] = xQueueCreate(QUEUE_LEN, ITEM_SIZE);
-        TEST_ASSERT_MESSAGE(handles[i] != NULL, "Failed to create queue");
-        TEST_ASSERT_MESSAGE(xQueueAddToSet(handles[i], set_handle) == pdPASS, "Failed to add to queue set");
-    }
+    // Create queues and queue set
+    QueueHandle_t queues[NUM_QUEUES];
+    QueueSetHandle_t queue_set;
+    allocate_resources(NUM_QUEUES, QUEUE_LEN, queues, &queue_set);
 
-    //Fill queue set via filling each queue
-    for (int i = 0; i < NO_OF_QUEUES; i++) {
+    // Fill each queue sequentially with QUEUE_LEN items
+    for (int i = 0; i < NUM_QUEUES; i++) {
         for (int j = 0; j < QUEUE_LEN; j++) {
-            uint32_t item_num = (i * QUEUE_LEN) + j;
-            TEST_ASSERT_MESSAGE(xQueueSendToBack(handles[i], &item_num, portMAX_DELAY) == pdTRUE, "Failed to send to queue");
+            BaseType_t item = j;
+            TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(queues[i], &item, 0));
         }
     }
 
-    //Check queue set is notified in correct order
-    for (int i = 0; i < NO_OF_QUEUES; i++) {
+    for (int i = 0; i < NUM_QUEUES; i++) {
         for (int j = 0; j < QUEUE_LEN; j++) {
-            QueueSetMemberHandle_t member = xQueueSelectFromSet(set_handle, portMAX_DELAY);
-            TEST_ASSERT_EQUAL_MESSAGE(handles[i], member, "Incorrect queue set member returned");
-            uint32_t item;
-            xQueueReceive((QueueHandle_t)member, &item, 0);
-            TEST_ASSERT_EQUAL_MESSAGE(((i * QUEUE_LEN) + j), item, "Incorrect item value");
+            // Check the queue set member
+            QueueSetMemberHandle_t member = xQueueSelectFromSet(queue_set, 0);
+            TEST_ASSERT_EQUAL(queues[i], member);
+            // Check the queue's items
+            BaseType_t item;
+            TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(member, &item, 0));
+            TEST_ASSERT_EQUAL(j, item);
         }
     }
+    // Check that there are no more members
+    TEST_ASSERT_EQUAL(NULL, xQueueSelectFromSet(queue_set, 0));
 
-    //Remove queues from queue set and delete queues
-    for (int i = 0; i < NO_OF_QUEUES; i++) {
-        TEST_ASSERT_MESSAGE(xQueueRemoveFromSet(handles[i], set_handle), "Failed to remove from queue set");
-        vQueueDelete(handles[i]);
-    }
-    vQueueDelete(set_handle);
+    // Cleanup queues and queue set
+    free_resources(NUM_QUEUES, queues, queue_set);
 }
 
-/*
- * Queue set thread safety test. Test the SMP thread safety by adding two queues
- * to a queue set and have a task on each core send to the queues simultaneously.
- * Check returned queue set members are valid.
- */
 #ifndef CONFIG_FREERTOS_UNICORE
-static volatile bool sync_flags[portNUM_PROCESSORS];
-static SemaphoreHandle_t sync_sem;
+/*
+Test queue set SMP thread safety
 
-static void send_task(void *arg)
+Purpose:
+    - Test that queue set works when being used from different cores simultaneously
+
+Procedure:
+    - Create a queue for each core and add them to the same queue set
+    - Create a task on each core to send QUEUE_LEN items to their assigned queue
+    - Synchronize the tasks so that the start sending at the same time
+
+Expected:
+    - Each call to xQueueSend() should generate a member in the queue set
+    - The item sent by the xQueueSend() is correct when read
+*/
+
+static volatile bool start_other_cores;
+static SemaphoreHandle_t done_sem = NULL;
+
+static void send_func(void *arg)
 {
     QueueHandle_t queue = (QueueHandle_t)arg;
-
-    //Wait until task on the other core starts running
-    xSemaphoreTake(sync_sem, portMAX_DELAY);
-    sync_flags[xPortGetCoreID()] = true;
-    while (!sync_flags[!xPortGetCoreID()]) {
-        ;
-    }
-
-    //Fill queue
-    for (int i = 0; i < QUEUE_LEN; i++) {
-        uint32_t item = i;
-        xQueueSendToBack(queue, &item, portMAX_DELAY);
-    }
-
-    xSemaphoreGive(sync_sem);
-    vTaskDelete(NULL);
-}
-
-TEST_CASE("Test Queue sets thread safety", "[freertos]")
-{
-    //Create queue set, queues, and a send task on each core
-    sync_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
-    QueueHandle_t queue_handles[portNUM_PROCESSORS];
-    QueueSetHandle_t queueset_handle = xQueueCreateSet(portNUM_PROCESSORS * QUEUE_LEN);
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        sync_flags[i] = false;
-        queue_handles[i] = xQueueCreate(QUEUE_LEN, ITEM_SIZE);
-        TEST_ASSERT_MESSAGE(xQueueAddToSet(queue_handles[i], queueset_handle) == pdPASS, "Failed to add to queue set");
-        xTaskCreatePinnedToCore(send_task, "send", 2048, (void *)queue_handles[i], 10, NULL, i);
-    }
-
-    //Start both send tasks
-    portDISABLE_INTERRUPTS();
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        xSemaphoreGive(sync_sem);
-    }
-    portENABLE_INTERRUPTS();
-    vTaskDelay(2);
-
-    //Check returned queue set members are valid
-    uint32_t expect_0 = 0;
-    uint32_t expect_1 = 0;
-    for (int i = 0; i < (portNUM_PROCESSORS * QUEUE_LEN); i++) {
-        QueueSetMemberHandle_t member = xQueueSelectFromSet(queueset_handle, portMAX_DELAY);
-        uint32_t item;
-        if (member == queue_handles[0]) {
-            xQueueReceive((QueueHandle_t)member, &item, 0);
-            TEST_ASSERT_EQUAL_MESSAGE(expect_0, item, "Incorrect item value");
-            expect_0++;
-        } else if (member == queue_handles[1]) {
-            xQueueReceive((QueueHandle_t)member, &item, 0);
-            TEST_ASSERT_EQUAL_MESSAGE(expect_1, item, "Incorrect item value");
-            expect_1++;
-        } else {
-            TEST_ASSERT_MESSAGE(0, "Incorrect queue set member returned");
+    BaseType_t core_id = xPortGetCoreID();
+    if (core_id == 0) {
+        // We are core 0. Trigger the other cores to start
+        start_other_cores = true;
+    } else {
+        // Wait to be started by main core
+        while (!start_other_cores) {
+            ;
         }
     }
 
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        xSemaphoreTake(sync_sem, portMAX_DELAY);
+    // Fill the queue assigned to the current core
+    for (int i = 0; i < QUEUE_LEN; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(queue, &core_id, 0));
     }
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        xQueueRemoveFromSet(queueset_handle, handles[i]);
-        vQueueDelete(queue_handles[i]);
+
+    if (core_id != 0) {
+        // Indicate completion to core 0 and self delete
+        xSemaphoreGive(done_sem);
+        vTaskDelete(NULL);
     }
-    vQueueDelete(queueset_handle);
 }
-#endif
+
+TEST_CASE("Test queue sets multi-core", "[freertos]")
+{
+    // Create done semaphore
+    done_sem = xSemaphoreCreateCounting(portNUM_PROCESSORS - 1, 0);
+    TEST_ASSERT_NOT_EQUAL(NULL, done_sem);
+
+    // Create queues and queue set
+    QueueHandle_t queues[portNUM_PROCESSORS];
+    QueueSetHandle_t queue_set;
+    allocate_resources(portNUM_PROCESSORS, QUEUE_LEN, queues, &queue_set);
+
+    // Create tasks of the same priority for all cores except for core 0
+    for (int i = 1; i < portNUM_PROCESSORS; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(send_func, "send", 2048, (void *)queues[i], UNITY_FREERTOS_PRIORITY, NULL, i));
+    }
+
+    // Core 0 calls send_func as well triggering the simultaneous sends from all cores
+    send_func((void *)queues[0]);
+
+    // Wait for all other cores to be done
+    for (int i = 1; i < portNUM_PROCESSORS; i++) {
+        xSemaphoreTake(done_sem, portMAX_DELAY);
+    }
+
+    // Read queues from the queue set, then read an item from the queue
+    uint32_t queues_check_count[portNUM_PROCESSORS] = {0};
+    QueueSetMemberHandle_t member = xQueueSelectFromSet(queue_set, 0);
+    while (member != NULL) {
+        // Read the core ID from the queue, check that core ID is sane
+        BaseType_t core_id;
+        TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(member, &core_id, 0));
+        TEST_ASSERT_LESS_THAN(portNUM_PROCESSORS, core_id);
+        queues_check_count[core_id]++;
+
+        // Get next member
+        member = xQueueSelectFromSet(queue_set, 0);
+    }
+    // Check that all items from all queues have been read
+    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+        TEST_ASSERT_EQUAL(QUEUE_LEN, queues_check_count[i]);
+    }
+
+    // Cleanup queues and queue set
+    free_resources(portNUM_PROCESSORS, queues, queue_set);
+    // Cleanup done sem
+    vSemaphoreDelete(done_sem);
+    done_sem = NULL;
+}
+#endif // CONFIG_FREERTOS_UNICORE
