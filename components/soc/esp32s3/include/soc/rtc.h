@@ -59,9 +59,8 @@ extern "C" {
 
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
- * Valid if RTC_CNTL_DBG_ATTEN is 0.
  */
-#define RTC_CNTL_DBIAS_SLP  0   ///< sleep dig_dbias & rtc_dbias
+#define RTC_CNTL_DBIAS_SLP  5   ///< sleep dig_dbias & rtc_dbias
 #define RTC_CNTL_DBIAS_0V90 13  ///< digital voltage
 #define RTC_CNTL_DBIAS_0V95 16
 #define RTC_CNTL_DBIAS_1V00 18
