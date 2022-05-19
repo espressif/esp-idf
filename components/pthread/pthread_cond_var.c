@@ -1,21 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// This is a simple implementation of pthread condition variables. In essence,
-// the waiter creates its own semaphore to wait on and pushes it in the cond var
-// specific list. Upon notify and broadcast, all the waiters for the given cond
-// var are woken up.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <errno.h>
 #include <pthread.h>
@@ -162,7 +149,11 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut, const struc
     }
 
     esp_pthread_cond_waiter_t w;
-    w.wait_sem = xSemaphoreCreateCounting(1, 0); /* First get will block */
+
+    // Around 80 bytes
+    StaticSemaphore_t sem_buffer;
+    // Create semaphore: first take will block
+    w.wait_sem = xSemaphoreCreateCountingStatic(1, 0, &sem_buffer);
 
     _lock_acquire_recursive(&cond->lock);
     TAILQ_INSERT_TAIL(&cond->waiter_list, &w, link);
