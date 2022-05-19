@@ -167,7 +167,7 @@ void ble_mesh_register_mesh_node(void)
 
 int ble_mesh_register_cb(int argc, char** argv)
 {
-    ESP_LOGE(TAG, "enter %s\n", __func__);
+    ESP_LOGD(TAG, "enter %s\n", __func__);
     ble_mesh_node_init();
     esp_ble_mesh_register_prov_callback(ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(ble_mesh_model_cb);
