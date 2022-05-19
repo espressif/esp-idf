@@ -7,17 +7,17 @@ Overview
 --------
 The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external flash. The spi_flash component also has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`.
 
-Different from the API before IDF v4.0, the functionality of `esp_flash_*` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access to external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
+Different from the API before IDF v4.0, the functionality of `esp_flash_*` APIs is not limited to the "main" SPI flash chip (the same SPI flash chip from which program runs). With different chip pointers, you can access external flash chips connected to not only SPI0/1 but also other SPI buses like SPI2.
 
 .. note::
 
-    Instead of through the cache connected to the SPI0 peripheral, most `esp_flash_*` APIs go through other SPI peripherals like SPI1, SPI2, etc.. This makes them able to access to not only the main flash, but also external flash.
+    Instead of going through the cache connected to the SPI0 peripheral, most `esp_flash_*` APIs go through other SPI peripherals like SPI1, SPI2, etc. This makes them able to access not only the main flash, but also external flash.
 
-    However due to limitations of the cache, operations through the cache are limited to the main flash. The address range limitation for these operations are also on the cache side. The cache is not able to access external flash chips or address range above its capabilities. These cache operations include: mmap, encrypted read/write, executing code or access to variables in the flash.
+    However, due to limitations of the cache, operations through the cache are limited to the main flash. The address range limitation for these operations are also on the cache side. The cache is not able to access external flash chips or address range above its capabilities. These cache operations include: mmap, encrypted read/write, executing code or access to variables in the flash.
 
 .. note::
 
-    Flash APIs after IDF v4.0 are no longer *atomic*. A writing operation during another on-going read operation, on the overlapped flash address, may cause the return data from the read operation to be partly same as before, and partly updated as new written.
+    Flash APIs after ESP-IDF v4.0 are no longer *atomic*. If a write operation occurs during another on-going read operation, and the flash addresses of both operations overlap, the data returned from the read operation may contain both old data and new data (that was updated written by the write operation).
 
 
 Kconfig option :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` can be used to switch ``spi_flash_*`` functions back to the implementation before ESP-IDF v4.0. However, the code size may get bigger if you use the new API and the old API at the same time.
@@ -27,10 +27,10 @@ Encrypted reads and writes use the old implementation, even if :ref:`CONFIG_SPI_
 Support for Features of Flash Chips
 -----------------------------------
 
-Quad/Dual mode chips
+Quad/Dual Mode Chips
 ^^^^^^^^^^^^^^^^^^^^
 
-Flash features of different vendors are operated in different ways and need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
+Features of different flashes are implemented in different ways and thus need speical support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
 
 Quad mode (QIO/QOUT) is supported on following chip types:
 
@@ -50,13 +50,13 @@ Optional Features
 
     spi_flash_optional_feature
 
-There are some features that are not supported by all flash models, or not supported by all Espressif chips. These features include:
+There are some features that are not supported by all flash chips, or not supported by all Espressif chips. These features include:
 
 .. only:: esp32s3
 
     -  OPI flash - means that flash supports octal mode.
 
--  32-bit address flash - usually means that the flash has higher capacity (equal to or larger than 16MB) that needs longer address to access.
+-  32-bit address flash - usually means that the flash has higher capacity (equal to or larger than 16 MB) that needs longer addresses.
 
 .. only:: esp32s3
 
@@ -68,9 +68,9 @@ There are some features that are not supported by all flash models, or not suppo
 
     -  Suspend & Resume - means that flash can accept suspend/resume command during its writing/erasing. The {IDF_TARGET_NAME} may keep the cache on when the flash is being written/erased and suspend it to read its contents randomly.
 
-If you want to use these features, you need to ensure {IDF_TARGET_NAME} supports this feature, and ALL the flash chips in your product have this feature. For more details, refer :doc:`spi_flash_optional_feature`.
+If you want to use these features, please ensure both {IDF_TARGET_NAME} and ALL flash chips in your product support these features. For more details, refer to :doc:`spi_flash_optional_feature`.
 
-Users can also customize their own flash chip driver, see :doc:`spi_flash_override_driver` for more details.
+You may also customise your own flash chip driver. See :doc:`spi_flash_override_driver` for more details.
 
 .. toctree::
    :hidden:
@@ -80,15 +80,15 @@ Users can also customize their own flash chip driver, see :doc:`spi_flash_overri
 Initializing a Flash Device
 ---------------------------
 
-To use ``esp_flash_*`` APIs, you need to have a chip initialized on a certain SPI bus.
+To use the ``esp_flash_*`` APIs, you need to initialise a flash chip on a certain SPI bus, as shown below:
 
-1. Call :cpp:func:`spi_bus_initialize` to properly initialize an SPI bus. This functions initialize the resources (I/O, DMA, interrupts) shared among devices attached to this bus.
+1. Call :cpp:func:`spi_bus_initialize` to properly initialize an SPI bus. This function initializes the resources (I/O, DMA, interrupts) shared among devices attached to this bus.
 
-2. Call :cpp:func:`spi_bus_add_flash_device` to attach the flash device onto the bus. This allocates memory, and fill the members for the ``esp_flash_t`` structure. The CS I/O is also initialized here.
+2. Call :cpp:func:`spi_bus_add_flash_device` to attach the flash device to the bus. This function allocates memory and fills the members for the ``esp_flash_t`` structure. The CS I/O is also initialized here.
 
 3. Call :cpp:func:`esp_flash_init` to actually communicate with the chip. This will also detect the chip type, and influence the following operations.
 
-.. note:: Multiple flash chips can be attached to the same bus now. However, using ``esp_flash_*`` devices and ``spi_device_*`` devices on the same SPI bus is not supported yet.
+.. note:: Multiple flash chips can be attached to the same bus now.
 
 SPI Flash Access API
 --------------------
@@ -99,7 +99,7 @@ This is the set of API functions for working with data in flash:
 - :cpp:func:`esp_flash_write` writes data from RAM to flash
 - :cpp:func:`esp_flash_erase_region` erases specific region of flash
 - :cpp:func:`esp_flash_erase_chip` erases the whole flash
-- :cpp:func:`spi_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
+- :cpp:func:`esp_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
 
 Generally, try to avoid using the raw SPI flash functions to the "main" SPI flash chip in favour of :ref:`partition-specific functions <flash-partition-apis>`.
 
@@ -108,11 +108,11 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the software bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in project configuration.
+By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
-Concurrency Constraints for flash on SPI1
+Concurrency Constraints for Flash on SPI1
 -----------------------------------------
 
 .. toctree::
@@ -129,7 +129,7 @@ Concurrency Constraints for flash on SPI1
 Partition Table API
 -------------------
 
-ESP-IDF projects use a partition table to maintain information about various regions of SPI flash memory (bootloader, various application binaries, data, filesystems). More information on partition tables can be found :doc:`here </api-guides/partition-tables>`.
+ESP-IDF projects use a partition table to maintain information about various regions of SPI flash memory (bootloader, various application binaries, data, filesystems). More information can be found in :doc:`Partition Tables </api-guides/partition-tables>`.
 
 This component provides API functions to enumerate partitions found in the partition table and perform operations on them. These functions are declared in ``esp_partition.h``:
 
@@ -137,7 +137,7 @@ This component provides API functions to enumerate partitions found in the parti
 - :cpp:func:`esp_partition_get` returns a structure describing the partition for a given iterator.
 - :cpp:func:`esp_partition_next` shifts the iterator to the next found partition.
 - :cpp:func:`esp_partition_iterator_release` releases iterator returned by ``esp_partition_find``.
-- :cpp:func:`esp_partition_find_first` - a convenience function which returns the structure describing the first partition found by ``esp_partition_find``.
+- :cpp:func:`esp_partition_find_first` is a convenience function which returns the structure describing the first partition found by ``esp_partition_find``.
 - :cpp:func:`esp_partition_read`, :cpp:func:`esp_partition_write`, :cpp:func:`esp_partition_erase_range` are equivalent to :cpp:func:`spi_flash_read`, :cpp:func:`spi_flash_write`, :cpp:func:`spi_flash_erase_range`, but operate within partition boundaries.
 
 .. note::
@@ -173,7 +173,7 @@ Memory mapping API are declared in ``esp_spi_flash.h`` and ``esp_partition.h``:
 Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap` are as follows:
 
 - :cpp:func:`spi_flash_mmap` must be given a {IDF_TARGET_CACHE_SIZE} aligned physical address.
-- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition, it will adjust the returned pointer to mapped memory as necessary.
+- :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition. It will adjust the returned pointer to mapped memory as necessary.
 
 Note that since memory mapping happens in pages, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``, regardless of the partition boundary.
 
@@ -194,16 +194,16 @@ Host driver
 
 The host driver relies on an interface (``spi_flash_host_driver_t``) defined in the ``spi_flash_types.h`` (in the ``hal/include/hal`` folder). This interface provides some common functions to communicate with the chip.
 
-In other files of the SPI HAL, some of these functions are implemented with existing {IDF_TARGET_NAME} memory-spi functionalities. However due to the speed limitations of {IDF_TARGET_NAME}, the HAL layer can't provide high-speed implementations to some reading commands (So we didn't do it at all). The files (``memspi_host_driver.h`` and ``.c``) implement the high-speed version of these commands with the ``common_command`` function provided in the HAL, and wrap these functions as ``spi_flash_host_driver_t`` for upper layer to use.
+In other files of the SPI HAL, some of these functions are implemented with existing {IDF_TARGET_NAME} memory-spi functionalities. However, due to the speed limitations of {IDF_TARGET_NAME}, the HAL layer cannot provide high-speed implementations to some reading commands (so the support for it was dropped). The files (``memspi_host_driver.h`` and ``.c``) implement the high-speed version of these commands with the ``common_command`` function provided in the HAL, and wrap these functions as ``spi_flash_host_driver_t`` for upper layer to use.
 
-You can also implement your own host driver, even with the GPIO. As long as all the functions in the ``spi_flash_host_driver_t`` are implemented, the esp_flash API can access to the flash regardless of the low-level hardware.
+You can also implement your own host driver, even with the GPIO. As long as all the functions in the ``spi_flash_host_driver_t`` are implemented, the esp_flash API can access the flash regardless of the low-level hardware.
 
 Chip Driver
 ^^^^^^^^^^^
 
 The chip driver, defined in ``spi_flash_chip_driver.h``, wraps basic functions provided by the host driver for the API layer to use.
 
-Some operations need some commands to be sent first, or read some status after. Some chips need different command or value, or need special communication ways.
+Some operations need some commands to be sent first, or read some status afterwards. Some chips need different commands or values, or need special communication ways.
 
 There is a type of chip called ``generic chip`` which stands for common chips. Other special chip drivers can be developed on the base of the generic chip.
 
@@ -222,7 +222,7 @@ The lock (see :ref:`spi_bus_lock`) is used to resolve the conflicts among the ac
 
 2. On the other buses, the flash driver needs to disable the ISR registered by SPI Master driver, to avoid conflicts.
 
-3. Some devices of SPI Master driver may requires to use the bus monopolized during a period. (especially when the device doesn't have CS wire, or the wire is controlled by the software like SDSPI driver).
+3. Some devices of SPI Master driver may require to use the bus monopolized during a period (especially when the device doesn't have a CS wire, or the wire is controlled by software like SDSPI driver).
 
 The delay is used by some long operations which requires the master to wait or polling periodically.
 
@@ -255,8 +255,8 @@ Implementation Details
 ----------------------
 
 In order to perform some flash operations, it is necessary to make sure that both CPUs are not running any code from flash for the duration of the flash operation:
-- In a single-core setup, the SDK does it by disabling interrupts/scheduler before performing the flash operation.
-- In a dual-core setup, this is slightly more complicated as the SDK needs to make sure that the other CPU is not running any code from flash.
+- In a single-core setup, the SDK needs to disable interrupts or scheduler before performing the flash operation.
+- In a dual-core setup, the SDK needs to make sure that both CPUs are not running any code from flash.
 
 When SPI flash API is called on CPU A (can be PRO or APP), start the ``spi_flash_op_block_func`` function on CPU B using the ``esp_ipc_call`` API. This API wakes up a high priority task on CPU B and tells it to execute a given function, in this case, ``spi_flash_op_block_func``. This function disables cache on CPU B and signals that the cache is disabled by setting the ``s_flash_op_can_start`` flag. Then the task on CPU A disables cache as well and proceeds to execute flash operation.
 
