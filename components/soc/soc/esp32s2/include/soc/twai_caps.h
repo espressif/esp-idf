@@ -20,6 +20,7 @@ extern "C" {
 
 #define TWAI_BRP_MIN                2
 #define TWAI_BRP_MAX                32768
+#define TWAI_SUPPORTS_RX_STATUS     1
 
 #ifdef __cplusplus
 }

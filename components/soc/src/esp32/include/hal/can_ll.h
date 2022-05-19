@@ -54,14 +54,14 @@ typedef twai_ll_frame_buffer_t can_ll_frame_buffer_t;
 
 /* ---------------------------- Mode Register ------------------------------- */
 
-static inline bool can_ll_enter_reset_mode(can_dev_t *hw)
+static inline void can_ll_enter_reset_mode(can_dev_t *hw)
 {
-    return twai_ll_enter_reset_mode(hw);
+    twai_ll_enter_reset_mode(hw);
 }
 
-static inline bool can_ll_exit_reset_mode(can_dev_t *hw)
+static inline void can_ll_exit_reset_mode(can_dev_t *hw)
 {
-    return twai_ll_exit_reset_mode(hw);
+    twai_ll_exit_reset_mode(hw);
 }
 
 static inline bool can_ll_is_in_reset_mode(can_dev_t *hw)

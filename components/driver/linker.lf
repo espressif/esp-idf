@@ -1,0 +1,9 @@
+
+[mapping:driver]
+archive: libdriver.a
+entries:
+    # TWAI workarounds that require periph_module_reset() won't work if cache is disabled due to the use of switch jump
+    # tables in periph_module_reset(). We prevent any part of periph_module_reset() (either text or RO data) from being
+    # placed in flash.
+    if TWAI_ISR_IN_IRAM = y  && (TWAI_ERRATA_FIX_RX_FRAME_INVALID = y || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT = y):
+        periph_ctrl: periph_module_reset (noflash)

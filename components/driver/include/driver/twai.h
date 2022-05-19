@@ -40,9 +40,9 @@ extern "C" {
  * configured. The other members of the general configuration structure are
  * assigned default values.
  */
-#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,       \
-                                                                    .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,       \
-                                                                    .tx_queue_len = 5, .rx_queue_len = 5,                          \
+#define TWAI_GENERAL_CONFIG_DEFAULT(tx_io_num, rx_io_num, op_mode) {.mode = op_mode, .tx_io = tx_io_num, .rx_io = rx_io_num,        \
+                                                                    .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      \
+                                                                    .tx_queue_len = 5, .rx_queue_len = 5,                           \
                                                                     .alerts_enabled = TWAI_ALERT_NONE,  .clkout_divider = 0,        \
                                                                     .intr_flags = ESP_INTR_FLAG_LEVEL1}
 
@@ -56,22 +56,25 @@ extern "C" {
  * @note    The TWAI_ALERT_AND_LOG flag is not an actual alert, but will configure
  *          the TWAI driver to log to UART when an enabled alert occurs.
  */
-#define TWAI_ALERT_TX_IDLE                  0x0001  /**< Alert(1): No more messages to transmit */
-#define TWAI_ALERT_TX_SUCCESS               0x0002  /**< Alert(2): The previous transmission was successful */
-#define TWAI_ALERT_BELOW_ERR_WARN           0x0004  /**< Alert(4): Both error counters have dropped below error warning limit */
-#define TWAI_ALERT_ERR_ACTIVE               0x0008  /**< Alert(8): TWAI controller has become error active */
-#define TWAI_ALERT_RECOVERY_IN_PROGRESS     0x0010  /**< Alert(16): TWAI controller is undergoing bus recovery */
-#define TWAI_ALERT_BUS_RECOVERED            0x0020  /**< Alert(32): TWAI controller has successfully completed bus recovery */
-#define TWAI_ALERT_ARB_LOST                 0x0040  /**< Alert(64): The previous transmission lost arbitration */
-#define TWAI_ALERT_ABOVE_ERR_WARN           0x0080  /**< Alert(128): One of the error counters have exceeded the error warning limit */
-#define TWAI_ALERT_BUS_ERROR                0x0100  /**< Alert(256): A (Bit, Stuff, CRC, Form, ACK) error has occurred on the bus */
-#define TWAI_ALERT_TX_FAILED                0x0200  /**< Alert(512): The previous transmission has failed (for single shot transmission) */
-#define TWAI_ALERT_RX_QUEUE_FULL            0x0400  /**< Alert(1024): The RX queue is full causing a frame to be lost */
-#define TWAI_ALERT_ERR_PASS                 0x0800  /**< Alert(2048): TWAI controller has become error passive */
-#define TWAI_ALERT_BUS_OFF                  0x1000  /**< Alert(4096): Bus-off condition occurred. TWAI controller can no longer influence bus */
-#define TWAI_ALERT_ALL                      0x1FFF  /**< Bit mask to enable all alerts during configuration */
-#define TWAI_ALERT_NONE                     0x0000  /**< Bit mask to disable all alerts during configuration */
-#define TWAI_ALERT_AND_LOG                  0x2000  /**< Bit mask to enable alerts to also be logged when they occur. Note that logging from the ISR is disabled if CONFIG_TWAI_ISR_IN_IRAM is enabled (see docs). */
+#define TWAI_ALERT_TX_IDLE                  0x00000001  /**< Alert(1): No more messages to transmit */
+#define TWAI_ALERT_TX_SUCCESS               0x00000002  /**< Alert(2): The previous transmission was successful */
+#define TWAI_ALERT_BELOW_ERR_WARN           0x00000004  /**< Alert(4): Both error counters have dropped below error warning limit */
+#define TWAI_ALERT_ERR_ACTIVE               0x00000008  /**< Alert(8): TWAI controller has become error active */
+#define TWAI_ALERT_RECOVERY_IN_PROGRESS     0x00000010  /**< Alert(16): TWAI controller is undergoing bus recovery */
+#define TWAI_ALERT_BUS_RECOVERED            0x00000020  /**< Alert(32): TWAI controller has successfully completed bus recovery */
+#define TWAI_ALERT_ARB_LOST                 0x00000040  /**< Alert(64): The previous transmission lost arbitration */
+#define TWAI_ALERT_ABOVE_ERR_WARN           0x00000080  /**< Alert(128): One of the error counters have exceeded the error warning limit */
+#define TWAI_ALERT_BUS_ERROR                0x00000100  /**< Alert(256): A (Bit, Stuff, CRC, Form, ACK) error has occurred on the bus */
+#define TWAI_ALERT_TX_FAILED                0x00000200  /**< Alert(512): The previous transmission has failed (for single shot transmission) */
+#define TWAI_ALERT_RX_QUEUE_FULL            0x00000400  /**< Alert(1024): The RX queue is full causing a frame to be lost */
+#define TWAI_ALERT_ERR_PASS                 0x00000800  /**< Alert(2048): TWAI controller has become error passive */
+#define TWAI_ALERT_BUS_OFF                  0x00001000  /**< Alert(4096): Bus-off condition occurred. TWAI controller can no longer influence bus */
+#define TWAI_ALERT_RX_FIFO_OVERRUN          0x00002000  /**< Alert(8192): An RX FIFO overrun has occurred */
+#define TWAI_ALERT_TX_RETRIED               0x00004000  /**< Alert(16384): An message transmission was cancelled and retried due to an errata workaround */
+#define TWAI_ALERT_PERIPH_RESET             0x00008000  /**< Alert(32768): The TWAI controller was reset */
+#define TWAI_ALERT_ALL                      0x0000FFFF  /**< Bit mask to enable all alerts during configuration */
+#define TWAI_ALERT_NONE                     0x00000000  /**< Bit mask to disable all alerts during configuration */
+#define TWAI_ALERT_AND_LOG                  0x00010000  /**< Bit mask to enable alerts to also be logged when they occur. Note that logging from the ISR is disabled if CONFIG_TWAI_ISR_IN_IRAM is enabled (see docs). */
 
 /** @endcond */
 
@@ -117,7 +120,8 @@ typedef struct {
     uint32_t tx_error_counter;      /**< Current value of Transmit Error Counter */
     uint32_t rx_error_counter;      /**< Current value of Receive Error Counter */
     uint32_t tx_failed_count;       /**< Number of messages that failed transmissions */
-    uint32_t rx_missed_count;       /**< Number of messages that were lost due to a full RX queue */
+    uint32_t rx_missed_count;       /**< Number of messages that were lost due to a full RX queue (or errata workaround if enabled) */
+    uint32_t rx_overrun_count;      /**< Number of messages that were lost due to a RX FIFO overrun */
     uint32_t arb_lost_count;        /**< Number of instances arbitration was lost */
     uint32_t bus_error_count;       /**< Number of instances a bus error has occurred */
 } twai_status_info_t;
@@ -168,9 +172,9 @@ esp_err_t twai_driver_uninstall(void);
  *
  * This function starts the TWAI driver, putting the TWAI driver into the running
  * state. This allows the TWAI driver to participate in TWAI bus activities such
- * as transmitting/receiving messages. The RX queue is reset in this function,
- * clearing any unread messages. This function can only be called when the TWAI
- * driver is in the stopped state.
+ * as transmitting/receiving messages. The TX and RX queue are reset in this function,
+ * clearing any messages that are unread or pending transmission. This function
+ * can only be called when the TWAI driver is in the stopped state.
  *
  * @return
  *      - ESP_OK: TWAI driver is now running

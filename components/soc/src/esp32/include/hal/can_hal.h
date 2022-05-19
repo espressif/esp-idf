@@ -66,19 +66,19 @@ static inline void can_hal_configure(can_hal_context_t *hal_ctx, const can_timin
 
 /* -------------------------------- Actions --------------------------------- */
 
-static inline bool can_hal_start(can_hal_context_t *hal_ctx, can_mode_t mode)
+static inline void can_hal_start(can_hal_context_t *hal_ctx, can_mode_t mode)
 {
-    return twai_hal_start(hal_ctx, mode);
+    twai_hal_start(hal_ctx, mode);
 }
 
-static inline bool can_hal_stop(can_hal_context_t *hal_ctx)
+static inline void can_hal_stop(can_hal_context_t *hal_ctx)
 {
-    return twai_hal_stop(hal_ctx);
+    twai_hal_stop(hal_ctx);
 }
 
-static inline bool can_hal_start_bus_recovery(can_hal_context_t *hal_ctx)
+static inline void can_hal_start_bus_recovery(can_hal_context_t *hal_ctx)
 {
-    return twai_hal_start_bus_recovery(hal_ctx);
+    twai_hal_start_bus_recovery(hal_ctx);
 }
 
 static inline uint32_t can_hal_get_tec(can_hal_context_t *hal_ctx)
@@ -101,37 +101,22 @@ static inline bool can_hal_check_last_tx_successful(can_hal_context_t *hal_ctx)
     return twai_hal_check_last_tx_successful(hal_ctx);
 }
 
+static inline bool can_hal_check_state_flags(can_hal_context_t *hal_ctx, uint32_t check_flags)
+{
+    return twai_hal_check_state_flags(hal_ctx, check_flags);
+}
+
 /* ----------------------------- Event Handling ----------------------------- */
 
-static inline uint32_t can_hal_decode_interrupt_events(can_hal_context_t *hal_ctx, bool bus_recovering) {
-    return twai_hal_decode_interrupt_events(hal_ctx, bus_recovering);
-}
-
-static inline bool can_hal_handle_bus_recov_cplt(can_hal_context_t *hal_ctx)
-{
-    return twai_hal_handle_bus_recov_cplt(hal_ctx);
-}
-
-static inline void can_hal_handle_arb_lost(can_hal_context_t *hal_ctx)
-{
-    twai_hal_handle_arb_lost(hal_ctx);
-}
-
-static inline void can_hal_handle_bus_error(can_hal_context_t *hal_ctx)
-{
-    twai_hal_handle_bus_error(hal_ctx);
-}
-
-static inline void can_hal_handle_bus_off(can_hal_context_t *hal_ctx)
-{
-    twai_hal_handle_bus_off(hal_ctx);
+static inline uint32_t can_hal_decode_interrupt_events(can_hal_context_t *hal_ctx) {
+    return twai_hal_decode_interrupt(hal_ctx);
 }
 
 /* ------------------------------- TX and RX -------------------------------- */
 
 static inline void can_hal_format_frame(const can_message_t *message, can_hal_frame_t *frame)
 {
-    twai_hal_format_frame(message, frame);                           
+    twai_hal_format_frame(message, frame);
 }
 
 static inline void can_hal_parse_frame(can_hal_frame_t *frame, can_message_t *message)

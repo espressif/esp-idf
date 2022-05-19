@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "freertos/FreeRTOS.h"
 #include "hal/clk_gate_ll.h"
+#include "esp_attr.h"
 #include "driver/periph_ctrl.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
