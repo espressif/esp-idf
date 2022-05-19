@@ -94,7 +94,7 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
             if (err == ESP_OK) {
                 err = esp_efuse_utility_apply_new_coding_scheme();
                 if (err == ESP_OK) {
-                    esp_efuse_utility_burn_efuses();
+                    err = esp_efuse_utility_burn_efuses();
                 }
             }
             esp_efuse_utility_reset();
@@ -129,7 +129,7 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
             if (err == ESP_OK) {
                 err = esp_efuse_utility_apply_new_coding_scheme();
                 if (err == ESP_OK) {
-                    esp_efuse_utility_burn_efuses();
+                    err = esp_efuse_utility_burn_efuses();
                 }
             }
             esp_efuse_utility_reset();
@@ -193,7 +193,7 @@ esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint3
         if (err == ESP_OK) {
             err = esp_efuse_utility_apply_new_coding_scheme();
             if (err == ESP_OK) {
-                esp_efuse_utility_burn_efuses();
+                err = esp_efuse_utility_burn_efuses();
             }
         }
         esp_efuse_utility_reset();
@@ -271,7 +271,7 @@ esp_err_t esp_efuse_batch_write_commit(void)
     } else {
         esp_err_t err = esp_efuse_utility_apply_new_coding_scheme();
         if (err == ESP_OK) {
-            esp_efuse_utility_burn_efuses();
+            err = esp_efuse_utility_burn_efuses();
         }
         esp_efuse_batch_write_cancel();
         return err;

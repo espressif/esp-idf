@@ -97,8 +97,12 @@ esp_err_t esp_efuse_utility_fill_buff(unsigned int num_reg, esp_efuse_block_t ef
  *
  * If CONFIG_EFUSE_VIRTUAL is set, writing will not be performed.
  * After the function is completed, the writing registers are cleared.
+ *
+ * @return
+ *      - ESP_OK: The operation was successfully completed.
+ *      - ESP_FAIL: The operation was not successfully completed.
  */
-void esp_efuse_utility_burn_efuses(void);
+esp_err_t esp_efuse_utility_burn_efuses(void);
 
 /**
  * @brief Returns the number of array elements for placing these "bits" in an array with the length of each element equal to "size_of_base".
@@ -150,6 +154,19 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme(void);
  * @brief   Efuse read operation: copies data from physical efuses to efuse read registers.
  */
 void esp_efuse_utility_clear_program_registers(void);
+
+/**
+ * @brief Checks the correctness of burned data in the given block.
+ *
+ * @note Internal use. Do not call it.
+ *
+ * @param[in] block Index of efuse block.
+ * @param[in] r_data_len Block length for reading data in bytes (multiple of 4).
+ *
+ * @return True  - written data are correct.
+ *         False - written data are incorrect.
+ */
+bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned r_data_len);
 
 #ifdef __cplusplus
 }
