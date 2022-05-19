@@ -60,6 +60,7 @@ ESP System
 ----------
 - The header files ``esp_random.h``, ``esp_mac.h`` and ``esp_chip_info.h``, which were all previously indirectly included via the header file ``esp_system.h``, must now be included directly. These headers are removed from ``esp_system.h``.
 - The header file ``eh_frame_parser.h`` must now be included with a ``esp_private`` prefix like ``#include "esp_private/eh_frame_parser.h"``.
+- The header file ``esp_int_wdt.h`` must now be included with a ``esp_private`` prefix like ``#include "esp_private/esp_int_wdt.h"``.
 
 SOC dependency
 --------------

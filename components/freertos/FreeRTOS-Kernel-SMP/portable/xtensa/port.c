@@ -17,17 +17,17 @@
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
 #include "xtensa/xtruntime.h"
+#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
+#include "esp_private/esp_int_wdt.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_task.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 #include "esp_rom_sys.h"
-#include "esp_int_wdt.h"
 #include "esp_task_wdt.h"
 #include "esp_heap_caps_init.h"
 #include "esp_freertos_hooks.h"
-#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
 #include "esp32/spiram.h"                   /* Required by esp_spiram_reserve_dma_pool() */
 #ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
@@ -620,15 +620,14 @@ BaseType_t xPortSysTickHandler(void)
     portbenchmarkIntLatency();
     traceISR_ENTER(SYSTICK_INTR_ID);
     BaseType_t ret;
+    esp_vApplicationTickHook();
     if (portGET_CORE_ID() == 0) {
-        //Only Core 0 calls xTaskIncrementTick();
+        // FreeRTOS SMP requires that only core 0 calls xTaskIncrementTick()
         ret = xTaskIncrementTick();
     } else {
-        //Manually call the IDF tick hooks
-        esp_vApplicationTickHook();
         ret = pdFALSE;
     }
-    if(ret != pdFALSE) {
+    if (ret != pdFALSE) {
         portYIELD_FROM_ISR();
     } else {
         traceISR_EXIT();
@@ -654,13 +653,6 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
         dest = strcat(dest, str[i]);
     }
     esp_system_abort(buf);
-}
-#endif
-
-#if  (  configUSE_TICK_HOOK > 0 )
-void vApplicationTickHook( void )
-{
-    esp_vApplicationTickHook();
 }
 #endif
 

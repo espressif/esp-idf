@@ -198,7 +198,11 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #else
 #define configUSE_IDLE_HOOK                             0
 #endif
+#if CONFIG_FREERTOS_USE_TICK_HOOK
 #define configUSE_TICK_HOOK                             1
+#else
+#define configUSE_TICK_HOOK                             0
+#endif
 #if CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE
 #define configCHECK_FOR_STACK_OVERFLOW                  0
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
