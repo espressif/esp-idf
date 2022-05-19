@@ -91,6 +91,12 @@ static void ethernet_low_level_init(struct netif *netif)
     netif->flags |= NETIF_FLAG_IGMP;
 #endif
 #endif
+
+#if ESP_IPV6
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+    netif->flags |= NETIF_FLAG_MLD6;
+#endif
+#endif
 }
 
 /**
