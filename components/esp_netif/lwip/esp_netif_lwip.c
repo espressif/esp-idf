@@ -2000,7 +2000,7 @@ static esp_err_t esp_netif_leave_ip6_multicast_group_api(esp_netif_api_msg_t *ms
 #if LWIP_IPV6_SCOPES
     ip6addr.zone = 0;
 #endif
-    ESP_RETURN_ON_FALSE(mld6_leavegroup_netif(msg->esp_netif->lwip_netif, &ip6addr) != ERR_OK,
+    ESP_RETURN_ON_FALSE(mld6_leavegroup_netif(msg->esp_netif->lwip_netif, &ip6addr) == ERR_OK,
                         ESP_ERR_ESP_NETIF_MLD6_FAILED, TAG, "Failed to leave ip6 multicast group");
     return ESP_OK;
 }
