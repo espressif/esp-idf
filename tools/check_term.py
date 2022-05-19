@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function
 
@@ -33,10 +22,10 @@ if __name__ == '__main__':
         print('WARNING: The TERM environment variable is not defined. The curses-based menuconfig '
               'will probably fail to run. Please consult the documentation of your terminal to set it up.')
     else:
-        if term.endswith('256color'):
+        if term.endswith('256color') or term in ['alacritty']:
             print('TERM environment variable is set to "{}"'.format(term))
         else:
             print('WARNING: Menuconfig may fail because of the TERM environment variable is set '
                   'to "{}". Please consult the documentation of your terminal to set it up. '
                   'Some good, proved to been working setups include xterm-256color, screen-256color, '
-                  'rxvt-unicode-256color.'.format(term))
+                  'rxvt-unicode-256color, alacritty.'.format(term))

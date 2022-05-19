@@ -321,14 +321,6 @@ esp_err_t timer_disable_intr(timer_group_t group_num, timer_idx_t timer_num);
  * @param timer_num Timer index.
  *
  */
-void timer_group_intr_clr_in_isr(timer_group_t group_num, timer_idx_t timer_num) __attribute__((deprecated));
-
-/** @brief Clear timer interrupt status, just used in ISR
- *
- * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- * @param timer_num Timer index.
- *
- */
 void timer_group_clr_intr_status_in_isr(timer_group_t group_num, timer_idx_t timer_num);
 
 /** @brief Enable alarm interrupt, just used in ISR
@@ -367,14 +359,6 @@ void timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t tim
  */
 void timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en);
 
-/** @brief Get the masked interrupt status, just used in ISR
- *
- * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- *
- * @return
- *     - Interrupt status
- */
-timer_intr_t timer_group_intr_get_in_isr(timer_group_t group_num) __attribute__((deprecated));
 
 /** @brief Get interrupt status, just used in ISR
  *
@@ -384,15 +368,6 @@ timer_intr_t timer_group_intr_get_in_isr(timer_group_t group_num) __attribute__(
  *     - Interrupt status
  */
 uint32_t timer_group_get_intr_status_in_isr(timer_group_t group_num);
-
-/** @brief Clear the masked interrupt status, just used in ISR
- *
- * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- * @param intr_mask Masked interrupt.
- *
- */
-void timer_group_clr_intr_sta_in_isr(timer_group_t group_num, timer_intr_t intr_mask) __attribute__((deprecated));
-
 /** @brief Get auto reload enable status, just used in ISR
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
@@ -403,30 +378,6 @@ void timer_group_clr_intr_sta_in_isr(timer_group_t group_num, timer_intr_t intr_
  *     - False Auto reload disabled
  */
 bool timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer_idx_t timer_num);
-
-/** @brief Take timer spinlock to enter critical protect
- *
- *  @note Deprecated, the recommended way is to use ISR callbacks instead, see timer_group_example_main
- *
- * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t timer_spinlock_take(timer_group_t group_num) __attribute__ ((deprecated));
-
-/** @brief Give timer spinlock to exit critical protect
- *
- *  @note Deprecated, the recommended way is to use ISR callbacks instead, see timer_group_example_main
- *
- * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t timer_spinlock_give(timer_group_t group_num) __attribute__ ((deprecated));
 
 #ifdef __cplusplus
 }

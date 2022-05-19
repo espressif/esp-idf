@@ -817,10 +817,10 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 BaseType_t res = xRingbufferSendFromISR(p_rmt->rx_buf, (void *)addr, item_len * 4, &HPTaskAwoken);
 #endif
                 if (res == pdFALSE) {
-                    ESP_EARLY_LOGE(TAG, "RMT RX BUFFER FULL");
+                    ESP_DRAM_LOGE(TAG, "RMT RX BUFFER FULL");
                 }
             } else {
-                ESP_EARLY_LOGE(TAG, "RMT RX BUFFER ERROR");
+                ESP_DRAM_LOGE(TAG, "RMT RX BUFFER ERROR");
             }
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
@@ -855,7 +855,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 p_rmt->rx_item_start_idx = 0;
             }
         } else {
-            ESP_EARLY_LOGE(TAG, "---RX buffer too small: %d", sizeof(p_rmt->rx_item_buf));
+            ESP_DRAM_LOGE(TAG, "---RX buffer too small: %d", sizeof(p_rmt->rx_item_buf));
         }
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_THRES(channel));
     }
@@ -894,8 +894,8 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         if (p_rmt) {
             // Reset the receiver's write/read addresses to prevent endless err interrupts.
             rmt_ll_rx_reset_pointer(rmt_contex.hal.regs, channel);
-            ESP_EARLY_LOGD(TAG, "RMT RX channel %d error", channel);
-            ESP_EARLY_LOGD(TAG, "status: 0x%08x", rmt_ll_rx_get_status_word(rmt_contex.hal.regs, channel));
+            ESP_DRAM_LOGD(TAG, "RMT RX channel %d error", channel);
+            ESP_DRAM_LOGD(TAG, "status: 0x%08x", rmt_ll_rx_get_status_word(rmt_contex.hal.regs, channel));
         }
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_ERROR(channel));
     }
@@ -909,8 +909,8 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         if (p_rmt) {
             // Reset the transmitter's write/read addresses to prevent endless err interrupts.
             rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
-            ESP_EARLY_LOGD(TAG, "RMT TX channel %d error", channel);
-            ESP_EARLY_LOGD(TAG, "status: 0x%08x", rmt_ll_tx_get_status_word(rmt_contex.hal.regs, channel));
+            ESP_DRAM_LOGD(TAG, "RMT TX channel %d error", channel);
+            ESP_DRAM_LOGD(TAG, "status: 0x%08x", rmt_ll_tx_get_status_word(rmt_contex.hal.regs, channel));
         }
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_ERROR(channel));
     }
