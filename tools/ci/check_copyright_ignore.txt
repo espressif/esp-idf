@@ -778,7 +778,6 @@ components/nvs_flash/test_nvs_host/test_nvs_initialization.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
-components/pthread/pthread_cond_var.c
 components/pthread/test/test_cxx_cond_var.cpp
 components/pthread/test/test_cxx_std_future.cpp
 components/pthread/test/test_pthread.c
