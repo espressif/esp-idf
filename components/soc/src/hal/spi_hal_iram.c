@@ -125,12 +125,15 @@ void spi_hal_prepare_data(const spi_hal_context_t *hal)
             lldesc_setup_link(hal->dmadesc_rx, hal->rcv_buffer, ((hal->rx_bitlen + 7) / 8), true);
             spi_ll_rxdma_start(hw, hal->dmadesc_rx);
         }
-    } else {
+    }
+#if CONFIG_IDF_TARGET_ESP32
+    else {
         //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
-        if (hal->dma_enabled) {
+        if (hal->dma_enabled && !hal->half_duplex) {
             spi_ll_rxdma_start(hw, 0);
         }
     }
+#endif
 
     if (hal->send_buffer) {
         if (!hal->dma_enabled) {
