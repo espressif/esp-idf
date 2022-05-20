@@ -199,7 +199,9 @@ typedef enum wifi_prov_security {
      * + proof of possession (pop) based authentication
      * + AES-CTR encryption
      */
-    WIFI_PROV_SECURITY_1
+    WIFI_PROV_SECURITY_1,
+
+    WIFI_PROV_SECURITY_2
 } wifi_prov_security_t;
 
 /**
@@ -299,8 +301,8 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
  *  - ESP_FAIL    : Failed to start provisioning service
  *  - ESP_ERR_INVALID_STATE : Provisioning manager not initialized or already started
  */
-esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop,
-                                           const char *service_name, const char *service_key);
+esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop, const char *salt,
+                                           const char *verifier, const char *service_name, const char *service_key);
 
 /**
  * @brief   Stop provisioning service

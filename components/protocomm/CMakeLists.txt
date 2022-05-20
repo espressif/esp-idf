@@ -1,18 +1,21 @@
 set(include_dirs include/common
-                include/security
-                include/transports)
-set(priv_include_dirs proto-c src/common)
+                 include/security
+                 include/transports)
+set(priv_include_dirs proto-c src/common src/crypto/srp6a/include)
 set(srcs
     "src/common/protocomm.c"
     "src/security/security0.c"
     "src/security/security1.c"
+    "src/security/security2.c"
     "proto-c/constants.pb-c.c"
     "proto-c/sec0.pb-c.c"
     "proto-c/sec1.pb-c.c"
     "proto-c/sec2.pb-c.c"
     "proto-c/session.pb-c.c"
     "src/transports/protocomm_console.c"
-    "src/transports/protocomm_httpd.c")
+    "src/transports/protocomm_httpd.c"
+    "src/crypto/srp6a/esp_srp.c"
+    "src/crypto/srp6a/esp_srp_mpi.c")
 
 if(CONFIG_BT_ENABLED)
     if(CONFIG_BT_BLUEDROID_ENABLED)

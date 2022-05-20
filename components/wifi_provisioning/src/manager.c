@@ -21,6 +21,7 @@
 #include <protocomm.h>
 #include <protocomm_security0.h>
 #include <protocomm_security1.h>
+#include <protocomm_security2.h>
 
 #include "wifi_provisioning_priv.h"
 
@@ -92,6 +93,9 @@ struct wifi_prov_mgr_ctx {
 
     /* Pointer to proof of possession */
     protocomm_security_pop_t pop;
+
+    /* Pointer to salt and verifier */
+    protocomm_security_sv_t sv;
 
     /* Handle for Provisioning Auto Stop timer */
     esp_timer_handle_t autostop_timer;
@@ -307,10 +311,13 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
     /* Set protocomm security type for endpoint */
     if (prov_ctx->security == 0) {
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
-                                     &protocomm_security0, NULL);
+                                     &protocomm_security0, NULL, NULL);
     } else if (prov_ctx->security == 1) {
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
-                                     &protocomm_security1, &prov_ctx->pop);
+                                     &protocomm_security1, &prov_ctx->pop, NULL);
+    } else if (prov_ctx->security == 2) {
+        ret = protocomm_set_security(prov_ctx->pc, "prov-session",
+                                     &protocomm_security2, NULL, &prov_ctx->sv);
     } else {
         ESP_LOGE(TAG, "Unsupported protocomm security version %d", prov_ctx->security);
         ret = ESP_ERR_INVALID_ARG;
@@ -1330,6 +1337,7 @@ void wifi_prov_mgr_deinit(void)
     if (!service_was_running && !prov_ctx) {
         ESP_LOGD(TAG, "Manager already de-initialized");
         RELEASE_LOCK(prov_ctx_lock);
+        vSemaphoreDelete(prov_ctx_lock);
         return;
     }
 
@@ -1380,10 +1388,12 @@ void wifi_prov_mgr_deinit(void)
     if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_DEINIT, NULL, 0, portMAX_DELAY) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post event WIFI_PROV_DEINIT");
     }
+
+    vSemaphoreDelete(prov_ctx_lock);
 }
 
-esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop,
-                                           const char *service_name, const char *service_key)
+esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop, const char *salt,
+                                           const char *verifier, const char *service_name, const char *service_key)
 {
     uint8_t restore_wifi_flag = 0;
 
@@ -1459,17 +1469,37 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     /* Initialize app data */
     if (security == WIFI_PROV_SECURITY_0) {
         prov_ctx->mgr_info.capabilities.no_sec = true;
-    } else if (pop) {
-        prov_ctx->pop.len = strlen(pop);
-        prov_ctx->pop.data = malloc(prov_ctx->pop.len);
-        if (!prov_ctx->pop.data) {
-            ESP_LOGE(TAG, "Unable to allocate PoP data");
-            ret = ESP_ERR_NO_MEM;
+    } else if (security == WIFI_PROV_SECURITY_1) {
+        if (pop) {
+            prov_ctx->pop.len = strlen(pop);
+            prov_ctx->pop.data = malloc(prov_ctx->pop.len);
+            if (!prov_ctx->pop.data) {
+                ESP_LOGE(TAG, "Unable to allocate PoP data");
+                ret = ESP_ERR_NO_MEM;
+                goto err;
+            }
+            memcpy((void *)prov_ctx->pop.data, pop, prov_ctx->pop.len);
+        } else {
+            prov_ctx->mgr_info.capabilities.no_pop = true;
+        }
+    } else if (security == WIFI_PROV_SECURITY_2) {
+        if (salt != NULL && verifier != NULL) {
+            prov_ctx->sv.salt_len = 4;
+            prov_ctx->sv.verifier_len = 384;
+            prov_ctx->sv.salt = malloc(prov_ctx->sv.salt_len);
+            prov_ctx->sv.verifier = malloc(prov_ctx->sv.verifier_len);
+            if (!prov_ctx->sv.salt || !prov_ctx->sv.salt) {
+                ESP_LOGE(TAG, "Unable to allocate salt-verifier data");
+                ret = ESP_ERR_NO_MEM;
+                goto err;
+            }
+            memcpy((void *)prov_ctx->sv.salt, salt, prov_ctx->sv.salt_len);
+            memcpy((void *)prov_ctx->sv.verifier, verifier, prov_ctx->sv.verifier_len);
+        } else {
+            ESP_LOGE(TAG, "Salt and verifier cannot be NULL!");
+            ret = ESP_ERR_INVALID_ARG;
             goto err;
         }
-        memcpy((void *)prov_ctx->pop.data, pop, prov_ctx->pop.len);
-    } else {
-        prov_ctx->mgr_info.capabilities.no_pop = true;
     }
     prov_ctx->security = security;
 

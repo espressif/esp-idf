@@ -164,7 +164,7 @@ esp_err_t esp_local_ctrl_start(const esp_local_ctrl_config_t *config)
             break;
     }
     ret = protocomm_set_security(local_ctrl_inst_ctx->pc, "esp_local_ctrl/session",
-                                 proto_sec_handle, local_ctrl_inst_ctx->config.proto_sec.pop);
+                                 proto_sec_handle, local_ctrl_inst_ctx->config.proto_sec.pop, NULL);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set session endpoint");
         esp_local_ctrl_stop();

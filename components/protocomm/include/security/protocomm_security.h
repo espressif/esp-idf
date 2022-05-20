@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -21,9 +13,9 @@ extern "C" {
 #endif
 
 /**
- * @brief   Proof Of Possession for authenticating a secure session
+ * @brief   Protocomm Security 1 parameters: Proof Of Possession
  */
-typedef struct protocomm_security_pop {
+typedef struct protocomm_security1_params {
     /**
      * Pointer to buffer containing the proof of possession data
      */
@@ -33,7 +25,35 @@ typedef struct protocomm_security_pop {
      * Length (in bytes) of the proof of possession data
      */
     uint16_t len;
-} protocomm_security_pop_t;
+} protocomm_security1_params_t;
+
+typedef protocomm_security1_params_t  protocomm_security_pop_t __attribute__((deprecated("Use protocomm_security1_params_t instead")));
+
+/**
+ * @brief Protocomm Security 2 parameters: Salt and Verifier
+ *
+ */
+typedef struct protocomm_security2_params {
+    /**
+     * Pointer to the buffer containing the salt
+     */
+    const char *salt;
+
+    /**
+     * Length (in bytes) of the salt
+     */
+    uint16_t salt_len;
+
+    /**
+     * Pointer to the buffer containing the verifier
+     */
+    const char *verifier;
+
+    /**
+     * Length (in bytes) of the verifier
+     */
+    uint16_t verifier_len;
+} protocomm_security2_params_t;
 
 typedef void * protocomm_security_handle_t;
 
@@ -80,7 +100,7 @@ typedef struct protocomm_security {
      * request and establishing secure session
      */
     esp_err_t (*security_req_handler)(protocomm_security_handle_t handle,
-                                      const protocomm_security_pop_t *pop,
+                                      const void *sec_params,
                                       uint32_t session_id,
                                       const uint8_t *inbuf, ssize_t inlen,
                                       uint8_t **outbuf, ssize_t *outlen,
@@ -92,7 +112,7 @@ typedef struct protocomm_security {
     esp_err_t (*encrypt)(protocomm_security_handle_t handle,
                          uint32_t session_id,
                          const uint8_t *inbuf, ssize_t inlen,
-                         uint8_t *outbuf, ssize_t *outlen);
+                         uint8_t **outbuf, ssize_t *outlen);
 
     /**
      * Function which implements the decryption algorithm
@@ -100,7 +120,7 @@ typedef struct protocomm_security {
     esp_err_t (*decrypt)(protocomm_security_handle_t handle,
                          uint32_t session_id,
                          const uint8_t *inbuf, ssize_t inlen,
-                         uint8_t *outbuf, ssize_t *outlen);
+                         uint8_t **outbuf, ssize_t *outlen);
 } protocomm_security_t;
 
 #ifdef __cplusplus
