@@ -92,6 +92,17 @@ esp_err_t esp_spiffs_format(const char* partition_label);
  */
 esp_err_t esp_spiffs_info(const char* partition_label, size_t *total_bytes, size_t *used_bytes);
 
+/**
+ * Check integrity of SPIFFS
+ *
+ * @param partition_label  Same label as passed to esp_vfs_spiffs_register
+ * @return
+ *          - ESP_OK                  if successful
+ *          - ESP_ERR_INVALID_STATE   if not mounted
+ *          - ESP_FAIL                on error
+ */
+esp_err_t esp_spiffs_check(const char* partition_label);
+
 #ifdef __cplusplus
 }
 #endif

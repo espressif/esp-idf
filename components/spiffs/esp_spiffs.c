@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_spiffs.h"
 #include "spiffs.h"
@@ -66,6 +58,7 @@ typedef struct {
     char path[SPIFFS_OBJ_NAME_LEN]; /*!< Requested directory name */
 } vfs_spiffs_dir_t;
 
+static int spiffs_res_to_errno(s32_t fr);
 static int vfs_spiffs_open(void* ctx, const char * path, int flags, int mode);
 static ssize_t vfs_spiffs_write(void* ctx, int fd, const void * data, size_t size);
 static ssize_t vfs_spiffs_read(void* ctx, int fd, void * dst, size_t size);
@@ -318,6 +311,22 @@ esp_err_t esp_spiffs_info(const char* partition_label, size_t *total_bytes, size
         return ESP_ERR_INVALID_STATE;
     }
     SPIFFS_info(_efs[index]->fs, (uint32_t *)total_bytes, (uint32_t *)used_bytes);
+    return ESP_OK;
+}
+
+esp_err_t esp_spiffs_check(const char* partition_label)
+{
+    int index;
+    if (esp_spiffs_by_label(partition_label, &index) != ESP_OK) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (SPIFFS_check(_efs[index]->fs) != SPIFFS_OK) {
+        int spiffs_res = SPIFFS_errno(_efs[index]->fs);
+        ESP_LOGE(TAG, "SPIFFS_check failed (%d)", spiffs_res);
+        errno = spiffs_res_to_errno(SPIFFS_errno(_efs[index]->fs));
+        SPIFFS_clearerr(_efs[index]->fs);
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 
