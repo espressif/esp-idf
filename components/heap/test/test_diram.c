@@ -10,6 +10,8 @@
 
 #define ALLOC_SZ 1024
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5167
 static void *malloc_block_diram(uint32_t caps)
 {
     void *attempts[256] = { 0 }; // Allocate up to 256 ALLOC_SZ blocks to exhaust all non-D/IRAM memory temporarily
@@ -72,3 +74,4 @@ TEST_CASE("Allocate D/IRAM as IRAM", "[heap]")
 
     free(iram);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

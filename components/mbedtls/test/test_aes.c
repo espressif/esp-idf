@@ -16,6 +16,9 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 static const uint8_t key_256[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -298,6 +301,7 @@ TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
     free(chipertext);
     free(decryptedtext);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static void aes_ctr_stream_test(void)
 {
@@ -399,6 +403,8 @@ static void aes_ctr_stream_test(void)
     free(decryptedtext);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("mbedtls CTR stream test", "[aes]")
 {
     aes_ctr_stream_test();
@@ -778,6 +784,7 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
     free(chipertext);
     free(decryptedtext);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 
 
@@ -839,11 +846,14 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
     free(decryptedtext);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("mbedtls AES internal mem alignment tests", "[aes]")
 {
     uint32_t internal_dma_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL;
     aes_ctr_alignment_test(internal_dma_caps, internal_dma_caps);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 
 #ifdef CONFIG_SPIRAM_USE_MALLOC

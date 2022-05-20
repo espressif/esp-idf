@@ -55,8 +55,16 @@ static void do_deep_sleep_from_app_cpu(void)
         ;
     }
 }
+
+TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
+{
+    esp_sleep_enable_timer_wakeup(2000000);
+    do_deep_sleep_from_app_cpu();
+}
 #endif
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
@@ -70,6 +78,7 @@ TEST_CASE("light sleep followed by deep sleep", "[deepsleep][reset=DEEPSLEEP_RES
     esp_deep_sleep_start();
 }
 
+//IDF-5053
 TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
 {
     esp_sleep_enable_timer_wakeup(2000000);
@@ -81,6 +90,7 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
                (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 //NOTE: Explained in IDF-1445 | MR !14996
 #if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
@@ -218,14 +228,8 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     }
 }
 
-#ifndef CONFIG_FREERTOS_UNICORE
-TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
-{
-    esp_sleep_enable_timer_wakeup(2000000);
-    do_deep_sleep_from_app_cpu();
-}
-#endif
-
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
@@ -292,9 +296,12 @@ static void check_wake_stub(void)
 #endif
 }
 
+
 TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
         prepare_wake_stub,
         check_wake_stub);
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -363,6 +370,9 @@ TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub from stack in RTC RAM", "[dee
 
 #if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
 {
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
@@ -416,6 +426,8 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][igno
     ESP_ERROR_CHECK(esp_sleep_enable_ext1_wakeup(BIT(GPIO_NUM_13), ESP_EXT1_WAKEUP_ALL_LOW));
     esp_deep_sleep_start();
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 __attribute__((unused)) static float get_time_ms(void)
 {
@@ -512,6 +524,8 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
 
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 static RTC_DATA_ATTR struct timeval start;
 static void trigger_deepsleep(void)
 {
@@ -571,3 +585,4 @@ TEST_CASE("wake up using GPIO (2 or 4 low)", "[deepsleep][ignore]")
     esp_deep_sleep_start();
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

@@ -210,6 +210,8 @@ esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint)
     return ESP_OK;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 esp_err_t client_setup(mbedtls_endpoint_t *client)
 {
     int ret;
@@ -344,9 +346,12 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    vSemaphoreDelete(signal_sem);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
 {
     /* A weak signature hash on the trusted certificate should not stop
@@ -392,6 +397,7 @@ TEST_CASE("custom certificate bundle - wrong signature", "[mbedtls]")
 
     esp_crt_bundle_detach(NULL);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("custom certificate bundle init API - bound checking", "[mbedtls]")
 {

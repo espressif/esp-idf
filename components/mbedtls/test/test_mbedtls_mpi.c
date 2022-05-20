@@ -15,9 +15,12 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "test_utils.h"
 
 #define MBEDTLS_OK 0
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 /* Debugging function to print an MPI number to stdout. Happens to
    print output that can be copy-pasted directly into a Python shell.
 */
@@ -274,3 +277,4 @@ TEST_CASE("test MPI modexp", "[bignum]")
 
     TEST_ASSERT_FALSE_MESSAGE(test_error, "mbedtls_mpi_exp_mod incorrect for some tests\n");
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

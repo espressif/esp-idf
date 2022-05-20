@@ -8,6 +8,7 @@
 #include "unity.h"
 #include "esp_rom_sys.h"
 #include "esp_task_wdt.h"
+#include "test_utils.h"
 
 #define TASK_WDT_TIMEOUT_MS     1000
 
@@ -18,6 +19,8 @@ void esp_task_wdt_isr_user_handler(void)
     timeout_flag = true;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5055
 TEST_CASE("Task WDT task timeout", "[task_wdt]")
 {
     timeout_flag = false;
@@ -34,6 +37,7 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("Task WDT task feed", "[task_wdt]")
 {
@@ -54,6 +58,8 @@ TEST_CASE("Task WDT task feed", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5055
 TEST_CASE("Task WDT user timeout", "[task_wdt]")
 {
     const char *user_name = "test_user";
@@ -72,6 +78,7 @@ TEST_CASE("Task WDT user timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete_user(user_handle));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("Task WDT user feed", "[task_wdt]")
 {

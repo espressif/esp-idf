@@ -283,11 +283,12 @@ static void test_bus_lock(bool test_flash)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2)
 //no runners
+//IDF-5049
 TEST_CASE("spi bus lock, with flash","[spi][test_env=UT_T1_ESP_FLASH]")
 {
     test_bus_lock(true);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 
 TEST_CASE("spi bus lock","[spi]")

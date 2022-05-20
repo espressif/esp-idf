@@ -544,6 +544,8 @@ TEST_CASE("concurrent selects work", "[vfs]")
     close(dummy_socket_fd);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5139
 TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
 {
     wl_handle_t test_wl_handle;
@@ -605,3 +607,4 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     deinit(uart_fd, socket_fd);
     close(dummy_socket_fd);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

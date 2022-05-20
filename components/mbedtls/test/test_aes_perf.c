@@ -12,6 +12,8 @@
 #include "test_utils.h"
 #include "ccomp_timer.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
 {
     const unsigned CALLS = 256;
@@ -68,3 +70,4 @@ TEST_CASE("mbedtls AES performance", "[aes][timeout=60]")
     TEST_PERFORMANCE_CCOMP_GREATER_THAN(AES_CBC_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

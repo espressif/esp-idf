@@ -75,6 +75,10 @@ TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]"
 
 }
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5047
+
 TEST_CASE("esp_netif: test dhcp client state transitions for wifi station", "[esp_netif]")
 {
     // init default wifi netif
@@ -298,6 +302,8 @@ TEST_CASE("esp_netif: get/set hostname", "[esp_netif]")
     esp_netif_destroy(esp_netif);
 }
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+
 TEST_CASE("esp_netif: convert ip address from string", "[esp_netif]")
 {
     const char *ipv4_src[] = {"127.168.1.1", "255.255.255.0", "305.500.721.801", "127.168.1..", "abc.def.***.ddd"};
@@ -322,6 +328,8 @@ TEST_CASE("esp_netif: convert ip address from string", "[esp_netif]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_netif_str_to_ip6(ipv6_src[0], NULL));
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5047
 TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][leaks=0]")
 {
     // Helper constants to refer default STA and AP's params
@@ -355,6 +363,9 @@ TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][
     TEST_ASSERT_NOT_NULL(sta);
     esp_netif_destroy_default_wifi(sta);
 }
+
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static esp_err_t dummy_transmit(void* hd, void *buf, size_t length)
 {

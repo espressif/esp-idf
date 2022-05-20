@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // Test for spi_flash_{read,write}.
 
@@ -69,6 +61,8 @@ TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
     }
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5137
 static bool s_test_nonzero_sha_of_partition(const esp_partition_t *part, bool allow_invalid_image)
 {
     uint8_t sha256[32] = { 0 };
@@ -145,3 +139,4 @@ TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", 
 
     spi_flash_munmap(handle);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
