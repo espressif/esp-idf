@@ -61,6 +61,13 @@ class TestPythonInstall(unittest.TestCase):
         self.assertIn(REQ_CORE, output)
         self.assertIn(REQ_GDBGUI, output)
 
+        # Argument that begins with '-' can't stand alone to be parsed as value
+        output = self.run_idf_tools(['install-python-env', '--features=-gdbgui'])
+        # After removing the gdbgui should not be present
+        self.assertIn(CONSTR, output)
+        self.assertIn(REQ_CORE, output)
+        self.assertNotIn(REQ_GDBGUI, output)
+
     def test_no_constraints(self):  # type: () -> None
         output = self.run_idf_tools(['install-python-env', '--no-constraints'])
         self.assertNotIn(CONSTR, output)
