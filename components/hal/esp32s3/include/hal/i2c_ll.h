@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for I2C register operations
 
@@ -152,18 +144,20 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
 static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, bus_cfg->clkm_div - 1);
+    /* According to the Technical Reference Manual, the following timings must be subtracted by 1.
+     * Moreover, the frequency calculation also shows that we must subtract 3 to the total SCL */
     //scl period
-    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 1;
-    hw->scl_high_period.scl_high_period = bus_cfg->scl_high;
+    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 1 - 2;
+    hw->scl_high_period.scl_high_period = bus_cfg->scl_high - 1 - 1;
     //sda sample
-    hw->sda_hold.sda_hold_time = bus_cfg->sda_hold;
-    hw->sda_sample.sda_sample_time = bus_cfg->sda_sample;
+    hw->sda_hold.sda_hold_time = bus_cfg->sda_hold - 1;
+    hw->sda_sample.sda_sample_time = bus_cfg->sda_sample - 1;
     //setup
-    hw->scl_rstart_setup.scl_rstart_setup_time = bus_cfg->setup;
-    hw->scl_stop_setup.scl_stop_setup_time = bus_cfg->setup;
+    hw->scl_rstart_setup.scl_rstart_setup_time = bus_cfg->setup - 1;
+    hw->scl_stop_setup.scl_stop_setup_time = bus_cfg->setup - 1;
     //hold
     hw->scl_start_hold.scl_start_hold_time = bus_cfg->hold - 1;
-    hw->scl_stop_hold.scl_stop_hold_time = bus_cfg->hold;
+    hw->scl_stop_hold.scl_stop_hold_time = bus_cfg->hold - 1;
     hw->to.time_out_value = bus_cfg->tout;
     hw->to.time_out_en = 1;
 }

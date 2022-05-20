@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for I2C register operations
 
@@ -125,9 +117,29 @@ static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2
  */
 static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
 {
-    //scl period
-    hw->scl_low_period.period = bus_cfg->scl_low;
-    hw->scl_high_period.period = bus_cfg->scl_high;
+    /* SCL period. According to the TRM, we should always subtract 1 to SCL low period */
+    assert(bus_cfg->scl_low > 0);
+    hw->scl_low_period.period = bus_cfg->scl_low - 1;
+    /* Still according to the TRM, if filter is not enbled, we have to subtract 7,
+     * if SCL filter is enabled, we have to subtract:
+     *   8 if SCL filter is between 0 and 2 (included)
+     *   6 + SCL threshold if SCL filter is between 3 and 7 (included)
+     * to SCL high period */
+    uint16_t scl_high = bus_cfg->scl_high;
+    /* In the "worst" case, we will subtract 13, make sure the result will still be correct */
+    assert(scl_high > 13);
+    if (hw->scl_filter_cfg.en) {
+        if (hw->scl_filter_cfg.thres <= 2) {
+            scl_high -= 8;
+        } else if (hw->scl_filter_cfg.thres <= 7) {
+            scl_high -= hw->scl_filter_cfg.thres + 6;
+        } else {
+            assert(false);
+        }
+    } else {
+        scl_high -= 7;
+    }
+    hw->scl_high_period.period = scl_high;
     //sda sample
     hw->sda_hold.time = bus_cfg->sda_hold;
     hw->sda_sample.time = bus_cfg->sda_sample;

@@ -788,7 +788,6 @@ components/hal/esp32/include/hal/can_hal.h
 components/hal/esp32/include/hal/can_types.h
 components/hal/esp32/include/hal/clk_gate_ll.h
 components/hal/esp32/include/hal/dac_ll.h
-components/hal/esp32/include/hal/i2c_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
 components/hal/esp32/include/hal/rtc_io_ll.h
@@ -807,7 +806,6 @@ components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
 components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
-components/hal/esp32c3/include/hal/i2c_ll.h
 components/hal/esp32c3/include/hal/interrupt_controller_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/rtc_cntl_ll.h
@@ -860,7 +858,6 @@ components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s2/interrupt_descriptor_table.c
 components/hal/esp32s2/touch_sensor_hal.c
 components/hal/esp32s3/include/hal/aes_ll.h
-components/hal/esp32s3/include/hal/i2c_ll.h
 components/hal/esp32s3/include/hal/interrupt_controller_ll.h
 components/hal/esp32s3/include/hal/memprot_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
