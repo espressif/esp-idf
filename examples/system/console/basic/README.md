@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Basic Console Example (`esp_console_repl`)
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -70,13 +73,13 @@ Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
 [esp32]> help
-help 
+help
   Print the list of registered commands
 
-free 
+free
   Get the total size of heap memory available
 
-restart 
+restart
   Restart the program
 
 deep_sleep  [-t <t>] [--io=<n>] [--io_level=<0|1>]
@@ -125,7 +128,7 @@ This is an example of ESP-IDF console component.
 Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
-[esp32]> 
+[esp32]>
 
 ```
 

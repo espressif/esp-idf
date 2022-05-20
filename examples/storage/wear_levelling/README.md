@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Wear levelling example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -36,7 +39,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example output
 
-Here is a typical example console output. 
+Here is a typical example console output.
 
 ```
 I (280) example: Mounting FAT filesystem

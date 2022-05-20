@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Flash Encryption
 
 The example checks if the flash encryption feature is enabled/disabled and if enabled prints the flash encryption mode (DEVELOPMENT / RELEASE) and FLASH_CRYPT_CNT (for ESP32) or SPI_BOOT_CRYPT_CNT (for ESP32-S2 and newer targets) eFuse value.
