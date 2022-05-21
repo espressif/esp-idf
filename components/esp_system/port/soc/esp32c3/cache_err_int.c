@@ -12,10 +12,13 @@
 */
 #include "esp_rom_sys.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "esp_intr_alloc.h"
-#include "soc/extmem_reg.h"
 #include "soc/periph_defs.h"
 #include "riscv/interrupt.h"
+#include "hal/cache_ll.h"
+
+static const char *TAG = "CACHE_ERR";
 
 void esp_cache_err_int_init(void)
 {
@@ -53,36 +56,17 @@ void esp_cache_err_int_init(void)
     esprv_intc_int_set_type(BIT(ETS_CACHEERR_INUM), INTR_TYPE_LEVEL);
     esprv_intc_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
-    /* On the hardware side, stat by clearing all the bits reponsible for
-    * enabling cache access error interrupts.  */
-    SET_PERI_REG_MASK(EXTMEM_CORE0_ACS_CACHE_INT_CLR_REG,
-                      EXTMEM_CORE0_DBUS_WR_IC_INT_CLR |
-                      EXTMEM_CORE0_DBUS_REJECT_INT_CLR |
-                      EXTMEM_CORE0_DBUS_ACS_MSK_IC_INT_CLR |
-                      EXTMEM_CORE0_IBUS_REJECT_INT_CLR |
-                      EXTMEM_CORE0_IBUS_WR_IC_INT_CLR |
-                      EXTMEM_CORE0_IBUS_ACS_MSK_IC_INT_CLR);
-
-    /* Enable these interrupts. */
-    SET_PERI_REG_MASK(EXTMEM_CORE0_ACS_CACHE_INT_ENA_REG,
-                      EXTMEM_CORE0_DBUS_WR_IC_INT_ENA |
-                      EXTMEM_CORE0_DBUS_REJECT_INT_ENA |
-                      EXTMEM_CORE0_DBUS_ACS_MSK_IC_INT_ENA |
-                      EXTMEM_CORE0_IBUS_REJECT_INT_ENA |
-                      EXTMEM_CORE0_IBUS_WR_IC_INT_ENA |
-                      EXTMEM_CORE0_IBUS_ACS_MSK_IC_INT_ENA);
+    ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
+    /* On the hardware side, start by clearing all the bits reponsible for cache access error */
+    cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
+    /* Then enable cache access error interrupts. */
+    cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
 
     /* Same goes for cache illegal error: start by clearing the bits and then
     * set them back. */
-    SET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_CLR_REG,
-                      EXTMEM_MMU_ENTRY_FAULT_INT_CLR |
-                      EXTMEM_ICACHE_PRELOAD_OP_FAULT_INT_CLR |
-                      EXTMEM_ICACHE_SYNC_OP_FAULT_INT_CLR);
-
-    SET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_ENA_REG,
-                      EXTMEM_MMU_ENTRY_FAULT_INT_ENA |
-                      EXTMEM_ICACHE_PRELOAD_OP_FAULT_INT_ENA |
-                      EXTMEM_ICACHE_SYNC_OP_FAULT_INT_ENA);
+    ESP_DRAM_LOGV(TAG, "illegal error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ILG_EVENT_MASK);
+    cache_ll_l1_clear_illegal_error_intr(0, CACHE_LL_L1_ILG_EVENT_MASK);
+    cache_ll_l1_enable_illegal_error_intr(0, CACHE_LL_L1_ILG_EVENT_MASK);
 
     /* Enable the interrupts for cache error. */
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
