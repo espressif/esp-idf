@@ -12,6 +12,9 @@ def deepsleep_test(dut: Dut, case_name: str) -> None:
     if dut.target == 'esp32c3':
         # Known issue: IDF-5003
         dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=40)
+    elif dut.target == 'esp32c2':
+        # Known issue: IDF-5003
+        dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=60)
     else:
         dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=10)
 
