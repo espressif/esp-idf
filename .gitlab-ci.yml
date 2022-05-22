@@ -62,6 +62,7 @@ variables:
   AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test-v5.0:2-1"
   CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis-v5.0:2-1"
   TARGET_TEST_ENV_IMAGE: "$CI_DOCKER_REGISTRY/target-test-env-v5.0:2"
+  QEMU_IMAGE: "${CI_DOCKER_REGISTRY}/qemu-v5.0:2-20210826"
 
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:3"
   LINUX_SHELL_IMAGE: "${CI_DOCKER_REGISTRY}/linux-shells-v5.0:2"
@@ -209,13 +210,15 @@ before_script:
     - fetch_submodules
     - *download_test_python_contraint_file
     - $IDF_PATH/tools/idf_tools.py install-python-env
+    # TODO: remove this, IDFCI-1207
+    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
     - pip install
       "pytest-embedded-serial-esp~=$PYTEST_EMBEDDED_VERSION"
       "pytest-embedded-idf~=$PYTEST_EMBEDDED_VERSION"
+      "pytest-embedded-qemu~=$PYTEST_EMBEDDED_VERSION"
       pytest-rerunfailures
       scapy
       google-api-python-client
-    - cd $IDF_PATH
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 

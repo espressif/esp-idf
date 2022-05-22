@@ -12,11 +12,10 @@ import subprocess
 import sys
 from contextlib import redirect_stdout
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Set
+from typing import TYPE_CHECKING, Any, List, Optional, Set
 
 if TYPE_CHECKING:
     from _pytest.python import Function
-
 
 IDF_PATH = os.path.abspath(
     os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -158,7 +157,7 @@ class PytestCollectPlugin:
 
         return item.callspec.params.get(key, default) or default
 
-    def pytest_collection_modifyitems(self, items: List['Function']) -> None:
+    def pytest_report_collectionfinish(self, items: List['Function']) -> None:
         from pytest_embedded.plugin import parse_multi_dut_args
 
         for item in items:
@@ -195,17 +194,22 @@ class PytestCollectPlugin:
             self.cases.append(PytestCase(case_path, case_name, case_apps))
 
 
-def get_pytest_cases(folder: str, target: str) -> List[PytestCase]:
+def get_pytest_cases(
+    folder: str, target: str, marker_expr: Optional[str] = None
+) -> List[PytestCase]:
     import pytest
     from _pytest.config import ExitCode
 
     collector = PytestCollectPlugin(target)
+    if marker_expr:
+        marker_expr = f'{target} and ({marker_expr})'
+    else:
+        marker_expr = target  # target is also a marker
 
     with io.StringIO() as buf:
         with redirect_stdout(buf):
             res = pytest.main(
-                ['--collect-only', folder, '-q', '--target', target],
-                plugins=[collector],
+                ['--collect-only', folder, '-q', '-m', marker_expr], plugins=[collector]
             )
         if res.value != ExitCode.OK:
             if res.value == ExitCode.NO_TESTS_COLLECTED:
@@ -219,7 +223,9 @@ def get_pytest_cases(folder: str, target: str) -> List[PytestCase]:
     return collector.cases
 
 
-def get_pytest_app_paths(folder: str, target: str) -> Set[str]:
-    cases = get_pytest_cases(folder, target)
+def get_pytest_app_paths(
+    folder: str, target: str, marker_expr: Optional[str] = None
+) -> Set[str]:
+    cases = get_pytest_cases(folder, target, marker_expr)
 
     return set({app.path for case in cases for app in case.apps})

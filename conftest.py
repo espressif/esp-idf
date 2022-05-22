@@ -31,6 +31,7 @@ from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
 from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
+from pytest_embedded_idf.dut import IdfDut
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
 PREVIEW_TARGETS = ['linux', 'esp32h2']
@@ -72,6 +73,23 @@ os.makedirs(_TEST_SESSION_TMPDIR, exist_ok=True)
 @pytest.fixture(scope='session', autouse=True)
 def session_tempdir() -> str:
     return _TEST_SESSION_TMPDIR
+
+
+@pytest.fixture()
+def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
+    def real_func() -> None:
+        res = dut.expect(r'Minimum free heap size: (\d+) bytes')
+        logging.info('\n------ heap size info ------\n'
+                     '[app_name] {}\n'
+                     '[config_name] {}\n'
+                     '[target] {}\n'
+                     '[minimum_free_heap_size] {} Bytes\n'
+                     '------ heap size end ------'.format(os.path.basename(dut.app.app_path),
+                                                          config,
+                                                          dut.target,
+                                                          res.group(1).decode('utf8')))
+
+    return real_func
 
 
 @pytest.fixture
