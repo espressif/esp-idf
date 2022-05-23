@@ -474,7 +474,8 @@ menu "FreeRTOS"
         # Intended to be used as a constant from other Kconfig files.
         # Value is (32-bit) INT_MAX.
         hex
-        default 0x7FFFFFFF
+        default 0x7FFFFFFF if !FREERTOS_SMP
+        default 0xFFFFFFFF if FREERTOS_SMP
 
     config FREERTOS_SUPPORT_STATIC_ALLOCATION
         # Always enabled. Kconfig option preserved for compatibility with code which checked for
