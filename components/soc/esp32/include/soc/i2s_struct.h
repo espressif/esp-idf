@@ -21,8 +21,8 @@ extern "C" {
 #endif
 
 typedef volatile struct i2s_dev_s {
-    uint32_t reserved_0;
-    uint32_t reserved_4;
+    uint32_t fifo_wr;
+    uint32_t fifo_rd;
     union {
         struct {
             uint32_t tx_reset:       1;

@@ -1403,6 +1403,14 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg)
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_FAIL, TAG, "i2s has not installed yet");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->hal_cfg.comm_fmt & I2S_COMM_FORMAT_STAND_PCM_SHORT),
                         ESP_ERR_INVALID_ARG, TAG, "i2s communication mode is not PCM mode");
+
+    if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_TX) {
+        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    }
+    if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_RX) {
+        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+    }
+
     i2s_stop(i2s_num);
     I2S_ENTER_CRITICAL(i2s_num);
     if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_TX) {
@@ -1412,6 +1420,14 @@ esp_err_t i2s_pcm_config(i2s_port_t i2s_num, const i2s_pcm_cfg_t *pcm_cfg)
     }
     I2S_EXIT_CRITICAL(i2s_num);
     i2s_start(i2s_num);
+
+    if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_TX) {
+        xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
+    }
+    if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_RX) {
+        xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
+    }
+
     return ESP_OK;
 }
 #endif
@@ -1437,9 +1453,12 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsampl
 {
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_FAIL, TAG, "i2s has not installed yet");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_PDM), ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
+
+    xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
     i2s_stop(i2s_num);
     i2s_hal_set_rx_pdm_dsr(&(p_i2s[i2s_num]->hal), downsample);
-    // i2s will start in 'i2s_set_clk'
+    i2s_start(i2s_num);
+    xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
     return i2s_set_clk(i2s_num, p_i2s[i2s_num]->hal_cfg.sample_rate, p_i2s[i2s_num]->hal_cfg.sample_bits, p_i2s[i2s_num]->hal_cfg.active_chan);
 }
 #endif
@@ -1462,9 +1481,12 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
 {
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_FAIL, TAG, "i2s has not installed yet");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_PDM), ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
+
+    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
     i2s_stop(i2s_num);
     i2s_hal_set_tx_pdm_fpfs(&(p_i2s[i2s_num]->hal), upsample_cfg->fp, upsample_cfg->fs);
-    // i2s will start in 'i2s_set_clk'
+    i2s_start(i2s_num);
+    xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
     return i2s_set_clk(i2s_num, upsample_cfg->sample_rate, p_i2s[i2s_num]->hal_cfg.sample_bits, p_i2s[i2s_num]->hal_cfg.active_chan);
 }
 #endif
@@ -1568,6 +1590,14 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
     i2s_hal_config_t *cfg = &p_i2s[i2s_num]->hal_cfg;
 
+    /* Acquire the lock before stop i2s, otherwise reading/writing operation will stuck on receiving the message queue from interrupt */
+    if (cfg->mode & I2S_MODE_TX) {
+        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    }
+    if (cfg->mode & I2S_MODE_RX) {
+        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+    }
+
     /* Stop I2S */
     i2s_stop(i2s_num);
 
@@ -1619,14 +1649,10 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         cfg->total_chan = 2;
 #endif
         if (cfg->mode & I2S_MODE_TX) {
-            xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
             i2s_hal_tx_set_channel_style(&(p_i2s[i2s_num]->hal), cfg);
-            xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
         }
         if (cfg->mode & I2S_MODE_RX) {
-            xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
             i2s_hal_rx_set_channel_style(&(p_i2s[i2s_num]->hal), cfg);
-            xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
         }
     }
     uint32_t data_bits = cfg->sample_bits;
@@ -1646,7 +1672,6 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     if (cfg->mode & I2S_MODE_TX) {
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->tx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for transmit finish */
-        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
         i2s_tx_set_clk_and_channel(i2s_num, &clk_cfg);
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
@@ -1659,14 +1684,12 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         }
         /* Reset the queue to avoid receive invalid data */
         xQueueReset(p_i2s[i2s_num]->tx->queue);
-        xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
         ESP_RETURN_ON_ERROR(ret, TAG, "I2S%d tx DMA buffer malloc failed", i2s_num);
     }
     /* RX mode clock reset */
     if (cfg->mode & I2S_MODE_RX) {
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->rx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for receive finish */
-        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
         i2s_rx_set_clk_and_channel(i2s_num, &clk_cfg);
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
@@ -1681,7 +1704,6 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         }
         /* Reset the queue to avoid receiving invalid data */
         xQueueReset(p_i2s[i2s_num]->rx->queue);
-        xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
         ESP_RETURN_ON_ERROR(ret, TAG, "I2S%d rx DMA buffer malloc failed", i2s_num);
     }
     /* Update last buffer size */
@@ -1689,6 +1711,13 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
     /* I2S start */
     i2s_start(i2s_num);
+
+    if (cfg->mode & I2S_MODE_TX) {
+        xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
+    }
+    if (cfg->mode & I2S_MODE_RX) {
+        xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
+    }
 
     return ESP_OK;
 }
