@@ -131,10 +131,9 @@ static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
     if (hw->scl_filter_cfg.en) {
         if (hw->scl_filter_cfg.thres <= 2) {
             scl_high -= 8;
-        } else if (hw->scl_filter_cfg.thres <= 7) {
-            scl_high -= hw->scl_filter_cfg.thres + 6;
         } else {
-            assert(false);
+            assert(hw->scl_filter_cfg.thres <= 7);
+            scl_high -= hw->scl_filter_cfg.thres + 6;
         }
     } else {
         scl_high -= 7;
