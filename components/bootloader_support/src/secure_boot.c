@@ -64,7 +64,7 @@ static esp_err_t secure_boot_v2_check(bool *need_fix)
 {
     esp_err_t err = ESP_OK;
     esp_efuse_block_t block = EFUSE_BLK_SECURE_BOOT;
-#ifndef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+#ifndef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     if (esp_efuse_get_key_dis_read(block)) {
         ESP_LOGE(TAG, "eFuse BLOCK%d should be readable", block);
         abort();
