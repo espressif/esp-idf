@@ -146,7 +146,7 @@ class Directory:
         return None
 
     @staticmethod
-    def _if_end_of_path(path_as_list: List[str]) -> bool:
+    def _is_end_of_path(path_as_list: List[str]) -> bool:
         """
         :param path_as_list: path split into the list
 
@@ -161,7 +161,7 @@ class Directory:
         next_obj = current_dir.lookup_entity(name, extension)
         if next_obj is None:
             raise FileNotFoundError('No such file or directory!')
-        if self._if_end_of_path(path_as_list) and next_obj.name_equals(name, extension):
+        if self._is_end_of_path(path_as_list) and next_obj.name_equals(name, extension):
             return next_obj
         return self.recursive_search(path_as_list[1:], next_obj)
 
@@ -213,8 +213,8 @@ class Directory:
         split_names_reversed = reversed(list(enumerate(split_name_to_lfn_entries(lfn_full_name, entries_count))))
         for i, name_split_to_entry in split_names_reversed:
             order: int = i + 1
-            lfn_names: List[bytes] = list(
-                map(lambda x: x.lower(), split_name_to_lfn_entry_blocks(name_split_to_entry)))  # type: ignore
+            blocks_: List[bytes] = split_name_to_lfn_entry_blocks(name_split_to_entry)
+            lfn_names: List[bytes] = list(map(lambda x: x.lower(), blocks_))
             free_entry.allocate_entry(first_cluster_id=free_cluster.id,
                                       entity_name=name,
                                       entity_extension=extension,

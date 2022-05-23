@@ -44,14 +44,15 @@ def split_name_to_lfn_entry_blocks(name: str) -> List[bytes]:
     characters are set to 0xFFFF.
     E.g.:
     'GFILENAMA.TXT' -> [b'G\x00F\x00I\x00L\x00E\x00', b'N\x00A\x00M\x00A\x00.\x00T\x00', b'X\x00T\x00'];
-    'T' -> [b'T\x00\x00\x00\xff\xff\xff\xff\xff\xff', b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff', b'\xff\xff\xff\xff']
+    'T' -> [b'T\x00\x00\x00\xff\xff\xff\xff\xff\xff', b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff',
+            b'\xff\xff\xff\xff']
 
     Notice that since every character is coded using 2 bytes be must add 0x00 to ASCII symbols ('G' -> 'G\x00', etc.),
     since character 'T' ends in the first block, we must add '\x00\x00' after 'T\x00'.
     """
     max_entry_size: int = Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE + Entry.LDIR_Name2_SIZE
     assert len(name) <= max_entry_size
-    return [
+    blocks_: List[bytes] = [
         convert_to_utf16_and_pad(content=name[:Entry.LDIR_Name1_SIZE],
                                  expected_size=Entry.LDIR_Name1_SIZE),
         convert_to_utf16_and_pad(content=name[Entry.LDIR_Name1_SIZE:Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE],
@@ -59,6 +60,7 @@ def split_name_to_lfn_entry_blocks(name: str) -> List[bytes]:
         convert_to_utf16_and_pad(content=name[Entry.LDIR_Name1_SIZE + Entry.LDIR_Name2_SIZE:],
                                  expected_size=Entry.LDIR_Name3_SIZE)
     ]
+    return blocks_
 
 
 def build_lfn_unique_entry_name_order(entities: list, lfn_entry_name: str) -> int:

@@ -194,9 +194,7 @@ class FatFSGen(unittest.TestCase):
         folder3_ = {
             'type': 'folder',
             'name': 'XYZ2',
-            'content': [
-                self.file_(f'A{i}') for i in range(50)
-            ]
+            'content': [self.file_(f'A{i}') for i in range(50)]
         }
         struct_: dict = {
             'type': 'folder',
@@ -244,9 +242,7 @@ class FatFSGen(unittest.TestCase):
         folder3_ = {
             'type': 'folder',
             'name': 'XYZ2',
-            'content': [
-                self.file_(f'A{i}') for i in range(50)
-            ] + [folder2_]
+            'content': [self.file_(f'A{i}') for i in range(50)] + [folder2_]
         }
 
         struct_: dict = {
@@ -266,6 +262,36 @@ class FatFSGen(unittest.TestCase):
             'testf'
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
+
+    def test_e2e_very_deep_long(self) -> None:
+        folder_ = {
+            'type': 'folder',
+            'name': 'veryveryverylong111',
+            'content': [
+                self.file_('myndewveryverylongfile1.txt', content_=4097 * 'a'),
+                self.file_('mynewveryverylongfile22.txt', content_=2 * 4097 * 'a'),
+                self.file_('mynewveryverylongfile333.txt' * 8),
+                self.file_('mynewveryverylongfile4444.txt' * 8),
+                self.file_('mynewveryverylongfile5555.txt'),
+                self.file_('SHORT.TXT'),
+            ]
+        }
+        struct_: dict = {
+            'type': 'folder',
+            'name': 'testf',
+            'content': [
+                self.file_('mynewveryverylongfile.txt' * 5),
+                folder_,
+            ]
+        }
+        generate_local_folder_structure(struct_, path_='.')
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "fatfsgen.py")}',
+            'testf', '--long_name_support'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', 'fatfs_image.img', '--long-name-support'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
 
 

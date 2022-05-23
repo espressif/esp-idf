@@ -19,8 +19,8 @@ class Entry:
     ATTR_HIDDEN: int = 0x02
     ATTR_SYSTEM: int = 0x04
     ATTR_VOLUME_ID: int = 0x08
-    ATTR_DIRECTORY: int = 0x10
-    ATTR_ARCHIVE: int = 0x20
+    ATTR_DIRECTORY: int = 0x10  # directory
+    ATTR_ARCHIVE: int = 0x20  # file
     ATTR_LONG_NAME: int = ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID
 
     # indexes in the entry structure and sizes in bytes, not in characters (encoded using 2 bytes for lfn)
@@ -35,6 +35,8 @@ class Entry:
     CHARS_PER_ENTRY: int = LDIR_Name1_SIZE + LDIR_Name2_SIZE + LDIR_Name3_SIZE
 
     SHORT_ENTRY: int = -1
+
+    # this value is used for short-like entry but with accepted lower case
     SHORT_ENTRY_LN: int = 0
 
     # The 1st January 1980 00:00:00
@@ -67,6 +69,11 @@ class Entry:
         self._is_alias: bool = False
         self._is_empty: bool = True
 
+    @staticmethod
+    def get_cluster_id(obj_: dict) -> int:
+        cluster_id_: int = obj_['DIR_FstClusLO']
+        return cluster_id_
+
     @property
     def is_empty(self) -> bool:
         return self._is_empty
@@ -82,7 +89,7 @@ class Entry:
         return entry_
 
     @staticmethod
-    def _build_entry_long(names: List[bytes], checksum: int, order: int, is_last: bool, entity_type: int) -> bytes:
+    def _build_entry_long(names: List[bytes], checksum: int, order: int, is_last: bool) -> bytes:
         """
         Long entry starts with 1 bytes of the order, if the entry is the last in the chain it is or-masked with 0x40,
         otherwise is without change (or masked with 0x00). The following example shows 3 entries:
@@ -99,13 +106,25 @@ class Entry:
         order |= (0x40 if is_last else 0x00)
         long_entry: bytes = (Int8ul.build(order) +  # order of the long name entry (possibly masked with 0x40)
                              names[0] +  # first 5 characters (10 bytes) of the name part
-                             Int8ul.build(entity_type) +  # one byte entity type ATTR_LONG_NAME
+                             Int8ul.build(Entry.ATTR_LONG_NAME) +  # one byte entity type ATTR_LONG_NAME
                              Int8ul.build(0) +  # one byte of zeros
                              Int8ul.build(checksum) +  # lfn_checksum defined in utils.py
                              names[1] +  # next 6 characters (12 bytes) of the name part
                              Int16ul.build(0) +  # 2 bytes of zeros
                              names[2])  # last 2 characters (4 bytes) of the name part
         return long_entry
+
+    @staticmethod
+    def parse_entry_long(entry_bytes_: bytes, my_check: int) -> dict:
+        order_ = Int8ul.parse(entry_bytes_[0:1])
+        names0 = entry_bytes_[1:11]
+        if Int8ul.parse(entry_bytes_[12:13]) != 0 or Int16ul.parse(entry_bytes_[26:28]) != 0 or Int8ul.parse(entry_bytes_[11:12]) != 15:
+            return {}
+        if Int8ul.parse(entry_bytes_[13:14]) != my_check:
+            return {}
+        names1 = entry_bytes_[14:26]
+        names2 = entry_bytes_[28:32]
+        return {'order': order_, 'name1': names0, 'name2': names1, 'name3': names2, 'is_last': bool(order_ & 0x40 == 0x40)}
 
     @property
     def entry_bytes(self) -> bytes:
@@ -207,8 +226,7 @@ class Entry:
             self.fatfs_state.binary_image[start_address: end_address] = self._build_entry_long(lfn_names,
                                                                                                lfn_checksum_,
                                                                                                lfn_order,
-                                                                                               lfn_is_last,
-                                                                                               self.ATTR_LONG_NAME)
+                                                                                               lfn_is_last)
 
     def update_content_size(self, content_size: int) -> None:
         """
