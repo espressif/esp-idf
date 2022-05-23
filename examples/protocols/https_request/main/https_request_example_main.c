@@ -85,7 +85,7 @@ extern const uint8_t local_server_cert_pem_start[] asm("_binary_local_server_cer
 extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cert_pem_end");
 
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
-esp_tls_client_session_t *tls_client_session = NULL;
+static esp_tls_client_session_t *tls_client_session = NULL;
 static bool save_client_session = false;
 #endif
 
@@ -110,7 +110,7 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
     /* The TLS session is successfully established, now saving the session ctx for reuse */
     if (save_client_session) {
-        free(tls_client_session);
+        esp_tls_free_client_session(tls_client_session);
         tls_client_session = esp_tls_get_client_session(tls);
     }
 #endif
@@ -220,7 +220,7 @@ static void https_get_request_using_already_saved_session(const char *url)
         .client_session = tls_client_session,
     };
     https_get_request(cfg, url, LOCAL_SRV_REQUEST);
-    free(tls_client_session);
+    esp_tls_free_client_session(tls_client_session);
     save_client_session = false;
     tls_client_session = NULL;
 }
