@@ -125,10 +125,6 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN,
                   (slow_freq == RTC_SLOW_FREQ_32K_XTAL) ? 1 : 0);
 
-    /* The clk_8m_d256 will be closed when rtc_state in SLEEP,
-    so if the slow_clk is 8md256, clk_8m must be force power on
-    */
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU, (slow_freq == RTC_SLOW_FREQ_8MD256) ? 1 : 0);
     esp_rom_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 
