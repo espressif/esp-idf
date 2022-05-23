@@ -1154,8 +1154,8 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsampl
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM), ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
     xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
     i2s_stop(i2s_num);
-    i2s_pdm_rx_slot_config_t *slot_cfg = (i2s_pdm_rx_slot_config_t*)p_i2s[i2s_num];
-    i2s_pdm_rx_clk_config_t *clk_cfg = (i2s_pdm_rx_clk_config_t*)p_i2s[i2s_num];
+    i2s_pdm_rx_slot_config_t *slot_cfg = (i2s_pdm_rx_slot_config_t*)p_i2s[i2s_num]->slot_cfg;
+    i2s_pdm_rx_clk_config_t *clk_cfg = (i2s_pdm_rx_clk_config_t*)p_i2s[i2s_num]->clk_cfg;
     clk_cfg->dn_sample_mode = downsample;
     i2s_ll_rx_set_pdm_dsr(p_i2s[i2s_num]->hal.dev, downsample);
     i2s_start(i2s_num);
