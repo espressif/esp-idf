@@ -217,7 +217,6 @@ tools/idf_py_actions/create_ext.py
 tools/idf_py_actions/debug_ext.py
 tools/idf_py_actions/dfu_ext.py
 tools/idf_py_actions/errors.py
-tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
