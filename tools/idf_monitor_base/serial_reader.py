@@ -76,6 +76,10 @@ class SerialReader(Reader):
                     while self.alive:  # so that exiting monitor works while waiting
                         try:
                             time.sleep(RECONNECT_DELAY)
+                            if not self.reset:
+                                self.serial.dtr = low      # Non reset state
+                                self.serial.rts = high     # IO0=HIGH
+                                self.serial.dtr = self.serial.dtr   # usbser.sys workaround
                             self.serial.open()
                             break  # device connected
                         except serial.serialutil.SerialException:
