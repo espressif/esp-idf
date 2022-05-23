@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/efuse_reg.h"
@@ -54,7 +55,7 @@ static void example_print_chip_info(void)
 
 static void example_secure_boot_status(void)
 {
-    ets_secure_boot_key_digests_t trusted_keys = { 0};
+    esp_secure_boot_key_digests_t trusted_keys = { 0};
 
     ESP_LOGI(TAG, "Checking for Secure Boot..");
     if(esp_secure_boot_enabled()) {
@@ -62,7 +63,7 @@ static void example_secure_boot_status(void)
         ESP_ERROR_CHECK( esp_secure_boot_read_key_digests(&trusted_keys) );
 
         unsigned total = 0;
-        for (int i = 0; i < MAX_KEY_DIGESTS; i++) {
+        for (int i = 0; i < SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS; i++) {
             ESP_LOGI(TAG, "Key slot %d:", i);
             if (trusted_keys.key_digests[i]) {
                 ESP_LOG_BUFFER_HEXDUMP("trusted key", trusted_keys.key_digests[i], DIGEST_LEN, ESP_LOG_INFO);

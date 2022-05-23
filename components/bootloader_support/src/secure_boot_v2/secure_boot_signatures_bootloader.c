@@ -10,6 +10,7 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
+#include "bootloader_signature.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
@@ -66,19 +67,19 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
 static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t *public_key_digests)
 {
     // Read key digests from efuse
-    ets_secure_boot_key_digests_t trusted_keys;
-    ets_secure_boot_key_digests_t trusted_key_copies[2];
+    esp_secure_boot_key_digests_t trusted_keys;
+    esp_secure_boot_key_digests_t trusted_key_copies[2];
 
-    memset(&trusted_keys, 0, sizeof(ets_secure_boot_key_digests_t));
-    memset(trusted_key_copies, 0, 2 * sizeof(ets_secure_boot_key_digests_t));
+    memset(&trusted_keys, 0, sizeof(esp_secure_boot_key_digests_t));
+    memset(trusted_key_copies, 0, 2 * sizeof(esp_secure_boot_key_digests_t));
 
     esp_err_t err = esp_secure_boot_read_key_digests(&trusted_keys);
 
     // Create the copies for FI checks (assuming result is ETS_OK, if it's not then it'll fail the fault check anyhow)
     esp_secure_boot_read_key_digests(&trusted_key_copies[0]);
     esp_secure_boot_read_key_digests(&trusted_key_copies[1]);
-    ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[0], sizeof(ets_secure_boot_key_digests_t)) == 0);
-    ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[1], sizeof(ets_secure_boot_key_digests_t)) == 0);
+    ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[0], sizeof(esp_secure_boot_key_digests_t)) == 0);
+    ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[1], sizeof(esp_secure_boot_key_digests_t)) == 0);
 
     if (err == ESP_OK) {
         for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {

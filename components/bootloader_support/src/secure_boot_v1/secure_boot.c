@@ -11,6 +11,7 @@
 #include "esp_log.h"
 
 #include "esp32/rom/cache.h"
+#include "esp32/rom/secure_boot.h"
 
 #include "soc/rtc_periph.h"
 #include "bootloader_utility.h"

@@ -7,6 +7,7 @@
 #include <sys/param.h>
 #include <esp_cpu.h>
 #include <bootloader_utility.h>
+#include <bootloader_signature.h>
 #include <esp_secure_boot.h>
 #include <esp_fault.h>
 #include <esp_log.h>

@@ -14,6 +14,8 @@
 #include "mbedtls/ecp.h"
 #include "rom/ecdsa.h"
 
+#include "secure_boot_signature_priv.h"
+
 static const char *TAG = "secure_boot_v2_ecdsa";
 
 #define ECDSA_INTEGER_LEN 32

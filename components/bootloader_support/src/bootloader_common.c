@@ -189,11 +189,6 @@ void bootloader_common_vddsdio_configure(void)
 #endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
 }
 
-RESET_REASON bootloader_common_get_reset_reason(int cpu_no)
-{
-    return (RESET_REASON)esp_rom_get_reset_reason(cpu_no);
-}
-
 uint8_t bootloader_flash_get_cs_io(void)
 {
 #if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
