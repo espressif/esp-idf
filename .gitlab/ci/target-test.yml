@@ -91,6 +91,56 @@ example_test_pytest_esp32_ethernet_ota:
     TARGET: ESP32
     ENV_MARKER: ethernet_ota
 
+example_test_pytest_esp32_wifi_ota:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: wifi_ota
+
+example_test_pytest_esp32_flash_encryption_ota:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: flash_encryption_ota
+
+example_test_pytest_esp32c3_flash_encryption_wifi_ota:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_esp32c3
+  variables:
+    TARGET: ESP32C3
+    ENV_MARKER: flash_encryption_wifi_ota
+
+example_test_pytest_esp32_ethernet:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ethernet
+
+example_test_pytest_esp32_8mb_flash:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ethernet_flash_8m
+
 example_test_pytest_esp32_wifi:
   extends:
     - .pytest_examples_dir_template
