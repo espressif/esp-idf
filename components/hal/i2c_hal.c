@@ -152,7 +152,7 @@ void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal)
     i2c_ll_slave_disable_rx_it(hal->dev);
 }
 
-void i2c_hal_slave_init(i2c_hal_context_t *hal, int i2c_num)
+void i2c_hal_slave_init(i2c_hal_context_t *hal, i2c_port_t i2c_num)
 {
     i2c_ll_slave_init(hal->dev);
     //Use fifo mode
@@ -183,7 +183,7 @@ void i2c_hal_master_fsm_rst(i2c_hal_context_t *hal)
     i2c_ll_master_fsm_rst(hal->dev);
 }
 
-void i2c_hal_master_init(i2c_hal_context_t *hal, int i2c_num)
+void i2c_hal_master_init(i2c_hal_context_t *hal, i2c_port_t i2c_num)
 {
     hal->version = i2c_ll_get_hw_version(hal->dev);
     i2c_ll_master_init(hal->dev);

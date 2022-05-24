@@ -105,6 +105,14 @@ static const char *I2C_TAG = "i2c";
 
 #define I2C_CLOCK_INVALID                 (-1)
 
+/**
+ * I2C bus are defined in the header files, let's check that the values are correct
+ */
+#if SOC_I2C_NUM >= 2
+_Static_assert(I2C_NUM_1 == 1, "I2C_NUM_1 must be equal to 1");
+#endif // SOC_I2C_NUM >= 2
+_Static_assert(I2C_NUM_MAX == SOC_I2C_NUM, "I2C_NUM_MAX must be equal to SOC_I2C_NUM");
+
 typedef struct {
     i2c_hw_cmd_t hw_cmd;
     union {
@@ -193,7 +201,9 @@ typedef struct
 
 static i2c_context_t i2c_context[I2C_NUM_MAX] = {
     I2C_CONTEX_INIT_DEF(I2C_NUM_0),
-#if I2C_NUM_MAX > 1
+/* Now that I2C_NUM_MAX is part of an enum (i2c_port_t), we cannot use
+ * it anomore in the preprocessor! */
+#if SOC_I2C_NUM > 1
     I2C_CONTEX_INIT_DEF(I2C_NUM_1),
 #endif
 };
