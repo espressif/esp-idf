@@ -48,34 +48,37 @@ if(NOT BOOTLOADER_BUILD)
         add_dependencies(flash blank_ota_data)
         add_dependencies(encrypted-flash blank_ota_data)
 
-        set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
+        set(otatool_py "${python}" "${COMPONENT_DIR}/otatool.py")
 
-        set(esptool_args "--esptool-args;before=${CONFIG_ESPTOOLPY_BEFORE};after=${CONFIG_ESPTOOLPY_AFTER}")
-        set(otatool_args "--partition-table-file;${PARTITION_CSV_PATH}"
-                         "--partition-table-offset;${PARTITION_TABLE_OFFSET}")
+        set(esptool_args --esptool-args before=${CONFIG_ESPTOOLPY_BEFORE} after=${CONFIG_ESPTOOLPY_AFTER})
+        set(otatool_args --partition-table-file ${PARTITION_CSV_PATH})
+        list(APPEND otatool_args --partition-table-offset ${PARTITION_TABLE_OFFSET})
+
         idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
         add_custom_target(read-otadata DEPENDS "${PARTITION_CSV_PATH}"
             COMMAND ${CMAKE_COMMAND}
-            -D IDF_PATH="${idf_path}"
-            -D SERIAL_TOOL="${otatool_py}"
-            -D SERIAL_TOOL_ARGS="${esptool_args};${otatool_args};read_otadata"
-            -D WORKING_DIRECTORY="${build_dir}"
+            -D "IDF_PATH=${idf_path}"
+            -D "SERIAL_TOOL=${otatool_py}"
+            -D "SERIAL_TOOL_ARGS=${esptool_args};${otatool_args};read_otadata"
+            -D "WORKING_DIRECTORY=${build_dir}"
             -P ${esptool_py_dir}/run_serial_tool.cmake
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            WORKING_DIRECTORY "${build_dir}"
             USES_TERMINAL
+            VERBATIM
             )
         add_deprecated_target_alias(read_otadata read-otadata)
 
         add_custom_target(erase-otadata DEPENDS "${PARTITION_CSV_PATH}"
             COMMAND ${CMAKE_COMMAND}
-            -D IDF_PATH="${idf_path}"
-            -D SERIAL_TOOL="${otatool_py}"
-            -D SERIAL_TOOL_ARGS="${esptool_args};${otatool_args};erase_otadata"
-            -D WORKING_DIRECTORY="${build_dir}"
+            -D "IDF_PATH=${idf_path}"
+            -D "SERIAL_TOOL=${otatool_py}"
+            -D "SERIAL_TOOL_ARGS=${esptool_args};${otatool_args};erase_otadata"
+            -D "WORKING_DIRECTORY=${build_dir}"
             -P ${esptool_py_dir}/run_serial_tool.cmake
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            WORKING_DIRECTORY "${build_dir}"
             USES_TERMINAL
+            VERBATIM
             )
         add_deprecated_target_alias(erase_otadata erase-otadata)
 
