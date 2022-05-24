@@ -805,7 +805,7 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
-            select PARTITION_TABLE_MD5 if !ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            select PARTITION_TABLE_MD5 if !APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
 
     endchoice
 

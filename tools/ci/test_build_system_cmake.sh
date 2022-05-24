@@ -518,7 +518,7 @@ function run_tests()
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -r build sdkconfig
-    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
+    echo "CONFIG_SPIRAM=y" >> sdkconfig.defaults
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
     # note: we do 'reconfigure' here, as we just need to run cmake
     idf.py -C $IDF_PATH/examples/build_system/cmake/import_lib -B `pwd`/build -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults" reconfigure
@@ -529,7 +529,7 @@ function run_tests()
     print_status "Test for external libraries in custom CMake projects with ESP-IDF components linked"
     mkdir build
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
-    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > $IDF_AS_LIB/sdkconfig
+    echo "CONFIG_SPIRAM=y" > $IDF_AS_LIB/sdkconfig
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> $IDF_AS_LIB/sdkconfig
     # note: we just need to run cmake
     (cd build && cmake $IDF_AS_LIB -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)
@@ -540,7 +540,7 @@ function run_tests()
         print_status "Test for external libraries in custom CMake projects with PSRAM strategy $strat"
         rm -r build sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
         stratlc=`echo $strat | tr A-Z a-z`
-        echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > sdkconfig.defaults
+        echo "CONFIG_SPIRAM=y" > sdkconfig.defaults
         echo "CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_$strat=y"  >> sdkconfig.defaults
         echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
         # note: we do 'reconfigure' here, as we just need to run cmake
@@ -899,15 +899,15 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     print_status "Getting component overriden dir"
     clean_build_dir
-    mkdir -p components/esp32
-    echo "idf_component_get_property(overriden_dir \${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)" >> components/esp32/CMakeLists.txt
-    echo "message(STATUS overriden_dir:\${overriden_dir})" >> components/esp32/CMakeLists.txt
-    (idf.py reconfigure | grep "overriden_dir:$IDF_PATH/components/esp32") || failure  "Failed to get overriden dir" # no registration, overrides registration as well
+    mkdir -p components/hal
+    echo "idf_component_get_property(overriden_dir \${COMPONENT_NAME} COMPONENT_OVERRIDEN_DIR)" >> components/hal/CMakeLists.txt
+    echo "message(STATUS overriden_dir:\${overriden_dir})" >> components/hal/CMakeLists.txt
+    (idf.py reconfigure | grep "overriden_dir:$IDF_PATH/components/hal") || failure  "Failed to get overriden dir" # no registration, overrides registration as well
     print_status "Overriding Kconfig"
-    echo "idf_component_register(KCONFIG \${overriden_dir}/Kconfig)" >> components/esp32/CMakeLists.txt
-    echo "idf_component_get_property(kconfig \${COMPONENT_NAME} KCONFIG)" >> components/esp32/CMakeLists.txt
-    echo "message(STATUS kconfig:\${overriden_dir}/Kconfig)" >> components/esp32/CMakeLists.txt
-    (idf.py reconfigure | grep "kconfig:$IDF_PATH/components/esp32/Kconfig") || failure  "Failed to verify original `main` directory"
+    echo "idf_component_register(KCONFIG \${overriden_dir}/Kconfig)" >> components/hal/CMakeLists.txt
+    echo "idf_component_get_property(kconfig \${COMPONENT_NAME} KCONFIG)" >> components/hal/CMakeLists.txt
+    echo "message(STATUS kconfig:\${overriden_dir}/Kconfig)" >> components/hal/CMakeLists.txt
+    (idf.py reconfigure | grep "kconfig:$IDF_PATH/components/hal/Kconfig") || failure  "Failed to verify original `main` directory"
     rm -rf components
 
     print_status "Project components prioritized over EXTRA_COMPONENT_DIRS"

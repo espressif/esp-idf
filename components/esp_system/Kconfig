@@ -3,6 +3,12 @@ menu "ESP System Settings"
     # Insert chip-specific cpu config
     rsource "./port/soc/$IDF_TARGET/Kconfig.cpu"
 
+    orsource "./port/soc/$IDF_TARGET/Kconfig.cache"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.memory"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.tracemem"
+
     choice ESP_SYSTEM_PANIC
         prompt "Panic handler behaviour"
         default ESP_SYSTEM_PANIC_PRINT_REBOOT
@@ -377,8 +383,8 @@ menu "ESP System Settings"
     config ESP_INT_WDT_TIMEOUT_MS
         int "Interrupt watchdog timeout (ms)"
         depends on ESP_INT_WDT
-        default 300 if !ESP32_SPIRAM_SUPPORT
-        default 800 if ESP32_SPIRAM_SUPPORT
+        default 300 if !(SPIRAM && IDF_TARGET_ESP32)
+        default 800 if (SPIRAM && IDF_TARGET_ESP32)
         range 10 10000
         help
             The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.

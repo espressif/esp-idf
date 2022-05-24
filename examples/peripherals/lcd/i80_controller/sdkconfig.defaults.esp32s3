@@ -1,4 +1,4 @@
-CONFIG_ESP32S3_SPIRAM_SUPPORT=y
+CONFIG_SPIRAM=y
 CONFIG_SPIRAM_SPEED_80M=y
 # Can't set the FPS too high due to the limitation of PSRAM bandwidth
 CONFIG_LV_DISP_DEF_REFR_PERIOD=100
