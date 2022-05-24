@@ -170,4 +170,15 @@ api-reference/protocols/esp_tls
 api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
-security/flash-encryption
+get-started/establish-serial-connection
+get-started/macos-setup-scratch
+get-started/vscode-setup
+get-started/linux-setup-scratch
+get-started/eclipse-setup
+get-started/windows-setup
+get-started/toolchain-setup-scratch
+get-started/windows-setup-scratch
+get-started/linux-setup
+get-started/index
+get-started/windows-setup-update
+get-started/macos-setup
