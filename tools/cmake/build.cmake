@@ -401,6 +401,15 @@ macro(idf_build_process target)
 
     idf_build_set_property(IDF_TARGET ${target})
 
+    if("${target}" STREQUAL "esp32" OR "${target}" STREQUAL "esp32s2" OR "${target}" STREQUAL "esp32s3")
+        idf_build_set_property(IDF_TARGET_ARCH "xtensa")
+    elseif("${target}" STREQUAL "linux")
+        # No arch specified for linux host builds at the moment
+        idf_build_set_property(IDF_TARGET_ARCH "")
+    else()
+        idf_build_set_property(IDF_TARGET_ARCH "riscv")
+    endif()
+
     __build_set_default(PROJECT_DIR ${CMAKE_SOURCE_DIR})
     __build_set_default(PROJECT_NAME ${CMAKE_PROJECT_NAME})
     __build_set_default(PROJECT_VER 1)
@@ -415,9 +424,11 @@ macro(idf_build_process target)
     __build_check_python()
 
     idf_build_get_property(target IDF_TARGET)
+    idf_build_get_property(arch IDF_TARGET_ARCH)
 
     if(NOT "${target}" STREQUAL "linux")
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
+        idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${arch} APPEND)
     endif()
 
     # Call for component manager to download dependencies for all components
