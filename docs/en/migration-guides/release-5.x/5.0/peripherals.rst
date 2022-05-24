@@ -527,6 +527,65 @@ LCD
 
     The deprecated ``CAN`` peripheral driver is removed. Please use ``TWAI`` driver instead (i.e. include ``driver/twai.h`` in your application).
 
+.. only:: SOC_DAC_SUPPORTED
+
+    DAC
+    ---
+
+    DAC driver has been redesigned (see :doc:`DAC API Reference <../api-reference/peripherals/dac>`), which aims to unify and extend the usage of DAC peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/dac.h``. However, by default, including ``driver/dac.h`` will bring a build warning like `The legacy DAC driver is deprecated, please use driver/dac_driver.h instead`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_DAC_SUPPRESS_DEPRECATE_WARN`.
+
+    The major breaking changes in concept and usage are listed as follows:
+
+    .. only:: esp32
+
+        Breaking Changes in Concepts
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        - ``dac_channel_t`` which used to identify the hardware channel are removed from user space, the channel index now starts from ``0``, please use  `DAC_CHAN_0` and `DAC_CHAN_1` instead. And in the new driver, DAC channels can be seleted by :cpp:type:`dac_channel_mask_t`. And these channels can be allocated in a same channel group which is represented by :cpp:type:`dac_channels_handle_t`.
+        - ``dac_cw_scale_t`` is replaced by :cpp:type:`dac_cosine_scale_t`, to decupling the legacy driver and the new driver.
+        - ``dac_cw_phase_t`` is replaced by :cpp:type:`dac_cosine_phase_t`, the enum value is now the phase angle directly.
+        - ``dac_cw_config_t`` is replaced by :cpp:type:`dac_cosine_config_t`, but the ``en_ch`` field is removed because it should be specify while allocate the channel group.
+
+        Breaking Changes in Usage
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        - ``dac_pad_get_io_num`` is removed.
+        - ``dac_output_voltage`` is replaced by :cpp:func:`dac_channels_set_voltage`.
+        - ``dac_output_enable`` is replaced by :cpp:func:`dac_channels_enable`.
+        - ``dac_output_disable`` is replaced by :cpp:func:`dac_channels_disable`.
+        - ``dac_cw_generator_enable`` is replaced by :cpp:func:`dac_channels_start_cosine_output`, but it need to initialize the DAC channel group to cosine mode first by :cpp:func:`dac_channels_start_cosine_output`, and :cpp:func:`dac_channels_enable` should be called as well.
+        - ``dac_cw_generator_disable`` is replaced by :cpp:func:`dac_channels_stop_cosine_output`, it is also only allowed to be called under cosine mode.
+        - ``dac_cw_generator_config`` is replaced by :cpp:func:`dac_channels_init_cosine_mode`, when it is called, the driver will work at cosine mode.
+        - ``dac_i2s_enable`` is replaced by :cpp:func:`dac_channels_enable_continuous_mode`, but it need to initialize the DAC channel group to DMA mode first by :cpp:func:`dac_channels_init_continuous_mode`, and :cpp:func:`dac_channels_enable` should be called as well.
+        - ``dac_i2s_disable`` is replaced by :cpp:func:`dac_channels_disable_continuous_mode`, it is also only allowed to be called under DMA mode.
+
+    .. only:: esp32s2
+
+        Breaking Changes in Concepts
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        - ``dac_channel_t`` which used to identify the hardware channel are removed from user space, the channel index now starts from ``0``, please use  `DAC_CHAN_0` and `DAC_CHAN_1` instead. And in the new driver, DAC channels can be seleted by :cpp:type:`dac_channel_mask_t`. And these channels can be allocated in a same channel group which is represented by :cpp:type:`dac_channels_handle_t`.
+        - ``dac_cw_scale_t`` is replaced by :cpp:type:`dac_cosine_scale_t`, to decupling the legacy driver and the new driver.
+        - ``dac_cw_phase_t`` is replaced by :cpp:type:`dac_cosine_phase_t`, the enum value is now the phase angle directly.
+        - ``dac_digi_convert_mode_t`` is removed. The driver now can transmit DMA data in different ways by calling :cpp:func:`dac_channels_write_continuously` or :cpp:func:`dac_channels_write_cyclically`.
+        - ``dac_cw_config_t`` is replaced by :cpp:type:`dac_cosine_config_t`, but the ``en_ch`` field is removed because it should be specify while allocate the channel group.
+        - ``dac_digi_config_t`` is replaced by :cpp:type:`dac_conti_config_t`.
+
+        Breaking Changes in Usage
+        ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        - ``dac_pad_get_io_num`` is removed.
+        - ``dac_output_voltage`` is replaced by :cpp:func:`dac_channels_set_voltage`.
+        - ``dac_output_enable`` is replaced by :cpp:func:`dac_channels_enable`.
+        - ``dac_output_disable`` is replaced by :cpp:func:`dac_channels_disable`.
+        - ``dac_cw_generator_enable`` is replaced by :cpp:func:`dac_channels_start_cosine_output`, but it need to initialize the DAC channel group to cosine mode first by :cpp:func:`dac_channels_start_cosine_output`, and :cpp:func:`dac_channels_enable` should be called as well.
+        - ``dac_cw_generator_disable`` is replaced by :cpp:func:`dac_channels_stop_cosine_output`, it is also only allowed to be called under cosine mode.
+        - ``dac_cw_generator_config`` is replaced by :cpp:func:`dac_channels_init_cosine_mode`, when it is called, the driver will work at cosine mode.
+        - ``dac_digi_init`` and ``dac_digi_controller_config`` is merged into :cpp:func:`dac_channels_init_continuous_mode`.
+        - ``dac_digi_deinit`` is replaced by :cpp:func:`dac_channels_deinit_continuous_mode`.
+        - ``dac_digi_start``, ``dac_digi_fifo_reset`` and ``dac_digi_reset`` are merged into :cpp:func:`dac_channels_enable_continuous_mode`.
+        - ``dac_digi_stop`` is replaced by :cpp:func:`dac_channels_disable_continuous_mode`.
+
 Register Access Macros
 ----------------------
 

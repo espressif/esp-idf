@@ -1,5 +1,13 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/driver/test_apps/dac_test_apps/dac:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+
+components/driver/test_apps/dac_test_apps/legacy_dac_driver:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+
 components/driver/test_apps/i2s_test_apps:
   disable:
     - if: SOC_I2S_SUPPORTED != 1

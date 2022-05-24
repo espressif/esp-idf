@@ -1,4 +1,4 @@
-idf_component_register(SRC_DIRS . param_test dac_dma_test
+idf_component_register(SRC_DIRS . param_test
                        PRIV_INCLUDE_DIRS include param_test/include
                        PRIV_REQUIRES cmock test_utils driver nvs_flash
                                      esp_timer esp_adc esp_event esp_wifi)

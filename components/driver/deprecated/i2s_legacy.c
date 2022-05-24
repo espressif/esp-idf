@@ -26,7 +26,8 @@
 #include "driver/i2s_types_legacy.h"
 #include "hal/i2s_hal.h"
 #if SOC_I2S_SUPPORTS_DAC
-#include "driver/dac.h"
+#include "hal/dac_ll.h"
+#include "hal/dac_types.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "adc1_private.h"
 #include "driver/adc_i2s_legacy.h"
@@ -836,20 +837,22 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
 {
     ESP_RETURN_ON_FALSE((dac_mode < I2S_DAC_CHANNEL_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s dac mode error");
     if (dac_mode == I2S_DAC_CHANNEL_DISABLE) {
-        dac_output_disable(DAC_CHANNEL_1);
-        dac_output_disable(DAC_CHANNEL_2);
-        dac_i2s_disable();
+        dac_ll_power_down(DAC_CHAN_0);
+        dac_ll_power_down(DAC_CHAN_1);
+        dac_ll_digi_enable_dma(false);
     } else {
-        dac_i2s_enable();
+        dac_ll_digi_enable_dma(true);
     }
 
     if (dac_mode & I2S_DAC_CHANNEL_RIGHT_EN) {
         //DAC1, right channel
-        dac_output_enable(DAC_CHANNEL_1);
+        dac_ll_power_on(DAC_CHAN_0);
+        dac_ll_rtc_sync_by_adc(false);
     }
     if (dac_mode & I2S_DAC_CHANNEL_LEFT_EN) {
         //DAC2, left channel
-        dac_output_enable(DAC_CHANNEL_2);
+        dac_ll_power_on(DAC_CHAN_1);
+        dac_ll_rtc_sync_by_adc(false);
     }
     return ESP_OK;
 }

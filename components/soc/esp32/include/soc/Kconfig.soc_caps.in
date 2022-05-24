@@ -251,6 +251,10 @@ config SOC_DAC_RESOLUTION
     int
     default 8
 
+config SOC_DAC_DMA_16BIT_ALIGN
+    bool
+    default y
+
 config SOC_GPIO_PORT
     int
     default 1

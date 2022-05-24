@@ -401,6 +401,14 @@ menu "Driver Configurations"
 
     menu "DAC Configuration"
         depends on SOC_DAC_SUPPORTED
+        config DAC_CTRL_FUNC_IN_IRAM
+            bool "Place DAC control functions into IRAM"
+            default n
+            help
+                Place 'dac_channels_set_voltage' function into IRAM,
+                so that this function can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
         config DAC_ISR_IRAM_SAFE
             bool "DAC ISR IRAM-Safe"
             default n
@@ -422,6 +430,19 @@ menu "Driver Configurations"
             help
                 Wether to enable the debug log message for DAC driver.
                 Note that, this option only controls the DAC driver log, won't affect other drivers.
+
+        config DAC_DMA_AUTO_16BIT_ALIGN
+            bool "Align the continuous data to 16 bit automatically"
+            depends on IDF_TARGET_ESP32
+            default y
+            help
+                Whether to left shift the continuous data to align every bytes to 16 bits in the driver.
+                On ESP32, although the DAC resolution is only 8 bits,
+                the hardware requires 16 bits data in continuous mode.
+                By enabling this option, the driver will left shift 8 bits for the input data automatically.
+                Only disable this option when you decide to do this step by yourself.
+                Note that the driver will allocate a new piece of memory to save the converted data.
+
     endmenu # DAC Configuration
 
 endmenu  # Driver configurations

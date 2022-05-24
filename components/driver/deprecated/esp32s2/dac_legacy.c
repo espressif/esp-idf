@@ -6,17 +6,13 @@
 
 
 #include <string.h>
-#include "esp_log.h"
-#include "esp_err.h"
+#include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "driver/dac_types_legacy.h"
+#include "hal/adc_ll.h"
+#include "hal/dac_ll.h"
 #include "esp_check.h"
 #include "esp_pm.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/timers.h"
-#include "driver/rtc_io.h"
-#include "driver/dac.h"
-#include "soc/dac_periph.h"
-#include "hal/dac_hal.h"
 
 static __attribute__((unused)) const char *TAG = "DAC";
 
@@ -35,7 +31,7 @@ static esp_pm_lock_handle_t s_dac_digi_lock = NULL;
 esp_err_t dac_digi_init(void)
 {
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_init();
+    dac_ll_digi_clk_inv(true);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -50,7 +46,10 @@ esp_err_t dac_digi_deinit(void)
     }
 #endif
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_deinit();
+    dac_ll_digi_trigger_output(false);
+    dac_ll_digi_enable_dma(false);
+    dac_ll_digi_fifo_reset();
+    dac_ll_digi_reset();
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -80,7 +79,10 @@ esp_err_t dac_digi_controller_config(const dac_digi_config_t *cfg)
 #endif //CONFIG_PM_ENABLE
 
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_controller_config(cfg);
+    dac_ll_digi_set_convert_mode(cfg->mode == DAC_CONV_ALTER);
+    dac_ll_digi_set_trigger_interval(cfg->interval);
+    adc_ll_digi_controller_clk_div(cfg->dig_clk.div_num, cfg->dig_clk.div_b, cfg->dig_clk.div_a);
+    adc_ll_digi_clk_sel(cfg->dig_clk.use_apll);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -93,7 +95,8 @@ esp_err_t dac_digi_start(void)
     esp_pm_lock_acquire(s_dac_digi_lock);
 #endif
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_start();
+    dac_ll_digi_enable_dma(true);
+    dac_ll_digi_trigger_output(true);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -107,7 +110,8 @@ esp_err_t dac_digi_stop(void)
     }
 #endif
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_stop();
+    dac_ll_digi_trigger_output(false);
+    dac_ll_digi_enable_dma(false);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -116,7 +120,7 @@ esp_err_t dac_digi_stop(void)
 esp_err_t dac_digi_fifo_reset(void)
 {
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_fifo_reset();
+    dac_ll_digi_fifo_reset();
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -125,7 +129,7 @@ esp_err_t dac_digi_fifo_reset(void)
 esp_err_t dac_digi_reset(void)
 {
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_reset();
+    dac_ll_digi_reset();
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;

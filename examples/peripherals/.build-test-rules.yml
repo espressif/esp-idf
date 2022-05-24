@@ -6,6 +6,22 @@ examples/peripherals/adc/continuous_read:
       temporary: true
       reason: adc dma mode isn't supported on these targets
 
+examples/peripherals/dac/dac_audio:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+
+examples/peripherals/dac/dac_basic:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+
+examples/peripherals/dac/dac_continuous:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+
+examples/peripherals/dac/dac_cosine_wave:
+  disable:
+    - if: SOC_DAC_SUPPORTED != 1
+
 examples/peripherals/gpio/generic_gpio:
   disable_test:
     - if: IDF_TARGET != "esp32"

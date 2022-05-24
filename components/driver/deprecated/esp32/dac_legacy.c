@@ -5,16 +5,9 @@
  */
 
 
-#include <string.h>
-#include "esp_log.h"
-#include "esp_err.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/timers.h"
-#include "driver/rtc_io.h"
-#include "driver/dac.h"
-#include "soc/dac_periph.h"
-#include "hal/dac_hal.h"
+#include "hal/dac_ll.h"
+#include "esp_err.h"
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 #define DAC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
@@ -27,7 +20,7 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 esp_err_t dac_i2s_enable(void)
 {
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_enable_dma(true);
+    dac_ll_digi_enable_dma(true);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -36,7 +29,7 @@ esp_err_t dac_i2s_enable(void)
 esp_err_t dac_i2s_disable(void)
 {
     DAC_ENTER_CRITICAL();
-    dac_hal_digi_enable_dma(false);
+    dac_ll_digi_enable_dma(false);
     DAC_EXIT_CRITICAL();
 
     return ESP_OK;

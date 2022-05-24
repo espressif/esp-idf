@@ -61,7 +61,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/include/driver/dac_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
@@ -178,7 +177,6 @@ INPUT = \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
     $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \

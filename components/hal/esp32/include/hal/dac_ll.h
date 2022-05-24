@@ -23,6 +23,9 @@
 extern "C" {
 #endif
 
+#define DAC_LL_CW_PHASE_0       0x02
+#define DAC_LL_CW_PHASE_180     0x03
+
 /**
  * Power on dac module and start output voltage.
  *
@@ -55,10 +58,10 @@ static inline void dac_ll_power_down(dac_channel_t channel)
  */
 static inline void dac_ll_update_output_value(dac_channel_t channel, uint8_t value)
 {
-    if (channel == DAC_CHANNEL_1) {
+    if (channel == DAC_CHAN_0) {
         SENS.sar_dac_ctrl2.dac_cw_en1 = 0;
         HAL_FORCE_MODIFY_U32_REG_FIELD(RTCIO.pad_dac[channel], dac, value);
-    } else if (channel == DAC_CHANNEL_2) {
+    } else if (channel == DAC_CHAN_1) {
         SENS.sar_dac_ctrl2.dac_cw_en2 = 0;
         HAL_FORCE_MODIFY_U32_REG_FIELD(RTCIO.pad_dac[channel], dac, value);
     }
@@ -103,9 +106,9 @@ static inline void dac_ll_cw_generator_disable(void)
  */
 static inline void dac_ll_cw_set_channel(dac_channel_t channel, bool enable)
 {
-    if (channel == DAC_CHANNEL_1) {
+    if (channel == DAC_CHAN_0) {
         SENS.sar_dac_ctrl2.dac_cw_en1 = enable;
-    } else if (channel == DAC_CHANNEL_2) {
+    } else if (channel == DAC_CHAN_1) {
         SENS.sar_dac_ctrl2.dac_cw_en2 = enable;
     }
 }
@@ -114,11 +117,12 @@ static inline void dac_ll_cw_set_channel(dac_channel_t channel, bool enable)
  * Set frequency of cosine wave generator output.
  *
  * @note We know that CLK8M is about 8M, but don't know the actual value. so this freq have limited error.
- * @param freq_hz CW generator frequency. Range: 130(130Hz) ~ 55000(100KHz).
+ * @param freq_hz CW generator frequency. Range: 130(130Hz)
+ * @param rtc8m_freq the calibrated RTC 8M clock frequency
  */
-static inline void dac_ll_cw_set_freq(uint32_t freq)
+static inline void dac_ll_cw_set_freq(uint32_t freq, uint32_t rtc8m_freq)
 {
-    uint32_t sw_freq = freq * 0xFFFF / SOC_CLK_RC_FAST_FREQ_APPROX;
+    uint32_t sw_freq = (uint32_t)(((float)freq  / (float)rtc8m_freq) * 65536);
     HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_dac_ctrl1, sw_fstep, (sw_freq > 0xFFFF) ? 0xFFFF : sw_freq);
 }
 
@@ -130,9 +134,9 @@ static inline void dac_ll_cw_set_freq(uint32_t freq)
  */
 static inline void dac_ll_cw_set_scale(dac_channel_t channel, uint32_t scale)
 {
-    if (channel == DAC_CHANNEL_1) {
+    if (channel == DAC_CHAN_0) {
         SENS.sar_dac_ctrl2.dac_scale1 = scale;
-    } else if (channel == DAC_CHANNEL_2) {
+    } else if (channel == DAC_CHAN_1) {
         SENS.sar_dac_ctrl2.dac_scale2 = scale;
     }
 }
@@ -141,13 +145,13 @@ static inline void dac_ll_cw_set_scale(dac_channel_t channel, uint32_t scale)
  * Set the phase of the cosine wave generator output.
  *
  * @param channel DAC channel num.
- * @param scale Phase value.
+ * @param phase Phase value. 0: 0x02 180: 0x03.
  */
 static inline void dac_ll_cw_set_phase(dac_channel_t channel, uint32_t phase)
 {
-    if (channel == DAC_CHANNEL_1) {
+    if (channel == DAC_CHAN_0) {
         SENS.sar_dac_ctrl2.dac_inv1 = phase;
-    } else if (channel == DAC_CHANNEL_2) {
+    } else if (channel == DAC_CHAN_1) {
         SENS.sar_dac_ctrl2.dac_inv2 = phase;
     }
 }
@@ -162,14 +166,14 @@ static inline void dac_ll_cw_set_phase(dac_channel_t channel, uint32_t phase)
  */
 static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
 {
-    if (channel == DAC_CHANNEL_1) {
-        if (SENS.sar_dac_ctrl2.dac_inv1 == DAC_CW_PHASE_180) {
-            offset = 0 - offset;
+    if (channel == DAC_CHAN_0) {
+        if (SENS.sar_dac_ctrl2.dac_inv1 == DAC_LL_CW_PHASE_180) {
+            offset = -offset;
         }
         HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_dac_ctrl2, dac_dc1, offset);
-    } else if (channel == DAC_CHANNEL_2) {
-        if (SENS.sar_dac_ctrl2.dac_inv2 == DAC_CW_PHASE_180) {
-            offset = 0 - offset;
+    } else if (channel == DAC_CHAN_1) {
+        if (SENS.sar_dac_ctrl2.dac_inv2 == DAC_LL_CW_PHASE_180) {
+            offset = -offset;
         }
         HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_dac_ctrl2, dac_dc2, offset);
     }

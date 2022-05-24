@@ -922,13 +922,11 @@ components/sdmmc/sdmmc_io.c
 components/sdmmc/sdmmc_mmc.c
 components/sdmmc/sdmmc_sd.c
 components/soc/esp32/adc_periph.c
-components/soc/esp32/dac_periph.c
 components/soc/esp32/i2c_periph.c
 components/soc/esp32/include/soc/apb_ctrl_reg.h
 components/soc/esp32/include/soc/apb_ctrl_struct.h
 components/soc/esp32/include/soc/bb_reg.h
 components/soc/esp32/include/soc/boot_mode.h
-components/soc/esp32/include/soc/dac_channel.h
 components/soc/esp32/include/soc/emac_dma_struct.h
 components/soc/esp32/include/soc/emac_ext_struct.h
 components/soc/esp32/include/soc/emac_mac_struct.h
@@ -1060,7 +1058,6 @@ components/soc/esp32h2/include/soc/wdev_reg.h
 components/soc/esp32h2/ledc_periph.c
 components/soc/esp32h2/uart_periph.c
 components/soc/esp32s2/adc_periph.c
-components/soc/esp32s2/dac_periph.c
 components/soc/esp32s2/dedic_gpio_periph.c
 components/soc/esp32s2/i2c_periph.c
 components/soc/esp32s2/include/soc/apb_ctrl_reg.h
@@ -1069,7 +1066,6 @@ components/soc/esp32s2/include/soc/assist_debug_reg.h
 components/soc/esp32s2/include/soc/bb_reg.h
 components/soc/esp32s2/include/soc/boot_mode.h
 components/soc/esp32s2/include/soc/crypto_dma_reg.h
-components/soc/esp32s2/include/soc/dac_channel.h
 components/soc/esp32s2/include/soc/dedic_gpio_reg.h
 components/soc/esp32s2/include/soc/dedic_gpio_struct.h
 components/soc/esp32s2/include/soc/extmem_reg.h

@@ -22,8 +22,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
-#include "driver/i2s.h"
+#include "driver/dac_driver.h"
 #else
 #include "driver/i2s_std.h"
 #endif
@@ -55,6 +54,8 @@ static uint8_t s_volume = 0;
 static bool s_volume_notify;
 #ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
 extern i2s_chan_handle_t tx_chan;
+#else
+extern dac_channels_handle_t tx_chan;
 #endif
 
 /* callback for A2DP sink */
@@ -171,7 +172,17 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
                 sample_rate = 48000;
             }
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-            i2s_set_clk(0, sample_rate, 16, 2);
+            dac_conti_config_t conti_cfg = {
+                .freq_hz = sample_rate,
+                .chan_mode = DAC_CHANNEL_MODE_ALTER,
+                .clk_src = DAC_DIGI_CLK_SRC_DEFAULT,     // If the frequency is out of range, try 'DAC_DIGI_CLK_SRC_APLL'
+                .desc_num = 6,
+                .buf_size = 2048,
+            };
+            dac_channels_disable_continuous_mode(tx_chan);
+            dac_channels_deinit_continuous_mode(tx_chan);
+            dac_channels_init_continuous_mode(tx_chan, &conti_cfg);
+            dac_channels_enable_continuous_mode(tx_chan);
         #else
             i2s_channel_disable(tx_chan);
             i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);

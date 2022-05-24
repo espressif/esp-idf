@@ -30,7 +30,7 @@ This example will assume that that an ESP-WROVER-KIT is used.
 
 #### Pin Assignment:
 
-The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `ADC1_CHANNEL_6`. Users may provide this signal themselves, or use the example-generated signal in `DAC_CHANNEL_1`. Listed below are the corresponding DAC/ADC channel pins for supported targets.
+The sinusoidal signal of 130 Hz ranging from 0 V ~ 3.1 V should be input into `ADC1_CHANNEL_6`. Users may provide this signal themselves, or use the example-generated signal in `DAC_CHAN_0`. Listed below are the corresponding DAC/ADC channel pins for supported targets.
 
 | Target             | DAC Output         | ADC Input          |
 | ------------------ | ------------------ | ------------------ |
