@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 9295c8aa9c48d48dc42c78456bd02645
+// md5_digest_table 466199602f703d803a9f87956236882e
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -339,6 +339,14 @@ static const esp_efuse_desc_t DIS_USB_OTG_DOWNLOAD_MODE[] = {
     {EFUSE_BLK0, 159, 1}, 	 // Set this bit to disable download through USB-OTG,
 };
 
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 160, 1}, 	 // Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 161, 1}, 	 // Disables check of blk version major,
+};
+
 static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 40, 8}, 	 // Factory MAC addr [0],
     {EFUSE_BLK1, 32, 8}, 	 // Factory MAC addr [1],
@@ -392,28 +400,101 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
-static const esp_efuse_desc_t WAFER_VERSION[] = {
-    {EFUSE_BLK1, 114, 3}, 	 // WAFER version 0:A,
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 114, 3}, 	 // WAFER_VERSION_MINOR least significant bits,
+    {EFUSE_BLK1, 183, 1}, 	 // WAFER_VERSION_MINOR most significant bit,
 };
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK1, 117, 4}, 	 // Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32,
+    {EFUSE_BLK1, 117, 3}, 	 // Package version,
 };
 
-static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 120, 3}, 	 // BLK_VERSION_MINOR,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART0[] = {
-    {EFUSE_BLK1, 126, 66}, 	 // System configuration,
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 184, 2}, 	 // WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN3[] = {
+    {EFUSE_BLK1, 186, 6}, 	 // ADC2 calibration voltage at atten3,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
 };
 
-static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2,
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK2, 128, 2}, 	 // BLK_VERSION_MAJOR of BLOCK2 change of this bit means users need to update firmware,
+};
+
+static const esp_efuse_desc_t TEMP_CALIB[] = {
+    {EFUSE_BLK2, 132, 9}, 	 // Temperature calibration data,
+};
+
+static const esp_efuse_desc_t OCODE[] = {
+    {EFUSE_BLK2, 141, 8}, 	 // ADC OCode,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0[] = {
+    {EFUSE_BLK2, 149, 8}, 	 // ADC1 init code at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN1[] = {
+    {EFUSE_BLK2, 157, 6}, 	 // ADC1 init code at atten1,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN2[] = {
+    {EFUSE_BLK2, 163, 6}, 	 // ADC1 init code at atten2,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN3[] = {
+    {EFUSE_BLK2, 169, 6}, 	 // ADC1 init code at atten3,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN0[] = {
+    {EFUSE_BLK2, 175, 8}, 	 // ADC2 init code at atten0,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN1[] = {
+    {EFUSE_BLK2, 183, 6}, 	 // ADC2 init code at atten1,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN2[] = {
+    {EFUSE_BLK2, 189, 6}, 	 // ADC2 init code at atten2,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN3[] = {
+    {EFUSE_BLK2, 195, 6}, 	 // ADC2 init code at atten3,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN0[] = {
+    {EFUSE_BLK2, 201, 8}, 	 // ADC1 calibration voltage at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN1[] = {
+    {EFUSE_BLK2, 209, 8}, 	 // ADC1 calibration voltage at atten1,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN2[] = {
+    {EFUSE_BLK2, 217, 8}, 	 // ADC1 calibration voltage at atten2,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
+    {EFUSE_BLK2, 225, 8}, 	 // ADC1 calibration voltage at atten3,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN0[] = {
+    {EFUSE_BLK2, 233, 8}, 	 // ADC2 calibration voltage at atten0,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN1[] = {
+    {EFUSE_BLK2, 241, 7}, 	 // ADC2 calibration voltage at atten1,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN2[] = {
+    {EFUSE_BLK2, 248, 7}, 	 // ADC2 calibration voltage at atten2,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -847,6 +928,16 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_OTG_DOWNLOAD_MODE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// Disables check of blk version major
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[0],    		// Factory MAC addr [0]
     &MAC_FACTORY[1],    		// Factory MAC addr [1]
@@ -912,23 +1003,29 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
-    &WAFER_VERSION[0],    		// WAFER version 0:A
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// WAFER_VERSION_MINOR least significant bits
+    &WAFER_VERSION_MINOR[1],    		// WAFER_VERSION_MINOR most significant bit
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32
+    &PKG_VERSION[0],    		// Package version
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
-    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version 0:No calibration 1:With calibration
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// BLK_VERSION_MINOR
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[] = {
-    &SYS_DATA_PART0[0],    		// System configuration
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN3[] = {
+    &ADC2_CAL_VOL_ATTEN3[0],    		// ADC2 calibration voltage at atten3
     NULL
 };
 
@@ -937,8 +1034,93 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of BLOCK2
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// BLK_VERSION_MAJOR of BLOCK2 change of this bit means users need to update firmware
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[] = {
+    &TEMP_CALIB[0],    		// Temperature calibration data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
+    &OCODE[0],    		// ADC OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[] = {
+    &ADC1_INIT_CODE_ATTEN0[0],    		// ADC1 init code at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN1[] = {
+    &ADC1_INIT_CODE_ATTEN1[0],    		// ADC1 init code at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN2[] = {
+    &ADC1_INIT_CODE_ATTEN2[0],    		// ADC1 init code at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[] = {
+    &ADC1_INIT_CODE_ATTEN3[0],    		// ADC1 init code at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN0[] = {
+    &ADC2_INIT_CODE_ATTEN0[0],    		// ADC2 init code at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN1[] = {
+    &ADC2_INIT_CODE_ATTEN1[0],    		// ADC2 init code at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN2[] = {
+    &ADC2_INIT_CODE_ATTEN2[0],    		// ADC2 init code at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN3[] = {
+    &ADC2_INIT_CODE_ATTEN3[0],    		// ADC2 init code at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[] = {
+    &ADC1_CAL_VOL_ATTEN0[0],    		// ADC1 calibration voltage at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN1[] = {
+    &ADC1_CAL_VOL_ATTEN1[0],    		// ADC1 calibration voltage at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN2[] = {
+    &ADC1_CAL_VOL_ATTEN2[0],    		// ADC1 calibration voltage at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
+    &ADC1_CAL_VOL_ATTEN3[0],    		// ADC1 calibration voltage at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN0[] = {
+    &ADC2_CAL_VOL_ATTEN0[0],    		// ADC2 calibration voltage at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN1[] = {
+    &ADC2_CAL_VOL_ATTEN1[0],    		// ADC2 calibration voltage at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN2[] = {
+    &ADC2_CAL_VOL_ATTEN2[0],    		// ADC2 calibration voltage at atten2
     NULL
 };
 

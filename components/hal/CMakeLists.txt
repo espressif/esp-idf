@@ -1,7 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs    "wdt_hal_iram.c"
-            "mpu_hal.c")
+            "mpu_hal.c"
+            "efuse_hal.c"
+            "${target}/efuse_hal.c")
 set(includes "${target}/include" "include")
 
 if(NOT BOOTLOADER_BUILD)

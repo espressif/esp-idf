@@ -31,6 +31,7 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
 #endif
+#include "hal/efuse_hal.h"
 #include "esp_rom_uart.h"
 
 __attribute__((weak)) void bootloader_clock_configure(void)
@@ -51,8 +52,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */
-    uint32_t chip_ver_reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
-    if ((chip_ver_reg & EFUSE_RD_CHIP_VER_REV1_M) == 0 &&
+    if (efuse_hal_get_major_chip_version() == 0 &&
             DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
         cpu_freq_mhz = 240;
     }

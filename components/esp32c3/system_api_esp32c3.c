@@ -33,6 +33,7 @@
 #include "soc/system_reg.h"
 #include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/efuse_hal.h"
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -146,7 +147,8 @@ void esp_chip_info(esp_chip_info_t *out_info)
 {
     memset(out_info, 0, sizeof(*out_info));
     out_info->model = CHIP_ESP32C3;
-    out_info->revision = esp_efuse_get_chip_ver();
+    out_info->revision = efuse_hal_get_minor_chip_version();
+    out_info->full_revision = efuse_hal_chip_revision();
     out_info->cores = 1;
     out_info->features = CHIP_FEATURE_WIFI_BGN | CHIP_FEATURE_BLE;
 }

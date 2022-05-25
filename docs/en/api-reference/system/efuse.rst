@@ -211,7 +211,7 @@ Access to the fields is via a pointer to the description structure. API function
 * :cpp:func:`esp_efuse_batch_write_commit` - writes all prepared data for batch writing mode and reset the batch writing mode.
 * :cpp:func:`esp_efuse_batch_write_cancel` - reset the batch writing mode and prepared data.
 
-For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_chip_ver`, :cpp:func:`esp_efuse_get_pkg_ver`.
+For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_pkg_ver`.
 
 .. only:: not esp32
 

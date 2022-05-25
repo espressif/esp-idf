@@ -172,7 +172,9 @@ typedef volatile struct efuse_dev_s {
     } rd_repeat_data3;
     union {
         struct {
-            uint32_t rpt4_reserved4:24;                          /*Reserved.*/
+            uint32_t disable_wafer_version_major: 1;
+            uint32_t disable_blk_version_major: 1;
+            uint32_t rpt4_reserved4:22;                          /*Reserved.*/
             uint32_t reserved24:     8;                          /*Reserved.*/
         };
         uint32_t val;
@@ -189,17 +191,34 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t spi_pad_conf_2:  18;                        /*Stores the second part of SPI_PAD_CONF.*/
-            uint32_t sys_data_part0_0:14;                        /*Stores the fist 14 bits of the zeroth part of system data.*/
+            uint32_t wafer_version_minor_low:    3;
+            uint32_t pkg_version:      3;
+            uint32_t blk_version_minor:3;
+            uint32_t sys_data_part0_0: 5;
         };
         uint32_t val;
     } rd_mac_spi_sys_3;
     uint32_t rd_mac_spi_sys_4;                                   /*BLOCK1 data register $n.*/
-    uint32_t rd_mac_spi_sys_5;                                   /*BLOCK1 data register $n.*/
+    union {
+        struct {
+            uint32_t reserved1:              23;
+            uint32_t wafer_version_minor_high:    1;
+            uint32_t wafer_version_major:    2;
+            uint32_t reserved2:              6;
+        };
+        uint32_t val;
+    } rd_mac_spi_sys_5;                                          /*BLOCK1 data register $n.*/
     uint32_t rd_sys_part1_data0;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data1;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data2;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data3;                                 /*Register $n of BLOCK2 (system).*/
-    uint32_t rd_sys_part1_data4;                                 /*Register $n of BLOCK2 (system).*/
+    union {
+        struct {
+            uint32_t blk_version_major :     2;
+            uint32_t reserved1:              30;
+        };
+        uint32_t val;
+    } rd_sys_part1_data4;                                        /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data5;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data6;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data7;                                 /*Register $n of BLOCK2 (system).*/
