@@ -105,7 +105,10 @@ function(__build_set_default_build_specifications)
                                     "-Wno-sign-compare"
                                     # always generate debug symbols (even in release mode, these don't
                                     # go into the final binary so have no impact on size
-                                    "-ggdb")
+                                    "-ggdb"
+                                    # without this GCC may not enable ANSI colouring, making errors
+                                    # harder to decipher
+                                    "-fdiagnostics-color=always")
 
     list(APPEND c_compile_options   "-std=gnu99")
 
