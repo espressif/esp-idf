@@ -162,6 +162,10 @@ static uint32_t ledc_get_glb_clk_freq(ledc_slow_clk_sel_t clk_cfg)
             src_clk_freq = esp_clk_xtal_freq();
             break;
 #endif
+        case LEDC_CLK_NOT_INIT:
+        default:
+            ESP_LOGE(LEDC_TAG, "Clock not initialized");
+            break;
     }
 
     return src_clk_freq;
@@ -494,7 +498,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     /* Timer-specific mux. Set to timer-specific clock or LEDC_SCLK if a global clock is used. */
     ledc_clk_src_t timer_clk_src;
     /* Global clock mux. Should be set when LEDC_SCLK is used in LOW_SPEED_MODE. Otherwise left uninitialized. */
-    ledc_slow_clk_sel_t glb_clk;
+    ledc_slow_clk_sel_t glb_clk = LEDC_CLK_NOT_INIT;
 
     if (clk_cfg == LEDC_AUTO_CLK) {
         /* User hasn't specified the speed, we should try to guess it. */

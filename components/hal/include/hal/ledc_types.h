@@ -45,6 +45,7 @@ typedef enum {
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_SLOW_CLK_XTAL,    /*!< LEDC low speed timer clock source XTAL clock*/
 #endif
+    LEDC_CLK_NOT_INIT,
 } ledc_slow_clk_sel_t;
 
 /**
