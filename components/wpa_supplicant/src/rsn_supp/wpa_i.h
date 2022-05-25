@@ -43,6 +43,8 @@ struct wpa_sm {
     u8 request_counter[WPA_REPLAY_COUNTER_LEN];
     struct rsn_pmksa_cache *pmksa; /* PMKSA cache */
     struct rsn_pmksa_cache_entry *cur_pmksa; /* current PMKSA entry */
+    u8 ssid[32];
+    size_t ssid_len;
 
     unsigned int pairwise_cipher;
     unsigned int group_cipher;
