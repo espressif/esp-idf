@@ -6,62 +6,62 @@ IDF 监视器
 
 IDF 监视器是一个串行终端程序，用于收发目标设备串口的串行数据，IDF 监视器同时还兼具 IDF 的其他特性。
 
-在 IDF 中调用 idf.py monitor 可以启用此监视器
+在 IDF 中调用 ``idf.py monitor`` 可以启用此监视器。
 
 操作快捷键
 ==================
 
 为了方便与 IDF 监视器进行交互，请使用表中给出的快捷键。
 
-.. list-table::                                        
-   :header-rows: 1                                     
-   :widths: 15 25 55                                      
-                                        
+.. list-table::
+   :header-rows: 1
+   :widths: 15 25 55
+
    * - 快捷键
      - 操作
-     - 描述                                        
+     - 描述
    * - Ctrl+]
      - 退出监视器程序
-     -                                      
+     -
    * - Ctrl+T
      - 菜单退出键
-     - 按下如下给出的任意键之一，并按指示操作。                                       
+     - 按下如下给出的任意键之一，并按指示操作。
    * - * Ctrl+T
      - 将菜单字符发送至远程
-     -                                      
+     -
    * - * Ctrl+]
      - 将 exit 字符发送至远程
-     -                                      
+     -
    * - * Ctrl+P
-     - 重置目标设备，进入 Bootloader，通过 RTS 线暂停应用程序
-     - 重置目标设备，通过 RTS 线（如已连接）进入 Bootloader，此时开发板不运行任何程序。等待其他设备启动时可以使用此操作。                                     
+     - 重置目标设备，进入引导加载程序，通过 RTS 线暂停应用程序
+     - 重置目标设备，通过 RTS 线（如已连接）进入引导加载程序，此时开发板不运行任何程序。等待其他设备启动时可以使用此操作。
    * - * Ctrl+R
      - 通过 RTS 线重置目标设备
-     - 重置设备，并通过 RTS 线（如已连接）重新启动应用程序。                                      
+     - 重置设备，并通过 RTS 线（如已连接）重新启动应用程序。
    * - * Ctrl+F
      - 编译并烧录此项目
-     - 暂停 idf_monitor，运行 ``flash`` 目标，然后恢复 idf_monitor。任何改动的源文件都会被重新编译，然后重新烧录。如果 idf_monitor 是以参数 ``-E`` 启动的，则会运行目标 ``encrypted-flash``。                                    
+     - 暂停 idf_monitor，运行 ``flash`` 目标，然后恢复 idf_monitor。任何改动的源文件都会被重新编译，然后重新烧录。如果 idf_monitor 是以参数 ``-E`` 启动的，则会运行目标 ``encrypted-flash``。
    * - * Ctrl+A (或者 A)
      - 仅编译及烧录应用程序
-     - 暂停 idf_monitor，运行 ``app-flash`` 目标，然后恢复 idf_monitor。 这与 ``flash`` 类似，但只有主应用程序被编译并被重新烧录。如果 idf_monitor 是以参数 ``-E`` 启动的，则会运行目标 ``encrypted-flash``。                                    
+     - 暂停 idf_monitor，运行 ``app-flash`` 目标，然后恢复 idf_monitor。 这与 ``flash`` 类似，但只有主应用程序被编译并被重新烧录。如果 idf_monitor 是以参数 ``-E`` 启动的，则会运行目标 ``encrypted-flash``。
    * - * Ctrl+Y
      - 停止/恢复在屏幕上打印日志输出
-     - 激活时，会丢弃所有传入的串行数据。允许在不退出监视器的情况下快速暂停和检查日志输出。                   
+     - 激活时，会丢弃所有传入的串行数据。允许在不退出监视器的情况下快速暂停和检查日志输出。
    * - * Ctrl+L
      - 停止/恢复向文件写入日志输出
-     - 在工程目录下创建一个文件，用于写入日志输出。可使用快捷键停止/恢复该功能（退出 IDF 监视器也会终止该功能） 
+     - 在工程目录下创建一个文件，用于写入日志输出。可使用快捷键停止/恢复该功能（退出 IDF 监视器也会终止该功能）。
    * - * Ctrl+I (或者 I)
      - 停止/恢复打印时间标记
-     - IDF 监视器可以在每一行的开头打印一个时间标记。时间标记的格式可以通过 ``--timestamp-format`` 命令行参数来改变。        
+     - IDF 监视器可以在每一行的开头打印一个时间标记。时间标记的格式可以通过 ``--timestamp-format`` 命令行参数来改变。
    * - * Ctrl+H (或者 H)
      - 显示所有快捷键
-     -                                      
+     -
    * - * Ctrl+X (或者 X)
      - 退出监视器程序
-     - 
+     -
    * - Ctrl+C
      - 中断正在运行的应用程序
-     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启 :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME 选项。   
+     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启用 :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME 选项。
 
 除了 ``Ctrl-]`` 和 ``Ctrl-T``，其他快捷键信号会通过串口发送到目标设备。
 
@@ -72,7 +72,7 @@ IDF 监视器是一个串行终端程序，用于收发目标设备串口的串�
 自动解码地址
 ~~~~~~~~~~~~~~~~
 
-ESP-IDF 输出形式为 ``0x4_______`` 的十六进制代码地址后，IDF 监视器将使用 addr2line_ 查找该地址在源代码中的位置和对应的函数名。
+ESP-IDF 输出形式为 ``0x4_______`` 的十六进制代码地址后，IDF 监视器将使用 ``addr2line_`` 查找该地址在源代码中的位置和对应的函数名。
 
 .. highlight:: none
 
@@ -182,24 +182,33 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 .. note::
 
-    将环境变量 ``ESP_MONITOR_DECODE`` 设置为 ``0`` 或者调用 idf_monitor.py 的特定命令行选项：``idf_monitor.py --disable-address-decoding`` 来禁止地址解码。
+    将环境变量 ``ESP_MONITOR_DECODE`` 设置为 ``0`` 或者调用 idf_monitor.py 的特定命令行选项 ``idf_monitor.py --disable-address-decoding`` 来禁止地址解码。
+
+连接时复位目标芯片
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+默认情况下，IDF 监视器会在目标芯片连接时通过 DTR 和 RTS 串行线自动复位芯片。要防止 IDF 监视器在连接时自动复位，请在调用 IDF 监视器时加上选项 ``--no-reset``，如 ``idf_monitor.py --no-reset``。
+
+.. note::
+
+    ``--no-reset`` 选项在 IDF 监视器连接到特定端口时可以实现同样的效果，如 ``idf.py monitor --no-reset -p [PORT]``。
+
 
 配置 GDBStub 以启用 GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-默认情况下，如果 ESP-IDF 应用程序发生 crash 事件，panic 处理器将在串口上打印相关寄存器和堆栈转储（类似上述情况），然后重置开发板。
+GDBStub 支持在运行时进行调试。GDBStub 在目标上运行，并通过串口连接到主机从而接收调试命令。GDBStub 支持读取内存和变量、检查调用堆栈帧等命令。虽然没有 JTAG 调试通用，但由于 GDBStub 完全通过串行端口完成通信，故不需要使用特殊硬件（如 JTAG/USB 桥接器）。
 
-此外，可以配置应用程序在后台运行 GDBStub 并处理运行中的应用程序突然中断事件 (Ctrl+C)。
+通过将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``GDBStub on runtime``，可以将目标配置为在后台运行 GDBStub。GDBStub 将保持在后台运行，直到通过串行端口发送 ``Ctrl+C`` 导致应用程序中断（即停止程序执行），从而让 GDBStub 处理调试命令。
 
-或者选择配置 panic 处理器以运行 GDBStub，GDBStub 工具可以与 GDB_ 项目调试器进行通信，允许读取内存、检查调用堆栈帧和变量等。GDBStub 虽然没有 JTAG 通用，但不需要使用特殊硬件。
+此外，还可以通过设置 :ref:`CONFIG_ESP_SYSTEM_PANIC` 为 ``GDBStub on panic`` 来配置 panic 处理程序，使其在发生 crash 事件时运行 GDBStub。当 crash 发生时，GDBStub 将通过串口输出特殊的字符串模式，表示 GDBStub 正在运行。
 
-如需在发生 panic 事件时启用 GDBStub，请运行 ``idf.py menuconfig`` 打开项目配置菜单，并将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 选项设置为 ``GDBStub on panic``，或者将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``GDBStub on runtime``。
+无论是通过发送 ``Ctrl+C`` 还是收到特殊字符串模式，IDF 监视器都会自动启动 GDB，从而让用户发送调试命令。GDB 退出后，通过 RTS 串口线复位目标。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
 
-在这种情况下，如果 panic 处理器被触发或应用程序突然中断 (Ctrl+C)，只要 IDF 监视器监控到 GDBStub 已经加载，panic 处理器就会自动暂停串行监控并使用必要的参数运行 GDB。GDB 退出后，通过 RTS 串口线复位开发板。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
+.. note::
+    IDF 监视器在后台运行如下命令启用 GDB::
 
-IDF 监控器在后台运行如下命令::
-
-  {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
+        {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
 
 
 输出筛选
