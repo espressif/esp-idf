@@ -22,7 +22,8 @@ def get_prefix_map_gdbinit_path(prog_path):  # type: (str) -> Any
     build_dir = os.path.abspath(os.path.dirname(prog_path))
     desc_path = os.path.abspath(os.path.join(build_dir, 'project_description.json'))
     if not os.path.isfile(desc_path):
-        raise ValueError(f'{desc_path} does not exist. Please build the app with "idf.py build"')
+        logging.warning('%s does not exist. Please build the app with "idf.py build"', desc_path)
+        return ''
 
     with open(desc_path, 'r') as f:
         project_desc = json.load(f)
