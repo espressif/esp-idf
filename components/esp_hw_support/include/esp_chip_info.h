@@ -41,6 +41,7 @@ typedef enum {
 typedef struct {
     esp_chip_model_t model;  //!< chip model, one of esp_chip_model_t
     uint32_t features;       //!< bit mask of CHIP_FEATURE_x feature flags
+    uint16_t full_revision;  //!< chip revision number (in format MXX; where M - wafer major version, XX - wafer minor version)
     uint8_t cores;           //!< number of CPU cores
     uint8_t revision;        //!< chip revision number
 } esp_chip_info_t;

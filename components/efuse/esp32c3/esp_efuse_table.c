@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6614a99de35023cf9ba3849a2b80e9e7
+// md5_digest_table d006c80095638b5dbdc8649bf7e04dce
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -315,6 +315,14 @@ static const esp_efuse_desc_t ERR_RST_ENABLE[] = {
     {EFUSE_BLK0, 159, 1}, 	 // Use BLOCK0 to check error record registers,
 };
 
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 160, 1}, 	 // Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 161, 1}, 	 // Disables check of blk version major,
+};
+
 static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 40, 8}, 	 // Factory MAC addr [0],
     {EFUSE_BLK1, 32, 8}, 	 // Factory MAC addr [1],
@@ -368,24 +376,29 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
-static const esp_efuse_desc_t WAFER_VERSION[] = {
-    {EFUSE_BLK1, 114, 3}, 	 // WAFER version,
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 114, 3}, 	 // WAFER_VERSION_MINOR least significant bits,
+    {EFUSE_BLK1, 183, 1}, 	 // WAFER_VERSION_MINOR most significant bit,
 };
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
     {EFUSE_BLK1, 117, 3}, 	 // Package version 0:ESP32C3,
 };
 
-static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 120, 3}, 	 // BLOCK1 efuse version,
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 120, 3}, 	 // BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 184, 2}, 	 // WAFER_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
 };
 
-static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 128, 3}, 	 // Version of BLOCK2,
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK2, 128, 2}, 	 // BLK_VERSION_MAJOR of BLOCK2,
 };
 
 static const esp_efuse_desc_t TEMP_CALIB[] = {
@@ -867,6 +880,16 @@ const esp_efuse_desc_t* ESP_EFUSE_ERR_RST_ENABLE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// Disables check of blk version major
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[0],    		// Factory MAC addr [0]
     &MAC_FACTORY[1],    		// Factory MAC addr [1]
@@ -932,8 +955,9 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
-    &WAFER_VERSION[0],    		// WAFER version
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// WAFER_VERSION_MINOR least significant bits
+    &WAFER_VERSION_MINOR[1],    		// WAFER_VERSION_MINOR most significant bit
     NULL
 };
 
@@ -942,8 +966,13 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
-    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// WAFER_VERSION_MAJOR
     NULL
 };
 
@@ -952,8 +981,8 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of BLOCK2
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// BLK_VERSION_MAJOR of BLOCK2
     NULL
 };
 

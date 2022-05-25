@@ -17,6 +17,7 @@
 #include "soc/spi_reg.h"
 #include "soc/soc_caps.h"
 #include "soc/soc_pins.h"
+#include "hal/efuse_hal.h"
 #include "hal/gpio_hal.h"
 #include "flash_qio_mode.h"
 #include "bootloader_common.h"
@@ -176,7 +177,7 @@ int bootloader_flash_get_wp_pin(void)
         return ESP32_D2WD_WP_GPIO;
     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4:
         /* Same package IDs are used for ESP32-PICO-V3 and ESP32-PICO-D4, silicon version differentiates */
-        chip_ver = bootloader_common_get_chip_revision();
+        chip_ver = efuse_hal_get_major_chip_version();
         return (chip_ver < 3) ? ESP32_D2WD_WP_GPIO : ESP32_PICO_V3_GPIO;
     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302:
         return ESP32_PICO_V3_GPIO;

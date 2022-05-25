@@ -11,6 +11,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
+#include "hal/efuse_ll.h"
 #include "soc/gpio_periph.h"
 
 
@@ -118,7 +119,7 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
         result.tieh = (efuse_reg & EFUSE_RD_SDIO_TIEH_M) >> EFUSE_RD_SDIO_TIEH_S;
         //DREFH/M/L eFuse are used for EFUSE_ADC_VREF instead. Therefore tuning
         //will only be available on older chips that don't have EFUSE_ADC_VREF
-        if(REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG ,EFUSE_RD_BLK3_PART_RESERVE) == 0){
+        if(!efuse_ll_get_blk3_part_reserve()){
             //BLK3_PART_RESERVE indicates the presence of EFUSE_ADC_VREF
             // in this case, DREFH/M/L are also set from EFUSE
             result.drefh = (efuse_reg & EFUSE_RD_SDIO_DREFH_M) >> EFUSE_RD_SDIO_DREFH_S;

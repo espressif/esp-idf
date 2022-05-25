@@ -38,6 +38,7 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
 #include "esp_efuse.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "boot.esp32c3";
 
@@ -258,7 +259,7 @@ static inline void bootloader_hardware_init(void)
 {
     // This check is always included in the bootloader so it can
     // print the minimum revision error message later in the boot
-    if (bootloader_common_get_chip_revision() < 3) {
+    if (efuse_hal_get_minor_chip_version() < 3) {
         REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_IPH, 1);
         REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 12);
     }
@@ -271,7 +272,7 @@ static inline void bootloader_ana_reset_config(void)
       For ECO2: fix brownout reset bug, support swt & brownout reset;
       For ECO3: fix clock glitch reset bug, support all reset, include: swt & brownout & clock glitch reset.
     */
-    uint8_t chip_version = bootloader_common_get_chip_revision();
+    uint8_t chip_version = efuse_hal_get_minor_chip_version();
     switch (chip_version) {
         case 0:
         case 1:

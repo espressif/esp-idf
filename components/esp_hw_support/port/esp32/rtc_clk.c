@@ -16,6 +16,8 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/dport_reg.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 #include "soc/efuse_periph.h"
 #include "soc/syscon_reg.h"
 #include "soc/gpio_struct.h"
@@ -122,7 +124,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, dbias);
 
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-    uint8_t chip_ver = esp_efuse_get_chip_ver();
+    uint8_t chip_ver = efuse_hal_get_major_chip_version();
     // version0 and version1 need provide additional current to external XTAL.
     if(chip_ver == 0 || chip_ver == 1) {
         /* TOUCH sensor can provide additional current to external XTAL.
@@ -138,7 +140,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
         SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
     }
 #elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-    uint8_t chip_ver = esp_efuse_get_chip_ver();
+    uint8_t chip_ver = efuse_hal_get_major_chip_version();
     if(chip_ver == 0 || chip_ver == 1) {
         /* TOUCH sensor can provide additional current to external XTAL.
         In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
@@ -172,13 +174,13 @@ void rtc_clk_32k_enable(bool enable)
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-        uint8_t chip_ver = esp_efuse_get_chip_ver();
+        uint8_t chip_ver = efuse_hal_get_major_chip_version();
         if(chip_ver == 0 || chip_ver == 1) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
         }
 #elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-        uint8_t chip_ver = esp_efuse_get_chip_ver();
+        uint8_t chip_ver = efuse_hal_get_major_chip_version();
         if(chip_ver == 0 || chip_ver == 1) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
@@ -281,8 +283,7 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
 
     if (enable) {
         uint8_t sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV1;
-        uint32_t is_rev0 = (GET_PERI_REG_BITS2(EFUSE_BLK0_RDATA3_REG, 1, 15) == 0);
-        if (is_rev0) {
+        if (efuse_hal_get_major_chip_version() == 0) {
             sdm0 = 0;
             sdm1 = 0;
             sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV0;

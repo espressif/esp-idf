@@ -173,7 +173,12 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_data4;
-    uint32_t rd_mac_spi_sys_0;                                   /*BLOCK1 data register $n.*/
+    union {
+        struct {
+            uint32_t mac_0;
+        };
+        uint32_t val;
+    } rd_mac_spi_sys_0;                                          /*BLOCK1 data register $n.*/
     union {
         struct {
             uint32_t mac_1:         16;                          /*Stores the high 16 bits of MAC address.*/
@@ -185,7 +190,9 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t spi_pad_conf_2:  18;                        /*Stores the second part of SPI_PAD_CONF.*/
-            uint32_t sys_data_part0_0:14;                        /*Stores the fist 14 bits of the zeroth part of system data.*/
+            uint32_t wafer_version:    3;
+            uint32_t pkg_version:      3;
+            uint32_t sys_data_part0_0: 8;                        /*Stores the fist 14 bits of the zeroth part of system data.*/
         };
         uint32_t val;
     } rd_mac_spi_sys_3;

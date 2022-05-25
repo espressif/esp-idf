@@ -188,13 +188,6 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
 
 /**
- * @brief Get chip revision
- *
- * @return Chip revision number
- */
-uint8_t bootloader_common_get_chip_revision(void);
-
-/**
  * @brief Get chip package
  *
  * @return Chip package number
