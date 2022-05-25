@@ -68,7 +68,6 @@ tools/ci/test_check_kconfigs.py
 tools/ci/test_configure_ci_environment.sh
 tools/cmake/convert_to_cmake.py
 tools/docker/entrypoint.sh
-tools/docker/hooks/build
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py
 tools/esp_app_trace/test/logtrace/test.sh
