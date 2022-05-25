@@ -157,11 +157,15 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_FLASHSIZE_DETECT
         bool "Detect flash size when flashing bootloader"
-        default y
+        default n
         help
             If this option is set, flashing the project will automatically detect
             the flash size of the target chip and update the bootloader image
             before it is flashed.
+
+            Enabling this option turns off the image protection against corruption
+            by a SHA256 digest. Updating the bootloader image before flashing would
+            invalidate the digest.
 
     choice ESPTOOLPY_BEFORE
         prompt "Before flashing"
