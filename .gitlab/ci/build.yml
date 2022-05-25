@@ -41,8 +41,9 @@ build_pytest_examples_esp32:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32
+  parallel: 2
   script:
-    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv --parallel-count $CI_NODE_TOTAL --parallel-index $CI_NODE_INDEX
 
 build_pytest_examples_esp32s2:
   extends:
