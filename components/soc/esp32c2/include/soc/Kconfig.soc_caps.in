@@ -151,6 +151,10 @@ config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
 
+config SOC_CPU_IDRAM_SPLIT_USING_PMP
+    bool
+    default y
+
 config SOC_GDMA_GROUPS
     int
     default 1

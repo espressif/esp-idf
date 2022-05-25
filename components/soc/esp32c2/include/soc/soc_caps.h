@@ -80,6 +80,8 @@
 
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
+#define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
+
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
