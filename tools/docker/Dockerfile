@@ -23,7 +23,7 @@ RUN : \
     make \
     ninja-build \
     python3 \
-    python3-pip \
+    python3-venv \
     unzip \
     wget \
     xz-utils \
@@ -31,9 +31,6 @@ RUN : \
   && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/* \
   && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
-  && python -m pip install --upgrade \
-    pip \
-    virtualenv \
   && :
 
 # To build the image for a branch or a tag of IDF, pass --build-arg IDF_CLONE_BRANCH_OR_TAG=name.
