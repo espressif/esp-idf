@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import ensure_build_directory, is_target_supported, run_target
 
