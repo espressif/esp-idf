@@ -17,6 +17,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
+#include "hal/efuse_hal.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -63,7 +64,13 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
     }
 
 #ifndef CONFIG_IDF_ENV_FPGA
-    uint8_t revision = bootloader_common_get_chip_revision();
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32H2)
+    uint8_t revision = efuse_hal_get_major_chip_version();
+    // min_chip_rev keeps the MAJOR wafer version for these chips
+#else
+    uint8_t revision = efuse_hal_get_minor_chip_version();
+    // min_chip_rev keeps the MINOR wafer version for these chips
+#endif
     if (revision < img_hdr->min_chip_rev) {
         /* To fix this error, please update mininum supported chip revision from configuration,
          * located in TARGET (e.g. ESP32) specific options under "Component config" menu */

@@ -45,9 +45,36 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_secure_boot_v2_en
     return EFUSE.rd_repeat_data2.secure_boot_en;
 }
 
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_revision(void)
+// use efuse_hal_get_major_chip_version() to get major chip version
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_major(void)
 {
     return EFUSE.rd_mac_spi_sys_3.wafer_version;
+}
+
+// use efuse_hal_get_minor_chip_version() to get minor chip version
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
+{
+    return 0;
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
+{
+    return 0;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
+{
+    return 0;
+}
+
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
+{
+    return 0;
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
+{
+    return 0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)

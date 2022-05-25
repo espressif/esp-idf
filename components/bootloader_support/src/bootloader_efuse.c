@@ -11,11 +11,6 @@
 #include "hal/efuse_hal.h"
 #include "esp_attr.h"
 
-IRAM_ATTR uint8_t bootloader_common_get_chip_revision(void)
-{
-    return efuse_hal_get_chip_revision();
-}
-
 IRAM_ATTR uint32_t bootloader_common_get_chip_ver_pkg(void)
 {
     return efuse_ll_get_chip_ver_pkg();

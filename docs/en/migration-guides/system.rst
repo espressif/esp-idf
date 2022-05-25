@@ -42,6 +42,7 @@ ESP HW Support
 - The header file ``esp_panic.h`` has been deleted. ESP-IDF developers should include ``esp_private/panic_reason.h`` to get supported panic reasons. And should include ``esp_debug_helpers.h`` to use any debug related helper functions, e.g. print backtrace.
 - The header file ``soc_log.h`` is now renamed to ``esp_hw_log.h`` and all logging macros have been updated from ``SOC_LOGx`` to ``ESP_HW_LOGx``. ESP-IDF users must use the later form.
 - The header files ``spinlock.h``, ``clk_ctrl_os.h`` and ``rtc_wdt.h`` must now be included without the ``soc`` prefix. Eg:- ``#include "spinlock.h"``.
+- ``esp_chip_info()`` returns the chip version in the format  = 100 * ``major eFuse version`` + ``minor eFuse version``. Thus, the ``revision`` in the ``esp_chip_info_t`` structure is expanded to uint16_t to fit the new format.
 
 PSRAM
 ^^^^^
@@ -92,3 +93,8 @@ Task Watchdog Timers
 
     - Configuration is now passed as a configuration structure.
     - The function will now handle subscribing of the idle tasks if configured to do so
+
+Efuse
+-----
+
+- Added eFuse wafer revisions: major and minor. The `esp_efuse_get_chip_ver()` API is not compatible with these changes this is why it was removed. Please use instead of it the following APIs: `efuse_hal_get_major_chip_version()`, `efuse_hal_get_minor_chip_version()` or `efuse_hal_chip_revision()`.
