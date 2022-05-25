@@ -346,9 +346,14 @@ static void task_wdt_isr(void *arg)
         if (!entry->has_reset) {
             if (entry->task_handle) {
 #if CONFIG_FREERTOS_SMP
-                UBaseType_t uxCoreAffinity = vTaskCoreAffinityGet(entry->task_handle);
-                ESP_EARLY_LOGE(TAG, " - %s (0x%x)", pcTaskGetName(entry->task_handle), uxCoreAffinity);
-#else
+#if configNUM_CORES > 1
+                // Log the task's name and its affinity
+                ESP_EARLY_LOGE(TAG, " - %s (0x%x)", pcTaskGetName(entry->task_handle), vTaskCoreAffinityGet(entry->task_handle));
+#else // configNUM_CORES > 1
+                // Log the task's name
+                ESP_EARLY_LOGE(TAG, " - %s", pcTaskGetName(entry->task_handle));
+#endif // configNUM_CORES > 1
+#else // CONFIG_FREERTOS_SMP
                 BaseType_t task_affinity = xTaskGetAffinity(entry->task_handle);
                 const char *cpu;
                 if (task_affinity == 0) {
@@ -359,7 +364,7 @@ static void task_wdt_isr(void *arg)
                     cpu = DRAM_STR("CPU 0/1");
                 }
                 ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetName(entry->task_handle), cpu);
-#endif
+#endif // CONFIG_FREERTOS_SMP
             } else {
                 ESP_EARLY_LOGE(TAG, " - %s", entry->user_name);
             }
