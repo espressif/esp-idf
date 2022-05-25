@@ -41,20 +41,28 @@ RUN : \
 # It is possibe to combine both, e.g.:
 #   IDF_CLONE_BRANCH_OR_TAG=release/vX.Y
 #   IDF_CHECKOUT_REF=<some commit on release/vX.Y branch>.
+# Use IDF_CLONE_SHALLOW=1 to peform shallow clone (i.e. --depth=1 --shallow-submodules)
+# Use IDF_INSTALL_TARGETS to install tools only for selected chip targets (CSV)
 
 ARG IDF_CLONE_URL=https://github.com/espressif/esp-idf.git
 ARG IDF_CLONE_BRANCH_OR_TAG=master
 ARG IDF_CHECKOUT_REF=
+ARG IDF_CLONE_SHALLOW=
+ARG IDF_INSTALL_TARGETS=all
 
 ENV IDF_PATH=/opt/esp/idf
 ENV IDF_TOOLS_PATH=/opt/esp
 
 RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_BRANCH_OR_TAG && \
     git clone --recursive \
+      ${IDF_CLONE_SHALLOW:+--depth=1 --shallow-submodules} \
       ${IDF_CLONE_BRANCH_OR_TAG:+-b $IDF_CLONE_BRANCH_OR_TAG} \
       $IDF_CLONE_URL $IDF_PATH && \
     if [ -n "$IDF_CHECKOUT_REF" ]; then \
       cd $IDF_PATH && \
+      if [ -n "$IDF_CLONE_SHALLOW" ]; then \
+        git fetch origin --depth=1 --recurse-submodules ${IDF_CHECKOUT_REF}; \
+      fi && \
       git checkout $IDF_CHECKOUT_REF && \
       git submodule update --init --recursive; \
     fi
@@ -62,7 +70,7 @@ RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_B
 # Install all the required tools
 RUN : \
   && update-ca-certificates --fresh \
-  && $IDF_PATH/tools/idf_tools.py --non-interactive install required \
+  && $IDF_PATH/tools/idf_tools.py --non-interactive install required --targets=${IDF_INSTALL_TARGETS} \
   && $IDF_PATH/tools/idf_tools.py --non-interactive install cmake \
   && $IDF_PATH/tools/idf_tools.py --non-interactive install-python-env \
   && rm -rf $IDF_TOOLS_PATH/dist \
