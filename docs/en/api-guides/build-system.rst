@@ -1299,6 +1299,7 @@ These are properties that describe the build. Values of build properties can be 
 - EXECUTABLE - project executable; set by call to ``idf_build_executable``
 - EXECUTABLE_NAME - name of project executable without extension; set by call to ``idf_build_executable``
 - EXECUTABLE_DIR - path containing the output executable
+- IDF_COMPONENT_MANAGER - the component manager is enabled by default, but if this property is set to ``0`` it was disabled by the IDF_COMPONENT_MANAGER environment variable
 - IDF_PATH - ESP-IDF path; set from IDF_PATH environment variable, if not, inferred from the location of ``idf.cmake``
 - IDF_TARGET - target chip for the build; set from the required target argument for ``idf_build_process``
 - IDF_VER - ESP-IDF version; set from either a version file or the Git revision of the IDF_PATH repository
