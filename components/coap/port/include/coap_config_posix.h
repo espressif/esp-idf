@@ -30,6 +30,8 @@
 #define HAVE_NETDB_H
 #define HAVE_NETINET_IN_H
 #define HAVE_STRUCT_CMSGHDR
+#define HAVE_PTHREAD_H
+#define HAVE_PTHREAD_MUTEX_LOCK
 #define COAP_DISABLE_TCP 0
 
 #define ipi_spec_dst ipi_addr
