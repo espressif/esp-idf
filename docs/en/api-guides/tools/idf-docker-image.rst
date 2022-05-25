@@ -2,6 +2,9 @@
 IDF Docker Image
 ****************
 
+..
+    When changing this page, please keep tools/docker/README.md in sync.
+
 .. highlight:: bash
 
 IDF Docker image (``espressif/idf``) is intended for building applications and libraries with specific versions of ESP-IDF, when doing automated builds.
