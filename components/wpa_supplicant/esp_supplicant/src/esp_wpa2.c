@@ -276,7 +276,7 @@ int wpa2_post(uint32_t sig, uint32_t par)
         DATA_MUTEX_GIVE();
         evt->sig = sig;
         evt->par = par;
-        if (os_queue_send(s_wpa2_queue, &evt, 10 / portTICK_PERIOD_MS ) != TRUE) {
+        if (os_queue_send(s_wpa2_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
             wpa_printf(MSG_ERROR, "WPA2: Q S E");
             return ESP_FAIL;
         } else {

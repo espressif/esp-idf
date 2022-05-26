@@ -63,6 +63,7 @@ void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len);
 
 void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
 static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd);
+void wpa_supplicant_stop_countermeasures(void *data, void *user_ctx);
 static inline enum wpa_states   wpa_sm_get_state(struct wpa_sm *sm)
 {
     return sm->wpa_state;;
@@ -2098,9 +2099,9 @@ out:
  */
 void wpa_sm_set_state(enum wpa_states state)
 {
-       struct wpa_sm *sm = &gWpaSm;
+    struct wpa_sm *sm = &gWpaSm;
     if(WPA_MIC_FAILURE==WPA_SM_STATE(sm))
-        ets_timer_disarm(&(sm->cm_timer));
+    eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
     sm->wpa_state= state;
 }
 
@@ -2446,26 +2447,25 @@ void wpa_supplicant_clr_countermeasures(u16 *pisunicast)
 {
     struct wpa_sm *sm = &gWpaSm;
     sm->mic_errors_seen = 0;
-    ets_timer_done(&(sm->cm_timer));
     wpa_printf(MSG_DEBUG, "WPA: TKIP countermeasures clean\n");
 }
 
 /*recovery from countermeasures state, countermeasures state is period that stop connection with ap
   also used in wpa_init after connecting with ap
 */
-void wpa_supplicant_stop_countermeasures(u16 *pisunicast)
+void wpa_supplicant_stop_countermeasures(void *data, void *user_ctx)
 {
-       struct wpa_sm *sm = &gWpaSm;
+    struct wpa_sm *sm = &gWpaSm;
 
-       ets_timer_done(&(sm->cm_timer));
     if (sm->countermeasures) {
         sm->countermeasures = 0;
-              wpa_supplicant_clr_countermeasures(NULL);
+        wpa_supplicant_clr_countermeasures(NULL);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
 
         wpa_printf(MSG_DEBUG, "WPA: TKIP countermeasures stopped\n");
-              /*renew scan preocess, this isn't done now*/
+        /*renew scan preocess, this isn't done now*/
     }
-       wpa_sm_set_state(WPA_DISCONNECTED);
+    wpa_sm_set_state(WPA_DISCONNECTED);
 }
 
 int wpa_michael_mic_failure(u16 isunicast)
@@ -2494,10 +2494,8 @@ int wpa_michael_mic_failure(u16 isunicast)
         /*deauthenticate AP*/
 
         /*stop monitor next mic_failure timer,disconnect for 60sec, then stop contermeasures*/
-        ets_timer_disarm(&(sm->cm_timer));
-        ets_timer_done(&(sm->cm_timer));
-        ets_timer_setfn(&(sm->cm_timer), (ETSTimerFunc *)wpa_supplicant_stop_countermeasures, NULL);
-        ets_timer_arm(&(sm->cm_timer), 60*1000, false);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
+        eloop_register_timeout(60, 0, wpa_supplicant_stop_countermeasures, NULL, NULL);
 
         /* TODO: mark the AP rejected for 60 second. STA is
          * allowed to associate with another AP.. */
@@ -2506,10 +2504,8 @@ int wpa_michael_mic_failure(u16 isunicast)
         wpa_sm_set_state(WPA_MIC_FAILURE);
         wpa_sm_key_request(sm, 1, isunicast);
         /*start 60sec counter to monitor whether next mic_failure occur in this period, or clear mic_errors_seen*/
-        ets_timer_disarm(&(sm->cm_timer));
-        ets_timer_done(&(sm->cm_timer));
-        ets_timer_setfn(&(sm->cm_timer), (ETSTimerFunc *)wpa_supplicant_clr_countermeasures, NULL);
-        ets_timer_arm(&(sm->cm_timer), 60*1000, false);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
+        eloop_register_timeout(60, 0, wpa_supplicant_stop_countermeasures, NULL, NULL);
     }
 
     return 0;

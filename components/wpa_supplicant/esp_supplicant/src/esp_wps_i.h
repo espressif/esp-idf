@@ -61,11 +61,6 @@ struct wps_sm {
     u8 ap_cred_cnt;
     struct wps_device_data *dev;
     u8 uuid[16];
-    ETSTimer wps_timeout_timer;
-    ETSTimer wps_msg_timeout_timer;
-    ETSTimer wps_scan_timer;
-    ETSTimer wps_success_cb_timer;
-    ETSTimer wps_eapol_start_timer;
     u8 current_identifier;
     bool is_wps_scan;
     u8 channel;
@@ -123,3 +118,4 @@ static inline int wps_set_status(uint32_t status)
     return esp_wifi_set_wps_status_internal(status);
 }
 int wps_init_cfg_pin(struct wps_config *cfg);
+void wifi_station_wps_eapol_start_handle(void *data, void *user_ctx);

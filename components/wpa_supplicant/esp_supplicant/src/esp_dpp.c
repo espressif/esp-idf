@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "utils/includes.h"
+#include "utils/common.h"
+#include "common/defs.h"
+
 #include "esp_dpp_i.h"
 #include "esp_dpp.h"
 #include "esp_wpa.h"
-#include "esp_timer.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
@@ -50,7 +53,7 @@ static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
         ret = ESP_ERR_DPP_FAILURE;
         goto end;
     }
-    if (os_queue_send(s_dpp_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != TRUE) {
+    if (os_queue_send(s_dpp_evt_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
         DPP_API_UNLOCK();
         ret = ESP_ERR_DPP_FAILURE;
         goto end;

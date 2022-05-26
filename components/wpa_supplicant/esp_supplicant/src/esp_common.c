@@ -836,7 +836,7 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 		os_free(evt);
 		return -1;
 	}
-	if (os_queue_send(s_supplicant_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != TRUE) {
+	if (os_queue_send(s_supplicant_evt_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
 		SUPPLICANT_API_UNLOCK();
 		os_free(evt);
 		return -1;

@@ -44,12 +44,17 @@ void callback(void *a, void *b)
 
 }
 
+extern const wifi_osi_funcs_t *wifi_funcs;
 /* Check if eloop runs its timers correctly & in correct order */
 TEST_CASE("Test eloop timers run", "[eloop]")
 {
 	int execution_order[6] = {1, 5, 3, 0, 2, 4};
 	int index[6] = {0,1,2,3,4,5};
 
+	wifi_funcs = WIFI_OSI_FUNCS_INITIALIZER();
+	if (!wifi_funcs) {
+		TEST_ASSERT(1);
+	}
 	eloop_init();
 	os_get_reltime(&ts);
 	for (int i = 0; i < 6; i++) {
@@ -59,7 +64,7 @@ TEST_CASE("Test eloop timers run", "[eloop]")
 
 	/* wait for all timers to run */
 	os_sleep(20, 0);
-
+	t = 0;
 	/* check the execution order, this will also check whether they were fired at correct time */
 	TEST_ASSERT(memcmp(execution_order, executed_order, 6*sizeof(int)) == 0);
 	eloop_destroy();
