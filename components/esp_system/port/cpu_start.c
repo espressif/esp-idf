@@ -128,9 +128,6 @@ static volatile bool s_cpu_inited[SOC_CPU_CORES_NUM] = { false };
 static volatile bool s_resume_cores;
 #endif
 
-// If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
-bool g_spiram_ok = true;
-
 static void core_intr_matrix_clear(void)
 {
     uint32_t core_id = cpu_hal_get_core_id();
@@ -394,7 +391,6 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
-        g_spiram_ok = false;
 #else
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
         abort();
@@ -428,7 +424,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // SOC_CPU_CORES_NUM > 1
 
 #if CONFIG_SPIRAM_MEMTEST
-    if (g_spiram_ok) {
+    if (esp_psram_is_initialized()) {
         bool ext_ram_ok = esp_psram_extram_test();
         if (!ext_ram_ok) {
             ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");

@@ -5,6 +5,7 @@
  */
 
 #include "soc/dport_reg.h"
+#include "esp_attr.h"
 #include "esp_psram.h"
 #include "esp_private/esp_psram_extram.h"
 
