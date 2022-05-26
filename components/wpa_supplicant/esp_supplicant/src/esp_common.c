@@ -866,6 +866,7 @@ void esp_set_scan_ie(void) { }
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie) { }
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
+	wpa_cb->wpa_sta_rx_mgmt = NULL;
 	return 0;
 }
 void esp_supplicant_common_deinit(void) { }

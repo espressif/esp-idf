@@ -10,6 +10,7 @@
 
 #include "utils/common.h"
 #include "utils/base64.h"
+#include "utils/eloop.h"
 #include "utils/uuid.h"
 #include "utils/list.h"
 #include "crypto/crypto.h"
@@ -699,6 +700,7 @@ wps_registrar_init(struct wps_context *wps,
 	reg->dualband = cfg->dualband;
 	reg->force_per_enrollee_psk = cfg->force_per_enrollee_psk;
 
+#ifndef ESP_SUPPLICANT
 	if (cfg->multi_ap_backhaul_ssid) {
 		os_memcpy(reg->multi_ap_backhaul_ssid,
 			  cfg->multi_ap_backhaul_ssid,
@@ -714,6 +716,7 @@ wps_registrar_init(struct wps_context *wps,
 			reg->multi_ap_backhaul_network_key_len =
 				cfg->multi_ap_backhaul_network_key_len;
 	}
+#endif
 
 	if (wps_set_ie(reg)) {
 		wps_registrar_deinit(reg);
@@ -1291,6 +1294,7 @@ static void wps_cb_set_sel_reg(struct wps_registrar *reg)
 }
 
 
+#ifndef ESP_SUPPLICANT
 static int wps_cp_lookup_pskfile(struct wps_registrar *reg, const u8 *mac_addr,
 				 const u8 **psk)
 {
@@ -1298,7 +1302,7 @@ static int wps_cp_lookup_pskfile(struct wps_registrar *reg, const u8 *mac_addr,
 		return 0;
 	return reg->lookup_pskfile_cb(reg->cb_ctx, mac_addr, psk);
 }
-
+#endif
 
 static int wps_set_ie(struct wps_registrar *reg)
 {
@@ -1619,9 +1623,11 @@ int wps_build_credential_wrap(struct wpabuf *msg,
 int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 {
 	struct wpabuf *cred;
+#ifndef ESP_SUPPLICANT
 	struct wps_registrar *reg = wps->wps->registrar;
 	const u8 *pskfile_psk;
 	char hex[65];
+#endif
 
 	if (wps->wps->registrar->skip_cred_build)
 		goto skip_cred_build;
@@ -1631,6 +1637,7 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		os_memcpy(&wps->cred, wps->use_cred, sizeof(wps->cred));
 		goto use_provided;
 	}
+#ifndef ESP_SUPPLICANT
 	os_memset(&wps->cred, 0, sizeof(wps->cred));
 
 	if (wps->peer_dev.multi_ap_ext == MULTI_AP_BACKHAUL_STA &&
@@ -1741,12 +1748,23 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 				      wps->new_psk, wps->new_psk_len);
 		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);
 		wps->cred.key_len = wps->new_psk_len;
-	} else if (wps->use_psk_key && wps->wps->psk_set) {
-		char hex[65] = {0};
-		wpa_printf(MSG_DEBUG,  "WPS: Use PSK format for Network Key");
-		os_memcpy(wps->cred.key, hex, 32 * 2);
-		wps->cred.key_len = 32 * 2;
-	} else if (wps->wps->network_key) {
+	} else if (wps_cp_lookup_pskfile(reg, wps->mac_addr_e, &pskfile_psk)) {
+		wpa_hexdump_key(MSG_DEBUG, "WPS: Use PSK from wpa_psk_file",
+				pskfile_psk, PMK_LEN);
+		wpa_snprintf_hex(hex, sizeof(hex), pskfile_psk, PMK_LEN);
+		os_memcpy(wps->cred.key, hex, PMK_LEN * 2);
+		wps->cred.key_len = PMK_LEN * 2;
+	} else if (!wps->wps->registrar->force_per_enrollee_psk &&
+		   wps->use_psk_key && wps->wps->psk_set) {
+		wpa_printf(MSG_DEBUG, "WPS: Use PSK format for Network Key");
+		wpa_snprintf_hex(hex, sizeof(hex), wps->wps->psk, PMK_LEN);
+		os_memcpy(wps->cred.key, hex, PMK_LEN * 2);
+		wps->cred.key_len = PMK_LEN * 2;
+	} else
+		if ((!wps->wps->registrar->force_per_enrollee_psk ||
+		    wps->wps->use_passphrase) && wps->wps->network_key) {
+		wpa_printf(MSG_DEBUG,
+			   "WPS: Use passphrase format for Network key");
 		os_memcpy(wps->cred.key, wps->wps->network_key,
 			  wps->wps->network_key_len);
 		wps->cred.key_len = wps->wps->network_key_len;
@@ -1772,6 +1790,7 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		os_memcpy(wps->cred.key, hex, wps->new_psk_len * 2);
 		wps->cred.key_len = wps->new_psk_len * 2;
 	}
+#endif
 
 use_provided:
 #ifdef CONFIG_WPS_TESTING
@@ -1836,6 +1855,7 @@ static int wps_build_ap_settings(struct wps_data *wps, struct wpabuf *msg)
 }
 
 
+#ifndef ESP_SUPPLICANT
 static struct wpabuf * wps_build_ap_cred(struct wps_data *wps)
 {
 	struct wpabuf *msg, *plain;
@@ -1863,6 +1883,7 @@ static struct wpabuf * wps_build_ap_cred(struct wps_data *wps)
 
 	return msg;
 }
+#endif
 
 
 static struct wpabuf * wps_build_m2(struct wps_data *wps)
@@ -2563,15 +2584,10 @@ static int wps_process_wps_state(struct wps_data *wps, const u8 *state)
 
 static int wps_process_assoc_state(struct wps_data *wps, const u8 *assoc)
 {
-	u16 a;
-
 	if (assoc == NULL) {
 		wpa_printf(MSG_DEBUG, "WPS: No Association State received");
 		return -1;
 	}
-
-	a = WPA_GET_BE16(assoc);
-	wpa_printf(MSG_DEBUG, "WPS: Enrollee Association State %d", a);
 
 	return 0;
 }
@@ -2579,15 +2595,10 @@ static int wps_process_assoc_state(struct wps_data *wps, const u8 *assoc)
 
 static int wps_process_config_error(struct wps_data *wps, const u8 *err)
 {
-	u16 e;
-
 	if (err == NULL) {
 		wpa_printf(MSG_DEBUG, "WPS: No Configuration Error received");
 		return -1;
 	}
-
-	e = WPA_GET_BE16(err);
-	wpa_printf(MSG_DEBUG, "WPS: Enrollee Configuration Error %d", e);
 
 	return 0;
 }
@@ -2863,6 +2874,7 @@ static enum wps_process_res wps_process_m5(struct wps_data *wps,
 }
 
 
+#ifndef ESP_SUPPLICANT
 static void wps_sta_cred_cb(struct wps_data *wps)
 {
 	/*
@@ -2949,8 +2961,15 @@ static int wps_process_ap_settings_r(struct wps_data *wps,
 
 		return 1;
 	}
+	return 0;
 }
-
+#else
+static int wps_process_ap_settings_r(struct wps_data *wps,
+				     struct wps_parse_attr *attr)
+{
+	return 0;
+}
+#endif
 
 static enum wps_process_res wps_process_m7(struct wps_data *wps,
 					   const struct wpabuf *msg,
@@ -3301,6 +3320,7 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 	}
 
 	wpa_printf(MSG_DEBUG, "WPS: Negotiation completed successfully");
+#ifndef ESP_SUPPLICANT
 	wps_device_store(wps->wps->registrar, &wps->peer_dev,
 			 wps->uuid_e);
 
@@ -3349,6 +3369,7 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 		wps->new_psk = NULL;
 	}
 
+#endif
 	wps_cb_reg_success(wps->wps->registrar, wps->mac_addr_e, wps->uuid_e,
 			   wps->dev_password, wps->dev_password_len);
 

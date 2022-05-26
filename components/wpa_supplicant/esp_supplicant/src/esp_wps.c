@@ -31,25 +31,12 @@
 #include "eap_common/eap_wsc_common.h"
 #include "esp_wpas_glue.h"
 
-#define API_MUTEX_TAKE() do {\
-    if (!s_wps_api_lock) {\
-        s_wps_api_lock = xSemaphoreCreateRecursiveMutex();\
-        if (!s_wps_api_lock) {\
-            wpa_printf(MSG_ERROR, "wps api lock create failed");\
-            return ESP_ERR_NO_MEM;\
-        }\
-    }\
-    xSemaphoreTakeRecursive(s_wps_api_lock, portMAX_DELAY);\
-} while(0)
-
-#define API_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_api_lock)
-#define DATA_MUTEX_TAKE() xSemaphoreTakeRecursive(s_wps_data_lock, portMAX_DELAY)
-#define DATA_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_data_lock)
-
-#define WPS_ADDR_LEN 6
+void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
+void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */
+bool s_wps_enabled = false;
 #ifdef USE_WPS_TASK
 struct wps_rx_param {
-    u8 sa[WPS_ADDR_LEN];
+    u8 sa[ETH_ALEN];
     u8 *buf;
     int len;
     STAILQ_ENTRY(wps_rx_param) bqentry;
@@ -63,11 +50,8 @@ typedef struct {
 
 static TaskHandle_t s_wps_task_hdl = NULL;
 static void *s_wps_queue = NULL;
-static void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
-static void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */
 static void *s_wps_data_lock = NULL;
 static void *s_wps_task_create_sem = NULL;
-static bool s_wps_enabled = false;
 static uint8_t s_wps_sig_cnt[SIG_WPS_NUM] = {0};
 
 #endif
@@ -88,31 +72,6 @@ void wps_add_discard_ap(u8 *bssid);
 
 struct wps_sm *gWpsSm = NULL;
 static wps_factory_information_t *s_factory_info = NULL;
-
-#ifdef CONFIG_WPS_TESTING
-int wps_version_number = 0x20;
-int wps_testing_dummy_cred = 0;
-#endif /* CONFIG_WPS_TESTING */
-
-int wps_get_type(void)
-{
-    return esp_wifi_get_wps_type_internal();
-}
-
-int wps_set_type(uint32_t type)
-{
-    return esp_wifi_set_wps_type_internal(type);
-}
-
-int wps_get_status(void)
-{
-    return esp_wifi_get_wps_status_internal();
-}
-
-int wps_set_status(uint32_t status)
-{
-    return esp_wifi_set_wps_status_internal(status);
-}
 
 static void wps_rxq_init(void)
 {
@@ -395,7 +354,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
     }
 
     if (!scan->rsn && !scan->wpa && (scan->capinfo & WLAN_CAPABILITY_PRIVACY)) {
-        wpa_printf(MSG_INFO, "WEP not suppported in WPS");
+        wpa_printf(MSG_DEBUG, "WEP not suppported in WPS");
         return false;
     }
 
@@ -916,7 +875,7 @@ int wps_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
         }
         os_memcpy(param->buf, buf, len);
         param->len = len;
-        os_memcpy(param->sa, src_addr, WPS_ADDR_LEN);
+        os_memcpy(param->sa, src_addr, ETH_ALEN);
 
         wps_rxq_enqueue(param);
         return wps_post(SIG_WPS_RX, 0);
@@ -1041,7 +1000,7 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
 
             tmp = (u8 *)(ehdr + 1) + 1;
             ret = wps_process_wps_mX_req(tmp, plen - sizeof(*ehdr) - 1, &res);
-            if (ret == 0 && res != WPS_FAILURE && res != WPS_IGNORE && res != WPS_FRAGMENT) {
+            if (ret == 0 && res != WPS_FAILURE && res != WPS_FRAGMENT) {
                 ret = wps_send_wps_mX_rsp(ehdr->identifier);
                 if (ret == 0) {
                     wpa_printf(MSG_DEBUG, "sm->wps->state = %d", sm->wps->state);
@@ -1050,9 +1009,6 @@ int wps_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len)
             } else if (ret == 0 && res == WPS_FRAGMENT) {
                 wpa_printf(MSG_DEBUG, "wps frag, continue...");
                 ret = ESP_OK;
-            } else if (res == WPS_IGNORE) {
-                wpa_printf(MSG_DEBUG, "IGNORE overlap Mx");
-                ret = ESP_OK; /* IGNORE the overlap */
             } else {
                 ret = ESP_FAIL;
             }
@@ -1382,12 +1338,32 @@ static int save_credentials_cb(void *ctx, const struct wps_credential *cred)
     return ESP_OK;
 }
 
+int wps_init_cfg_pin(struct wps_config *cfg)
+{
+    if (wps_get_type() != WPS_TYPE_PIN) {
+        cfg->pbc = 1;
+        return 0;
+    }
+
+    cfg->pbc = 0;
+    if (os_strncmp((char *)cfg->pin, "00000000", 8) != 0) {
+        unsigned int spin = 0;
+        cfg->dev_pw_id = DEV_PW_DEFAULT;
+        cfg->pin_len = 8;
+        if (wps_generate_pin(&spin) < 0) {
+            return -1;
+	}
+        os_sprintf((char *)cfg->pin, "%08d", spin);
+    }
+
+    return 0;
+}
+
 int
 wifi_station_wps_init(void)
 {
     struct wps_funcs *wps_cb;
     struct wps_sm *sm = NULL;
-    uint8_t mac[6];
     struct wps_config cfg = {0};
 
     if (gWpsSm) {
@@ -1403,8 +1379,7 @@ wifi_station_wps_init(void)
 
     sm = gWpsSm;
 
-    esp_wifi_get_macaddr_internal(WIFI_IF_STA, mac);
-    os_memcpy(sm->ownaddr, mac, ETH_ALEN);
+    esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
 
     sm->identity_len = WSC_ID_ENROLLEE_LEN;
     os_memcpy(sm->identity, WSC_ID_ENROLLEE, sm->identity_len);
@@ -1419,34 +1394,17 @@ wifi_station_wps_init(void)
     }
 
     cfg.wps = sm->wps_ctx;
-    if (IS_WPS_REGISTRAR(wps_get_type())) {
-        cfg.registrar = 1;
+
+    if (wps_init_cfg_pin(&cfg) < 0) {
+        goto _err;
     }
 
-    /* TODO add for Registrar */
-    if (wps_get_type() == WPS_TYPE_PIN) {
-        unsigned int spin = 0;
-        cfg.dev_pw_id = DEV_PW_DEFAULT;
-        cfg.pin_len = 8;
-        cfg.pin = os_zalloc(cfg.pin_len + 1);
-        if (!cfg.pin) {
-            goto _err;
-        }
-        if (wps_generate_pin(&spin) < 0) {
-            goto _err;
-	}
-        os_sprintf((char *)cfg.pin, "%08d", spin);
-    } else if (wps_get_type() == WPS_TYPE_PBC) {
-        cfg.pbc = 1;
-    }
-
+    os_memcpy(cfg.wps->uuid, sm->uuid, WPS_UUID_LEN);
     if ((sm->wps = wps_init(&cfg)) == NULL) {         /* alloc wps_data */
         goto _err;
     }
 
-    if (cfg.pin) {
-        os_free((u8 *)cfg.pin);
-    }
+    /* Report PIN */
     if (wps_get_type() == WPS_TYPE_PIN) {
         wifi_event_sta_wps_er_pin_t evt;
         os_memcpy(evt.pin_code, sm->wps->dev_password, 8);
@@ -1478,13 +1436,12 @@ wifi_station_wps_init(void)
     wps_cb = os_malloc(sizeof(struct wps_funcs));
     if (wps_cb == NULL) {
         goto _err;
-    } else {
-        wps_cb->wps_parse_scan_result = wps_parse_scan_result;
-        wps_cb->wifi_station_wps_start = wifi_station_wps_start;
-        wps_cb->wps_sm_rx_eapol = wps_sm_rx_eapol;
-        wps_cb->wps_start_pending = wps_start_pending;
-        esp_wifi_set_wps_cb_internal(wps_cb);
     }
+    wps_cb->wps_parse_scan_result = wps_parse_scan_result;
+    wps_cb->wifi_station_wps_start = wifi_station_wps_start;
+    wps_cb->wps_sm_rx_eapol = wps_sm_rx_eapol;
+    wps_cb->wps_start_pending = wps_start_pending;
+    esp_wifi_set_wps_cb_internal(wps_cb);
 
     return ESP_OK;
 
@@ -1647,6 +1604,11 @@ void wifi_wps_scan(void)
 #endif
 }
 
+static int wps_rf_band_cb(void *ctx)
+{
+	return WPS_RF_24GHZ;
+}
+
 int wifi_station_wps_start(void)
 {
     struct wps_sm *sm = wps_sm_get();
@@ -1666,7 +1628,7 @@ int wifi_station_wps_start(void)
         sm->wps->wps->dh_privkey = wpabuf_dup(sm->wps->dh_privkey);
         sm->wps->wps->dh_ctx = sm->wps->dh_ctx;
         sm->wps->wps->dh_pubkey = sm->wps->dh_pubkey_e;
-        sm->wps->wps->rf_band_cb = NULL;
+        sm->wps->wps->rf_band_cb = wps_rf_band_cb;
         wpabuf_clear_free(sm->wps->dh_privkey);
         sm->wps->dh_privkey = NULL;
         wifi_wps_scan();
@@ -1872,12 +1834,6 @@ int wifi_wps_enable_internal(const esp_wps_config_t *config)
         return ESP_ERR_WIFI_WPS_TYPE;
     }
 
-    /* currently , we don't support REGISTRAR */
-    if (IS_WPS_REGISTRAR(config->wps_type)) {
-        wpa_printf(MSG_ERROR, "wps enable: not support registrar");
-        return ESP_ERR_WIFI_WPS_TYPE;
-    }
-
     wpa_printf(MSG_DEBUG, "Set factory information.");
     ret = wps_set_factory_info(config);
     if (ret != 0) {
@@ -1974,13 +1930,11 @@ int esp_wifi_wps_start(int timeout_ms)
     }
 
     wpa_printf(MSG_DEBUG, "wps scan");
-
 #ifdef USE_WPS_TASK
     wps_post_block(SIG_WPS_START, 0);
 #else
     ic_pp_post(SIG_PP_WPS, 0);
 #endif
-
     API_MUTEX_GIVE();
     return ESP_OK;
 }

@@ -11,6 +11,7 @@
 #include "rsn_supp/wpa_i.h"
 #include "common/eapol_common.h"
 #include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
 #include "rsn_supp/wpa_ie.h"
 #include "ap/wpa_auth.h"
 #include "ap/wpa_auth_i.h"
@@ -29,6 +30,13 @@
 #include "esp_wpa3_i.h"
 #include "esp_wpa2.h"
 #include "esp_common_i.h"
+
+#include "esp_wps.h"
+#include "eap_server/eap.h"
+#include "eapol_auth/eapol_auth_sm.h"
+#include "ap/ieee802_1x.h"
+#include "ap/sta_info.h"
+#include "wps/wps_defs.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
@@ -134,16 +142,24 @@ uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
     return hapd->wpa_auth->wpa_ie;
 }
 
-bool  wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
+bool wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 {
     struct hostapd_data *hapd = (struct hostapd_data *)hapd_data;
-    struct wpa_state_machine *sm = (struct wpa_state_machine *)sm_data;
-
-    if (!hapd || !sm) {
+    struct sta_info *sta = (struct sta_info *)sm_data;
+    if (!hapd || !sta) {
+        wpa_printf(MSG_DEBUG, "hapd=%p sta=%p", hapd, sta);
         return false;
     }
+#ifdef CONFIG_WPS_REGISTRAR
+    int wps_type = esp_wifi_get_wps_type_internal();
 
-    wpa_receive(hapd->wpa_auth, sm, data, data_len);
+    if ((wps_type == WPS_TYPE_PBC) ||
+	(wps_type == WPS_TYPE_PIN)) {
+	ieee802_1x_receive(hapd, sta->addr, data, data_len);
+        return true;
+    }
+#endif
+    wpa_receive(hapd->wpa_auth, sta->wpa_sm, data, data_len);
 
     return true;
 }
@@ -226,6 +242,60 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     }
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+
+#ifdef CONFIG_WPS_REGISTRAR
+static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, u8 *ies, u8 ies_len, bool *pmf_enable)
+{
+    struct wpabuf *wps_ie = ieee802_11_vendor_ie_concat(ies, ies_len, WPS_DEV_OUI_WFA);
+    int wps_type = esp_wifi_get_wps_type_internal();
+
+    /* Condition for this, WPS is running and WPS IEs are part of assoc req */
+    if (!wps_ie || (wps_type == WPS_TYPE_DISABLE)) {
+        return 0;
+    }
+
+    sta_info->wps_ie = wps_ie;
+    sta_info->eapol_sm = ieee802_1x_alloc_eapol_sm(hapd, sta_info);
+
+    if (sta_info->eapol_sm) {
+        wpa_printf(MSG_DEBUG, "considering station " MACSTR " for WPS", MAC2STR(sta_info->addr));
+        return 1;
+    }
+
+    return 0;
+}
+#endif
+
+static bool hostap_sta_join(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
+{
+    struct sta_info *sta_info;
+    struct hostapd_data *hapd = hostapd_get_hapd_data();
+
+    if (!hapd) {
+        return 0;
+    }
+    sta_info = ap_sta_add(hapd, bssid);
+    if (!sta_info) {
+        wpa_printf(MSG_ERROR, "failed to add station " MACSTR, MAC2STR(bssid));
+	return 0;
+    }
+#ifdef CONFIG_WPS_REGISTRAR
+    if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable)) {
+        *sm = sta_info;
+        return true;
+    }
+#endif
+    if (wpa_ap_join(sm, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
+        sta_info->wpa_sm = *sm;
+        *sm = sta_info;
+        return true;
+    }
+
+    return false;
+}
+#endif
+
 int esp_supplicant_init(void)
 {
     int ret = ESP_OK;
@@ -244,7 +314,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_sta_in_4way_handshake = wpa_sta_in_4way_handshake;
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
-    wpa_cb->wpa_ap_join       = wpa_ap_join;
+    wpa_cb->wpa_ap_join       = hostap_sta_join;
     wpa_cb->wpa_ap_remove     = wpa_ap_remove;
     wpa_cb->wpa_ap_get_wpa_ie = wpa_ap_get_wpa_ie;
     wpa_cb->wpa_ap_rx_eapol   = wpa_ap_rx_eapol;

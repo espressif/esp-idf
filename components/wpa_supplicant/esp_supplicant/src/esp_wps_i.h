@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_wifi_driver.h"
+#include "esp_wps.h"
+
 /* WPS message flag */
 enum wps_msg_flag {
     WPS_MSG_FLAG_MORE = 0x01,
@@ -36,6 +39,10 @@ struct discard_ap_list_t{
 
 #ifndef MAX_PASSPHRASE_LEN
 #define MAX_PASSPHRASE_LEN 64
+#endif
+
+#ifndef MAX_CRED_COUNT
+#define MAX_CRED_COUNT 10
 #endif
 
 #define WPS_OUTBUF_SIZE 500
@@ -72,9 +79,47 @@ struct wps_sm {
     u8 discard_ap_cnt;
 };
 
+#define API_MUTEX_TAKE() do {\
+    if (!s_wps_api_lock) {\
+        s_wps_api_lock = xSemaphoreCreateRecursiveMutex();\
+        if (!s_wps_api_lock) {\
+            wpa_printf(MSG_ERROR, "wps api lock create failed");\
+            return ESP_ERR_NO_MEM;\
+        }\
+    }\
+    xSemaphoreTakeRecursive(s_wps_api_lock, portMAX_DELAY);\
+} while(0)
+
+#define API_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_api_lock)
+#define DATA_MUTEX_TAKE() xSemaphoreTakeRecursive(s_wps_data_lock, portMAX_DELAY)
+#define DATA_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_data_lock)
+
 struct wps_sm *wps_sm_get(void);
 int wps_station_wps_unregister_cb(void);
 int wps_start_pending(void);
 int wps_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 
 int wps_dev_deinit(struct wps_device_data *dev);
+int wps_dev_init(void);
+int wps_set_factory_info(const esp_wps_config_t *config);
+
+static inline int wps_get_type(void)
+{
+    return esp_wifi_get_wps_type_internal();
+}
+
+static inline int wps_set_type(uint32_t type)
+{
+    return esp_wifi_set_wps_type_internal(type);
+}
+
+static inline int wps_get_status(void)
+{
+    return esp_wifi_get_wps_status_internal();
+}
+
+static inline int wps_set_status(uint32_t status)
+{
+    return esp_wifi_set_wps_status_internal(status);
+}
+int wps_init_cfg_pin(struct wps_config *cfg);

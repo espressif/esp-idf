@@ -25,13 +25,6 @@ extern "C" {
   * @{
   */
 
-/** \defgroup WPS_APIs  WPS APIs
-  * @brief ESP32 WPS APIs
-  *
-  * WPS can only be used when ESP32 station is enabled.
-  *
-  */
-
 /** @addtogroup WPS_APIs
   * @{
   */
@@ -59,9 +52,11 @@ typedef struct {
     char device_name[WPS_MAX_DEVICE_NAME_LEN];   /*!< Device name, null-terminated string. The default device name is used if the string is empty */
 } wps_factory_information_t;
 
+#define PIN_LEN 9
 typedef struct {
     wps_type_t wps_type;
     wps_factory_information_t factory_info;
+    char pin[PIN_LEN];
 } esp_wps_config_t;
 
 #define WPS_CONFIG_INIT_DEFAULT(type) { \
@@ -70,14 +65,15 @@ typedef struct {
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(manufacturer, "ESPRESSIF")  \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(model_number, "ESP32")  \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(model_name, "ESPRESSIF IOT")  \
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(device_name, "ESP STATION")  \
-    }  \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(device_name, "ESP DEVICE")  \
+    },  \
+    ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(pin, "00000000") \
 }
 
 /**
   * @brief     Enable Wi-Fi WPS function.
   *
-  * @attention WPS can only be used when ESP32 station is enabled.
+  * @attention WPS can only be used when station is enabled.
   *
   * @param     wps_type_t wps_type : WPS type, so far only WPS_TYPE_PBC and WPS_TYPE_PIN is supported
   *
@@ -103,7 +99,7 @@ esp_err_t esp_wifi_wps_disable(void);
 /**
   * @brief     WPS starts to work.
   *
-  * @attention WPS can only be used when ESP32 station is enabled.
+  * @attention WPS can only be used when station is enabled.
   *
   * @param     timeout_ms : maximum blocking time before API return.
   *          - 0 : non-blocking
@@ -117,6 +113,47 @@ esp_err_t esp_wifi_wps_disable(void);
   *          - ESP_FAIL : wps initialization fails
   */
 esp_err_t esp_wifi_wps_start(int timeout_ms);
+
+/**
+  * @brief     Enable Wi-Fi AP WPS function.
+  *
+  * @attention WPS can only be used when softAP is enabled.
+  *
+  * @param     wps_type_t wps_type : WPS type, so far only WPS_TYPE_PBC and WPS_TYPE_PIN is supported
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_WIFI_WPS_TYPE : wps type is invalid
+  *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
+  *          - ESP_FAIL : wps initialization fails
+  */
+esp_err_t esp_wifi_ap_wps_enable(const esp_wps_config_t *config);
+
+/**
+  * @brief  Disable Wi-Fi SoftAP WPS function and release resource it taken.
+  *
+  * @param  null
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
+  */
+esp_err_t esp_wifi_ap_wps_disable(void);
+
+/**
+  * @brief     WPS starts to work.
+  *
+  * @attention WPS can only be used when softAP is enabled.
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_WIFI_WPS_TYPE : wps type is invalid
+  *          - ESP_ERR_WIFI_WPS_MODE : wifi is not in station mode or sniffer mode is on
+  *          - ESP_ERR_WIFI_WPS_SM : wps state machine is not initialized
+  *          - ESP_FAIL : wps initialization fails
+  */
+esp_err_t esp_wifi_ap_wps_start(const unsigned char *pin);
+
 
 /**
   * @}

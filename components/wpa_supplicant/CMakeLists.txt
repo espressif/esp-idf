@@ -4,6 +4,7 @@ set(srcs "port/os_xtensa.c"
     "src/ap/ieee802_1x.c"
     "src/ap/wpa_auth.c"
     "src/ap/wpa_auth_ie.c"
+    "src/ap/sta_info.c"
     "src/common/sae.c"
     "src/common/wpa_common.c"
     "src/utils/bitfield.c"
@@ -24,6 +25,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/md4-internal.c"
     "src/crypto/sha1-tprf.c"
     "src/eap_common/eap_wsc_common.c"
+    "src/common/ieee802_11_common.c"
     "src/eap_peer/chap.c"
     "src/eap_peer/eap.c"
     "src/eap_peer/eap_common.c"
@@ -54,7 +56,6 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_common.c"
     "src/wps/wps_dev_attr.c"
     "src/wps/wps_enrollee.c")
-#    "src/wps/wps_registrar.c")
 
 set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
@@ -176,8 +177,23 @@ else()
     set(dpp_src "")
 endif()
 
-idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}"
-                            "${crypto_src}" "${mbo_src}" "${dpp_src}"
+if(CONFIG_WPA_WPS_SOFTAP_REGISTRAR)
+    set(wps_registrar_src
+    "src/ap/wps_hostapd.c"
+    "src/eap_server/eap_server.c"
+    "src/eap_server/eap_server_methods.c"
+    "src/eap_server/eap_server_wsc.c"
+    "src/ap/eap_user_db.c"
+    "src/eapol_auth/eapol_auth_sm.c"
+    "src/eap_server/eap_server_identity.c"
+    "esp_supplicant/src/esp_hostpad_wps.c"
+    "src/wps/wps_registrar.c")
+else()
+    set(wps_registrar_src "")
+endif()
+
+idf_component_register(SRCS "${srcs}" "${esp_srcs}" "${tls_src}" "${roaming_src}"
+                            "${crypto_src}" "${mbo_src}" "${dpp_src}" "${wps_registrar_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
                     PRIV_REQUIRES mbedtls esp_timer)
@@ -193,14 +209,14 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_TLS
     EAP_PEAP
     USE_WPA2_TASK
-    CONFIG_WPS2
-    CONFIG_WPS_PIN
+    CONFIG_WPS
     USE_WPS_TASK
     ESPRESSIF_USE
     ESP32_WORKAROUND
     CONFIG_ECC
     CONFIG_IEEE80211W
     CONFIG_SHA256
+    CONFIG_NO_RADIUS
     )
 
 if(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
@@ -241,5 +257,8 @@ if(CONFIG_WPA_MBEDTLS_CRYPTO)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_CRYPTO_MBEDTLS)
 else()
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_CRYPTO_INTERNAL)
+endif()
+if(CONFIG_WPA_WPS_SOFTAP_REGISTRAR)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_REGISTRAR)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)

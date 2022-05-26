@@ -49,7 +49,7 @@ struct wps_data * wps_init(const struct wps_config *cfg)
 		os_memcpy(data->mac_addr_e, cfg->wps->dev.mac_addr, ETH_ALEN);
 		os_memcpy(data->uuid_e, cfg->wps->uuid, WPS_UUID_LEN);
 	}
-	if (cfg->pin) {
+	if (cfg->pbc == 0 && cfg->pin_len) {
 		data->dev_pw_id = cfg->dev_pw_id;
 		data->dev_password = os_memdup(cfg->pin, cfg->pin_len);
 		if (data->dev_password == NULL) {
@@ -226,10 +226,7 @@ enum wps_process_res wps_process_msg(struct wps_data *wps,
  */
 struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code)
 {
-    if (wps->registrar)
         return wps_registrar_get_msg(wps, op_code);
-    else
-        return wps_enrollee_get_msg(wps, op_code);
 }
 
 

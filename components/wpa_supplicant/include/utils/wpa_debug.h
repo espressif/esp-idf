@@ -65,14 +65,6 @@ void wpa_debug_print_timestamp(void);
 #define wpa_dbg(ctx, level, fmt, args...) wpa_printf(level, fmt, ##args)
 
 void wpa_dump_mem(char* desc, uint8_t *addr, uint16_t len);
-static inline void wpa_hexdump_ascii(int level, const char *title, const void *buf, size_t len)
-{
-
-}
-
-static inline void wpa_hexdump_ascii_key(int level, const char *title, const void *buf, size_t len)
-{
-}
 
 /**
  * wpa_hexdump - conditional hex dump
@@ -86,6 +78,16 @@ static inline void wpa_hexdump_ascii_key(int level, const char *title, const voi
  * configuration. The contents of buf is printed out has hex dump.
  */
 void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len);
+
+static inline void wpa_hexdump_ascii(int level, const char *title, const void *buf, size_t len)
+{
+	wpa_hexdump(level, title, buf, len);
+}
+
+static inline void wpa_hexdump_ascii_key(int level, const char *title, const void *buf, size_t len)
+{
+	wpa_hexdump(level, title, buf, len);
+}
 
 static inline void wpa_hexdump_buf(int level, const char *title,
 				   const struct wpabuf *buf)
@@ -107,7 +109,6 @@ static inline void wpa_hexdump_buf(int level, const char *title,
  * etc.) in debug output.
  */
 void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len);
-
 
 static inline void wpa_hexdump_buf_key(int level, const char *title,
 				       const struct wpabuf *buf)

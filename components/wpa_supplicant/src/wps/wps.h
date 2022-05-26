@@ -121,7 +121,7 @@ struct wps_config {
 	/**
 	 * pin - Enrollee Device Password (%NULL for Registrar or PBC)
 	 */
-	const u8 *pin;
+	const u8 pin[9];
 
 	/**
 	 * pin_len - Length on pin in octets
@@ -132,7 +132,7 @@ struct wps_config {
 	 * pbc - Whether this is protocol run uses PBC
 	 */
 	int pbc;
-#ifndef ESP_SUPPLICANT
+#ifdef CONFIG_WPS_REGISTRAR
 	/**
 	 * assoc_wps_ie: (Re)AssocReq WPS IE (in AP; %NULL if not AP)
 	 */
@@ -161,7 +161,6 @@ struct wps_config {
 	 * struct wpa_context::psk.
 	 */
 	int use_psk_key;
-
 #endif
 	/**
 	 * dev_pw_id - Device Password ID for Enrollee when PIN is used
@@ -228,7 +227,6 @@ enum wps_process_res {
 	 *	event (e.g., UPnP message from an external Registrar)
 	 */
 	WPS_PENDING,
-	WPS_IGNORE,     /* snake, ignore the re-packge */
 
 	WPS_FRAGMENT    /* Tim, send wsc fragment ack */
 };
