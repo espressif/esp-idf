@@ -890,7 +890,6 @@ components/hal/include/hal/spi_flash_encrypt_hal.h
 components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/systimer_hal.h
-components/hal/include/hal/systimer_types.h
 components/hal/include/hal/twai_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
