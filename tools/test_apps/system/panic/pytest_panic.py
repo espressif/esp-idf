@@ -50,7 +50,7 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
 def test_task_wdt(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.expect_test_func_name(test_func_name)
     dut.expect_exact(
-        'Task watchdog got triggered. The following tasks did not reset the watchdog in time:'
+        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
     )
     dut.expect_exact('CPU 0: main')
     dut.expect(r'abort\(\) was called at PC [0-9xa-f]+ on core 0')
