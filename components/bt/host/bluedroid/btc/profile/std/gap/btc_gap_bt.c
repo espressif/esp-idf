@@ -743,6 +743,7 @@ static void btc_gap_bt_read_remote_name_cmpl_callback(void *p_data)
     msg.pid = BTC_PID_GAP_BT;
     msg.act = BTC_GAP_BT_READ_REMOTE_NAME_EVT;
 
+    memcpy(param.read_rmt_name.bda,result->bd_addr,BD_ADDR_LEN);
     param.read_rmt_name.stat = btc_btm_status_to_esp_status(result->status);
     memcpy(param.read_rmt_name.rmt_name,result->remote_bd_name,ESP_BT_GAP_MAX_BDNAME_LEN);
 
