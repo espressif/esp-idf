@@ -119,15 +119,15 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
-    if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
+    if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         rtc_clk_32k_enable(true);
     }
-    if (cfg.fast_freq == RTC_FAST_FREQ_8M) {
-        bool need_8md256 = cfg.slow_freq == RTC_SLOW_FREQ_8MD256;
+    if (cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_RC_FAST) {
+        bool need_8md256 = cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256;
         rtc_clk_8m_enable(true, need_8md256);
     }
-    rtc_clk_fast_freq_set(cfg.fast_freq);
-    rtc_clk_slow_freq_set(cfg.slow_freq);
+    rtc_clk_fast_src_set(cfg.fast_clk_src);
+    rtc_clk_slow_src_set(cfg.slow_clk_src);
 }
 
 static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
@@ -148,7 +148,7 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
      * (shifted by RTC_CLK_CAL_FRACT bits).
      * Xtal frequency will be (cal_val * 8M / 256) / 2^19
      */
-    uint32_t freq_mhz = (cal_val * RTC_FAST_CLK_FREQ_APPROX / MHZ / 256 ) >> RTC_CLK_CAL_FRACT;
+    uint32_t freq_mhz = (cal_val * SOC_CLK_RC_FAST_FREQ_APPROX / MHZ / 256 ) >> RTC_CLK_CAL_FRACT;
     /* Guess the XTAL type. For now, only 40 and 26MHz are supported.
      */
     switch (freq_mhz) {

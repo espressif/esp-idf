@@ -16,8 +16,6 @@
 #define DPORT_SOC_CLK_SEL_8M     2
 #define DPORT_SOC_CLK_SEL_XTAL_D2 3
 
-#define RTC_FAST_CLK_FREQ_8M        8500000
-
 #ifdef __cplusplus
 extern "C" {
 #endif

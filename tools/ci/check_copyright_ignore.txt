@@ -787,7 +787,6 @@ components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/can_hal.h
 components/hal/esp32/include/hal/can_types.h
 components/hal/esp32/include/hal/clk_gate_ll.h
-components/hal/esp32/include/hal/dac_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
 components/hal/esp32/include/hal/rtc_io_ll.h
@@ -797,7 +796,6 @@ components/hal/esp32/include/hal/sigmadelta_ll.h
 components/hal/esp32/include/hal/soc_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
-components/hal/esp32/include/hal/touch_sensor_ll.h
 components/hal/esp32/include/hal/trace_ll.h
 components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32/interrupt_descriptor_table.c
@@ -838,7 +836,6 @@ components/hal/esp32s2/include/hal/cp_dma_hal.h
 components/hal/esp32s2/include/hal/cp_dma_ll.h
 components/hal/esp32s2/include/hal/crypto_dma_ll.h
 components/hal/esp32s2/include/hal/dac_hal.h
-components/hal/esp32s2/include/hal/dac_ll.h
 components/hal/esp32s2/include/hal/dedic_gpio_ll.h
 components/hal/esp32s2/include/hal/i2c_ll.h
 components/hal/esp32s2/include/hal/interrupt_controller_ll.h
@@ -851,8 +848,6 @@ components/hal/esp32s2/include/hal/sigmadelta_ll.h
 components/hal/esp32s2/include/hal/soc_ll.h
 components/hal/esp32s2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s2/include/hal/systimer_ll.h
-components/hal/esp32s2/include/hal/touch_sensor_hal.h
-components/hal/esp32s2/include/hal/touch_sensor_ll.h
 components/hal/esp32s2/include/hal/trace_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s2/interrupt_descriptor_table.c
@@ -896,7 +891,6 @@ components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/systimer_hal.h
 components/hal/include/hal/systimer_types.h
-components/hal/include/hal/touch_sensor_hal.h
 components/hal/include/hal/twai_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h

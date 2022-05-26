@@ -50,15 +50,15 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
     uint32_t expected_freq;
-    rtc_slow_freq_t slow_freq = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL);
+    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     if (cal_clk == RTC_CAL_32K_XTAL ||
-        (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_32K_XTAL)) {
-        expected_freq = 32768; /* standard 32k XTAL */
+        (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
+        expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX; /* standard 32k XTAL */
     } else if (cal_clk == RTC_CAL_8MD256 ||
-            (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_8MD256)) {
-        expected_freq = RTC_FAST_CLK_FREQ_APPROX / 256;
+            (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256)) {
+        expected_freq = SOC_CLK_RC_FAST_D256_FREQ_APPROX;
     } else {
-        expected_freq = 150000; /* 150k internal oscillator */
+        expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX; /* 150k internal oscillator */
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Check if the required number of slowclk_cycles may result in an overflow of TIMG_RTC_CALI_VALUE */

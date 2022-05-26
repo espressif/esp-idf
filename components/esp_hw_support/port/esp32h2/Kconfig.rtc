@@ -5,20 +5,20 @@ choice RTC_CLK_SRC
         Choose which clock is used as RTC clock source.
 
     config RTC_CLK_SRC_INT_RC
-        bool "Internal 150kHz RC oscillator"
+        bool "Internal 136kHz RC oscillator"
     config RTC_CLK_SRC_EXT_CRYS
         bool "External 32.768kHz crystal"
         select ESP_SYSTEM_RTC_EXT_XTAL
     config RTC_CLK_SRC_EXT_OSC
         bool "External 32kHz oscillator at 32K_XP pin"
         select ESP_SYSTEM_RTC_EXT_OSC
-    config RTC_CLK_SRC_INT_8MD256
-        bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
+    config RTC_CLK_SRC_INT_RC32K
+        bool "Internal 32kHz RC oscillator"
 endchoice
 
 config RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
-    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
+    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_RC32K
     default 576 if RTC_CLK_SRC_INT_RC
     range 0 125000
     help

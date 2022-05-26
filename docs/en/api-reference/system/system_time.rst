@@ -29,6 +29,8 @@ The possible combinations of hardware timers used to keep system time are listed
 It is recommended that users stick to the default option as it provides the highest accuracy. However, users can also select a different setting via the :ref:`CONFIG_NEWLIB_TIME_SYSCALL` configuration option.
 
 
+.. _rtc-clock-source-choice:
+
 RTC Timer Clock Sources
 ------------------------
 

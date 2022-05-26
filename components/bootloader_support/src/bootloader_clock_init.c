@@ -47,8 +47,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 #endif
         /* ESP32-S2 doesn't have XTAL_FREQ choice, always 40MHz */
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
-        clk_cfg.slow_freq = rtc_clk_slow_freq_get();
-        clk_cfg.fast_freq = rtc_clk_fast_freq_get();
+        clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
+        clk_cfg.fast_clk_src = rtc_clk_fast_src_get();
         rtc_clk_init(clk_cfg);
     }
 
