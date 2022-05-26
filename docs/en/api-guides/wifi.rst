@@ -767,7 +767,7 @@ Four-way Handshake Phase
 Wi-Fi Reason Code
 +++++++++++++++++++++
 
-The table below shows the reason code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 8.4.1.7 of IEEE 802.11-2012 (For more information, refer to the standard mentioned above). The last column describes the reason.
+The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 9.4.1.7 of IEEE 802.11-2020. (For more information, refer to the standard mentioned above.) The last column describes the reason.
 
 .. list-table::
    :header-rows: 1
@@ -996,6 +996,102 @@ The table below shows the reason code defined in {IDF_TARGET_NAME}. The first co
        For the ESP station, this reason is reported when:
 
        - it is received from the AP.
+   * - TDLS_PEER_UNREACHABLE
+     - 25
+     - 25
+     - TDLS direct-link teardown due to TDLS peer STA unreachable via the TDLS direct link.
+   * - TDLS_UNSPECIFIED
+     - 26
+     - 26
+     - TDLS direct-link teardown for unspecified reason.
+   * - SSP_REQUESTED_DISASSOC
+     - 27
+     - 27
+     - Disassociated because session terminated by SSP request.
+   * - NO_SSP_ROAMING_AGREEMENT
+     - 28
+     - 28
+     - Disassociated because of lack of SSP roaming agreement.
+   * - BAD_CIPHER_OR_AKM
+     - 29
+     - 29
+     - Requested service rejected because of SSP cipher suite or AKM requiremen.
+   * - NOT_AUTHORIZED_THIS_LO CATION
+     - 30
+     - 30
+     - Requested service not authorized in this location.
+   * - SERVICE_CHANGE_PRECLUDES_TS
+     - 31
+     - 31
+     - TS deleted because QoS AP lacks sufficient bandwidth for this QoS STA due to a change in BSS service characteristics or operational mode (e.g., an HT BSS change from 40 MHz channel to 20 MHz channel).
+   * - UNSPECIFIED_QOS
+     - 32
+     - 32
+     - Disassociated for unspecified, QoS-related reason.
+   * - NOT_ENOUGH_BANDWIDTH
+     - 33
+     - 33
+     - Disassociated because QoS AP lacks sufficient bandwidth for this QoS STA.
+   * - MISSING_ACKS
+     - 34
+     - 34
+     - Disassociated because excessive number of frames need to be acknowledged, but are not acknowledged due to AP transmissions and/or poor channel conditions.
+   * - EXCEEDED_TXOP
+     - 35
+     - 35
+     - Disassociated because STA is transmitting outside the limits of its TXOPs.
+   * - STA_LEAVING
+     - 36
+     - 36
+     - Requesting STA is leaving the BSS (or resetting).
+   * - END_BA
+     - 37
+     - 37
+     - Requesting STA is no longer using the stream or session.
+   * - UNKNOWN_BA
+     - 38
+     - 38
+     - Requesting STA received frames using a mechanism for which a setup has not been completed.
+   * - TIMEOUT
+     - 39
+     - 39
+     - Requested from peer STA due to timeout
+   * - Reserved
+     - 40 ~ 45
+     - 40 ~ 45
+     - 
+   * - PEER_INITIATED
+     - 46
+     - 46
+     - In a Disassociation frame: Disassociated because authorized access limit reached.
+   * - AP_INITIATED
+     - 47
+     - 47
+     - In a Disassociation frame: Disassociated due to external service requirements.
+   * - INVALID_FT_ACTION_FRAME_COUNT
+     - 48
+     - 48
+     - Invalid FT Action frame count.
+   * - INVALID_PMKID
+     - 49
+     - 49
+     - Invalid pairwise master key identifier (PMKID).
+   * - INVALID_MDE
+     - 50
+     - 50
+     - Invalid MDE.
+   * - INVALID_FTE
+     - 51
+     - 51
+     - Invalid FTE
+   * - TRANSMISSION_LINK_ESTABLISHMENT_FAILED
+     - 67
+     - 67
+     - Transmission link establishment in alternative channel failed.
+   * - ALTERATIVE_CHANNEL_OCCUPIED
+     - 68
+     - 68
+     - The alternative channel is occupied.
    * - BEACON_TIMEOUT
      - 200
      - reserved
@@ -1020,6 +1116,31 @@ The table below shows the reason code defined in {IDF_TARGET_NAME}. The first co
      - 205
      - reserved
      - Espressif-specific Wi-Fi reason code: the connection to the AP has failed.
+
+
+Wi-Fi Reason code related to wrong password
+++++++++++++++++++++++++++++++++++++++++++++++
+
+The table below shows the Wi-Fi reason-code may related to wrong password.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 5 10 40
+
+   * - Reason code
+     - Value
+     - Description
+   * - 4WAY_HANDSHAKE_TIMEOUT
+     - 15
+     - Four-way handshake times out.
+   * - NO_AP_FOUND
+     - 201
+     - This may related to wrong password in the two scenarios:
+       - Setting password when STA connecting to an unencrypted AP.
+       - Doesn't setting password when STA connecting to an encrpted AP.
+   * - HANDSHAKE_TIMEOUT
+     - 204
+     - Four-way handshake fails.
 
 
 {IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found
