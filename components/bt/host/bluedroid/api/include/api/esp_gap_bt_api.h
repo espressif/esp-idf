@@ -337,6 +337,7 @@ typedef union {
      * @brief ESP_BT_GAP_READ_REMOTE_NAME_EVT
      */
     struct read_rmt_name_param {
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
         esp_bt_status_t stat;                  /*!< read Remote Name status */
         uint8_t rmt_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< Remote device name */
     } read_rmt_name;                        /*!< read Remote Name parameter struct */
