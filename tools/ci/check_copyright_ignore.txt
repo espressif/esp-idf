@@ -462,11 +462,9 @@ components/esp_hid/test/test_esp_hid.c
 components/esp_hw_support/include/esp_clk.h
 components/esp_hw_support/include/soc/esp_himem.h
 components/esp_hw_support/include/soc/esp_spiram.h
-components/esp_local_ctrl/include/esp_local_ctrl.h
 components/esp_local_ctrl/proto-c/esp_local_ctrl.pb-c.c
 components/esp_local_ctrl/proto-c/esp_local_ctrl.pb-c.h
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
-components/esp_local_ctrl/src/esp_local_ctrl.c
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c

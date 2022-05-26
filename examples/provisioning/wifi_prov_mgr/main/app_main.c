@@ -32,9 +32,9 @@
 
 static const char *TAG = "app";
 
-const char sec2_salt[4] = {0xc1, 0x85, 0x74, 0xfe};
+static const char sec2_salt[4] = {0xc1, 0x85, 0x74, 0xfe};
 
-const char sec2_verifier[384] = {0x88, 0x98, 0x2a, 0xd3, 0xb1, 0x8a, 0xf6, 0xe3, 0x00, 0x5d, 0x34, 0x63, 0x56, 0x73, 0x2a, 0x03,
+static const char sec2_verifier[384] = {0x88, 0x98, 0x2a, 0xd3, 0xb1, 0x8a, 0xf6, 0xe3, 0x00, 0x5d, 0x34, 0x63, 0x56, 0x73, 0x2a, 0x03,
                                  0x7b, 0x1c, 0xae, 0xe8, 0x2e, 0x59, 0x03, 0x48, 0x68, 0x00, 0xba, 0xa1, 0xb0, 0xff, 0x12, 0xca,
                                  0xa7, 0xc9, 0xff, 0x69, 0xaf, 0x7a, 0x1e, 0x53, 0x98, 0x15, 0x79, 0xd1, 0x11, 0x83, 0x68, 0xf2,
                                  0x8c, 0x7a, 0xcf, 0x8b, 0x1b, 0x25, 0x2e, 0x0c, 0xcb, 0xdc, 0x6a, 0x7c, 0xda, 0x2e, 0x6d, 0x5b,
@@ -280,6 +280,8 @@ void app_main(void)
          *      - WIFI_PROV_SECURITY_1 is secure communication which consists of secure handshake
          *          using X25519 key exchange and proof of possession (pop) and AES-CTR
          *          for encryption/decryption of messages.
+         *      - WIFI_PROV_SECURITY_2 SRP6a based authentication and key exchange
+         *        + AES-CTR encryption/decryption of messages
          */
         // wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
         wifi_prov_security_t security = WIFI_PROV_SECURITY_2;
@@ -289,7 +291,20 @@ void app_main(void)
          *      - NULL if not used
          */
         const char *pop = "abcd1234";
+        /* This is the structure for passing security parameters
+         * for the protocomm security 1
+         */
+        //const wifi_prov_security1_params_t sec1_params = {
+        //    .data = (const unsigned char *)pop,
+        //    .len = strlen(pop),
+        //};
 
+        static const wifi_prov_security2_params_t sec2_params = {
+            .salt = sec2_salt,
+            .salt_len = sizeof(sec2_salt),
+            .verifier = sec2_verifier,
+            .verifier_len = sizeof(sec2_verifier),
+        };
         /* What is the service key (could be NULL)
          * This translates to :
          *     - Wi-Fi password when scheme is wifi_prov_scheme_softap
@@ -328,8 +343,9 @@ void app_main(void)
          */
         wifi_prov_mgr_endpoint_create("custom-data");
         /* Start provisioning service */
-        // ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, NULL, NULL, service_name, service_key));
-        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, NULL, sec2_salt, sec2_verifier, service_name, service_key));
+        // ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key));
+
+        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (void *) &sec2_params, service_name, service_key));
 
         /* The handler for the optional endpoint created above.
          * This call must be made after starting the provisioning, and only if the endpoint
