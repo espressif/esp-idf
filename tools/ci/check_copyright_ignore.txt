@@ -708,7 +708,6 @@ components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
 components/esp_wifi/include/esp_coexist_adapter.h
 components/esp_wifi/include/esp_mesh_internal.h
-components/esp_wifi/include/esp_private/esp_wifi_private.h
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h

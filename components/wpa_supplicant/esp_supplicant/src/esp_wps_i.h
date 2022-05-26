@@ -81,18 +81,18 @@ struct wps_sm {
 
 #define API_MUTEX_TAKE() do {\
     if (!s_wps_api_lock) {\
-        s_wps_api_lock = xSemaphoreCreateRecursiveMutex();\
+        s_wps_api_lock = os_recursive_mutex_create();\
         if (!s_wps_api_lock) {\
             wpa_printf(MSG_ERROR, "wps api lock create failed");\
             return ESP_ERR_NO_MEM;\
         }\
     }\
-    xSemaphoreTakeRecursive(s_wps_api_lock, portMAX_DELAY);\
+    os_mutex_lock(s_wps_api_lock);\
 } while(0)
 
-#define API_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_api_lock)
-#define DATA_MUTEX_TAKE() xSemaphoreTakeRecursive(s_wps_data_lock, portMAX_DELAY)
-#define DATA_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wps_data_lock)
+#define API_MUTEX_GIVE() os_mutex_unlock(s_wps_api_lock)
+#define DATA_MUTEX_TAKE() os_mutex_lock(s_wps_data_lock)
+#define DATA_MUTEX_GIVE() os_mutex_unlock(s_wps_data_lock)
 
 struct wps_sm *wps_sm_get(void);
 int wps_station_wps_unregister_cb(void);

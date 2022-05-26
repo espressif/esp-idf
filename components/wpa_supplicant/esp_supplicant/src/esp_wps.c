@@ -6,10 +6,6 @@
 
 #include <string.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
 #include "utils/includes.h"
 #include "rsn_supp/wpa.h"
 #include "utils/common.h"
@@ -48,7 +44,7 @@ typedef struct {
     int ret; /* return value */
 } wps_ioctl_param_t;
 
-static TaskHandle_t s_wps_task_hdl = NULL;
+static void *s_wps_task_hdl = NULL;
 static void *s_wps_queue = NULL;
 static void *s_wps_data_lock = NULL;
 static void *s_wps_task_create_sem = NULL;
@@ -119,11 +115,11 @@ void wps_task(void *pvParameters )
     wps_ioctl_param_t *param;
     bool del_task = false;
 
-    xSemaphoreGive(s_wps_task_create_sem);
+    os_semphr_give(s_wps_task_create_sem);
 
     wpa_printf(MSG_DEBUG, "wps_Task enter");
     for (;;) {
-        if ( pdPASS == xQueueReceive(s_wps_queue, &e, portMAX_DELAY) ) {
+        if ( TRUE == os_queue_recv(s_wps_queue, &e, OS_BLOCK) ) {
 
             if ( (e->sig >= SIG_WPS_ENABLE) && (e->sig < SIG_WPS_NUM) ) {
                 DATA_MUTEX_TAKE();
@@ -144,7 +140,7 @@ void wps_task(void *pvParameters )
                 param = (wps_ioctl_param_t *)e->par;
                 if (!param) {
                     wpa_printf(MSG_ERROR, "wpsT: invalid param sig=%d", e->sig);
-                    xSemaphoreGive(s_wps_api_sem);
+                    os_semphr_give(s_wps_api_sem);
                     break;
                 }
 
@@ -158,7 +154,7 @@ void wps_task(void *pvParameters )
                     param->ret = wifi_station_wps_start();
                 }
 
-                xSemaphoreGive(s_wps_api_sem);
+                os_semphr_give(s_wps_api_sem);
                 break;
 
             case SIG_WPS_RX: {
@@ -203,7 +199,7 @@ void wps_task(void *pvParameters )
             }
         }
     }
-    vTaskDelete(NULL);
+    os_task_delete(NULL);
 }
 
 /* wps_post() is thread-safe
@@ -232,7 +228,7 @@ int wps_post(uint32_t sig, uint32_t par)
         evt->par = par;
         DATA_MUTEX_GIVE();
 
-        if ( xQueueSend(s_wps_queue, &evt, 10 / portTICK_PERIOD_MS) != pdPASS) {
+        if (os_queue_send(s_wps_queue, &evt, 10 / portTICK_PERIOD_MS) != TRUE) {
             wpa_printf(MSG_ERROR, "WPS: Q S E");
             DATA_MUTEX_TAKE();
             s_wps_sig_cnt[sig]--;
@@ -735,7 +731,7 @@ int wps_stop_process(wifi_event_sta_wps_fail_reason_t reason_code)
 
     wpa_printf(MSG_DEBUG, "Write wps_fail_information");
 
-    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), OS_BLOCK);
 
     return ESP_OK;
 }
@@ -1031,7 +1027,7 @@ out:
         esp_wifi_disarm_sta_connection_timer_internal();
         ets_timer_disarm(&sm->wps_timeout_timer);
 
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), OS_BLOCK);
 
         return ret;
     }
@@ -1214,7 +1210,7 @@ wifi_station_wps_timeout_internal(void)
 
     wps_set_status(WPS_STATUS_DISABLE);
 
-    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_TIMEOUT, 0, 0, portMAX_DELAY);
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_TIMEOUT, 0, 0, OS_BLOCK);
 }
 
 void wifi_station_wps_timeout(void)
@@ -1283,10 +1279,10 @@ void wifi_station_wps_success_internal(void)
             os_memcpy(evt.ap_cred[i].passphrase, sm->key[i], sm->key_len[i]);
         }
         esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS, &evt,
-                                sizeof(evt), portMAX_DELAY);
+                                sizeof(evt), OS_BLOCK);
     } else {
         esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS,
-                                0, 0, portMAX_DELAY);
+                                0, 0, OS_BLOCK);
     }
 }
 
@@ -1408,7 +1404,7 @@ wifi_station_wps_init(void)
     if (wps_get_type() == WPS_TYPE_PIN) {
         wifi_event_sta_wps_er_pin_t evt;
         os_memcpy(evt.pin_code, sm->wps->dev_password, 8);
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PIN, &evt, sizeof(evt), portMAX_DELAY);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PIN, &evt, sizeof(evt), OS_BLOCK);
     }
 
     sm->wps->wps->cred_cb = save_credentials_cb;
@@ -1549,7 +1545,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
     } else {
         wpa_printf(MSG_INFO, "PBC session overlap!");
         wps_set_status(WPS_STATUS_DISABLE);
-        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP, 0, 0, portMAX_DELAY);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP, 0, 0, OS_BLOCK);
     }
 
     wpa_printf(MSG_DEBUG, "wps scan_done discover_ssid_cnt = %d", sm->discover_ssid_cnt);
@@ -1653,19 +1649,19 @@ int wps_task_deinit(void)
     wpa_printf(MSG_DEBUG, "wps task deinit");
 
     if (s_wps_api_sem) {
-        vSemaphoreDelete(s_wps_api_sem);
+        os_semphr_delete(s_wps_api_sem);
         s_wps_api_sem = NULL;
         wpa_printf(MSG_DEBUG, "wps task deinit: free api sem");
     }
 
     if (s_wps_task_create_sem) {
-        vSemaphoreDelete(s_wps_task_create_sem);
+        os_semphr_delete(s_wps_task_create_sem);
         s_wps_task_create_sem = NULL;
         wpa_printf(MSG_DEBUG, "wps task deinit: free task create sem");
     }
 
     if (s_wps_queue) {
-        vQueueDelete(s_wps_queue);
+        os_queue_delete(s_wps_queue);
         s_wps_queue = NULL;
         wpa_printf(MSG_DEBUG, "wps task deinit: free queue");
     }
@@ -1675,7 +1671,7 @@ int wps_task_deinit(void)
     }
 
     if (s_wps_data_lock) {
-        vSemaphoreDelete(s_wps_data_lock);
+        os_semphr_delete(s_wps_data_lock);
         s_wps_data_lock = NULL;
         wpa_printf(MSG_DEBUG, "wps task deinit: free data lock");
     }
@@ -1691,26 +1687,26 @@ int wps_task_init(void)
      */
     wps_task_deinit();
 
-    s_wps_data_lock = xSemaphoreCreateRecursiveMutex();
+    s_wps_data_lock = os_recursive_mutex_create();
     if (!s_wps_data_lock) {
         wpa_printf(MSG_ERROR, "wps task init: failed to alloc data lock");
         goto _wps_no_mem;
     }
 
-    s_wps_api_sem = xSemaphoreCreateCounting(1, 0);
+    s_wps_api_sem = os_semphr_create(1, 0);
     if (!s_wps_api_sem) {
         wpa_printf(MSG_ERROR, "wps task init: failed to create api sem");
         goto _wps_no_mem;
     }
 
-    s_wps_task_create_sem = xSemaphoreCreateCounting(1, 0);
+    s_wps_task_create_sem = os_semphr_create(1, 0);
     if (!s_wps_task_create_sem) {
         wpa_printf(MSG_ERROR, "wps task init: failed to create task sem");
         goto _wps_no_mem;
     }
 
     os_bzero(s_wps_sig_cnt, SIG_WPS_NUM);
-    s_wps_queue = xQueueCreate(SIG_WPS_NUM, sizeof(s_wps_queue));
+    s_wps_queue = os_queue_create(SIG_WPS_NUM, sizeof(s_wps_queue));
     if (!s_wps_queue) {
         wpa_printf(MSG_ERROR, "wps task init: failed to alloc queue");
         goto _wps_no_mem;
@@ -1718,14 +1714,14 @@ int wps_task_init(void)
 
     wps_rxq_init();
 
-    ret = xTaskCreate(wps_task, "wpsT", WPS_TASK_STACK_SIZE, NULL, 2, &s_wps_task_hdl);
-    if (pdPASS != ret) {
+    ret = os_task_create(wps_task, "wpsT", WPS_TASK_STACK_SIZE, NULL, 2, &s_wps_task_hdl);
+    if (TRUE != ret) {
         wpa_printf(MSG_ERROR, "wps enable: failed to create task");
         goto _wps_no_mem;
     }
 
-    xSemaphoreTake(s_wps_task_create_sem, portMAX_DELAY);
-    vSemaphoreDelete(s_wps_task_create_sem);
+    os_semphr_take(s_wps_task_create_sem, OS_BLOCK);
+    os_semphr_delete(s_wps_task_create_sem);
     s_wps_task_create_sem = NULL;
 
     wpa_printf(MSG_DEBUG, "wifi wps enable: task prio:%d, stack:%d", 2, WPS_TASK_STACK_SIZE);
@@ -1747,7 +1743,7 @@ int wps_post_block(uint32_t sig, void *arg)
         return ESP_FAIL;
     }
 
-    if (pdPASS == xSemaphoreTake(s_wps_api_sem, portMAX_DELAY)) {
+    if (TRUE == os_semphr_take(s_wps_api_sem, OS_BLOCK)) {
         return param.ret;
     } else {
         return ESP_FAIL;
