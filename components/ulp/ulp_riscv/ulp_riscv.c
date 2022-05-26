@@ -48,11 +48,6 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
 {
     esp_err_t ret = ESP_OK;
 
-#if CONFIG_IDF_TARGET_ESP32S3
-    ESP_LOGE(TAG, "ULP temporarily unsupported on ESP32-S3, running sleep + ULP risks causing permanent damage to chip");
-    abort();
-// Fix in-progress: DIG-160
-#endif //CONFIG_IDF_TARGET_ESP32S3
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset COCPU when power on. */

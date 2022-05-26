@@ -211,6 +211,26 @@ example_test_pytest_esp32c3_flash_encryption:
     TARGET: ESP32C3
     ENV_MARKER: flash_encryption
 
+example_test_pytest_esp32s2_deepsleep: # Temp tag, will be removed IDF-5213
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_pytest_examples_esp32s2
+  variables:
+    TARGET: ESP32S2
+    ENV_MARKER: deepsleep_temp_tag
+
+example_test_pytest_esp32s3_deepsleep: # Temp tag, will be removed IDF-5213
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: deepsleep_temp_tag
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
