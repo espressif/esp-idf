@@ -47,7 +47,7 @@ void regi2c_exit_critical(void);
 #endif // BOOTLOADER_BUILD
 
 /* Convenience macros for the above functions, these use register definitions
- * from regi2c_apll.h/regi2c_bbpll.h header files.
+ * from regi2c_xxx.h header files.
  */
 #define REGI2C_WRITE_MASK(block, reg_add, indata) \
       regi2c_ctrl_write_reg_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)

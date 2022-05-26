@@ -16,10 +16,9 @@
 #include "soc/efuse_periph.h"
 #include "soc/syscon_reg.h"
 #include "hal/cpu_hal.h"
-#include "regi2c_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "rtc_clk_common.h"
 
 static const char* TAG = "rtc_clk_init";
 
@@ -44,9 +43,11 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     /* Configure 8M clock division */
     rtc_clk_8m_divider_set(cfg.clk_8m_clk_div);
 
+    /* Reset (disable) i2c internal bus for all regi2c registers */
+    regi2c_ctrl_ll_i2c_reset(); // TODO: This should be move out from rtc_clk_init
     /* Enable the internal bus used to configure PLLs */
-    SET_PERI_REG_BITS(ANA_CONFIG_REG, ANA_CONFIG_M, ANA_CONFIG_M, ANA_CONFIG_S);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
+    regi2c_ctrl_ll_i2c_bbpll_enable(); // TODO: This should be moved to bbpll_set_config
+    regi2c_ctrl_ll_i2c_apll_enable(); // TODO: This should be moved to apll_set_config
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);

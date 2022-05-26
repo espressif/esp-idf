@@ -15,10 +15,9 @@
 #include "soc/rtc_periph.h"
 #include "soc/efuse_periph.h"
 #include "hal/cpu_hal.h"
-#include "regi2c_ctrl.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "rtc_clk_common.h"
 #include "esp_rom_uart.h"
 
 static const char *TAG = "rtc_clk_init";
@@ -44,9 +43,10 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     /* Configure 8M clock division */
     rtc_clk_8m_divider_set(cfg.clk_8m_clk_div);
 
-    /* Enable the internal bus used to configure PLLs */
-    SET_PERI_REG_BITS(ANA_CONFIG_REG, ANA_CONFIG_M, ANA_CONFIG_M, ANA_CONFIG_S);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_BBPLL_M);
+    /* Reset (disable) i2c internal bus for all regi2c registers */
+    regi2c_ctrl_ll_i2c_reset(); // TODO: This should be move out from rtc_clk_init
+    /* Enable the internal bus used to configure BBPLL */
+    regi2c_ctrl_ll_i2c_bbpll_enable(); // TODO: This should be moved to bbpll_set_config
 
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);
@@ -66,7 +66,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     /* Re-calculate the ccount to make time calculation correct. */
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
-    /* fast clocks setup */
+    /* Slow & fast clocks setup */
     if (cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_RC_FAST) {
         bool need_8md256 = cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256;
         rtc_clk_8m_enable(true, need_8md256);

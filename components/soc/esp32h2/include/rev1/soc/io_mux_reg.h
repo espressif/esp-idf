@@ -152,6 +152,9 @@
 #define USB_DM_GPIO_NUM   18
 #define USB_DP_GPIO_NUM   19
 
+#define XTAL32K_P_GPIO_NUM 0
+#define XTAL32K_N_GPIO_NUM 1
+
 #define MAX_RTC_GPIO_NUM 5
 #define MAX_PAD_GPIO_NUM 40
 #define MAX_GPIO_NUM    44

@@ -893,10 +893,6 @@
 #define RTC_CNTL_SOC_CLK_SEL_M  ((RTC_CNTL_SOC_CLK_SEL_V)<<(RTC_CNTL_SOC_CLK_SEL_S))
 #define RTC_CNTL_SOC_CLK_SEL_V  0x3
 #define RTC_CNTL_SOC_CLK_SEL_S  27
-#define RTC_CNTL_SOC_CLK_SEL_XTL    0
-#define RTC_CNTL_SOC_CLK_SEL_PLL    1
-#define RTC_CNTL_SOC_CLK_SEL_8M     2
-#define RTC_CNTL_SOC_CLK_SEL_APLL   3
 /* RTC_CNTL_CK8M_FORCE_PU : R/W ;bitpos:[26] ;default: 1'd0 ; */
 /*description: CK8M force power up*/
 #define RTC_CNTL_CK8M_FORCE_PU  (BIT(26))

@@ -14,12 +14,11 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
-#include "soc/syscon_reg.h"
 #include "hal/cpu_hal.h"
-#include "regi2c_ctrl.h"
+#include "hal/clk_tree_ll.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "rtc_clk_common.h"
 
 /* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
  * 10 cycles will take approximately 300 microseconds.
@@ -27,6 +26,7 @@
 #define XTAL_FREQ_EST_CYCLES            10
 
 static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
+extern void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
 static const char* TAG = "rtc_clk_init";
 
@@ -43,7 +43,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
      * PLL is configured for 480M, but it takes less time to switch to 40M and
      * run the following code than querying the PLL does.
      */
-    if (REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL) == RTC_CNTL_SOC_CLK_SEL_PLL) {
+    if (clk_ll_cpu_get_src() == SOC_CPU_CLK_SRC_PLL) {
         /* We don't know actual XTAL frequency yet, assume 40MHz.
          * REF_TICK divider will be corrected below, once XTAL frequency is
          * determined.
@@ -63,18 +63,22 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DFREQ, cfg.clk_8m_dfreq);
 
     /* Configure 8M clock division */
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, cfg.clk_8m_div);
+    clk_ll_rc_fast_set_divider(cfg.clk_8m_div + 1);
 
+    /* Reset (disable) i2c internal bus for all regi2c registers */
+    regi2c_ctrl_ll_i2c_reset(); // TODO: This should be move out from rtc_clk_init
     /* Enable the internal bus used to configure PLLs */
-    SET_PERI_REG_BITS(ANA_CONFIG_REG, ANA_CONFIG_M, ANA_CONFIG_M, ANA_CONFIG_S);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
+    regi2c_ctrl_ll_i2c_bbpll_enable(); // TODO: This should be moved to bbpll_set_config
+    regi2c_ctrl_ll_i2c_apll_enable(); // TODO: This should be moved to apll_set_config
 
     /* Estimate XTAL frequency */
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-        if (clk_val_is_valid(READ_PERI_REG(RTC_XTAL_FREQ_REG))) {
+    rtc_xtal_freq_t configured_xtal_freq = cfg.xtal_freq;
+    rtc_xtal_freq_t stored_xtal_freq = rtc_clk_xtal_freq_get(); // read the xtal freq value from RTC storage register
+    rtc_xtal_freq_t xtal_freq = configured_xtal_freq;
+    if (configured_xtal_freq == RTC_XTAL_FREQ_AUTO) {
+        if (stored_xtal_freq != RTC_XTAL_FREQ_AUTO) {
             /* XTAL frequency has already been set, use existing value */
-            xtal_freq = rtc_clk_xtal_freq_get();
+            xtal_freq = stored_xtal_freq;
         } else {
             /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
             xtal_freq = rtc_clk_xtal_freq_estimate();
@@ -83,16 +87,16 @@ void rtc_clk_init(rtc_clk_config_t cfg)
                 xtal_freq = RTC_XTAL_FREQ_26M;
             }
         }
-    } else if (!clk_val_is_valid(READ_PERI_REG(RTC_XTAL_FREQ_REG))) {
+    } else if (stored_xtal_freq == RTC_XTAL_FREQ_AUTO) {
         /* Exact frequency was set in sdkconfig, but still warn if autodetected
          * frequency is different. If autodetection failed, worst case we get a
          * bit of garbage output.
          */
 
         rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
-        if (est_xtal_freq != xtal_freq) {
+        if (est_xtal_freq != configured_xtal_freq) {
             ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
-                    xtal_freq, est_xtal_freq);
+                    configured_xtal_freq, est_xtal_freq);
         }
     }
     esp_rom_uart_tx_wait_idle(0);
@@ -112,8 +116,10 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Configure REF_TICK */
-    REG_WRITE(SYSCON_XTAL_TICK_CONF_REG, xtal_freq - 1);
-    REG_WRITE(SYSCON_PLL_TICK_CONF_REG, APB_CLK_FREQ / MHZ - 1); /* Under PLL, APB frequency is always 80MHz */
+    // Initialize it in the bootloader stage, but it is not a must to do here
+    // REF_TICK divider value always gets updated when switching cpu clock source
+    clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_XTAL, xtal_freq);
+    clk_ll_ref_tick_set_divider(SOC_CPU_CLK_SRC_PLL, new_config.freq_mhz);
 
     /* Re-calculate the ccount to make time calculation correct. */
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );

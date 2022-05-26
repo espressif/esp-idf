@@ -14,6 +14,7 @@
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
+#include "hal/clk_tree_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
@@ -126,12 +127,12 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
      */
     esp_rtc_get_time_us();
 #endif // CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
-    REG_WRITE(RTC_SLOW_CLK_CAL_REG, new_cal);
+    clk_ll_rtc_slow_store_cal(new_cal);
 }
 
 uint32_t esp_clk_slowclk_cal_get(void)
 {
-    return REG_READ(RTC_SLOW_CLK_CAL_REG);
+    return clk_ll_rtc_slow_load_cal();
 }
 
 uint64_t esp_clk_rtc_time(void)
