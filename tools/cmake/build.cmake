@@ -427,7 +427,6 @@ macro(idf_build_process target)
     idf_build_get_property(arch IDF_TARGET_ARCH)
 
     if(NOT "${target}" STREQUAL "linux")
-        idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${arch} APPEND)
     endif()
 

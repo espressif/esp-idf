@@ -252,18 +252,14 @@ if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 endif()
 
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
-set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver idf::${target})
-set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver idf::${target})
+set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver)
+set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver)
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
-    # Link target (e.g. esp32s2) library to component library
-    idf_component_get_property(target_lib ${target} COMPONENT_LIB)
-    set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES $<LINK_ONLY:${target_lib}>)
     # The linker seems to be unable to resolve all the dependencies without increasing this
     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
-    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${target_lib})
 endif()
 
 # Link esp-cryptoauthlib to mbedtls
