@@ -69,6 +69,10 @@ def action_extensions(base_actions, project_path):
             subprocess.check_output(GENERATORS[args.generator]['dry_run'] + [target_name], cwd=args.build_dir)
 
         except Exception:
+            if target_name in ['clang-check', 'clang-html-report']:
+                raise FatalError('command "{}" requires an additional plugin "pyclang". '
+                                 'Please install it via "pip install --upgrade pyclang"'.format(target_name))
+
             raise FatalError(
                 'command "%s" is not known to idf.py and is not a %s target' % (target_name, args.generator))
 
