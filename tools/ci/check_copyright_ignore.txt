@@ -419,8 +419,6 @@ components/esp32/include/rom/tjpgd.h
 components/esp32/include/rom/uart.h
 components/esp_eth/include/eth_phy_regs_struct.h
 components/esp_eth/src/dm9051.h
-components/esp_eth/src/esp_eth_mac_w5500.c
-components/esp_eth/src/esp_eth_phy.c
 components/esp_eth/src/ksz8851.h
 components/esp_eth/src/openeth.h
 components/esp_eth/src/w5500.h

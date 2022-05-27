@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2022 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdlib.h>
 #include "esp_check.h"
@@ -13,7 +13,7 @@
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "ksz8851.h"
 
 

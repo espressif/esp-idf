@@ -81,6 +81,13 @@ freertos_component:
     - Apache-2.0    #Files added to the freertos added by us
     - MIT           #FreeRTOS sources and port files
 
+ethernet_component:
+  include:
+    - 'components/esp_eth/**'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT           # To allow contributed drivers
+
 systemview:
   include:
     - 'components/app_trace/sys_view'

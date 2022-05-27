@@ -5,7 +5,7 @@
  */
 #include <stdlib.h>
 #include "esp_netif.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_eth_netif_glue.h"
 #include "esp_event.h"
 #include "esp_log.h"
