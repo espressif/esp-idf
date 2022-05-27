@@ -381,9 +381,7 @@ def load_sections(map_file: TextIO) -> Dict:
             if srcs:
                 last_src = srcs[-1]
                 if last_src['size'] > 0 and last_src['address'] == int(match_line.group('address'), 16):
-                    if '.comment' != section['name'] and '.debug_str' != section['name'] and\
-                            'rodata' not in last_src['sym_name']:
-
+                    if section['name'] not in ['.comment', '.debug_str', '.debug_line_str'] and 'rodata' not in last_src['sym_name']:
                         raise RuntimeError('Due to overlap with following lines, size of the line set to 0:\n    %s' % dump_src_line(last_src))
 
                     last_src['size'] = 0
