@@ -53,7 +53,10 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         clk_ll_xtal32k_digi_enable();
     }
 
+    bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
+    bool rc_fast_d256_enabled = clk_ll_rc_fast_d256_is_enabled();
     if (cal_clk == RTC_CAL_8MD256) {
+        rtc_clk_8m_enable(true, true);
         clk_ll_rc_fast_d256_digi_enable();
     }
     /* There may be another calibration process already running during we call this function,
@@ -114,6 +117,7 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 
     if (cal_clk == RTC_CAL_8MD256) {
         clk_ll_rc_fast_d256_digi_disable();
+        rtc_clk_8m_enable(rc_fast_enabled, rc_fast_d256_enabled);
     }
 
     return cal_val;

@@ -67,13 +67,16 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
+    // We will not power off RC_FAST in bootloader stage even if it is not being used as any
+    // cpu / rtc_fast / rtc_slow clock sources, this is because RNG always needs it in the bootloader stage.
+    bool need_rc_fast_en = true;
+    bool need_rc_fast_d256_en = false;
     if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         rtc_clk_32k_enable(true);
+    } else if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
+        need_rc_fast_d256_en = true;
     }
-    if (cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_RC_FAST) {
-        bool need_8md256 = cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256;
-        rtc_clk_8m_enable(true, need_8md256);
-    }
+    rtc_clk_8m_enable(need_rc_fast_en, need_rc_fast_d256_en);
     rtc_clk_fast_src_set(cfg.fast_clk_src);
     rtc_clk_slow_src_set(cfg.slow_clk_src);
 }
