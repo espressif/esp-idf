@@ -14,13 +14,14 @@
 extern "C" {
 #endif
 
-/// Media codec types supported by A2DP
+/**
+ * @brief Media codec types supported by A2DP.
+ */
 #define ESP_A2D_MCT_SBC         (0)             /*!< SBC */
 #define ESP_A2D_MCT_M12         (0x01)          /*!< MPEG-1, 2 Audio */
 #define ESP_A2D_MCT_M24         (0x02)          /*!< MPEG-2, 4 AAC */
 #define ESP_A2D_MCT_ATRAC       (0x04)          /*!< ATRAC family */
-#define ESP_A2D_MCT_NON_A2DP    (0xff)
-
+#define ESP_A2D_MCT_NON_A2DP    (0xff)          /*!< NON-A2DP */
 typedef uint8_t esp_a2d_mct_t;
 
 /**
@@ -29,7 +30,8 @@ typedef uint8_t esp_a2d_mct_t;
 #define ESP_A2D_PSC_DELAY_RPT          (1<<0)  /*!< Delay Report */
 typedef uint16_t esp_a2d_psc_t;
 
-/** A2DP media codec capabilities union
+/**
+ * @brief A2DP media codec capabilities union
  */
 typedef struct {
     esp_a2d_mct_t type;                        /*!< A2DP media codec type */
@@ -45,7 +47,9 @@ typedef struct {
     } cie;                                     /*!< A2DP codec information element */
 } __attribute__((packed)) esp_a2d_mcc_t;
 
-/// Bluetooth A2DP connection states
+/**
+ * @brief Bluetooth A2DP connection states
+ */
 typedef enum {
     ESP_A2D_CONNECTION_STATE_DISCONNECTED = 0, /*!< connection released  */
     ESP_A2D_CONNECTION_STATE_CONNECTING,       /*!< connecting remote device */
@@ -53,27 +57,35 @@ typedef enum {
     ESP_A2D_CONNECTION_STATE_DISCONNECTING     /*!< disconnecting remote device */
 } esp_a2d_connection_state_t;
 
-/// Bluetooth A2DP disconnection reason
+/**
+ * @brief Bluetooth A2DP disconnection reason
+ */
 typedef enum {
     ESP_A2D_DISC_RSN_NORMAL = 0,               /*!< Finished disconnection that is initiated by local or remote device */
     ESP_A2D_DISC_RSN_ABNORMAL                  /*!< Abnormal disconnection caused by signal loss */
 } esp_a2d_disc_rsn_t;
 
-/// Bluetooth A2DP datapath states
+/**
+ * @brief Bluetooth A2DP datapath states
+ */
 typedef enum {
     ESP_A2D_AUDIO_STATE_REMOTE_SUSPEND = 0,    /*!< audio stream datapath suspended by remote device */
     ESP_A2D_AUDIO_STATE_STOPPED,               /*!< audio stream datapath stopped */
     ESP_A2D_AUDIO_STATE_STARTED,               /*!< audio stream datapath started */
 } esp_a2d_audio_state_t;
 
-/// A2DP media control command acknowledgement code
+/**
+ * @brief A2DP media control command acknowledgement code
+ */
 typedef enum {
     ESP_A2D_MEDIA_CTRL_ACK_SUCCESS = 0,        /*!< media control command is acknowledged with success */
     ESP_A2D_MEDIA_CTRL_ACK_FAILURE,            /*!< media control command is acknowledged with failure */
     ESP_A2D_MEDIA_CTRL_ACK_BUSY,               /*!< media control command is rejected, as previous command is not yet acknowledged */
 } esp_a2d_media_ctrl_ack_t;
 
-/// A2DP media control commands
+/**
+ * @brief A2DP media control commands
+ */
 typedef enum {
     ESP_A2D_MEDIA_CTRL_NONE = 0,               /*!< Not for application use, use inside stack only. */
     ESP_A2D_MEDIA_CTRL_CHECK_SRC_RDY,          /*!< check whether AVDTP is connected, only used in A2DP source */
@@ -82,19 +94,25 @@ typedef enum {
     ESP_A2D_MEDIA_CTRL_SUSPEND,                /*!< command to suspend media transmission  */
 } esp_a2d_media_ctrl_t;
 
-/// Bluetooth A2DP Initiation states
+/**
+ * @brief Bluetooth A2DP Initiation states
+ */
 typedef enum {
     ESP_A2D_DEINIT_SUCCESS = 0,                /*!< A2DP profile deinit successful event */
     ESP_A2D_INIT_SUCCESS                       /*!< A2DP profile deinit successful event */
 } esp_a2d_init_state_t;
 
-/// Bluetooth A2DP set delay report value states
+/**
+ * @brief Bluetooth A2DP set delay report value states
+ */
 typedef enum {
     ESP_A2D_SET_SUCCESS = 0,                /*!< A2DP profile set delay report value successful */
     ESP_A2D_SET_INVALID_PARAMS              /*!< A2DP profile set delay report value is invalid parameter */
 } esp_a2d_set_delay_value_state_t;
 
-/// A2DP callback events
+/**
+ * @brief A2DP callback events
+ */
 typedef enum {
     ESP_A2D_CONNECTION_STATE_EVT = 0,          /*!< connection state changed event */
     ESP_A2D_AUDIO_STATE_EVT,                   /*!< audio stream transmission state changed event */
@@ -107,7 +125,9 @@ typedef enum {
     ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
 } esp_a2d_cb_event_t;
 
-/// A2DP state callback parameters
+/**
+ * @brief A2DP state callback parameters
+ */
 typedef union {
     /**
      * @brief  ESP_A2D_CONNECTION_STATE_EVT
