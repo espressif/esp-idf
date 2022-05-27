@@ -216,6 +216,9 @@ static void print_abort_details(const void *f)
     panic_print_str(s_panic_abort_details);
 }
 
+// Can be overridden by the user to run custom code just before panic reboot.
+__attribute__((weak)) void user_panic_handler(void) {}
+
 // Control arrives from chip-specific panic handler, environment prepared for
 // the 'main' logic of panic handling. This means that chip-specific stuff have
 // already been done, and panic_info_t has been filled.
@@ -333,6 +336,8 @@ void esp_panic_handler(panic_info_t *info)
 #endif
     esp_panic_handler_reconfigure_wdts(); // restore WDT config
 #endif // CONFIG_APPTRACE_ENABLE
+
+    user_panic_handler();
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
     disable_all_wdts();
