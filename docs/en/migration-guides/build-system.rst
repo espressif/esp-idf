@@ -70,3 +70,10 @@ For example::
 instead of::
 
     target_link_libraries(${project_elf} "-Wl,--wrap=esp_panic_handler")
+
+Update CMake version
+--------------------
+
+In ESP-IDF v5.0 minimal cmake version was increased to 3.16 and versions lower than 3.16 are not supported anymore.  Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions doesn't have one.
+
+This affects ESP-IDF users who use system-provided CMake and custom CMake project users.

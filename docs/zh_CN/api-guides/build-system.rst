@@ -200,7 +200,7 @@ ESP-IDF 适用于 Python 3.7 以上版本。
 
 最小项目::
 
-        cmake_minimum_required(VERSION 3.5)
+        cmake_minimum_required(VERSION 3.16)
         include($ENV{IDF_PATH}/tools/cmake/project.cmake)
         project(myProject)
 
@@ -211,7 +211,7 @@ ESP-IDF 适用于 Python 3.7 以上版本。
 
 每个项目都要按照上面显示的顺序添加上述三行代码：
 
-- ``cmake_minimum_required(VERSION 3.5)`` 必须放在 CMakeLists.txt 文件的第一行，它会告诉 CMake 构建该项目所需要的最小版本号。ESP-IDF 支持 CMake 3.5 或更高的版本。
+- ``cmake_minimum_required(VERSION 3.16)`` 必须放在 CMakeLists.txt 文件的第一行，它会告诉 CMake 构建该项目所需要的最小版本号。ESP-IDF 支持 CMake 3.16 或更高的版本。
 - ``include($ENV{IDF_PATH}/tools/cmake/project.cmake)`` 会导入 CMake 的其余功能来完成配置项目、检索组件等任务。
 - ``project(myProject)`` 会创建项目本身，并指定项目名称。该名称会作为最终输出的二进制文件的名字，即 ``myProject.elf`` 和 ``myProject.bin``。每个 CMakeLists 文件只能定义一个项目。
 
@@ -255,7 +255,7 @@ ESP-IDF 适用于 Python 3.7 以上版本。
 应在 ``project()`` 之后进行::
 
 
-    cmake_minimum_required(VERSION 3.5)
+    cmake_minimum_required(VERSION 3.16)
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
     project(myProject)
 
@@ -1066,7 +1066,7 @@ ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用�
 
 .. code-block:: cmake
 
-  cmake_minimum_required(VERSION 3.5)
+  cmake_minimum_required(VERSION 3.16)
   project(my_custom_app C)
 
   # 导入提供 ESP-IDF CMake 构建系统 API 的 CMake 文件
