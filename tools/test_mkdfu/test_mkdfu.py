@@ -1,19 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2020-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import unicode_literals
 
@@ -45,7 +34,8 @@ class TestMkDFU(unittest.TestCase):
             self.addCleanup(os.unlink, f_out.name)
         args = [mkdfu_path, 'write',
                 '-o', f_out.name,
-                '--pid', '2']
+                '--pid', '2',
+                '--flash-size', '4MB']
         if part_size:
             args += ['--part-size', str(part_size)]
         if json_input:
@@ -54,6 +44,8 @@ class TestMkDFU(unittest.TestCase):
             args += [str(addr), f_path]
         p = pexpect.spawn(sys.executable, args, timeout=10, encoding='utf-8')
         self.addCleanup(p.terminate, force=True)
+
+        p.expect_exact('Adding flash chip parameters file with flash_size = 4MB')
 
         for addr, f_path in sorted(file_args, key=lambda e: e[0]):
             p.expect_exact('Adding {} at {}'.format(f_path, hex(addr)))
@@ -114,7 +106,7 @@ class TestSplit(TestMkDFU):
     tests with images prepared in the "2" subdirectory
 
     "2/dfu.bin" was prepared with:
-        mkdfu.py write --part-size 5 --pid 2 -o 2/dfu.bin 0 bin
+        mkdfu.py write --part-size 5 --pid 2 --flash-size 4MB -o 2/dfu.bin 0 bin
     where the content of "bin" is b"\xce" * 10
     '''
     def test_split(self):
