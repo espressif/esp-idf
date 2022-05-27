@@ -12,7 +12,6 @@ extern "C" {
 #endif
 
 #include "sdkconfig.h"
-#include "soc/soc_caps.h"
 
 #define ROMFN_ATTR
 
@@ -62,7 +61,26 @@ extern "C" {
 // Use as esp_rom_printf(DRAM_STR("Hello world!\n"));
 #define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if CONFIG_SOC_RTC_FAST_MEM_SUPPORTED || CONFIG_SOC_RTC_SLOW_MEM_SUPPORTED
+// Forces data into RTC memory. See "docs/deep-sleep-stub.rst"
+// Any variable marked with this attribute will keep its value
+// during a deep sleep / wake cycle.
+#define RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.data", __COUNTER__)
+
+// Forces data into RTC memory of .noinit section.
+// Any variable marked with this attribute will keep its value
+// after restart or during a deep sleep / wake cycle.
+#define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __COUNTER__)
+
+// Forces read-only data into RTC memory. See "docs/deep-sleep-stub.rst"
+#define RTC_RODATA_ATTR _SECTION_ATTR_IMPL(".rtc.rodata", __COUNTER__)
+
+// Forces data into RTC memory and map it to coredump
+#define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __COUNTER__)
+
+// Allows to place data into RTC_SLOW memory.
+#define RTC_SLOW_ATTR _SECTION_ATTR_IMPL(".rtc.force_slow", __COUNTER__)
+
 // Forces code into RTC fast memory. See "docs/deep-sleep-stub.rst"
 #define RTC_IRAM_ATTR _SECTION_ATTR_IMPL(".rtc.text", __COUNTER__)
 
@@ -72,39 +90,14 @@ extern "C" {
 // Allows to place data into RTC_FAST memory and map it to coredump
 #define COREDUMP_RTC_FAST_ATTR _SECTION_ATTR_IMPL(".rtc.fast.coredump", __COUNTER__)
 #else
+#define RTC_DATA_ATTR
+#define RTC_NOINIT_ATTR
+#define RTC_RODATA_ATTR
+#define COREDUMP_RTC_DATA_ATTR
+#define RTC_SLOW_ATTR
 #define RTC_IRAM_ATTR
 #define RTC_FAST_ATTR
 #define COREDUMP_RTC_FAST_ATTR
-#endif
-
-#if SOC_RTC_SLOW_MEM_SUPPORTED
-// Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst"
-// Any variable marked with this attribute will keep its value
-// during a deep sleep / wake cycle.
-#define RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.data", __COUNTER__)
-
-// Allows to place data into RTC_SLOW memory.
-#define RTC_SLOW_ATTR _SECTION_ATTR_IMPL(".rtc.force_slow", __COUNTER__)
-
-// Forces data into RTC slow memory of .noinit section.
-// Any variable marked with this attribute will keep its value
-// after restart or during a deep sleep / wake cycle.
-#define RTC_NOINIT_ATTR  _SECTION_ATTR_IMPL(".rtc_noinit", __COUNTER__)
-#else
-#define RTC_DATA_ATTR
-#define RTC_SLOW_ATTR
-#define RTC_NOINIT_ATTR
-#endif
-
-#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
-// Forces read-only data into RTC memory. See "docs/deep-sleep-stub.rst"
-#define RTC_RODATA_ATTR _SECTION_ATTR_IMPL(".rtc.rodata", __COUNTER__)
-
-// Forces data into RTC memory and map it to coredump
-#define COREDUMP_RTC_DATA_ATTR _SECTION_ATTR_IMPL(".rtc.coredump", __COUNTER__)
-#else
-#define RTC_RODATA_ATTR
-#define COREDUMP_RTC_DATA_ATTR
 #endif
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
