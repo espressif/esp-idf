@@ -79,10 +79,10 @@ I (1045) wifi_prov_mgr: Provisioning started with service name : PROV_261FCC
 
 Make sure to note down the BLE device name (starting with `PROV_`) displayed in the serial monitor log (eg. PROV_261FCC). This will depend on the MAC ID and will be unique for every device.
 
-In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses protocomm security scheme 1 and proof of possession PoP based authentication :
+In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses the protocomm security scheme 2 (based on Secure Remote Password protocol (SRP6a)) :
 
 ```
-python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
+python esp_prov.py --verbose --transport ble --service_name PROV_4C33E8 --sec_ver 2 --sec2_username testuser --sec2_pwd testpassword --ssid myssid --passphrase mypassword
 ```
 
 Above command will perform the provisioning steps, and the monitor log should display something like this :
@@ -112,6 +112,26 @@ I (52355) app: Hello World!
 I (53355) app: Hello World!
 I (54355) app: Hello World!
 I (55355) app: Hello World!
+```
+
+**Note:** For generating the credentials for security version 2 (`SRP6a` salt and verifier) for the device-side, the following example command can be used. The output can then directly be used in this example.
+
+The config option `CONFIG_EXAMPLE_PROV_SEC2_USERNAME` should be set to the same username used in the salt-verifier generation.
+
+```log
+$ python esp_prov.py --verbose --transport softap --sec_ver 2 --sec2_gen_cred --sec2_username testuser --sec2_pwd testpassword
+==== Salt-verifier for security scheme 2 (SRP6a) ====
+static const char sec2_salt[] = {
+    0x14, 0xdf, 0x42, 0x50, 0x3d, 0xec, 0x54, 0xc3, 0xe5, 0x0e, 0x0c, 0x9d, 0xb4, 0x84, 0xd7, 0xe4
+};
+
+static const char sec2_verifier[] = {
+    0xd7, 0xc2, 0xdb, 0x68, 0x3b, 0x98, 0xf0, 0xbf, 0x4f, 0x02, 0x21, 0xf6, 0x07, 0xe6, 0xfc, 0x0d,
+    ...
+    ...
+    0x86, 0xf2, 0x78, 0xba, 0x1e, 0x12, 0xa9, 0x62, 0x9a, 0x47, 0x1b, 0x69, 0x42, 0xba, 0x37, 0xe2
+};
+
 ```
 
 ### QR Code Scanning
