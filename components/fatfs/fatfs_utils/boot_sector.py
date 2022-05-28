@@ -12,6 +12,15 @@ from .utils import (ALLOWED_SECTOR_SIZES, ALLOWED_SECTORS_PER_CLUSTER, EMPTY_BYT
 
 
 class BootSector:
+    """
+    This class describes the first sector of the volume in the Reserved Region.
+    It contains data from BPB (BIOS Parameter Block) and BS (Boot sector). The fields of the BPB and BS are mixed in
+    the header of the physical boot sector. Fields with prefix BPB belongs to BPB block and with prefix BS
+    belongs to the actual boot sector.
+
+    Please beware, that the name of class BootSector refer to data both from the boot sector and BPB.
+    ESP32 ignores fields with prefix "BS_"! Fields with prefix BPB_ are essential to read the filesystem.
+    """
     MAX_VOL_LAB_SIZE = 11
     MAX_OEM_NAME_SIZE = 8
     MAX_FS_TYPE_SIZE = 8
@@ -20,6 +29,7 @@ class BootSector:
     BOOT_HEADER_SIZE = 512
 
     BOOT_SECTOR_HEADER = Struct(
+        # this value reflects BS_jmpBoot used for ESP32 boot sector (any other accepted)
         'BS_jmpBoot' / Const(b'\xeb\xfe\x90'),
         'BS_OEMName' / PaddedString(MAX_OEM_NAME_SIZE, SHORT_NAMES_ENCODING),
         'BPB_BytsPerSec' / Int16ul,
@@ -27,13 +37,13 @@ class BootSector:
         'BPB_RsvdSecCnt' / Int16ul,
         'BPB_NumFATs' / Int8ul,
         'BPB_RootEntCnt' / Int16ul,
-        'BPB_TotSec16' / Int16ul,
+        'BPB_TotSec16' / Int16ul,  # zero if the FAT type is 32, otherwise number of sectors
         'BPB_Media' / Int8ul,
         'BPB_FATSz16' / Int16ul,  # for FAT32 always zero, for FAT12/FAT16 number of sectors per FAT
         'BPB_SecPerTrk' / Int16ul,
         'BPB_NumHeads' / Int16ul,
         'BPB_HiddSec' / Int32ul,
-        'BPB_TotSec32' / Int32ul,
+        'BPB_TotSec32' / Int32ul,  # zero if the FAT type is 12/16, otherwise number of sectors
         'BS_DrvNum' / Const(b'\x80'),
         'BS_Reserved1' / Const(EMPTY_BYTE),
         'BS_BootSig' / Const(b'\x29'),
@@ -90,6 +100,7 @@ class BootSector:
         self._parsed_header = BootSector.BOOT_SECTOR_HEADER.parse(binary_data)
         if self._parsed_header is None:
             raise NotInitialized('The boot sector header is not parsed successfully!')
+
         if self._parsed_header['BPB_TotSec16'] != 0x00:
             sectors_count_: int = self._parsed_header['BPB_TotSec16']
         elif self._parsed_header['BPB_TotSec32'] != 0x00:
@@ -100,6 +111,7 @@ class BootSector:
             raise NotImplementedError('FAT32 not implemented!')
         else:
             raise InconsistentFATAttributes('The number of FS sectors cannot be zero!')
+
         # in the current code assigning self._parsed_header['BPB_TotSec32'] is not reachable
         # the option to assign it is kept for possibility to implement FAT32
         sectors_per_fat_cnt_ = self._parsed_header['BPB_FATSz16'] or self._parsed_header['BPB_TotSec32']
@@ -136,7 +148,7 @@ class BootSector:
         if self._parsed_header is None:
             return 'Boot sector is not initialized!'
         res: str = 'Properties of the FATFS:\n'
-        for member in getmembers(self.boot_sector_state, lambda a: not(isroutine(a))):
+        for member in getmembers(self.boot_sector_state, lambda a: not (isroutine(a))):
             prop_ = getattr(self.boot_sector_state, member[0])
             if isinstance(prop_, int) or isinstance(prop_, str) and not member[0].startswith('_'):
                 res += f'{member[0]}: {prop_}\n'

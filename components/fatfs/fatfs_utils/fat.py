@@ -29,8 +29,14 @@ class FAT:
         if init_:
             self.allocate_root_dir()
 
-    def parse_fat_sector(self) -> None:
-        pass
+    def get_cluster_value(self, cluster_id_: int) -> int:
+        fat_cluster_value_: int = self.clusters[cluster_id_].get_from_fat()
+        return fat_cluster_value_
+
+    def is_cluster_last(self, cluster_id_: int) -> bool:
+        value_ = self.get_cluster_value(cluster_id_)
+        is_cluster_last_: bool = value_ == (1 << self.boot_sector_state.fatfs_type) - 1
+        return is_cluster_last_
 
     def find_free_cluster(self) -> Cluster:
         # finds first empty cluster and allocates it
