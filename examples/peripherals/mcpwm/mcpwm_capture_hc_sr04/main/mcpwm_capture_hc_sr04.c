@@ -1,25 +1,16 @@
-/* MCPWM capture example: HC-SR04
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
 /*
- * This example will show you how to use capture function to read HC-SR04 sonar sensor.
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * HC_SR04_SAMPLE_PERIOD_MS should be at least 50ms
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
-#include "esp_check.h"
 #include "esp_private/esp_clk.h"
 #include "driver/mcpwm.h"
+#include "driver/gpio.h"
 
 const static char *TAG = "hc-sr04";
 

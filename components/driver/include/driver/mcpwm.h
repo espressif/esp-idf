@@ -6,11 +6,12 @@
 
 #pragma once
 
-#include "soc/soc_caps.h"
-#if SOC_MCPWM_SUPPORTED
+#include <stdbool.h>
+#include <stdint.h>
 #include "esp_err.h"
-#include "driver/gpio.h"
+#include "esp_bit_defs.h"
 #include "esp_intr_alloc.h"
+#include "soc/soc_caps.h"
 #include "hal/mcpwm_types.h"
 
 #ifdef __cplusplus
@@ -101,14 +102,6 @@ typedef enum {
 typedef mcpwm_generator_t mcpwm_operator_t; ///< @deprecated
 
 /**
- * @brief MCPWM carrier oneshot mode, in this mode the width of the first pulse of carrier can be programmed
- */
-typedef enum {
-    MCPWM_ONESHOT_MODE_DIS, /*!<Enable oneshot mode*/
-    MCPWM_ONESHOT_MODE_EN,  /*!<Disable oneshot mode*/
-} mcpwm_carrier_os_t;
-
-/**
  * @brief MCPWM carrier output inversion, high frequency carrier signal active with MCPWM signal is high
  */
 typedef enum {
@@ -138,7 +131,7 @@ typedef enum {
     MCPWM_SELECT_GPIO_SYNC2,      /*!<Select GPIO SYNC2 as input*/
 } mcpwm_sync_signal_t;
 
- // backward compatibility
+// backward compatibility
 #define MCPWM_SELCT_SYNC0 MCPWM_SELCT_GPIO_SYNC0
 #define MCPWM_SELCT_SYNC1 MCPWM_SELCT_GPIO_SYNC1
 #define MCPWM_SELCT_SYNC2 MCPWM_SELCT_GPIO_SYNC2
@@ -288,7 +281,6 @@ typedef struct {
     uint8_t carrier_period;                    /*!<Set carrier period = (carrier_period + 1)*800ns, carrier_period should be < 16*/
     uint8_t carrier_duty;                      /*!<Set carrier duty cycle, carrier_duty should be less than 8 (increment every 12.5%)*/
     uint8_t pulse_width_in_os;                 /*!<Set pulse width of first pulse in one shot mode = (carrier period)*(pulse_width_in_os + 1), should be less then 16*/
-    mcpwm_carrier_os_t carrier_os_mode;        /*!<Enable or disable carrier oneshot mode*/
     mcpwm_carrier_out_ivt_t carrier_ivt_mode;  /*!<Invert output of carrier*/
 } mcpwm_carrier_config_t;
 
@@ -449,14 +441,14 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 esp_err_t mcpwm_set_duty_type(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_generator_t gen, mcpwm_duty_type_t duty_type);
 
 /**
-* @brief Get frequency of timer
-*
-* @param mcpwm_num set MCPWM unit(0-1)
-* @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
-*
-* @return
-*     - frequency of timer
-*/
+ * @brief Get frequency of timer
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ *
+ * @return
+ *     - frequency of timer
+ */
 uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 
 /**
@@ -489,7 +481,7 @@ uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the operator(MCPWMXA/MCPWMXB), 'x' is timer number selected
-
+ *
  *
  * @return
  *     - ESP_OK Success
@@ -503,7 +495,7 @@ esp_err_t mcpwm_set_signal_high(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the operator(MCPWMXA/MCPWMXB), 'x' is timer number selected
-
+ *
  *
  * @return
  *     - ESP_OK Success
@@ -549,15 +541,15 @@ esp_err_t mcpwm_stop(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 esp_err_t mcpwm_carrier_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpwm_carrier_config_t *carrier_conf);
 
 /**
-* @brief Enable MCPWM carrier submodule, for respective timer
-*
-* @param mcpwm_num set MCPWM unit(0-1)
-* @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
-*
-* @return
-*     - ESP_OK Success
-*     - ESP_ERR_INVALID_ARG Parameter error
-*/
+ * @brief Enable MCPWM carrier submodule, for respective timer
+ *
+ * @param mcpwm_num set MCPWM unit(0-1)
+ * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t mcpwm_carrier_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 
 /**
@@ -603,6 +595,8 @@ esp_err_t mcpwm_carrier_set_duty_cycle(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
 /**
  * @brief Enable and set width of first pulse in carrier oneshot mode
  *
+ * @note The carrier oneshot pulse can't disabled.
+ *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param pulse_width set pulse width of first pulse in oneshot mode, width = (carrier period)*(pulse_width +1)
@@ -613,18 +607,6 @@ esp_err_t mcpwm_carrier_set_duty_cycle(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t mcpwm_carrier_oneshot_mode_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, uint8_t pulse_width);
-
-/**
- * @brief Disable oneshot mode, width of first pulse = carrier period
- *
- * @param mcpwm_num set MCPWM unit(0-1)
- * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t mcpwm_carrier_oneshot_mode_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 
 /**
  * @brief Enable or disable carrier output inversion
@@ -847,5 +829,3 @@ esp_err_t mcpwm_sync_invert_gpio_synchro(mcpwm_unit_t mcpwm_num, mcpwm_sync_sign
 #ifdef __cplusplus
 }
 #endif
-
-#endif  //SOC_MCPWM_SUPPORTED

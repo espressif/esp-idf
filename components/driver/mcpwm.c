@@ -530,11 +530,6 @@ esp_err_t mcpwm_carrier_oneshot_mode_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_
     return ESP_OK;
 }
 
-esp_err_t mcpwm_carrier_oneshot_mode_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
-{
-    return mcpwm_carrier_oneshot_mode_enable(mcpwm_num, timer_num, 0);
-}
-
 esp_err_t mcpwm_carrier_output_invert(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
                                       mcpwm_carrier_out_ivt_t carrier_ivt_mode)
 {
@@ -558,11 +553,7 @@ esp_err_t mcpwm_carrier_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, co
     mcpwm_carrier_enable(mcpwm_num, timer_num);
     mcpwm_carrier_set_period(mcpwm_num, timer_num, carrier_conf->carrier_period);
     mcpwm_carrier_set_duty_cycle(mcpwm_num, timer_num, carrier_conf->carrier_duty);
-    if (carrier_conf->carrier_os_mode == MCPWM_ONESHOT_MODE_EN) {
-        mcpwm_carrier_oneshot_mode_enable(mcpwm_num, timer_num, carrier_conf->pulse_width_in_os);
-    } else {
-        mcpwm_carrier_oneshot_mode_disable(mcpwm_num, timer_num);
-    }
+    mcpwm_carrier_oneshot_mode_enable(mcpwm_num, timer_num, carrier_conf->pulse_width_in_os);
     mcpwm_carrier_output_invert(mcpwm_num, timer_num, carrier_conf->carrier_ivt_mode);
 
     mcpwm_critical_enter(mcpwm_num);
