@@ -217,6 +217,34 @@ typedef enum {
     UART_SCLK_DEFAULT = SOC_MOD_CLK_APB, /*!< UART source clock default choice is APB */
 } soc_periph_uart_clk_src_legacy_t;
 
+//////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Timer
+ */
+#define SOC_MCPWM_TIMER_CLKS {SOC_MOD_CLK_PLL_D2}
+
+/**
+ * @brief Type of MCPWM timer clock source
+ */
+typedef enum {
+    MCPWM_TIMER_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the source clock */
+    MCPWM_TIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M, /*!< Select PLL_F160M as the default clock choice */
+} soc_periph_mcpwm_timer_clk_src_t;
+
+/**
+ * @brief Array initializer for all supported clock sources of MCPWM Capture Timer
+ */
+#define SOC_MCPWM_CAPTURE_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Type of MCPWM capture clock source
+ */
+typedef enum {
+    MCPWM_CAPTURE_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< SElect APB as the default clock choice */
+} soc_periph_mcpwm_capture_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

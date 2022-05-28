@@ -451,10 +451,6 @@ config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     bool
     default y
 
-config SOC_MCPWM_BASE_CLK_HZ
-    int
-    default 160000000
-
 config SOC_PCNT_GROUPS
     bool
     default y
