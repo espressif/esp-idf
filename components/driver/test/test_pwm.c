@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "unity.h"
-#include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
@@ -27,7 +26,8 @@
 #define TEST_SYNC_GPIO_2 (19)
 #define TEST_CAP_GPIO (21)
 
-#define MCPWM_TEST_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / 16)
+#define MCPWM_GROUP_CLK_SRC_HZ  160000000
+#define MCPWM_TEST_GROUP_CLK_HZ (MCPWM_GROUP_CLK_SRC_HZ / 16)
 #define MCPWM_TEST_TIMER_CLK_HZ (MCPWM_TEST_GROUP_CLK_HZ / 10)
 
 const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};

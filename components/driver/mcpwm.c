@@ -19,6 +19,7 @@
 #include "hal/mcpwm_hal.h"
 #include "hal/gpio_hal.h"
 #include "hal/mcpwm_ll.h"
+#include "driver/gpio.h"
 #include "driver/mcpwm.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -36,16 +37,17 @@ static const char *TAG = "mcpwm";
 #define MCPWM_DT_ERROR          "MCPWM DEADTIME TYPE ERROR"
 #define MCPWM_CAP_EXIST_ERROR   "MCPWM USER CAP INT SERVICE ALREADY EXISTS"
 
-#ifdef CONFIG_MCPWM_ISR_IN_IRAM
+#ifdef CONFIG_MCPWM_ISR_IRAM_SAFE
 #define MCPWM_ISR_ATTR     IRAM_ATTR
-#define MCPWM_INTR_FLAG  (ESP_INTR_FLAG_IRAM)
+#define MCPWM_INTR_FLAG    ESP_INTR_FLAG_IRAM
 #else
 #define MCPWM_ISR_ATTR
 #define MCPWM_INTR_FLAG  0
 #endif
 
+#define MCPWM_GROUP_CLK_SRC_HZ 160000000
 #define MCPWM_GROUP_CLK_PRESCALE (16)
-#define MCPWM_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / MCPWM_GROUP_CLK_PRESCALE)
+#define MCPWM_GROUP_CLK_HZ (MCPWM_GROUP_CLK_SRC_HZ / MCPWM_GROUP_CLK_PRESCALE)
 #define MCPWM_TIMER_CLK_HZ (MCPWM_GROUP_CLK_HZ / 10)
 
 _Static_assert(SOC_MCPWM_OPERATORS_PER_GROUP >= SOC_MCPWM_TIMERS_PER_GROUP, "This driver assumes the timer num equals to the operator num.");
@@ -87,26 +89,30 @@ typedef struct {
 } mcpwm_context_t;
 
 static mcpwm_context_t context[SOC_MCPWM_GROUPS] = {
-        [0] = {
-                .hal = {MCPWM_LL_GET_HW(0)},
-                .spinlock = portMUX_INITIALIZER_UNLOCKED,
-                .group_id = 0,
-                .group_pre_scale = SOC_MCPWM_BASE_CLK_HZ / MCPWM_GROUP_CLK_HZ,
-                .timer_pre_scale = {[0 ... SOC_MCPWM_TIMERS_PER_GROUP - 1] =
-                MCPWM_GROUP_CLK_HZ / MCPWM_TIMER_CLK_HZ},
-                .mcpwm_intr_handle = NULL,
-                .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
+    [0] = {
+        .hal = {MCPWM_LL_GET_HW(0)},
+        .spinlock = portMUX_INITIALIZER_UNLOCKED,
+        .group_id = 0,
+        .group_pre_scale = MCPWM_GROUP_CLK_SRC_HZ / MCPWM_GROUP_CLK_HZ,
+        .timer_pre_scale = {
+            [0 ... SOC_MCPWM_TIMERS_PER_GROUP - 1] =
+            MCPWM_GROUP_CLK_HZ / MCPWM_TIMER_CLK_HZ
         },
-        [1] = {
-                .hal = {MCPWM_LL_GET_HW(1)},
-                .spinlock = portMUX_INITIALIZER_UNLOCKED,
-                .group_id = 1,
-                .group_pre_scale = SOC_MCPWM_BASE_CLK_HZ / MCPWM_GROUP_CLK_HZ,
-                .timer_pre_scale = {[0 ... SOC_MCPWM_TIMERS_PER_GROUP - 1] =
-                MCPWM_GROUP_CLK_HZ / MCPWM_TIMER_CLK_HZ},
-                .mcpwm_intr_handle = NULL,
-                .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
-        }
+        .mcpwm_intr_handle = NULL,
+        .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
+    },
+    [1] = {
+        .hal = {MCPWM_LL_GET_HW(1)},
+        .spinlock = portMUX_INITIALIZER_UNLOCKED,
+        .group_id = 1,
+        .group_pre_scale = MCPWM_GROUP_CLK_SRC_HZ / MCPWM_GROUP_CLK_HZ,
+        .timer_pre_scale = {
+            [0 ... SOC_MCPWM_TIMERS_PER_GROUP - 1] =
+            MCPWM_GROUP_CLK_HZ / MCPWM_TIMER_CLK_HZ
+        },
+        .mcpwm_intr_handle = NULL,
+        .cap_isr_func = {[0 ... SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER - 1] = {NULL, NULL}},
+    }
 };
 
 typedef void (*mcpwm_ll_gen_set_event_action_t)(mcpwm_dev_t *mcpwm, int op, int gen, int action);
@@ -121,11 +127,13 @@ static inline void mcpwm_critical_exit(mcpwm_unit_t mcpwm_num)
     portEXIT_CRITICAL(&context[mcpwm_num].spinlock);
 }
 
-static inline void mcpwm_mutex_lock(mcpwm_unit_t mcpwm_num){
+static inline void mcpwm_mutex_lock(mcpwm_unit_t mcpwm_num)
+{
     _lock_acquire(&context[mcpwm_num].mutex_lock);
 }
 
-static inline void mcpwm_mutex_unlock(mcpwm_unit_t mcpwm_num){
+static inline void mcpwm_mutex_unlock(mcpwm_unit_t mcpwm_num)
+{
     _lock_release(&context[mcpwm_num].mutex_lock);
 }
 
@@ -202,9 +210,10 @@ esp_err_t mcpwm_stop(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
     return ESP_OK;
 }
 
-esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int resolution) {
+esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int resolution)
+{
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
-    int pre_scale_temp = SOC_MCPWM_BASE_CLK_HZ / resolution;
+    int pre_scale_temp = MCPWM_GROUP_CLK_SRC_HZ / resolution;
     ESP_RETURN_ON_FALSE(pre_scale_temp >= 1, ESP_ERR_INVALID_ARG, TAG, "invalid resolution");
     context[mcpwm_num].group_pre_scale = pre_scale_temp;
     mcpwm_critical_enter(mcpwm_num);
@@ -213,11 +222,12 @@ esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int r
     return ESP_OK;
 }
 
-esp_err_t mcpwm_timer_set_resolution(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, unsigned long int resolution) {
+esp_err_t mcpwm_timer_set_resolution(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, unsigned long int resolution)
+{
     MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
 
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
-    int pre_scale_temp = SOC_MCPWM_BASE_CLK_HZ / context[mcpwm_num].group_pre_scale / resolution;
+    int pre_scale_temp = MCPWM_GROUP_CLK_SRC_HZ / context[mcpwm_num].group_pre_scale / resolution;
     ESP_RETURN_ON_FALSE(pre_scale_temp >= 1, ESP_ERR_INVALID_ARG, TAG, "invalid resolution");
     context[mcpwm_num].timer_pre_scale[timer_num] = pre_scale_temp;
     mcpwm_critical_enter(mcpwm_num);
@@ -239,7 +249,7 @@ esp_err_t mcpwm_set_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, u
     uint32_t previous_peak = mcpwm_ll_timer_get_peak(hal->dev, timer_num, false);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
     unsigned long int real_timer_clk_hz =
-            SOC_MCPWM_BASE_CLK_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
+        MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
     uint32_t new_peak = real_timer_clk_hz / frequency;
     mcpwm_ll_timer_set_peak(hal->dev, timer_num, new_peak, false);
     // keep the duty cycle unchanged
@@ -286,7 +296,7 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
     unsigned long int real_timer_clk_hz =
-            SOC_MCPWM_BASE_CLK_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
+        MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
     mcpwm_ll_operator_set_compare_value(hal->dev, op, cmp, duty_in_us * real_timer_clk_hz / 1000000);
     mcpwm_ll_operator_enable_update_compare_on_tez(hal->dev, op, cmp, true);
     mcpwm_critical_exit(mcpwm_num);
@@ -393,7 +403,7 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     mcpwm_ll_timer_update_period_at_once(hal->dev, timer_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
     unsigned long int real_timer_clk_hz =
-            SOC_MCPWM_BASE_CLK_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
+        MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
     mcpwm_ll_timer_set_peak(hal->dev, timer_num, real_timer_clk_hz / mcpwm_conf->frequency, false);
     mcpwm_ll_operator_connect_timer(hal->dev, timer_num, timer_num); //the driver currently always use the timer x for operator x
     mcpwm_critical_exit(mcpwm_num);
@@ -414,7 +424,7 @@ uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
     unsigned long int real_timer_clk_hz =
-            SOC_MCPWM_BASE_CLK_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
+        MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
     uint32_t peak = mcpwm_ll_timer_get_peak(hal->dev, timer_num, false);
     uint32_t freq = real_timer_clk_hz / peak;
     mcpwm_critical_exit(mcpwm_num);
@@ -433,7 +443,8 @@ float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_gene
     return duty;
 }
 
-uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen){
+uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_operator_t gen)
+{
     //the driver currently always use the timer x for operator x
     const int op = timer_num;
     MCPWM_GEN_CHECK(mcpwm_num, timer_num, gen);
@@ -441,7 +452,7 @@ uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
     unsigned long int real_timer_clk_hz =
-            SOC_MCPWM_BASE_CLK_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
+        MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
     uint32_t duty = mcpwm_ll_operator_get_compare_value(hal->dev, op, gen) * (1000000.0 / real_timer_clk_hz);
     mcpwm_critical_exit(mcpwm_num);
     return duty;

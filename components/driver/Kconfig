@@ -1,6 +1,6 @@
-menu "Driver configurations"
+menu "Driver Configurations"
 
-    menu "ADC configuration"
+    menu "ADC Configuration"
 
         config ADC_FORCE_XPD_FSM
             bool "Use the FSM to control ADC power"
@@ -21,20 +21,7 @@ menu "Driver configurations"
 
     endmenu  # ADC Configuration
 
-    menu "MCPWM configuration"
-        depends on SOC_MCPWM_SUPPORTED
-        config MCPWM_ISR_IN_IRAM
-            bool "Place MCPWM ISR function into IRAM"
-            default n
-            help
-                If this option is not selected, the MCPWM interrupt will be deferred when the Cache
-                is in a disabled state (e.g. Flash write/erase operation).
-
-                Note that if this option is selected, all user registered ISR callbacks should never
-                try to use cache as well. (with IRAM_ATTR)
-    endmenu # MCPWM Configuration
-
-    menu "SPI configuration"
+    menu "SPI Configuration"
 
         config SPI_MASTER_IN_IRAM
             bool "Place transmitting functions of SPI master into IRAM"
@@ -84,7 +71,7 @@ menu "Driver configurations"
 
     endmenu # SPI Configuration
 
-    menu "TWAI configuration"
+    menu "TWAI Configuration"
         depends on SOC_TWAI_SUPPORTED
 
         config TWAI_ISR_IN_IRAM
@@ -166,7 +153,7 @@ menu "Driver configurations"
 
     endmenu # TEMP_SENSOR Configuration
 
-    menu "UART configuration"
+    menu "UART Configuration"
 
         config UART_ISR_IN_IRAM
             bool "Place UART ISR function into IRAM"
@@ -306,4 +293,16 @@ menu "Driver configurations"
                 Note that, this option only controls the RMT driver log, won't affect other drivers.
     endmenu # RMT Configuration
 
-endmenu  # Driver configurations
+    menu "MCPWM Configuration"
+        depends on SOC_MCPWM_SUPPORTED
+        config MCPWM_ISR_IRAM_SAFE
+            bool "Place MCPWM ISR function into IRAM"
+            default n
+            help
+                This will ensure the MCPWM interrupt handle is IRAM-Safe, allow to avoid flash
+                cache misses, and also be able to run whilst the cache is disabled.
+                (e.g. SPI Flash write)
+
+    endmenu # MCPWM Configuration
+
+endmenu  # Driver Configurations
