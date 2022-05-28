@@ -16,8 +16,8 @@
     BTLC_GPIO_ENABLE (BLOCK0)                Enable btlc gpio                                   = 0 R/W (0b00)
     POWERGLITCH_EN (BLOCK0)                  Set this bit to enable power glitch function       = False R/W (0b0)
     POWER_GLITCH_DSENSE (BLOCK0)             Sample delay configuration of power glitch         = 0 R/W (0b00)
-    DIS_LEGACY_SPI_BOOT (BLOCK0)             Disables Legacy SPI boot mode                      = False R/W (0b0)
-    UART_PRINT_CHANNEL (BLOCK0)              Selects the default UART for printing boot msg     = UART0 R/W (0b0)
+    DIS_DIRECT_BOOT (BLOCK0)                 Disables direct boot mode                          = False R/W (0b0)
+    DIS_USB_SERIAL_JTAG_ROM_PRINT (BLOCK0)       Selects the default UART for printing boot msg     = UART0 R/W (0b0)
     UART_PRINT_CONTROL (BLOCK0)              Sets the default UART boot message output mode     = Enabled R/W (0b00)
     FORCE_SEND_RESUME (BLOCK0)               Force ROM code to send a resume command during SPI = False R/W (0b0)
                                             bootduring SPI boot                              
@@ -128,7 +128,7 @@
     DIS_USB_DEVICE (BLOCK0)                  Disables USB DEVICE                                = False R/W (0b0)
     DIS_USB (BLOCK0)                         Disables the USB OTG hardware                      = False R/W (0b0)
     USB_EXCHG_PINS (BLOCK0)                  Exchanges USB D+ and D- pins                       = False R/W (0b0)
-    DIS_USB_DOWNLOAD_MODE (BLOCK0)           Disables use of USB in UART download boot mode     = False R/W (0b0)
+    DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE (BLOCK0) Disables download through USB-Serial-JTAG        = False R/W (0b0)
 
     Vdd_Spi Config fuses:
     PIN_POWER_SELECTION (BLOCK0)             GPIO33-GPIO37 power supply selection in ROM code   = VDD3P3_CPU R/W (0b0)
