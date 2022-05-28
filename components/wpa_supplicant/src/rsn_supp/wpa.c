@@ -2251,7 +2251,17 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 {
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
+    bool use_pmk_cache = true;
 
+    /* Incase AP has changed it's SSID, don't try with PMK caching for SAE connection */
+    /* Ideally we should use network_ctx for this purpose however currently network profile block
+     * is part of libraries,
+     * TODO Correct this in future during NVS restructuring */
+    if ((sm->key_mgmt == WPA_KEY_MGMT_SAE) &&
+        (os_memcmp(sm->bssid, bssid, ETH_ALEN) == 0) &&
+        (os_memcmp(sm->ssid, ssid, ssid_len) != 0)) {
+        use_pmk_cache = false;
+    }
     sm->pairwise_cipher = BIT(pairwise_cipher);
     sm->group_cipher = BIT(group_cipher);
     sm->rx_replay_counter_set = 0;  //init state not intall replay counter value
@@ -2264,7 +2274,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
         is_wpa2_enterprise_connection()) {
-        if (!esp_wifi_skip_supp_pmkcaching()) {
+        if (!esp_wifi_skip_supp_pmkcaching() || use_pmk_cache) {
             pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
             wpa_sm_set_pmk_from_pmksa(sm);
         } else {
