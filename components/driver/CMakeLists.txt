@@ -32,7 +32,15 @@ if(CONFIG_SOC_ADC_DMA_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_MCPWM_SUPPORTED)
-    list(APPEND srcs "mcpwm.c")
+    list(APPEND srcs "mcpwm/mcpwm_cap.c"
+                     "mcpwm/mcpwm_cmpr.c"
+                     "mcpwm/mcpwm_com.c"
+                     "mcpwm/mcpwm_fault.c"
+                     "mcpwm/mcpwm_gen.c"
+                     "mcpwm/mcpwm_oper.c"
+                     "mcpwm/mcpwm_sync.c"
+                     "mcpwm/mcpwm_timer.c"
+                     "deprecated/mcpwm_legacy.c")
 endif()
 
 if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
@@ -88,9 +96,12 @@ if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
     list(APPEND srcs "touch_sensor_common.c" "${target}/touch_sensor.c")
 endif()
 
+if(CONFIG_SOC_SDIO_SLAVE_SUPPORTED)
+    list(APPEND srcs "sdio_slave.c")
+endif()
+
 if(${target} STREQUAL "esp32")
     list(APPEND srcs "dac_common.c"
-                     "sdio_slave.c"
                      "deprecated/adc_i2s_deprecated.c"
                      "esp32/dac.c")
 endif()
