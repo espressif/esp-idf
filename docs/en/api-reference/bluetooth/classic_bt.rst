@@ -13,3 +13,4 @@ CLASSIC BT
    BT HFP AG <esp_hf_ag>
    BT HID DEVICE <esp_hidd>
    BT L2CAP <esp_l2cap_bt>
+   BT SDP <esp_sdp>
