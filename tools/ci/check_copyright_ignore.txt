@@ -551,7 +551,6 @@ components/esp_rom/include/esp32c3/rom/bigint.h
 components/esp_rom/include/esp32c3/rom/cache.h
 components/esp_rom/include/esp32c3/rom/crc.h
 components/esp_rom/include/esp32c3/rom/digital_signature.h
-components/esp_rom/include/esp32c3/rom/efuse.h
 components/esp_rom/include/esp32c3/rom/esp_flash.h
 components/esp_rom/include/esp32c3/rom/ets_sys.h
 components/esp_rom/include/esp32c3/rom/gpio.h
@@ -572,7 +571,6 @@ components/esp_rom/include/esp32h2/rom/bigint.h
 components/esp_rom/include/esp32h2/rom/cache.h
 components/esp_rom/include/esp32h2/rom/crc.h
 components/esp_rom/include/esp32h2/rom/digital_signature.h
-components/esp_rom/include/esp32h2/rom/efuse.h
 components/esp_rom/include/esp32h2/rom/esp_flash.h
 components/esp_rom/include/esp32h2/rom/ets_sys.h
 components/esp_rom/include/esp32h2/rom/hmac.h
@@ -617,7 +615,6 @@ components/esp_rom/include/esp32s3/rom/bigint.h
 components/esp_rom/include/esp32s3/rom/cache.h
 components/esp_rom/include/esp32s3/rom/crc.h
 components/esp_rom/include/esp32s3/rom/digital_signature.h
-components/esp_rom/include/esp32s3/rom/efuse.h
 components/esp_rom/include/esp32s3/rom/ets_sys.h
 components/esp_rom/include/esp32s3/rom/gpio.h
 components/esp_rom/include/esp32s3/rom/hmac.h

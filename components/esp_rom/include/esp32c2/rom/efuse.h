@@ -212,13 +212,13 @@ bool ets_efuse_legacy_spi_boot_mode_disabled(void);
 uint32_t ets_efuse_get_uart_print_control(void);
 
 /**
-  * @brief  Read which channel will used by ROM to print
+  * @brief  Read if USB-Serial-JTAG print during rom boot is disabled from Efuse
   *
   * @return
-  * - 0 for UART0.
-  * - 1 for UART1.
+  * - 1 for efuse disable USB-Serial-JTAG print during rom boot.
+  * - 0 for efuse doesn't disable USB-Serial-JTAG print during rom boot.
   */
-uint32_t ets_efuse_get_uart_print_channel(void);
+uint32_t ets_efuse_usb_serial_jtag_print_is_disabled(void);
 
 /**
   * @brief  Read if usb download mode disabled from Efuse
