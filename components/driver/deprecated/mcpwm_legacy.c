@@ -14,16 +14,17 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_rom_gpio.h"
+#include "esp_intr_alloc.h"
 #include "soc/gpio_periph.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_hal.h"
 #include "hal/gpio_hal.h"
 #include "hal/mcpwm_ll.h"
+#include "driver/mcpwm_types_legacy.h"
 #include "driver/gpio.h"
-#include "driver/mcpwm.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *TAG = "mcpwm";
+static const char *TAG = "mcpwm(legacy)";
 
 _Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
 
@@ -326,11 +327,11 @@ esp_err_t mcpwm_set_duty_type(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_LOW);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_NO_CHANGE);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, gen, MCPWM_ACTION_FORCE_HIGH);
-        } else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_LOW) {
+        } else if (duty_type == MCPWM_DUTY_MODE_FORCE_LOW) {
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, gen, MCPWM_ACTION_FORCE_LOW);
-        } else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH) {
+        } else if (duty_type == MCPWM_DUTY_MODE_FORCE_HIGH) {
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, gen, MCPWM_ACTION_FORCE_HIGH);
@@ -345,11 +346,11 @@ esp_err_t mcpwm_set_duty_type(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_NO_CHANGE);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, gen, MCPWM_ACTION_FORCE_LOW);
-        } else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_LOW) {
+        } else if (duty_type == MCPWM_DUTY_MODE_FORCE_LOW) {
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, gen, MCPWM_ACTION_FORCE_LOW);
-        } else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH) {
+        } else if (duty_type == MCPWM_DUTY_MODE_FORCE_HIGH) {
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, gen, MCPWM_ACTION_FORCE_HIGH);
@@ -364,14 +365,14 @@ esp_err_t mcpwm_set_duty_type(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, gen, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, gen, MCPWM_ACTION_FORCE_LOW);
-        } else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_LOW) {
+        } else if (duty_type == MCPWM_DUTY_MODE_FORCE_LOW) {
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, gen, MCPWM_ACTION_FORCE_LOW);
             mcpwm_ll_generator_set_action_on_compare_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, gen, MCPWM_ACTION_FORCE_LOW);
-        } else if (duty_type == MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH) {
+        } else if (duty_type == MCPWM_DUTY_MODE_FORCE_HIGH) {
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_FULL, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_DOWN, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_HIGH);
             mcpwm_ll_generator_set_action_on_timer_event(hal->dev, op, gen, MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_ACTION_FORCE_HIGH);
@@ -463,13 +464,13 @@ uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
 esp_err_t mcpwm_set_signal_high(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_generator_t gen)
 {
     //the driver currently always use the timer x for operator x
-    return mcpwm_set_duty_type(mcpwm_num, timer_num, gen, MCPWM_HAL_GENERATOR_MODE_FORCE_HIGH);
+    return mcpwm_set_duty_type(mcpwm_num, timer_num, gen, MCPWM_DUTY_MODE_FORCE_HIGH);
 }
 
 esp_err_t mcpwm_set_signal_low(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_generator_t gen)
 {
     //the driver currently always use the timer x for operator x
-    return mcpwm_set_duty_type(mcpwm_num, timer_num, gen, MCPWM_HAL_GENERATOR_MODE_FORCE_LOW);
+    return mcpwm_set_duty_type(mcpwm_num, timer_num, gen, MCPWM_DUTY_MODE_FORCE_LOW);
 }
 
 esp_err_t mcpwm_carrier_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
@@ -942,4 +943,20 @@ esp_err_t mcpwm_set_timer_sync_output(mcpwm_unit_t mcpwm_num, mcpwm_timer_t time
     }
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
+}
+
+/**
+ * @brief This function will be called during start up, to check that this legacy mcpwm driver is not running along with the new MCPWM driver
+ */
+__attribute__((constructor))
+static void check_mcpwm_driver_conflict(void)
+{
+    // This function was declared as weak here. The new MCPWM driver has the implementation.
+    // So if the new MCPWM driver is not linked in, then `mcpwm_acquire_group_handle()` should be NULL at runtime.
+    extern __attribute__((weak)) void *mcpwm_acquire_group_handle(int group_id);
+    if ((void *)mcpwm_acquire_group_handle != NULL) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
+        abort();
+    }
+    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/mcpwm_prelude.h`");
 }

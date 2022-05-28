@@ -12,7 +12,6 @@
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/esp_clk.h"
-#if SOC_MCPWM_SUPPORTED
 #include "soc/mcpwm_periph.h"
 #include "driver/pulse_cnt.h"
 #include "driver/mcpwm.h"
@@ -568,5 +567,3 @@ TEST_CASE("MCPWM capture test", "[mcpwm]")
         }
     }
 }
-
-#endif // SOC_MCPWM_SUPPORTED
