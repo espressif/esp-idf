@@ -1,9 +1,0 @@
-menu "Example Configuration"
-
-    config EXAMPLE_PORT
-        string "Asio example port number"
-        default "2222"
-        help
-            Port number used by Asio example.
-
-endmenu

@@ -13,6 +13,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `nghttp <https://components.espressif.com/component/espressif/nghttp>`_
 * `mdns <https://components.espressif.com/component/espressif/mdns>`_
 * `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_
+* `asio <https://components.espressif.com/component/espressif/asio>`_
 * `freemodbus <https://components.espressif.com/component/espressif/esp-modbus>`_
 
 .. note:: Please note that http parser functionality which was previously part of ``nghttp`` component is now part of :component:`http_parser <http_parser>` component.
