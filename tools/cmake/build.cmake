@@ -141,7 +141,7 @@ function(__build_init idf_path)
 
     idf_build_set_property(__PREFIX idf)
     idf_build_set_property(__CHECK_PYTHON 1)
-    idf_build_set_property(__ENABLE_COMPONENT_MANAGER 0)
+    idf_build_set_property(IDF_COMPONENT_MANAGER 0)
 
     __build_set_default_build_specifications()
 
@@ -422,8 +422,8 @@ macro(idf_build_process target)
     endif()
 
     # Call for component manager to download dependencies for all components
-    idf_build_get_property(enable_component_manager __ENABLE_COMPONENT_MANAGER)
-    if(enable_component_manager)
+    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
+    if(idf_component_manager EQUAL 1)
         idf_build_get_property(build_dir BUILD_DIR)
         set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
         set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
