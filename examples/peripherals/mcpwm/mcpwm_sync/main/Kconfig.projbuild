@@ -1,0 +1,20 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_SYNC_FROM
+        prompt "Where the sync event is generated from"
+        default EXAMPLE_SYNC_FROM_GPIO
+        help
+            Select MCPWM sync source.
+
+        config EXAMPLE_SYNC_FROM_GPIO
+            bool "GPIO"
+
+        config EXAMPLE_SYNC_FROM_TEZ
+            bool "Timer TEZ"
+
+        config EXAMPLE_SYNC_FROM_SOFT
+            bool "Software"
+            depends on SOC_MCPWM_SWSYNC_CAN_PROPAGATE
+    endchoice
+
+endmenu
