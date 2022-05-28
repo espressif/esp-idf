@@ -1244,6 +1244,9 @@ esp_err_t esp_bt_controller_deinit(void)
     phy_init_flag();
 
     esp_bt_power_domain_off();
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_deinit();
+#endif
 
     free(osi_funcs_p);
     osi_funcs_p = NULL;

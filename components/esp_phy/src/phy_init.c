@@ -79,6 +79,8 @@ static uint32_t* s_phy_digital_regs_mem = NULL;
 
 #if CONFIG_MAC_BB_PD
 uint32_t* s_mac_bb_pd_mem = NULL;
+/* Reference count of MAC BB backup memory */
+static uint8_t s_backup_mem_ref = 0;
 #endif
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
@@ -317,8 +319,22 @@ void esp_mac_bb_pd_mem_init(void)
 {
     _lock_acquire(&s_phy_access_lock);
 
+    s_backup_mem_ref++;
     if (s_mac_bb_pd_mem == NULL) {
         s_mac_bb_pd_mem = (uint32_t *)heap_caps_malloc(SOC_MAC_BB_PD_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+    }
+
+    _lock_release(&s_phy_access_lock);
+}
+
+void esp_mac_bb_pd_mem_deinit(void)
+{
+    _lock_acquire(&s_phy_access_lock);
+
+    s_backup_mem_ref--;
+    if (s_backup_mem_ref == 0) {
+        free(s_mac_bb_pd_mem);
+        s_mac_bb_pd_mem = NULL;
     }
 
     _lock_release(&s_phy_access_lock);

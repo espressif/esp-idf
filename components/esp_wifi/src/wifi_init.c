@@ -129,6 +129,9 @@ esp_err_t esp_wifi_deinit(void)
     phy_init_flag();
 #endif
     esp_wifi_power_domain_off();
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_deinit();
+#endif
     return err;
 }
 
