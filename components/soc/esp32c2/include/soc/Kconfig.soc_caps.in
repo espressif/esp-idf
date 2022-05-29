@@ -25,7 +25,7 @@ config SOC_BT_SUPPORTED
 
 config SOC_WIFI_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
@@ -499,10 +499,6 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
-config SOC_WIFI_HW_TSF
-    bool
-    default y
-
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -526,3 +522,27 @@ config SOC_PM_SUPPORT_WIFI_WAKEUP
 config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y
+
+config SOC_PM_SUPPORT_CPU_PD
+    bool
+    default n
+
+config SOC_PM_SUPPORT_WIFI_PD
+    bool
+    default n
+
+config SOC_PM_SUPPORT_BT_PD
+    bool
+    default n
+
+config SOC_WIFI_HW_TSF
+    bool
+    default y
+
+config SOC_WIFI_FTM_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_GCMP_SUPPORT
+    bool
+    default n

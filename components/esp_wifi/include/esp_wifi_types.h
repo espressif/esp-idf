@@ -276,7 +276,11 @@ typedef struct {
     uint32_t reserved:27;    /**< bit: 5..31 reserved */
 } wifi_sta_info_t;
 
+#if CONFIG_IDF_TARGET_ESP32C2
+#define ESP_WIFI_MAX_CONN_NUM  (4)        /**< max number of stations which can connect to ESP32C2 soft-AP */
+#else
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
+#endif
 
 /** @brief List of stations associated with the ESP32 Soft-AP */
 typedef struct {
@@ -346,7 +350,7 @@ typedef struct {
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
 #if CONFIG_IDF_TARGET_ESP32
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     unsigned :8;                  /**< reserved */
 #endif
     unsigned ampdu_cnt:8;         /**< ampdu cnt */
@@ -357,7 +361,7 @@ typedef struct {
     unsigned :32;                 /**< reserved */
 #if CONFIG_IDF_TARGET_ESP32S2
     unsigned :32;                 /**< reserved */
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
     unsigned :32;                 /**< reserved */
@@ -367,7 +371,7 @@ typedef struct {
 #if CONFIG_IDF_TARGET_ESP32S2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: dBm*/
     unsigned :24;                 /**< reserved */
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     unsigned :32;                 /**< reserved */
     unsigned :32;                 /**< reserved */
     unsigned :32;                 /**< reserved */
@@ -602,6 +606,8 @@ typedef enum {
     WIFI_EVENT_ROC_DONE,                 /**< Remain-on-Channel operation complete */
 
     WIFI_EVENT_STA_BEACON_TIMEOUT,       /**< ESP32 station beacon timeout */
+
+    WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START,   /**< ESP32 connectionless module wake interval start */
 
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;

@@ -1209,16 +1209,17 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
 esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
 
 /**
-  * @brief      Set interval for station to wake up periodically at disconnected.
+  * @brief      Set wake interval for connectionless modules to wake up periodically.
   *
-  * @attention 1. Only when ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is enabled, this configuration could work
-  * @attention 2. This configuration only work for station mode and disconnected status
-  * @attention 3. This configuration would influence nothing until some module configure wake_window
-  * @attention 4. A sensible interval which is not too small is recommended (e.g. 100ms)
+  * @attention 1. Only one wake interval for all connectionless modules.
+  * @attention 2. This configuration could work at connected status.
+  *               When ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is enabled, this configuration could work at disconnected status.
+  * @attention 3. Event WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START would be posted each time wake interval starts.
+  * @attention 4. Recommend to configure interval in multiples of hundred. (e.g. 100ms)
   *
-  * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
+  * @param      wake_interval  Milliseconds after would the chip wake up, from 1 to 65535.
   */
-esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
+esp_err_t esp_wifi_connectionless_module_set_wake_interval(uint16_t wake_interval);
 
 /**
   * @brief     configure country

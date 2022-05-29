@@ -104,6 +104,7 @@ static void wifi_driver_can_start_on_APP_CPU_task(void* arg)
 
 TEST_CASE("wifi driver can start on APP CPU", "[wifi_init]")
 {
+    test_case_uses_tcpip();
     TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(sema);
@@ -206,6 +207,7 @@ static void wifi_stop_task(void* arg)
 
 TEST_CASE("Calling esp_wifi_stop() without start", "[wifi_init]")
 {
+    test_case_uses_tcpip();
     TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(sema);

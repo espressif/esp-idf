@@ -370,3 +370,8 @@
 
 /*------------------------------ BLE --------------------------------------------*/
 #define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
+
+/*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
+#define SOC_WIFI_HW_TSF                 (0)    /*!< Support hardware TSF */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM Support */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */

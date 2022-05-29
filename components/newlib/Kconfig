@@ -50,7 +50,7 @@ menu "Newlib"
 
     config NEWLIB_NANO_FORMAT
         bool "Enable 'nano' formatting options for printf/scanf family"
-        default n
+        default y if IDF_TARGET_ESP32C2
         help
             ESP32 ROM contains parts of newlib C library, including printf/scanf family
             of functions. These functions have been compiled with so-called "nano"

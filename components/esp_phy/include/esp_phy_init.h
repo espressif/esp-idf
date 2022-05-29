@@ -182,6 +182,11 @@ void esp_phy_load_cal_and_init(void);
 void esp_mac_bb_pd_mem_init(void);
 
 /**
+ * @brief Deinitialize backup memory for MAC and Baseband power up/down
+ */
+void esp_mac_bb_pd_mem_deinit(void);
+
+/**
  * @brief Power up MAC and Baseband
  */
 void esp_mac_bb_power_up(void);

@@ -4,8 +4,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_ENABLED
         bool
-        default "n" if IDF_TARGET_ESP32C2 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
-        default "y" if !IDF_TARGET_ESP32H2
+        default y if SOC_WIFI_SUPPORTED
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
@@ -282,7 +281,7 @@ menu "Wi-Fi"
     config ESP_WIFI_FTM_ENABLE
         bool "WiFi FTM"
         default n
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on SOC_WIFI_FTM_SUPPORT
         help
             Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
@@ -317,7 +316,7 @@ menu "Wi-Fi"
     config ESP_WIFI_GCMP_SUPPORT
         bool "WiFi GCMP Support(GCMP128 and GCMP256)"
         default n
-        depends on (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on SOC_WIFI_GCMP_SUPPORT
         help
             Select this option to enable GCMP support. GCMP support is compulsory for WiFi Suite-B support.
 
