@@ -181,7 +181,11 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", 
 static void do_int_wdt(void)
 {
     setup_values();
+#if CONFIG_FREERTOS_SMP
+    BaseType_t prev_level = portDISABLE_INTERRUPTS();
+#else
     BaseType_t prev_level = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
     (void) prev_level;
     while(1);
 }

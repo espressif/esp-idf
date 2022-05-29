@@ -39,6 +39,16 @@
 
 // Single core SoC: atomics can be implemented using portSET_INTERRUPT_MASK_FROM_ISR
 // and portCLEAR_INTERRUPT_MASK_FROM_ISR, which disables and enables interrupts.
+#if CONFIG_FREERTOS_SMP
+#define _ATOMIC_ENTER_CRITICAL() ({ \
+    unsigned state = portDISABLE_INTERRUPTS(); \
+    state; \
+})
+
+#define _ATOMIC_EXIT_CRITICAL(state)   do { \
+    portRESTORE_INTERRUPTS(state); \
+    } while (0)
+#else // CONFIG_FREERTOS_SMP
 #define _ATOMIC_ENTER_CRITICAL() ({ \
     unsigned state = portSET_INTERRUPT_MASK_FROM_ISR(); \
     state; \
@@ -47,7 +57,7 @@
 #define _ATOMIC_EXIT_CRITICAL(state)   do { \
     portCLEAR_INTERRUPT_MASK_FROM_ISR(state); \
     } while (0)
-
+#endif
 #else // SOC_CPU_CORES_NUM
 
 _Static_assert(HAS_ATOMICS_32, "32-bit atomics should be supported if SOC_CPU_CORES_NUM > 1");
