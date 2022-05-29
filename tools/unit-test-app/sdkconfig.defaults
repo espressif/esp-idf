@@ -30,3 +30,4 @@ CONFIG_MQTT_TEST_BROKER_URI="mqtt://${EXAMPLE_MQTT_BROKER_TCP}"
 # size of the storage partition divided by flash sector size.
 # See esp_spiffs_gc description for more info.
 CONFIG_SPIFFS_GC_MAX_RUNS=132
+CONFIG_NVS_ASSERT_ERROR_CHECK=y

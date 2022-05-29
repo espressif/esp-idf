@@ -40,7 +40,7 @@ typedef nvs_handle_t nvs_handle IDF_DEPRECATED("Replace with nvs_handle_t");
 #define ESP_ERR_NVS_INVALID_STATE           (ESP_ERR_NVS_BASE + 0x0b)  /*!< NVS is in an inconsistent state due to a previous error. Call nvs_flash_init and nvs_open again, then retry. */
 #define ESP_ERR_NVS_INVALID_LENGTH          (ESP_ERR_NVS_BASE + 0x0c)  /*!< String or blob length is not sufficient to store data */
 #define ESP_ERR_NVS_NO_FREE_PAGES           (ESP_ERR_NVS_BASE + 0x0d)  /*!< NVS partition doesn't contain any empty pages. This may happen if NVS partition was truncated. Erase the whole partition and call nvs_flash_init again. */
-#define ESP_ERR_NVS_VALUE_TOO_LONG          (ESP_ERR_NVS_BASE + 0x0e)  /*!< String or blob length is longer than supported by the implementation */
+#define ESP_ERR_NVS_VALUE_TOO_LONG          (ESP_ERR_NVS_BASE + 0x0e)  /*!< Value doesn't fit into the entry or string or blob length is longer than supported by the implementation */
 #define ESP_ERR_NVS_PART_NOT_FOUND          (ESP_ERR_NVS_BASE + 0x0f)  /*!< Partition with specified name is not found in the partition table */
 
 #define ESP_ERR_NVS_NEW_VERSION_FOUND       (ESP_ERR_NVS_BASE + 0x10)  /*!< NVS partition contains data in new format and cannot be recognized by this version of code */
@@ -124,6 +124,8 @@ typedef struct nvs_opaque_iterator_t *nvs_iterator_t;
  *
  * @return
  *             - ESP_OK if storage handle was opened successfully
+ *             - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized
  *             - ESP_ERR_NVS_PART_NOT_FOUND if the partition with label "nvs" is not found
  *             - ESP_ERR_NVS_NOT_FOUND id namespace doesn't exist yet and
@@ -151,6 +153,8 @@ esp_err_t nvs_open(const char* name, nvs_open_mode_t open_mode, nvs_handle_t *ou
  *
  * @return
  *             - ESP_OK if storage handle was opened successfully
+ *             - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_NOT_INITIALIZED if the storage driver is not initialized
  *             - ESP_ERR_NVS_PART_NOT_FOUND if the partition with specified name is not found
  *             - ESP_ERR_NVS_NOT_FOUND id namespace doesn't exist yet and
@@ -175,6 +179,8 @@ esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_o
  *
  * @return
  *             - ESP_OK if value was set successfully
+ *             - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_READ_ONLY if storage handle was opened as read only
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
@@ -282,6 +288,8 @@ esp_err_t nvs_set_str (nvs_handle_t handle, const char* key, const char* value);
  *
  * @return
  *             - ESP_OK if value was set successfully
+ *             - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_READ_ONLY if storage handle was opened as read only
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
@@ -325,6 +333,8 @@ esp_err_t nvs_set_blob(nvs_handle_t handle, const char* key, const void* value, 
  *
  * @return
  *             - ESP_OK if the value was retrieved successfully
+ *             - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
@@ -432,6 +442,8 @@ esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value
  *
  * @return
  *             - ESP_OK if the value was retrieved successfully
+ *             - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *               NVS partition (only if NVS assertion checks are disabled)
  *             - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
@@ -459,6 +471,8 @@ esp_err_t nvs_get_blob(nvs_handle_t handle, const char* key, void* out_value, si
  *
  * @return
  *              - ESP_OK if erase operation was successful
+ *              - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *                NVS partition (only if NVS assertion checks are disabled)
  *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
  *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
@@ -476,6 +490,8 @@ esp_err_t nvs_erase_key(nvs_handle_t handle, const char* key);
  *
  * @return
  *              - ESP_OK if erase operation was successful
+ *              - ESP_FAIL if there is an internal error; most likely due to corrupted
+ *                NVS partition (only if NVS assertion checks are disabled)
  *              - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
  *              - other error codes from the underlying storage driver
