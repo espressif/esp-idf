@@ -458,17 +458,17 @@ static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
     return ptr;
 }
 
-static esp_err_t nvs_open_wrapper(const char* name, uint32_t open_mode, nvs_handle_t *out_handle)
+static esp_err_t nvs_open_wrapper(const char* name, unsigned int open_mode, nvs_handle_t *out_handle)
 {
     return nvs_open(name,(nvs_open_mode_t)open_mode, out_handle);
 }
 
-static void esp_log_writev_wrapper(uint32_t level, const char *tag, const char *format, va_list args)
+static void esp_log_writev_wrapper(unsigned int level, const char *tag, const char *format, va_list args)
 {
     return esp_log_writev((esp_log_level_t)level,tag,format,args);
 }
 
-static void esp_log_write_wrapper(uint32_t level,const char *tag,const char *format, ...)
+static void esp_log_write_wrapper(unsigned int level,const char *tag,const char *format, ...)
 {
     va_list list;
     va_start(list, format);
@@ -476,7 +476,7 @@ static void esp_log_write_wrapper(uint32_t level,const char *tag,const char *for
     va_end(list);
 }
 
-static esp_err_t esp_read_mac_wrapper(uint8_t* mac, uint32_t type)
+static esp_err_t esp_read_mac_wrapper(uint8_t* mac, unsigned int type)
 {
     return esp_read_mac(mac, (esp_mac_type_t)type);
 }

@@ -663,7 +663,7 @@ static void IRAM_ATTR esp_empty_wrapper(void)
 
 }
 
-int32_t IRAM_ATTR coex_is_in_isr_wrapper(void)
+int IRAM_ATTR coex_is_in_isr_wrapper(void)
 {
     return !xPortCanYield();
 }
