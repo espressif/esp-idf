@@ -600,7 +600,8 @@ void vPortTLSPointersDelCb( void * pxTCB )
         {
             /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
             if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
-                ESP_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
+                // We call EARLY log here as currently portCLEAN_UP_TCB() is called in a critical section
+                ESP_EARLY_LOGE("FreeRTOS", "Fatal error: TLSP deletion callback at index %d overwritten with non-excutable pointer %p", x, pvThreadLocalStoragePointersDelCallback[ x ]);
                 abort();
             }
 
