@@ -106,7 +106,7 @@ static int init_slot_data(slot_data_t *slot_data, size_t queue_size)
     return 0;
 }
 
-void free_slot_data(slot_data_t *slot_data)
+static void free_slot_data(slot_data_t *slot_data)
 {
     fixed_queue_free(slot_data->queue, spp_osi_free);
     slot_data->queue = NULL;

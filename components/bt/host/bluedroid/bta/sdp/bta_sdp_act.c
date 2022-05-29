@@ -50,6 +50,9 @@ static const uint8_t  UUID_OBEX_OBJECT_PUSH[] = {0x00, 0x00, 0x11, 0x05, 0x00, 0
 static const uint8_t  UUID_PBAP_PSE[] = {0x00, 0x00, 0x11, 0x2F, 0x00, 0x00, 0x10, 0x00,
                                          0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
                                         };
+static const uint8_t  UUID_PBAP_PCE[] = {0x00, 0x00, 0x11, 0x2E, 0x00, 0x00, 0x10, 0x00,
+                                         0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
+                                        };
 static const uint8_t  UUID_MAP_MAS[] = {0x00, 0x00, 0x11, 0x32, 0x00, 0x00, 0x10, 0x00,
                                         0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
                                        };
@@ -223,6 +226,28 @@ static void bta_create_pse_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     }
 }
 
+static void bta_create_pce_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_REC *p_rec)
+{
+    tSDP_DISC_ATTR *p_attr;
+    UINT16 pversion;
+
+    record->pce.hdr.type = SDP_TYPE_PBAP_PCE;
+    record->pce.hdr.service_name_length = 0;
+    record->pce.hdr.service_name = NULL;
+    record->pce.hdr.rfcomm_channel_number = 0;  // unused
+    record->pce.hdr.l2cap_psm = -1;             // unused
+    record->pce.hdr.profile_version = 0;
+
+    if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME)) != NULL) {
+        record->pce.hdr.service_name_length = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
+        record->pce.hdr.service_name = (char *)p_attr->attr_value.v.array;
+    }
+
+    if (SDP_FindProfileVersionInRec(p_rec, UUID_SERVCLASS_PHONE_ACCESS, &pversion)) {
+        record->pce.hdr.profile_version = pversion;
+    }
+}
+
 static void bta_create_ops_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_REC *p_rec)
 {
     tSDP_DISC_ATTR *p_attr, *p_sattr;
@@ -342,6 +367,10 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
         record->pse.hdr.service_name = (char *)p_attr->attr_value.v.array;
     }
 
+    if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_GOEP_L2CAP_PSM)) != NULL) {
+        record->hdr.l2cap_psm = p_attr->attr_value.v.u16;
+    }
+
     /* Try to extract an RFCOMM channel */
     if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
         record->pse.hdr.rfcomm_channel_number = pe.params[0];
@@ -395,6 +424,9 @@ static void bta_sdp_search_cback(UINT16 result, void *user_data)
                 } else if (IS_UUID(UUID_PBAP_PSE, uuid->uu.uuid128)) {
                     APPL_TRACE_DEBUG("%s() - found PBAP (PSE) uuid\n", __func__);
                     bta_create_pse_sdp_record(&evt_data.records[count], p_rec);
+                } else if (IS_UUID(UUID_PBAP_PCE, uuid->uu.uuid128)) {
+                    APPL_TRACE_DEBUG("%s() - found PBAP (PCE) uuid\n", __func__);
+                    bta_create_pce_sdp_record(&evt_data.records[count], p_rec);
                 } else if (IS_UUID(UUID_OBEX_OBJECT_PUSH, uuid->uu.uuid128)) {
                     APPL_TRACE_DEBUG("%s() - found Object Push Server (OPS) uuid\n", __func__);
                     bta_create_ops_sdp_record(&evt_data.records[count], p_rec);
@@ -439,9 +471,10 @@ static void bta_sdp_search_cback(UINT16 result, void *user_data)
 void bta_sdp_enable(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s in, sdp_active:%d\n", __func__, bta_sdp_cb.sdp_active);
-    tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
+    tBTA_SDP bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
     bta_sdp_cb.p_dm_cback = p_data->enable.p_cback;
-    bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, (tBTA_SDP *)&status, NULL);
+    bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, (tBTA_SDP *)&bta_sdp, NULL);
 }
 
 /*******************************************************************************
@@ -523,8 +556,11 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
 void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
+    tBTA_SDP bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
+    bta_sdp.handle = (int)p_data->record.user_data;
     if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL, p_data->record.user_data);
+        bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, &bta_sdp, p_data->record.user_data);
     }
 }
 
@@ -540,8 +576,10 @@ void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
+    tBTA_SDP bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
     if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL, p_data->record.user_data);
+        bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, &bta_sdp, p_data->record.user_data);
     }
 }
 

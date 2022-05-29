@@ -80,13 +80,22 @@
 #if (UC_BT_SPP_ENABLED == TRUE)
 #define RFCOMM_INCLUDED             TRUE
 #define BTA_JV_INCLUDED             TRUE
+#define BTA_JV_RFCOMM_INCLUDED      TRUE
 #define BTC_SPP_INCLUDED            TRUE
 #endif /* UC_BT_SPP_ENABLED */
+
+#if (UC_BT_L2CAP_ENABLED == TRUE)
+#define BTA_JV_INCLUDED             TRUE
+#define BTC_L2CAP_INCLUDED          TRUE
+#define BTC_SDP_INCLUDED            TRUE
+#define VND_BT_JV_BTA_L2CAP         TRUE
+#endif /* UC_BT_L2CAP_ENABLED */
 
 #if (UC_BT_HFP_AG_ENABLED == TRUE)
 #define BTC_HF_INCLUDED             TRUE
 #define BTA_AG_INCLUDED             TRUE
 #define PLC_INCLUDED                TRUE
+#define BTA_JV_RFCOMM_INCLUDED      TRUE
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             TRUE
 #endif
@@ -1405,7 +1414,7 @@
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
-#if defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)
+#if (defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)) || (defined(BTC_SDP_INCLUDED) && (BTC_SDP_INCLUDED==TRUE))
 #define SDP_MAX_REC_ATTR            25
 #else
 #define SDP_MAX_REC_ATTR            8
@@ -1478,6 +1487,10 @@
 ******************************************************************************/
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             FALSE
+#endif
+
+#ifndef BTA_JV_RFCOMM_INCLUDED
+#define BTA_JV_RFCOMM_INCLUDED      FALSE
 #endif
 
 /* The maximum number of ports supported. */
@@ -1557,6 +1570,31 @@
 #define PORT_CREDIT_RX_LOW          8
 #endif
 
+/* ERTM Tx window size */
+#ifndef RFC_FCR_OPT_TX_WINDOW_SIZE
+#define RFC_FCR_OPT_TX_WINDOW_SIZE  20
+#endif
+
+/* ERTM Maximum transmissions before disconnecting */
+#ifndef RFC_FCR_OPT_MAX_TX_B4_DISCNT
+#define RFC_FCR_OPT_MAX_TX_B4_DISCNT 20
+#endif
+
+/* ERTM Retransmission timeout (2 secs) */
+#ifndef RFC_FCR_OPT_RETX_TOUT
+#define RFC_FCR_OPT_RETX_TOUT        2000
+#endif
+
+/* ERTM Monitor timeout (12 secs) */
+#ifndef RFC_FCR_OPT_MONITOR_TOUT
+#define RFC_FCR_OPT_MONITOR_TOUT     12000
+#endif
+
+/* ERTM ERTM MPS segment size */
+#ifndef RFC_FCR_OPT_MAX_PDU_SIZE
+#define RFC_FCR_OPT_MAX_PDU_SIZE     1010
+#endif
+
 /******************************************************************************
 **
 ** OBEX
@@ -1594,49 +1632,86 @@
 #define OBX_FCR_TX_BUF_SIZE     BT_DEFAULT_BUFFER_SIZE
 #endif
 
-/* This option is application when OBX_14_INCLUDED=TRUE
-Size of the transmission window when using enhanced retransmission mode. Not used
-in basic and streaming modes. Range: 1 - 63
-*/
+/*
+ * Size of the transmission window when using enhanced retransmission mode. Not used
+ * in basic and streaming modes. Range: 1 - 63
+ */
 #ifndef OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR
 #define OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR       20
 #endif
 
-/* This option is application when OBX_14_INCLUDED=TRUE
-Number of transmission attempts for a single I-Frame before taking
-Down the connection. Used In ERTM mode only. Value is Ignored in basic and
-Streaming modes.
-Range: 0, 1-0xFF
-0 - infinite retransmissions
-1 - single transmission
-*/
+/*
+ * Number of transmission attempts for a single I-Frame before taking
+ * Down the connection. Used In ERTM mode only. Value is Ignored in basic and
+ * Streaming modes.
+ * Range: 0, 1-0xFF
+ * 0 - infinite retransmissions
+ * 1 - single transmission
+ */
 #ifndef OBX_FCR_OPT_MAX_TX_B4_DISCNT
 #define OBX_FCR_OPT_MAX_TX_B4_DISCNT    20
 #endif
 
-/* This option is application when OBX_14_INCLUDED=TRUE
-Retransmission Timeout
-Range: Minimum 2000 (2 secs) on BR/EDR when supporting PBF.
+/*
+ * Retransmission Timeout
+ * Range: Minimum 2000 (2 secs) on BR/EDR when supporting PBF.
  */
 #ifndef OBX_FCR_OPT_RETX_TOUT
 #define OBX_FCR_OPT_RETX_TOUT           2000
 #endif
 
-/* This option is application when OBX_14_INCLUDED=TRUE
-Monitor Timeout
-Range: Minimum 12000 (12 secs) on BR/EDR when supporting PBF.
-*/
+/*
+ * Monitor Timeout
+ * Range: Minimum 12000 (12 secs) on BR/EDR when supporting PBF.
+ */
 #ifndef OBX_FCR_OPT_MONITOR_TOUT
 #define OBX_FCR_OPT_MONITOR_TOUT        12000
 #endif
 
-/* This option is application when OBX_14_INCLUDED=TRUE
-Maximum PDU payload size.
-Suggestion: The maximum amount of data that will fit into a 3-DH5 packet.
-Range: 2 octets
+/*
+ * Maximum PDU payload size.
+ * Suggestion: The maximum amount of data that will fit into a 3-DH5 packet.
+ * Range: 2 octets
 */
 #ifndef OBX_FCR_OPT_MAX_PDU_SIZE
 #define OBX_FCR_OPT_MAX_PDU_SIZE        L2CAP_MPS_OVER_BR_EDR
+#endif
+
+/*
+ * Pool ID where to reassemble the SDU.
+ * This Pool will allow buffers to be used that are larger than
+ * the L2CAP_MAX_MTU.
+ */
+#ifndef OBX_USER_RX_POOL_ID
+#define OBX_USER_RX_POOL_ID              4
+#endif
+
+/*
+ * Pool ID where to hold the SDU.
+ * This Pool will allow buffers to be used that are larger than
+ * the L2CAP_MAX_MTU.
+ */
+#ifndef OBX_USER_TX_POOL_ID
+#define OBX_USER_TX_POOL_ID              4
+#endif
+
+/*
+ * GKI Buffer Pool ID used to hold MPS segments during SDU reassembly
+ */
+#ifndef OBX_FCR_RX_POOL_ID
+#define OBX_FCR_RX_POOL_ID                3
+#endif
+
+/*
+ * Pool ID used to hold MPS segments used in (re)transmissions.
+ * L2CAP_DEFAULT_ERM_POOL_ID is specified to use the HCI ACL data pool.
+ * Note:  This pool needs to have enough buffers to hold two times the window size negotiated
+ * in the L2CA_SetFCROptions (2 * tx_win_size)  to allow for retransmissions.
+ * The size of each buffer must be able to hold the maximum MPS segment size passed in
+ * L2CA_SetFCROptions plus BT_HDR (8) + HCI preamble (4) + L2CAP_MIN_OFFSET (11 - as of BT 2.1 + EDR Spec).
+ */
+#ifndef OBX_FCR_TX_POOL_ID
+#define OBX_FCR_TX_POOL_ID                3
 #endif
 
 

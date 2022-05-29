@@ -56,6 +56,8 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hidd_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_l2cap_bt_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_sdp_api.h \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/console/esp_console.h \

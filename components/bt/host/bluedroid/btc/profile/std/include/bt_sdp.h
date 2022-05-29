@@ -20,6 +20,7 @@
 #include <stdint.h>
 // #include "bluetooth.h"
 #include "common/bt_defs.h"
+#include "esp_bt_defs.h"
 
 #define SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH 15
 
@@ -38,7 +39,7 @@ typedef enum {
 
 typedef struct _bluetooth_sdp_hdr {
     bluetooth_sdp_types type;
-    bt_uuid_t   uuid;
+    esp_bt_uuid_t       uuid;
     uint32_t    service_name_length;
     char       *service_name;
     int32_t     rfcomm_channel_number;
@@ -52,7 +53,7 @@ typedef struct _bluetooth_sdp_hdr {
  */
 typedef struct _bluetooth_sdp_hdr_overlay {
     bluetooth_sdp_types type;
-    bt_uuid_t   uuid;
+    esp_bt_uuid_t       bt_uuid;
     uint32_t    service_name_length;
     char       *service_name;
     int32_t     rfcomm_channel_number;
