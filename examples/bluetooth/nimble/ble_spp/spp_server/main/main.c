@@ -377,7 +377,7 @@ static void ble_spp_uart_init(void)
      uart_param_config(UART_NUM_0, &uart_config);
      //Set UART pins
      uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-     xTaskCreate(ble_server_uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
+     xTaskCreate(ble_server_uart_task, "uTask", 4096, (void*)UART_NUM_0, 8, NULL);
 }
 
 
