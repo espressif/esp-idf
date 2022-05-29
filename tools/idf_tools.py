@@ -1889,6 +1889,49 @@ def get_constraints(idf_version):  # type: (str) -> str
         raise DownloadError()
 
 
+def install_legacy_python_virtualenv(path):  # type: (str) -> None
+    # Before creating the virtual environment, check if pip is installed.
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', '--version'])
+    except subprocess.CalledProcessError:
+        fatal('Python interpreter at {} doesn\'t have pip installed. '
+              'Please check the Getting Started Guides for the steps to install prerequisites for your OS.'.format(sys.executable))
+        raise SystemExit(1)
+
+    virtualenv_installed_via_pip = False
+    try:
+        import virtualenv  # noqa: F401
+    except ImportError:
+        info('Installing virtualenv')
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv'],
+                              stdout=sys.stdout, stderr=sys.stderr)
+        virtualenv_installed_via_pip = True
+        # since we just installed virtualenv via pip, we know that version is recent enough
+        # so the version check below is not necessary.
+
+    with_seeder_option = True
+    if not virtualenv_installed_via_pip:
+        # virtualenv is already present in the system and may have been installed via OS package manager
+        # check the version to determine if we should add --seeder option
+        try:
+            major_ver = int(virtualenv.__version__.split('.')[0])
+            if major_ver < 20:
+                warn('Virtualenv version {} is old, please consider upgrading it'.format(virtualenv.__version__))
+                with_seeder_option = False
+        except (ValueError, NameError, AttributeError, IndexError):
+            pass
+
+    info(f'Creating a new Python environment using virtualenv in {path}')
+    virtualenv_options = ['--python', sys.executable]
+    if with_seeder_option:
+        virtualenv_options += ['--seeder', 'pip']
+
+    subprocess.check_call([sys.executable, '-m', 'virtualenv',
+                           *virtualenv_options,
+                           path],
+                          stdout=sys.stdout, stderr=sys.stderr)
+
+
 def action_install_python_env(args):  # type: ignore
     use_constraints = not args.no_constraints
     reinstall = args.reinstall
@@ -1919,46 +1962,24 @@ def action_install_python_env(args):  # type: ignore
         shutil.rmtree(idf_python_env_path)
 
     if not os.path.exists(virtualenv_python):
-        # Before creating the virtual environment, check if pip is installed.
         try:
-            subprocess.check_call([sys.executable, '-m', 'pip', '--version'])
-        except subprocess.CalledProcessError:
-            fatal('Python interpreter at {} doesn\'t have pip installed. '
-                  'Please check the Getting Started Guides for the steps to install prerequisites for your OS.'.format(sys.executable))
-            raise SystemExit(1)
+            import venv  # noqa: F401
 
-        virtualenv_installed_via_pip = False
-        try:
-            import virtualenv  # noqa: F401
-        except ImportError:
-            info('Installing virtualenv')
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv'],
+            # venv available
+            virtualenv_options = ['--clear']  # delete environment if already exists
+            if sys.version_info[:2] >= (3, 9):
+                # upgrade pip & setuptools
+                virtualenv_options += ['--upgrade-deps']
+
+            info('Creating a new Python environment in {}'.format(idf_python_env_path))
+            subprocess.check_call([sys.executable, '-m', 'venv',
+                                  *virtualenv_options,
+                                  idf_python_env_path],
                                   stdout=sys.stdout, stderr=sys.stderr)
-            virtualenv_installed_via_pip = True
-            # since we just installed virtualenv via pip, we know that version is recent enough
-            # so the version check below is not necessary.
+        except ImportError:
+            # The embeddable Python for Windows doesn't have the built-in venv module
+            install_legacy_python_virtualenv(idf_python_env_path)
 
-        with_seeder_option = True
-        if not virtualenv_installed_via_pip:
-            # virtualenv is already present in the system and may have been installed via OS package manager
-            # check the version to determine if we should add --seeder option
-            try:
-                major_ver = int(virtualenv.__version__.split('.')[0])
-                if major_ver < 20:
-                    warn('Virtualenv version {} is old, please consider upgrading it'.format(virtualenv.__version__))
-                    with_seeder_option = False
-            except (ValueError, NameError, AttributeError, IndexError):
-                pass
-
-        info('Creating a new Python environment in {}'.format(idf_python_env_path))
-        virtualenv_options = ['--python', sys.executable]
-        if with_seeder_option:
-            virtualenv_options += ['--seeder', 'pip']
-
-        subprocess.check_call([sys.executable, '-m', 'virtualenv',
-                               *virtualenv_options,
-                               idf_python_env_path],
-                              stdout=sys.stdout, stderr=sys.stderr)
     env_copy = os.environ.copy()
     if env_copy.get('PIP_USER')  == 'yes':
         warn('Found PIP_USER="yes" in the environment. Disabling PIP_USER in this shell to install packages into a virtual environment.')
