@@ -981,7 +981,9 @@ void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay)
 {
     FUNC_TRACE();
 
-    APPL_TRACE_ERROR("bta_av_co_audio_delay handle: x%x, delay:0x%x", hndl, delay);
+    btc_source_report_delay_value(delay);
+
+    APPL_TRACE_DEBUG("bta_av_co_audio_delay handle: x%x, delay:0x%x", hndl, delay);
 }
 
 

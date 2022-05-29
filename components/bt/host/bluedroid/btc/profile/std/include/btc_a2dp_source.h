@@ -231,6 +231,15 @@ void btc_a2dp_source_set_tx_flush(BOOLEAN enable);
  *******************************************************************************/
 void btc_a2dp_source_encoder_update(void);
 
+/*****************************************************************************
+**
+** Function        btc_source_report_delay_value
+**
+** Description     Report sink delay report value
+**
+*******************************************************************************/
+void btc_source_report_delay_value(UINT16 delay_value);
+
 #endif /* #if BTC_AV_SRC_INCLUDED */
 
 #endif /* __BTC_A2DP_SOURCE_H__ */

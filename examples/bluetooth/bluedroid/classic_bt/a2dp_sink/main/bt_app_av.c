@@ -31,6 +31,9 @@
 #define APP_RC_CT_TL_RN_PLAYBACK_CHANGE  (3)
 #define APP_RC_CT_TL_RN_PLAY_POS_CHANGE  (4)
 
+/* Application layer causes delay value */
+#define APP_DELAY_VALUE                  50  // 5ms
+
 /*******************************
  * STATIC FUNCTION DECLARATIONS
  ******************************/
@@ -304,6 +307,35 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         }
         break;
     }
+    /* When protocol service capabilities configured, this event comes */
+    case ESP_A2D_SNK_PSC_CFG_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        ESP_LOGI(BT_AV_TAG, "protocol service capabilities configured: 0x%x ", a2d->a2d_psc_cfg_stat.psc_mask);
+        if (a2d->a2d_psc_cfg_stat.psc_mask & ESP_A2D_PSC_DELAY_RPT) {
+            ESP_LOGI(BT_AV_TAG, "Peer device support delay reporting");
+        } else {
+            ESP_LOGI(BT_AV_TAG, "Peer device unsupport delay reporting");
+        }
+        break;
+    }
+    /* when set delay value completed, this event comes */
+    case ESP_A2D_SNK_SET_DELAY_VALUE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        if (ESP_A2D_SET_INVALID_PARAMS == a2d->a2d_set_delay_value_stat.set_state) {
+            ESP_LOGI(BT_AV_TAG, "Set delay report value: fail");
+        } else {
+            ESP_LOGI(BT_AV_TAG, "Set delay report value: success, delay_value: %u * 1/10 ms", a2d->a2d_set_delay_value_stat.delay_value);
+        }
+        break;
+    }
+    /* when get delay value completed, this event comes */
+    case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(p_param);
+        ESP_LOGI(BT_AV_TAG, "Get delay report value: delay_value: %u * 1/10 ms", a2d->a2d_get_delay_value_stat.delay_value);
+        /* Default delay value plus delay caused by application layer */
+        esp_a2d_sink_set_delay_value(a2d->a2d_get_delay_value_stat.delay_value + APP_DELAY_VALUE);
+        break;
+    }
     /* others */
     default:
         ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
@@ -437,7 +469,10 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     case ESP_A2D_CONNECTION_STATE_EVT:
     case ESP_A2D_AUDIO_STATE_EVT:
     case ESP_A2D_AUDIO_CFG_EVT:
-    case ESP_A2D_PROF_STATE_EVT: {
+    case ESP_A2D_PROF_STATE_EVT:
+    case ESP_A2D_SNK_PSC_CFG_EVT:
+    case ESP_A2D_SNK_SET_DELAY_VALUE_EVT:
+    case ESP_A2D_SNK_GET_DELAY_VALUE_EVT: {
         bt_app_work_dispatch(bt_av_hdl_a2d_evt, event, param, sizeof(esp_a2d_cb_param_t), NULL);
         break;
     }

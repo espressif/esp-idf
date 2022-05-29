@@ -375,6 +375,45 @@ void BTA_AvProtectRsp(tBTA_AV_HNDL hndl, UINT8 error_code, UINT8 *p_data, UINT16
 
 /*******************************************************************************
 **
+** Function         BTA_SetDelayValue
+**
+** Description      Set delay report value
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_SetDelayValue(UINT16 delay_value)
+{
+    tBTA_AV_API_SET_DELAY_VALUE  *p_buf;
+
+    if ((p_buf = (tBTA_AV_API_SET_DELAY_VALUE *) osi_malloc(sizeof(tBTA_AV_API_SET_DELAY_VALUE))) != NULL) {
+        p_buf->hdr.event = BTA_AV_API_SET_DELAY_VALUE_EVT;
+        p_buf->delay_value = delay_value;
+        bta_sys_sendmsg(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_GetDelayValue
+**
+** Description      Get delay report value
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_GetDelayValue(void)
+{
+    tBTA_AV_API_GET_DELAY_VALUE  *p_buf;
+
+    if ((p_buf = (tBTA_AV_API_GET_DELAY_VALUE *) osi_malloc(sizeof(tBTA_AV_API_GET_DELAY_VALUE))) != NULL) {
+        p_buf->hdr.event = BTA_AV_API_GET_DELAY_VALUE_EVT;
+        bta_sys_sendmsg(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_AvRemoteCmd
 **
 ** Description      Send a remote control command.  This function can only

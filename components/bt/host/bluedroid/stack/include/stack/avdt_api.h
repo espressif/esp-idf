@@ -109,6 +109,12 @@ typedef UINT8 AVDT_REPORT_TYPE;
 #define AVDT_PSC_MUX                (1<<6)  /* Multiplexing */
 #define AVDT_PSC_DELAY_RPT          (1<<8)  /* Delay Report */
 
+/* Max audio per 3-DH5 EDR packet: 23.2ms
+** jitter buffer: 5(JITTER_BUFFER_WATER_LEVEL)
+*/
+#define AVDT_DELAY_RPT_DFT_VALUE     1200   /* 120 ms */
+#define AVDT_DELAY_RPT_TIMER_TICK_MS 2000   /* 2000 ms */
+
 /* Recovery type.  This indicates the recovery type. */
 #define AVDT_RECOV_RFC2733          1       /* RFC2733 recovery */
 
@@ -979,6 +985,28 @@ extern UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
 **
 ******************************************************************************/
 extern UINT8 AVDT_SetTraceLevel (UINT8 new_level);
+
+/*******************************************************************************
+**
+** Function         AVDT_SetDelayValue
+**
+** Description      Set delay reporting value.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void AVDT_SetDelayValue(UINT16 delay_value);
+
+/*******************************************************************************
+**
+** Function         AVDT_GetDelayValue
+**
+** Description      Get delay reporting value.
+**
+** Returns          delay value
+**
+*******************************************************************************/
+extern UINT16 AVDT_GetDelayValue(void);
 
 #ifdef __cplusplus
 }

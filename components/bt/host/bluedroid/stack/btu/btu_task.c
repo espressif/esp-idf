@@ -334,6 +334,7 @@ static void btu_general_alarm_process(void *param)
 
 
 #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE)
+    case BTU_TTYPE_AVDT_SCB_DELAY_RPT:
     case BTU_TTYPE_AVDT_CCB_RET:
     case BTU_TTYPE_AVDT_CCB_RSP:
     case BTU_TTYPE_AVDT_CCB_IDLE:

@@ -29,6 +29,8 @@
 /*****************************************************************************
 **  constants
 *****************************************************************************/
+#define A2D_VERSION             0x0102
+#define A2D_VERSION_SYC         0x0103
 
 /* Profile supported features */
 #define A2D_SUPF_PLAYER     0x0001
@@ -261,6 +263,28 @@ extern bt_status_t A2D_Init(void);
 **
 *******************************************************************************/
 extern void A2D_Deinit(void);
+
+/*******************************************************************************
+**
+** Function         a2d_set_avdt_sdp_ver
+**
+** Description      Used for change version of avdtp
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void a2d_set_avdt_sdp_ver(UINT16 avdt_sdp_ver);
+
+/*******************************************************************************
+**
+** Function         a2d_set_a2dp_sdp_ver
+**
+** Description      Used for change version of a2dp
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void a2d_set_a2dp_sdp_ver(UINT16 a2dp_sdp_ver);
 
 #ifdef __cplusplus
 }

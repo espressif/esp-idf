@@ -839,6 +839,52 @@ void avdt_scb_hdl_setconfig_rej(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
 /*******************************************************************************
 **
+** Function         avdt_scb_send_delay_report_cmd
+**
+** Description      This function is to initiate the delay reporting command.
+**
+** Returns          Nothing.
+**
+*******************************************************************************/
+void avdt_scb_send_delay_report_cmd(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
+{
+    UINT16          delay_value;
+    UNUSED(p_data);
+
+    if ((p_scb->cs.tsep == AVDT_TSEP_SNK) && (p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
+        delay_value = AVDT_GetDelayValue();
+        AVDT_DelayReport(avdt_scb_to_hdl(p_scb), p_scb->peer_seid, delay_value);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         avdt_scb_init_open_req
+**
+** Description      This function sends the SCB an AVDT_SCB_API_OPEN_REQ_EVT
+**                  to initiate sending of an open command message.
+**
+** Returns          Nothing.
+**
+*******************************************************************************/
+void avdt_scb_init_open_req(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
+{
+    tAVDT_EVT_HDR   single;
+    UNUSED(p_data);
+
+    if (p_scb->p_ccb != NULL && p_scb->role == AVDT_CONF_INT) {
+        if (!(p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
+            /* initiate open */
+            single.seid = p_scb->peer_seid;
+            avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+        } else {
+            btu_start_timer(&p_scb->timer_entry, BTU_TTYPE_AVDT_SCB_DELAY_RPT, AVDT_SCB_TC_DELAY_RPT_TOUT);
+        }
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         avdt_scb_hdl_setconfig_rsp
 **
 ** Description      This function sends the SCB an AVDT_SCB_API_OPEN_REQ_EVT
@@ -849,16 +895,15 @@ void avdt_scb_hdl_setconfig_rej(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 *******************************************************************************/
 void avdt_scb_hdl_setconfig_rsp(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 {
-    tAVDT_EVT_HDR   single;
     UNUSED(p_data);
 
     if (p_scb->p_ccb != NULL) {
         /* save configuration */
         memcpy(&p_scb->curr_cfg, &p_scb->req_cfg, sizeof(tAVDT_CFG));
+        p_scb->role = AVDT_CONF_INT;
 
-        /* initiate open */
-        single.seid = p_scb->peer_seid;
-        avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+        /* send delay reporting command */
+        avdt_scb_send_delay_report_cmd(p_scb, p_data);
     }
 }
 
@@ -1029,13 +1074,26 @@ void avdt_scb_snd_delay_rpt_req (tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 *******************************************************************************/
 void avdt_scb_hdl_delay_rpt_cmd (tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 {
+    tAVDT_EVT_HDR single;
+
     (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb),
                               p_scb->p_ccb ? p_scb->p_ccb->peer_addr : NULL,
                               AVDT_DELAY_REPORT_EVT,
                               (tAVDT_CTRL *) &p_data->msg.hdr);
 
     if (p_scb->p_ccb) {
-        avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
+        if (p_scb->cs.cfg.psc_mask & AVDT_PSC_DELAY_RPT) {
+            avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
+            if(p_scb->role == AVDT_CONF_INT) {
+                btu_stop_timer(&p_scb->timer_entry);
+                /* initiate open */
+                single.seid = p_scb->peer_seid;
+                avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+            }
+        } else {
+            p_data->msg.hdr.err_code = AVDT_ERR_NSC;
+            avdt_msg_send_rej(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
+        }
     } else {
         avdt_scb_rej_not_in_use(p_scb, p_data);
     }
@@ -1053,6 +1111,16 @@ void avdt_scb_hdl_delay_rpt_cmd (tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 *******************************************************************************/
 void avdt_scb_hdl_delay_rpt_rsp (tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 {
+    tAVDT_EVT_HDR single;
+
+    if ((p_scb->cs.tsep == AVDT_TSEP_SNK) &&
+            (p_scb->state == AVDT_SCB_CONF_ST) && (p_scb->role == AVDT_CONF_INT)) {
+        btu_stop_timer(&p_scb->timer_entry);
+        /* initiate open */
+        single.seid = p_scb->peer_seid;
+        avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+    }
+
     (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb),
                               p_scb->p_ccb ? p_scb->p_ccb->peer_addr : NULL,
                               AVDT_DELAY_REPORT_CFM_EVT,
@@ -1092,6 +1160,26 @@ void avdt_scb_hdl_tc_close_sto(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     }
 }
 #endif
+
+/*******************************************************************************
+ *
+ * Function         avdt_scb_hdl_delay_rpt_tout
+ *
+ * Description      The timer triggers the sending of AVDT open_req.
+ *                  This function is theoretically not called.
+ *
+ * Returns          Nothing.
+ *
+ ******************************************************************************/
+void avdt_scb_hdl_delay_rpt_tout(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
+{
+    tAVDT_EVT_HDR   single;
+    UNUSED(p_data);
+
+    /* initiate open */
+    single.seid = p_scb->peer_seid;
+    avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+}
 
 /*******************************************************************************
 **
@@ -1654,6 +1742,7 @@ void avdt_scb_snd_setconfig_rsp(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 {
     if (p_scb->p_ccb != NULL) {
         memcpy(&p_scb->curr_cfg, &p_scb->req_cfg, sizeof(tAVDT_CFG));
+        p_scb->role = AVDT_CONF_ACP;
 
         avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_SETCONFIG, &p_data->msg);
     }
