@@ -147,7 +147,7 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #else //CONFIG_SPIRAM
 #if !CONFIG_IDF_TARGET_ESP32C3
 #define FLASH_TEST_CASE_3(STR, FUNC_TO_RUN) \
-    TEST_CASE(STR", 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
+    TEST_CASE(STR", 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH][timeout=35]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNC_TO_RUN) \
     TEST_CASE(STR", 3 chips", "[esp_flash_3][test_env=UT_T1_ESP_FLASH][ignore]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}

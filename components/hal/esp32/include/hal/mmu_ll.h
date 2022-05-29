@@ -70,6 +70,62 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 }
 
 /**
+ * Write to the MMU table to map the virtual memory and the physical memory
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * @param mmu_val  Value to be set into an MMU entry, for physical address
+ * @param target   MMU target physical memory.
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
+{
+    (void)target;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    DPORT_INTERRUPT_DISABLE();
+    switch (mmu_id) {
+        case MMU_TABLE_CORE0:
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], mmu_val);
+            break;
+        case MMU_TABLE_CORE1:
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], mmu_val);
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
+    DPORT_INTERRUPT_RESTORE();
+}
+
+/**
+ * Read the raw value from MMU table
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * @param mmu_val  Value to be read from MMU table
+ */
+__attribute__((always_inline))
+static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
+{
+    uint32_t mmu_value;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    DPORT_INTERRUPT_DISABLE();
+    switch (mmu_id) {
+        case MMU_TABLE_CORE0:
+            mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id]);
+            break;
+        case MMU_TABLE_CORE1:
+            mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id]);
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
+    DPORT_INTERRUPT_RESTORE();
+    return mmu_value;
+}
+
+/**
  * Set MMU table entry as invalid
  *
  * @param mmu_id   MMU ID
@@ -82,14 +138,14 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 
     DPORT_INTERRUPT_DISABLE();
     switch (mmu_id) {
-        case 0:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], DPORT_FLASH_MMU_TABLE_INVALID_VAL);
+        case MMU_TABLE_CORE0:
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], MMU_INVALID);
             break;
-        case 1:
-            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], DPORT_FLASH_MMU_TABLE_INVALID_VAL);
+        case MMU_TABLE_CORE1:
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], MMU_INVALID);
             break;
         default:
-            HAL_ASSERT(false && "invalid mmu_id");
+            HAL_ASSERT(false);
     }
     DPORT_INTERRUPT_RESTORE();
 }
@@ -105,6 +161,25 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
     for (int i = 0; i < MMU_ENTRY_NUM; i++) {
         mmu_ll_set_entry_invalid(mmu_id, i);
     }
+}
+
+/**
+ * Get MMU table entry is invalid
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * return ture for MMU entry is invalid, false for valid
+ */
+__attribute__((always_inline))
+static inline bool mmu_ll_get_entry_is_invalid(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+
+    DPORT_INTERRUPT_DISABLE();
+    uint32_t mmu_value = DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id]);
+    DPORT_INTERRUPT_RESTORE();
+
+    return (mmu_value & MMU_INVALID) ? true : false;
 }
 
 #ifdef __cplusplus

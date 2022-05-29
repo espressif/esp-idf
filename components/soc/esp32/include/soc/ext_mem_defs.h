@@ -37,6 +37,8 @@ extern "C" {
 #define ADDRESS_IN_DRAM1_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM1_CACHE, vaddr)
 #define ADDRESS_IN_DROM0_CACHE(vaddr)      ADDRESS_IN_BUS(DROM0_CACHE, vaddr)
 
+#define MMU_INVALID                 BIT(8)
+
 //MMU entry num
 #define MMU_ENTRY_NUM    256
 

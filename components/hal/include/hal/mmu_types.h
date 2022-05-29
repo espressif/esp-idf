@@ -28,6 +28,14 @@ typedef enum {
     MMU_TARGET_PSRAM0,
 } mmu_target_t;
 
+/**
+ * MMU table id
+ */
+typedef enum {
+    MMU_TABLE_CORE0,
+    MMU_TABLE_CORE1,
+} mmu_table_id_t;
+
 #ifdef __cplusplus
 }
 #endif
