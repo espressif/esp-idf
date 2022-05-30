@@ -19,6 +19,7 @@
 #include "esp_intr_alloc.h"
 #include "sys/lock.h"
 #include "esp_private/rtc_ctrl.h"
+#include "esp_attr.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -26,7 +27,15 @@
 #endif
 #include "sys/queue.h"
 
+#define NOT_REGISTERED      (-1)
+
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
+// Disable the interrupt which cannot work without cache.
+static DRAM_ATTR uint32_t rtc_intr_cache;
+static DRAM_ATTR uint32_t rtc_intr_enabled;
+static DRAM_ATTR int rtc_isr_cpu = NOT_REGISTERED;  // Unused number
+static void s_rtc_isr_noniram_hook(uint32_t rtc_intr_mask);
+static void s_rtc_isr_noniram_hook_relieve(uint32_t rtc_intr_mask);
 
 /*---------------------------------------------------------------
                         INTERRUPT HANDLER
@@ -37,15 +46,16 @@ typedef struct rtc_isr_handler_ {
     uint32_t mask;
     intr_handler_t handler;
     void* handler_arg;
+    uint32_t flags;
     SLIST_ENTRY(rtc_isr_handler_) next;
 } rtc_isr_handler_t;
 
-static SLIST_HEAD(rtc_isr_handler_list_, rtc_isr_handler_) s_rtc_isr_handler_list =
+static DRAM_ATTR SLIST_HEAD(rtc_isr_handler_list_, rtc_isr_handler_) s_rtc_isr_handler_list =
         SLIST_HEAD_INITIALIZER(s_rtc_isr_handler_list);
-portMUX_TYPE s_rtc_isr_handler_list_lock = portMUX_INITIALIZER_UNLOCKED;
+static DRAM_ATTR portMUX_TYPE s_rtc_isr_handler_list_lock = portMUX_INITIALIZER_UNLOCKED;
 static intr_handle_t s_rtc_isr_handle;
 
-static void rtc_isr(void* arg)
+IRAM_ATTR static void rtc_isr(void* arg)
 {
     uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
     rtc_isr_handler_t* it;
@@ -71,32 +81,37 @@ static esp_err_t rtc_isr_ensure_installed(void)
 
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
-    err = esp_intr_alloc(ETS_RTC_CORE_INTR_SOURCE, 0, &rtc_isr, NULL, &s_rtc_isr_handle);
+    err = esp_intr_alloc(ETS_RTC_CORE_INTR_SOURCE, ESP_INTR_FLAG_IRAM, &rtc_isr, NULL, &s_rtc_isr_handle);
     if (err != ESP_OK) {
         goto out;
     }
-
+    rtc_isr_cpu = esp_intr_get_cpu(s_rtc_isr_handle);
 out:
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return err;
 }
 
-
-esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t rtc_intr_mask)
+esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t rtc_intr_mask, uint32_t flags)
 {
     esp_err_t err = rtc_isr_ensure_installed();
     if (err != ESP_OK) {
         return err;
     }
 
-    rtc_isr_handler_t* item = malloc(sizeof(*item));
+    rtc_isr_handler_t* item = heap_caps_malloc(sizeof(*item), MALLOC_CAP_INTERNAL);
     if (item == NULL) {
         return ESP_ERR_NO_MEM;
     }
     item->handler = handler;
     item->handler_arg = handler_arg;
     item->mask = rtc_intr_mask;
+    item->flags = flags;
     portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    if (flags & RTC_INTR_FLAG_IRAM) {
+        s_rtc_isr_noniram_hook(rtc_intr_mask);
+    } else {
+        s_rtc_isr_noniram_hook_relieve(rtc_intr_mask);
+    }
     SLIST_INSERT_HEAD(&s_rtc_isr_handler_list, item, next);
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return ESP_OK;
@@ -116,6 +131,9 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
                 SLIST_REMOVE_AFTER(prev, next);
             }
             found = true;
+            if (it->flags & RTC_INTR_FLAG_IRAM) {
+                s_rtc_isr_noniram_hook_relieve(it->mask);
+            }
             free(it);
             break;
         }
@@ -123,4 +141,38 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
     }
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return found ? ESP_OK : ESP_ERR_INVALID_STATE;
+}
+
+/**
+ * @brief This helper function can be used to avoid the interrupt to be triggered with cache disabled.
+ *        There are lots of different signals on RTC module (i.e. sleep_wakeup, wdt, brownout_detect, etc.)
+ *        We might want some of them can be triggered with cache disabled, some are not. Therefore, this function
+ *        is created to avoid those which do not want to be triggered with cache disabled.
+ *
+ * @param rtc_intr_mask the mask of the rtc interrupt.
+ */
+static void s_rtc_isr_noniram_hook(uint32_t rtc_intr_mask)
+{
+    rtc_intr_cache |= rtc_intr_mask;
+}
+
+static void s_rtc_isr_noniram_hook_relieve(uint32_t rtc_intr_mask)
+{
+    rtc_intr_cache &= ~rtc_intr_mask;
+}
+
+IRAM_ATTR void rtc_isr_noniram_disable(uint32_t cpu)
+{
+    if (rtc_isr_cpu == cpu) {
+        rtc_intr_enabled |= RTCCNTL.int_ena.val;
+        RTCCNTL.int_ena.val &= rtc_intr_cache;
+    }
+}
+
+IRAM_ATTR void rtc_isr_noniram_enable(uint32_t cpu)
+{
+    if (rtc_isr_cpu == cpu) {
+        RTCCNTL.int_ena.val = rtc_intr_enabled;
+        rtc_intr_enabled = 0;
+    }
 }
