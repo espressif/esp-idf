@@ -62,23 +62,6 @@ if(CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS)
     list(APPEND compile_options "-msave-restore")
 endif()
 
-if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
-    list(APPEND compile_options "-Wno-parentheses"
-                                "-Wno-sizeof-pointer-memaccess"
-                                "-Wno-clobbered")
-
-    list(APPEND compile_options "-Wno-format-overflow"
-                                "-Wno-stringop-truncation"
-                                "-Wno-misleading-indentation"
-                                "-Wno-cast-function-type"
-                                "-Wno-implicit-fallthrough"
-                                "-Wno-unused-const-variable"
-                                "-Wno-switch-unreachable"
-                                "-Wno-format-truncation"
-                                "-Wno-memset-elt-size"
-                                "-Wno-int-in-bool-context")
-endif()
-
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     list(APPEND c_compile_options "-Wno-old-style-declaration")
 endif()
