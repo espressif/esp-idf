@@ -27,7 +27,17 @@ if(CONFIG_BT_ENABLED)
     elseif(CONFIG_IDF_TARGET_ESP32S3)
        list(APPEND include_dirs include/esp32s3/include)
     elseif(CONFIG_IDF_TARGET_ESP32H2)
-       list(APPEND include_dirs include/esp32h2/include)
+       if(CONFIG_BT_BLUEDROID_ENABLED)
+           list(APPEND include_dirs
+                host/nimble/nimble/porting/nimble/include
+                host/nimble/nimble/nimble/include
+                host/nimble/nimble/porting/npl/freertos/include
+                host/nimble/nimble/nimble/transport/ram/include
+                host/nimble/port/include
+                include/esp32h2/include)
+       else()
+           list(APPEND include_dirs include/esp32h2/include)
+       endif()
     endif()
 
     list(APPEND priv_include_dirs
@@ -351,6 +361,14 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/smp/smp_l2c.c"
                    "host/bluedroid/stack/smp/smp_main.c"
                    "host/bluedroid/stack/smp/smp_utils.c")
+if(CONFIG_IDF_TARGET_ESP32H2)
+       if(CONFIG_BT_BLUEDROID_ENABLED)
+                   list(APPEND srcs
+                   "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
+                   "host/nimble/nimble/porting/nimble/src/os_msys_init.c"
+                   "host/nimble/port/src/esp_nimble_mem.c")
+       endif()
+endif()
 
             list(APPEND srcs "common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c")
         if(CONFIG_BLE_MESH)
@@ -663,19 +681,8 @@ if(CONFIG_BT_ENABLED)
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     elseif(CONFIG_IDF_TARGET_ESP32H2)
-
-        if(CONFIG_BT_NIMBLE_CONTROL_SEQUENCE_MODE_ENABLED)
-            add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/libcontroller_5p0_seq.a")
-        else()
-            if(CONFIG_BLE_50_FEATURE_SUPPORT)
-                add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/libcontroller_5p0.a")
-            else()
-                add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/libcontroller_4p2.a")
-            endif()
-        endif()
-
+        add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/libcontroller_5p0_seq.a")
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
-
     endif()
 
     set_source_files_properties(

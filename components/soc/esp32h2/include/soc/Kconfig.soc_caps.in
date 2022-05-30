@@ -29,7 +29,7 @@ config SOC_BT_SUPPORTED
 
 config SOC_BLUEDROID_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_ESP_NIMBLE_CONTROLLER
     bool
