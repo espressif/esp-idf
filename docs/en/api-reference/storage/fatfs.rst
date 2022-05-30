@@ -96,7 +96,7 @@ The tool is used to create filesystem images on a host and populate it with cont
 
 The script is based on the partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`). Apart from generating partition, it can also initialize wear levelling.
 
-The latest version supports both short and long file names, FAT12, and FAT16. The long file names are limited to 255 characters, and can contain multiple period (".") characters within the filename and additional characters "+", ",", ";", "=", "[" and also "]". The characters in long file names are encoded using utf-16, and those in short file names are encoded using utf-8.
+The latest version supports both short and long file names, FAT12 and FAT16. The long file names are limited to 255 characters and can contain multiple periods (``.``) characters within the filename and additional characters ``+``, ``,``, ``;``, ``=``, ``[`` and ``]``.
 
 
 Build System Integration with FatFs Partition Generator
