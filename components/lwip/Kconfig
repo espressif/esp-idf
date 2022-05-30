@@ -16,7 +16,7 @@ menu "LWIP"
             instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
 
     config LWIP_TCPIP_CORE_LOCKING
-        bool "Enable tcpip　core locking"
+        bool "Enable tcpip core locking"
         default n
         help
             If Enable tcpip　core locking,Creates a global mutex that is held
