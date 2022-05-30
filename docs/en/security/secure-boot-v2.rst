@@ -153,7 +153,7 @@ The content of each signature block is shown in the following table:
           - RSA-PSS Signature result (section 8.1.1 of RFC8017) of image content, computed using following PSS parameters: SHA256 hash, MFG1 function, salt length 32 bytes, default trailer field (0xBC).
         * - 1196
           - 4
-          - CRC32 of the preceding 1095 bytes.
+          - CRC32 of the preceding 1196 bytes.
         * - 1200
           - 16
           - Zero padding to length 1216 bytes.
@@ -197,7 +197,7 @@ The content of each signature block is shown in the following table:
           - Reserved.
         * - 1196
           - 4
-          - CRC32 of the preceding 1095 bytes.
+          - CRC32 of the preceding 1196 bytes.
         * - 1200
           - 16
           - Zero padding to length 1216 bytes.
