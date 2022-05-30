@@ -980,7 +980,6 @@ components/lwip/port/esp32/include/netinet/tcp.h
 components/lwip/port/esp32/include/sntp/sntp_get_set_time.h
 components/lwip/port/esp32/include/sys/socket.h
 components/lwip/port/esp32/netif/ethernetif.c
-components/lwip/port/esp32/netif/wlanif.c
 components/lwip/port/esp32/no_vfs_syscalls.c
 components/lwip/test_afl_host/dhcp_di.h
 components/lwip/test_afl_host/dhcpserver_di.h
