@@ -1,8 +1,8 @@
-{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1", esp32c2="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332"}
 
 Build the Project
 =================
@@ -60,7 +60,7 @@ For more information on idf.py arguments, see :ref:`idf.py`.
 Encountered Issues While Flashing?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
+{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9"}
 
 If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
 
@@ -205,6 +205,49 @@ When flashing, you will see the output log similar to the following:
         Leaving...
         Hard resetting via RTS pin...
         Done
+
+
+.. only:: esp32c2
+
+    .. code-block:: none
+
+        ...
+        esptool.py esp32c2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 60m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py v3.3.1
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-C2 (revision 1)
+        Features: Wi-Fi
+        Crystal is 40MHz
+        MAC: 10:97:bd:f0:e5:0c
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Flash will be erased from 0x00000000 to 0x00004fff...
+        Flash will be erased from 0x00010000 to 0x0002ffff...
+        Flash will be erased from 0x00008000 to 0x00008fff...
+        Compressed 18192 bytes to 10989...
+        Writing at 0x00000000... (100 %)
+        Wrote 18192 bytes (10989 compressed) at 0x00000000 in 0.6 seconds (effective 248.5 kbit/s)...
+        Hash of data verified.
+        Compressed 128640 bytes to 65895...
+        Writing at 0x00010000... (20 %)
+        Writing at 0x00019539... (40 %)
+        Writing at 0x00020bf2... (60 %)
+        Writing at 0x00027de1... (80 %)
+        Writing at 0x0002f480... (100 %)
+        Wrote 128640 bytes (65895 compressed) at 0x00010000 in 1.7 seconds (effective 603.0 kbit/s)...
+        Hash of data verified.
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 360.1 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
 
 
 .. only:: esp32c3

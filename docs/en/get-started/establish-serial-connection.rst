@@ -77,12 +77,12 @@ Make sure you re-login to enable read and write permissions for the serial port.
 Verify serial connection
 ------------------------
 
-Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after reseting {IDF_TARGET_NAME}.
+Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after resetting {IDF_TARGET_NAME}.
 
 Windows and Linux
 ^^^^^^^^^^^^^^^^^
 
-In this example we will use `PuTTY SSH Client <https://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial program and set communication parameters like below.
+In this example we will use `PuTTY SSH Client <https://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial programs and set communication parameters like below.
 
 Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 
@@ -136,7 +136,7 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 Example Output
 ^^^^^^^^^^^^^^
 
-An example log by {IDF_TARGET_NAME} is shown below. Reset the board if you do not see anything.
+An example log is shown below. Reset the board if you do not see anything.
 
 .. highlight:: none
 
