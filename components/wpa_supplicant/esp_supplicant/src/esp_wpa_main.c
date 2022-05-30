@@ -38,6 +38,8 @@
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 
+const wifi_osi_funcs_t *wifi_funcs;
+
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, enum key_flag key_flag)
 {
@@ -301,6 +303,10 @@ int esp_supplicant_init(void)
     int ret = ESP_OK;
     struct wpa_funcs *wpa_cb;
 
+    wifi_funcs = WIFI_OSI_FUNCS_INITIALIZER();
+    if (!wifi_funcs) {
+        return ESP_ERR_NOT_FOUND;
+    }
     wpa_cb = (struct wpa_funcs *)os_zalloc(sizeof(struct wpa_funcs));
     if (!wpa_cb) {
         return ESP_ERR_NO_MEM;

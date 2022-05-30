@@ -16,7 +16,6 @@
 #include "common.h"
 #include "list.h"
 #include "eloop.h"
-#include "esp_wifi.h"
 
 struct eloop_timeout {
 	struct dl_list list;
@@ -32,8 +31,8 @@ struct eloop_data {
 	bool eloop_started;
 };
 
-#define ELOOP_LOCK() xSemaphoreTakeRecursive(eloop_data_lock, portMAX_DELAY)
-#define ELOOP_UNLOCK() xSemaphoreGiveRecursive(eloop_data_lock)
+#define ELOOP_LOCK() os_mutex_lock(eloop_data_lock)
+#define ELOOP_UNLOCK() os_mutex_unlock(eloop_data_lock)
 
 static void *eloop_data_lock = NULL;
 
@@ -43,10 +42,10 @@ int eloop_init(void)
 {
 	os_memset(&eloop, 0, sizeof(eloop));
 	dl_list_init(&eloop.timeout);
-	ets_timer_disarm(&eloop.eloop_timer);
-	ets_timer_setfn(&eloop.eloop_timer, (ETSTimerFunc *)eloop_run, NULL);
+	os_timer_disarm(&eloop.eloop_timer);
+	os_timer_setfn(&eloop.eloop_timer, (ETSTimerFunc *)eloop_run, NULL);
 
-	eloop_data_lock = xSemaphoreCreateRecursiveMutex();
+	eloop_data_lock = os_recursive_mutex_create();
 
 	if (!eloop_data_lock) {
 		wpa_printf(MSG_ERROR, "failed to create eloop data loop");
@@ -100,8 +99,8 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 	ELOOP_UNLOCK();
 
 run:
-	ets_timer_disarm(&eloop.eloop_timer);
-	ets_timer_arm(&eloop.eloop_timer, 0, 0);
+	os_timer_disarm(&eloop.eloop_timer);
+	os_timer_arm(&eloop.eloop_timer, 0, 0);
 
 	return 0;
 
@@ -271,8 +270,8 @@ void eloop_run(void)
 				uint32_t ms;
 				os_reltime_sub(&timeout->time, &now, &tv);
 				ms = tv.sec * 1000 + tv.usec / 1000;
-				ets_timer_disarm(&eloop.eloop_timer);
-				ets_timer_arm(&eloop.eloop_timer, ms, 0);
+				os_timer_disarm(&eloop.eloop_timer);
+				os_timer_arm(&eloop.eloop_timer, ms, 0);
 				goto out;
 			}
 		}
@@ -321,9 +320,9 @@ void eloop_destroy(void)
 		eloop_remove_timeout(timeout);
 	}
 	if (eloop_data_lock) {
-		vSemaphoreDelete(eloop_data_lock);
+		os_semphr_delete(eloop_data_lock);
 		eloop_data_lock = NULL;
 	}
-	ets_timer_disarm(&eloop.eloop_timer);
+	os_timer_disarm(&eloop.eloop_timer);
 	os_memset(&eloop, 0, sizeof(eloop));
 }

@@ -27,9 +27,12 @@
 struct wpa_supplicant g_wpa_supp;
 
 #ifdef CONFIG_SUPPLICANT_TASK
-static TaskHandle_t s_supplicant_task_hdl = NULL;
+static void *s_supplicant_task_hdl = NULL;
 static void *s_supplicant_evt_queue = NULL;
 static void *s_supplicant_api_lock = NULL;
+#define SUPPLICANT_API_LOCK() os_mutex_lock(s_supplicant_api_lock)
+#define SUPPLICANT_API_UNLOCK() os_mutex_unlock(s_supplicant_api_lock)
+#define SUPPLICANT_TASK_STACK_SIZE (6144 + TASK_STACK_SIZE_ADD)
 
 static int handle_action_frm(u8 *frame, size_t len,
 			     u8 *sender, u32 rssi, u8 channel)
@@ -105,7 +108,7 @@ static void btm_rrm_task(void *pvParameters)
 	bool task_del = false;
 
 	while(1) {
-		if (xQueueReceive(s_supplicant_evt_queue, &evt, portMAX_DELAY) != pdTRUE)
+		if (os_queue_recv(s_supplicant_evt_queue, &evt, OS_BLOCK) != TRUE)
 			continue;
 
 		/* event validation failed */
@@ -139,16 +142,16 @@ static void btm_rrm_task(void *pvParameters)
 			break;
 	}
 
-	vQueueDelete(s_supplicant_evt_queue);
+	os_queue_delete(s_supplicant_evt_queue);
 	s_supplicant_evt_queue = NULL;
 
 	if (s_supplicant_api_lock) {
-		vSemaphoreDelete(s_supplicant_api_lock);
+		os_semphr_delete(s_supplicant_api_lock);
 		s_supplicant_api_lock = NULL;
 	}
 
 	/* At this point, we completed */
-	vTaskDelete(NULL);
+	os_task_delete(NULL);
 }
 #endif
 
@@ -346,22 +349,22 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	int ret = 0;
 
 #ifdef CONFIG_SUPPLICANT_TASK
-	s_supplicant_api_lock = xSemaphoreCreateRecursiveMutex();
+	s_supplicant_api_lock = os_recursive_mutex_create();
 	if (!s_supplicant_api_lock) {
 		wpa_printf(MSG_ERROR, "%s: failed to create Supplicant API lock", __func__);
 		ret = -1;
 		goto err;
 	}
 
-	s_supplicant_evt_queue = xQueueCreate(3, sizeof(supplicant_event_t));
+	s_supplicant_evt_queue = os_queue_create(3, sizeof(supplicant_event_t));
 
 	if (!s_supplicant_evt_queue) {
 		wpa_printf(MSG_ERROR, "%s: failed to create Supplicant event queue", __func__);
 		ret = -1;
 		goto err;
 	}
-	ret = xTaskCreate(btm_rrm_task, "btm_rrm_t", SUPPLICANT_TASK_STACK_SIZE, NULL, 2, &s_supplicant_task_hdl);
-	if (ret != pdPASS) {
+	ret = os_task_create(btm_rrm_task, "btm_rrm_t", SUPPLICANT_TASK_STACK_SIZE, NULL, 2, &s_supplicant_task_hdl);
+	if (ret != TRUE) {
 		wpa_printf(MSG_ERROR, "btm: failed to create task");
 		ret = -1;
 		goto err;
@@ -417,11 +420,11 @@ void esp_supplicant_common_deinit(void)
 #ifdef CONFIG_SUPPLICANT_TASK
 	if (!s_supplicant_task_hdl && esp_supplicant_post_evt(SIG_SUPPLICANT_DEL_TASK, 0) != 0) {
 		if (s_supplicant_evt_queue) {
-			vQueueDelete(s_supplicant_evt_queue);
+			os_queue_delete(s_supplicant_evt_queue);
 			s_supplicant_evt_queue = NULL;
 		}
 		if (s_supplicant_api_lock) {
-			vSemaphoreDelete(s_supplicant_api_lock);
+			os_semphr_delete(s_supplicant_api_lock);
 			s_supplicant_api_lock = NULL;
 		}
 	}
@@ -833,7 +836,7 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 		os_free(evt);
 		return -1;
 	}
-	if (xQueueSend(s_supplicant_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
+	if (os_queue_send(s_supplicant_evt_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
 		SUPPLICANT_API_UNLOCK();
 		os_free(evt);
 		return -1;

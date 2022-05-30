@@ -55,6 +55,7 @@ static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
 #define WPA_SM_MAX_INDEX 16
 static void *s_sm_table[WPA_SM_MAX_INDEX];
 static u32 s_sm_valid_bitmap = 0;
+void resend_eapol_handle(void *data, void *user_ctx);
 
 static struct wpa_state_machine * wpa_auth_get_sm(u32 index)
 {
@@ -449,8 +450,7 @@ void wpa_auth_sta_deinit(struct wpa_state_machine *sm)
     if (sm == NULL)
         return;
 
-    ets_timer_disarm(&sm->resend_eapol);
-    ets_timer_done(&sm->resend_eapol);
+    eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
 
     if (sm->in_step_loop) {
         /* Must not free state machine while wpa_sm_step() is running.
@@ -806,8 +806,6 @@ continue_processing:
         }
         sm->MICVerified = TRUE;
         eloop_cancel_timeout(wpa_send_eapol_timeout, wpa_auth, sm);
-        ets_timer_disarm(&sm->resend_eapol);
-        ets_timer_done(&sm->resend_eapol);
         sm->pending_1_of_4_timeout = 0;
     }
 
@@ -1098,12 +1096,12 @@ int hostap_eapol_resend_process(void *timeout_ctx)
     return ESP_OK;
 }
 
-void resend_eapol_handle(void *timeout_ctx)
+void resend_eapol_handle(void *data, void *user_ctx)
 {
     wifi_ipc_config_t cfg;
 
     cfg.fn = hostap_eapol_resend_process;
-    cfg.arg = timeout_ctx;
+    cfg.arg = data;
     cfg.arg_size = 0;
     esp_wifi_ipc_internal(&cfg, false);
 }
@@ -1126,9 +1124,9 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
     ctr = pairwise ? sm->TimeoutCtr : sm->GTimeoutCtr;
     if (pairwise && ctr == 1 && !(key_info & WPA_KEY_INFO_MIC))
         sm->pending_1_of_4_timeout = 1;
-    ets_timer_disarm(&sm->resend_eapol);
-    ets_timer_setfn(&sm->resend_eapol, (ETSTimerFunc *)resend_eapol_handle, (void*)(sm->index));
-    ets_timer_arm(&sm->resend_eapol, 1000, 0);
+
+    eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
+    eloop_register_timeout(1, 0, resend_eapol_handle, (void*)(sm->index), NULL);
 }
 
 static int wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,

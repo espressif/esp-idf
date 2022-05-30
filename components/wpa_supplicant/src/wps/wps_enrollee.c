@@ -9,6 +9,7 @@
 #include "includes.h"
 
 #include "common.h"
+#include "eloop.h"
 #include "crypto/crypto.h"
 #include "crypto/sha256.h"
 #include "crypto/random.h"
@@ -1364,12 +1365,11 @@ extern struct wps_sm *gWpsSm;
 static enum wps_process_res wps_process_wsc_start(struct wps_data *wps,
 						const struct wpabuf *msg)
 {
-	struct wps_sm *sm = gWpsSm;
 	enum wps_process_res ret = WPS_CONTINUE;
 
 	wpa_printf(MSG_DEBUG,  "WPS: Received WSC_START");
-	ets_timer_disarm(&sm->wps_eapol_start_timer);
-        wps->state = SEND_M1;
+	eloop_cancel_timeout(wifi_station_wps_eapol_start_handle, NULL, NULL);
+	wps->state = SEND_M1;
 	return ret;
 }
 
