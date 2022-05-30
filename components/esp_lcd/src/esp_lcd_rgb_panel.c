@@ -61,7 +61,7 @@ static esp_err_t rgb_panel_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mi
 static esp_err_t rgb_panel_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
 static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool off);
-static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src);
+static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src);
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel);
@@ -81,7 +81,7 @@ struct esp_rgb_panel_t {
     uint8_t *fb;           // Frame buffer
     size_t fb_size;        // Size of frame buffer
     int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; // GPIOs used for data lines, we keep these GPIOs for action like "invert_color"
-    size_t resolution_hz;    // Peripheral clock resolution
+    uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     gdma_channel_handle_t dma_chan; // DMA channel handle
     esp_lcd_rgb_panel_frame_trans_done_cb_t on_frame_trans_done; // Callback, invoked after frame trans done
@@ -159,9 +159,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->flags.fb_in_psram = alloc_from_psram;
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
-    // set peripheral clock resolution
-    ret = lcd_rgb_panel_select_periph_clock(rgb_panel, rgb_panel_config->clk_src);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock failed");
+    // enable clock gating
+    lcd_ll_enable_clock(rgb_panel->hal.dev, true);
+    // set clock source
+    ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
@@ -232,6 +234,7 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
     gdma_disconnect(rgb_panel->dma_chan);
     gdma_del_channel(rgb_panel->dma_chan);
     esp_intr_free(rgb_panel->intr);
+    lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     periph_module_disable(lcd_periph_signals.panels[panel_id].module);
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
     free(rgb_panel->fb);
@@ -256,14 +259,8 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
 {
     esp_err_t ret = ESP_OK;
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
-    // configure clock
-    lcd_ll_enable_clock(rgb_panel->hal.dev, true);
-    // set PCLK frequency
-    uint32_t pclk_prescale = rgb_panel->resolution_hz / rgb_panel->timings.pclk_hz;
-    ESP_GOTO_ON_FALSE(pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
-                      "prescaler can't satisfy PCLK clock %uHz", rgb_panel->timings.pclk_hz);
-    lcd_ll_set_pixel_clock_prescale(rgb_panel->hal.dev, pclk_prescale);
-    rgb_panel->timings.pclk_hz = rgb_panel->resolution_hz / pclk_prescale;
+    // set pixel clock frequency
+    rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz);
     // pixel clock phase and polarity
     lcd_ll_set_clock_idle_level(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_idle_high);
     lcd_ll_set_pixel_clock_edge(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_active_neg);
@@ -299,7 +296,6 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
         lcd_rgb_panel_start_transmission(rgb_panel);
     }
     ESP_LOGD(TAG, "rgb panel(%d) start, pclk=%uHz", rgb_panel->panel_id, rgb_panel->timings.pclk_hz);
-err:
     return ret;
 }
 
@@ -442,14 +438,12 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
     return ESP_OK;
 }
 
-static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src)
+static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src)
 {
     esp_err_t ret = ESP_OK;
-    // force to use integer division, as fractional division might lead to clock jitter
-    lcd_ll_set_group_clock_src(panel->hal.dev, clk_src, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
     switch (clk_src) {
     case LCD_CLK_SRC_PLL160M:
-        panel->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
+        panel->src_clk_hz = 160000000;
 #if CONFIG_PM_ENABLE
         ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
@@ -459,12 +453,13 @@ static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_c
 #endif
         break;
     case LCD_CLK_SRC_XTAL:
-        panel->resolution_hz = esp_clk_xtal_freq() / LCD_PERIPH_CLOCK_PRE_SCALE;
+        panel->src_clk_hz = esp_clk_xtal_freq();
         break;
     default:
-        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG,  "unsupported clock source: %d", clk_src);
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported clock source: %d", clk_src);
         break;
     }
+    lcd_ll_select_clk_src(panel->hal.dev, clk_src);
     return ret;
 }
 
