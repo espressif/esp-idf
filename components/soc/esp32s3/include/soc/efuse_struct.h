@@ -101,10 +101,10 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t reg_dis_download_mode         :    1;  /*Set this bit to disable download mode (boot_mode[3:0] = 0, 1, 2, 3, 6, 7).*/
-            uint32_t reg_dis_legacy_spi_boot       :    1;  /*Set this bit to disable Legacy SPI boot mode (boot_mode[3:0] = 4).*/
-            uint32_t reg_uart_print_channel        :    1;  /*Selectes the default UART print channel. 0: UART0. 1: UART1.*/
+            uint32_t reg_dis_direct_boot           :    1;  /*Set this bit to disable direct boot..*/
+            uint32_t dis_usb_serial_jtag_rom_print :    1;  /*Set this bit to disable USB-Serial-JTAG print during rom boot*/
             uint32_t reg_flash_ecc_mode            :    1;  /*Set ECC mode in ROM, 0: ROM would Enable Flash ECC 16to18 byte mode. 1:ROM would use 16to17 byte mode.*/
-            uint32_t reg_dis_usb_download_mode     :    1;  /*Set this bit to disable UART download mode through USB.*/
+            uint32_t reg_dis_usb_serial_jtag_download_mode: 1;  /*Set this bit to disable download through USB-Serial-JTAG.*/
             uint32_t reg_enable_security_download  :    1;  /*Set this bit to enable secure UART download mode.*/
             uint32_t reg_uart_print_control        :    2;  /*Set the default UARTboot message output mode. 00: Enabled. 01: Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
             uint32_t reg_pin_power_selection       :    1;  /*GPIO33-GPIO37 power supply selection in ROM code. 0: VDD3P3_CPU. 1: VDD_SPI.*/
@@ -113,8 +113,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t reg_flash_ecc_en              :    1;  /*Set 1 to enable ECC for flash boot.*/
             uint32_t reg_force_send_resume         :    1;  /*Set this bit to force ROM code to send a resume command during SPI boot.*/
             uint32_t reg_secure_version            :    16;  /*Secure version (used by ESP-IDF anti-rollback feature).*/
-            uint32_t reg_powerglitch_en            :    1;  /*Set this bit to enable power glitch function.*/
             uint32_t reg_rpt4_reserved1            :    1;  /*Reserved (used for four backups method).*/
+            uint32_t reg_dis_usb_otg_download_mode :    1;  /*Set this bit to disable download through USB-OTG*/
         };
         uint32_t val;
     } rd_repeat_data3;
@@ -283,10 +283,10 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t reg_dis_download_mode_err     :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_dis_legacy_spi_boot_err   :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_uart_print_channel_err    :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
+            uint32_t reg_dis_direct_boot_err       :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
+            uint32_t reg_dis_usb_serial_jtag_rom_print_err:1;/*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_flash_ecc_mode_err        :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_dis_usb_download_mode_err :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
+            uint32_t reg_dis_usb_serial_jtag_download_mode_err :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_enable_security_download_err:    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_uart_print_control_err    :    2;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_pin_power_selection_err   :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
@@ -294,9 +294,9 @@ typedef volatile struct efuse_dev_s {
             uint32_t reg_flash_page_size_err       :    2;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_flash_ecc_en_err          :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_force_send_resume_err     :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_secure_version_err        :    16;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_powerglitch_en_err        :    1;
+            uint32_t reg_secure_version_err        :    16; /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_rpt4_reserved1_err        :    1;  /*Reserved.*/
+            uint32_t reg_dis_usb_otg_download_mode_err: 1;  /*Set this bit to disable download through USB-OTG*/
         };
         uint32_t val;
     } rd_repeat_err3;

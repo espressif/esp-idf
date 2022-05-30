@@ -73,17 +73,18 @@ typedef volatile struct efuse_dev_s {
     } pgm_data3;
     union {
         struct {
-            uint32_t dis_download_mode:        1;                /*Set this bit to disable download mode (boot_mode[3:0] = 0  1  2  3  6  7).*/
-            uint32_t dis_legacy_spi_boot:      1;                /*Set this bit to disable Legacy SPI boot mode (boot_mode[3:0] = 4).*/
-            uint32_t uart_print_channel:       1;                /*Selectes the default UART print channel. 0: UART0. 1: UART1.*/
-            uint32_t rpt4_reserved8:           1;                /*Reserved (used for four backups method).*/
-            uint32_t dis_usb_download_mode:    1;                /*Set this bit to disable UART download mode through USB.*/
-            uint32_t enable_security_download: 1;                /*Set this bit to enable secure UART download mode.*/
-            uint32_t uart_print_control:       2;                /*Set the default UARTboot message output mode. 00: Enabled. 01: Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
-            uint32_t rpt4_reserved7:           5;                /*Reserved (used for four backups method).*/
-            uint32_t force_send_resume:        1;                /*Set this bit to force ROM code to send a resume command during SPI boot.*/
-            uint32_t secure_version:          16;                /*Secure version (used by ESP-IDF anti-rollback feature).*/
-            uint32_t rpt4_reserved1:           2;                /*Reserved (used for four backups method).*/
+            uint32_t dis_download_mode:                 1;                /*Set this bit to disable download mode (boot_mode[3:0] = 0  1  2  3  6  7).*/
+            uint32_t dis_direct_boot:                   1;                /*Set this bit to disable direct boot.*/
+            uint32_t dis_usb_serial_jtag_rom_print:     1;                /*Set this bit to disable USB-Serial-JTAG print during rom boot*/
+            uint32_t rpt4_reserved8:                    1;                /*Reserved (used for four backups method).*/
+            uint32_t dis_usb_serial_jtag_download_mode: 1;                /*Set this bit to disable download mode through USB-Serial-JTAG.*/
+            uint32_t enable_security_download:          1;                /*Set this bit to enable secure UART download mode.*/
+            uint32_t uart_print_control:                2;                /*Set the default UARTboot message output mode. 00: Enabled. 01: Enabled when GPIO8 is low at reset. 10: Enabled when GPIO8 is high at reset. 11:disabled.*/
+            uint32_t rpt4_reserved7:                    5;                /*Reserved (used for four backups method).*/
+            uint32_t force_send_resume:                 1;                /*Set this bit to force ROM code to send a resume command during SPI boot.*/
+            uint32_t secure_version:                    16;                /*Secure version (used by ESP-IDF anti-rollback feature).*/
+            uint32_t rpt4_reserved1:                    1;                /*Reserved (used for four backups method).*/
+            uint32_t err_rst_enable:                    1;                /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } pgm_data4;
@@ -155,10 +156,10 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t dis_download_mode:        1;                /*The value of DIS_DOWNLOAD_MODE.*/
-            uint32_t dis_legacy_spi_boot:      1;                /*The value of DIS_LEGACY_SPI_BOOT.*/
-            uint32_t uart_print_channel:       1;                /*The value of UART_PRINT_CHANNEL.*/
+            uint32_t dis_direct_boot:          1;                /*The value of DIS_DIRECT_BOOT.*/
+            uint32_t dis_usb_serial_jtag_rom_print:1;                /*The value of DIS_USB_SERIAL_JTAG_ROM_PRINT.*/
             uint32_t rpt4_reserved8:           1;                /*Reserved.*/
-            uint32_t dis_usb_download_mode:    1;                /*The value of DIS_USB_DOWNLOAD_MODE.*/
+            uint32_t dis_usb_serial_jtag_download_mode:    1;    /*The value of dis_usb_serial_jtag_download_mode.*/
             uint32_t enable_security_download: 1;                /*The value of ENABLE_SECURITY_DOWNLOAD.*/
             uint32_t uart_print_control:       2;                /*The value of UART_PRINT_CONTROL.*/
             uint32_t rpt4_reserved7:           5;                /*Reserved.*/
@@ -319,17 +320,18 @@ typedef volatile struct efuse_dev_s {
     } rd_repeat_err2;
     union {
         struct {
-            uint32_t dis_download_mode_err:        1;            /*If DIS_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
-            uint32_t dis_legacy_spi_boot_err:      1;            /*If DIS_LEGACY_SPI_BOOT is 1  then it indicates a programming error.*/
-            uint32_t uart_print_channel_err:       1;            /*If UART_PRINT_CHANNEL is 1  then it indicates a programming error.*/
+            uint32_t dis_download_mode_err:        1;            /*If the value is not zero then it indicates a programming error on DIS_DOWNLOAD_MODE.*/
+            uint32_t dis_direct_boot_err:          1;            /*If the value is not zero then it indicates a programming error on DIS_DIRECT_BOOT.*/
+            uint32_t dis_usb_serial_jtag_rom_print_err:1;            /*If the value is not zero then it indicates a programming error on DIS_USB_SERIAL_JTAG_ROM_PRINT.*/
             uint32_t rpt4_reserved8_err:           1;            /*Reserved.*/
-            uint32_t dis_usb_download_mode_err:    1;            /*If DIS_USB_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
-            uint32_t enable_security_download_err: 1;            /*If ENABLE_SECURITY_DOWNLOAD is 1  then it indicates a programming error.*/
-            uint32_t uart_print_control_err:       2;            /*If any bit in UART_PRINT_CONTROL is 1  then it indicates a programming error.*/
+            uint32_t dis_usb_serial_jtag_download_mode_err:    1; /*If the value is not zero then it indicates a programming error on DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE.*/
+            uint32_t enable_security_download_err: 1;            /*If the value is not zero then it indicates a programming error on ENABLE_SECURITY_DOWNLOAD.*/
+            uint32_t uart_print_control_err:       2;            /*If the value is not zero  then it indicates a programming error on UART_PRINT_CONTROL.*/
             uint32_t rpt4_reserved7_err:           5;            /*Reserved*/
-            uint32_t force_send_resume_err:        1;            /*If FORCE_SEND_RESUME is 1  then it indicates a programming error.*/
-            uint32_t secure_version_err:          16;            /*If any bit in SECURE_VERSION is 1  then it indicates a programming error.*/
-            uint32_t rpt4_reserved1_err:           2;            /*Reserved.*/
+            uint32_t force_send_resume_err:        1;            /*If the value is not zero then it indicates a programming error on FORCE_SEND_RESUME.*/
+            uint32_t secure_version_err:          16;            /*If the value is not zero then it indicates a programming error on SECURE_VERSION.*/
+            uint32_t rpt4_reserved1_err:           1;            /*Reserved.*/
+            uint32_t err_rst_enable_err:           1;            /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } rd_repeat_err3;
