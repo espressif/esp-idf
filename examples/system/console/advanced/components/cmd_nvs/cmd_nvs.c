@@ -374,20 +374,31 @@ static int list(const char *part, const char *name, const char *str_type)
 {
     nvs_type_t type = str_to_type(str_type);
 
-    nvs_iterator_t it = nvs_entry_find(part, NULL, type);
-    if (it == NULL) {
-        ESP_LOGE(TAG, "No such enty was found");
+    nvs_iterator_t it = NULL;
+    esp_err_t result = nvs_entry_find(part, NULL, type, &it);
+    if (result == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGE(TAG, "No such entry was found");
+        return 1;
+    }
+
+    if (result != ESP_OK) {
+        ESP_LOGE(TAG, "NVS error: %s", esp_err_to_name(result));
         return 1;
     }
 
     do {
         nvs_entry_info_t info;
         nvs_entry_info(it, &info);
-        it = nvs_entry_next(it);
+        result = nvs_entry_next(&it);
 
         printf("namespace '%s', key '%s', type '%s' \n",
                info.namespace_name, info.key, type_to_str(info.type));
-    } while (it != NULL);
+    } while (result == ESP_OK);
+
+    if (result != ESP_ERR_NVS_NOT_FOUND) { // the last iteration ran into an internal error
+        ESP_LOGE(TAG, "NVS error %s at current iteration, stopping.", esp_err_to_name(result));
+        return 1;
+    }
 
     return 0;
 }

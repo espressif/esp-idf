@@ -132,8 +132,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_NVS_NOT_INITIALIZED),                    /*  4353 0x1101 The storage driver is not initialized */
 #   endif
 #   ifdef      ESP_ERR_NVS_NOT_FOUND
-    ERR_TBL_IT(ESP_ERR_NVS_NOT_FOUND),                          /*  4354 0x1102 Id namespace doesn’t exist yet and mode
-                                                                                is NVS_READONLY */
+    ERR_TBL_IT(ESP_ERR_NVS_NOT_FOUND),                          /*  4354 0x1102 A requested entry couldn't be found or
+                                                                                namespace doesn’t exist yet and mode is
+                                                                                NVS_READONLY */
 #   endif
 #   ifdef      ESP_ERR_NVS_TYPE_MISMATCH
     ERR_TBL_IT(ESP_ERR_NVS_TYPE_MISMATCH),                      /*  4355 0x1103 The type of set or get operation doesn't
