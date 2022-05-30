@@ -949,7 +949,6 @@ components/nvs_flash/test_nvs_host/test_nvs_handle.cpp
 components/nvs_flash/test_nvs_host/test_nvs_initialization.cpp
 components/nvs_flash/test_nvs_host/test_nvs_partition.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
-components/openthread/include/esp_openthread.h
 components/openthread/include/esp_openthread_lock.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
