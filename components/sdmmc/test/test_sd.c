@@ -249,40 +249,16 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
     sd_test_board_power_off();
 }
 
-static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int pin_cs)
-{
-    sd_test_board_power_on();
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_miso = pin_miso;
-    slot_config.gpio_mosi = pin_mosi;
-    slot_config.gpio_sck = pin_sck;
-    slot_config.gpio_cs = pin_cs;
-    slot_config.dma_channel = SPI_DMA_CH_AUTO;
-
-    TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
-
-    probe_core(config.slot);
-
-    TEST_ESP_OK(sdspi_host_deinit());
-
-    TEST_ESP_OK(spi_bus_free(config.slot));
-
-    sd_test_board_power_off();
-}
 
 TEST_CASE("probe SD in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
 }
 
 // No runner for this
 TEST_CASE("probe SD in SPI mode, slot 0", "[sd][ignore]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
 }
 #endif //WITH_SDSPI_TEST
 

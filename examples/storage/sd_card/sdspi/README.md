@@ -32,7 +32,7 @@ It is recommended to get familiar with [the document about pullup requirements](
 The GPIO pin numbers used to connect an SD card can be customized. This can be done in two ways:
 
 1. Using menuconfig: Run `idf.py menuconfig` in the project directory and open "SD SPI Example Configuration" menu.
-2. In the source code: See the initialization of ``spi_bus_config_t`` and ``sdspi_slot_config_t`` structures in the example code.
+2. In the source code: See the initialization of ``spi_bus_config_t`` and ``sdspi_device_config_t`` structures in the example code.
 
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
 
