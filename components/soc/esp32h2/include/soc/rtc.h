@@ -602,6 +602,11 @@ void rtc_dig_clk8m_enable(void);
 void rtc_dig_clk8m_disable(void);
 
 /**
+ * @brief Get whether the rtc digital 8M clock is enabled
+ */
+bool rtc_dig_8m_enabled(void);
+
+/**
  * @brief Calculate the real clock value after the clock calibration
  *
  * @param cal_val Average slow clock period in microseconds, fixed point value as returned from `rtc_clk_cal`
@@ -685,7 +690,7 @@ typedef struct {
     .dig_ret_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_RET) ? 1 : 0, \
     .bt_pd_en = ((sleep_flags) & RTC_SLEEP_PD_BT) ? 1 : 0, \
     .cpu_pd_en = ((sleep_flags) & RTC_SLEEP_PD_CPU) ? 1 : 0, \
-    .int_8m_pd_en = is_dslp(sleep_flags) ? 1 : ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
+    .int_8m_pd_en = ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
     .dig_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_PERIPH) ? 1 : 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
@@ -698,7 +703,7 @@ typedef struct {
                    : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
                    : RTC_CNTL_DBIAS_SLP, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
-    .xtal_fpu = is_dslp(sleep_flags) ? 0 : ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
+    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
     .deep_slp_reject = 1, \
     .light_slp_reject = 1 \
 };

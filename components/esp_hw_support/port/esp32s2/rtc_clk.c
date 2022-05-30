@@ -508,6 +508,11 @@ void rtc_dig_clk8m_disable(void)
     esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
 }
 
+bool rtc_dig_8m_enabled(void)
+{
+    return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+}
+
 /* Name used in libphy.a:phy_chip_v7.o
  * TODO: update the library to use rtc_clk_xtal_freq_get
  */
