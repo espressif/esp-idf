@@ -95,10 +95,8 @@ if(CONFIG_WPA_MBEDTLS_CRYPTO)
     "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-rsa.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-ec.c")
-    # Add internal RC4 if RC4 is disabled in mbedtls
-    if(CONFIG_MBEDTLS_RC4_DISABLED)
-        set(crypto_src ${crypto_src} "src/crypto/rc4.c")
-    endif()
+    # Add internal RC4 as RC4 has been removed from mbedtls
+    set(crypto_src ${crypto_src} "src/crypto/rc4.c")
     if(NOT CONFIG_MBEDTLS_DES_C)
         set(crypto_src ${crypto_src} "src/crypto/des-internal.c")
     endif()

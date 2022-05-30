@@ -291,43 +291,6 @@
 #define MBEDTLS_CIPHER_PADDING_ZEROS
 
 /**
- * \def MBEDTLS_REMOVE_ARC4_CIPHERSUITES & MBEDTLS_ARC4_C
- *
- * MBEDTLS_ARC4_C
- * Enable the ARCFOUR stream cipher.
- *
- * This module enables/disables the following ciphersuites
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_ECDH_RSA_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_ECDHE_RSA_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_ECDHE_PSK_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_RSA_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_RSA_WITH_RC4_128_MD5
- *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
- *
- * MBEDTLS_REMOVE_ARC4_CIPHERSUITES
- * This flag removes the ciphersuites based on RC4 from the default list as
- * returned by mbedtls_ssl_list_ciphersuites(). However, it is still possible to
- * enable (some of) them with mbedtls_ssl_conf_ciphersuites() by including them
- * explicitly.
- *
- * Uncomment this macro to remove RC4 ciphersuites by default.
- */
-#ifdef CONFIG_MBEDTLS_RC4_ENABLED
-#define MBEDTLS_ARC4_C
-#undef MBEDTLS_REMOVE_ARC4_CIPHERSUITES
-#elif defined CONFIG_MBEDTLS_RC4_ENABLED_NO_DEFAULT
-#define MBEDTLS_ARC4_C
-#define MBEDTLS_REMOVE_ARC4_CIPHERSUITES
-#else
-#undef MBEDTLS_ARC4_C
-#define MBEDTLS_REMOVE_ARC4_CIPHERSUITES
-#endif
-
-/**
  * \def MBEDTLS_ECP_RESTARTABLE
  *
  * Enable "non-blocking" ECC operations that can return early and be resumed.
@@ -529,7 +492,6 @@
  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_PSK_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_PSK
 #define MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
@@ -557,7 +519,6 @@
  *      MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_DHE_PSK
 #define MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
@@ -581,7 +542,6 @@
  *      MBEDTLS_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA
  *      MBEDTLS_TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_ECDHE_PSK_WITH_RC4_128_SHA
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
@@ -610,7 +570,6 @@
  *      MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_PSK
 #define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
@@ -641,8 +600,6 @@
  *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_RSA_WITH_CAMELLIA_128_CBC_SHA
  *      MBEDTLS_TLS_RSA_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_RSA_WITH_RC4_128_SHA
- *      MBEDTLS_TLS_RSA_WITH_RC4_128_MD5
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_RSA
 #define MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
@@ -701,7 +658,6 @@
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_ECDHE_RSA_WITH_RC4_128_SHA
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_RSA
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
@@ -729,7 +685,6 @@
  *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
  *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256
  *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA
- *      MBEDTLS_TLS_ECDHE_ECDSA_WITH_RC4_128_SHA
  */
 #ifdef CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA
 #define MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
@@ -746,7 +701,6 @@
  *
  * This enables the following ciphersuites (if other requisites are
  * enabled as well):
- *      MBEDTLS_TLS_ECDH_ECDSA_WITH_RC4_128_SHA
  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA
  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA
  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA
@@ -774,7 +728,6 @@
  *
  * This enables the following ciphersuites (if other requisites are
  * enabled as well):
- *      MBEDTLS_TLS_ECDH_RSA_WITH_RC4_128_SHA
  *      MBEDTLS_TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA
  *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_128_CBC_SHA
  *      MBEDTLS_TLS_ECDH_RSA_WITH_AES_256_CBC_SHA
@@ -1072,41 +1025,6 @@
 #endif
 
 /**
- * \def MBEDTLS_SSL_PROTO_TLS1
- *
- * Enable support for TLS 1.0.
- *
- * Requires: MBEDTLS_MD5_C
- *           MBEDTLS_SHA1_C
- *
- * Comment this macro to disable support for TLS 1.0
- */
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1
-#define MBEDTLS_SSL_PROTO_TLS1
-#else
-#undef MBEDTLS_SSL_PROTO_TLS1
-#endif
-
-/**
- * \def MBEDTLS_SSL_PROTO_SSL3
- *
- * Enable support for SSL 3.0.
- *
- * Requires: MBEDTLS_MD5_C
- *           MBEDTLS_SHA1_C
- *
- * \deprecated This option is deprecated and will be removed in a future
- *             version of Mbed TLS.
- *
- * Comment this macro to disable support for SSL 3.0
- */
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_SSL3
-#define MBEDTLS_SSL_PROTO_SSL3
-#else
-#undef MBEDTLS_SSL_PROTO_SSL3
-#endif
-
-/**
  * \def MBEDTLS_SSL_CBC_RECORD_SPLITTING
  *
  * Enable 1/n-1 record splitting for CBC mode in SSLv3 and TLS 1.0.
@@ -1393,7 +1311,7 @@
  *
  * Requires: MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
  */
-#if defined MBEDTLS_SSL_MAX_FRAGMENT_LENGTH && CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
+#ifdef CONFIG_MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
 #define MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
 #else
 #undef MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
@@ -1788,6 +1706,19 @@
 #endif
 
 /**
+ * \def MBEDTLS_ARC4_C
+ *
+ * NOTE: mbedTLS-3.x release has removed support for RC4 cipher-suite.
+ * TODO: IDF-4983
+ *
+ * Following option is kept as there are a few places in the
+ * WPA supplicant component in ESP-IDF that relies on this config.
+ * This shall be removed once the RC4 cipher-suite support is cleanly
+ * removed from WPA supplicant component.
+ */
+#undef MBEDTLS_ARC4_C
+
+/**
  * \def MBEDTLS_DHM_C
  *
  * Enable the Diffie-Hellman-Merkle module.
@@ -2151,7 +2082,6 @@
  * Caller:  library/pkparse.c
  *
  * Requires: MBEDTLS_ASN1_PARSE_C, MBEDTLS_CIPHER_C, MBEDTLS_MD_C
- * Can use:  MBEDTLS_ARC4_C
  *
  * This module enables PKCS#12 functions.
  */
