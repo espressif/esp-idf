@@ -19,8 +19,23 @@ extern "C" {
 #endif
 
 
-#define CACHE_LL_DEFAULT_IBUS_MASK    CACHE_BUS_IBUS0
-#define CACHE_LL_DEFAULT_DBUS_MASK    CACHE_BUS_DBUS0
+#define CACHE_LL_DEFAULT_IBUS_MASK                       CACHE_BUS_IBUS0
+#define CACHE_LL_DEFAULT_DBUS_MASK                       CACHE_BUS_DBUS0
+
+#define CACHE_LL_L1_ACCESS_EVENT_MASK                    (0x1f)
+#define CACHE_LL_L1_ACCESS_EVENT_DBUS_REJECT             (1<<4)
+#define CACHE_LL_L1_ACCESS_EVENT_DBUS_ACS_MSK_DC_INT     (1<<3)
+#define CACHE_LL_L1_ACCESS_EVENT_IBUS_REJECT             (1<<2)
+#define CACHE_LL_L1_ACCESS_EVENT_IBUS_WR_IC              (1<<1)
+#define CACHE_LL_L1_ACCESS_EVENT_IBUS_ACS_MSK_IC         (1<<0)
+
+#define CACHE_LL_L1_ILG_EVENT_MASK                       (0x3f)
+#define CACHE_LL_L1_ILG_EVENT_MMU_ENTRY_FAULT            (1<<5)
+#define CACHE_LL_L1_ILG_EVENT_DCACHE_WRITE_FLASH         (1<<4)
+#define CACHE_LL_L1_ILG_EVENT_DCACHE_PRELOAD_OP_FAULT    (1<<3)
+#define CACHE_LL_L1_ILG_EVENT_DCACHE_SYNC_OP_FAULT       (1<<2)
+#define CACHE_LL_L1_ILG_EVENT_ICACHE_PRELOAD_OP_FAULT    (1<<1)
+#define CACHE_LL_L1_ILG_EVENT_ICACHE_SYNC_OP_FAULT       (1<<0)
 
 
 /**
@@ -113,6 +128,91 @@ static inline void cache_ll_l1_disable_bus(uint32_t cache_id, cache_bus_mask_t m
         dbus_mask |= (mask & CACHE_BUS_DBUS0) ? EXTMEM_DCACHE_SHUT_CORE1_BUS : 0;
     }
     REG_SET_BIT(EXTMEM_DCACHE_CTRL1_REG, dbus_mask);
+}
+
+/*------------------------------------------------------------------------------
+ * Interrupt
+ *----------------------------------------------------------------------------*/
+/**
+ * @brief Enable Cache access error interrupt
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l1_enable_access_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    if (cache_id == 0) {
+        SET_PERI_REG_MASK(EXTMEM_CORE0_ACS_CACHE_INT_ENA_REG, mask);
+    } else {
+        SET_PERI_REG_MASK(EXTMEM_CORE1_ACS_CACHE_INT_ENA_REG, mask);
+    }
+}
+
+/**
+ * @brief Clear Cache access error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l1_clear_access_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    if (cache_id == 0) {
+        SET_PERI_REG_MASK(EXTMEM_CORE0_ACS_CACHE_INT_CLR_REG, mask);
+    } else {
+        SET_PERI_REG_MASK(EXTMEM_CORE1_ACS_CACHE_INT_CLR_REG, mask);
+    }
+}
+
+/**
+ * @brief Get Cache access error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ *
+ * @return            Status mask
+ */
+static inline uint32_t cache_ll_l1_get_access_error_intr_status(uint32_t cache_id, uint32_t mask)
+{
+    if (cache_id == 0) {
+        return GET_PERI_REG_MASK(EXTMEM_CORE0_ACS_CACHE_INT_ST_REG, mask);
+    } else {
+        return GET_PERI_REG_MASK(EXTMEM_CORE1_ACS_CACHE_INT_ST_REG, mask);
+    }
+}
+
+/**
+ * @brief Enable Cache illegal error interrupt
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l1_enable_illegal_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    SET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_ENA_REG, mask);
+}
+
+/**
+ * @brief Clear Cache illegal error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ */
+static inline void cache_ll_l1_clear_illegal_error_intr(uint32_t cache_id, uint32_t mask)
+{
+    SET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_CLR_REG, mask);
+}
+
+/**
+ * @brief Get Cache illegal error interrupt status
+ *
+ * @param cache_id    Cache ID
+ * @param mask        Interrupt mask
+ *
+ * @return            Status mask
+ */
+static inline uint32_t cache_ll_l1_get_illegal_error_intr_status(uint32_t cache_id, uint32_t mask)
+{
+    return GET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_ST_REG, mask);
 }
 
 #ifdef __cplusplus
