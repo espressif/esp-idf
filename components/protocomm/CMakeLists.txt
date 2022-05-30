@@ -9,6 +9,7 @@ set(srcs
     "proto-c/constants.pb-c.c"
     "proto-c/sec0.pb-c.c"
     "proto-c/sec1.pb-c.c"
+    "proto-c/sec2.pb-c.c"
     "proto-c/session.pb-c.c"
     "src/transports/protocomm_console.c"
     "src/transports/protocomm_httpd.c")

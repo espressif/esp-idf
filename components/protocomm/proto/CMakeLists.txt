@@ -8,6 +8,7 @@ set(PY_OUT_PATH "${CMAKE_CURRENT_LIST_DIR}/../python")
 set(PROTO_SRCS "constants.proto"
                "sec0.proto"
                "sec1.proto"
+               "sec2.proto"
                "session.proto")
 
 add_custom_target(c_proto
