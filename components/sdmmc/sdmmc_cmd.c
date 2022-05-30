@@ -572,7 +572,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
 
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd (ERASE_GROUP_START) returned 0x%x", __func__, err);
         return err;
     }
 
@@ -582,7 +582,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
 
     err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd (ERASE_GROUP_END) returned 0x%x", __func__, err);
         return err;
     }
 
@@ -591,13 +591,11 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
     cmd.flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY;
     cmd.opcode = MMC_ERASE;
     cmd.arg = cmd38_arg;
-    // TODO: best way, application to compute timeout value. For this card
-    // structure should have a place holder for erase_timeout.
-    cmd.timeout_ms = (SDMMC_ERASE_BLOCK_TIMEOUT_MS + sector_count);
+    cmd.timeout_ms = sdmmc_get_erase_timeout_ms(card, cmd38_arg, sector_count * card->csd.sector_size / 1024);
 
     err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd (ERASE) returned 0x%x", __func__, err);
         return err;
     }
 
@@ -684,9 +682,10 @@ esp_err_t sdmmc_full_erase(sdmmc_card_t* card)
     if (card->is_mmc) {
         arg = sdmmc_mmc_can_sanitize(card) == ESP_OK ? SDMMC_MMC_DISCARD_ARG: SDMMC_MMC_TRIM_ARG;
     }
-    err = sdmmc_erase_sectors(card, 0,  card->csd.capacity, arg);
+    err = sdmmc_erase_sectors(card, 0, card->csd.capacity, arg);
     if ((err == ESP_OK) && (arg == SDMMC_MMC_DISCARD_ARG)) {
-        return sdmmc_mmc_sanitize(card, SDMMC_ERASE_BLOCK_TIMEOUT_MS + card->csd.capacity);
+        uint32_t timeout_ms = sdmmc_get_erase_timeout_ms(card, SDMMC_MMC_DISCARD_ARG, card->csd.capacity * ((uint64_t) card->csd.sector_size) / 1024);
+        return sdmmc_mmc_sanitize(card, timeout_ms);
     }
     return err;
 }

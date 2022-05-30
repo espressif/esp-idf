@@ -318,3 +318,12 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
     }
     return ESP_OK;
 }
+
+uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb)
+{
+    if (card->is_mmc) {
+        return sdmmc_mmc_get_erase_timeout_ms(card, arg, erase_size_kb);
+    } else {
+        return sdmmc_sd_get_erase_timeout_ms(card, arg, erase_size_kb);
+    }
+}

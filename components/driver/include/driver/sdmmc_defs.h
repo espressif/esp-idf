@@ -372,6 +372,9 @@
 /* SSR (SD Status Register) */
 #define SSR_DAT_BUS_WIDTH(ssr)          MMC_RSP_BITS((ssr), 510, 2)
 #define SSR_AU_SIZE(ssr)                MMC_RSP_BITS((ssr), 428, 4)
+#define SSR_ERASE_SIZE(ssr)             MMC_RSP_BITS((ssr), 408, 16)
+#define SSR_ERASE_TIMEOUT(ssr)          MMC_RSP_BITS((ssr), 402, 6)
+#define SSR_ERASE_OFFSET(ssr)           MMC_RSP_BITS((ssr), 400, 2)
 #define SSR_DISCARD_SUPPORT(ssr)        MMC_RSP_BITS((ssr), 313, 1)
 #define SSR_FULE_SUPPORT(ssr)           MMC_RSP_BITS((ssr), 312, 1)
 

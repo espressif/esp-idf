@@ -288,3 +288,13 @@ out:
     free(ext_csd);
     return err;
 }
+
+uint32_t sdmmc_mmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb)
+{
+    /* TODO: calculate erase timeout based on ext_csd (trim_timeout) */
+    uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
+    timeout_ms = MAX(1000, timeout_ms);
+    ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
+             __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+    return timeout_ms;
+}
