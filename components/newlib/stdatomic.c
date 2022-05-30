@@ -497,16 +497,16 @@ ATOMIC_STORE(8, long long unsigned int)
 #endif // !HAS_ATOMICS_64
 
 // Clang generates calls to the __atomic_load/__atomic_store functions for object size more then 4 bytes
-void CLANG_ATOMIC_SUFFIX( __atomic_load ) (int size, void *src, void *dest, int model) {
+void CLANG_ATOMIC_SUFFIX( __atomic_load ) (size_t size, const volatile void *src, void *dest, int model) {
     unsigned state = _ATOMIC_ENTER_CRITICAL();
-    memcpy(dest, src, size);
+    memcpy(dest, (const void *)src, size);
     _ATOMIC_EXIT_CRITICAL(state);
 }
 CLANG_DECLARE_ALIAS( __atomic_load )
 
-void CLANG_ATOMIC_SUFFIX( __atomic_store ) (int size, void *dest, void *src, int model) {
+void CLANG_ATOMIC_SUFFIX( __atomic_store ) (size_t size, volatile void *dest, void *src, int model) {
     unsigned state = _ATOMIC_ENTER_CRITICAL();
-    memcpy(dest, src, size);
+    memcpy((void *)dest, (const void *)src, size);
     _ATOMIC_EXIT_CRITICAL(state);
 }
 CLANG_DECLARE_ALIAS( __atomic_store)

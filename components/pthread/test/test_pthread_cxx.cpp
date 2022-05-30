@@ -2,6 +2,7 @@
 #include <sstream>
 #include <thread>
 #include <mutex>
+#include <memory>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"

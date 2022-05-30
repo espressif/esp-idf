@@ -59,36 +59,36 @@ _Static_assert(NUM_RESULTS == NUM_MESSAGES, "expected_results size should be the
 
 TEST_CASE("Digital Signature Parameter Encryption data NULL", "[hw_crypto] [ds]")
 {
-    const char iv [32];
-    esp_ds_p_data_t p_data;
-    const char key [32];
+    const char iv [32] = {0};
+    esp_ds_p_data_t p_data = {0};
+    const char key [32] = {0};
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(NULL, iv, &p_data, key));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption iv NULL", "[hw_crypto] [ds]")
 {
-    esp_ds_data_t data;
-    esp_ds_p_data_t p_data;
-    const char key [32];
+    esp_ds_data_t data = {0};
+    esp_ds_p_data_t p_data = {0};
+    const char key [32] = {0};
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(&data, NULL, &p_data, key));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption p_data NULL", "[hw_crypto] [ds]")
 {
-    esp_ds_data_t data;
-    const char iv [32];
-    const char key [32];
+    esp_ds_data_t data = {0};
+    const char iv [32] = {0};
+    const char key [32] = {0};
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(&data, iv, NULL, key));
 }
 
 TEST_CASE("Digital Signature Parameter Encryption key NULL", "[hw_crypto] [ds]")
 {
-    esp_ds_data_t data;
-    const char iv [32];
-    esp_ds_p_data_t p_data;
+    esp_ds_data_t data = {0};
+    const char iv [32] = {0};
+    esp_ds_p_data_t p_data = {0};
 
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_ds_encrypt_params(&data, iv, &p_data, NULL));
 }
