@@ -209,6 +209,28 @@ menu "SPI Flash driver"
 
             See example: custom_chip_driver under examples/storage for more details.
 
+    menu "SPI Flash behavior when brownout"
+
+        config SPI_FLASH_BROWNOUT_RESET_XMC
+            bool "Enable sending reset when brownout for XMC flash chips"
+            default y
+            select SPI_FLASH_BROWNOUT_RESET
+            help
+                When this option is selected, the patch will be enabled for XMC.
+                Follow the recommended flow by XMC for better stability.
+
+                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+        config SPI_FLASH_BROWNOUT_RESET
+            bool
+            default y
+            select ESP_SYSTEM_BROWNOUT_INTR
+            help
+                When brownout happens during flash erase/write operations,
+                send reset command to stop the flash operations to improve stability.
+
+    endmenu
+
     menu "Auto-detect flash chips"
         visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
 

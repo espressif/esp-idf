@@ -25,6 +25,7 @@ else()
     set(srcs
         "partition.c"
         "partition_target.c"
+        "flash_brownout_hook.c"
     )
 
     if(CONFIG_ESPTOOLPY_OCT_FLASH)

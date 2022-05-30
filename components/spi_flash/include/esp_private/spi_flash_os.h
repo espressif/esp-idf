@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +100,28 @@ bool spi_timing_is_tuned(void);
  * @brief Set Flash chip specifically required MSPI register settings here
  */
 void spi_flash_set_vendor_required_regs(void);
+
+/**
+ * @brief Judge whether need to reset flash when brownout.
+ *        Set` flash_brownout_needs_reset` inside the function if really need reset.
+ */
+void spi_flash_needs_reset_check(void);
+
+/**
+ * @brief Set flag to reset flash. set when erase chip or program chip
+ *
+ * @param bool status. True if flash is eraing. False if flash is not erasing.
+ *
+ * @return None.
+ */
+void spi_flash_set_erasing_flag(bool status);
+
+/**
+ * @brief Judge whether need to reset flash when brownout.
+ *
+ * @return true if need reset, otherwise false.
+ */
+bool spi_flash_brownout_need_reset(void);
 
 /**
  * @brief Enable SPI flash high performance mode.

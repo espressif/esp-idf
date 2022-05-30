@@ -18,6 +18,7 @@
 #include "esp_log.h"
 #include "esp_compiler.h"
 #include "esp_rom_sys.h"
+#include "esp_private/spi_flash_os.h"
 
 #include "driver/spi_common_internal.h"
 
@@ -185,6 +186,13 @@ static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_a
     }
 }
 
+
+static IRAM_ATTR void main_flash_op_status(uint32_t op_status)
+{
+    bool is_erasing = op_status & SPI_FLASH_OS_IS_ERASING_STATUS_FLAG;
+    spi_flash_set_erasing_flag(is_erasing);
+}
+
 static DRAM_ATTR spi1_app_func_arg_t main_flash_arg = {};
 
 //for SPI1, we have to disable the cache and interrupts before using the SPI bus
@@ -197,6 +205,11 @@ static const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functi
     .release_temp_buffer = release_buffer_malloc,
     .check_yield = spi1_flash_os_check_yield,
     .yield = spi1_flash_os_yield,
+#if CONFIG_SPI_FLASH_BROWNOUT_RESET
+    .set_flash_op_status = main_flash_op_status,
+#else
+    .set_flash_op_status = NULL,
+#endif
 };
 
 static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
@@ -208,6 +221,7 @@ static const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .region_protected = NULL,
     .check_yield = NULL,
     .yield = NULL,
+    .set_flash_op_status = NULL,
 };
 
 static bool use_bus_lock(int host_id)

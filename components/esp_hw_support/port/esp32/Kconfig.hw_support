@@ -7,6 +7,8 @@ choice ESP32_REV_MIN
 
     config ESP32_REV_MIN_0
         bool "Rev 0"
+        # Brownout on Rev 0 is bugged, must use interrupt
+        select ESP_SYSTEM_BROWNOUT_INTR
     config ESP32_REV_MIN_1
         bool "Rev 1"
     config ESP32_REV_MIN_2
