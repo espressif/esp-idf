@@ -123,8 +123,6 @@ foreach(__component_target ${__component_targets})
 
     __component_get_requirements()
 
-    list(APPEND __component_requires "${__common_reqs}")
-
     # Remove duplicates and the component itself from its requirements
     __component_get_property(__component_alias ${__component_target} COMPONENT_ALIAS)
     __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
