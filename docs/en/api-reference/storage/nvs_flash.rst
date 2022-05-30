@@ -106,7 +106,7 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
 
 1. Generate the keys on the ESP chip:
 
-    When NVS encryption is enabled the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function internally generates the XTS encryption keys on the ESP chip. The API function finds the first :ref:`nvs_key_partition`. Then the API function automatically generates and stores the NVS keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by :component_file:`nvs_flash/include/nvs_flash.h`. New keys are generated and stored only when the respective key partiton is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
+    When NVS encryption is enabled the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function internally generates the XTS encryption keys on the ESP chip. The API function finds the first :ref:`nvs_key_partition`. Then the API function automatically generates and stores the NVS keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by :component_file:`nvs_flash/include/nvs_flash.h`. New keys are generated and stored only when the respective key partition is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
 
     The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function will then write those keys onto the key-partition in encrypted form.
 
@@ -122,7 +122,12 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
     ii) Store the keys in the :ref:`nvs_key_partition` (on the flash) with the help of :component_file:`parttool.py<partition_table/parttool.py>` (see Partition Tool section in :doc:`partition-tables </api-guides/partition-tables>` for more details)
     ::
 
-        parttool.py --port /dev/ttyUSB0 --partition-table-offset "nvs_key partition offset" write_partition --partition-name="name of nvs_key partition" --input "nvs_key partition"
+        parttool.py --port PORT --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
+
+    .. note:: If the device is encrypted in flash encryption development mode and you want to renew the NVS key partition, you need to advice :component_file:`parttool.py<partition_table/parttool.py>` to encrypt the NVS key partition and you also need to give it a pointer to the unencrypted partition table in your build directory (build/partition_table) since the partition table on the device is encrypted, too. You can use the following command:
+        ::
+
+            parttool.py --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
 
 Since the key partition is marked as `encrypted` and :doc:`Flash Encryption <../../security/flash-encryption>` is enabled, the bootloader will encrypt this partition using flash encryption key on the first boot.
 
