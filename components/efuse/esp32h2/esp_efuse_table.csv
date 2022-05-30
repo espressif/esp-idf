@@ -30,7 +30,7 @@
             WR_DIS.KEY5_PURPOSE,          EFUSE_BLK0,  13,    1,      Write protection for key_purpose. KEY5
             WR_DIS.SECURE_BOOT_EN,        EFUSE_BLK0,  15,    1,      Write protection for SECURE_BOOT_EN
             WR_DIS.SECURE_BOOT_AGGRESSIVE_REVOKE,EFUSE_BLK0, 16, 1,   Write protection for SECURE_BOOT_AGGRESSIVE_REVOKE
-            WR_DIS.GROUP_3,               EFUSE_BLK0,  18,    1,      Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_LEGACY_SPI_BOOT UART_PRINT_CHANNEL DIS_TINY_BASIC DIS_USB_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION
+            WR_DIS.GROUP_3,               EFUSE_BLK0,  18,    1,      Write protection for FLASH_TPUW DIS_DOWNLOAD_MODE DIS_DIRECT_BOOT DIS_USB_SERIAL_JTAG_ROM_PRINT DIS_TINY_BASIC DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE ENABLE_SECURITY_DOWNLOAD UART_PRINT_CONTROL PIN_POWER_SELECTION FLASH_TYPE FORCE_SEND_RESUME SECURE_VERSION
             WR_DIS.BLK1,                  EFUSE_BLK0,  20,    1,      Write protection for EFUSE_BLK1.  MAC_SPI_8M_SYS
             WR_DIS.SYS_DATA_PART1,        EFUSE_BLK0,  21,    1,      Write protection for EFUSE_BLK2.  SYS_DATA_PART1
             WR_DIS.USER_DATA,             EFUSE_BLK0,  22,    1,      Write protection for EFUSE_BLK3.  USER_DATA
@@ -89,9 +89,9 @@
 
     # EFUSE_RD_REPEAT_DATA3_REG #
         DIS_DOWNLOAD_MODE,                EFUSE_BLK0,  128,    1,     Disble download mode include boot_mode[3:0] is 0 1 2 3 6 7
-        DIS_LEGACY_SPI_BOOT,              EFUSE_BLK0,  129,    1,     Disable_Legcy_SPI_boot mode include boot_mode[3:0] is 4
-        UART_PRINT_CHANNEL,               EFUSE_BLK0,  130,    1,     0: UART0. 1: UART1
-        DIS_USB_DOWNLOAD_MODE,            EFUSE_BLK0,  132,    1,     Disable download through USB
+        DIS_DIRECT_BOOT,                  EFUSE_BLK0,  129,    1,     Disable direct boot mode
+        DIS_USB_SERIAL_JTAG_ROM_PRINT,        EFUSE_BLK0,  130,    1,     Disable usb serial jtag print during rom boot
+        DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE,EFUSE_BLK0,  132,    1,     Disable download through USB-Serial-JTAG
         ENABLE_SECURITY_DOWNLOAD,         EFUSE_BLK0,  133,    1,     Enable security download mode
         UART_PRINT_CONTROL,               EFUSE_BLK0,  134,    2,     b00:force print. b01:control by GPIO8 - low level print. b10:control by GPIO8 - high level print. b11:force disable print.
         FORCE_SEND_RESUME,                EFUSE_BLK0,  141,    1,     Force ROM code to send a resume command during SPI boot

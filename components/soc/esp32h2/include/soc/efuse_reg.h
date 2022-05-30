@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_REG_H_
 #define _SOC_EFUSE_REG_H_
 
@@ -319,12 +311,12 @@ extern "C" {
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_M  (BIT(5))
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_V  0x1
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_S  5
-/* EFUSE_DIS_USB_DOWNLOAD_MODE : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: Set this bit to disable UART download mode through USB.*/
-#define EFUSE_DIS_USB_DOWNLOAD_MODE  (BIT(4))
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_M  (BIT(4))
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_V  0x1
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_S  4
+/* EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: Set this bit to disable download through USB-Serial-JTAG.*/
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE  (BIT(4))
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_M  (BIT(4))
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_V  0x1
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_S  4
 /* EFUSE_FLASH_ECC_MODE : R/W ;bitpos:[3] ;default: 1'b0 ; */
 /*description: Set ECC mode in ROM  0: ROM would Enable Flash ECC 16to18 byte
  mode. 1:ROM would use 16to17 byte mode.*/
@@ -332,18 +324,17 @@ extern "C" {
 #define EFUSE_FLASH_ECC_MODE_M  (BIT(3))
 #define EFUSE_FLASH_ECC_MODE_V  0x1
 #define EFUSE_FLASH_ECC_MODE_S  3
-/* EFUSE_UART_PRINT_CHANNEL : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: Selectes the default UART print channel. 0: UART0. 1: UART1.*/
-#define EFUSE_UART_PRINT_CHANNEL  (BIT(2))
-#define EFUSE_UART_PRINT_CHANNEL_M  (BIT(2))
-#define EFUSE_UART_PRINT_CHANNEL_V  0x1
-#define EFUSE_UART_PRINT_CHANNEL_S  2
-/* EFUSE_DIS_LEGACY_SPI_BOOT : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: Set this bit to disable Legacy SPI boot mode (boot_mode[3:0] = 4).*/
-#define EFUSE_DIS_LEGACY_SPI_BOOT  (BIT(1))
-#define EFUSE_DIS_LEGACY_SPI_BOOT_M  (BIT(1))
-#define EFUSE_DIS_LEGACY_SPI_BOOT_V  0x1
-#define EFUSE_DIS_LEGACY_SPI_BOOT_S  1
+/*description: Disable USB-Serial-JTAG print during rom boot.*/
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT  (BIT(2))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_M  (BIT(2))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V  0x1
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S  2
+/* EFUSE_DIS_DIRECT_BOOT : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: Set this bit to disable direct boot..*/
+#define EFUSE_DIS_DIRECT_BOOT  (BIT(1))
+#define EFUSE_DIS_DIRECT_BOOT_M  (BIT(1))
+#define EFUSE_DIS_DIRECT_BOOT_V  0x1
+#define EFUSE_DIS_DIRECT_BOOT_S  1
 /* EFUSE_DIS_DOWNLOAD_MODE : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set this bit to disable download mode (boot_mode[3:0] = 0  1  2  3  6  7).*/
 #define EFUSE_DIS_DOWNLOAD_MODE  (BIT(0))
@@ -690,30 +681,30 @@ extern "C" {
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_M  (BIT(5))
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_V  0x1
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_S  5
-/* EFUSE_DIS_USB_DOWNLOAD_MODE : RO ;bitpos:[4] ;default: 1'b0 ; */
-/*description: The value of DIS_USB_DOWNLOAD_MODE.*/
-#define EFUSE_DIS_USB_DOWNLOAD_MODE  (BIT(4))
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_M  (BIT(4))
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_V  0x1
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_S  4
+/* EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE : RO ;bitpos:[4] ;default: 1'b0 ; */
+/*description: The value of DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE.*/
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE  (BIT(4))
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_M  (BIT(4))
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_V  0x1
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_S  4
 /* EFUSE_FLASH_ECC_MODE : RO ;bitpos:[3] ;default: 1'b0 ; */
 /*description: The value of FLASH_ECC_MODE.*/
 #define EFUSE_FLASH_ECC_MODE  (BIT(3))
 #define EFUSE_FLASH_ECC_MODE_M  (BIT(3))
 #define EFUSE_FLASH_ECC_MODE_V  0x1
 #define EFUSE_FLASH_ECC_MODE_S  3
-/* EFUSE_UART_PRINT_CHANNEL : RO ;bitpos:[2] ;default: 1'b0 ; */
-/*description: The value of UART_PRINT_CHANNEL.*/
-#define EFUSE_UART_PRINT_CHANNEL  (BIT(2))
-#define EFUSE_UART_PRINT_CHANNEL_M  (BIT(2))
-#define EFUSE_UART_PRINT_CHANNEL_V  0x1
-#define EFUSE_UART_PRINT_CHANNEL_S  2
-/* EFUSE_DIS_LEGACY_SPI_BOOT : RO ;bitpos:[1] ;default: 1'b0 ; */
-/*description: The value of DIS_LEGACY_SPI_BOOT.*/
-#define EFUSE_DIS_LEGACY_SPI_BOOT  (BIT(1))
-#define EFUSE_DIS_LEGACY_SPI_BOOT_M  (BIT(1))
-#define EFUSE_DIS_LEGACY_SPI_BOOT_V  0x1
-#define EFUSE_DIS_LEGACY_SPI_BOOT_S  1
+/* EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT : RO ;bitpos:[2] ;default: 1'b0 ; */
+/*description: The value of DIS_USB_SERIAL_JTAG_ROM_PRINT.*/
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT  (BIT(2))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_M  (BIT(2))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_V  0x1
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_S  2
+/* EFUSE_DIS_DIRECT_BOOT : RO ;bitpos:[1] ;default: 1'b0 ; */
+/*description: The value of DIS_DIRECT_BOOT.*/
+#define EFUSE_DIS_DIRECT_BOOT  (BIT(1))
+#define EFUSE_DIS_DIRECT_BOOT_M  (BIT(1))
+#define EFUSE_DIS_DIRECT_BOOT_V  0x1
+#define EFUSE_DIS_DIRECT_BOOT_S  1
 /* EFUSE_DIS_DOWNLOAD_MODE : RO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: The value of DIS_DOWNLOAD_MODE.*/
 #define EFUSE_DIS_DOWNLOAD_MODE  (BIT(0))
@@ -1660,30 +1651,30 @@ extern "C" {
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_ERR_M  (BIT(5))
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_ERR_V  0x1
 #define EFUSE_ENABLE_SECURITY_DOWNLOAD_ERR_S  5
-/* EFUSE_DIS_USB_DOWNLOAD_MODE_ERR : RO ;bitpos:[4] ;default: 1'b0 ; */
-/*description: If DIS_USB_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR  (BIT(4))
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR_M  (BIT(4))
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR_V  0x1
-#define EFUSE_DIS_USB_DOWNLOAD_MODE_ERR_S  4
+/* EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_ERR : RO ;bitpos:[4] ;default: 1'b0 ; */
+/*description: If DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_ERR  (BIT(4))
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_ERR_M  (BIT(4))
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_ERR_V  0x1
+#define EFUSE_DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE_ERR_S  4
 /* EFUSE_FLASH_ECC_MODE_ERR : RO ;bitpos:[3] ;default: 1'b0 ; */
 /*description: If FLASH_ECC_MODE is 1  then it indicates a programming error.*/
 #define EFUSE_FLASH_ECC_MODE_ERR  (BIT(3))
 #define EFUSE_FLASH_ECC_MODE_ERR_M  (BIT(3))
 #define EFUSE_FLASH_ECC_MODE_ERR_V  0x1
 #define EFUSE_FLASH_ECC_MODE_ERR_S  3
-/* EFUSE_UART_PRINT_CHANNEL_ERR : RO ;bitpos:[2] ;default: 1'b0 ; */
-/*description: If UART_PRINT_CHANNEL is 1  then it indicates a programming error.*/
-#define EFUSE_UART_PRINT_CHANNEL_ERR  (BIT(2))
-#define EFUSE_UART_PRINT_CHANNEL_ERR_M  (BIT(2))
-#define EFUSE_UART_PRINT_CHANNEL_ERR_V  0x1
-#define EFUSE_UART_PRINT_CHANNEL_ERR_S  2
-/* EFUSE_DIS_LEGACY_SPI_BOOT_ERR : RO ;bitpos:[1] ;default: 1'b0 ; */
-/*description: If DIS_LEGACY_SPI_BOOT is 1  then it indicates a programming error.*/
-#define EFUSE_DIS_LEGACY_SPI_BOOT_ERR  (BIT(1))
-#define EFUSE_DIS_LEGACY_SPI_BOOT_ERR_M  (BIT(1))
-#define EFUSE_DIS_LEGACY_SPI_BOOT_ERR_V  0x1
-#define EFUSE_DIS_LEGACY_SPI_BOOT_ERR_S  1
+/* EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR : RO ;bitpos:[2] ;default: 1'b0 ; */
+/*description: If DIS_USB_SERIAL_JTAG_ROM_PRINT is 1  then it indicates a programming error.*/
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR  (BIT(2))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_M  (BIT(2))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_V  0x1
+#define EFUSE_DIS_USB_SERIAL_JTAG_ROM_PRINT_ERR_S  2
+/* EFUSE_DIS_DIRECT_BOOT_ERR : RO ;bitpos:[1] ;default: 1'b0 ; */
+/*description: If DIS_DIRECT_BOOT_ERR is 1  then it indicates a programming error.*/
+#define EFUSE_DIS_DIRECT_BOOT_ERR  (BIT(1))
+#define EFUSE_DIS_DIRECT_BOOT_ERR_M  (BIT(1))
+#define EFUSE_DIS_DIRECT_BOOT_ERR_V  0x1
+#define EFUSE_DIS_DIRECT_BOOT_ERR_S  1
 /* EFUSE_DIS_DOWNLOAD_MODE_ERR : RO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: If DIS_DOWNLOAD_MODE is 1  then it indicates a programming error.*/
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR  (BIT(0))
