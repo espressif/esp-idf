@@ -211,6 +211,12 @@ build_ssc_esp32s2:
   variables:
     TARGET_NAME: "ESP32S2"
 
+build_ssc_esp32c2:
+  extends: .build_ssc_template
+  parallel: 2
+  variables:
+    TARGET_NAME: "ESP32C2"
+
 build_ssc_esp32c3:
   extends: .build_ssc_template
   parallel: 3
