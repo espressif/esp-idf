@@ -310,6 +310,9 @@
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED    1
 
+/*-------------------------- SPI MEM CAPS ---------------------------------------*/
+#define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE         (1)
+
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* ESP32 style SHA engine, where multiple states can be stored in parallel */
 #define SOC_SHA_SUPPORT_PARALLEL_ENG    (1)
@@ -346,9 +349,11 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ---------------------------*/
-#define SOC_PM_SUPPORT_EXT_WAKEUP       (1)
+#define SOC_PM_SUPPORT_EXT_WAKEUP                 (1)
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
-#define SOC_PM_SUPPORT_RTC_PERIPH_PD        (1)
+#define SOC_PM_SUPPORT_RTC_PERIPH_PD              (1)
+#define SOC_PM_SUPPORT_RTC_FAST_MEM_PD            (1)
+#define SOC_PM_SUPPORT_RTC_SLOW_MEM_PD            (1)
 
 /* ---------------------------- Compatibility ------------------------------- */
 #define SOC_CAN_SUPPORTED                   SOC_TWAI_SUPPORTED

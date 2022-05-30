@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
+#include "soc/soc_caps.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -195,6 +196,7 @@ RESET_REASON bootloader_common_get_reset_reason(int cpu_no)
 
 uint8_t bootloader_flash_get_cs_io(void)
 {
+#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
     uint8_t cs_io;
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
@@ -203,4 +205,7 @@ uint8_t bootloader_flash_get_cs_io(void)
         cs_io = (spiconfig >> 18) & 0x3f;
     }
     return cs_io;
+#else
+    return SPI_CS0_GPIO_NUM;
+#endif
 }

@@ -19,6 +19,8 @@
 #include "soc/efuse_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
+#include "soc/io_mux_reg.h"
+#include "soc/soc.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_bbpll.h"
 #include "esp_hw_log.h"
@@ -34,6 +36,12 @@ static const char *TAG = "rtc_clk";
 static int s_cur_pll_freq;
 
 static void rtc_clk_cpu_freq_to_8m(void);
+
+void rtc_clk_32k_enable_external(void)
+{
+    REG_SET_BIT(PERIPHS_IO_MUX_XTAL_32K_P_U, FUN_IE);
+    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, RTC_CNTL_GPIO_PIN0_HOLD);
+}
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
 {

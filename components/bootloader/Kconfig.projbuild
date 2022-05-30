@@ -323,7 +323,7 @@ menu "Bootloader config"
         # options, allowing to turn on "allow insecure options" and have secure boot with
         # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
-        depends on (SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT
+        depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
         help
             This option disables the normal validation of an image coming out of
@@ -379,6 +379,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_RESERVE_RTC_SIZE
         hex
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
         default 0x10 if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP || BOOTLOADER_CUSTOM_RESERVE_RTC
         default 0
         help
@@ -390,6 +391,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC
         bool "Reserve RTC FAST memory for custom purposes"
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
         default n
         help
             This option allows the customer to place data in the RTC FAST memory,

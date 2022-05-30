@@ -803,6 +803,10 @@ config SOC_SPI_MEM_SUPPORT_SW_SUSPEND
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+    bool
+    default y
+
 config SOC_PM_SUPPORT_EXT_WAKEUP
     bool
     default y
@@ -820,6 +824,14 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
     default y
 
 config SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RTC_FAST_MEM_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
     bool
     default y
 
