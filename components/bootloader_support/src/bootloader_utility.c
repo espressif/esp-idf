@@ -478,7 +478,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
 {
     int index = start_index;
     esp_partition_pos_t part;
-    esp_image_metadata_t image_data;
+    esp_image_metadata_t image_data = {0};
 
     if (start_index == TEST_APP_INDEX) {
         if (check_anti_rollback(&bs->test) && try_load_partition(&bs->test, &image_data)) {
