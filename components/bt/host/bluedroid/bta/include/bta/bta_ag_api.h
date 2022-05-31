@@ -45,12 +45,16 @@
 #define BTA_AG_FEAT_ECC     0x00000080   /* Enhanced Call Control */
 #define BTA_AG_FEAT_EXTERR  0x00000100   /* Extended error codes */
 #define BTA_AG_FEAT_CODEC   0x00000200   /* Codec Negotiation */
-#define BTA_AG_FEAT_VOIP    0x00000400   /* VoIP call */
+/* HFP 1.7+ */
+#define BTA_AG_FEAT_HF_IND  0x00000400    /* HF Indicators */
+#define BTA_AG_FEAT_ESCO_S4 0x00000800    /* eSCO S4 Setting Supported */
+
 /* Proprietary features: using 31 ~ 16 bits */
 #define BTA_AG_FEAT_BTRH    0x00010000   /* CCAP incoming call hold */
 #define BTA_AG_FEAT_UNAT    0x00020000   /* Pass unknown AT commands to application */
 #define BTA_AG_FEAT_NOSCO   0x00040000   /* No SCO control performed by BTA AG */
 #define BTA_AG_FEAT_NO_ESCO 0x00080000   /* Do not allow or use eSCO */
+#define BTA_AG_FEAT_VOIP    0x00100000   /* VoIP call */
 typedef UINT32 tBTA_AG_FEAT;
 
 /* HFP peer features */
@@ -62,8 +66,15 @@ typedef UINT32 tBTA_AG_FEAT;
 #define BTA_AG_PEER_FEAT_ECS        0x0020  /* Enhanced Call Status */
 #define BTA_AG_PEER_FEAT_ECC        0x0040  /* Enhanced Call Control */
 #define BTA_AG_PEER_FEAT_CODEC      0x0080  /* Codec Negotiation */
-#define BTA_AG_PEER_FEAT_VOIP       0x0100  /* VoIP call */
+/* HFP 1.7+ */
+#define BTA_AG_PEER_FEAT_HF_IND     0x0100  /* HF Indicators */
+#define BTA_AG_PEER_FEAT_ESCO_S4    0x0200  /* eSCO S4 Setting Supported */
 typedef UINT16 tBTA_AG_PEER_FEAT;
+
+/* Proprietary features: using bits after 12 */
+/* Pass unknown AT command responses to application */
+#define BTA_AG_PEER_FEAT_UNAT 0x1000
+#define BTA_AG_PEER_FEAT_VOIP 0x2000 /* VoIP call */
 
 /* AG extended call handling - masks not related to any spec */
 #define BTA_AG_CLIENT_CHLD_REL          0x00000001  /* 0  Release waiting call or held calls */
