@@ -61,6 +61,8 @@ entries:
     pbuf:pbuf_header_impl (noflash_text)
     pbuf:pbuf_header (noflash_text)
     pbuf:pbuf_free (noflash_text)
+    pbuf:pbuf_alloced_custom (noflash_text)
+    pbuf:pbuf_init_alloced_pbuf (noflash_text)
     udp:udp_input_local_match (noflash_text)
     udp:udp_input (noflash_text)
     udp:udp_send (noflash_text)
@@ -82,6 +84,7 @@ entries:
     wlanif:ap_output (noflash_text)
     wlanif:wifi_rxcb_sta (noflash_text)
     wlanif:wifi_rxcb_ap (noflash_text)
+    wlanif:wifi_pbuf_free (noflash_text)
     lwip_default_hooks:ip4_route_src_hook (noflash_text)
 
   if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y:

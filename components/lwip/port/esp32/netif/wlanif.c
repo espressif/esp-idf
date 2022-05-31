@@ -14,7 +14,7 @@
 #include "lwip/opt.h"
 
 #include "lwip/def.h"
-#include "lwip/memp.h"
+#include "lwip/mem.h"
 #include "lwip/pbuf.h"
 #include "lwip/stats.h"
 #include "lwip/snmp.h"
@@ -37,9 +37,6 @@ typedef struct wifi_custom_pbuf
     struct pbuf_custom p;
     void* l2_buf;
 } wifi_custom_pbuf_t;
-
-#define ESP_PBUF_POOL_SIZE 16
-LWIP_MEMPOOL_DECLARE(ESP_PBUF_POOL, ESP_PBUF_POOL_SIZE, sizeof(wifi_custom_pbuf_t), "WIFI_CUSTOM_PBUF");
 
 static struct netif *s_wifi_netifs[2] = { NULL };
 
@@ -88,27 +85,27 @@ void set_wifi_netif(int wifi_inx, void* netif)
 }
 
 
-static void esp_pbuf_free_l2_buff(struct pbuf *p)
+static void wifi_pbuf_free(struct pbuf *p)
 {
   wifi_custom_pbuf_t* wifi_pbuf = (wifi_custom_pbuf_t*)p;
   esp_wifi_internal_free_rx_buffer(wifi_pbuf->l2_buf);
-  LWIP_MEMPOOL_FREE(ESP_PBUF_POOL, wifi_pbuf);
+  mem_free(wifi_pbuf);
 }
 
-static inline struct pbuf* pbuf_allocate(struct netif *netif, void *buffer, size_t len, void *l2_buff)
+static inline struct pbuf* wifi_pbuf_allocate(struct netif *netif, void *buffer, size_t len, void *l2_buff)
 {
   struct pbuf *p;
 
-  wifi_custom_pbuf_t* esp_pbuf  = (wifi_custom_pbuf_t*)LWIP_MEMPOOL_ALLOC(ESP_PBUF_POOL);
+  wifi_custom_pbuf_t* esp_pbuf = mem_malloc(sizeof(wifi_custom_pbuf_t));
 
   if (esp_pbuf == NULL) {
     return NULL;
   }
-  esp_pbuf->p.custom_free_function = esp_pbuf_free_l2_buff;
+  esp_pbuf->p.custom_free_function = wifi_pbuf_free;
   esp_pbuf->l2_buf = l2_buff;
   p = pbuf_alloced_custom(PBUF_RAW, len, PBUF_REF, &esp_pbuf->p, buffer, len);
   if (p == NULL) {
-    LWIP_MEMPOOL_FREE(ESP_PBUF_POOL, esp_pbuf);
+    mem_free(esp_pbuf);
     return NULL;
   }
   return p;
@@ -126,7 +123,7 @@ esp_err_t wifi_rxcb_sta(void *buffer, uint16_t len, void *l2_buff)
     return ESP_FAIL;
   }
 
-  p = pbuf_allocate(netif, buffer, len, l2_buff);
+  p = wifi_pbuf_allocate(netif, buffer, len, l2_buff);
   if (p == NULL) {
     esp_wifi_internal_free_rx_buffer(l2_buff);
     return ESP_FAIL;
@@ -152,7 +149,7 @@ esp_err_t wifi_rxcb_ap(void *buffer, uint16_t len, void *l2_buff)
     return ESP_FAIL;
   }
 
-  p = pbuf_allocate(netif, buffer, len, l2_buff);
+  p = wifi_pbuf_allocate(netif, buffer, len, l2_buff);
   if (p == NULL) {
     esp_wifi_internal_free_rx_buffer(l2_buff);
     return ESP_FAIL;
