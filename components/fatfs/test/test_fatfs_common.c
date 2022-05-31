@@ -317,13 +317,14 @@ void test_fatfs_truncate_file(const char* filename)
 
 void test_fatfs_stat(const char* filename, const char* root_dir)
 {
-    struct tm tm;
-    tm.tm_year = 2017 - 1900;
-    tm.tm_mon = 11;
-    tm.tm_mday = 8;
-    tm.tm_hour = 19;
-    tm.tm_min = 51;
-    tm.tm_sec = 10;
+    struct tm tm = {
+        .tm_year = 2017 - 1900,
+        .tm_mon = 11,
+        .tm_mday = 8,
+        .tm_hour = 19,
+        .tm_min = 51,
+        .tm_sec = 10
+    };
     time_t t = mktime(&tm);
     printf("Setting time: %s", asctime(&tm));
     struct timeval now = { .tv_sec = t };
@@ -346,6 +347,34 @@ void test_fatfs_stat(const char* filename, const char* root_dir)
     TEST_ASSERT_EQUAL(0, stat(root_dir, &st));
     TEST_ASSERT(st.st_mode & S_IFDIR);
     TEST_ASSERT_FALSE(st.st_mode & S_IFREG);
+}
+
+void test_fatfs_mtime_dst(const char* filename, const char* root_dir)
+{
+    struct timeval tv = { 1653638041, 0 };
+    settimeofday(&tv, NULL);
+    setenv("TZ", "MST7MDT,M3.2.0,M11.1.0", 1);
+    tzset();
+
+    struct tm tm;
+    time_t sys_time = tv.tv_sec;
+    localtime_r(&sys_time, &tm);
+    printf("Setting time: %s", asctime(&tm));
+
+    test_fatfs_create_file_with_text(filename, "foo\n");
+
+    struct stat st;
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+
+    time_t mtime = st.st_mtime;
+    struct tm mtm;
+    localtime_r(&mtime, &mtm);
+    printf("File time: %s", asctime(&mtm));
+
+    TEST_ASSERT(llabs(mtime - sys_time) < 2);    // fatfs library stores time with 2 second precision
+
+    unsetenv("TZ");
+    tzset();
 }
 
 void test_fatfs_utime(const char* filename, const char* root_dir)
