@@ -576,6 +576,7 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(dut: Dut) 
 @pytest.mark.esp32s3
 @pytest.mark.wifi_ota
 @pytest.mark.parametrize('config', ['nimble',], indirect=True)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_examples_protocol_advanced_https_ota_example_nimble_gatts(dut: Dut) -> None:
     """
     Run an OTA image update while a BLE GATT Server is running in background. This GATT server will be using NimBLE Host stack.
@@ -618,6 +619,7 @@ def test_examples_protocol_advanced_https_ota_example_nimble_gatts(dut: Dut) -> 
 @pytest.mark.esp32s3
 @pytest.mark.wifi_ota
 @pytest.mark.parametrize('config', ['bluedroid',], indirect=True)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(dut: Dut) -> None:
     """
     Run an OTA image update while a BLE GATT Server is running in background. This GATT server will be using Bluedroid Host stack.
