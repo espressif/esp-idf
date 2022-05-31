@@ -159,8 +159,12 @@ esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_si
     uint8_t* base = (uint8_t*) RTC_SLOW_MEM;
 
     //Start by clearing memory reserved with zeros, this will also will initialize the bss:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     memset(base, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     memcpy(base, program_binary, program_size_bytes);
+#pragma GCC diagnostic pop
 
     return ESP_OK;
 }
