@@ -476,6 +476,11 @@ menu "Security features"
         bool
         default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_RSA_SUPPORTED
 
+    config SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+        bool
+        default y if SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK && SECURE_BOOT && SECURE_FLASH_ENC_ENABLED
+        # ESP32-C2 has one key block for SB and FE keys. These keys must be burned at the same time.
+
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
         depends on !SECURE_BOOT
@@ -769,21 +774,29 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on SOC_FLASH_ENCRYPTION_XTS_AES_256 && SECURE_FLASH_ENC_ENABLED
+        depends on SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
-            AES-128 uses a 256-bit key (32 bytes) which occupies one Efuse key block.
-            AES-256 uses a 512-bit key (64 bytes) which occupies two Efuse key blocks.
+            - AES-128 uses a 256-bit key (32 bytes) derived from 128 bits (16 bytes) burned in half Efuse key block.
+              Internally, it calculates SHA256(128 bits)
+            - AES-128 uses a 256-bit key (32 bytes) which occupies one Efuse key block.
+            - AES-256 uses a 512-bit key (64 bytes) which occupies two Efuse key blocks.
 
             This setting is ignored if either type of key is already burned to Efuse before the first boot.
             In this case, the pre-burned key is used and no new key is generated.
 
+        config SECURE_FLASH_ENCRYPTION_AES128_DERIVED
+            bool "AES-128 key derived from 128 bits (SHA256(128 bits))"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128 && !(IDF_TARGET_ESP32C2 && SECURE_BOOT)
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_256
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE

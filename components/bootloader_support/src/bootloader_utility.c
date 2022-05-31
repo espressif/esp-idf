@@ -577,6 +577,17 @@ static void load_image(const esp_image_metadata_t *image_data)
     esp_err_t err;
 #endif
 
+#ifdef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+    if (esp_secure_boot_enabled() ^ esp_flash_encrypt_initialized_once()) {
+        ESP_LOGE(TAG, "Secure Boot and Flash Encryption cannot be enabled separately, only together (their keys go into one eFuse key block)");
+        return;
+    }
+
+    if (!esp_secure_boot_enabled() || !esp_flash_encryption_enabled()) {
+        esp_efuse_batch_write_begin();
+    }
+#endif // CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+
 #ifdef CONFIG_SECURE_BOOT_V2_ENABLED
     err = esp_secure_boot_v2_permanently_enable(image_data);
     if (err != ESP_OK) {
@@ -604,13 +615,50 @@ static void load_image(const esp_image_metadata_t *image_data)
      *   5) Burn EFUSE to enable flash encryption
      */
     ESP_LOGI(TAG, "Checking flash encryption...");
-    bool flash_encryption_enabled = esp_flash_encryption_enabled();
-    err = esp_flash_encrypt_check_and_update();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Flash encryption check failed (%d).", err);
+    bool flash_encryption_enabled = esp_flash_encrypt_state();
+    if (!flash_encryption_enabled) {
+#ifdef CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+        ESP_LOGE(TAG, "flash encryption is not enabled, and SECURE_FLASH_REQUIRE_ALREADY_ENABLED is set, refusing to boot.");
         return;
+#endif // CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+
+        if (esp_flash_encrypt_is_write_protected(true)) {
+            return;
+        }
+
+        err = esp_flash_encrypt_init();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Initialization of Flash Encryption key failed (%d)", err);
+            return;
+        }
     }
-#endif
+
+#ifdef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+    if (!esp_secure_boot_enabled() || !flash_encryption_enabled) {
+        err = esp_efuse_batch_write_commit();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error programming eFuses (err=0x%x).", err);
+            return;
+        }
+        assert(esp_secure_boot_enabled());
+        ESP_LOGI(TAG, "Secure boot permanently enabled");
+    }
+#endif // CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+
+    if (!flash_encryption_enabled) {
+        err = esp_flash_encrypt_contents();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Encryption flash contents failed (%d)", err);
+            return;
+        }
+
+        err = esp_flash_encrypt_enable();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Enabling of Flash encryption failed (%d)", err);
+            return;
+        }
+    }
+#endif // CONFIG_SECURE_FLASH_ENC_ENABLED
 
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
     /* Step 6 (see above for full description):

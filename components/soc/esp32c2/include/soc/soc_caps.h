@@ -236,8 +236,10 @@
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
-#define SOC_FLASH_ENCRYPTION_XTS_AES            1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_128        0        // This will be enabled with IDF-3899
+#define SOC_FLASH_ENCRYPTION_XTS_AES             1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS     1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128         1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED 1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C2 has 2 UARTs

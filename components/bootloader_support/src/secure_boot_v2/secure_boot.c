@@ -218,17 +218,24 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
                 continue;
             }
 #endif
+#ifndef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
             if (esp_efuse_get_key_dis_read(blocks[i])) {
                 ESP_LOGE(TAG, "Key digest (BLK%d) read protected, aborting...", blocks[i]);
                 return ESP_FAIL;
             }
+#endif
             if (esp_efuse_block_is_empty(blocks[i])) {
                 ESP_LOGE(TAG, "%d eFuse block is empty, aborting...", blocks[i]);
                 return ESP_FAIL;
             }
             esp_efuse_set_key_dis_write(blocks[i]);
-            ret = esp_efuse_read_block(blocks[i], boot_key_digests.key_digests[boot_key_digests.num_digests], 0,
-                                            sizeof(boot_key_digests.key_digests[0]) * 8);
+#ifdef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
+            size_t offset = 128;
+#else
+            size_t offset = 0;
+#endif
+             ret = esp_efuse_read_block(blocks[i], boot_key_digests.key_digests[boot_key_digests.num_digests], offset,
+                                            ESP_SECURE_BOOT_KEY_DIGEST_LEN * 8);
             if (ret) {
                 ESP_LOGE(TAG, "Error during reading %d eFuse block (err=0x%x)", blocks[i], ret);
                 return ret;
@@ -271,7 +278,7 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         }
 #endif // SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
         for (unsigned j = 0; j < app_key_digests.num_digests; j++) {
-            if (!memcmp(boot_key_digests.key_digests[i], app_key_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN)) {
+            if (!memcmp(boot_key_digests.key_digests[i], app_key_digests.key_digests[j], ESP_SECURE_BOOT_KEY_DIGEST_LEN)) {
                 ESP_LOGI(TAG, "Application key(%d) matches with bootloader key(%d).", j, i);
                 match = true;
             }
@@ -331,8 +338,10 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
     assert(esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE));
 #endif
 
+#ifndef CONFIG_SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
     assert(esp_secure_boot_enabled());
     ESP_LOGI(TAG, "Secure boot permanently enabled");
+#endif
 
     return ESP_OK;
 }

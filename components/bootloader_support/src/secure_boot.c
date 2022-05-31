@@ -64,12 +64,14 @@ static esp_err_t secure_boot_v2_check(bool *need_fix)
 {
     esp_err_t err = ESP_OK;
     esp_efuse_block_t block = EFUSE_BLK_SECURE_BOOT;
+#ifndef CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     if (esp_efuse_get_key_dis_read(block)) {
         ESP_LOGE(TAG, "eFuse BLOCK%d should be readable", block);
         abort();
         // This code is not achievable because the bootloader will not boot an app in this state.
         // But we keep it here just in case (any unexpected behavior).
     }
+#endif
     if (esp_efuse_block_is_empty(block)) {
         ESP_LOGE(TAG, "eFuse BLOCK%d should not be empty", block);
         abort();
