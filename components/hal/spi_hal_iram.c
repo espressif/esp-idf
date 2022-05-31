@@ -136,7 +136,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 
     //Fill DMA descriptors
     if (trans->rcv_buffer) {
-        if (!hal->dma_enabled) {
+        if (!hal->dma_enabled || trans->dont_dma) {
             //No need to setup anything; we'll copy the result out of the work registers directly later.
         } else {
             lldesc_setup_link(hal->dmadesc_rx, trans->rcv_buffer, ((trans->rx_bitlen + 7) / 8), true);
@@ -152,7 +152,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 #if CONFIG_IDF_TARGET_ESP32
     else {
         //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
-        if (hal->dma_enabled && !dev->half_duplex) {
+        if (hal->dma_enabled && !dev->half_duplex && !trans->dont_dma) {
             spi_ll_dma_rx_enable(hal->hw, 1);
             spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, 0);
         }
@@ -160,7 +160,7 @@ void spi_hal_prepare_data(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 #endif
 
     if (trans->send_buffer) {
-        if (!hal->dma_enabled) {
+        if (!hal->dma_enabled || trans->dont_dma) {
             //Need to copy data to registers manually
             spi_ll_write_buffer(hw, trans->send_buffer, trans->tx_bitlen);
         } else {
@@ -197,7 +197,7 @@ void spi_hal_fetch_result(const spi_hal_context_t *hal)
 {
     const spi_hal_trans_config_t *trans = &hal->trans_config;
 
-    if (trans->rcv_buffer && !hal->dma_enabled) {
+    if (trans->rcv_buffer && (!hal->dma_enabled || trans->dont_dma)) {
         //Need to copy from SPI regs to result buffer.
         spi_ll_read_buffer(hal->hw, trans->rcv_buffer, trans->rx_bitlen);
     }

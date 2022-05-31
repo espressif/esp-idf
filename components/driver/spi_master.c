@@ -531,6 +531,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     hal_trans.cmd = trans->cmd;
     hal_trans.addr = trans->addr;
     hal_trans.cs_keep_active = (trans->flags & SPI_TRANS_CS_KEEP_ACTIVE) ? 1 : 0;
+    hal_trans.dont_dma = (trans->flags & SPI_TRANS_DONT_DMA) ? 1 : 0;
 
     //Set up OIO/QIO/DIO if needed
     hal_trans.line_mode.data_lines = (trans->flags & SPI_TRANS_MODE_DIO) ? 2 :
@@ -605,7 +606,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         //Okay, transaction is done.
         const int cs = host->cur_cs;
         //Tell common code DMA workaround that our DMA channel is idle. If needed, the code will do a DMA reset.
-        if (bus_attr->dma_enabled) {
+        if (bus_attr->dma_enabled && (host->cur_trans_buf.trans->flags & SPI_TRANS_DONT_DMA) == 0) {
             //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
             spicommon_dmaworkaround_idle(bus_attr->tx_dma_chan);
         }
@@ -660,7 +661,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
         if (trans_found) {
             spi_trans_priv_t *const cur_trans_buf = &host->cur_trans_buf;
-            if (bus_attr->dma_enabled && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send)) {
+            if (bus_attr->dma_enabled && (cur_trans_buf->buffer_to_rcv || cur_trans_buf->buffer_to_send) && (cur_trans_buf->trans->flags & SPI_TRANS_DONT_DMA) == 0) {
                 //mark channel as active, so that the DMA will not be reset by the slave
                 //This workaround is only for esp32, where tx_dma_chan and rx_dma_chan are always same
                 spicommon_dmaworkaround_transfer_active(bus_attr->tx_dma_chan);
@@ -689,6 +690,8 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     //check transmission length
     SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0 || trans_desc->rxlength <= 32, "SPI_TRANS_USE_RXDATA only available for rxdata transfer <= 32 bits", ESP_ERR_INVALID_ARG);
     SPI_CHECK((trans_desc->flags & SPI_TRANS_USE_TXDATA)==0 || trans_desc->length <= 32, "SPI_TRANS_USE_TXDATA only available for txdata transfer <= 32 bits", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_DONT_DMA)==0 || trans_desc->length <= SOC_SPI_MAXIMUM_BUFFER_SIZE*8, "txdata transfer > host maximum without DMA", ESP_ERR_INVALID_ARG);
+    SPI_CHECK((trans_desc->flags & SPI_TRANS_DONT_DMA)==0 || trans_desc->rxlength <= SOC_SPI_MAXIMUM_BUFFER_SIZE*8, "rxdata transfer > host maximum without DMA", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->length <= bus_attr->max_transfer_sz*8, "txdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK(trans_desc->rxlength <= bus_attr->max_transfer_sz*8, "rxdata transfer > host maximum", ESP_ERR_INVALID_ARG);
     SPI_CHECK(is_half_duplex || trans_desc->rxlength <= trans_desc->length, "rx length > tx length in full duplex mode", ESP_ERR_INVALID_ARG);
@@ -701,7 +704,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "Incompatible when setting to both multi-line mode and 3-wire-mode", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && !is_half_duplex), "Incompatible when setting to both multi-line mode and half duplex mode", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
-    SPI_CHECK(!is_half_duplex || !bus_attr->dma_enabled || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
+    SPI_CHECK(!is_half_duplex || !(bus_attr->dma_enabled && (trans_desc->flags & SPI_TRANS_DONT_DMA)==0) || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
 #endif
 #if !SOC_SPI_HD_BOTH_INOUT_SUPPORTED
     SPI_CHECK(!is_half_duplex || !tx_enabled || !rx_enabled, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
@@ -804,7 +807,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
     }
 
     spi_trans_priv_t trans_buf;
-    ret = setup_priv_desc(trans_desc, &trans_buf, (host->bus_attr->dma_enabled));
+    ret = setup_priv_desc(trans_desc, &trans_buf, ((host->bus_attr->dma_enabled) && (trans_desc->flags & SPI_TRANS_DONT_DMA) == 0));
     if (ret != ESP_OK) return ret;
 
 #ifdef CONFIG_PM_ENABLE
@@ -953,7 +956,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     }
     if (ret != ESP_OK) return ret;
 
-    ret = setup_priv_desc(trans_desc, &host->cur_trans_buf, (host->bus_attr->dma_enabled));
+    ret = setup_priv_desc(trans_desc, &host->cur_trans_buf, ((host->bus_attr->dma_enabled) && (trans_desc->flags & SPI_TRANS_DONT_DMA) == 0));
     if (ret!=ESP_OK) return ret;
 
     //Polling, no interrupt is used.
