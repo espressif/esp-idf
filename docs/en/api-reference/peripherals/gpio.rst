@@ -1,14 +1,16 @@
 GPIO & RTC GPIO
 ===============
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
 .. only:: esp32
 
-    The {IDF_TARGET_NAME} chip features 35 physical GPIO pads (GPIO0 ~ GPIO23, GPIO25 ~ GPIO27, and GPIO32 ~ GPIO39). Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
+    The {IDF_TARGET_NAME} chip features 34 physical GPIO pins (GPIO0 ~ GPIO19, GPIO21 ~ GPIO23, GPIO25 ~ GPIO27, and GPIO32 ~ GPIO39). Each pin can be used as a general-purpose I/O, or be connected to an internal peripheral signal. Through IO MUX, RTC IO MUX and the GPIO matrix, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
-    Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal. The table below provides more information on pin usage, and please note the comments in the table  for GPIOs with restrictions.
+    The table below provides more information on pin usage, and please note the comments in the table  for GPIOs with restrictions.
 
     .. list-table::
        :header-rows: 1
@@ -119,11 +121,6 @@ Overview
          -
          -
 
-       * - GPIO20
-         -
-         -
-         - This pin is only available on ESP32-PICO-V3 chip package
-
        * - GPIO21
          -
          -
@@ -201,14 +198,14 @@ Overview
         - JTAG: GPIO12-15 are usually used for inline debug.
         - GPI: GPIO34-39 can only be set as input mode and do not have software-enabled pullup or pulldown functions.
         - TXD & RXD are usually used for flashing and debugging.
-        - ADC2: ADC2 pins cannot be used when Wi-Fi is used. So, if you’re using Wi-Fi and you’re having trouble getting the value from an ADC2 GPIO, you may consider using an ADC1 GPIO instead, that should solve your problem. For more details, please refer to `ADC limitations <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc.html#adc-limitations>`_.
+        - ADC2: ADC2 pins cannot be used when Wi-Fi is used. So, if you are having trouble getting the value from an ADC2 GPIO while using Wi-Fi, you may consider using an ADC1 GPIO instead, which should solve your problem. For more details, please refer to `ADC limitations <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc.html#adc-limitations>`_.
 
 
 .. only:: esp32s2
 
-    The {IDF_TARGET_NAME} chip features 43 physical GPIO pads (GPIO0 ~ GPIO21 and GPIO26 ~ GPIO46). Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+    The {IDF_TARGET_NAME} chip features 43 physical GPIO pins (GPIO0 ~ GPIO21 and GPIO26 ~ GPIO46). Each pin can be used as a general-purpose I/O, or be connected to an internal peripheral signal. Through IO MUX, RTC IO MUX and the GPIO matrix, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
-    The table below provides more information on pin usage, and please note the comments in the table  for GPIOs with restrictions.
+    The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
 
     .. list-table::
        :header-rows: 1
@@ -444,9 +441,9 @@ Overview
 
 .. only:: esp32c3
 
-    The {IDF_TARGET_NAME} chip features 22 physical GPIO pads (GPIO0 ~ GPIO21). Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+    The {IDF_TARGET_NAME} chip features 22 physical GPIO pins (GPIO0 ~ GPIO21). Each pin can be used as a general-purpose I/O, or be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
-    The table below provides more information on pin usage, and please note the comments in the table  for GPIOs with restrictions.
+    The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
 
 
     .. list-table::
@@ -548,18 +545,16 @@ Overview
     .. note::
 
         - Strapping pin: GPIO2, GPIO8 and GPIO9 are strapping pins. For more infomation, please refer to `ESP32-C3 datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_en.pdf>`_.
-        - SPI0/1: GPIO12-17 are usually used for SPI flash and PSRAM and not recommended for other uses.
+        - SPI0/1: GPIO12-17 are usually used for SPI flash and PSRAM and are not recommended for other uses.
         - USB-JTAG: GPIO 18 and 19 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
-        - RTC: GPIO0-5 can be used when in deep sleep.
-
-
+        - RTC: GPIO0-5 can be used when in Deep-sleep mode.
 
 
 .. only:: esp32s3
 
-    The {IDF_TARGET_NAME} chip features 45 physical GPIO pads (GPIO0 ~ GPIO21 and GPIO26 ~ GPIO48). Some GPIO pads cannot be used or do not have the corresponding pin on the chip package. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+    The {IDF_TARGET_NAME} chip features 45 physical GPIO pins (GPIO0 ~ GPIO21 and GPIO26 ~ GPIO48). Each pin can be used as a general-purpose I/O, or be connected to an internal peripheral signal. Through GPIO matrix, IO MUX, and RTC IO MUX, peripheral input signals can be from any GPIO pin, and peripheral output signals can be routed to any GPIO pin. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
-    The table below provides more information on pin usage, and please note the comments in the table  for GPIOs with restrictions.
+    The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
 
     .. list-table::
        :header-rows: 1
@@ -797,16 +792,17 @@ Overview
 
     .. Note::
 
-        - Strapping pin: GPIO0, GPIO3, GPIO45 and GPIO46 are strapping pins.
-        - SPI0/1: GPIO26-32 are usually used for SPI flash and PSRAM and not recommended for other uses. When using Octal Flash or Octal PSRAM or both, GPIO33~37 are connected to SPIIO4 ~ SPIIO7 and SPIDQS. Therefore on ESP32-S3R8 / ESP32-S3R8V board GPIO33~37 are also not recommended for other uses.
+        - Strapping pin: GPIO0, GPIO3, GPIO45 and GPIO46 are strapping pins. For more infomation, please refer to `ESP32-S3 datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf>`_.
+        - SPI0/1: GPIO26-32 are usually used for SPI flash and PSRAM and not recommended for other uses. When using Octal Flash or Octal PSRAM or both, GPIO33~37 are connected to SPIIO4 ~ SPIIO7 and SPIDQS. Therefore, on boards embedded with ESP32-S3R8 / ESP32-S3R8V chip, GPIO33~37 are also not recommended for other uses.
         - USB-JTAG: GPIO 19 and 20 are used by USB-JTAG by default. In order to use them as GPIOs, USB-JTAG will be disabled by the drivers.
 
 .. only:: esp32c2
 
-    The {IDF_TARGET_NAME} chip features 21 physical GPIO pads (GPIO0 ~ GPIO20). For chip variants with an SiP flash built in, GPIO11 ~ GPIO17 are dedicated to connecting the SiP flash; therefore, only 14 GPIO pins are available. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. Each pad can be used as a general purpose I/O or can be connected to an internal peripheral signal.
+    The {IDF_TARGET_NAME} chip features 21 physical GPIO pins (GPIO0 ~ GPIO20). For chip variants with an SiP flash built in, GPIO11 ~ GPIO17 are dedicated to connecting the SiP flash; therefore, only 14 GPIO pins are available.
+
+    Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
     The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
-
 
     .. list-table::
        :header-rows: 1
@@ -902,9 +898,9 @@ Overview
 
     .. note::
 
-        - Strapping pin: GPIO8 and GPIO9 are strapping pins. For more infomation, please refer to `ESP32-C2 datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-c2_datasheet_en.pdf>`_.
+        - Strapping pin: GPIO8 and GPIO9 are strapping pins. For more infomation, please refer to `ESP8684 datasheet <https://www.espressif.com/sites/default/files/documentation/esp8684_datasheet_en.pdf>`_.
         - SPI0/1: GPIO12-17 are usually used for SPI flash and not recommended for other uses.
-        - RTC: GPIO0-5 can be used when in deep sleep.
+        - RTC: GPIO0-5 can be used when in Deep-sleep mode.
 
 
 .. only:: SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
@@ -913,7 +909,7 @@ Overview
 
     .. list::
 
-        - In deep sleep
+        - In Deep-sleep mode
         :SOC_ULP_SUPPORTED: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
         - Analog functions such as ADC/DAC/etc are in use.
 
