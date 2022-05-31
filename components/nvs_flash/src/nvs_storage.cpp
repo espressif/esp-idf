@@ -749,7 +749,10 @@ void Storage::fillEntryInfo(Item &item, nvs_entry_info_t &info)
 
     for (auto &name : mNamespaces) {
         if(item.nsIndex == name.mIndex) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
             strncpy(info.namespace_name, name.mName, sizeof(info.namespace_name) - 1);
+#pragma GCC diagnostic pop
             info.namespace_name[sizeof(info.namespace_name) -1] = '\0';
             break;
         }
