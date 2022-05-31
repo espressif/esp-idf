@@ -272,7 +272,7 @@ const tBTA_AG_ST_TBL bta_ag_st_tbl[] =
 /*****************************************************************************
 ** Global data
 *****************************************************************************/
-const char *bta_ag_version = "1.6";
+const uint16_t bta_ag_version = HFP_VERSION_1_7;
 /* AG control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_AG_CB  bta_ag_cb;
@@ -758,7 +758,7 @@ static void bta_ag_api_enable(tBTA_AG_DATA *p_data)
     bta_ag_cb.p_cback = p_data->api_enable.p_cback;
     bta_ag_cb.parse_mode = p_data->api_enable.parse_mode;
     /* check if mSBC support enabled */
-    if (strcmp(bta_ag_version, "1.6") == 0) {
+    if (bta_ag_version >= HFP_VERSION_1_6) {
         bta_ag_cb.msbc_enabled = TRUE;
         bta_ag_cb.scb->negotiated_codec = BTM_SCO_CODEC_MSBC;
     } else{
