@@ -2258,7 +2258,6 @@ tools/esp_prov/__init__.py
 tools/esp_prov/prov/__init__.py
 tools/esp_prov/prov/wifi_prov.py
 tools/esp_prov/prov/wifi_scan.py
-tools/esp_prov/security/__init__.py
 tools/esp_prov/security/security.py
 tools/esp_prov/security/security0.py
 tools/esp_prov/security/security1.py
@@ -2269,7 +2268,6 @@ tools/esp_prov/transport/transport_ble.py
 tools/esp_prov/transport/transport_console.py
 tools/esp_prov/transport/transport_http.py
 tools/esp_prov/utils/__init__.py
-tools/esp_prov/utils/convenience.py
 tools/find_apps.py
 tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
