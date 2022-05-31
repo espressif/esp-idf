@@ -527,10 +527,10 @@ TEST_SPI_LOCAL(MODE, mode_pgroup)
 TEST_CASE("Slave receive correct data", "[spi]")
 {
    // Initialize device handle and spi bus
-    uint32_t master_seed_send = MASTER_DATA_RAND_SEED;
-    uint32_t slave_seed_send = SLAVE_DATA_RAND_SEED;
-    uint32_t master_seed_cmp = slave_seed_send;
-    uint32_t slave_seed_cmp = master_seed_send;
+    unsigned int master_seed_send = MASTER_DATA_RAND_SEED;
+    unsigned int slave_seed_send = SLAVE_DATA_RAND_SEED;
+    unsigned int master_seed_cmp = slave_seed_send;
+    unsigned int slave_seed_cmp = master_seed_send;
 
     const int buf_size = 20;
 
