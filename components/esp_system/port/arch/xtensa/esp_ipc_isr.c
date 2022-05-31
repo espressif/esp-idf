@@ -108,7 +108,11 @@ void esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd);
 void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
 {
     if (s_stall_state == STALL_STATE_RUNNING) {
+#if CONFIG_FREERTOS_SMP
+        BaseType_t intLvl = portDISABLE_INTERRUPTS();
+#else
         BaseType_t intLvl = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
         const uint32_t cpu_id = xPortGetCoreID();
         if (s_count_of_nested_calls[cpu_id]++ == 0) {
             IPC_ISR_ENTER_CRITICAL();
@@ -119,7 +123,11 @@ void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
         }
 
         /* Interrupts are already disabled by the parent, we're nested here. */
+#if CONFIG_FREERTOS_SMP
+        portRESTORE_INTERRUPTS(intLvl);
+#else
         portCLEAR_INTERRUPT_MASK_FROM_ISR(intLvl);
+#endif
     }
 }
 
@@ -130,7 +138,11 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
         if (--s_count_of_nested_calls[cpu_id] == 0) {
             esp_ipc_isr_finish_cmd = 1;
             IPC_ISR_EXIT_CRITICAL();
+#if CONFIG_FREERTOS_SMP
+            portRESTORE_INTERRUPTS(s_stored_interrupt_level);
+#else
             portCLEAR_INTERRUPT_MASK_FROM_ISR(s_stored_interrupt_level);
+#endif
         } else if (s_count_of_nested_calls[cpu_id] < 0) {
             assert(0);
         }
