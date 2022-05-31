@@ -23,6 +23,14 @@
 static volatile bool trigger;
 static volatile bool flag;
 
+#ifndef CONFIG_FREERTOS_SMP
+#define MAX_YIELD_COUNT 10000
+#else
+//TODO: IDF-5081
+#define MAX_YIELD_COUNT 15000
+#endif // CONFIG_FREERTOS_SMP
+
+
 /* Task:
    - Waits for 'trigger' variable to be set
    - Reads the cycle count on this CPU
@@ -70,7 +78,7 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
 
         delta = now_ccount - yield_ccount;
         printf("Yielding from lower priority task took %u cycles\n", delta);
-        TEST_ASSERT(delta < 10000);
+        TEST_ASSERT(delta < MAX_YIELD_COUNT);
 
         vTaskDelete(sender_task);
         vQueueDelete(queue);
@@ -107,7 +115,7 @@ TEST_CASE("Yield from lower priority task, other CPU", "[freertos]")
 
         delta = now_ccount - trigger_ccount;
         printf("Yielding from task on other core took %u cycles\n", delta);
-        TEST_ASSERT(delta < 10000);
+        TEST_ASSERT(delta < MAX_YIELD_COUNT);
 
         vQueueDelete(queue);
         vTaskDelete(sender_task);
