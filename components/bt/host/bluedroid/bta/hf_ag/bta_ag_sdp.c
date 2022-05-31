@@ -157,7 +157,7 @@ BOOLEAN bta_ag_add_record(UINT16 service_uuid, char *p_service_name, UINT8 scn,
     /* add profile descriptor list */
     if (service_uuid == UUID_SERVCLASS_AG_HANDSFREE) {
         profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
-        version = HFP_VERSION_1_6;
+        version = HFP_VERSION_1_7;
     } else {
         profile_uuid = UUID_SERVCLASS_HEADSET;
         version = HSP_VERSION_1_2;
