@@ -19,14 +19,38 @@ menu "Example Configuration"
             the window defined by the initial temperature and a threshold
             around it.
 
+    config EXAMPLE_EXT0_WAKEUP
+        bool "Enable wakeup from GPIO (ext0)"
+        default y
+        depends on !IDF_TARGET_ESP32C3
+        help
+            This option enables wake up from deep sleep from GPIO3. They should be connected to LOW to avoid
+            floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating
+            pins may trigger a wake up.
+
     config EXAMPLE_EXT1_WAKEUP
-        bool "Enable wakeup from GPIO"
+        bool "Enable wakeup from GPIO (ext1)"
         default y
         depends on !IDF_TARGET_ESP32C3
         help
             This option enables wake up from deep sleep from GPIO2 and GPIO4. They should be connected to LOW to avoid
             floating pins. When triggering a wake up, connect one or both of the pins to HIGH. Note that floating
             pins may trigger a wake up.
+
+    config EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
+        bool "Use internal pull-up/downs for EXT1 wakeup source"
+        default n
+        depends on EXAMPLE_EXT1_WAKEUP
+        help
+            When using EXT1 wakeup source without external pull-up/downs, you may want to make use of the internal
+            ones.
+
+            However, the RTC IO reside in the RTC Periph power domain. Enable this option to force that power domain
+            ON during deep sleep. Note that this will increase some power comsumption, so it's still suggested to use
+            external ones instead.
+
+            EXT0 wakeup source resides in the same power domain as RTCIO (RTC Periph), so internal pull-up/downs are
+            always available. There's no need to explicitly force it on for EXT0.
 
     config EXAMPLE_GPIO_WAKEUP
         bool "Enable wakeup from GPIO"
