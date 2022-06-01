@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 include(${IDF_PATH}/tools/cmake/utilities.cmake)
 project(${ULP_APP_NAME} ASM C)

@@ -200,7 +200,7 @@ Minimal Example CMakeLists
 
 Minimal project::
 
-      cmake_minimum_required(VERSION 3.5)
+      cmake_minimum_required(VERSION 3.16)
       include($ENV{IDF_PATH}/tools/cmake/project.cmake)
       project(myProject)
 
@@ -211,7 +211,7 @@ Mandatory Parts
 
 The inclusion of these three lines, in the order shown above, is necessary for every project:
 
-- ``cmake_minimum_required(VERSION 3.5)`` tells CMake the minimum version that is required to build the project. ESP-IDF is designed to work with CMake 3.5 or newer. This line must be the first line in the CMakeLists.txt file.
+- ``cmake_minimum_required(VERSION 3.16)`` tells CMake the minimum version that is required to build the project. ESP-IDF is designed to work with CMake 3.16 or newer. This line must be the first line in the CMakeLists.txt file.
 - ``include($ENV{IDF_PATH}/tools/cmake/project.cmake)`` pulls in the rest of the CMake functionality to configure the project, discover all the components, etc.
 - ``project(myProject)`` creates the project itself, and specifies the project name. The project name is used for the final binary output files of the app - ie ``myProject.elf``, ``myProject.bin``. Only one project can be defined per CMakeLists file.
 
@@ -255,7 +255,7 @@ For example, one of the default build specifications set is the compile option `
 it should be done after ``project()``::
 
 
-    cmake_minimum_required(VERSION 3.5)
+    cmake_minimum_required(VERSION 3.16)
     include($ENV{IDF_PATH}/tools/cmake/project.cmake)
     project(myProject)
 
@@ -664,7 +664,7 @@ Special components which contain no source files, only ``Kconfig.projbuild`` and
 Debugging CMake
 ===============
 
-For full details about CMake_ and CMake commands, see the `CMake v3.5 documentation`_.
+For full details about CMake_ and CMake commands, see the `CMake v3.16 documentation`_.
 
 Some tips for debugging the ESP-IDF CMake-based build system:
 
@@ -1066,7 +1066,7 @@ It is possible to do so by using the :ref:`build system APIs provided<cmake_buil
 
 .. code-block:: cmake
 
-  cmake_minimum_required(VERSION 3.5)
+  cmake_minimum_required(VERSION 3.16)
   project(my_custom_app C)
 
   # Include CMake file that provides ESP-IDF CMake build system APIs.
@@ -1483,23 +1483,23 @@ Flashing from make
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org
 .. _esptool.py: https://github.com/espressif/esptool/#readme
-.. _CMake v3.5 documentation: https://cmake.org/cmake/help/v3.5/index.html
-.. _cmake command line documentation: https://cmake.org/cmake/help/v3.5/manual/cmake.1.html#options
-.. _cmake add_library: https://cmake.org/cmake/help/v3.5/command/add_library.html
-.. _cmake if: https://cmake.org/cmake/help/v3.5/command/if.html
-.. _cmake list: https://cmake.org/cmake/help/v3.5/command/list.html
-.. _cmake project: https://cmake.org/cmake/help/v3.5/command/project.html
-.. _cmake set: https://cmake.org/cmake/help/v3.5/command/set.html
-.. _cmake string: https://cmake.org/cmake/help/v3.5/command/string.html
+.. _CMake v3.16 documentation: https://cmake.org/cmake/help/v3.16/index.html
+.. _cmake command line documentation: https://cmake.org/cmake/help/v3.16/manual/cmake.1.html#options
+.. _cmake add_library: https://cmake.org/cmake/help/v3.16/command/add_library.html
+.. _cmake if: https://cmake.org/cmake/help/v3.16/command/if.html
+.. _cmake list: https://cmake.org/cmake/help/v3.16/command/list.html
+.. _cmake project: https://cmake.org/cmake/help/v3.16/command/project.html
+.. _cmake set: https://cmake.org/cmake/help/v3.16/command/set.html
+.. _cmake string: https://cmake.org/cmake/help/v3.16/command/string.html
 .. _cmake faq generated files: https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-generate-a-source-file-during-the-build
-.. _ADDITIONAL_MAKE_CLEAN_FILES: https://cmake.org/cmake/help/v3.5/prop_dir/ADDITIONAL_MAKE_CLEAN_FILES.html
-.. _ExternalProject: https://cmake.org/cmake/help/v3.5/module/ExternalProject.html
-.. _cmake language variables: https://cmake.org/cmake/help/v3.5/manual/cmake-variables.7.html#variables-for-languages
-.. _set_source_files_properties: https://cmake.org/cmake/help/v3.5/command/set_source_files_properties.html
-.. _target_compile_options: https://cmake.org/cmake/help/v3.5/command/target_compile_options.html
-.. _target_link_libraries: https://cmake.org/cmake/help/v3.5/command/target_link_libraries.html#command:target_link_libraries
-.. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.5/variable/CMAKE_TOOLCHAIN_FILE.html
-.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.5/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
+.. _ADDITIONAL_MAKE_CLEAN_FILES: https://cmake.org/cmake/help/v3.16/prop_dir/ADDITIONAL_MAKE_CLEAN_FILES.html
+.. _ExternalProject: https://cmake.org/cmake/help/v3.16/module/ExternalProject.html
+.. _cmake language variables: https://cmake.org/cmake/help/v3.16/manual/cmake-variables.7.html#variables-for-languages
+.. _set_source_files_properties: https://cmake.org/cmake/help/v3.16/command/set_source_files_properties.html
+.. _target_compile_options: https://cmake.org/cmake/help/v3.16/command/target_compile_options.html
+.. _target_link_libraries: https://cmake.org/cmake/help/v3.16/command/target_link_libraries.html#command:target_link_libraries
+.. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.16/variable/CMAKE_TOOLCHAIN_FILE.html
+.. _LINK_INTERFACE_MULTIPLICITY: https://cmake.org/cmake/help/v3.16/prop_tgt/LINK_INTERFACE_MULTIPLICITY.html
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/
