@@ -1049,7 +1049,6 @@ components/newlib/assert.c
 components/newlib/platform_include/assert.h
 components/newlib/platform_include/net/if.h
 components/newlib/platform_include/pthread.h
-components/newlib/platform_include/sys/dirent.h
 components/newlib/platform_include/sys/ioctl.h
 components/newlib/platform_include/sys/lock.h
 components/newlib/platform_include/sys/poll.h
