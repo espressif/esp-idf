@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include "lwip/netif.h"
 
-#include <stdbool.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
