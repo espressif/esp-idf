@@ -27,22 +27,30 @@ For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Co
     * EFUSE_BLK2 is used for security boot key. If not using that Secure Boot feature, they can be used for another purpose;
     * EFUSE_BLK3 can be partially reserved for the custom MAC address, or used entirely for user application. Note that some bits are already used in IDF.
 
-.. only:: not esp32
+.. only:: not esp32 and not esp32c2
 
     {IDF_TARGET_NAME} has 11 eFuse blocks each of the size of 256 bits (not all bits are available):
 
     * EFUSE_BLK0 is used entirely for system purposes;
     * EFUSE_BLK1 is used entirely for system purposes;
     * EFUSE_BLK2 is used entirely for system purposes;
-    * EFUSE_BLK3 or EFUSE_BLK_USER_DATA can be used for user purposes;
-    * EFUSE_BLK4 or EFUSE_BLK_KEY0 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK5 or EFUSE_BLK_KEY1 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK6 or EFUSE_BLK_KEY2 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK7 or EFUSE_BLK_KEY3 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK8 or EFUSE_BLK_KEY4 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK9 or EFUSE_BLK_KEY5 can be used as key (for secure_boot or flash_encryption) or for user purposes;
-    * EFUSE_BLK10 or EFUSE_BLK_SYS_DATA_PART2 is reseved for system purposes.
+    * EFUSE_BLK3 (also named EFUSE_BLK_USER_DATA) can be used for user purposes;
+    * EFUSE_BLK4 (also named EFUSE_BLK_KEY0) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK5 (also named EFUSE_BLK_KEY1) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK6 (also named EFUSE_BLK_KEY2) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK7 (also named EFUSE_BLK_KEY3) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK8 (also named EFUSE_BLK_KEY4) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK9 (also named EFUSE_BLK_KEY5) can be used as key (for secure_boot or flash_encryption) or for user purposes;
+    * EFUSE_BLK10 (also named EFUSE_BLK_SYS_DATA_PART2) is reseved for system purposes.
 
+.. only:: esp32c2
+
+    {IDF_TARGET_NAME} has 4 eFuse blocks each of the size of 256 bits (not all bits are available):
+
+    * EFUSE_BLK0 is used entirely for system purposes;
+    * EFUSE_BLK1 is used entirely for system purposes;
+    * EFUSE_BLK2 is used entirely for system purposes;
+    * EFUSE_BLK3 (also named EFUSE_BLK_KEY0) can be used as key (for secure_boot or flash_encryption) or for user purposes;
 
 Each block is divided into 8 32-bits registers.
 
@@ -64,7 +72,7 @@ Description CSV file
 The CSV file contains a description of the eFuse fields. In the simple case, one field has one line of description.
 Table header:
 
-{IDF_TARGET_MAX_EFUSE_BLK:default = "EFUSE_BLK10", esp32 = "EFUSE_BLK3"}
+{IDF_TARGET_MAX_EFUSE_BLK:default = "EFUSE_BLK10", esp32 = "EFUSE_BLK3", esp32c2 = "EFUSE_BLK3"}
 
 .. code-block:: none
 
@@ -110,6 +118,8 @@ If a non-sequential bit order is required to describe a field, then the field de
 
 This field will available in code as ESP_EFUSE_MAC_FACTORY and ESP_EFUSE_MAC_FACTORY_CRC.
 
+.. _structured-efuse-fields:
+
 Structured efuse fields
 -----------------------
 
@@ -133,6 +143,20 @@ It is possible to create aliases for fields with the same range, see ``WR_DIS.FI
 
 The IDF names for structured efuse fields should be unique. The ``efuse_table_gen`` tool will generate the final names where the dot will be replaced by ``_``. The names for using in IDF are ESP_EFUSE_WR_DIS, ESP_EFUSE_WR_DIS_RD_DIS, ESP_EFUSE_WR_DIS_FIELD_2_B1, etc.
 
+The ``efuse_table_gen`` tool checks that the fields do not overlap each other and must be within the range of a field if there is a violation, then throws the following error:
+
+.. code-block:: none
+
+    Field at USER_DATA, EFUSE_BLK3, 0, 256  intersected with  SERIAL_NUMBER, EFUSE_BLK3, 0, 32
+
+Solution: Describe ``SERIAL_NUMBER`` to be included in ``USER_DATA``. (``USER_DATA.SERIAL_NUMBER``).
+
+.. code-block:: none
+
+    Field at FEILD, EFUSE_BLK3, 0, 50  out of range  FEILD.MAJOR_NUMBER, EFUSE_BLK3, 60, 32
+
+Solution: Change ``bit_start`` for ``FIELD.MAJOR_NUMBER`` from 60 to 0, so ``MAJOR_NUMBER`` is in the ``FEILD`` range.
+
 efuse_table_gen.py tool
 -----------------------
 
@@ -143,7 +167,7 @@ To generate a `common` files, use the following command ``idf.py efuse-common-ta
 .. code-block:: bash
 
     cd $IDF_PATH/components/efuse/
-    ./efuse_table_gen.py {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv
+    ./efuse_table_gen.py --idf_target {IDF_TARGET_PATH_NAME} {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv
 
 After generation in the folder $IDF_PATH/components/efuse/`{IDF_TARGET_PATH_NAME}` create:
 
@@ -155,7 +179,7 @@ To generate a `custom` files, use the following command ``idf.py efuse-custom-ta
 .. code-block:: bash
 
     cd $IDF_PATH/components/efuse/
-    ./efuse_table_gen.py {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv PROJECT_PATH/main/esp_efuse_custom_table.csv
+    ./efuse_table_gen.py --idf_target {IDF_TARGET_PATH_NAME} {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv PROJECT_PATH/main/esp_efuse_custom_table.csv
 
 After generation in the folder PROJECT_PATH/main create:
 
@@ -167,7 +191,7 @@ To use the generated fields, you need to include two files:
 .. code-block:: c
 
     #include "esp_efuse.h"
-    #include "esp_efuse_table.h" or "esp_efuse_custom_table.h"
+    #include "esp_efuse_table.h" // or "esp_efuse_custom_table.h"
 
 
 Supported coding scheme
@@ -213,7 +237,7 @@ Supported coding scheme
     Coding schemes are used to protect against data corruption. {IDF_TARGET_NAME} supports two coding schemes:
 
     * ``None``. EFUSE_BLK0 is stored with four backups, meaning each bit is stored four times. This backup scheme is automatically applied by the hardware and is not visible to software. EFUSE_BLK0 can be written many times.
-    * ``RS``. EFUSE_BLK1 - EFUSE_BLK10 use Reed-Solomon coding scheme that supports up to 5 bytes of automatic error correction. Software will encode the 32-byte EFUSE_BLKx using RS (44, 32) to generate a 12-byte check code, and then burn the EFUSE_BLKx and the check code into eFuse at the same time. The eFuse Controller automatically decodes the RS encoding and applies error correction when reading back the eFuse block. Because the RS check codes are generated across the entire 256-bit eFuse block, each block can only be written to one time.
+    * ``RS``. EFUSE_BLK1 - {IDF_TARGET_MAX_EFUSE_BLK} use Reed-Solomon coding scheme that supports up to 5 bytes of automatic error correction. Software will encode the 32-byte EFUSE_BLKx using RS (44, 32) to generate a 12-byte check code, and then burn the EFUSE_BLKx and the check code into eFuse at the same time. The eFuse Controller automatically decodes the RS encoding and applies error correction when reading back the eFuse block. Because the RS check codes are generated across the entire 256-bit eFuse block, each block can only be written to one time.
 
 To write some fields into one block, or different blocks in one time, you need to use ``the batch writing mode``. Firstly set this mode through :cpp:func:`esp_efuse_batch_write_begin` function then write some fields as usual using the ``esp_efuse_write_...`` functions. At the end to burn them, call the :cpp:func:`esp_efuse_batch_write_commit` function. It burns prepared data to the eFuse blocks and disables the ``batch recording mode``.
 
@@ -254,29 +278,34 @@ Access to the fields is via a pointer to the description structure. API function
 
 For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_chip_ver`, :cpp:func:`esp_efuse_get_pkg_ver`.
 
-.. only:: not esp32
+.. only:: SOC_EFUSE_KEY_PURPOSE_FIELD or SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 
     eFuse API for keys
     ------------------
 
-    EFUSE_BLK_KEY0 - EFUSE_BLK_KEY5 are intended to keep up to 6 keys with a length of 256-bits. Each key has an ``ESP_EFUSE_KEY_PURPOSE_x`` field which defines the purpose of these keys. The purpose field is described in :cpp:type:`esp_efuse_purpose_t`.
+    .. only:: SOC_EFUSE_KEY_PURPOSE_FIELD
 
-    The purposes like ``ESP_EFUSE_KEY_PURPOSE_XTS_AES_...`` are used for flash encryption.
+        EFUSE_BLK_KEY0 - EFUSE_BLK_KEY5 are intended to keep up to 6 keys with a length of 256-bits. Each key has an ``ESP_EFUSE_KEY_PURPOSE_x`` field which defines the purpose of these keys. The purpose field is described in :cpp:type:`esp_efuse_purpose_t`.
 
-    The purposes like ``ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST...`` are used for secure boot.
+        The purposes like ``ESP_EFUSE_KEY_PURPOSE_XTS_AES_...`` are used for flash encryption.
 
-    There are some eFuse APIs useful to work with states of keys.
+        The purposes like ``ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST...`` are used for secure boot.
 
-    * :cpp:func:`esp_efuse_get_purpose_field` - Returns a pointer to a key purpose for an eFuse key block.
-    * :cpp:func:`esp_efuse_get_key` - Returns a pointer to a key block.
-    * :cpp:func:`esp_efuse_set_key_purpose` - Sets a key purpose for an eFuse key block.
-    * :cpp:func:`esp_efuse_set_keypurpose_dis_write` - Sets a write protection of the key purpose field for an eFuse key block.
-    * :cpp:func:`esp_efuse_find_unused_key_block` - Search for an unused key block and return the first one found.
-    * :cpp:func:`esp_efuse_count_unused_key_blocks` - Returns the number of unused eFuse key blocks in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
-    * :cpp:func:`esp_efuse_get_digest_revoke` - Returns the status of the Secure Boot public key digest revocation bit.
-    * :cpp:func:`esp_efuse_set_digest_revoke` - Sets the Secure Boot public key digest revocation bit.
-    * :cpp:func:`esp_efuse_get_write_protect_of_digest_revoke` - Returns a write protection of the Secure Boot public key digest revocation bit.
-    * :cpp:func:`esp_efuse_set_write_protect_of_digest_revoke` - Sets a write protection of the Secure Boot public key digest revocation bit.
+        There are some eFuse APIs useful to work with states of keys.
+
+        * :cpp:func:`esp_efuse_get_purpose_field` - Returns a pointer to a key purpose for an eFuse key block.
+        * :cpp:func:`esp_efuse_get_key` - Returns a pointer to a key block.
+        * :cpp:func:`esp_efuse_set_key_purpose` - Sets a key purpose for an eFuse key block.
+        * :cpp:func:`esp_efuse_set_keypurpose_dis_write` - Sets a write protection of the key purpose field for an eFuse key block.
+        * :cpp:func:`esp_efuse_find_unused_key_block` - Search for an unused key block and return the first one found.
+        * :cpp:func:`esp_efuse_count_unused_key_blocks` - Returns the number of unused eFuse key blocks in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
+
+    .. only:: SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+
+        * :cpp:func:`esp_efuse_get_digest_revoke` - Returns the status of the Secure Boot public key digest revocation bit.
+        * :cpp:func:`esp_efuse_set_digest_revoke` - Sets the Secure Boot public key digest revocation bit.
+        * :cpp:func:`esp_efuse_get_write_protect_of_digest_revoke` - Returns a write protection of the Secure Boot public key digest revocation bit.
+        * :cpp:func:`esp_efuse_set_write_protect_of_digest_revoke` - Sets a write protection of the Secure Boot public key digest revocation bit.
 
 
 How to add a new field
@@ -284,78 +313,91 @@ How to add a new field
 
 1. Find a free bits for field. Show `esp_efuse_table.csv` file or run ``idf.py show-efuse-table`` or the next command:
 
+.. include:: inc/show-efuse-table_{IDF_TARGET_NAME}.rst
+
+The number of bits not included in square brackets is free (some bits are reserved for Espressif). All fields are checked for overlapping.
+
+To add fields to an existing field, use the :ref:`Structured efuse fields <structured-efuse-fields>` technique. For example, adding the fields: SERIAL_NUMBER, MODEL_NUMBER and HARDWARE REV to an existing ``USER_DATA`` field. Use ``.`` (dot) to show an attachment in a field.
+
 .. code-block:: none
 
-    $ ./efuse_table_gen.py {IDF_TARGET_PATH_NAME}/esp_efuse_table.csv --info
-    eFuse coding scheme: NONE
-    #       field_name                      efuse_block     bit_start       bit_count
-    1       WR_DIS_FLASH_CRYPT_CNT          EFUSE_BLK0         2               1
-    2       WR_DIS_BLK1                     EFUSE_BLK0         7               1
-    3       WR_DIS_BLK2                     EFUSE_BLK0         8               1
-    4       WR_DIS_BLK3                     EFUSE_BLK0         9               1
-    5       RD_DIS_BLK1                     EFUSE_BLK0         16              1
-    6       RD_DIS_BLK2                     EFUSE_BLK0         17              1
-    7       RD_DIS_BLK3                     EFUSE_BLK0         18              1
-    8       FLASH_CRYPT_CNT                 EFUSE_BLK0         20              7
-    9       MAC_FACTORY                     EFUSE_BLK0         32              8
-    10      MAC_FACTORY                     EFUSE_BLK0         40              8
-    11      MAC_FACTORY                     EFUSE_BLK0         48              8
-    12      MAC_FACTORY                     EFUSE_BLK0         56              8
-    13      MAC_FACTORY                     EFUSE_BLK0         64              8
-    14      MAC_FACTORY                     EFUSE_BLK0         72              8
-    15      MAC_FACTORY_CRC                 EFUSE_BLK0         80              8
-    16      CHIP_VER_DIS_APP_CPU            EFUSE_BLK0         96              1
-    17      CHIP_VER_DIS_BT                 EFUSE_BLK0         97              1
-    18      CHIP_VER_PKG                    EFUSE_BLK0        105              3
-    19      CHIP_CPU_FREQ_LOW               EFUSE_BLK0        108              1
-    20      CHIP_CPU_FREQ_RATED             EFUSE_BLK0        109              1
-    21      CHIP_VER_REV1                   EFUSE_BLK0        111              1
-    22      ADC_VREF_AND_SDIO_DREF          EFUSE_BLK0        136              6
-    23      XPD_SDIO_REG                    EFUSE_BLK0        142              1
-    24      SDIO_TIEH                       EFUSE_BLK0        143              1
-    25      SDIO_FORCE                      EFUSE_BLK0        144              1
-    26      ENCRYPT_CONFIG                  EFUSE_BLK0        188              4
-    27      CONSOLE_DEBUG_DISABLE           EFUSE_BLK0        194              1
-    28      ABS_DONE_0                      EFUSE_BLK0        196              1
-    29      DISABLE_JTAG                    EFUSE_BLK0        198              1
-    30      DISABLE_DL_ENCRYPT              EFUSE_BLK0        199              1
-    31      DISABLE_DL_DECRYPT              EFUSE_BLK0        200              1
-    32      DISABLE_DL_CACHE                EFUSE_BLK0        201              1
-    33      ENCRYPT_FLASH_KEY               EFUSE_BLK1         0              256
-    34      SECURE_BOOT_KEY                 EFUSE_BLK2         0              256
-    35      MAC_CUSTOM_CRC                  EFUSE_BLK3         0               8
-    36      MAC_CUSTOM                      EFUSE_BLK3         8               48
-    37      ADC1_TP_LOW                     EFUSE_BLK3         96              7
-    38      ADC1_TP_HIGH                    EFUSE_BLK3        103              9
-    39      ADC2_TP_LOW                     EFUSE_BLK3        112              7
-    40      ADC2_TP_HIGH                    EFUSE_BLK3        119              9
-    41      SECURE_VERSION                  EFUSE_BLK3        128              32
-    42      MAC_CUSTOM_VER                  EFUSE_BLK3        184              8
-
-    Used bits in eFuse table:
-    EFUSE_BLK0
-    [2 2] [7 9] [16 18] [20 27] [32 87] [96 97] [105 109] [111 111] [136 144] [188 191] [194 194] [196 196] [198 201]
-
-    EFUSE_BLK1
-    [0 255]
-
-    EFUSE_BLK2
-    [0 255]
-
-    EFUSE_BLK3
-    [0 55] [96 159] [184 191]
-
-    Note: Not printed ranges are free for using. (bits in EFUSE_BLK0 are reserved for Espressif)
-
-    Parsing eFuse CSV input file $IDF_PATH/components/efuse/{IDF_TARGET_PATH_NAME}/esp_efuse_table.csv ...
-    Verifying eFuse table...
-
-
-The number of bits not included in square brackets is free (bits in EFUSE_BLK0 are reserved for Espressif). All fields are checked for overlapping.
+    USER_DATA.SERIAL_NUMBER,                  EFUSE_BLK3,    0,  32,
+    USER_DATA.MODEL_NUMBER,                   EFUSE_BLK3,    32, 10,
+    USER_DATA.HARDWARE_REV,                   EFUSE_BLK3,    42, 10,
 
 2. Fill a line for field: field_name, efuse_block, bit_start, bit_count, comment.
 
 3. Run a ``show_efuse_table`` command to check eFuse table. To generate source files run ``efuse_common_table`` or ``efuse_custom_table`` command.
+
+You may get errors such as ``intersects with`` or ``out of range``. Please see how to solve them in the :ref:`Structured efuse fields <structured-efuse-fields>` article.
+
+Bit Order
+---------
+
+The eFuses bit order is little endian (see the example below), it means that eFuse bits are read and written from LSB to MSB:
+
+.. code-block:: none
+
+    $ espefuse.py dump
+
+    USER_DATA      (BLOCK3          ) [3 ] read_regs: 03020100 07060504 0B0A0908 0F0E0D0C 13121111 17161514 1B1A1918 1F1E1D1C
+    BLOCK4         (BLOCK4          ) [4 ] read_regs: 03020100 07060504 0B0A0908 0F0E0D0C 13121111 17161514 1B1A1918 1F1E1D1C
+
+    where is the register representation:
+
+    EFUSE_RD_USR_DATA0_REG = 0x03020100
+    EFUSE_RD_USR_DATA1_REG = 0x07060504
+    EFUSE_RD_USR_DATA2_REG = 0x0B0A0908
+    EFUSE_RD_USR_DATA3_REG = 0x0F0E0D0C
+    EFUSE_RD_USR_DATA4_REG = 0x13121111
+    EFUSE_RD_USR_DATA5_REG = 0x17161514
+    EFUSE_RD_USR_DATA6_REG = 0x1B1A1918
+    EFUSE_RD_USR_DATA7_REG = 0x1F1E1D1C
+
+    where is the byte representation:
+
+    byte[0] = 0x00, byte[1] = 0x01, ... byte[3] = 0x03, byte[4] = 0x04, ..., byte[31] = 0x1F
+
+For example, csv file describes the ``USER_DATA`` field, which occupies all 256 bits (a whole block).
+
+.. code-block:: none
+
+    USER_DATA,          EFUSE_BLK3,    0,  256,     User data
+    USER_DATA.FIELD1,   EFUSE_BLK3,    16,  16,     Field1
+
+    ID,                 EFUSE_BLK4,    8,  3,      ID bit[0..2]
+    ,                   EFUSE_BLK4,    16, 2,      ID bit[3..4]
+    ,                   EFUSE_BLK4,    32, 3,      ID bit[5..7]
+
+Thus, reading the eFuse ``USER_DATA`` block written as above gives the following results:
+
+.. code-block:: c
+
+    uint8_t buf[32] = { 0 };
+    esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA, &buf, sizeof(buf) * 8);
+    // buf[0] = 0x00, buf[1] = 0x01, ... buf[31] = 0x1F
+
+    uint32_t field1 = 0;
+    size_t field1_size = ESP_EFUSE_USER_DATA[0]->bit_count; // can be used for this case because it only consists of one entry
+    esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA, &field1, field1_size);
+    // field1 = 0x0302
+
+    uint32_t field1_1 = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA, &field1_1, 2); // reads only first 2 bits
+    // field1 = 0x0002
+
+    uint8_t id = 0;
+    size_t id_size = esp_efuse_get_field_size(ESP_EFUSE_ID); // returns 6
+    // size_t id_size = ESP_EFUSE_USER_DATA[0]->bit_count; // can NOT be used because it consists of 3 entries. It returns 3 not 6.
+    esp_efuse_read_field_blob(ESP_EFUSE_ID, &id, id_size);
+    // id = 0x91
+    // b'100 10  001
+    //   [3] [2] [3]
+
+    uint8_t id_1 = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_ID, &id_1, 3);
+    // id = 0x01
+    // b'001
 
 Debug eFuse & Unit tests
 ------------------------
@@ -374,7 +416,7 @@ espefuse.py
 
 esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_.
 
-   .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
+.. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 
 
 .. include-build-file:: inc/components/efuse/{IDF_TARGET_PATH_NAME}/include/esp_efuse.inc
