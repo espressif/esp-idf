@@ -88,10 +88,12 @@ struct esp_rgb_panel_t {
     void *user_ctx;                // Reserved user's data of callback functions
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
+    portMUX_TYPE spinlock;          // to protect panel specific resource from concurrent access (e.g. between task and ISR)
     struct {
         unsigned int disp_en_level: 1; // The level which can turn on the screen by `disp_gpio_num`
         unsigned int stream_mode: 1;   // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
         unsigned int fb_in_psram: 1;   // Whether the frame buffer is in PSRAM
+        unsigned int need_update_pclk: 1; // Whether to update the PCLK before start a new transaction
     } flags;
     dma_descriptor_t dma_nodes[]; // DMA descriptor pool of size `num_dma_nodes`
 };
@@ -187,6 +189,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->on_frame_trans_done = rgb_panel_config->on_frame_trans_done;
     rgb_panel->user_ctx = rgb_panel_config->user_ctx;
+    rgb_panel->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     // fill function table
     rgb_panel->base.del = rgb_panel_del;
     rgb_panel->base.reset = rgb_panel_reset;
@@ -225,6 +228,18 @@ err:
         free(rgb_panel);
     }
     return ret;
+}
+
+esp_err_t esp_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq_hz)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    // the pclk frequency will be updated in `lcd_rgb_panel_start_transmission()`
+    portENTER_CRITICAL(&rgb_panel->spinlock);
+    rgb_panel->flags.need_update_pclk = true;
+    rgb_panel->timings.pclk_hz = freq_hz;
+    portEXIT_CRITICAL(&rgb_panel->spinlock);
+    return ESP_OK;
 }
 
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
@@ -499,6 +514,15 @@ static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
     // reset FIFO of DMA and LCD, incase there remains old frame data
     gdma_reset(rgb_panel->dma_chan);
     lcd_ll_stop(rgb_panel->hal.dev);
+
+    // check whether to update the PCLK frequency
+    portENTER_CRITICAL_SAFE(&rgb_panel->spinlock);
+    if (unlikely(rgb_panel->flags.need_update_pclk)) {
+        rgb_panel->flags.need_update_pclk = false;
+        rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz);
+    }
+    portEXIT_CRITICAL_SAFE(&rgb_panel->spinlock);
+
     lcd_ll_fifo_reset(rgb_panel->hal.dev);
     gdma_start(rgb_panel->dma_chan, (intptr_t)rgb_panel->dma_nodes);
     // delay 1us is sufficient for DMA to pass data to LCD FIFO

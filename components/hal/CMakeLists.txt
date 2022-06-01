@@ -85,6 +85,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "emac_hal.c")
     endif()
 
+    if(CONFIG_SOC_LCDCAM_SUPPORTED)
+        list(APPEND srcs "lcd_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "dac_hal.c"
@@ -119,7 +123,6 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
             "ds_hal.c"
-            "lcd_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
             "touch_sensor_hal.c"

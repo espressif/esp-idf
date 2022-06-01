@@ -28,3 +28,5 @@ entries:
         timer_hal_iram (noflash)
     if GPIO_CTRL_FUNC_IN_IRAM = y:
         gpio_hal: gpio_hal_intr_disable (noflash)
+    if LCD_RGB_ISR_IRAM_SAFE = y:
+        lcd_hal: lcd_hal_cal_pclk_freq (noflash)

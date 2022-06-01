@@ -78,7 +78,7 @@ typedef struct {
 /**
  * @brief Declare the prototype of the function that will be invoked when panel IO finishes transferring color data
  *
- * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel`
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
  * @param[in] edata Panel event data, fed by driver
  * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_config_t`
  * @return Whether a high priority task has been waken up by this function
@@ -121,6 +121,24 @@ typedef struct {
  *          - ESP_OK                on success
  */
 esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_lcd_panel_handle_t *ret_panel);
+
+/**
+ * @brief Set frequency of PCLK for RGB LCD panel
+ *
+ * @note The PCLK frequency is set in the `esp_lcd_rgb_timing_t` and gets configured during LCD panel initialization.
+ *       Usually you don't need to call this function to set the PCLK again, but in some cases, you may need to change the PCLK frequency.
+ *       e.g. to slow down the PCLK frequency to reduce power consumption or to reduce the memory throughput.
+ * @note This function doesn't cause the hardware to update the PCLK immediately but to record the new frequency and set a flag internally.
+ *       Next time when start a new transaction, the driver will update the PCLK automatically.
+ *
+ * @param panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param freq_hz Frequency of pixel clock, in Hz
+ * @return
+ *          - ESP_ERR_NOT_SUPPORTED   if frequency is unreachable
+ *          - ESP_ERR_INVALID_ARG     if parameter panel is invalid
+ *          - ESP_OK                  on success
+ */
+esp_err_t esp_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq_hz);
 
 #endif // SOC_LCD_RGB_SUPPORTED
 
