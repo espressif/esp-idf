@@ -39,15 +39,19 @@ esp_err_t touch_pad_sw_start(void);
  * @brief Set touch sensor times of charge and discharge and sleep time.
  *        Excessive total time will slow down the touch response.
  *        Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
- *
+ * @note  Though this API name is same as ESP32, it has opposite logic of capacity.
+ *        The touch sensor on ESP32-S3 will fix the count of charge and discharge cycles (specified by the second parameter)
+ *        and then record the count of the clock cycles(which is 8 MHz) during the sensing period as the raw value.
+ *        That means the raw value will increase as the capacity of the touch pad increasing.
  * @note The greater the duty cycle of the measurement time, the more system power is consumed.
+ *
  * @param sleep_cycle The touch sensor will sleep after each measurement.
  *                    sleep_cycle decide the interval between each measurement.
  *                    t_sleep = sleep_cycle / (RTC_SLOW_CLK frequency).
  *                    The approximate frequency value of RTC_SLOW_CLK can be obtained using rtc_clk_slow_freq_get_hz function.
- * @param meas_times The times of charge and discharge in each measure process of touch channels.
- *                  The timer frequency is 8Mhz. Range: 0 ~ 0xffff.
- *                  Recommended typical value: Modify this value to make the measurement time around 1ms.
+ * @param meas_times The times of charge and discharge in each measurement of touch channels.  Range: 0 ~ 0xffff.
+ *                   Recommended typical value: Modify this value to make the measurement time around 1 ms.
+ *                   The clock frequency is 8 MHz, so the raw value will be about 8000 if the measurement time is 1 ms
  * @return
  *      - ESP_OK on success
  */
