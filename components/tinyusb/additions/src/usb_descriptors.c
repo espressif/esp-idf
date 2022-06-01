@@ -179,12 +179,12 @@ uint8_t const descriptor_cfg_kconfig[] = {
 
 #   if CFG_TUD_CDC
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, 64),
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, CFG_TUD_CDC_EP_BUFSIZE),
 #   endif
 
 #   if CFG_TUD_CDC > 1
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC1, 4, 0x83, 8, 0x04, 0x84, 64),
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC1, 4, 0x83, 8, 0x04, 0x84, CFG_TUD_CDC_EP_BUFSIZE),
 #   endif
 
 #   if CFG_TUD_MSC
