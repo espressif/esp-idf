@@ -2860,17 +2860,18 @@ void vTaskStartScheduler( void )
          * starts to run. */
         portDISABLE_INTERRUPTS();
 
-        #if ( configUSE_NEWLIB_REENTRANT == 1 )
+        #if ( ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) )
             {
                 /* Switch Newlib's _impure_ptr variable to point to the _reent
                  * structure specific to the task that will run first.
                  * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
-                 * for additional information. */
-#ifndef ESP_PLATFORM
+                 * for additional information.
+                 *
+                 * Note: Updating the _impure_ptr is not required when Newlib is compiled with
+                 * __DYNAMIC_REENT__ enabled. The port should provide __getreent() instead. */
                 _impure_ptr = &( pxCurrentTCB->xNewLib_reent );
-#endif
             }
-        #endif /* configUSE_NEWLIB_REENTRANT */
+        #endif /* ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) */
 
         xNextTaskUnblockTime = portMAX_DELAY;
         xSchedulerRunning = pdTRUE;
@@ -3953,17 +3954,18 @@ void vTaskSwitchContext( BaseType_t xCoreID )
                 }
             #endif
 
-            #if ( configUSE_NEWLIB_REENTRANT == 1 )
+            #if ( ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) )
                 {
                     /* Switch Newlib's _impure_ptr variable to point to the _reent
                      * structure specific to this task.
                      * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
-                     * for additional information. */
-#ifndef ESP_PLATFORM
+                     * for additional information.
+                     *
+                     * Note: Updating the _impure_ptr is not required when Newlib is compiled with
+                     * __DYNAMIC_REENT__ enabled. The the port should provide __getreent() instead. */
                     _impure_ptr = &( pxCurrentTCB->xNewLib_reent );
-#endif
                 }
-            #endif /* configUSE_NEWLIB_REENTRANT */
+            #endif /* ( configUSE_NEWLIB_REENTRANT == 1 ) && ( configNEWLIB_REENTRANT_IS_DYNAMIC == 0 ) */
         }
     }
     portRELEASE_ISR_LOCK();
@@ -4918,7 +4920,6 @@ static void prvCheckTasksWaitingTermination( void )
 
     static void prvDeleteTCB( TCB_t * pxTCB )
     {
-
         /* This call is required specifically for the TriCore port.  It must be
          * above the vPortFree() calls.  The call is also used by ports/demos that
          * want to allocate and clean RAM statically. */
@@ -5008,7 +5009,7 @@ static void prvResetNextTaskUnblockTime( void )
         return xReturn;
     }
 
-    TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
+    TaskHandle_t xTaskGetCurrentTaskHandleCPU( UBaseType_t xCoreID )
     {
         TaskHandle_t xReturn = NULL;
 
@@ -6440,24 +6441,3 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
-
-/* ------------------------------------------------ IDF Compatibility --------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#ifdef ESP_PLATFORM
-#if ( configUSE_NEWLIB_REENTRANT == 1 )
-//Return global reent struct if FreeRTOS isn't running,
-struct _reent* __getreent(void) {
-    //No lock needed because if this changes, we won't be running anymore.
-    TCB_t *currTask=xTaskGetCurrentTaskHandle();
-    if (currTask==NULL) {
-        //No task running. Return global struct.
-        return _GLOBAL_REENT;
-    } else {
-        //We have a task; return its reentrant struct.
-        return &currTask->xNewLib_reent;
-    }
-}
-#endif
-#endif //ESP_PLATFORM

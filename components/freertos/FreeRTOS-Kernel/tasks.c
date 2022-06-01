@@ -2418,22 +2418,6 @@ void vTaskEndScheduler( void )
 }
 /*----------------------------------------------------------*/
 
-#if ( configUSE_NEWLIB_REENTRANT == 1 )
-//Return global reent struct if FreeRTOS isn't running,
-struct _reent* __getreent(void) {
-    //No lock needed because if this changes, we won't be running anymore.
-    TCB_t *currTask=xTaskGetCurrentTaskHandle();
-    if (currTask==NULL) {
-        //No task running. Return global struct.
-        return _GLOBAL_REENT;
-    } else {
-        //We have a task; return its reentrant struct.
-        return &currTask->xNewLib_reent;
-    }
-}
-#endif
-
-
 void vTaskSuspendAll( void )
 {
     /* A critical section is not required as the variable is of type

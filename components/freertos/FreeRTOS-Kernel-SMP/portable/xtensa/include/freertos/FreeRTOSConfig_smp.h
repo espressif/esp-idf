@@ -177,6 +177,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 #define configSTACK_DEPTH_TYPE                          uint32_t
 #define configUSE_NEWLIB_REENTRANT                      1
+#define configNEWLIB_REENTRANT_IS_DYNAMIC               1   // IDF Newlib supports dynamic reentrancy. We provide our own __getreent() function
 #define configENABLE_BACKWARD_COMPATIBILITY             0
 #define configASSERT(a)                                 assert(a)
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
