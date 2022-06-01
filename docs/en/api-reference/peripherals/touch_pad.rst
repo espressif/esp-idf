@@ -84,12 +84,37 @@ Touch State Measurements
 
 For the demonstration of how to read the touch pad data, check the application example :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`.
 
+Method of Measurements
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_TOUCH_VERSION_1
+
+    The touch sensor will count the number of charge/discharge cycles over a fixed period of time (specified by :cpp:func:`touch_pad_set_measurement_clock_cycles`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor will sleep until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
+
+    .. note::
+
+        If the specified clock cycles for measurement is too samll, the result may be inaccurate, but increasing clock cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    The touch sensor will record the period of time (i.e. the number of clock cycles) over a fixed charge/discharge cycles (specified by :cpp:func:`touch_pad_set_charge_discharge_times`). The count result is the raw data that read from :cpp:func:`touch_pad_read_raw_data`. After finishing one measurement, the touch sensor will sleep until the next measurement start, this interval between two measurements can be set by :cpp:func:`touch_pad_set_measurement_interval`.
+
+    .. note::
+
+        If the specified charge and discharge cycles for measurement is too samll, the result may be inaccurate, but increasing charge and discharge cycles will increase the power consumption as well. Additionally, the response of the touch sensor will slow down if the total time of the inverval and measurement is too long.
+
 Optimization of Measurements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A touch sensor has several configurable parameters to match the characteristics of a particular touch pad design. For instance, to sense smaller capacity changes, it is possible to narrow down the reference voltage range within which the touch pads are charged / discharged. The high and low reference voltages are set using the function :cpp:func:`touch_pad_set_voltage`.
 
-Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_meas_time`.
+.. only:: SOC_TOUCH_VERSION_1
+
+    Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_measurement_clock_cycles`.
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    Besides the ability to discern smaller capacity changes, a positive side effect is reduction of power consumption for low power applications. A likely negative effect is an increase in measurement noise. If the dynamic range of obtained readings is still satisfactory, then further reduction of power consumption might be done by reducing the measurement time with :cpp:func:`touch_pad_set_charge_discharge_times`.
 
 The following list summarizes available measurement parameters and corresponding 'set' functions:
 
@@ -98,7 +123,13 @@ The following list summarizes available measurement parameters and corresponding
     * voltage range: :cpp:func:`touch_pad_set_voltage`
     * speed (slope): :cpp:func:`touch_pad_set_cnt_mode`
 
-* Measurement time: :cpp:func:`touch_pad_set_meas_time`
+.. only:: SOC_TOUCH_VERSION_1
+
+    * Clock cycles of one measurement: :cpp:func:`touch_pad_set_measurement_clock_cycles`
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    * Charge and discharge times of one measurement: :cpp:func:`touch_pad_set_charge_discharge_times`
 
 Relationship between the voltage range (high / low reference voltages), speed (slope), and measurement time is shown in the figure below.
 

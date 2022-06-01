@@ -36,22 +36,74 @@ esp_err_t touch_pad_fsm_stop(void);
 esp_err_t touch_pad_sw_start(void);
 
 /**
+ * @brief Set charge and discharge times of each measurement
+ * @note  This function will specify the charge and discharge times in each measurement period
+ *        The clock is sourced from SOC_MOD_CLK_RTC_FAST, and its default frequency is SOC_CLK_RC_FAST_FREQ_APPROX
+ *        The touch sensor will record the total clock cycles of all the charge and discharge cycles as the final result (raw value)
+ * @note  If the charge and discharge times is too small, it may lead to inaccurate results.
+ *
+ * @param charge_discharge_times    Charge and discharge times, range: 0 ~ 0xffff.
+ *                                  No exact typical value can be recommended because the capacity is influenced by the hardware design and how finger touches,
+ *                                  but suggest adjusting this value to make the measurement time around 1 ms.
+ * @return
+ *      - ESP_OK    Set charge and discharge times success
+ */
+esp_err_t touch_pad_set_charge_discharge_times(uint16_t charge_discharge_times);
+
+/**
+ * @brief Get charge and discharge times of each measurement
+ *
+ * @param charge_discharge_times    Charge and discharge times
+ * @return
+ *      - ESP_OK    Get charge_discharge_times success
+ *      - ESP_ERR_INVALID_ARG   The input parameter is NULL
+ */
+esp_err_t touch_pad_get_charge_discharge_times(uint16_t *charge_discharge_times);
+
+/**
+ * @brief Set the interval between two measurements
+ * @note  The touch sensor will sleep between two mesurements
+ *        This function is to set the interval cycle
+ *        And the interval is clocked from SOC_MOD_CLK_RTC_SLOW, its default frequency is SOC_CLK_RC_SLOW_FREQ_APPROX
+ *
+ * @param interval_cycle    The interval between two measurements
+ *                          sleep_time = interval_cycle / SOC_CLK_RC_SLOW_FREQ_APPROX.
+ *                          The approximate frequency value of RTC_SLOW_CLK can be obtained using rtc_clk_slow_freq_get_hz function.
+ * @return
+ *      - ESP_OK    Set interval cycle success
+ */
+esp_err_t touch_pad_set_measurement_interval(uint16_t interval_cycle);
+
+/**
+ * @brief Get the interval between two measurements
+ *
+ * @param interval_cycle    The interval between two measurements
+ * @return
+ *      - ESP_OK    Get interval cycle success
+ *      - ESP_ERR_INVALID_ARG   The input parameter is NULL
+ */
+esp_err_t touch_pad_get_measurement_interval(uint16_t *interval_cycle);
+
+/**
  * @brief Set touch sensor times of charge and discharge and sleep time.
  *        Excessive total time will slow down the touch response.
  *        Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
- *
+ * @note  The touch sensor will measure time of a fixed number of charge/discharge cycles (specified as the second parameter).
+ *        That means the time (raw value) will increase as the capacity of the touch pad is increasing.
+ *        The time (raw value) here is the number of clock cycles which is sourced from SOC_MOD_CLK_RTC_FAST and at (SOC_CLK_RC_FAST_FREQ_APPROX) Hz as default
  * @note The greater the duty cycle of the measurement time, the more system power is consumed.
+ *
  * @param sleep_cycle The touch sensor will sleep after each measurement.
  *                    sleep_cycle decide the interval between each measurement.
- *                    t_sleep = sleep_cycle / (RTC_SLOW_CLK frequency).
+ *                    t_sleep = sleep_cycle / SOC_CLK_RC_SLOW_FREQ_APPROX.
  *                    The approximate frequency value of RTC_SLOW_CLK can be obtained using rtc_clk_slow_freq_get_hz function.
- * @param meas_times The times of charge and discharge in each measure process of touch channels.
- *                  The timer frequency is 8Mhz. Range: 0 ~ 0xffff.
- *                  Recommended typical value: Modify this value to make the measurement time around 1ms.
+ * @param meas_times The times of charge and discharge in each measurement of touch channels.  Range: 0 ~ 0xffff.
+ *                   Recommended typical value: Modify this value to make the measurement time around 1 ms.
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_times);
+esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_times)
+__attribute__((deprecated("please use 'touch_pad_set_charge_discharge_times' and 'touch_pad_set_measurement_interval' instead")));
 
 /**
  * @brief Get touch sensor times of charge and discharge and sleep time
@@ -60,7 +112,8 @@ esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_times);
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_times);
+esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_times)
+__attribute__((deprecated("please use 'touch_pad_get_charge_discharge_times' and 'touch_pad_get_measurement_interval' instead")));
 
 /**
  * @brief Set connection type of touch channel in idle status.

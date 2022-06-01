@@ -222,7 +222,8 @@ static int test_touch_parameter(touch_pad_t pad_num, int meas_time, int slp_time
     TEST_ESP_OK( touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER) );
     TEST_ESP_OK( touch_pad_config(pad_num, TOUCH_READ_INVALID_VAL) );
 
-    touch_pad_set_meas_time(slp_time, meas_time);
+    touch_pad_set_measurement_interval(slp_time);
+    touch_pad_set_measurement_clock_cycles(meas_time);
     touch_pad_set_voltage(vol_h, vol_l, vol_a);
     touch_pad_set_cnt_mode(pad_num, slope, TOUCH_PAD_TIE_OPT_DEFAULT);
 

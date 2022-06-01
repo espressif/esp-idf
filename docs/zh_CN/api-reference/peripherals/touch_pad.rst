@@ -84,12 +84,37 @@
 
 请参考应用示例 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`，查看如何使用读取触摸传感器数据。
 
+测量方式
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. only:: SOC_TOUCH_VERSION_1
+
+    触摸传感器会统计固定时间内的充放电次数，其计数结果即为原始数据，可由 :cpp:func:`touch_pad_read_raw_data` 读出。上述固定时间可通过 :cpp:func:`touch_pad_set_measurement_clock_cycles` 设置。完成一次测量后，触摸传感器会在下次测量开始前保持睡眠状态。两次测量之前的间隔时间可由 :cpp:func:`touch_pad_set_measurement_interval` 进行设置。
+
+    .. note::
+
+        若设置的计数时间太短（即测量持续的时钟周期数太小），则可能导致结果不准确，但是过大的计数时间也会造成功耗上升。另外，若睡眠时间加测量时间的总时间过长，则会造成触摸传感器响应变慢。
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    触摸传感器会统计固定充放电次数所需的时间（即所需时钟周期数），其结果即为原始数据，可由 :cpp:func:`touch_pad_read_raw_data` 读出。上述固定的充放电次数可通过 :cpp:func:`touch_pad_set_charge_discharge_times` 设置。完成一次测量后，触摸传感器会在下次测量开始前保持睡眠状态。两次测量之前的间隔时间可由 :cpp:func:`touch_pad_set_measurement_interval` 进行设置。
+
+    .. note::
+
+        若设置的充放电次数太少，则可能导致结果不准确，但是充放电次数过多也会造成功耗上升。另外，若睡眠时间加测量时间的总时间过长，则会造成触摸传感器响应变慢。
+
 优化测量
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 触摸传感器设有数个可配置参数，以适应触摸传感器设计特点。例如，如果需要感知较细微的电容变化，则可以缩小触摸传感器充放电的参考电压范围。用户可以使用 :cpp:func:`touch_pad_set_voltage` 函数设置电压参考低值和参考高值。
 
-优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_meas_time` 函数来减少测量时间，从而进一步降低功耗。
+.. only:: SOC_TOUCH_VERSION_1
+
+    优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_measurement_clock_cycles` 函数来减少测量时间，从而进一步降低功耗。
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    优化测量除了可以识别细微的电容变化之外，还可以降低应用程序功耗，但可能会增加测量噪声干扰。如果得到的动态读数范围结果比较理想，则可以调用 :cpp:func:`touch_pad_set_charge_discharge_times` 函数来减少测量时间，从而进一步降低功耗。
 
 可用的测量参数及相应的 'set' 函数总结如下：
 
@@ -98,7 +123,13 @@
     * 电压门限：:cpp:func:`touch_pad_set_voltage`
     * 速率（斜率） :cpp:func:`touch_pad_set_cnt_mode`
 
-* 测量时间：:cpp:func:`touch_pad_set_meas_time`
+.. only:: SOC_TOUCH_VERSION_1
+
+    * 单次测量所用的时钟周期：:cpp:func:`touch_pad_set_measurement_clock_cycles`
+
+.. only:: SOC_TOUCH_VERSION_2
+
+    * 单次测量所需充放电次数：:cpp:func:`touch_pad_set_charge_discharge_times`
 
 电压门限（参考低值/参考高值）、速率（斜率）与测量时间的关系如下图所示：
 
