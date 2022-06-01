@@ -6,6 +6,7 @@
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
+#include "netif/wlanif.h"
 #include "esp_log.h"
 #include "esp_private/wifi.h"
 #include "esp_wifi_netif.h"
@@ -99,10 +100,6 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx)
     return false;
 #endif
 }
-
-void set_wifi_netif(int wifi_inx, void* netif);
-esp_err_t wifi_rxcb_sta(void *buffer, uint16_t len, void *eb);
-esp_err_t wifi_rxcb_ap(void *buffer, uint16_t len, void *eb);
 
 esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t fn, void * arg)
 {

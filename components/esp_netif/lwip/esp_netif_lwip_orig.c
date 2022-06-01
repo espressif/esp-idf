@@ -18,13 +18,15 @@
 
 #define DHCP_CB_CHANGE (LWIP_NSC_IPV4_SETTINGS_CHANGED | LWIP_NSC_IPV4_ADDRESS_CHANGED | LWIP_NSC_IPV4_GATEWAY_CHANGED | LWIP_NSC_IPV4_NETMASK_CHANGED)
 
+static netif_ext_callback_t netif_callback = { .callback_fn = NULL, .next = NULL };
+
 static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args)
 {
     if (reason & DHCP_CB_CHANGE) {
         esp_netif_internal_dhcpc_cb(netif);
     }
 #if LWIP_IPV6
-    if (reason & LWIP_NSC_IPV6_ADDR_STATE_CHANGED) {
+    if ((reason & LWIP_NSC_IPV6_ADDR_STATE_CHANGED) && (args != NULL)) {
         s8_t addr_idx = args->ipv6_addr_state_changed.addr_index;
         if (netif_ip6_addr_state(netif, addr_idx) & IP6_ADDR_VALID)  {
             /* address is valid -> call the callback function */
@@ -33,8 +35,6 @@ static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, co
     }
 #endif /* #if LWIP_IPV6 */
 }
-
-static netif_ext_callback_t netif_callback = { .callback_fn = NULL, .next = NULL };
 
 void set_lwip_netif_callback(void)
 {

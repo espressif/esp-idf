@@ -632,7 +632,7 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_NETIF_STATUS_CALLBACK      0
 #endif
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
+#if defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 /**
  * LWIP_NETIF_EXT_STATUS_CALLBACK==1: Support an extended callback function
  * for several netif related event that supports multiple subscribers.

@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
+#if defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
 static inline int accept(int s,struct sockaddr *addr,socklen_t *addrlen)
 { return lwip_accept(s,addr,addrlen); }
@@ -53,7 +53,7 @@ static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_
 static inline int inet_pton(int af, const char *src, void *dst)
 { return lwip_inet_pton(af, src, dst); }
 
-#endif // CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG || CONFIG_ESP_NETIF_TCPIP_LWIP
+#endif // CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP || CONFIG_ESP_NETIF_TCPIP_LWIP
 
 #ifdef __cplusplus
 }

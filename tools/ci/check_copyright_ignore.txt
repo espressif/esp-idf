@@ -974,7 +974,6 @@ components/lwip/port/esp32/include/debug/lwip_debug.h
 components/lwip/port/esp32/include/netdb.h
 components/lwip/port/esp32/include/netif/ethernetif.h
 components/lwip/port/esp32/include/netif/openthreadif.h
-components/lwip/port/esp32/include/netif/wlanif.h
 components/lwip/port/esp32/include/netinet/in.h
 components/lwip/port/esp32/include/netinet/tcp.h
 components/lwip/port/esp32/include/sntp/sntp_get_set_time.h

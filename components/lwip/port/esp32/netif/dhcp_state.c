@@ -26,6 +26,9 @@ bool dhcp_ip_addr_restore(struct netif *netif)
     nvs_handle_t nvs;
     char if_key[IF_KEY_SIZE];
     bool err = false;
+    if (netif == NULL) {
+        return false;
+    }
     struct dhcp *dhcp = netif_dhcp_data(netif);
 
     uint32_t *ip_addr = &dhcp->offered_ip_addr.addr;
@@ -42,6 +45,9 @@ void dhcp_ip_addr_store(struct netif *netif)
 {
     nvs_handle_t nvs;
     char if_key[IF_KEY_SIZE];
+    if (netif == NULL) {
+        return;
+    }
     struct dhcp *dhcp = netif_dhcp_data(netif);
     uint32_t ip_addr = dhcp->offered_ip_addr.addr;
 
@@ -56,6 +62,9 @@ void dhcp_ip_addr_erase(struct netif *netif)
 {
     nvs_handle_t nvs;
     char if_key[IF_KEY_SIZE];
+    if (netif == NULL) {
+        return;
+    }
     if (nvs_open(DHCP_NAMESPACE, NVS_READWRITE, &nvs) == ESP_OK) {
         nvs_erase_key(nvs, gen_if_key(netif, if_key));
         nvs_commit(nvs);

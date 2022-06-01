@@ -16,7 +16,7 @@
 #include "esp_netif_private.h"
 #include "esp_random.h"
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG)
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP)
 
 #include "lwip/tcpip.h"
 #include "lwip/dhcp.h"
@@ -567,7 +567,7 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
         }
         netif_remove(esp_netif->lwip_netif);
 #if ESP_GRATUITOUS_ARP
-        if (esp_netif->flags&ESP_NETIF_FLAG_GARP) {
+        if (esp_netif->flags & ESP_NETIF_FLAG_GARP) {
             netif_unset_garp_flag(esp_netif->lwip_netif);
         }
 #endif
@@ -2081,4 +2081,4 @@ esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_add
 
 #endif // CONFIG_LWIP_IPV6
 
-#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP || CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG */
+#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP || CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP */

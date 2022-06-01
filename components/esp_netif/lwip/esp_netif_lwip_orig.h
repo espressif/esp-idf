@@ -9,7 +9,7 @@
 #include "esp_netif_lwip_internal.h"
 
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
+#if defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
 #if PPP_SUPPORT
 typedef struct ppp_pcb_s ppp_pcb;
@@ -44,7 +44,7 @@ void netif_unset_garp_flag(struct netif *netif);
 
 #endif // ESP_GRATUITOUS_ARP
 
-#else // !CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG and !CONFIG_ESP_NETIF_TCPIP_LWIP
+#else // !CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP and !CONFIG_ESP_NETIF_TCPIP_LWIP
 
 static inline void set_lwip_netif_callback(void) { }
 
@@ -52,4 +52,4 @@ static inline void remove_lwip_netif_callback(void) { }
 
 static inline void netif_unset_garp_flag(struct netif *netif) {}
 
-#endif // CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG or CONFIG_ESP_NETIF_TCPIP_LWIP
+#endif // CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP or CONFIG_ESP_NETIF_TCPIP_LWIP

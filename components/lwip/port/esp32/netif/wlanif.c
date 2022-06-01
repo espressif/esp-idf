@@ -77,18 +77,22 @@ low_level_init(struct netif *netif)
 
 }
 
-void set_wifi_netif(int wifi_inx, void* netif)
+err_t set_wifi_netif(int wifi_inx, void* netif)
 {
   if (wifi_inx < 2) {
     s_wifi_netifs[wifi_inx] = netif;
+    return ERR_OK;
   }
+  return ERR_ARG;
 }
 
 
 static void wifi_pbuf_free(struct pbuf *p)
 {
   wifi_custom_pbuf_t* wifi_pbuf = (wifi_custom_pbuf_t*)p;
-  esp_wifi_internal_free_rx_buffer(wifi_pbuf->l2_buf);
+  if (wifi_pbuf) {
+    esp_wifi_internal_free_rx_buffer(wifi_pbuf->l2_buf);
+  }
   mem_free(wifi_pbuf);
 }
 
