@@ -32,7 +32,7 @@ def get_parser():  # type: () -> argparse.ArgumentParser
         '--disable-address-decoding', '-d',
         help="Don't print lines about decoded addresses from the application ELF file",
         action='store_true',
-        default=os.environ.get('ESP_MONITOR_DECODE') == 0
+        default=os.getenv('ESP_MONITOR_DECODE') == '0'
     )
 
     parser.add_argument(
