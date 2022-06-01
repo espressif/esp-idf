@@ -32,8 +32,13 @@ set(esptool_elf2image_args
     --flash_size ${ESPFLASHSIZE}
     )
 
+set(MMU_PAGE_SIZE ${CONFIG_MMU_PAGE_MODE})
+
 if(NOT BOOTLOADER_BUILD)
     list(APPEND esptool_elf2image_args --elf-sha256-offset 0xb0)
+    if(CONFIG_IDF_TARGET_ESP32C2)
+        list(APPEND esptool_elf2image_args --flash-mmu-page-size ${MMU_PAGE_SIZE})
+    endif()
 endif()
 
 if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND

@@ -27,8 +27,8 @@
 
 
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
+#define MMU_PAGE_SIZE (0x10000)
 
-#define MMU_PAGE_SIZE    0x10000
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 #if CONFIG_SPIRAM_SPEED_40M
@@ -222,6 +222,8 @@ static uint32_t rodata_end_page = 0;
 #endif
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+// Helper macro to make a MMU entry invalid
+#define INVALID_PHY_PAGE          0xffff
 static uint32_t page0_mapped = 0;
 static uint32_t page0_page = INVALID_PHY_PAGE;
 #endif

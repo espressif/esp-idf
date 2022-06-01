@@ -87,7 +87,6 @@ extern "C" {
 #define PRO_CACHE_DBUS2_MMU_START       0x500
 #define PRO_CACHE_DBUS2_MMU_END         0x600
 
-// #define MMU_SIZE                        0x600
 #define ICACHE_MMU_SIZE                 0x300
 #define DCACHE_MMU_SIZE                 0x300
 
@@ -110,7 +109,7 @@ extern "C" {
 #define MMU_VALID_VAL_MASK 0x3fff
 /**
  * Max MMU available paddr page num.
- * `MMU_MAX_PADDR_PAGE_NUM * MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * `MMU_MAX_PADDR_PAGE_NUM * CONFIG_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
  * 16384 * 64KB, means MMU can support 1GB paddr at most
  */
 #define MMU_MAX_PADDR_PAGE_NUM    16384

@@ -12,7 +12,7 @@
 #include "soc/ext_mem_defs.h"
 #include "soc/extmem_reg.h"
 
-#define MMU_PAGE_SIZE    0x10000
+#define MMU_PAGE_SIZE (0x10000)
 #define MMU_PAGE_TO_BYTES(page_id)      ((page_id) * MMU_PAGE_SIZE)
 #define BYTES_TO_MMU_PAGE(bytes)        ((bytes) / MMU_PAGE_SIZE)
 
@@ -46,6 +46,8 @@ uint32_t rodata_flash_end_page_get(void);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+// Helper macro to make a MMU entry invalid
+#define INVALID_PHY_PAGE          0xffff
 //TODO IDF-4387
 static uint32_t page0_mapped = 0;
 static uint32_t page0_page = INVALID_PHY_PAGE;

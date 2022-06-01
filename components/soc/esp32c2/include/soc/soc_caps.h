@@ -269,6 +269,8 @@
 
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
 #define SOC_PM_SUPPORT_CPU_PD           (0)
 
 #define SOC_PM_SUPPORT_WIFI_PD          (0)

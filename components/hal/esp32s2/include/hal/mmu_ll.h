@@ -36,12 +36,12 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 /**
  * Set MMU page size
  *
- * @param size  See `mmu_page_size_t`
+ * @param size  MMU page size
  *
  * @note On esp32s2, only supports `MMU_PAGE_64KB`
  */
 __attribute__((always_inline))
-static inline void mmu_ll_set_page_size(uint32_t mmu_id, mmu_page_size_t size)
+static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
     HAL_ASSERT(size == MMU_PAGE_64KB);
 }

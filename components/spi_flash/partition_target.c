@@ -181,9 +181,9 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
         return ESP_ERR_NOT_SUPPORTED;
     }
     size_t phys_addr = partition->address + offset;
-    // offset within 64kB block
-    size_t region_offset = phys_addr & 0xffff;
-    size_t mmap_addr = phys_addr & 0xffff0000;
+    // offset within mmu page size block
+    size_t region_offset = phys_addr & (CONFIG_MMU_PAGE_SIZE - 1);
+    size_t mmap_addr = phys_addr & ~(CONFIG_MMU_PAGE_SIZE - 1);
     esp_err_t rc = spi_flash_mmap(mmap_addr, size + region_offset, memory, out_ptr, out_handle);
     // adjust returned pointer to point to the correct offset
     if (rc == ESP_OK) {

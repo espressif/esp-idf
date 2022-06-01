@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-
 #define IRAM0_CACHE_ADDRESS_LOW     0x400D0000
 #define IRAM0_CACHE_ADDRESS_HIGH    0x40400000
 
