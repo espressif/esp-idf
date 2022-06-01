@@ -436,6 +436,25 @@ public class AddDeviceActivity extends AppCompatActivity {
                 }
             });
         }
+
+        @Override
+        public void onFailure(Exception e, String qrCodeData) {
+            // Called when QR code is not in supported format.
+            // Comment below error handling and do whatever you want to do with your QR code data.
+            Log.e(TAG, "Error : " + e.getMessage());
+            Log.e(TAG, "QR code data : " + qrCodeData);
+
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    hideLoading();
+                    String msg = e.getMessage();
+                    Toast.makeText(AddDeviceActivity.this, msg, Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            });
+        }
     };
 
     private void goToWiFiScanActivity() {

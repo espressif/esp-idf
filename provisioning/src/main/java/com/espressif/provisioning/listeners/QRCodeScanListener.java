@@ -39,4 +39,12 @@ public interface QRCodeScanListener {
      * @param e Exception
      */
     void onFailure(Exception e);
+
+    /**
+     * Called when QR code data has different format.
+     *
+     * @param e    Exception
+     * @param data QR code data string.
+     */
+    void onFailure(Exception e, String data);
 }
