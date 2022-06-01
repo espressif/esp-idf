@@ -15,7 +15,6 @@
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/uart.h"
 #include "soc/system_reg.h"
-#include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"

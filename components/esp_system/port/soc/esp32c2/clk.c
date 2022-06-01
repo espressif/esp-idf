@@ -17,7 +17,6 @@
 #include "esp32c2/rom/uart.h"
 #include "esp32c2/rom/rtc.h"
 #include "soc/system_reg.h"
-#include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"

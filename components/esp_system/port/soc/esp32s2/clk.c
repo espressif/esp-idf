@@ -15,7 +15,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "soc/system_reg.h"
-#include "soc/dport_access.h"
+#include "soc/dport_reg.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"

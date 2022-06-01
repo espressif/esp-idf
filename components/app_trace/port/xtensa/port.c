@@ -148,7 +148,6 @@
 // time exceeds specified timeout value operation is canceled and ESP_ERR_TIMEOUT code is returned.
 #include "sdkconfig.h"
 #include "soc/soc.h"
-#include "soc/dport_access.h"
 #include "soc/dport_reg.h"
 #include "soc/tracemem_config.h"
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3

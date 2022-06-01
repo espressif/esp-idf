@@ -23,7 +23,6 @@
 #include "soc/dport_reg.h"
 #include "hal/cpu_hal.h"
 
-#include "esp32/dport_access.h"
 #include "esp_rom_sys.h"
 
 #include "sdkconfig.h"

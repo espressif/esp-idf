@@ -8,9 +8,6 @@
 #define _DPORT_ACCESS_H_
 
 #include <stdint.h>
-#include "esp_attr.h"
-#include "esp_attr.h"
-#include "esp32h2/dport_access.h"
 #include "soc.h"
 #include "soc/uart_reg.h"
 
@@ -19,6 +16,18 @@ extern "C" {
 #endif
 
 // Target does not have DPORT bus, so these macros are all same as the non-DPORT versions
+
+#define DPORT_INTERRUPT_DISABLE()
+#define DPORT_INTERRUPT_RESTORE()
+
+/**
+ * @brief Read a sequence of DPORT registers to the buffer.
+ *
+ * @param[out] buff_out  Contains the read data.
+ * @param[in]  address   Initial address for reading registers.
+ * @param[in]  num_words The number of words.
+ */
+void esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t num_words);
 
 // _DPORT_REG_WRITE & DPORT_REG_WRITE are equivalent.
 #define _DPORT_REG_READ(_r)        (*(volatile uint32_t *)(_r))

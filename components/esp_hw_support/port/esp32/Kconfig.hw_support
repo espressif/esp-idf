@@ -23,17 +23,6 @@ config ESP32_REV_MIN
     default 2 if ESP32_REV_MIN_2
     default 3 if ESP32_REV_MIN_3
 
-config ESP32_DPORT_WORKAROUND
-    bool
-    default "y" if !FREERTOS_UNICORE  && ESP32_REV_MIN < 2
-
-config ESP32_DPORT_DIS_INTERRUPT_LVL
-    int "Disable the interrupt level for the DPORT workarounds"
-    default 5
-    help
-        To prevent interrupting DPORT workarounds,
-        need to disable interrupt with a maximum used level in the system.
-
 choice ESP32_XTAL_FREQ_SEL
     prompt "Main XTAL frequency"
     default ESP32_XTAL_FREQ_40

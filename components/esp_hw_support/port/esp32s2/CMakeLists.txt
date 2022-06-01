@@ -16,8 +16,7 @@ if(NOT BOOTLOADER_BUILD)
                      "memprot.c"
                      "esp_hmac.c"
                      "esp_crypto_lock.c"
-                     "esp_ds.c"
-                     "dport_access.c")
+                     "esp_ds.c")
 
     if(CONFIG_SPIRAM)
         list(APPEND srcs "spiram.c" "mmu_psram.c" "spiram_psram.c")

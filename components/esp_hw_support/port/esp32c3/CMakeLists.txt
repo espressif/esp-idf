@@ -13,7 +13,6 @@ if(NOT BOOTLOADER_BUILD)
                      "esp_hmac.c"
                      "esp_crypto_lock.c"
                      "esp_ds.c"
-                     "dport_access.c"
                      "esp_memprot.c"
                      "../esp_memprot_conv.c")
 endif()

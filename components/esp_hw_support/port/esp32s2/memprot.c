@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include "sdkconfig.h"
 #include "soc/sensitive_reg.h"
-#include "soc/dport_access.h"
 #include "soc/periph_defs.h"
 #include "esp_intr_alloc.h"
 #include "hal/memprot_ll.h"

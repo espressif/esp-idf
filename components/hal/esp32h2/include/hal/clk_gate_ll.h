@@ -16,6 +16,7 @@ extern "C" {
 #include "soc/system_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/dport_access.h"
+#include "esp_attr.h"
 
 static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
 {

@@ -6,7 +6,6 @@
 
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/dport_access.h"
 #include "soc/i2s_reg.h"
 #include "hal/cpu_hal.h"
 #include "esp_private/periph_ctrl.h"
