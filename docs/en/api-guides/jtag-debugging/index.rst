@@ -249,6 +249,11 @@ This section is intended for users not familiar with GDB. It presents example de
 
 Similar debugging actions are provided using GDB from :ref:`jtag-debugging-examples-command-line`.
 
+.. note::
+
+    :ref:`jtag-debugging-examples-command-line-08` is currently only available for command line debugging.
+
+
 Before proceeding to examples, set up your {IDF_TARGET_NAME} target and load it with :example:`get-started/blink`.
 
 

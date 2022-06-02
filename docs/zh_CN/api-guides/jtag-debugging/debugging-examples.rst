@@ -445,10 +445,6 @@
 
 在上图所示的情况下，应用程序已经在 ``freertos_hooks.c`` 文件的第 52 行暂停运行，现在您可以通过输入 ``c`` 再次将其恢复运行或者进行如下所述的一些调试工作。
 
-.. note::
-
-	在 MSYS2 的 shell 中输入 Ctrl+C 并不会暂停目标的运行，而是会退出调试器。解决这个问题的方法可以通过 :ref:`使用 Eclipse 来调试 <jtag-debugging-examples-eclipse>` 或者参考 http://www.mingw.org/wiki/Workaround_for_GDB_Ctrl_C_Interrupt 里的解决方案。
-
 
 .. _jtag-debugging-examples-command-line-04:
 
