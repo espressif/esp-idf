@@ -1060,6 +1060,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
             os_free(hdr);
             return;
         }
+        os_free(buf);
     }
 
     if (key_info & WPA_KEY_INFO_MIC) {
