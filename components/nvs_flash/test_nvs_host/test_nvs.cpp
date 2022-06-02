@@ -2682,6 +2682,96 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
     TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
     CHECK(i32v == -2147483648);
 
+    char string_buf[256];
+    const char test_str[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
+                             "Fusce quis risus justo.\n"
+                             "Suspendisse egestas in nisi sit amet auctor.\n"
+                             "Pellentesque rhoncus dictum sodales.\n"
+                             "In justo erat, viverra at interdum eget, interdum vel dui.";
+    size_t str_len = sizeof(test_str);
+    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", string_buf, &str_len));
+    CHECK(strncmp(string_buf, test_str, str_len) == 0);
+
+    char buf[64] = {0};
+    uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
+    size_t buflen = 64;
+    int j;
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    CHECK(memcmp(buf, hexdata, buflen) == 0);
+
+    uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    CHECK(memcmp(buf, base64data, buflen) == 0);
+
+    buflen = 64;
+    uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+    TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
+    CHECK(memcmp(buf, hexfiledata, buflen) == 0);
+
+    buflen = 64;
+    uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
+    TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
+    CHECK(memcmp(buf, strfiledata, buflen) == 0);
+
+    char bin_data[5200];
+    size_t bin_len = sizeof(bin_data);
+    char binfiledata[5200];
+    ifstream file;
+    file.open(filename);
+    file.read(binfiledata,5200);
+    TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
+    CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
+
+    file.close();
+
+    nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(part_name));
+}
+
+static void check_nvs_part_gen_args_mfg(SpiFlashEmulator *spi_flash_emulator,
+        char const *part_name,
+        int size,
+        char const *filename,
+        bool is_encr,
+        nvs_sec_cfg_t* xts_cfg)
+{
+    nvs_handle_t handle;
+
+    esp_partition_t esp_part;
+    esp_part.encrypted = false; // we're not testing generic flash encryption here, only the legacy NVS encryption
+    esp_part.address = 0;
+    esp_part.size = size * SPI_FLASH_SEC_SIZE;
+    strncpy(esp_part.label, part_name, PART_NAME_MAX_SIZE);
+    shared_ptr<Partition> part;
+
+    if (is_encr) {
+        NVSEncryptedPartition *enc_part = new NVSEncryptedPartition(&esp_part);
+        TEST_ESP_OK(enc_part->init(xts_cfg));
+        part.reset(enc_part);
+    } else {
+        part.reset(new PartitionEmulation(spi_flash_emulator, 0, size, part_name));
+    }
+
+    TEST_ESP_OK( NVSPartitionManager::get_instance()->init_custom(part.get(), 0, size) );
+
+    TEST_ESP_OK( nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
+    uint8_t u8v;
+    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    CHECK(u8v == 127);
+    int8_t i8v;
+    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    CHECK(i8v == -128);
+    uint16_t u16v;
+    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    CHECK(u16v == 32768);
+    uint32_t u32v;
+    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    CHECK(u32v == 4294967295);
+    int32_t i32v;
+    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    CHECK(i32v == -2147483648);
+
     char buf[64] = {0};
     size_t buflen = 64;
     TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", buf, &buflen));
@@ -2722,7 +2812,6 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
 
     TEST_ESP_OK(nvs_flash_deinit_partition(part_name));
 }
-
 
 TEST_CASE("check and read data from partition generated via partition generation utility with multipage blob support disabled", "[nvs_part_gen]")
 {
@@ -2886,10 +2975,10 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
     SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
-    check_nvs_part_gen_args(&emu1, "test", 3, "mfg_testdata/sample_singlepage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu1, "test", 3, "mfg_testdata/sample_singlepage_blob.bin", false, NULL);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition.bin");
-    check_nvs_part_gen_args(&emu2, "test", 3, "testdata/sample_singlepage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu2, "test", 3, "testdata/sample_singlepage_blob.bin", false, NULL);
 
 
     childpid = fork();
@@ -2967,10 +3056,10 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
     SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
-    check_nvs_part_gen_args(&emu1, "test", 4, "mfg_testdata/sample_multipage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu1, "test", 4, "mfg_testdata/sample_multipage_blob.bin", false, NULL);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition.bin");
-    check_nvs_part_gen_args(&emu2, "test", 4, "testdata/sample_multipage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu2, "test", 4, "testdata/sample_multipage_blob.bin", false, NULL);
 
     childpid = fork();
     if (childpid == 0) {
@@ -3465,11 +3554,11 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         cfg.tky[count] = 0x22;
     }
 
-    check_nvs_part_gen_args(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted.bin");
 
-    check_nvs_part_gen_args(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
 
 
     childpid = fork();
@@ -3585,11 +3674,11 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         cfg.tky[count] = buffer[count+32] & 255;
     }
 
-    check_nvs_part_gen_args(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted.bin");
 
-    check_nvs_part_gen_args(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
 
     childpid = fork();
     if (childpid == 0) {
