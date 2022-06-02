@@ -17,6 +17,7 @@
 #include "sdkconfig.h"
 
 #define RX_UNREADBUF_SZ_DEFAULT 64 // buffer storing all unread RX data
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 
 typedef struct {
@@ -283,7 +284,7 @@ size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, const uint8_t *in_bu
         return 0;
     }
     const uint32_t size_available = tud_cdc_n_write_available(itf);
-    return tud_cdc_n_write(itf, in_buf, (in_size < size_available) ? in_size : size_available);
+    return tud_cdc_n_write(itf, in_buf, MIN(in_size, size_available));
 }
 
 static uint32_t tud_cdc_n_write_occupied(tinyusb_cdcacm_itf_t itf)
