@@ -1242,7 +1242,7 @@ esp_err_t esp_wifi_connectionless_module_set_wake_interval(uint16_t wake_interva
   *               "RO","SE","SI","SK","TW","US"
   *
   * @attention 7. When country code "01" (world safe mode) is set, SoftAP mode won't contain country IE.
-  * @attention 8. The default country is "CN" and ieee80211d_enabled is TRUE.
+  * @attention 8. The default country is "01" (world safe mode) and ieee80211d_enabled is TRUE.
   *
   * @param     country   the configured country ISO code
   * @param     ieee80211d_enabled   802.11d is enabled or not

@@ -1210,7 +1210,7 @@ When to Use LR
 
 The general conditions for using LR are:
 
- - Both the AP and station are devices.
+ - Both the AP and station are Espressif devices.
  - Long distance Wi-Fi connection and data transmission is required.
  - Data throughput requirements are very small, such as remote device control.
 
@@ -1232,7 +1232,7 @@ Call :cpp:func:`esp_wifi_set_country()` to set the country info. The table below
        - an ASCII ‘O’ character, which means the regulations under which the station/AP is operating are for an outdoor environment only.
        - an ASCII ‘I’ character, which means the regulations under which the station/AP is operating are for an indoor environment only.
        - an ASCII ‘X’ character, which means the station/AP is operating under a noncountry entity. The first two octets of the noncountry entity is two ASCII ‘XX’ characters.
-       - the binary representation of the Operating Class table number currently in use. Refer to Annex E of IEEE Std 802.11-2012.
+       - the binary representation of the Operating Class table number currently in use. Refer to Annex E of IEEE Std 802.11-2020.
 
    * - schan
      - Start channel. It is the minimum channel number of the regulations under which the station/AP can operate.
@@ -1242,7 +1242,33 @@ Call :cpp:func:`esp_wifi_set_country()` to set the country info. The table below
      - Country policy. This field controls which country info will be used if the configured country info is in conflict with the connected AP’s. For more details on related policies, see the following section.
 
 
-The default country info is {.cc="CN", .schan=1, .nchan=13, policy=WIFI_COUNTRY_POLICY_AUTO}. If the Wi-Fi mode is station/AP coexist mode, they share the same configured country info. Sometimes the country info of the AP to which the station is connected is different from the configured country info. For example, if the configured station has the country info of {.cc="JP", .schan=1, .nchan=14, policy=WIFI_COUNTRY_POLICY_AUTO}, but the connected AP has the country info of {.cc="CN", .schan=1, .nchan=13}, then the country info of the connected AP is used.
+The default country info is::
+
+    wifi_country_t config = {
+        .cc = "01",
+        .schan = 1,
+        .nchan = 11,
+        .policy = WIFI_COUNTRY_POLICY_AUTO,
+    };
+
+If the Wi-Fi Mode is station/AP coexist mode, they share the same configured country info. Sometimes, the country info of AP, to which the station is connected, is different from the country info of configured. For example, the configured station has country info::
+
+    wifi_country_t config = {
+        .cc = "JP",
+        .schan = 1,
+        .nchan = 14,
+        .policy = WIFI_COUNTRY_POLICY_AUTO,
+    };
+
+but the connected AP has country info::
+
+    wifi_country_t config = {
+        .cc = "CN",
+        .schan = 1,
+        .nchan = 13,
+    };
+
+then country info of connected AP's is used.
 
 The following table depicts which country info is used in different Wi-Fi modes and different country policies, and it also describes the impact on active scan.
 
@@ -1261,17 +1287,27 @@ The following table depicts which country info is used in different Wi-Fi modes 
 
        - If schan+nchan-1 >11 :
 
-         Use active scan from schan to 11 and use passive scan from 12 to schan+nchan-1.
+         Use active scan from schan to 11 and use passive scan from 12 to 14.
 
        - If schan+nchan-1 <= 11 :
 
-         Use active scan from schan to schan+nchan-1.
+         Use active scan from schan to schan+nchan-1 and use passive scan from schan+nchan to 14.
 
        Always keep in mind that if an AP with hidden SSID and station is set to a passive scan channel, the passive scan will not find it. In other words, if the application hopes to find the AP with hidden SSID in every channel, the policy of country info should be configured to WIFI_COUNTRY_POLICY_MANUAL.
 
    * - Station
      - WIFI_COUNTRY_POLICY_MANUAL
-     - Always use the configured country info. For scan, scans channel “schan” to “schan+nchan-1” with active scan.
+     - Always use the configured country info.
+
+       For scan:
+
+       - If schan+nchan-1 >11 :
+
+         Use active scan from schan to 11 and use passive scan from 12 to schan+nchan-1.
+
+       - If schan+nchan-1 <= 11 :
+
+         Use active scan from schan to schan+nchan-1.
    * - AP
      - WIFI_COUNTRY_POLICY_AUTO
      - Always use the configured country info.
