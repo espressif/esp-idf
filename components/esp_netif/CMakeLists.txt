@@ -13,7 +13,6 @@ set(srcs
     "vfs_l2tap/esp_vfs_l2tap.c"
     "lwip/esp_netif_lwip.c"
     "lwip/esp_netif_lwip_defaults.c"
-    "lwip/esp_netif_lwip_orig.c"
     "lwip/esp_netif_sta_list.c")
 
 set(include_dirs "include")

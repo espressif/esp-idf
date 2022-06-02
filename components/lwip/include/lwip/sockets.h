@@ -12,8 +12,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
-
 static inline int accept(int s,struct sockaddr *addr,socklen_t *addrlen)
 { return lwip_accept(s,addr,addrlen); }
 static inline int bind(int s,const struct sockaddr *name, socklen_t namelen)
@@ -52,8 +50,6 @@ static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_
 { return lwip_inet_ntop(af, src, dst, size);  }
 static inline int inet_pton(int af, const char *src, void *dst)
 { return lwip_inet_pton(af, src, dst); }
-
-#endif // CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP || CONFIG_ESP_NETIF_TCPIP_LWIP
 
 #ifdef __cplusplus
 }

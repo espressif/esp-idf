@@ -12,7 +12,7 @@
 #include "lwip/netif.h"
 #include "dhcpserver/dhcpserver.h"
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP)
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
 struct esp_netif_netstack_lwip_vanilla_config {
     err_t (*init_fn)(struct netif*);

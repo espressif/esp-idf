@@ -24,6 +24,13 @@ _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SO
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
+/**
+ * @brief This function is implemented only in FreeRTOS port (ingroup sys_sem)
+ * and has no official API counterpart in lwip's sys.h declarations
+ * Signals a semaphore from ISR
+ * @param sem the semaphore to signal
+ * @return 1 if the signal has caused a high-prio task to unblock (pxHigherPriorityTaskWoken)
+ */
 int sys_sem_signal_isr(sys_sem_t *sem);
 
 static void lwip_stop_socket_select(void *sem)

@@ -21,8 +21,8 @@ extern "C" {
 err_t wlanif_init_ap(struct netif *netif);
 err_t wlanif_init_sta(struct netif *netif);
 err_t set_wifi_netif(int wifi_inx, void* netif);
-esp_err_t wifi_rxcb_sta(void *buffer, uint16_t len, void *eb);
-esp_err_t wifi_rxcb_ap(void *buffer, uint16_t len, void *eb);
+esp_err_t wifi_rxcb_sta(void *buffer, uint16_t len, void *l2_buff);
+esp_err_t wifi_rxcb_ap(void *buffer, uint16_t len, void *l2_buff);
 
 
 void wlanif_input(void *netif, void *buffer, size_t len, void* eb);

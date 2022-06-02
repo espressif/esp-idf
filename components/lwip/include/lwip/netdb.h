@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
-
 static inline int gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop)
 { return lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop); }
 static inline struct hostent *gethostbyname(const char *name)
@@ -23,8 +21,6 @@ static inline void freeaddrinfo(struct addrinfo *ai)
 { lwip_freeaddrinfo(ai); }
 static inline int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
 { return lwip_getaddrinfo(nodename, servname, hints, res); }
-
-#endif // CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP || CONFIG_ESP_NETIF_TCPIP_LWIP
 
 #ifdef __cplusplus
 }

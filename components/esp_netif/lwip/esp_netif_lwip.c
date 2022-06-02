@@ -10,13 +10,12 @@
 
 #include "esp_check.h"
 #include "esp_netif_lwip_internal.h"
-#include "esp_netif_lwip_orig.h"
 
 #include "esp_netif.h"
 #include "esp_netif_private.h"
 #include "esp_random.h"
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP)
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
 #include "lwip/tcpip.h"
 #include "lwip/dhcp.h"
@@ -26,6 +25,7 @@
 #include "lwip/nd6.h"
 #include "lwip/priv/tcpip_priv.h"
 #include "lwip/netif.h"
+#include "lwip/etharp.h"
 #if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
 #include "lwip/dns.h"
 #endif
@@ -47,6 +47,8 @@
 //
 
 #define ESP_NETIF_HOSTNAME_MAX_SIZE    32
+
+#define DHCP_CB_CHANGE (LWIP_NSC_IPV4_SETTINGS_CHANGED | LWIP_NSC_IPV4_ADDRESS_CHANGED | LWIP_NSC_IPV4_GATEWAY_CHANGED | LWIP_NSC_IPV4_NETMASK_CHANGED)
 
 /**
  * @brief lwip thread safe tcpip function utility macros
@@ -99,7 +101,75 @@ static const char *TAG = "esp_netif_lwip";
 static bool tcpip_initialized = false;
 static esp_netif_t *s_last_default_esp_netif = NULL;
 static bool s_is_last_default_esp_netif_overridden = false;
+static netif_ext_callback_t netif_callback = { .callback_fn = NULL, .next = NULL };
 
+static void esp_netif_internal_dhcpc_cb(struct netif *netif);
+#if LWIP_IPV6
+static void esp_netif_internal_nd6_cb(struct netif *p_netif, uint8_t ip_index);
+#endif /* LWIP_IPV6 */
+
+static void netif_callback_fn(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args)
+{
+    if (reason & DHCP_CB_CHANGE) {
+        esp_netif_internal_dhcpc_cb(netif);
+    }
+#if LWIP_IPV6
+    if ((reason & LWIP_NSC_IPV6_ADDR_STATE_CHANGED) && (args != NULL)) {
+        s8_t addr_idx = args->ipv6_addr_state_changed.addr_index;
+        if (netif_ip6_addr_state(netif, addr_idx) & IP6_ADDR_VALID)  {
+            /* address is valid -> call the callback function */
+            esp_netif_internal_nd6_cb(netif, addr_idx);
+        }
+    }
+#endif /* #if LWIP_IPV6 */
+}
+
+static void set_lwip_netif_callback(void)
+{
+    if (netif_callback.callback_fn == NULL ) {
+        netif_add_ext_callback(&netif_callback, netif_callback_fn);
+    }
+}
+
+static void remove_lwip_netif_callback(void)
+{
+    netif_remove_ext_callback(&netif_callback);
+    memset(&netif_callback, 0, sizeof(netif_callback));
+}
+
+static void dns_clear_servers(bool keep_fallback)
+{
+    u8_t numdns = 0;
+
+    for (numdns = 0; numdns < DNS_MAX_SERVERS; numdns ++) {
+        if (keep_fallback && numdns == DNS_FALLBACK_SERVER_INDEX) {
+            continue;
+        }
+
+        dns_setserver(numdns, NULL);
+    }
+}
+
+#ifdef CONFIG_LWIP_GARP_TMR_INTERVAL
+
+static void netif_send_garp(void *arg)
+{
+    struct netif *netif = arg;
+    etharp_gratuitous(netif);
+    sys_timeout(CONFIG_LWIP_GARP_TMR_INTERVAL*1000, netif_send_garp, netif);
+}
+
+static void netif_set_garp_flag(struct netif *netif)
+{
+    sys_timeout(CONFIG_LWIP_GARP_TMR_INTERVAL*1000, netif_send_garp, netif);
+}
+
+static void netif_unset_garp_flag(struct netif *netif)
+{
+    sys_untimeout(netif_send_garp, netif);
+}
+
+#endif  // CONFIG_LWIP_GARP_TMR_INTERVAL
 
 #if !LWIP_TCPIP_CORE_LOCKING
 static sys_sem_t api_sync_sem = NULL;
@@ -947,7 +1017,7 @@ static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif);
 //
 // DHCP:
 //
-void esp_netif_internal_dhcpc_cb(struct netif *netif)
+static void esp_netif_internal_dhcpc_cb(struct netif *netif)
 {
     if (!netif) {
         ESP_LOGD(TAG, "null netif=%p", netif);
@@ -1144,8 +1214,6 @@ static esp_err_t esp_netif_dhcpc_start_api(esp_netif_api_msg_t *msg)
             ESP_LOGE(TAG, "dhcp client start failed");
             return ESP_ERR_ESP_NETIF_DHCPC_START_FAILED;
         }
-
-        dhcp_set_cb(p_netif, esp_netif_internal_dhcpc_cb);
 
         esp_netif->dhcpc_status = ESP_NETIF_DHCP_STARTED;
         return ESP_OK;
@@ -1647,7 +1715,7 @@ esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
 
 }
 
-void esp_netif_internal_nd6_cb(struct netif *p_netif, uint8_t ip_index)
+static void esp_netif_internal_nd6_cb(struct netif *p_netif, uint8_t ip_index)
 {
     ESP_LOGD(TAG, "%s lwip-netif:%p", __func__, p_netif);
     if (!p_netif) {
@@ -1684,7 +1752,6 @@ static esp_err_t esp_netif_create_ip6_linklocal_api(esp_netif_api_msg_t *msg)
     struct netif *p_netif = esp_netif->lwip_netif;
     if (p_netif != NULL && netif_is_up(p_netif)) {
         netif_create_ip6_linklocal_address(p_netif, 1);
-        nd6_set_cb(p_netif, esp_netif_internal_nd6_cb);
         return ESP_OK;
     } else {
         return ESP_FAIL;
@@ -2081,4 +2148,4 @@ esp_err_t esp_netif_remove_ip6_address(esp_netif_t *esp_netif, const esp_ip6_add
 
 #endif // CONFIG_LWIP_IPV6
 
-#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP || CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP */
+#endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

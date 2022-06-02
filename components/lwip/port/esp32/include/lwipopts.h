@@ -632,7 +632,6 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define LWIP_NETIF_STATUS_CALLBACK      0
 #endif
 
-#if defined(CONFIG_ESP_NETIF_TCPIP_VANILLA_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 /**
  * LWIP_NETIF_EXT_STATUS_CALLBACK==1: Support an extended callback function
  * for several netif related event that supports multiple subscribers.
@@ -641,8 +640,6 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * to provide netif related events on IP4/IP6 address/status changes
  */
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
-#endif
-
 
 /**
  * LWIP_NETIF_TX_SINGLE_PBUF: if this is set to 1, lwIP *tries* to put all data
@@ -1440,13 +1437,13 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * allocate memory for lwip in SPIRAM firstly. If failed, try to allocate
  * internal memory then.
  */
-#if CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
 #define mem_clib_malloc(size)    heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
 #define mem_clib_calloc(n, size) heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
-#else /* !CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST */
+#else /* !CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP */
 #define mem_clib_malloc malloc
 #define mem_clib_calloc calloc
-#endif /* CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP */
 
 #ifdef __cplusplus
 }

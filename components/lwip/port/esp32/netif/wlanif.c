@@ -244,9 +244,9 @@ sta_output(struct netif *netif, struct pbuf *p)
     LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
     q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
     if (q != NULL) {
-        pbuf_copy(q, p);
+      pbuf_copy(q, p);
     } else {
-        return ERR_MEM;
+      return ERR_MEM;
     }
     ret = esp_wifi_internal_tx(WIFI_IF_STA, q->payload, q->len);
     pbuf_free(q);
@@ -276,9 +276,9 @@ ap_output(struct netif *netif, struct pbuf *p)
     LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
     q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
     if (q != NULL) {
-        pbuf_copy(q, p);
+      pbuf_copy(q, p);
     } else {
-        return ERR_MEM;
+      return ERR_MEM;
     }
     ret = esp_wifi_internal_tx(WIFI_IF_AP, q->payload, q->len);
     pbuf_free(q);
