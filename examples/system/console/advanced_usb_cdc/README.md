@@ -1,11 +1,11 @@
 | Supported Targets | ESP32-S2 |
 | ----------------- | -------- |
 
-# USB Console Example
+# USB_OTG CDC Console Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example is similar to the [console example](../console/advanced/README.md), but instead of the UART it uses USB CDC for console output.
+This example is similar to the [advanced console example](../advanced/README.md), but instead of the UART it uses the USB CDC port provided by USB_OTG peripheral for console output.
 The example uses the [Console Component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html#console) to create an interactive shell.
 
 The interactive shell implemented in this example contains a wide variety of commands, and can act as a basis for applications that require a command-line interface (CLI).
