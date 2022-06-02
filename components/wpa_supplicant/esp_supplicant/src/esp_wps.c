@@ -392,7 +392,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
             wpabuf_free(buf);
             esp_wifi_enable_sta_privacy_internal();
             os_memset(sm->ssid[0], 0, SSID_MAX_LEN);
-            strncpy((char *)sm->ssid[0], (char *)&scan->ssid[2], (int)scan->ssid[1]);
+            os_strlcpy((char *)sm->ssid[0], (char *)&scan->ssid[2], (int)scan->ssid[1]);
             sm->ssid_len[0] = scan->ssid[1];
             if (scan->bssid && memcmp(sm->bssid, scan->bssid, ETH_ALEN) != 0) {
                 wpa_printf(MSG_INFO, "sm BSSid: "MACSTR " scan BSSID " MACSTR "\n",
@@ -1052,10 +1052,10 @@ int wps_set_default_factory(void)
         }
     }
 
-    sprintf(s_factory_info->manufacturer, "ESPRESSIF");
-    sprintf(s_factory_info->model_name, "ESPRESSIF IOT");
-    sprintf(s_factory_info->model_number, "ESP32");
-    sprintf(s_factory_info->device_name, "ESP32 STATION");
+    os_snprintf(s_factory_info->manufacturer, WPS_MAX_MANUFACTURER_LEN, "ESPRESSIF");
+    os_snprintf(s_factory_info->model_name, WPS_MAX_MODEL_NUMBER_LEN, "ESPRESSIF IOT");
+    os_snprintf(s_factory_info->model_number, WPS_MAX_MODEL_NAME_LEN, "ESP32");
+    os_snprintf(s_factory_info->device_name, WPS_MAX_DEVICE_NAME_LEN, "ESP32 STATION");
 
     return ESP_OK;
 }
@@ -1129,35 +1129,35 @@ int wps_dev_init(void)
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->manufacturer, s_factory_info->manufacturer);
+    os_snprintf(dev->manufacturer, WPS_MAX_MANUFACTURER_LEN, s_factory_info->manufacturer);
 
     dev->model_name = os_zalloc(WPS_MAX_MODEL_NAME_LEN);
     if (!dev->model_name) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->model_name, s_factory_info->model_name);
+    os_snprintf(dev->model_name, WPS_MAX_MODEL_NAME_LEN, s_factory_info->model_name);
 
     dev->model_number = os_zalloc(WPS_MAX_MODEL_NAME_LEN);
     if (!dev->model_number) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->model_number, s_factory_info->model_number);
+    os_snprintf(dev->model_number, WPS_MAX_MODEL_NAME_LEN, s_factory_info->model_number);
 
     dev->device_name = os_zalloc(WPS_MAX_DEVICE_NAME_LEN);
     if (!dev->device_name) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->device_name, s_factory_info->device_name);
+    os_snprintf(dev->device_name, WPS_MAX_DEVICE_NAME_LEN, s_factory_info->device_name);
 
     dev->serial_number = os_zalloc(16);
     if (!dev->serial_number) {
         ret = ESP_FAIL;
         goto _out;
     }
-    sprintf(dev->serial_number, "%02x%02x%02x%02x%02x%02x",
+    os_snprintf(dev->serial_number, 16, "%02x%02x%02x%02x%02x%02x",
             sm->ownaddr[0], sm->ownaddr[1], sm->ownaddr[2],
             sm->ownaddr[3], sm->ownaddr[4], sm->ownaddr[5]);
 
@@ -1356,7 +1356,7 @@ int wps_init_cfg_pin(struct wps_config *cfg)
         if (wps_generate_pin(&spin) < 0) {
             return -1;
 	}
-        os_sprintf((char *)cfg->pin, "%08d", spin);
+        os_snprintf((char *)cfg->pin, 9, "%08d", spin);
     }
 
     return 0;
@@ -1553,7 +1553,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
         esp_wifi_disconnect();
 
         os_memcpy(wifi_config.sta.bssid, sm->bssid, ETH_ALEN);
-        os_strncpy((char *)wifi_config.sta.ssid, (char *)sm->ssid[0], sm->ssid_len[0]);
+        os_strlcpy((char *)wifi_config.sta.ssid, (char *)sm->ssid[0], sm->ssid_len[0]);
         wifi_config.sta.bssid_set = 1;
         wpa_printf(MSG_INFO, "WPS: connecting to %s, bssid=" MACSTR,
                    (char *)sm->ssid[0], MAC2STR(wifi_config.sta.bssid));
