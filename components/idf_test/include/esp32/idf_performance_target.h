@@ -24,8 +24,8 @@
 
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               15
 #define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        15
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            30
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     27
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING                            34      // TODO: IDF-5180
+#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA                     30      // TODO: IDF-5180
 
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_CYCLES_PER_DIV                                      70

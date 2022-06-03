@@ -103,6 +103,13 @@ function(__build_set_default_build_specifications)
                                     "-Wextra"
                                     "-Wno-unused-parameter"
                                     "-Wno-sign-compare"
+                                    # ignore format for uint32_t/int32_t mostly, since xtensa have long types for them
+                                    # TODO: IDF-3735 for both xtensa and riscv32
+                                    "-Wno-error=format="
+                                    "-Wno-format"
+                                    # ignore multiple enum conversion warnings since gcc 11
+                                    # TODO: IDF-5163
+                                    "-Wno-enum-conversion"
                                     # Default is dwarf-5 since GCC 11, fallback to dwarf-4 because of binary size
                                     # TODO: IDF-5160
                                     "-gdwarf-4"
