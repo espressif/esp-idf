@@ -36,6 +36,7 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "esp_coexist_internal.h"
+#include "esp_timer.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
 #endif
