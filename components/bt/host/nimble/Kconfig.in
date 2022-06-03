@@ -1,32 +1,3 @@
-config BT_NIMBLE_CONTROLLER_ENABLED
-    bool "Enable NimBLE controller"
-    depends on BT_NIMBLE_ENABLED && IDF_TARGET_ESP32H2
-    default y
-    help
-            Enable or Disable NimBLE controller
-
-config BT_NIMBLE_CONTROL_SEQUENCE_MODE_ENABLED
-    bool "Enable controller in sequence mode"
-    depends on BT_NIMBLE_CONTROLLER_ENABLED
-    default y
-    help
-            Enable or Disable controller sequence mode
-
-choice
-    prompt "Select HCI interface"
-    depends on BT_NIMBLE_ENABLED && IDF_TARGET_ESP32H2
-    default BT_NIMBLE_CONTROL_USE_RAM_HCI
-
-    config BT_NIMBLE_CONTROL_USE_RAM_HCI
-        bool "ram"
-        help
-                Use RAM as HCI interface
-    config BT_NIMBLE_CONTROL_USE_UART_HCI
-        bool "uart"
-        help
-                Use UART as HCI interface
-endchoice
-
 
 choice BT_NIMBLE_MEM_ALLOC_MODE
     prompt "Memory allocation strategy"
@@ -91,55 +62,13 @@ config BT_NIMBLE_LOG_LEVEL
     default 3 if BT_NIMBLE_LOG_LEVEL_ERROR
     default 4 if BT_NIMBLE_LOG_LEVEL_NONE
 
-
-config BT_NIMBLE_HCI_UART_PORT
-    int "HCI UART port"
-    depends on BT_NIMBLE_USE_UART_HCI
-    default 1
-    help
-        Set the port number of HCI UART
-
-config BT_NIMBLE_HCI_UART_TX_PIN
-    int "HCI uart Tx gpio"
-    depends on BT_NIMBLE_USE_UART_HCI
-    default 19
-
-config BT_NIMBLE_HCI_UART_RX_PIN
-    int "HCI uart Rx gpio"
-    depends on BT_NIMBLE_USE_UART_HCI
-    default 10
-
-config BT_NIMBLE_HCI_UART_TASK_STACK_SIZE
-    int "HCI uart task stack size"
-    depends on BT_NIMBLE_USE_UART_HCI
-    default 1000
-    help
-            Set the size of uart task stack
-
-config BT_NIMBLE_HCI_UART_BAUD
-    int "HCI uart baudrate"
-    depends on BT_NIMBLE_USE_UART_HCI
-    default 921600
-    help
-            HCI uart baud rate 115200 ~ 1000000
-
-config BT_NIMBLE_RUN_QA_TEST
-    bool "Run QA test"
-    default y
-    help
-               Enable this option to run QA test.
-
-config BT_NIMBLE_RUN_BQB_TEST
-    bool "Run BQB test"
-    default n
-    help
-               Enable this option to run BQB test.
-
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     range 1 8 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2)
+    range 1 2 if IDF_TARGET_ESP32C2
     range 1 9 if IDF_TARGET_ESP32
-    default 3
+    default 3 if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2)
+    default 2 if IDF_TARGET_ESP32C2
     depends on BT_NIMBLE_ENABLED
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
@@ -226,21 +155,6 @@ config BT_NIMBLE_ROLE_OBSERVER
     help
             Enables observer role
 
-config BT_NIMBLE_CONTROLLER_TASK_STACK_SIZE
-    int "NimBLE Controller task stack size"
-    depends on BT_NIMBLE_ENABLED && IDF_TARGET_ESP32H2
-    default 5120 if BLE_MESH
-    default 4096
-    help
-            This configures stack size of NimBLE controller task
-
-config BT_NIMBLE_CONTROLLER_TASK_PRIORITY
-    int "NimBLE Controller task priority"
-    depends on BT_NIMBLE_ENABLED
-    default 23
-    help
-            This configures priority of NimBLE controller task
-
 config BT_NIMBLE_NVS_PERSIST
     bool "Persist the BLE Bonding keys in NVS"
     depends on BT_NIMBLE_ENABLED
@@ -269,13 +183,14 @@ config BT_NIMBLE_SM_SC
     help
         Enable security manager secure connections
 
-config BT_NIMBLE_DEBUG
-    bool "Enable extra runtime asserts and host debugging"
+config BT_NIMBLE_SM_SC_DEBUG_KEYS
+    bool "Use predefined public-private key pair"
     default n
-    depends on BT_NIMBLE_ENABLED
+    depends on BT_NIMBLE_SECURITY_ENABLE && BT_NIMBLE_SM_SC
     help
-        This enables extra runtime asserts and host debugging
-
+        If this option is enabled, SM uses predefined DH key pair as described
+        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
+        decrypt air traffic easily and thus should only be used for debugging.
 
 config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
     bool "Enable LE encryption"
@@ -284,14 +199,12 @@ config BT_NIMBLE_LL_CFG_FEAT_LE_ENCRYPTION
     help
             Enable encryption connection
 
-config BT_NIMBLE_SM_SC_DEBUG_KEYS
-    bool "Use predefined public-private key pair"
+config BT_NIMBLE_DEBUG
+    bool "Enable extra runtime asserts and host debugging"
     default n
-    depends on BT_NIMBLE_SM_SC
+    depends on BT_NIMBLE_ENABLED
     help
-        If this option is enabled, SM uses predefined DH key pair as described
-        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
-        decrypt air traffic easily and thus should only be used for debugging.
+        This enables extra runtime asserts and host debugging
 
 config BT_NIMBLE_SVC_GAP_DEVICE_NAME
     string "BLE GAP default device name"
@@ -323,87 +236,81 @@ config BT_NIMBLE_SVC_GAP_APPEARANCE
     help
         Standard BLE GAP Appearance value in HEX format e.g. 0x02C0
 
-config BT_NIMBLE_ACL_BUF_COUNT
-    int "ACL Buffer count"
-    depends on BT_NIMBLE_ENABLED
-    default 24
-    help
-        The number of ACL data buffers.
 
-config BT_NIMBLE_ACL_BUF_SIZE
-    int "ACL Buffer size"
-    depends on BT_NIMBLE_ENABLED
-    default 255
-    help
-        This is the maximum size of the data portion of HCI ACL data packets.
-        It does not include the HCI data header (of 4 bytes)
+menu "Memory Settings"
+    config BT_NIMBLE_MSYS_1_BLOCK_COUNT
+        int "MSYS_1 Block Count"
+        default 12
+        help
+            MSYS is a system level mbuf registry. For prepare write & prepare
+            responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+            enabled cases, this block count is increased by 8 than user defined
+            count.
 
-config BT_NIMBLE_HCI_EVT_BUF_SIZE
-    int "HCI Event Buffer size"
-    depends on BT_NIMBLE_ENABLED
-    default 257 if BT_NIMBLE_EXT_ADV
-    default 70
-    help
-        This is the size of each HCI event buffer in bytes. In case of
-        extended advertising, packets can be fragmented. 257 bytes is the
-        maximum size of a packet.
+    config BT_NIMBLE_MSYS_1_BLOCK_SIZE
+        int    "MSYS_1 Block Size"
+        default 256
+        help
+                Dynamic memory size of block 1
 
-config BT_NIMBLE_HCI_EVT_HI_BUF_COUNT
-    int "High Priority HCI Event Buffer count"
-    depends on BT_NIMBLE_ENABLED
-    default 30
-    help
-        This is the high priority HCI events' buffer size. High-priority
-        event buffers are for everything except advertising reports. If there
-        are no free high-priority event buffers then host will try to allocate a
-        low-priority buffer instead
+    config BT_NIMBLE_MSYS_2_BLOCK_COUNT
+        int    "MSYS_2 Block Count"
+        default 24
+        help
+                Dynamic memory count
 
-config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
-    int "Low Priority HCI Event Buffer count"
-    depends on BT_NIMBLE_ENABLED
-    default 8
-    help
-        This is the low priority HCI events' buffer size. Low-priority event
-        buffers are only used for advertising reports. If there are no free
-        low-priority event buffers, then an incoming advertising report will
-        get dropped
+    config BT_NIMBLE_MSYS_2_BLOCK_SIZE
+        int    "MSYS_2 Block Size"
+        default 320
+        help
+                Dynamic memory size of block 2
 
-menuconfig BT_NIMBLE_MEMORY_SETTINGS
-    bool "OS Memory Settings"
-    default y
-    help
-            Settings memory blocks
+    config BT_NIMBLE_ACL_BUF_COUNT
+        int "ACL Buffer count"
+        depends on BT_NIMBLE_ENABLED
+        default 24
+        help
+            The number of ACL data buffers.
 
-config BT_NIMBLE_MSYS_1_BLOCK_COUNT
-    int "MSYS_1 Block Count"
-    depends on BT_NIMBLE_MEMORY_SETTINGS
-    default 12
-    help
-        MSYS is a system level mbuf registry. For prepare write & prepare
-        responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
-        enabled cases, this block count is increased by 8 than user defined
-        count.
+    config BT_NIMBLE_ACL_BUF_SIZE
+        int "ACL Buffer size"
+        depends on BT_NIMBLE_ENABLED
+        default 255
+        help
+            This is the maximum size of the data portion of HCI ACL data packets.
+            It does not include the HCI data header (of 4 bytes)
 
-config BT_NIMBLE_MSYS_1_BLOCK_SIZE
-    int    "MSYS_1 Block Size"
-    depends on BT_NIMBLE_MEMORY_SETTINGS
-    default 256
-    help
-            Dynamic memory size of block 1
+    config BT_NIMBLE_HCI_EVT_BUF_SIZE
+        int "HCI Event Buffer size"
+        depends on BT_NIMBLE_ENABLED
+        default 257 if BT_NIMBLE_EXT_ADV
+        default 70
+        help
+            This is the size of each HCI event buffer in bytes. In case of
+            extended advertising, packets can be fragmented. 257 bytes is the
+            maximum size of a packet.
 
-config BT_NIMBLE_MSYS_2_BLOCK_COUNT
-    int    "MSYS_2 Block Count"
-    depends on BT_NIMBLE_MEMORY_SETTINGS
-    default 24
-    help
-            Dynamic memory count
+    config BT_NIMBLE_HCI_EVT_HI_BUF_COUNT
+        int "High Priority HCI Event Buffer count"
+        depends on BT_NIMBLE_ENABLED
+        default 30
+        help
+            This is the high priority HCI events' buffer size. High-priority
+            event buffers are for everything except advertising reports. If there
+            are no free high-priority event buffers then host will try to allocate a
+            low-priority buffer instead
 
-config BT_NIMBLE_MSYS_2_BLOCK_SIZE
-    int    "MSYS_2 Block Size"
-    depends on BT_NIMBLE_MEMORY_SETTINGS
-    default 320
-    help
-            Dynamic memory size of block 2
+    config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
+        int "Low Priority HCI Event Buffer count"
+        depends on BT_NIMBLE_ENABLED
+        default 8
+        help
+            This is the low priority HCI events' buffer size. Low-priority event
+            buffers are only used for advertising reports. If there are no free
+            low-priority event buffers, then an incoming advertising report will
+            get dropped
+
+endmenu
 
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
@@ -567,7 +474,7 @@ config BT_NIMBLE_HOST_BASED_PRIVACY
 
 config BT_NIMBLE_ENABLE_CONN_REATTEMPT
     bool "Enable connection reattempts on connection establishment error"
-    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2 )
+    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C2)
     default n if IDF_TARGET_ESP32
     help
         Enable to make the NimBLE host to reattempt GAP connection on connection
@@ -582,29 +489,92 @@ config BT_NIMBLE_MAX_CONN_REATTEMPT
         Defines maximum number of connection reattempts.
 
 menuconfig BT_NIMBLE_50_FEATURE_SUPPORT
-    bool "Enable BLE v5.0 feature"
+    bool "Enable BLE 5 feature"
     depends on BT_NIMBLE_ENABLED
     default y
     help
-            Enable BLE v5.0 feature
+            Enable BLE 5 feature
 
+config BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY
+    bool "Enable 2M Phy"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT
+    default y
+    help
+            Enable 2M-PHY
+
+config BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY
+    bool "Enable coded Phy"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT
+    default y
+    help
+            Enable coded-PHY
 
 config BT_NIMBLE_EXT_ADV
     bool "Enable extended advertising"
-    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT
     default n
     help
         Enable this option to do extended advertising. Extended advertising
         will be supported from BLE 5.0 onwards.
 
 if BT_NIMBLE_EXT_ADV
-    config BT_NIMBLE_EXT_ADV_MAX_SIZE
-        int "set ext adv maximum paket size"
-        depends on BT_NIMBLE_50_FEATURE_SUPPORT
-        default 1650
+    config BT_NIMBLE_MAX_EXT_ADV_INSTANCES
+        int "Maximum number of extended advertising instances."
+        range 0 4
+        default 1 if BT_NIMBLE_EXT_ADV
+        default 0
+        depends on BT_NIMBLE_EXT_ADV
         help
-                Ext ADV packet size
+            Change this option to set maximum number of extended advertising
+            instances. Minimum there is always one instance of
+            advertising. Enter how many more advertising instances you
+            want.
+
+    config BT_NIMBLE_EXT_ADV_MAX_SIZE
+        int "Maximum length of the advertising data."
+        range 0 1650
+        default 1650 if BT_NIMBLE_EXT_ADV
+        default 0
+        depends on BT_NIMBLE_EXT_ADV
+        help
+            Defines the length of the extended adv data. The value should not
+            exceed 1650.
+
+    config BT_NIMBLE_ENABLE_PERIODIC_ADV
+        bool "Enable periodic advertisement."
+        default y
+        depends on BT_NIMBLE_EXT_ADV
+        help
+            Enable this option to start periodic advertisement.
+
+    config BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
+        bool "Enable Transer Sync Events"
+        depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+        default y
+        help
+                This enables controller transfer periodic sync events to host
+
 endif
+
+config BT_NIMBLE_MAX_PERIODIC_SYNCS
+    int "Maximum number of periodic advertising syncs"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT
+    range 0 8 if !IDF_TARGET_ESP32C2
+    range 0 3 if IDF_TARGET_ESP32C2
+    default 1 if BT_NIMBLE_ENABLE_PERIODIC_ADV
+    default 0
+    help
+        Set this option to set the upper limit for number of periodic sync
+        connections. This should be less than maximum connections allowed by
+        controller.
+
+config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
+    int "Maximum number of periodic advertiser list"
+    depends on BT_NIMBLE_50_FEATURE_SUPPORT && IDF_TARGET_ESP32C2
+    range 1 5
+    default 5 if BT_NIMBLE_50_FEATURE_SUPPORT
+    help
+        Set this option to set the upper limit for number of periodic advertiser list.
 
 choice BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM
     prompt "Coexistence: limit on MAX Tx/Rx time for coded-PHY connection"
@@ -635,99 +605,18 @@ config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
     depends on BT_NIMBLE_ENABLED
-    range 1 15
-    default 12
+    range 1 15 if !IDF_TARGET_ESP32C2
+    default 12 if !IDF_TARGET_ESP32C2
+    range 1 5 if IDF_TARGET_ESP32C2
+    default 5 if IDF_TARGET_ESP32C2
     help
             BLE list size
-
-
-config BT_NIMBLE_MAX_EXT_ADV_INSTANCES
-    int "Maximum number of extended advertising instances."
-    range 0 4
-    default 1 if BT_NIMBLE_EXT_ADV
-    default 0
-    depends on BT_NIMBLE_EXT_ADV
-    help
-        Change this option to set maximum number of extended advertising
-        instances. Minimum there is always one instance of
-        advertising. Enter how many more advertising instances you
-        want.
-
-config BT_NIMBLE_MAX_EXT_ADV_DATA_LEN
-    int "Maximum length of the advertising data."
-    range 0 1650
-    default 1650 if BT_NIMBLE_EXT_ADV
-    default 0
-    depends on BT_NIMBLE_EXT_ADV
-    help
-        Defines size of extended advertising data. Size should not increase
-        1650.
-
-config BT_NIMBLE_ENABLE_PERIODIC_ADV
-    bool "Enable periodic advertisement."
-    default y
-    depends on BT_NIMBLE_EXT_ADV
-    help
-        Enable this option to start periodic advertisement.
-
-config BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
-    bool "Enable Transer Sync Events"
-    depends on BT_NIMBLE_EXT_ADV
-    default y
-    help
-            This enables controller transfer periodic sync events to host
-
-
-config BT_NIMBLE_MAX_PERIODIC_SYNCS
-    int "Maximum number of periodic advertising syncs."
-    default 1 if BT_NIMBLE_ENABLE_PERIODIC_ADV
-    default 0
-    depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
-    range 1 8
-    help
-        Set this option to set the upper limit for number of periodic sync
-        connections. This should be less than maximum connections allowed by
-        controller.
-
-config BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY
-    bool "Enable 2M Phy"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    default y
-    help
-            Enable 2M-PHY
-
-config BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY
-    bool "Enable coded Phy"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    default y
-    help
-            Enable coded-PHY
-
-config BT_NIMBLE_HARDWARE_BLE_ONLY
-    bool "Run example on Ble Only Hardware"
-    default y
-    help
-            Run example on Ble Only Hardware
 
 config BT_NIMBLE_TEST_THROUGHPUT_TEST
     bool "Throughput Test Mode enable"
     default n
     help
             Enable the throughput test mode
-
-
-config BT_NIMBLE_LL_RESOLV_LIST_SIZE
-    int "BLE LL Resolving list size"
-    default 4
-    help
-            Configure the size of resolving list used in link layer.
-
-config BT_NIMBLE_LL_DUP_SCAN_LIST_COUNT
-    int "BLE duplicate scan list count"
-    range 1 100
-    default 8
-    help
-            config the max count of duplicate scan list
 
 config BT_NIMBLE_SLEEP_ENABLE
     bool "Enable BLE sleep"
@@ -736,7 +625,7 @@ config BT_NIMBLE_SLEEP_ENABLE
     help
             Enable BLE sleep
 
-choice
+choice BT_NIMBLE_WAKEUP_SOURCE
     prompt "BLE light sleep wakeup source"
     depends on BT_NIMBLE_SLEEP_ENABLE
     default BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
