@@ -23,8 +23,6 @@
 #include "test_apb_dport_access.h"
 #include "test_utils.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5141
 TEST_CASE("mbedtls AES self-tests", "[aes]")
 {
     start_apb_access_loop();
@@ -45,4 +43,3 @@ TEST_CASE("mbedtls RSA self-tests", "[bignum]")
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_rsa_self_test(1), "RSA self-tests should pass.");
     verify_apb_access_loop();
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

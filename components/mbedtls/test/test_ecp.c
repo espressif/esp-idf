@@ -31,8 +31,6 @@ which are undefined if the following flag is not defined */
    error hex value (mbedTLS uses -N for error codes) */
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5141
 TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
 {
     mbedtls_ecdh_context ctx;
@@ -86,7 +84,6 @@ TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
     mbedtls_ctr_drbg_free(&ctxRandom);
     mbedtls_entropy_free(&ctxEntropy);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #if CONFIG_MBEDTLS_HARDWARE_ECC
 /*
@@ -157,8 +154,6 @@ const uint8_t ecc_p256_mul_res_y[] = {
     0xC7, 0xD4, 0x0C, 0x90, 0xA1, 0xC9, 0xD3, 0x3A
 };
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5141
 static int rng_wrapper(void *ctx, unsigned char *buf, size_t len)
 {
     esp_fill_random(buf, len);
@@ -258,5 +253,4 @@ TEST_CASE("mbedtls ECP point verify with SECP256R1", "[mbedtls]")
 {
     test_ecp_verify(MBEDTLS_ECP_DP_SECP256R1, ecc_p256_mul_res_x, ecc_p256_mul_res_y);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #endif /* CONFIG_MBEDTLS_HARDWARE_ECC */
