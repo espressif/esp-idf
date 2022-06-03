@@ -319,6 +319,7 @@ menu "ESP System Settings"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 1 if IDF_TARGET_ESP32
+        default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
         default 43
         help
@@ -333,6 +334,7 @@ menu "ESP System Settings"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 3 if IDF_TARGET_ESP32
+        default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
         default 44
         help
