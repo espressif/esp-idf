@@ -28,7 +28,11 @@ components/esp32/include/esp32/cache_err_int.h
 components/driver/include/driver/sdmmc_defs.h
 components/driver/include/driver/sdmmc_types.h
 
+# LWIP: sockets.h uses #include_next<>, which doesn't work correctly with the checker
+# memp_std.h is supposed to be included multiple times with different settings
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
+components/lwip/include/lwip/sockets.h
+components/lwip/lwip/src/include/lwip/prot/nd6.h
 
 components/esp_phy/esp32/include/phy_init_data.h
 
@@ -101,8 +105,6 @@ components/esp_common/include/esp_compiler.h
 
 ### To be fixed: headers that rely on implicit inclusion
 #
-components/lwip/lwip/src/include/lwip/prot/nd6.h
-components/lwip/port/esp32/include/netif/dhcp_state.h
 components/soc/src/esp32/rtc_clk_common.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
@@ -142,6 +144,5 @@ components/fatfs/diskio/diskio_sdmmc.h
 components/openssl/include/openssl/ssl.h
 components/ulp/include/ulp_common.h
 components/ulp/include/esp32s2/ulp_riscv.h
-components/lwip/include/apps/sntp/sntp.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h

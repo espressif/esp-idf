@@ -28,6 +28,7 @@ menu "ESP NETIF Adapter"
             help
                 Dummy implementation of esp-netif functionality which connects driver transmit
                 to receive function. This option is for testing purpose only
+
     endchoice
 
     config ESP_NETIF_L2_TAP

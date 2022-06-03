@@ -36,6 +36,29 @@ typedef struct lwip_peer2peer_ctx {
     ppp_pcb *ppp;
 } lwip_peer2peer_ctx_t;
 
+#if PPP_SUPPORT && PPP_AUTH_SUPPORT
+typedef struct {
+    struct tcpip_api_call_data call;
+    ppp_pcb *ppp;
+    u8_t authtype;
+    const char *user;
+    const char *passwd;
+} set_auth_msg_t;
+
+static err_t pppapi_do_ppp_set_auth(struct tcpip_api_call_data *m)
+{
+    set_auth_msg_t *msg = (set_auth_msg_t *)m;
+    ppp_set_auth(msg->ppp, msg->authtype, msg->user, msg->passwd);
+    return ERR_OK;
+}
+
+static void pppapi_set_auth(ppp_pcb *pcb, u8_t authtype, const char *user, const char *passwd)
+{
+    set_auth_msg_t msg = { .ppp = pcb, .authtype = authtype, .user = user, .passwd = passwd};
+    tcpip_api_call(pppapi_do_ppp_set_auth, &msg.call);
+}
+#endif // PPP_SUPPORT && PPP_AUTH_SUPPORT
+
 /**
  * @brief lwip callback from PPP client used here to produce PPP error related events,
  * as well as some IP events

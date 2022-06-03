@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdbool.h>
@@ -31,6 +23,15 @@
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
+
+/**
+ * @brief This function is implemented only in FreeRTOS port (ingroup sys_sem)
+ * and has no official API counterpart in lwip's sys.h declarations
+ * Signals a semaphore from ISR
+ * @param sem the semaphore to signal
+ * @return 1 if the signal has caused a high-prio task to unblock (pxHigherPriorityTaskWoken)
+ */
+int sys_sem_signal_isr(sys_sem_t *sem);
 
 static void lwip_stop_socket_select(void *sem)
 {

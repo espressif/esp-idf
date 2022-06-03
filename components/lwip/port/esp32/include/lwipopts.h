@@ -16,15 +16,20 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/select.h>
-#include "netif/dhcp_state.h"
-#include "sntp/sntp_get_set_time.h"
+#include <sys/poll.h>
 #ifdef __linux__
 #include "esp32_mock.h"
 #else
 #include "esp_task.h"
 #include "esp_random.h"
 #endif // __linux__
+#include "sdkconfig.h"
+#include "sntp/sntp_get_set_time.h"
+#include "sockets_ext.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
    -----------------------------------------------
@@ -302,13 +307,19 @@
  * is restored after reset/power-up.
  */
 #ifdef CONFIG_LWIP_DHCP_RESTORE_LAST_IP
-#define LWIP_DHCP_IP_ADDR_RESTORE()     dhcp_ip_addr_restore(netif)
-#define LWIP_DHCP_IP_ADDR_STORE()       dhcp_ip_addr_store(netif)
-#define LWIP_DHCP_IP_ADDR_ERASE(esp_netif)       dhcp_ip_addr_erase(esp_netif)
+/*
+ * Make the post-init hook check if we could restore the previously bound address
+ * - if yes reset the state to bound and mark result as ERR_OK (which skips discovery state)
+ * - if no, return false to continue normally to the discovery state
+ */
+#define LWIP_HOOK_DHCP_POST_INIT(netif, result) \
+    (dhcp_ip_addr_restore(netif) ? ( dhcp_set_state(dhcp, DHCP_STATE_BOUND), \
+                                     dhcp_network_changed(netif), \
+                                     (result) = ERR_OK , \
+        true ) : \
+        false)
 #else
-#define LWIP_DHCP_IP_ADDR_RESTORE()     0
-#define LWIP_DHCP_IP_ADDR_STORE()
-#define LWIP_DHCP_IP_ADDR_ERASE(esp_netif)
+#define LWIP_HOOK_DHCP_PRE_DISCOVERY(netif, result) (false)
 #endif /* CONFIG_LWIP_DHCP_RESTORE_LAST_IP */
 
 /**
@@ -326,6 +337,38 @@
  * LWIP_DHCP_DISABLE_VENDOR_CLASS_ID==1: Do not add option 60 (Vendor Class Identifier) to DHCP packets
  */
 #define ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER       CONFIG_LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+
+#define DHCP_DEFINE_CUSTOM_TIMEOUTS     1
+#define DHCP_COARSE_TIMER_SECS          (1)
+#define DHCP_NEXT_TIMEOUT_THRESHOLD     (3)
+/* Since for embedded devices it's not that hard to miss a discover packet, so lower
+ * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
+ */
+#define DHCP_REQUEST_TIMEOUT_SEQUENCE(tries)   (( (tries) < 6 ? 1 << (tries) : 60) * 250)
+
+static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
+{
+    uint32_t timeout = lease;
+    if (timeout == 0) {
+        timeout = min;
+    }
+    return timeout;
+}
+
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T0_LEASE(dhcp)  \
+        timeout_from_offered((dhcp)->offered_t0_lease, 120)
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T1_RENEW(dhcp)  \
+        timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout>>1 /* 50% */ )
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T2_REBIND(dhcp) \
+        timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ )
+
+#define LWIP_HOOK_DHCP_PARSE_OPTION(netif, dhcp, state, msg, msg_type, option, len, pbuf, offset)   \
+        do {    LWIP_UNUSED_ARG(msg);                                           \
+                dhcp_parse_extra_opts(dhcp, state, option, len, pbuf, offset);  \
+            } while(0)
+
+#define LWIP_HOOK_DHCP_APPEND_OPTIONS(netif, dhcp, state, msg, msg_type, options_len_ptr) \
+        dhcp_append_extra_opts(netif, state, msg, options_len_ptr);
 
 /*
    ------------------------------------
@@ -590,6 +633,15 @@
 #endif
 
 /**
+ * LWIP_NETIF_EXT_STATUS_CALLBACK==1: Support an extended callback function
+ * for several netif related event that supports multiple subscribers.
+ *
+ * This ext-callback is used by ESP-NETIF with lwip-orig (upstream version)
+ * to provide netif related events on IP4/IP6 address/status changes
+ */
+#define LWIP_NETIF_EXT_STATUS_CALLBACK  1
+
+/**
  * LWIP_NETIF_TX_SINGLE_PBUF: if this is set to 1, lwIP *tries* to put all data
  * to be sent into one single pbuf. This is for compatibility with DMA-enabled
  * MACs that do not support scatter-gather.
@@ -790,7 +842,7 @@
  * While this helps code completion, it might conflict with existing libraries.
  * (only used if you use sockets.c)
  */
-#define LWIP_COMPAT_SOCKETS             1
+#define LWIP_COMPAT_SOCKETS             0
 
 /**
  * LWIP_POSIX_SOCKETS_IO_NAMES==1: Enable POSIX-style sockets functions names.
@@ -1111,6 +1163,11 @@
 #endif
 #define LWIP_HOOK_FILENAME              "lwip_default_hooks.h"
 #define LWIP_HOOK_IP4_ROUTE_SRC         ip4_route_src_hook
+#define LWIP_HOOK_SOCKETS_GETSOCKOPT(s, sock, level, optname, optval, optlen, err)    \
+        lwip_getsockopt_impl_ext(sock, level, optname, optval, optlen, err)?(done_socket(sock), true): false
+
+#define LWIP_HOOK_SOCKETS_SETSOCKOPT(s, sock, level, optname, optval, optlen, err)    \
+        lwip_setsockopt_impl_ext(sock, level, optname, optval, optlen, err)?(done_socket(sock), true): false
 
 /*
    ---------------------------------------
@@ -1311,6 +1368,8 @@
 #ifdef CONFIG_LWIP_TIMERS_ONDEMAND
 #define ESP_LWIP_IGMP_TIMERS_ONDEMAND   1
 #define ESP_LWIP_MLD6_TIMERS_ONDEMAND   1
+#define LWIP_NUM_SYS_TIMEOUT_INTERNAL_WOUT_IGMP_MLD6   (LWIP_TCP + IP_REASSEMBLY + LWIP_ARP + (2*LWIP_DHCP) + LWIP_AUTOIP + LWIP_DNS + PPP_NUM_TIMEOUTS + (LWIP_IPV6 * (1 + LWIP_IPV6_REASS)))
+#define MEMP_NUM_SYS_TIMEOUT            LWIP_NUM_SYS_TIMEOUT_INTERNAL_WOUT_IGMP_MLD6
 #else
 #define ESP_LWIP_IGMP_TIMERS_ONDEMAND   0
 #define ESP_LWIP_MLD6_TIMERS_ONDEMAND   0
@@ -1346,7 +1405,7 @@
 #define ESP_LWIP_SELECT                 1
 #define ESP_LWIP_LOCK                   1
 #define ESP_THREAD_PROTECTION           1
-#define ESP_IP_FORWARD                  1
+#define LWIP_SUPPORT_CUSTOM_PBUF        1
 
 /*
    -----------------------------------------
@@ -1364,5 +1423,30 @@
 #define ESP_DHCPS_TIMER                 0
 #endif /* CONFIG_LWIP_DHCPS */
 
+
+#if LWIP_NETCONN_SEM_PER_THREAD
+#if ESP_THREAD_SAFE
+#define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
+#define LWIP_NETCONN_THREAD_SEM_ALLOC() sys_thread_sem_init()
+#define LWIP_NETCONN_THREAD_SEM_FREE() sys_thread_sem_deinit()
+#endif
+#endif
+
+/**
+ * If CONFIG_ALLOC_MEMORY_IN_SPIRAM_FIRST is enabled, Try to
+ * allocate memory for lwip in SPIRAM firstly. If failed, try to allocate
+ * internal memory then.
+ */
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+#define mem_clib_malloc(size)    heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#define mem_clib_calloc(n, size) heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#else /* !CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP */
+#define mem_clib_malloc malloc
+#define mem_clib_calloc calloc
+#endif /* CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LWIP_HDR_ESP_LWIPOPTS_H */

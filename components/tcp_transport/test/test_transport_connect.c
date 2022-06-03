@@ -12,7 +12,8 @@
     struct ifreq ifr; \
     ifr.ifr_name[0] = 'l'; \
     ifr.ifr_name[1] = 'o'; \
-    ifr.ifr_name[2] = '\0';
+    ifr.ifr_name[2] = '0'; \
+    ifr.ifr_name[3] = '\0';
 
 
 static void tcp_transport_keepalive_test(esp_transport_handle_t transport_under_test, bool async, esp_transport_keep_alive_t *config)

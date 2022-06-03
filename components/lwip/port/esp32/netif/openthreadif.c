@@ -37,11 +37,6 @@ static err_t openthread_output_ip6(struct netif *netif, struct pbuf *p, const st
         LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
         q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
         if (q != NULL) {
-#if ESP_LWIP
-            /* This pbuf RAM was not allocated on layer2, no extra free operation needed in pbuf_free */
-            q->l2_owner = NULL;
-            q->l2_buf = NULL;
-#endif
             pbuf_copy(q, p);
         } else {
             return ERR_MEM;
@@ -84,10 +79,6 @@ void openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
         LWIP_DEBUGF(NETIF_DEBUG, ("Failed to read OpenThread message\n"));
     }
 
-#if ESP_LWIP
-    p->l2_owner = NULL;
-    p->l2_buf = NULL;
-#endif
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("openthread_netif_input: IP input error\n"));
@@ -135,7 +126,6 @@ err_t openthread_netif_init(struct netif *netif)
     netif->output = NULL;
     netif->output_ip6 = openthread_output_ip6;
     netif->mld_mac_filter = openthread_netif_multicast_handler;
-    netif->l2_buffer_free_notify = NULL;
     netif_set_link_up(netif);
 
     return ERR_OK;
