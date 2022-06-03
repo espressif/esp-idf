@@ -1,5 +1,3 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- | -------- |
 # HTTP Websocket server with SSL support
 
 This example creates a SSL server and employs a simple Websocket request handler. It demonstrates handling multiple clients from the server including:

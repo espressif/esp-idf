@@ -1,5 +1,3 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- | -------- |
 # HTTP server with SSL support using OpenSSL
 
 This example creates a SSL server that returns a simple HTML page when you visit its root URL.
