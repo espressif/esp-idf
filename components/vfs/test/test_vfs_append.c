@@ -13,6 +13,7 @@
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"
 #include "wear_levelling.h"
+#include "test_utils.h"
 
 #define TEST_PARTITION_LABEL "flash_test"
 
@@ -77,6 +78,8 @@ static void test_append(const char *path)
     TEST_ASSERT_NOT_EQUAL(-1, unlink(path));
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5139
 TEST_CASE("open() with O_APPEND on FATFS works well", "[vfs][FATFS]")
 {
     wl_handle_t test_wl_handle;
@@ -91,6 +94,7 @@ TEST_CASE("open() with O_APPEND on FATFS works well", "[vfs][FATFS]")
 
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("open() with O_APPEND on SPIFFS works well", "[vfs][spiffs]")
 {

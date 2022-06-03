@@ -18,6 +18,8 @@
 #include "esp32c3/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/ets_sys.h"
 #endif
 
 static void test_correct_delay_timer_func(void* arg)

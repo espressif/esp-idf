@@ -19,6 +19,7 @@
 #include "soc/uart_struct.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs.h"
+#include "test_utils.h"
 #include "sdkconfig.h"
 
 static void fwrite_str_loopback(const char* str, size_t size)
@@ -207,6 +208,8 @@ TEST_CASE("fcntl supported in UART VFS", "[vfs]")
 }
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5139
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
     uart_config_t uart_config = {
@@ -333,4 +336,5 @@ TEST_CASE("Can use termios for UART", "[vfs]")
     close(uart_fd);
     uart_driver_delete(UART_NUM_1);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 #endif // CONFIG_VFS_SUPPORT_TERMIOS

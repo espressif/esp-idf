@@ -28,7 +28,11 @@ LIGHT_SLEEP_TIME = 500000
 ONE_SHOT_TIMER_PERIOD = 5000000
 
 
-@pytest.mark.supported_targets
+# IDF-5052
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c3
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

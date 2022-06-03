@@ -61,6 +61,16 @@ example_test_pytest_esp32s3_generic:
     TARGET: ESP32S3
     ENV_MARKER: generic
 
+example_test_pytest_esp32c2_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2
+  needs:
+    - build_pytest_examples_esp32c2
+  variables:
+    TARGET: ESP32C2
+    ENV_MARKER: generic
+
 example_test_pytest_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
@@ -256,6 +266,16 @@ component_ut_pytest_esp32s3_octal_psram:
     TARGET: ESP32S3
     ENV_MARKER: octal_psram
 
+component_ut_pytest_esp32c2_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2
+  needs:
+    - build_pytest_components_esp32c2
+  variables:
+    TARGET: ESP32C2
+    ENV_MARKER: generic
+
 component_ut_pytest_esp32c3_generic:
   extends:
     - .pytest_components_dir_template
@@ -301,6 +321,16 @@ test_app_test_pytest_esp32s3_generic:
     - build_pytest_test_apps_esp32s3
   variables:
     TARGET: ESP32S3
+    ENV_MARKER: generic
+
+test_app_test_pytest_esp32c2_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2
+  needs:
+    - build_pytest_test_apps_esp32c2
+  variables:
+    TARGET: ESP32C2
     ENV_MARKER: generic
 
 test_app_test_pytest_esp32c3_generic:
@@ -400,6 +430,11 @@ test_weekend_mqtt:
   extends:
     - .example_test_template
     - .rules:test:example_test-esp32s2
+
+.example_test_esp32c2_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32c2
 
 .example_test_esp32c3_template:
   extends:
@@ -572,6 +607,13 @@ example_test_017:
     - ESP32S2
     - Example_GENERIC
 
+example_test_C2_GENERIC:
+  extends: .example_test_esp32c2_template
+  parallel: 2
+  tags:
+    - ESP32C2
+    - Example_GENERIC
+
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
   parallel: 2
@@ -621,6 +663,11 @@ example_test_ESP32C3_SDSPI:
     - .test_app_template
     - .rules:test:custom_test-esp32s2
 
+.test_app_esp32c2_template:
+  extends:
+    - .test_app_template
+    - .rules:test:custom_test-esp32c2
+
 .test_app_esp32c3_template:
   extends:
     - .test_app_template
@@ -661,6 +708,12 @@ test_app_test_004:
   extends: .test_app_esp32s2_template
   tags:
     - ESP32S2
+    - Example_GENERIC
+
+test_app_test_esp32c2_generic:
+  extends: .test_app_esp32c2_template
+  tags:
+    - ESP32C2
     - Example_GENERIC
 
 test_app_test_005:
@@ -716,6 +769,11 @@ test_app_test_flash_psram_f8r8:
     - .unit_test_template
     - .rules:test:unit_test-esp32s3
 
+.unit_test_esp32c2_template:
+  extends:
+    - .unit_test_template
+    - .rules:test:unit_test-esp32c2
+
 .unit_test_esp32c3_template:
   extends:
     - .unit_test_template
@@ -767,7 +825,7 @@ UT_006:
 
 UT_007:
   extends: .unit_test_esp32_template
-  parallel: 5
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -904,7 +962,7 @@ UT_046:
 
 UT_047:
   extends: .unit_test_esp32s2_template
-  parallel: 13
+  parallel: 5
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -921,9 +979,16 @@ UT_S2_SDSPI:
     - ESP32S2_IDF
     - UT_T1_SPIMODE
 
+UT_C2:
+  extends: .unit_test_esp32c2_template
+  parallel: 19
+  tags:
+    - ESP32C2_IDF
+    - UT_T1_1
+
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 34
+  parallel: 31
   tags:
     - ESP32C3_IDF
     - UT_T1_1
@@ -967,26 +1032,18 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 33
+  parallel: 28
   tags:
     - ESP32S3_IDF
     - UT_T1_1
 
 UT_S3_QUAD_PSRAM:
   extends: .unit_test_esp32s3_template
-  parallel: 33
+  parallel: 4
   tags:
     - ESP32S3_IDF
     - UT_T1_1
     - quad_psram
-
-UT_S3_OCTAL_PSRAM:
-  extends: .unit_test_esp32s3_template
-  parallel: 33
-  tags:
-    - ESP32S3_IDF
-    - UT_T1_1
-    - octal_psram
 
 UT_S3_SPI_DUAL:
   extends: .unit_test_esp32s3_template

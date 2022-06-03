@@ -32,6 +32,7 @@ which are undefined if the following flag is not defined */
 #include <protocomm_security.h>
 #include <protocomm_security0.h>
 #include <protocomm_security1.h>
+#include "test_utils.h"
 
 #include "session.pb-c.h"
 
@@ -680,6 +681,8 @@ static void stop_test_service(void)
     test_pc = NULL;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5143
 static esp_err_t test_security1_no_encryption (void)
 {
     ESP_LOGI(TAG, "Starting Security 1 no encryption test");
@@ -887,7 +890,7 @@ static esp_err_t test_security1_wrong_pop (void)
     return ESP_OK;
 }
 
-__attribute__((unused)) static esp_err_t test_security1_insecure_client (void)
+static esp_err_t test_security1_insecure_client (void)
 {
     ESP_LOGI(TAG, "Starting Security 1 insecure client test");
 
@@ -939,7 +942,7 @@ __attribute__((unused)) static esp_err_t test_security1_insecure_client (void)
     return ESP_OK;
 }
 
-__attribute__((unused)) static esp_err_t test_security1_weak_session (void)
+static esp_err_t test_security1_weak_session (void)
 {
     ESP_LOGI(TAG, "Starting Security 1 weak session test");
 
@@ -1002,6 +1005,7 @@ __attribute__((unused)) static esp_err_t test_security1_weak_session (void)
     ESP_LOGI(TAG, "Protocomm test successful");
     return ESP_OK;
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static esp_err_t test_protocomm (session_t *session)
 {
@@ -1051,6 +1055,8 @@ static esp_err_t test_protocomm (session_t *session)
     return ESP_OK;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5143
 static esp_err_t test_security1 (void)
 {
     ESP_LOGI(TAG, "Starting Sec1 test");
@@ -1081,6 +1087,7 @@ static esp_err_t test_security1 (void)
     free(session);
     return ESP_OK;
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static esp_err_t test_security0 (void)
 {
@@ -1107,6 +1114,8 @@ static esp_err_t test_security0 (void)
     return ESP_OK;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5143
 TEST_CASE("leak test", "[PROTOCOMM]")
 {
 #ifdef CONFIG_HEAP_TRACING
@@ -1147,12 +1156,15 @@ TEST_CASE("leak test", "[PROTOCOMM]")
 
     TEST_ASSERT(pre_start_mem == post_stop_mem);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("security 0 basic test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security0() == ESP_OK);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5143
 TEST_CASE("security 1 basic test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1() == ESP_OK);
@@ -1182,3 +1194,4 @@ TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

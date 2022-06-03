@@ -1,7 +1,10 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 
 # CoAP server example
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)  
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 This CoAP server example is very simplified adaptation of one of the
 [libcoap](https://github.com/obgm/libcoap) examples.
 
@@ -17,7 +20,7 @@ NOTE: Client sessions trying to use coaps+tcp:// are not currently supported, ev
 libcoap and MbedTLS support it.
 
 The Constrained Application Protocol (CoAP) is a specialized web transfer protocol for use with
-constrained nodes and constrained networks in the Internet of Things.   
+constrained nodes and constrained networks in the Internet of Things.
 The protocol is designed for machine-to-machine (M2M) applications such as smart energy and
 building automation.
 
@@ -58,8 +61,8 @@ idf.py -p PORT flash monitor
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
-current CoAP server would startup a daemon task,   
-and the log is such as the following:  
+current CoAP server would startup a daemon task,
+and the log is such as the following:
 
 ```
 ...
@@ -76,7 +79,7 @@ I (2622) CoAP_server: Connected to AP
 ...
 ```
 
-If a CoAP client queries the `/Espressif` resource, CoAP server will return `"Hello World!"`  
+If a CoAP client queries the `/Espressif` resource, CoAP server will return `"Hello World!"`
 until a CoAP client does a PUT with different data.
 
 ## libcoap Documentation

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Semihosting VFS driver example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -101,9 +104,9 @@ There are two outputs produced by example:
    but they're the best we can do in text.  A graphics file illustrating
    the character set should be available from the same archive as this
    file.
-   
+
    Hex Description                 Hex Description
-   
+
    20  SPACE
    ...
    7D  RIGHT CURLY BRACKET         FD  SMALL LETTER Y WITH ACUTE

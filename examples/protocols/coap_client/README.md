@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 
 # CoAP client example
 
@@ -18,7 +21,7 @@ If the URI is prefixed with coap+tcp://, then the CoAP will try to use TCP for t
 NOTE: coaps+tcp:// is not currently supported, even though both libcoap and MbedTLS support it.
 
 The Constrained Application Protocol (CoAP) is a specialized web transfer protocol for use with
-constrained nodes and constrained networks in the Internet of Things.   
+constrained nodes and constrained networks in the Internet of Things.
 The protocol is designed for machine-to-machine (M2M) applications such as smart energy and
 building automation.
 
@@ -61,9 +64,9 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 Prerequisite: we startup a CoAP server on coap server example,
-or use the default of coap://californium.eclipseprojects.io.  
+or use the default of coap://californium.eclipseprojects.io.
 
-and you could receive data from CoAP server if succeed,  
+and you could receive data from CoAP server if succeed,
 such as the following log:
 
 ```

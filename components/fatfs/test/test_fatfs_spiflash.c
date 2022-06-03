@@ -23,6 +23,8 @@
 #include "esp_partition.h"
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5136
 static wl_handle_t s_test_wl_handle;
 static void test_setup(void)
 {
@@ -200,6 +202,7 @@ TEST_CASE("(WL) can get partition info", "[fatfs][wear_levelling]")
     test_fatfs_info("/spiflash", "/spiflash/test.txt");
     test_teardown();
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 /*
  * In FatFs menuconfig, set CONFIG_FATFS_API_ENCODING to UTF-8 and set the
@@ -207,6 +210,9 @@ TEST_CASE("(WL) can get partition info", "[fatfs][wear_levelling]")
  * Ensure that the text editor is UTF-8 compatible when compiling these tests.
  */
 #if defined(CONFIG_FATFS_API_ENCODING_UTF_8) && (CONFIG_FATFS_CODEPAGE == 936)
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5136
 TEST_CASE("(WL) can read file with UTF-8 encoded strings", "[fatfs][wear_levelling]")
 {
     test_setup();
@@ -221,7 +227,8 @@ TEST_CASE("(WL) opendir, readdir, rewinddir, seekdir work as expected using UTF-
     test_fatfs_opendir_readdir_rewinddir_utf_8("/spiflash/目录");
     test_teardown();
 }
-#endif
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+#endif //defined(CONFIG_FATFS_API_ENCODING_UTF_8) && (CONFIG_FATFS_CODEPAGE == 936)
 
 #ifdef CONFIG_SPIRAM
 TEST_CASE("FATFS prefers SPI RAM for allocations", "[fatfs]")

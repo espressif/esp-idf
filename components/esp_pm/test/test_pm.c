@@ -18,6 +18,7 @@
 #include "soc/rtc_periph.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
+#include "test_utils.h"
 
 #include "sdkconfig.h"
 
@@ -38,6 +39,8 @@ TEST_CASE("Can dump power management lock stats", "[pm]")
 
 #ifdef CONFIG_PM_ENABLE
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5053
 static void switch_freq(int mhz)
 {
     int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
@@ -47,6 +50,8 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32s2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C2
+    esp_pm_config_esp32c2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32H2
@@ -81,6 +86,7 @@ TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 
     switch_freq(orig_freq_mhz);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
@@ -95,6 +101,8 @@ static void light_sleep_enable(void)
     esp_pm_config_esp32s2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C2
+    esp_pm_config_esp32c2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32H2
@@ -117,6 +125,8 @@ static void light_sleep_disable(void)
     esp_pm_config_esp32s2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S3
     esp_pm_config_esp32s3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32C2
+    esp_pm_config_esp32c2_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32H2
@@ -128,6 +138,8 @@ static void light_sleep_disable(void)
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5053
 TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
 {
     gptimer_handle_t gptimer = NULL;
@@ -178,6 +190,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
     TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #if CONFIG_ULP_COPROC_TYPE_FSM
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
@@ -255,6 +268,8 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #endif //CONFIG_ULP_COPROC_TYPE_FSM
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5053
 typedef struct {
     int delay_us;
     int result;
@@ -375,6 +390,7 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
 
 #undef NUM_INTERVALS
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static void timer_cb1(void *arg)
 {

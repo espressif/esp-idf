@@ -196,6 +196,9 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
     esp_intr_free(handle1);
 }
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5061
 static void dummy(void *arg)
 {
 }
@@ -223,6 +226,8 @@ TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[intr_alloc]")
     err = esp_intr_free(ih);
     TEST_ESP_OK(err);
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifndef CONFIG_FREERTOS_UNICORE
 void isr_free_task(void *param)

@@ -24,6 +24,8 @@
 
 #define PRINT_DEBUG_INFO
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 /* Taken from openssl s_client -connect api.gigafive.com:443 -showcerts
  */
 static const char *rsa4096_cert = "-----BEGIN CERTIFICATE-----\n"\
@@ -108,9 +110,11 @@ static const char *rsa2048_cert = "-----BEGIN CERTIFICATE-----\n"\
     "b8ravHNjkOR/ez4iyz0H7V84dJzjA1BOoa+Y7mHyhD8S\n"\
     "-----END CERTIFICATE-----\n";
 
+
 /* Some random input bytes to public key encrypt */
 static const uint8_t pki_input[4096/8] = {
     0, 1, 4, 6, 7, 9, 33, 103, 49, 11, 56, 211, 67, 92 };
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 /* Result of an RSA4096 operation using cert's public key
    (raw PKI, no padding/etc) */
@@ -323,9 +327,12 @@ _Static_assert(sizeof(pki_rsa2048_output) == 2048/8, "rsa2048 output is wrong si
 _Static_assert(sizeof(pki_rsa3072_output) == 3072/8, "rsa3072 output is wrong size");
 _Static_assert(sizeof(pki_rsa4096_output) == 4096/8, "rsa4096 output is wrong size");
 
-static void test_cert(const char *cert, const uint8_t *expected_output, size_t output_len);
 void mbedtls_mpi_printf(const char *name, const mbedtls_mpi *X);
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
+static void test_cert(const char *cert, const uint8_t *expected_output, size_t output_len);
 
 TEST_CASE("mbedtls RSA4096 cert", "[mbedtls]")
 {
@@ -394,6 +401,7 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
 
     mbedtls_x509_crt_free(&crt);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
 static void rsa_key_operations(int keysize, bool check_performance, bool generate_new_rsa);
@@ -533,6 +541,8 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
 
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
 {
 
@@ -570,3 +580,4 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
 #endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

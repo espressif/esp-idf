@@ -13,16 +13,7 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "spiram.h"
 #endif
-
-static __NOINIT_ATTR uint32_t s_noinit;
-static RTC_NOINIT_ATTR uint32_t s_rtc_noinit;
-static RTC_DATA_ATTR uint32_t s_rtc_data;
-static RTC_RODATA_ATTR uint32_t s_rtc_rodata;
-static RTC_FAST_ATTR uint32_t s_rtc_force_fast;
-static RTC_SLOW_ATTR uint32_t s_rtc_force_slow;
-#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
-#endif
+#include "test_utils.h"
 
 extern int _rtc_noinit_start;
 extern int _rtc_noinit_end;
@@ -39,6 +30,19 @@ extern int _ext_ram_noinit_end;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5045
+//Variables for test: Attributes place variables into correct sections
+static __NOINIT_ATTR uint32_t s_noinit;
+static RTC_NOINIT_ATTR uint32_t s_rtc_noinit;
+static RTC_DATA_ATTR uint32_t s_rtc_data;
+static RTC_RODATA_ATTR uint32_t s_rtc_rodata;
+static RTC_FAST_ATTR uint32_t s_rtc_force_fast;
+static RTC_SLOW_ATTR uint32_t s_rtc_force_slow;
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
+#endif
 
 static bool data_in_segment(void *ptr, int *seg_start, int *seg_end)
 {
@@ -75,6 +79,7 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 #endif
 }
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 

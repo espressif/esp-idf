@@ -21,6 +21,7 @@
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
 #include "soc/soc_caps.h"
+#include "test_utils.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
@@ -42,9 +43,14 @@ static const uint8_t sha256_thousand_as[32] = {
     0x20, 0xcb, 0xc9, 0xf5, 0xa5, 0xd1, 0x34, 0x64, 0x5a, 0xdb, 0x5d, 0xb1, 0xb9, 0x73, 0x7e, 0xa3
 };
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 static const uint8_t sha256_thousand_bs[32] = {
     0xf6, 0xf1, 0x18, 0xe1, 0x20, 0xe5, 0x2b, 0xe0, 0xbd, 0x0c, 0xfd, 0xf2, 0x79, 0x4c, 0xd1, 0x2c, 0x07, 0x68, 0x6c, 0xc8, 0x71, 0x23, 0x5a, 0xc2, 0xf1, 0x14, 0x59, 0x37, 0x8e, 0x6d, 0x23, 0x5b
 };
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static const uint8_t sha512_thousand_bs[64] = {
     0xa6, 0x68, 0x68, 0xa3, 0x73, 0x53, 0x2a, 0x5c, 0xc3, 0x3f, 0xbf, 0x43, 0x4e, 0xba, 0x10, 0x86, 0xb3, 0x87, 0x09, 0xe9, 0x14, 0x3f, 0xbf, 0x37, 0x67, 0x8d, 0x43, 0xd9, 0x9b, 0x95, 0x08, 0xd5, 0x80, 0x2d, 0xbe, 0x9d, 0xe9, 0x1a, 0x54, 0xab, 0x9e, 0xbc, 0x8a, 0x08, 0xa0, 0x1a, 0x89, 0xd8, 0x72, 0x68, 0xdf, 0x52, 0x69, 0x7f, 0x1c, 0x70, 0xda, 0xe8, 0x3f, 0xe5, 0xae, 0x5a, 0xfc, 0x9d
@@ -94,7 +100,11 @@ TEST_CASE("mbedtls SHA interleaving", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha1_thousand_as, sha1, 20, "SHA1 calculation");
 }
 
+#define SHA_TASK_STACK_SIZE (10*1024)
 static SemaphoreHandle_t done_sem;
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 static void tskRunSHA1Test(void *pvParameters)
 {
     mbedtls_sha1_context sha1_ctx;
@@ -133,7 +143,6 @@ static void tskRunSHA256Test(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-#define SHA_TASK_STACK_SIZE (10*1024)
 
 TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
 {
@@ -150,6 +159,7 @@ TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
     }
     vSemaphoreDelete(done_sem);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 void tskRunSHASelftests(void *param)
 {
@@ -264,6 +274,8 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls][")
 }
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("mbedtls SHA256 clone", "[mbedtls]")
 {
     mbedtls_sha256_context ctx;
@@ -339,6 +351,7 @@ TEST_CASE("mbedtls SHA session passed between tasks", "[mbedtls]")
     TEST_ASSERT_EQUAL(0, param.ret);
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, param.result, 32, "SHA256 result from other task");
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 
 
@@ -386,6 +399,8 @@ const uint8_t test_vector_digest[] = {
     0x98, 0x5d, 0x36, 0xc0, 0xb7, 0xeb, 0x35, 0xe0,
 };
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 TEST_CASE("mbedtls SHA, input in flash", "[mbedtls]")
 {
     mbedtls_sha256_context sha256_ctx;
@@ -400,6 +415,7 @@ TEST_CASE("mbedtls SHA, input in flash", "[mbedtls]")
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(test_vector_digest, sha256, 32, "SHA256 calculation");
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 /* Function are not implemented in SW */
 #if CONFIG_MBEDTLS_HARDWARE_SHA && SOC_SHA_SUPPORT_SHA512_T

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Asio SSL client/server example
 
 Simple Asio client and server with SSL/TLS transport
@@ -13,8 +16,8 @@ to connect to internet or a local network via WiFi or Ethernet to easily exercis
 
 * Open the project configuration menu (`idf.py menuconfig`)
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
-* Enable the ASIO client and set server's host name to examine client's functionality. 
-The ASIO client connects to the configured server and sends default payload string "GET / HTTP/1.1" 
+* Enable the ASIO client and set server's host name to examine client's functionality.
+The ASIO client connects to the configured server and sends default payload string "GET / HTTP/1.1"
 * Enable the ASIO server to examine server's functionality. The ASIO server listens to connection and echos back what was received.
 
 ### Build and Flash
@@ -58,7 +61,7 @@ D
 ### Both server and client enabled
 
 The below output demonstrates the client connecting to the ASIO server via loopback interface, so no WiFi, nor Ethernet connection
-was established. 
+was established.
 ```
 I (0) cpu_start: App cpu up.
 I (495) heap_init: Initializing. RAM available for dynamic allocation:

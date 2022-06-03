@@ -175,7 +175,7 @@ TEST_CASE("libgcc math functions", "[rom][libgcc]")
     TEST_ASSERT(__umoddi3(15, 2) == 1);
     extern unsigned __umodsi3(unsigned x, unsigned y);
     TEST_ASSERT(__umodsi3(15, 2) == 1);
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if !(CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C3)
     extern uint64_t __umulsidi3(unsigned x, unsigned y);
     TEST_ASSERT(__umulsidi3(0x10000000, 0x10000000) == 0x100000000000000ULL);
 #endif

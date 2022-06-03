@@ -201,6 +201,8 @@ TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]"
     TEST_ASSERT(ulp_riscv_is_running());
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 /*
 * Keep this test case as the last test case in this suite as a CPU reset occurs.
 * Add new test cases above in order to ensure they run when all test cases are run together.
@@ -220,3 +222,5 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][reset=
     esp_deep_sleep_start();
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

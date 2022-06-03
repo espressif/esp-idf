@@ -6,6 +6,10 @@
 #include <string.h>
 #include "unity.h"
 #include "esp_attr.h"
+#include "test_utils.h"
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5050
 
 /* Global variables that should be part of the coredump */
 COREDUMP_IRAM_DATA_ATTR uint32_t var_iram = 0x42;
@@ -58,3 +62,5 @@ TEST_CASE("test variables presence in core dump sections", "[espcoredump]")
     TEST_ASSERT(section_size > 0);
     TEST_ASSERT(is_addr_in_region(&var_rtcfast, (uint8_t*) section_start, section_size));
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+#include "test_utils.h"
 
 static void timer_callback(TimerHandle_t timer)
 {
@@ -20,6 +21,8 @@ static void timer_callback(TimerHandle_t timer)
     printf("Callback timer %p count %p = %d\n", timer, count, *count);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5140
 TEST_CASE("Oneshot FreeRTOS timers", "[freertos]")
 {
     volatile int count = 0;
@@ -74,6 +77,7 @@ TEST_CASE("Recurring FreeRTOS timers", "[freertos]")
 
     TEST_ASSERT( xTimerDelete(recurring, 1) );
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("Static timer creation", "[freertos]")
 {

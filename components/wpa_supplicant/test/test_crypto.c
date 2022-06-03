@@ -15,8 +15,12 @@
 #include "crypto/crypto.h"
 
 #include "mbedtls/ecp.h"
+#include "test_utils.h"
+
 typedef struct crypto_bignum crypto_bignum;
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5046
 TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
 {
     {
@@ -536,3 +540,4 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
     }
 
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

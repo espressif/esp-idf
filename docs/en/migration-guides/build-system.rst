@@ -77,3 +77,18 @@ Update CMake version
 In ESP-IDF v5.0 minimal cmake version was increased to 3.16 and versions lower than 3.16 are not supported anymore.  Run "tools/idf_tools.py install cmake" to install a suitable version if your OS versions doesn't have one.
 
 This affects ESP-IDF users who use system-provided CMake and custom CMake project users.
+
+Target-specific sdkconfig files no longer always override all other files in SDKCONFIG_DEFAULTS
+-----------------------------------------------------------------------------------------------
+
+.. highlight:: none
+
+ESP-IDF v5.0 reorders the applying order of target-specific config files and other files listed in SDKCONFIG_DEFAULTS. Now, target-specific file will be applied right after the file bringing it in, before all latter files in ``SDKCONFIG_DEFAULTS``.
+
+For example::
+
+    If ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``, and there is a file ``sdkconfig.defaults.esp32`` in the same folder, then the files will be applied in the following order: (1) sdkconfig.defaults (2) sdkconfig.defaults.esp32 (3) sdkconfig_devkit1.
+
+If you have a key with different values in the target-specific file of former item (e.g. ``sdkconfig.defaults.esp32`` above) and the latter item (e.g. ``sdkconfig_devket1`` above), please note the latter one will override the target-specific file of the former one.
+
+If you do want to have some target-specific config values, please put it into the target-specific file of the latter item (e.g. ``sdkconfig_devkit1.esp32``).

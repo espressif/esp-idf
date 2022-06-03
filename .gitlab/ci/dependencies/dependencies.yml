@@ -156,6 +156,27 @@ build:integration_test:
     - "build:component_ut-{0}"
     - build:target_test
 
+# due to the lack of runners, c2 tests will only be triggered by label
+"test:{0}-esp32c2":
+  matrix:
+    - *target_test
+  labels:
+    - "{0}_esp32c2"
+  included_in:
+    - "build:{0}"
+    - "build:{0}-esp32c2"
+    - build:target_test
+
+# overwrite the esp32c2 component ut again
+"test:component_ut-esp32c2": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
+  labels:
+    - "component_ut_esp32c2"
+    - "unit_test_esp32c2"
+  included_in:
+    - build:component_ut
+    - "build:component_ut-esp32c2"
+    - build:target_test
+
 # due to the lack of runners, s3 tests will only be triggered by label
 "test:{0}-esp32s3":
   matrix:

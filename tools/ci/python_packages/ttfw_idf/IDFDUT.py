@@ -604,6 +604,15 @@ class ESP32S3DUT(IDFDUT):
         raise NotImplementedError()
 
 
+class ESP32C2DUT(IDFDUT):
+    TARGET = 'esp32c2'
+    TOOLCHAIN_PREFIX = 'riscv32-esp-elf-'
+
+    @classmethod
+    def get_rom(cls):
+        return targets.ESP32C2ROM
+
+
 class ESP32C3DUT(IDFDUT):
     TARGET = 'esp32c3'
     TOOLCHAIN_PREFIX = 'riscv32-esp-elf-'
@@ -641,7 +650,7 @@ class ESP8266DUT(IDFDUT):
 
 
 def get_target_by_rom_class(cls):
-    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C3DUT, ESP32C6DUT, ESP32H2DUT, ESP8266DUT, IDFQEMUDUT]:
+    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C2DUT, ESP32C3DUT, ESP32C6DUT, ESP32H2DUT, ESP8266DUT, IDFQEMUDUT]:
         if c.get_rom() == cls:
             return c.TARGET
     return None

@@ -16,6 +16,9 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5141
 static SemaphoreHandle_t done_sem;
 
 static const unsigned char *one_hundred_bs =  (unsigned char *)
@@ -130,3 +133,4 @@ TEST_CASE("mbedtls AES/SHA multithreading", "[mbedtls]")
 
     vSemaphoreDelete(done_sem);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
