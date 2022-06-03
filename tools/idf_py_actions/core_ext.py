@@ -7,20 +7,22 @@ import re
 import shutil
 import subprocess
 import sys
+from typing import Any, Dict, List, Optional
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 from webbrowser import open_new_tab
 
 import click
+from click.core import Context
 from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARGETS, URL_TO_DOC
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import (TargetChoice, ensure_build_directory, get_target, idf_version, merge_action_lists,
-                                  realpath, run_target)
+from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, get_target, idf_version,
+                                  merge_action_lists, realpath, run_target)
 
 
-def action_extensions(base_actions, project_path):
-    def build_target(target_name, ctx, args):
+def action_extensions(base_actions: Dict, project_path: str) -> Any:
+    def build_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
         Execute the target build system to build target 'target_name'
 
@@ -30,7 +32,7 @@ def action_extensions(base_actions, project_path):
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
 
-    def size_target(target_name, ctx, args):
+    def size_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
         Builds the app and then executes a size-related target passed in 'target_name'.
         `tool_error_handler` handler is used to suppress errors during the build,
@@ -38,18 +40,18 @@ def action_extensions(base_actions, project_path):
 
         """
 
-        def tool_error_handler(e):
+        def tool_error_handler(e: int) -> None:
             pass
 
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, custom_error_handler=tool_error_handler)
         run_target(target_name, args)
 
-    def list_build_system_targets(target_name, ctx, args):
+    def list_build_system_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """Shows list of targets known to build sytem (make/ninja)"""
         build_target('help', ctx, args)
 
-    def menuconfig(target_name, ctx, args, style):
+    def menuconfig(target_name: str, ctx: Context, args: PropertyDict, style: str) -> None:
         """
         Menuconfig target is build_target extended with the style argument for setting the value for the environment
         variable.
@@ -61,7 +63,7 @@ def action_extensions(base_actions, project_path):
         os.environ['MENUCONFIG_STYLE'] = style
         build_target(target_name, ctx, args)
 
-    def fallback_target(target_name, ctx, args):
+    def fallback_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
         Execute targets that are not explicitly known to idf.py
         """
@@ -80,42 +82,22 @@ def action_extensions(base_actions, project_path):
 
         run_target(target_name, args)
 
-    def verbose_callback(ctx, param, value):
+    def verbose_callback(ctx: Context, param: List, value: str) -> Optional[str]:
         if not value or ctx.resilient_parsing:
-            return
+            return None
 
         for line in ctx.command.verbose_output:
             print(line)
 
         return value
 
-    def clean(action, ctx, args):
+    def clean(action: str, ctx: Context, args: PropertyDict) -> None:
         if not os.path.isdir(args.build_dir):
             print("Build directory '%s' not found. Nothing to clean." % args.build_dir)
             return
         build_target('clean', ctx, args)
 
-    def _delete_windows_symlinks(directory):
-        """
-        It deletes symlinks recursively on Windows. It is useful for Python 2 which doesn't detect symlinks on Windows.
-        """
-        deleted_paths = []
-        if os.name == 'nt':
-            import ctypes
-
-            for root, dirnames, _filenames in os.walk(directory):
-                for d in dirnames:
-                    full_path = os.path.join(root, d)
-                    try:
-                        full_path = full_path.decode('utf-8')
-                    except Exception:
-                        pass
-                    if ctypes.windll.kernel32.GetFileAttributesW(full_path) & 0x0400:
-                        os.rmdir(full_path)
-                        deleted_paths.append(full_path)
-        return deleted_paths
-
-    def fullclean(action, ctx, args):
+    def fullclean(action: str, ctx: Context, args: PropertyDict) -> None:
         build_dir = args.build_dir
         if not os.path.isdir(build_dir):
             print("Build directory '%s' not found. Nothing to clean." % build_dir)
@@ -135,13 +117,8 @@ def action_extensions(base_actions, project_path):
                 raise FatalError(
                     "Refusing to automatically delete files in directory containing '%s'. Delete files manually if you're sure."
                     % red)
-        # OK, delete everything in the build directory...
-        # Note: Python 2.7 doesn't detect symlinks on Windows (it is supported form 3.2). Tools promising to not
-        # follow symlinks will actually follow them. Deleting the build directory with symlinks deletes also items
-        # outside of this directory.
-        deleted_symlinks = _delete_windows_symlinks(build_dir)
-        if args.verbose and len(deleted_symlinks) > 1:
-            print('The following symlinks were identified and removed:\n%s' % '\n'.join(deleted_symlinks))
+        if args.verbose and len(build_dir) > 1:
+            print('The following symlinks were identified and removed:\n%s' % '\n'.join(build_dir))
         for f in os.listdir(build_dir):  # TODO: once we are Python 3 only, this can be os.scandir()
             f = os.path.join(build_dir, f)
             if args.verbose:
@@ -151,7 +128,7 @@ def action_extensions(base_actions, project_path):
             else:
                 os.remove(f)
 
-    def python_clean(action, ctx, args):
+    def python_clean(action: str, ctx: Context, args: PropertyDict) -> None:
         for root, dirnames, filenames in os.walk(os.environ['IDF_PATH']):
             for d in dirnames:
                 if d == '__pycache__':
@@ -165,7 +142,7 @@ def action_extensions(base_actions, project_path):
                     print('Removing: %s' % file_to_delete)
                 os.remove(file_to_delete)
 
-    def set_target(action, ctx, args, idf_target):
+    def set_target(action: str, ctx: Context, args: PropertyDict, idf_target: str) -> None:
         if (not args['preview'] and idf_target in PREVIEW_TARGETS):
             raise FatalError(
                 "%s is still in preview. You have to append '--preview' option after idf.py to use any preview feature."
@@ -180,10 +157,10 @@ def action_extensions(base_actions, project_path):
         print('Set Target to: %s, new sdkconfig created. Existing sdkconfig renamed to sdkconfig.old.' % idf_target)
         ensure_build_directory(args, ctx.info_name, True)
 
-    def reconfigure(action, ctx, args):
+    def reconfigure(action: str, ctx: Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name, True)
 
-    def validate_root_options(ctx, args, tasks):
+    def validate_root_options(ctx: Context, args: PropertyDict, tasks: List) -> None:
         args.project_dir = realpath(args.project_dir)
         if args.build_dir is not None and args.project_dir == realpath(args.build_dir):
             raise FatalError(
@@ -193,7 +170,7 @@ def action_extensions(base_actions, project_path):
             args.build_dir = os.path.join(args.project_dir, 'build')
         args.build_dir = realpath(args.build_dir)
 
-    def idf_version_callback(ctx, param, value):
+    def idf_version_callback(ctx: Context, param: str, value: str) -> None:
         if not value or ctx.resilient_parsing:
             return
 
@@ -205,7 +182,7 @@ def action_extensions(base_actions, project_path):
         print('ESP-IDF %s' % version)
         sys.exit(0)
 
-    def list_targets_callback(ctx, param, value):
+    def list_targets_callback(ctx: Context, param: List, value: int) -> None:
         if not value or ctx.resilient_parsing:
             return
 
@@ -218,12 +195,13 @@ def action_extensions(base_actions, project_path):
 
         sys.exit(0)
 
-    def show_docs(action, ctx, args, no_browser, language, starting_page, version, target):
+    def show_docs(action: str, ctx: Context, args: PropertyDict, no_browser: bool, language: str, starting_page: str, version: str, target: str) -> None:
         if language == 'cn':
             language = 'zh_CN'
         if not version:
             # '0.0-dev' here because if 'dev' in version it will transform in to 'latest'
-            version = re.search(r'v\d+\.\d+\.?\d*(-dev|-beta\d|-rc)?', idf_version() or '0.0-dev').group()
+            version_search = re.search(r'v\d+\.\d+\.?\d*(-dev|-beta\d|-rc)?', idf_version() or '0.0-dev')
+            version = version_search.group() if version_search else 'latest'
             if 'dev' in version:
                 version = 'latest'
         elif version[0] != 'v':
@@ -249,7 +227,7 @@ def action_extensions(base_actions, project_path):
             print(link)
         sys.exit(0)
 
-    def get_default_language():
+    def get_default_language() -> str:
         try:
             language = 'zh_CN' if locale.getdefaultlocale()[0] == 'zh_CN' else 'en'
         except ValueError:

@@ -5,6 +5,7 @@ import re
 import subprocess
 import sys
 from io import open
+from typing import Any, List
 
 import click
 
@@ -340,12 +341,12 @@ class TargetChoice(click.Choice):
     - ignores hyphens
     - not case sensitive
     """
-    def __init__(self, choices):
+    def __init__(self, choices: List) -> None:
         super(TargetChoice, self).__init__(choices, case_sensitive=False)
 
-    def convert(self, value, param, ctx):
-        def normalize(str):
-            return str.lower().replace('-', '')
+    def convert(self, value: Any, param: click.Parameter, ctx: click.Context) -> Any:
+        def normalize(string: str) -> str:
+            return string.lower().replace('-', '')
 
         saved_token_normalize_func = ctx.token_normalize_func
         ctx.token_normalize_func = normalize
@@ -354,3 +355,20 @@ class TargetChoice(click.Choice):
             return super(TargetChoice, self).convert(value, param, ctx)
         finally:
             ctx.token_normalize_func = saved_token_normalize_func
+
+
+class PropertyDict(dict):
+    def __getattr__(self, name: str) -> Any:
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        self[name] = value
+
+    def __delattr__(self, name: str) -> None:
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
