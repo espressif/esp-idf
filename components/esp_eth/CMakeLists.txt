@@ -53,6 +53,3 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include}
                        REQUIRES "esp_event" # For using "ESP_EVENT_DECLARE_BASE" in header file
                        PRIV_REQUIRES ${priv_requires})
-
-# uses C11 atomic feature
-set_source_files_properties(src/esp_eth.c PROPERTIES COMPILE_FLAGS -std=gnu11)
