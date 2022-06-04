@@ -101,6 +101,34 @@ config BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
 
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
+
+    config BT_LE_MSYS_1_BLOCK_COUNT
+        int "MSYS_1 Block Count"
+        default 12
+        help
+            MSYS is a system level mbuf registry. For prepare write & prepare
+            responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+            enabled cases, this block count is increased by 8 than user defined
+            count.
+
+    config BT_LE_MSYS_1_BLOCK_SIZE
+        int    "MSYS_1 Block Size"
+        default 256
+        help
+                Dynamic memory size of block 1
+
+    config BT_LE_MSYS_2_BLOCK_COUNT
+        int    "MSYS_2 Block Count"
+        default 24
+        help
+                Dynamic memory count
+
+    config BT_LE_MSYS_2_BLOCK_SIZE
+        int    "MSYS_2 Block Size"
+        default 320
+        help
+                Dynamic memory size of block 2
+
     config BT_LE_ACL_BUF_COUNT
         int "ACL Buffer count"
         default 24
