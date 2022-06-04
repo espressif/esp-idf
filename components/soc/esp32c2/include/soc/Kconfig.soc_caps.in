@@ -21,7 +21,11 @@ config SOC_GDMA_SUPPORTED
 
 config SOC_BT_SUPPORTED
     bool
-    default n
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y
 
 config SOC_WIFI_SUPPORTED
     bool

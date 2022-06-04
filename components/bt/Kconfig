@@ -7,20 +7,8 @@ menu "Bluetooth"
         help
             Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
-    config BT_SOC_SUPPORT_5_0
-        bool
-        depends on BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
-        default y if BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
-        default n
-
-    menu "Bluetooth controller"
-        depends on BT_ENABLED
-
-        source "$IDF_PATH/components/bt/controller/$IDF_TARGET/Kconfig.in"
-    endmenu
-
     choice BT_HOST
-        prompt "Bluetooth Host"
+        prompt "Host"
         depends on BT_ENABLED
         default BT_BLUEDROID_ENABLED
         help
@@ -38,7 +26,7 @@ menu "Bluetooth"
                 This option is recommended for BLE only usecases to save on memory
 
         config BT_CONTROLLER_ONLY
-            bool "Controller Only"
+            bool "Disabled"
             help
                 This option is recommended when you want to communicate directly with the
                 controller (without any host) or when you are using any other host stack
@@ -46,15 +34,39 @@ menu "Bluetooth"
 
     endchoice
 
-    menu "Bluedroid Options"
-        depends on BT_BLUEDROID_ENABLED && SOC_BLUEDROID_SUPPORTED
+    choice BT_CONTROLLER
+        prompt "Controller"
+        depends on BT_ENABLED
+        default BT_CONTROLLER_ENABLED
+        help
+            This helps to choose Bluetooth controller stack
 
+        config BT_CONTROLLER_ENABLED
+            bool "Enabled"
+            help
+                This option is recommended for Bluetooth controller usecases
+                This option is recommended for Bluetooth controller usecases
+
+        config BT_CONTROLLER_DISABLED
+            bool "Disabled"
+            help
+                This option is recommended for Bluetooth Host only usecases
+
+    endchoice
+
+    menu "Bluedroid Options"
+        depends on BT_BLUEDROID_ENABLED
         source "$IDF_PATH/components/bt/host/bluedroid/Kconfig.in"
     endmenu
+
     menu "NimBLE Options"
         depends on BT_NIMBLE_ENABLED
-
         source "$IDF_PATH/components/bt/host/nimble/Kconfig.in"
+    endmenu
+
+    menu "Controller Options"
+        depends on BT_CONTROLLER_ENABLED
+        source "$IDF_PATH/components/bt/controller/$IDF_TARGET/Kconfig.in"
     endmenu
 
 endmenu

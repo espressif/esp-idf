@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <esp_random.h>
+#include "esp_random.h"
 #include <esp_mac.h>
 
 #include "sdkconfig.h"
@@ -37,10 +37,13 @@
 #include "nimble/nimble_npl_os.h"
 #include "esp_bt.h"
 #include "esp_intr_alloc.h"
+#include "nimble/nimble_npl_os.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
 #include "esp_phy_init.h"
-#include "soc/system_reg.h"
+#include "soc/syscon_reg.h"
+#include "soc/modem_clkrst_reg.h"
+#include "esp_private/periph_ctrl.h"
 #include "hal/hal_uart.h"
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "hci/hci_hal.h"
@@ -50,7 +53,7 @@
 #include "freertos/task.h"
 
 #include "esp_private/periph_ctrl.h"
-#include "nimble/hci_common.h"
+
 /* Macro definition
  ************************************************************************
  */
@@ -58,6 +61,9 @@
 #define NIMBLE_PORT_LOG_TAG          "BLE_INIT"
 #define OSI_COEX_VERSION              0x00010006
 #define OSI_COEX_MAGIC_VALUE          0xFADEBEAD
+
+#define EXT_FUNC_VERSION             0x20220125
+#define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
 /* Types definition
  ************************************************************************
@@ -88,6 +94,9 @@ struct ext_funcs_t {
     void (* _task_delete)(void *task_handle);
     void (*_osi_assert)(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
     uint32_t (* _os_random)(void);
+    int (* _ecc_gen_key_pair)(uint8_t *public, uint8_t *priv);
+    int (* _ecc_gen_dh_key)(const uint8_t *remote_pub_key_x, const uint8_t *remote_pub_key_y, const uint8_t *local_priv_key, uint8_t *dhkey);
+    void (* _esp_reset_rpa_moudle)(void);
     uint32_t magic;
 };
 
@@ -109,9 +118,6 @@ extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
-/* TX power */
-int ble_txpwr_set(int power_type, int power_level);
-int ble_txpwr_get(int power_type);
 extern void bt_bb_v2_init_cmplx(uint8_t i);
 extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
@@ -119,8 +125,6 @@ extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
 extern void r_ble_ll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg, void *w_arg, uint32_t us_to_enabled);
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
-extern void esp_ble_register_trace_funcs(struct ble_ll_trace_func_t *funcs);
-extern void bt_bb_set_le_tx_on_delay(uint32_t delay_us);
 
 /* Local Function Declaration
  *********************************************************************
@@ -141,7 +145,12 @@ static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler,
 static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
 static uint32_t osi_random_wrapper(void);
+static void esp_reset_rpa_moudle(void);
 
+extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
+                                const uint8_t *peer_pub_key_y,
+                                const uint8_t *our_priv_key, uint8_t *out_dhkey);
+extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 /* Local variable definition
  ***************************************************************************
  */
@@ -183,7 +192,7 @@ static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
 };
 
 struct ext_funcs_t ext_funcs_ro = {
-    .ext_version = 0xE0000001,
+    .ext_version = EXT_FUNC_VERSION,
     ._esp_intr_alloc = esp_intr_alloc_wrapper,
     ._esp_intr_free = esp_intr_free_wrapper,
     ._malloc = malloc,
@@ -198,11 +207,20 @@ struct ext_funcs_t ext_funcs_ro = {
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
-    .magic = 0xA5A5A5A5,
+    ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
+    ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
+    ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
+    .magic = EXT_FUNC_MAGIC_VALUE,
 };
+
+static void IRAM_ATTR esp_reset_rpa_moudle(void)
+{
+    periph_module_reset(PERIPH_MODEM_RPA_MODULE);
+}
 
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2)
 {
+    ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BLE assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
     assert(0);
 }
 
@@ -236,8 +254,7 @@ bool esp_vhci_host_check_send_available(void)
 /**
  * Allocates an mbuf for use by the nimble host.
  */
-static struct os_mbuf *
-ble_hs_mbuf_gen_pkt(uint16_t leading_space)
+static struct os_mbuf *ble_hs_mbuf_gen_pkt(uint16_t leading_space)
 {
     struct os_mbuf *om;
     int rc;
@@ -264,8 +281,7 @@ ble_hs_mbuf_gen_pkt(uint16_t leading_space)
  * @return                  An empty mbuf on success; null on memory
  *                              exhaustion.
  */
-struct os_mbuf *
-ble_hs_mbuf_acl_pkt(void)
+struct os_mbuf *ble_hs_mbuf_acl_pkt(void)
 {
     return ble_hs_mbuf_gen_pkt(4 + 1);
 }
@@ -300,7 +316,7 @@ esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callba
         return ESP_FAIL;
     }
 
-    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt,NULL,ble_hs_rx_data,NULL);
+    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt, NULL, ble_hs_rx_data, NULL);
 
     return ESP_OK;
 }
@@ -454,7 +470,6 @@ static void btdm_slp_tmr_callback(void *arg)
 
 void controller_sleep_init(void)
 {
-
 #ifdef CONFIG_NIMBLE_SLEEP_ENABLE
     s_is_sleep_state = false;
 #ifdef CONFIG_PM_ENABLE
@@ -556,6 +571,28 @@ void controller_sleep_deinit(void)
 
 }
 
+void ble_rtc_clk_init(void)
+{
+    // modem_clkrst_reg
+    // LP_TIMER_SEL_XTAL32K -> 0
+    // LP_TIMER_SEL_XTAL -> 1
+    // LP_TIMER_SEL_8M -> 0
+    // LP_TIMER_SEL_RTC_SLOW -> 0
+    // LP_TIMER_CLK_DIV_NUM -> 1250
+    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL32K_S);
+    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 1, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
+    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
+    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
+    SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 249, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
+
+    // MODEM_CLKRST_ETM_CLK_ACTIVE -> 1
+    // MODEM_CLKRST_ETM_CLK_SEL -> 0
+    SET_PERI_REG_BITS(MODEM_CLKRST_ETM_CLK_CONF_REG, 1, 1, MODEM_CLKRST_ETM_CLK_ACTIVE_S);
+    SET_PERI_REG_BITS(MODEM_CLKRST_ETM_CLK_CONF_REG, 1, 0, MODEM_CLKRST_ETM_CLK_SEL_S);
+
+}
+
+
 esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
 {
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
@@ -563,10 +600,14 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
         return ESP_FAIL;
     }
     if (cfg == NULL) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "cfg is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
+    ble_rtc_clk_init();
+
     if (esp_register_ext_funcs(&ext_funcs_ro) != 0) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "register extend functions failed");
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -606,8 +647,8 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
     // init phy
     esp_phy_enable();
 
-    // set bb delay
-    bt_bb_set_le_tx_on_delay(50);
+    // init bb
+    bt_bb_v2_init_cmplx(1);
 
     if (ble_osi_coex_funcs_register((struct osi_coex_funcs_t *)&s_osi_coex_funcs_ro) != 0) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "osi coex funcs reg failed");
@@ -617,8 +658,9 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
-
-    if (ble_controller_init(cfg) != 0) {
+    int rc = ble_controller_init(cfg);
+    if (rc != 0) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", rc);
         return ESP_ERR_NO_MEM;
     }
 
@@ -633,7 +675,7 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
-    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt,NULL,ble_hs_rx_data,NULL);
+    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt, NULL, ble_hs_rx_data, NULL);
 #endif
     return ESP_OK;
 }
@@ -672,70 +714,6 @@ esp_err_t esp_bt_controller_deinit(void)
     return ESP_OK;
 }
 
-esp_bt_controller_status_t esp_bt_controller_get_status(void)
-{
-    return ble_controller_status;
-}
-
-/* extra functions */
-esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level)
-{
-    esp_err_t stat = ESP_FAIL;
-
-    switch (power_type) {
-    case ESP_BLE_PWR_TYPE_ADV:
-    case ESP_BLE_PWR_TYPE_SCAN:
-    case ESP_BLE_PWR_TYPE_DEFAULT:
-        if (ble_txpwr_set(power_type, power_level) == 0) {
-            stat = ESP_OK;
-        }
-        break;
-    default:
-        stat = ESP_ERR_NOT_SUPPORTED;
-        break;
-    }
-
-    return stat;
-}
-
-int ble_txpwr_get(int power_type)
-{
-    return 0;
-}
-
-int ble_txpwr_set(int power_type, int power_level)
-{
-    return 0;
-}
-esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
-{
-    esp_power_level_t lvl;
-
-    switch (power_type) {
-    case ESP_BLE_PWR_TYPE_ADV:
-    case ESP_BLE_PWR_TYPE_SCAN:
-        lvl = (esp_power_level_t)ble_txpwr_get(power_type);
-        break;
-    case ESP_BLE_PWR_TYPE_CONN_HDL0:
-    case ESP_BLE_PWR_TYPE_CONN_HDL1:
-    case ESP_BLE_PWR_TYPE_CONN_HDL2:
-    case ESP_BLE_PWR_TYPE_CONN_HDL3:
-    case ESP_BLE_PWR_TYPE_CONN_HDL4:
-    case ESP_BLE_PWR_TYPE_CONN_HDL5:
-    case ESP_BLE_PWR_TYPE_CONN_HDL6:
-    case ESP_BLE_PWR_TYPE_CONN_HDL7:
-    case ESP_BLE_PWR_TYPE_CONN_HDL8:
-    case ESP_BLE_PWR_TYPE_DEFAULT:
-        lvl = (esp_power_level_t)ble_txpwr_get(ESP_BLE_PWR_TYPE_DEFAULT);
-        break;
-    default:
-        lvl = ESP_PWR_LVL_INVALID;
-        break;
-    }
-
-    return lvl;
-}
-
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
     if (mode != ESP_BT_MODE_BLE) {
@@ -746,15 +724,12 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
     }
-
 #if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif
-
     if (ble_controller_enable(mode) != 0) {
         return ESP_FAIL;
     }
-
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_ENABLED;
     return ESP_OK;
 }
@@ -768,6 +743,7 @@ esp_err_t esp_bt_controller_disable(void)
     if (ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
+    ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     return ESP_OK;
 }
 
@@ -782,3 +758,244 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
     ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
     return ESP_OK;
 }
+
+
+esp_bt_controller_status_t esp_bt_controller_get_status(void)
+{
+    return ble_controller_status;
+}
+
+/* extra functions */
+esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level)
+{
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
+    return ESP_OK;
+}
+
+esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
+{
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
+    return ESP_PWR_LVL_N0;
+}
+
+#if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED == true)
+
+#define BLE_SM_KEY_ERR 0x17
+
+#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#include "mbedtls/aes.h"
+
+#if CONFIG_BT_LE_SM_SC
+#include "mbedtls/cipher.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/cmac.h"
+#include "mbedtls/ecdh.h"
+#include "mbedtls/ecp.h"
+#endif
+
+#else
+#include "tinycrypt/aes.h"
+#include "tinycrypt/constants.h"
+#include "tinycrypt/utils.h"
+
+#if CONFIG_BT_LE_SM_SC
+#include "tinycrypt/cmac_mode.h"
+#include "tinycrypt/ecc_dh.h"
+#endif
+
+#endif
+
+#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+#if CONFIG_BT_LE_SM_SC
+static mbedtls_ecp_keypair keypair;
+#endif
+#endif
+
+int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
+                         const uint8_t *our_priv_key, uint8_t *out_dhkey)
+{
+    uint8_t dh[32];
+    uint8_t pk[64];
+    uint8_t priv[32];
+    int rc = BLE_SM_KEY_ERR;
+
+    swap_buf(pk, peer_pub_key_x, 32);
+    swap_buf(&pk[32], peer_pub_key_y, 32);
+    swap_buf(priv, our_priv_key, 32);
+
+#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+    struct mbedtls_ecp_point pt = {0}, Q = {0};
+    mbedtls_mpi z = {0}, d = {0};
+    mbedtls_ctr_drbg_context ctr_drbg = {0};
+    mbedtls_entropy_context entropy = {0};
+
+    uint8_t pub[65] = {0};
+    /* Hardcoded first byte of pub key for MBEDTLS_ECP_PF_UNCOMPRESSED */
+    pub[0] = 0x04;
+    memcpy(&pub[1], pk, 64);
+
+    /* Initialize the required structures here */
+    mbedtls_ecp_point_init(&pt);
+    mbedtls_ecp_point_init(&Q);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_entropy_init(&entropy);
+    mbedtls_mpi_init(&d);
+    mbedtls_mpi_init(&z);
+
+    /* Below 3 steps are to validate public key on curve secp256r1 */
+    if (mbedtls_ecp_group_load(&keypair.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_SECP256R1) != 0) {
+        goto exit;
+    }
+
+    if (mbedtls_ecp_point_read_binary(&keypair.MBEDTLS_PRIVATE(grp), &pt, pub, 65) != 0) {
+        goto exit;
+    }
+
+    if (mbedtls_ecp_check_pubkey(&keypair.MBEDTLS_PRIVATE(grp), &pt) != 0) {
+        goto exit;
+    }
+
+    /* Set PRNG */
+    if ((rc = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                    NULL, 0)) != 0) {
+        goto exit;
+    }
+
+    /* Prepare point Q from pub key */
+    if (mbedtls_ecp_point_read_binary(&keypair.MBEDTLS_PRIVATE(grp), &Q, pub, 65) != 0) {
+        goto exit;
+    }
+
+    if (mbedtls_mpi_read_binary(&d, priv, 32) != 0) {
+        goto exit;
+    }
+
+    rc = mbedtls_ecdh_compute_shared(&keypair.MBEDTLS_PRIVATE(grp), &z, &Q, &d,
+                                     mbedtls_ctr_drbg_random, &ctr_drbg);
+    if (rc != 0) {
+        goto exit;
+    }
+
+    rc = mbedtls_mpi_write_binary(&z, dh, 32);
+    if (rc != 0) {
+        goto exit;
+    }
+
+exit:
+    mbedtls_ecp_point_free(&pt);
+    mbedtls_mpi_free(&z);
+    mbedtls_mpi_free(&d);
+    mbedtls_ecp_point_free(&Q);
+    mbedtls_entropy_free(&entropy);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    if (rc != 0) {
+        return BLE_SM_KEY_ERR;
+    }
+
+#else
+    if (uECC_valid_public_key(pk, &curve_secp256r1) < 0) {
+        return BLE_SM_KEY_ERR;
+    }
+
+    rc = uECC_shared_secret(pk, priv, dh, &curve_secp256r1);
+    if (rc == TC_CRYPTO_FAIL) {
+        return BLE_SM_KEY_ERR;
+    }
+#endif
+
+    swap_buf(out_dhkey, dh, 32);
+    return 0;
+}
+
+/* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
+static const uint8_t ble_sm_alg_dbg_priv_key[32] = {
+    0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38, 0x74, 0xc9, 0xb3, 0xe3,
+    0xd2, 0x10, 0x3f, 0x50, 0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
+    0x58, 0x99, 0xb8, 0xa6, 0xcd, 0x3c, 0x1a, 0xbd
+};
+
+#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+static int mbedtls_gen_keypair(uint8_t *public_key, uint8_t *private_key)
+{
+    int rc = BLE_SM_KEY_ERR;
+    mbedtls_entropy_context entropy = {0};
+    mbedtls_ctr_drbg_context ctr_drbg = {0};
+
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+    mbedtls_ecp_keypair_init(&keypair);
+
+    if ((rc = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                    NULL, 0)) != 0) {
+        goto exit;
+    }
+
+    if ((rc = mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, &keypair,
+                                  mbedtls_ctr_drbg_random, &ctr_drbg)) != 0) {
+        goto exit;
+    }
+
+    if ((rc = mbedtls_mpi_write_binary(&keypair.MBEDTLS_PRIVATE(d), private_key, 32)) != 0) {
+        goto exit;
+    }
+
+    size_t olen = 0;
+    uint8_t pub[65] = {0};
+
+    if ((rc = mbedtls_ecp_point_write_binary(&keypair.MBEDTLS_PRIVATE(grp), &keypair.MBEDTLS_PRIVATE(Q), MBEDTLS_ECP_PF_UNCOMPRESSED,
+              &olen, pub, 65)) != 0) {
+        goto exit;
+    }
+
+    memcpy(public_key, &pub[1], 64);
+
+exit:
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+    if (rc != 0) {
+        mbedtls_ecp_keypair_free(&keypair);
+        return BLE_SM_KEY_ERR;
+    }
+
+    return 0;
+}
+#endif
+
+/**
+ * pub: 64 bytes
+ * priv: 32 bytes
+ */
+int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
+{
+#if CONFIG_BT_LE_SM_SC_DEBUG_KEYS
+    swap_buf(pub, ble_sm_alg_dbg_pub_key, 32);
+    swap_buf(&pub[32], &ble_sm_alg_dbg_pub_key[32], 32);
+    swap_buf(priv, ble_sm_alg_dbg_priv_key, 32);
+#else
+    uint8_t pk[64];
+
+    do {
+
+#if CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS
+        if (mbedtls_gen_keypair(pk, priv) != 0) {
+            return BLE_SM_KEY_ERR;
+        }
+#else
+        if (uECC_make_key(pk, priv, &curve_secp256r1) != TC_CRYPTO_SUCCESS) {
+            return BLE_SM_KEY_ERR;
+        }
+#endif
+
+        /* Make sure generated key isn't debug key. */
+    } while (memcmp(priv, ble_sm_alg_dbg_priv_key, 32) == 0);
+
+    swap_buf(pub, pk, 32);
+    swap_buf(&pub[32], &pk[32], 32);
+    swap_in_place(priv, 32);
+#endif
+
+    return 0;
+}
+
+#endif

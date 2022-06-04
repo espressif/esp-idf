@@ -42,7 +42,7 @@ void periph_module_reset(periph_module_t periph)
     portEXIT_CRITICAL_SAFE(&periph_spinlock);
 }
 
-#if CONFIG_ESP32_WIFI_ENABLED
+#if CONFIG_ESP32_WIFI_ENABLED || CONFIG_BT_ENABLED
 IRAM_ATTR void wifi_bt_common_module_enable(void)
 {
     portENTER_CRITICAL_SAFE(&periph_spinlock);

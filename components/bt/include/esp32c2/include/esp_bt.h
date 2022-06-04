@@ -15,10 +15,7 @@
 
 #include "nimble/nimble_npl.h"
 #include "syscfg/syscfg.h"
-#if CONFIG_BT_NIMBLE_ENABLED
 #include "esp_nimble_cfg.h"
-#endif
-#include "nimble/ble.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,7 +119,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
 
-#define CONFIG_VERSION  0x02109228
+#define CONFIG_VERSION  0x20220105
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -175,6 +172,8 @@ struct esp_bt_controller_config_t{
     uint8_t cca_rssi_thresh;
     uint8_t sleep_en;
     uint8_t coex_phy_coded_tx_rx_time_limit;
+    uint8_t dis_scan_backoff;
+    uint8_t esp_scan_filter_en;
     uint32_t config_magic;
 };
 
@@ -182,9 +181,10 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
 
 #define RUN_BQB_TEST                0
 #define RUN_QA_TEST                 0
+#define NIMBLE_DISABLE_SCAN_BACKOFF 0
 
-#ifdef CONFIG_BT_NIMBLE_HCI_INTERFACE_USE_UART
-#define HCI_UART_EN CONFIG_BT_NIMBLE_HCI_INTERFACE_USE_UART
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+#define HCI_UART_EN CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #else
 #define HCI_UART_EN 0 // hci ram mode
 #endif
@@ -200,6 +200,7 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
 #else
 #define NIMBLE_SLEEP_ENABLE  0
 #endif
+
 
 #if CONFIG_BT_NIMBLE_ENABLED
 
@@ -299,7 +300,6 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
     #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (CONFIG_BT_LE_HCI_UART_TASK_STACK_SIZE)
     #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (CONFIG_BT_LE_HCI_UART_FLOW_CTRL)
 #else
-    #warning "DEFAULT_BT_LE_HCI_UART is not set"
     #define DEFAULT_BT_LE_HCI_UART_TX_PIN (0)
     #define DEFAULT_BT_LE_HCI_UART_RX_PIN (0)
     #define DEFAULT_BT_LE_HCI_UART_PORT (0)
@@ -355,6 +355,8 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
     .cca_rssi_thresh            = 256 - MYNEWT_VAL(BLE_CCA_RSSI_THRESH),                \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
+    .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
+    .esp_scan_filter_en         = 0,                                                    \
     .config_magic = CONFIG_MAGIC,                                                       \
 };
 

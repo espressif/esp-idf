@@ -29,7 +29,8 @@
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
-#define SOC_BT_SUPPORTED                0 // Enable during bringup, IDF-4357
+#define SOC_BT_SUPPORTED                1
+#define SOC_ESP_NIMBLE_CONTROLLER       1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
