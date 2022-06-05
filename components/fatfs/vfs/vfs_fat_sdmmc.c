@@ -85,6 +85,7 @@ static esp_err_t mount_to_vfs_fat(const esp_vfs_fat_mount_config_t *mount_config
     FATFS* fs = NULL;
     esp_err_t err;
     ff_diskio_register_sdmmc(pdrv, card);
+    ff_sdmmc_set_disk_status_check(pdrv, mount_config->disk_status_check_enable);
     ESP_LOGD(TAG, "using pdrv=%i", pdrv);
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
