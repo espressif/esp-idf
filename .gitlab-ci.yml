@@ -74,7 +74,6 @@ variables:
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
-  PYTEST_EMBEDDED_VERSION: "0.7.1"
 
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -209,20 +208,12 @@ before_script:
     - *setup_tools_unless_target_test
     - fetch_submodules
     - *download_test_python_contraint_file
-    - $IDF_PATH/tools/idf_tools.py install-python-env
+    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
     # TODO: remove this, IDFCI-1207
     - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-    - pip install
-      "pytest-embedded-serial-esp~=$PYTEST_EMBEDDED_VERSION"
-      "pytest-embedded-idf~=$PYTEST_EMBEDDED_VERSION"
-      "pytest-embedded-qemu~=$PYTEST_EMBEDDED_VERSION"
-      pytest-rerunfailures
-      scapy
-      websocket-client
-      netifaces
-      -r tools/esp_prov/requirements.txt
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    - eval "$($IDF_PATH/tools/idf_tools.py export)"  # use idf venv instead
 
 default:
   retry:
