@@ -825,7 +825,7 @@ menu "Security features"
     endchoice
 
     menu "Potentially insecure options"
-        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE
+        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT # NOERROR
 
         # NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
         # and/or SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT in "depends on", as the menu
@@ -862,7 +862,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
             bool "Allow app partition length not 64KB aligned"
-            depends on SECURE_BOOT_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
             help
                 If not set (default), app partition size must be a multiple of 64KB. App images are padded to 64KB
                 length, and the bootloader checks any trailing bytes after the signature (before the next 64KB
