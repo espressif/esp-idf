@@ -1,4 +1,5 @@
 # This config is split between targets since different component needs to be included (esp32, esp32s2)
+# IRAM is full... split some component to default_32_2
 CONFIG_IDF_TARGET="esp32"
-TEST_COMPONENTS=freertos esp_hw_support esp_ipc esp_system esp_timer driver heap pthread soc spi_flash vfs
+TEST_COMPONENTS=freertos esp_hw_support esp_ipc esp_system esp_timer driver heap
 CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD=y

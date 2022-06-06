@@ -774,7 +774,6 @@ components/hal/aes_hal.c
 components/hal/cpu_hal.c
 components/hal/dac_hal.c
 components/hal/ds_hal.c
-components/hal/esp32/brownout_hal.c
 components/hal/esp32/gpio_hal_workaround.c
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/can_hal.h
@@ -858,7 +857,6 @@ components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s3/interrupt_descriptor_table.c
 components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
-components/hal/include/hal/brownout_hal.h
 components/hal/include/hal/cpu_types.h
 components/hal/include/hal/dac_hal.h
 components/hal/include/hal/dac_types.h
@@ -1530,10 +1528,8 @@ components/soc/include/soc/usb_periph.h
 components/soc/lldesc.c
 components/soc/soc_include_legacy_warn.c
 components/spi_flash/cache_utils.h
-components/spi_flash/include/esp_flash.h
 components/spi_flash/include/esp_spi_flash.h
 components/spi_flash/include/esp_spi_flash_counters.h
-components/spi_flash/include/memspi_host_driver.h
 components/spi_flash/include/spi_flash_chip_boya.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h
@@ -1547,7 +1543,6 @@ components/spi_flash/sim/flash_mock_util.c
 components/spi_flash/sim/sdkconfig/sdkconfig.h
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_gd.c
-components/spi_flash/spi_flash_chip_generic.c
 components/spi_flash/spi_flash_chip_issi.c
 components/spi_flash/spi_flash_chip_mxic.c
 components/spi_flash/spi_flash_chip_mxic_opi.c

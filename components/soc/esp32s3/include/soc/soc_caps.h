@@ -99,7 +99,7 @@
 #define SOC_APB_BACKUP_DMA              (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
-#include "brownout_caps.h"
+#define SOC_BROWNOUT_RESET_SUPPORTED 1
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #include "cpu_caps.h"

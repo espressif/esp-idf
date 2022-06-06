@@ -730,3 +730,44 @@ esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
 }
 
 #endif //XMC_SUPPORT
+
+FORCE_INLINE_ATTR void bootloader_mspi_reset(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    SPI1.slave.sync_reset = 0;
+    SPI0.slave.sync_reset = 0;
+    SPI1.slave.sync_reset = 1;
+    SPI0.slave.sync_reset = 1;
+    SPI1.slave.sync_reset = 0;
+    SPI0.slave.sync_reset = 0;
+#else
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+    SPIMEM1.ctrl2.sync_reset = 1;
+    SPIMEM0.ctrl2.sync_reset = 1;
+    SPIMEM1.ctrl2.sync_reset = 0;
+    SPIMEM0.ctrl2.sync_reset = 0;
+#endif
+}
+
+esp_err_t IRAM_ATTR bootloader_flash_reset_chip(void)
+{
+    bootloader_mspi_reset();
+    // Seems that sync_reset cannot make host totally idle.'
+    // Sending an extra(useless) command to make the host idle in order to send reset command.
+    bootloader_execute_flash_command(0x05, 0, 0, 0);
+#if CONFIG_IDF_TARGET_ESP32
+    if (SPI1.ext2.st != 0)
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    if (SPIMEM1.fsm.st != 0)
+#else
+    if (SPIMEM1.fsm.spi0_mst_st != 0)
+#endif
+    {
+        return ESP_FAIL;
+    }
+    bootloader_execute_flash_command(0x66, 0, 0, 0);
+    bootloader_execute_flash_command(0x99, 0, 0, 0);
+
+    return ESP_OK;
+}

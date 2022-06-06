@@ -70,13 +70,13 @@ static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, t
 esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
 {
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch_Pad ISR null");
-    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M, 0);
 }
 
 esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg)
 {
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch_Pad ISR null");
-    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M, 0);
 }
 
 static uint32_t _touch_filter_iir(uint32_t in_now, uint32_t out_last, uint32_t k)

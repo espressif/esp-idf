@@ -1,0 +1,4 @@
+# continue from default
+CONFIG_IDF_TARGET="esp32"
+TEST_COMPONENTS=pthread soc spi_flash vfs
+CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD=y

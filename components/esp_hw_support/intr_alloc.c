@@ -20,6 +20,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "hal/cpu_hal.h"
+#include "esp_private/rtc_ctrl.h"
 #include "hal/interrupt_controller_hal.h"
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -797,6 +798,8 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
     non_iram_int_disabled_flag[cpu] = true;
     oldint = interrupt_controller_hal_read_interrupt_mask();
     interrupt_controller_hal_disable_interrupts(non_iram_ints);
+    // Disable the RTC bit which don't want to be put in IRAM.
+    rtc_isr_noniram_disable(cpu);
     // Save disabled ints
     non_iram_int_disabled[cpu] = oldint & non_iram_ints;
     portEXIT_CRITICAL_SAFE(&spinlock);
@@ -812,6 +815,7 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
     }
     non_iram_int_disabled_flag[cpu] = false;
     interrupt_controller_hal_enable_interrupts(non_iram_ints);
+    rtc_isr_noniram_enable(cpu);
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 

@@ -10,7 +10,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "regi2c_brownout.h"
-
+#include "esp_attr.h"
 
 void brownout_hal_config(const brownout_hal_config_t *cfg)
 {
@@ -33,7 +33,7 @@ void brownout_hal_intr_enable(bool enable)
     RTCCNTL.int_ena.rtc_brown_out = enable;
 }
 
-void brownout_hal_intr_clear(void)
+IRAM_ATTR void brownout_hal_intr_clear(void)
 {
     RTCCNTL.int_clr.rtc_brown_out = 1;
 }

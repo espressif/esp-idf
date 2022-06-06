@@ -85,7 +85,7 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg, touch_pad_intr_ma
         en_msk |= RTC_CNTL_TOUCH_APPROACH_LOOP_DONE_INT_ST_M;
     }
 #endif
-    esp_err_t ret = rtc_isr_register(fn, arg, en_msk);
+    esp_err_t ret = rtc_isr_register(fn, arg, en_msk, 0);
 
     return ret;
 }
