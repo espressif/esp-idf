@@ -209,6 +209,8 @@ static uint32_t select_best_tuning_config_dtr(spi_timing_config_t *config, uint3
 static uint32_t select_best_tuning_config_str(spi_timing_config_t *config, uint32_t consecutive_length, uint32_t end)
 {
 #if (SPI_TIMING_CORE_CLOCK_MHZ == 120 || SPI_TIMING_CORE_CLOCK_MHZ == 240)
+    ESP_EARLY_LOGW("FLASH/PSRAM", "DO NOT USE FOR MASS PRODUCTION! Timing parameters may be updated in future IDF version.");
+
     //STR best point scheme
     uint32_t best_point;
 
@@ -297,7 +299,6 @@ static void get_flash_tuning_configs(spi_timing_config_t *config)
 
 void spi_timing_flash_tuning(void)
 {
-    ESP_EARLY_LOGW("FLASH", "DO NOT USE FOR MASS PRODUCTION! Timing parameters will be updated in future IDF version.");
     /**
      * set SPI01 related regs to 20mhz configuration, to get reference data from FLASH
      * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode`)
@@ -348,7 +349,6 @@ static void get_psram_tuning_configs(spi_timing_config_t *config)
 
 void spi_timing_psram_tuning(void)
 {
-    ESP_EARLY_LOGW("PSRAM", "DO NOT USE FOR MASS PRODUCTION! Timing parameters will be updated in future IDF version.");
     /**
      * set SPI01 related regs to 20mhz configuration, to write reference data to PSRAM
      * see detailed comments in this function (`spi_timing_enter_mspi_low_speed_mode`)
