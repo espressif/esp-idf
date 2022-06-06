@@ -1021,6 +1021,8 @@ The beacon timeout mechanism is used by {IDF_TARGET_NAME} station to detect whet
 
 After the beacon timeout happens, the station sends 5 probe requests to AP, it disconnects the AP and raises the event `WIFI_EVENT_STA_DISCONNECTED`_ if still no probe response or beacon is received from AP.
 
+It should be considered that the timer used for beacon timeout will be reset during the scanning process. It means that the scan process will affect the triggering of the event `WIFI_EVENT_STA_BEACON_TIMEOUT`_.
+
 {IDF_TARGET_NAME} Wi-Fi Configuration
 -------------------------------------
 
