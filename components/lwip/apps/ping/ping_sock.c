@@ -271,6 +271,9 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     /* set tos */
     setsockopt(ep->sock, IPPROTO_IP, IP_TOS, &config->tos, sizeof(config->tos));
 
+    /* set ttl */
+    setsockopt(ep->sock, IPPROTO_IP, IP_TTL, &config->ttl, sizeof(config->ttl));
+
     /* set socket address */
     if (IP_IS_V4(&config->target_addr)) {
         struct sockaddr_in *to4 = (struct sockaddr_in *)&ep->target_addr;
