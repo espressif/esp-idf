@@ -29,6 +29,20 @@
 #include "eap_common/eap_wsc_common.h"
 #include "esp_wpas_glue.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+const char *wps_model_number = "ESP32";
+#elif CONFIG_IDF_TARGET_ESP32S2
+const char *wps_model_number = "ESP32S2";
+#elif CONFIG_IDF_TARGET_ESP32S3
+const char *wps_model_number = "ESP32S3";
+#elif CONFIG_IDF_TARGET_ESP32C3
+const char *wps_model_number = "ESP32C3";
+#elif CONFIG_IDF_TARGET_ESP32C2
+const char *wps_model_number = "ESP32C2";
+#elif CONFIG_IDF_TARGET_ESP32H2
+const char *wps_model_number = "ESP32H2";
+#endif
+
 void *s_wps_api_lock = NULL;  /* Used in WPS public API only, never be freed */
 void *s_wps_api_sem = NULL;   /* Sync semaphore used between WPS publi API caller task and WPS task */
 bool s_wps_enabled = false;
@@ -1054,8 +1068,8 @@ int wps_set_default_factory(void)
 
     os_snprintf(s_factory_info->manufacturer, WPS_MAX_MANUFACTURER_LEN, "ESPRESSIF");
     os_snprintf(s_factory_info->model_name, WPS_MAX_MODEL_NUMBER_LEN, "ESPRESSIF IOT");
-    os_snprintf(s_factory_info->model_number, WPS_MAX_MODEL_NAME_LEN, "ESP32");
-    os_snprintf(s_factory_info->device_name, WPS_MAX_DEVICE_NAME_LEN, "ESP32 STATION");
+    os_snprintf(s_factory_info->model_number, WPS_MAX_MODEL_NAME_LEN, wps_model_number);
+    os_snprintf(s_factory_info->device_name, WPS_MAX_DEVICE_NAME_LEN, "%s STATION", wps_model_number);
 
     return ESP_OK;
 }
