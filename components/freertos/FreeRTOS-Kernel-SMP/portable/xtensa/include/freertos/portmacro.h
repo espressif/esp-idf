@@ -267,7 +267,7 @@ static inline BaseType_t xPortInIsrContext(void)
     return xPortCheckIfInISR();
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void);
+BaseType_t xPortInterruptedFromISRContext(void);
 
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
