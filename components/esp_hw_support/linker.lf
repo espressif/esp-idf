@@ -1,7 +1,16 @@
 [mapping:esp_hw_support]
 archive: libesp_hw_support.a
 entries:
-    cpu (noflash_text)
+    cpu: esp_cpu_stall (noflash)
+    cpu: esp_cpu_unstall (noflash)
+    cpu: esp_cpu_reset (noflash)
+    cpu: esp_cpu_wait_for_intr (noflash)
+    if ESP_PANIC_HANDLER_IRAM = y:
+        cpu: esp_cpu_set_breakpoint (noflash)
+        cpu: esp_cpu_clear_breakpoint (noflash)
+        cpu: esp_cpu_set_watchpoint (noflash)
+        cpu: esp_cpu_clear_watchpoint (noflash)
+    cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
     rtc_clk (noflash)
     rtc_init:rtc_vddsdio_set_config (noflash)
