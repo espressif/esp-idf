@@ -2350,53 +2350,49 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
     return 0;
 }
 
-bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable)
+bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
-    struct wpa_state_machine   **wpa_sm;
 
-    if (!sm || !bssid || !wpa_ie){
+    if (!sta || !bssid || !wpa_ie){
         return false;
     }
 
-
-    wpa_sm = (struct wpa_state_machine  **)sm;
-
     if (hapd) {
         if (hapd->wpa_auth->conf.wpa) {
-            if (*wpa_sm){
-                wpa_auth_sta_deinit(*wpa_sm);
+            if (sta->wpa_sm){
+                wpa_auth_sta_deinit(sta->wpa_sm);
             }
 
-            *wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
-            wpa_printf( MSG_DEBUG, "init wpa sm=%p\n", *wpa_sm);
+            sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, bssid);
+            wpa_printf( MSG_DEBUG, "init wpa sm=%p\n", sta->wpa_sm);
 
-            if (*wpa_sm == NULL) {
+            if (sta->wpa_sm == NULL) {
                 return false;
             }
 
-            if (wpa_validate_wpa_ie(hapd->wpa_auth, *wpa_sm, wpa_ie, wpa_ie_len)) {
+            if (wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len)) {
                 return false;
 	    }
 
 	    //Check whether AP uses Management Frame Protection for this connection
-	    *pmf_enable = wpa_auth_uses_mfp(*wpa_sm);
+	    *pmf_enable = wpa_auth_uses_mfp(sta->wpa_sm);
         }
 
-        wpa_auth_sta_associated(hapd->wpa_auth, *wpa_sm);
+        wpa_auth_sta_associated(hapd->wpa_auth, sta->wpa_sm);
     }
 
     return true;
 }
 
-bool wpa_ap_remove(void* sm)
+bool wpa_ap_remove(void* sta_info)
 {
     struct hostapd_data *hapd = hostapd_get_hapd_data();
-    if (!sm || !hapd) {
+    if (!sta_info || !hapd) {
         return false;
     }
 
-    ap_free_sta(hapd, sm);
+    ap_free_sta(hapd, sta_info);
 
     return true;
 }
