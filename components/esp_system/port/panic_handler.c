@@ -153,8 +153,13 @@ static void panic_handler(void *frame, bool pseudo_excause)
     esp_panic_handler_reconfigure_wdts();
 
     esp_rom_delay_us(1);
-    SOC_HAL_STALL_OTHER_CORES();
-#endif
+    // Stall all other cores
+    for (uint32_t i = 0; i < SOC_CPU_CORES_NUM; i++) {
+        if (i != core_id) {
+            esp_cpu_stall(i);
+        }
+    }
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     esp_ipc_isr_stall_abort();
 

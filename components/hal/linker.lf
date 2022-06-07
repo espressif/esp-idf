@@ -14,8 +14,6 @@ entries:
     spi_flash_encrypt_hal_iram (noflash)
     ledc_hal_iram (noflash)
     i2c_hal_iram (noflash)
-    cpu_hal (noflash)
-    soc_hal (noflash)
     if HAL_WDT_USE_ROM_IMPL = n:
         wdt_hal_iram (noflash)
     if SOC_SYSTIMER_SUPPORTED = y && HAL_SYSTIMER_USE_ROM_IMPL = n:

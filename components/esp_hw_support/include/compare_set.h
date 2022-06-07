@@ -8,8 +8,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "esp_cpu.h"
 #include "esp_memory_utils.h"
+#include "hal/cpu_hal.h"
 
 #ifdef __cplusplus
 extern "C" {

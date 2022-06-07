@@ -80,6 +80,7 @@
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
+#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 #include "portbenchmark.h"
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
