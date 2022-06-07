@@ -23,6 +23,10 @@ except ImportError:
 
 # --------------------------------------------------------------------
 
+def device_sort(device):
+    return device.address
+
+
 class BLE_Bleak_Client:
     def __init__(self):
         self.adapter_props = None
@@ -46,23 +50,56 @@ class BLE_Bleak_Client:
                 raise RuntimeError('Bluetooth is not ready. Maybe try `bluetoothctl power on`?')
             raise
 
-        address = None
-        for d in devices:
-            if d.name == self.devname:
-                address = d.address
-                uuids = d.metadata['uuids']
-                # There should be 1 service UUID in advertising data
-                # If bluez had cached an old version of the advertisement data
-                # the list of uuids may be incorrect, in which case connection
-                # or service discovery may fail the first time. If that happens
-                # the cache will be refreshed before next retry
-                if len(uuids) == 1:
-                    self.srv_uuid_adv = uuids[0]
-        if not address:
+        found_device = None
+
+        if self.devname is None:
+            if len(devices) == 0:
+                print('No devices found!')
+                exit(1)
+
+            while True:
+                devices.sort(key=device_sort)
+                print('==== BLE Discovery results ====')
+                print('{0: >4} {1: <33} {2: <12}'.format(
+                    'S.N.', 'Name', 'Address'))
+                for i in range(len(devices)):
+                    print('[{0: >2}] {1: <33} {2: <12}'.format(i + 1, devices[i].name or 'Unknown', devices[i].address))
+
+                while True:
+                    try:
+                        select = int(input('Select device by number (0 to rescan) : '))
+                        if select < 0 or select > len(devices):
+                            raise ValueError
+                        break
+                    except ValueError:
+                        print('Invalid input! Retry')
+
+                if select != 0:
+                    break
+
+                devices = await bleak.discover()
+
+            self.devname = devices[select - 1].name
+            found_device = devices[select - 1]
+        else:
+            for d in devices:
+                if d.name == self.devname:
+                    found_device = d
+
+        if not found_device:
             raise RuntimeError('Device not found')
 
+        uuids = found_device.metadata['uuids']
+        # There should be 1 service UUID in advertising data
+        # If bluez had cached an old version of the advertisement data
+        # the list of uuids may be incorrect, in which case connection
+        # or service discovery may fail the first time. If that happens
+        # the cache will be refreshed before next retry
+        if len(uuids) == 1:
+            self.srv_uuid_adv = uuids[0]
+
         print('Connecting...')
-        self.device = bleak.BleakClient(address)
+        self.device = bleak.BleakClient(found_device.address)
         await self.device.connect()
         # must be paired on Windows to access characteristics;
         # cannot be paired on Mac
@@ -123,7 +160,6 @@ class BLE_Bleak_Client:
         await self.device.write_gatt_char(characteristic_uuid, bytearray(data.encode('latin-1')), True)
         readval = await self.device.read_gatt_char(characteristic_uuid)
         return ''.join(chr(b) for b in readval)
-
 # --------------------------------------------------------------------
 
 

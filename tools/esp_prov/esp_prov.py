@@ -59,8 +59,6 @@ async def get_transport(sel_transport, service_name):
                 service_name = '192.168.4.1:80'
             tp = transport.Transport_HTTP(service_name)
         elif (sel_transport == 'ble'):
-            if service_name is None:
-                raise RuntimeError('"--service_name" must be specified for ble transport')
             # BLE client is now capable of automatically figuring out
             # the primary service from the advertisement data and the
             # characteristics corresponding to each endpoint.
