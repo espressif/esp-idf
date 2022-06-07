@@ -248,10 +248,6 @@ esp_err_t touch_pad_config(touch_pad_t touch_num)
 
 esp_err_t touch_pad_init(void)
 {
-    //TODO: IDF-4813
-    extern bool esp_no_sleep;
-    esp_no_sleep = true;
-
     if (rtc_touch_mux == NULL) {
         rtc_touch_mux = xSemaphoreCreateMutex();
     }
