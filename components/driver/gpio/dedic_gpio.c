@@ -19,7 +19,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "hal/cpu_hal.h"
-#include "hal/cpu_ll.h"
+#include "hal/dedic_gpio_cpu_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
@@ -271,7 +271,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
             esp_rom_gpio_connect_out_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].out_sig_per_channel[out_offset + i], config->flags.out_invert, false);
         }
 #if !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
-        cpu_ll_enable_dedic_gpio_output(s_platform[core_id]->out_occupied_mask);
+        dedic_gpio_cpu_ll_enable_output(s_platform[core_id]->out_occupied_mask);
 #endif // !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
     }
 
@@ -353,14 +353,14 @@ void dedic_gpio_bundle_write(dedic_gpio_bundle_handle_t bundle, uint32_t mask, u
 {
     // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
-    cpu_ll_write_dedic_gpio_mask(bundle->out_mask & (mask << bundle->out_offset), value << bundle->out_offset);
+    dedic_gpio_cpu_ll_write_mask(bundle->out_mask & (mask << bundle->out_offset), value << bundle->out_offset);
 }
 
 uint32_t dedic_gpio_bundle_read_out(dedic_gpio_bundle_handle_t bundle)
 {
     // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
-    uint32_t value =  cpu_ll_read_dedic_gpio_out();
+    uint32_t value =  dedic_gpio_cpu_ll_read_out();
     return (value & bundle->out_mask) >> (bundle->out_offset);
 }
 
@@ -368,7 +368,7 @@ uint32_t dedic_gpio_bundle_read_in(dedic_gpio_bundle_handle_t bundle)
 {
     // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
-    uint32_t value  = cpu_ll_read_dedic_gpio_in();
+    uint32_t value  = dedic_gpio_cpu_ll_read_in();
     return (value & bundle->in_mask) >> (bundle->in_offset);
 }
 

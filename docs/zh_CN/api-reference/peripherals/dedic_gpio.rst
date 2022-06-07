@@ -113,7 +113,7 @@ GPIO 捆绑包操作
 
     有关支持的专用 GPIO 指令的详细信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__].
 
-一些专用的 CPU 指令也包含在 `hal/dedic_gpio_ll.h` 中，作为辅助内联函数。
+一些专用的 CPU 指令也包含在 `hal/dedic_gpio_cpu_ll.h` 中，作为辅助内联函数。
 
 .. note::
     由于自定义指令在不同目标上可能会有不同的格式，在应用程序中编写汇编代码可能会让代码难以在不同的芯片架构之间移植。
