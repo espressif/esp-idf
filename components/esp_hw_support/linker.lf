@@ -1,7 +1,7 @@
 [mapping:esp_hw_support]
 archive: libesp_hw_support.a
 entries:
-    cpu_util (noflash_text)
+    cpu (noflash_text)
     esp_memory_utils (noflash)
     rtc_clk (noflash)
     rtc_init:rtc_vddsdio_set_config (noflash)

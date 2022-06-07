@@ -1,4 +1,4 @@
-set(srcs "cpu_util_esp32c3.c"
+set(srcs "cpu_esp32c3.c"
          "rtc_clk_init.c"
          "rtc_clk.c"
          "rtc_init.c"
