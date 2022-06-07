@@ -13,6 +13,7 @@ extern "C" {
 #include "Mockhttp_parser.h"
 #include "Mockqueue.h"
 #include "Mocktask.h"
+#include "Mockesp_timer.h"
 
     /*
      * The following functions are not directly called but the generation of them
@@ -30,15 +31,16 @@ struct ClientInitializedFixture {
     esp_mqtt_client_handle_t client;
     ClientInitializedFixture()
     {
-        TEST_PROTECT();
+        [[maybe_unused]] auto protect = TEST_PROTECT();
         int mtx;
         int transport_list;
         int transport;
         int event_group;
         uint8_t mac[] = {0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55};
         esp_log_write_Ignore();
-        xQueueTakeMutexRecursive_CMockIgnoreAndReturn(0, true);
-        xQueueGiveMutexRecursive_CMockIgnoreAndReturn(0, true);
+        esp_timer_get_time_IgnoreAndReturn(0);
+        xQueueTakeMutexRecursive_IgnoreAndReturn(true);
+        xQueueGiveMutexRecursive_IgnoreAndReturn(true);
         xQueueCreateMutex_ExpectAnyArgsAndReturn(
             reinterpret_cast<QueueHandle_t>(&mtx));
         xEventGroupCreate_IgnoreAndReturn(reinterpret_cast<EventGroupHandle_t>(&event_group));
