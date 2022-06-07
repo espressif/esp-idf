@@ -365,7 +365,7 @@ async def main():
                             'If Wi-Fi scanning is supported by the provisioning service, this need not '
                             'be specified'))
 
-    parser.add_argument('--passphrase', dest='passphrase', type=str, default='',
+    parser.add_argument('--passphrase', dest='passphrase', type=str,
                         help=desc_format(
                             'This configures the device to use Passphrase for the Wi-Fi network to which '
                             'we would like it to connect to permanently, once provisioning is complete. '
@@ -480,6 +480,8 @@ async def main():
                     break
 
             args.ssid = APs[select - 1]['ssid']
+
+        if args.passphrase is None:
             prompt_str = 'Enter passphrase for {0} : '.format(args.ssid)
             args.passphrase = getpass(prompt_str)
 
