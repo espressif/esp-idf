@@ -1,0 +1,36 @@
+.upload_cache_template:
+  stage: upload_cache
+  image: $ESP_ENV_IMAGE
+
+.upload_pip_cache_template:
+  extends:
+    - .upload_cache_template
+    - .rules:patterns:python-cache
+  cache:
+    key: pip-cache
+    paths:
+      - .cache/pip
+    # pull only for most of the use cases since it's cache dir.
+    # Only set "push" policy for "upload_cache" stage jobs since it would install all pypi packages
+    policy: push
+  before_script: []
+  script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - source tools/ci/setup_python.sh
+    - rm -rf .cache/pip  # clear old packages
+    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
+    # TODO: remove this, IDFCI-1207
+    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+
+upload-pip-cache-shiny:
+  extends: .upload_pip_cache_template
+  tags:
+    - shiny
+    - build
+
+upload-pip-cache-brew:
+  extends: .upload_pip_cache_template
+  tags:
+    - brew
+    - build

@@ -1,4 +1,5 @@
 stages:
+  - upload_cache
   - pre_check
   - build
   - assign_test
@@ -100,7 +101,7 @@ cache:
   paths:
     - .cache/pip
   # pull only for most of the use cases since it's cache dir.
-  # Only set "pull-push" policy for "scan_test" since it would **possibly** install all pypi packages
+  # Only set "push" policy for "upload_cache" stage jobs since it would install all pypi packages
   policy: pull
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
@@ -226,6 +227,7 @@ default:
 
 include:
   - '.gitlab/ci/rules.yml'
+  - '.gitlab/ci/upload_cache.yml'
   - '.gitlab/ci/docs.yml'
   - '.gitlab/ci/static-code-analysis.yml'
   - '.gitlab/ci/pre_check.yml'

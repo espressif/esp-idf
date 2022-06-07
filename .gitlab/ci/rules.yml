@@ -12,6 +12,10 @@
   - "components/**/Kconfig"
   - "components/**/CMakeList.txt"
 
+.patterns-python-cache: &patterns-python-cache
+  - "tools/requirements.json"
+  - "tools/requirements/requirements.*.txt"
+
 .patterns-python-files: &patterns-python-files
   - ".gitlab/ci/static-code-analysis.yml"
   - "**/*.py"
@@ -231,6 +235,11 @@
 .rules:protected-no_label:
   rules:
     - <<: *if-protected-no_label
+
+.rules:patterns:python-cache:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-python-cache
 
 .rules:dev:
   rules:
