@@ -489,7 +489,7 @@ IRAM_ATTR static void gptimer_default_isr(void *args)
     uint32_t intr_status = timer_ll_get_intr_status(timer->hal.dev);
 
     if (intr_status & TIMER_LL_EVENT_ALARM(timer->timer_id)) {
-        // Note: when alarm event happends, the alarm will be disabled automatically by hardware
+        // Note: when alarm event happens, the alarm will be disabled automatically by hardware
         gptimer_alarm_event_data_t edata = {
             .count_value = timer_ll_get_counter_value(timer->hal.dev, timer->timer_id),
             .alarm_value = timer->alarm_count,

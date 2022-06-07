@@ -93,10 +93,10 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     (void)divider_numerator;
     switch (src) {
     case RMT_CLK_SRC_APB:
-        dev->conf_ch[channel].conf1.ref_always_on = 1;
+        dev->conf_ch[channel].conf1.ref_always_on_chn = 1;
         break;
     case RMT_CLK_SRC_REF_TICK:
-        dev->conf_ch[channel].conf1.ref_always_on = 0;
+        dev->conf_ch[channel].conf1.ref_always_on_chn = 0;
         break;
     default:
         HAL_ASSERT(false && "unsupported RMT clock source");
@@ -132,7 +132,7 @@ static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
     if (div >= 256) {
         div = 0; // 0 means 256 division
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt_chn, div);
 }
 
 /**
@@ -143,10 +143,10 @@ static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
  */
 static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->conf_ch[channel].conf1.mem_rd_rst = 1;
-    dev->conf_ch[channel].conf1.mem_rd_rst = 0;
-    dev->conf_ch[channel].conf1.apb_mem_rst = 1;
-    dev->conf_ch[channel].conf1.apb_mem_rst = 0;
+    dev->conf_ch[channel].conf1.mem_rd_rst_chn = 1;
+    dev->conf_ch[channel].conf1.mem_rd_rst_chn = 0;
+    dev->conf_ch[channel].conf1.apb_mem_rst_chn = 1;
+    dev->conf_ch[channel].conf1.apb_mem_rst_chn = 0;
 }
 
 /**
@@ -157,7 +157,7 @@ static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->conf_ch[channel].conf1.tx_start = 1;
+    dev->conf_ch[channel].conf1.tx_start_chn = 1;
 }
 
 /**
@@ -168,7 +168,7 @@ static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_tx_stop(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->conf_ch[channel].conf1.tx_stop = 1;
+    dev->conf_ch[channel].conf1.tx_stop_chn = 1;
 }
 
 /**
@@ -180,7 +180,7 @@ static inline void rmt_ll_tx_stop(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_tx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, uint8_t block_num)
 {
-    dev->conf_ch[channel].conf0.mem_size = block_num;
+    dev->conf_ch[channel].conf0.mem_size_chn = block_num;
 }
 
 /**
@@ -204,7 +204,7 @@ static inline void rmt_ll_tx_enable_wrap(rmt_dev_t *dev, uint32_t channel, bool 
  */
 static inline void rmt_ll_tx_enable_loop(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf1.tx_conti_mode = enable;
+    dev->conf_ch[channel].conf1.tx_conti_mode_chn = enable;
 }
 
 /**
@@ -217,7 +217,7 @@ static inline void rmt_ll_tx_enable_loop(rmt_dev_t *dev, uint32_t channel, bool 
 static inline void rmt_ll_tx_set_loop_count(rmt_dev_t *dev, uint32_t channel, uint32_t count)
 {
     HAL_ASSERT(count <= RMT_LL_MAX_LOOP_COUNT_PER_BATCH && "loop count out of range");
-    dev->tx_lim_ch[channel].tx_loop_num = count;
+    dev->chn_tx_lim[channel].tx_loop_num_chn = count;
 }
 
 /**
@@ -228,8 +228,8 @@ static inline void rmt_ll_tx_set_loop_count(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_tx_reset_loop_count(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->tx_lim_ch[channel].loop_count_reset = 1;
-    dev->tx_lim_ch[channel].loop_count_reset = 0;
+    dev->chn_tx_lim[channel].loop_count_reset_chn = 1;
+    dev->chn_tx_lim[channel].loop_count_reset_chn = 0;
 }
 
 /**
@@ -241,7 +241,7 @@ static inline void rmt_ll_tx_reset_loop_count(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_tx_enable_loop_count(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->tx_lim_ch[channel].tx_loop_cnt_en = enable;
+    dev->chn_tx_lim[channel].tx_loop_cnt_en_chn = enable;
 }
 
 /**
@@ -252,7 +252,7 @@ static inline void rmt_ll_tx_enable_loop_count(rmt_dev_t *dev, uint32_t channel,
  */
 static inline void rmt_ll_tx_enable_sync(rmt_dev_t *dev, bool enable)
 {
-    dev->tx_sim.en = enable;
+    dev->tx_sim.tx_sim_en = enable;
 }
 
 /**
@@ -297,8 +297,8 @@ static inline void rmt_ll_tx_sync_group_remove_channels(rmt_dev_t *dev, uint32_t
  */
 static inline void rmt_ll_tx_fix_idle_level(rmt_dev_t *dev, uint32_t channel, uint8_t level, bool enable)
 {
-    dev->conf_ch[channel].conf1.idle_out_en = enable;
-    dev->conf_ch[channel].conf1.idle_out_lv = level;
+    dev->conf_ch[channel].conf1.idle_out_en_chn = enable;
+    dev->conf_ch[channel].conf1.idle_out_lv_chn = level;
 }
 
 /**
@@ -310,7 +310,7 @@ static inline void rmt_ll_tx_fix_idle_level(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_tx_set_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
 {
-    dev->tx_lim_ch[channel].tx_lim = limit;
+    dev->chn_tx_lim[channel].tx_lim_chn = limit;
 }
 
 /**
@@ -331,8 +331,8 @@ static inline void rmt_ll_tx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
     if (low_ticks >= 65536) {
         low_ticks = 0;
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->carrier_duty_ch[channel], high, high_ticks);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->carrier_duty_ch[channel], low, low_ticks);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chncarrier_duty[channel], carrier_high_chn, high_ticks);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chncarrier_duty[channel], carrier_low_chn, low_ticks);
 }
 
 /**
@@ -344,7 +344,7 @@ static inline void rmt_ll_tx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
  */
 static inline void rmt_ll_tx_enable_carrier_modulation(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf0.carrier_en = enable;
+    dev->conf_ch[channel].conf0.carrier_en_chn = enable;
 }
 
 /**
@@ -356,7 +356,7 @@ static inline void rmt_ll_tx_enable_carrier_modulation(rmt_dev_t *dev, uint32_t 
  */
 static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
-    dev->conf_ch[channel].conf0.carrier_out_lv = level;
+    dev->conf_ch[channel].conf0.carrier_out_lv_chn = level;
 }
 
 /**
@@ -368,7 +368,7 @@ static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
  */
 static inline void rmt_ll_tx_enable_carrier_always_on(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf0.carrier_eff_en = !enable;
+    dev->conf_ch[channel].conf0.carrier_eff_en_chn = !enable;
 }
 
 ////////////////////////////////////////RX Channel Specific/////////////////////////////////////////////////////////////
@@ -399,7 +399,7 @@ static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
     if (div >= 256) {
         div = 0; // 0 means 256 division
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt_chn, div);
 }
 
 /**
@@ -410,10 +410,10 @@ static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
  */
 static inline void rmt_ll_rx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->conf_ch[channel].conf1.mem_wr_rst = 1;
-    dev->conf_ch[channel].conf1.mem_wr_rst = 0;
-    dev->conf_ch[channel].conf1.apb_mem_rst = 1;
-    dev->conf_ch[channel].conf1.apb_mem_rst = 0;
+    dev->conf_ch[channel].conf1.mem_wr_rst_chn = 1;
+    dev->conf_ch[channel].conf1.mem_wr_rst_chn = 0;
+    dev->conf_ch[channel].conf1.apb_mem_rst_chn = 1;
+    dev->conf_ch[channel].conf1.apb_mem_rst_chn = 0;
 }
 
 /**
@@ -425,7 +425,7 @@ static inline void rmt_ll_rx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_rx_enable(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf1.rx_en = enable;
+    dev->conf_ch[channel].conf1.rx_en_chn = enable;
 }
 
 /**
@@ -437,7 +437,7 @@ static inline void rmt_ll_rx_enable(rmt_dev_t *dev, uint32_t channel, bool enabl
  */
 static inline void rmt_ll_rx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, uint8_t block_num)
 {
-    dev->conf_ch[channel].conf0.mem_size = block_num;
+    dev->conf_ch[channel].conf0.mem_size_chn = block_num;
 }
 
 /**
@@ -449,7 +449,7 @@ static inline void rmt_ll_rx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres, thres);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres_chn, thres);
 }
 
 /**
@@ -461,7 +461,7 @@ static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt_ll_mem_owner_t owner)
 {
-    dev->conf_ch[channel].conf1.mem_owner = owner;
+    dev->conf_ch[channel].conf1.mem_owner_chn = owner;
 }
 
 /**
@@ -473,7 +473,7 @@ static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt
  */
 static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf1.rx_filter_en = enable;
+    dev->conf_ch[channel].conf1.rx_filter_en_chn = enable;
 }
 
 /**
@@ -485,7 +485,7 @@ static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, boo
  */
 static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf1, rx_filter_thres, thres);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf1, rx_filter_thres_chn, thres);
 }
 
 /**
@@ -497,7 +497,7 @@ static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, 
  */
 static inline uint32_t rmt_ll_rx_get_memory_writer_offset(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->status_ch[channel].mem_waddr_ex - (channel) * 64;
+    return dev->chnstatus[channel].mem_waddr_ex_chn - (channel) * 64;
 }
 
 /**
@@ -511,8 +511,8 @@ static inline uint32_t rmt_ll_rx_get_memory_writer_offset(rmt_dev_t *dev, uint32
 static inline void rmt_ll_rx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
 {
     HAL_ASSERT(high_ticks >= 1 && high_ticks <= 65536 && low_ticks >= 1 && low_ticks <= 65536 && "out of range high/low ticks");
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->ch_rx_carrier_rm[channel], carrier_high_thres_ch, high_ticks - 1);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->ch_rx_carrier_rm[channel], carrier_low_thres_ch, low_ticks - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chn_rx_carrier_rm[channel], carrier_high_thres_chn, high_ticks - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chn_rx_carrier_rm[channel], carrier_low_thres_chn, low_ticks - 1);
 }
 
 /**
@@ -524,7 +524,7 @@ static inline void rmt_ll_rx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
  */
 static inline void rmt_ll_rx_enable_carrier_demodulation(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf0.carrier_en = enable;
+    dev->conf_ch[channel].conf0.carrier_en_chn = enable;
 }
 
 /**
@@ -536,7 +536,7 @@ static inline void rmt_ll_rx_enable_carrier_demodulation(rmt_dev_t *dev, uint32_
  */
 static inline void rmt_ll_rx_set_carrier_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
-    dev->conf_ch[channel].conf0.carrier_out_lv = level;
+    dev->conf_ch[channel].conf0.carrier_out_lv_chn = level;
 }
 
 //////////////////////////////////////////Interrupt Specific////////////////////////////////////////////////////////////
@@ -634,49 +634,49 @@ static inline uint32_t rmt_ll_rx_get_interrupt_status(rmt_dev_t *dev, uint32_t c
 
 static inline uint32_t rmt_ll_tx_get_status_word(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->status_ch[channel].val;
+    return dev->chnstatus[channel].val;
 }
 
 static inline uint32_t rmt_ll_rx_get_status_word(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->status_ch[channel].val;
+    return dev->chnstatus[channel].val;
 }
 
 static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt);
+    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt_chn);
     return div == 0 ? 256 : div;
 }
 
 static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt);
+    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt_chn);
     return div == 0 ? 256 : div;
 }
 
 static inline uint32_t rmt_ll_rx_get_idle_thres(rmt_dev_t *dev, uint32_t channel)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres);
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres_chn);
 }
 
 static inline uint32_t rmt_ll_tx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf0.mem_size;
+    return dev->conf_ch[channel].conf0.mem_size_chn;
 }
 
 static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf0.mem_size;
+    return dev->conf_ch[channel].conf0.mem_size_chn;
 }
 
 static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf1.tx_conti_mode;
+    return dev->conf_ch[channel].conf1.tx_conti_mode_chn;
 }
 
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
-    if (dev->conf_ch[channel].conf1.ref_always_on) {
+    if (dev->conf_ch[channel].conf1.ref_always_on_chn) {
         return RMT_CLK_SRC_APB;
     }
     return RMT_CLK_SRC_REF_TICK;
@@ -684,12 +684,12 @@ static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint
 
 static inline bool rmt_ll_tx_is_idle_enabled(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf1.idle_out_en;
+    return dev->conf_ch[channel].conf1.idle_out_en_chn;
 }
 
 static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf1.idle_out_lv;
+    return dev->conf_ch[channel].conf1.idle_out_lv_chn;
 }
 
 static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
@@ -702,7 +702,7 @@ static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
 
 static inline uint32_t rmt_ll_rx_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf1.mem_owner;
+    return dev->conf_ch[channel].conf1.mem_owner_chn;
 }
 
 static inline uint32_t rmt_ll_get_tx_end_interrupt_status(rmt_dev_t *dev)

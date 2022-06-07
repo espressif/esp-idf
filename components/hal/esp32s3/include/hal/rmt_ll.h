@@ -139,7 +139,7 @@ static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
     if (div >= 256) {
         div = 0; // 0 means 256 division
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_n, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_chn, div);
 }
 
 /**
@@ -150,10 +150,10 @@ static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
  */
 static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->chnconf0[channel].mem_rd_rst_n = 1;
-    dev->chnconf0[channel].mem_rd_rst_n = 0;
-    dev->chnconf0[channel].apb_mem_rst_n = 1;
-    dev->chnconf0[channel].apb_mem_rst_n = 0;
+    dev->chnconf0[channel].mem_rd_rst_chn = 1;
+    dev->chnconf0[channel].mem_rd_rst_chn = 0;
+    dev->chnconf0[channel].apb_mem_rst_chn = 1;
+    dev->chnconf0[channel].apb_mem_rst_chn = 0;
 }
 
 /**
@@ -166,7 +166,7 @@ static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 static inline void rmt_ll_tx_enable_dma(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     HAL_ASSERT(channel == 3 && "only TX channel 3 has DMA ability");
-    dev->chnconf0[channel].dma_access_en_n = enable;
+    dev->chnconf0[channel].dma_access_en_chn = enable;
 }
 
 /**
@@ -178,8 +178,8 @@ static inline void rmt_ll_tx_enable_dma(rmt_dev_t *dev, uint32_t channel, bool e
 static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
 {
     // update other configuration registers before start transmitting
-    dev->chnconf0[channel].conf_update_n = 1;
-    dev->chnconf0[channel].tx_start_n = 1;
+    dev->chnconf0[channel].conf_update_chn = 1;
+    dev->chnconf0[channel].tx_start_chn = 1;
 }
 
 /**
@@ -190,9 +190,9 @@ static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_tx_stop(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->chnconf0[channel].tx_stop_n = 1;
+    dev->chnconf0[channel].tx_stop_chn = 1;
     // stop won't take place until configurations updated
-    dev->chnconf0[channel].conf_update_n = 1;
+    dev->chnconf0[channel].conf_update_chn = 1;
 }
 
 /**
@@ -204,7 +204,7 @@ static inline void rmt_ll_tx_stop(rmt_dev_t *dev, uint32_t channel)
  */
 static inline void rmt_ll_tx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, uint8_t block_num)
 {
-    dev->chnconf0[channel].mem_size_n = block_num;
+    dev->chnconf0[channel].mem_size_chn = block_num;
 }
 
 /**
@@ -216,7 +216,7 @@ static inline void rmt_ll_tx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_tx_enable_wrap(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chnconf0[channel].mem_tx_wrap_en_n = enable;
+    dev->chnconf0[channel].mem_tx_wrap_en_chn = enable;
 }
 
 /**
@@ -228,7 +228,7 @@ static inline void rmt_ll_tx_enable_wrap(rmt_dev_t *dev, uint32_t channel, bool 
  */
 static inline void rmt_ll_tx_enable_loop(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chnconf0[channel].tx_conti_mode_n = enable;
+    dev->chnconf0[channel].tx_conti_mode_chn = enable;
 }
 
 /**
@@ -333,8 +333,8 @@ static inline void rmt_ll_tx_sync_group_remove_channels(rmt_dev_t *dev, uint32_t
  */
 static inline void rmt_ll_tx_fix_idle_level(rmt_dev_t *dev, uint32_t channel, uint8_t level, bool enable)
 {
-    dev->chnconf0[channel].idle_out_en_n = enable;
-    dev->chnconf0[channel].idle_out_lv_n = level;
+    dev->chnconf0[channel].idle_out_en_chn = enable;
+    dev->chnconf0[channel].idle_out_lv_chn = level;
 }
 
 /**
@@ -380,7 +380,7 @@ static inline void rmt_ll_tx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
  */
 static inline void rmt_ll_tx_enable_carrier_modulation(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chnconf0[channel].carrier_en_n = enable;
+    dev->chnconf0[channel].carrier_en_chn = enable;
 }
 
 /**
@@ -392,7 +392,7 @@ static inline void rmt_ll_tx_enable_carrier_modulation(rmt_dev_t *dev, uint32_t 
  */
 static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
-    dev->chnconf0[channel].carrier_out_lv_n = level;
+    dev->chnconf0[channel].carrier_out_lv_chn = level;
 }
 
 /**
@@ -404,7 +404,7 @@ static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
  */
 static inline void rmt_ll_tx_enable_carrier_always_on(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chnconf0[channel].carrier_eff_en_n = !enable;
+    dev->chnconf0[channel].carrier_eff_en_chn = !enable;
 }
 
 ////////////////////////////////////////RX Channel Specific/////////////////////////////////////////////////////////////
@@ -434,7 +434,7 @@ static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
     if (div >= 256) {
         div = 0; // 0 means 256 division
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_m, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_chm, div);
 }
 
 /**
@@ -445,10 +445,10 @@ static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
  */
 static inline void rmt_ll_rx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
-    dev->chmconf[channel].conf1.mem_wr_rst_m = 1;
-    dev->chmconf[channel].conf1.mem_wr_rst_m = 0;
-    dev->chmconf[channel].conf1.apb_mem_rst_m = 1;
-    dev->chmconf[channel].conf1.apb_mem_rst_m = 0;
+    dev->chmconf[channel].conf1.mem_wr_rst_chm = 1;
+    dev->chmconf[channel].conf1.mem_wr_rst_chm = 0;
+    dev->chmconf[channel].conf1.apb_mem_rst_chm = 1;
+    dev->chmconf[channel].conf1.apb_mem_rst_chm = 0;
 }
 
 /**
@@ -461,7 +461,7 @@ static inline void rmt_ll_rx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 static inline void rmt_ll_rx_enable_dma(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     HAL_ASSERT(channel == 3 && "only RX channel 3 has DMA ability");
-    dev->chmconf[channel].conf0.dma_access_en_m = enable;
+    dev->chmconf[channel].conf0.dma_access_en_chm = enable;
 }
 
 /**
@@ -473,9 +473,9 @@ static inline void rmt_ll_rx_enable_dma(rmt_dev_t *dev, uint32_t channel, bool e
  */
 static inline void rmt_ll_rx_enable(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chmconf[channel].conf1.rx_en_m = enable;
+    dev->chmconf[channel].conf1.rx_en_chm = enable;
     // rx won't be enabled until configurations updated
-    dev->chmconf[channel].conf1.conf_update_m = 1;
+    dev->chmconf[channel].conf1.conf_update_chm = 1;
 }
 
 /**
@@ -487,7 +487,7 @@ static inline void rmt_ll_rx_enable(rmt_dev_t *dev, uint32_t channel, bool enabl
  */
 static inline void rmt_ll_rx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, uint8_t block_num)
 {
-    dev->chmconf[channel].conf0.mem_size_m = block_num;
+    dev->chmconf[channel].conf0.mem_size_chm = block_num;
 }
 
 /**
@@ -499,7 +499,7 @@ static inline void rmt_ll_rx_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    dev->chmconf[channel].conf0.idle_thres_m = thres;
+    dev->chmconf[channel].conf0.idle_thres_chm = thres;
 }
 
 /**
@@ -511,7 +511,7 @@ static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, ui
  */
 static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt_ll_mem_owner_t owner)
 {
-    dev->chmconf[channel].conf1.mem_owner_m = owner;
+    dev->chmconf[channel].conf1.mem_owner_chm = owner;
 }
 
 /**
@@ -523,7 +523,7 @@ static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt
  */
 static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chmconf[channel].conf1.rx_filter_en_m = enable;
+    dev->chmconf[channel].conf1.rx_filter_en_chm = enable;
 }
 
 /**
@@ -535,7 +535,7 @@ static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, boo
  */
 static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf1, rx_filter_thres_m, thres);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->chmconf[channel].conf1, rx_filter_thres_chm, thres);
 }
 
 /**
@@ -547,7 +547,7 @@ static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, 
  */
 static inline uint32_t rmt_ll_rx_get_memory_writer_offset(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chmstatus[channel].mem_waddr_ex_m - (channel + 4) * 48;
+    return dev->chmstatus[channel].mem_waddr_ex_chm - (channel + 4) * 48;
 }
 
 /**
@@ -559,7 +559,7 @@ static inline uint32_t rmt_ll_rx_get_memory_writer_offset(rmt_dev_t *dev, uint32
  */
 static inline void rmt_ll_rx_set_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
 {
-    dev->chm_rx_lim[channel].chm_rx_lim_reg = limit;
+    dev->chm_rx_lim[channel].rx_lim_chm = limit;
 }
 
 /**
@@ -586,7 +586,7 @@ static inline void rmt_ll_rx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t
  */
 static inline void rmt_ll_rx_enable_carrier_demodulation(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chmconf[channel].conf0.carrier_en_m = enable;
+    dev->chmconf[channel].conf0.carrier_en_chm = enable;
 }
 
 /**
@@ -598,7 +598,7 @@ static inline void rmt_ll_rx_enable_carrier_demodulation(rmt_dev_t *dev, uint32_
  */
 static inline void rmt_ll_rx_set_carrier_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
-    dev->chmconf[channel].conf0.carrier_out_lv_m = level;
+    dev->chmconf[channel].conf0.carrier_out_lv_chm = level;
 }
 
 /**
@@ -610,7 +610,7 @@ static inline void rmt_ll_rx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
  */
 static inline void rmt_ll_rx_enable_wrap(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->chmconf[channel].conf1.mem_rx_wrap_en_m = enable;
+    dev->chmconf[channel].conf1.mem_rx_wrap_en_chm = enable;
 }
 
 //////////////////////////////////////////Interrupt Specific////////////////////////////////////////////////////////////
@@ -718,34 +718,34 @@ static inline uint32_t rmt_ll_rx_get_status_word(rmt_dev_t *dev, uint32_t channe
 
 static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_n);
+    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_chn);
     return div == 0 ? 256 : div;
 }
 
 static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_m);
+    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_chm);
     return div == 0 ? 256 : div;
 }
 
 static inline uint32_t rmt_ll_rx_get_idle_thres(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chmconf[channel].conf0.idle_thres_m;
+    return dev->chmconf[channel].conf0.idle_thres_chm;
 }
 
 static inline uint32_t rmt_ll_tx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chnconf0[channel].mem_size_n;
+    return dev->chnconf0[channel].mem_size_chn;
 }
 
 static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chmconf[channel].conf0.mem_size_m;
+    return dev->chmconf[channel].conf0.mem_size_chm;
 }
 
 static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chnconf0[channel].tx_conti_mode_n;
+    return dev->chnconf0[channel].tx_conti_mode_chn;
 }
 
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
@@ -767,12 +767,12 @@ static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint
 
 static inline bool rmt_ll_tx_is_idle_enabled(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chnconf0[channel].idle_out_en_n;
+    return dev->chnconf0[channel].idle_out_en_chn;
 }
 
 static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chnconf0[channel].idle_out_lv_n;
+    return dev->chnconf0[channel].idle_out_lv_chn;
 }
 
 static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
@@ -785,12 +785,12 @@ static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
 
 static inline uint32_t rmt_ll_rx_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chmconf[channel].conf1.mem_owner_m;
+    return dev->chmconf[channel].conf1.mem_owner_chm;
 }
 
 static inline uint32_t rmt_ll_rx_get_limit(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->chm_rx_lim[channel].chm_rx_lim_reg;
+    return dev->chm_rx_lim[channel].rx_lim_chm;
 }
 
 static inline uint32_t rmt_ll_get_tx_end_interrupt_status(rmt_dev_t *dev)
