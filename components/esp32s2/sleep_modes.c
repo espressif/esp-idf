@@ -198,7 +198,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
-        // no-op for esp32s2
+        REG_SET_BIT(RTC_CNTL_INT_CLR_REG, RTC_CNTL_ULP_CP_INT_CLR);
+        REG_SET_BIT(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_INT_CLR);
+        REG_SET_BIT(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_TRAP_INT_CLR);
     }
 
     extern void regi2c_analog_cali_reg_read(void);
