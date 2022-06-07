@@ -3,7 +3,7 @@ menu "Example Configuration"
     config EXAMPLE_TOUCH_WAKEUP
         bool "Enable touch wake up"
         default y
-        depends on !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S3
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         help
             This option enables wake up from deep sleep using touch pads
             TOUCH8 and TOUCH9, which correspond to GPIO33 and GPIO32.
