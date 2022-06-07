@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_BT_H__
 #define __ESP_BT_H__
@@ -164,7 +156,9 @@ enum {
     .ble_st_acl_tx_buf_nb = CONFIG_BT_CTRL_BLE_STATIC_ACL_TX_BUF_NB,       \
     .ble_hw_cca_check = CONFIG_BT_CTRL_HW_CCA_EFF,                         \
     .ble_adv_dup_filt_max = CONFIG_BT_CTRL_ADV_DUP_FILT_MAX,               \
+    .coex_param_en = false,                                                \
     .ce_len_type = CONFIG_BT_CTRL_CE_LENGTH_TYPE_EFF,                      \
+    .coex_use_hooks = false,                                               \
     .hci_tl_type = CONFIG_BT_CTRL_HCI_TL_EFF,                              \
     .hci_tl_funcs = NULL,                                                  \
     .txant_dft = CONFIG_BT_CTRL_TX_ANTENNA_INDEX_EFF,                      \
