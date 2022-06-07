@@ -86,15 +86,12 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 
 # AVAILABILITY
 
-`esp_prov` is intended as a cross-platform tool, but currently BLE communication functionality is only available on Linux (via BlueZ and DBus)
-
 For Android, a provisioning tool along with source code is available [here](https://github.com/espressif/esp-idf-provisioning-android)
-
-On macOS and Windows, running with `--transport ble` option falls back to console mode, ie. write data and target UUID are printed to STDOUT and read data is input through STDIN. Users are free to use their app of choice to connect to the BLE device, send the write data to the target characteristic and read from it.
 
 ## Dependencies
 
 This requires the following python libraries to run (included in requirements.txt):
+* `bleak`
 * `future`
 * `protobuf`
 * `cryptography`
@@ -103,14 +100,6 @@ Run `pip install -r $IDF_PATH/tools/esp_prov/requirements.txt`
 
 Note :
 * The packages listed in requirements.txt are limited only to the ones needed AFTER fully satisfying the requirements of ESP-IDF
-* BLE communication is only supported on Linux (via Bluez and DBus), therefore, the dependencies for this have been made optional
-
-## Optional Dependencies (Linux Only)
-
-These dependencies are for enabling communication with BLE devices using Bluez and DBus on Linux:
-* `dbus-python`
-
-Run `pip install -r $IDF_PATH/tools/esp_prov/requirements_linux_extra.txt`
 
 # EXAMPLE USAGE
 
