@@ -554,7 +554,7 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         }
     }
 
-    sprintf(command, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
+    os_snprintf(command, 1200, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
             MAC2STR(params->mac), uri_chan_list,
             key ? "key=" : "", key ? key : "",
             params->info_len ? " info=" : "",

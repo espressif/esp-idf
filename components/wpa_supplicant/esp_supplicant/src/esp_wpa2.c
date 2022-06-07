@@ -1153,12 +1153,14 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_fast_phase1_params(esp_eap_fast_config confi
 {
     char config_for_supplicant[PHASE1_PARAM_STRING_LEN] = "";
     if ((config.fast_provisioning > -1) && (config.fast_provisioning <= 2)) {
-        os_sprintf((char *) &config_for_supplicant, "fast_provisioning=%d ", config.fast_provisioning);
+        os_snprintf((char *) &config_for_supplicant, PHASE1_PARAM_STRING_LEN, "fast_provisioning=%d ", config.fast_provisioning);
     } else {
         return ESP_ERR_INVALID_ARG;
     }
     if (config.fast_max_pac_list_len && config.fast_max_pac_list_len < 100) {
-        os_sprintf((char *) &config_for_supplicant + strlen(config_for_supplicant), "fast_max_pac_list_len=%d ", config.fast_max_pac_list_len);
+        os_snprintf((char *) &config_for_supplicant + strlen(config_for_supplicant),
+                   PHASE1_PARAM_STRING_LEN - strlen(config_for_supplicant),
+                   "fast_max_pac_list_len=%d ", config.fast_max_pac_list_len);
     } else if (config.fast_max_pac_list_len >= 100) {
         return ESP_ERR_INVALID_ARG;
     }

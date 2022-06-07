@@ -815,8 +815,10 @@ static int sae_derive_keys(struct sae_data *sae, const u8 *k)
 	 */
 
 	os_memset(null_key, 0, sizeof(null_key));
-	hmac_sha256(null_key, sizeof(null_key), k, sae->tmp->prime_len,
-		    keyseed);
+	if (hmac_sha256(null_key, sizeof(null_key), k, sae->tmp->prime_len,
+			keyseed) < 0)
+		goto fail;
+
 	wpa_hexdump_key(MSG_DEBUG, "SAE: keyseed", keyseed, sizeof(keyseed));
 
 	crypto_bignum_add(sae->tmp->own_commit_scalar, sae->peer_commit_scalar,

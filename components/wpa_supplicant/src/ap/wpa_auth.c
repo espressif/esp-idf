@@ -37,7 +37,6 @@
 #define STATE_MACHINE_ADDR sm->addr
 
 
-static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx);
 static int wpa_sm_step(struct wpa_state_machine *sm);
 static int wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,
 			      size_t data_len);
@@ -805,7 +804,7 @@ continue_processing:
             return;
         }
         sm->MICVerified = TRUE;
-        eloop_cancel_timeout(wpa_send_eapol_timeout, wpa_auth, sm);
+        eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
         sm->pending_1_of_4_timeout = 0;
     }
 
@@ -913,16 +912,6 @@ static int wpa_gmk_to_gtk(const u8 *gmk, const char *label, const u8 *addr,
 #endif /* CONFIG_IEEE80211W */
 
     return ret;
-}
-
-
-static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx)
-{
-    struct wpa_state_machine *sm = timeout_ctx;
-
-    sm->pending_1_of_4_timeout = 0;
-    sm->TimeoutEvt = TRUE;
-    wpa_sm_step(sm);
 }
 
 
@@ -1060,6 +1049,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
             os_free(hdr);
             return;
         }
+        os_free(buf);
     }
 
     if (key_info & WPA_KEY_INFO_MIC) {
@@ -1548,7 +1538,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 #endif /* CONFIG_IEEE80211R_AP */
 
     sm->pending_1_of_4_timeout = 0;
-    eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
+    eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
 
     if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) && sm->PMK != pmk) {
         /* PSK may have changed from the previous choice, so update

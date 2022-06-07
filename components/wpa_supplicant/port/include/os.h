@@ -281,9 +281,6 @@ char * ets_strdup(const char *s);
 #ifndef os_strncmp
 #define os_strncmp(s1, s2, n) strncmp((s1), (s2), (n))
 #endif
-#ifndef os_strncpy
-#define os_strncpy(d, s, n) strncpy((d), (s), (n))
-#endif
 #ifndef os_strrchr
 #define os_strrchr(s, c)  strrchr((s), (c))
 #endif
