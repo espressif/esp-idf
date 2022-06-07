@@ -269,13 +269,17 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
 {
     struct sta_info *sta_info;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
 
     if (!hapd) {
         return 0;
+    }
+
+    if (*sta) {
+       ap_free_sta(hapd, *sta);
     }
     sta_info = ap_sta_add(hapd, bssid);
     if (!sta_info) {
@@ -284,13 +288,12 @@ static bool hostap_sta_join(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, boo
     }
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable)) {
-        *sm = sta_info;
+        *sta = sta_info;
         return true;
     }
 #endif
-    if (wpa_ap_join(sm, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
-        sta_info->wpa_sm = *sm;
-        *sm = sta_info;
+    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
+        *sta = sta_info;
         return true;
     }
 
