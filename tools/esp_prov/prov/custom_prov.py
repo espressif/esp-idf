@@ -19,7 +19,7 @@ def custom_data_request(security_ctx, data):
     # Encrypt the custom data
     enc_cmd = security_ctx.encrypt_data(tobytes(data))
     print_verbose(security_ctx, 'Client -> Device (CustomData cmd) ' + utils.str_to_hexstr(enc_cmd))
-    return enc_cmd
+    return enc_cmd.decode('latin-1')
 
 
 def custom_data_response(security_ctx, response_data):
