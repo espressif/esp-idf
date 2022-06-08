@@ -31,7 +31,7 @@
 
 // throughput performance by iperf
 #ifndef IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT
-#define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   45
+#define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   40      // TODO: IDF-5221
 #endif
 #ifndef IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT
 #define IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT                                   40
