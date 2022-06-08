@@ -119,7 +119,7 @@ esp_err_t esp_wifi_wps_start(int timeout_ms);
   *
   * @attention WPS can only be used when softAP is enabled.
   *
-  * @param     wps_type_t wps_type : WPS type, so far only WPS_TYPE_PBC and WPS_TYPE_PIN is supported
+  * @param     esp_wps_config_t config: wps configuration to be used.
   *
   * @return
   *          - ESP_OK : succeed
@@ -144,6 +144,10 @@ esp_err_t esp_wifi_ap_wps_disable(void);
   * @brief     WPS starts to work.
   *
   * @attention WPS can only be used when softAP is enabled.
+  *
+  * @param  pin : Pin to be used in case of WPS mode is pin.
+  *               If Pin is not provided, device will use the pin generated/provided
+  *               during esp_wifi_ap_wps_enable() and reported in WIFI_EVENT_AP_WPS_RG_PIN
   *
   * @return
   *          - ESP_OK : succeed

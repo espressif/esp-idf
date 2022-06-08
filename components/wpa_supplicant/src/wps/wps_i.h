@@ -145,6 +145,7 @@ void wps_success_event(struct wps_context *wps, const u8 *mac_addr);
 void wps_pwd_auth_fail_event(struct wps_context *wps, int enrollee, int part,
 			     const u8 *mac_addr);
 void wps_pbc_overlap_event(struct wps_context *wps);
+void wps_selected_registrar_timeout_event(struct wps_context *wps);
 void wps_pbc_timeout_event(struct wps_context *wps);
 void wps_pbc_active_event(struct wps_context *wps);
 void wps_pbc_disable_event(struct wps_context *wps);
