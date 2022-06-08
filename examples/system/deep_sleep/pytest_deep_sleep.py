@@ -72,7 +72,7 @@ def test_deep_sleep(dut: Dut) -> None:
 
 
 CONFIGS_S2_S3 = [
-    pytest.param('basic', marks=[pytest.mark.esp32s2, pytest.mark.esp32s3]),  # S2/S3 runner on isolated runners for now, IDF-XX
+    pytest.param('basic', marks=[pytest.mark.esp32s2, pytest.mark.esp32s3]),  # S2/S3 runner on isolated runners for now, IDF-5213
 ]
 
 
