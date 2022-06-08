@@ -132,6 +132,57 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
 
     ssl_context.load_cert_chain(certfile=CLIENT_CERT_FILE, keyfile=CLIENT_KEY_FILE)
 
+    conn = http.client.HTTPSConnection(got_ip, got_port, context=ssl_context)
+    Utility.console_log('Performing SSL handshake with the server')
+    conn.request('GET','/')
+    resp = conn.getresponse()
+    dut1.expect('performing session handshake')
+    got_resp = resp.read().decode('utf-8')
+    if got_resp != success_response:
+        Utility.console_log('Response obtained does not match with correct response')
+        raise RuntimeError('Failed to test SSL connection')
+
+    # Close the connection
+    conn.close()
+
+    Utility.console_log('Checking user callback: Obtaining client certificate...')
+
+    serial_number = dut1.expect(re.compile(r'serial number(.*)'), timeout=5)[0]
+    issuer_name = dut1.expect(re.compile(r'issuer name(.*)'), timeout=5)[0]
+    expiry = dut1.expect(re.compile(r'expires on(.*)'), timeout=5)[0]
+
+    Utility.console_log('Serial No.' + serial_number)
+    Utility.console_log('Issuer Name' + issuer_name)
+    Utility.console_log('Expires on' + expiry)
+
+    Utility.console_log('Correct response obtained')
+    Utility.console_log('SSL connection test successful\nClosing the connection')
+
+    # Test with mbedTLS dynamic buffer feature
+    dut1 = env.get_dut('https_server_simple', 'examples/protocols/https_server/simple', dut_class=ttfw_idf.ESP32DUT, app_config_name='dynamic_buffer')
+
+    # start test
+    dut1.start_app()
+    # Parse IP address and port of the server
+    dut1.expect(re.compile(r'Starting server'))
+    got_port = dut1.expect(re.compile(r'Server listening on port (\d+)'), timeout=30)[0]
+    Utility.console_log('Waiting to connect with AP')
+
+    got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
+    # Expected logs
+
+    Utility.console_log('Got IP   : ' + got_ip)
+    Utility.console_log('Got Port : ' + got_port)
+
+    Utility.console_log('Performing GET request over an SSL connection with the server')
+
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    ssl_context.verify_mode = ssl.CERT_REQUIRED
+    ssl_context.check_hostname = False
+    ssl_context.load_verify_locations(cadata=server_cert_pem)
+
+    ssl_context.load_cert_chain(certfile=CLIENT_CERT_FILE, keyfile=CLIENT_KEY_FILE)
+
     os.remove(CLIENT_CERT_FILE)
     os.remove(CLIENT_KEY_FILE)
 
@@ -146,6 +197,9 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
         Utility.console_log('Response obtained does not match with correct response')
         raise RuntimeError('Failed to test SSL connection')
 
+    # Close the connection
+    conn.close()
+
     Utility.console_log('Checking user callback: Obtaining client certificate...')
 
     serial_number = dut1.expect(re.compile(r'serial number(.*)'), timeout=5)[0]
@@ -158,7 +212,6 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
 
     Utility.console_log('Correct response obtained')
     Utility.console_log('SSL connection test successful\nClosing the connection')
-    conn.close()
 
 
 if __name__ == '__main__':
