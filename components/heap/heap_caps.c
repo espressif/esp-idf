@@ -16,8 +16,11 @@
 #include "esp_system.h"
 
 
-// forward declaration
-static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps);
+/* Forward declaration for base function, put in IRAM.
+ * These functions don't check for errors after trying to allocate memory. */
+static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps );
+static void *heap_caps_calloc_base( size_t n, size_t size, uint32_t caps );
+static void *heap_caps_malloc_base( size_t size, uint32_t caps );
 
 /*
 This file, combined with a region allocator that supports multiple heaps, solves the problem that the ESP32 has RAM
@@ -248,12 +251,16 @@ IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
     va_list argp;
     va_start( argp, num );
     void *r = NULL;
+    uint32_t caps = MALLOC_CAP_DEFAULT;
     while (num--) {
-        uint32_t caps = va_arg( argp, uint32_t );
-        r = heap_caps_malloc( size, caps );
+        caps = va_arg( argp, uint32_t );
+        r = heap_caps_malloc_base( size, caps );
         if (r != NULL) {
             break;
         }
+    }
+    if (r == NULL){
+        heap_caps_alloc_failed(size, caps, __func__);
     }
     va_end( argp );
     return r;
@@ -267,12 +274,16 @@ IRAM_ATTR void *heap_caps_realloc_prefer( void *ptr, size_t size, size_t num, ..
     va_list argp;
     va_start( argp, num );
     void *r = NULL;
+    uint32_t caps = MALLOC_CAP_DEFAULT;
     while (num--) {
-        uint32_t caps = va_arg( argp, uint32_t );
-        r = heap_caps_realloc( ptr, size, caps );
+        caps = va_arg( argp, uint32_t );
+        r = heap_caps_realloc_base( ptr, size, caps );
         if (r != NULL || size == 0) {
             break;
         }
+    }
+    if (r == NULL){
+        heap_caps_alloc_failed(size, caps, __func__);
     }
     va_end( argp );
     return r;
@@ -286,10 +297,16 @@ IRAM_ATTR void *heap_caps_calloc_prefer( size_t n, size_t size, size_t num, ... 
     va_list argp;
     va_start( argp, num );
     void *r = NULL;
+    uint32_t caps = MALLOC_CAP_DEFAULT;
     while (num--) {
-        uint32_t caps = va_arg( argp, uint32_t );
-        r = heap_caps_calloc( n, size, caps );
-        if (r != NULL) break;
+        caps = va_arg( argp, uint32_t );
+        r = heap_caps_calloc_base( n, size, caps );
+        if (r != NULL){
+            break;
+        }
+    }
+    if (r == NULL){
+        heap_caps_alloc_failed(size, caps, __func__);
     }
     va_end( argp );
     return r;
@@ -421,7 +438,11 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, uint32_t caps)
     return ptr;
 }
 
-IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
+/*
+This function should not be called directly as it does not
+check for failure / call heap_caps_alloc_failed()
+*/
+IRAM_ATTR static void *heap_caps_calloc_base( size_t n, size_t size, uint32_t caps)
 {
     void *result;
     size_t size_bytes;
@@ -430,11 +451,22 @@ IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
         return NULL;
     }
 
-    result = heap_caps_malloc(size_bytes, caps);
+    result = heap_caps_malloc_base(size_bytes, caps);
     if (result != NULL) {
         bzero(result, size_bytes);
     }
     return result;
+}
+
+IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
+{
+    void* ptr = heap_caps_calloc_base(n, size, caps);
+
+    if (!ptr){
+        heap_caps_alloc_failed(size, caps, __func__);
+    }
+
+    return ptr;
 }
 
 size_t heap_caps_get_total_size(uint32_t caps)
