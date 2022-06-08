@@ -32,7 +32,7 @@ extern void *s_wps_api_lock;
 extern void *s_wps_api_sem;
 extern bool s_wps_enabled;
 
-static int wifi_ap_wps_init(void)
+static int wifi_ap_wps_init(const esp_wps_config_t *config)
 {
     struct wps_sm *sm = NULL;
     uint8_t mac[ETH_ALEN];
@@ -69,6 +69,7 @@ static int wifi_ap_wps_init(void)
     cfg.registrar = 1;
     cfg.wps = sm->wps_ctx;
 
+    os_memcpy((void *)cfg.pin, config->pin, 8);
     wps_init_cfg_pin(&cfg);
     os_memcpy(cfg.wps->uuid, sm->uuid, WPS_UUID_LEN);
     if ((sm->wps = wps_init(&cfg)) == NULL) {         /* alloc wps_data */
@@ -76,6 +77,14 @@ static int wifi_ap_wps_init(void)
     }
 
     hostapd_init_wps(hostapd_get_hapd_data(), sm->wps, sm->wps_ctx);
+
+    /* Report PIN */
+    if (wps_get_type() == WPS_TYPE_PIN) {
+        wifi_event_sta_wps_er_pin_t evt;
+        os_memcpy(evt.pin_code, sm->wps->dev_password, 8);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WPS_RG_PIN, &evt, sizeof(evt), OS_BLOCK);
+    }
+
     return ESP_OK;
 
 _err:
@@ -102,23 +111,26 @@ int wifi_ap_wps_deinit(void)
 {
     struct wps_sm *sm = gWpsSm;
 
-    hostapd_deinit_wps(hostapd_get_hapd_data());
     if (gWpsSm == NULL) {
         return ESP_FAIL;
     }
 
+    hostapd_deinit_wps(hostapd_get_hapd_data());
+    if (sm->wps) {
+        sm->wps->registrar = 0;
+        wps_deinit(sm->wps);
+        sm->wps = NULL;
+    }
     if (sm->dev) {
         wps_dev_deinit(sm->dev);
         sm->dev = NULL;
     }
+
     if (sm->wps_ctx) {
         os_free(sm->wps_ctx);
         sm->wps_ctx = NULL;
     }
-    if (sm->wps) {
-        wps_deinit(sm->wps);
-        sm->wps = NULL;
-    }
+
     os_free(gWpsSm);
     gWpsSm = NULL;
 
@@ -146,7 +158,7 @@ int wifi_ap_wps_enable_internal(const esp_wps_config_t *config)
     wps_set_type(config->wps_type);
     wps_set_status(WPS_STATUS_DISABLE);
 
-    ret = wifi_ap_wps_init();
+    ret = wifi_ap_wps_init(config);
 
     if (ret != 0) {
         wps_set_type(WPS_STATUS_DISABLE);
@@ -199,8 +211,8 @@ int esp_wifi_ap_wps_disable(void)
     }
 
     wpa_printf(MSG_INFO, "wifi_wps_disable");
-    wps_set_status(WPS_STATUS_DISABLE);
     wps_set_type(WPS_TYPE_DISABLE);
+    wps_set_status(WPS_STATUS_DISABLE);
 
     wifi_ap_wps_deinit();
 
@@ -232,15 +244,20 @@ int esp_wifi_ap_wps_start(const unsigned char *pin)
     }
 
     if (wps_get_type() == WPS_TYPE_DISABLE || (wps_get_status() != WPS_STATUS_DISABLE && wps_get_status() != WPS_STATUS_SCANNING)) {
+        wpa_printf(MSG_ERROR, "wps start: wps_get_type=%d wps_get_status=%d", wps_get_type(), wps_get_status());
         API_MUTEX_GIVE();
         return ESP_ERR_WIFI_WPS_TYPE;
     }
 
     if (esp_wifi_get_user_init_flag_internal() == 0) {
+        wpa_printf(MSG_ERROR, "wps start: esp_wifi_get_user_init_flag_internal=%d", esp_wifi_get_user_init_flag_internal());
         API_MUTEX_GIVE();
         return ESP_ERR_WIFI_STATE;
     }
 
+    if (!pin) {
+        pin = gWpsSm->wps->dev_password;
+    }
     /* TODO ideally SoftAP mode should also do a single scan in PBC mode
      * however softAP scanning is not available at the moment */
     wps_set_status(WPS_STATUS_PENDING);

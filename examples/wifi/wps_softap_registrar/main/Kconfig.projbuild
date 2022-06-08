@@ -1,0 +1,50 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_WIFI_CHANNEL
+        int "WiFi Channel"
+        range 1 13
+        default 1
+        help
+            WiFi channel (network channel) for the example to use.
+
+    config EXAMPLE_MAX_STA_CONN
+        int "Maximal STA connections"
+        default 4
+        help
+            Max number of the STA connects to AP.
+
+    choice EXAMPLE_WPS_TYPE
+        prompt "WPS mode"
+        default EXAMPLE_WPS_TYPE_PBC
+        help
+            WPS type for the esp32 to use.
+
+        config EXAMPLE_WPS_TYPE_PBC
+            bool "PBC"
+        config EXAMPLE_WPS_TYPE_PIN
+            bool "PIN"
+        config EXAMPLE_WPS_TYPE_DISABLE
+            bool "disable"
+    endchoice
+
+    if EXAMPLE_WPS_TYPE_PIN
+        config EXAMPLE_WPS_PIN_VALUE
+            int "WPS PIN"
+            default 0
+            help
+                WPS PIN to be used for the connection, incase its not give, AP will derive a new one.
+    endif
+
+endmenu
