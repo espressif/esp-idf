@@ -195,8 +195,8 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
 #define BLE_LL_SCAN_PHY_NUMBER_N (1)
 #endif
 
-#ifdef CONFIG_BT_NIMBLE_SLEEP_ENABLE
-#define NIMBLE_SLEEP_ENABLE CONFIG_BT_NIMBLE_SLEEP_ENABLE
+#ifdef CONFIG_BT_LE_SLEEP_ENABLE
+#define NIMBLE_SLEEP_ENABLE CONFIG_BT_LE_SLEEP_ENABLE
 #else
 #define NIMBLE_SLEEP_ENABLE  0
 #endif

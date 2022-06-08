@@ -618,28 +618,6 @@ config BT_NIMBLE_TEST_THROUGHPUT_TEST
     help
             Enable the throughput test mode
 
-config BT_NIMBLE_SLEEP_ENABLE
-    bool "Enable BLE sleep"
-    depends on BT_NIMBLE_ENABLED
-    default n
-    help
-            Enable BLE sleep
-
-choice BT_NIMBLE_WAKEUP_SOURCE
-    prompt "BLE light sleep wakeup source"
-    depends on BT_NIMBLE_SLEEP_ENABLE
-    default BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-    config BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-        bool "Use CPU rtc timer to wakeup CPU"
-        help
-                Use CPU rtc timer to wakeup CPU
-
-    config BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
-        bool "Use BLE rtc timer to wakeup CPU"
-        help
-                Use BLE rtc timer to wakeup CPU
-endchoice
-
 config BT_NIMBLE_BLUFI_ENABLE
     bool "Enable blufi functionality"
     depends on BT_NIMBLE_ENABLED
