@@ -22,7 +22,7 @@ All the introduced concepts and usages are based on the default behavior in ESP-
 Installation
 ------------
 
-``$ pip install -U pytest-embedded-serial-esp~=0.7.0 pytest-embedded-idf~=0.7.0``
+All dependencies could be installed by running the install script with the ``--enable-pytest`` argument, e.g. ``$ install.sh --enable-pytest``.
 
 Basic Concepts
 --------------
