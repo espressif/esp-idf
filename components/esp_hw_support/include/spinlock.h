@@ -37,7 +37,7 @@ typedef struct {
     NEED_VOLATILE_MUX uint32_t count;
 }spinlock_t;
 
-#if (CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
+#if (CONFIG_SPIRAM)
 /**
  * @brief Check if the pointer is on external ram
  * @param p pointer
@@ -108,13 +108,13 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
          */
         result = core_id;
 
-#if (CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
+#if (CONFIG_SPIRAM)
         if (spinlock_ptr_external_ram(lock)) {
             compare_and_set_extram(&lock->owner, SPINLOCK_FREE, &result);
         } else {
 #endif
         compare_and_set_native(&lock->owner, SPINLOCK_FREE, &result);
-#if (CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
+#if (CONFIG_SPIRAM)
         }
 #endif
         if(result != other_core_id) {
