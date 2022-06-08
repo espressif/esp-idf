@@ -73,15 +73,15 @@ TEST_CASE("portMUX recursive locks (no contention)", "[freertos]")
 #if portNUM_PROCESSORS == 2
 
 static volatile int shared_value;
-static portMUX_TYPE shared_mux;
+static portMUX_TYPE *shared_mux;
 static xSemaphoreHandle done_sem;
 
 static void task_shared_value_increment(void *ignore)
 {
     for (int i = 0; i < REPEAT_OPS; i++) {
-        portENTER_CRITICAL(&shared_mux);
+        portENTER_CRITICAL(shared_mux);
         shared_value++;
-        portEXIT_CRITICAL(&shared_mux);
+        portEXIT_CRITICAL(shared_mux);
     }
     xSemaphoreGive(done_sem);
     vTaskDelete(NULL);
@@ -89,8 +89,9 @@ static void task_shared_value_increment(void *ignore)
 
 TEST_CASE("portMUX cross-core locking", "[freertos]")
 {
+    shared_mux = heap_caps_malloc(sizeof(portMUX_TYPE), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     done_sem = xSemaphoreCreateCounting(2, 0);
-    portMUX_INITIALIZE(&shared_mux);
+    portMUX_INITIALIZE(shared_mux);
     shared_value = 0;
 
     BENCHMARK_START();
@@ -106,15 +107,17 @@ TEST_CASE("portMUX cross-core locking", "[freertos]")
 
     BENCHMARK_END("cross-core incrementing");
     vSemaphoreDelete(done_sem);
+    free(shared_mux);
 
     TEST_ASSERT_EQUAL_INT(REPEAT_OPS * 2, shared_value);
 }
 
-TEST_CASE("portMUX high contention", "[freertos]")
+void portmux_high_contention_test(uint32_t lock_malloc_caps)
 {
     const int TOTAL_TASKS = 8; /* half on each core */
+    shared_mux = heap_caps_malloc(sizeof(portMUX_TYPE), lock_malloc_caps);
     done_sem = xSemaphoreCreateCounting(TOTAL_TASKS, 0);
-    portMUX_INITIALIZE(&shared_mux);
+    portMUX_INITIALIZE(shared_mux);
     shared_value = 0;
 
     BENCHMARK_START();
@@ -136,8 +139,21 @@ TEST_CASE("portMUX high contention", "[freertos]")
 
     BENCHMARK_END("cross-core high contention");
     vSemaphoreDelete(done_sem);
+    free(shared_mux);
 
     TEST_ASSERT_EQUAL_INT(REPEAT_OPS * TOTAL_TASKS, shared_value);
 }
+
+TEST_CASE("portMUX high contention", "[freertos]")
+{
+    portmux_high_contention_test(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+}
+
+#if CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC
+TEST_CASE("portMUX high contention, PSRAM", "[freertos]")
+{
+    portmux_high_contention_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+}
+#endif// CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC
 
 #endif // portNUM_PROCESSORS == 2
