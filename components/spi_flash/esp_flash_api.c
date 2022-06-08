@@ -292,21 +292,21 @@ esp_err_t IRAM_ATTR esp_flash_init_main(esp_flash_t *chip)
     uint32_t size;
     err = esp_flash_get_size(chip, &size);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to get chip size");
+        ESP_EARLY_LOGE(TAG, "failed to get chip size");
         return err;
     }
 
     if (chip->chip_drv->get_chip_caps == NULL) {
         // chip caps get failed, pass the flash capability check.
-        ESP_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
+        ESP_EARLY_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
     } else {
         if (((chip->chip_drv->get_chip_caps(chip) & SPI_FLASH_CHIP_CAP_32MB_SUPPORT) == 0) && (size > (16 *1024 * 1024))) {
-            ESP_LOGW(TAG, "Detected flash size > 16 MB, but access beyond 16 MB is not supported for this flash model yet.");
+            ESP_EARLY_LOGW(TAG, "Detected flash size > 16 MB, but access beyond 16 MB is not supported for this flash model yet.");
             size = (16 * 1024 * 1024);
         }
     }
 
-    ESP_LOGI(TAG, "flash io: %s", io_mode_str[chip->read_mode]);
+    ESP_EARLY_LOGI(TAG, "flash io: %s", io_mode_str[chip->read_mode]);
     err = rom_spiflash_api_funcs->start(chip);
     if (err != ESP_OK) {
         return err;
@@ -423,7 +423,7 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
         chip->chip_drv = *drivers;
         // start/end SPI operation each time, for multitasking
         // and also so esp_flash_registered_flash_drivers can live in flash
-        ESP_LOGD(TAG, "trying chip: %s", chip->chip_drv->name);
+        ESP_EARLY_LOGD(TAG, "trying chip: %s", chip->chip_drv->name);
 
         err = rom_spiflash_api_funcs->start(chip);
         if (err != ESP_OK) {
@@ -444,7 +444,7 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
     if (!esp_flash_chip_driver_initialized(chip)) {
         return ESP_ERR_NOT_FOUND;
     }
-    ESP_LOGI(TAG, "detected chip: %s", chip->chip_drv->name);
+    ESP_EARLY_LOGI(TAG, "detected chip: %s", chip->chip_drv->name);
     return ESP_OK;
 }
 
