@@ -377,17 +377,6 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 #define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(1)
 #define portRESTORE_INTERRUPTS(x)                   vPortClearInterruptMask(x)
 
-#define portSET_INTERRUPT_MASK_FROM_ISR() ({ \
-    unsigned int cur_level; \
-    cur_level = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG); \
-    vTaskEnterCritical(); \
-    cur_level; \
-})
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x) ({ \
-    vTaskExitCritical(); \
-    portRESTORE_INTERRUPTS(x); \
-})
-
 // ------------------ Critical Sections --------------------
 
 #define portGET_TASK_LOCK()                         vPortTakeLock(&port_xTaskLock)
@@ -395,8 +384,6 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 #define portGET_ISR_LOCK()                          vPortTakeLock(&port_xISRLock)
 #define portRELEASE_ISR_LOCK()                      vPortReleaseLock(&port_xISRLock)
 
-#define portENTER_CRITICAL_IDF(mux)                 {(void)mux;  vPortEnterCritical();}
-#define portEXIT_CRITICAL_IDF(mux)                  {(void)mux;  vPortExitCritical();}
 
 //Critical sections used by FreeRTOS SMP
 extern void vTaskEnterCritical( void );
@@ -412,33 +399,16 @@ extern void vTaskExitCritical( void );
 #define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
-#define portTRY_ENTER_CRITICAL(mux, timeout)    ({  \
-    (void)mux; (void)timeout;                       \
-    vPortEnterCritical();                           \
-    BaseType_t ret = pdPASS;                        \
-    ret;                                            \
+#define portSET_INTERRUPT_MASK_FROM_ISR() ({ \
+    unsigned int cur_level; \
+    cur_level = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG); \
+    vTaskEnterCritical(); \
+    cur_level; \
 })
-//In single-core RISC-V, we can use the same critical section API
-#define portENTER_CRITICAL_ISR(mux)                 portENTER_CRITICAL(mux)
-#define portEXIT_CRITICAL_ISR(mux)                  portEXIT_CRITICAL(mux)
-#define portTRY_ENTER_CRITICAL_ISR(mux, timeout)    portTRY_ENTER_CRITICAL(mux, timeout)
-
-/* [refactor-todo] on RISC-V, both ISR and non-ISR cases result in the same call. We can redefine this macro */
-#define portENTER_CRITICAL_SAFE(mux)    ({  \
-    if (xPortInIsrContext()) {              \
-        portENTER_CRITICAL_ISR(mux);        \
-    } else {                                \
-        portENTER_CRITICAL(mux);            \
-    }                                       \
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(x) ({ \
+    vTaskExitCritical(); \
+    portRESTORE_INTERRUPTS(x); \
 })
-#define portEXIT_CRITICAL_SAFE(mux)     ({  \
-    if (xPortInIsrContext()) {              \
-        portEXIT_CRITICAL_ISR(mux);         \
-    } else {                                \
-        portEXIT_CRITICAL(mux);             \
-    }                                       \
-})
-#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   portENTER_CRITICAL_SAFE(mux, timeout)
 
 // ---------------------- Yielding -------------------------
 
@@ -573,6 +543,25 @@ static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t comp
 }
 
 // ------------------ Critical Sections --------------------
+
+/*
+IDF style critical sections which are orthogonal to FreeRTOS critical sections. However, on single core, the IDF style
+critical sections simply disable interrupts, thus we discard the lock and timeout arguments.
+*/
+void vPortEnterCriticalIDF(void);
+void vPortExitCriticalIDF(void);
+
+//IDF task critical sections
+#define portTRY_ENTER_CRITICAL(lock, timeout)       {((void) lock; (void) timeout; vPortEnterCriticalIDF(); pdPASS;)}
+#define portENTER_CRITICAL_IDF(lock)                ({(void) lock; vPortEnterCriticalIDF();})
+#define portEXIT_CRITICAL_IDF(lock)                 ({(void) lock; vPortExitCriticalIDF();})
+//IDF ISR critical sections
+#define portTRY_ENTER_CRITICAL_ISR(lock, timeout)   {((void) lock; (void) timeout; vPortEnterCriticalIDF(); pdPASS;)}
+#define portENTER_CRITICAL_ISR(lock)                ({(void) lock; vPortEnterCriticalIDF();})
+#define portEXIT_CRITICAL_ISR(lock)                 ({(void) lock; vPortExitCriticalIDF();})
+//IDF safe critical sections (they're the same)
+#define portENTER_CRITICAL_SAFE(lock)               ({(void) lock; vPortEnterCriticalIDF();})
+#define portEXIT_CRITICAL_SAFE(lock)                ({(void) lock; vPortExitCriticalIDF();})
 
 // ---------------------- Yielding -------------------------
 

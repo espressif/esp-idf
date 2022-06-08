@@ -45,21 +45,17 @@
 
 static const char *TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
 
-/**
- * @brief A variable is used to keep track of the critical section nesting.
- * @note This variable has to be stored as part of the task context and must be initialized to a non zero value
- *       to ensure interrupts don't inadvertently become unmasked before the scheduler starts.
- *       As it is stored as part of the task context it will automatically be set to 0 when the first task is started.
- */
-static UBaseType_t uxCriticalNesting = 0;
-static UBaseType_t uxSavedInterruptState = 0;
 BaseType_t uxSchedulerRunning = 0;
 UBaseType_t uxInterruptNesting = 0;
+portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
+portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 BaseType_t xPortSwitchFlag = 0;
 __attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
 StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
-portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
-portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
+
+// Variables used for IDF style critical sections. These are orthogonal to FreeRTOS critical sections
+static UBaseType_t port_uxCriticalNestingIDF = 0;
+static UBaseType_t port_uxCriticalOldInterruptStateIDF = 0;
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
  * - These need to be defined for IDF to compile
@@ -318,7 +314,7 @@ extern void esprv_intc_int_set_threshold(int); // FIXME, this function is in ROM
 BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
-    uxCriticalNesting = 0;
+    port_uxCriticalNestingIDF = 0;
     uxSchedulerRunning = 0;
 
     /* Setup the hardware to generate the tick. */
@@ -421,7 +417,6 @@ __attribute__((noreturn)) static void _prvTaskExitError(void)
 
     Artificially force an assert() to be triggered if configASSERT() is
     defined, then stop here so application writers can catch the error. */
-    configASSERT(uxCriticalNesting == ~0UL);
     portDISABLE_INTERRUPTS();
     abort();
 }
@@ -629,22 +624,25 @@ void vPortCleanUpTCB ( void *pxTCB )
 
 // ------------------ Critical Sections --------------------
 
-void vPortEnterCritical(void)
+void vPortEnterCriticalIDF(void)
 {
-    BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
-    uxCriticalNesting++;
-
-    if (uxCriticalNesting == 1) {
-        uxSavedInterruptState = state;
+    // Save current interrupt threshold and disable interrupts
+    int old_thresh = vPortSetInterruptMask();
+    // Update the IDF critical nesting count
+    port_uxCriticalNestingIDF++;
+    if (port_uxCriticalNestingIDF == 1) {
+        // Save a copy of the old interrupt threshold
+        port_uxCriticalOldInterruptStateIDF = (UBaseType_t) old_thresh;
     }
 }
 
-void vPortExitCritical(void)
+void vPortExitCriticalIDF(void)
 {
-    if (uxCriticalNesting > 0) {
-        uxCriticalNesting--;
-        if (uxCriticalNesting == 0) {
-            portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptState);
+    if (port_uxCriticalNestingIDF > 0) {
+        port_uxCriticalNestingIDF--;
+        if (port_uxCriticalNestingIDF == 0) {
+            // Restore the saved interrupt threshold
+            vPortClearInterruptMask((int)port_uxCriticalOldInterruptStateIDF);
         }
     }
 }
@@ -712,7 +710,7 @@ void vPortYield(void)
            for an instant yield, and if that happens then the WFI would be
            waiting for the next interrupt to occur...)
         */
-        while (uxSchedulerRunning && uxCriticalNesting == 0 && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
+        while (uxSchedulerRunning && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
     }
 }
 
