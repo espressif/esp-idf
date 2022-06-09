@@ -13,7 +13,24 @@ Performance of this type of "software" bridge is limited by the performance of E
 
 You need one ESP32 with at least two Ethernet ports and two PCs (or other Ethernet capable devices). Connect the network as shown in figure below, configure PC#1 as DHCP server and PC#2 as DHCP client.
 
-![example network](docs/network.png)
+```mermaid
+graph TD;
+   classDef classPing fill:#0000,stroke-width:0px;
+   esp32["ESP32 w/ 2 bridged<br/>Ethernet ports<br/>(DHCP Client)"];
+   pc1["PC#1<br/>(DHCP Server)"];
+   pc2["PC#2<br/>(DHCP Client)"];
+   ping1["ping"]:::classPing
+   ping2["ping"]:::classPing
+   ping3["ping"]:::classPing
+   esp32 -.- ping1;
+   ping1 -.- pc1;
+   esp32 == Eth === pc2;
+   esp32 == Eth === pc1;
+   esp32 -.- ping2;
+   ping2 -.- pc2;
+   pc1 <-.- ping3;
+   pc2 <-.- ping3;
+```
 
 The work flow of the example is then as follows:
 

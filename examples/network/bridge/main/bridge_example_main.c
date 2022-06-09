@@ -301,10 +301,11 @@ void app_main(void)
         .base = &esp_netif_br_config,
         .stack = ESP_NETIF_NETSTACK_DEFAULT_BR,
     };
+    // Bridge configuration
     bridgeif_config_t bridgeif_config = {
-        .max_fdb_dyn_entries = 10,
-        .max_fdb_sta_entries = 2,
-        .max_ports = port_cnt
+        .max_fdb_dyn_entries = 10, // maximum number of address entries in dynamic forwarding database
+        .max_fdb_sta_entries = 2,  // maximum number of address entries in static forwarding database
+        .max_ports = port_cnt      // maximum number of ports the bridge can consist of
     };
     esp_netif_br_config.bridge_info = &bridgeif_config;
     // Set MAC address of bridge interface the same as the Ethernet interface
