@@ -1,6 +1,5 @@
-| Supported Targets | ESP32-S2 |
-| ----------------- | -------- |
-
+| Supported Targets | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 # ULP-RISC-V simple example with GPIO Interrupt:
 
 This example demonstrates how to program the ULP-RISC-V coprocessor to wake up from a RTC IO interrupt, instead of waking periodically from the ULP timer.

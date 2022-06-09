@@ -13,7 +13,7 @@
 void ulp_riscv_rescue_from_monitor(void)
 {
     /* Rescue RISCV from monitor state. */
-    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE | RTC_CNTL_COCPU_SHUT_RESET_EN);
 }
 
 void ulp_riscv_wakeup_main_processor(void)

@@ -1,17 +1,23 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
+import time
+
 import pexpect
 import pytest
 from pytest_embedded import Dut
 
 
 @pytest.mark.esp32s2
-@pytest.mark.generic
+@pytest.mark.esp32s3
+@pytest.mark.deepsleep_temp_tag
 def test_ulp_riscv_gpio(dut: Dut) -> None:
 
     dut.expect_exact('Not a ULP-RISC-V wakeup, initializing it!')
     dut.expect_exact('Entering in deep sleep')
+
+    # Give the chip time to enter deepsleep
+    time.sleep(1)
 
     # Run two times to make sure device sleep
     # and wake up properly
