@@ -1,21 +1,14 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #ifndef _ESP_CRT_BUNDLE_H_
 #define _ESP_CRT_BUNDLE_H_
 
+#include "esp_err.h"
 #include "mbedtls/ssl.h"
 
 #ifdef __cplusplus
@@ -52,13 +45,19 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf);
 /**
  * @brief      Set the default certificate bundle used for verification
  *
- * Overrides the default certificate bundle. In most use cases the bundle should be
+ * Overrides the default certificate bundle only in case of successful initialization. In most use cases the bundle should be
  * set through menuconfig. The bundle needs to be sorted by subject name since binary search is
  * used to find certificates.
  *
  * @param[in]  x509_bundle     A pointer to the certificate bundle.
+ *
+ * @param[in]  bundle_size     Size of the certificate bundle in bytes.
+ *
+ * @return
+ *             - ESP_OK  if adding certificates was successful.
+ *             - Other   if an error occured or an action must be taken by the calling process.
  */
-void esp_crt_bundle_set(const uint8_t *x509_bundle);
+esp_err_t esp_crt_bundle_set(const uint8_t *x509_bundle, size_t bundle_size);
 
 
 #ifdef __cplusplus
