@@ -69,7 +69,11 @@ struct ClientInitializedFixture {
 };
 TEST_CASE_METHOD(ClientInitializedFixture, "Client set uri")
 {
-    struct http_parser_url ret_uri;
+        struct http_parser_url ret_uri = {
+            .field_set = 1,
+            .port = 0,
+            .field_data = { { 0, 1} }
+        };
     SECTION("User set a correct URI") {
         http_parser_parse_url_StopIgnore();
         http_parser_parse_url_ExpectAnyArgsAndReturn(0);
@@ -88,8 +92,20 @@ TEST_CASE_METHOD(ClientInitializedFixture, "Client set uri")
 TEST_CASE_METHOD(ClientInitializedFixture, "Client Start")
 {
     SECTION("Successful start") {
+        esp_mqtt_client_config_t config{};
+        config.uri = "mqtt://1.1.1.1";
+        struct http_parser_url ret_uri = {
+            .field_set = 1 | (1<<1),
+            .port = 0,
+            .field_data = { { 0, 4 } /*mqtt*/, { 7, 1 } } // at least *scheme* and *host*
+        };
+        http_parser_parse_url_StopIgnore();
+        http_parser_parse_url_ExpectAnyArgsAndReturn(0);
+        http_parser_parse_url_ReturnThruPtr_u(&ret_uri);
         xTaskCreatePinnedToCore_ExpectAnyArgsAndReturn(pdTRUE);
-        auto res = esp_mqtt_client_start(client);
+        auto res = esp_mqtt_set_config(client, &config);
+        REQUIRE(res == ESP_OK);
+        res = esp_mqtt_client_start(client);
         REQUIRE(res == ESP_OK);
     }
     SECTION("Failed on initialization") {
