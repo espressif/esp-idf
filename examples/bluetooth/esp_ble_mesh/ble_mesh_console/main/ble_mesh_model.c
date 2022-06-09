@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "ble_mesh_cfg_srv_model.h"
-#include "esp_ble_mesh_generic_model_api.h"
+#include "ble_mesh_model.h"
 uint8_t dev_uuid[16] = {0xdd, 0xdd};
 
 
@@ -36,9 +35,8 @@ esp_ble_mesh_prov_t prov = {
 };
 
 esp_ble_mesh_model_pub_t vendor_model_pub_config;
-ESP_BLE_MESH_MODEL_PUB_DEFINE(model_pub_config, 2 + 1, ROLE_NODE);
 
-// configure server module
+// Configuration server model
 esp_ble_mesh_cfg_srv_t cfg_srv = {
     .relay = ESP_BLE_MESH_RELAY_ENABLED,
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
@@ -59,21 +57,9 @@ esp_ble_mesh_cfg_srv_t cfg_srv = {
     .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
-esp_ble_mesh_model_t config_server_models[] = {
-    ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
-};
+// Configuration Client model
+esp_ble_mesh_client_t cfg_cli;
 
-esp_ble_mesh_elem_t config_server_elements[] = {
-    ESP_BLE_MESH_ELEMENT(0, config_server_models, ESP_BLE_MESH_MODEL_NONE),
-};
-
-esp_ble_mesh_comp_t config_server_comp = {
-    .cid = CID_ESP,
-    .elements = config_server_elements,
-    .element_count = ARRAY_SIZE(config_server_elements),
-};
-
-// config client model
 esp_ble_mesh_model_t config_client_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
     ESP_BLE_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -89,49 +75,15 @@ esp_ble_mesh_comp_t config_client_comp = {
     .element_count = ARRAY_SIZE(config_client_elements),
 };
 
-// configure special model
-ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
-static esp_ble_mesh_gen_onoff_srv_t onoff_server = {
+// Generic OnOff Server model
+esp_ble_mesh_gen_onoff_srv_t onoff_server = {
     .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
     .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
 };
 
-esp_ble_mesh_model_t gen_onoff_srv_models[] = {
-    ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
-    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
-};
-
-esp_ble_mesh_elem_t gen_onoff_srv_elements[] = {
-    ESP_BLE_MESH_ELEMENT(0, gen_onoff_srv_models, ESP_BLE_MESH_MODEL_NONE),
-};
-
-esp_ble_mesh_comp_t gen_onoff_srv_comp = {
-    .cid = CID_ESP,
-    .elements = gen_onoff_srv_elements,
-    .element_count = ARRAY_SIZE(gen_onoff_srv_elements),
-};
-
-// config generic onoff client
+// Generic OnOff Client model
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
-
 esp_ble_mesh_client_t gen_onoff_cli;
-
-esp_ble_mesh_model_t gen_onoff_cli_models[] = {
-    ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
-    ESP_BLE_MESH_MODEL_CFG_CLI(&cfg_cli),
-    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI(&model_pub_config, &gen_onoff_cli),
-    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
-};
-
-esp_ble_mesh_elem_t gen_onoff_cli_elements[] = {
-    ESP_BLE_MESH_ELEMENT(0, gen_onoff_cli_models, ESP_BLE_MESH_MODEL_NONE),
-};
-
-esp_ble_mesh_comp_t gen_onoff_cli_comp = {
-    .cid = CID_ESP,
-    .elements = gen_onoff_cli_elements,
-    .element_count = ARRAY_SIZE(gen_onoff_cli_elements),
-};
 #endif //CONFIG_BLE_MESH_GENERIC_ONOFF_CLI
 
 //CONFIG VENDOR MODEL TEST PERFORMANCE
@@ -169,34 +121,4 @@ esp_ble_mesh_model_op_t test_perf_cli_op[] = {
 esp_ble_mesh_model_t config_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
     ESP_BLE_MESH_MODEL_CFG_CLI(&cfg_cli),
-};
-
-esp_ble_mesh_model_t test_perf_cli_models[] = {
-    ESP_BLE_MESH_VENDOR_MODEL(CID_ESP, ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI,
-    test_perf_cli_op, &vendor_model_pub_config, &test_perf_cli),
-};
-
-esp_ble_mesh_elem_t test_perf_cli_elements[] = {
-    ESP_BLE_MESH_ELEMENT(0, config_models, test_perf_cli_models),
-};
-
-esp_ble_mesh_comp_t test_perf_cli_comp = {
-    .cid = CID_ESP,
-    .elements = test_perf_cli_elements,
-    .element_count = ARRAY_SIZE(test_perf_cli_elements),
-};
-
-esp_ble_mesh_model_t test_perf_srv_models[] = {
-    ESP_BLE_MESH_VENDOR_MODEL(CID_ESP, ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_SRV,
-    test_perf_srv_op, NULL, NULL),
-};
-
-esp_ble_mesh_elem_t test_perf_srv_elements[] = {
-    ESP_BLE_MESH_ELEMENT(0, config_models, test_perf_srv_models),
-};
-
-esp_ble_mesh_comp_t test_perf_srv_comp = {
-    .cid = CID_ESP,
-    .elements = test_perf_srv_elements,
-    .element_count = ARRAY_SIZE(test_perf_srv_elements),
 };
