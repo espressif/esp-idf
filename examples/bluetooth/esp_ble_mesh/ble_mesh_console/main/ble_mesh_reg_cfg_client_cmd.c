@@ -28,8 +28,6 @@ typedef struct {
 ble_mesh_client_get_set_state_t configuration_client_model_operation;
 
 void ble_mesh_register_configuration_client_model_command(void);
-void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
-        esp_ble_mesh_cfg_client_cb_param_t *param);
 
 void ble_mesh_register_configuration_client_model(void)
 {
@@ -208,6 +206,7 @@ void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t e
 int ble_mesh_configuration_client_model_operation(int argc, char **argv)
 {
     int err = ESP_OK;
+    esp_ble_mesh_elem_t *element = NULL;
     const uint8_t *app_key = NULL;
     esp_ble_mesh_cfg_default_ttl_set_t ttl_set;
     esp_ble_mesh_cfg_gatt_proxy_set_t proxy_set;
@@ -239,7 +238,17 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
         .company_id = 0xFFFF,
     };
 
-    client_common.model = ble_mesh_get_model(ESP_BLE_MESH_MODEL_ID_CONFIG_CLI);
+    element = esp_ble_mesh_find_element(esp_ble_mesh_get_primary_element_address());
+    if (!element) {
+        ESP_LOGE(TAG, "Element 0x%04x not exists", esp_ble_mesh_get_primary_element_address());
+        return ESP_FAIL;
+    }
+
+    client_common.model = esp_ble_mesh_find_sig_model(element, ESP_BLE_MESH_MODEL_ID_CONFIG_CLI);
+    if (!client_common.model) {
+        ESP_LOGE(TAG, "CfgClient:LoadModel,Fail");
+        return ESP_FAIL;
+    }
 
     ESP_LOGD(TAG, "enter %s \n", __func__);
 
@@ -357,8 +366,6 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
                     err = esp_ble_mesh_config_client_set_state(&client_common, (esp_ble_mesh_cfg_client_set_state_t *)&heartbeat_pub_set);
                 }
             }
-        } else if (strcmp(configuration_client_model_operation.action_type->sval[0], "reg") == 0) {
-            err = esp_ble_mesh_register_config_client_callback(ble_mesh_configuration_client_model_cb);
         }
     }
 
