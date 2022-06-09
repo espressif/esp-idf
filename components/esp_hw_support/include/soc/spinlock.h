@@ -95,13 +95,13 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
          */
         result = core_id;
 
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if (CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_ESP32S3_SPIRAM_SUPPORT)
         if (esp_ptr_external_ram(lock)) {
             compare_and_set_extram(&lock->owner, SPINLOCK_FREE, &result);
         } else {
 #endif
         compare_and_set_native(&lock->owner, SPINLOCK_FREE, &result);
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if (CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_ESP32S3_SPIRAM_SUPPORT)
         }
 #endif
         if(result != other_core_id) {
