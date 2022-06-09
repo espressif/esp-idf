@@ -126,17 +126,17 @@ static bool fn_in_rom(void *fn)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-#if CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2)
+#if CONFIG_NEWLIB_NANO_FORMAT
     TEST_ASSERT(fn_in_rom(vfprintf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(vfprintf));
-#endif // CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGETx
+#endif // CONFIG_NEWLIB_NANO_FORMAT
 
-#if defined(CONFIG_NEWLIB_NANO_FORMAT)
+#if CONFIG_NEWLIB_NANO_FORMAT && (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2)
     TEST_ASSERT(fn_in_rom(sscanf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(sscanf));
-#endif // CONFIG_NEWLIB_NANO_FORMAT
+#endif // CONFIG_NEWLIB_NANO_FORMAT && CONFIG_IDF_TARGET_x
 
 #if defined(CONFIG_IDF_TARGET_ESP32) && !defined(CONFIG_SPIRAM)
     TEST_ASSERT(fn_in_rom(atoi));

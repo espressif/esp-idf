@@ -450,7 +450,9 @@ static struct timeval get_time(const char *desc, char *buffer)
     gettimeofday(&timestamp, NULL);
     struct tm* tm_info = localtime(&timestamp.tv_sec);
     strftime(buffer, 32, "%c", tm_info);
+#if !CONFIG_NEWLIB_NANO_FORMAT
     ESP_LOGI("TAG", "%s: %016llX (%s)", desc, timestamp.tv_sec, buffer);
+#endif
     return timestamp;
 }
 
@@ -462,7 +464,9 @@ TEST_CASE("test time_t wide 64 bits", "[newlib]")
 
     struct tm tm = {4, 14, 3, 19, 0, 138, 0, 0, 0};
     struct timeval timestamp = { mktime(&tm), 0 };
+#if !CONFIG_NEWLIB_NANO_FORMAT
     ESP_LOGI("TAG", "timestamp: %016llX", timestamp.tv_sec);
+#endif
     settimeofday(&timestamp, NULL);
     get_time("Set time", buffer);
 
@@ -494,7 +498,9 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
         localtime_r(&now, &timeinfo);
 
         time_t t = mktime(&timeinfo);
+#if !CONFIG_NEWLIB_NANO_FORMAT
         ESP_LOGI("TAG", "Test mktime(). Time: %016llX", t);
+#endif
         TEST_ASSERT_EQUAL(timestamp.tv_sec, t);
         // mktime() has error in newlib-3.0.0. It fixed in newlib-3.0.0.20180720
         TEST_ASSERT_EQUAL((timestamp.tv_sec >> 32), (t >> 32));
