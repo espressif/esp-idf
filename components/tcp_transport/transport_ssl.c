@@ -304,6 +304,14 @@ void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
 }
 #endif
 
+void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*crt_bundle_attach)(void *conf)))
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.crt_bundle_attach = crt_bundle_attach;
+    }
+}
+
 static int ssl_get_socket(esp_transport_handle_t t)
 {
     if (t) {
