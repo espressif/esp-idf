@@ -15,60 +15,72 @@
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"
 
-esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id)
-{
-    esp_ble_mesh_model_t *model = NULL;
+ble_mesh_performance_statistics_t test_perf_statistics;
+ble_mesh_node_statistics_t ble_mesh_node_statistics;
 
-    switch (model_id) {
-    case ESP_BLE_MESH_MODEL_ID_CONFIG_SRV:
-        model = &config_server_models[0];
-        break;
-#if (CONFIG_BLE_MESH_CFG_CLI)
-    case ESP_BLE_MESH_MODEL_ID_CONFIG_CLI:
-        model = &gen_onoff_cli_models[1];
-        break;
-#endif
-    case ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV:
-        model = &gen_onoff_srv_models[1];
-        break;
-#if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
-    case ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI:
-        model = &gen_onoff_cli_models[2];
-        break;
-#endif
-    case ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI:
-        model = &test_perf_cli_models[0];
-        break;
-    case ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_SRV:
-        model = &test_perf_srv_models[0];
-        break;
-    }
-    return model;
-}
+ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
+ESP_BLE_MESH_MODEL_PUB_DEFINE(model_pub_config, 2 + 1, ROLE_NODE);
+
+static esp_ble_mesh_model_t srv_models[] = {
+    ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
+};
+
+esp_ble_mesh_model_t vendor_srv_models[] = {
+    ESP_BLE_MESH_VENDOR_MODEL(CID_ESP, ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_SRV,
+    test_perf_srv_op, NULL, NULL),
+};
+
+static esp_ble_mesh_elem_t srv_elements[] = {
+    ESP_BLE_MESH_ELEMENT(0, srv_models, vendor_srv_models),
+};
+
+static esp_ble_mesh_comp_t srv_composition = {
+    .cid = CID_ESP,
+    .elements = srv_elements,
+    .element_count = ARRAY_SIZE(srv_elements),
+};
+
+//client models
+esp_ble_mesh_model_t cli_models[] = {
+    ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
+    ESP_BLE_MESH_MODEL_CFG_CLI(&cfg_cli),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI(&model_pub_config, &gen_onoff_cli),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
+};
+
+esp_ble_mesh_model_t vendor_cli_models[] = {
+    ESP_BLE_MESH_VENDOR_MODEL(CID_ESP, ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI,
+    test_perf_cli_op, &vendor_model_pub_config, &test_perf_cli),
+};
+
+static esp_ble_mesh_elem_t cli_elements[] = {
+    ESP_BLE_MESH_ELEMENT(0, cli_models, vendor_cli_models),
+};
+
+static esp_ble_mesh_comp_t cli_composition = {
+    .cid = CID_ESP,
+    .elements = cli_elements,
+    .element_count = ARRAY_SIZE(cli_elements),
+};
 
 esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id)
 {
     esp_ble_mesh_comp_t *comp = NULL;
     switch (model_id) {
     case ESP_BLE_MESH_MODEL_ID_CONFIG_SRV:
-        comp = &config_server_comp;
+    case ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV:
+    case ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_SRV:
+        comp = &srv_composition;
         break;
     case ESP_BLE_MESH_MODEL_ID_CONFIG_CLI:
-        comp = &config_client_comp;
-        break;
-    case ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV:
-        comp = &gen_onoff_srv_comp;
-        break;
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
     case ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI:
-        comp = &gen_onoff_cli_comp;
-        break;
 #endif
     case ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI:
-        comp = &test_perf_cli_comp;
+        comp = &cli_composition;
         break;
-    case ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_SRV:
-        comp = &test_perf_srv_comp;
+    default:
         break;
     }
     return comp;
