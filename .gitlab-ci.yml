@@ -88,6 +88,7 @@ variables:
 
 before_script:
   - source tools/ci/utils.sh
+  - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
   - source tools/ci/setup_python.sh
   - add_gitlab_ssh_keys
   - source tools/ci/configure_ci_environment.sh
@@ -99,6 +100,7 @@ before_script:
   before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
     - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - source tools/ci/setup_python.sh
     - source tools/ci/configure_ci_environment.sh
 
@@ -106,10 +108,12 @@ before_script:
   before_script:
     - echo "Only load utils.sh"
     - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
 
 .before_script_macos:
   before_script:
     - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     - $IDF_PATH/tools/idf_tools.py install-python-env
     # On macOS, these tools need to be installed
