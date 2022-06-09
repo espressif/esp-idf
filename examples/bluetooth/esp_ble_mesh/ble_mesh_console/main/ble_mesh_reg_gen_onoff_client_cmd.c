@@ -33,8 +33,6 @@ typedef struct {
 static ble_mesh_gen_onoff_state_t gen_onoff_state;
 
 void ble_mesh_register_gen_onoff_client_command(void);
-void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param);
 
 void ble_mesh_register_gen_onoff_client(void)
 {
@@ -108,6 +106,7 @@ void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event
 int ble_mesh_generic_onoff_client_model(int argc, char **argv)
 {
     int err = ESP_OK;
+    esp_ble_mesh_elem_t *element = NULL;
     esp_ble_mesh_generic_client_set_state_t gen_client_set;
     esp_ble_mesh_generic_client_get_state_t gen_client_get;
     esp_ble_mesh_client_common_param_t onoff_common = {
@@ -123,9 +122,16 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
         return 1;
     }
 
-    onoff_common.model = ble_mesh_get_model(ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI);
-    if (onoff_common.model == NULL) {
+    element = esp_ble_mesh_find_element(esp_ble_mesh_get_primary_element_address());
+    if (!element) {
+        ESP_LOGE(TAG, "Element 0x%04x not exists", esp_ble_mesh_get_primary_element_address());
+        return ESP_FAIL;
+    }
+
+    onoff_common.model = esp_ble_mesh_find_sig_model(element, ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI);
+    if (!onoff_common.model) {
         ESP_LOGI(TAG, "GenONOFFClient:LoadModel,Fail");
+        return ESP_FAIL;
     }
 
     arg_int_to_value(gen_onoff_state.appkey_idx, onoff_common.ctx.app_idx, "appkey_index");
@@ -145,11 +151,6 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
         }
         else if (strcmp(gen_onoff_state.action_type->sval[0], "set") == 0) {
             err = esp_ble_mesh_generic_client_set_state(&onoff_common, &gen_client_set);
-        } else if (strcmp(gen_onoff_state.action_type->sval[0], "reg") == 0) {
-            err = esp_ble_mesh_register_generic_client_callback(ble_mesh_generic_onoff_client_model_cb);
-            if (err == ESP_OK) {
-                ESP_LOGI(TAG, "GenONOFFClient:Reg,OK");
-            }
         }
     }
     ESP_LOGD(TAG, "exit %s\n", __func__);
