@@ -23,6 +23,10 @@ struct eloop_timeout {
 	void *eloop_data;
 	void *user_data;
 	eloop_timeout_handler handler;
+#ifdef ELOOP_DEBUG
+	char func_name[100];
+	int line;
+#endif
 };
 
 struct eloop_data {
@@ -56,12 +60,21 @@ int eloop_init(void)
 	return 0;
 }
 
+#ifdef ELOOP_DEBUG
+int eloop_register_timeout_debug(unsigned int secs, unsigned int usecs,
+				 eloop_timeout_handler handler, void *eloop_data,
+				 void *user_data, const char *func, int line)
+#else
 int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 			   eloop_timeout_handler handler,
 			   void *eloop_data, void *user_data)
+#endif
 {
 	struct eloop_timeout *timeout, *tmp;
 	os_time_t now_sec;
+#ifdef ELOOP_DEBUG
+	int count = 0;
+#endif
 
 	timeout = os_zalloc(sizeof(*timeout));
 	if (timeout == NULL)
@@ -84,6 +97,10 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 	timeout->eloop_data = eloop_data;
 	timeout->user_data = user_data;
 	timeout->handler = handler;
+#ifdef ELOOP_DEBUG
+	os_strlcpy(timeout->func_name, func, 100);
+	timeout->line = line;
+#endif
 
 	/* Maintain timeouts in order of increasing time */
 	dl_list_for_each(tmp, &eloop.timeout, struct eloop_timeout, list) {
@@ -93,12 +110,19 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 			ELOOP_UNLOCK();
 			goto run;
 		}
+#ifdef ELOOP_DEBUG
+		count++;
+#endif
 	}
 	ELOOP_LOCK();
 	dl_list_add_tail(&eloop.timeout, &timeout->list);
 	ELOOP_UNLOCK();
 
 run:
+#ifdef ELOOP_DEBUG
+	wpa_printf(MSG_DEBUG, "ELOOP: Added one timer from %s:%d to call %p, current order=%d",
+			timeout->func_name, line, timeout->handler, count);
+#endif
 	os_timer_disarm(&eloop.eloop_timer);
 	os_timer_arm(&eloop.eloop_timer, 0, 0);
 
@@ -126,8 +150,13 @@ static void eloop_remove_timeout(struct eloop_timeout *timeout)
 }
 
 
+#ifdef ELOOP_DEBUG
+int eloop_cancel_timeout_debug(eloop_timeout_handler handler, void *eloop_data,
+			       void *user_data, const char *func, int line)
+#else
 int eloop_cancel_timeout(eloop_timeout_handler handler,
 			 void *eloop_data, void *user_data)
+#endif
 {
 	struct eloop_timeout *timeout, *prev;
 	int removed = 0;
@@ -143,6 +172,10 @@ int eloop_cancel_timeout(eloop_timeout_handler handler,
 			removed++;
 		}
 	}
+#ifdef ELOOP_DEBUG
+	wpa_printf(MSG_DEBUG, "ELOOP: %s:%d called to remove timer handler=%p, removed count=%d",
+			func, line, handler, removed);
+#endif
 
 	return removed;
 }
@@ -286,7 +319,16 @@ void eloop_run(void)
 				void *user_data = timeout->user_data;
 				eloop_timeout_handler handler =
 					timeout->handler;
+#ifdef ELOOP_DEBUG
+				char fn_name[100] = {0};
+				int line = timeout->line;
+				os_strlcpy(fn_name, timeout->func_name, 100);
+#endif
 				eloop_remove_timeout(timeout);
+#ifdef ELOOP_DEBUG
+				wpa_printf(MSG_DEBUG, "ELOOP: Running timer fn:%p scheduled by %s:%d ",
+						handler, fn_name, line);
+#endif
 				handler(eloop_data, user_data);
 			}
 		}
