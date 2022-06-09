@@ -46,10 +46,10 @@
 static const char *TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
 
 BaseType_t uxSchedulerRunning = 0;
-UBaseType_t uxInterruptNesting = 0;
+volatile UBaseType_t uxInterruptNesting = 0;
 portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
 portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
-BaseType_t xPortSwitchFlag = 0;
+volatile BaseType_t xPortSwitchFlag = 0;
 __attribute__((aligned(16))) static StackType_t xIsrStack[configISR_STACK_SIZE];
 StackType_t *xIsrStackTop = &xIsrStack[0] + (configISR_STACK_SIZE & (~((portPOINTER_SIZE_TYPE)portBYTE_ALIGNMENT_MASK)));
 
@@ -61,26 +61,32 @@ static UBaseType_t port_uxCriticalOldInterruptStateIDF = 0;
  * - These need to be defined for IDF to compile
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// --------------------- Interrupts ------------------------
-
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
-{
-    /* For single core, this can be the same as xPortCheckIfInISR() because reading it is atomic */
-    return uxInterruptNesting;
-}
-
 // ------------------ Critical Sections --------------------
 
-// ----------------------- System --------------------------
-
-// TODO: Check this
-#if 0
-uint32_t xPortGetTickRateHz(void)
+void vPortEnterCriticalIDF(void)
 {
-    return (uint32_t)configTICK_RATE_HZ;
+    // Save current interrupt threshold and disable interrupts
+    UBaseType_t old_thresh = ulPortSetInterruptMask();
+    // Update the IDF critical nesting count
+    port_uxCriticalNestingIDF++;
+    if (port_uxCriticalNestingIDF == 1) {
+        // Save a copy of the old interrupt threshold
+        port_uxCriticalOldInterruptStateIDF = (UBaseType_t) old_thresh;
+    }
 }
-#endif
-// TODO: Check this end
+
+void vPortExitCriticalIDF(void)
+{
+    if (port_uxCriticalNestingIDF > 0) {
+        port_uxCriticalNestingIDF--;
+        if (port_uxCriticalNestingIDF == 0) {
+            // Restore the saved interrupt threshold
+            vPortClearInterruptMask((int)port_uxCriticalOldInterruptStateIDF);
+        }
+    }
+}
+
+// ----------------------- System --------------------------
 
 #define STACK_WATCH_AREA_SIZE 32
 #define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
@@ -282,6 +288,50 @@ void esp_startup_start_app(void)
 
 // --------------------- Interrupts ------------------------
 
+UBaseType_t ulPortSetInterruptMask(void)
+{
+    int ret;
+    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    ret = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
+    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
+    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    /**
+     * In theory, this function should not return immediately as there is a
+     * delay between the moment we mask the interrupt threshold register and
+     * the moment a potential lower-priority interrupt is triggered (as said
+     * above), it should have a delay of 2 machine cycles/instructions.
+     *
+     * However, in practice, this function has an epilogue of one instruction,
+     * thus the instruction masking the interrupt threshold register is
+     * followed by two instructions: `ret` and `csrrs` (RV_SET_CSR).
+     * That's why we don't need any additional nop instructions here.
+     */
+    return ret;
+}
+
+void vPortClearInterruptMask(UBaseType_t mask)
+{
+    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, mask);
+    /**
+     * The delay between the moment we unmask the interrupt threshold register
+     * and the moment the potential requested interrupt is triggered is not
+     * null: up to three machine cycles/instructions can be executed.
+     *
+     * When compilation size optimization is enabled, this function and its
+     * callers returning void will have NO epilogue, thus the instruction
+     * following these calls will be executed.
+     *
+     * If the requested interrupt is a context switch to a higher priority
+     * task then the one currently running, we MUST NOT execute any instruction
+     * before the interrupt effectively happens.
+     * In order to prevent this, force this routine to have a 3-instruction
+     * delay before exiting.
+     */
+    asm volatile ( "nop" );
+    asm volatile ( "nop" );
+    asm volatile ( "nop" );
+}
+
 BaseType_t xPortCheckIfInISR(void)
 {
     return uxInterruptNesting;
@@ -289,19 +339,45 @@ BaseType_t xPortCheckIfInISR(void)
 
 // ------------------ Critical Sections --------------------
 
-void vPortTakeLock( portMUX_TYPE *lock )
+void IRAM_ATTR vPortTakeLock( portMUX_TYPE *lock )
 {
     spinlock_acquire( lock, portMUX_NO_TIMEOUT);
 }
 
-void vPortReleaseLock( portMUX_TYPE *lock )
+void IRAM_ATTR vPortReleaseLock( portMUX_TYPE *lock )
 {
     spinlock_release( lock );
 }
 
 // ---------------------- Yielding -------------------------
 
-// ----------------------- System --------------------------
+void vPortYield(void)
+{
+    if (uxInterruptNesting) {
+        vPortYieldFromISR();
+    } else {
+
+        esp_crosscore_int_send_yield(0);
+        /* There are 3-4 instructions of latency between triggering the software
+           interrupt and the CPU interrupt happening. Make sure it happened before
+           we return, otherwise vTaskDelay() may return and execute 1-2
+           instructions before the delay actually happens.
+
+           (We could use the WFI instruction here, but there is a chance that
+           the interrupt will happen while evaluating the other two conditions
+           for an instant yield, and if that happens then the WFI would be
+           waiting for the next interrupt to occur...)
+        */
+        while (uxSchedulerRunning && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
+    }
+}
+
+void vPortYieldFromISR( void )
+{
+    //traceISR_EXIT_TO_SCHEDULER();
+    uxSchedulerRunning = 1;
+    xPortSwitchFlag = 1;
+}
 
 /* ------------------------------------------------ FreeRTOS Portable --------------------------------------------------
  * - Provides implementation for functions required by FreeRTOS
@@ -507,8 +583,6 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     return (StackType_t *)frame;
 }
 
-// -------------------- Co-Processor -----------------------
-
 // ------- Thread Local Storage Pointers Deletion Callbacks -------
 
 #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
@@ -616,112 +690,4 @@ void vPortCleanUpTCB ( void *pxTCB )
     /* Call TLS pointers deletion callbacks */
     vPortTLSPointersDelCb( pxTCB );
 #endif /* CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS */
-}
-
-/* ---------------------------------------------- Port Implementations -------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
-// ------------------ Critical Sections --------------------
-
-void vPortEnterCriticalIDF(void)
-{
-    // Save current interrupt threshold and disable interrupts
-    int old_thresh = vPortSetInterruptMask();
-    // Update the IDF critical nesting count
-    port_uxCriticalNestingIDF++;
-    if (port_uxCriticalNestingIDF == 1) {
-        // Save a copy of the old interrupt threshold
-        port_uxCriticalOldInterruptStateIDF = (UBaseType_t) old_thresh;
-    }
-}
-
-void vPortExitCriticalIDF(void)
-{
-    if (port_uxCriticalNestingIDF > 0) {
-        port_uxCriticalNestingIDF--;
-        if (port_uxCriticalNestingIDF == 0) {
-            // Restore the saved interrupt threshold
-            vPortClearInterruptMask((int)port_uxCriticalOldInterruptStateIDF);
-        }
-    }
-}
-
-// ---------------------- Yielding -------------------------
-
-int vPortSetInterruptMask(void)
-{
-    int ret;
-    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
-    ret = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
-    /**
-     * In theory, this function should not return immediately as there is a
-     * delay between the moment we mask the interrupt threshold register and
-     * the moment a potential lower-priority interrupt is triggered (as said
-     * above), it should have a delay of 2 machine cycles/instructions.
-     *
-     * However, in practice, this function has an epilogue of one instruction,
-     * thus the instruction masking the interrupt threshold register is
-     * followed by two instructions: `ret` and `csrrs` (RV_SET_CSR).
-     * That's why we don't need any additional nop instructions here.
-     */
-    return ret;
-}
-
-void vPortClearInterruptMask(int mask)
-{
-    REG_WRITE(INTERRUPT_CORE0_CPU_INT_THRESH_REG, mask);
-    /**
-     * The delay between the moment we unmask the interrupt threshold register
-     * and the moment the potential requested interrupt is triggered is not
-     * null: up to three machine cycles/instructions can be executed.
-     *
-     * When compilation size optimization is enabled, this function and its
-     * callers returning void will have NO epilogue, thus the instruction
-     * following these calls will be executed.
-     *
-     * If the requested interrupt is a context switch to a higher priority
-     * task then the one currently running, we MUST NOT execute any instruction
-     * before the interrupt effectively happens.
-     * In order to prevent this, force this routine to have a 3-instruction
-     * delay before exiting.
-     */
-    asm volatile ( "nop" );
-    asm volatile ( "nop" );
-    asm volatile ( "nop" );
-}
-
-void vPortYield(void)
-{
-    if (uxInterruptNesting) {
-        vPortYieldFromISR();
-    } else {
-
-        esp_crosscore_int_send_yield(0);
-        /* There are 3-4 instructions of latency between triggering the software
-           interrupt and the CPU interrupt happening. Make sure it happened before
-           we return, otherwise vTaskDelay() may return and execute 1-2
-           instructions before the delay actually happens.
-
-           (We could use the WFI instruction here, but there is a chance that
-           the interrupt will happen while evaluating the other two conditions
-           for an instant yield, and if that happens then the WFI would be
-           waiting for the next interrupt to occur...)
-        */
-        while (uxSchedulerRunning && REG_READ(SYSTEM_CPU_INTR_FROM_CPU_0_REG) != 0) {}
-    }
-}
-
-void vPortYieldFromISR( void )
-{
-    //traceISR_EXIT_TO_SCHEDULER();
-    uxSchedulerRunning = 1;
-    xPortSwitchFlag = 1;
-}
-
-void vPortYieldOtherCore(BaseType_t coreid)
-{
-    esp_crosscore_int_send_yield(coreid);
 }

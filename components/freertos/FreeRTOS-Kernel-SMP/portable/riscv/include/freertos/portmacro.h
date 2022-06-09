@@ -49,11 +49,8 @@ typedef uint32_t TickType_t;
 #define portTASK_FUNCTION_PROTO( vFunction, pvParameters )  void vFunction( void *pvParameters )
 #define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( void *pvParameters )
 
-//TODO: Check this
 // interrupt module will mask interrupt with priority less than threshold
 #define RVHAL_EXCM_LEVEL            4
-// TODO: Check this end
-
 
 /* ----------------------------------------------- Port Configurations -------------------------------------------------
  * - Configurations values supplied by each port
@@ -67,126 +64,27 @@ typedef uint32_t TickType_t;
 #define portNOP() __asm volatile        (" nop ")
 
 /* ---------------------------------------------- Forward Declarations -------------------------------------------------
- * - Forward declarations of all the port functions and macros need to implement the FreeRTOS porting interface
+ * - Forward declarations of all the port functions and macros needed to implement the FreeRTOS porting interface
  * - These must come before definition/declaration of the FreeRTOS porting interface
  * ------------------------------------------------------------------------------------------------------------------ */
 
 /* ---------------------- Spinlocks ------------------------
  - Spinlocks added to match API with SMP FreeRTOS. Single core RISC-V does not need spin locks
- - Because single core does not have a primitive spinlock data type, we have to implement one here
- * @note [refactor-todo] Refactor critical section API so that this is no longer required
  * ------------------------------------------------------ */
 
-/**
- * @brief Spinlock object
- * Owner:
- *  - Set to 0 if uninitialized
- *  - Set to portMUX_FREE_VAL when free
- *  - Set to CORE_ID_REGVAL_PRO or CORE_ID_REGVAL_AP when locked
- *  - Any other value indicates corruption
- * Count:
- *  - 0 if unlocked
- *  - Recursive count if locked
- *
- * @note Not a true spinlock as single core RISC-V does not have atomic compare and set instruction
- * @note Keep portMUX_INITIALIZER_UNLOCKED in sync with this struct
- */
-//typedef struct {
-//    uint32_t owner;
-//    uint32_t count;
-//} portMUX_TYPE;
 typedef spinlock_t                          portMUX_TYPE;               /**< Spinlock type used by FreeRTOS critical sections */
-#if 0
-#define portMUX_INITIALIZER_UNLOCKED {                      \
-            .owner = portMUX_FREE_VAL,                      \
-            .count = 0,                                     \
-        }
-#define portMUX_FREE_VAL                    SPINLOCK_FREE           /**< Spinlock is free. [refactor-todo] check if this is still required */
-#define portMUX_NO_TIMEOUT                  SPINLOCK_WAIT_FOREVER   /**< When passed for 'timeout_cycles', spin forever if necessary. [refactor-todo] check if this is still required */
-#define portMUX_TRY_LOCK                    SPINLOCK_NO_WAIT        /**< Try to acquire the spinlock a single time only. [refactor-todo] check if this is still required */
-#define portMUX_INITIALIZE(mux)    ({ \
-    (mux)->owner = portMUX_FREE_VAL; \
-    (mux)->count = 0; \
-})
-#endif
+
 #define portMUX_INITIALIZER_UNLOCKED        SPINLOCK_INITIALIZER        /**< Spinlock initializer */
 #define portMUX_FREE_VAL                    SPINLOCK_FREE               /**< Spinlock is free. [refactor-todo] check if this is still required */
 #define portMUX_NO_TIMEOUT                  SPINLOCK_WAIT_FOREVER       /**< When passed for 'timeout_cycles', spin forever if necessary. [refactor-todo] check if this is still required */
 #define portMUX_TRY_LOCK                    SPINLOCK_NO_WAIT            /**< Try to acquire the spinlock a single time only. [refactor-todo] check if this is still required */
 #define portMUX_INITIALIZE(mux)             spinlock_initialize(mux)    /*< Initialize a spinlock to its unlocked state */
 
-
-// ----------------------- Memory --------------------------
-
 // --------------------- Interrupts ------------------------
 
 BaseType_t xPortCheckIfInISR(void);
 
-// TODO: Check this
-#if 0
-/**
- * @brief Checks if the current core is in an ISR context
- *
- * - ISR context consist of Low/Mid priority ISR, or time tick ISR
- * - High priority ISRs aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
- *
- * @note [refactor-todo] Check if this should be inlined
- * @return
- *  - pdTRUE if in ISR
- *  - pdFALSE otherwise
- */
-BaseType_t xPortInIsrContext(void);
-#endif
-// TODO: Check this end
-
-// TODO: Check this
-/**
- * @brief Check if in ISR context from High priority ISRs
- *
- * - Called from High priority ISR
- * - Checks if the previous context (before high priority interrupt) was in ISR context (meaning low/med priority)
- *
- * @note [refactor-todo] Check if this should be inlined
- * @return
- *  - pdTRUE if in previous in ISR context
- *  - pdFALSE otherwise
- */
-BaseType_t xPortInterruptedFromISRContext(void);
-// TODO: Check this end
-
-// TODO: Check this
-/* ---------------------- Spinlocks ------------------------*/
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-// TODO: Check this end
-
 // ------------------ Critical Sections --------------------
-
-UBaseType_t uxPortEnterCriticalFromISR( void );
-void vPortExitCriticalFromISR( UBaseType_t level );
 
 /*
 These are always called with interrupts already disabled. We simply need to get/release the spinlocks
@@ -198,55 +96,24 @@ extern portMUX_TYPE port_xISRLock;
 void vPortTakeLock( portMUX_TYPE *lock );
 void vPortReleaseLock( portMUX_TYPE *lock );
 
-/**
- * @brief Enter a critical section
- *
- * - Simply disable interrupts
- * - Can be nested
- */
-void vPortEnterCritical(void);
-
-/**
- * @brief Exit a critical section
- *
- * - Reenables interrupts
- * - Can be nested
- */
-void vPortExitCritical(void);
-
 // ---------------------- Yielding -------------------------
 
 void vPortYield( void );
 static inline void __attribute__((always_inline)) vPortYieldCore( BaseType_t xCoreID );
-// TODO: Check this
-//static inline void __attribute__((always_inline)) vPortYieldFromISR( void );
-// TODO: Check this end
 
 /**
  * @brief Set interrupt mask and return current interrupt enable register
  *
- * @note [refactor-todo] Check if this function should be renamed (due to int return type)
- * @return int Current interrupt enable register before set
+ * @return UBaseType_t Current interrupt enable register before set
  */
-int vPortSetInterruptMask(void);
+UBaseType_t ulPortSetInterruptMask(void);
 
 /**
  * @brief Clear current interrupt mask and set given mask
  *
  * @param mask Interrupt mask
  */
-void vPortClearInterruptMask(int mask);
-
-// TODO: Check this
-#if 0
-/**
- * @brief Perform a context switch from a task
- *
- * @note [refactor-todo] The rest of ESP-IDF should call taskYield() instead
- */
-void vPortYield(void);
-#endif
-// TODO: Check this end
+void vPortClearInterruptMask(UBaseType_t mask);
 
 /**
  * @brief Perform a context switch from an ISR
@@ -260,31 +127,6 @@ void vPortYieldFromISR(void);
 })
 #define portYIELD_FROM_ISR_NO_CHECK()               vPortYieldFromISR()
 
-// TODO: Check this
-#if 0
-/**
- * @brief Yields the other core
- *
- * @note Added to be compatible with SMP API
- * @note [refactor-todo] Put this into private macros as its only called from task.c and is not public API
- * @param coreid ID of core to yield
- */
-void vPortYieldOtherCore(BaseType_t coreid);
-
-/**
- * @brief Checks if the current core can yield
- *
- * - A core cannot yield if its in an ISR or in a critical section
- *
- * @note [refactor-todo] See if this can be separated from port macro
- * @note [refactor-todo] Check if this function should be renamed (due to bool return type)
- * @return true Core can yield
- * @return false Core cannot yield
- */
-static inline bool xPortCanYield(void);
-#endif
-// TODO: Check this end
-
 // ----------------------- System --------------------------
 
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
@@ -293,87 +135,15 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
 
 void vPortCleanUpTCB ( void *pxTCB );
 
-// TODO: Check this
-#if 0
-// ------------------- Hook Functions ----------------------
-
-/**
- * @brief Hook function called on entry to tickless idle
- *
- * - Implemented in pm_impl.c
- *
- * @param xExpectedIdleTime Expected idle time
- */
-void vApplicationSleep(TickType_t xExpectedIdleTime);
-#endif
-// TODO: Check this end
-
-// TODO: Check this
-#if 0
-// ----------------------- System --------------------------
-
-/**
- * @brief Get the tick rate per second
- *
- * @note [refactor-todo] make this inline
- * @note [refactor-todo] Check if this function should be renamed (due to uint return type)
- * @return uint32_t Tick rate in Hz
- */
-uint32_t xPortGetTickRateHz(void);
-
-/**
- * @brief Set a watchpoint to watch the last 32 bytes of the stack
- *
- * Callback to set a watchpoint on the end of the stack. Called every context switch to change the stack watchpoint
- * around.
- *
- * @param pxStackStart Pointer to the start of the stack
- */
-void vPortSetStackWatchpoint(void *pxStackStart);
-
-/**
- * @brief Get the current core's ID
- *
- * @note Added to be compatible with SMP API
- * @note [refactor-todo] IDF should call a FreeRTOS like macro instead of port function directly
- * @return BaseType_t Core ID
- */
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
-{
-    return (BaseType_t) cpu_hal_get_core_id();
-}
-#endif
-// TODO: Check this end
-
-
-
 /* ------------------------------------------- FreeRTOS Porting Interface ----------------------------------------------
  * - Contains all the mappings of the macros required by FreeRTOS
  * - Most come after forward declare as porting macros map to declared functions
  * - Maps to forward declared functions
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// ----------------------- Memory --------------------------
-
-// TODO: Check this
-#if 0
-/**
- * @brief Task memory allocation macros
- *
- * @note Because the ROM routines don't necessarily handle a stack in external RAM correctly, we force the stack
- * memory to always be internal.
- * @note [refactor-todo] Update portable.h to match v10.4.3 to use new malloc prototypes
- */
-#define portTcbMemoryCaps               (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-#define portStackMemoryCaps             (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-#define pvPortMallocTcbMem(size)        pvPortMalloc(size)
-#define pvPortMallocStackMem(size)      pvPortMalloc(size)
-#endif
-// TODO: Check this end
-
 // --------------------- Interrupts ------------------------
 
-#define portDISABLE_INTERRUPTS()                    vPortSetInterruptMask()
+#define portDISABLE_INTERRUPTS()                    ulPortSetInterruptMask()
 #define portENABLE_INTERRUPTS()                     vPortClearInterruptMask(1)
 #define portRESTORE_INTERRUPTS(x)                   vPortClearInterruptMask(x)
 
@@ -420,50 +190,10 @@ extern void vTaskExitCritical( void );
 #endif
 #define portYIELD_CORE(x)                           vPortYieldCore(x)
 
-// TODO: Check this
-#if 0
-#define portYIELD_FROM_ISR_NO_ARG() vPortYieldFromISR()
-#define portYIELD_FROM_ISR_ARG(xHigherPriorityTaskWoken) ({ \
-    if (xHigherPriorityTaskWoken == pdTRUE) { \
-        vPortYieldFromISR(); \
-    } \
-})
-/**
- * @note    The macro below could be used when passing a single argument, or without any argument,
- *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
- *          might result in undesired behavior
- */
-#if defined(__cplusplus) && (__cplusplus >  201703L)
-#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
-#else
-#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG, ##__VA_ARGS__)(__VA_ARGS__)
-#endif
-
-
-#define portEND_SWITCHING_ISR(xSwitchRequired) if(xSwitchRequired) vPortYield()
-/* Yielding within an API call (when interrupts are off), means the yield should be delayed
-   until interrupts are re-enabled.
-   To do this, we use the "cross-core" interrupt as a trigger to yield on this core when interrupts are re-enabled.This
-   is the same interrupt & code path which is used to trigger a yield between CPUs, although in this case the yield is
-   happening on the same CPU.
-*/
-#define portYIELD_WITHIN_API() portYIELD()
-#endif
-// TODO: Check this end
-
-//
 // ----------------------- System --------------------------
 
 #define portGET_CORE_ID()                           xPortGetCoreID()
 #define portCHECK_IF_IN_ISR()                       xPortCheckIfInISR()
-
-// TODO: Check this
-#if 0
-// ------------------- Hook Functions ----------------------
-
-#define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
-#endif
-// TODO: Check this end
 
 // ------------------- Run Time Stats ----------------------
 
@@ -484,30 +214,12 @@ extern void vTaskExitCritical( void );
  * - For implementation of non-inlined functions, see port.c, port_common.c, or other assembly files
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// --------------------- Interrupts ------------------------
-
-// ------------------ Critical Sections --------------------
-
 // ---------------------- Yielding -------------------------
 
 static inline void __attribute__((always_inline)) vPortYieldCore( BaseType_t xCoreID )
 {
     esp_crosscore_int_send_yield( xCoreID );
 }
-
-// TODO: Check this
-#if 0
-static inline bool IRAM_ATTR xPortCanYield(void)
-{
-    uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
-    /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
-     * and exit critical code, will recover threshold value (1). so threshold <= 1
-     * means not in critical code
-     */
-    return (threshold <= 1);
-}
-#endif
-// TODO: Check this end
 
 // ----------------------- System --------------------------
 
@@ -520,8 +232,6 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void )
  * - These macros and functions need to be defined for IDF to compile
  * ------------------------------------------------------------------------------------------------------------------ */
 
-// --------------------- Interrupts ------------------------
-
 static inline BaseType_t xPortInIsrContext(void)
 {
     //Just call the FreeRTOS port interface version
@@ -530,11 +240,33 @@ static inline BaseType_t xPortInIsrContext(void)
 
 // ---------------------- Spinlocks ------------------------
 
+/**
+ * @brief Wrapper for atomic compare-and-set instruction
+ *
+ * @note Isn't a real atomic CAS.
+ * @note [refactor-todo] check if we still need this
+ * @note [refactor-todo] Check if this function should be renamed (due to void return type)
+ *
+ * @param[inout] addr Pointer to target address
+ * @param[in] compare Compare value
+ * @param[inout] set Pointer to set value
+ */
 static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
 {
     compare_and_set_native(addr, compare, set);
 }
 
+/**
+ * @brief Wrapper for atomic compare-and-set instruction in external RAM
+ *
+ * @note Isn't a real atomic CAS.
+ * @note [refactor-todo] check if we still need this
+ * @note [refactor-todo] Check if this function should be renamed (due to void return type)
+ *
+ * @param[inout] addr Pointer to target address
+ * @param[in] compare Compare value
+ * @param[inout] set Pointer to set value
+ */
 static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
 {
 #if defined(CONFIG_SPIRAM)
@@ -606,7 +338,7 @@ extern int xPortSwitchFlag;
 // --------------------- Debugging -------------------------
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#define UNTESTED_FUNCTION() do{ esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
 #else
 #define UNTESTED_FUNCTION()
 #endif

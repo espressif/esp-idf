@@ -17,54 +17,14 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #include <assert.h>         //For configASSERT()
 #endif /* def __ASSEMBLER__ */
 
-#if __XTENSA__
-/* Required for configuration-dependent settings. */
-#include "xtensa_config.h"
-
-/* -------------------------------------------- Xtensa Additional Config  ----------------------------------------------
- * - Provide Xtensa definitions usually given by -D option when building with xt-make (see readme_xtensa.txt)
- * - xtensa_rtos.h and xtensa_timer.h will default some of these values
- *      - XT_SIMULATOR         configXT_SIMULATOR
- *      - XT_BOARD             configXT_BOARD
- *      - XT_CLOCK_FREQ        Should not be defined as we are using XT_BOARD mode
- *      - XT_TICK_PER_SEC      Defaults to configTICK_RATE_HZ
- *      - XT_TIMER_INDEX       Defaults to configXT_TIMER_INDEX
- *      - XT_INTEXC_HOOKS      Defaults to configXT_INTEXC_HOOKS
- *      - XT_USE_OVLY          We don't define this (unused)
- *      - XT_USE_SWPRI         We don't define this (unused)
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#define configXT_SIMULATOR                                  0
-#define configXT_BOARD                                      1   /* Board mode */
-#if CONFIG_FREERTOS_CORETIMER_0
-#define configXT_TIMER_INDEX                                0
-#elif CONFIG_FREERTOS_CORETIMER_1
-#define configXT_TIMER_INDEX                                1
-#endif
-#define configXT_INTEXC_HOOKS                               0
-
-#define configBENCHMARK                                     0
-#endif // __XTENSA__
-
 /* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#if __XTENSA__
-/* The Xtensa port uses a separate interrupt stack. Adjust the stack size
- * to suit the needs of your specific application.
- * Size needs to be aligned to the stack increment, since the location of
- * the stack for the 2nd CPU will be calculated using configISR_STACK_SIZE.
- */
-#define configSTACK_ALIGNMENT                               16
-#ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE                                ((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
-#endif
-#else // RISC-V
 #ifndef configISR_STACK_SIZE
 #define configISR_STACK_SIZE                                (CONFIG_FREERTOS_ISR_STACKSIZE)
 #endif
-#endif // __XTENSA__
+
 /* ----------------------------------------------------- Helpers -------------------------------------------------------
  * - Macros that the FreeRTOS configuration macros depend on
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -188,6 +148,8 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 #define configSTACK_DEPTH_TYPE                          uint32_t
 #define configUSE_NEWLIB_REENTRANT                      1
+#define configNEWLIB_REENTRANT_IS_DYNAMIC               1   // IDF Newlib supports dynamic reentrancy.
+                                                            // We provide our own __getreent() function
 #define configENABLE_BACKWARD_COMPATIBILITY             0
 #define configASSERT(a)                                 assert(a)
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
