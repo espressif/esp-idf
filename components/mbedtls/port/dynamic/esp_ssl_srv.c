@@ -12,6 +12,24 @@ int __wrap_mbedtls_ssl_handshake_server_step(mbedtls_ssl_context *ssl);
 
 static const char *TAG = "SSL Server";
 
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
+/**
+ * Check if ciphersuite uses rsa key exchange methods.
+ */
+static bool ssl_ciphersuite_uses_rsa_key_ex(mbedtls_ssl_context *ssl)
+{
+    const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
+        ssl->handshake->ciphersuite_info;
+
+    if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_RSA ||
+        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_RSA_PSK) {
+        return true;
+    } else {
+        return false;
+    }
+}
+#endif
+
 static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 {
     int state = add ? ssl->state : ssl->state - 1;
@@ -65,7 +83,13 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 CHECK_OK(esp_mbedtls_add_tx_buffer(ssl, buffer_len));
             } else {
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
-                esp_mbedtls_free_keycert_cert(ssl);
+                /**
+                 * Not free keycert->cert until MBEDTLS_SSL_CLIENT_KEY_EXCHANGE for rsa key exchange methods.
+                 * For ssl server will use keycert->cert to parse client key exchange.
+                 */
+                if (!ssl_ciphersuite_uses_rsa_key_ex(ssl)) {
+                    esp_mbedtls_free_keycert_cert(ssl);
+                }
 #endif
             }
             break;
@@ -77,8 +101,14 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
             } else {
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
                 esp_mbedtls_free_dhm(ssl);
-                esp_mbedtls_free_keycert_key(ssl);
-                esp_mbedtls_free_keycert(ssl);
+                /**
+                 * Not free keycert->key and keycert until MBEDTLS_SSL_CLIENT_KEY_EXCHANGE for rsa key exchange methods.
+                 * For ssl server will use keycert->key to parse client key exchange.
+                 */
+                if (!ssl_ciphersuite_uses_rsa_key_ex(ssl)) {
+                    esp_mbedtls_free_keycert_key(ssl);
+                    esp_mbedtls_free_keycert(ssl);
+                }
 #endif
             }
             break;
@@ -114,6 +144,18 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
                 CHECK_OK(esp_mbedtls_add_rx_buffer(ssl));
             } else {
                 CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));
+
+#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
+                /**
+                 * Free keycert after MBEDTLS_SSL_CLIENT_KEY_EXCHANGE for rsa key exchange methods.
+                 * For ssl server will use keycert->cert and keycert->key to parse client key exchange.
+                 */
+                if (ssl_ciphersuite_uses_rsa_key_ex(ssl)) {
+                    esp_mbedtls_free_keycert_cert(ssl);
+                    esp_mbedtls_free_keycert_key(ssl);
+                    esp_mbedtls_free_keycert(ssl);
+                }
+#endif
             }
             break;
         case MBEDTLS_SSL_CERTIFICATE_VERIFY:
