@@ -179,3 +179,5 @@ with open('../page_redirects.txt') as f:
         if len(line.split(' ')) != 2:
             raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
+
+html_static_path = ['../_static']
