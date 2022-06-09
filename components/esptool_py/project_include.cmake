@@ -66,7 +66,7 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Flash size detection updates the image header which would invalidate the appended
     # SHA256 digest. Therefore, a digest is not appended in that case.
     # This argument requires esptool>=4.1.
-    set(esptool_elf2image_args --dont-append-digest)
+    list(APPEND esptool_elf2image_args --dont-append-digest)
 endif()
 
 if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
