@@ -165,7 +165,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t rpt4_reserved7:           5;                /*Reserved.*/
             uint32_t force_send_resume:        1;                /*The value of FORCE_SEND_RESUME.*/
             uint32_t secure_version:          16;                /*The value of SECURE_VERSION.*/
-            uint32_t rpt4_reserved1:           2;                /*Reserved.*/
+            uint32_t rpt4_reserved1:           1;                /*Reserved.*/
+            uint32_t err_rst_enable:           1;                /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } rd_repeat_data3;
