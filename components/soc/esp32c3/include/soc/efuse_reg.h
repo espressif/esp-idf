@@ -1435,12 +1435,12 @@ extern "C" {
 #define EFUSE_DIS_USB_DEVICE_ERR_M  (BIT(11))
 #define EFUSE_DIS_USB_DEVICE_ERR_V  0x1
 #define EFUSE_DIS_USB_DEVICE_ERR_S  11
-/* EFUSE_DIS_DOWNLOAD_ICACHE : RO ;bitpos:[10] ;default: 1'b0 ; */
+/* EFUSE_DIS_DOWNLOAD_ICACHE_ERR : RO ;bitpos:[10] ;default: 1'b0 ; */
 /*description: If DIS_DOWNLOAD_ICACHE is 1  then it indicates a programming error.*/
-#define EFUSE_DIS_DOWNLOAD_ICACHE  (BIT(10))
-#define EFUSE_DIS_DOWNLOAD_ICACHE_M  (BIT(10))
-#define EFUSE_DIS_DOWNLOAD_ICACHE_V  0x1
-#define EFUSE_DIS_DOWNLOAD_ICACHE_S  10
+#define EFUSE_DIS_DOWNLOAD_ICACHE_ERR  (BIT(10))
+#define EFUSE_DIS_DOWNLOAD_ICACHE_ERR_M  (BIT(10))
+#define EFUSE_DIS_DOWNLOAD_ICACHE_ERR_V  0x1
+#define EFUSE_DIS_DOWNLOAD_ICACHE_ERR_S  10
 /* EFUSE_DIS_USB_JTAG_ERR : RO ;bitpos:[9] ;default: 1'b0 ; */
 /*description: If DIS_USB_JTAG is 1  then it indicates a programming error.*/
 #define EFUSE_DIS_USB_JTAG_ERR  (BIT(9))
@@ -1655,104 +1655,97 @@ extern "C" {
 #define EFUSE_RPT4_RESERVED4_ERR_S  0
 
 #define EFUSE_RD_RS_ERR0_REG          (DR_REG_EFUSE_BASE + 0x1C0)
-/* EFUSE_KEY4_FAIL : RO ;bitpos:[31] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of key$n is reliable 1:
- Means that programming key$n failed and the number of error bytes is over 6.*/
-#define EFUSE_KEY4_FAIL  (BIT(31))
-#define EFUSE_KEY4_FAIL_M  (BIT(31))
-#define EFUSE_KEY4_FAIL_V  0x1
-#define EFUSE_KEY4_FAIL_S  31
+/* EFUSE_KEY3_FAIL : RO ;bitpos:[31] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of key3 is reliable 1:
+ Means that programming key3 failed and the number of error bytes is over 6.*/
+#define EFUSE_KEY3_FAIL  (BIT(31))
+#define EFUSE_KEY3_FAIL_M  (BIT(31))
+#define EFUSE_KEY3_FAIL_V  0x1
+#define EFUSE_KEY3_FAIL_S  31
 /* EFUSE_KEY4_ERR_NUM : RO ;bitpos:[30:28] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_KEY4_ERR_NUM  0x00000007
 #define EFUSE_KEY4_ERR_NUM_M  ((EFUSE_KEY4_ERR_NUM_V)<<(EFUSE_KEY4_ERR_NUM_S))
 #define EFUSE_KEY4_ERR_NUM_V  0x7
 #define EFUSE_KEY4_ERR_NUM_S  28
-/* EFUSE_KEY3_FAIL : RO ;bitpos:[27] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of key$n is reliable 1:
- Means that programming key$n failed and the number of error bytes is over 6.*/
-#define EFUSE_KEY3_FAIL  (BIT(27))
-#define EFUSE_KEY3_FAIL_M  (BIT(27))
-#define EFUSE_KEY3_FAIL_V  0x1
-#define EFUSE_KEY3_FAIL_S  27
+/* EFUSE_KEY2_FAIL : RO ;bitpos:[27] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of key2 is reliable 1:
+ Means that programming key2 failed and the number of error bytes is over 6.*/
+#define EFUSE_KEY2_FAIL  (BIT(27))
+#define EFUSE_KEY2_FAIL_M  (BIT(27))
+#define EFUSE_KEY2_FAIL_V  0x1
+#define EFUSE_KEY2_FAIL_S  27
 /* EFUSE_KEY3_ERR_NUM : RO ;bitpos:[26:24] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_KEY3_ERR_NUM  0x00000007
 #define EFUSE_KEY3_ERR_NUM_M  ((EFUSE_KEY3_ERR_NUM_V)<<(EFUSE_KEY3_ERR_NUM_S))
 #define EFUSE_KEY3_ERR_NUM_V  0x7
 #define EFUSE_KEY3_ERR_NUM_S  24
-/* EFUSE_KEY2_FAIL : RO ;bitpos:[23] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of key$n is reliable 1:
- Means that programming key$n failed and the number of error bytes is over 6.*/
-#define EFUSE_KEY2_FAIL  (BIT(23))
-#define EFUSE_KEY2_FAIL_M  (BIT(23))
-#define EFUSE_KEY2_FAIL_V  0x1
-#define EFUSE_KEY2_FAIL_S  23
+/* EFUSE_KEY1_FAIL : RO ;bitpos:[23] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of key1 is reliable 1:
+ Means that programming key1 failed and the number of error bytes is over 6.*/
+#define EFUSE_KEY1_FAIL  (BIT(23))
+#define EFUSE_KEY1_FAIL_M  (BIT(23))
+#define EFUSE_KEY1_FAIL_V  0x1
+#define EFUSE_KEY1_FAIL_S  23
 /* EFUSE_KEY2_ERR_NUM : RO ;bitpos:[22:20] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_KEY2_ERR_NUM  0x00000007
 #define EFUSE_KEY2_ERR_NUM_M  ((EFUSE_KEY2_ERR_NUM_V)<<(EFUSE_KEY2_ERR_NUM_S))
 #define EFUSE_KEY2_ERR_NUM_V  0x7
 #define EFUSE_KEY2_ERR_NUM_S  20
-/* EFUSE_KEY1_FAIL : RO ;bitpos:[19] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of key$n is reliable 1:
- Means that programming key$n failed and the number of error bytes is over 6.*/
-#define EFUSE_KEY1_FAIL  (BIT(19))
-#define EFUSE_KEY1_FAIL_M  (BIT(19))
-#define EFUSE_KEY1_FAIL_V  0x1
-#define EFUSE_KEY1_FAIL_S  19
+/* EFUSE_KEY0_FAIL : RO ;bitpos:[19] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of key0 is reliable 1:
+ Means that programming key0 failed and the number of error bytes is over 6.*/
+#define EFUSE_KEY0_FAIL  (BIT(19))
+#define EFUSE_KEY0_FAIL_M  (BIT(19))
+#define EFUSE_KEY0_FAIL_V  0x1
+#define EFUSE_KEY0_FAIL_S  19
 /* EFUSE_KEY1_ERR_NUM : RO ;bitpos:[18:16] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_KEY1_ERR_NUM  0x00000007
 #define EFUSE_KEY1_ERR_NUM_M  ((EFUSE_KEY1_ERR_NUM_V)<<(EFUSE_KEY1_ERR_NUM_S))
 #define EFUSE_KEY1_ERR_NUM_V  0x7
 #define EFUSE_KEY1_ERR_NUM_S  16
-/* EFUSE_KEY0_FAIL : RO ;bitpos:[15] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of key$n is reliable 1:
- Means that programming key$n failed and the number of error bytes is over 6.*/
-#define EFUSE_KEY0_FAIL  (BIT(15))
-#define EFUSE_KEY0_FAIL_M  (BIT(15))
-#define EFUSE_KEY0_FAIL_V  0x1
-#define EFUSE_KEY0_FAIL_S  15
+/* EFUSE_USR_DATA_FAIL : RO ;bitpos:[15] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of user data is reliable
+ 1: Means that programming user data failed and the number of error bytes is over 6.*/
+#define EFUSE_USR_DATA_FAIL  (BIT(15))
+#define EFUSE_USR_DATA_FAIL_M  (BIT(15))
+#define EFUSE_USR_DATA_FAIL_V  0x1
+#define EFUSE_USR_DATA_FAIL_S  15
 /* EFUSE_KEY0_ERR_NUM : RO ;bitpos:[14:12] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_KEY0_ERR_NUM  0x00000007
 #define EFUSE_KEY0_ERR_NUM_M  ((EFUSE_KEY0_ERR_NUM_V)<<(EFUSE_KEY0_ERR_NUM_S))
 #define EFUSE_KEY0_ERR_NUM_V  0x7
 #define EFUSE_KEY0_ERR_NUM_S  12
-/* EFUSE_USR_DATA_FAIL : RO ;bitpos:[11] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the user data is reliable 1: Means
- that programming user data failed and the number of error bytes is over 6.*/
-#define EFUSE_USR_DATA_FAIL  (BIT(11))
-#define EFUSE_USR_DATA_FAIL_M  (BIT(11))
-#define EFUSE_USR_DATA_FAIL_V  0x1
-#define EFUSE_USR_DATA_FAIL_S  11
+/* EFUSE_SYS_PART1_FAIL : RO ;bitpos:[11] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of system part1 is reliable
+ 1: Means that programming data of system part1 failed and the number of error bytes is over 6.*/
+#define EFUSE_SYS_PART1_FAIL  (BIT(11))
+#define EFUSE_SYS_PART1_FAIL_M  (BIT(11))
+#define EFUSE_SYS_PART1_FAIL_V  0x1
+#define EFUSE_SYS_PART1_FAIL_S  11
 /* EFUSE_USR_DATA_ERR_NUM : RO ;bitpos:[10:8] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_USR_DATA_ERR_NUM  0x00000007
 #define EFUSE_USR_DATA_ERR_NUM_M  ((EFUSE_USR_DATA_ERR_NUM_V)<<(EFUSE_USR_DATA_ERR_NUM_S))
 #define EFUSE_USR_DATA_ERR_NUM_V  0x7
 #define EFUSE_USR_DATA_ERR_NUM_S  8
-/* EFUSE_SYS_PART1_FAIL : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of system part1 is reliable
- 1: Means that programming user data failed and the number of error bytes is over 6.*/
-#define EFUSE_SYS_PART1_FAIL  (BIT(7))
-#define EFUSE_SYS_PART1_FAIL_M  (BIT(7))
-#define EFUSE_SYS_PART1_FAIL_V  0x1
-#define EFUSE_SYS_PART1_FAIL_S  7
+/* EFUSE_MAC_SPI_8M_FAIL : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of MAC_SPI_8M is reliable
+ 1: Means that programming MAC_SPI_8M failed and the number of error bytes is over 6.*/
+#define EFUSE_MAC_SPI_8M_FAIL  (BIT(7))
+#define EFUSE_MAC_SPI_8M_FAIL_M  (BIT(7))
+#define EFUSE_MAC_SPI_8M_FAIL_V  0x1
+#define EFUSE_MAC_SPI_8M_FAIL_S  7
 /* EFUSE_SYS_PART1_NUM : RO ;bitpos:[6:4] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_SYS_PART1_NUM  0x00000007
 #define EFUSE_SYS_PART1_NUM_M  ((EFUSE_SYS_PART1_NUM_V)<<(EFUSE_SYS_PART1_NUM_S))
 #define EFUSE_SYS_PART1_NUM_V  0x7
 #define EFUSE_SYS_PART1_NUM_S  4
-/* EFUSE_MAC_SPI_8M_FAIL : RO ;bitpos:[3] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of MAC_SPI_8M is reliable
- 1: Means that programming user data failed and the number of error bytes is over 6.*/
-#define EFUSE_MAC_SPI_8M_FAIL  (BIT(3))
-#define EFUSE_MAC_SPI_8M_FAIL_M  (BIT(3))
-#define EFUSE_MAC_SPI_8M_FAIL_V  0x1
-#define EFUSE_MAC_SPI_8M_FAIL_S  3
 /* EFUSE_MAC_SPI_8M_ERR_NUM : RO ;bitpos:[2:0] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_MAC_SPI_8M_ERR_NUM  0x00000007
@@ -1761,26 +1754,26 @@ extern "C" {
 #define EFUSE_MAC_SPI_8M_ERR_NUM_S  0
 
 #define EFUSE_RD_RS_ERR1_REG          (DR_REG_EFUSE_BASE + 0x1C4)
-/* EFUSE_SYS_PART2_FAIL : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of system part2 is reliable
- 1: Means that programming user data failed and the number of error bytes is over 6.*/
-#define EFUSE_SYS_PART2_FAIL  (BIT(7))
-#define EFUSE_SYS_PART2_FAIL_M  (BIT(7))
-#define EFUSE_SYS_PART2_FAIL_V  0x1
-#define EFUSE_SYS_PART2_FAIL_S  7
+/* EFUSE_KEY5_FAIL : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of KEY5 is reliable 1:
+ Means that programming KEY5 failed and the number of error bytes is over 6.*/
+#define EFUSE_KEY5_FAIL  (BIT(7))
+#define EFUSE_KEY5_FAIL_M  (BIT(7))
+#define EFUSE_KEY5_FAIL_V  0x1
+#define EFUSE_KEY5_FAIL_S  7
 /* EFUSE_SYS_PART2_ERR_NUM : RO ;bitpos:[6:4] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_SYS_PART2_ERR_NUM  0x00000007
 #define EFUSE_SYS_PART2_ERR_NUM_M  ((EFUSE_SYS_PART2_ERR_NUM_V)<<(EFUSE_SYS_PART2_ERR_NUM_S))
 #define EFUSE_SYS_PART2_ERR_NUM_V  0x7
 #define EFUSE_SYS_PART2_ERR_NUM_S  4
-/* EFUSE_KEY5_FAIL : RO ;bitpos:[3] ;default: 1'b0 ; */
-/*description: 0: Means no failure and that the data of KEY5 is reliable 1:
- Means that programming user data failed and the number of error bytes is over 6.*/
-#define EFUSE_KEY5_FAIL  (BIT(3))
-#define EFUSE_KEY5_FAIL_M  (BIT(3))
-#define EFUSE_KEY5_FAIL_V  0x1
-#define EFUSE_KEY5_FAIL_S  3
+/* EFUSE_KEY4_FAIL : RO ;bitpos:[3] ;default: 1'b0 ; */
+/*description: 0: Means no failure and that the data of KEY4 is reliable 1:
+ Means that programming KEY4 failed and the number of error bytes is over 6.*/
+#define EFUSE_KEY4_FAIL  (BIT(3))
+#define EFUSE_KEY4_FAIL_M  (BIT(3))
+#define EFUSE_KEY4_FAIL_V  0x1
+#define EFUSE_KEY4_FAIL_S  3
 /* EFUSE_KEY5_ERR_NUM : RO ;bitpos:[2:0] ;default: 3'h0 ; */
 /*description: The value of this signal means the number of error bytes.*/
 #define EFUSE_KEY5_ERR_NUM  0x00000007
