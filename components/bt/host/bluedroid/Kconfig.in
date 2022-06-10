@@ -1061,8 +1061,8 @@ config BT_MAX_DEVICE_NAME_LEN
 config BT_BLE_RPA_SUPPORTED
     bool "Update RPA to Controller"
     depends on BT_BLUEDROID_ENABLED
-    default y if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
     default n if IDF_TARGET_ESP32
+    default y
     help
         This enables controller RPA list function.
         For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
@@ -1072,8 +1072,8 @@ config BT_BLE_RPA_SUPPORTED
         cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
         to your own needs.
 
-        For ESP32C3 and esp32s3, devices support network privacy mode and device privacy mode, users can switch the
-        two modes according to their own needs. So this option is enabled by default.
+        For ESP32C3, ESP32S3, ESP32H2 and ESP32C2, devices support network privacy mode and device privacy mode,
+        users can switch the two modes according to their own needs. So this option is enabled by default.
 
 config BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 features"
