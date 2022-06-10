@@ -281,10 +281,11 @@ def get_file_size_sha256(filename, block_size=65536):  # type: (str, int) -> Tup
 
 
 def report_progress(count, block_size, total_size):  # type: (int, int, int) -> None
-    percent = int(count * block_size * 100 / total_size)
-    percent = min(100, percent)
-    sys.stdout.write('\r%d%%' % percent)
-    sys.stdout.flush()
+    if sys.stdout.isatty():
+        percent = int(count * block_size * 100 / total_size)
+        percent = min(100, percent)
+        sys.stdout.write('\r%d%%' % percent)
+        sys.stdout.flush()
 
 
 def mkdir_p(path):  # type: (str) -> None
