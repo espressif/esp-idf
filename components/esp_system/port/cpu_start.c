@@ -70,6 +70,7 @@
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
 #include "esp_private/esp_clk.h"
+#include "esp_spi_flash.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "esp_private/trax.h"
@@ -93,9 +94,6 @@
 #define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
 #endif
 
-//This will be replaced with a kconfig, TODO: IDF-3821
-//Besides, the MMU setting will be abstracted later. So actually we don't need this define in the future
-#define MMU_PAGE_SIZE    0x10000
 //This dependency will be removed in the future
 #include "soc/ext_mem_defs.h"
 
@@ -349,12 +347,12 @@ void IRAM_ATTR call_start_cpu0(void)
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     extern int _rodata_reserved_start;
-    uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
-    uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+    uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
+    uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 
 #if CONFIG_IDF_TARGET_ESP32S3
     extern int _rodata_reserved_end;
-    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif
 
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);

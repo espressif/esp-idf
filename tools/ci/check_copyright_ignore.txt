@@ -582,7 +582,6 @@ components/esp_rom/include/esp32h2/rom/tjpgd.h
 components/esp_rom/include/esp32h2/rom/uart.h
 components/esp_rom/include/esp32s2/rom/aes.h
 components/esp_rom/include/esp32s2/rom/bigint.h
-components/esp_rom/include/esp32s2/rom/cache.h
 components/esp_rom/include/esp32s2/rom/crc.h
 components/esp_rom/include/esp32s2/rom/digital_signature.h
 components/esp_rom/include/esp32s2/rom/efuse.h
@@ -1528,7 +1527,6 @@ components/soc/include/soc/usb_periph.h
 components/soc/lldesc.c
 components/soc/soc_include_legacy_warn.c
 components/spi_flash/cache_utils.h
-components/spi_flash/include/esp_spi_flash.h
 components/spi_flash/include/esp_spi_flash_counters.h
 components/spi_flash/include/spi_flash_chip_boya.h
 components/spi_flash/include/spi_flash_chip_driver.h

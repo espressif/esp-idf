@@ -12,6 +12,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include "soc/mmu.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
@@ -24,33 +25,20 @@
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
 #include "esp32/spiram.h"
-#include "soc/mmu.h"
-// TODO: IDF-3821
-#define INVALID_PHY_PAGE 0xffff
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #include "esp_private/mmu_psram.h"
 #include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/spiram.h"
 #include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/cache.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
-#include "soc/ext_mem_defs.h"
-#include "soc/mmu.h"
 #endif
 
 #ifndef NDEBUG
@@ -62,6 +50,7 @@
 #define IROM0_PAGES_NUM (SOC_MMU_IROM0_PAGES_END - SOC_MMU_IROM0_PAGES_START)
 #define DROM0_PAGES_NUM (SOC_MMU_DROM0_PAGES_END - SOC_MMU_DROM0_PAGES_START)
 #define PAGES_LIMIT ((SOC_MMU_IROM0_PAGES_END > SOC_MMU_DROM0_PAGES_END) ? SOC_MMU_IROM0_PAGES_END:SOC_MMU_DROM0_PAGES_END)
+#define INVALID_PHY_PAGE(page_size)                ((page_size) - 1)
 
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 
@@ -125,7 +114,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
-    if (src_addr & INVALID_PHY_PAGE) {
+    if (src_addr & INVALID_PHY_PAGE(CONFIG_MMU_PAGE_SIZE)) {
         return ESP_ERR_INVALID_ARG;
     }
     if ((src_addr + size) > spi_flash_get_chip_size()) {

@@ -78,7 +78,7 @@ static esp_err_t load_partitions(void)
     esp_rom_md5_init(&context);
 #endif
 
-    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(0x10000 - 1);
+    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(CONFIG_MMU_PAGE_SIZE - 1);
     uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
 
 #if CONFIG_IDF_TARGET_LINUX

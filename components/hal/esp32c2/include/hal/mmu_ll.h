@@ -8,15 +8,24 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "soc/extmem_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
+#include "sdkconfig.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief The real MMU page size get from Kconfig.
+ *
+ * @note Only used in this file
+ */
+#define MMU_LL_PAGE_SIZE                   (CONFIG_MMU_PAGE_SIZE)
 
 /**
  * Get MMU page size
@@ -36,10 +45,10 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 /**
  * Set MMU page size
  *
- * @param size  See `mmu_page_size_t`
+ * @param size  MMU page size
  */
 __attribute__((always_inline))
-static inline void mmu_ll_set_page_size(uint32_t mmu_id, mmu_page_size_t size)
+static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
     uint8_t reg_val = (size == MMU_PAGE_16KB) ? 0 : (size == MMU_PAGE_32KB) ? 1 : 2;
     REG_SET_FIELD(EXTMEM_CACHE_CONF_MISC_REG, EXTMEM_CACHE_MMU_PAGE_SIZE, reg_val);
@@ -60,7 +69,7 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
 {
     (void)mmu_id;
     uint32_t vaddr_end = vaddr_start + len;
-    return (ADDRESS_IN_IRAM0_CACHE(vaddr_start) && ADDRESS_IN_IRAM0_CACHE(vaddr_end)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start) && ADDRESS_IN_DRAM0_CACHE(vaddr_end));
+    return (ADDRESS_IN_IRAM0_CACHE(vaddr_start, MMU_LL_PAGE_SIZE) && ADDRESS_IN_IRAM0_CACHE(vaddr_end, MMU_LL_PAGE_SIZE)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start, MMU_LL_PAGE_SIZE) && ADDRESS_IN_DRAM0_CACHE(vaddr_end, MMU_LL_PAGE_SIZE));
 }
 
 /**
@@ -93,7 +102,7 @@ static inline uint32_t mmu_ll_get_entry_id(uint32_t mmu_id, uint32_t vaddr)
             HAL_ASSERT(shift_code);
     }
 
-    return ((vaddr & MMU_VADDR_MASK) >> shift_code);
+    return ((vaddr & MMU_VADDR_MASK(page_size)) >> shift_code);
 }
 
 /**

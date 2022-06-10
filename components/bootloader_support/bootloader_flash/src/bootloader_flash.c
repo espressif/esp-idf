@@ -137,7 +137,11 @@ static const char *TAG = "bootloader_flash";
    63th block for bootloader_flash_read
 */
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
-#define MMU_SIZE          (0x3f0000)
+#ifdef SOC_MMU_PAGE_SIZE_CONFIGURABLE
+#define MMU_SIZE          (DRAM0_CACHE_ADDRESS_HIGH(SPI_FLASH_MMU_PAGE_SIZE) - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
+#else
+#define MMU_SIZE          (DRAM0_CACHE_ADDRESS_HIGH - DRAM0_CACHE_ADDRESS_LOW - SPI_FLASH_MMU_PAGE_SIZE) // This mmu size means that the mmu size to be mapped
+#endif
 #define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
 #define FLASH_READ_VADDR MMU_BLOCK63_VADDR
 #endif
@@ -196,7 +200,7 @@ const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     uint32_t count = GET_REQUIRED_MMU_PAGES(size, src_paddr);
     int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_paddr_aligned, 64, count);
-    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, count * MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, count * SPI_FLASH_MMU_PAGE_SIZE);
     if (e != 0) {
         ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
         Cache_Read_Enable(0);
@@ -303,12 +307,12 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             //---------------Do mapping------------------------
             ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
-            //Should never fail if we only map a MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
+            //Should never fail if we only map a SPI_FLASH_MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
             int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
             assert(e == 0);
 #else
             uint32_t actual_mapped_len = 0;
-            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, MMU_PAGE_SIZE - 1, &actual_mapped_len);
+            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, SPI_FLASH_MMU_PAGE_SIZE - 1, &actual_mapped_len);
 #endif
             current_read_mapping = map_at;
 

@@ -22,3 +22,5 @@ _esp_memprot_align_size = CONFIG_ESP_SYSTEM_MEMPROT_MEM_ALIGN_SIZE;
 #else
 _esp_memprot_align_size = 0;
 #endif
+
+_esp_mmu_block_size = (CONFIG_MMU_PAGE_SIZE);

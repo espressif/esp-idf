@@ -772,12 +772,12 @@ static void set_cache_and_start_app(
     //The addr is aligned, so we add the mask off length to the size, to make sure the corresponding buses are enabled.
     drom_size = (drom_load_addr - drom_load_addr_aligned) + drom_size;
 #if CONFIG_IDF_TARGET_ESP32
-    uint32_t drom_page_count = (drom_size + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
+    uint32_t drom_page_count = (drom_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
     rc = cache_flash_mmu_set(0, 0, drom_load_addr_aligned, drom_addr_aligned, 64, drom_page_count);
     ESP_EARLY_LOGV(TAG, "rc=%d", rc);
     rc = cache_flash_mmu_set(1, 0, drom_load_addr_aligned, drom_addr_aligned, 64, drom_page_count);
     ESP_EARLY_LOGV(TAG, "rc=%d", rc);
-    ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, drom_page_count * MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", drom_addr_aligned, drom_load_addr_aligned, drom_page_count * SPI_FLASH_MMU_PAGE_SIZE);
 #else
     uint32_t actual_mapped_len = 0;
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, drom_load_addr_aligned, drom_addr_aligned, drom_size, &actual_mapped_len);
@@ -791,12 +791,12 @@ static void set_cache_and_start_app(
     //The addr is aligned, so we add the mask off length to the size, to make sure the corresponding buses are enabled.
     irom_size = (irom_load_addr - irom_load_addr_aligned) + irom_size;
 #if CONFIG_IDF_TARGET_ESP32
-    uint32_t irom_page_count = (irom_size + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
+    uint32_t irom_page_count = (irom_size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
     rc = cache_flash_mmu_set(0, 0, irom_load_addr_aligned, irom_addr_aligned, 64, irom_page_count);
     ESP_EARLY_LOGV(TAG, "rc=%d", rc);
     rc = cache_flash_mmu_set(1, 0, irom_load_addr_aligned, irom_addr_aligned, 64, irom_page_count);
     ESP_LOGV(TAG, "rc=%d", rc);
-    ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, irom_page_count * MMU_PAGE_SIZE);
+    ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, irom_page_count * SPI_FLASH_MMU_PAGE_SIZE);
 #else
     mmu_hal_map_region(0, MMU_TARGET_FLASH0, irom_load_addr_aligned, irom_addr_aligned, irom_size, &actual_mapped_len);
     ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", irom_addr_aligned, irom_load_addr_aligned, actual_mapped_len);
