@@ -20,7 +20,7 @@
 // To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many.
 // More means more memory use, but less overhead for setting up / finishing transfers. Make sure 240
 // is dividable by this.
-#define PARALLEL_LINES 16
+#define PARALLEL_LINES 12
 // The number of frames to show before rotate the graph
 #define ROTATE_FRAME   30
 
