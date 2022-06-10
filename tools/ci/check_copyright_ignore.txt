@@ -863,8 +863,6 @@ components/hal/include/hal/ds_hal.h
 components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
-components/hal/include/hal/mcpwm_hal.h
-components/hal/include/hal/mcpwm_types.h
 components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
 components/hal/include/hal/rtc_io_types.h
@@ -885,7 +883,6 @@ components/hal/include/hal/wdt_hal.h
 components/hal/include/hal/wdt_types.h
 components/hal/interrupt_controller_hal.c
 components/hal/ledc_hal_iram.c
-components/hal/mcpwm_hal.c
 components/hal/mpu_hal.c
 components/hal/platform_port/include/hal/assert.h
 components/hal/platform_port/include/hal/check.h
@@ -1215,7 +1212,6 @@ components/soc/esp32/include/soc/uhci_struct.h
 components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/interrupts.c
 components/soc/esp32/ledc_periph.c
-components/soc/esp32/mcpwm_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/sigmadelta_periph.c
@@ -1493,7 +1489,6 @@ components/soc/esp32s3/include/soc/world_controller_reg.h
 components/soc/esp32s3/include/soc/world_controller_struct.h
 components/soc/esp32s3/interrupts.c
 components/soc/esp32s3/ledc_periph.c
-components/soc/esp32s3/mcpwm_periph.c
 components/soc/esp32s3/rtc_io_periph.c
 components/soc/esp32s3/sdio_slave_periph.c
 components/soc/esp32s3/sdmmc_periph.c
@@ -1510,7 +1505,6 @@ components/soc/include/soc/gpio_periph.h
 components/soc/include/soc/i2c_periph.h
 components/soc/include/soc/interrupts.h
 components/soc/include/soc/ledc_periph.h
-components/soc/include/soc/mcpwm_periph.h
 components/soc/include/soc/rtc_cntl_periph.h
 components/soc/include/soc/rtc_periph.h
 components/soc/include/soc/sdio_slave_periph.h
@@ -1986,13 +1980,10 @@ examples/peripherals/i2s/i2s_audio_recorder_sdcard/main/i2s_recorder_main.c
 examples/peripherals/i2s/i2s_basic/main/i2s_example_main.c
 examples/peripherals/ledc/ledc_basic/main/ledc_basic_example_main.c
 examples/peripherals/ledc/ledc_fade/main/ledc_fade_example_main.c
-examples/peripherals/mcpwm/mcpwm_bldc_hall_control/main/mcpwm_bldc_hall_control_example_main.c
 examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/cmd_mcpwm_motor.c
 examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_control_example.c
 examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_control_example.h
-examples/peripherals/mcpwm/mcpwm_capture_hc_sr04/main/mcpwm_capture_hc_sr04.c
 examples/peripherals/mcpwm/mcpwm_servo_control/main/mcpwm_servo_control_example_main.c
-examples/peripherals/mcpwm/mcpwm_sync_example/main/mcpwm_sync_example.c
 examples/peripherals/sdio/host/main/app_main.c
 examples/peripherals/sdio/sdio_test.py
 examples/peripherals/sdio/slave/main/app_main.c

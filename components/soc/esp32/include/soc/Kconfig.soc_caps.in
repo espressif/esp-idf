@@ -383,10 +383,6 @@ config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
     int
     default 3
 
-config SOC_MCPWM_BASE_CLK_HZ
-    int
-    default 160000000
-
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool
     default n

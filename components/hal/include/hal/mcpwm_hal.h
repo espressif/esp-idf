@@ -1,16 +1,8 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -18,18 +10,28 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The HAL layer for MCPWM (common part)
-
 #pragma once
 
-#include "soc/mcpwm_struct.h"
+#include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct mcpwm_dev_t *mcpwm_soc_handle_t; // MCPWM SOC layer handle
+
+/**
+ * @brief HAL layer configuration
+ */
 typedef struct {
-    int host_id; ///< Which MCPWM peripheral to use, 0-1.
+    int group_id; // Indicate the MCPWM hardware group
 } mcpwm_hal_init_config_t;
 
+/**
+ * Context that should be maintained by both the driver and the HAL
+ */
 typedef struct {
-    mcpwm_dev_t *dev; ///< Beginning address of the peripheral registers of a single MCPWM unit. Call `mcpwm_hal_init` to initialize it.
+    mcpwm_soc_handle_t dev; // MCPWM SOC layer handle
 } mcpwm_hal_context_t;
 
 /**
@@ -39,3 +41,39 @@ typedef struct {
  * @param init_config Configuration for the HAL to be used only once.
  */
 void mcpwm_hal_init(mcpwm_hal_context_t *hal, const mcpwm_hal_init_config_t *init_config);
+
+/**
+ * @brief Deinitialize the HAL driver.
+ *
+ * @param hal Context of the HAL layer.
+ */
+void mcpwm_hal_deinit(mcpwm_hal_context_t *hal);
+
+/**
+ * @brief Reset MCPWM timer
+ *
+ * @param hal Context of the HAL layer.
+ * @param timer_id Timer ID
+ */
+void mcpwm_hal_timer_reset(mcpwm_hal_context_t *hal, int timer_id);
+
+/**
+ * @brief Reset MCPWM operator
+ *
+ * @param hal Context of the HAL layer.
+ * @param oper_id Operator ID
+ */
+void mcpwm_hal_operator_reset(mcpwm_hal_context_t *hal, int oper_id);
+
+/**
+ * @brief Reset MCPWM generator
+ *
+ * @param hal Context of the HAL layer.
+ * @param oper_id Operator ID
+ * @param gen_id Generator ID
+ */
+void mcpwm_hal_generator_reset(mcpwm_hal_context_t *hal, int oper_id, int gen_id);
+
+#ifdef __cplusplus
+}
+#endif

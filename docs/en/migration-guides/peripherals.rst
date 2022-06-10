@@ -243,15 +243,8 @@ LCD
     MCPWM
     -----
 
-    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
-    | Removed/Deprecated items  | Replacement                                       | Remarks                                                   |
-    +===========================+===================================================+===========================================================+
-    | ``mcpwm_capture_enable``  | :cpp:func:`mcpwm_capture_enable_channel`          | Enable capture channel.                                   |
-    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
-    | ``mcpwm_capture_disable`` | :cpp:func:`mcpwm_capture_capture_disable_channel` | Disable capture channel.                                  |
-    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
-    | ``mcpwm_sync_enable``     | :cpp:func:`mcpwm_sync_configure`                  | Configure synchronization.                                |
-    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
-    | ``mcpwm_isr_register``    | By registering event callbacks, e.g.              | MCPWM interrupt handling is implemented by driver itself. |
-    |                           | :cpp:member:`mcpwm_capture_config_t::capture_cb`  |                                                           |
-    +---------------------------+---------------------------------------------------+-----------------------------------------------------------+
+    - ``mcpwm_capture_enable`` is removed. To enable capture channel, please use :cpp:func:`mcpwm_capture_enable_channel`.
+    - ``mcpwm_capture_disable`` is remove. To disable capture channel, please use :cpp:func:`mcpwm_capture_capture_disable_channel`.
+    - ``mcpwm_sync_enable`` is removed. To configure synchronization, please use :cpp:func:`mcpwm_sync_configure`.
+    - ``mcpwm_isr_register`` is removed. You can register event callbacks, for capture channels. e.g. :cpp:member:`mcpwm_capture_config_t::capture_cb`.
+    - ``mcpwm_carrier_oneshot_mode_disable`` is removed. Disable the first pulse (a.k.a the one-shot pulse) in the carrier is not supported by hardware.
