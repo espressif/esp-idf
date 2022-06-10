@@ -71,10 +71,14 @@ typedef struct {
  * Note: When new member is added, update reserved bits accordingly
  */
 typedef struct {
+    uint32_t alloc_unit_kb: 16;     /*!< Allocation unit of the card, in multiples of kB (1024 bytes) */
+    uint32_t erase_size_au: 16;     /*!< Erase size for the purpose of timeout calculation, in multiples of allocation unit */
     uint32_t cur_bus_width: 2;      /*!< SD current bus width */
     uint32_t discard_support: 1;    /*!< SD discard feature support */
     uint32_t fule_support: 1;       /*!< SD FULE (Full User Area Logical Erase) feature support */
-    uint32_t reserved: 28;          /*!< reserved for future expansion */
+    uint32_t erase_timeout: 6;      /*!< Timeout (in seconds) for erase of a single allocation unit */
+    uint32_t erase_offset: 2;       /*!< Constant timeout offset (in seconds) for any erase operation */
+    uint32_t reserved: 20;          /*!< reserved for future expansion */
 } sdmmc_ssr_t;
 
 /**

@@ -101,13 +101,6 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
             return RES_ERROR;
 #if FF_USE_TRIM
         case CTRL_TRIM:
-            /*
-             * limitation with sector erase when used in SDSPI mode
-             * hence return if host is SPI.
-             */
-            if ((card->host.flags & SDMMC_HOST_FLAG_SPI) != 0) {
-                return RES_ERROR;
-            }
             return ff_sdmmc_trim (pdrv, *((DWORD*)buff), //start_sector
                     (*((DWORD*)buff + 1) - *((DWORD*)buff) + 1)); //sector_count
 #endif //FF_USE_TRIM
