@@ -151,6 +151,14 @@ esp_tls_client_session_t *esp_mbedtls_get_client_session(esp_tls_t *tls)
 
     return client_session;
 }
+
+void esp_mbedtls_free_client_session(esp_tls_client_session_t *client_session)
+{
+    if (client_session) {
+        mbedtls_ssl_session_free(&(client_session->saved_session));
+        free(client_session);
+    }
+}
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
 int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)

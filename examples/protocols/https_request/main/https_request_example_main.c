@@ -68,7 +68,7 @@ static const char REQUEST[] = "GET " WEB_URL " HTTP/1.1\r\n"
 extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
 extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
-esp_tls_client_session_t *tls_client_session = NULL;
+static esp_tls_client_session_t *tls_client_session = NULL;
 #endif
 static void https_get_request(esp_tls_cfg_t cfg)
 {
@@ -187,7 +187,7 @@ static void https_get_request_using_already_saved_session(void)
         .client_session = tls_client_session,
     };
     https_get_request(cfg);
-    free(tls_client_session);
+    esp_tls_free_client_session(tls_client_session);
     tls_client_session = NULL;
 }
 #endif
