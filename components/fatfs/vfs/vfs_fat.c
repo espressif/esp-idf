@@ -637,7 +637,13 @@ static int vfs_fat_stat(void* ctx, const char * path, struct stat * st)
         .tm_year = fdate.year + 80,
         .tm_sec = ftime.sec * 2,
         .tm_min = ftime.min,
-        .tm_hour = ftime.hour
+        .tm_hour = ftime.hour,
+        /* FAT doesn't keep track if the time was DST or not, ask the C library
+         * to try to figure this out. Note that this may yield incorrect result
+         * in the hour before the DST comes in effect, when the local time can't
+         * be converted to UTC uniquely.
+         */
+        .tm_isdst = -1
     };
     st->st_mtime = mktime(&tm);
     st->st_atime = 0;
