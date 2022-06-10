@@ -41,6 +41,9 @@ extern const char howsmyssl_com_root_cert_pem_end[]   asm("_binary_howsmyssl_com
 extern const char dl_espressif_com_root_cert_pem_start[] asm("_binary_dl_espressif_com_root_cert_pem_start");
 extern const char dl_espressif_com_root_cert_pem_end[]   asm("_binary_dl_espressif_com_root_cert_pem_end");
 
+extern const char postman_echo_com_root_cert_pem_start[] asm("_binary_postman_echo_com_root_cert_pem_start");
+extern const char postman_echo_com_root_cert_pem_end[]   asm("_binary_postman_echo_com_root_cert_pem_end");
+
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     static char *output_buffer;  // Buffer to store response of http request from event handler
@@ -525,6 +528,7 @@ static void https_async(void)
         .event_handler = _http_event_handler,
         .is_async = true,
         .timeout_ms = 5000,
+        .cert_pem = postman_echo_com_root_cert_pem_start,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
@@ -622,7 +626,7 @@ static void http_native_request(void)
         }
         int data_read = esp_http_client_read_response(client, output_buffer, MAX_HTTP_OUTPUT_BUFFER);
         if (data_read >= 0) {
-            ESP_LOGI(TAG, "HTTP GET Status = %d, content_length = %d",
+            ESP_LOGI(TAG, "HTTP POST Status = %d, content_length = %d",
             esp_http_client_get_status_code(client),
             esp_http_client_get_content_length(client));
             ESP_LOG_BUFFER_HEX(TAG, output_buffer, strlen(output_buffer));
