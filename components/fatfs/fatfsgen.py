@@ -39,7 +39,6 @@ class FATFS:
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
                  explicit_fat_type: int = None,
                  media_type: int = FATDefaults.MEDIA_TYPE) -> None:
-
         # root directory bytes should be aligned by sector size
         assert (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
         # number of bytes in the root dir must be even multiple of BPB_BytsPerSec

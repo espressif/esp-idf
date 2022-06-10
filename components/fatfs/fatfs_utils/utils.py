@@ -261,7 +261,7 @@ class FATDefaults:
     SEC_PER_TRACK: int = 0x3f
     VOLUME_LABEL: str = 'Espressif'
     FILE_SYS_TYPE: str = 'FAT'
-    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory
+    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory, recommended 512
     MEDIA_TYPE: int = 0xf8
     SIGNATURE_WORD: bytes = b'\x55\xAA'
 
