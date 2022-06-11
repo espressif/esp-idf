@@ -19,12 +19,12 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_netif.h"
+#include "esp_eth_driver.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 
-#if CONFIG_ESP_NETIF_L2_TAP
 
 #define INVALID_FD          (-1)
 
@@ -624,4 +624,3 @@ esp_err_t esp_vfs_l2tap_intf_unregister(const char *base_path)
 
     return ESP_OK;
 }
-#endif // CONFIG_ESP_NETIF_L2_TAP

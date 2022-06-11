@@ -10,7 +10,6 @@ set(srcs
     "esp_netif_handlers.c"
     "esp_netif_objects.c"
     "esp_netif_defaults.c"
-    "vfs_l2tap/esp_vfs_l2tap.c"
     "lwip/esp_netif_lwip.c"
     "lwip/esp_netif_lwip_defaults.c"
     "lwip/esp_netif_sta_list.c")
@@ -33,7 +32,17 @@ list(APPEND srcs
     "loopback/esp_netif_loopback.c")
 endif()
 
+if(CONFIG_ESP_NETIF_L2_TAP)
+list(APPEND srcs
+    "vfs_l2tap/esp_vfs_l2tap.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                    REQUIRES lwip esp_eth)
+                    REQUIRES lwip)
+
+
+if(CONFIG_ESP_NETIF_L2_TAP)
+idf_component_optional_requires(PRIVATE esp_eth)
+endif()

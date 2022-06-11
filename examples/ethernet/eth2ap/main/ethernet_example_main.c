@@ -14,7 +14,7 @@
 #include "freertos/queue.h"
 #include "esp_event.h"
 #include "esp_log.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_private/wifi.h"

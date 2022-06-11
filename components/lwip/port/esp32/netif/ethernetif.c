@@ -48,7 +48,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
 #include "esp_compiler.h"

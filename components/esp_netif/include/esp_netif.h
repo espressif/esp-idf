@@ -14,10 +14,6 @@
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
 
-#ifdef CONFIG_ETH_ENABLED
-#include "esp_eth_netif_glue.h"
-#endif
-
 
 #ifdef __cplusplus
 extern "C" {

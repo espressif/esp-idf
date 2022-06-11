@@ -15,6 +15,7 @@ extern "C" {
 
 #include "esp_err.h"
 #include "esp_netif.h"
+#include "esp_eth.h"
 
 #ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
 #define EXAMPLE_INTERFACE get_example_netif()

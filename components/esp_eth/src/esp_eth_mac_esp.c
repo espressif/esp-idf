@@ -12,7 +12,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_pm.h"
 #include "esp_mac.h"
 #include "esp_heap_caps.h"

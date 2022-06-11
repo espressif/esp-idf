@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2022 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -15,7 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "ksz8851.h"
 
 

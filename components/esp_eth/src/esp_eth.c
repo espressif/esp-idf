@@ -8,7 +8,7 @@
 #include <stdatomic.h>
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
@@ -384,19 +384,6 @@ esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...)
     xSemaphoreGive(eth_driver->transmit_mutex);
 #endif // CONFIG_ETH_TRANSMIT_MUTEX
     va_end(args);
-err:
-    return ret;
-}
-
-esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length)
-{
-    esp_err_t ret = ESP_OK;
-    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
-    ESP_GOTO_ON_FALSE(buf && length, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf and length to null");
-    ESP_GOTO_ON_FALSE(*length > 60, ESP_ERR_INVALID_ARG, err, TAG, "length can't be less than 60");
-    ESP_GOTO_ON_FALSE(eth_driver, ESP_ERR_INVALID_ARG, err, TAG, "ethernet driver handle can't be null");
-    esp_eth_mac_t *mac = eth_driver->mac;
-    ret = mac->receive(mac, buf, length);
 err:
     return ret;
 }
