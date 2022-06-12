@@ -570,7 +570,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
 
 // The function is called when a transaction is done, in ISR or in the task.
 // Fetch the data from FIFO and call the ``post_cb``.
-static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
+static bool SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
 {
     spi_transaction_t *cur_trans = host->cur_trans_buf.trans;
 
@@ -580,6 +580,8 @@ static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
     if (dev->cfg.post_cb) dev->cfg.post_cb(cur_trans);
 
     host->cur_cs = DEV_NUM_MAX;
+
+    return (dev->cfg.flags & SPI_DEVICE_DISCARD_AFTER_POST);
 }
 
 // This is run in interrupt context.
@@ -611,10 +613,12 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         }
 
         //cur_cs is changed to DEV_NUM_MAX here
-        spi_post_trans(host);
+        if(!spi_post_trans(host)) {
+            //Return transaction descriptor.
+            xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
+        }
+
         // spi_bus_lock_bg_pause(bus_attr->lock);
-        //Return transaction descriptor.
-        xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
 #ifdef CONFIG_PM_ENABLE
         //Release APB frequency lock
         esp_pm_lock_release(bus_attr->pm_lock);
