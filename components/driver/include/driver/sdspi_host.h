@@ -187,60 +187,6 @@ esp_err_t sdspi_host_io_int_enable(sdspi_dev_handle_t handle);
  */
 esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_ticks);
 
-/*******************************************************************************
- * Deprecated APIs
- ******************************************************************************/
-
-/**
- * Extra configuration for SPI host.
- *
- * @deprecated Use `sdspi_device_config_t` and corresponding `sdspi_host_init_device()` instead.
- */
-typedef struct {
-    gpio_num_t gpio_cs;     ///< GPIO number of CS signal
-    gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
-    gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
-    gpio_num_t gpio_int;    ///< GPIO number of interrupt line (input) for SDIO card.
-    gpio_num_t gpio_miso;   ///< GPIO number of MISO signal.
-    gpio_num_t gpio_mosi;   ///< GPIO number of MOSI signal.
-    gpio_num_t gpio_sck;    ///< GPIO number of SCK signal.
-    int        dma_channel;        ///< DMA channel to be used by SPI driver (1 or 2).
-} sdspi_slot_config_t;
-
-/**
- * Macro defining default configuration of SPI host
- */
-#define SDSPI_SLOT_CONFIG_DEFAULT() {\
-    .gpio_cs   = GPIO_NUM_13, \
-    .gpio_cd   = SDSPI_SLOT_NO_CD, \
-    .gpio_wp   = SDSPI_SLOT_NO_WP, \
-    .gpio_int  = GPIO_NUM_NC, \
-    .gpio_miso = GPIO_NUM_2, \
-    .gpio_mosi = GPIO_NUM_15, \
-    .gpio_sck  = GPIO_NUM_14, \
-    .dma_channel = SDSPI_DEFAULT_DMA, \
-}
-
-/**
-* @brief Initialize SD SPI driver for the specific SPI controller
-*
-* @note This function is not thread safe
-*
-* @note The SDIO over sdspi needs an extra interrupt line. Call ``gpio_install_isr_service()`` before this function.
-*
-* @param slot         SPI controller to use (SPI2_HOST or SPI3_HOST)
-* @param slot_config  pointer to slot configuration structure
-
-* @deprecated Use `sdspi_host_init_device` instead.
-*
-* @return
-*      - ESP_OK on success
-*      - ESP_ERR_INVALID_ARG if sdspi_init_slot has invalid arguments
-*      - ESP_ERR_NO_MEM if memory can not be allocated
-*      - other errors from the underlying spi_master and gpio drivers
-*/
-esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config);
-
 #ifdef __cplusplus
 }
 #endif

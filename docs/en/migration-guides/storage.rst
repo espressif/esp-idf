@@ -67,3 +67,9 @@ Iterator Validity
 ^^^^^^^^^^^^^^^^^
 
 Note that due to the new signatures, it is possible to have an invalid iterator from ``nvs_entry_find()``, if there is a parameter errors. Hence, it is important to initialize the iterator with ``NULL`` before using ``nvs_entry_find()`` to avoid complex error checking before calling ``nvs_release_iterator()``. A good example is the programming pattern above.
+
+Removed SDSPI deprecated API
+----------------------------
+
+Removed structure ``sdspi_slot_config_t`` and fuction ``sdspi_host_init_slot``. These were replaced by a structure ``sdspi_device_config_t`` and a fuction ``sdspi_host_init_device`` respectively.
+

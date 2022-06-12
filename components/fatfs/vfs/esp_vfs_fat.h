@@ -116,8 +116,6 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  * @param slot_config   Pointer to structure with slot configuration.
  *                      For SDMMC peripheral, pass a pointer to sdmmc_slot_config_t
  *                      structure initialized using SDMMC_SLOT_CONFIG_DEFAULT.
- *                      (Deprecated) For SPI peripheral, pass a pointer to sdspi_slot_config_t
- *                      structure initialized using SDSPI_SLOT_CONFIG_DEFAULT().
  * @param mount_config  pointer to structure with extra parameters for mounting FATFS
  * @param[out] out_card  if not NULL, pointer to the card information structure will be returned via this argument
  * @return
