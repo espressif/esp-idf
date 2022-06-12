@@ -612,9 +612,13 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
         //cur_cs is changed to DEV_NUM_MAX here
         spi_post_trans(host);
+
+        if (!(host->device[cs]->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT)) {
+            //Return transaction descriptor.
+            xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
+        }
+
         // spi_bus_lock_bg_pause(bus_attr->lock);
-        //Return transaction descriptor.
-        xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
 #ifdef CONFIG_PM_ENABLE
         //Release APB frequency lock
         esp_pm_lock_release(bus_attr->pm_lock);

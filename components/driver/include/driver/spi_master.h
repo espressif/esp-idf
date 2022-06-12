@@ -43,7 +43,7 @@ extern "C"
   */
 #define SPI_DEVICE_NO_DUMMY                (1<<6)
 #define SPI_DEVICE_DDRCLK                  (1<<7)
-
+#define SPI_DEVICE_NO_RETURN_RESULT        (1<<8)  ///< Don't return the descriptor to the host on completion (use post_cb to notify instead)
 
 typedef struct spi_transaction_t spi_transaction_t;
 typedef void(*transaction_cb_t)(spi_transaction_t *trans);
