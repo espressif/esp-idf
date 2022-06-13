@@ -664,6 +664,9 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         if (esp_ret != ESP_OK) {
             return esp_ret;
         }
+    } else if (cfg->skip_server_verification == true) {
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
+        ESP_LOGE(TAG, "insecure connection without server verification, USE ONLY FOR DEBUGGING!");
     } else if (cfg->cacert_buf != NULL) {
         esp_err_t esp_ret = set_ca_cert(tls, cfg->cacert_buf, cfg->cacert_bytes);
         if (esp_ret != ESP_OK) {

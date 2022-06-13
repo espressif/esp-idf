@@ -70,6 +70,14 @@ void esp_transport_ssl_crt_bundle_attach(esp_transport_handle_t t, esp_err_t ((*
 void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t);
 
 /**
+ * @brief      Disable server verification. Should never be used in production
+ *             and only help to debug a faulty connection.
+ *
+ * @param      t    ssl transport
+ */
+void esp_transport_ssl_skip_server_verification(esp_transport_handle_t t);
+
+/**
  * @brief      Set SSL client certificate data for mutual authentication (as PEM format).
  *             Note that, this function stores the pointer to data, rather than making a copy.
  *             So this data must remain valid until after the connection is cleaned up

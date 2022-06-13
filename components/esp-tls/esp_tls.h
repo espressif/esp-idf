@@ -151,6 +151,10 @@ typedef struct esp_tls_cfg {
     bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
                                                  this bool is set. */
 
+    bool skip_server_verification;          /*!< Don't try to verificate the server's certificate in any
+                                                 way. Should never be used in production and only help to debug
+                                                 a faulty connection. */
+
     const char *common_name;                /*!< If non-NULL, server certificate CN must match this name.
                                                  If NULL, server certificate CN must match hostname. */
 

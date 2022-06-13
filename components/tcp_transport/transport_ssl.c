@@ -347,6 +347,12 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
     ssl->cfg.use_global_ca_store = true;
 }
 
+void esp_transport_ssl_skip_server_verification(esp_transport_handle_t t)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.skip_server_verification = true;
+}
+
 #ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
 void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key)
 {
