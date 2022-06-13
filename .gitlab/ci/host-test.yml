@@ -362,6 +362,13 @@ test_nvs_page:
     - idf.py build
     - build/test_nvs_page_host.elf
 
+test_mqtt_on_host:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/mqtt/host_test
+    - idf.py build
+    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
+
 test_log:
   extends: .host_test_template
   script:
