@@ -161,6 +161,20 @@ void esp_efuse_utility_erase_virt_blocks(void);
 esp_err_t esp_efuse_utility_apply_new_coding_scheme(void);
 
 /**
+ * @brief   Checks eFuse errors in BLOCK0.
+ *
+ * @note Refers to ESP32-C3 only.
+ *
+ * It does a BLOCK0 check if eFuse EFUSE_ERR_RST_ENABLE is set.
+ * If BLOCK0 has an error, it prints the error and returns ESP_FAIL, which should be treated as esp_restart.
+ *
+ * @return
+ *         - ESP_OK: No errors in BLOCK0.
+ *         - ESP_FAIL: Error in BLOCK0 requiring reboot.
+ */
+esp_err_t esp_efuse_utility_check_errors(void);
+
+/**
  * @brief   Efuse read operation: copies data from physical efuses to efuse read registers.
  */
 void esp_efuse_utility_clear_program_registers(void);
