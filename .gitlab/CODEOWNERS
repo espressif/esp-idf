@@ -159,6 +159,7 @@
 /examples/bluetooth/          @esp-idf-codeowners/bluetooth
 /examples/build_system/       @esp-idf-codeowners/build-config
 /examples/common_components/  @esp-idf-codeowners/system
+/examples/custom_bootloader/  @esp-idf-codeowners/system
 /examples/cxx/                @esp-idf-codeowners/system
 /examples/ethernet/           @esp-idf-codeowners/network
 /examples/get-started/        @esp-idf-codeowners/system
