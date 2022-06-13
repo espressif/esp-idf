@@ -27,7 +27,7 @@ struct MqttClientHandle
     explicit MqttClientHandle(const std::string & uri)
     {
         esp_mqtt_client_config_t config = { };
-        config.uri = uri.c_str();
+        config.broker.address.uri = uri.c_str();
         client = esp_mqtt_client_init(&config);
         esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, mqtt_event_handler, this);
     }

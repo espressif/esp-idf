@@ -52,12 +52,23 @@ static const psk_hint_key_t psk_hint_key = {
         .hint = "hint"
         };
 
-static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+/*
+ * @brief Event handler registered to receive MQTT events
+ *
+ *  This function is called by the MQTT client event loop.
+ *
+ * @param handler_args user data registered to the event.
+ * @param base Event base for the handler(always MQTT Base in this example).
+ * @param event_id The id for the received event.
+ * @param event_data The data for the event, esp_mqtt_event_handle_t.
+ */
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
+    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    esp_mqtt_event_handle_t event = event_data;
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
-    // your_context_t *context = event->context;
-    switch (event->event_id) {
+    switch ((esp_mqtt_event_id_t)event_id) {
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
             msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
@@ -96,20 +107,20 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             ESP_LOGI(TAG, "Other event id:%d", event->event_id);
             break;
     }
-    return ESP_OK;
 }
 
 
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = EXAMPLE_BROKER_URI,
-        .event_handle = mqtt_event_handler,
-        .psk_hint_key = &psk_hint_key,
+        .broker.address.uri = EXAMPLE_BROKER_URI,
+        .broker.verification.psk_hint_key = &psk_hint_key,
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_mqtt_client_start(client);
 }
 

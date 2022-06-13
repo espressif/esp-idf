@@ -95,7 +95,7 @@ TEST_CASE_METHOD(ClientInitializedFixture, "Client Start")
 {
     SECTION("Successful start") {
         esp_mqtt_client_config_t config{};
-        config.uri = "mqtt://1.1.1.1";
+        config.broker.address.uri = "mqtt://1.1.1.1";
         struct http_parser_url ret_uri = {
             .field_set = 1 | (1<<1),
             .port = 0,

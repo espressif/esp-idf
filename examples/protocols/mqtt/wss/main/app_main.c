@@ -96,8 +96,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = CONFIG_BROKER_URI,
-        .cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start,
+        .broker.address.uri = CONFIG_BROKER_URI,
+        .broker.verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start,
     };
 
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());

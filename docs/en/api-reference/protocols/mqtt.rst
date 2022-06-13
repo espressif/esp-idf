@@ -4,7 +4,7 @@ ESP-MQTT
 Overview
 --------
 
-ESP-MQTT is an implementation of MQTT protocol client (MQTT is a lightweight publish/subscribe messaging protocol).
+ESP-MQTT is an implementation of [MQTT](mqtt.org) protocol client (MQTT is a lightweight publish/subscribe messaging protocol).
 
 
 Features
@@ -19,17 +19,40 @@ Application Example
 -------------------
 
     * :example:`protocols/mqtt/tcp`: MQTT over tcp, default port 1883
-    * :example:`protocols/mqtt/ssl`:  MQTT over tcp, default port 8883
-    * :example:`protocols/mqtt/ssl_psk`: MQTT over tcp using pre-shared keys for authentication, default port 8883
+    * :example:`protocols/mqtt/ssl`:  MQTT over tls, default port 8883
+    * :example:`protocols/mqtt/ssl_ds`:  MQTT over tls using digital signature peripheral for authentication, default port 8883.
+    * :example:`protocols/mqtt/ssl_mutual_auth`:  MQTT over tls using certificates for authentication, default port 8883
+    * :example:`protocols/mqtt/ssl_psk`: MQTT over tls using pre-shared keys for authentication, default port 8883.
     * :example:`protocols/mqtt/ws`: MQTT over Websocket, default port 80
     * :example:`protocols/mqtt/wss`: MQTT over Websocket Secure, default port 443
 
 
 Configuration
 -------------
-URI
-^^^
 
+The configuration is made by setting fields in ``esp_mqtt_client_config_t`` struct. The configuration struct has the following sub structs to configure different aspects of the client operation. 
+
+  * :cpp:member:`broker<esp_mqtt_client_config::broker>` - Allow to set address and security verification.
+  * :cpp:member:`credentials<esp_mqtt_client_config::credentials>` - Client credentials for authentication.
+  * :cpp:member:`session<esp_mqtt_client_config::session>` - Configuration for MQTT session aspects.
+  * :cpp:member:`network<esp_mqtt_client_config::network>` - Networking related configuration. 
+  * :cpp:member:`task<esp_mqtt_client_config::task>` - Allow to configure FreeRTOS task.
+  * :cpp:member:`buffer<esp_mqtt_client_config::buffer>` - Buffer size for input and output.
+
+In the following session the most common aspects are detailed. 
+
+Broker
+^^^^^^^^^^^
+
+===========
+Address
+===========
+
+Broker address can be set by usage of ``broker.address`` struct. The configuration can be made by usage of ``uri`` field 
+or the combination of ``hostname``, ``transport`` and ``port``. Optionally, `path` could be set, this field is useful in 
+websocket connections.
+
+The ``uri`` field is used in the following format ``scheme://hostname:port/path``.
 -  Curently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
 -  MQTT over TCP samples:
 
@@ -56,8 +79,7 @@ URI
 .. code:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtt://mqtt.eclipseprojects.io",
-        // .user_context = (void *)your_context
+        .broker.address.uri = "mqtt://mqtt.eclipseprojects.io",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
@@ -65,9 +87,13 @@ URI
 
 -  Note: By default mqtt client uses event loop library to post related mqtt events (connected, subscribed, published, etc.)
 
+============
+Verification
+============
 
-SSL
-^^^
+For secure connections TLS is used, and to guarantee Broker's identity the ``broker.verification`` struct must be set.
+The broker certificate may be set in PEM or DER format. To select DER the equivalent ``_len`` field must be set, 
+otherwise a NULL terminated string in PEM format should be provided to ``certificate`` field.
 
 -  Get certificate from server, example: ``mqtt.eclipseprojects.io``
    ``openssl s_client -showcerts -connect mqtt.eclipseprojects.io:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >mqtt_eclipse_org.pem``
@@ -77,58 +103,54 @@ SSL
 .. code:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtts://mqtt.eclipseprojects.io:8883",
-        .event_handle = mqtt_event_handler,
-        .cert_pem = (const char *)mqtt_eclipse_org_pem_start,
+        .broker = {
+          .address.uri = "mqtts://mqtt.eclipseprojects.io:8883",
+          .verification.certificate = (const char *)mqtt_eclipse_org_pem_start,
+        },
     };
 
-If the certificate is not null-terminated then ``cert_len`` should also be set.
-Other SSL related configuration parameters are:
+To details on other fields check the Reference API and :ref:`esp_tls_server_verification`.
 
- * ``use_global_ca_store``: use the global certificate store to verify server certificate, see :component_file:`esp-tls/esp_tls.h` for more information
- * ``client_cert_pem``: pointer to certificate data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed.
- * ``client_cert_len``: length of the buffer pointed to by client_cert_pem. May be 0 for null-terminated pem.
- * ``client_key_pem``: pointer to private key data in PEM or DER format for SSL mutual authentication, default is NULL, not required if mutual authentication is not needed.
- * ``client_key_len``: length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem.
- * ``psk_hint_key``: pointer to PSK struct defined in esp_tls.h to enable PSK authentication (as alternative to certificate verification). If not NULL and server/client certificates are NULL, PSK is enabled
- * ``alpn_protos``: NULL-terminated list of protocols to be used for ALPN.
+Client Credentials
+^^^^^^^^^^^^^^^^^^
 
-Last Will and Testament
-^^^^^^^^^^^^^^^^^^^^^^^
-MQTT allows for a last will and testament (LWT) message to notify other clients when a client ungracefully disconnects. This is configured by the following fields
-in the ``esp_mqtt_client_config_t``-struct.
+All client related credentials are under the ``credentials`` field.
 
- * ``lwt_topic``: pointer to the LWT message topic
- * ``lwt_msg``: pointer to the LWT message
- * ``lwt_msg_len``: length of the LWT message, required if ``lwt_msg`` is not null-terminated
- * ``lwt_qos``: quality of service for the LWT message
- * ``lwt_retain``: specifies the retain flag of the LWT message
-
-Other Configuration Parameters
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
- * ``disable_clean_session``: determines the clean session flag for the connect message, defaults to a clean session
- * ``keepalive``: determines how many seconds the client will wait for a ping response before disconnecting, default is 120 seconds.
- * ``disable_auto_reconnect``: enable to stop the client from reconnecting to server after errors or disconnects
- * ``user_context``: custom context that will be passed to the event handler
- * ``task_prio``: MQTT task priority, defaults to 5
- * ``task_stack``: MQTT task stack size, defaults to 6144 bytes, setting this will override setting from menuconfig
- * ``buffer_size``: size of MQTT send/receive buffer, default is 1024 bytes
- * ``username``: pointer to the username used for connecting to the broker
- * ``password``: pointer to the password used for connecting to the broker
+ * ``username``: pointer to the username used for connecting to the broker, can also be set by URI. 
  * ``client_id``: pointer to the client id, defaults to ``ESP32_%CHIPID%`` where %CHIPID% are the last 3 bytes of MAC address in hex format
- * ``host``: MQTT broker domain (ipv4 as string), setting the uri will override this
- * ``port``: MQTT broker port, specifying the port in the uri will override this
- * ``transport``: sets the transport protocol, setting the uri will override this
- * ``refresh_connection_after_ms``: refresh connection after this value (in milliseconds)
- * ``event_handle``: handle for MQTT events as a callback in legacy mode
- * ``event_loop_handle``: handle for MQTT event loop library
 
+==============
+Authentication
+==============
 
+It's possible to set authentication parameters through the ``authentication`` field. The client supports the following authentication methods:
 
-For more options on ``esp_mqtt_client_config_t``, please refer to API reference below
+ * Using a password by setting ``authentication.password``.
+ * Muthual authentication with TLS by setting ``authentication.certificate`` and ``authentication.key``, both can be provided in PEM or DER format.
+ * Using secure element available in ESP32-WROOM-32SE, setting ``authentication.use_secure_element``.
+ * Using Digital Signature Peripheral available in some Espressif devices, setting ``authentication.ds_data``.   
+
+Session
+^^^^^^^^^^^
+
+For MQTT session related configurations ``section`` fields should be used. 
+
+=======================
+Last Will and Testament
+=======================
+
+MQTT allows for a last will and testament (LWT) message to notify other clients when a client ungracefully disconnects. This is configured by the following fields
+in the ``esp_mqtt_client_config_t.session.last_will``-struct.
+
+ * ``topic``: pointer to the LWT message topic
+ * ``msg``: pointer to the LWT message
+ * ``msg_len``: length of the LWT message, required if ``msg`` is not null-terminated
+ * ``qos``: quality of service for the LWT message
+ * ``retain``: specifies the retain flag of the LWT message
 
 Change settings in Project Configuration Menu
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 The settings for MQTT can be found using ``idf.py menuconfig``, under Component config -> ESP-MQTT Configuration
 
 The following settings are available:
@@ -152,8 +174,6 @@ The following events may be posted by the MQTT client:
 * ``MQTT_EVENT_PUBLISHED``: The broker has acknowledged the client's publish message. This will only be posted for Quality of Service level 1 and 2, as level 0 does not use acknowledgements. The event data will contain the message ID of the publish message.
 * ``MQTT_EVENT_DATA``: The client has received a publish message. The event data contains: message ID, name of the topic it was published to, received data and its length. For data that exceeds the internal buffer multiple `MQTT_EVENT_DATA` will be posted and `current_data_offset` and `total_data_len` from event data updated to keep track of the fragmented message.
 * ``MQTT_EVENT_ERROR``: The client has encountered an error. `esp_mqtt_error_type_t` from `error_handle` in the event data can be used to further determine the type of the error. The type of error will determine which parts of the `error_handle` struct is filled.
-
-
 
 API Reference
 -------------

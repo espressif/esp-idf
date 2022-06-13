@@ -156,3 +156,18 @@ Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - The function :cpp:func:`esp_transport_read` now returns ``0`` for a connection timeout and ``< 0`` for other errors. Please refer :cpp:enum:`esp_tcp_transport_err_t` for all possible return values.
+
+
+MQTT Client
+-----------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- :cpp:type:`esp_mqtt_client_config_t` have all fields grouped in sub structs. 
+
+Most common configurations are listed below:
+
+- Broker address now is set in :cpp:member:`esp_mqtt_client_config_t::broker::address::uri`
+- Security related to broker verification in :cpp:member:`esp_mqtt_client_config_t::broker::verification`
+- Client username is set in :cpp:member:`esp_mqtt_client_config_t::credentials::username`   
