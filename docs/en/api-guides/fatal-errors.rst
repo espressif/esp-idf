@@ -279,6 +279,27 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
 
 The GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change the PC, or continue execution. To reset the program, exit GDB and perform an external reset: Ctrl-T Ctrl-R in IDF Monitor, or using the external reset button on the development board.
 
+.. _RTC-Watchdog-Timeout:
+
+RTC Watchdog Timeout
+--------------------
+
+The RTC watchdog is used in the startup code to keep track of execution time and also helps to prevent a lock up caused by an unstable power source, it is enabled by default, see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`. If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the ROM bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
+
+.. only:: esp32
+
+    ::
+
+        rst:0x10 (RTCWDT_RTC_RESET)
+
+.. only:: not esp32
+
+    ::
+
+        rst:0x10 (RTCWDT_RTC_RST)
+
+The RTC watchdog covers the execution time from the first stage bootloader (ROM bootloader) to application startup. It is initially set in the ROM bootloader, then configured in the bootloader with the :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000ms by default). During the application initialization stage, it is reconfigured again because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which allows the RTC watchdog to not be disabled before ``app_main`` and instead the RTC watchdog remains active and must be explicitly reset in your application.
+
 .. _Guru-Meditation-Errors:
 
 Guru Meditation Errors
