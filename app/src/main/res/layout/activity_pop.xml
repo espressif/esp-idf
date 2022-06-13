@@ -45,6 +45,18 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_pop" />
 
+            <TextView
+                android:id="@+id/tv_error_pop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_32"
+                android:text="@string/error_pop_incorrect"
+                android:textColor="@color/color_orange"
+                android:textSize="14sp"
+                android:visibility="invisible"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/et_pop" />
+
             <include
                 android:id="@+id/btn_next"
                 layout="@layout/button"
@@ -53,7 +65,7 @@
                 android:layout_marginTop="@dimen/margin_16"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/et_pop" />
+                app:layout_constraintTop_toBottomOf="@id/tv_error_pop" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

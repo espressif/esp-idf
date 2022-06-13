@@ -555,7 +555,7 @@ public class ESPDevice {
         }
     }
 
-    private void initSession(final ResponseListener listener) {
+    public void initSession(final ResponseListener listener) {
 
         if (securityType.equals(ESPConstants.SecurityType.SECURITY_0)) {
             security = new Security0();

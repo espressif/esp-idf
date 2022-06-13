@@ -30,6 +30,7 @@ import androidx.cardview.widget.CardView;
 import com.espressif.provisioning.DeviceConnectionEvent;
 import com.espressif.provisioning.ESPConstants;
 import com.espressif.provisioning.ESPProvisionManager;
+import com.espressif.provisioning.listeners.ResponseListener;
 import com.espressif.wifi_provisioning.R;
 
 import org.greenrobot.eventbus.EventBus;
@@ -47,7 +48,7 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
     private TextView txtNextBtn;
 
     private String deviceName;
-    private TextView tvPopInstruction;
+    private TextView tvPopInstruction, tvPopError;
     private EditText etPop;
     private ESPProvisionManager provisionManager;
 
@@ -111,14 +112,36 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
 
             final String pop = etPop.getText().toString();
             Log.d(TAG, "POP : " + pop);
+            tvPopError.setVisibility(View.INVISIBLE);
             provisionManager.getEspDevice().setProofOfPossession(pop);
-            ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
 
-            if (deviceCaps.contains("wifi_scan")) {
-                goToWiFiScanListActivity();
-            } else {
-                goToWiFiConfigActivity();
-            }
+            provisionManager.getEspDevice().initSession(new ResponseListener() {
+                @Override
+                public void onSuccess(byte[] returnData) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ArrayList<String> deviceCaps = provisionManager.getEspDevice().getDeviceCapabilities();
+                            if (deviceCaps.contains("wifi_scan")) {
+                                goToWiFiScanListActivity();
+                            } else {
+                                goToWiFiConfigActivity();
+                            }
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    e.printStackTrace();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            tvPopError.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
+            });
         }
     };
 
@@ -137,6 +160,7 @@ public class ProofOfPossessionActivity extends AppCompatActivity {
         tvBack = findViewById(R.id.btn_back);
         tvCancel = findViewById(R.id.btn_cancel);
         tvPopInstruction = findViewById(R.id.tv_pop);
+        tvPopError = findViewById(R.id.tv_error_pop);
         etPop = findViewById(R.id.et_pop);
 
         tvTitle.setText(R.string.title_activity_pop);

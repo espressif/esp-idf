@@ -84,7 +84,7 @@
     <string name="error_network_not_found">Network not found.</string>
     <string name="error_authentication_failed">Wi-Fi Authentication failed.</string>
     <string name="error_unknown">Device provisioning failed. Reason : Unknown.</string>
-    <string name="error_pop_incorrect">Error establishing session.\n Check if Proof of Possession(POP) is correct!</string>
+    <string name="error_pop_incorrect">Please retry with correct proof of possession PIN.</string>
     <string name="error_no_ble_device">No Bluetooth devices found!</string>
     <string name="error_device_connect_failed">Error! Failed to connect with device.</string>
     <string name="error_ssid_empty">Network name cannot be empty</string>
