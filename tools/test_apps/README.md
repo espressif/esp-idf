@@ -74,15 +74,15 @@ You should also set the port via the environment variable ESPPORT to prevent the
 export ESPPORT=/dev/ttyUSB<X>
 ```
 
-## Test Apps local execution (pytest)
-
-Some of the examples have `pytest_....py` scripts that are using the `pytest` as the test framework. For detailed information, please refer to the "Run the Tests Locally" Section under [ESP-IDF tests in Pytest documentation](../../docs/en/contribute/esp-idf-tests-with-pytest.rst)
-
-Using `pytest` is the recommended way to write new tests. We will migrate all the test apps scripts to this new framework soon.
-
 ### Execution
 
 - Create an sdkconfig file from the relevant `sdkconfig.ci.<CONFIG>` and `sdkconfig.defaults`: `cat sdkconfig.defaults sdkconfig.ci.<CONFIG> > sdkconfig`
 - Run `idf.py menuconfig` to configure local project attributes
 - Run `idf.py build` to build the test app
 - Run `python app_test.py` to run the test locally
+
+## Test Apps local execution (pytest)
+
+Some of the examples have `pytest_....py` scripts that are using the `pytest` as the test framework. For detailed information, please refer to the "Run the Tests Locally" Section under [ESP-IDF tests in Pytest documentation](../../docs/en/contribute/esp-idf-tests-with-pytest.rst)
+
+Using `pytest` is the recommended way to write new tests. We will migrate all the test apps scripts to this new framework soon.
