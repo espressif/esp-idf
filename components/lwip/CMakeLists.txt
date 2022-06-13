@@ -178,6 +178,13 @@ set_source_files_properties(
     -Wno-type-limits
 )
 
+# ignore some declaration mismatches
+set_source_files_properties(
+    lwip/src/netif/ppp/chap_ms.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-array-parameter
+)
+
 if(CONFIG_OPENTHREAD_ENABLED)
     idf_component_optional_requires(PRIVATE openthread)
 endif()
