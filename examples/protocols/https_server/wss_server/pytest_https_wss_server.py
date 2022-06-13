@@ -143,6 +143,16 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
             raise RuntimeError('Failed to receive the correct echo response')
         logging.info('Correct echo response obtained from the wss server')
 
+        # Test for PING
+        logging.info('Testing for send PING')
+        ws.write(data=DATA, opcode=OPCODE_PING)
+        dut.expect('Got a WS PING frame, Replying PONG')
+        opcode, data = ws.read()
+        data = data.decode('UTF-8')
+        if data != DATA or opcode != OPCODE_PONG:
+            raise RuntimeError('Failed to receive the PONG response')
+        logging.info('Passed the test for PING')
+
         # Test for keepalive
         logging.info('Testing for keep alive (approx time = 20s)')
         start_time = time.time()
