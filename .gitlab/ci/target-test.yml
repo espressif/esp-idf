@@ -613,6 +613,12 @@ example_test_C3_GENERIC:
     - ESP32C3
     - Example_GENERIC
 
+example_test_C2_GENERIC:
+  extends: .example_test_esp32c2_template
+  tags:
+    - ESP32C2
+    - Example_GENERIC
+
 example_test_ESP32_SDSPI:
   extends: .example_test_esp32_template
   tags:
