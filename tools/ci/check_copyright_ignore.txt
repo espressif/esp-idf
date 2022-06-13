@@ -727,7 +727,6 @@ components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h
 components/fatfs/diskio/diskio_rawflash.c
 components/fatfs/diskio/diskio_rawflash.h
-components/fatfs/diskio/diskio_sdmmc.h
 components/fatfs/diskio/diskio_wl.h
 components/fatfs/port/freertos/ffsystem.c
 components/fatfs/port/linux/ffsystem.c

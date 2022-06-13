@@ -85,6 +85,17 @@ typedef struct {
      * sector size.
      */
     size_t allocation_unit_size;
+    /**
+     * Enables real ff_disk_status function implementation for SD cards
+     * (ff_sdmmc_status). Possibly slows down IO performance.
+     *
+     * Try to enable if you need to handle situations when SD cards
+     * are not unmounted properly before physical removal
+     * or you are experiencing issues with SD cards.
+     *
+     * Doesn't do anything for other memory storage media.
+     */
+    bool disk_status_check_enable;
 } esp_vfs_fat_mount_config_t;
 
 // Compatibility definition

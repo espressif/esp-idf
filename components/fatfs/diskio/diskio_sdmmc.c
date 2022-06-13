@@ -12,6 +12,7 @@
 #include "esp_compiler.h"
 
 static sdmmc_card_t* s_cards[FF_VOLUMES] = { NULL };
+static bool s_disk_status_check_en[FF_VOLUMES] = { };
 
 static const char* TAG = "diskio_sdmmc";
 
@@ -38,9 +39,12 @@ DSTATUS ff_sdmmc_initialize (BYTE pdrv)
     return ff_sdmmc_card_available(pdrv);
 }
 
-DSTATUS ff_sdmmc_status (BYTE pdrv)
+DSTATUS ff_sdmmc_status(BYTE pdrv)
 {
-    return ff_sdmmc_card_available(pdrv);
+    if (s_disk_status_check_en[pdrv]) {
+        return ff_sdmmc_card_available(pdrv);
+    }
+    return 0;
 }
 
 DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
@@ -108,6 +112,11 @@ DRESULT ff_sdmmc_ioctl (BYTE pdrv, BYTE cmd, void* buff)
     return RES_ERROR;
 }
 
+void ff_sdmmc_set_disk_status_check(BYTE pdrv, bool enable)
+{
+    s_disk_status_check_en[pdrv] = enable;
+}
+
 void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card)
 {
     static const ff_diskio_impl_t sdmmc_impl = {
@@ -118,6 +127,7 @@ void ff_diskio_register_sdmmc(BYTE pdrv, sdmmc_card_t* card)
         .ioctl = &ff_sdmmc_ioctl
     };
     s_cards[pdrv] = card;
+    s_disk_status_check_en[pdrv] = false;
     ff_diskio_register(pdrv, &sdmmc_impl);
 }
 
