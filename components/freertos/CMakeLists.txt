@@ -28,6 +28,24 @@ if(CONFIG_FREERTOS_SMP)
             "FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos"
             "FreeRTOS-Kernel-SMP/portable/xtensa"
             .)
+
+    elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
+        set(srcs
+            "FreeRTOS-Kernel-SMP/portable/riscv/port.c"
+            "FreeRTOS-Kernel-SMP/portable/riscv/portasm.S")
+
+        set(include_dirs
+            FreeRTOS-Kernel-SMP/include
+            esp_additions/include/freertos          # For files with #include "FreeRTOSConfig.h"
+            FreeRTOS-Kernel-SMP/portable/riscv/include
+            esp_additions/include                   # For files with #include "freertos/FreeRTOSConfig.h"
+            FreeRTOS-Kernel-SMP/portable/riscv/include/freertos)
+
+        set(private_include_dirs
+            FreeRTOS-Kernel-SMP/portable/riscv/include/freertos
+            FreeRTOS-Kernel-SMP/portable/riscv
+            .)
+
     endif()
 
     list(APPEND srcs
