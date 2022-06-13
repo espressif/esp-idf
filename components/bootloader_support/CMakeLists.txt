@@ -18,7 +18,7 @@ set(srcs
 
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "bootloader_flash/include"
-        "include_bootloader")
+        "private_include")
     set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
     "src/bootloader_init.c"
@@ -35,7 +35,7 @@ else()
     list(APPEND srcs
         "src/idf/bootloader_sha.c")
     set(include_dirs "include" "bootloader_flash/include")
-    set(priv_include_dirs "include_bootloader")
+    set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
     set(priv_requires spi_flash mbedtls efuse app_update heap)
 endif()
