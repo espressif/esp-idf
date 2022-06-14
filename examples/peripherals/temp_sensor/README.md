@@ -1,9 +1,9 @@
-| Supported Targets | ESP32-S2 | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-C3 | ESP32-S3 | ESP32-C2 |
+| ----------------- | -------- | -------- | -------- | -------- |
 
 # Temperature Sensor Example
 
-The ESP32-S2/C3/S3 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.
+The ESP32-S2/C3/S3/C2 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.
 
 The conversion relationship is the first two columns of the table below. Among them, `offset = 0`(default) is the main measurement option, and other values are extended measurement options.
 
@@ -21,7 +21,7 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Hardware Required
 
-* A development board with ESP32-S2/C3/S3 SoC (e.g., ESP32-S2-Saola-1, ESP32-S2-DevKitM-1, ESP32-C3-DevKitM-1, ESP32-S3-WROOM-1, etc.)
+* A development board with ESP32-S2/C3/S3/C2 SoC (e.g., ESP32-S2-Saola-1, ESP32-S2-DevKitM-1, ESP32-C3-DevKitM-1, ESP32-S3-WROOM-1, etc.)
 * A USB cable for power supply and programming
 
 ### Build and Flash

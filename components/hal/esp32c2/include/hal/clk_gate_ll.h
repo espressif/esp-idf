@@ -57,6 +57,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_BT_BASEBAND_EN;
     case PERIPH_BT_LC_MODULE:
         return SYSTEM_BT_LC_EN;
+    case PERIPH_TEMPSENSOR_MODULE:
+        return SYSTEM_TSENS_CLK_EN;
     default:
         return 0;
     }
@@ -90,6 +92,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_SPI01_RST;
     case PERIPH_SPI2_MODULE:
         return SYSTEM_SPI2_RST;
+    case PERIPH_TEMPSENSOR_MODULE:
+        return SYSTEM_TSENS_RST;
     case PERIPH_SHA_MODULE:
         if (enable == true) {
             // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
@@ -119,6 +123,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_SHA_MODULE:
     case PERIPH_GDMA_MODULE:
     case PERIPH_ECC_MODULE:
+    case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
@@ -140,6 +145,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_SHA_MODULE:
     case PERIPH_GDMA_MODULE:
     case PERIPH_ECC_MODULE:
+    case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
     default:
         return SYSTEM_PERIP_RST_EN0_REG;

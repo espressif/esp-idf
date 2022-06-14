@@ -38,6 +38,17 @@ static inline void regi2c_ctrl_ll_i2c_apll_enable(void)
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M);
 }
 
+/**
+ * @brief Enable I2C_SAR
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+{
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+}
+
 #ifdef __cplusplus
 }
 #endif

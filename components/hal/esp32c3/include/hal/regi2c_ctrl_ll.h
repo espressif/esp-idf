@@ -39,6 +39,15 @@ static inline __attribute__((always_inline)) void regi2c_ctrl_ll_bbpll_calibrati
     REG_SET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
 }
 
+/**
+ * @brief Enable I2C_SAR
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+{
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
+}
+
 #ifdef __cplusplus
 }
 #endif
