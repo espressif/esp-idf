@@ -79,6 +79,8 @@ static long vfs_spiffs_telldir(void* ctx, DIR* pdir);
 static void vfs_spiffs_seekdir(void* ctx, DIR* pdir, long offset);
 static int vfs_spiffs_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_spiffs_rmdir(void* ctx, const char* name);
+static int vfs_spiffs_truncate(void* ctx, const char *path, off_t length);
+static int vfs_spiffs_ftruncate(void* ctx, int fd, off_t length);
 #ifdef CONFIG_SPIFFS_USE_MTIME
 static int vfs_spiffs_utime(void *ctx, const char *path, const struct utimbuf *times);
 #endif // CONFIG_SPIFFS_USE_MTIME
@@ -410,6 +412,8 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
         .telldir_p = &vfs_spiffs_telldir,
         .mkdir_p = &vfs_spiffs_mkdir,
         .rmdir_p = &vfs_spiffs_rmdir,
+        .truncate_p = &vfs_spiffs_truncate,
+        .ftruncate_p = &vfs_spiffs_ftruncate,
 #ifdef CONFIG_SPIFFS_USE_MTIME
         .utime_p = &vfs_spiffs_utime,
 #else
@@ -780,6 +784,44 @@ static int vfs_spiffs_rmdir(void* ctx, const char* name)
 {
     errno = ENOTSUP;
     return -1;
+}
+
+static int vfs_spiffs_truncate(void* ctx, const char *path, off_t length)
+{
+    assert(path);
+    esp_spiffs_t * efs = (esp_spiffs_t *)ctx;
+    int fd = SPIFFS_open(efs->fs, path, SPIFFS_WRONLY, 0);
+    if (fd < 0) {
+        goto err;
+    }
+
+    int res = SPIFFS_ftruncate(efs->fs, fd, length);
+    if (res < 0) {
+        (void)SPIFFS_close(efs->fs, fd);
+        goto err;
+    }
+
+    res = SPIFFS_close(efs->fs, fd);
+    if (res < 0) {
+       goto err;
+    }
+    return res;
+err:
+    errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+    SPIFFS_clearerr(efs->fs);
+    return -1;
+}
+
+static int vfs_spiffs_ftruncate(void* ctx, int fd, off_t length)
+{
+    esp_spiffs_t * efs = (esp_spiffs_t *)ctx;
+    int res = SPIFFS_ftruncate(efs->fs, fd, length);
+    if (res < 0) {
+        errno = spiffs_res_to_errno(SPIFFS_errno(efs->fs));
+        SPIFFS_clearerr(efs->fs);
+        return -1;
+    }
+    return res;
 }
 
 static int vfs_spiffs_link(void* ctx, const char* n1, const char* n2)
