@@ -224,6 +224,8 @@ ESP32-S2-Kaluga-1 上电前，请首先确认开发板完好无损。
 
 您还可以点击 `这里 <https://github.com/espressif/esp-dev-kits/tree/master/esp32-s2-kaluga-1>`_，获取有关 ESP32-S2-Kaluga-1 套件编程指南与应用示例的更多内容。
 
+您可以在 `IDF 组件注册器 <https://components.espressif.com>`_ 中下载板级支持包 (BSP)。
+
 
 内容和包装
 ----------

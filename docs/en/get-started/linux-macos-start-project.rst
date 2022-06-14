@@ -72,3 +72,7 @@ You are using this menu to set up project specific variables, e.g., Wi-Fi networ
 .. note::
 
     The colors of the menu could be different in your terminal. You can change the appearance with the option ``--style``. Please run ``idf.py menuconfig --help`` for further information.
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    If you are using one of the supported development boards, you can speed up your development by using Board Support Package. See `Additional Tips <#additional-tips>`__ for more information.
