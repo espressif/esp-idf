@@ -87,18 +87,16 @@ extern "C" {
 #define RTC_CNTL_DIG_DBIAS_1V15  6
 #define RTC_CNTL_DIG_DBIAS_1V20  7
 
-#define DELAY_FAST_CLK_SWITCH           3
-#define DELAY_SLOW_CLK_SWITCH           300
-#define DELAY_8M_ENABLE                 50
-
-/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
- * 10 cycles will take approximately 300 microseconds.
+/* Delays for various clock sources to be enabled/switched.
+ * All values are in microseconds.
  */
-#define XTAL_FREQ_EST_CYCLES            10
+#define SOC_DELAY_RTC_FAST_CLK_SWITCH       3
+#define SOC_DELAY_RTC_SLOW_CLK_SWITCH       300
+#define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 
-#define DIG_DBIAS_80M   RTC_CNTL_DBIAS_1V20
-#define DIG_DBIAS_160M  RTC_CNTL_DBIAS_1V20
-
+/* Core voltage (to be supported) */
+#define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
+#define DIG_DBIAS_160M      RTC_CNTL_DBIAS_1V20
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
@@ -109,7 +107,6 @@ extern "C" {
 
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT  600
 #define RTC_CNTL_SCK_DCAP_DEFAULT    128
-#define RTC_CNTL_RC32K_DFREQ_DEFAULT 707
 
 
 /* Various delays to be programmed into power control state machines */
@@ -140,7 +137,6 @@ set sleep_init default param
  */
 typedef enum {
     RTC_XTAL_FREQ_32M = 32,
-    RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
 /**
@@ -173,7 +169,7 @@ typedef enum {
 typedef struct {
     rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
-    soc_rtc_fast_clk_src_t fast_clk_src : 1;   //!< RTC_FAST_CLK clock source to choose
+    soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
     soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;               //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
@@ -195,29 +191,6 @@ typedef struct {
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
     .root_clk_slt = 0, \
-}
-
-typedef struct {
-    uint32_t dac : 6;
-    uint32_t dres : 3;
-    uint32_t dgm : 3;
-    uint32_t dbuf: 1;
-} x32k_config_t;
-
-
-#define X32K_CONFIG_DEFAULT() { \
-    .dac = 3, \
-    .dres = 3, \
-    .dgm = 3, \
-    .dbuf = 1, \
-}
-
-typedef struct {
-    uint32_t dfreq : 10;
-} rc32k_config_t;
-
-#define RC32K_CONFIG_DEFAULT() {\
-    .dfreq = RTC_CNTL_RC32K_DFREQ_DEFAULT,\
 }
 
 typedef struct {
@@ -344,9 +317,9 @@ bool rtc_clk_8md256_enabled(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
- * @param slow_freq clock source (one of soc_rtc_slow_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_slow_clk_src_t values)
  */
-void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t slow_freq);
+void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_SLOW_CLK source
@@ -370,9 +343,9 @@ uint32_t rtc_clk_slow_freq_get_hz(void);
 
 /**
  * @brief Select source for RTC_FAST_CLK
- * @param fast_freq clock source (one of soc_rtc_fast_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_fast_clk_src_t values)
  */
-void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t fast_freq);
+void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_FAST_CLK source
@@ -455,18 +428,13 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq);
 
 /**
  * @brief Get the current stored APB frequency.
- * @return The APB frequency value as last set via rtc_clk_apb_freq_update(), in Hz.
+ * @return The APB frequency value computed from upstream, in Hz.
  */
 uint32_t rtc_clk_apb_freq_get(void);
 
 void rtc_clk_cpu_freq_set(uint32_t source, uint32_t div);
 
-/**
- * @brief Get the current stored AHB frequency.
- * @return The AHB frequency value as last set via rtc_clk_ahb_freq_set(), in Hz.
- */
-uint32_t rtc_clk_ahb_freq_get(void);
-
+uint32_t rtc_clk_select_root_clk(soc_cpu_clk_src_t cpu_clk_src);
 
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
@@ -910,12 +878,6 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void);
  */
 void rtc_vddsdio_set_config(rtc_vddsdio_config_t config);
 
-
-/* Select clock root source for esp32h2. return source clk freq_mhz
- */
-uint32_t root_clk_slt(uint32_t source);
-uint32_t root_clk_get(void);
-
 /**
  * Regulator config
  */
@@ -944,12 +906,6 @@ typedef struct {
     .rtc_active_dbias = 15, \
     .rtc_slp_dbias = 8  \
 }
-
-
-/**
- * gpio hangup
- */
-void rtc_gpio_hangup(uint32_t gpio_no);
 
 
 // -------------------------- CLOCK TREE DEFS ALIAS ----------------------------

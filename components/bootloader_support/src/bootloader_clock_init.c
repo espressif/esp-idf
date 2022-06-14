@@ -9,7 +9,7 @@
 #include "hal/efuse_hal.h"
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "soc/dport_reg.h"
+#include "hal/clk_tree_ll.h"
 #endif
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
@@ -33,22 +33,28 @@ __attribute__((weak)) void bootloader_clock_configure(void)
      * previously.
      */
     if (efuse_hal_get_chip_revision() == 0 &&
-            DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
+            clk_ll_cpu_get_freq_mhz_from_pll() == CLK_LL_PLL_240M_FREQ_MHZ) {
         cpu_freq_mhz = 240;
     }
 #elif CONFIG_IDF_TARGET_ESP32H2
     cpu_freq_mhz = 64;
 #endif
 
-    if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW) {
+    if (esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW || rtc_clk_apb_freq_get() < APB_CLK_FREQ) {
         rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
 #if CONFIG_IDF_TARGET_ESP32
         clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
 #endif
-        /* ESP32-S2 doesn't have XTAL_FREQ choice, always 40MHz */
+        /* Except ESP32, there is no XTAL_FREQ choice */
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
+        if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {
+            clk_cfg.slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+        }
         clk_cfg.fast_clk_src = rtc_clk_fast_src_get();
+        if (clk_cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_INVALID) {
+            clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_XTAL_DIV;
+        }
         rtc_clk_init(clk_cfg);
     }
 

@@ -880,7 +880,6 @@ components/hal/include/hal/wdt_types.h
 components/hal/interrupt_controller_hal.c
 components/hal/ledc_hal_iram.c
 components/hal/mpu_hal.c
-components/hal/platform_port/include/hal/assert.h
 components/hal/platform_port/include/hal/check.h
 components/hal/platform_port/include/hal/misc.h
 components/hal/rtc_io_hal.c
@@ -1153,7 +1152,6 @@ components/soc/esp32/include/soc/can_periph.h
 components/soc/esp32/include/soc/can_struct.h
 components/soc/esp32/include/soc/clkout_channel.h
 components/soc/esp32/include/soc/dac_channel.h
-components/soc/esp32/include/soc/dport_reg.h
 components/soc/esp32/include/soc/emac_dma_struct.h
 components/soc/esp32/include/soc/emac_ext_struct.h
 components/soc/esp32/include/soc/emac_mac_struct.h
@@ -1172,7 +1170,6 @@ components/soc/esp32/include/soc/host_struct.h
 components/soc/esp32/include/soc/hwcrypto_reg.h
 components/soc/esp32/include/soc/i2c_reg.h
 components/soc/esp32/include/soc/i2c_struct.h
-components/soc/esp32/include/soc/io_mux_reg.h
 components/soc/esp32/include/soc/ledc_reg.h
 components/soc/esp32/include/soc/ledc_struct.h
 components/soc/esp32/include/soc/nrx_reg.h
@@ -1369,7 +1366,6 @@ components/soc/esp32s2/include/soc/spi_reg.h
 components/soc/esp32s2/include/soc/spi_struct.h
 components/soc/esp32s2/include/soc/syscon_reg.h
 components/soc/esp32s2/include/soc/syscon_struct.h
-components/soc/esp32s2/include/soc/system_reg.h
 components/soc/esp32s2/include/soc/systimer_reg.h
 components/soc/esp32s2/include/soc/systimer_struct.h
 components/soc/esp32s2/include/soc/touch_sensor_channel.h

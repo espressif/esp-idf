@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SYSTEM_REG_H_
 #define _SOC_SYSTEM_REG_H_
 
@@ -886,10 +878,6 @@ extern "C" {
 #define DPORT_SOC_CLK_SEL_M  ((DPORT_SOC_CLK_SEL_V)<<(DPORT_SOC_CLK_SEL_S))
 #define DPORT_SOC_CLK_SEL_V  0x3
 #define DPORT_SOC_CLK_SEL_S  10
-#define DPORT_SOC_CLK_SEL_XTL    0
-#define DPORT_SOC_CLK_SEL_PLL    1
-#define DPORT_SOC_CLK_SEL_8M     2
-#define DPORT_SOC_CLK_SEL_APLL   3
 /* DPORT_PRE_DIV_CNT : R/W ;bitpos:[9:0] ;default: 10'h1 ; */
 /*description: */
 #define DPORT_PRE_DIV_CNT  0x000003FF

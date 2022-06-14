@@ -131,6 +131,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
 #endif
 
+    bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
+    rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE

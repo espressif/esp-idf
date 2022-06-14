@@ -213,7 +213,7 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 
     rtc_cpu_freq_config_t config_xtal, config_default;
     rtc_clk_cpu_freq_get_config(&config_default);
-    rtc_clk_cpu_freq_mhz_to_config((int) rtc_clk_xtal_freq_get(), &config_xtal);
+    rtc_clk_cpu_freq_mhz_to_config(esp_clk_xtal_freq() / MHZ, &config_xtal);
 
     esp_sleep_enable_timer_wakeup(1000);
     for (int i = 0; i < 1000; ++i) {
