@@ -5,7 +5,6 @@
 import copy
 import fnmatch
 import os
-import sys
 import types
 from typing import List
 
@@ -137,7 +136,6 @@ class Search:
             test_cases += cls._search_cases_from_file(test_case_file)
 
         if cls.missing_import_warnings:
-            print('\n\n'.join(cls.missing_import_warnings))
-            sys.exit(1)
+            raise ImportError('\n\n'.join(cls.missing_import_warnings))
 
         return test_cases
