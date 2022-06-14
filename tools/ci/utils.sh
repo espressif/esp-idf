@@ -62,8 +62,7 @@ function warning() {
 }
 
 function run_cmd() {
-  local args=( "$@" )
-  local cmd="${args[@]}"
+  local cmd="$*"
   local start=$(date +%s)
 
   info "\$ ${cmd}"
