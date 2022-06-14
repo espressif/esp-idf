@@ -23,8 +23,9 @@ extern "C" {
 #define LCD_LL_EVENT_VSYNC_END  (1 << 0)
 #define LCD_LL_EVENT_TRANS_DONE (1 << 1)
 
-// Maximum coefficient of clock prescaler
-#define LCD_LL_CLOCK_PRESCALE_MAX (64)
+#define LCD_LL_CLK_FRAC_DIV_N_MAX  256 // LCD_CLK = LCD_CLK_S / (N + b/a), the N register is 8 bit-width
+#define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
+#define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
 
 /**
  * @brief Enable clock gating
@@ -38,25 +39,13 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 }
 
 /**
- * @brief Set clock source for LCD peripheral
+ * @brief Select clock source for LCD peripheral
  *
  * @param dev LCD register base address
  * @param src Clock source
- * @param div_num Integer part of the divider
- * @param div_a denominator of the divider
- * @param div_b numerator of the divider
  */
-static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_source_t src, int div_num, int div_a, int div_b)
+static inline void lcd_ll_select_clk_src(lcd_cam_dev_t *dev, lcd_clock_source_t src)
 {
-    // lcd_clk = module_clock_src / (div_num + div_b / div_a)
-    HAL_ASSERT(div_num >= 2 && div_num <= 256);
-    // dic_num == 0 means 256 divider in hardware
-    if (div_num >= 256) {
-        div_num = 0;
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
-    dev->lcd_clock.lcd_clkm_div_a = div_a;
-    dev->lcd_clock.lcd_clkm_div_b = div_b;
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         dev->lcd_clock.lcd_clk_sel = 3;
@@ -68,11 +57,32 @@ static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_sour
         dev->lcd_clock.lcd_clk_sel = 1;
         break;
     default:
-        // disble LCD clock source
+        // disable LCD clock source
         dev->lcd_clock.lcd_clk_sel = 0;
-        HAL_ASSERT(false && "unsupported clock source");
+        HAL_ASSERT(false);
         break;
     }
+}
+
+/**
+ * @brief Set clock coefficient of LCD peripheral
+ *
+ * @param dev LCD register base address
+ * @param div_num Integer part of the divider
+ * @param div_a denominator of the divider
+ * @param div_b numerator of the divider
+ */
+static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num, int div_a, int div_b)
+{
+    // lcd_clk = module_clock_src / (div_num + div_b / div_a)
+    HAL_ASSERT(div_num >= 2 && div_num <= LCD_LL_CLK_FRAC_DIV_N_MAX);
+    // dic_num == 0 means LCD_LL_CLK_FRAC_DIV_N_MAX divider in hardware
+    if (div_num >= LCD_LL_CLK_FRAC_DIV_N_MAX) {
+        div_num = 0;
+    }
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
+    dev->lcd_clock.lcd_clkm_div_a = div_a;
+    dev->lcd_clock.lcd_clkm_div_b = div_b;
 }
 
 
@@ -109,6 +119,7 @@ static inline void lcd_ll_set_pixel_clock_edge(lcd_cam_dev_t *dev, bool active_o
 __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t prescale)
 {
+    HAL_ASSERT(prescale <= LCD_LL_PCLK_DIV_MAX);
     // Formula: pixel_clk = lcd_clk / (1 + clkcnt_n)
     // clkcnt_n can't be zero
     uint32_t scale = 1;
