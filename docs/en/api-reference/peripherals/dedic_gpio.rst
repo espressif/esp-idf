@@ -86,7 +86,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
 1. Allocate a GPIO bundle: :cpp:func:`dedic_gpio_new_bundle`
 2. Query the mask occupied by that bundle: :cpp:func:`dedic_gpio_get_out_mask` or/and :cpp:func:`dedic_gpio_get_in_mask`
-3. Call CPU LL apis (e.g. `cpu_ll_write_dedic_gpio_mask`) or write assembly code with that mask
+3. Call CPU LL apis (e.g. `dedic_gpio_cpu_ll_write_mask`) or write assembly code with that mask
 4. The fasted way of toggling IO is to use the dedicated "set/clear" instructions:
 
     .. only:: esp32s2 or esp32s3
@@ -113,7 +113,7 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 
     For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *ESP-RISC-V CPU* [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__].
 
-Some of the dedicated CPU instructions are also wrapped inside `hal/dedic_gpio_ll.h` as helper inline functions.
+Some of the dedicated CPU instructions are also wrapped inside ``hal/dedic_gpio_cpu_ll.h`` as helper inline functions.
 
 .. note::
     Writing assembly code in application could make your code hard to port between targets, because those customized instructions are not guaranteed to remain the same format on different targets.

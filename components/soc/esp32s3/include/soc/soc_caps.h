@@ -33,7 +33,6 @@
 #define SOC_LCDCAM_SUPPORTED            1
 #define SOC_MCPWM_SUPPORTED             1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
-#define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_RISCV_COPROC_SUPPORTED      1
@@ -102,7 +101,13 @@
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
-#include "cpu_caps.h"
+#define SOC_CPU_CORES_NUM               2
+#define SOC_CPU_INTR_NUM                32
+#define SOC_CPU_HAS_FPU                 1
+
+#define SOC_CPU_BREAKPOINTS_NUM         2
+#define SOC_CPU_WATCHPOINTS_NUM         2
+#define SOC_CPU_WATCHPOINT_SIZE         64 // bytes
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */

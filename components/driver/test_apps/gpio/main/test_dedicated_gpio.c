@@ -11,7 +11,7 @@
 #include "unity_test_utils.h"
 #include "esp_rom_sys.h"
 #include "soc/soc_caps.h"
-#include "hal/cpu_ll.h"
+#include "hal/dedic_gpio_cpu_ll.h"
 #include "driver/gpio.h"
 #include "driver/dedic_gpio.h"
 
@@ -67,7 +67,7 @@ static void test_dedic_gpio_on_specific_core(void *args)
 {
     test_dedic_task_context_t *ctx = (test_dedic_task_context_t *)args;
     uint32_t value = 0;
-    cpu_ll_write_dedic_gpio_all(0x0); // clear all out channels
+    dedic_gpio_cpu_ll_write_all(0x0); // clear all out channels
 
     // configure a group of GPIOs, output only
     const int bundleA_gpios[] = {ctx->gpios[0], ctx->gpios[1]};
@@ -112,21 +112,21 @@ static void test_dedic_gpio_on_specific_core(void *args)
     dedic_gpio_bundle_write(bundleA, 0x01, 0x01);
     dedic_gpio_bundle_write(bundleB, 0x03, 0x03);
 
-    value = cpu_ll_read_dedic_gpio_out();
+    value = dedic_gpio_cpu_ll_read_out();
     TEST_ASSERT_EQUAL(0x0D, value); // 1101
-    value = cpu_ll_read_dedic_gpio_in();
+    value = dedic_gpio_cpu_ll_read_in();
     TEST_ASSERT_EQUAL(0x03, value); // 11
 
     dedic_gpio_bundle_write(bundleB, 0x02, 0x0);
-    value = cpu_ll_read_dedic_gpio_out();
+    value = dedic_gpio_cpu_ll_read_out();
     TEST_ASSERT_EQUAL(0x05, value); // 0101
-    value = cpu_ll_read_dedic_gpio_in();
+    value = dedic_gpio_cpu_ll_read_in();
     TEST_ASSERT_EQUAL(0x01, value); // 01
 
-    cpu_ll_write_dedic_gpio_all(0x0F); // Set all out channels
-    value = cpu_ll_read_dedic_gpio_out();
+    dedic_gpio_cpu_ll_write_all(0x0F); // Set all out channels
+    value = dedic_gpio_cpu_ll_read_out();
     TEST_ASSERT_EQUAL(0x0F, value);
-    value = cpu_ll_read_dedic_gpio_in();
+    value = dedic_gpio_cpu_ll_read_in();
     TEST_ASSERT_EQUAL(0x03, value);                               // 11
     TEST_ASSERT_EQUAL(0x03, dedic_gpio_bundle_read_out(bundleA)); // 11
     TEST_ASSERT_EQUAL(0x00, dedic_gpio_bundle_read_in(bundleA));  // input is not enabled for bundleA

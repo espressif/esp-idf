@@ -37,6 +37,8 @@
 #include "esp_efuse.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "xtensa/config/core.h"
+#include "xt_instr_macros.h"
 
 
 static const char *TAG = "boot.esp32s3";
@@ -316,6 +318,12 @@ static inline void bootloader_ana_reset_config(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+
+#if XCHAL_ERRATUM_572
+    uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
+    WSR(MEMCTL, memctl);
+#endif // XCHAL_ERRATUM_572
+
     bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
     // protect memory region

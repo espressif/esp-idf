@@ -17,6 +17,7 @@
 #include "portbenchmark.h"
 #include "esp_macros.h"
 #include "hal/cpu_hal.h"
+#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 #include "esp_private/crosscore_int.h"
 
 /*

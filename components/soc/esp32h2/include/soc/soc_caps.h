@@ -33,7 +33,6 @@
 #endif
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_CPU_CORES_NUM               1
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
@@ -103,10 +102,12 @@
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
-#define SOC_CPU_BREAKPOINTS_NUM         8
-#define SOC_CPU_WATCHPOINTS_NUM         8
+#define SOC_CPU_CORES_NUM               (1U)
+#define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 
+#define SOC_CPU_BREAKPOINTS_NUM         8
+#define SOC_CPU_WATCHPOINTS_NUM         8
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/

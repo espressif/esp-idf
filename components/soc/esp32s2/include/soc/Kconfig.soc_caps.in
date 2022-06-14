@@ -19,10 +19,6 @@ config SOC_CP_DMA_SUPPORTED
     bool
     default y
 
-config SOC_CPU_CORES_NUM
-    bool
-    default y
-
 config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
@@ -206,6 +202,14 @@ config SOC_BROWNOUT_RESET_SUPPORTED
 config SOC_CP_DMA_MAX_BUFFER_SIZE
     int
     default 4095
+
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_CPU_INTR_NUM
+    int
+    default 32
 
 config SOC_CPU_BREAKPOINTS_NUM
     int

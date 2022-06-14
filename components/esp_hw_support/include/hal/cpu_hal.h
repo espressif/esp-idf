@@ -6,18 +6,26 @@
 
 #pragma once
 
+/*
+Note: This is a compatibility header. Call the interfaces in esp_cpu.h instead
+[refactor-todo]: Mark all API in this header as deprecated
+*/
+
 #include <stdint.h>
-#include <stdbool.h>
-
-#include "esp_err.h"
-
+#include <stddef.h>
 #include "soc/soc_caps.h"
-#include "hal/cpu_types.h"
 #include "hal/cpu_ll.h"
+#include "esp_cpu.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef enum {
+    WATCHPOINT_TRIGGER_ON_RO = ESP_CPU_WATCHPOINT_LOAD,     // on read
+    WATCHPOINT_TRIGGER_ON_WO = ESP_CPU_WATCHPOINT_STORE,    // on write
+    WATCHPOINT_TRIGGER_ON_RW = ESP_CPU_WATCHPOINT_ACCESS,   // on either read or write
+} watchpoint_trigger_t;
 
 /**
  * Return the ID of the core currently executing this code.
@@ -45,7 +53,7 @@ extern "C" {
  * Set the given value into the internal counter that increments
  * every processor-clock cycle.
  */
-#define cpu_hal_set_cycle_count(val)       cpu_ll_set_cycle_count(val)
+#define cpu_hal_set_cycle_count(val)    cpu_ll_set_cycle_count(val)
 
 /**
  * Check if some form of debugger is attached to CPU.
@@ -80,14 +88,19 @@ extern "C" {
  * @param id breakpoint to set [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  * @param addr address to set a breakpoint on
  */
-void cpu_hal_set_breakpoint(int id, const void* addr);
-
+static inline void cpu_hal_set_breakpoint(int id, const void *addr)
+{
+    esp_cpu_set_breakpoint(id, addr);
+}
 /**
  * Clear and disable breakpoint.
  *
  * @param id breakpoint to clear [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  */
-void cpu_hal_clear_breakpoint(int id);
+static inline void cpu_hal_clear_breakpoint(int id)
+{
+    esp_cpu_clear_breakpoint(id);
+}
 
 #endif // SOC_CPU_BREAKPOINTS_NUM > 0
 
@@ -101,14 +114,20 @@ void cpu_hal_clear_breakpoint(int id);
  * @param size number of bytes from starting address to watch
  * @param trigger operation on specified memory range that triggers the watchpoint (read, write, read/write)
  */
-void cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger);
+static inline void cpu_hal_set_watchpoint(int id, const void *addr, size_t size, watchpoint_trigger_t trigger)
+{
+    esp_cpu_set_watchpoint(id, addr, size, (esp_cpu_watchpoint_trigger_t)trigger);
+}
 
 /**
  * Clear and disable watchpoint.
  *
  * @param id watchpoint to clear [0..SOC_CPU_WATCHPOINTS_NUM - 1]
  */
-void cpu_hal_clear_watchpoint(int id);
+static inline void cpu_hal_clear_watchpoint(int id)
+{
+    esp_cpu_clear_watchpoint(id);
+}
 
 #endif // SOC_CPU_WATCHPOINTS_NUM > 0
 
@@ -117,7 +136,10 @@ void cpu_hal_clear_watchpoint(int id);
  *
  * @param base address to move the exception vector table to
  */
-void cpu_hal_set_vecbase(const void* base);
+static inline void cpu_hal_set_vecbase(const void *base)
+{
+    esp_cpu_intr_set_ivt_addr(base);
+}
 
 #ifdef __cplusplus
 }

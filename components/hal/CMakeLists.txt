@@ -1,7 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs "mpu_hal.c"
-         "cpu_hal.c"
          "efuse_hal.c"
          "${target}/efuse_hal.c"
          "mmu_hal.c")
@@ -43,8 +42,6 @@ if(NOT BOOTLOADER_BUILD)
         "spi_flash_hal.c"
         "spi_flash_hal_iram.c"
         "spi_flash_encrypt_hal_iram.c"
-        "soc_hal.c"
-        "interrupt_controller_hal.c"
         "sha_hal.c"
         "adc_hal_common.c"
         "adc_hal.c")
@@ -97,7 +94,6 @@ if(NOT BOOTLOADER_BUILD)
             "aes_hal.c"
             "esp32/adc_hal.c"
             "esp32/brownout_hal.c"
-            "esp32/interrupt_descriptor_table.c"
             "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")
     endif()
@@ -116,7 +112,6 @@ if(NOT BOOTLOADER_BUILD)
                     "esp32s2/cp_dma_hal.c"
                     "esp32s2/touch_sensor_hal.c"
                     "esp32s2/dac_hal.c"
-                    "esp32s2/interrupt_descriptor_table.c"
                     "usbh_hal.c")
     endif()
 
@@ -132,7 +127,6 @@ if(NOT BOOTLOADER_BUILD)
             "aes_hal.c"
             "esp32s3/brownout_hal.c"
             "esp32s3/hmac_hal.c"
-            "esp32s3/interrupt_descriptor_table.c"
             "esp32s3/touch_sensor_hal.c"
             "esp32s3/rtc_cntl_hal.c"
             "usbh_hal.c")

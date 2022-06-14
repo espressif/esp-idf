@@ -248,3 +248,10 @@ LCD
     - ``mcpwm_sync_enable`` is removed. To configure synchronization, please use :cpp:func:`mcpwm_sync_configure`.
     - ``mcpwm_isr_register`` is removed. You can register event callbacks, for capture channels. e.g. :cpp:member:`mcpwm_capture_config_t::capture_cb`.
     - ``mcpwm_carrier_oneshot_mode_disable`` is removed. Disable the first pulse (a.k.a the one-shot pulse) in the carrier is not supported by hardware.
+
+.. only:: SOC_DEDICATED_GPIO_SUPPORTED
+
+    Dedicated GPIO Driver
+    ---------------------
+
+    - All of the dedicated GPIO related LL functionsn in ``cpu_ll.h`` have been moved to ``dedic_gpio_cpu_ll.h`` and renamed.

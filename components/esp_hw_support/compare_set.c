@@ -17,18 +17,18 @@ void compare_and_set_extram(volatile uint32_t *addr, uint32_t compare, uint32_t 
     __asm__ __volatile__ ("rsil %0, " XTSTR(XCHAL_EXCM_LEVEL) "\n"
                           : "=r"(intlevel));
 
-	spinlock_acquire(&global_extram_lock, SPINLOCK_WAIT_FOREVER);
+    spinlock_acquire(&global_extram_lock, SPINLOCK_WAIT_FOREVER);
 
     old_value = *addr;
     if (old_value == compare) {
         *addr = *set;
     }
 
-	spinlock_release(&global_extram_lock);
+    spinlock_release(&global_extram_lock);
 
-	__asm__ __volatile__ ("memw \n"
-						"wsr %0, ps\n"
-						:: "r"(intlevel));
+    __asm__ __volatile__ ("memw \n"
+                          "wsr %0, ps\n"
+                          :: "r"(intlevel));
 
     *set = old_value;
 }

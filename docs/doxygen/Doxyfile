@@ -251,6 +251,7 @@ PREDEFINED             = \
 	_Static_assert()= \
     IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
+    FORCE_INLINE_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \
     configSUPPORT_STATIC_ALLOCATION=1 \
     configQUEUE_REGISTRY_SIZE=1 \

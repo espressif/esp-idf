@@ -24,6 +24,7 @@
 #include "soc/system_reg.h"
 #include "soc/uart_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/cpu_hal.h"
 #include "esp_private/cache_err_int.h"
 
 #include "esp32c3/rom/cache.h"
