@@ -66,7 +66,7 @@ JTAG 调试
 
 `Eclipse <https://www.eclipse.org/>`__ 环境集成了 JTAG 调试和应用程序加载、监视的功能，使得软件从编写、编译、加载到调试的迭代过程变得更加快速简单。Eclipse IDE 及其集成的调试软件均适用于 Windows、Linux 和 macOS 平台。根据用户喜好，除了使用 Eclipse 集成开发环境，还可以直接在命令行终端运行 `debugger` 和 `idf.py build`。
 
-.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
+.. only:: esp32 or esp32s2
 
     若使用 |devkit-name-with-link|，由于其板载 FT232H 芯片，仅需一根 USB 线即可连接 PC 与 {IDF_TARGET_NAME}。FT232H 提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 UART。
 
@@ -85,7 +85,7 @@ JTAG 调试
 选择 JTAG 适配器
 ----------------
 
-.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
+.. only:: esp32 or esp32s2
 
     上手 JTAG 最快速便捷的方式是使用 |devkit-name-with-link|，因为它板载了 JTAG 调试接口，无需使用外部 JTAG 硬件适配器和额外线缆来连接 JTAG 与 {IDF_TARGET_NAME}。|devkit-name| 采用 FT2232H 提供的 JTAG 接口，可以稳定运行在 20 MHz 的时钟频率，外接的适配器很难达到这个速度。
 

@@ -1,13 +1,3 @@
-api-guides/jtag-debugging/debugging-examples
-api-guides/jtag-debugging/configure-ft2232h-jtag
-api-guides/jtag-debugging/tips-and-quirks
-api-guides/jtag-debugging/using-debugger
-api-guides/jtag-debugging/building-openocd-macos
-api-guides/jtag-debugging/building-openocd-linux
-api-guides/jtag-debugging/configure-other-jtag
-api-guides/jtag-debugging/building-openocd-windows
-api-guides/jtag-debugging/index
-api-guides/jtag-debugging/configure-builtin-jtag
 api-guides/blufi
 api-guides/lwip
 api-guides/esp-ble-mesh/ble-mesh-index
