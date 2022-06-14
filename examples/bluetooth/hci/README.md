@@ -12,6 +12,12 @@ Demonstrates interaction with controller through HCI over UART.
 
 See the [README.md](./controller_hci_uart_esp32/README.md) file in the example [controller_hci_uart_esp32](./controller_hci_uart_esp32).
 
+## controller_hci_uart_esp32c3
+
+Demonstrates interaction with controller through HCI over UART on ESP32-C3.
+
+See the [README.md](./controller_hci_uart_esp32c3/README.md) file in the example [controller_hci_uart_esp32c3](./controller_hci_uart_esp32c3).
+
 ## controller_vhci_ble_adv
 
 Demonstrates interaction with controller though virtual HCI layer. In this example, simple BLE advertising is done.
