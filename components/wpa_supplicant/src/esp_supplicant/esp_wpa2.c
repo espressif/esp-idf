@@ -451,6 +451,12 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
         if (m == NULL) {
             goto build_nak;
         }
+
+        if (!eap_sm_allowMethod(sm, reqVendor, reqVendorMethod)) {
+            wpa_printf(MSG_DEBUG, "EAP: vendor %u method %u not allowed",
+                    reqVendor, reqVendorMethod);
+            goto build_nak;
+        }
         if (sm->m) {
             eap_deinit_prev_method(sm, "GET_METHOD");
         }

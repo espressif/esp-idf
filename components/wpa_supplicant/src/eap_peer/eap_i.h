@@ -145,6 +145,7 @@ const u8 * eap_get_config_password2(struct eap_sm *sm, size_t *len, int *hash);
 const u8 * eap_get_config_new_password(struct eap_sm *sm, size_t *len);
 struct eap_peer_config * eap_get_config(struct eap_sm *sm);
 const struct wpa_config_blob * eap_get_config_blob(struct eap_sm *sm, const char *name);
+int eap_allowed_method(struct eap_sm *sm, int vendor, u32 method);
 bool wifi_sta_get_enterprise_disable_time_check(void);
 
 struct wpabuf * eap_sm_build_identity_resp(struct eap_sm *sm, u8 id, int encrypted);
