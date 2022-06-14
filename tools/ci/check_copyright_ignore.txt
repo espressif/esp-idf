@@ -694,7 +694,6 @@ components/esp_system/test_eh_frame_parser/eh_frame_parser_impl.h
 components/esp_system/test_eh_frame_parser/esp_private/panic_internal.h
 components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/ubsan.c
-components/esp_timer/include/esp_private/esp_timer_private.h
 components/esp_timer/test/test_esp_timer.c
 components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
