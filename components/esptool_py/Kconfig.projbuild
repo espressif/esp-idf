@@ -155,7 +155,7 @@ menu "Serial flasher config"
         default "64MB" if ESPTOOLPY_FLASHSIZE_64MB
         default "128MB" if ESPTOOLPY_FLASHSIZE_128MB
 
-    config ESPTOOLPY_FLASHSIZE_DETECT
+    config ESPTOOLPY_HEADER_FLASHSIZE_UPDATE
         bool "Detect flash size when flashing bootloader"
         default n
         help

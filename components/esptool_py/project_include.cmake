@@ -63,7 +63,7 @@ if(min_rev)
     unset(min_rev)
 endif()
 
-if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
+if(CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE)
     # Set ESPFLASHSIZE to 'detect' *after* esptool_elf2image_args are generated,
     # as elf2image can't have 'detect' as an option...
     set(ESPFLASHSIZE detect)
