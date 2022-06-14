@@ -52,6 +52,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
             group->clk_src = RMT_CLK_SRC_NONE;
             // enable APB access RMT registers
             periph_module_enable(rmt_periph_signals.groups[group_id].module);
+            periph_module_reset(rmt_periph_signals.groups[group_id].module);
             // hal layer initialize
             rmt_hal_init(&group->hal);
         }
