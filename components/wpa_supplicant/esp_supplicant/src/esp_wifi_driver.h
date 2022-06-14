@@ -71,6 +71,7 @@ enum {
     WAPI_AUTH_CERT      = 0x0c,
     WPA2_AUTH_ENT_SHA384_SUITE_B = 0x0d,
     WPA2_AUTH_FT_PSK    = 0x0e,
+    WPA3_AUTH_OWE       = 0x0f,
     WPA2_AUTH_INVALID
 };
 
@@ -134,6 +135,8 @@ struct wpa_funcs {
     int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type, uint16_t status);
     int (*wpa_sta_rx_mgmt)(u8 type, u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel, u64 current_tsf);
     void (*wpa_config_done)(void);
+    uint8_t *(*owe_build_dhie)(uint16_t group);
+    int (*owe_process_assoc_resp)(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
 };
 
 struct wpa2_funcs {
@@ -239,7 +242,7 @@ int esp_wifi_ipc_internal(wifi_ipc_config_t *cfg, bool sync);
 int esp_wifi_register_wpa2_cb_internal(struct wpa2_funcs *cb);
 int esp_wifi_unregister_wpa2_cb_internal(void);
 bool esp_wifi_sta_prof_is_wpa2_internal(void);
-bool esp_wifi_sta_prof_is_wpa3_internal(void);
+bool esp_wifi_sta_prof_is_rsn_internal(void);
 bool esp_wifi_sta_prof_is_wapi_internal(void);
 esp_err_t esp_wifi_sta_wpa2_ent_disable_internal(wifi_wpa2_param_t *param);
 esp_err_t esp_wifi_sta_wpa2_ent_enable_internal(wifi_wpa2_param_t *param);

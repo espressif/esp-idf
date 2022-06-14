@@ -62,7 +62,8 @@ set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_common.c"
     "esp_supplicant/src/esp_wps.c"
-    "esp_supplicant/src/esp_wpa3.c")
+    "esp_supplicant/src/esp_wpa3.c"
+    "esp_supplicant/src/esp_owe.c")
 if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
     set(esp_srcs ${esp_srcs} "esp_supplicant/src/esp_hostap.c")
 endif()
@@ -141,6 +142,7 @@ else()
     "src/crypto/sha1-pbkdf2.c"
     "src/crypto/sha1.c"
     "src/crypto/sha256-internal.c"
+    "src/crypto/sha256.c"
     "src/crypto/sha384-internal.c"
     "src/crypto/sha512-internal.c"
     "src/crypto/sha256.c")
@@ -258,5 +260,8 @@ else()
 endif()
 if(CONFIG_WPA_WPS_SOFTAP_REGISTRAR)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_REGISTRAR)
+endif()
+if(CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_OWE_STA)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)

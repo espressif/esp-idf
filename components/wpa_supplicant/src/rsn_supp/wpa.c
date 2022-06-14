@@ -29,9 +29,11 @@
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
 #include "crypto/ccmp.h"
+#include "crypto/sha256.h"
 #include "esp_rom_sys.h"
 #include "common/bss.h"
 #include "esp_common_i.h"
+#include "esp_owe_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -284,7 +286,7 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
         ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
     else if (sm->pairwise_cipher != WPA_CIPHER_TKIP)
         ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
-    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
         ver = 0;
     else
         ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
@@ -807,7 +809,7 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
             sm, addr, MLME_SETPROTECTION_PROTECT_TYPE_RX_TX,
             MLME_SETPROTECTION_KEY_TYPE_PAIRWISE);
 
-        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt))
+        if (wpa_key_mgmt_wpa_psk(sm->key_mgmt) || sm->key_mgmt == WPA_KEY_MGMT_OWE)
             eapol_sm_notify_eap_success(TRUE);
         /*
          * Start preauthentication after a short wait to avoid a
@@ -1719,7 +1721,8 @@ static int wpa_supplicant_decrypt_key_data(struct wpa_sm *sm,
                ver == WPA_KEY_INFO_TYPE_AES_128_CMAC ||
                sm->key_mgmt == WPA_KEY_MGMT_OSEN ||
                wpa_key_mgmt_suite_b(sm->key_mgmt) ||
-               sm->key_mgmt == WPA_KEY_MGMT_SAE) {
+               sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+               sm->key_mgmt == WPA_KEY_MGMT_OWE) {
         u8 *buf;
         if (*key_data_len < 8 || *key_data_len % 8) {
             #ifdef DEBUG_PRINT
@@ -1912,6 +1915,9 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
         sm->key_mgmt != WPA_KEY_MGMT_SAE &&
 #endif
         !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
+#ifdef CONFIG_OWE_STA
+        sm->key_mgmt != WPA_KEY_MGMT_OWE &&
+#endif /* CONFIG_OWE_STA */
 #endif
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
 #ifdef DEBUG_PRINT
@@ -1933,7 +1939,8 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
         if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
             sm->key_mgmt != WPA_KEY_MGMT_OSEN &&
             !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
-            sm->key_mgmt != WPA_KEY_MGMT_SAE) {
+            sm->key_mgmt != WPA_KEY_MGMT_SAE &&
+            sm->key_mgmt != WPA_KEY_MGMT_OWE) {
             goto out;
         }
     } else
@@ -1942,7 +1949,8 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (sm->pairwise_cipher == WPA_CIPHER_CCMP &&
         !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES &&
-        sm->key_mgmt != WPA_KEY_MGMT_SAE) {
+        sm->key_mgmt != WPA_KEY_MGMT_SAE &&
+        sm->key_mgmt != WPA_KEY_MGMT_OWE) {
 #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: CCMP is used, but EAPOL-Key "
                "descriptor version (%d) is not 2.", ver);
@@ -2223,6 +2231,8 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
          sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
     } else if (auth_mode == WPA2_AUTH_FT_PSK) {
          sm->key_mgmt = WPA_KEY_MGMT_FT_PSK;
+    } else if (auth_mode == WPA3_AUTH_OWE) {
+         sm->key_mgmt = WPA_KEY_MGMT_OWE;
     } else {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
@@ -2274,6 +2284,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
 
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+        sm->key_mgmt == WPA_KEY_MGMT_OWE ||
         is_wpa2_enterprise_connection()) {
         if (!esp_wifi_skip_supp_pmkcaching() && use_pmk_cache) {
             pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
@@ -2374,7 +2385,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *  Here only handle passphrase string.  Need extra step to handle 32B, 64Hex raw
      *    PMK.
      */
-    if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE || sm->key_mgmt == WPA_KEY_MGMT_OWE)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */
@@ -2595,4 +2606,190 @@ void wpa_sta_clear_curr_pmksa(void) {
     pmksa_cache_clear_current(sm);
 }
 
+struct wpa_sm * get_wpa_sm(void)
+{
+    return &gWpaSm;
+}
+
+#ifdef CONFIG_OWE_STA
+struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group)
+{
+    struct wpabuf *owe_ie = NULL, *pub = NULL;
+    size_t prime_len;
+
+    if (group == OWE_DH_GRP19) {
+        prime_len = OWE_PRIME_LEN;
+    } else {
+        wpa_printf(MSG_ERROR, "OWE: Unsupported Diffie-Hellman group");
+        return NULL;
+    }
+
+    sm->owe_ecdh = crypto_ecdh_init(group);
+
+    if (!sm->owe_ecdh) {
+        wpa_printf(MSG_ERROR, "Initialization of ecdh failed");
+        return NULL;
+    }
+
+    sm->owe_group = group;
+    /* Get own public key */
+    pub = crypto_ecdh_get_pubkey(sm->owe_ecdh, 0);
+    pub = wpabuf_zeropad(pub, prime_len);
+
+    if (!pub) {
+        wpa_printf(MSG_ERROR, "Own public key is NULL");
+        goto fail;
+    }
+
+    wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
+    owe_ie = wpabuf_alloc(5 + wpabuf_len(pub));
+
+    if (!owe_ie) {
+        wpa_printf(MSG_ERROR, "OWE IE allocation failed");
+        goto fail;
+    }
+
+    /* Constructing the DH IE */
+    wpabuf_put_u8(owe_ie, WLAN_EID_EXTENSION);
+    wpabuf_put_u8(owe_ie, 1 + 2 + wpabuf_len(pub));
+    wpabuf_put_u8(owe_ie, WLAN_EID_EXT_OWE_DH_PARAM);
+    wpabuf_put_le16(owe_ie, group);
+    wpabuf_put_buf(owe_ie, pub);
+    wpabuf_free(pub);
+
+    wpa_hexdump_buf(MSG_DEBUG, "OWE: Diffie-Hellman Parameter element", owe_ie);
+
+    return (struct wpabuf *)wpabuf_head(owe_ie);
+
+fail:
+    wpabuf_free(pub);
+    crypto_ecdh_deinit(sm->owe_ecdh);
+    return NULL;
+}
+
+int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len)
+{
+    size_t prime_len=0,hash_len=0;
+    struct wpabuf * sh_secret = NULL, *pub = NULL, *hkey = NULL;
+    int res;
+    const char *info = "OWE Key Generation";
+    u8 pmkid[SHA256_MAC_LEN], prk[SHA256_MAC_LEN], pmk[SHA256_MAC_LEN];
+    const u8 *addr[2];
+    size_t len[2];
+    u16 group;
+
+    struct wpa_sm *sm;
+    sm = get_wpa_sm();
+
+    (void)res;
+    struct wpa_ie_data *parsed_rsn_data;
+    parsed_rsn_data = os_zalloc(sizeof(struct wpa_ie_data));
+    if (!parsed_rsn_data) {
+        wpa_printf(MSG_ERROR, "Memory allocation failed");
+        goto fail;
+    }
+
+    if (rsn_ie && rsn_len && wpa_parse_wpa_ie_rsn(rsn_ie, rsn_len + 2, parsed_rsn_data) != 0) {
+        goto fail;
+    }
+    if (!dh_ie && !dh_len && parsed_rsn_data->num_pmkid == 0) {
+        wpa_printf(MSG_ERROR, "OWE: No diffie hellman parameter in response");
+        goto fail;
+    }
+
+    if (!sm->cur_pmksa) { /* No PMK caching */
+        dh_len += 2;
+
+        dh_ie += 3;
+        dh_len -=3;
+        group = WPA_GET_LE16(dh_ie);
+
+        /* Only group 19 is supported */
+        if ((group != sm->owe_group) || (group != OWE_DH_GRP19)) {
+            wpa_printf(MSG_ERROR, "OWE: Unexpected Diffie-Hellman group in response");
+            goto fail;
+        }
+
+        prime_len = OWE_PRIME_LEN;
+
+        /* Set peer's public key point and calculate shared secret */
+        sh_secret = crypto_ecdh_set_peerkey(sm->owe_ecdh, 0, dh_ie+2, dh_len-2);
+        sh_secret = wpabuf_zeropad(sh_secret, prime_len);
+        if (!sh_secret) {
+            wpa_printf(MSG_ERROR, "OWE: Invalid peer DH public key");
+            goto fail;
+        }
+
+        wpa_hexdump_buf_key(MSG_DEBUG, "OWE: DH shared secret", sh_secret);
+        pub = crypto_ecdh_get_pubkey(sm->owe_ecdh, 0);
+        if (!pub) {
+            wpa_printf(MSG_ERROR, "No own public key");
+            wpabuf_free(sh_secret);
+            goto fail;
+        }
+
+        /* PMKID = Truncate-128(Hash(C | A)) */
+        addr[0] = wpabuf_head(pub);
+        len[0] = wpabuf_len(pub);
+        addr[1] = dh_ie + 2;
+        len[1] = dh_len - 2;
+
+        res = sha256_vector(2, addr, len, pmkid);
+        hash_len = SHA256_MAC_LEN;
+
+        pub = wpabuf_zeropad(pub, prime_len);
+
+        /* prk = HKDF-extract(C | A | group, z) */
+        hkey = wpabuf_alloc(wpabuf_len(pub) + dh_len - 2 + 2);
+
+        wpabuf_put_buf(hkey, pub); /* C */
+        wpabuf_free(pub);
+
+        wpabuf_put_data(hkey, dh_ie + 2, dh_len - 2); /* A */
+        wpabuf_put_le16(hkey, sm->owe_group); /* group */
+
+        res = hmac_sha256(wpabuf_head(hkey), wpabuf_len(hkey), wpabuf_head(sh_secret), wpabuf_len(sh_secret), prk);
+        hash_len = SHA256_MAC_LEN;
+
+        wpabuf_free(hkey);
+        wpabuf_free(sh_secret);
+
+        wpa_hexdump_key(MSG_DEBUG, "OWE: prk", prk, hash_len);
+
+        /* PMK = HKDF-expand(prk, "OWE Key Generation", n) */
+        res = hmac_sha256_kdf(prk, hash_len, NULL, (const u8 *)info,
+        os_strlen(info), pmk, hash_len);
+
+        forced_memzero(prk, SHA256_MAC_LEN);
+        wpa_hexdump(MSG_DEBUG, "OWE: PMKID", pmkid, OWE_PMKID_LEN);
+
+        os_memcpy(sm->pmk,pmk,hash_len);
+        sm->pmk_len = hash_len;
+        wpa_hexdump_key(MSG_DEBUG, "OWE: PMK", sm->pmk, sm->pmk_len);
+
+        pmksa_cache_add(sm->pmksa, sm->pmk, sm->pmk_len, pmkid, NULL, 0,
+                            sm->bssid, sm->own_addr, sm->network_ctx, sm->key_mgmt);
+        goto done;
+    } else { /* PMK caching */
+        if (parsed_rsn_data && sm->cur_pmksa) {
+            if (parsed_rsn_data->num_pmkid == 1 && parsed_rsn_data->pmkid) {
+                if (os_memcmp(parsed_rsn_data->pmkid, sm->cur_pmksa->pmkid, OWE_PMKID_LEN) == 0) {
+                    wpa_printf(MSG_DEBUG, "OWE: Using PMK caching");
+                    wpa_sm_set_pmk_from_pmksa(sm);
+                    goto done;
+                } else {
+                    wpa_printf(MSG_DEBUG, "OWE : Invalid PMKID in response");
+                    goto fail;
+                }
+            }
+        }
+     }
+done:
+    os_free(parsed_rsn_data);
+    return 0;
+fail:
+    os_free(parsed_rsn_data);
+    return -1;
+}
+#endif // CONFIG_OWE_STA
 #endif // ESP_SUPPLICANT

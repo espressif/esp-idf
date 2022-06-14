@@ -30,6 +30,7 @@
 #include "esp_wpa3_i.h"
 #include "esp_wpa2.h"
 #include "esp_common_i.h"
+#include "esp_owe_i.h"
 
 #include "esp_wps.h"
 #include "eap_server/eap.h"
@@ -83,7 +84,7 @@ int  wpa_config_profile(uint8_t *bssid)
 
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
-    } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
+    } else if (esp_wifi_sta_prof_is_rsn_internal()) {
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
     } else if (esp_wifi_sta_prof_is_wapi_internal()) {
         wpa_set_profile(WPA_PROTO_WAPI, esp_wifi_sta_get_prof_authmode_internal());
@@ -242,6 +243,9 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
         default:
             break;
     }
+#ifdef CONFIG_OWE_STA
+    owe_deinit();
+#endif /* CONFIG_OWE_STA */
 }
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
@@ -339,6 +343,9 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_done = wpa_config_done;
 
     esp_wifi_register_wpa3_cb(wpa_cb);
+#ifdef CONFIG_OWE_STA
+    esp_wifi_register_owe_cb(wpa_cb);
+#endif /* CONFIG_OWE_STA */
     eloop_init();
     ret = esp_supplicant_common_init(wpa_cb);
 

@@ -109,6 +109,10 @@ struct wpa_sm {
     u8 *assoc_resp_ies; /* MDIE and FTIE from (Re)Association Response */
     size_t assoc_resp_ies_len;
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_OWE_STA
+    struct crypto_ecdh *owe_ecdh;
+    u16 owe_group;
+#endif /* CONFIG_OWE_STA */
 };
 
 /**
