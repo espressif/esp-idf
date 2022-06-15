@@ -1977,8 +1977,8 @@ static void test_deep_sleep_init(void)
 
 TEST_CASE("Touch Sensor sleep pad wakeup deep sleep test", "[touch][ignore]")
 {
-//TODO: IDF-4813
-#if TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+//TODO: IDF-5218
+#if TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
     abort();
 #endif //TEMPORARY_DISABLED_FOR_TARGETS(..)
     test_deep_sleep_init();
