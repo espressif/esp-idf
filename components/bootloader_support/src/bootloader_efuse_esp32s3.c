@@ -13,15 +13,16 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include "esp_attr.h"
 
-uint8_t bootloader_common_get_chip_revision(void)
+IRAM_ATTR uint8_t bootloader_common_get_chip_revision(void)
 {
     // should return the same value as esp_efuse_get_chip_ver()
     /* No other revisions for ESP32-S3 */
     return 0;
 }
 
-uint32_t bootloader_common_get_chip_ver_pkg(void)
+IRAM_ATTR uint32_t bootloader_common_get_chip_ver_pkg(void)
 {
     // should return the same value as esp_efuse_get_pkg_ver()
     return 0;
