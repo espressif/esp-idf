@@ -219,7 +219,6 @@ struct hostapd_bss_config {
 	int rsn_pairwise;
 	int rsn_preauth;
 	char *rsn_preauth_interfaces;
-	int peerkey;
 
 #ifdef CONFIG_IEEE80211R
 	/* IEEE 802.11r - Fast BSS Transition */

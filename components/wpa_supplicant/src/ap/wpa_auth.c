@@ -557,8 +557,7 @@ void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *s
     struct ieee802_1x_hdr *hdr;
     struct wpa_eapol_key *key;
     u16 key_info, key_data_length;
-    enum { PAIRWISE_2, PAIRWISE_4, GROUP_2, REQUEST,
-           SMK_M1, SMK_M3, SMK_ERROR } msg;
+    enum { PAIRWISE_2, PAIRWISE_4, GROUP_2, REQUEST } msg;
     struct wpa_eapol_ie_parse kde;
     int ft;
     const u8 *eapol_key_ie;
@@ -617,16 +616,12 @@ void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *s
     /* FIX: verify that the EAPOL-Key frame was encrypted if pairwise keys
      * are set */
 
-    if ((key_info & (WPA_KEY_INFO_SMK_MESSAGE | WPA_KEY_INFO_REQUEST)) ==
-        (WPA_KEY_INFO_SMK_MESSAGE | WPA_KEY_INFO_REQUEST)) {
-        if (key_info & WPA_KEY_INFO_ERROR) {
-            msg = SMK_ERROR;
-        } else {
-            msg = SMK_M1;
-        }
-    } else if (key_info & WPA_KEY_INFO_SMK_MESSAGE) {
-        msg = SMK_M3;
-    } else if (key_info & WPA_KEY_INFO_REQUEST) {
+    if (key_info & WPA_KEY_INFO_SMK_MESSAGE) {
+        wpa_printf(MSG_DEBUG, "WPA: Ignore SMK message");
+        return;
+    }
+
+    if (key_info & WPA_KEY_INFO_REQUEST) {
         msg = REQUEST;
     } else if (!(key_info & WPA_KEY_INFO_KEY_TYPE)) {
         msg = GROUP_2;
@@ -636,7 +631,6 @@ void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *s
         msg = PAIRWISE_2;
     }
 
-    /* TODO: key_info type validation for PeerKey */
     if (msg == REQUEST || msg == PAIRWISE_2 || msg == PAIRWISE_4 ||
         msg == GROUP_2) {
         u16 ver = key_info & WPA_KEY_INFO_TYPE_MASK;
@@ -777,25 +771,6 @@ continue_processing:
             return;
         }
         break;
-#ifdef CONFIG_PEERKEY
-    case SMK_M1:
-    case SMK_M3:
-    case SMK_ERROR:
-        if (!wpa_auth->conf.peerkey) {
-            wpa_printf( MSG_DEBUG, "RSN: SMK M1/M3/Error, but "
-                   "PeerKey use disabled - ignoring message");
-            return;
-        }
-        if (!sm->PTK_valid) {
-            return;
-        }
-        break;
-#else /* CONFIG_PEERKEY */
-    case SMK_M1:
-    case SMK_M3:
-    case SMK_ERROR:
-        return; /* STSL disabled - ignore SMK messages */
-#endif /* CONFIG_PEERKEY */
     case REQUEST:
         break;
     }
@@ -836,22 +811,13 @@ continue_processing:
          * even though MAC address KDE is not normally encrypted,
          * supplicant is allowed to encrypt it.
          */
-        if (msg == SMK_ERROR) {
-#ifdef CONFIG_PEERKEY
-            wpa_smk_error(wpa_auth, sm, key);
-#endif /* CONFIG_PEERKEY */
-            return;
-        } else if (key_info & WPA_KEY_INFO_ERROR) {
+        if (key_info & WPA_KEY_INFO_ERROR) {
             if (wpa_receive_error_report(
                     wpa_auth, sm,
                     !(key_info & WPA_KEY_INFO_KEY_TYPE)) > 0)
                 return; /* STA entry was removed */
         } else if (key_info & WPA_KEY_INFO_KEY_TYPE) {
             wpa_request_new_ptk(sm);
-#ifdef CONFIG_PEERKEY
-        } else if (msg == SMK_M1) {
-            wpa_smk_m1(wpa_auth, sm, key);
-#endif /* CONFIG_PEERKEY */
         } else if (key_data_length > 0 &&
                wpa_parse_kde_ies((const u8 *) (key + 1),
                          key_data_length, &kde) == 0 &&
@@ -886,13 +852,6 @@ continue_processing:
          */
         wpa_replay_counter_mark_invalid(sm->key_replay, NULL);
     }
-
-#ifdef CONFIG_PEERKEY
-    if (msg == SMK_M3) {
-        wpa_smk_m3(wpa_auth, sm, key);
-        return;
-    }
-#endif /* CONFIG_PEERKEY */
 
     wpa_printf( MSG_DEBUG, "wpa_rx: free eapol=%p\n", sm->last_rx_eapol_key);
     os_free(sm->last_rx_eapol_key);
@@ -1025,11 +984,11 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
     WPA_PUT_BE16(key->key_info, key_info);
 
     alg = pairwise ? sm->pairwise : wpa_auth->conf.wpa_group;
-    WPA_PUT_BE16(key->key_length, wpa_cipher_key_len(alg));
-    if (key_info & WPA_KEY_INFO_SMK_MESSAGE)
+    if (sm->wpa == WPA_VERSION_WPA2 && !pairwise)
         WPA_PUT_BE16(key->key_length, 0);
+    else
+        WPA_PUT_BE16(key->key_length, wpa_cipher_key_len(alg));
 
-    /* FIX: STSL: what to use as key_replay_counter? */
     for (i = RSNA_MAX_EAPOL_RETRIES - 1; i > 0; i--) {
         sm->key_replay[i].valid = sm->key_replay[i - 1].valid;
         memcpy(sm->key_replay[i].counter,
