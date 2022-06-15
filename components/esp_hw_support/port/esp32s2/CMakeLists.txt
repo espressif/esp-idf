@@ -18,9 +18,6 @@ if(NOT BOOTLOADER_BUILD)
                      "esp_crypto_lock.c"
                      "esp_ds.c")
 
-    if(CONFIG_SPIRAM)
-        list(APPEND srcs "spiram.c" "mmu_psram.c" "spiram_psram.c")
-    endif()
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

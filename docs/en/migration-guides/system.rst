@@ -45,11 +45,8 @@ ESP HW Support
 
 PSRAM
 ^^^^^
-
-- The header file ``esp_spiram.h`` file has been deleted. Users should use the ``<target>/spiram.h`` file instead.
-- The header file ``esp32/himem.h`` file has been deleted. Users should use the esp_himem.h file instead.
-- `esp_spiram_get_chip_size` has been deleted.
-- `esp_spiram_get_size` has been moved to `esp_private/spiram_private.h`
+- The target specific header files ``spiram.h`` have been deleted. The header file ``esp_spiram.h`` has been deleted. A new component ``esp_psram`` is created, you should include ``esp_psram.h`` instead. Besides, you might need to add ``esp_psram`` component to the list of component requirements in CMakeLists.txt.
+- ``esp_spiram_get_chip_size`` and ``esp_spiram_get_size`` have been deleted. You should use ``esp_psram_get_size`` instead.
 
 ESP Common
 ----------

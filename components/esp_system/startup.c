@@ -71,13 +71,9 @@
 
 #include "esp_rom_sys.h"
 
-// [refactor-todo] make this file completely target-independent
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/spiram.h"
+#if CONFIG_SPIRAM
+#include "esp_psram.h"
+#include "esp_private/esp_psram_extram.h"
 #endif
 /***********************************************/
 
@@ -251,9 +247,9 @@ static void do_core_init(void)
     esp_timer_early_init();
     esp_newlib_init();
 
-    if (g_spiram_ok) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-        esp_err_t r=esp_spiram_add_to_heapalloc();
+    if (esp_psram_is_initialized()) {
+        esp_err_t r=esp_psram_extram_add_to_heap_allocator();
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
             abort();
@@ -261,8 +257,8 @@ static void do_core_init(void)
 #if CONFIG_SPIRAM_USE_MALLOC
         heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
-#endif
     }
+#endif
 
 #if CONFIG_ESP_BROWNOUT_DET
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->

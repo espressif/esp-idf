@@ -19,13 +19,6 @@ entries:
     rtc_time (noflash_text)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
-    if IDF_TARGET_ESP32S3 = y:
-        if SPIRAM_MODE_QUAD = y:
-            spiram_psram (noflash)
-        if SPIRAM_MODE_OCT = y:
-            opiram_psram (noflash)
-    if IDF_TARGET_ESP32S2 = y && SPIRAM:
-        mmu_psram (noflash)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:
         periph_ctrl: periph_module_reset (noflash)
         periph_ctrl: wifi_module_enable (noflash)

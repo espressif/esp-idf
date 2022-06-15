@@ -32,7 +32,7 @@
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #if CONFIG_SPIRAM
-#include "spiram.h"
+#include "esp_psram.h"
 #endif
 #include "esp_lcd_common.h"
 #include "soc/lcd_periph.h"
@@ -141,7 +141,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // fb_in_psram is only an option, if there's no PSRAM on board, we still alloc from SRAM
     if (rgb_panel_config->flags.fb_in_psram) {
 #if CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC
-        if (esp_spiram_is_initialized()) {
+        if (esp_psram_is_initialized()) {
             alloc_from_psram = true;
         }
 #endif
