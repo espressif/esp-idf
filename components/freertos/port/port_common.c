@@ -173,9 +173,24 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-    pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+
+    /* If the stack grows down then allocate the stack then the TCB so the stack
+     * does not grow into the TCB.  Likewise if the stack grows up then allocate
+     * the TCB then the stack. */
+    #if (portSTACK_GROWTH > 0)
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+    }
+    #else /* portSTACK_GROWTH */
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxStackBufferTemp = pvPortMallocStackMem(configIDLE_TASK_STACK_SIZE);
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+    }
+    #endif /* portSTACK_GROWTH */
+
     assert(pxTCBBufferTemp != NULL);
     assert(pxStackBufferTemp != NULL);
     //Write back pointers
@@ -198,9 +213,24 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
-    pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+
+    /* If the stack grows down then allocate the stack then the TCB so the stack
+     * does not grow into the TCB.  Likewise if the stack grows up then allocate
+     * the TCB then the stack. */
+    #if (portSTACK_GROWTH > 0)
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+        pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+    }
+    #else /* portSTACK_GROWTH */
+    {
+        //Allocate TCB and stack buffer in internal memory
+        pxStackBufferTemp = pvPortMallocStackMem(configTIMER_TASK_STACK_DEPTH);
+        pxTCBBufferTemp = pvPortMallocTcbMem(sizeof(StaticTask_t));
+    }
+    #endif /* portSTACK_GROWTH */
+
     assert(pxTCBBufferTemp != NULL);
     assert(pxStackBufferTemp != NULL);
     //Write back pointers

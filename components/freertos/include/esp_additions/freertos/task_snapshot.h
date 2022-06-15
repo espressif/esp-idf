@@ -80,8 +80,9 @@ TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
  * @note This function should not be used while FreeRTOS is running (as it doesn't acquire any locks).
  * @param pxTask task handle.
  * @param pxTaskSnapshot address of TaskSnapshot_t structure to fill.
+ * @return pdTRUE if operation was successful else pdFALSE
  */
-void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
+BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
 
 #ifdef __cplusplus
 }
