@@ -49,6 +49,7 @@ typedef struct {
     uint32_t elapsed_time_ms;
     uint32_t total_time_ms;
     uint8_t ttl;
+    uint8_t tos;
     uint32_t flags;
     void (*on_ping_success)(esp_ping_handle_t hdl, void *args);
     void (*on_ping_timeout)(esp_ping_handle_t hdl, void *args);
@@ -113,6 +114,7 @@ static int esp_ping_receive(esp_ping_t *ep)
                 if ((iecho->id == ep->packet_hdr->id) && (iecho->seqno == ep->packet_hdr->seqno)) {
                     ep->received++;
                     ep->ttl = iphdr->_ttl;
+                    ep->tos = iphdr->_tos;
                     ep->recv_len = lwip_ntohs(IPH_LEN(iphdr)) - data_head;  // The data portion of ICMP
                     return len;
                 }
@@ -355,6 +357,10 @@ esp_err_t esp_ping_get_profile(esp_ping_handle_t hdl, esp_ping_profile_t profile
     case ESP_PING_PROF_SEQNO:
         from = &ep->packet_hdr->seqno;
         copy_size = sizeof(ep->packet_hdr->seqno);
+        break;
+    case ESP_PING_PROF_TOS:
+        from = &ep->tos;
+        copy_size = sizeof(ep->tos);
         break;
     case ESP_PING_PROF_TTL:
         from = &ep->ttl;

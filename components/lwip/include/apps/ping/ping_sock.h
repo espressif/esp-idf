@@ -93,6 +93,7 @@ typedef struct {
 */
 typedef enum {
     ESP_PING_PROF_SEQNO,   /*!< Sequence number of a ping procedure */
+    ESP_PING_PROF_TOS,     /*!< Type of service of a ping procedure */
     ESP_PING_PROF_TTL,     /*!< Time to live of a ping procedure */
     ESP_PING_PROF_REQUEST, /*!< Number of request packets sent out */
     ESP_PING_PROF_REPLY,   /*!< Number of reply packets received */
