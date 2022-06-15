@@ -26,6 +26,7 @@
 #include "esp_log.h"
 #include "soc/dport_access.h"
 #include "sdkconfig.h"
+#include "esp_freertos_hooks.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/spiram.h"
@@ -85,13 +86,24 @@ void esp_startup_start_app_common(void)
 	assert(res == pdTRUE);
 }
 
+#if !CONFIG_FREERTOS_UNICORE
+static volatile bool s_app_cpu_startup_done = false;
+static bool s_app_cpu_startup_idle_hook_cb(void)
+{
+    s_app_cpu_startup_done = true;
+    return true;
+}
+#endif
+
 static void main_task(void* args)
 {
 #if !CONFIG_FREERTOS_UNICORE
-	// Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
-	while (port_xSchedulerRunning[1] == 0) {
-		;
-	}
+    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+    esp_register_freertos_idle_hook_for_cpu(s_app_cpu_startup_idle_hook_cb, 1);
+    while (!s_app_cpu_startup_done) {
+        ;
+    }
+    esp_deregister_freertos_idle_hook_for_cpu(s_app_cpu_startup_idle_hook_cb, 1);
 #endif
 
 	// [refactor-todo] check if there is a way to move the following block to esp_system startup
