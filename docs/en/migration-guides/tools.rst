@@ -35,3 +35,8 @@ Deprecated commands
      - erase-otadata
    * - read_otadata
      - read-otadata
+
+Esptool
+-------
+
+The CONFIG_ESPTOOLPY_FLASHSIZE_DETECT option has been renamed to :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` and it is disabled by default. New and existing projects migrated to ESP-IDF v5.0 will have to set :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`. If this is not possible because the flash size is not known at build time then :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` can be enabled but this will have the consequence of not appending a SHA256 digest after the image in order that the binary header could be updated with the flash size during flashing without invalidating the digest.
