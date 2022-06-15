@@ -299,6 +299,22 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void);
 esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
 
 /**
+ * @brief Enable wakeup by bluetooth
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
+ */
+esp_err_t esp_sleep_enable_bt_wakeup(void);
+
+/**
+ * @brief Disable wakeup by bluetooth
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
+ */
+esp_err_t esp_sleep_disable_bt_wakeup(void);
+
+/**
  * @brief Enable wakeup by WiFi MAC
  * @return
  *      - ESP_OK on success

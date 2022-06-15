@@ -53,6 +53,7 @@
 #include "freertos/task.h"
 
 #include "esp_private/periph_ctrl.h"
+#include "esp_sleep.h"
 
 /* Macro definition
  ************************************************************************
@@ -105,7 +106,6 @@ struct ext_funcs_t {
  ************************************************************************
  */
 
-extern int ble_plf_set_log_level(int level);
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
 extern int ble_controller_init(struct esp_bt_controller_config_t *cfg);
@@ -122,7 +122,8 @@ extern void bt_bb_v2_init_cmplx(uint8_t i);
 extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
 extern uint32_t r_os_cputime_ticks_to_usecs(uint32_t ticks);
-extern void r_ble_ll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg, void *w_arg, uint32_t us_to_enabled);
+extern void r_ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg, void *w_arg, uint32_t us_to_enabled);
+extern void r_ble_rtc_wake_up_state_clr(void);
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
 
@@ -157,29 +158,24 @@ extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 
 /* Static variable declare */
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-static bool s_is_sleep_state = false;
 
 #ifdef CONFIG_PM_ENABLE
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-uint32_t s_sleep_tick;
-#endif
-#endif
-
-#ifdef CONFIG_PM_ENABLE
-static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr = NULL;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 static bool s_pm_lock_acquired = true;
 static DRAM_ATTR bool s_btdm_allow_light_sleep;
 // pm_lock to prevent light sleep when using main crystal as Bluetooth low power clock
 static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
-static void btdm_slp_tmr_callback(void *arg);
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
 #endif /* #ifdef CONFIG_PM_ENABLE */
 
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 #define BLE_RTC_DELAY_US                    (1100)
-#else
+#endif
+
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 #define BLE_RTC_DELAY_US                    (0)
+static void btdm_slp_tmr_callback(void *arg);
+static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr = NULL;
 #endif
 
 static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
@@ -400,26 +396,32 @@ static int esp_intr_free_wrapper(void **ret_handle)
 
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
-    if (s_is_sleep_state) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "sleep state error");
-        assert(0);
-    }
-    s_is_sleep_state = true;
+    esp_phy_disable();
 #ifdef CONFIG_PM_ENABLE
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-    uint32_t tick_invalid = *(uint32_t *)(arg);
-    if (!tick_invalid) {
-        s_sleep_tick = r_os_cputime_get32();
-        assert(enable_tick >= s_sleep_tick);
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
+    uint32_t tick_invalid = *(uint32_t*)(arg);
+    assert(arg != NULL);
+    if(!tick_invalid) {
+        uint32_t sleep_tick = r_os_cputime_get32();
+        if(enable_tick <= sleep_tick) {
+            return;
+        }
         // start a timer to wake up and acquire the pm_lock before modem_sleep awakes
-        uint32_t us_to_sleep = os_cputime_ticks_to_usecs(enable_tick - s_sleep_tick);
+        uint32_t us_to_sleep = r_os_cputime_ticks_to_usecs(enable_tick - sleep_tick);
         assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
-        if (esp_timer_start_once(s_btdm_slp_tmr, us_to_sleep - BTDM_MIN_TIMER_UNCERTAINTY_US) != ESP_OK) {
-            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "timer start failed");
+        esp_err_t err = esp_timer_start_once(s_btdm_slp_tmr, us_to_sleep - BTDM_MIN_TIMER_UNCERTAINTY_US);
+        if (err != ESP_OK) {
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ESP timer start failed\n");
+            return;
         }
     }
-#endif // CONFIG_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
+
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
+    r_ble_rtc_wake_up_state_clr();
+#endif
     if (s_pm_lock_acquired) {
+        assert(s_pm_lock != NULL);
         esp_pm_lock_release(s_pm_lock);
         s_pm_lock_acquired = false;
     }
@@ -429,60 +431,49 @@ IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 
 IRAM_ATTR void controller_wakeup_cb(void *arg)
 {
-    if (!s_is_sleep_state) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "wake up state error");
-        assert(0);
-    }
-    s_is_sleep_state = false;
-
-// need to check if need to call pm lock here
+    esp_phy_enable();
+    // need to check if need to call pm lock here
 #ifdef CONFIG_PM_ENABLE
+    assert(s_pm_lock != NULL);
     if (!s_pm_lock_acquired) {
         s_pm_lock_acquired = true;
         esp_pm_lock_acquire(s_pm_lock);
     }
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "wake up source %d", esp_sleep_get_wakeup_cause());
-    }
-#endif
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
-    if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_BT) {
-        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "wake up source %d", esp_sleep_get_wakeup_cause());
-    }
-#endif
-#endif
+#endif //CONFIG_PM_ENABLE
 }
 
 #ifdef CONFIG_PM_ENABLE
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-static void btdm_slp_tmr_callback(void *arg)
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
+static void btdm_slp_tmr_callback(void * arg)
 {
     (void)(arg);
     if (!s_pm_lock_acquired) {
+        assert(s_pm_lock != NULL);
         s_pm_lock_acquired = true;
         esp_pm_lock_acquire(s_pm_lock);
     }
 }
 
-#endif
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 #endif // CONFIG_PM_ENABLE
 
 void controller_sleep_init(void)
 {
-#ifdef CONFIG_NIMBLE_SLEEP_ENABLE
-    s_is_sleep_state = false;
-#ifdef CONFIG_PM_ENABLE
-    s_btdm_allow_light_sleep = true;
-#endif // CONFIG_PM_ENABLE
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled");
-    // register sleep callbacks
-    r_ble_ll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0, 500 + BLE_RTC_DELAY_US);
-#else
+
 #ifdef CONFIG_PM_ENABLE
     s_btdm_allow_light_sleep = false;
 #endif // CONFIG_PM_ENABLE
-#endif // CONFIG_NIMBLE_SLEEP_ENABLE
+
+#ifdef CONFIG_BT_LE_SLEEP_ENABLE
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "BLE modem sleep is enabled\n");
+    r_ble_lll_rfmgmt_set_sleep_cb(controller_sleep_cb, controller_wakeup_cb, 0, 0, 500 + BLE_RTC_DELAY_US);
+
+#ifdef CONFIG_PM_ENABLE
+    s_btdm_allow_light_sleep = true;
+    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+#endif // CONFIG_PM_ENABLE
+
+#endif // CONFIG_BT_LE_SLEEP_ENABLE
 
     // enable light sleep
 #ifdef CONFIG_PM_ENABLE
@@ -494,22 +485,22 @@ void controller_sleep_init(void)
     if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock) != ESP_OK) {
         goto error;
     }
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
     esp_timer_create_args_t create_args = {
         .callback = btdm_slp_tmr_callback,
         .arg = NULL,
         .name = "btSlp"
     };
-    if ( esp_timer_create(&create_args, &s_btdm_slp_tmr) != ESP_OK) {
+    if (esp_timer_create(&create_args, &s_btdm_slp_tmr) != ESP_OK) {
         goto error;
     }
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "light sleep enable success, CPU RTC timer wake up");
-#endif //CONFIG_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is ESP timer\n");
+#endif //CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     esp_sleep_enable_bt_wakeup();
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "light sleep enable success, BLE RTC timer wake up");
-#endif // CONFIG_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer\n");
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 
     s_pm_lock_acquired = true;
 
@@ -533,22 +524,28 @@ error:
         esp_pm_lock_delete(s_pm_lock);
         s_pm_lock = NULL;
     }
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
     if (s_btdm_slp_tmr != NULL) {
         esp_timer_delete(s_btdm_slp_tmr);
         s_btdm_slp_tmr = NULL;
     }
-#endif // CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
+
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     esp_sleep_disable_bt_wakeup();
-#endif // CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
-#endif
+#endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
+
+#endif //CONFIG_PM_ENABLE
 
 }
 
 void controller_sleep_deinit(void)
 {
 #ifdef CONFIG_PM_ENABLE
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
+    r_ble_rtc_wake_up_state_clr();
+#endif
+    esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_AUTO);
     if (!s_btdm_allow_light_sleep) {
         if (s_light_sleep_pm_lock != NULL) {
             esp_pm_lock_delete(s_light_sleep_pm_lock);
@@ -559,8 +556,8 @@ void controller_sleep_deinit(void)
         esp_pm_lock_delete(s_pm_lock);
         s_pm_lock = NULL;
     }
-#ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
-    if (s_btdm_slp_tmr != NULL) {
+#ifdef CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
+    if(s_btdm_slp_tmr != NULL) {
         esp_timer_stop(s_btdm_slp_tmr);
         esp_timer_delete(s_btdm_slp_tmr);
         s_btdm_slp_tmr = NULL;
