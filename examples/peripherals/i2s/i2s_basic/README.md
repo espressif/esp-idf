@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # I2S Example
 
@@ -11,7 +11,7 @@ In this example, we generate a 100Hz triangle and sine wave and send it out from
 
 ### Hardware Required
 
-* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-S2/ESP32-C3/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for power supply and programming
 
 ### Configure the Project
@@ -34,20 +34,50 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-Running this example, you will see the Bits per Sample changes every 5 seconds after you have run this example. You can use `i2s_set_clk` to change the Bits per Sample and the Sample Rate. The output log can be seen below:
+Running this example, you will see I2S start to read and write data, and only the first 4 elements in the receive buffer will be displayed. The output log can be seen below:
 
 ```
-Test bits=24 free mem=293780, written data=2880
-I2S: DMA Malloc info, datalen=blocksize=480, dma_desc_num=6
-I2S: PLL_D2: Req RATE: 36000, real rate: 37878.000, BITS: 24, CLKM: 11, BCK: 8, MCLK: 13837837.838, SCLK: 1818144.000000, diva: 64, divb: 36
+[i2s write] 1440 bytes are written successfully
 
-Test bits=32 free mem=292336, written data=2880
-I2S: DMA Malloc info, datalen=blocksize=480, dma_desc_num=6
-I2S: PLL_D2: Req RATE: 36000, real rate: 36764.000, BITS: 32, CLKM: 17, BCK: 4, MCLK: 9216921.692, SCLK: 2352896.000000, diva: 64, divb: 23
+[i2s read] 8192 bytes are read successfully
+----------------------------------------------
+[0]    0 [1]    0 [2]    0 [3]    0
 
-Test bits=16 free mem=293772, written data=1440
-I2S: DMA Malloc info, datalen=blocksize=240, dma_desc_num=6
-I2S: PLL_D2: Req RATE: 36000, real rate: 36764.000, BITS: 16, CLKM: 17, BCK: 8, MCLK: 9216921.692, SCLK: 1176448.000000, diva: 64, divb: 23
+[i2s write] 1440 bytes are written successfully
+[i2s write] 1440 bytes are written successfully
+[i2s write] 1440 bytes are written successfully
+
+[i2s read] 8192 bytes are read successfully
+----------------------------------------------
+[0] a7d468d9 [1] a88a6a1d [2] a9406b58 [3] a9f66c8b
+
+[i2s write] 1440 bytes are written successfully
+[i2s write] 1440 bytes are written successfully
+
+[i2s read] 8192 bytes are read successfully
+----------------------------------------------
+[0] 8b622120 [1] 8c182347 [2] 8cce256c [3] 8d84278d
+```
+
+There is a abnormal case that printing `Data dropped`, it is caused by a long polling time of `i2s_channel_read`, please refer to the `Application Notes` section in I2S API reference.
+
+```
+[i2s read] 8192 bytes are read successfully
+----------------------------------------------
+[0] a7d468d9 [1] a88a6a1d [2] a9406b58 [3] a9f66c8b
+
+
+[i2s monitor] Data dropped
+
+
+[i2s monitor] Data dropped
+
+
+[i2s monitor] Data dropped
+
+[i2s write] 1440 bytes are written successfully
+
+[i2s monitor] Data dropped
 ```
 
 If you have a logic analyzer, you can use a logic analyzer to grab online data. The following table describes the pins we use by default (Note that you can also use other pins for the same purpose).

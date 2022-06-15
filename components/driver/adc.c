@@ -37,8 +37,8 @@
 #include "hal/spi_types.h"
 #include "driver/spi_common_internal.h"
 #elif CONFIG_IDF_TARGET_ESP32
-#include "driver/i2s.h"
 #include "hal/i2s_types.h"
+#include "driver/i2s_types.h"
 #include "soc/i2s_periph.h"
 #include "esp_private/i2s_platform.h"
 #endif
@@ -259,7 +259,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 #elif CONFIG_IDF_TARGET_ESP32
     //ADC utilises I2S0 DMA on ESP32
     uint32_t dma_chan = 0;
-    ret = i2s_priv_register_object(&s_adc_digi_ctx, I2S_NUM_0);
+    ret = i2s_platform_acquire_occupation(I2S_NUM_0, "adc");
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -541,7 +541,7 @@ esp_err_t adc_digi_deinitialize(void)
     spicommon_periph_free(s_adc_digi_ctx->spi_host);
 #elif CONFIG_IDF_TARGET_ESP32
     esp_intr_free(s_adc_digi_ctx->intr_hdl);
-    i2s_priv_deregister_object(s_adc_digi_ctx->i2s_host);
+    i2s_platform_release_occupation(s_adc_digi_ctx->i2s_host);
 #endif
     free(s_adc_digi_ctx);
     s_adc_digi_ctx = NULL;

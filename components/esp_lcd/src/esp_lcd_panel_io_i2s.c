@@ -152,7 +152,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
     int bus_id = -1;
     for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
-        if (i2s_priv_register_object(bus, i) == ESP_OK) {
+        if (i2s_platform_acquire_occupation(i, "esp_lcd_panel_io_i2s") == ESP_OK) {
             bus_id = i;
             break;
         }
@@ -185,7 +185,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_bypass_pcm(bus->hal.dev, true);
     i2s_ll_tx_set_slave_mod(bus->hal.dev, false);
     i2s_ll_tx_set_bits_mod(bus->hal.dev, bus_config->bus_width);
-    i2s_ll_tx_select_slot(bus->hal.dev, I2S_STD_SLOT_ONLY_LEFT); // mono
+    i2s_ll_tx_select_slot(bus->hal.dev, I2S_STD_SLOT_ONLY_LEFT, false); // mono
     bus->bus_width = bus_config->bus_width;
     i2s_ll_tx_enable_right_first(bus->hal.dev, true);
 #if SOC_I2S_SUPPORTS_DMA_EQUAL
@@ -214,7 +214,7 @@ err:
             esp_intr_free(bus->intr);
         }
         if (bus->bus_id >= 0) {
-            i2s_priv_deregister_object(bus->bus_id);
+            i2s_platform_release_occupation(bus->bus_id);
         }
         if (bus->format_buffer) {
             free(bus->format_buffer);
@@ -233,7 +233,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
-    i2s_priv_deregister_object(bus_id);
+    i2s_platform_release_occupation(bus_id);
     esp_intr_free(bus->intr);
     if (bus->pm_lock) {
         esp_pm_lock_delete(bus->pm_lock);
@@ -593,9 +593,9 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
-        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_D2CLK);
+        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_SRC_PLL_160M);
 #if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_bus_lcd", &bus->pm_lock);
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_controller_lcd", &bus->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
         ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
 #endif

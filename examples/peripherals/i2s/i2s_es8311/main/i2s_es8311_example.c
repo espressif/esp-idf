@@ -8,7 +8,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s.h"
+#include "driver/i2s_std.h"
 #include "esp_system.h"
 #include "esp_check.h"
 #include "es8311.h"
@@ -34,7 +34,7 @@
 /* Example configurations */
 #define EXAMPLE_RECV_BUF_SIZE   (2048)
 #define EXAMPLE_SAMPLE_RATE     (16000)
-#define EXAMPLE_MCLK_MULTIPLE   I2S_MCLK_MULTIPLE_256
+#define EXAMPLE_MCLK_MULTIPLE   (256)
 #define EXAMPLE_VOICE_VOLUME    CONFIG_EXAMPLE_VOICE_VOLUME
 #if CONFIG_EXAMPLE_MODE_ECHO
 #define EXAMPLE_MIC_GAIN        CONFIG_EXAMPLE_MIC_GAIN
@@ -44,6 +44,8 @@ static const char *TAG = "i2s_es8311";
 static const char err_reason[][30] = {"input param is invalid",
                                       "operation timeout"
                                      };
+static i2s_chan_handle_t tx_handle = NULL;
+static i2s_chan_handle_t rx_handle = NULL;
 
 /* Import music file as buffer */
 #if CONFIG_EXAMPLE_MODE_MUSIC
@@ -73,7 +75,7 @@ static esp_err_t es8311_codec_init(void)
         .sample_frequency = EXAMPLE_SAMPLE_RATE
     };
 
-    es8311_init(es_handle, &es_clk, ES8311_RESOLUTION_16, ES8311_RESOLUTION_16);
+    ESP_ERROR_CHECK(es8311_init(es_handle, &es_clk, ES8311_RESOLUTION_16, ES8311_RESOLUTION_16));
     ESP_RETURN_ON_ERROR(es8311_sample_frequency_config(es_handle, EXAMPLE_SAMPLE_RATE * EXAMPLE_MCLK_MULTIPLE, EXAMPLE_SAMPLE_RATE), TAG, "set es8311 sample frequency failed");
     ESP_RETURN_ON_ERROR(es8311_voice_volume_set(es_handle, EXAMPLE_VOICE_VOLUME, NULL), TAG, "set es8311 volume failed");
     ESP_RETURN_ON_ERROR(es8311_microphone_config(es_handle, false), TAG, "set es8311 microphone failed");
@@ -85,37 +87,29 @@ static esp_err_t es8311_codec_init(void)
 
 static esp_err_t i2s_driver_init(void)
 {
-    i2s_config_t i2s_cfg = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
-        .sample_rate = EXAMPLE_SAMPLE_RATE,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-        .tx_desc_auto_clear = true,
-#if SOC_I2S_SUPPORTS_TDM
-        .total_chan = 2,
-        .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1,
-        .left_align = false,
-        .big_edin = false,
-        .bit_order_msb = false,
-        .skip_msk = false,
-#endif
-        .dma_desc_num = 8,
-        .dma_frame_num = 64,
-        .use_apll = false,
-        .mclk_multiple = EXAMPLE_MCLK_MULTIPLE,
-        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = GPIO_NUM_0,
+            .bclk = GPIO_NUM_4,
+            .ws = GPIO_NUM_5,
+            .dout = GPIO_NUM_18,
+            .din = GPIO_NUM_19,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
     };
 
-    ESP_RETURN_ON_ERROR(i2s_driver_install(I2S_NUM, &i2s_cfg, 0, NULL), TAG, "install i2s failed");
-    i2s_pin_config_t i2s_pin_cfg = {
-        .mck_io_num = I2S_MCK_IO,
-        .bck_io_num = I2S_BCK_IO,
-        .ws_io_num = I2S_WS_IO,
-        .data_out_num = I2S_DO_IO,
-        .data_in_num = I2S_DI_IO
-    };
-    ESP_RETURN_ON_ERROR(i2s_set_pin(I2S_NUM, &i2s_pin_cfg), TAG, "set i2s pins failed");
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
     return ESP_OK;
 }
 
@@ -126,16 +120,14 @@ static void i2s_music(void *args)
     size_t bytes_write = 0;
     while (1) {
         /* Write music to earphone */
-        ret = i2s_write(I2S_NUM, music_pcm_start, music_pcm_end - music_pcm_start, &bytes_write, portMAX_DELAY);
+        ret = i2s_channel_write(tx_handle, music_pcm_start, music_pcm_end - music_pcm_start, &bytes_write, portMAX_DELAY);
         if (ret != ESP_OK) {
-            /* Since we set timeout to 'portMAX_DELAY' in 'i2s_write'
+            /* Since we set timeout to 'portMAX_DELAY' in 'i2s_channel_write'
                so you won't reach here unless you set other timeout value,
                if timeout detected, it means write operation failed. */
-            ESP_LOGE(TAG, "[music] i2s read failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
+            ESP_LOGE(TAG, "[music] i2s write failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
             abort();
         }
-        /* Clear DMA buffer to avoid noise from legacy data in buffer */
-        i2s_zero_dma_buffer(I2S_NUM);
         if (bytes_write > 0) {
             ESP_LOGI(TAG, "[music] i2s music played, %d bytes are written.", bytes_write);
         } else {
@@ -163,13 +155,13 @@ static void i2s_echo(void *args)
     while (1) {
         memset(mic_data, 0, EXAMPLE_RECV_BUF_SIZE);
         /* Read sample data from mic */
-        ret = i2s_read(I2S_NUM, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_read, 100);
+        ret = i2s_channel_read(rx_handle, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_read, 1000);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "[echo] i2s read failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
             abort();
         }
         /* Write sample data to earphone */
-        ret = i2s_write(I2S_NUM, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_write, 100);
+        ret = i2s_channel_write(tx_handle, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_write, 1000);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "[echo] i2s write failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
             abort();
@@ -184,15 +176,20 @@ static void i2s_echo(void *args)
 
 void app_main(void)
 {
+    printf("i2s es8311 codec example start\n-----------------------------\n");
     /* Initialize i2s peripheral */
     if (i2s_driver_init() != ESP_OK) {
         ESP_LOGE(TAG, "i2s driver init failed");
         abort();
+    } else {
+        ESP_LOGI(TAG, "i2s driver init success");
     }
     /* Initialize i2c peripheral and config es8311 codec by i2c */
     if (es8311_codec_init() != ESP_OK) {
         ESP_LOGE(TAG, "es8311 codec init failed");
         abort();
+    } else {
+        ESP_LOGI(TAG, "es8311 codec init success");
     }
 #if CONFIG_EXAMPLE_MODE_MUSIC
     /* Play a piece of music in music mode */

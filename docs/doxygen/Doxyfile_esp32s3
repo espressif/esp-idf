@@ -1,5 +1,10 @@
 INPUT += \
          $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
+         $(PROJECT_PATH)/components/driver/include/driver/i2s_common.h \
+         $(PROJECT_PATH)/components/driver/include/driver/i2s_pdm.h \
+         $(PROJECT_PATH)/components/driver/include/driver/i2s_std.h \
+         $(PROJECT_PATH)/components/driver/include/driver/i2s_tdm.h \
+         $(PROJECT_PATH)/components/driver/include/driver/i2s_types.h \
          $(PROJECT_PATH)/components/driver/include/driver/mcpwm.h \
          $(PROJECT_PATH)/components/driver/include/driver/pulse_cnt.h \
          $(PROJECT_PATH)/components/driver/include/driver/rmt_common.h \
@@ -12,6 +17,7 @@ INPUT += \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/$(IDF_TARGET)/esp_hmac.h \
          $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
          $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h \
+         $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
          $(PROJECT_PATH)/components/hal/include/hal/mcpwm_types.h \
          $(PROJECT_PATH)/components/hal/include/hal/pcnt_types.h \
          $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \

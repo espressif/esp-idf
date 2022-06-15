@@ -19,7 +19,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
-#include "hal/i2s_types_priv.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +40,9 @@ extern "C" {
 #define I2S_LL_EVENT_RX_DSCR_ERR    BIT(13)
 #define I2S_LL_EVENT_TX_DSCR_ERR    BIT(14)
 #define I2S_INTR_MAX                (UINT32_MAX)
+
+#define I2S_LL_TX_EVENT_MASK        I2S_LL_EVENT_TX_EOF
+#define I2S_LL_RX_EVENT_MASK        I2S_LL_EVENT_RX_EOF
 
 /* I2S clock configuration structure */
 typedef struct {
@@ -247,7 +250,7 @@ static inline void i2s_ll_rx_reset_fifo(i2s_dev_t *hw)
  */
 static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->clkm_conf.clk_sel = (src == I2S_CLK_APLL) ? 1 : 2;
+    hw->clkm_conf.clk_sel = (src == I2S_CLK_SRC_APLL) ? 1 : 2;
 }
 
 /**
@@ -258,7 +261,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
-    hw->clkm_conf.clk_sel = (src == I2S_CLK_APLL) ? 1 : 2;
+    hw->clkm_conf.clk_sel = (src == I2S_CLK_SRC_APLL) ? 1 : 2;
 }
 
 /**
@@ -439,6 +442,14 @@ static inline volatile void *i2s_ll_get_intr_status_reg(i2s_dev_t *hw)
 static inline uint32_t i2s_ll_get_intr_status(i2s_dev_t *hw)
 {
     return hw->int_st.val;
+}
+
+/**
+ * @brief Get DMA interrupt status register address
+ */
+static inline volatile void *i2s_ll_get_interrupt_status_reg(i2s_dev_t *hw)
+{
+    return (volatile void *)(&hw->int_st);
 }
 
 /**
@@ -829,17 +840,17 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
  * @brief Set I2S tx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_sel select slot to send data
+ * @param slot_mask select slot to send data
  */
-static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
 {
-    switch (slot_sel)
+    switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_LEFT:
-        hw->conf_chan.tx_chan_mod = 1;
-        break;
     case I2S_STD_SLOT_ONLY_RIGHT:
-        hw->conf_chan.tx_chan_mod = 2;
+        hw->conf_chan.tx_chan_mod = is_msb_right ? 1 : 2;
+        break;
+    case I2S_STD_SLOT_ONLY_LEFT:
+        hw->conf_chan.tx_chan_mod = is_msb_right ? 2 : 1;
         break;
     case I2S_STD_SLOT_LEFT_RIGHT:
         hw->conf_chan.tx_chan_mod = 0;
@@ -853,17 +864,17 @@ static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_
  * @brief Set I2S rx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_sel select slot to receive data
+ * @param slot_mask select slot to receive data
  */
-static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
 {
-    switch (slot_sel)
+    switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_LEFT:
-        hw->conf_chan.rx_chan_mod = 1;
-        break;
     case I2S_STD_SLOT_ONLY_RIGHT:
-        hw->conf_chan.rx_chan_mod = 2;
+        hw->conf_chan.rx_chan_mod = is_msb_right ? 1 : 2;
+        break;
+    case I2S_STD_SLOT_ONLY_LEFT:
+        hw->conf_chan.rx_chan_mod = is_msb_right ? 2 : 1;
         break;
     case I2S_STD_SLOT_LEFT_RIGHT:
         hw->conf_chan.rx_chan_mod = 0;
@@ -906,7 +917,6 @@ static inline void i2s_ll_tx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
     int data_bit = hw->sample_rate_conf.tx_bits_mod;
     hw->fifo_conf.tx_fifo_mod = data_bit <= I2S_DATA_BIT_WIDTH_16BIT ? mono_ena : 2 + mono_ena;
     hw->conf.tx_dma_equal = mono_ena;
-    hw->conf_chan.tx_chan_mod = mono_ena;
 }
 
 /**
@@ -920,7 +930,6 @@ static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
     int data_bit = hw->sample_rate_conf.rx_bits_mod;
     hw->fifo_conf.rx_fifo_mod = data_bit <= I2S_DATA_BIT_WIDTH_16BIT ? mono_ena : 2 + mono_ena;
     hw->conf.rx_dma_equal = mono_ena;
-    hw->conf_chan.rx_chan_mod = mono_ena;
 }
 
 /**

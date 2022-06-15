@@ -58,7 +58,15 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_I2S_SUPPORTED)
-    list(APPEND srcs "i2s.c")
+    list(APPEND srcs "i2s/i2s_common.c"
+                     "i2s/i2s_std.c"
+                     "deprecated/i2s_legacy.c")
+    if(CONFIG_SOC_I2S_SUPPORTS_PDM)
+        list(APPEND srcs "i2s/i2s_pdm.c")
+    endif()
+    if(CONFIG_SOC_I2S_SUPPORTS_TDM)
+        list(APPEND srcs "i2s/i2s_tdm.c")
+    endif()
 endif()
 
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)

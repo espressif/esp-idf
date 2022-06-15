@@ -121,4 +121,4 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 
     return ESP_OK;
 }
-#endif // SOC_I2S_SUPPORTS_APLL
+#endif // SOC_CLK_APLL_SUPPORTED

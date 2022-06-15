@@ -12,18 +12,23 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
+#include "sdkconfig.h"
+
+#if CONFIG_I2S_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
+
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
+#include "driver/i2s_types_legacy.h"
 #include "hal/i2s_hal.h"
-#include "hal/i2s_std.h"
-#include "hal/i2s_pdm.h"
-#include "hal/i2s_tdm.h"
-#include "driver/i2s.h"
 #if SOC_I2S_SUPPORTS_DAC
 #include "driver/dac.h"
 #include "driver/adc.h"
-#include "adc1_private.h"
+#include "../adc1_private.h"
 #endif // SOC_I2S_SUPPORTS_ADC
 
 #if SOC_GDMA_SUPPORTED
@@ -39,12 +44,9 @@
 #include "esp_pm.h"
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
-#include "esp_private/i2s_platform.h"
 #include "esp_private/periph_ctrl.h"
 
-#include "sdkconfig.h"
-
-static const char *TAG = "I2S";
+static const char *TAG = "i2s(legacy)";
 
 #define I2S_ENTER_CRITICAL_ISR(i2s_num)          portENTER_CRITICAL_ISR(&i2s_spinlock[i2s_num])
 #define I2S_EXIT_CRITICAL_ISR(i2s_num)           portEXIT_CRITICAL_ISR(&i2s_spinlock[i2s_num])
@@ -56,6 +58,23 @@ static const char *TAG = "I2S";
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #define    I2S_COMM_MODE_ADC_DAC    -1
 #endif
+
+/**
+ * @brief General clock configuration information
+ * @note It is a general purpose struct, not supposed to be used directly by user
+ */
+typedef struct {
+    uint32_t                sample_rate_hz;     /*!< I2S sample rate */
+    i2s_clock_src_t         clk_src;            /*!< Choose clock source */
+    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
+#if SOC_I2S_SUPPORTS_PDM_TX
+    uint32_t                up_sample_fp;       /*!< Up-sampling param fp */
+    uint32_t                up_sample_fs;       /*!< Up-sampling param fs */
+#endif
+#if SOC_I2S_SUPPORTS_PDM_RX
+    i2s_pdm_dsr_t           dn_sample_mode;     /*!< Down-sampling rate mode */
+#endif
+} i2s_clk_config_t;
 
 /**
  * @brief DMA buffer object
@@ -104,19 +123,29 @@ typedef struct {
     i2s_dir_t         dir;
     i2s_role_t        role;
     i2s_comm_mode_t   mode;
-    void              *slot_cfg;
-    void              *clk_cfg;
+    i2s_hal_slot_config_t slot_cfg;
+    i2s_clk_config_t      clk_cfg;
     uint32_t          active_slot;    /*!< Active slot number */
     uint32_t          total_slot;     /*!< Total slot number */
 } i2s_obj_t;
 
+// Record the component name that using I2S peripheral
+static const char *comp_using_i2s[SOC_I2S_NUM] = {[0 ... SOC_I2S_NUM - 1] = NULL};
+
+// Global I2S object pointer
 static i2s_obj_t *p_i2s[SOC_I2S_NUM] = {
     [0 ... SOC_I2S_NUM - 1] = NULL,
 };
-static portMUX_TYPE i2s_platform_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+
+// Global spin lock for all i2s controllers
 static portMUX_TYPE i2s_spinlock[SOC_I2S_NUM] = {
     [0 ... SOC_I2S_NUM - 1] = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED,
 };
+
+
+__attribute__((weak)) esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name);
+
+__attribute__((weak)) esp_err_t i2s_platform_release_occupation(int id);
 
 /*-------------------------------------------------------------
                     I2S DMA operation
@@ -399,7 +428,7 @@ static void i2s_rx_stop(i2s_port_t i2s_num)
 
 esp_err_t i2s_start(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     //start DMA link
     I2S_ENTER_CRITICAL(i2s_num);
 
@@ -420,7 +449,7 @@ esp_err_t i2s_start(i2s_port_t i2s_num)
 
 esp_err_t i2s_stop(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     I2S_ENTER_CRITICAL(i2s_num);
 #if !SOC_GDMA_SUPPORTED
     esp_intr_disable(p_i2s[i2s_num]->i2s_isr_handle);
@@ -443,13 +472,13 @@ esp_err_t i2s_stop(i2s_port_t i2s_num)
   -------------------------------------------------------------*/
 static inline uint32_t i2s_get_buf_size(i2s_port_t i2s_num)
 {
-    i2s_slot_config_t *slot_cfg = (i2s_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[i2s_num]->slot_cfg;
     /* Calculate bytes per sample, align to 16 bit */
     uint32_t bytes_per_sample = ((slot_cfg->data_bit_width + 15) / 16) * 2;
     /* The DMA buffer limitation is 4092 bytes */
     uint32_t bytes_per_frame = bytes_per_sample * p_i2s[i2s_num]->active_slot;
     p_i2s[i2s_num]->dma_frame_num = (p_i2s[i2s_num]->dma_frame_num * bytes_per_frame > I2S_DMA_BUFFER_MAX_SIZE) ?
-                                  I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame : p_i2s[i2s_num]->dma_frame_num;
+                                    I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame : p_i2s[i2s_num]->dma_frame_num;
     return p_i2s[i2s_num]->dma_frame_num * bytes_per_frame;
 }
 
@@ -483,7 +512,6 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
         ESP_GOTO_ON_FALSE(dma_obj->buf[cnt], ESP_ERR_NO_MEM, err, TAG, "Error malloc dma buffer");
         /* Initialize DMA buffer to 0 */
         memset(dma_obj->buf[cnt], 0, dma_obj->buf_size);
-        ESP_LOGD(TAG, "Addr[%d] = %d", cnt, (int)dma_obj->buf[cnt]);
 
         /* Allocate DMA descpriptor */
         dma_obj->desc[cnt] = (lldesc_t *) heap_caps_calloc(1, sizeof(lldesc_t), MALLOC_CAP_DMA);
@@ -505,7 +533,7 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
     if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(p_i2s[i2s_num]->hal.dev, dma_obj->buf_size);
     }
-    ESP_LOGI(TAG, "DMA Malloc info, datalen=blocksize=%d, dma_desc_num=%d", dma_obj->buf_size, buf_cnt);
+    ESP_LOGD(TAG, "DMA Malloc info, datalen=blocksize=%d, dma_desc_num=%d", dma_obj->buf_size, buf_cnt);
     return ESP_OK;
 err:
     /* Delete DMA buffer if failed to allocate memory */
@@ -551,7 +579,7 @@ static esp_err_t i2s_destroy_dma_object(i2s_port_t i2s_num, i2s_dma_t **dma)
     /* Free DMA structure */
     free(*dma);
     *dma = NULL;
-    ESP_LOGI(TAG, "DMA queue destroyed");
+    ESP_LOGD(TAG, "DMA queue destroyed");
     return ESP_OK;
 }
 
@@ -616,27 +644,27 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
         if (ret == ESP_ERR_INVALID_STATE) {
             ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
         }
-        ESP_LOGI(TAG, "APLL expected frequency is %d Hz, real frequency is %d Hz", expt_freq, real_freq);
+        ESP_LOGD(TAG, "APLL expected frequency is %d Hz, real frequency is %d Hz", expt_freq, real_freq);
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
         return real_freq;
     }
     return I2S_LL_BASE_CLK;
 #else
     if (use_apll) {
-        ESP_LOGW(TAG, "APLL not supported on current chip, use I2S_CLK_D2CLK as default clock source");
+        ESP_LOGW(TAG, "APLL not supported on current chip, use I2S_CLK_SRC_DEFAULT as default clock source");
     }
     return I2S_LL_BASE_CLK;
 #endif
 }
 
 #if SOC_I2S_SUPPORTS_ADC || SOC_I2S_SUPPORTS_DAC
-static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_clock_info_t *clk_info)
+static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_hal_clock_info_t *clk_info)
 {
     /* For ADC/DAC mode, the built-in ADC/DAC is driven by 'mclk' instead of 'bclk'
      * 'bclk' should be fixed to the double of sample rate
      * 'bclk_div' is the real coefficient that affects the slot bit */
-    i2s_clk_config_t *clk_cfg = (i2s_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
-    i2s_slot_config_t *slot_cfg = (i2s_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[i2s_num]->slot_cfg;
     uint32_t slot_bits = slot_cfg->slot_bit_width;
     /* Set I2S bit clock */
     clk_info->bclk = clk_cfg->sample_rate_hz * I2S_LL_AD_BCK_FACTOR;
@@ -644,7 +672,7 @@ static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_clock_info_t *clk_
     clk_info->bclk_div = slot_bits;
     /* If fixed_mclk and use_apll are set, use fixed_mclk as mclk frequency, otherwise calculate by mclk = bclk * bclk_div */
     clk_info->mclk = (p_i2s[i2s_num]->use_apll && p_i2s[i2s_num]->fixed_mclk) ?
-                    p_i2s[i2s_num]->fixed_mclk : clk_info->bclk * clk_info->bclk_div;
+                     p_i2s[i2s_num]->fixed_mclk : clk_info->bclk * clk_info->bclk_div;
     /* Calculate bclk_div = mclk / bclk */
     clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
     /* Get I2S system clock by config source clock */
@@ -661,9 +689,9 @@ static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_clock_info_t *clk_
 #endif // SOC_I2S_SUPPORTS_ADC || SOC_I2S_SUPPORTS_DAC
 
 #if SOC_I2S_SUPPORTS_PDM_TX
-static esp_err_t i2s_calculate_pdm_tx_clock(int i2s_num, i2s_clock_info_t *clk_info)
+static esp_err_t i2s_calculate_pdm_tx_clock(int i2s_num, i2s_hal_clock_info_t *clk_info)
 {
-    i2s_pdm_tx_clk_config_t *clk_cfg = (i2s_pdm_tx_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
 
     int fp = clk_cfg->up_sample_fp;
     int fs = clk_cfg->up_sample_fs;
@@ -673,7 +701,7 @@ static esp_err_t i2s_calculate_pdm_tx_clock(int i2s_num, i2s_clock_info_t *clk_i
     clk_info->bclk_div = 8;
     /* If fixed_mclk and use_apll are set, use fixed_mclk as mclk frequency, otherwise calculate by mclk = sample_rate_hz * multiple */
     clk_info->mclk = (p_i2s[i2s_num]->use_apll && p_i2s[i2s_num]->fixed_mclk) ?
-                    p_i2s[i2s_num]->fixed_mclk : clk_info->bclk * clk_info->bclk_div;
+                     p_i2s[i2s_num]->fixed_mclk : clk_info->bclk * clk_info->bclk_div;
     /* Calculate bclk_div = mclk / bclk */
     clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
     /* Get I2S system clock by config source clock */
@@ -690,9 +718,9 @@ static esp_err_t i2s_calculate_pdm_tx_clock(int i2s_num, i2s_clock_info_t *clk_i
 #endif  // SOC_I2S_SUPPORTS_PDM_TX
 
 #if SOC_I2S_SUPPORTS_PDM_RX
-static esp_err_t i2s_calculate_pdm_rx_clock(int i2s_num, i2s_clock_info_t *clk_info)
+static esp_err_t i2s_calculate_pdm_rx_clock(int i2s_num, i2s_hal_clock_info_t *clk_info)
 {
-    i2s_pdm_rx_clk_config_t *clk_cfg = (i2s_pdm_rx_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
     i2s_pdm_dsr_t dsr = clk_cfg->dn_sample_mode;
     /* Set I2S bit clock */
     clk_info->bclk = clk_cfg->sample_rate_hz * I2S_LL_PDM_BCK_FACTOR * (dsr == I2S_PDM_DSR_16S ? 2 : 1);
@@ -700,7 +728,7 @@ static esp_err_t i2s_calculate_pdm_rx_clock(int i2s_num, i2s_clock_info_t *clk_i
     clk_info->bclk_div = 8;
     /* If fixed_mclk and use_apll are set, use fixed_mclk as mclk frequency, otherwise calculate by mclk = sample_rate_hz * multiple */
     clk_info->mclk = (p_i2s[i2s_num]->use_apll && p_i2s[i2s_num]->fixed_mclk) ?
-                    p_i2s[i2s_num]->fixed_mclk : clk_info->bclk * clk_info->bclk_div;
+                     p_i2s[i2s_num]->fixed_mclk : clk_info->bclk * clk_info->bclk_div;
     /* Calculate bclk_div = mclk / bclk */
     clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
     /* Get I2S system clock by config source clock */
@@ -715,10 +743,10 @@ static esp_err_t i2s_calculate_pdm_rx_clock(int i2s_num, i2s_clock_info_t *clk_i
     return ESP_OK;
 }
 #endif // SOC_I2S_SUPPORTS_PDM_RX
-static esp_err_t i2s_calculate_common_clock(int i2s_num, i2s_clock_info_t *clk_info)
+static esp_err_t i2s_calculate_common_clock(int i2s_num, i2s_hal_clock_info_t *clk_info)
 {
-    i2s_clk_config_t *clk_cfg = (i2s_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
-    i2s_slot_config_t *slot_cfg = (i2s_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[i2s_num]->slot_cfg;
     uint32_t rate     = clk_cfg->sample_rate_hz;
     uint32_t slot_num = p_i2s[i2s_num]->total_slot < 2 ? 2 : p_i2s[i2s_num]->total_slot;
     uint32_t slot_bits = slot_cfg->slot_bit_width;
@@ -745,7 +773,7 @@ static esp_err_t i2s_calculate_common_clock(int i2s_num, i2s_clock_info_t *clk_i
 }
 
 
-static esp_err_t i2s_calculate_clock(i2s_port_t i2s_num, i2s_clock_info_t *clk_info)
+static esp_err_t i2s_calculate_clock(i2s_port_t i2s_num, i2s_hal_clock_info_t *clk_info)
 {
     /* Calculate clock for ADC/DAC mode */
 #if SOC_I2S_SUPPORTS_ADC_DAC
@@ -780,33 +808,11 @@ static esp_err_t i2s_calculate_clock(i2s_port_t i2s_num, i2s_clock_info_t *clk_i
 /*-------------------------------------------------------------
                    I2S configuration
   -------------------------------------------------------------*/
-#if SOC_I2S_SUPPORTS_TDM
-
-static uint32_t i2s_get_max_channel_num(uint32_t chan_mask)
-{
-    int max_chan;
-    for (max_chan = 0; chan_mask; max_chan++, chan_mask >>= 1);
-    /* Can't be smaller than 2 */
-    return max_chan < 2 ? 2 : max_chan;
-}
-
-static uint32_t i2s_get_active_channel_num(uint32_t chan_mask)
-{
-    uint32_t num = 0;
-    for (int i = 0; chan_mask; i++, chan_mask >>= 1) {
-        if (chan_mask & 0x01) {
-            num++;
-        }
-    }
-    return num;
-}
-#endif
-
 #if SOC_I2S_SUPPORTS_ADC_DAC
 static void i2s_dac_set_slot_legacy(void)
 {
     i2s_dev_t *dev = p_i2s[0]->hal.dev;
-    i2s_slot_config_t *slot_cfg = p_i2s[0]->slot_cfg;
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[0]->slot_cfg;
 
     i2s_ll_tx_reset(dev);
     i2s_ll_tx_set_slave_mod(dev, false);
@@ -845,7 +851,7 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
 static void i2s_adc_set_slot_legacy(void)
 {
     i2s_dev_t *dev = p_i2s[0]->hal.dev;
-    i2s_slot_config_t *slot_cfg = p_i2s[0]->slot_cfg;
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[0]->slot_cfg;
     // When ADC/DAC are installed as duplex mode, ADC will share the WS and BCLK clock by working in slave mode
     i2s_ll_rx_set_slave_mod(dev, false);
     i2s_ll_rx_set_sample_bit(dev, slot_cfg->slot_bit_width, slot_cfg->data_bit_width);
@@ -878,7 +884,7 @@ esp_err_t i2s_set_adc_mode(adc_unit_t adc_unit, adc1_channel_t adc_channel)
 
 esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num] != NULL), ESP_ERR_INVALID_STATE, TAG, "Not initialized yet");
     ESP_RETURN_ON_FALSE(((int)p_i2s[i2s_num]->mode == I2S_COMM_MODE_ADC_DAC) && (p_i2s[i2s_num]->dir & I2S_DIR_RX),
                         ESP_ERR_INVALID_STATE, TAG, "i2s built-in adc not enabled");
@@ -891,7 +897,7 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
 
 esp_err_t i2s_adc_disable(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num] != NULL), ESP_ERR_INVALID_STATE, TAG, "Not initialized yet");
     ESP_RETURN_ON_FALSE(((int)p_i2s[i2s_num]->mode == I2S_COMM_MODE_ADC_DAC) && (p_i2s[i2s_num]->dir & I2S_DIR_RX),
                         ESP_ERR_INVALID_STATE, TAG, "i2s built-in adc not enabled");
@@ -906,7 +912,7 @@ static esp_err_t i2s_check_cfg_validity(i2s_port_t i2s_num, const i2s_config_t *
 {
     /* Step 1: Check the validity of input parameters */
     /* Check the validity of i2s device number */
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num] == NULL, ESP_ERR_INVALID_STATE, TAG, "this i2s port is in use");
     ESP_RETURN_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, TAG, "I2S configuration must not be NULL");
     /* Check the size of DMA buffer */
@@ -958,33 +964,33 @@ static void i2s_set_slot_legacy(i2s_port_t i2s_num)
     }
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_STD) {
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            i2s_hal_std_set_tx_slot(&(p_i2s[i2s_num]->hal), is_tx_slave, p_i2s[i2s_num]->slot_cfg );
+            i2s_hal_std_set_tx_slot(&(p_i2s[i2s_num]->hal), is_tx_slave, (i2s_hal_slot_config_t *)(&p_i2s[i2s_num]->slot_cfg) );
         }
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            i2s_hal_std_set_rx_slot(&(p_i2s[i2s_num]->hal), is_rx_slave, p_i2s[i2s_num]->slot_cfg );
+            i2s_hal_std_set_rx_slot(&(p_i2s[i2s_num]->hal), is_rx_slave, (i2s_hal_slot_config_t *)(&p_i2s[i2s_num]->slot_cfg) );
         }
     }
 #if SOC_I2S_SUPPORTS_PDM
     else if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
-    #if SOC_I2S_SUPPORTS_PDM_TX
+#if SOC_I2S_SUPPORTS_PDM_TX
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            i2s_hal_pdm_set_tx_slot(&(p_i2s[i2s_num]->hal), is_tx_slave, p_i2s[i2s_num]->slot_cfg );
+            i2s_hal_pdm_set_tx_slot(&(p_i2s[i2s_num]->hal), is_tx_slave, (i2s_hal_slot_config_t *)(&p_i2s[i2s_num]->slot_cfg) );
         }
-    #endif
-    #if SOC_I2S_SUPPORTS_PDM_RX
+#endif
+#if SOC_I2S_SUPPORTS_PDM_RX
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            i2s_hal_pdm_set_rx_slot(&(p_i2s[i2s_num]->hal), is_rx_slave, p_i2s[i2s_num]->slot_cfg );
+            i2s_hal_pdm_set_rx_slot(&(p_i2s[i2s_num]->hal), is_rx_slave, (i2s_hal_slot_config_t *)(&p_i2s[i2s_num]->slot_cfg) );
         }
-    #endif
+#endif
     }
 #endif
 #if SOC_I2S_SUPPORTS_TDM
     else if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_TDM) {
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            i2s_hal_tdm_set_tx_slot(&(p_i2s[i2s_num]->hal), is_tx_slave, p_i2s[i2s_num]->slot_cfg );
+            i2s_hal_tdm_set_tx_slot(&(p_i2s[i2s_num]->hal), is_tx_slave, (i2s_hal_slot_config_t *)(&p_i2s[i2s_num]->slot_cfg) );
         }
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            i2s_hal_tdm_set_rx_slot(&(p_i2s[i2s_num]->hal), is_rx_slave, p_i2s[i2s_num]->slot_cfg );
+            i2s_hal_tdm_set_rx_slot(&(p_i2s[i2s_num]->hal), is_rx_slave, (i2s_hal_slot_config_t *)(&p_i2s[i2s_num]->slot_cfg) );
         }
     }
 #endif
@@ -1002,8 +1008,8 @@ static void i2s_set_slot_legacy(i2s_port_t i2s_num)
 
 static void i2s_set_clock_legacy(i2s_port_t i2s_num)
 {
-    i2s_clk_config_t *clk_cfg = (i2s_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
-    i2s_clock_info_t clk_info;
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
+    i2s_hal_clock_info_t clk_info;
     i2s_calculate_clock(i2s_num, &clk_info);
     if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
         i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
@@ -1015,14 +1021,14 @@ static void i2s_set_clock_legacy(i2s_port_t i2s_num)
 
 float i2s_get_clk(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
-    i2s_clk_config_t *clk_cfg = (i2s_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
     return (float)clk_cfg->sample_rate_hz;
 }
 
 esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_channel_t ch)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_ERR_INVALID_ARG, TAG, "I2S%d has not installed yet", i2s_num);
 
     /* Acquire the lock before stop i2s, otherwise reading/writing operation will stuck on receiving the message queue from interrupt */
@@ -1036,8 +1042,8 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     /* Stop I2S */
     i2s_stop(i2s_num);
 
-    i2s_clk_config_t *clk_cfg = (i2s_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
-    i2s_slot_config_t *slot_cfg = (i2s_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
+    i2s_clk_config_t *clk_cfg = &p_i2s[i2s_num]->clk_cfg;
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[i2s_num]->slot_cfg;
 
     clk_cfg->sample_rate_hz = rate;
     slot_cfg->data_bit_width = bits_cfg & 0xFFFF;
@@ -1047,15 +1053,28 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     ESP_RETURN_ON_FALSE((slot_cfg->slot_bit_width % 8 == 0), ESP_ERR_INVALID_ARG, TAG, "Invalid bits per channel");
     ESP_RETURN_ON_FALSE(((int)slot_cfg->slot_bit_width <= (int)I2S_BITS_PER_SAMPLE_32BIT), ESP_ERR_INVALID_ARG, TAG, "Invalid bits per sample");
     slot_cfg->slot_mode = ((ch & 0xFFFF) == I2S_CHANNEL_MONO) ? I2S_SLOT_MODE_MONO : I2S_SLOT_MODE_STEREO;
+    if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_STD) {
+        if (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) {
+            if (slot_cfg->std.slot_mask == I2S_STD_SLOT_LEFT_RIGHT) {
+                slot_cfg->std.slot_mask = I2S_STD_SLOT_ONLY_LEFT;
+#if SOC_I2S_HW_VERSION_1
+                // Enable right first to get correct data sequence
+                slot_cfg->std.ws_pol = !slot_cfg->std.ws_pol;
+#endif
+            }
+        } else {
+            slot_cfg->std.slot_mask = I2S_STD_SLOT_LEFT_RIGHT;
+        }
+    }
 #if SOC_I2S_SUPPORTS_TDM
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_TDM) {
         uint32_t slot_mask = ch >> 16;
         if (slot_mask == 0) {
             slot_mask = (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ? 1 : 2;
         }
-        ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->total_slot >= i2s_get_max_channel_num(slot_mask), ESP_ERR_INVALID_ARG, TAG,
+        ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->total_slot >= (32 - __builtin_clz(slot_mask)), ESP_ERR_INVALID_ARG, TAG,
                             "The max channel number can't be greater than CH%d\n", p_i2s[i2s_num]->total_slot);
-        p_i2s[i2s_num]->active_slot = i2s_get_active_channel_num(slot_mask);
+        p_i2s[i2s_num]->active_slot = __builtin_popcount(slot_mask);
     } else
 #endif
     {
@@ -1101,12 +1120,12 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
 
 esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
-    i2s_slot_config_t *slot_cfg = (i2s_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    i2s_hal_slot_config_t *slot_cfg = &p_i2s[i2s_num]->slot_cfg;
     uint32_t mask = 0;
 #if SOC_I2S_SUPPORTS_TDM
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_TDM) {
-        mask = ((i2s_tdm_slot_config_t *)slot_cfg)->slot_mask;;
+        mask = slot_cfg->tdm.slot_mask;
     }
 #endif
     return i2s_set_clk(i2s_num, rate, slot_cfg->data_bit_width, slot_cfg->slot_mode | (mask << 16));
@@ -1154,13 +1173,11 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsampl
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM), ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
     xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
     i2s_stop(i2s_num);
-    i2s_pdm_rx_slot_config_t *slot_cfg = (i2s_pdm_rx_slot_config_t*)p_i2s[i2s_num]->slot_cfg;
-    i2s_pdm_rx_clk_config_t *clk_cfg = (i2s_pdm_rx_clk_config_t*)p_i2s[i2s_num]->clk_cfg;
-    clk_cfg->dn_sample_mode = downsample;
+    p_i2s[i2s_num]->clk_cfg.dn_sample_mode = downsample;
     i2s_ll_rx_set_pdm_dsr(p_i2s[i2s_num]->hal.dev, downsample);
     i2s_start(i2s_num);
     xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
-    return i2s_set_clk(i2s_num, clk_cfg->sample_rate_hz, slot_cfg->data_bit_width, slot_cfg->slot_mode);
+    return i2s_set_clk(i2s_num, p_i2s[i2s_num]->clk_cfg.sample_rate_hz, p_i2s[i2s_num]->slot_cfg.data_bit_width, p_i2s[i2s_num]->slot_cfg.slot_mode);
 }
 #endif
 
@@ -1172,14 +1189,12 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
                         ESP_ERR_INVALID_ARG, TAG, "i2s mode is not PDM mode");
     xSemaphoreTake(p_i2s[i2s_num]->tx->mux, portMAX_DELAY);
     i2s_stop(i2s_num);
-    i2s_pdm_tx_clk_config_t *clk_cfg = (i2s_pdm_tx_clk_config_t *)p_i2s[i2s_num]->clk_cfg;
-    i2s_pdm_tx_slot_config_t *slot_cfg = (i2s_pdm_tx_slot_config_t *)p_i2s[i2s_num]->slot_cfg;
-    clk_cfg->up_sample_fp = upsample_cfg->fp;
-    clk_cfg->up_sample_fs = upsample_cfg->fs;
+    p_i2s[i2s_num]->clk_cfg.up_sample_fp = upsample_cfg->fp;
+    p_i2s[i2s_num]->clk_cfg.up_sample_fs = upsample_cfg->fs;
     i2s_ll_tx_set_pdm_fpfs(p_i2s[i2s_num]->hal.dev, upsample_cfg->fp, upsample_cfg->fs);
     i2s_start(i2s_num);
     xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
-    return i2s_set_clk(i2s_num, clk_cfg->sample_rate_hz, slot_cfg->data_bit_width, slot_cfg->slot_mode);
+    return i2s_set_clk(i2s_num, p_i2s[i2s_num]->clk_cfg.sample_rate_hz, p_i2s[i2s_num]->slot_cfg.data_bit_width, p_i2s[i2s_num]->slot_cfg.slot_mode);
 }
 #endif
 
@@ -1223,7 +1238,7 @@ static void i2s_mode_identify(i2s_port_t i2s_num, const i2s_config_t *i2s_config
 
 #if SOC_I2S_SUPPORTS_TDM
     if (i2s_config->channel_format == I2S_CHANNEL_FMT_MULTIPLE) {
-          p_i2s[i2s_num]->mode = I2S_COMM_MODE_TDM;
+        p_i2s[i2s_num]->mode = I2S_COMM_MODE_TDM;
     }
 #endif // SOC_I2S_SUPPORTS_TDM
 
@@ -1237,95 +1252,78 @@ static void i2s_mode_identify(i2s_port_t i2s_num, const i2s_config_t *i2s_config
 
 static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s_config)
 {
+#define SLOT_CFG(m)     p_i2s[i2s_num]->slot_cfg.m
+#define CLK_CFG()       p_i2s[i2s_num]->clk_cfg
     /* Convert legacy configuration into general part of slot and clock configuration */
-    i2s_slot_config_t slot_cfg = {};
-    slot_cfg.mode = p_i2s[i2s_num]->mode;
-    slot_cfg.data_bit_width = i2s_config->bits_per_sample;
-    slot_cfg.slot_bit_width = (int)i2s_config->bits_per_chan < (int)i2s_config->bits_per_sample ?
-                                i2s_config->bits_per_sample : i2s_config->bits_per_chan;
-    slot_cfg.slot_mode = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ?
-                         I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
-    i2s_clk_config_t clk_cfg = {};
-    clk_cfg.sample_rate_hz = i2s_config->sample_rate;
-    clk_cfg.mclk_multiple = i2s_config->mclk_multiple == 0 ? I2S_MCLK_MULTIPLE_256 : i2s_config->mclk_multiple;
-    clk_cfg.clk_src = I2S_CLK_D2CLK;
+    p_i2s[i2s_num]->slot_cfg.data_bit_width = i2s_config->bits_per_sample;
+    p_i2s[i2s_num]->slot_cfg.slot_bit_width = (int)i2s_config->bits_per_chan < (int)i2s_config->bits_per_sample ?
+            i2s_config->bits_per_sample : i2s_config->bits_per_chan;
+
+    p_i2s[i2s_num]->slot_cfg.slot_mode = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ?
+                                         I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
+    CLK_CFG().sample_rate_hz = i2s_config->sample_rate;
+    CLK_CFG().mclk_multiple = i2s_config->mclk_multiple == 0 ? I2S_MCLK_MULTIPLE_256 : i2s_config->mclk_multiple;
+    CLK_CFG().clk_src = I2S_CLK_SRC_DEFAULT;
     p_i2s[i2s_num]->fixed_mclk = i2s_config->fixed_mclk;
     p_i2s[i2s_num]->use_apll = false;
-    #if SOC_I2S_SUPPORTS_APLL
-    clk_cfg.clk_src = i2s_config->use_apll ? I2S_CLK_APLL : I2S_CLK_D2CLK;
+#if SOC_I2S_SUPPORTS_APLL
+    CLK_CFG().clk_src = i2s_config->use_apll ? I2S_CLK_SRC_APLL : I2S_CLK_SRC_DEFAULT;
     p_i2s[i2s_num]->use_apll = i2s_config->use_apll;
-    #endif // SOC_I2S_SUPPORTS_APLL
+#endif // SOC_I2S_SUPPORTS_APLL
 
     /* Convert legacy configuration into particular part of slot and clock configuration */
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_STD) {
         /* Generate STD slot configuration */
-        i2s_std_slot_config_t *std_slot = (i2s_std_slot_config_t *)calloc(1, sizeof(i2s_std_slot_config_t));
-        ESP_RETURN_ON_FALSE(std_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
-        memcpy(std_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        std_slot->ws_width = i2s_config->bits_per_sample;
-        std_slot->ws_pol = false;
+        SLOT_CFG(std).ws_width = i2s_config->bits_per_sample;
+        SLOT_CFG(std).ws_pol = false;
         if (i2s_config->channel_format == I2S_CHANNEL_FMT_RIGHT_LEFT) {
-            std_slot->slot_sel = I2S_STD_SLOT_LEFT_RIGHT;
+            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_LEFT_RIGHT;
         } else if (i2s_config->channel_format == I2S_CHANNEL_FMT_ALL_LEFT ||
                    i2s_config->channel_format == I2S_CHANNEL_FMT_ONLY_LEFT) {
-            std_slot->slot_sel = I2S_STD_SLOT_ONLY_LEFT;
+            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_ONLY_LEFT;
         } else {
-            std_slot->slot_sel = I2S_STD_SLOT_ONLY_RIGHT;
+            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_ONLY_RIGHT;
         }
         if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_I2S) {
-            std_slot->bit_shift = true;
+            SLOT_CFG(std).bit_shift = true;
         }
         if (i2s_config->communication_format & I2S_COMM_FORMAT_STAND_PCM_SHORT) {
-            std_slot->bit_shift = true;
-            std_slot->ws_width = 1;
-            std_slot->ws_pol = true;
+            SLOT_CFG(std).bit_shift = true;
+            SLOT_CFG(std).ws_width = 1;
+            SLOT_CFG(std).ws_pol = true;
         }
-        #if SOC_I2S_HW_VERSION_1
-        std_slot->msb_right = false;
-        #elif SOC_I2S_HW_VERSION_2
-        std_slot->left_align = i2s_config->left_align;
-        std_slot->big_endian = i2s_config->big_edin;
-        std_slot->bit_order_lsb = i2s_config->bit_order_msb; // The old name is incorrect
-        #endif // SOC_I2S_HW_VERSION_1
-        p_i2s[i2s_num]->slot_cfg = std_slot;
+#if SOC_I2S_HW_VERSION_1
+        SLOT_CFG(std).msb_right = true;
+#elif SOC_I2S_HW_VERSION_2
+        SLOT_CFG(std).left_align = i2s_config->left_align;
+        SLOT_CFG(std).big_endian = i2s_config->big_edin;
+        SLOT_CFG(std).bit_order_lsb = i2s_config->bit_order_msb; // The old name is incorrect
+#endif // SOC_I2S_HW_VERSION_1
 
-        /* Generate STD clock configuration */
-        i2s_std_clk_config_t *std_clk = (i2s_std_clk_config_t *)calloc(1, sizeof(i2s_std_clk_config_t));
-        ESP_RETURN_ON_FALSE(std_clk, ESP_ERR_NO_MEM, TAG, "no memory for clock configuration struct");
-        memcpy(std_clk, &clk_cfg, sizeof(i2s_clk_config_t));
-        p_i2s[i2s_num]->clk_cfg = std_clk;
-        p_i2s[i2s_num]->active_slot = (int)std_slot->slot_mode;
+        p_i2s[i2s_num]->active_slot = (int)p_i2s[i2s_num]->slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
         p_i2s[i2s_num]->total_slot = 2;
         goto finish;
     }
 #if SOC_I2S_SUPPORTS_PDM_TX
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
         /* Generate PDM TX slot configuration */
-        i2s_pdm_tx_slot_config_t *pdm_tx_slot = (i2s_pdm_tx_slot_config_t *)calloc(1, sizeof(i2s_pdm_tx_slot_config_t));
-        ESP_RETURN_ON_FALSE(pdm_tx_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
-        memcpy(pdm_tx_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        pdm_tx_slot->sd_prescale = 0;
-        pdm_tx_slot->sd_scale = I2S_PDM_SIG_SCALING_MUL_1;
-        pdm_tx_slot->hp_scale = I2S_PDM_SIG_SCALING_MUL_1;
-        pdm_tx_slot->lp_scale = I2S_PDM_SIG_SCALING_MUL_1;
-        pdm_tx_slot->sinc_scale = I2S_PDM_SIG_SCALING_MUL_1;
-    #if SOC_I2S_HW_VERSION_2
-        pdm_tx_slot->sd_en = true;
-        pdm_tx_slot->hp_en = true;
-        pdm_tx_slot->hp_cut_off_freq_hz = 49;
-        pdm_tx_slot->sd_dither = 0;
-        pdm_tx_slot->sd_dither2 = 0;
-    #endif // SOC_I2S_HW_VERSION_2
-        p_i2s[i2s_num]->slot_cfg = pdm_tx_slot;
+        SLOT_CFG(pdm_tx).sd_prescale = 0;
+        SLOT_CFG(pdm_tx).sd_scale = I2S_PDM_SIG_SCALING_MUL_1;
+        SLOT_CFG(pdm_tx).hp_scale = I2S_PDM_SIG_SCALING_MUL_1;
+        SLOT_CFG(pdm_tx).lp_scale = I2S_PDM_SIG_SCALING_MUL_1;
+        SLOT_CFG(pdm_tx).sinc_scale = I2S_PDM_SIG_SCALING_MUL_1;
+#if SOC_I2S_HW_VERSION_2
+        SLOT_CFG(pdm_tx).sd_en = true;
+        SLOT_CFG(pdm_tx).hp_en = true;
+        SLOT_CFG(pdm_tx).hp_cut_off_freq_hz = 49;
+        SLOT_CFG(pdm_tx).sd_dither = 0;
+        SLOT_CFG(pdm_tx).sd_dither2 = 0;
+#endif // SOC_I2S_HW_VERSION_2
 
         /* Generate PDM TX clock configuration */
-        i2s_pdm_tx_clk_config_t *pdm_tx_clk = (i2s_pdm_tx_clk_config_t *)calloc(1, sizeof(i2s_pdm_tx_clk_config_t));
-        ESP_RETURN_ON_FALSE(pdm_tx_clk, ESP_ERR_NO_MEM, TAG, "no memory for clock configuration struct");
-        memcpy(pdm_tx_clk, &clk_cfg, sizeof(i2s_clk_config_t));
-        pdm_tx_clk->up_sample_fp = 960;
-        pdm_tx_clk->up_sample_fs = i2s_config->sample_rate / 100;
-        p_i2s[i2s_num]->clk_cfg = pdm_tx_clk;
-        p_i2s[i2s_num]->active_slot = (int)pdm_tx_slot->slot_mode;
+        CLK_CFG().up_sample_fp = 960;
+        CLK_CFG().up_sample_fs = i2s_config->sample_rate / 100;
+        p_i2s[i2s_num]->active_slot = (int)p_i2s[i2s_num]->slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
         p_i2s[i2s_num]->total_slot = 2;
         goto finish;
     }
@@ -1333,20 +1331,9 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
 
 #if SOC_I2S_SUPPORTS_PDM_RX
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
-        /* Generate PDM RX slot configuration */
-        i2s_pdm_rx_slot_config_t *pdm_rx_slot = (i2s_pdm_rx_slot_config_t *)calloc(1, sizeof(i2s_pdm_rx_slot_config_t));
-        ESP_RETURN_ON_FALSE(pdm_rx_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
-        memcpy(pdm_rx_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        p_i2s[i2s_num]->slot_cfg = pdm_rx_slot;
-
-
         /* Generate PDM RX clock configuration */
-        i2s_pdm_rx_clk_config_t *pdm_rx_clk = (i2s_pdm_rx_clk_config_t *)calloc(1, sizeof(i2s_pdm_rx_clk_config_t));
-        ESP_RETURN_ON_FALSE(pdm_rx_clk, ESP_ERR_NO_MEM, TAG, "no memory for clock configuration struct");
-        memcpy(pdm_rx_clk, &clk_cfg, sizeof(i2s_clk_config_t));
-        pdm_rx_clk->dn_sample_mode = I2S_PDM_DSR_8S;
-        p_i2s[i2s_num]->clk_cfg = pdm_rx_clk;
-        p_i2s[i2s_num]->active_slot = (int)pdm_rx_slot->slot_mode;
+        CLK_CFG().dn_sample_mode = I2S_PDM_DSR_8S;
+        p_i2s[i2s_num]->active_slot = (int)p_i2s[i2s_num]->slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
         p_i2s[i2s_num]->total_slot = 2;
         goto finish;
     }
@@ -1355,59 +1342,47 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
 #if SOC_I2S_SUPPORTS_TDM
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_TDM) {
         /* Generate TDM slot configuration */
-        i2s_tdm_slot_config_t *tdm_slot = (i2s_tdm_slot_config_t *)calloc(1, sizeof(i2s_tdm_slot_config_t));
-        ESP_RETURN_ON_FALSE(tdm_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
-        memcpy(tdm_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        tdm_slot->slot_mask = i2s_config->chan_mask >> 16;
-        uint32_t mx_slot = i2s_get_max_channel_num(tdm_slot->slot_mask);
-        tdm_slot->total_slot = mx_slot < i2s_config->total_chan ? mx_slot : i2s_config->total_chan;
-        tdm_slot->ws_width = I2S_TDM_AUTO_WS_WIDTH;
-        tdm_slot->ws_pol = false;
+        SLOT_CFG(tdm).slot_mask = i2s_config->chan_mask >> 16;
+
+        SLOT_CFG(tdm).ws_width = 0; // I2S_TDM_AUTO_WS_WIDTH
+        p_i2s[i2s_num]->slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
+        SLOT_CFG(tdm).ws_pol = false;
         if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_I2S) {
-            tdm_slot->bit_shift = true;
+            SLOT_CFG(tdm).bit_shift = true;
+        } else if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_PCM_SHORT) {
+            SLOT_CFG(tdm).bit_shift = true;
+            SLOT_CFG(tdm).ws_width = 1;
+            SLOT_CFG(tdm).ws_pol = true;
+        } else if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_PCM_LONG) {
+            SLOT_CFG(tdm).bit_shift = true;
+            SLOT_CFG(tdm).ws_width = p_i2s[i2s_num]->slot_cfg.slot_bit_width;
+            SLOT_CFG(tdm).ws_pol = true;
         }
-        else if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_PCM_SHORT) {
-            tdm_slot->bit_shift = true;
-            tdm_slot->ws_width = 1;
-            tdm_slot->ws_pol = true;
-        }
-        else if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_PCM_LONG) {
-            tdm_slot->bit_shift = true;
-            tdm_slot->ws_width = tdm_slot->slot_bit_width;
-            tdm_slot->ws_pol = true;
-        }
-        tdm_slot->left_align = i2s_config->left_align;
-        tdm_slot->big_endian = i2s_config->big_edin;
-        tdm_slot->bit_order_lsb = i2s_config->bit_order_msb; // The old name is incorrect
-        tdm_slot->skip_mask = i2s_config->skip_msk;
-        p_i2s[i2s_num]->slot_cfg = tdm_slot;
+        SLOT_CFG(tdm).left_align = i2s_config->left_align;
+        SLOT_CFG(tdm).big_endian = i2s_config->big_edin;
+        SLOT_CFG(tdm).bit_order_lsb = i2s_config->bit_order_msb; // The old name is incorrect
+        SLOT_CFG(tdm).skip_mask = i2s_config->skip_msk;
 
         /* Generate TDM clock configuration */
-        i2s_tdm_clk_config_t *tdm_clk = (i2s_tdm_clk_config_t *)calloc(1, sizeof(i2s_tdm_clk_config_t));
-        ESP_RETURN_ON_FALSE(tdm_clk, ESP_ERR_NO_MEM, TAG, "no memory for clock configuration struct");
-        memcpy(tdm_clk, &clk_cfg, sizeof(i2s_clk_config_t));
-        p_i2s[i2s_num]->clk_cfg = tdm_clk;
-        p_i2s[i2s_num]->active_slot = i2s_get_active_channel_num(tdm_slot->slot_mask);
-        p_i2s[i2s_num]->total_slot = tdm_slot->total_slot;
+        p_i2s[i2s_num]->active_slot = __builtin_popcount(SLOT_CFG(tdm).slot_mask);
+        uint32_t mx_slot = 32 - __builtin_clz(SLOT_CFG(tdm).slot_mask);
+        mx_slot = mx_slot < 2 ? 2 : mx_slot;
+        p_i2s[i2s_num]->total_slot = mx_slot < i2s_config->total_chan ? mx_slot : i2s_config->total_chan;
         goto finish;
     }
 #endif // SOC_I2S_SUPPORTS_TDM
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
     if ((int)p_i2s[i2s_num]->mode == I2S_COMM_MODE_ADC_DAC) {
-        i2s_slot_config_t *adc_dac_slot = (i2s_slot_config_t *)calloc(1, sizeof(i2s_slot_config_t));
-        ESP_RETURN_ON_FALSE(adc_dac_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
-        memcpy(adc_dac_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        p_i2s[i2s_num]->slot_cfg = adc_dac_slot;
-
-        i2s_clk_config_t *adc_dac_clk = (i2s_clk_config_t *)calloc(1, sizeof(i2s_clk_config_t));
-        ESP_RETURN_ON_FALSE(adc_dac_clk, ESP_ERR_NO_MEM, TAG, "no memory for clock configuration struct");
-        memcpy(adc_dac_clk, &clk_cfg, sizeof(i2s_clk_config_t));
-        p_i2s[i2s_num]->clk_cfg = adc_dac_clk;
+        p_i2s[i2s_num]->slot_cfg.slot_mode = (p_i2s[i2s_num]->dir & I2S_DIR_TX) ?
+                                             I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
         p_i2s[i2s_num]->active_slot = (p_i2s[i2s_num]->dir & I2S_DIR_TX) ? 2 : 1;
         p_i2s[i2s_num]->total_slot = 2;
     }
 #endif // SOC_I2S_SUPPORTS_ADC_DAC
+
+#undef SLOT_CFG
+#undef CLK_CFG
 
 finish:
     return ESP_OK;
@@ -1443,16 +1418,16 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
     }
 #if SOC_I2S_SUPPORTS_PDM
     else if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
-    #if SOC_I2S_SUPPORTS_PDM_TX
+#if SOC_I2S_SUPPORTS_PDM_TX
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
             i2s_hal_pdm_enable_tx_channel(&(p_i2s[i2s_num]->hal));
         }
-    #endif
-    #if SOC_I2S_SUPPORTS_PDM_RX
+#endif
+#if SOC_I2S_SUPPORTS_PDM_RX
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
             i2s_hal_pdm_enable_rx_channel(&(p_i2s[i2s_num]->hal));
         }
-    #endif
+#endif
     }
 #endif
 #if SOC_I2S_SUPPORTS_TDM
@@ -1509,7 +1484,7 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
 
 esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE(i2s_num < I2S_NUM_MAX, ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE(i2s_num < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_ERR_INVALID_STATE, TAG, "I2S port %d has not installed", i2s_num);
     i2s_obj_t *obj = p_i2s[i2s_num];
     i2s_stop(i2s_num);
@@ -1554,10 +1529,10 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     if (obj->use_apll) {
         // switch back to PLL clock source
         if (obj->dir & I2S_DIR_TX) {
-            i2s_ll_tx_clk_set_src(obj->hal.dev, I2S_CLK_D2CLK);
+            i2s_ll_tx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
         }
         if (obj->dir & I2S_DIR_RX) {
-            i2s_ll_rx_clk_set_src(obj->hal.dev, I2S_CLK_D2CLK);
+            i2s_ll_rx_clk_set_src(obj->hal.dev, I2S_CLK_SRC_DEFAULT);
         }
         periph_rtc_apll_release();
     }
@@ -1578,15 +1553,7 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 #endif
     /* Disable module clock */
-    i2s_priv_deregister_object(i2s_num);
-    if (obj->clk_cfg) {
-        free(obj->clk_cfg);
-        obj->clk_cfg = NULL;
-    }
-    if (obj->slot_cfg) {
-        free(obj->slot_cfg);
-        obj->slot_cfg = NULL;
-    }
+    i2s_platform_release_occupation(i2s_num);
     free(obj);
     p_i2s[i2s_num] = NULL;
     return ESP_OK;
@@ -1595,6 +1562,9 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
 
 esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void *i2s_queue)
 {
+#if CONFIG_I2S_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
 
     /* Step 1: Check the validity of input parameters */
@@ -1603,11 +1573,12 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     /* Step 2: Allocate driver object and register to platform */
     i2s_obj_t *i2s_obj = calloc(1, sizeof(i2s_obj_t));
     ESP_RETURN_ON_FALSE(i2s_obj, ESP_ERR_NO_MEM, TAG, "no mem for I2S driver");
-    if (i2s_priv_register_object(i2s_obj, i2s_num) != ESP_OK) {
+    if (i2s_platform_acquire_occupation(i2s_num, "i2s_legacy") != ESP_OK) {
         free(i2s_obj);
         ESP_LOGE(TAG, "register I2S object to platform failed");
         return ESP_ERR_INVALID_STATE;
     }
+    p_i2s[i2s_num] = i2s_obj;
     i2s_hal_init(&i2s_obj->hal, i2s_num);
 
     /* Step 3: Store and assign configarations */
@@ -1625,7 +1596,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         i2s_obj->i2s_queue = xQueueCreate(queue_size, sizeof(i2s_event_t));
         ESP_GOTO_ON_FALSE(i2s_obj->i2s_queue, ESP_ERR_NO_MEM, err, TAG, "I2S queue create failed");
         *((QueueHandle_t *) i2s_queue) = i2s_obj->i2s_queue;
-        ESP_LOGI(TAG, "queue free spaces: %d", uxQueueSpacesAvailable(i2s_obj->i2s_queue));
+        ESP_LOGD(TAG, "queue free spaces: %d", uxQueueSpacesAvailable(i2s_obj->i2s_queue));
     } else {
         i2s_obj->i2s_queue = NULL;
     }
@@ -1647,7 +1618,7 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
     char *src_byte;
     size_t bytes_can_write;
     *bytes_written = 0;
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->tx), ESP_ERR_INVALID_ARG, TAG, "TX mode is not enabled");
     xSemaphoreTake(p_i2s[i2s_num]->tx->mux, portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
@@ -1690,7 +1661,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
     int aim_bytes;
     int zero_bytes;
     *bytes_written = 0;
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((size > 0), ESP_ERR_INVALID_ARG, TAG, "size must greater than zero");
     ESP_RETURN_ON_FALSE((aim_bits >= src_bits), ESP_ERR_INVALID_ARG, TAG, "aim_bits mustn't be less than src_bits");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->tx), ESP_ERR_INVALID_ARG, TAG, "TX mode is not enabled");
@@ -1749,11 +1720,11 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
 esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
 {
     char *data_ptr;;
-    char*dest_byte;
+    char *dest_byte;
     int bytes_can_read;
     *bytes_read = 0;
     dest_byte = (char *)dest;
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->rx), ESP_ERR_INVALID_ARG, TAG, "RX mode is not enabled");
     xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
@@ -1832,13 +1803,13 @@ static esp_err_t i2s_check_set_mclk(i2s_port_t i2s_num, gpio_num_t gpio_num)
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");
     gpio_matrix_out_check_and_set(gpio_num, i2s_periph_signal[i2s_num].mck_out_sig, 0, 0);
 #endif
-    ESP_LOGI(TAG, "I2S%d, MCLK output by GPIO%d", i2s_num, gpio_num);
+    ESP_LOGD(TAG, "I2S%d, MCLK output by GPIO%d", i2s_num, gpio_num);
     return ESP_OK;
 }
 
 esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     uint32_t buf_cnt = p_i2s[i2s_num]->dma_desc_num;
 
     /* Clear I2S RX DMA buffer */
@@ -1866,7 +1837,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
 
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
 {
-    ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
+    ESP_RETURN_ON_FALSE((i2s_num < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     if (pin == NULL) {
 #if SOC_I2S_SUPPORTS_DAC
         return i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
@@ -1914,30 +1885,47 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
     return ESP_OK;
 }
 
-esp_err_t i2s_priv_register_object(void *driver_obj, int port_id)
+esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
 {
     esp_err_t ret = ESP_ERR_NOT_FOUND;
-    ESP_RETURN_ON_FALSE(driver_obj && (port_id < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
-    portENTER_CRITICAL(&i2s_platform_spinlock);
-    if (!p_i2s[port_id]) {
+    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
+    portENTER_CRITICAL(&i2s_spinlock[id]);
+    if (!comp_using_i2s[id]) {
         ret = ESP_OK;
-        p_i2s[port_id] = driver_obj;
-        periph_module_enable(i2s_periph_signal[port_id].module);
+        comp_using_i2s[id] = comp_name;
+        periph_module_enable(i2s_periph_signal[id].module);
+        i2s_ll_enable_clock(I2S_LL_GET_HW(id));
     }
-    portEXIT_CRITICAL(&i2s_platform_spinlock);
+    portEXIT_CRITICAL(&i2s_spinlock[id]);
     return ret;
 }
 
-esp_err_t i2s_priv_deregister_object(int port_id)
+esp_err_t i2s_platform_release_occupation(int id)
 {
     esp_err_t ret = ESP_ERR_INVALID_STATE;
-    ESP_RETURN_ON_FALSE(port_id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid arguments");
-    portENTER_CRITICAL(&i2s_platform_spinlock);
-    if (p_i2s[port_id]) {
+    ESP_RETURN_ON_FALSE(id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid i2s port id");
+    portENTER_CRITICAL(&i2s_spinlock[id]);
+    if (comp_using_i2s[id]) {
         ret = ESP_OK;
-        p_i2s[port_id] = NULL;
-        periph_module_disable(i2s_periph_signal[port_id].module);
+        comp_using_i2s[id] = NULL;
+        /* Disable module clock */
+        periph_module_disable(i2s_periph_signal[id].module);
+        i2s_ll_disable_clock(I2S_LL_GET_HW(id));
     }
-    portEXIT_CRITICAL(&i2s_platform_spinlock);
+    portEXIT_CRITICAL(&i2s_spinlock[id]);
     return ret;
+}
+
+/**
+ * @brief This function will be called during start up, to check that pulse_cnt driver is not running along with the legacy i2s driver
+ */
+static __attribute__((constructor)) void check_i2s_driver_conflict(void)
+{
+    extern __attribute__((weak)) esp_err_t i2s_del_channel(void *handle);
+    /* If the new I2S driver is linked, the weak function will point to the actual function in the new driver, otherwise it is NULL*/
+    if ((void *)i2s_del_channel != NULL) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! The new i2s driver can't work along with the legacy i2s driver");
+        abort();
+    }
+    ESP_EARLY_LOGW(TAG, "legacy i2s driver is deprecated, please migrate to use driver/i2s_std.h, driver/i2s_pdm.h or driver/i2s_tdm.h");
 }

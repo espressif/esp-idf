@@ -67,7 +67,6 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/driver/include/driver/i2c.h \
-    $(PROJECT_PATH)/components/driver/include/driver/i2s.h \
     $(PROJECT_PATH)/components/driver/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/include/driver/rtc_io.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdio_slave.h \
@@ -156,7 +155,6 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \

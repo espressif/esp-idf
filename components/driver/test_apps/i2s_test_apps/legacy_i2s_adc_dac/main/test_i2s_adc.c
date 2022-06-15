@@ -20,15 +20,14 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "test_utils.h"
 #include "esp_rom_sys.h"
 #include "driver/dac.h"
+#include "soc/adc_periph.h"
 
 /*
  * ADC DMA testcase
  */
 #include "driver/i2s.h"
-#include "test/test_common_adc.h"
 
 //i2s number
 #define EXAMPLE_I2S_NUM           (0)
@@ -46,6 +45,100 @@
 #define I2S_ADC_UNIT              ADC_UNIT_1
 //I2S built-in ADC channel
 #define I2S_ADC_CHANNEL           ADC1_CHANNEL_4
+
+#define ADC_GET_IO_NUM(periph, channel) (adc_channel_io_map[periph][channel])
+
+static void adc_fake_tie_middle(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    gpio_num_t gpio_num = 0;
+    if (adc_unit == ADC_UNIT_1) {
+        gpio_num = ADC_GET_IO_NUM(0, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_en(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_PULLDOWN));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+    }
+    if (adc_unit == ADC_UNIT_2) {
+        gpio_num = ADC_GET_IO_NUM(1, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_en(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_PULLDOWN));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+}
+
+static void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    gpio_num_t gpio_num = 0;
+    if (adc_unit == ADC_UNIT_1) {
+        gpio_num = ADC_GET_IO_NUM(0, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_dis(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 1));
+    }
+    if (adc_unit == ADC_UNIT_2) {
+        gpio_num = ADC_GET_IO_NUM(1, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_dis(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 1));
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+}
+
+static void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    gpio_num_t gpio_num = 0;
+    if (adc_unit == ADC_UNIT_1) {
+        gpio_num = ADC_GET_IO_NUM(0, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_en(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLDOWN_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 0));
+    }
+    if (adc_unit == ADC_UNIT_2) {
+        gpio_num = ADC_GET_IO_NUM(1, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_en(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLDOWN_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
+        TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 0));
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+}
+
+static void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
+{
+    gpio_num_t gpio_num = 0;
+    if (adc_unit == ADC_UNIT_1) {
+        gpio_num = ADC_GET_IO_NUM(0, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_dis(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+    }
+    if (adc_unit == ADC_UNIT_2) {
+        gpio_num = ADC_GET_IO_NUM(1, channel);
+        TEST_ESP_OK(rtc_gpio_init(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
+        TEST_ESP_OK(rtc_gpio_pulldown_dis(gpio_num));
+        TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
+        TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+}
 
 /**
  * @brief I2S ADC/DAC mode init.
@@ -125,7 +218,7 @@ static void adc_dma_read(uint8_t *buf, int length)
     }
 }
 
-TEST_CASE("ADC DMA read", "[adc dma]")
+TEST_CASE("ADC_DMA_read", "[adc dma]")
 {
     int i2s_read_len = EXAMPLE_I2S_READ_LEN;
     char *i2s_read_buff = (char *) calloc(i2s_read_len, sizeof(char));

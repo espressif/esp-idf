@@ -202,6 +202,21 @@ typedef enum {
     UART_SCLK_DEFAULT = SOC_MOD_CLK_APB, /*!< UART source clock default choice is APB */
 } soc_periph_uart_clk_src_legacy_t;
 
+///////////////////////////////////////////////////// I2S //////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of
+ */
+#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL_F160M}
+
+/**
+ * @brief I2S clock source enum
+ */
+typedef enum {
+    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,                /*!< Select PLL_F160M as the default source clock  */
+    I2S_CLK_SRC_PLL_160M = SOC_MOD_CLK_PLL_F160M,               /*!< Select PLL_F160M as the source clock */
+} soc_periph_i2s_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

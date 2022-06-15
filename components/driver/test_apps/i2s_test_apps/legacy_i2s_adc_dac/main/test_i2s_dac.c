@@ -20,7 +20,6 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "test_utils.h"
 #include "test_dac_audio_file.h"
 #include "driver/i2s.h"
 #include "driver/dac.h"
@@ -132,7 +131,7 @@ static void example_reset_play_mode(void)
     TEST_ESP_OK( i2s_set_clk(EXAMPLE_I2S_NUM, EXAMPLE_I2S_SAMPLE_RATE, EXAMPLE_I2S_SAMPLE_BITS, EXAMPLE_I2S_CHANNEL_NUM) );
 }
 
-TEST_CASE("DAC DMA output", "[dac]")
+TEST_CASE("DAC_DMA_output", "[dac]")
 {
     size_t bytes_written;
     int i2s_read_len = EXAMPLE_I2S_READ_LEN;
