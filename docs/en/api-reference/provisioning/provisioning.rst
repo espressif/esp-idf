@@ -107,6 +107,8 @@ At present, unified provisioning supports the following security schemes:
     b. No Auth (Null PoP) - Shared key derived through key exchange only
 3. Security2 - SRP6a-based shared key derivation and AES256-GCM mode encryption of the data.
 
+.. note:: The respective security schemes need to be enabled through the project configuration menu. Please refer to the Enabling protocom security version section in :doc:`protocomm` (Protocol Communication) for more details.
+
 Security1 Scheme
 >>>>>>>>>>>>>>>>
 

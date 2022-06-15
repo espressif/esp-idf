@@ -19,6 +19,17 @@ Protocomm provides framework for various transports - WiFi (SoftAP+HTTPD), BLE, 
 
 Note that the client still needs to establish session (for protocomm_security1 and protocomm_security2) by performing the two way handshake. See :doc:`provisioning` for more details about the secure handshake logic.
 
+Enabling protocomm security version
+-----------------------------------
+Protocomm component provides project configuration menu to enable/disable support of respective security versions.
+The respective configuration options can be found as follows:
+
+    * Support protocomm security version 1 (no security): :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0` (this option is enabled by default)
+    * Support protocomm security version 1 (Curve25519 key exchange + AES-CTR encryption/decryption): :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1` (this option is enabled by default)
+    * Support protocomm security version 2 (SRP6a-based key exchange + AES-GCM encryption/decryption): :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`
+
+.. note:: Enabling multiple security versions allow to control them dynamically but also increases firmware size.
+
 Transport Example (SoftAP + HTTP) with Security 2
 -------------------------------------------------
 For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`

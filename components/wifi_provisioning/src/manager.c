@@ -307,14 +307,29 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
 
     /* Set protocomm security type for endpoint */
     if (prov_ctx->security == 0) {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
                                      &protocomm_security0, NULL);
+#else
+        // Enable SECURITY_VERSION_0 in Protocomm configuration menu
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
     } else if (prov_ctx->security == 1) {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
                                      &protocomm_security1, prov_ctx->protocomm_sec_params);
+#else
+        // Enable SECURITY_VERSION_1 in Protocomm configuration menu
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
     } else if (prov_ctx->security == 2) {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
                                      &protocomm_security2, prov_ctx->protocomm_sec_params);
+#else
+        // Enable SECURITY_VERSION_2 in Protocomm configuration menu
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
     } else {
         ESP_LOGE(TAG, "Unsupported protocomm security version %d", prov_ctx->security);
         ret = ESP_ERR_INVALID_ARG;

@@ -1070,8 +1070,6 @@ components/nvs_flash/test_nvs_host/test_spi_flash_emulation.cpp
 components/openthread/include/esp_openthread.h
 components/openthread/include/esp_openthread_lock.h
 components/openthread/include/esp_openthread_netif_glue.h
-components/protocomm/include/security/protocomm_security0.h
-components/protocomm/include/security/protocomm_security1.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/protocomm/proto-c/constants.pb-c.c
