@@ -48,7 +48,7 @@
 #define IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT                                   40
 #endif
 #ifndef IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT
-#define IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT                                   64
+#define IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT                                   60      // TODO: IDF-5221
 #endif
 #ifndef IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT
 #define IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT                                   50
