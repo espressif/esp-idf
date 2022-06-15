@@ -650,7 +650,7 @@ esp_err_t esp_light_sleep_start(void)
     s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
-    /* We will be calling esp_timer_private_advance inside DPORT access critical
+    /* We will be calling esp_timer_private_set inside DPORT access critical
      * section. Make sure the code on the other CPU is not holding esp_timer
      * lock, otherwise there will be deadlock.
      */
@@ -758,29 +758,16 @@ esp_err_t esp_light_sleep_start(void)
 
     s_light_sleep_wakeup = true;
 
-    // System timer has been clock gated for the duration of the sleep, correct for that.
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-    /**
-     * On esp32c3, rtc_time_get() is non-blocking, esp_timer_get_time() is
-     * blocking, and the measurement data shows that this order is better.
-     */
-    uint64_t high_res_time_at_end = esp_timer_get_time();
+    // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
-#else
-    uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t high_res_time_at_end = esp_timer_get_time();
-#endif
-
     uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
-    uint64_t high_res_time_diff = high_res_time_at_end - high_res_time_at_start;
 
-    int64_t time_diff = rtc_time_diff - high_res_time_diff;
-    /* Small negative values (up to 1 RTC_SLOW clock period) are possible,
-     * for very small values of sleep_duration. Ignore those to keep esp_timer
-     * monotonic.
+    /**
+     * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
+     * In this case, just ignore the time compensation and keep esp_timer monotonic.
      */
-    if (time_diff > 0) {
-        esp_timer_private_advance(time_diff);
+    if (rtc_time_diff > 0) {
+        esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
     }
     esp_set_time_from_rtc();
 
