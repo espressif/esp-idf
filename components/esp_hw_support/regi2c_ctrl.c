@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "regi2c_ctrl.h"
+#include "hal/regi2c_ctrl.h"
 
 static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
@@ -58,7 +58,7 @@ void IRAM_ATTR regi2c_exit_critical(void)
  * This is a workaround, and is fixed on later chips
  */
 #if REGI2C_ANA_CALI_PD_WORKAROUND
-#include "regi2c_saradc.h"
+#include "soc/regi2c_saradc.h"
 
 static DRAM_ATTR uint8_t reg_val[REGI2C_ANA_CALI_BYTE_NUM];
 

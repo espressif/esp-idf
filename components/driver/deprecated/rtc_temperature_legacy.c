@@ -13,7 +13,7 @@
 #include "esp_check.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "regi2c_saradc.h"
+#include "soc/regi2c_saradc.h"
 #include "esp_log.h"
 #include "esp_efuse_rtc_calib.h"
 #include "hal/temperature_sensor_ll.h"

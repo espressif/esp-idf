@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <stddef.h> /* For size_t type */
 #include "soc/hwcrypto_reg.h"
 
 #define SHA256_BLOCK_SZ 64
