@@ -91,8 +91,8 @@
 
 #if SOC_CAPS_ECO_VER < 2
 #define SOC_DPORT_WORKAROUND                   1
-#define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
 #endif // SOC_CAPS_ECO_VER < 2
+#define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**
