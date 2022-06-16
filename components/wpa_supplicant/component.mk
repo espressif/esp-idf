@@ -67,7 +67,6 @@ ifneq ($(CONFIG_WPA_11KV_SUPPORT), y)
     src/common/bss.o \
     src/common/scan.o \
     src/common/ieee802_11_common.o \
-    src/esp_supplicant/esp_common.o \
     src/esp_supplicant/esp_scan.o
 endif
 

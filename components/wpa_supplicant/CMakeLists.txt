@@ -32,6 +32,7 @@ set(srcs "port/os_xtensa.c"
     "src/esp_supplicant/esp_hostap.c"
     "src/esp_supplicant/esp_wpa2.c"
     "src/esp_supplicant/esp_wpa_main.c"
+    "src/esp_supplicant/esp_common.c"
     "src/esp_supplicant/esp_wpas_glue.c"
     "src/esp_supplicant/esp_wps.c"
     "src/esp_supplicant/esp_wpa3.c"
@@ -150,7 +151,6 @@ if(CONFIG_WPA_11KV_SUPPORT)
     "src/common/bss.c"
     "src/common/scan.c"
     "src/common/ieee802_11_common.c"
-    "src/esp_supplicant/esp_common.c"
     "src/esp_supplicant/esp_scan.c"
     )
 else()

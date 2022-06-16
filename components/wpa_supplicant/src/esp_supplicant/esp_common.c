@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "esp_event.h"
@@ -23,6 +22,7 @@
 
 struct wpa_supplicant g_wpa_supp;
 
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 static TaskHandle_t s_supplicant_task_hdl = NULL;
 static void *s_supplicant_evt_queue = NULL;
 static void *s_supplicant_api_lock = NULL;
@@ -431,6 +431,93 @@ void esp_set_rm_enabled_ie(void)
 	}
 }
 
+static size_t get_rm_enabled_ie(uint8_t *ie, size_t len)
+{
+	uint8_t rrm_ie[7] = {0};
+	uint8_t rrm_ie_len = 5;
+	uint8_t *pos = rrm_ie;
+
+	if (!esp_wifi_is_rm_enabled_internal(WIFI_IF_STA)) {
+		return 0;
+	}
+
+	*pos++ = WLAN_EID_RRM_ENABLED_CAPABILITIES;
+	*pos++ = rrm_ie_len;
+	*pos |= WLAN_RRM_CAPS_LINK_MEASUREMENT;
+
+	*pos |= WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
+#ifdef SCAN_CACHE_SUPPORTED
+		WLAN_RRM_CAPS_BEACON_REPORT_TABLE |
+#endif
+		WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE;
+
+	os_memcpy(ie, rrm_ie, sizeof(rrm_ie));
+
+	return rrm_ie_len + 2;
+}
+#endif
+
+static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
+{
+	uint8_t ext_caps_ie[5] = {0};
+	uint8_t ext_caps_ie_len = 3;
+	uint8_t *pos = ext_caps_ie;
+
+	if (!esp_wifi_is_btm_enabled_internal(WIFI_IF_STA)) {
+		return 0;
+	}
+
+	*pos++ = WLAN_EID_EXT_CAPAB;
+	*pos++ = ext_caps_ie_len;
+	*pos++ = 0;
+	*pos++ = 0;
+#define CAPAB_BSS_TRANSITION BIT(3)
+	*pos |= CAPAB_BSS_TRANSITION;
+#undef CAPAB_BSS_TRANSITION
+	os_memcpy(ie, ext_caps_ie, sizeof(ext_caps_ie));
+
+	return ext_caps_ie_len + 2;
+}
+
+void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
+{
+#define ASSOC_IE_LEN 128
+	uint8_t *ie, *pos;
+	size_t len = ASSOC_IE_LEN, ie_len;
+	ie = os_malloc(ASSOC_IE_LEN + ies_len);
+	if (!ie) {
+		wpa_printf(MSG_ERROR, "failed to allocate ie");
+		return;
+	}
+	pos = ie;
+	ie_len = get_extended_caps_ie(pos, len);
+	pos += ie_len;
+	len -= ie_len;
+#ifdef CONFIG_WPA_11KV_SUPPORT
+	ie_len = get_rm_enabled_ie(pos, len);
+	pos += ie_len;
+	len -= ie_len;
+#ifdef CONFIG_MBO
+	ie_len = get_operating_class_ie(pos, len);
+	pos += ie_len;
+	len -= ie_len;
+	ie_len = get_mbo_oce_assoc_ie(pos, len);
+	pos += ie_len;
+	len -= ie_len;
+#endif /* CONFIG_MBO */
+#endif
+	if (ies_len) {
+		os_memcpy(pos, ies, ies_len);
+		pos += ies_len;
+		len -= ies_len;
+	}
+	esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_REQ);
+	esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_REQ, ie, ASSOC_IE_LEN - len, 0);
+	os_free(ie);
+#undef ASSOC_IE_LEN
+}
+
+#ifdef CONFIG_WPA_11KV_SUPPORT
 void esp_get_tx_power(uint8_t *tx_power)
 {
 #define DEFAULT_MAX_TX_POWER 19 /* max tx power is 19.5 dbm */
@@ -506,3 +593,4 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 	}
 	return 0;
 }
+#endif
