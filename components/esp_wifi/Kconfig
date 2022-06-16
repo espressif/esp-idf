@@ -250,6 +250,15 @@ menu "Wi-Fi"
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
             explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
 
+    config ESP32_WIFI_ENABLE_WPA3_OWE_STA
+        bool "Enable OWE STA"
+        default y
+        select WPA_MBEDTLS_CRYPTO
+        help
+            Select this option to allow the device to establish OWE connection with eligible AP's.
+            PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
+            explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
+
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
         select PM_SLP_DEFAULT_PARAMS_OPT

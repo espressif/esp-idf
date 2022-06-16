@@ -474,5 +474,6 @@ void * __hide_aliasing_typecast(void *foo);
 #endif /* CONFIG_VALGRIND */
 
 #define IANA_SECP256R1 19
-
+#define IANA_SECP384R1 20
+#define IANA_SECP521R1 21
 #endif /* COMMON_H */

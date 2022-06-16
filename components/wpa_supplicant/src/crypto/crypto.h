@@ -20,6 +20,7 @@
 
 #ifndef CRYPTO_H
 #define CRYPTO_H
+#include "utils/common.h"
 
 /**
  * md4_vector - MD4 hash for data vector
@@ -1081,4 +1082,15 @@ int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data,
  */
 int crypto_bignum_to_string(const struct crypto_bignum *a,
                          u8 *buf, size_t buflen, size_t padlen);
+
+struct crypto_ecdh;
+
+void crypto_ecdh_deinit(struct crypto_ecdh *ecdh);
+
+struct crypto_ecdh * crypto_ecdh_init(int group);
+
+struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh,int y);
+struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
+                                        const u8 *key, size_t len);
+
 #endif /* CRYPTO_H */

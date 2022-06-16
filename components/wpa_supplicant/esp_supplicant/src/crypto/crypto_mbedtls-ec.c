@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
@@ -26,6 +29,12 @@
 #include "mbedtls/oid.h"
 
 #define ECP_PRV_DER_MAX_BYTES   29 + 3 * MBEDTLS_ECP_MAX_BYTES
+
+#ifdef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
+#define ACCESS_ECDH(S, var) S->var
+#else
+#define ACCESS_ECDH(S, var) S->ctx.mbed_ecdh.var
+#endif
 
 #ifdef CONFIG_ECC
 struct crypto_ec {
@@ -994,4 +1003,192 @@ int crypto_ec_write_pub_key(struct crypto_key *key, unsigned char **key_buf)
 
 	return len;
 }
+
+int crypto_mbedtls_get_grp_id(int group)
+{
+        switch(group) {
+        case IANA_SECP256R1:
+                return MBEDTLS_ECP_DP_SECP256R1;
+        case IANA_SECP384R1:
+                return MBEDTLS_ECP_DP_SECP384R1;
+        case IANA_SECP521R1:
+                return MBEDTLS_ECP_DP_SECP521R1;
+        default:
+                return MBEDTLS_ECP_DP_NONE;
+        }
+}
+
+void crypto_ecdh_deinit(struct crypto_ecdh *ecdh)
+{
+	mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
+        if (!ctx) {
+                return;
+        }
+        mbedtls_ecdh_free(ctx);
+        os_free(ctx);
+        ctx = NULL;
+}
+
+struct crypto_ecdh * crypto_ecdh_init(int group)
+{
+	mbedtls_ctr_drbg_context ctr_drbg;
+	mbedtls_entropy_context entropy;
+	mbedtls_ecdh_context *ctx;
+
+	ctx = os_zalloc(sizeof(*ctx));
+
+	if (!ctx) {
+		wpa_printf(MSG_ERROR, "Memory allocation failed for ecdh context");
+		goto fail;
+	}
+	mbedtls_ecdh_init(ctx);
+
+	if ((mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), crypto_mbedtls_get_grp_id(group))) != 0) {
+                wpa_printf(MSG_ERROR, "Failed to set up ECDH context with group info");
+                goto fail;
+	}
+
+	/* Initialize CTR_DRBG context */
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_entropy_init(&entropy);
+
+	/* Seed and setup CTR_DRBG entropy source for future reseeds */
+	if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) != 0) {
+                wpa_printf(MSG_ERROR, "Seeding entropy source failed");
+                goto fail;
+	}
+
+	/* Generates ECDH keypair on elliptic curve */
+	if (mbedtls_ecdh_gen_public(ACCESS_ECDH(&ctx, grp), ACCESS_ECDH(&ctx, d), ACCESS_ECDH(&ctx, Q), mbedtls_ctr_drbg_random, &ctr_drbg)!=0) {
+                wpa_printf(MSG_ERROR, "ECDH keypair on curve failed");
+                goto fail;
+	}
+	return (struct crypto_ecdh *)ctx;
+fail:
+	return NULL;
+}
+
+struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
+{
+	struct wpabuf *public_key = NULL;
+	uint8_t *buf = NULL;
+	mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
+	size_t prime_len = ACCESS_ECDH(ctx, grp).pbits/8;
+
+	buf = os_zalloc(y ? prime_len : 2 * prime_len);
+        if (!buf) {
+                wpa_printf(MSG_ERROR, "Memory allocation failed");
+                return NULL;
+        }
+
+	/* Export an MPI into unsigned big endian binary data of fixed size */
+	mbedtls_mpi_write_binary(ACCESS_ECDH(&ctx, Q).X, buf, prime_len);
+	public_key = wpabuf_alloc_copy(buf, 32);
+	os_free(buf);
+	return public_key;
+}
+
+struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
+                                        const u8 *key, size_t len)
+{
+	uint8_t *secret = 0;
+	size_t olen = 0, len_prime = 0;
+	struct crypto_bignum *bn_x = NULL;
+	struct crypto_ec_point *ec_pt = NULL;
+	uint8_t *px = NULL, *py = NULL, *buf = NULL;
+	struct crypto_key *pkey = NULL;
+	struct wpabuf *sh_secret = NULL;
+	int secret_key = 0;
+
+	mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
+
+	mbedtls_ctr_drbg_context ctr_drbg;
+	mbedtls_entropy_context entropy;
+
+	/* Initialize CTR_DRBG context */
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	mbedtls_entropy_init(&entropy);
+
+	/* Seed and setup CTR_DRBG entropy source for future reseeds */
+	if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) != 0) {
+		wpa_printf(MSG_ERROR, "Seeding entropy source failed");
+		goto cleanup;
+	}
+	len_prime = ACCESS_ECDH(ctx, grp).pbits/8;
+	bn_x = crypto_bignum_init_set(key, len);
+
+	/* Initialize data for EC point */
+	ec_pt = crypto_ec_point_init((struct crypto_ec*)ACCESS_ECDH(&ctx, grp));
+	if (!ec_pt) {
+		wpa_printf(MSG_ERROR,"Initializing for EC point failed");
+		goto cleanup;
+	}
+
+	if (crypto_ec_point_solve_y_coord((struct crypto_ec*)ACCESS_ECDH(&ctx, grp), ec_pt, bn_x, inc_y) != 0) {
+                wpa_printf(MSG_ERROR,"Failed to solve for y coordinate");
+                goto cleanup;
+	}
+	px = os_zalloc(len);
+	py = os_zalloc(len);
+	buf = os_zalloc(2*len);
+
+        if (!px || !py || !buf) {
+                wpa_printf(MSG_ERROR, "Memory allocation failed");
+                goto cleanup;
+        }
+	if (crypto_ec_point_to_bin((struct crypto_ec*)ACCESS_ECDH(&ctx, grp), ec_pt, px, py) != 0) {
+                wpa_printf(MSG_ERROR,"Failed to write EC point value as binary data");
+                goto cleanup;
+	}
+
+	os_memcpy(buf, px, len);
+	os_memcpy(buf+len, py, len);
+
+	pkey = crypto_ec_set_pubkey_point((struct crypto_ec_group*)ACCESS_ECDH(&ctx, grp), buf, len);
+        if (!pkey) {
+                wpa_printf(MSG_ERROR, "Failed to set point for peer's public key");
+                goto cleanup;
+	}
+
+
+	mbedtls_pk_context *peer = (mbedtls_pk_context*)pkey;
+
+	/* Setup ECDH context from EC key */
+/* Call to mbedtls_ecdh_get_params() will initialize the context when not LEGACY context */
+        if (ctx != NULL && peer != NULL) {
+                mbedtls_ecp_copy( ACCESS_ECDH(&ctx, Qp), &(mbedtls_pk_ec(*peer))->Q );
+#ifndef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
+                ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
+#endif
+        } else {
+                wpa_printf(MSG_ERROR, "Failed to set peer's ECDH context");
+                goto cleanup;
+        }
+	int len_secret = inc_y ? 2*len : len;
+	secret = os_zalloc(len_secret);
+	if (!secret) {
+		wpa_printf(MSG_ERROR, "Allocation failed for secret");
+		goto cleanup;
+	}
+
+	/* Calculate secret
+	z = F(DH(x,Y)) */
+	secret_key = mbedtls_ecdh_calc_secret(ctx, &olen, secret, len_prime, mbedtls_ctr_drbg_random, &ctr_drbg);
+	if (secret_key != 0) {
+		wpa_printf(MSG_ERROR, "Calculation of secret failed");
+		goto cleanup;
+	}
+	sh_secret = wpabuf_alloc_copy(secret, len_secret);
+
+cleanup:
+	os_free(px);
+	os_free(py);
+	os_free(buf);
+	os_free(secret);
+	crypto_ec_free_key(pkey);
+	crypto_bignum_deinit(bn_x, 1);
+	crypto_ec_point_deinit(ec_pt, 1);
+	return sh_secret;
+}
+
 #endif /* CONFIG_ECC */

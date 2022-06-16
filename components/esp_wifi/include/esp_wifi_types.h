@@ -47,6 +47,8 @@ typedef struct {
     wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
+/* Strength of authmodes */
+/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
@@ -57,6 +59,7 @@ typedef enum {
     WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
     WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
     WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
+    WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
@@ -250,7 +253,8 @@ typedef struct {
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
     uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
     uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
-    uint32_t reserved:28;         /**< Reserved for future feature set */
+    uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
+    uint32_t reserved:27;         /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
