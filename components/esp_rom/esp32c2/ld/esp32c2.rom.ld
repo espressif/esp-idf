@@ -2106,7 +2106,6 @@ sta_recv_mgmt = 0x40002094;
 ieee80211_send_setup = 0x40002098;
 ieee80211_send_probereq = 0x4000209c;
 sta_auth_shared = 0x400020a4;
-sta_auth_sae = 0x400020a8;
 cnx_coexist_timeout_process = 0x400020ac;
 ieee80211_alloc_challenge = 0x400020b0;
 cnx_assoc_timeout = 0x400020b4;
