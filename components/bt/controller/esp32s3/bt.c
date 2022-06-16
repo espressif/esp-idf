@@ -936,6 +936,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_init();
 #endif
+    esp_phy_pd_mem_init();
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -1207,6 +1208,10 @@ esp_err_t esp_bt_controller_deinit(void)
 #endif
 
     esp_bt_power_domain_off();
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_deinit();
+#endif
+    esp_phy_pd_mem_deinit();
 
     free(osi_funcs_p);
     osi_funcs_p = NULL;

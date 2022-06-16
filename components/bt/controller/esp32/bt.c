@@ -1629,6 +1629,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
+    esp_phy_pd_mem_init();
+
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -1794,6 +1796,8 @@ esp_err_t esp_bt_controller_deinit(void)
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 
     esp_bt_power_domain_off();
+
+    esp_phy_pd_mem_deinit();
 
     return ESP_OK;
 }

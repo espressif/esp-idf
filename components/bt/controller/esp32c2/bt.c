@@ -639,6 +639,7 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
     /* Initialize default event queue */
     ble_npl_eventq_init(nimble_port_get_dflt_eventq());
 #endif
+    esp_phy_pd_mem_init();
     periph_module_enable(PERIPH_BT_MODULE);
 
     // init phy
@@ -705,6 +706,7 @@ esp_err_t esp_bt_controller_deinit(void)
     npl_freertos_mempool_deinit();
 
     esp_phy_disable();
+    esp_phy_pd_mem_deinit();
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
