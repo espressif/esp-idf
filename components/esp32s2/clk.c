@@ -82,6 +82,12 @@ void esp_clk_init(void)
     RESET_REASON rst_reas;
     rst_reas = rtc_get_reset_reason(0);
     if (rst_reas == POWERON_RESET) {
+        /* Ocode calibration will switch to XTAL frequency, need to wait for UART FIFO
+         * to be empty, to avoid garbled output.
+         */
+        if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
+            uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        }
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
