@@ -17,9 +17,9 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/misc.h"
+#include "hal/regi2c_ctrl.h"
 
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_saradc.h"
+#include "soc/regi2c_saradc.h"
 
 #ifdef __cplusplus
 extern "C" {

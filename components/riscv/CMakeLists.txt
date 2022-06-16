@@ -9,7 +9,7 @@ endif()
 if(BOOTLOADER_BUILD)
     set(priv_requires soc)
 else()
-    set(priv_requires soc freertos)
+    set(priv_requires soc)
     set(srcs
         "instruction_decode.c"
         "interrupt.c"

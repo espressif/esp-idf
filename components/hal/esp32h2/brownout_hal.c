@@ -9,9 +9,9 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "i2c_pmu.h"
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_brownout.h"
 #include "esp_attr.h"
+#include "hal/regi2c_ctrl.h"
+#include "soc/regi2c_brownout.h"
 
 
 void brownout_hal_config(const brownout_hal_config_t *cfg)
