@@ -5,11 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-# IDF-5051
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_freertos_real_time_stats(dut: Dut) -> None:
 
