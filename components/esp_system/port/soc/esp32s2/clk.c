@@ -81,6 +81,12 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
     rst_reas = rtc_get_reset_reason(0);
     if (rst_reas == POWERON_RESET) {
         cfg.cali_ocode = 1;
+        /* Ocode calibration will switch to XTAL frequency, need to wait for UART FIFO
+         * to be empty, to avoid garbled output.
+         */
+        if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
+            esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        }
     }
     rtc_init(cfg);
 
