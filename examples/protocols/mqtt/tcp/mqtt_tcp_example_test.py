@@ -76,7 +76,7 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     dut1.start_app()
     # waiting for getting the IP address
     try:
-        ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -86,8 +86,8 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     thread1.join()
     print('Message id received from server: {}'.format(msgid))
     # 3. check the message id was enqueued and then deleted
-    msgid_enqueued = dut1.expect(re.compile(r'OUTBOX: ENQUEUE msgid=([0-9]+)'), timeout=30)
-    msgid_deleted = dut1.expect(re.compile(r'OUTBOX: DELETED msgid=([0-9]+)'), timeout=30)
+    msgid_enqueued = dut1.expect(re.compile(r'outbox: ENQUEUE msgid=([0-9]+)'), timeout=30)
+    msgid_deleted = dut1.expect(re.compile(r'outbox: DELETED msgid=([0-9]+)'), timeout=30)
     # 4. check the msgid of received data are the same as that of enqueued and deleted from outbox
     if (msgid_enqueued[0] == str(msgid) and msgid_deleted[0] == str(msgid)):
         print('PASS: Received correct msg id')
