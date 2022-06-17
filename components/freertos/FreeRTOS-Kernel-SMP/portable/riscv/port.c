@@ -38,6 +38,9 @@
 #include "esp_private/pm_trace.h"
 #endif //CONFIG_PM_TRACE
 
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#include "esp_gdbstub.h"
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 /* ---------------------------------------------------- Variables ------------------------------------------------------
  *
@@ -63,7 +66,7 @@ static UBaseType_t port_uxCriticalOldInterruptStateIDF = 0;
 
 // ------------------ Critical Sections --------------------
 
-void vPortEnterCriticalIDF(void)
+void vPortEnterCritical(void)
 {
     // Save current interrupt threshold and disable interrupts
     UBaseType_t old_thresh = ulPortSetInterruptMask();
@@ -75,7 +78,7 @@ void vPortEnterCriticalIDF(void)
     }
 }
 
-void vPortExitCriticalIDF(void)
+void vPortExitCritical(void)
 {
     if (port_uxCriticalNestingIDF > 0) {
         port_uxCriticalNestingIDF--;
