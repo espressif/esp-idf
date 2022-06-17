@@ -22,6 +22,11 @@ menu "HCI Config"
         help
             Set the port number of HCI UART
 
+    config BT_LE_HCI_UART_FLOWCTRL
+        bool "HCI uart Hardware Flow ctrl"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default n
+
     config BT_LE_HCI_UART_TX_PIN
         int "HCI uart Tx gpio"
         depends on BT_LE_HCI_INTERFACE_USE_UART
@@ -32,12 +37,15 @@ menu "HCI Config"
         depends on BT_LE_HCI_INTERFACE_USE_UART
         default 10
 
-    config BT_LE_HCI_UART_TASK_STACK_SIZE
-        int "HCI uart task stack size"
-        depends on BT_LE_HCI_INTERFACE_USE_UART
-        default 1000
-        help
-                Set the size of uart task stack
+    config BT_LE_HCI_UART_RTS_PIN
+        int "HCI uart RTS gpio"
+        depends on BT_LE_HCI_UART_FLOWCTRL
+        default 4
+
+    config BT_LE_HCI_UART_CTS_PIN
+        int "HCI uart CTS gpio"
+        depends on BT_LE_HCI_UART_FLOWCTRL
+        default 5
 
     config BT_LE_HCI_UART_BAUD
         int "HCI uart baudrate"
@@ -46,58 +54,120 @@ menu "HCI Config"
         help
                 HCI uart baud rate 115200 ~ 1000000
 
+    choice BT_LE_HCI_UART_PARITY
+        prompt "select uart parity"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default BT_LE_HCI_UART_UART_PARITY_DISABLE
+
+        config BT_LE_HCI_UART_UART_PARITY_DISABLE
+            bool "PARITY_DISABLE"
+            help
+                    UART_PARITY_DISABLE
+        config BT_LE_HCI_UART_UART_PARITY_EVEN
+            bool "PARITY_EVEN"
+            help
+                    UART_PARITY_EVEN
+        config BT_LE_HCI_UART_UART_PARITY_ODD
+            bool "PARITY_ODD"
+            help
+                    UART_PARITY_ODD
+    endchoice
+
+    config BT_LE_HCI_UART_TASK_STACK_SIZE
+        int "HCI uart task stack size"
+        depends on BT_LE_HCI_INTERFACE_USE_UART
+        default 1000
+        help
+                Set the size of uart task stack
 endmenu
 
-config BT_LE_CONTROLLER_TASK_STACK_SIZE
-    int "Controller task stack size"
-    default 5120 if BLE_MESH
-    default 4096
-    help
-            This configures stack size of NimBLE controller task
-
-config BT_LE_LL_RESOLV_LIST_SIZE
-    int "BLE LL Resolving list size"
-    range 1 5 if IDF_TARGET_ESP32C2
-    default 4
-    help
-            Configure the size of resolving list used in link layer.
-
-menuconfig BT_LE_SECURITY_ENABLE
-    bool "Enable BLE SM feature"
+menuconfig BT_LE_50_FEATURE_SUPPORT
+    bool "Enable BLE 5 feature"
     depends on !BT_NIMBLE_ENABLED
     default y
     help
-            Enable BLE sm feature
+            Enable BLE 5 feature
 
-config BT_LE_SM_LEGACY
-    bool "Security manager legacy pairing"
-    depends on BT_LE_SECURITY_ENABLE
+config BT_LE_LL_CFG_FEAT_LE_2M_PHY
+    bool "Enable 2M Phy"
+    depends on BT_LE_50_FEATURE_SUPPORT
     default y
     help
-        Enable security manager legacy pairing
+            Enable 2M-PHY
 
-config BT_LE_SM_SC
-    bool "Security manager secure connections (4.2)"
-    depends on BT_LE_SECURITY_ENABLE
+config BT_LE_LL_CFG_FEAT_LE_CODED_PHY
+    bool "Enable coded Phy"
+    depends on BT_LE_50_FEATURE_SUPPORT
     default y
     help
-        Enable security manager secure connections
+            Enable coded-PHY
 
-config BT_LE_SM_SC_DEBUG_KEYS
-    bool "Use predefined public-private key pair"
-    default n
-    depends on BT_LE_SECURITY_ENABLE && BT_LE_SM_SC
-    help
-        If this option is enabled, SM uses predefined DH key pair as described
-        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
-        decrypt air traffic easily and thus should only be used for debugging.
-
-config BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
-    bool "Enable LE encryption"
-    depends on BT_LE_SECURITY_ENABLE
+config BT_LE_EXT_ADV
+    bool "Enable extended advertising"
+    depends on BT_LE_50_FEATURE_SUPPORT
     default y
     help
-            Enable encryption connection
+        Enable this option to do extended advertising. Extended advertising
+        will be supported from BLE 5.0 onwards.
+
+if BT_LE_EXT_ADV
+    config BT_LE_MAX_EXT_ADV_INSTANCES
+        int "Maximum number of extended advertising instances."
+        range 0 4
+        default 1 if BT_LE_EXT_ADV
+        default 0
+        depends on BT_LE_EXT_ADV
+        help
+            Change this option to set maximum number of extended advertising
+            instances. Minimum there is always one instance of
+            advertising. Enter how many more advertising instances you
+            want.
+
+    config BT_LE_EXT_ADV_MAX_SIZE
+        int "Maximum length of the advertising data."
+        range 0 1650
+        default 1650 if BT_LE_EXT_ADV
+        default 0
+        depends on BT_LE_EXT_ADV
+        help
+            Defines the length of the extended adv data. The value should not
+            exceed 1650.
+
+    config BT_LE_ENABLE_PERIODIC_ADV
+        bool "Enable periodic advertisement."
+        default y
+        depends on BT_LE_EXT_ADV
+        help
+            Enable this option to start periodic advertisement.
+
+    config BT_LE_PERIODIC_ADV_SYNC_TRANSFER
+        bool "Enable Transer Sync Events"
+        depends on BT_LE_ENABLE_PERIODIC_ADV
+        default y
+        help
+                This enables controller transfer periodic sync events to host
+
+endif
+
+config BT_LE_MAX_PERIODIC_SYNCS
+    int "Maximum number of periodic advertising syncs"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
+
+    range 0 3
+    default 1 if BT_LE_ENABLE_PERIODIC_ADV
+    default 0
+    help
+        Set this option to set the upper limit for number of periodic sync
+        connections. This should be less than maximum connections allowed by
+        controller.
+
+config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
+    int "Maximum number of periodic advertiser list"
+    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
+    range 1 5
+    default 5 if BT_LE_50_FEATURE_SUPPORT
+    help
+        Set this option to set the upper limit for number of periodic advertiser list.
 
 menu "Memory Settings"
     depends on !BT_NIMBLE_ENABLED
@@ -170,6 +240,57 @@ menu "Memory Settings"
             get dropped
 endmenu
 
+config BT_LE_CONTROLLER_TASK_STACK_SIZE
+    int "Controller task stack size"
+    default 5120 if BLE_MESH
+    default 4096
+    help
+            This configures stack size of NimBLE controller task
+
+config BT_LE_LL_RESOLV_LIST_SIZE
+    int "BLE LL Resolving list size"
+    range 1 5
+    default 4
+    help
+            Configure the size of resolving list used in link layer.
+
+menuconfig BT_LE_SECURITY_ENABLE
+    bool "Enable BLE SM feature"
+    depends on !BT_NIMBLE_ENABLED
+    default y
+    help
+            Enable BLE sm feature
+
+config BT_LE_SM_LEGACY
+    bool "Security manager legacy pairing"
+    depends on BT_LE_SECURITY_ENABLE
+    default y
+    help
+        Enable security manager legacy pairing
+
+config BT_LE_SM_SC
+    bool "Security manager secure connections (4.2)"
+    depends on BT_LE_SECURITY_ENABLE
+    default y
+    help
+        Enable security manager secure connections
+
+config BT_LE_SM_SC_DEBUG_KEYS
+    bool "Use predefined public-private key pair"
+    default n
+    depends on BT_LE_SECURITY_ENABLE && BT_LE_SM_SC
+    help
+        If this option is enabled, SM uses predefined DH key pair as described
+        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
+        decrypt air traffic easily and thus should only be used for debugging.
+
+config BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
+    bool "Enable LE encryption"
+    depends on BT_LE_SECURITY_ENABLE
+    default y
+    help
+            Enable encryption connection
+
 config BT_LE_CRYPTO_STACK_MBEDTLS
     bool "Override TinyCrypt with mbedTLS for crypto computations"
     default y
@@ -180,99 +301,10 @@ config BT_LE_CRYPTO_STACK_MBEDTLS
         Enable this option to choose mbedTLS instead of TinyCrypt for crypto
         computations.
 
-menuconfig BT_LE_50_FEATURE_SUPPORT
-    bool "Enable BLE 5 feature"
-    depends on !BT_NIMBLE_ENABLED
-    default y
-    help
-            Enable BLE 5 feature
-
-config BT_LE_LL_CFG_FEAT_LE_2M_PHY
-    bool "Enable 2M Phy"
-    depends on BT_LE_50_FEATURE_SUPPORT
-    default y
-    help
-            Enable 2M-PHY
-
-config BT_LE_LL_CFG_FEAT_LE_CODED_PHY
-    bool "Enable coded Phy"
-    depends on BT_LE_50_FEATURE_SUPPORT
-    default y
-    help
-            Enable coded-PHY
-
-config BT_LE_EXT_ADV
-    bool "Enable extended advertising"
-    depends on BT_LE_50_FEATURE_SUPPORT
-    default n
-    help
-        Enable this option to do extended advertising. Extended advertising
-        will be supported from BLE 5.0 onwards.
-
-if BT_LE_EXT_ADV
-    config BT_LE_MAX_EXT_ADV_INSTANCES
-        int "Maximum number of extended advertising instances."
-        range 0 4
-        default 1 if BT_LE_EXT_ADV
-        default 0
-        depends on BT_LE_EXT_ADV
-        help
-            Change this option to set maximum number of extended advertising
-            instances. Minimum there is always one instance of
-            advertising. Enter how many more advertising instances you
-            want.
-
-    config BT_LE_EXT_ADV_MAX_SIZE
-        int "Maximum length of the advertising data."
-        range 0 1650
-        default 1650 if BT_LE_EXT_ADV
-        default 0
-        depends on BT_LE_EXT_ADV
-        help
-            Defines the length of the extended adv data. The value should not
-            exceed 1650.
-
-    config BT_LE_ENABLE_PERIODIC_ADV
-        bool "Enable periodic advertisement."
-        default y
-        depends on BT_LE_EXT_ADV
-        help
-            Enable this option to start periodic advertisement.
-
-    config BT_LE_PERIODIC_ADV_SYNC_TRANSFER
-        bool "Enable Transer Sync Events"
-        depends on BT_LE_ENABLE_PERIODIC_ADV
-        default y
-        help
-                This enables controller transfer periodic sync events to host
-
-endif
-
-config BT_LE_MAX_PERIODIC_SYNCS
-    int "Maximum number of periodic advertising syncs"
-    depends on BT_LE_50_FEATURE_SUPPORT && !BT_NIMBLE_ENABLED
-
-    range 0 8 if !IDF_TARGET_ESP32C2
-    range 0 3 if IDF_TARGET_ESP32C2
-    default 1 if BT_LE_ENABLE_PERIODIC_ADV
-    default 0
-    help
-        Set this option to set the upper limit for number of periodic sync
-        connections. This should be less than maximum connections allowed by
-        controller.
-
-config BT_LE_MAX_PERIODIC_ADVERTISER_LIST
-    int "Maximum number of periodic advertiser list"
-    depends on BT_LE_50_FEATURE_SUPPORT && IDF_TARGET_ESP32C2 && !BT_NIMBLE_ENABLED
-    range 1 5
-    default 5 if BT_LE_50_FEATURE_SUPPORT
-    help
-        Set this option to set the upper limit for number of periodic advertiser list.
-
 config BT_LE_WHITELIST_SIZE
     int "BLE white list size"
-    range 1 5 if IDF_TARGET_ESP32C2
-    default 5 if IDF_TARGET_ESP32C2
+    range 1 15
+    default 12
     depends on !BT_NIMBLE_ENABLED
 
     help
@@ -295,10 +327,8 @@ config BT_LE_LL_SCA
 config BT_LE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     depends on !BT_NIMBLE_ENABLED
-    range 1 8 if IDF_TARGET_ESP32H2
-    default 3 if IDF_TARGET_ESP32H2
-    range 1 2 if IDF_TARGET_ESP32C2
-    default 2 if IDF_TARGET_ESP32C2
+    range 1 2
+    default 2
     help
         Defines maximum number of concurrent BLE connections. For ESP32, user
         is expected to configure BTDM_CTRL_BLE_MAX_CONN from controller menu
