@@ -1,0 +1,9 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_BT_ENABLED=y
+CONFIG_BT_CONTROLLER_ONLY=y
+CONFIG_BT_LE_HCI_INTERFACE_USE_UART=y
+CONFIG_BT_LE_HCI_UART_TX_PIN=8
+CONFIG_BT_LE_HCI_UART_RX_PIN=9
+CONFIG_BT_LE_HCI_UART_BAUD=115200
