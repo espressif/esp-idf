@@ -319,3 +319,22 @@ LCD
     7. Calling :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.
 
     8. Calling :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.
+
+Register access macros
+----------------------
+
+Previously, all register access macros could be used as expressions, so the following was allowed::
+
+    uint32_t val = REG_SET_BITS(reg, mask);
+
+In IDF v5.0, register access macros which write or read-modify-write the register can no longer be used as expressions, and can only be used as statements. This applies to the following macros: ``REG_WRITE``, ``REG_SET_BIT``, ``REG_CLR_BIT``, ``REG_SET_BITS``, ``REG_SET_FIELD``, ``WRITE_PERI_REG``, ``CLEAR_PERI_REG_MASK``, ``SET_PERI_REG_MASK``, ``SET_PERI_REG_BITS``.
+
+To store the value which would have been written into the register, split the operation as follows::
+
+    uint32_t new_val = REG_READ(reg) | mask;
+    REG_WRITE(reg, new_val);
+
+To get the value of the register after modification (which may be different from the value written), add an explicit read::
+
+    REG_SET_BITS(reg, mask);
+    uint32_t new_val = REG_READ(reg);
