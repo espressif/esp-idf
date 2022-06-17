@@ -6,6 +6,7 @@
 from __future__ import print_function, unicode_literals
 
 import sys
+from typing import Any, List, Optional, TextIO
 
 try:
     from builtins import object, range, str
@@ -57,7 +58,7 @@ class ErrItem(object):
     - rel_str - (optional) error string which is a base for the error
     - rel_off - (optional) offset in relation to the base error
     """
-    def __init__(self, name, file, include_as=None, comment='', rel_str='', rel_off=0):
+    def __init__(self, name: str, file: str, include_as: Optional[Any]=None, comment: str='', rel_str: str='', rel_off: int=0) -> None:
         self.name = name
         self.file = file
         self.include_as = include_as
@@ -65,7 +66,7 @@ class ErrItem(object):
         self.rel_str = rel_str
         self.rel_off = rel_off
 
-    def __str__(self):
+    def __str__(self) -> str:
         ret = self.name + ' from ' + self.file
         if (self.rel_str != ''):
             ret += ' is (' + self.rel_str + ' + ' + str(self.rel_off) + ')'
@@ -73,7 +74,7 @@ class ErrItem(object):
             ret += ' // ' + self.comment
         return ret
 
-    def __cmp__(self, other):
+    def __cmp__(self, other) -> int:
         if self.file in priority_headers and other.file not in priority_headers:
             return -1
         elif self.file not in priority_headers and other.file in priority_headers:
@@ -101,11 +102,11 @@ class InputError(RuntimeError):
     """
     Represents and error on the input
     """
-    def __init__(self, p, e):
+    def __init__(self, p: str, e: str) -> None:
         super(InputError, self).__init__(p + ': ' + e)
 
 
-def process(line, idf_path, include_as):
+def process(line: str, idf_path: str, include_as: Any) -> None:
     """
     Process a line of text from file idf_path (relative to IDF project).
     Fills the global list unproc_list and dictionaries err_dict, rev_err_dict
@@ -168,7 +169,7 @@ def process(line, idf_path, include_as):
         unproc_list.append(ErrItem(words[1], idf_path, include_as, comment, related, num))
 
 
-def process_remaining_errors():
+def process_remaining_errors() -> None:
     """
     Create errors which could not be processed before because the error code
     for the BASE error code wasn't known.
@@ -189,7 +190,7 @@ def process_remaining_errors():
     del unproc_list[:]
 
 
-def path_to_include(path):
+def path_to_include(path: str) -> str:
     """
     Process the path (relative to the IDF project) in a form which can be used
     to include in a C file. Using just the filename does not work all the
@@ -210,7 +211,7 @@ def path_to_include(path):
         return os.sep.join(spl_path[i + 1:])  # subdirectories and filename in "include"
 
 
-def print_warning(error_list, error_code):
+def print_warning(error_list: List, error_code: int) -> None:
     """
     Print warning about errors with the same error code
     """
@@ -219,7 +220,7 @@ def print_warning(error_list, error_code):
         print('    ' + str(e))
 
 
-def max_string_width():
+def max_string_width() -> int:
     max = 0
     for k in err_dict:
         for e in err_dict[k]:
@@ -229,7 +230,7 @@ def max_string_width():
     return max
 
 
-def generate_c_output(fin, fout):
+def generate_c_output(fin: TextIO, fout: TextIO) -> None:
     """
     Writes the output to fout based on th error dictionary err_dict and
     template file fin.
@@ -294,7 +295,7 @@ def generate_c_output(fin, fout):
             fout.write(line)
 
 
-def generate_rst_output(fout):
+def generate_rst_output(fout: TextIO) -> None:
     for k in sorted(err_dict.keys()):
         v = err_dict[k][0]
         fout.write(':c:macro:`{}` '.format(v.name))
@@ -307,7 +308,7 @@ def generate_rst_output(fout):
         fout.write('\n\n')
 
 
-def main():
+def main() -> None:
     if 'IDF_PATH' in os.environ:
         idf_path = os.environ['IDF_PATH']
     else:

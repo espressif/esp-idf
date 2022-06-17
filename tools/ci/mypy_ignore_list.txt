@@ -211,15 +211,7 @@ tools/find_apps.py
 tools/find_build_apps/common.py
 tools/gen_esp_err_to_name.py
 tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py
-tools/idf.py
-tools/idf_py_actions/core_ext.py
-tools/idf_py_actions/create_ext.py
-tools/idf_py_actions/debug_ext.py
-tools/idf_py_actions/dfu_ext.py
-tools/idf_py_actions/errors.py
-tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
-tools/idf_py_actions/uf2_ext.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/gen_kconfig_doc.py
@@ -240,7 +232,6 @@ tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
 tools/ldgen/test/test_output_commands.py
 tools/mass_mfg/mfg_gen.py
-tools/mkuf2.py
 tools/test_apps/build_system/ldgen_test/check_placements.py
 tools/test_apps/protocols/mqtt/publish_connect_test/app_test.py
 tools/test_apps/protocols/openssl/app_test.py
