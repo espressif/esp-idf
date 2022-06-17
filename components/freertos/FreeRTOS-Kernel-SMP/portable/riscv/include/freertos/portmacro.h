@@ -238,6 +238,9 @@ static inline BaseType_t xPortInIsrContext(void)
     return xPortCheckIfInISR();
 }
 
+// Added for backward compatibility with IDF
+#define xPortInterruptedFromISRContext()    xPortInIsrContext()
+
 // ---------------------- Spinlocks ------------------------
 
 /**
@@ -279,21 +282,25 @@ static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t comp
 /*
 IDF style critical sections which are orthogonal to FreeRTOS critical sections. However, on single core, the IDF style
 critical sections simply disable interrupts, thus we discard the lock and timeout arguments.
+
+Note: The IDF Style critical sections are named differently to their counterparts present in the xtensa port as few IDF
+examples such as esp_zigbee_gateway, when compiled for RISC-V targets, have a reference to vPortEnterCritical()
+and vPortExitCritical() from precompiled libraries (.a) thereby failing linking.
 */
-void vPortEnterCriticalIDF(void);
-void vPortExitCriticalIDF(void);
+void vPortEnterCritical(void);
+void vPortExitCritical(void);
 
 //IDF task critical sections
-#define portTRY_ENTER_CRITICAL(lock, timeout)       {((void) lock; (void) timeout; vPortEnterCriticalIDF(); pdPASS;)}
-#define portENTER_CRITICAL_IDF(lock)                ({(void) lock; vPortEnterCriticalIDF();})
-#define portEXIT_CRITICAL_IDF(lock)                 ({(void) lock; vPortExitCriticalIDF();})
+#define portTRY_ENTER_CRITICAL(lock, timeout)       {((void) lock; (void) timeout; vPortEnterCritical(); pdPASS;)}
+#define portENTER_CRITICAL_IDF(lock)                ({(void) lock; vPortEnterCritical();})
+#define portEXIT_CRITICAL_IDF(lock)                 ({(void) lock; vPortExitCritical();})
 //IDF ISR critical sections
-#define portTRY_ENTER_CRITICAL_ISR(lock, timeout)   {((void) lock; (void) timeout; vPortEnterCriticalIDF(); pdPASS;)}
-#define portENTER_CRITICAL_ISR(lock)                ({(void) lock; vPortEnterCriticalIDF();})
-#define portEXIT_CRITICAL_ISR(lock)                 ({(void) lock; vPortExitCriticalIDF();})
+#define portTRY_ENTER_CRITICAL_ISR(lock, timeout)   {((void) lock; (void) timeout; vPortEnterCritical(); pdPASS;)}
+#define portENTER_CRITICAL_ISR(lock)                ({(void) lock; vPortEnterCritical();})
+#define portEXIT_CRITICAL_ISR(lock)                 ({(void) lock; vPortExitCritical();})
 //IDF safe critical sections (they're the same)
-#define portENTER_CRITICAL_SAFE(lock)               ({(void) lock; vPortEnterCriticalIDF();})
-#define portEXIT_CRITICAL_SAFE(lock)                ({(void) lock; vPortExitCriticalIDF();})
+#define portENTER_CRITICAL_SAFE(lock)               ({(void) lock; vPortEnterCritical();})
+#define portEXIT_CRITICAL_SAFE(lock)                ({(void) lock; vPortExitCritical();})
 
 // ---------------------- Yielding -------------------------
 
@@ -306,6 +313,9 @@ static inline bool IRAM_ATTR xPortCanYield(void)
      */
     return (threshold <= 1);
 }
+
+// Added for backward compatibility with IDF
+#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
 
 // ----------------------- System --------------------------
 
@@ -329,7 +339,7 @@ void vPortSetStackWatchpoint(void *pxStackStart);
 // --------------------- App-Trace -------------------------
 
 #if CONFIG_APPTRACE_SV_ENABLE
-extern int xPortSwitchFlag;
+extern volatile BaseType_t xPortSwitchFlag;
 #define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
 #else
 #define os_task_switch_is_pended(_cpu_) (false)

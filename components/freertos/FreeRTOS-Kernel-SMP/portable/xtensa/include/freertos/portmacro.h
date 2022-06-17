@@ -356,6 +356,9 @@ static inline bool IRAM_ATTR xPortCanYield(void)
     return ((ps_reg & PS_INTLEVEL_MASK) == 0);
 }
 
+// Added for backward compatibility with IDF
+#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
+
 // ----------------------- System --------------------------
 
 void vPortSetStackWatchpoint(void *pxStackStart);

@@ -259,15 +259,6 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 #define configTASKLIST_INCLUDE_COREID                   1
 #endif
 
-#ifndef __ASSEMBLER__
-#if CONFIG_APPTRACE_SV_ENABLE
-extern uint32_t port_switch_flag[];
-#define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
-#else
-#define os_task_switch_is_pended(_cpu_) (false)
-#endif
-#endif
-
 // ---------------------- Features -------------------------
 
 /* These currently aren't required, but could be useful additions in the future */
