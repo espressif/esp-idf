@@ -1089,7 +1089,6 @@ components/protocomm/python/sec2_pb2.py
 components/protocomm/python/session_pb2.py
 components/pthread/pthread_cond_var.c
 components/pthread/pthread_internal.h
-components/pthread/pthread_local_storage.c
 components/pthread/test/test_cxx_cond_var.cpp
 components/pthread/test/test_cxx_std_future.cpp
 components/pthread/test/test_pthread.c
