@@ -155,6 +155,16 @@ def test_examples_protocol_https_wss_server(env, extra_data):  # type: (tiny_tes
             raise RuntimeError('Failed to receive the correct echo response')
         Utility.console_log('Correct echo response obtained from the wss server')
 
+        # Test for PING
+        Utility.console_log('Testing for send PING')
+        ws.write(data=DATA, opcode=OPCODE_PING)
+        dut1.expect('Got a WS PING frame, Replying PONG')
+        opcode, data = ws.read()
+        data = data.decode('UTF-8')
+        if data != DATA or opcode != OPCODE_PONG:
+            raise RuntimeError('Failed to receive the PONG response')
+        Utility.console_log('Passed the test for PING')
+
         # Test for keepalive
         Utility.console_log('Testing for keep alive (approx time = 20s)')
         start_time = time.time()
