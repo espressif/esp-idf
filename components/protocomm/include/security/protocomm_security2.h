@@ -12,14 +12,15 @@
 extern "C" {
 #endif
 
-#if CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
+#if CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
 /**
- * @brief   Protocomm security version 1 implementation
+ * @brief   Protocomm security version 2 implementation
  *
  * This is a full fledged security implementation using
- * Curve25519 key exchange and AES-256-CTR encryption
+ * key exchange based on SRP6a (RFC 5054)
+ * and AES-GCM encryption/decryption
  */
-extern const protocomm_security_t protocomm_security1;
+extern const protocomm_security_t protocomm_security2;
 #endif
 
 #ifdef __cplusplus

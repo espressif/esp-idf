@@ -462,11 +462,9 @@ components/esp_hid/test/test_esp_hid.c
 components/esp_hw_support/include/esp_clk.h
 components/esp_hw_support/include/soc/esp_himem.h
 components/esp_hw_support/include/soc/esp_spiram.h
-components/esp_local_ctrl/include/esp_local_ctrl.h
 components/esp_local_ctrl/proto-c/esp_local_ctrl.pb-c.c
 components/esp_local_ctrl/proto-c/esp_local_ctrl.pb-c.h
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
-components/esp_local_ctrl/src/esp_local_ctrl.c
 components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
@@ -1072,10 +1070,6 @@ components/nvs_flash/test_nvs_host/test_spi_flash_emulation.cpp
 components/openthread/include/esp_openthread.h
 components/openthread/include/esp_openthread_lock.h
 components/openthread/include/esp_openthread_netif_glue.h
-components/protocomm/include/common/protocomm.h
-components/protocomm/include/security/protocomm_security.h
-components/protocomm/include/security/protocomm_security0.h
-components/protocomm/include/security/protocomm_security1.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/protocomm/proto-c/constants.pb-c.c
@@ -1084,14 +1078,15 @@ components/protocomm/proto-c/sec0.pb-c.c
 components/protocomm/proto-c/sec0.pb-c.h
 components/protocomm/proto-c/sec1.pb-c.c
 components/protocomm/proto-c/sec1.pb-c.h
+components/protocomm/proto-c/sec2.pb-c.c
+components/protocomm/proto-c/sec2.pb-c.h
 components/protocomm/proto-c/session.pb-c.c
 components/protocomm/proto-c/session.pb-c.h
 components/protocomm/python/constants_pb2.py
 components/protocomm/python/sec0_pb2.py
 components/protocomm/python/sec1_pb2.py
+components/protocomm/python/sec2_pb2.py
 components/protocomm/python/session_pb2.py
-components/protocomm/src/common/protocomm_priv.h
-components/protocomm/src/security/security0.c
 components/pthread/pthread_cond_var.c
 components/pthread/pthread_internal.h
 components/pthread/pthread_local_storage.c
@@ -2255,7 +2250,6 @@ tools/esp_prov/__init__.py
 tools/esp_prov/prov/__init__.py
 tools/esp_prov/prov/wifi_prov.py
 tools/esp_prov/prov/wifi_scan.py
-tools/esp_prov/security/__init__.py
 tools/esp_prov/security/security.py
 tools/esp_prov/security/security0.py
 tools/esp_prov/security/security1.py
@@ -2266,7 +2260,6 @@ tools/esp_prov/transport/transport_ble.py
 tools/esp_prov/transport/transport_console.py
 tools/esp_prov/transport/transport_http.py
 tools/esp_prov/utils/__init__.py
-tools/esp_prov/utils/convenience.py
 tools/find_apps.py
 tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py

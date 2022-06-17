@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -234,8 +226,12 @@ typedef union {
 typedef enum esp_local_ctrl_proto_sec {
     PROTOCOM_SEC0 = 0,
     PROTOCOM_SEC1,
+    PROTOCOM_SEC2,
     PROTOCOM_SEC_CUSTOM,
 } esp_local_ctrl_proto_sec_t;
+
+typedef protocomm_security1_params_t esp_local_ctrl_security1_params_t;
+typedef protocomm_security2_params_t esp_local_ctrl_security2_params_t;
 
 /**
  * Protocom security configs
@@ -253,10 +249,22 @@ typedef struct esp_local_ctrl_proto_sec_cfg {
      */
     void *custom_handle;
 
-    /**
-     * Proof of possession to be used for local control. Could be NULL.
-     */
-    void *pop;
+    /* Anonymous union */
+    union {
+        /**
+         * Proof of possession to be used for local control. Could be NULL.
+         */
+        const void *pop __attribute__((deprecated("use sec_params field instead")));
+
+        /**
+         * Pointer to security params (NULL if not needed).
+         * This is not needed for protocomm security 0
+         * This pointer should hold the struct of type
+         * esp_local_ctrl_security1_params_t for protocomm security 1
+         * and esp_local_ctrl_security2_params_t for protocomm security 2 respectively. Could be NULL.
+         */
+        const void *sec_params;
+    };
 } esp_local_ctrl_proto_sec_cfg_t;
 
 /**

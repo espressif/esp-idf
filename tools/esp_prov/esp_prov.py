@@ -40,8 +40,10 @@ def on_except(err):
         print(err)
 
 
-def get_security(secver, pop='', verbose=False):
-    if secver == 1:
+def get_security(secver, username, password, pop='', verbose=False):
+    if secver == 2:
+        return security.Security2(username, password, verbose)
+    elif secver == 1:
         return security.Security1(pop, verbose)
     elif secver == 0:
         return security.Security0(verbose)
@@ -331,14 +333,29 @@ if __name__ == '__main__':
                             '\t- 0 : No security',
                             '\t- 1 : X25519 key exchange + AES-CTR encryption',
                             '\t      + Authentication using Proof of Possession (PoP)',
+                            '\t- 2 : SRP6a + AES-GCM encryption',
                             'In case device side application uses IDF\'s provisioning manager, '
                             'the compatible security version is automatically determined from '
                             'capabilities retrieved via the version endpoint'))
 
-    parser.add_argument('--pop', dest='pop', type=str, default='',
+    parser.add_argument('--pop', dest='sec1_pop', type=str, default='',
                         help=desc_format(
                             'This specifies the Proof of possession (PoP) when security scheme 1 '
                             'is used'))
+
+    parser.add_argument('--sec2_username', dest='sec2_usr', type=str, default='',
+                        help=desc_format(
+                            'Username for security scheme 2 (SRP6a)'))
+
+    parser.add_argument('--sec2_pwd', dest='sec2_pwd', type=str, default='',
+                        help=desc_format(
+                            'Password for security scheme 2 (SRP6a)'))
+
+    parser.add_argument('--sec2_gen_cred', help='Generate salt and verifier for security scheme 2 (SRP6a)', action='store_true')
+
+    parser.add_argument('--sec2_salt_len', dest='sec2_salt_len', type=int, default=16,
+                        help=desc_format(
+                            'Salt length for security scheme 2 (SRP6a)'))
 
     parser.add_argument('--ssid', dest='ssid', type=str, default='',
                         help=desc_format(
@@ -363,6 +380,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    if args.secver == 2 and args.sec2_gen_cred:
+        if not args.sec2_usr or not args.sec2_pwd:
+            print('---- Username/password cannot be empty for security scheme 2 (SRP6a) ----')
+            exit(1)
+        print('==== Salt-verifier for security scheme 2 (SRP6a) ====')
+        security.sec2_gen_salt_verifier(args.sec2_usr, args.sec2_pwd, args.sec2_salt_len)
+        exit(0)
+
     obj_transport = get_transport(args.mode.lower(), args.name)
     if obj_transport is None:
         print('---- Failed to establish connection ----')
@@ -381,14 +406,14 @@ if __name__ == '__main__':
         print('Security scheme determined to be :', args.secver)
 
         if (args.secver != 0) and not has_capability(obj_transport, 'no_pop'):
-            if len(args.pop) == 0:
+            if len(args.sec1_pop) == 0:
                 print('---- Proof of Possession argument not provided ----')
                 exit(2)
-        elif len(args.pop) != 0:
+        elif len(args.sec1_pop) != 0:
             print('---- Proof of Possession will be ignored ----')
-            args.pop = ''
+            args.sec1_pop = ''
 
-    obj_security = get_security(args.secver, args.pop, args.verbose)
+    obj_security = get_security(args.secver, args.sec2_usr, args.sec2_pwd, args.sec1_pop, args.verbose)
     if obj_security is None:
         print('---- Invalid Security Version ----')
         exit(2)

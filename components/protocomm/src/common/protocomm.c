@@ -53,10 +53,9 @@ void protocomm_delete(protocomm_t *pc)
     if (pc->sec && pc->sec->cleanup) {
         pc->sec->cleanup(pc->sec_inst);
     }
-    if (pc->pop) {
-        free(pc->pop);
+    if (pc->sec_params) {
+        free(pc->sec_params);
     }
-
     free(pc);
 }
 
@@ -199,14 +198,9 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
     } else if (ep->flag & REQ_EP) {
         if (pc->sec && pc->sec->decrypt) {
             /* Decrypt the data first */
-            uint8_t *dec_inbuf = (uint8_t *) malloc(inlen);
-            if (!dec_inbuf) {
-                ESP_LOGE(TAG, "Failed to allocate decrypt buf len %d", inlen);
-                return ESP_ERR_NO_MEM;
-            }
-
-            ssize_t dec_inbuf_len = inlen;
-            ret = pc->sec->decrypt(pc->sec_inst, session_id, inbuf, inlen, dec_inbuf, &dec_inbuf_len);
+            ssize_t dec_inbuf_len = 0;
+            uint8_t *dec_inbuf = NULL;
+            ret = pc->sec->decrypt(pc->sec_inst, session_id, inbuf, inlen, &dec_inbuf, &dec_inbuf_len);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Decryption of response failed for endpoint %s", ep_name);
                 free(dec_inbuf);
@@ -229,17 +223,10 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
             /* We don't need decrypted data anymore */
             free(dec_inbuf);
 
-            /* Encrypt response to be sent back */
-            uint8_t *enc_resp = (uint8_t *) malloc(plaintext_resp_len);
-            if (!enc_resp) {
-                ESP_LOGE(TAG, "Failed to allocate encrypt buf len %d", plaintext_resp_len);
-                free(plaintext_resp);
-                return ESP_ERR_NO_MEM;
-            }
-
-            ssize_t enc_resp_len = plaintext_resp_len;
+            uint8_t *enc_resp = NULL;
+            ssize_t enc_resp_len = 0;
             ret = pc->sec->encrypt(pc->sec_inst, session_id, plaintext_resp, plaintext_resp_len,
-                                   enc_resp, &enc_resp_len);
+                                   &enc_resp, &enc_resp_len);
 
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Encryption of response failed for endpoint %s", ep_name);
@@ -278,7 +265,7 @@ static int protocomm_common_security_handler(uint32_t session_id,
 
     if (pc->sec && pc->sec->security_req_handler) {
         return pc->sec->security_req_handler(pc->sec_inst,
-                                             pc->pop, session_id,
+                                             pc->sec_params, session_id,
                                              inbuf, inlen,
                                              outbuf, outlen,
                                              priv_data);
@@ -289,7 +276,7 @@ static int protocomm_common_security_handler(uint32_t session_id,
 
 esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
                                  const protocomm_security_t *sec,
-                                 const protocomm_security_pop_t *pop)
+                                 const void *sec_params)
 {
     if ((pc == NULL) || (ep_name == NULL) || (sec == NULL)) {
         return ESP_ERR_INVALID_ARG;
@@ -317,22 +304,42 @@ esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
     }
     pc->sec = sec;
 
-    if (pop) {
-        pc->pop = malloc(sizeof(protocomm_security_pop_t));
-        if (pc->pop == NULL) {
-            ESP_LOGE(TAG, "Error allocating Proof of Possession");
-            if (pc->sec && pc->sec->cleanup) {
-                pc->sec->cleanup(pc->sec_inst);
-                pc->sec_inst = NULL;
-                pc->sec = NULL;
+    /* sec params is not needed and thus checked in case of security 0 */
+    if (pc->sec->ver == 1) {
+        if (sec_params) {
+            pc->sec_params = calloc(1, sizeof(protocomm_security1_params_t));
+            if (pc->sec_params == NULL) {
+                ESP_LOGE(TAG, "Error allocating memory for security1 params");
+                ret = ESP_ERR_NO_MEM;
+                goto cleanup;
             }
-
-            protocomm_remove_endpoint(pc, ep_name);
-            return ESP_ERR_NO_MEM;
+            memcpy((void *)pc->sec_params, sec_params, sizeof(protocomm_security1_params_t));
         }
-        memcpy((void *)pc->pop, pop, sizeof(protocomm_security_pop_t));
+    } else if (pc->sec->ver == 2) {
+        if (sec_params) {
+            pc->sec_params = calloc(1, sizeof(protocomm_security2_params_t));
+            if (pc->sec_params == NULL) {
+                ESP_LOGE(TAG, "Error allocating memory for security2 params");
+                ret = ESP_ERR_NO_MEM;
+                goto cleanup;
+            }
+            memcpy((void *)pc->sec_params, sec_params, sizeof(protocomm_security2_params_t));
+        } else {
+            ESP_LOGE(TAG, "Security params cannot be null");
+            ret = ESP_ERR_INVALID_ARG;
+            goto cleanup;
+        }
     }
     return ESP_OK;
+
+cleanup:
+    if (pc->sec && pc->sec->cleanup) {
+            pc->sec->cleanup(pc->sec_inst);
+            pc->sec_inst = NULL;
+            pc->sec = NULL;
+        }
+    protocomm_remove_endpoint(pc, ep_name);
+    return ret;
 }
 
 esp_err_t protocomm_unset_security(protocomm_t *pc, const char *ep_name)
@@ -347,9 +354,9 @@ esp_err_t protocomm_unset_security(protocomm_t *pc, const char *ep_name)
         pc->sec = NULL;
     }
 
-    if (pc->pop) {
-        free(pc->pop);
-        pc->pop = NULL;
+    if (pc->sec_params) {
+        free(pc->sec_params);
+        pc->sec_params = NULL;
     }
 
     return protocomm_remove_endpoint(pc, ep_name);

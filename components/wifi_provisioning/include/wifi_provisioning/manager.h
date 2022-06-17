@@ -199,8 +199,18 @@ typedef enum wifi_prov_security {
      * + proof of possession (pop) based authentication
      * + AES-CTR encryption
      */
-    WIFI_PROV_SECURITY_1
+    WIFI_PROV_SECURITY_1,
+
+    /**
+     * This secure communication mode consists of
+     *  SRP6a based authentication and key exchange
+     *  + AES-GCM encryption/decryption
+     */
+    WIFI_PROV_SECURITY_2
 } wifi_prov_security_t;
+
+typedef protocomm_security1_params_t wifi_prov_security1_params_t;
+typedef protocomm_security2_params_t wifi_prov_security2_params_t;
 
 /**
  * @brief   Initialize provisioning manager instance
@@ -283,9 +293,14 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
  *                              - WIFI_PROV_SECURITY_0 : For no security
  *                              - WIFI_PROV_SECURITY_1 : x25519 secure handshake for session
  *                                establishment followed by AES-CTR encryption of provisioning messages
- * @param[in] pop           Pointer to proof of possession string (NULL if not needed). This
- *                          is relevant only for protocomm security 1, in which case it is used
- *                          for authenticating secure session
+ *                              - WIFI_PROV_SECURITY_2:  SRP6a based authentication and key exchange
+ *                                followed by AES-GCM encryption/decryption of provisioning messages
+ * @param[in] wifi_prov_sec_params
+ *                          Pointer to security params (NULL if not needed).
+ *                          This is not needed for protocomm security 0
+ *                          This pointer should hold the struct of type
+ *                          wifi_prov_security1_params_t for protocomm security 1
+ *                          and wifi_prov_security2_params_t for protocomm security 2 respectively.
  * @param[in] service_name  Unique name of the service. This translates to:
  *                              - Wi-Fi SSID when provisioning mode is softAP
  *                              - Device name when provisioning mode is BLE
@@ -299,8 +314,7 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
  *  - ESP_FAIL    : Failed to start provisioning service
  *  - ESP_ERR_INVALID_STATE : Provisioning manager not initialized or already started
  */
-esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop,
-                                           const char *service_name, const char *service_key);
+esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const void *wifi_prov_sec_params, const char *service_name, const char *service_key);
 
 /**
  * @brief   Stop provisioning service

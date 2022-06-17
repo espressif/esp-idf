@@ -9,8 +9,11 @@ from importlib.abc import Loader
 from typing import Any
 
 
-def _load_source(name, path):  # type: (str, str) -> Any
+def _load_source(name: str, path: str) -> Any:
     spec = importlib.util.spec_from_file_location(name, path)
+    if not spec:
+        return None
+
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
     assert isinstance(spec.loader, Loader)
@@ -24,6 +27,7 @@ idf_path = os.environ['IDF_PATH']
 constants_pb2 = _load_source('constants_pb2', idf_path + '/components/protocomm/python/constants_pb2.py')
 sec0_pb2      = _load_source('sec0_pb2',      idf_path + '/components/protocomm/python/sec0_pb2.py')
 sec1_pb2      = _load_source('sec1_pb2',      idf_path + '/components/protocomm/python/sec1_pb2.py')
+sec2_pb2      = _load_source('sec2_pb2',      idf_path + '/components/protocomm/python/sec2_pb2.py')
 session_pb2   = _load_source('session_pb2',   idf_path + '/components/protocomm/python/session_pb2.py')
 
 # wifi_provisioning component related python files generated from .proto files

@@ -21,6 +21,7 @@
 #include <protocomm.h>
 #include <protocomm_security0.h>
 #include <protocomm_security1.h>
+#include <protocomm_security2.h>
 
 #include "wifi_provisioning_priv.h"
 
@@ -90,8 +91,8 @@ struct wifi_prov_mgr_ctx {
     /* Type of security to use with protocomm */
     int security;
 
-    /* Pointer to proof of possession */
-    protocomm_security_pop_t pop;
+    /* Pointer to security params */
+    const void* protocomm_sec_params;
 
     /* Handle for Provisioning Auto Stop timer */
     esp_timer_handle_t autostop_timer;
@@ -306,11 +307,29 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
 
     /* Set protocomm security type for endpoint */
     if (prov_ctx->security == 0) {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
                                      &protocomm_security0, NULL);
+#else
+        // Enable SECURITY_VERSION_0 in Protocomm configuration menu
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
     } else if (prov_ctx->security == 1) {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
         ret = protocomm_set_security(prov_ctx->pc, "prov-session",
-                                     &protocomm_security1, &prov_ctx->pop);
+                                     &protocomm_security1, prov_ctx->protocomm_sec_params);
+#else
+        // Enable SECURITY_VERSION_1 in Protocomm configuration menu
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
+    } else if (prov_ctx->security == 2) {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
+        ret = protocomm_set_security(prov_ctx->pc, "prov-session",
+                                     &protocomm_security2, prov_ctx->protocomm_sec_params);
+#else
+        // Enable SECURITY_VERSION_2 in Protocomm configuration menu
+        return ESP_ERR_NOT_SUPPORTED;
+#endif
     } else {
         ESP_LOGE(TAG, "Unsupported protocomm security version %d", prov_ctx->security);
         ret = ESP_ERR_INVALID_ARG;
@@ -580,9 +599,8 @@ static bool wifi_prov_mgr_stop_service(bool blocking)
     prov_ctx->prov_state = WIFI_PROV_STATE_STOPPING;
 
     /* Free proof of possession */
-    if (prov_ctx->pop.data) {
-        free((void *)prov_ctx->pop.data);
-        prov_ctx->pop.data = NULL;
+    if (prov_ctx->protocomm_sec_params) {
+        prov_ctx->protocomm_sec_params = NULL;
     }
 
     /* Delete all scan results */
@@ -1330,6 +1348,7 @@ void wifi_prov_mgr_deinit(void)
     if (!service_was_running && !prov_ctx) {
         ESP_LOGD(TAG, "Manager already de-initialized");
         RELEASE_LOCK(prov_ctx_lock);
+        vSemaphoreDelete(prov_ctx_lock);
         return;
     }
 
@@ -1380,9 +1399,11 @@ void wifi_prov_mgr_deinit(void)
     if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_DEINIT, NULL, 0, portMAX_DELAY) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to post event WIFI_PROV_DEINIT");
     }
+
+    vSemaphoreDelete(prov_ctx_lock);
 }
 
-esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop,
+esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const void *wifi_prov_sec_params,
                                            const char *service_name, const char *service_key)
 {
     uint8_t restore_wifi_flag = 0;
@@ -1459,17 +1480,16 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     /* Initialize app data */
     if (security == WIFI_PROV_SECURITY_0) {
         prov_ctx->mgr_info.capabilities.no_sec = true;
-    } else if (pop) {
-        prov_ctx->pop.len = strlen(pop);
-        prov_ctx->pop.data = malloc(prov_ctx->pop.len);
-        if (!prov_ctx->pop.data) {
-            ESP_LOGE(TAG, "Unable to allocate PoP data");
-            ret = ESP_ERR_NO_MEM;
-            goto err;
+    } else if (security == WIFI_PROV_SECURITY_1) {
+        if (wifi_prov_sec_params) {
+            prov_ctx->protocomm_sec_params = wifi_prov_sec_params;
+        } else {
+            prov_ctx->mgr_info.capabilities.no_pop = true;
         }
-        memcpy((void *)prov_ctx->pop.data, pop, prov_ctx->pop.len);
-    } else {
-        prov_ctx->mgr_info.capabilities.no_pop = true;
+    } else if (security == WIFI_PROV_SECURITY_2) {
+        if (wifi_prov_sec_params) {
+            prov_ctx->protocomm_sec_params = wifi_prov_sec_params;
+        }
     }
     prov_ctx->security = security;
 
@@ -1483,7 +1503,6 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     ret = esp_timer_create(&wifi_connect_timer_conf, &prov_ctx->wifi_connect_timer);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create Wi-Fi connect timer");
-        free((void *)prov_ctx->pop.data);
         goto err;
     }
 
@@ -1500,7 +1519,6 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to create auto-stop timer");
             esp_timer_delete(prov_ctx->wifi_connect_timer);
-            free((void *)prov_ctx->pop.data);
             goto err;
         }
     }
@@ -1516,7 +1534,6 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     if (ret != ESP_OK) {
         esp_timer_delete(prov_ctx->autostop_timer);
         esp_timer_delete(prov_ctx->wifi_connect_timer);
-        free((void *)prov_ctx->pop.data);
     }
     ACQUIRE_LOCK(prov_ctx_lock);
     if (ret == ESP_OK) {
