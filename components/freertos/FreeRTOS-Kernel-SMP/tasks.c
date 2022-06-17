@@ -709,11 +709,17 @@ static void prvYieldCore( BaseType_t xCoreID )
         {
             xYieldPendings[ xCoreID ] = pdTRUE;
         }
-        else
-        {
-            portYIELD_CORE( xCoreID );
-            pxCurrentTCBs[ xCoreID ]->xTaskRunState = taskTASK_YIELDING;
-        }
+
+#ifdef ESP_PLATFORM
+// TODO: IDF-5256
+        #if ( configNUM_CORES > 1 )
+            else
+            {
+                portYIELD_CORE( xCoreID );
+                pxCurrentTCBs[ xCoreID ]->xTaskRunState = taskTASK_YIELDING;
+            }
+        #endif /* ( configNUM_CORES > 1 ) */
+#endif /* ESP_PLATFORM */
     }
 }
 
