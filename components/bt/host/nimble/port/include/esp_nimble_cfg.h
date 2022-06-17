@@ -22,31 +22,6 @@
 #define IRAM_ATTR_64MCPU IRAM_ATTR
 #endif
 
-#define BLE_LL_CTRL_PROC_TIMEOUT_MS_N   (40000) /* ms */
-
-#define BLE_LL_CFG_NUM_HCI_CMD_PKTS_N   (1)
-
-#define BLE_LL_SCHED_ADV_MAX_USECS_N    (852)
-
-#define BLE_LL_SCHED_DIRECT_ADV_MAX_USECS_N (502)
-
-#define BLE_LL_SCHED_MAX_ADV_PDU_USECS_N    (376)
-
-#define BLE_LL_SUB_VERS_NR_N                (0x0000)
-
-#define BLE_LL_JITTER_USECS_N               (16)
-
-#define BLE_PHY_MAX_PWR_DBM_N               (10)
-
-#define BLE_LL_CONN_DEF_AUTH_PYLD_TMO_N     (3000)
-
-#if CONFIG_IDF_TARGET_ESP32H2
-#define RTC_FREQ_N                          (32768) /* in Hz */
-#else
-#define RTC_FREQ_N                          (32000) /* in Hz */
-#endif
-
-#define BLE_LL_TX_PWR_DBM_N                 (0)
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
 #define NIMBLE_CFG_CONTROLLER    0
@@ -1592,18 +1567,6 @@
 
 #ifndef MYNEWT_VAL_BLE_HCI_UART_STOP_BITS
 #define MYNEWT_VAL_BLE_HCI_UART_STOP_BITS (1)
-#endif
-
-#ifndef CONFIG_BLE_TX_CCA_ENABLED
-#define MYNEWT_VAL_BLE_TX_CCA_ENABLED   (0)
-#else
-#define MYNEWT_VAL_BLE_TX_CCA_ENABLED   (CONFIG_BLE_TX_CCA_ENABLED)
-#endif
-
-#ifndef CONFIG_BLE_CCA_RSSI_THRESH
-#define MYNEWT_VAL_BLE_CCA_RSSI_THRESH   (50)
-#else
-#define MYNEWT_VAL_BLE_CCA_RSSI_THRESH   (CONFIG_BLE_CCA_RSSI_THRESH)
 #endif
 
 

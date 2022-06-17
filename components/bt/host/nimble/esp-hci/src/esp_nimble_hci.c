@@ -14,6 +14,7 @@
 #include "nimble/nimble_port_freertos.h"
 #include "esp_nimble_hci.h"
 #include "esp_nimble_mem.h"
+#include "bt_osi_mem.h"
 #include "esp_bt.h"
 #include "freertos/semphr.h"
 #include "esp_compiler.h"
