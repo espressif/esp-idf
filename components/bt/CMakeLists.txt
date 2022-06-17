@@ -32,13 +32,14 @@ if(CONFIG_BT_ENABLED)
 
     list(APPEND priv_include_dirs
             common/btc/include
-            common/include)
+            common/include
+            porting/mem/
+        )
     list(APPEND include_dirs
          common/api/include/api
          common/btc/profile/esp/blufi/include
          common/btc/profile/esp/include
-         porting/mem/
-         )
+        )
 
 
     list(APPEND srcs "common/btc/core/btc_alarm.c"
@@ -467,9 +468,7 @@ if(CONFIG_BT_ENABLED)
 
 
 
-    if(CONFIG_IDF_TARGET_ESP32C2 OR CONFIG_IDF_TARGET_ESP32H2)
-
-        if(CONFIG_BT_CONTROLLER_ENABLED)
+    if(CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
             list(APPEND srcs
                     "porting/npl/freertos/src/npl_os_freertos.c"
                     "porting/nimble/src/os_msys_init.c"
@@ -477,40 +476,38 @@ if(CONFIG_BT_ENABLED)
 
             list(APPEND include_dirs
                     porting/include
-                    porting/mem/
                     porting/nimble/include
                     porting/npl/freertos/include
                     porting/transport/include
             )
-        endif()
 
-        if(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
-            list(APPEND srcs
-                    "porting/transport/uart/hci_uart.c"
-                )
-        endif()
+            if(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
+                list(APPEND srcs
+                        "porting/transport/uart/hci_uart.c"
+                    )
+            endif()
+    endif()
 
 
-        if(NOT (CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS))
-            list(APPEND include_dirs
+    if(NOT (CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS))
+        list(APPEND include_dirs
                 porting/ext/tinycrypt/include
-                )
-            list(APPEND srcs "porting/ext/tinycrypt/src/utils.c"
-                    "porting/ext/tinycrypt/src/sha256.c"
-                    "porting/ext/tinycrypt/src/ecc.c"
-                    "porting/ext/tinycrypt/src/ctr_prng.c"
-                    "porting/ext/tinycrypt/src/ctr_mode.c"
-                    "porting/ext/tinycrypt/src/aes_decrypt.c"
-                    "porting/ext/tinycrypt/src/aes_encrypt.c"
-                    "porting/ext/tinycrypt/src/ccm_mode.c"
-                    "porting/ext/tinycrypt/src/ecc_dsa.c"
-                    "porting/ext/tinycrypt/src/cmac_mode.c"
-                    "porting/ext/tinycrypt/src/ecc_dh.c"
-                    "porting/ext/tinycrypt/src/hmac_prng.c"
-                    "porting/ext/tinycrypt/src/ecc_platform_specific.c"
-                    "porting/ext/tinycrypt/src/hmac.c"
-                    "porting/ext/tinycrypt/src/cbc_mode.c")
-        endif()
+            )
+        list(APPEND srcs "porting/ext/tinycrypt/src/utils.c"
+                "porting/ext/tinycrypt/src/sha256.c"
+                "porting/ext/tinycrypt/src/ecc.c"
+                "porting/ext/tinycrypt/src/ctr_prng.c"
+                "porting/ext/tinycrypt/src/ctr_mode.c"
+                "porting/ext/tinycrypt/src/aes_decrypt.c"
+                "porting/ext/tinycrypt/src/aes_encrypt.c"
+                "porting/ext/tinycrypt/src/ccm_mode.c"
+                "porting/ext/tinycrypt/src/ecc_dsa.c"
+                "porting/ext/tinycrypt/src/cmac_mode.c"
+                "porting/ext/tinycrypt/src/ecc_dh.c"
+                "porting/ext/tinycrypt/src/hmac_prng.c"
+                "porting/ext/tinycrypt/src/ecc_platform_specific.c"
+                "porting/ext/tinycrypt/src/hmac.c"
+                "porting/ext/tinycrypt/src/cbc_mode.c")
     endif()
 
     if(CONFIG_BT_NIMBLE_ENABLED)
@@ -601,7 +598,7 @@ if(CONFIG_BT_ENABLED)
                 host/nimble/port/include
             )
 
-        if(NOT((CONFIG_IDF_TARGET_ESP32C2 OR CONFIG_IDF_TARGET_ESP32H2) AND CONFIG_BT_CONTROLLER_ENABLED))
+        if(NOT CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
             list(APPEND srcs
                     "host/nimble/nimble/porting/nimble/src/endian.c"
                     "host/nimble/nimble/porting/nimble/src/os_mempool.c"
@@ -625,8 +622,6 @@ if(CONFIG_BT_ENABLED)
                 host/nimble/esp-hci/include
             )
         endif()
-
-
 
         list(APPEND srcs
                     "common/btc/profile/esp/blufi/nimble_host/esp_blufi.c")

@@ -20,6 +20,7 @@
 #ifndef _NIMBLE_PORT_H
 #define _NIMBLE_PORT_H
 
+#include "esp_err.h"
 #include "nimble/nimble_npl.h"
 
 #define NIMBLE_CORE (CONFIG_BT_NIMBLE_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_NIMBLE_PINNED_TO_CORE : tskNO_AFFINITY)
@@ -42,7 +43,6 @@ int nimble_port_stop(void);
 
 struct ble_npl_eventq *nimble_port_get_dflt_eventq(void);
 
-struct ble_hs_cfg;
 esp_err_t esp_nimble_init();
 esp_err_t esp_nimble_enable(void *host_task);
 
