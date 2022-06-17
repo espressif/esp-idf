@@ -27,7 +27,7 @@ static volatile bool flag;
 #define MAX_YIELD_COUNT 10000
 #else
 //TODO: IDF-5081
-#define MAX_YIELD_COUNT 15000
+#define MAX_YIELD_COUNT 17000
 #endif // CONFIG_FREERTOS_SMP
 
 
