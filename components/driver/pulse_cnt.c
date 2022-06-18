@@ -22,6 +22,7 @@
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
 #include "soc/pcnt_periph.h"
+#include "soc/gpio_pins.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
 #include "hal/gpio_hal.h"
@@ -556,11 +557,22 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
         esp_rom_gpio_connect_in_signal(config->edge_gpio_num,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
                                        config->flags.invert_edge_input);
+    } else {
+        // using virtual IO
+        esp_rom_gpio_connect_in_signal(config->flags.virt_edge_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
+                                       config->flags.invert_edge_input);
     }
+
     if (config->level_gpio_num >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << config->level_gpio_num;
         ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config level GPIO failed");
         esp_rom_gpio_connect_in_signal(config->level_gpio_num,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
+                                       config->flags.invert_level_input);
+    } else {
+        // using virtual IO
+        esp_rom_gpio_connect_in_signal(config->flags.virt_level_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
                                        config->flags.invert_level_input);
     }

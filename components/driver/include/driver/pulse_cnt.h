@@ -70,10 +70,12 @@ typedef struct {
     int edge_gpio_num;  /*!< GPIO number used by the edge signal, input mode with pull up enabled. Set to -1 if unused */
     int level_gpio_num; /*!< GPIO number used by the level signal, input mode with pull up enabled. Set to -1 if unused */
     struct {
-        uint32_t invert_edge_input: 1;  /*!< Invert the input edge signal */
-        uint32_t invert_level_input: 1; /*!< Invert the input level signal */
-        uint32_t io_loop_back: 1;       /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-    } flags;                            /*!< Channel config flags */
+        uint32_t invert_edge_input: 1;   /*!< Invert the input edge signal */
+        uint32_t invert_level_input: 1;  /*!< Invert the input level signal */
+        uint32_t virt_edge_io_level: 1;  /*!< Virtual edge IO level, 0: low, 1: high. Only valid when edge_gpio_num is set to -1 */
+        uint32_t virt_level_io_level: 1; /*!< Virtual level IO level, 0: low, 1: high. Only valid when level_gpio_num is set to -1 */
+        uint32_t io_loop_back: 1;        /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+    } flags;                             /*!< Channel config flags */
 } pcnt_chan_config_t;
 
 /**
