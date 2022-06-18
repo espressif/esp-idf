@@ -276,6 +276,37 @@ void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base,
  */
 esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif);
 
+
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+/**
+ * @brief Add a port to the bridge
+ *
+ * @param esp_netif_br Handle to bridge esp-netif instance
+ * @param esp_netif_port Handle to port esp-netif instance
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_bridge_add_port(esp_netif_t *esp_netif_br, esp_netif_t *esp_netif_port);
+
+/**
+ * @brief Add a static entry to bridge forwarding database
+ *
+ * @param esp_netif_br Handle to bridge esp-netif instance
+ * @param addr MAC address entry to be added
+ * @param ports_mask Port(s) mask where to be the address forwarded
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_bridge_fdb_add(esp_netif_t *esp_netif_br, uint8_t *addr, uint64_t ports_mask);
+
+/**
+ * @brief Remove a static entry from bridge forwarding database
+ *
+ * @param esp_netif_br Handle to bridge esp-netif instance
+ * @param addr MAC address entry to be removed
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_bridge_fdb_remove(esp_netif_t *esp_netif_br, uint8_t *addr);
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
+
 /**
  * @}
  */

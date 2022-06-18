@@ -56,4 +56,12 @@ menu "ESP NETIF Adapter"
             Maximum number of frames queued in opened File descriptor. Once the queue is full, the newly arriving
             frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue
             management).
+
+    config ESP_NETIF_BRIDGE_EN
+        depends on ESP_NETIF_TCPIP_LWIP
+        bool "Enable LwIP IEEE 802.1D bridge"
+        default n
+        help
+            Enable LwIP IEEE 802.1D bridge support in ESP-NETIF. Note that "Number of clients store data in netif"
+            (LWIP_NUM_NETIF_CLIENT_DATA) option needs to be properly configured to be LwIP bridge avaiable!
 endmenu

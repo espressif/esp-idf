@@ -661,6 +661,22 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  */
 #define LWIP_NETIF_TX_SINGLE_PBUF       1
 
+/**
+ * LWIP_NUM_NETIF_CLIENT_DATA: Number of clients that may store
+ * data in client_data member array of struct netif (max. 256).
+ */
+#ifdef CONFIG_LWIP_NUM_NETIF_CLIENT_DATA
+#define LWIP_NUM_NETIF_CLIENT_DATA      CONFIG_LWIP_NUM_NETIF_CLIENT_DATA
+#endif
+
+/**
+ * BRIDGEIF_MAX_PORTS: this is used to create a typedef used for forwarding
+ * bit-fields: the number of bits required is this + 1 (for the internal/cpu port)
+ */
+#ifdef CONFIG_LWIP_BRIDGEIF_MAX_PORTS
+#define BRIDGEIF_MAX_PORTS       CONFIG_LWIP_BRIDGEIF_MAX_PORTS
+#endif
+
 /*
    ------------------------------------
    ---------- LOOPIF options ----------
@@ -1327,6 +1343,27 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * TCP_OOSEQ_DEBUG: Enable debugging in tcpin.c for OOSEQ.
  */
 #define TCP_OOSEQ_DEBUG                 LWIP_DBG_OFF
+
+/**
+ * BRIDGEIF_DEBUG: Enable generic debugging for bridge.
+ */
+#ifdef CONFIG_LWIP_BRIDGEIF_DEBUG
+#define BRIDGEIF_DEBUG                  LWIP_DBG_ON
+#endif
+
+/**
+ * BRIDGEIF_FDB_DEBUG: Enable debugging for bridge FDB.
+ */
+#ifdef CONFIG_LWIP_BRIDGEIF_FDB_DEBUG
+#define BRIDGEIF_FDB_DEBUG              LWIP_DBG_ON
+#endif
+
+/**
+ * BRIDGEIF_FW_DEBUG: Enable debugging for bridge forwarding.
+ */
+#ifdef CONFIG_LWIP_BRIDGEIF_FW_DEBUG
+#define BRIDGEIF_FW_DEBUG               LWIP_DBG_ON
+#endif
 
 /*
    --------------------------------------
