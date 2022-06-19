@@ -100,6 +100,12 @@ menu "Example Connection Configuration"
             Choose this option to connect with Ethernet
 
     if EXAMPLE_CONNECT_ETHERNET
+        config EXAMPLE_ETHERNET_EMAC_TASK_STACK_SIZE
+            int "emac_rx task stack size"
+            default 2048
+            help
+                This set stack size for emac_rx task
+
         config EXAMPLE_USE_SPI_ETHERNET
             bool
 
