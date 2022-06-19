@@ -59,7 +59,7 @@ void rtc_init(rtc_config_t cfg)
     /* Reset RTC bias to default value (needed if waking up from deep sleep) */
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_SLP, RTC_CNTL_DBIAS_1V10);
-    /* Recover default wait cycle for touch or COCPU after wakeup from deep sleep. */
+    /* Set the wait time to the default value. */
     REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT);
 
     if (cfg.clkctl_init) {
