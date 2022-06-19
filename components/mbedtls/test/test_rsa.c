@@ -434,27 +434,42 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 * The allocations made by ESP32-S2 (944 bytes) and ESP32-S3 are the same,
 * except for the JTAG lock (92 + 944 > 1024).
 */
+#if CONFIG_FREERTOS_SMP // IDF-5260
+TEST_CASE("test performance RSA key operations", "[bignum][leaks=1088][timeout=60]")
+#else
 TEST_CASE("test performance RSA key operations", "[bignum][leaks=1088]")
+#endif
 {
     for (int keysize = 2048; keysize <= SOC_RSA_MAX_BIT_LEN; keysize += 1024) {
         rsa_key_operations(keysize, true, false);
     }
 }
 
+#if CONFIG_FREERTOS_SMP // IDF-5260
+TEST_CASE("test RSA-3072 calculations", "[bignum][timeout=60]")
+#else
 TEST_CASE("test RSA-3072 calculations", "[bignum]")
+#endif
 {
     // use pre-genrated keys to make the test run a bit faster
     rsa_key_operations(3072, false, false);
 }
 
+#if CONFIG_FREERTOS_SMP // IDF-5260
+TEST_CASE("test RSA-2048 calculations", "[bignum][timeout=60]")
+#else
 TEST_CASE("test RSA-2048 calculations", "[bignum]")
+#endif
 {
     // use pre-genrated keys to make the test run a bit faster
     rsa_key_operations(2048, false, false);
 }
 
-
+#if CONFIG_FREERTOS_SMP // IDF-5260
+TEST_CASE("test RSA-4096 calculations", "[bignum][timeout=60]")
+#else
 TEST_CASE("test RSA-4096 calculations", "[bignum]")
+#endif
 {
     // use pre-genrated keys to make the test run a bit faster
     rsa_key_operations(4096, false, false);
