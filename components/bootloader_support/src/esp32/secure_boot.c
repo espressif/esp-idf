@@ -29,7 +29,7 @@
 
 #include "sdkconfig.h"
 
-#include "bootloader_flash.h"
+#include "bootloader_flash_priv.h"
 #include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"

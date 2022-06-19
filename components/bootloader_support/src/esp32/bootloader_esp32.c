@@ -23,6 +23,7 @@
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
+#include "bootloader_flash_priv.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
@@ -259,7 +260,7 @@ static esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();
@@ -267,6 +268,8 @@ static esp_err_t bootloader_init_spi_flash(void)
 
     print_flash_info(&bootloader_image_hdr);
     update_flash_config(&bootloader_image_hdr);
+    //ensure the flash is write-protected
+    bootloader_enable_wp();
     return ESP_OK;
 }
 
@@ -452,6 +455,11 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
     // update flash ID
     bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        goto err;
+    }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         goto err;
