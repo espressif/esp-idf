@@ -932,6 +932,7 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
 
         gattc_if = disconnect->client_if;
         param.disconnect.reason = disconnect->reason;
+        param.disconnect.link_role = disconnect->link_role;
         param.disconnect.conn_id = BTC_GATT_GET_CONN_ID(disconnect->conn_id);
         memcpy(param.disconnect.remote_bda, disconnect->remote_bda, sizeof(esp_bd_addr_t));
         btc_gattc_cb_to_app(ESP_GATTC_DISCONNECT_EVT, gattc_if, &param);

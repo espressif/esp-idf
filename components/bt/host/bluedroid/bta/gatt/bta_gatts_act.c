@@ -996,17 +996,18 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, bda);
             }
         }
+
         if(evt == BTA_GATTS_CONNECT_EVT) {
             tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
             if(p_lcb != NULL) {
                 cb_data.conn.conn_params.interval = p_lcb->current_used_conn_interval;
                 cb_data.conn.conn_params.latency = p_lcb->current_used_conn_latency;
                 cb_data.conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
-                cb_data.conn.link_role = p_lcb->link_role;
             }else {
                 APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
             }
         }
+        cb_data.conn.link_role = l2cu_find_link_role_by_bd_addr(bda, BT_TRANSPORT_LE);
         cb_data.conn.conn_id = conn_id;
         cb_data.conn.server_if = gatt_if;
         cb_data.conn.reason = reason;

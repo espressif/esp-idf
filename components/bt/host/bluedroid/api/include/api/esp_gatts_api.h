@@ -206,6 +206,7 @@ typedef union {
      */
     struct gatts_disconnect_evt_param {
         uint16_t conn_id;               /*!< Connection id */
+        uint8_t link_role;              /*!< Link role : master role = 0  ; slave role = 1*/
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
         esp_gatt_conn_reason_t reason;  /*!< Indicate the reason of disconnection */
     } disconnect;                       /*!< Gatt server callback param of ESP_GATTS_DISCONNECT_EVT */
