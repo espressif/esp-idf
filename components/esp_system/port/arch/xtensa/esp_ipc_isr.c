@@ -105,6 +105,13 @@ void esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd);
  */
 void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
 {
+#if CONFIG_FREERTOS_SMP
+    /*
+    Temporary workaround to prevent deadlocking on the SMP FreeRTOS kernel lock after stalling the other CPU.
+    See IDF-5257
+    */
+    taskENTER_CRITICAL();
+#endif
     if (s_stall_state == STALL_STATE_RUNNING) {
 #if CONFIG_FREERTOS_SMP
         BaseType_t intLvl = portDISABLE_INTERRUPTS();
@@ -145,6 +152,13 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
             assert(0);
         }
     }
+#if CONFIG_FREERTOS_SMP
+    /*
+    Temporary workaround to prevent deadlocking on the SMP FreeRTOS kernel lock after stalling the other CPU.
+    See IDF-5257
+    */
+    taskEXIT_CRITICAL();
+#endif
 }
 
 void IRAM_ATTR esp_ipc_isr_stall_pause(void)
