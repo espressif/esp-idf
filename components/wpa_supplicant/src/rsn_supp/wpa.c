@@ -54,13 +54,13 @@ u8 assoc_ie_buf[ASSOC_IE_LEN+2];
 
 void set_assoc_ie(u8 * assoc_buf);
 
-int wpa_sm_set_key(struct install_key *sm, enum wpa_alg alg,
+static int wpa_sm_set_key(struct install_key *sm, enum wpa_alg alg,
         u8 *addr, int key_idx, int set_tx,
         u8 *seq, size_t seq_len,
         u8 *key, size_t key_len,
-        int  key_entry_valid);
+        enum key_flag key_flag);
 
-int wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, int key_entry_valid);
+static int wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, enum key_flag key_flag);
 
 void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len);
 
@@ -658,8 +658,7 @@ failed:
     wpa_sm_key_request(sm, 0, 1);
 }
 
-
-int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
+static int wpa_supplicant_install_ptk(struct wpa_sm *sm, enum key_flag key_flag)
 {
     int keylen;
     enum wpa_alg alg;
@@ -691,11 +690,8 @@ int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
         return -1;
     }
 
-    //now only use keyentry 0 for pairwise key
-    sm->key_entry_valid = esp_wifi_get_sta_hw_key_idx_internal(0); //KEY_IDX_STA_PTK
-
     if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
-               (u8 *) sm->ptk.tk1, keylen,sm->key_entry_valid) < 0) {
+               (u8 *) sm->ptk.tk1, keylen,KEY_FLAG_PAIRWISE | key_flag) < 0) {
         #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Failed to set PTK to the "
                "driver (alg=%d keylen=%d bssid=" MACSTR ")",
@@ -835,13 +831,12 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
         memcpy(gtk_buf + 24, gd->gtk + 24, 8);
         _gtk = gtk_buf;
     }
-    //now only use keycache entry1 for group key
-    sm->key_entry_valid = esp_wifi_get_sta_hw_key_idx_internal(gd->keyidx);
+
     if (sm->pairwise_cipher == WPA_CIPHER_NONE) {
         if (wpa_sm_set_key(&(sm->install_gtk), gd->alg,
                    sm->bssid, //(u8 *) "\xff\xff\xff\xff\xff\xff",
                    gd->keyidx, 1, key_rsc, gd->key_rsc_len,
-                   _gtk, gd->gtk_len,sm->key_entry_valid) < 0) {
+                   _gtk, gd->gtk_len, (KEY_FLAG_GROUP | KEY_FLAG_RX | KEY_FLAG_TX)) < 0) {
             #ifdef DEBUG_PRINT
             wpa_printf(MSG_DEBUG, "WPA: Failed to set "
                    "GTK to the driver (Group only).");
@@ -851,7 +846,7 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
     } else if (wpa_sm_set_key(&(sm->install_gtk), gd->alg,
                   sm->bssid, //(u8 *) "\xff\xff\xff\xff\xff\xff",
                   gd->keyidx, gd->tx, key_rsc, gd->key_rsc_len,
-                  _gtk, gd->gtk_len, sm->key_entry_valid) < 0) {
+                  _gtk, gd->gtk_len, KEY_FLAG_GROUP | KEY_FLAG_RX)) {
         #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Failed to set GTK to "
                "the driver (alg=%d keylen=%d keyidx=%d)",
@@ -871,8 +866,7 @@ static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd
     u8 ifx;
     int alg;
     u8 bssid[6];
-    int keyidx;
-    int hw_keyidx;
+    int keyidx = gd->keyidx;
 
     #ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "WPA: Judge GTK: (keyidx=%d len=%d).", gd->keyidx, gd->gtk_len);
@@ -886,11 +880,10 @@ static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd
         _gtk = gtk_buf;
     }
 
-    hw_keyidx = esp_wifi_get_sta_hw_key_idx_internal(gd->keyidx);
-    if (wpa_sm_get_key(&ifx, &alg, bssid, &keyidx, gtk_get, gd->gtk_len, hw_keyidx - 2) == 0) {
+    if (wpa_sm_get_key(&ifx, &alg, bssid, &keyidx, gtk_get, gd->gtk_len, KEY_FLAG_GROUP) == 0) {
         if (ifx == 0 && alg == gd->alg && memcmp(bssid, sm->bssid, ETH_ALEN) == 0 &&
         		memcmp(_gtk, gtk_get, gd->gtk_len) == 0) {
-            wpa_printf(MSG_DEBUG, "GTK %d is already in use in entry %d, it may be an attack, ignore it.", gd->keyidx, hw_keyidx);
+            wpa_printf(MSG_DEBUG, "GTK %d is already in use, it may be an attack, ignore it.", gd->keyidx);
             return true;
         }
     }
@@ -1278,6 +1271,9 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
         goto failed;
     }
 
+    if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL) {
+        wpa_supplicant_install_ptk(sm, KEY_FLAG_RX);
+    }
     /*after txover, callback will continue run remain task*/
     if (wpa_supplicant_send_4_of_4(sm, sm->bssid, key, ver, key_info,
                        NULL, 0, &sm->ptk)) {
@@ -1290,13 +1286,41 @@ failed:
     wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
 }
 
+static int wpa_supplicant_activate_ptk(struct wpa_sm *sm)
+{
+    int keylen;
+    enum wpa_alg alg;
+
+    alg = wpa_cipher_to_alg(sm->pairwise_cipher);
+    keylen = wpa_cipher_key_len(sm->pairwise_cipher);
+
+    if (alg == WIFI_WPA_ALG_NONE) {
+        wpa_printf(MSG_DEBUG, "WPA: Pairwise Cipher Suite: "
+               "NONE - do not use pairwise keys");
+        return 0;
+    }
+
+    wpa_printf(MSG_DEBUG,
+            "WPA: Activate PTK bssid=" MACSTR ")",
+            MAC2STR(sm->bssid));
+
+    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq,
+                       WPA_KEY_RSC_LEN, sm->ptk.tk1, keylen,
+                       (KEY_FLAG_MODIFY | KEY_FLAG_PAIRWISE | KEY_FLAG_RX | KEY_FLAG_TX)) < 0) {
+            wpa_printf(MSG_WARNING,
+                    "WPA: Failed to activate PTK for TX (idx=%d bssid="
+                    MACSTR ")", 0, MAC2STR(sm->bssid));
+            return -1;
+    }
+    return 0;
+}
 
   int   wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
 {
        u16 key_info=sm->key_info;
 
     if (sm->key_install && key_info & WPA_KEY_INFO_INSTALL) {
-        if (wpa_supplicant_install_ptk(sm))
+        if (wpa_supplicant_activate_ptk(sm))
             goto failed;
     }
     else if (sm->key_install == false) {
@@ -2076,7 +2100,6 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
     sm->get_ppkey = ppgetkey;
     sm->wpa_deauthenticate = wpa_deauth;
     sm->wpa_neg_complete = wpa_neg_complete;
-    sm->key_entry_valid = 0;
     sm->key_install = false;
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
@@ -2254,7 +2277,7 @@ wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
         u8 *addr, int key_idx, int set_tx,
         u8 *seq, size_t seq_len,
         u8 *key, size_t key_len,
-        int  key_entry_valid)
+        enum key_flag key_flag)
 {
     struct wpa_sm *sm = &gWpaSm;
 
@@ -2271,15 +2294,15 @@ wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
     key_sm->set_tx = set_tx;
     memcpy(key_sm->key, key, key_len);
 
-    sm->install_ppkey(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_entry_valid);
+    sm->install_ppkey(alg, addr, key_idx, set_tx, seq, seq_len, key, key_len, key_flag);
     return 0;
 }
 
   int
-wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, int key_entry_valid)
+wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t key_len, enum key_flag key_flag)
 {
     struct wpa_sm *sm = &gWpaSm;
-    return sm->get_ppkey(ifx, alg, addr, key_idx, key, key_len, key_entry_valid);
+    return sm->get_ppkey(ifx, alg, addr, key_idx, key, key_len, key_flag);
 }
 
 void wpa_supplicant_clr_countermeasures(u16 *pisunicast)
