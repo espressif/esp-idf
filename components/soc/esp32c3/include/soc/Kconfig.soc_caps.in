@@ -762,3 +762,7 @@ config SOC_WIFI_FTM_SUPPORT
 config SOC_WIFI_GCMP_SUPPORT
     bool
     default y
+
+config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default y

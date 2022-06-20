@@ -380,6 +380,7 @@
 #define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
 
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
-#define SOC_WIFI_HW_TSF                 (0)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM Support */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_HW_TSF                 (0)    /*!< Hardware TSF is not supported */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
