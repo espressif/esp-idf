@@ -361,3 +361,4 @@
 #define SOC_WIFI_FTM_SUPPORT            (1)    /*!< Support FTM */
 #define SOC_WIFI_GCMP_SUPPORT           (1)    /*!< Support GCMP(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */

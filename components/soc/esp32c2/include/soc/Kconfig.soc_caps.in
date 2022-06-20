@@ -570,3 +570,7 @@ config SOC_WIFI_GCMP_SUPPORT
 config SOC_WIFI_WAPI_SUPPORT
     bool
     default n
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default n
