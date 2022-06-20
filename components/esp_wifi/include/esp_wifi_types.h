@@ -254,7 +254,8 @@ typedef struct {
     uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
     uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
     uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
-    uint32_t reserved:27;         /**< Reserved for future feature set */
+    uint32_t sae_pwe_h2e:2;       /**< Whether SAE hash to element is enabled */
+    uint32_t reserved:25;         /**< Reserved for future feature set */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.

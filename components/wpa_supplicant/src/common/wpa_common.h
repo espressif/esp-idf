@@ -337,6 +337,7 @@ struct wpa_ie_data {
 	size_t num_pmkid;
 	const u8 *pmkid;
 	int mgmt_group_cipher;
+	uint8_t rsnxe_capa;
 };
 
 struct rsn_sppamsdu_sup {
@@ -372,6 +373,8 @@ int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			 struct wpa_ie_data *data);
 int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
 		     struct wpa_ie_data *data);
+int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
+			    struct wpa_ie_data *data);
 
 int wpa_compare_rsn_ie(int ft_initial_assoc,
 		       const u8 *ie1, size_t ie1len,
