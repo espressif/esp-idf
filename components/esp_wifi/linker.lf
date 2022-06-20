@@ -147,8 +147,9 @@ entries:
     if ESP_WIFI_SLP_IRAM_OPT =y:
         esp_adapter:wifi_clock_enable_wrapper (noflash)
         esp_adapter:wifi_clock_disable_wrapper (noflash)
-        wifi_init:wifi_apb80m_request (noflash)
-        wifi_init:wifi_apb80m_release (noflash)
+        if PM_ENABLE = y:
+            wifi_init:wifi_apb80m_request (noflash)
+            wifi_init:wifi_apb80m_release (noflash)
 
 [mapping:driver_wifi_pm]
 archive: libdriver.a
