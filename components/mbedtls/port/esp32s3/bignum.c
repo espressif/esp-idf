@@ -16,6 +16,7 @@
 #include "soc/system_reg.h"
 #include "soc/periph_defs.h"
 #include <sys/param.h>
+#include "esp_crypto_lock.h"
 
 size_t esp_mpi_hardware_words(size_t words)
 {
@@ -24,6 +25,8 @@ size_t esp_mpi_hardware_words(size_t words)
 
 void esp_mpi_enable_hardware_hw_op( void )
 {
+    esp_crypto_mpi_lock_acquire();
+
     /* Enable RSA hardware */
     periph_module_enable(PERIPH_RSA_MODULE);
 
@@ -43,6 +46,8 @@ void esp_mpi_disable_hardware_hw_op( void )
 
     /* Disable RSA hardware */
     periph_module_disable(PERIPH_RSA_MODULE);
+
+    esp_crypto_mpi_lock_release();
 }
 
 void esp_mpi_interrupt_enable( bool enable )
