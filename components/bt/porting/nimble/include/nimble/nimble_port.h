@@ -43,11 +43,11 @@ int nimble_port_stop(void);
 
 struct ble_npl_eventq *nimble_port_get_dflt_eventq(void);
 
-esp_err_t esp_nimble_init();
+esp_err_t esp_nimble_init(void);
 esp_err_t esp_nimble_enable(void *host_task);
 
-esp_err_t esp_nimble_disable();
-esp_err_t esp_nimble_deinit();
+esp_err_t esp_nimble_disable(void);
+esp_err_t esp_nimble_deinit(void);
 
 
 #ifdef __cplusplus

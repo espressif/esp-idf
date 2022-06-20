@@ -19,7 +19,7 @@ static struct ble_npl_eventq g_eventq_dflt;
 static struct ble_npl_sem ble_hs_stop_sem;
 static struct ble_npl_event ble_hs_ev_stop;
 
-esp_err_t esp_nimble_init()
+esp_err_t esp_nimble_init(void)
 {
 #if !SOC_ESP_NIMBLE_CONTROLLER
     /* Initialize the function pointers for OS porting */
@@ -57,7 +57,7 @@ esp_err_t esp_nimble_enable(void *host_task)
 
 }
 
-esp_err_t esp_nimble_disable()
+esp_err_t esp_nimble_disable(void)
 {
     esp_err_t err = ESP_OK;
     ble_npl_sem_init(&ble_hs_stop_sem, 0);
@@ -86,7 +86,7 @@ esp_err_t esp_nimble_disable()
 
 }
 
-esp_err_t esp_nimble_deinit()
+esp_err_t esp_nimble_deinit(void)
 {
 #if !(SOC_ESP_NIMBLE_CONTROLLER && CONFIG_BT_CONTROLLER_ENABLED)
     ble_npl_eventq_deinit(&g_eventq_dflt);

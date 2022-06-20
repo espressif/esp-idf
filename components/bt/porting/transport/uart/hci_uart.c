@@ -130,7 +130,7 @@ int hci_uart_config(int port_num, int32_t baud_rate, uint8_t data_bits, uint8_t 
     intr_alloc_flags = ESP_INTR_FLAG_IRAM;
 
     printf("set uart pin tx:%d, rx:%d.\n", HCI_UART_TX_PIN, HCI_UART_RX_PIN);
-    printf("set rts:%d, cts:%d.\n", HCI_UART_RTS_PIN, HCI_UART_RTS_PIN);
+    printf("set rts:%d, cts:%d.\n", HCI_UART_RTS_PIN, HCI_UART_CTS_PIN);
     printf("set baud_rate:%d.\n", baud_rate);
 
     ESP_ERROR_CHECK(uart_driver_delete(port_num));
