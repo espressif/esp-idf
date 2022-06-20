@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "sdkconfig.h"
 #include "nvs.hpp"
 #include "nvs_flash.h"
@@ -23,6 +15,7 @@
 #include "nvs_handle_simple.hpp"
 #include "esp_err.h"
 #include <esp_rom_crc.h>
+#include "nvs_internal.h"
 
 // Uncomment this line to force output from this module
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -752,7 +745,7 @@ extern "C" nvs_iterator_t nvs_entry_find(const char *part_name, const char *name
 extern "C" nvs_iterator_t nvs_entry_next(nvs_iterator_t it)
 {
     Lock lock;
-    assert(it);
+    NVS_ASSERT_OR_RETURN(it, nullptr);
 
     bool entryFound = it->storage->nextEntry(it);
     if (!entryFound) {
