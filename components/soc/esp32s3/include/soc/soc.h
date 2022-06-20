@@ -266,7 +266,8 @@
 #define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
-#define ETS_CACHEERR_INUM                       25
+#define ETS_MEMACCESS_ERR_INUM                  25
+#define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
 #define ETS_IPC_ISR_INUM                        28
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK

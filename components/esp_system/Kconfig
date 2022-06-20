@@ -133,7 +133,7 @@ menu "ESP System Settings"
             bool
             default y if IDF_TARGET_ESP32S2
             default y if IDF_TARGET_ESP32C3
-            default y if IDF_TARGET_ESP32H2
+            default y if IDF_TARGET_ESP32S3
 
         config ESP_SYSTEM_MEMPROT_FEATURE
             bool "Enable memory protection"

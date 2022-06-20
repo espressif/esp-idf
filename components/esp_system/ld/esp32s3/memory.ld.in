@@ -101,11 +101,6 @@ MEMORY
   rtc_iram_seg(RWX) :                org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 
   /**
-   * RTC fast memory (same block as above), viewed from data bus
-   */
-  rtc_data_seg(RW) :                 org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
-
-  /**
    * RTC slow memory (data accessible). Persists over deep sleep.
    * Start of RTC slow memory is reserved for ULP co-processor code + data, if enabled.
    */
@@ -133,6 +128,10 @@ _static_data_end = _bss_end;
 _heap_end = 0x40000000;
 
 _data_seg_org = ORIGIN(rtc_data_seg);
+
+
+/* RTC fast memory shares the same range for both data and instructions */
+REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
 
 #if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
 REGION_ALIAS("rtc_data_location", rtc_data_seg );

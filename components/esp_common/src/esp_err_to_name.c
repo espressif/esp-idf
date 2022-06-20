@@ -800,6 +800,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MEMPROT_AREA_INVALID
     ERR_TBL_IT(ESP_ERR_MEMPROT_AREA_INVALID),                   /* 53255 0xd007 */
 #   endif
+#   ifdef      ESP_ERR_MEMPROT_CPUID_INVALID
+    ERR_TBL_IT(ESP_ERR_MEMPROT_CPUID_INVALID),                  /* 53256 0xd008 */
+#   endif
     // components/tcp_transport/include/esp_transport.h
 #   ifdef      ESP_ERR_TCP_TRANSPORT_BASE
     ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_BASE),                     /* 57344 0xe000 Starting number of TCP Transport error codes */
