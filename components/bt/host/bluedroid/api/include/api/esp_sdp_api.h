@@ -30,8 +30,8 @@ typedef enum {
  * @brief SDP callback function events
  */
 typedef enum {
-    ESP_SDP_INIT_EVT                    = 0,                /*!< When SDP is inited, the event comes */
-    ESP_SDP_DEINIT_EVT                  = 1,                /*!< When SDP is deinited, the event comes */
+    ESP_SDP_INIT_EVT                    = 0,                /*!< When SDP is initialized, the event comes */
+    ESP_SDP_DEINIT_EVT                  = 1,                /*!< When SDP is deinitialized, the event comes */
     ESP_SDP_SEARCH_COMP_EVT             = 2,                /*!< When SDP search complete, the event comes */
     ESP_SDP_CREATE_RECORD_COMP_EVT      = 3,                /*!< When create SDP records complete, the event comes */
     ESP_SDP_REMOVE_RECORD_COMP_EVT      = 4,                /*!< When remove a SDP record complete, the event comes */
@@ -227,7 +227,7 @@ esp_err_t esp_sdp_deinit(void);
 /**
  * @brief       This function is called to performs service discovery for the services provided by the given peer device.
  *              When the operation is completed, the callback function will be called with ESP_SDP_SEARCH_COMP_EVT.
- *              This funciton must be called after esp_sdp_init() successful and before esp_sdp_deinit().
+ *              This function must be called after esp_sdp_init() successful and before esp_sdp_deinit().
  *
  * @param[in]   bd_addr:   Remote device bluetooth device address.
  * @param[in]   uuid:      Service UUID of the remote device.
@@ -241,7 +241,7 @@ esp_err_t esp_sdp_search_record(esp_bd_addr_t bd_addr, esp_bt_uuid_t uuid);
 /**
  * @brief       This function is called to create SDP records.
  *              When the operation is completed, the callback function will be called with ESP_SDP_CREATE_RECORD_COMP_EVT.
- *              This funciton must be called after esp_sdp_init() successful and before esp_sdp_deinit().
+ *              This function must be called after esp_sdp_init() successful and before esp_sdp_deinit().
  *
  * @param[in]   record:   The SDP record to create.
  *
@@ -254,7 +254,7 @@ esp_err_t esp_sdp_create_record(esp_bluetooth_sdp_record_t *record);
 /**
  * @brief       This function is called to remove a SDP record.
  *              When the operation is completed, the callback function will be called with ESP_SDP_REMOVE_RECORD_COMP_EVT.
- *              This funciton must be called after esp_sdp_init() successful and before esp_sdp_deinit().
+ *              This function must be called after esp_sdp_init() successful and before esp_sdp_deinit().
  *
  * @param[in]   record_handle:    The SDP record handle.
  *

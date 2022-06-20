@@ -215,7 +215,7 @@ typedef enum {
     ESP_GATT_UNKNOWN_ERROR          =   0xef,   /* 0xef */    /* relate to BTA_GATT_UNKNOWN_ERROR in bta/bta_gatt_api.h */
     ESP_GATT_CCC_CFG_ERR            =   0xfd,   /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */    /* relate to BTA_GATT_CCC_CFG_ERR in bta/bta_gatt_api.h */
     ESP_GATT_PRC_IN_PROGRESS        =   0xfe,   /* 0xFE Procedure Already in progress */  /* relate to BTA_GATT_PRC_IN_PROGRESS in bta/bta_gatt_api.h */
-    ESP_GATT_OUT_OF_RANGE           =   0xff,   /* 0xFFAttribute value out of range */    /* relate to BTA_GATT_OUT_OF_RANGE in bta/bta_gatt_api.h */
+    ESP_GATT_OUT_OF_RANGE           =   0xff,   /* 0xFF Attribute value out of range */    /* relate to BTA_GATT_OUT_OF_RANGE in bta/bta_gatt_api.h */
 } esp_gatt_status_t;
 
 /* relate to BTA_GATT_CONN_xxx in bta/bta_gatt_api.h */

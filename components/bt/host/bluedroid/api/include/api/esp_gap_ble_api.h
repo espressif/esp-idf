@@ -677,7 +677,7 @@ typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE                          (1 << 0) // Connectable advertising
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE                            (1 << 1) // Scannable advertising
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED                             (1 << 2) // Directed advertising
-#define ESP_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED                          (1 << 3) // High Duty Cycle Directed Connectable advertising (<= 3.75 ms Advertis- ing Interval)
+#define ESP_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED                          (1 << 3) // High Duty Cycle Directed Connectable advertising (<= 3.75 ms Advertising Interval)
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY                               (1 << 4) // Use legacy advertising PDUs
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_ANON_ADV                             (1 << 5) // Omit advertiser's address from all PDUs ("anonymous advertising")
 #define ESP_BLE_GAP_SET_EXT_ADV_PROP_INCLUDE_TX_PWR                       (1 << 6) // Include TxPower in the extended header of the advertising PDU
@@ -765,7 +765,7 @@ typedef struct {
     uint32_t interval_min;              /*!< ext adv minimum interval */
     uint32_t interval_max;              /*!< ext adv maximum interval */
     esp_ble_adv_channel_t channel_map;  /*!< ext adv channel map */
-    esp_ble_addr_type_t own_addr_type;  /*!< ext adv own addresss type */
+    esp_ble_addr_type_t own_addr_type;  /*!< ext adv own address type */
     esp_ble_addr_type_t peer_addr_type; /*!< ext adv peer address type */
     esp_bd_addr_t peer_addr;            /*!< ext adv peer address */
     esp_ble_adv_filter_t filter_policy; /*!< ext adv filter policy */
@@ -774,7 +774,7 @@ typedef struct {
     uint8_t max_skip;                   /*!< ext adv maximum skip */
     esp_ble_gap_phy_t secondary_phy;    /*!< ext adv secondary phy */
     uint8_t sid;                        /*!< ext adv sid */
-    bool scan_req_notif;                /*!< ext adv sacn request event notify */
+    bool scan_req_notif;                /*!< ext adv scan request event notify */
 } esp_ble_gap_ext_adv_params_t;
 
 /**
@@ -790,7 +790,7 @@ typedef struct {
 * @brief ext scan parameters
 */
 typedef struct {
-    esp_ble_addr_type_t own_addr_type;        /*!< ext scan own addresss type */
+    esp_ble_addr_type_t own_addr_type;        /*!< ext scan own address type */
     esp_ble_scan_filter_t filter_policy;      /*!< ext scan filter policy */
     esp_ble_scan_duplicate_t  scan_duplicate; /*!< ext scan duplicate scan */
     esp_ble_ext_scan_cfg_mask_t cfg_mask;     /*!< ext scan config mask */
@@ -1103,7 +1103,7 @@ typedef union {
      * @brief ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT
      */
     struct ble_ext_adv_scan_rsp_set_cmpl_evt_param {
-        esp_bt_status_t status;                      /*!< Indicate extend advertising sacn response data set status */
+        esp_bt_status_t status;                      /*!< Indicate extend advertising scan response data set status */
     } scan_rsp_set;                                  /*!< Event parameter of ESP_GAP_BLE_EXT_SCAN_RSP_DATA_SET_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_START_COMPLETE_EVT
@@ -1163,7 +1163,7 @@ typedef union {
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT
      */
     struct ble_period_adv_sync_cancel_cmpl_param {
-        esp_bt_status_t status;                  /*!< Indicate periodic advertising sync cancle status */
+        esp_bt_status_t status;                  /*!< Indicate periodic advertising sync cancel status */
     } period_adv_sync_cancel;                    /*!< Event parameter of ESP_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL_COMPLETE_EVT */
      /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT
@@ -1523,7 +1523,7 @@ esp_err_t esp_ble_gap_set_prefer_conn_params(esp_bd_addr_t bd_addr,
 esp_err_t esp_ble_gap_set_device_name(const char *name);
 
 /**
- * @brief          This function is called to get local used address and adress type.
+ * @brief          This function is called to get local used address and address type.
  *                 uint8_t *esp_bt_dev_get_address(void) get the public address
  *
  * @param[in]       local_used_addr - current local used ble address (six bytes)

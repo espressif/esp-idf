@@ -34,7 +34,7 @@ typedef enum {
     ESP_HIDH_HS_HID_NOT_READY,  /*!< handshake error : device not ready */
     ESP_HIDH_HS_INVALID_RPT_ID, /*!< handshake error : invalid report ID */
     ESP_HIDH_HS_TRANS_NOT_SPT,  /*!< handshake error : transaction not spt */
-    ESP_HIDH_HS_INVALID_PARAM,  /*!< handshake error : invalid paremter */
+    ESP_HIDH_HS_INVALID_PARAM,  /*!< handshake error : invalid paremeter */
     ESP_HIDH_HS_ERROR,          /*!< handshake error : unspecified HS error */
     ESP_HIDH_ERR,               /*!< general ESP HH error */
     ESP_HIDH_ERR_SDP,           /*!< SDP error */
@@ -79,8 +79,8 @@ typedef enum {
  * @brief HID host callback function events
  */
 typedef enum {
-    ESP_HIDH_INIT_EVT = 0,  /*!< When HID host is inited, the event comes */
-    ESP_HIDH_DEINIT_EVT,    /*!< When HID host is deinited, the event comes */
+    ESP_HIDH_INIT_EVT = 0,  /*!< When HID host is initialized, the event comes */
+    ESP_HIDH_DEINIT_EVT,    /*!< When HID host is deinitialized, the event comes */
     ESP_HIDH_OPEN_EVT,      /*!< When HID host connection opened, the event comes */
     ESP_HIDH_CLOSE_EVT,     /*!< When HID host connection closed, the event comes */
     ESP_HIDH_GET_RPT_EVT,   /*!< When Get_Report command is called, the event comes */
@@ -89,7 +89,7 @@ typedef enum {
     ESP_HIDH_SET_PROTO_EVT, /*!< When Set_Protocol command is called, the event comes */
     ESP_HIDH_GET_IDLE_EVT,  /*!< When Get_Idle command is called, the event comes */
     ESP_HIDH_SET_IDLE_EVT,  /*!< When Set_Idle command is called, the event comes */
-    ESP_HIDH_GET_DSCP_EVT,  /*!< When HIDH is inited, the event comes */
+    ESP_HIDH_GET_DSCP_EVT,  /*!< When HIDH is initialized, the event comes */
     ESP_HIDH_ADD_DEV_EVT,   /*!< When a device is added, the event comes */
     ESP_HIDH_RMV_DEV_EVT,   /*!< When a device is removed, the event comes */
     ESP_HIDH_VC_UNPLUG_EVT, /*!< When virtually unplugged, the event comes */
@@ -295,7 +295,7 @@ esp_err_t esp_bt_hid_host_register_callback(esp_hh_cb_t callback);
 
 /**
  * @brief       This function initializes HID host. This function should be called after esp_bluedroid_enable() and
- *              esp_blueroid_init() success, and should be called after esp_bt_hid_host_register_callback().
+ *              esp_bluedroid_init() success, and should be called after esp_bt_hid_host_register_callback().
  *              When the operation is complete the callback function will be called with ESP_HIDH_INIT_EVT.
  *
  * @return
@@ -306,7 +306,7 @@ esp_err_t esp_bt_hid_host_init(void);
 
 /**
  * @brief       Closes the interface. This function should be called after esp_bluedroid_enable() and
- *              esp_blueroid_init() success, and should be called after esp_bt_hid_host_init().
+ *              esp_bluedroid_init() success, and should be called after esp_bt_hid_host_init().
  *              When the operation is complete the callback function will be called with ESP_HIDH_DEINIT_EVT.
  *
  * @return      - ESP_OK: success
