@@ -201,8 +201,8 @@ typedef enum {
     ESP_GATT_MORE                   =   0x8a,   /* 0x8a */    /* relate to BTA_GATT_MORE in bta/bta_gatt_api.h */
     ESP_GATT_INVALID_CFG            =   0x8b,   /* 0x8b */    /* relate to BTA_GATT_INVALID_CFG in bta/bta_gatt_api.h */
     ESP_GATT_SERVICE_STARTED        =   0x8c,   /* 0x8c */    /* relate to BTA_GATT_SERVICE_STARTED in bta/bta_gatt_api.h */
-    ESP_GATT_ENCRYPED_MITM          =   ESP_GATT_OK,    /* relate to BTA_GATT_ENCRYPED_MITM in bta/bta_gatt_api.h */
-    ESP_GATT_ENCRYPED_NO_MITM       =   0x8d,   /* 0x8d */    /* relate to BTA_GATT_ENCRYPED_NO_MITM in bta/bta_gatt_api.h */
+    ESP_GATT_ENCRYPTED_MITM         =   ESP_GATT_OK,          /* relate to BTA_GATT_ENCRYPED_MITM in bta/bta_gatt_api.h */
+    ESP_GATT_ENCRYPTED_NO_MITM      =   0x8d,   /* 0x8d */    /* relate to BTA_GATT_ENCRYPED_NO_MITM in bta/bta_gatt_api.h */
     ESP_GATT_NOT_ENCRYPTED          =   0x8e,   /* 0x8e */    /* relate to BTA_GATT_NOT_ENCRYPTED in bta/bta_gatt_api.h */
     ESP_GATT_CONGESTED              =   0x8f,   /* 0x8f */    /* relate to BTA_GATT_CONGESTED in bta/bta_gatt_api.h */
     ESP_GATT_DUP_REG                =   0x90,   /* 0x90 */    /* relate to BTA_GATT_DUP_REG in bta/bta_gatt_api.h */

@@ -167,8 +167,8 @@ typedef enum {
     ESP_GAP_BLE_SET_CHANNELS_EVT = 29,                           /*!< When setting BLE channels complete, the event comes */
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     ESP_GAP_BLE_READ_PHY_COMPLETE_EVT,
-    ESP_GAP_BLE_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT,
-    ESP_GAP_BLE_SET_PREFERED_PHY_COMPLETE_EVT,
+    ESP_GAP_BLE_SET_PREFERRED_DEFAULT_PHY_COMPLETE_EVT,
+    ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT,
     ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT,
     ESP_GAP_BLE_EXT_ADV_SET_PARAMS_COMPLETE_EVT,
     ESP_GAP_BLE_EXT_ADV_DATA_SET_COMPLETE_EVT,
@@ -196,7 +196,7 @@ typedef enum {
     ESP_GAP_BLE_SCAN_TIMEOUT_EVT,
     ESP_GAP_BLE_ADV_TERMINATED_EVT,
     ESP_GAP_BLE_SCAN_REQ_RECEIVED_EVT,
-    ESP_GAP_BLE_CHANNEL_SELETE_ALGORITHM_EVT,
+    ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT,
     ESP_GAP_BLE_PERIODIC_ADV_REPORT_EVT,
     ESP_GAP_BLE_PERIODIC_ADV_SYNC_LOST_EVT,
     ESP_GAP_BLE_PERIODIC_ADV_SYNC_ESTAB_EVT,
@@ -640,7 +640,7 @@ typedef enum {
 typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
-} esp_ble_wl_opration_t;
+} esp_ble_wl_operation_t;
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 typedef enum {
     ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_ADD      = 0,  /*!< Add device info into duplicate scan exceptional list */
@@ -997,7 +997,7 @@ typedef union {
     struct ble_pkt_data_length_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the set pkt data length operation success status */
         esp_ble_pkt_data_length_params_t params;    /*!<  pkt data length value */
-    } pkt_data_lenth_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT */
+    } pkt_data_length_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT
      */
@@ -1039,7 +1039,7 @@ typedef union {
      */
     struct ble_update_whitelist_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
-        esp_ble_wl_opration_t wl_opration;          /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
+        esp_ble_wl_operation_t wl_operation;        /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
     } update_whitelist_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     /**
@@ -1070,17 +1070,17 @@ typedef union {
         esp_ble_gap_phy_t rx_phy;                 /*!< rx phy type */
     } read_phy;                                   /*!< Event parameter of ESP_GAP_BLE_READ_PHY_COMPLETE_EVT */
     /**
-     * @brief ESP_GAP_BLE_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT
+     * @brief ESP_GAP_BLE_SET_PREFERRED_DEFAULT_PHY_COMPLETE_EVT
      */
     struct ble_set_perf_def_phy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate perf default phy set status */
-    } set_perf_def_phy;                             /*!< Event parameter of ESP_GAP_BLE_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT */
+    } set_perf_def_phy;                             /*!< Event parameter of ESP_GAP_BLE_SET_PREFERRED_DEFAULT_PHY_COMPLETE_EVT */
     /**
-     * @brief ESP_GAP_BLE_SET_PREFERED_PHY_COMPLETE_EVT
+     * @brief ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT
      */
     struct ble_set_perf_phy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate perf phy set status */
-    } set_perf_phy;                                  /*!< Event parameter of ESP_GAP_BLE_SET_PREFERED_PHY_COMPLETE_EVT */
+    } set_perf_phy;                                 /*!< Event parameter of ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT
      */
@@ -1236,12 +1236,12 @@ typedef union {
         esp_bd_addr_t scan_addr;             /*!< scanner address */
     } scan_req_received;                     /*!< Event parameter of ESP_GAP_BLE_SCAN_REQ_RECEIVED_EVT */
     /**
-     * @brief ESP_GAP_BLE_CHANNEL_SELETE_ALGORITHM_EVT
+     * @brief ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT
      */
     struct ble_channel_sel_alg_param {
         uint16_t conn_handle;              /*!< connection handle */
         uint8_t channel_sel_alg;           /*!< channel selection algorithm */
-    } channel_sel_alg;                     /*!< Event parameter of ESP_GAP_BLE_CHANNEL_SELETE_ALGORITHM_EVT */
+    } channel_sel_alg;                     /*!< Event parameter of ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT */
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SYNC_LOST_EVT
      */
@@ -1849,7 +1849,7 @@ esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr);
 *                    - other  : failed
 *
 */
-esp_err_t esp_ble_gap_set_prefered_default_phy(esp_ble_gap_phy_mask_t tx_phy_mask, esp_ble_gap_phy_mask_t rx_phy_mask);
+esp_err_t esp_ble_gap_set_preferred_default_phy(esp_ble_gap_phy_mask_t tx_phy_mask, esp_ble_gap_phy_mask_t rx_phy_mask);
 /**
 * @brief           This function is used to set the PHY preferences for the connection identified by the remote address.
 *                  The Controller might not be able to make the change (e.g. because the peer does not support the requested PHY)
@@ -1865,7 +1865,7 @@ esp_err_t esp_ble_gap_set_prefered_default_phy(esp_ble_gap_phy_mask_t tx_phy_mas
 *                    - other  : failed
 *
 */
-esp_err_t esp_ble_gap_set_prefered_phy(esp_bd_addr_t bd_addr,
+esp_err_t esp_ble_gap_set_preferred_phy(esp_bd_addr_t bd_addr,
                                        esp_ble_gap_all_phys_t all_phys_mask,
                                        esp_ble_gap_phy_mask_t tx_phy_mask,
                                        esp_ble_gap_phy_mask_t rx_phy_mask,

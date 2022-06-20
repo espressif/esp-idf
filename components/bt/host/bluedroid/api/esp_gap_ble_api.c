@@ -787,7 +787,7 @@ esp_err_t esp_ble_gap_read_phy(esp_bd_addr_t bd_addr)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gap_set_prefered_default_phy(esp_ble_gap_phy_mask_t tx_phy_mask,
+esp_err_t esp_ble_gap_set_preferred_default_phy(esp_ble_gap_phy_mask_t tx_phy_mask,
                                                esp_ble_gap_phy_mask_t rx_phy_mask)
 {
     btc_msg_t msg;
@@ -805,7 +805,7 @@ esp_err_t esp_ble_gap_set_prefered_default_phy(esp_ble_gap_phy_mask_t tx_phy_mas
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gap_set_prefered_phy(esp_bd_addr_t bd_addr,
+esp_err_t esp_ble_gap_set_preferred_phy(esp_bd_addr_t bd_addr,
                                        esp_ble_gap_all_phys_t all_phys_mask,
                                        esp_ble_gap_phy_mask_t tx_phy_mask,
                                        esp_ble_gap_phy_mask_t rx_phy_mask,

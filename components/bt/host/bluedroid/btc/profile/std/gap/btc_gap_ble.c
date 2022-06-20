@@ -687,9 +687,9 @@ static void btc_set_pkt_length_callback(UINT8 status, tBTM_LE_SET_PKT_DATA_LENGT
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT;
-    param.pkt_data_lenth_cmpl.status = btc_btm_status_to_esp_status(status);
-    param.pkt_data_lenth_cmpl.params.rx_len = data_len_params->rx_len;
-    param.pkt_data_lenth_cmpl.params.tx_len = data_len_params->tx_len;
+    param.pkt_data_length_cmpl.status = btc_btm_status_to_esp_status(status);
+    param.pkt_data_length_cmpl.params.rx_len = data_len_params->rx_len;
+    param.pkt_data_length_cmpl.params.tx_len = data_len_params->tx_len;
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_gap_cb_param_t), NULL);
 
@@ -728,7 +728,7 @@ static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION 
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT;
     param.update_whitelist_cmpl.status = btc_hci_to_esp_status(status);
-    param.update_whitelist_cmpl.wl_opration = wl_opration;
+    param.update_whitelist_cmpl.wl_operation = wl_opration;
     ret = btc_transfer_context(&msg, &param,
                                sizeof(esp_ble_gap_cb_param_t), NULL);
 
@@ -824,12 +824,12 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
         case BTA_DM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT: {
-            msg.act = ESP_GAP_BLE_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT;
+            msg.act = ESP_GAP_BLE_SET_PREFERRED_DEFAULT_PHY_COMPLETE_EVT;
             param.set_perf_def_phy.status = btc_btm_status_to_esp_status(params->set_perf_def_phy.status);
             break;
         }
         case BTA_DM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT: {
-            msg.act = ESP_GAP_BLE_SET_PREFERED_PHY_COMPLETE_EVT;
+            msg.act = ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT;
             param.set_perf_phy.status = btc_btm_status_to_esp_status(params->set_perf_phy.status);
             break;
         }
@@ -971,7 +971,7 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             break;
         }
         case BTA_DM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT: {
-            msg.act = ESP_GAP_BLE_CHANNEL_SELETE_ALGORITHM_EVT;
+            msg.act = ESP_GAP_BLE_CHANNEL_SELECT_ALGORITHM_EVT;
             param.channel_sel_alg.conn_handle = params->channel_sel.conn_handle;
             param.channel_sel_alg.channel_sel_alg = params->channel_sel.channel_sel_alg;
             break;
