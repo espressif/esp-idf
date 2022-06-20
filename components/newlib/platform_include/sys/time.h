@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 /* Newlib sys/time.h defines timerisset, timerclear, timercmp, timeradd, timersub macros
    for __CYGWIN__ and __rtems__. We want to define these macros in IDF as well.
