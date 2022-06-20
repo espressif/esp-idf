@@ -408,8 +408,8 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
 
         /* Init the channel into PDM TX mode */
         i2s_pdm_tx_config_t pdm_tx_cfg = {
-            .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(36000),
-            .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+            .clk_cfg = I2S_PDM_TX_CLK_DEFAULT_CONFIG(36000),
+            .slot_cfg = I2S_PDM_TX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
             .gpio_cfg = {
                 .clk = GPIO_NUM_5,
                 .dout = GPIO_NUM_18,
@@ -448,12 +448,12 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
 
         /* Allocate an I2S rx channel */
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-        i2s_new_channel(&chan_cfg, &rx_handle, NULL);
+        i2s_new_channel(&chan_cfg, NULL, &rx_handle);
 
         /* Init the channel into PDM RX mode */
         i2s_pdm_rx_config_t pdm_rx_cfg = {
-            .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(36000),
-            .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+            .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(36000),
+            .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
             .gpio_cfg = {
                 .clk = GPIO_NUM_5,
                 .din = GPIO_NUM_19,

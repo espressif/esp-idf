@@ -277,9 +277,7 @@ LCD
     I2S driver
     ----------
 
-    {I2S_DRIVER_HEADERS:default=":component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h` or :component_file:`driver/include/driver/i2s_tdm.h`", esp32=":component_file:`driver/include/driver/i2s_std.h` or :component_file:`driver/include/driver/i2s_pdm.h`", esp32s2=":component_file:`driver/include/driver/i2s_std.h`"}
-
-    Shortcomings are exposed when supporting all the new features of ESP32-C3 & ESP32-S3 by the old I2S driver, so it is re-designed to make it more compatible and flexible to all the communication modes. New APIs are available by including corresponding mode header files {I2S_DRIVER_HEADERS}. Meanwhile, the old APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if you keep using the old APIs in your project, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`. Here is the general overview of the current I2S files:
+    Shortcomings are exposed when supporting all the new features of ESP32-C3 & ESP32-S3 by the old I2S driver, so it is re-designed to make it more compatible and flexible to all the communication modes. New APIs are available by including corresponding mode header files :component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h` or :component_file:`driver/include/driver/i2s_tdm.h`. Meanwhile, the old APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if you keep using the old APIs in your project, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`. Here is the general overview of the current I2S files:
 
     .. figure:: ../../../_static/diagrams/i2s/i2s_file_structure.png
         :align: center

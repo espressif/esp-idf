@@ -1315,11 +1315,11 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         SLOT_CFG(pdm_tx).lp_scale = I2S_PDM_SIG_SCALING_MUL_1;
         SLOT_CFG(pdm_tx).sinc_scale = I2S_PDM_SIG_SCALING_MUL_1;
 #if SOC_I2S_HW_VERSION_2
-        SLOT_CFG(pdm_tx).sd_en = true;
+        SLOT_CFG(pdm_tx).line_mode = I2S_PDM_TX_ONE_LINE_CODEC;
         SLOT_CFG(pdm_tx).hp_en = true;
         SLOT_CFG(pdm_tx).hp_cut_off_freq_hz = 49;
         SLOT_CFG(pdm_tx).sd_dither = 0;
-        SLOT_CFG(pdm_tx).sd_dither2 = 0;
+        SLOT_CFG(pdm_tx).sd_dither2 = 1;
 #endif // SOC_I2S_HW_VERSION_2
 
         /* Generate PDM TX clock configuration */

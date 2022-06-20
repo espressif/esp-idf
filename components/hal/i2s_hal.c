@@ -124,12 +124,10 @@ void i2s_hal_std_enable_rx_channel(i2s_hal_context_t *hal)
 #if SOC_I2S_SUPPORTS_PDM_TX
 void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg)
 {
-    uint32_t slot_bit_width = (int)slot_cfg->slot_bit_width < (int)slot_cfg->data_bit_width ?
-                              slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
+    bool is_mono = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO;
     i2s_ll_tx_reset(hal->dev);
     i2s_ll_tx_set_slave_mod(hal->dev, is_slave); //TX Slave
-    i2s_ll_tx_set_sample_bit(hal->dev, slot_bit_width, slot_cfg->data_bit_width);
-    i2s_ll_tx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
+    i2s_ll_tx_enable_msb_shift(hal->dev, false);
 
     i2s_ll_tx_set_pdm_prescale(hal->dev, slot_cfg->pdm_tx.sd_prescale);
     i2s_ll_tx_set_pdm_hp_scale(hal->dev, slot_cfg->pdm_tx.hp_scale);
@@ -138,11 +136,23 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_pdm_sd_scale(hal->dev, slot_cfg->pdm_tx.sd_scale);
 
 #if SOC_I2S_HW_VERSION_1
+    uint32_t slot_bit_width = (int)slot_cfg->slot_bit_width < (int)slot_cfg->data_bit_width ?
+                              slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
     i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
+    i2s_ll_tx_set_sample_bit(hal->dev, slot_bit_width, slot_cfg->data_bit_width);
+    i2s_ll_tx_enable_mono_mode(hal->dev, is_mono);
 #elif SOC_I2S_HW_VERSION_2
-    /* Still need to enable the first 2 TDM channel mask to get the correct number of frame */
-    i2s_ll_tx_set_active_chan_mask(hal->dev, I2S_TDM_SLOT0 | I2S_TDM_SLOT1);
-    i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
+    /* PDM TX line mode */
+    i2s_ll_tx_pdm_line_mode(hal->dev, slot_cfg->pdm_tx.line_mode);
+    /* Force use 32 bit in PDM TX stereo mode to satisfy the frequency */
+    uint32_t slot_bit_width = is_mono ? 16 : 32;
+    i2s_ll_tx_set_sample_bit(hal->dev, slot_bit_width, slot_bit_width);
+    i2s_ll_tx_set_half_sample_bit(hal->dev, 16); // Fixed to 16 in PDM mode
+    /* By default, taking the DMA data at the first half period of WS  */
+    i2s_ll_tx_pdm_dma_take_mode(hal->dev, is_mono, true);
+    i2s_ll_tx_set_ws_idle_pol(hal->dev, false);
+    /* Slot mode seems not take effect according to the test, leave it default here */
+    i2s_ll_tx_pdm_slot_mode(hal->dev, is_mono, false, I2S_PDM_SLOT_BOTH);
     uint8_t cnt = 0;
     float min = 1000;
     float expt_cut_off = slot_cfg->pdm_tx.hp_cut_off_freq_hz;
@@ -154,9 +164,9 @@ void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
             cnt = i;
         }
     }
+    i2s_ll_tx_enable_pdm_hp_filter(hal->dev, slot_cfg->pdm_tx.hp_en);
     i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, cut_off_coef[cnt][1]);
     i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, cut_off_coef[cnt][2]);
-    i2s_ll_tx_enable_pdm_sd_codec(hal->dev, slot_cfg->pdm_tx.sd_en);
     i2s_ll_tx_set_pdm_sd_dither(hal->dev, slot_cfg->pdm_tx.sd_dither);
     i2s_ll_tx_set_pdm_sd_dither2(hal->dev, slot_cfg->pdm_tx.sd_dither2);
 #endif
@@ -176,12 +186,14 @@ void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_rx_reset(hal->dev);
     i2s_ll_rx_set_slave_mod(hal->dev, is_slave); //RX Slave
     i2s_ll_rx_set_sample_bit(hal->dev, slot_bit_width, slot_cfg->data_bit_width);
-    i2s_ll_rx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
 #if SOC_I2S_HW_VERSION_1
+    i2s_ll_rx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
+    i2s_ll_rx_select_slot(hal->dev, slot_cfg->pdm_rx.slot_mask, false);
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
 #elif SOC_I2S_HW_VERSION_2
-    /* Still need to enable the first 2 TDM channel mask to get the correct number of frame */
-    i2s_ll_rx_set_active_chan_mask(hal->dev, I2S_TDM_SLOT0 | I2S_TDM_SLOT1);
+    i2s_ll_rx_enable_mono_mode(hal->dev, false);
+    /* Set the channel mask to enable corresponding slots */
+    i2s_ll_rx_set_active_chan_mask(hal->dev,  slot_cfg->pdm_rx.slot_mask);
 #endif
 }
 
@@ -223,7 +235,7 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ?
                                    I2S_TDM_SLOT0 : (uint32_t)slot_cfg->tdm.slot_mask);
     i2s_ll_tx_set_skip_mask(hal->dev, slot_cfg->tdm.skip_mask);
-    i2s_ll_tx_set_half_sample_bit(hal->dev, total_slot * slot_bit_width / 2);
+    i2s_ll_tx_set_half_sample_bit(hal->dev, __builtin_popcount(slot_cfg->tdm.slot_mask) * slot_bit_width / 2);
     i2s_ll_tx_set_bit_order(hal->dev, slot_cfg->tdm.bit_order_lsb);
     i2s_ll_tx_enable_left_align(hal->dev, slot_cfg->tdm.left_align);
     i2s_ll_tx_enable_big_endian(hal->dev, slot_cfg->tdm.big_endian);
@@ -235,7 +247,6 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
                               slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
     uint32_t cnt;
     uint32_t msk = slot_cfg->tdm.slot_mask;
-    for (cnt = 0; msk; cnt++, msk >>= 1);
     /* Get the maximum slot number */
     cnt = 32 - __builtin_clz(msk);
     /* There should be at least 2 slots in total even for mono mode */
@@ -257,7 +268,7 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     /* In mono mode, there only should be one slot enabled, other inactive slots will transmit same data as enabled slot */
     i2s_ll_rx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ?
                                    I2S_TDM_SLOT0 : (uint32_t)slot_cfg->tdm.slot_mask);
-    i2s_ll_rx_set_half_sample_bit(hal->dev, total_slot * slot_bit_width / 2);
+    i2s_ll_rx_set_half_sample_bit(hal->dev, __builtin_popcount(slot_cfg->tdm.slot_mask) * slot_bit_width / 2);
     i2s_ll_rx_set_bit_order(hal->dev, slot_cfg->tdm.bit_order_lsb);
     i2s_ll_rx_enable_left_align(hal->dev, slot_cfg->tdm.left_align);
     i2s_ll_rx_enable_big_endian(hal->dev, slot_cfg->tdm.big_endian);

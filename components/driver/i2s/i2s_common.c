@@ -432,7 +432,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     if (handle->dir == I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(handle->controller->hal.dev, bufsize);
     }
-    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %d, dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %d, ", num, bufsize);
+    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %d, dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %d", num, bufsize);
     return ESP_OK;
 err:
     i2s_free_dma_desc(handle);
@@ -1112,7 +1112,7 @@ esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
     if (occupied_comp != NULL) {
-        ESP_LOGE(TAG, "i2s controller %d has been occupied by %s", id, occupied_comp);
+        ESP_LOGW(TAG, "i2s controller %d has been occupied by %s", id, occupied_comp);
     }
     return ret;
 }

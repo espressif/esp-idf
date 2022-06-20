@@ -22,8 +22,8 @@ extern "C" {
 #define I2S_CHANNEL_DEFAULT_CONFIG(i2s_num, i2s_role) { \
     .id = i2s_num, \
     .role = i2s_role, \
-    .dma_desc_num = 3, \
-    .dma_frame_num = 500, \
+    .dma_desc_num = 6, \
+    .dma_frame_num = 250, \
     .auto_clear = false, \
 }
 

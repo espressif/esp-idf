@@ -25,6 +25,7 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
         .s_rx_ws_sig  = I2S0I_WS_IN_IDX,
 
         .data_out_sig = I2S0O_DATA_OUT23_IDX,
+        .data_out1_sig = -1,
         .data_in_sig  = I2S0I_DATA_IN15_IDX,
 
         .irq          = ETS_I2S0_INTR_SOURCE,

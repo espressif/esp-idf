@@ -25,7 +25,7 @@
 
 #if !CONFIG_I2S_SUPPRESS_DEPRECATE_WARN
 #warning "This set of I2S APIs has been deprecated, \
-please include 'driver/i2s_std.h', 'driver/i2s_pdm' or 'driver/i2s_tdm' instead. \
+please include 'driver/i2s_std.h', 'driver/i2s_pdm.h' or 'driver/i2s_tdm.h' instead. \
 if you want to keep using the old APIs and ignore this warning, \
 you can enable 'Suppress leagcy driver deprecated warning' option under 'I2S Configuration' menu in Kconfig"
 #endif

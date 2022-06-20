@@ -101,6 +101,20 @@ typedef enum {
     I2S_PDM_SIG_SCALING_MUL_2 = 2,   /*!< I2S TX PDM signal scaling: x2 */
     I2S_PDM_SIG_SCALING_MUL_4 = 3,   /*!< I2S TX PDM signal scaling: x4 */
 } i2s_pdm_sig_scale_t;
+
+#if SOC_I2S_HW_VERSION_2
+/**
+ * @brief PDM TX line mode
+ * @note  For the standard codec mode, PDM pins are connect to a codec which requires both clock signal and data signal
+ *        For the DAC output mode, PDM data signal can be connected to a power amplifier directly with a low-pass filter,
+ *        normally, DAC output mode doesn't need the clock signal.
+ */
+typedef enum {
+    I2S_PDM_TX_ONE_LINE_CODEC,         /*!< Standard PDM format output, left and right slot data on a single line */
+    I2S_PDM_TX_ONE_LINE_DAC,           /*!< PDM DAC format output, left or right slot data on a single line */
+    I2S_PDM_TX_TWO_LINE_DAC,           /*!< PDM DAC format output, left and right slot data on separated lines */
+} i2s_pdm_tx_line_mode_t;
+#endif // SOC_I2S_HW_VERSION_2
 #endif // SOC_I2S_SUPPORTS_PDM_TX
 
 /**
@@ -111,6 +125,16 @@ typedef enum {
     I2S_STD_SLOT_ONLY_RIGHT = BIT(1),           /*!< I2S only transmits or receives right slot */
     I2S_STD_SLOT_LEFT_RIGHT = BIT(0) | BIT(1),  /*!< I2S transmits or receives both left and right slot */
 } i2s_std_slot_mask_t;
+
+/**
+ * @brief I2S slot select in PDM mode
+ *
+ */
+typedef enum {
+    I2S_PDM_SLOT_RIGHT      = BIT(0),           /*!< I2S PDM only transmits or receives the PDM device whose 'select' pin is pulled up */
+    I2S_PDM_SLOT_LEFT       = BIT(1),           /*!< I2S PDM only transmits or receives the PDM device whose 'select' pin is pulled down */
+    I2S_PDM_SLOT_BOTH       = BIT(0) | BIT(1),  /*!< I2S PDM transmits or receives both two slots */
+} i2s_pdm_slot_mask_t;
 
 #if SOC_I2S_SUPPORTS_TDM
 /**

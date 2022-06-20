@@ -40,6 +40,14 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
         clk_info->bclk = rate * handle->total_slot * slot_bits;
         clk_info->mclk = rate * clk_cfg->mclk_multiple;
         clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
+        /* While RECEIVING multiple slots, the data will go wrong if the bclk_div is euqal or smaller than 2 */
+    check:
+        if (clk_info->bclk_div <= 2) {
+            clk_info->mclk *= 2;
+            clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
+            ESP_LOGW(TAG, "the current mclk multiple is too small, adjust the mclk multiple to %d", clk_info->mclk / rate);
+            goto check;
+        }
     } else {
         /* For slave mode, mclk >= bclk * 8, so fix bclk_div to 2 first */
         clk_info->bclk_div = 8;
@@ -241,6 +249,8 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     /* Initialization finished, mark state as ready */
     handle->state = I2S_CHAN_STATE_READY;
     xSemaphoreGive(handle->mutex);
+    ESP_LOGD(TAG, "The %s channel on I2S%d has been initialized to TDM mode successfully",
+             handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
     return ret;
 
 err:

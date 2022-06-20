@@ -247,6 +247,8 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     /* Initialization finished, mark state as ready */
     handle->state = I2S_CHAN_STATE_READY;
     xSemaphoreGive(handle->mutex);
+    ESP_LOGD(TAG, "The %s channel on I2S%d has been initialized to STD mode successfully",
+             handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
     return ret;
 
 err:
