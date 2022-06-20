@@ -561,7 +561,7 @@ config SOC_WIFI_HW_TSF
 
 config SOC_WIFI_FTM_SUPPORT
     bool
-    default y
+    default n
 
 config SOC_WIFI_GCMP_SUPPORT
     bool
