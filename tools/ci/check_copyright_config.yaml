@@ -125,6 +125,8 @@ ignore:
   include:
     - components/bt/host/nimble/nimble/
     - components/bt/common/osi/
+    - components/bt/porting/ext/
+    - components/bt/porting/nimble/
     - components/http_parser/
     - components/wpa_supplicant/src/
     - '!components/wpa_supplicant/esp_supplicant/'

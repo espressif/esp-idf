@@ -315,8 +315,8 @@ endmenu
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
     depends on BT_NIMBLE_ENABLED
-    default n if BT_SOC_SUPPORT_5_0
-    default y
+    default y if IDF_TARGET_ESP32
+    default n
     help
         Enable Host Flow control
 
@@ -605,10 +605,8 @@ config BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
     depends on BT_NIMBLE_ENABLED
-    range 1 15 if !IDF_TARGET_ESP32C2
-    default 12 if !IDF_TARGET_ESP32C2
-    range 1 5 if IDF_TARGET_ESP32C2
-    default 5 if IDF_TARGET_ESP32C2
+    range 1 15
+    default 12
     help
             BLE list size
 

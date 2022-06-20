@@ -13,9 +13,12 @@
 extern "C" {
 #endif
 
-void *nimble_platform_mem_malloc(size_t size);
-void *nimble_platform_mem_calloc(size_t n, size_t size);
-void nimble_platform_mem_free(void *ptr);
+// #pragma message "This file should be replaced with bt_osi_mem.h, used here for compatibility"
+
+#include "bt_osi_mem.h"
+#define nimble_platform_mem_malloc bt_osi_mem_malloc
+#define nimble_platform_mem_calloc bt_osi_mem_calloc
+#define nimble_platform_mem_free bt_osi_mem_free
 
 #ifdef __cplusplus
 }

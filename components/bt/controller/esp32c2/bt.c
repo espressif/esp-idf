@@ -14,8 +14,6 @@
 
 #include "sdkconfig.h"
 
-#include "os/os.h"
-#include "sysinit/sysinit.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 
@@ -27,24 +25,21 @@
 #include "esp_coexist_internal.h"
 #endif
 
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-#include "transport/uart/ble_hci_uart.h"
-#else
-#include "transport/ram/ble_hci_ram.h"
-#endif
-#include "nimble/ble_hci_trans.h"
-
 #include "nimble/nimble_npl_os.h"
+#include "nimble/ble_hci_trans.h"
+#include "os/endian.h"
+
 #include "esp_bt.h"
 #include "esp_intr_alloc.h"
-#include "nimble/nimble_npl_os.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
 #include "esp_phy_init.h"
 #include "soc/syscon_reg.h"
 #include "soc/modem_clkrst_reg.h"
 #include "esp_private/periph_ctrl.h"
-#include "hal/hal_uart.h"
+#include "hci_uart.h"
+#include "bt_osi_mem.h"
+
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "hci/hci_hal.h"
 #endif
@@ -86,8 +81,8 @@ struct ext_funcs_t {
     void *(* _malloc)(size_t size);
     void (*_free)(void *p);
     void (*_hal_uart_start_tx)(int);
-    int (*_hal_uart_init_cbs)(int, hal_uart_tx_char, hal_uart_tx_done, hal_uart_rx_char, void *);
-    int (*_hal_uart_config)(int, int32_t, uint8_t, uint8_t, enum hal_uart_parity, enum hal_uart_flow_ctl);
+    int (*_hal_uart_init_cbs)(int, hci_uart_tx_char, hci_uart_tx_done, hci_uart_rx_char, void *);
+    int (*_hal_uart_config)(int, int32_t, uint8_t, uint8_t, uart_parity_t, uart_hw_flowcontrol_t);
     int (*_hal_uart_close)(int);
     void (*_hal_uart_blocking_tx)(int, uint8_t);
     int (*_hal_uart_init)(int, void *);
@@ -108,7 +103,7 @@ struct ext_funcs_t {
 
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
-extern int ble_controller_init(struct esp_bt_controller_config_t *cfg);
+extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
 extern int ble_controller_disable(void);
@@ -134,14 +129,16 @@ static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status);
 static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
-static void hal_uart_start_tx_wrapper(int uart_no);
-static int hal_uart_init_cbs_wrapper(int uart_no, hal_uart_tx_char tx_func,
-                                     hal_uart_tx_done tx_done, hal_uart_rx_char rx_func, void *arg);
-static int hal_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits, uint8_t stopbits,
-                                   enum hal_uart_parity parity, enum hal_uart_flow_ctl flow_ctl);
-static int hal_uart_close_wrapper(int uart_no);
-static void hal_uart_blocking_tx_wrapper(int port, uint8_t data);
-static int hal_uart_init_wrapper(int uart_no, void *cfg);
+#if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+static void hci_uart_start_tx_wrapper(int uart_no);
+static int hci_uart_init_cbs_wrapper(int uart_no, hci_uart_tx_char tx_func,
+                                     hci_uart_tx_done tx_done, hci_uart_rx_char rx_func, void *arg);
+static int hci_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits, uint8_t stopbits,
+                                   uart_parity_t parity, uart_hw_flowcontrol_t flow_ctl);
+static int hci_uart_close_wrapper(int uart_no);
+static void hci_uart_blocking_tx_wrapper(int port, uint8_t data);
+static int hci_uart_init_wrapper(int uart_no, void *cfg);
+#endif
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in);
 static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
@@ -191,14 +188,16 @@ struct ext_funcs_t ext_funcs_ro = {
     .ext_version = EXT_FUNC_VERSION,
     ._esp_intr_alloc = esp_intr_alloc_wrapper,
     ._esp_intr_free = esp_intr_free_wrapper,
-    ._malloc = malloc,
-    ._free = free,
-    ._hal_uart_start_tx     =  hal_uart_start_tx_wrapper,
-    ._hal_uart_init_cbs     =  hal_uart_init_cbs_wrapper,
-    ._hal_uart_config       =  hal_uart_config_wrapper,
-    ._hal_uart_close        =  hal_uart_close_wrapper,
-    ._hal_uart_blocking_tx  =  hal_uart_blocking_tx_wrapper,
-    ._hal_uart_init         =  hal_uart_init_wrapper,
+    ._malloc = bt_osi_mem_malloc_internal,
+    ._free = bt_osi_mem_free,
+#if CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+    ._hal_uart_start_tx     =  hci_uart_start_tx_wrapper,
+    ._hal_uart_init_cbs     =  hci_uart_init_cbs_wrapper,
+    ._hal_uart_config       =  hci_uart_config_wrapper,
+    ._hal_uart_close        =  hci_uart_close_wrapper,
+    ._hal_uart_blocking_tx  =  hci_uart_blocking_tx_wrapper,
+    ._hal_uart_init         =  hci_uart_init_wrapper,
+#endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     ._task_create = task_create_wrapper,
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
@@ -328,56 +327,53 @@ static void task_delete_wrapper(void *task_handle)
     vTaskDelete(task_handle);
 }
 
-static void hal_uart_start_tx_wrapper(int uart_no)
-{
 #ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    hal_uart_start_tx(uart_no);
-#endif
+static void hci_uart_start_tx_wrapper(int uart_no)
+{
+    hci_uart_start_tx(uart_no);
 }
 
-static int hal_uart_init_cbs_wrapper(int uart_no, hal_uart_tx_char tx_func,
-                                     hal_uart_tx_done tx_done, hal_uart_rx_char rx_func, void *arg)
+static int hci_uart_init_cbs_wrapper(int uart_no, hci_uart_tx_char tx_func,
+                                     hci_uart_tx_done tx_done, hci_uart_rx_char rx_func, void *arg)
 {
     int rc = -1;
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    rc = hal_uart_init_cbs(uart_no, tx_func, tx_done, rx_func, arg);
-#endif
+    rc = hci_uart_init_cbs(uart_no, tx_func, tx_done, rx_func, arg);
     return rc;
 }
 
-static int hal_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits, uint8_t stopbits,
-                                   enum hal_uart_parity parity, enum hal_uart_flow_ctl flow_ctl)
+
+static int hci_uart_config_wrapper(int port_num, int32_t baud_rate, uint8_t data_bits, uint8_t stop_bits,
+                                   uart_parity_t parity, uart_hw_flowcontrol_t flow_ctl)
 {
     int rc = -1;
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    rc = hal_uart_config(uart_no, speed, databits, stopbits, parity, flow_ctl);
-#endif
+    rc = hci_uart_config(port_num, baud_rate, data_bits, stop_bits, parity, flow_ctl);
     return rc;
 }
 
-static int hal_uart_close_wrapper(int uart_no)
+static int hci_uart_close_wrapper(int uart_no)
 {
     int rc = -1;
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    rc = hal_uart_close(uart_no);
-#endif
+    rc = hci_uart_close(uart_no);
     return rc;
 }
 
-static void hal_uart_blocking_tx_wrapper(int port, uint8_t data)
+static void hci_uart_blocking_tx_wrapper(int port, uint8_t data)
 {
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    hal_uart_blocking_tx(port, data);
-#endif
+    //This function is nowhere to use.
 }
 
-static int hal_uart_init_wrapper(int uart_no, void *cfg)
+static int hci_uart_init_wrapper(int uart_no, void *cfg)
 {
-    int rc = -1;
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-    rc = hal_uart_init(uart_no, cfg);
-#endif
-    return rc;
+    //This function is nowhere to use.
+    return 0;
+}
+
+#endif //CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+
+static int ble_hci_unregistered_hook(void*, void*)
+{
+    ESP_LOGD(NIMBLE_PORT_LOG_TAG,"%s ble hci rx_evt is not registered.",__func__);
+    return 0;
 }
 
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in)
@@ -494,12 +490,12 @@ void controller_sleep_init(void)
     if (esp_timer_create(&create_args, &s_btdm_slp_tmr) != ESP_OK) {
         goto error;
     }
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is ESP timer\n");
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is ESP timer");
 #endif //CONFIG_BT_LE_WAKEUP_SOURCE_CPU_RTC_TIMER
 
 #ifdef CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
     esp_sleep_enable_bt_wakeup();
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer\n");
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Enable light sleep, the wake up source is BLE timer");
 #endif // CONFIG_BT_LE_WAKEUP_SOURCE_BLE_RTC_TIMER
 
     s_pm_lock_acquired = true;
@@ -590,7 +586,7 @@ void ble_rtc_clk_init(void)
 }
 
 
-esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
@@ -672,9 +668,10 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
     esp_ble_ll_set_public_addr(mac);
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
-#ifdef CONFIG_BT_BLUEDROID_ENABLED
-    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt, NULL, ble_hs_rx_data, NULL);
-#endif
+
+    ble_hci_trans_cfg_hs((ble_hci_trans_rx_cmd_fn *)ble_hci_unregistered_hook,NULL,
+                         (ble_hci_trans_rx_acl_fn *)ble_hci_unregistered_hook,NULL);
+
     return ESP_OK;
 }
 
