@@ -165,7 +165,7 @@ def test_check_mode(dut=None, mode_str=None, value=None):
     return False
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_T2_RS485')
+@ttfw_idf.idf_example_test(env_tag='Example_T2_RS485', target=['esp32'])
 def test_modbus_communication(env, comm_mode):
     global logger
 
@@ -283,6 +283,5 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.addHandler(ch)
     logger.info('Start script %s.' % os.path.basename(__file__))
-    print('Logging file name: %s' % logger.handlers[0].baseFilename)
     test_modbus_communication()
     logging.shutdown()
