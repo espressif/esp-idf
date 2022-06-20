@@ -426,3 +426,4 @@
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
 #define SOC_WIFI_FTM_SUPPORT            (1)    /*!< FTM Support */
 #define SOC_WIFI_GCMP_SUPPORT           (1)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< WAPI Support */
