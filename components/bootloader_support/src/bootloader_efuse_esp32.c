@@ -16,8 +16,9 @@
 #include "bootloader_clock.h"
 #include "soc/efuse_reg.h"
 #include "soc/apb_ctrl_reg.h"
+#include "esp_attr.h"
 
-uint8_t bootloader_common_get_chip_revision(void)
+IRAM_ATTR uint8_t bootloader_common_get_chip_revision(void)
 {
     uint8_t eco_bit0, eco_bit1, eco_bit2;
     eco_bit0 = (REG_READ(EFUSE_BLK0_RDATA3_REG) & 0xF000) >> 15;
@@ -45,7 +46,7 @@ uint8_t bootloader_common_get_chip_revision(void)
     return chip_ver;
 }
 
-uint32_t bootloader_common_get_chip_ver_pkg(void)
+IRAM_ATTR uint32_t bootloader_common_get_chip_ver_pkg(void)
 {
     uint32_t pkg_version = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
     uint32_t pkg_version_4bit = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG_4BIT);
