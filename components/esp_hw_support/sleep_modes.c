@@ -636,6 +636,22 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     return err;
 }
 
+/**
+ * vddsdio is used for power supply of spi flash
+ *
+ * pd flash via menuconfig  |  pd flash via `esp_sleep_pd_config`  |  result
+ * ---------------------------------------------------------------------------------------------------
+ * 0                        |  0                                   |  no pd flash
+ * x                        |  1                                   |  pd flash with relaxed conditions(force_pd)
+ * 1                        |  0                                   |  pd flash with strict  conditions(safe_pd)
+ */
+static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_duration)
+{
+    bool force_pd = !(s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) || (s_config.sleep_duration > vddsdio_pd_sleep_duration);
+    bool safe_pd  = (s_config.wakeup_triggers == RTC_TIMER_TRIG_EN) && (s_config.sleep_duration > vddsdio_pd_sleep_duration);
+    return (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_OFF) ? force_pd : safe_pd;
+}
+
 esp_err_t esp_light_sleep_start(void)
 {
     s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
@@ -711,7 +727,7 @@ esp_err_t esp_light_sleep_start(void)
                         flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
                         + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
 
-        if (s_config.sleep_duration > vddsdio_pd_sleep_duration) {
+        if (can_power_down_vddsdio(vddsdio_pd_sleep_duration)) {
             if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
                 s_config.sleep_time_adjustment += flash_enable_time_us;
             }
@@ -1343,9 +1359,7 @@ static uint32_t get_power_down_flags(void)
      * value of this field.
      */
     if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
-#ifdef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
-        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_OFF;
-#else
+#ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
         s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
 #endif
     }
