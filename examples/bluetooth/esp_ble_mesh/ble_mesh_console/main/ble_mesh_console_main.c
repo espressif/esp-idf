@@ -73,6 +73,7 @@ void app_main(void)
 #endif
 
     // init console REPL environment
+    repl_config.max_history_len = 1;
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
     /* Register commands */
