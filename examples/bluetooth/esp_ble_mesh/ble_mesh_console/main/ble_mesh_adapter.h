@@ -107,7 +107,8 @@ extern SemaphoreHandle_t ble_mesh_node_sema;
     } \
 }while(0) \
 
-void ble_mesh_node_init(void);
+int ble_mesh_init_node_prestore_params(void);
+void ble_mesh_deinit_node_prestore_params(void);
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr);
 esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id);
 esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id);
