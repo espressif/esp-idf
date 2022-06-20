@@ -36,6 +36,8 @@ if(NOT __idf_env_set)
     set(IDF_PATH ${idf_path})
 
     include(GetGitRevisionDescription)
+    include(CheckCCompilerFlag)
+    include(CheckCXXCompilerFlag)
     include(git_submodules)
     include(crosstool_version_check)
     include(kconfig)
