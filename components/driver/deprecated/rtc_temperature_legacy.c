@@ -18,7 +18,6 @@
 #include "esp_log.h"
 #include "esp_efuse_rtc_calib.h"
 #include "hal/temperature_sensor_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "driver/temp_sensor_types_legacy.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -27,10 +26,6 @@ static const char *TAG = "tsens";
 #define TSENS_ADC_FACTOR  (0.4386)
 #define TSENS_DAC_FACTOR  (27.88)
 #define TSENS_SYS_OFFSET  (20.52)
-
-extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
-#define RTC_TEMP_SENSOR_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
-#define RTC_TEMP_SENSOR_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
 typedef struct {
     int index;
@@ -68,11 +63,8 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
         err = ESP_ERR_INVALID_STATE;
     }
     temperature_sensor_ll_set_clk_div(tsens.clk_div);
-    RTC_TEMP_SENSOR_ENTER_CRITICAL();
-    regi2c_ctrl_ll_i2c_saradc_enable();
     temperature_sensor_ll_set_range(dac_offset[tsens.dac_offset].reg_val);
     temperature_sensor_ll_enable(true);
-    RTC_TEMP_SENSOR_EXIT_CRITICAL();
     ESP_LOGI(TAG, "Config range [%d°C ~ %d°C], error < %d°C",
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
@@ -102,6 +94,7 @@ esp_err_t temp_sensor_start(void)
         ESP_LOGE(TAG, "Is already running or not be configured");
         err = ESP_ERR_INVALID_STATE;
     }
+    regi2c_saradc_enable();
     periph_module_enable(PERIPH_TEMPSENSOR_MODULE);
     temperature_sensor_ll_enable(true);
     temperature_sensor_ll_clk_enable(true);
@@ -112,6 +105,7 @@ esp_err_t temp_sensor_start(void)
 
 esp_err_t temp_sensor_stop(void)
 {
+    regi2c_saradc_disable();
     temperature_sensor_ll_enable(false);
     tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
     return ESP_OK;

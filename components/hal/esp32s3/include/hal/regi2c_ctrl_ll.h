@@ -35,10 +35,18 @@ static inline void regi2c_ctrl_ll_i2c_bbpll_enable(void)
  */
 static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
     SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
 }
+
+/**
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+{
+    CLEAR_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+}
+
 
 /**
  * @brief Start BBPLL self-calibration

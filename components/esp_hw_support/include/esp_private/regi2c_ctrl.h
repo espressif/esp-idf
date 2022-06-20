@@ -70,6 +70,13 @@ void regi2c_analog_cali_reg_read(void);
 void regi2c_analog_cali_reg_write(void);
 #endif   //#if ADC_CALI_PD_WORKAROUND
 
+/* Enable/Disable regi2c_saradc with calling these two functions.
+   With reference count protection inside.
+   Internal use only.
+*/
+void regi2c_saradc_enable(void);
+void regi2c_saradc_disable(void);
+
 #ifdef __cplusplus
 }
 #endif

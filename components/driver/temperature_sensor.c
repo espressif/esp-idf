@@ -25,14 +25,9 @@
 #include "esp_efuse_rtc_calib.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/temperature_sensor_ll.h"
-#include "hal/regi2c_ctrl_ll.h"
 #include "soc/temperature_sensor_periph.h"
 
 static const char *TAG = "temperature_sensor";
-
-extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
-#define TEMPERATURE_SENSOR_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
-#define TEMPERATURE_SENSOR_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
 typedef enum {
     TEMP_SENSOR_FSM_INIT,
@@ -103,11 +98,9 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
              tsens->tsens_attribute->range_max,
              tsens->tsens_attribute->error_max);
 
-    TEMPERATURE_SENSOR_ENTER_CRITICAL();
-    regi2c_ctrl_ll_i2c_saradc_enable();
+    regi2c_saradc_enable();
     temperature_sensor_ll_set_range(tsens->tsens_attribute->reg_val);
     temperature_sensor_ll_enable(false); // disable the sensor by default
-    TEMPERATURE_SENSOR_EXIT_CRITICAL();
 
     tsens->fsm = TEMP_SENSOR_FSM_INIT;
     *ret_tsens = tsens;
@@ -126,6 +119,7 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
         free(s_tsens_attribute_copy);
     }
     s_tsens_attribute_copy = NULL;
+    regi2c_saradc_disable();
 
     periph_module_disable(PERIPH_TEMPSENSOR_MODULE);
     free(tsens);

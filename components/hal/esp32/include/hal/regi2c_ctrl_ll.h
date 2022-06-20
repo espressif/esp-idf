@@ -38,6 +38,28 @@ static inline void regi2c_ctrl_ll_i2c_apll_enable(void)
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M);
 }
 
+/**
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+{
+    // Not used on ESP32, but leave a blank function here.
+    // I2C_SARADC is only used for enabling some analog features. However,
+    // ESP32 does not use it to support those features.
+    // In order to make it convenient for compiling other targets, left a blank function here.
+}
+
+/**
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+{
+    // Not used on ESP32, but leave a blank function here.
+    // I2C_SARADC is only used for enabling some analog features. However,
+    // ESP32 does not use it to support those features.
+    // In order to make it convenient for compiling other targets, left a blank function here.
+}
+
 #ifdef __cplusplus
 }
 #endif
