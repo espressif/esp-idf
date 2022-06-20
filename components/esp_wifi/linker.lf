@@ -64,8 +64,9 @@ entries:
         phy_init:esp_phy_enable (noflash)
         phy_init:esp_phy_disable (noflash)
         phy_init:esp_wifi_bt_power_domain_off (noflash)
-        wifi_init:wifi_apb80m_request (noflash)
-        wifi_init:wifi_apb80m_release (noflash)
+        if PM_ENABLE = y:
+            wifi_init:wifi_apb80m_request (noflash)
+            wifi_init:wifi_apb80m_release (noflash)
 
 [mapping:driver_wifi_pm]
 archive: libdriver.a
