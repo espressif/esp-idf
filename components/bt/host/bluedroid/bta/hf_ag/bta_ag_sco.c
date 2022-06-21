@@ -70,10 +70,11 @@ enum
 };
 
 #if (BTM_WBS_INCLUDED == TRUE)
-#define BTA_AG_NUM_CODECS   3
-#define BTA_AG_ESCO_SETTING_IDX_CVSD    0   /* eSCO setting for CVSD */
+#define BTA_AG_NUM_CODECS   4
+#define BTA_AG_ESCO_SETTING_IDX_CVSD    0   /* eSCO setting for CVSD    */
 #define BTA_AG_ESCO_SETTING_IDX_T1      1   /* eSCO setting for mSBC T1 */
 #define BTA_AG_ESCO_SETTING_IDX_T2      2   /* eSCO setting for mSBC T2 */
+#define BTA_AG_ESCO_SETTING_IDX_S4      3   /* eSCO setting for CVSD S4 */
 
 static const tBTM_ESCO_PARAMS bta_ag_esco_params[BTA_AG_NUM_CODECS] =
 {
@@ -81,9 +82,9 @@ static const tBTM_ESCO_PARAMS bta_ag_esco_params[BTA_AG_NUM_CODECS] =
     {
         BTM_64KBITS_RATE,                   /* TX Bandwidth (64 kbits/sec)              */
         BTM_64KBITS_RATE,                   /* RX Bandwidth (64 kbits/sec)              */
-        0x000a,                             /* 10 ms (HS/HF can use EV3, 2-EV3, 3-EV3)  */
+        10,                                 /* 10 ms (HS/HF can use EV3, 2-EV3, 3-EV3)  */
         BTM_VOICE_SETTING_CVSD,             /* Inp Linear, Air CVSD, 2s Comp, 16bit     */
-       (BTM_SCO_PKT_TYPES_MASK_HV1      +  /* Packet Types                             */
+       (BTM_SCO_PKT_TYPES_MASK_HV1      +   /* Packet Types                             */
         BTM_SCO_PKT_TYPES_MASK_HV2      +
         BTM_SCO_PKT_TYPES_MASK_HV3      +
         BTM_SCO_PKT_TYPES_MASK_EV3      +
@@ -91,7 +92,7 @@ static const tBTM_ESCO_PARAMS bta_ag_esco_params[BTA_AG_NUM_CODECS] =
         BTM_SCO_PKT_TYPES_MASK_EV5      +
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 +
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
-        BTM_ESCO_RETRANS_POWER       /* Retransmission effort                      */
+        BTM_ESCO_RETRANS_POWER               /* Retransmission effort                     */
     },
     /* mSBC  T1 */
     {
@@ -104,7 +105,7 @@ static const tBTM_ESCO_PARAMS bta_ag_esco_params[BTA_AG_NUM_CODECS] =
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV3 ),
-        BTM_ESCO_RETRANS_QUALITY       /* Retransmission effort                      */
+        BTM_ESCO_RETRANS_QUALITY             /* Retransmission effort                    */
     },
     /* mSBC T2*/
     {
@@ -116,26 +117,56 @@ static const tBTM_ESCO_PARAMS bta_ag_esco_params[BTA_AG_NUM_CODECS] =
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
-        BTM_ESCO_RETRANS_QUALITY       /* Retransmission effort                      */
+        BTM_ESCO_RETRANS_QUALITY            /* Retransmission effort                     */
+    },
+    /* HFP 1.7+ */
+    /* eSCO CVSD S4 */
+    {
+        BTM_64KBITS_RATE,                   /* TX Bandwidth (64 kbits/sec)              */
+        BTM_64KBITS_RATE,                   /* RX Bandwidth (64 kbits/sec)              */
+        12,                                 /* 12 ms (HS/HF can use EV3, 2-EV3)  */
+        BTM_VOICE_SETTING_CVSD,             /* Inp Linear, Air CVSD, 2s Comp, 16bit     */
+        (BTM_SCO_LINK_ALL_PKT_MASK |
+         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
+        BTM_ESCO_RETRANS_QUALITY            /* Retransmission effort                    */
     }
 };
 #else
+#define BTA_AG_NUM_CODECS   2
+#define BTA_AG_ESCO_SETTING_IDX_CVSD    0   /* eSCO setting for CVSD S3 */
+#define BTA_AG_ESCO_SETTING_IDX_S4      1   /* eSCO setting for CVSD S4 */
+
 /* WBS not included, CVSD by default */
-static const tBTM_ESCO_PARAMS bta_ag_esco_params =
+static const tBTM_ESCO_PARAMS bta_ag_esco_params[] =
 {
-    BTM_64KBITS_RATE,                   /* TX Bandwidth (64 kbits/sec)              */
-    BTM_64KBITS_RATE,                   /* RX Bandwidth (64 kbits/sec)              */
-    0x000a,                             /* 10 ms (HS/HF can use EV3, 2-EV3, 3-EV3)  */
-    0x0060,                             /* Inp Linear, Air CVSD, 2s Comp, 16bit     */
-    (BTM_SCO_PKT_TYPES_MASK_HV1      +  /* Packet Types                             */
-     BTM_SCO_PKT_TYPES_MASK_HV2      +
-     BTM_SCO_PKT_TYPES_MASK_HV3      +
-     BTM_SCO_PKT_TYPES_MASK_EV3      +
-     BTM_SCO_PKT_TYPES_MASK_EV4      +
-     BTM_SCO_PKT_TYPES_MASK_EV5      +
-     BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 +
-     BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
-     BTM_ESCO_RETRANS_POWER             /* Retransmission effort                      */
+    {
+        BTM_64KBITS_RATE,                   /* TX Bandwidth (64 kbits/sec)              */
+        BTM_64KBITS_RATE,                   /* RX Bandwidth (64 kbits/sec)              */
+        10,                                 /* 10 ms (HS/HF can use EV3, 2-EV3, 3-EV3)  */
+        BTM_VOICE_SETTING_CVSD,             /* Inp Linear, Air CVSD, 2s Comp, 16bit     */
+        (BTM_SCO_PKT_TYPES_MASK_HV1      +  /* Packet Types                             */
+        BTM_SCO_PKT_TYPES_MASK_HV2      +
+        BTM_SCO_PKT_TYPES_MASK_HV3      +
+        BTM_SCO_PKT_TYPES_MASK_EV3      +
+        BTM_SCO_PKT_TYPES_MASK_EV4      +
+        BTM_SCO_PKT_TYPES_MASK_EV5      +
+        BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 +
+        BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
+        BTM_ESCO_RETRANS_POWER              /* Retransmission effort                      */
+    },
+    /* HFP 1.7+ */
+    /* eSCO CVSD S4 */
+    {
+        BTM_64KBITS_RATE,                   /* TX Bandwidth (64 kbits/sec)              */
+        BTM_64KBITS_RATE,                   /* RX Bandwidth (64 kbits/sec)              */
+        12,                                 /* 12 ms (HS/HF can use EV3, 2-EV3)  */
+        BTM_VOICE_SETTING_CVSD,             /* Inp Linear, Air CVSD, 2s Comp, 16bit     */
+        (BTM_SCO_LINK_ALL_PKT_MASK |
+         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
+        BTM_ESCO_RETRANS_QUALITY            /* Retransmission effort                    */
+    }
 };
 #endif
 
@@ -470,9 +501,9 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
     tBTM_STATUS         status;
     UINT8               *p_bd_addr = NULL;
     tBTM_ESCO_PARAMS    params;
+    UINT8               codec_index = BTA_AG_ESCO_SETTING_IDX_CVSD;
 #if (BTM_WBS_INCLUDED == TRUE)
     tBTA_AG_PEER_CODEC  esco_codec = BTM_SCO_CODEC_CVSD;
-    int codec_index = 0;
 #endif
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     tBTM_SCO_ROUTE_TYPE     sco_route;
@@ -513,11 +544,20 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
             codec_index = BTA_AG_ESCO_SETTING_IDX_T1;
         }
     }
-    params = bta_ag_esco_params[codec_index];
+    /* If eSCO codec is CVSD and eSC0 S4 is supported, index is S4 */
+    else if ((esco_codec == BTM_SCO_CODEC_CVSD) && (p_scb->features & BTA_AG_FEAT_ESCO_S4)
+                && (p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO_S4))
+    {
+        codec_index = BTA_AG_ESCO_SETTING_IDX_S4;
+    }
+
 #else
-    /* When WBS is not included, use CVSD by default */
-    params = bta_ag_esco_params;
+    if ((p_scb->features & BTA_AG_FEAT_ESCO_S4) && (p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO_S4))
+    {
+        codec_index = BTA_AG_ESCO_SETTING_IDX_S4;
+    }
 #endif
+    params = bta_ag_esco_params[codec_index];
 
     if(bta_ag_cb.sco.param_updated) /* If we do not use the default parameters */
         params = bta_ag_cb.sco.params;
@@ -528,10 +568,13 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
         if (esco_codec == BTM_SCO_CODEC_CVSD)   /* For CVSD */
 #endif
         {
-            /* Use the application packet types (5 slot EV packets not allowed) */
-            params.packet_types = p_bta_ag_cfg->sco_pkt_types     |
-                                  BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
-                                  BTM_SCO_PKT_TYPES_MASK_NO_3_EV5;
+            if (codec_index == BTA_AG_ESCO_SETTING_IDX_CVSD)
+            {
+                /* Use the application packet types (5 slot EV packets not allowed) */
+                params.packet_types = p_bta_ag_cfg->sco_pkt_types     |
+                                    BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+                                    BTM_SCO_PKT_TYPES_MASK_NO_3_EV5;
+            }
         }
     }
 
@@ -1608,6 +1651,7 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB *p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA *p_data
 
             if (p_data->link_type == BTM_LINK_TYPE_SCO)
             {
+                resp.retrans_effort = BTM_ESCO_RETRANS_OFF;
                 resp.packet_types = (BTM_SCO_LINK_ONLY_MASK          |
                                      BTM_SCO_PKT_TYPES_MASK_NO_2_EV3 |
                                      BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
@@ -1616,6 +1660,13 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB *p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA *p_data
             }
             else    /* Allow controller to use all types available except 5-slot EDR */
             {
+                if ((p_scb->features & BTA_AG_FEAT_ESCO_S4) &&
+                        (p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO_S4))
+                {
+                    resp.max_latency = 12;
+                    resp.retrans_effort = BTM_ESCO_RETRANS_QUALITY;
+                }
+
                 resp.packet_types = (BTM_SCO_LINK_ALL_PKT_MASK |
                                      BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
                                      BTM_SCO_PKT_TYPES_MASK_NO_3_EV5);
