@@ -84,6 +84,10 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_DATA_FAT = 0x81,                                    //!< FAT partition
     ESP_PARTITION_SUBTYPE_DATA_SPIFFS = 0x82,                                 //!< SPIFFS partition
 
+#if __has_include("extra_partition_subtypes.inc")
+    #include "extra_partition_subtypes.inc"
+#endif
+
     ESP_PARTITION_SUBTYPE_ANY = 0xff,                                         //!< Used to search for partitions with any subtype
 } esp_partition_subtype_t;
 
