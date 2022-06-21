@@ -280,6 +280,8 @@
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (1)    /*!< Support FTM */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
 #define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT           (0)    /*!< WAPI is not supported */
+#define SOC_WIFI_CSI_SUPPORT            (0)    /*!< CSI is not supported */
+#define SOC_WIFI_MESH_SUPPORT           (0)    /*!< WIFI MESH is not supported */

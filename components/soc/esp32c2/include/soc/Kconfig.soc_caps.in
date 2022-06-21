@@ -561,12 +561,20 @@ config SOC_WIFI_HW_TSF
 
 config SOC_WIFI_FTM_SUPPORT
     bool
-    default y
+    default n
 
 config SOC_WIFI_GCMP_SUPPORT
     bool
     default n
 
 config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default n
+
+config SOC_WIFI_MESH_SUPPORT
     bool
     default n
