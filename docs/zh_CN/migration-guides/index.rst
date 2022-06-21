@@ -18,3 +18,4 @@ ESP-IDF 5.0 迁移指南
     tools
     tcpip-adapter
     gcc
+    bt
