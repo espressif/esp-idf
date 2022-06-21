@@ -2195,7 +2195,6 @@ tools/esp_app_trace/test/sysview/blink.c
 tools/esp_prov/__init__.py
 tools/esp_prov/prov/__init__.py
 tools/esp_prov/prov/wifi_prov.py
-tools/esp_prov/prov/wifi_scan.py
 tools/esp_prov/security/security.py
 tools/esp_prov/security/security0.py
 tools/esp_prov/security/security1.py
