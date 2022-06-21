@@ -146,7 +146,10 @@ typedef struct esp_tls_cfg {
     bool use_secure_element;                /*!< Enable this option to use secure element or
                                                  atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
 
-    int timeout_ms;                         /*!< Network timeout in milliseconds */
+    int timeout_ms;                         /*!< Network timeout in milliseconds.
+                                                 Note: If this value is not set, by default the timeout is
+                                                 set to 10 seconds. If you wish that the session should wait
+                                                 indefinitely then please use a larger value e.g., INT32_MAX */
 
     bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
                                                  this bool is set. */
