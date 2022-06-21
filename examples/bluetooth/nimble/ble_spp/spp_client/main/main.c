@@ -21,9 +21,9 @@ static const char *tag = "NimBLE_SPP_BLE_CENT";
 static int ble_spp_client_gap_event(struct ble_gap_event *event, void *arg);
 QueueHandle_t spp_common_uart_queue = NULL;
 void ble_store_config_init(void);
-static bool is_connect = false;
-uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS];
 static void ble_spp_client_scan(void);
+static ble_addr_t connected_addr[CONFIG_BT_NIMBLE_MAX_CONNECTIONS];
 
 /* 16 Bit Alert Notification Service UUID */
 #define GATT_SVR_SVC_ALERT_UUID                            0x1811
@@ -41,7 +41,7 @@ ble_spp_client_set_handle(const struct peer *peer)
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
-    attribute_handle[peer->conn_handle] = chr->chr.val_handle;
+    attribute_handle[peer->conn_handle - 1] = chr->chr.val_handle;
 }
 
 /**
@@ -66,7 +66,9 @@ ble_spp_client_on_disc_complete(const struct peer *peer, int status, void *arg)
                 "conn_handle=%d\n", status, peer->conn_handle);
 
     ble_spp_client_set_handle(peer);
+#if CONFIG_BT_NIMBLE_MAX_CONNECTIONS > 1
     ble_spp_client_scan();
+#endif
 }
 
 /**
@@ -122,6 +124,14 @@ ble_spp_client_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
+
+    /* Check if device is already connected or not */
+    for ( i = 0; i < CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+	if (memcmp(&connected_addr[i].val,disc->addr.val, sizeof(disc->addr.val)) == 0) {
+	    MODLOG_DFLT(DEBUG, "Device already connected");
+	    return 0;
+	}
+    }
 
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -232,9 +242,10 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         if (event->connect.status == 0) {
             /* Connection successfully established. */
             MODLOG_DFLT(INFO, "Connection established ");
-	    is_connect = true;
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
+	    memcpy(&connected_addr[event->connect.conn_handle - 1].val, desc.peer_id_addr.val,
+		   sizeof(desc.peer_id_addr.val));
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
@@ -346,7 +357,7 @@ void ble_client_uart_task(void *pvParameters)
              switch (event.type) {
              //Event of UART receving data
              case UART_DATA:
-                if (event.size && (is_connect == true)) {
+                if (event.size) {
 
                      /* Writing characteristics */
 		     uint8_t * temp = NULL;
@@ -357,9 +368,9 @@ void ble_client_uart_task(void *pvParameters)
                      }
                      memset(temp, 0x0, event.size);
                      uart_read_bytes(UART_NUM_0,temp,event.size,portMAX_DELAY);
-		     for ( i = 1; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+		     for ( i = 0; i < CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
 	                 if (attribute_handle[i] != 0) {
-			     rc = ble_gattc_write_flat(i, attribute_handle[i],temp, event.size,NULL, NULL);
+			     rc = ble_gattc_write_flat(i+1, attribute_handle[i],temp, event.size,NULL,NULL);
 			     if (rc == 0) {
 			         ESP_LOGI(tag,"Write in uart task success!");
 			     }
