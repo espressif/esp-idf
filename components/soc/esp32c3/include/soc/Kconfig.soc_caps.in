@@ -770,3 +770,7 @@ config SOC_WIFI_WAPI_SUPPORT
 config SOC_WIFI_CSI_SUPPORT
     bool
     default y
+
+config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y

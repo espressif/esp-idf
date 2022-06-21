@@ -284,3 +284,4 @@
 #define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
 #define SOC_WIFI_WAPI_SUPPORT           (0)    /*!< WAPI is not supported */
 #define SOC_WIFI_CSI_SUPPORT            (0)    /*!< CSI is not supported */
+#define SOC_WIFI_MESH_SUPPORT           (0)    /*!< WIFI MESH is not supported */
