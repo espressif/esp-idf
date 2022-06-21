@@ -37,6 +37,12 @@
 #define rbGET_RX_SEM_HANDLE( pxRingbuffer ) ( pxRingbuffer->xRecvSemHandle )
 #endif
 
+#ifdef CONFIG_UART_ISR_IN_IRAM
+#define ISR_ATTR     IRAM_ATTR
+#else
+#define ISR_ATTR
+#endif
+
 typedef struct {
     //This size of this structure must be 32-bit aligned
     size_t xItemLen;
@@ -225,7 +231,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
 
 /* --------------------------- Static Definitions --------------------------- */
 
-static void prvInitializeNewRingbuffer(size_t xBufferSize,
+static ISR_ATTR void prvInitializeNewRingbuffer(size_t xBufferSize,
                                        RingbufferType_t xBufferType,
                                        Ringbuffer_t *pxNewRingbuffer,
                                        uint8_t *pucRingbufferStorage)
@@ -276,7 +282,7 @@ static void prvInitializeNewRingbuffer(size_t xBufferSize,
     portMUX_INITIALIZE(&pxNewRingbuffer->mux);
 }
 
-static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer)
+static ISR_ATTR size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer)
 {
     size_t xReturn;
     if (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) {
@@ -293,7 +299,7 @@ static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer)
     return xReturn;
 }
 
-static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static ISR_ATTR BaseType_t prvCheckItemFitsDefault(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(rbCHECK_ALIGNED(pxRingbuffer->pucAcquire));              //pucAcquire is always aligned in no-split/allow-split ring buffers
@@ -321,7 +327,7 @@ static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xI
     }
 }
 
-static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static ISR_ATTR BaseType_t prvCheckItemFitsByteBuffer(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(pxRingbuffer->pucAcquire >= pxRingbuffer->pucHead && pxRingbuffer->pucAcquire < pxRingbuffer->pucTail);    //Check acquire pointer is within bounds
@@ -338,7 +344,7 @@ static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t
     return (xItemSize <= pxRingbuffer->xSize - (pxRingbuffer->pucAcquire - pxRingbuffer->pucFree)) ? pdTRUE : pdFALSE;
 }
 
-static uint8_t* prvAcquireItemNoSplit(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
+static ISR_ATTR uint8_t* prvAcquireItemNoSplit(Ringbuffer_t *pxRingbuffer, size_t xItemSize)
 {
     //Check arguments and buffer state
     size_t xAlignedItemSize = rbALIGN_SIZE(xItemSize);                  //Rounded up aligned item size
@@ -377,7 +383,7 @@ static uint8_t* prvAcquireItemNoSplit(Ringbuffer_t *pxRingbuffer, size_t xItemSi
     return item_address;
 }
 
-static void prvSendItemDoneNoSplit(Ringbuffer_t *pxRingbuffer, uint8_t* pucItem)
+static ISR_ATTR void prvSendItemDoneNoSplit(Ringbuffer_t *pxRingbuffer, uint8_t* pucItem)
 {
     //Check arguments and buffer state
     configASSERT(rbCHECK_ALIGNED(pucItem));
@@ -422,14 +428,14 @@ static void prvSendItemDoneNoSplit(Ringbuffer_t *pxRingbuffer, uint8_t* pucItem)
     }
 }
 
-static void prvCopyItemNoSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize)
+static ISR_ATTR void prvCopyItemNoSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize)
 {
     uint8_t* item_addr = prvAcquireItemNoSplit(pxRingbuffer, xItemSize);
     memcpy(item_addr, pucItem, xItemSize);
     prvSendItemDoneNoSplit(pxRingbuffer, item_addr);
 }
 
-static void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize)
+static ISR_ATTR void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize)
 {
     //Check arguments and buffer state
     size_t xAlignedItemSize = rbALIGN_SIZE(xItemSize);                  //Rounded up aligned item size
@@ -484,7 +490,7 @@ static void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *puc
     pxRingbuffer->pucWrite = pxRingbuffer->pucAcquire;
 }
 
-static void prvCopyItemByteBuf(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize)
+static ISR_ATTR void prvCopyItemByteBuf(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize)
 {
     //Check arguments and buffer state
     configASSERT(pxRingbuffer->pucAcquire >= pxRingbuffer->pucHead && pxRingbuffer->pucAcquire < pxRingbuffer->pucTail);    //Check acquire pointer is within bounds
@@ -517,7 +523,7 @@ static void prvCopyItemByteBuf(Ringbuffer_t *pxRingbuffer, const uint8_t *pucIte
     pxRingbuffer->pucWrite = pxRingbuffer->pucAcquire;
 }
 
-static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer)
+static ISR_ATTR BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer)
 {
     if ((pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) && pxRingbuffer->pucRead != pxRingbuffer->pucFree) {
         return pdFALSE;     //Byte buffers do not allow multiple retrievals before return
@@ -529,7 +535,7 @@ static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer)
     }
 }
 
-static void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
+static ISR_ATTR void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
                                BaseType_t *pxIsSplit,
                                size_t xUnusedParam,
                                size_t *pxItemSize)
@@ -570,7 +576,7 @@ static void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
     return (void *)pcReturn;
 }
 
-static void *prvGetItemByteBuf(Ringbuffer_t *pxRingbuffer,
+static ISR_ATTR void *prvGetItemByteBuf(Ringbuffer_t *pxRingbuffer,
                                BaseType_t *pxUnusedParam,
                                size_t xMaxSize,
                                size_t *pxItemSize)
@@ -611,7 +617,7 @@ static void *prvGetItemByteBuf(Ringbuffer_t *pxRingbuffer,
     return (void *)ret;
 }
 
-static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
+static ISR_ATTR void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
 {
     //Check arguments and buffer state
     configASSERT(rbCHECK_ALIGNED(pucItem));
@@ -663,7 +669,7 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
     }
 }
 
-static void prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
+static ISR_ATTR void prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
 {
     //Check pointer points to address inside buffer
     configASSERT((uint8_t *)pucItem >= pxRingbuffer->pucHead);
@@ -676,7 +682,7 @@ static void prvReturnItemByteBuf(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
     }
 }
 
-static size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer)
+static ISR_ATTR size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer)
 {
     BaseType_t xFreeSize;
     //Check if buffer is full
@@ -709,7 +715,7 @@ static size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer)
     return xFreeSize;
 }
 
-static size_t prvGetCurMaxSizeAllowSplit(Ringbuffer_t *pxRingbuffer)
+static ISR_ATTR size_t prvGetCurMaxSizeAllowSplit(Ringbuffer_t *pxRingbuffer)
 {
     BaseType_t xFreeSize;
     //Check if buffer is full
@@ -740,7 +746,7 @@ static size_t prvGetCurMaxSizeAllowSplit(Ringbuffer_t *pxRingbuffer)
     return xFreeSize;
 }
 
-static size_t prvGetCurMaxSizeByteBuf(Ringbuffer_t *pxRingbuffer)
+static ISR_ATTR size_t prvGetCurMaxSizeByteBuf(Ringbuffer_t *pxRingbuffer)
 {
     BaseType_t xFreeSize;
     //Check if buffer is full
@@ -759,7 +765,7 @@ static size_t prvGetCurMaxSizeByteBuf(Ringbuffer_t *pxRingbuffer)
     return xFreeSize;
 }
 
-static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
+static ISR_ATTR BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
                                     void **pvItem1,
                                     void **pvItem2,
                                     size_t *xItemSize1,
@@ -824,7 +830,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     return xReturn;
 }
 
-static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
+static ISR_ATTR BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
                                            void **pvItem1,
                                            void **pvItem2,
                                            size_t *xItemSize1,
