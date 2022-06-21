@@ -1418,7 +1418,6 @@ components/ulp/test/esp32/test_ulp_as.c
 components/unity/include/priv/setjmp.h
 components/unity/include/unity_config.h
 components/unity/include/unity_fixture_extras.h
-components/unity/unity_runner.c
 components/usb/test/hcd/test_hcd_ctrl.c
 components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h

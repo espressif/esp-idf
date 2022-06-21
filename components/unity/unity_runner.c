@@ -1,16 +1,8 @@
-// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -143,7 +135,7 @@ static void unity_run_single_test(const test_desc_t *test)
     }
 }
 
-static void unity_run_single_test_by_index(int index)
+void unity_run_test_by_index(int index)
 {
     const test_desc_t *test;
     for (test = s_unity_tests_first; test != NULL && index != 0; test = test->next, --index) {
@@ -159,7 +151,7 @@ static void unity_run_single_test_by_index_parse(const char *filter, int index_m
     int test_index = strtol(filter, NULL, 10);
     if (test_index >= 1 && test_index <= index_max) {
         UNITY_EXEC_TIME_START();
-        unity_run_single_test_by_index(test_index - 1);
+        unity_run_test_by_index(test_index - 1);
         UNITY_EXEC_TIME_STOP();
         UnityPrint("Test ran in ");
         UnityPrintNumberUnsigned(UNITY_EXEC_TIME_MS());
@@ -254,7 +246,7 @@ static int print_test_menu(void)
     return test_counter;
 }
 
-static int get_test_count(void)
+int unity_get_test_count(void)
 {
     int test_counter = 0;
     for (const test_desc_t *test = s_unity_tests_first;
@@ -271,7 +263,7 @@ void unity_run_menu(void)
     UNITY_PRINT_EOL();
     UnityPrint("Press ENTER to see the list of tests.");
     UNITY_PRINT_EOL();
-    int test_count = get_test_count();
+    int test_count = unity_get_test_count();
     while (true) {
         char cmdline[256] = { 0 };
         while (strlen(cmdline) == 0) {
@@ -317,4 +309,20 @@ void unity_run_menu(void)
         UNITY_PRINT_EOL();
         UNITY_OUTPUT_FLUSH();
     }
+}
+
+bool unity_get_test_info(int test_index, test_desc_t* out_info)
+{
+    if (test_index < 0) {
+        return false;
+    }
+    const test_desc_t *test;
+    for (test = s_unity_tests_first; test != NULL && test_index != 0; test = test->next, --test_index) {
+        ;
+    }
+    if (test == NULL) {
+        return false;
+    }
+    *out_info = *test;
+    return true;
 }
