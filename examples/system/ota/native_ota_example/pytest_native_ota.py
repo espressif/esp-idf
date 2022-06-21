@@ -74,15 +74,6 @@ def get_my_ip() -> str:
     return my_ip
 
 
-def get_server_status(host_ip: str, port: int) -> bool:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_status = sock.connect_ex((host_ip, port))
-    sock.close()
-    if server_status == 0:
-        return True
-    return False
-
-
 def create_file(server_file: str, file_data: str) -> None:
     with open(server_file, 'w+') as file:
         file.write(file_data)
@@ -149,30 +140,31 @@ def test_examples_protocol_native_ota_example(dut: Dut) -> None:
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    server_port = 8002
-    # No. of times working of application to be validated
-    iterations = 3
-    # File to be downloaded. This file is generated after compilation
-    bin_name = 'native_ota.bin'
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, server_port) is False):
+    try:
+        server_port = 8002
+        # No. of times working of application to be validated
+        iterations = 3
+        # File to be downloaded. This file is generated after compilation
+        bin_name = 'native_ota.bin'
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
-    for i in range(iterations):
-        dut.expect('Loaded app from partition at offset', timeout=60)
-        try:
-            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
-        except pexpect.exceptions.TIMEOUT:
-            thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-        dut.expect('Starting OTA example', timeout=30)
+        for i in range(iterations):
+            dut.expect('Loaded app from partition at offset', timeout=60)
+            try:
+                ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
+                print('Connected to AP with IP: {}'.format(ip_address))
+            except pexpect.exceptions.TIMEOUT:
+                thread1.terminate()
+                raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            dut.expect('Starting OTA example', timeout=30)
 
-        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
-        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
-    thread1.terminate()
+            print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+            dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.supported_targets
@@ -187,42 +179,43 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
       3. Fetch OTA image over HTTPS
       4. Check working of code if bin is truncated
     """
-    server_port = 8002
-    # Original binary file generated after compilation
-    bin_name = 'native_ota.bin'
-    # Truncated binary file to be generated from original binary file
-    truncated_bin_name = 'truncated.bin'
-    # Size of truncated file to be grnerated. This value can range from 288 bytes (Image header size) to size of original binary file
-    # truncated_bin_size is set to 64000 to reduce consumed by the test case
-    truncated_bin_size = 64000
-    # check and log bin size
-    binary_file = os.path.join(dut.app.binary_path, bin_name)
-    f = open(binary_file, 'rb+')
-    fo = open(os.path.join(dut.app.binary_path, truncated_bin_name), 'wb+')
-    fo.write(f.read(truncated_bin_size))
-    fo.close()
-    f.close()
-    binary_file = os.path.join(dut.app.binary_path, truncated_bin_name)
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, server_port) is False):
+    try:
+        server_port = 8002
+        # Original binary file generated after compilation
+        bin_name = 'native_ota.bin'
+        # Truncated binary file to be generated from original binary file
+        truncated_bin_name = 'truncated.bin'
+        # Size of truncated file to be grnerated. This value can range from 288 bytes (Image header size) to size of original binary file
+        # truncated_bin_size is set to 64000 to reduce consumed by the test case
+        truncated_bin_size = 64000
+        # check and log bin size
+        binary_file = os.path.join(dut.app.binary_path, bin_name)
+        f = open(binary_file, 'rb+')
+        fo = open(os.path.join(dut.app.binary_path, truncated_bin_name), 'wb+')
+        fo.write(f.read(truncated_bin_size))
+        fo.close()
+        f.close()
+        binary_file = os.path.join(dut.app.binary_path, truncated_bin_name)
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset', timeout=30)
-    try:
-        ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset', timeout=30)
+        try:
+            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
-    dut.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
-    dut.expect('native_ota_example: Image validation failed, image is corrupted', timeout=20)
-    os.remove(binary_file)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
+        dut.expect('native_ota_example: Image validation failed, image is corrupted', timeout=20)
+        os.remove(binary_file)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.supported_targets
@@ -237,41 +230,42 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
       3. Fetch OTA image over HTTPS
       4. Check working of code if headers are not sent completely
     """
-    server_port = 8002
-    # Original binary file generated after compilation
-    bin_name = 'native_ota.bin'
-    # Truncated binary file to be generated from original binary file
-    truncated_bin_name = 'truncated_header.bin'
-    # Size of truncated file to be grnerated. This value should be less than 288 bytes (Image header size)
-    truncated_bin_size = 180
-    # check and log bin size
-    binary_file = os.path.join(dut.app.binary_path, bin_name)
-    f = open(binary_file, 'rb+')
-    fo = open(os.path.join(dut.app.binary_path, truncated_bin_name), 'wb+')
-    fo.write(f.read(truncated_bin_size))
-    fo.close()
-    f.close()
-    binary_file = os.path.join(dut.app.binary_path, truncated_bin_name)
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, server_port) is False):
+    try:
+        server_port = 8002
+        # Original binary file generated after compilation
+        bin_name = 'native_ota.bin'
+        # Truncated binary file to be generated from original binary file
+        truncated_bin_name = 'truncated_header.bin'
+        # Size of truncated file to be grnerated. This value should be less than 288 bytes (Image header size)
+        truncated_bin_size = 180
+        # check and log bin size
+        binary_file = os.path.join(dut.app.binary_path, bin_name)
+        f = open(binary_file, 'rb+')
+        fo = open(os.path.join(dut.app.binary_path, truncated_bin_name), 'wb+')
+        fo.write(f.read(truncated_bin_size))
+        fo.close()
+        f.close()
+        binary_file = os.path.join(dut.app.binary_path, truncated_bin_name)
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset', timeout=30)
-    try:
-        ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset', timeout=30)
+        try:
+            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
-    dut.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
-    dut.expect('native_ota_example: received package is not fit len', timeout=20)
-    os.remove(binary_file)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
+        dut.expect('native_ota_example: received package is not fit len', timeout=20)
+        os.remove(binary_file)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.supported_targets
@@ -286,40 +280,41 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
       3. Fetch OTA image over HTTPS
       4. Check working of code for random binary file
     """
-    server_port = 8002
-    # Random binary file to be generated
-    random_bin_name = 'random.bin'
-    # Size of random binary file. 32000 is choosen, to reduce the time required to run the test-case
-    random_bin_size = 32000
-    # check and log bin size
-    binary_file = os.path.join(dut.app.binary_path, random_bin_name)
-    fo = open(binary_file, 'wb+')
-    # First byte of binary file is always set to zero. If first byte is generated randomly,
-    # in some cases it may generate 0xE9 which will result in failure of testcase.
-    fo.write(struct.pack('B', 0))
-    for i in range(random_bin_size - 1):
-        fo.write(struct.pack('B', random.randrange(0,255,1)))
-    fo.close()
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, server_port) is False):
+    try:
+        server_port = 8002
+        # Random binary file to be generated
+        random_bin_name = 'random.bin'
+        # Size of random binary file. 32000 is choosen, to reduce the time required to run the test-case
+        random_bin_size = 32000
+        # check and log bin size
+        binary_file = os.path.join(dut.app.binary_path, random_bin_name)
+        fo = open(binary_file, 'wb+')
+        # First byte of binary file is always set to zero. If first byte is generated randomly,
+        # in some cases it may generate 0xE9 which will result in failure of testcase.
+        fo.write(struct.pack('B', 0))
+        for i in range(random_bin_size - 1):
+            fo.write(struct.pack('B', random.randrange(0,255,1)))
+        fo.close()
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset', timeout=30)
-    try:
-        ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset', timeout=30)
+        try:
+            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
-    dut.write('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name)
-    dut.expect('esp_ota_ops: OTA image has invalid magic byte', timeout=20)
-    os.remove(binary_file)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name)
+        dut.expect('esp_ota_ops: OTA image has invalid magic byte', timeout=20)
+        os.remove(binary_file)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.supported_targets
@@ -338,18 +333,20 @@ def test_examples_protocol_native_ota_example_chunked(dut: Dut) -> None:
     # start test
     host_ip = get_my_ip()
     chunked_server = start_chunked_server(dut.app.binary_path, 8070)
-    dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Loaded app from partition at offset', timeout=30)
+        try:
+            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
 
-    dut.expect('Starting OTA example', timeout=30)
-    print('writing to device: {}'.format('https://' + host_ip + ':8070/' + bin_name))
-    dut.write('https://' + host_ip + ':8070/' + bin_name)
-    dut.expect('Loaded app from partition at offset', timeout=60)
-    dut.expect('Starting OTA example', timeout=30)
-    chunked_server.kill()
-    os.remove(os.path.join(dut.app.binary_path, 'server_cert.pem'))
-    os.remove(os.path.join(dut.app.binary_path, 'server_key.pem'))
+        dut.expect('Starting OTA example', timeout=30)
+        print('writing to device: {}'.format('https://' + host_ip + ':8070/' + bin_name))
+        dut.write('https://' + host_ip + ':8070/' + bin_name)
+        dut.expect('Loaded app from partition at offset', timeout=60)
+        dut.expect('Starting OTA example', timeout=30)
+        os.remove(os.path.join(dut.app.binary_path, 'server_cert.pem'))
+        os.remove(os.path.join(dut.app.binary_path, 'server_key.pem'))
+    finally:
+        chunked_server.kill()
