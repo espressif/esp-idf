@@ -124,6 +124,13 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/sha1.c")
 endif()
 
+if(CONFIG_LWIP_LOWPAN6_SUPPORT)
+    list(APPEND srcs
+        "lwip/src/netif/lowpan6_common.c"
+        "lwip/src/netif/lowpan6.c"
+        "lwip/src/netif/lowpan6_ble.c")
+endif()
+
 if(CONFIG_ETH_ENABLED)
     list(APPEND srcs "port/esp32/netif/ethernetif.c")
 endif()

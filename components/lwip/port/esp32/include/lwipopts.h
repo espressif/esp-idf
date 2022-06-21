@@ -719,6 +719,43 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 
 /*
    ------------------------------------
+   ---------- 6LoWPAN options ----------
+   ------------------------------------
+*/
+
+#ifdef CONFIG_LWIP_LOWPAN6_SUPPORT
+
+/**
+ * LOWPAN6_DEBUG: Enable debugging for 6LoWPAN.
+ */
+#ifdef CONFIG_LWIP_LOWPAN6_DEBUG_ON
+#define LWIP_LOWPAN6_DEBUG              LWIP_DBG_ON
+#else
+#define LWIP_LOWPAN6_DEBUG              LWIP_DBG_OFF
+#endif
+
+/** 
+ * LWIP_LOWPAN6_DECOMPRESSION_DEBUG: enable decompression debug output
+ */
+#ifdef CONFIG_LWIP_LOWPAN6_DECOMPRESSION_DEBUG_ON
+#define LWIP_LOWPAN6_DECOMPRESSION_DEBUG LWIP_DBG_ON
+#else
+#define LWIP_LOWPAN6_DECOMPRESSION_DEBUG LWIP_DBG_OFF
+#endif
+
+/**
+ * LWIP_RFC7668_IP_UNCOMPRESSED_DEBUG: enable decompressed IP frame output debugging
+ */
+#if CONFIG_LWIP_LOWPAN6_UNCOMPRESSED_DEBUG_ON
+#define LWIP_RFC7668_IP_UNCOMPRESSED_DEBUG LWIP_DBG_ON
+#else
+#define LWIP_RFC7668_IP_UNCOMPRESSED_DEBUG LWIP_DBG_OFF
+#endif
+
+#endif
+
+/*
+   ------------------------------------
    ---------- Thread options ----------
    ------------------------------------
 */
