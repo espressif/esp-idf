@@ -85,7 +85,7 @@ config SOC_DIG_SIGN_SUPPORTED
 
 config SOC_ECC_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_FLASH_ENC_SUPPORTED
     bool
