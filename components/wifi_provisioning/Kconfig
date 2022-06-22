@@ -34,7 +34,6 @@ menu "Wi-Fi Provisioning Manager"
     config WIFI_PROV_BLE_FORCE_ENCRYPTION
         bool
         prompt "Force Link Encryption during characteristic Read / Write"
-        depends on BT_NIMBLE_ENABLED
         default y
         help
             Used to enforce link encryption when attempting to read / write characteristic
