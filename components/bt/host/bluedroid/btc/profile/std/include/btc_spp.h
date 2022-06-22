@@ -58,14 +58,14 @@ typedef union {
         tSDP_UUID *p_uuid_list;
     } start_discovery;
     //BTC_SPP_ACT_CONNECT
-    struct connect_arg {
+    struct conn_arg {
         esp_spp_sec_t sec_mask;
         esp_spp_role_t role;
         UINT8 remote_scn;
         esp_bd_addr_t peer_bd_addr;
     } connect;
     //BTC_SPP_ACT_DISCONNECT
-    struct disconnect_arg {
+    struct disconn_arg {
         UINT32 handle;
     } disconnect;
     //BTC_SPP_ACT_START_SRV
