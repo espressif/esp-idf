@@ -57,7 +57,7 @@ typedef struct {
     pid_ctrl_block_handle_t pid_ctrl;
 } motor_control_task_context_t;
 
-static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
+static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
 {
     motor_control_timer_context_t *ctx = (motor_control_timer_context_t *)user_ctx;
     ctx->accumu_count += edata->watch_point_value;

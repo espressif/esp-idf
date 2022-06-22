@@ -20,19 +20,19 @@ PCNT 模块通常用于：
 
 PCNT 的功能从以下几个方面进行说明：
 
-- :ref:`allocating-resource` - 说明如何通过配置分配 PCNT 单元和通道，以及在相应操作完成之后，如何回收单元和通道。
-- :ref:`set-up-channel-actions` - 说明如何设置通道针对不同信号沿和电平进行操作。
-- :ref:`watch-points` - 说明如何配置观察点，即当计数达到某个数值时，命令 PCNT 单元触发某个事件。
-- :ref:`callbacks-register-event` - 说明如何将您的代码挂载到观察点事件的回调函数上。
-- :ref:`set-glitch-filter` - 说明如何使能毛刺滤波器并设置其时序参数。
-- :ref:`enable-and-disable-unit` - 说明如何使能和关闭 PCNT 单元。
-- :ref:`unit-io-control` - 说明 PCNT 单元的 IO 控制功能，例如使能毛刺滤波器，开启和停用 PCNT 单元，获取和清除计数。
-- :ref:`managing-power` - 说明哪些功能会阻止芯片进入低功耗模式。
-- :ref:`iram-safety` - 说明在缓存禁用的情况下，如何执行 PCNT 中断和 IO 控制功能。
-- :ref:`thread-safe` - 列出线程安全的 API。
-- :ref:`kconfig-option` - 列出了支持的 Kconfig 选项，这些选项可实现不同的驱动效果。
+- :ref:`pcnt-resource-allocation` - 说明如何通过配置分配 PCNT 单元和通道，以及在相应操作完成之后，如何回收单元和通道。
+- :ref:`pcnt-setup-channel-actions` - 说明如何设置通道针对不同信号沿和电平进行操作。
+- :ref:`pcnt-watch-points` - 说明如何配置观察点，即当计数达到某个数值时，命令 PCNT 单元触发某个事件。
+- :ref:`pcnt-register-event-callbacks` - 说明如何将您的代码挂载到观察点事件的回调函数上。
+- :ref:`pcnt-set-glitch-filter` - 说明如何使能毛刺滤波器并设置其时序参数。
+- :ref:`pcnt-enable-disable-unit` - 说明如何使能和关闭 PCNT 单元。
+- :ref:`pcnt-unit-io-control` - 说明 PCNT 单元的 IO 控制功能，例如使能毛刺滤波器，开启和停用 PCNT 单元，获取和清除计数。
+- :ref:`pcnt-power-management` - 说明哪些功能会阻止芯片进入低功耗模式。
+- :ref:`pcnt-iram-safe` - 说明在缓存禁用的情况下，如何执行 PCNT 中断和 IO 控制功能。
+- :ref:`pcnt-thread-safe` - 列出线程安全的 API。
+- :ref:`pcnt-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可实现不同的驱动效果。
 
-.. _allocating-resource:
+.. _pcnt-resource-allocation:
 
 分配资源
 ^^^^^^^^^^^^^
@@ -91,7 +91,7 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
 
-.. _set-up-channel-actions:
+.. _pcnt-setup-channel-actions:
 
 设置通道操作
 ^^^^^^^^^^^^^^
@@ -108,12 +108,12 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
     // keep the counting mode when the control signal is high level, and reverse the counting mode when the control signal is low level
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
 
-.. _watch-points:
+.. _pcnt-watch-points:
 
 配置观察点
 ^^^^^^^^^^
 
-PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值被称为 **观察点**。观察点不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器到达任一观察点时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断通知您。关于如何注册事件回调函数，请参考 :ref:`callbacks-register-event`。
+PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值被称为 **观察点**。观察点不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器到达任一观察点时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断通知您。关于如何注册事件回调函数，请参考 :ref:`pcnt-register-event-callbacks`。
 
 观察点分别可以通过 :cpp:func:`pcnt_unit_add_watch_point` 和 :cpp:func:`pcnt_unit_remove_watch_point` 进行添加和删除。常用的观察点包括 **过零**, **最大/最小计数** 以及其他的阈值。可用的观察点是有限的，如果 :cpp:func:`pcnt_unit_add_watch_point` 无法获得空闲硬件资源来存储观察点，会返回错误 :c:macro:`ESP_ERR_NOT_FOUND`。不能多次添加同一个观察点，否则将返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
 
@@ -126,7 +126,7 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
     // add high limit watch point
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(pcnt_unit, EXAMPLE_PCNT_HIGH_LIMIT));
 
-.. _callbacks-register-event:
+.. _pcnt-register-event-callbacks:
 
 注册事件回调函数
 ^^^^^^^^^^^^^^^^^^^^
@@ -146,7 +146,7 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
 .. code:: c
 
-    static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
+    static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
     {
         BaseType_t high_task_wakeup;
         QueueHandle_t queue = (QueueHandle_t)user_ctx;
@@ -162,7 +162,7 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
     QueueHandle_t queue = xQueueCreate(10, sizeof(int));
     ESP_ERROR_CHECK(pcnt_unit_register_event_callbacks(pcnt_unit, &cbs, queue));
 
-.. _set-glitch-filter:
+.. _pcnt-set-glitch-filter:
 
 设置毛刺滤波器
 ^^^^^^^^^^^^^^^^^
@@ -177,7 +177,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 .. note::
 
-    毛刺滤波器的时钟信息来自 APB。为确保 PCNT 单元不会滤除脉冲信号，最大毛刺宽度应大于一个 APB_CLK 周期（如果 APB 的频率为 80 MHz，则最大毛刺宽度为 12.5 ns）。使能动态频率缩放 (DFS) 后，APB 的频率会发生变化，从而最大毛刺宽度也会发生变化，这会导致计数器无法正常工作。因此，第一次使能毛刺滤波器时，驱动会为 PCNT 单元安装 PM 锁。关于 PCNT 驱动的电源管理的更多信息，请参考 :ref:`managing-power`。
+    毛刺滤波器的时钟信息来自 APB。为确保 PCNT 单元不会滤除脉冲信号，最大毛刺宽度应大于一个 APB_CLK 周期（如果 APB 的频率为 80 MHz，则最大毛刺宽度为 12.5 ns）。使能动态频率缩放 (DFS) 后，APB 的频率会发生变化，从而最大毛刺宽度也会发生变化，这会导致计数器无法正常工作。因此，第一次使能毛刺滤波器时，驱动会为 PCNT 单元安装 PM 锁。关于 PCNT 驱动的电源管理的更多信息，请参考 :ref:`pcnt-power-management`。
 
 .. code:: c
 
@@ -186,7 +186,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
-.. _enable-and-disable-unit:
+.. _pcnt-enable-disable-unit:
 
 使能和禁用单元
 ^^^^^^^^^^^^^^^^^
@@ -195,7 +195,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 * 将 PCNT 单元的驱动状态从 **初始** 切换到 **使能** 。
 * 如果中断服务已经在 :cpp:func:`pcnt_unit_register_event_callbacks` 延迟安装，使能中断服务。
-* 如果电源管理锁已经在 :cpp:func:`pcnt_unit_set_glitch_filter` 延迟安装，获取该电源管理锁。请参考 :ref:`managing-power` 获取更多信息。
+* 如果电源管理锁已经在 :cpp:func:`pcnt_unit_set_glitch_filter` 延迟安装，获取该电源管理锁。请参考 :ref:`pcnt-power-management` 获取更多信息。
 
 调用函数 :cpp:func:`pcnt_unit_disable` 会进行相反的操作，即将 PCNT 单元的驱动状态切换回 **初始** 状态，禁用中断服务并释放电源管理锁。
 
@@ -203,7 +203,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
     ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
 
-.. _unit-io-control:
+.. _pcnt-unit-io-control:
 
 控制单元 IO
 ^^^^^^^^^^^^^^^
@@ -234,7 +234,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
     int pulse_count = 0;
     ESP_ERROR_CHECK(pcnt_unit_get_count(pcnt_unit, &pulse_count));
 
-.. _managing-power:
+.. _pcnt-power-management:
 
 电源管理
 ^^^^^^^^^^
@@ -243,7 +243,7 @@ PCNT 单元的滤波器可滤除信号中的短时毛刺，:cpp:type:`pcnt_glitc
 
 驱动通过获取 :cpp:enumerator:`ESP_PM_APB_FREQ_MAX` 类型的电源管理锁来防止系统修改 APB 频率。每当通过 :cpp:func:`pcnt_unit_set_glitch_filter` 使能毛刺滤波器时，驱动可以保证系统在 :cpp:func:`pcnt_unit_enable` 使能 PCNT 单元后获取电源管理锁。而系统调用 :cpp:func:`pcnt_unit_disable` 之后，驱动会释放电源管理锁。
 
-.. _iram-safety:
+.. _pcnt-iram-safe:
 
 支持 IRAM 安全中断
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -265,7 +265,7 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 - :cpp:func:`pcnt_unit_clear_count`
 - :cpp:func:`pcnt_unit_get_count`
 
-.. _thread-safe:
+.. _pcnt-thread-safe:
 
 支持线程安全
 ^^^^^^^^^^^^^
@@ -280,13 +280,13 @@ Konfig 选项 :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 可以实现以下功能：
 
 其他以 :cpp:type:`pcnt_unit_handle_t` 和 :cpp:type:`pcnt_channel_handle_t` 作为第一个参数的函数被视为线程不安全函数，在多任务场景下应避免调用这些函数。
 
-.. _kconfig-option:
+.. _pcnt-kconfig-options:
 
 支持的 Kconfig 选项
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` 用于确定 PCNT 控制函数的位置 (放在 IRAM 还是 flash 中)，请参考 :ref:`iram-safety` 获取更多信息。
-- :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 用于控制当缓存禁用时，默认的 ISR 句柄是否可以工作，请参考 :ref:`iram-safety` 获取更多信息。
+- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` 用于确定 PCNT 控制函数的位置 (放在 IRAM 还是 flash 中)，请参考 :ref:`pcnt-iram-safe` 获取更多信息。
+- :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` 用于控制当缓存禁用时，默认的 ISR 句柄是否可以工作，请参考 :ref:`pcnt-iram-safe` 获取更多信息。
 - :ref:`CONFIG_PCNT_ENABLE_DEBUG_LOG` 用于使能调试日志输出，而这会增大固件二进制文件。
 
 应用实例

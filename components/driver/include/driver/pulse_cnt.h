@@ -44,7 +44,7 @@ typedef struct {
  * @param[in] user_ctx User data, passed from `pcnt_unit_register_event_callbacks()`
  * @return Whether a high priority task has been woken up by this function
  */
-typedef bool (*pcnt_watch_cb_t)(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx);
+typedef bool (*pcnt_watch_cb_t)(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx);
 
 /**
  * @brief Group of supported PCNT callbacks

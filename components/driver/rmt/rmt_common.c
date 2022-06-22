@@ -49,7 +49,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
             // initial occupy_mask: 1111...100...0
             group->occupy_mask = UINT32_MAX & ~((1 << SOC_RMT_CHANNELS_PER_GROUP) - 1);
             // group clock won't be configured at this stage, it will be set when allocate the first channel
-            group->clk_src = RMT_CLK_SRC_NONE;
+            group->clk_src = 0;
             // enable APB access RMT registers
             periph_module_enable(rmt_periph_signals.groups[group_id].module);
             periph_module_reset(rmt_periph_signals.groups[group_id].module);
@@ -102,7 +102,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     bool clock_selection_conflict = false;
     // check if we need to update the group clock source, group clock source is shared by all channels
     portENTER_CRITICAL(&group->spinlock);
-    if (group->clk_src == RMT_CLK_SRC_NONE) {
+    if (group->clk_src == 0) {
         group->clk_src = clk_src;
     } else {
         clock_selection_conflict = (group->clk_src != clk_src);
