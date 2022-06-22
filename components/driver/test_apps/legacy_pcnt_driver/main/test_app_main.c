@@ -8,7 +8,12 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 
+#ifndef CONFIG_FREERTOS_SMP
 #define TEST_MEMORY_LEAK_THRESHOLD (-300)
+#else
+// TODO: IDF-5290
+#define TEST_MEMORY_LEAK_THRESHOLD (-400)
+#endif // CONFIG_FREERTOS_SMP
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
