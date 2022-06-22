@@ -69,10 +69,10 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/include/driver/rtc_io.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdio_slave.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sdm.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdmmc_host.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdmmc_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdspi_host.h \
-    $(PROJECT_PATH)/components/driver/include/driver/sigmadelta.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_master.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_slave.h \
@@ -163,7 +163,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/sigmadelta_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/sdm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \

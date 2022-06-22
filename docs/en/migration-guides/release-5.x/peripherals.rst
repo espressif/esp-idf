@@ -33,10 +33,33 @@ GPIO
 
 The previous Kconfig option `RTCIO_SUPPORT_RTC_GPIO_DESC` has been removed, thus the ``rtc_gpio_desc`` array is unavailable. Please use ``rtc_io_desc`` array instead.
 
+.. only:: SOC_SDM_SUPPORTED
+
+    Sigma-Delta Modulator
+    ---------------------
+
+    The Sigma-Delta Modulator driver has been redesigned into :doc:`SDM <../../api-reference/peripherals/sdm>`. The new driver implements a factory pattern, where the SDM channels are managed in a pool internally, thus you don't have to fix a SDM channel to a GPIO manually. All SDM channels can be allocated dynamically. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/sigmadelta.h``. However, by default, including ``driver/sigmadelta.h`` will bring a build warning like ``The legacy sigma-delta driver is deprecated, please use driver/sdm.h``. The warning can be suppressed by Kconfig option :ref:`CONFIG_SDM_SUPPRESS_DEPRECATE_WARN`.
+
+    The major breaking changes in concept and usage are listed as follows:
+
+    Breaking Changes in Concepts
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - SDM channel representation has changed from ``sigmadelta_channel_t`` to :cpp:type:`sdm_channel_handle_t`, which is an opaque pointer.
+    - SDM channel configurations are stored in :cpp:type:`sdm_config_t` now, instead the previous ``sigmadelta_config_t``.
+    - In the legacy driver, you don't have to set the clock source for SDM channel. But in the new driver, you need to set a proper one in the :cpp:member:`sdm_config_t::clk_src`. The available clock sources are listed in the :cpp:type:`soc_periph_sdm_clk_src_t`.
+    - In the legacy driver, you need to set a ``prescale`` for the channel, which will reflected into the frequency the modulator output a pulse. In the new driver, you should use :cpp:member:`sdm_config_t::sample_rate_hz`.
+
+    Breaking Changes in Usage
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - Channel configuration was done by channel allocation, in :cpp:func:`sdm_new_channel`. In the new driver, only the ``duty`` can be changed at runtime, by :cpp:func:`sdm_channel_set_duty`. Other parameters like ``gpio number`` and ``prescale`` are only allowed to set during channel allocation.
+    - Before further channel operations, you should **enable** the channel in advance, by calling :cpp:func:`sdm_channel_enable`. This function will help to manage some system level services, like **Power Management**.
+
 Timer Group Driver
 ------------------
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. Although it's recommended to use the the new driver APIs, the legacy driver is till available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will bring a build warning like `legacy timer group driver is deprecated, please migrate to driver/gptimer.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. Although it's recommended to use the the new driver APIs, the legacy driver is still available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will bring a build warning like ``legacy timer group driver is deprecated, please migrate to driver/gptimer.h``. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
 The major breaking changes in concept and usage are listed as follows:
 
