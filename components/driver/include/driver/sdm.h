@@ -23,13 +23,13 @@ typedef struct sdm_channel_t *sdm_channel_handle_t;
  * @brief Sigma Delta channel configuration
  */
 typedef struct {
-    int gpio_num;                    /*!< GPIO number */
+    int gpio_num;               /*!< GPIO number */
     sdm_clock_source_t clk_src; /*!< Clock source */
-    uint32_t sample_rate_hz;         /*!< Sample rate in Hz, it determines how frequent the modulator outputs a pulse */
+    uint32_t sample_rate_hz;    /*!< Sample rate in Hz, it determines how frequent the modulator outputs a pulse */
     struct {
-        uint32_t invert_out: 1;     /*!< Whether to invert the output signal */
-        uint32_t io_loop_back: 1;   /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-    } flags;                        /*!< Extra flags */
+        uint32_t invert_out: 1;   /*!< Whether to invert the output signal */
+        uint32_t io_loop_back: 1; /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
+    } flags;                      /*!< Extra flags */
 } sdm_config_t;
 
 /**

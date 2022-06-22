@@ -91,7 +91,7 @@ static sdm_group_t *sdm_acquire_group_handle(int group_id)
             // initialize sdm group members
             group->group_id = group_id;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-            group->clk_src = SDM_CLK_SRC_NONE;
+            group->clk_src = 0;
             // initialize HAL context
             sdm_hal_init(&group->hal, group_id);
             // enable clock
@@ -206,7 +206,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     int group_id = group->group_id;
     int chan_id = chan->chan_id;
 
-    ESP_GOTO_ON_FALSE(group->clk_src == SDM_CLK_SRC_NONE || group->clk_src == config->clk_src, ESP_ERR_INVALID_ARG, err, TAG, "clock source conflict");
+    ESP_GOTO_ON_FALSE(group->clk_src == 0 || group->clk_src == config->clk_src, ESP_ERR_INVALID_ARG, err, TAG, "clock source conflict");
     uint32_t src_clk_hz = 0;
     switch (config->clk_src) {
     case SDM_CLK_SRC_APB:

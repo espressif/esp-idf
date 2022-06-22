@@ -1799,7 +1799,6 @@ examples/peripherals/mcpwm/mcpwm_servo_control/main/mcpwm_servo_control_example_
 examples/peripherals/sdio/host/main/app_main.c
 examples/peripherals/sdio/sdio_test.py
 examples/peripherals/sdio/slave/main/app_main.c
-examples/peripherals/sigmadelta/main/sigmadelta_example_main.c
 examples/peripherals/spi_master/hd_eeprom/components/eeprom/spi_eeprom.c
 examples/peripherals/spi_master/hd_eeprom/components/eeprom/spi_eeprom.h
 examples/peripherals/spi_master/hd_eeprom/main/spi_eeprom_main.c
