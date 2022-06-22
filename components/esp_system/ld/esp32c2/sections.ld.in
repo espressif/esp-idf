@@ -175,9 +175,6 @@ SECTIONS
     *(.gcc_except_table .gcc_except_table.*)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
-    . = (. + 3) & ~ 3;
-    __eh_frame = ABSOLUTE(.);
-    KEEP(*(.eh_frame))
     . = (. + 7) & ~ 3;
     /*
      * C++ constructor and destructor tables
@@ -226,7 +223,27 @@ SECTIONS
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
-    . = ALIGN(4);
+    . = ALIGN(ALIGNOF(.eh_frame));
+  } > default_rodata_seg
+
+  /* Keep this section shall be at least aligned on 4 */
+  .eh_frame : ALIGN(8)
+  {
+    __eh_frame = ABSOLUTE(.);
+    KEEP (*(.eh_frame))
+    __eh_frame_end = ABSOLUTE(.);
+    /* Guarantee that this section and the next one will be merged by making
+     * them adjacent. */
+    . = ALIGN(ALIGNOF(.eh_frame_hdr));
+  } > default_rodata_seg
+
+  /* To avoid any exception in C++ exception frame unwinding code, this section
+   * shall be aligned on 8. */
+  .eh_frame_hdr : ALIGN(8)
+  {
+    __eh_frame_hdr = ABSOLUTE(.);
+    KEEP (*(.eh_frame_hdr))
+    __eh_frame_hdr_end = ABSOLUTE(.);
   } > default_rodata_seg
 
   .flash.rodata_noload (NOLOAD) :
