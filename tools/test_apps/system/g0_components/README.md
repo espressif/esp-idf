@@ -1,22 +1,18 @@
-| Supported Targets | ESP32-C3 | ESP32-C2 | ESP32-H2 |
-| ----------------- | -------- | -------- | -------- |
-
-All Xtensa based targets (ESP32, ESP32-S2, ESP32-S3) are currently not supported by this test, because their components having dependencies on G1+ components.
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 | ESP32-C2 | ESP32-H2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
 # "G0"-components-only app
 
-This test application will compile ESP-IDF and this test's main component with G0 components only. The goal is to make sure that no G0 component depends
-on G1 or higher component.
+This test application will compile ESP-IDF and this test's main component with G0 components only.
+The goal is to make sure that no G0 component depends on G1 or higher component.
 
-Currently, this test only supports RISC-V based targets as Xtensa ones still have some G0 components depending on G1+ components.
-
-Compiling this test with an Xtensa based target will result in a CMake error, showing all the non-G0 components included in the build file generation.
+This supports all Xtensa and RISC-V based ESP targets.
 
 The purpose of this example is to make sure that any modification to ESP-IDF doesn't violate the G0-G1+ dependency rule.
 
 # Using this test app
 
-Set the target to a RISC-V based, `esp32c3` for example:
+Set the target, `esp32c3` for example:
 ```bash
 idf.py set-target esp32c3
 ```

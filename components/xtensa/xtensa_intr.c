@@ -30,12 +30,24 @@
 #include <stdlib.h>
 
 #include <xtensa/config/core.h>
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/portable.h"
+#include "esp_attr.h"
 #include "xtensa/xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
+
+/*
+ * When compiling for G0-only, we don't have FreeRTOS component.
+ * In fact, FreeRTOS component is only used for the core configuration, so
+ * the macro portNUM_PROCESSORS and the macro/function xPortGetCoreID need to
+ * be defined.
+ */
+#if __has_include("freertos/FreeRTOS.h")
+    #include "freertos/FreeRTOS.h"
+    #include "freertos/portable.h"
+#else
+    _Static_assert(portNUM_PROCESSORS == 1, "G0-only Xtensa builds can only be compiled in single-core mode");
+    #define xPortGetCoreID()    0
+#endif
 
 #if XCHAL_HAVE_EXCEPTIONS
 

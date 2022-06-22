@@ -1,4 +1,10 @@
-
+/*
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
  *
@@ -31,7 +37,15 @@
 #include <xtensa/config/core.h>
 
 #include "xtensa/xtensa_context.h"
-#include "freertos/FreeRTOSConfig.h"
+
+/*
+ * When compiling for G0-only, we don't have FreeRTOS component.
+ * In fact, FreeRTOS component is only used for the configuration, so only the
+ * macro portNUM_PROCESSORS needs to be defined (in the build file).
+ */
+#if __has_include("freertos/FreeRTOSConfig.h")
+    #include "freertos/FreeRTOSConfig.h"
+#endif
 
 #if XCHAL_HAVE_INTERRUPTS
 

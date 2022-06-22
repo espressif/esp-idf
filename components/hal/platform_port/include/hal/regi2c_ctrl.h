@@ -5,6 +5,14 @@
  */
 #pragma once
 
+/**
+ * When compiling G0-layer only, we can't depend on `esp_hw_support` component.
+ * However, `esp_private/regi2c_ctrl.h` is part of that component.
+ * Thus, if we don't have this header file in our compilation unit, we should use
+ * ROM functions.
+ * The main difference is that `regi2c_ctrl.h` implementation protects the functions
+ * with mutex. ROM functions must be protected explicitly by the user.
+ */
 #if __has_include("esp_private/regi2c_ctrl.h")
     #include "esp_private/regi2c_ctrl.h"
 #else

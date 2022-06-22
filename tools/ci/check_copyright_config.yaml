@@ -118,6 +118,13 @@ argtable3:
     - BSD-3-Clause
     - Apache-2.0
 
+xtensa:
+  include:
+    - 'components/xtensa/**'
+  allowed_licenses:
+    - Apache-2.0    #Files added to the xtensa component by us
+    - MIT           #Cadence sources
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:

@@ -392,7 +392,7 @@ TEST_CASE("test_adc_single_cali_time", "[adc][ignore][manual]")
 #include "esp_sleep.h"
 #include "esp_private/regi2c_ctrl.h"
 #if REGI2C_ANA_CALI_PD_WORKAROUND
-#include "regi2c_saradc.h"
+#include "soc/regi2c_saradc.h"
 #endif
 
 //ADC Channels
