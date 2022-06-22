@@ -346,8 +346,8 @@ define away all of the tracing macros.
                                                     }
 #else
   #define traceTASK_SWITCHED_IN()                   {                                                                   \
-                                                      if (memcmp(pxCurrentTCB[esp_cpu_get_core_id()]->pcTaskName, "IDLE", 5) != 0) { \
-                                                        SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[esp_cpu_get_core_id()]);    \
+                                                      if (memcmp(prvGetTCBFromHandle(NULL)->pcTaskName, "IDLE", 4) != 0) { \
+                                                        SEGGER_SYSVIEW_OnTaskStartExec((U32)prvGetTCBFromHandle(NULL));    \
                                                       } else {                                                          \
                                                         SEGGER_SYSVIEW_OnIdle();                                        \
                                                       }                                                                 \
