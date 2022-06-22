@@ -863,8 +863,13 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
     return ESP_ERR_INVALID_STATE;
 #endif // CONFIG_ESP32_ULP_COPROC_ENABLED
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+#if CONFIG_ESP32S2_ULP_COPROC_RISCV || CONFIG_ESP32S3_ULP_COPROC_RISCV
+    s_config.wakeup_triggers |= (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
+#else // ULP_FSM
+    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN);
+    return ESP_OK;
+#endif //ESP32S2_ULP_COPROC_RISCV || ESP32S3_ULP_COPROC_RISCV
 #else
     return ESP_ERR_NOT_SUPPORTED;
 #endif
