@@ -249,12 +249,16 @@ Once the new tools are installed, update the environment using the Export script
 Related Documents
 =================
 
+    * :doc:`establish-serial-connection`
+    * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
+    * `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+    * :doc:`../api-guides/tools/idf-monitor`
+
 .. toctree::
+    :hidden:
     :maxdepth: 1
 
     establish-serial-connection
-    eclipse-setup
-    vscode-setup
     ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

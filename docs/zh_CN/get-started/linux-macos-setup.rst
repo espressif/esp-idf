@@ -249,12 +249,16 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 相关文档
 =================
 
+* :doc:`establish-serial-connection`
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+* :doc:`../api-guides/tools/idf-monitor`
+
 .. toctree::
+    :hidden:
     :maxdepth: 1
 
     establish-serial-connection
-    eclipse-setup
-    vscode-setup
     ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

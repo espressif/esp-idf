@@ -22,7 +22,7 @@ Debugging functionality is provided out of box in standard Eclipse installation.
 
 To begin with, install "GDB Hardware Debugging" plugin by opening Eclipse and going to `Help` > `Install` New Software.
 
-Once installation is complete, configure debugging session following steps below. Please note that some of configuration parameters are generic and some are project specific. This will be shown below by configuring debugging for "blink" example project. If not done already, add this project to Eclipse workspace following guidance in section :doc:`Build and Flash with Eclipse IDE <../../get-started/eclipse-setup>`.  The source of :example:`get-started/blink` application is available  in :idf:`examples` directory of ESP-IDF repository.
+Once installation is complete, configure debugging session following steps below. Please note that some of configuration parameters are generic and some are project specific. This will be shown below by configuring debugging for "blink" example project. If not done already, add this project to Eclipse workspace following guidance in `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_.  The source of :example:`get-started/blink` application is available  in :idf:`examples` directory of ESP-IDF repository.
 
 1.  In Eclipse go to `Run` > `Debug Configuration`. A new window will open. In the window's left pane double click "GDB Hardware Debugging" (or select "GDB Hardware Debugging" and press the "New" button) to create a new configuration.
 
@@ -30,7 +30,7 @@ Once installation is complete, configure debugging session following steps below
 
 3.  On the "Main" tab below, under "Project:", press "Browse" button and select the "blink" project.
 
-4.  In next line "C/C++ Application:" press "Browse" button and select "blink.elf" file. If "blink.elf" is not there, then likely this project has not been build yet. See :doc:`Build and Flash with Eclipse IDE <../../get-started/eclipse-setup>` how to do it.
+4.  In next line "C/C++ Application:" press "Browse" button and select "blink.elf" file. If "blink.elf" is not there, then likely this project has not been build yet. See `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ how to do it.
 
 5.  Finally, under "Build (if required) before launching" click "Disable auto build".
 
