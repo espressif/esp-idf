@@ -1202,7 +1202,9 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
         {
             const int8_t cTxLock = pxQueue->cTxLock;
 
-            traceQUEUE_SEND_FROM_ISR( pxQueue );
+#ifdef ESP_PLATFORM // IDF-5384
+            traceQUEUE_GIVE_FROM_ISR( pxQueue );
+#endif
 
             /* A task can only have an inherited priority if it is a mutex
              * holder - and if there is a mutex holder then the mutex cannot be
@@ -1309,7 +1311,9 @@ BaseType_t xQueueGiveFromISR( QueueHandle_t xQueue,
         }
         else
         {
-            traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue );
+#ifdef ESP_PLATFORM // IDF-5384
+            traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue );
+#endif
             xReturn = errQUEUE_FULL;
         }
     }
@@ -1502,8 +1506,9 @@ BaseType_t xQueueSemaphoreTake( QueueHandle_t xQueue,
              * must be the highest priority task wanting to access the queue. */
             if( uxSemaphoreCount > ( UBaseType_t ) 0 )
             {
-                traceQUEUE_RECEIVE( pxQueue );
-
+#ifdef ESP_PLATFORM
+                traceQUEUE_SEMAPHORE_RECEIVE( pxQueue );
+#endif
                 /* Semaphores are queues with a data size of zero and where the
                  * messages waiting is the semaphore's count.  Reduce the count. */
                 pxQueue->uxMessagesWaiting = uxSemaphoreCount - ( UBaseType_t ) 1;
