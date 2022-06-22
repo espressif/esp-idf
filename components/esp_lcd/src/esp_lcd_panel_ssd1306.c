@@ -167,7 +167,7 @@ static esp_err_t panel_ssd1306_draw_bitmap(esp_lcd_panel_t *panel, int x_start, 
     }, 2);
     // transfer frame buffer
     size_t len = (y_end - y_start) * (x_end - x_start) * ssd1306->bits_per_pixel / 8;
-    esp_lcd_panel_io_tx_color(io, 0, color_data, len);
+    esp_lcd_panel_io_tx_color(io, -1, color_data, len);
 
     return ESP_OK;
 }

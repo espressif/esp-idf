@@ -134,10 +134,15 @@ static esp_err_t panel_io_i2c_tx_buffer(esp_lcd_panel_io_t *io, int lcd_cmd, con
         ESP_GOTO_ON_ERROR(i2c_master_write_byte(cmd_link, is_param ? i2c_panel_io->control_phase_cmd : i2c_panel_io->control_phase_data, true),
                         err, TAG, "write control phase failed"); // control phase
     }
-    uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
-    size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
-    if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {
-        ESP_GOTO_ON_ERROR(i2c_master_write(cmd_link, cmds + (sizeof(cmds) - cmds_size), cmds_size, true), err, TAG, "write LCD cmd failed");
+
+    // some displays don't want any additional commands on data transfers
+    if (lcd_cmd != -1)
+    {
+        uint8_t cmds[4] = {BYTESHIFT(lcd_cmd, 3), BYTESHIFT(lcd_cmd, 2), BYTESHIFT(lcd_cmd, 1), BYTESHIFT(lcd_cmd, 0)};
+        size_t cmds_size = i2c_panel_io->lcd_cmd_bits / 8;
+        if (cmds_size > 0 && cmds_size <= sizeof(cmds)) {
+            ESP_GOTO_ON_ERROR(i2c_master_write(cmd_link, cmds + (sizeof(cmds) - cmds_size), cmds_size, true), err, TAG, "write LCD cmd failed");
+        }
     }
 
     if (buffer) {
