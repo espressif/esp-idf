@@ -57,8 +57,8 @@ typedef enum {
  * @brief SPP callback function events
  */
 typedef enum {
-    ESP_SPP_INIT_EVT                    = 0,                /*!< When SPP is inited, the event comes */
-    ESP_SPP_UNINIT_EVT                  = 1,                /*!< When SPP is uninited, the event comes */
+    ESP_SPP_INIT_EVT                    = 0,                /*!< When SPP is initialized, the event comes */
+    ESP_SPP_UNINIT_EVT                  = 1,                /*!< When SPP is deinitialized, the event comes */
     ESP_SPP_DISCOVERY_COMP_EVT          = 8,                /*!< When SDP discovery complete, the event comes */
     ESP_SPP_OPEN_EVT                    = 26,               /*!< When SPP Client connection open, the event comes */
     ESP_SPP_CLOSE_EVT                   = 27,               /*!< When SPP connection closed, the event comes */
@@ -240,7 +240,7 @@ esp_err_t esp_spp_deinit(void);
 /**
  * @brief       This function is called to performs service discovery for the services provided by the given peer device.
  *              When the operation is completed, the callback function will be called with ESP_SPP_DISCOVERY_COMP_EVT.
- *              This funciton must be called after esp_spp_init() successful and before esp_spp_deinit().
+ *              This function must be called after esp_spp_init() successful and before esp_spp_deinit().
  *
  * @param[in]   bd_addr:   Remote device bluetooth device address.
  *
@@ -254,7 +254,7 @@ esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr);
  * @brief       This function makes an SPP connection to a remote BD Address.
  *              When the connection is initiated or failed to initiate, the callback is called with ESP_SPP_CL_INIT_EVT.
  *              When the connection is established or failed, the callback is called with ESP_SPP_OPEN_EVT.
- *              This funciton must be called after esp_spp_init() successful and before esp_spp_deinit().
+ *              This function must be called after esp_spp_init() successful and before esp_spp_deinit().
  *
  * @param[in]   sec_mask:     Security Setting Mask. Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only.
  * @param[in]   role:         Master or slave.
@@ -270,7 +270,7 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask, esp_spp_role_t role, uint8_t r
 /**
  * @brief       This function closes an SPP connection.
  *              When the operation is completed, the callback function will be called with ESP_SPP_CLOSE_EVT.
- *              This funciton must be called after esp_spp_init() successful and before esp_spp_deinit().
+ *              This function must be called after esp_spp_init() successful and before esp_spp_deinit().
  *
  * @param[in]   handle:    The connection handle.
  *
@@ -285,7 +285,7 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
  *              SPP connection request from a remote Bluetooth device.
  *              When the server is started successfully, the callback is called with ESP_SPP_START_EVT.
  *              When the connection is established, the callback is called with ESP_SPP_SRV_OPEN_EVT.
- *              This funciton must be called after esp_spp_init() successful and before esp_spp_deinit().
+ *              This function must be called after esp_spp_init() successful and before esp_spp_deinit().
  *
  * @param[in]   sec_mask:     Security Setting Mask. Suggest to use ESP_SPP_SEC_NONE, ESP_SPP_SEC_AUTHORIZE or ESP_SPP_SEC_AUTHENTICATE only.
  * @param[in]   role:         Master or slave.
@@ -304,7 +304,7 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask, esp_spp_role_t role, uint8_t
  *              The operation will close all active SPP connection first, then the callback function will be called
  *              with ESP_SPP_CLOSE_EVT, and the number of ESP_SPP_CLOSE_EVT is equal to the number of connection.
  *              When the operation is completed, the callback is called with ESP_SPP_SRV_STOP_EVT.
- *              This funciton must be called after esp_spp_init() successful and before esp_spp_deinit().
+ *              This function must be called after esp_spp_init() successful and before esp_spp_deinit().
  *
  * @return
  *              - ESP_OK: success
@@ -318,7 +318,7 @@ esp_err_t esp_spp_stop_srv(void);
  *              The operation will close all active SPP connection first on the specific SPP server, then the callback function will be called
  *              with ESP_SPP_CLOSE_EVT, and the number of ESP_SPP_CLOSE_EVT is equal to the number of connection.
  *              When the operation is completed, the callback is called with ESP_SPP_SRV_STOP_EVT.
- *              This funciton must be called after esp_spp_init() successful and before esp_spp_deinit().
+ *              This function must be called after esp_spp_init() successful and before esp_spp_deinit().
  *
  * @param[in]   scn:         Server channel number.
  *
@@ -334,7 +334,7 @@ esp_err_t esp_spp_stop_srv_scn(uint8_t scn);
  *              the previous event ESP_SPP_WRITE_EVT is received and the parameter 'cong' is equal to false. If the previous event
  *              ESP_SPP_WRITE_EVT with parameter 'cong' is equal to true, the function can only be called again when the event
  *              ESP_SPP_CONG_EVT with parameter 'cong' equal to false is received.
- *              This funciton must be called after an connection between initiator and acceptor has been established.
+ *              This function must be called after an connection between initiator and acceptor has been established.
  *
  * @param[in]   handle: The connection handle.
  * @param[in]   len:    The length of the data written.

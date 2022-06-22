@@ -34,7 +34,8 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_blufi.rst',
            'api-reference/bluetooth/esp-ble-mesh.rst',
            'api-reference/bluetooth/index.rst',
-           'api-reference/bluetooth/nimble/index.rst']
+           'api-reference/bluetooth/nimble/index.rst',
+           'migration-guides/bluetooth.rst']
 
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',

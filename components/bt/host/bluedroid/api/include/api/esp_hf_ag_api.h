@@ -102,7 +102,7 @@ typedef union
     } volume_control;                             /*!< AG callback param of ESP_HF_VOLUME_CONTROL_EVT */
 
     /**
-     * @brief ESP_HF_UNAT_RESPOSNE_EVT
+     * @brief ESP_HF_UNAT_RESPONSE_EVT
      */
     struct hf_unat_rep_param {
         char *unat;                               /*!< Unknown AT command string */
@@ -130,14 +130,14 @@ typedef union
     } out_call;                                   /*!< AG callback param of ESP_HF_DIAL_EVT */
 
     /**
-     * @brief ESP_HF_VTS_RESPOSNE_EVT
+     * @brief ESP_HF_VTS_RESPONSE_EVT
      */
     struct hf_vts_rep_param {
         char *code;                               /*!< MTF code from HF Client */
     }vts_rep;                                     /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
 
     /**
-     * @brief ESP_HF_NREC_RESPOSNE_EVT
+     * @brief ESP_HF_NREC_RESPONSE_EVT
      */
     struct hf_nrec_param {
        esp_hf_nrec_t state;                       /*!< NREC enabled or disabled */
@@ -309,7 +309,7 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_bda);
  * @brief           Response of Volume Recognition Command(AT+VRA) from HFP client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
- * @param[in]       remote_bda: the device address of voice recognization initiator
+ * @param[in]       remote_bda: the device address of voice recognition initiator
  *
  * @param[in]       value: 0 - voice recognition disabled, 1- voice recognition enabled
  *
@@ -375,7 +375,7 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_bda, esp_hf_at_response_c
 
  /**
  *
- * @brief           Usolicited send device status notificationto HFP Client.
+ * @brief           Unsolicited send device status notification to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -395,7 +395,7 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_cal
 
  /**
  *
- * @brief           Response to device individual indicatiors to HFP Client.
+ * @brief           Response to device individual indicators to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -404,7 +404,7 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_cal
  * @param[in]       ntk_state: network service state
  * @param[in]       signal: signal strength from 0 to 5
  * @param[in]       roam: roam state
- * @param[in]       batt_lev: batery level from 0 to 5
+ * @param[in]       batt_lev: battery level from 0 to 5
  * @param[in]       call_held_status: call held status
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
