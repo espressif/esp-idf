@@ -28,6 +28,10 @@ components/driver/test_apps/rmt:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
 
+components/driver/test_apps/sdm:
+  disable:
+    - if: SOC_SDM_SUPPORTED != 1
+
 components/driver/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1

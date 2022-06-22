@@ -15,3 +15,5 @@ entries:
     if GPIO_CTRL_FUNC_IN_IRAM = y:
         gpio: gpio_set_level (noflash)
         gpio: gpio_intr_disable (noflash)
+    if SDM_CTRL_FUNC_IN_IRAM = y:
+        sdm: sdm_channel_set_duty (noflash)

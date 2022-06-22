@@ -41,7 +41,7 @@ typedef bool (*gptimer_alarm_cb_t) (gptimer_handle_t timer, const gptimer_alarm_
 /**
  * @brief Group of supported GPTimer callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions callbed by it should be placed in IRAM.
+ * @note When CONFIG_GPTIMER_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  */
 typedef struct {
     gptimer_alarm_cb_t on_alarm; /*!< Timer alarm callback */
