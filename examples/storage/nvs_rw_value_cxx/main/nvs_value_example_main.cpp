@@ -19,6 +19,10 @@
 
 extern "C" void app_main(void)
 {
+#ifdef CONFIG_FREERTOS_SMP
+    printf("Running with SMP FreeRTOS configured.\r\n");
+#endif
+
     // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
