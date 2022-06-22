@@ -36,14 +36,14 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
         * Requires the device to be running in Wi-Fi SoftAP mode and hosting an HTTP server supporting specific endpoint URIs
         * The client needs to be connected to the device softAP network before running the `esp_prov` tool.
       * `ble` - for BLE based provisioning
-        * Supports Linux only; on Windows/macOS, it is redirected to console
+        * Supports Linux, Windows and macOS; redirected to console if dependencies are not met
         * Assumes that the provisioning endpoints are active on the device with specific BLE service UUIDs
       * `console` - for debugging via console-based provisioning
         * The client->device commands are printed to STDOUT and device->client messages are accepted via STDIN.
         * This is to be used when the device is accepting provisioning commands on UART console.
 
 * `--service_name <name>` (Optional)
-    - When transport mode is `ble`, this specifies the BLE device name to which connection is to be established for provisioned.
+    - When transport mode is `ble`, this specifies the BLE device name to which connection is to be established for provisioned. If not provided, BLE scanning is initiated and a list of nearby devices, as seen by the host, is displayed, of which the target device can be chosen.
     - When transport mode is `softap`, this specifies the HTTP server hostname / IP which is running the provisioning service, on the SoftAP network of the device which is to be provisioned. This defaults to `192.168.4.1:80` if not specified
 
 * `--ssid <AP SSID>` (Optional)

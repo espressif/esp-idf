@@ -44,11 +44,9 @@ For iOS, a provisioning application along with source code is available on GitHu
 
 #### Platform : Linux / Windows / macOS
 
-To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). Make sure to satisfy all the dependencies prior to running the script.
+To provision the device running this example, the `esp_prov.py` script needs to be run (found under `$IDF_PATH/tools/esp_prov`). Make sure to satisfy all the dependencies prior to running the script (check out the `requirements.txt` file in `esp_prov` directory).
 
-Presently, `esp_prov` supports BLE transport only for Linux platform. For Windows/macOS it falls back to console mode and requires another application (for BLE) through which the communication can take place.
-
-There are various applications, specific to Windows and macOS platform which can be used. The `esp_prov` console will guide you through the provisioning process of locating the correct BLE GATT services and characteristics, the values to write, and input read values.
+`esp_prov` supports BLE and SoftAP transport for Linux, MacOS and Windows platforms. For BLE, however, if dependencies are not met, the script falls back to console mode and requires another application through which the communication can take place. The `esp_prov` console will guide you through the provisioning process of locating the correct BLE GATT services and characteristics, the values to write, and input read values.
 
 ### Configure the project
 
@@ -79,10 +77,15 @@ I (1045) wifi_prov_mgr: Provisioning started with service name : PROV_261FCC
 
 Make sure to note down the BLE device name (starting with `PROV_`) displayed in the serial monitor log (eg. PROV_261FCC). This will depend on the MAC ID and will be unique for every device.
 
-In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses the protocomm security scheme 2 (based on Secure Remote Password protocol (SRP6a)) :
+In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses the protocomm security scheme 1 with PoP-based (proof-of-possession) authentication :
 
 ```
-python esp_prov.py --verbose --transport ble --service_name PROV_4C33E8 --sec_ver 2 --sec2_username testuser --sec2_pwd testpassword --ssid myssid --passphrase mypassword
+python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
+```
+
+For security version 2, the following command can be used:
+```
+python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 2 --sec2_username testuser --sec2_pwd testpassword --ssid myssid --passphrase mypassword
 ```
 
 Above command will perform the provisioning steps, and the monitor log should display something like this :
@@ -116,10 +119,10 @@ I (55355) app: Hello World!
 
 **Note:** For generating the credentials for security version 2 (`SRP6a` salt and verifier) for the device-side, the following example command can be used. The output can then directly be used in this example.
 
-The config option `CONFIG_EXAMPLE_PROV_SEC2_USERNAME` should be set to the same username used in the salt-verifier generation.
+The config option `CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE` should be enabled for the example and in `main/app_main.c`, the macro `EXAMPLE_PROV_SEC2_USERNAME` should be set to the same username used in the salt-verifier generation.
 
 ```log
-$ python esp_prov.py --verbose --transport softap --sec_ver 2 --sec2_gen_cred --sec2_username testuser --sec2_pwd testpassword
+$ python esp_prov.py --transport softap --sec_ver 2 --sec2_gen_cred --sec2_username testuser --sec2_pwd testpassword
 ==== Salt-verifier for security scheme 2 (SRP6a) ====
 static const char sec2_salt[] = {
     0x14, 0xdf, 0x42, 0x50, 0x3d, 0xec, 0x54, 0xc3, 0xe5, 0x0e, 0x0c, 0x9d, 0xb4, 0x84, 0xd7, 0xe4
@@ -170,6 +173,7 @@ I (1702) app: If QR code is not visible, copy paste the below URL in a browser.
 https://espressif.github.io/esp-jumpstart/qrcode.html?data={"ver":"v1","name":"PROV_EA69FC","pop":"abcd1234","transport":"ble"}
 ```
 
+
 ### Wi-Fi Scanning
 
 Provisioning manager also supports providing real-time Wi-Fi scan results (performed on the device) during provisioning. This allows the client side applications to choose the AP for which the device Wi-Fi station is to be configured. Various information about the visible APs is available, like signal strength (RSSI) and security type, etc. Also, the manager now provides capabilities information which can be used by client applications to determine the security type and availability of specific features (like `wifi_scan`).
@@ -207,14 +211,59 @@ S.N. SSID                              BSSID         CHN RSSI AUTH
 Select AP by number (0 to rescan) : 1
 Enter passphrase for MyHomeWiFiAP :
 
-==== Sending Wi-Fi credential to esp32 ====
+==== Sending Wi-Fi Credentials to Target ====
 ==== Wi-Fi Credentials sent successfully ====
 
-==== Applying config to esp32 ====
+==== Applying Wi-Fi Config to Target ====
 ==== Apply config sent successfully ====
 
 ==== Wi-Fi connection state  ====
-++++ WiFi state: connected ++++
+==== WiFi state: Connected ====
+==== Provisioning was successful ====
+```
+
+### Interactive Provisioning
+
+`esp_prov` supports interactive provisioning. You can trigger the script with a simplified command and input the necessary details
+(`Proof-of-possession` for security scheme 1 and `SRP6a username`, `SRP6a password` for security scheme 2) as the provisioning process advances.
+
+The command `python esp_prov.py --transport ble --sec_ver 1` gives out the following sample output:
+
+```
+Discovering...
+==== BLE Discovery results ====
+S.N. Name                              Address
+[ 1] PROV_4C33E8                       01:02:03:04:05:06
+[ 1] BT_DEVICE_SBC                     0A:0B:0C:0D:0E:0F
+Select device by number (0 to rescan) : 1
+Connecting...
+Getting Services...
+Proof of Possession required:
+
+==== Starting Session ====
+==== Session Established ====
+
+==== Scanning Wi-Fi APs ====
+++++ Scan process executed in 3.8695244789123535 sec
+++++ Scan results : 2
+
+++++ Scan finished in 4.4132080078125 sec
+==== Wi-Fi Scan results ====
+S.N. SSID                              BSSID         CHN RSSI AUTH
+[ 1] MyHomeWiFiAP                      788a20841996    1 -45  WPA2_PSK
+[ 2] MobileHotspot                     7a8a20841996   11 -46  WPA2_PSK
+
+Select AP by number (0 to rescan) : 1
+Enter passphrase for myssid :
+
+==== Sending Wi-Fi Credentials to Target ====
+==== Wi-Fi Credentials sent successfully ====
+
+==== Applying Wi-Fi Config to Target ====
+==== Apply config sent successfully ====
+
+==== Wi-Fi connection state  ====
+==== WiFi state: Connected ====
 ==== Provisioning was successful ====
 ```
 
