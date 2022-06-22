@@ -39,7 +39,7 @@ static inline uint32_t IRAM_ATTR cpu_ll_get_core_id(void)
     return id;
 }
 
-static inline uint32_t cpu_ll_get_cycle_count(void)
+static inline uint32_t IRAM_ATTR cpu_ll_get_cycle_count(void)
 {
     uint32_t result;
     RSR(CCOUNT, result);
