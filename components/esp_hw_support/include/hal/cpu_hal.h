@@ -136,7 +136,7 @@ static inline void cpu_hal_clear_watchpoint(int id)
  *
  * @param base address to move the exception vector table to
  */
-static inline void cpu_hal_set_vecbase(const void *base)
+static inline __attribute__((always_inline)) void cpu_hal_set_vecbase(const void *base)
 {
     esp_cpu_intr_set_ivt_addr(base);
 }
