@@ -2192,14 +2192,6 @@ tools/ci/python_packages/ttfw_idf/unity_test_parser.py
 tools/ci/python_packages/wifi_tools.py
 tools/ci/test_autocomplete.py
 tools/esp_app_trace/test/sysview/blink.c
-tools/esp_prov/__init__.py
-tools/esp_prov/prov/__init__.py
-tools/esp_prov/prov/wifi_prov.py
-tools/esp_prov/security/security.py
-tools/esp_prov/security/security0.py
-tools/esp_prov/security/security1.py
-tools/esp_prov/transport/__init__.py
-tools/esp_prov/utils/__init__.py
 tools/find_apps.py
 tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py

@@ -12,6 +12,7 @@ class Transport_BLE(Transport):
     def __init__(self, service_uuid, nu_lookup):
         self.nu_lookup = nu_lookup
         self.service_uuid = service_uuid
+        self.name_uuid_lookup = None
         # Expect service UUID like '0000ffff-0000-1000-8000-00805f9b34fb'
         for name in nu_lookup.keys():
             # Calculate characteristic UUID for each endpoint
@@ -39,7 +40,7 @@ class Transport_BLE(Transport):
             # Check if expected characteristics are provided by the service
             for name in self.name_uuid_lookup.keys():
                 if not self.cli.has_characteristic(self.name_uuid_lookup[name]):
-                    raise RuntimeError("'" + name + "' endpoint not found")
+                    raise RuntimeError(f"'{name}' endpoint not found")
 
     async def disconnect(self):
         await self.cli.disconnect()
@@ -47,5 +48,5 @@ class Transport_BLE(Transport):
     async def send_data(self, ep_name, data):
         # Write (and read) data to characteristic corresponding to the endpoint
         if ep_name not in self.name_uuid_lookup.keys():
-            raise RuntimeError('Invalid endpoint : ' + ep_name)
+            raise RuntimeError(f'Invalid endpoint: {ep_name}')
         return await self.cli.send_data(self.name_uuid_lookup[ep_name], data)

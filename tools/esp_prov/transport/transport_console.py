@@ -2,11 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
-
-from builtins import input
-
-import utils
+from utils import hex_str_to_bytes, str_to_bytes
 
 from .transport import Transport
 
@@ -14,10 +10,10 @@ from .transport import Transport
 class Transport_Console(Transport):
 
     async def send_data(self, path, data, session_id=0):
-        print('Client->Device msg :', path, session_id, utils.str_to_hexstr(data))
+        print('Client->Device msg :', path, session_id, str_to_bytes(data).hex())
         try:
             resp = input('Enter device->client msg : ')
         except Exception as err:
             print('error:', err)
             return None
-        return utils.hexstr_to_str(resp)
+        return hex_str_to_bytes(resp)

@@ -2,12 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
-
 import platform
-from builtins import input
 
-import utils
+from utils import hex_str_to_bytes, str_to_bytes
 
 fallback = True
 
@@ -29,18 +26,23 @@ def device_sort(device):
 
 class BLE_Bleak_Client:
     def __init__(self):
+        self.adapter = None
         self.adapter_props = None
+        self.characteristics = dict()
+        self.chrc_names = None
+        self.device = None
+        self.devname = None
+        self.iface = None
+        self.nu_lookup = None
+        self.services = None
+        self.srv_uuid_adv = None
+        self.srv_uuid_fallback = None
 
     async def connect(self, devname, iface, chrc_names, fallback_srv_uuid):
         self.devname = devname
         self.srv_uuid_fallback = fallback_srv_uuid
         self.chrc_names = [name.lower() for name in chrc_names]
-        self.device = None
-        self.adapter = None
-        self.services = None
-        self.nu_lookup = None
-        self.characteristics = dict()
-        self.srv_uuid_adv = None
+        self.iface = iface
 
         print('Discovering...')
         try:
@@ -62,7 +64,7 @@ class BLE_Bleak_Client:
                 print('==== BLE Discovery results ====')
                 print('{0: >4} {1: <33} {2: <12}'.format(
                     'S.N.', 'Name', 'Address'))
-                for i in range(len(devices)):
+                for i, _ in enumerate(devices):
                     print('[{0: >2}] {1: <33} {2: <12}'.format(i + 1, devices[i].name or 'Unknown', devices[i].address))
 
                 while True:
@@ -193,10 +195,10 @@ class BLE_Console_Client:
 
     async def send_data(self, characteristic_uuid, data):
         print("BLECLI >> Write following data to characteristic with UUID '" + characteristic_uuid + "' :")
-        print('\t>> ' + utils.str_to_hexstr(data))
+        print('\t>> ' + str_to_bytes(data).hex())
         print('BLECLI >> Enter data read from characteristic (in hex) :')
         resp = input('\t<< ')
-        return utils.hexstr_to_str(resp)
+        return hex_str_to_bytes(resp)
 
 
 # --------------------------------------------------------------------

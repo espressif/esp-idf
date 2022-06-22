@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
-
 import argparse
 import asyncio
 import json
@@ -13,7 +11,6 @@ import os
 import sys
 import textwrap
 import time
-from builtins import input as binput
 from getpass import getpass
 
 try:
@@ -289,7 +286,7 @@ async def wait_wifi_connected(tp, sec):
             retry -= 1
             print('Waiting to poll status again (status %s, %d tries left)...' % (ret, retry))
         else:
-            print('---- Provisioning failed ----')
+            print('---- Provisioning failed! ----')
             return False
 
 
@@ -381,68 +378,69 @@ async def main():
 
     if args.secver == 2 and args.sec2_gen_cred:
         if not args.sec2_usr or not args.sec2_pwd:
-            print('---- Username/password cannot be empty for security scheme 2 (SRP6a) ----')
-            exit(1)
+            raise ValueError('Username/password cannot be empty for security scheme 2 (SRP6a)')
+
         print('==== Salt-verifier for security scheme 2 (SRP6a) ====')
         security.sec2_gen_salt_verifier(args.sec2_usr, args.sec2_pwd, args.sec2_salt_len)
-        exit(0)
+        sys.exit()
 
     obj_transport = await get_transport(args.mode.lower(), args.name)
     if obj_transport is None:
-        print('---- Failed to establish connection ----')
-        exit(1)
+        raise RuntimeError('Failed to establish connection')
 
     try:
         # If security version not specified check in capabilities
         if args.secver is None:
             # First check if capabilities are supported or not
             if not await has_capability(obj_transport):
-                print('Security capabilities could not be determined. Please specify "--sec_ver" explicitly')
-                print('---- Invalid Security Version ----')
-                exit(2)
+                print('Security capabilities could not be determined, please specify "--sec_ver" explicitly')
+                raise ValueError('Invalid Security Version')
 
             # When no_sec is present, use security 0, else security 1
             args.secver = int(not await has_capability(obj_transport, 'no_sec'))
-            print('Security scheme determined to be :', args.secver)
+            print(f'==== Security Scheme: {args.secver} ====')
 
-            if (args.secver != 0) and not await has_capability(obj_transport, 'no_pop'):
+        if (args.secver == 1):
+            if not await has_capability(obj_transport, 'no_pop'):
                 if len(args.sec1_pop) == 0:
-                    args.sec1_pop = binput('Proof of Possession required : ')
+                    prompt_str = 'Proof of Possession required: '
+                    args.sec1_pop = getpass(prompt_str)
             elif len(args.sec1_pop) != 0:
-                print('---- Proof of Possession will be ignored ----')
+                print('Proof of Possession will be ignored')
                 args.sec1_pop = ''
+
+        if (args.secver == 2):
+            if len(args.sec2_usr) == 0:
+                args.sec2_usr = input('Security Scheme 2 - SRP6a Username required: ')
+            if len(args.sec2_pwd) == 0:
+                prompt_str = 'Security Scheme 2 - SRP6a Password required: '
+                args.sec2_pwd = getpass(prompt_str)
 
         obj_security = get_security(args.secver, args.sec2_usr, args.sec2_pwd, args.sec1_pop, args.verbose)
         if obj_security is None:
-            print('---- Invalid Security Version ----')
-            exit(2)
+            raise ValueError('Invalid Security Version')
 
         if args.version != '':
             print('\n==== Verifying protocol version ====')
             if not await version_match(obj_transport, args.version, args.verbose):
-                print('---- Error in protocol version matching ----')
-                exit(3)
+                raise RuntimeError('Error in protocol version matching')
             print('==== Verified protocol version successfully ====')
 
         print('\n==== Starting Session ====')
         if not await establish_session(obj_transport, obj_security):
             print('Failed to establish session. Ensure that security scheme and proof of possession are correct')
-            print('---- Error in establishing session ----')
-            exit(4)
+            raise RuntimeError('Error in establishing session')
         print('==== Session Established ====')
 
         if args.custom_data != '':
-            print('\n==== Sending Custom data to esp32 ====')
+            print('\n==== Sending Custom data to Target ====')
             if not await custom_data(obj_transport, obj_security, args.custom_data):
-                print('---- Error in custom data ----')
-                exit(5)
+                raise RuntimeError('Error in custom data')
             print('==== Custom data sent successfully ====')
 
         if args.ssid == '':
             if not await has_capability(obj_transport, 'wifi_scan'):
-                print('---- Wi-Fi Scan List is not supported by provisioning service ----')
-                print('---- Rerun esp_prov with SSID and Passphrase as argument ----')
-                exit(3)
+                raise RuntimeError('Wi-Fi Scan List is not supported by provisioning service')
 
             while True:
                 print('\n==== Scanning Wi-Fi APs ====')
@@ -451,12 +449,11 @@ async def main():
                 end_time = time.time()
                 print('\n++++ Scan finished in ' + str(end_time - start_time) + ' sec')
                 if APs is None:
-                    print('---- Error in scanning Wi-Fi APs ----')
-                    exit(8)
+                    raise RuntimeError('Error in scanning Wi-Fi APs')
 
                 if len(APs) == 0:
                     print('No APs found!')
-                    exit(9)
+                    sys.exit()
 
                 print('==== Wi-Fi Scan results ====')
                 print('{0: >4} {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}'.format(
@@ -467,7 +464,7 @@ async def main():
 
                 while True:
                     try:
-                        select = int(binput('Select AP by number (0 to rescan) : '))
+                        select = int(input('Select AP by number (0 to rescan) : '))
                         if select < 0 or select > len(APs):
                             raise ValueError
                         break
@@ -483,16 +480,14 @@ async def main():
             prompt_str = 'Enter passphrase for {0} : '.format(args.ssid)
             args.passphrase = getpass(prompt_str)
 
-        print('\n==== Sending Wi-Fi credential to esp32 ====')
+        print('\n==== Sending Wi-Fi Credentials to Target ====')
         if not await send_wifi_config(obj_transport, obj_security, args.ssid, args.passphrase):
-            print('---- Error in send Wi-Fi config ----')
-            exit(6)
+            raise RuntimeError('Error in send Wi-Fi config')
         print('==== Wi-Fi Credentials sent successfully ====')
 
-        print('\n==== Applying config to esp32 ====')
+        print('\n==== Applying Wi-Fi Config to Target ====')
         if not await apply_wifi_config(obj_transport, obj_security):
-            print('---- Error in apply Wi-Fi config ----')
-            exit(7)
+            raise RuntimeError('Error in apply Wi-Fi config')
         print('==== Apply config sent successfully ====')
 
         await wait_wifi_connected(obj_transport, obj_security)

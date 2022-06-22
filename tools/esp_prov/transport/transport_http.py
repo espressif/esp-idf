@@ -22,14 +22,14 @@ class Transport_HTTP(Transport):
         try:
             socket.gethostbyname(hostname.split(':')[0])
         except socket.gaierror:
-            raise RuntimeError('Unable to resolve hostname :' + hostname)
+            raise RuntimeError(f'Unable to resolve hostname: {hostname}')
 
         if ssl_context is None:
             self.conn = HTTPConnection(hostname, timeout=60)
         else:
             self.conn = HTTPSConnection(hostname, context=ssl_context, timeout=60)
         try:
-            print('Connecting to ' + hostname)
+            print(f'++++ Connecting to {hostname}++++')
             self.conn.connect()
         except Exception as err:
             raise RuntimeError('Connection Failure : ' + str(err))
