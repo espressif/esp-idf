@@ -7,18 +7,21 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_err.h"
-#include "driver/sigmadelta.h"
 #include "esp_heap_caps.h"
-#include "hal/sigmadelta_hal.h"
+#include "driver/gpio.h"
+#include "driver/sigmadelta_types_legacy.h"
+#include "soc/sdm_periph.h"
+#include "hal/sdm_hal.h"
+#include "hal/sdm_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
-static const char *TAG = "sigma-delta";
+static const char *TAG = "sdm(legacy)";
 
 #define SIGMADELTA_CHECK(a,str,ret_val) ESP_RETURN_ON_FALSE(a, ret_val, TAG, "%s", str)
 
 typedef struct {
-    sigmadelta_hal_context_t hal;        /*!< SIGMADELTA hal context*/
+    sdm_hal_context_t hal;        /*!< SIGMADELTA hal context*/
 } sigmadelta_obj_t;
 
 static sigmadelta_obj_t *p_sigmadelta_obj[SIGMADELTA_PORT_MAX] = {0};
@@ -32,7 +35,7 @@ static inline esp_err_t _sigmadelta_set_duty(sigmadelta_port_t sigmadelta_port, 
 {
     SIGMADELTA_OBJ_CHECK(sigmadelta_port);
 
-    sigmadelta_hal_set_duty(&(p_sigmadelta_obj[sigmadelta_port]->hal), channel, duty);
+    sdm_ll_set_duty(p_sigmadelta_obj[sigmadelta_port]->hal.dev, channel, duty);
     return ESP_OK;
 }
 
@@ -40,7 +43,7 @@ static inline esp_err_t _sigmadelta_set_prescale(sigmadelta_port_t sigmadelta_po
 {
     SIGMADELTA_OBJ_CHECK(sigmadelta_port);
 
-    sigmadelta_hal_set_prescale(&(p_sigmadelta_obj[sigmadelta_port]->hal), channel, prescale);
+    sdm_ll_set_prescale(p_sigmadelta_obj[sigmadelta_port]->hal.dev, channel, prescale + 1);
     return ESP_OK;
 }
 
@@ -85,7 +88,8 @@ esp_err_t sigmadelta_init(sigmadelta_port_t sigmadelta_port)
         return ESP_FAIL;
     }
 
-    sigmadelta_hal_init(&(p_sigmadelta_obj[sigmadelta_port]->hal), sigmadelta_port);
+    sdm_hal_init(&(p_sigmadelta_obj[sigmadelta_port]->hal), sigmadelta_port);
+    sdm_ll_enable_clock(p_sigmadelta_obj[sigmadelta_port]->hal.dev, true);
     return ESP_OK;
 }
 

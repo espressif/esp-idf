@@ -5,8 +5,8 @@ if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
     list(APPEND srcs "test_dedicated_gpio.c")
 endif()
 
-if(CONFIG_SOC_SIGMADELTA_SUPPORTED)
-    list(APPEND srcs "test_sigmadelta.c")
+if(CONFIG_SOC_SDM_SUPPORTED)
+    list(APPEND srcs "test_sigma_delta_legacy.c")
 endif()
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
