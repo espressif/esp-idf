@@ -23,7 +23,7 @@
 #include "esp_system.h"
 
 #include "esp_rom_uart.h"
-
+#include "esp_efuse.h"
 #include "esp_clk_internal.h"
 #include "esp_rom_efuse.h"
 #include "esp_rom_sys.h"
@@ -339,6 +339,10 @@ void IRAM_ATTR call_start_cpu0(void)
     rom_config_data_cache_mode(CONFIG_ESP32S3_DATA_CACHE_SIZE, CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS, CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE);
     Cache_Resume_DCache(0);
 #endif // CONFIG_IDF_TARGET_ESP32S3
+
+    if (esp_efuse_check_errors() != ESP_OK) {
+        esp_restart();
+    }
 
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
     /* Configure the Cache MMU size for instruction and rodata in flash. */

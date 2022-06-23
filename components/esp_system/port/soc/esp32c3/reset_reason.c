@@ -25,6 +25,9 @@ static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_re
 {
     switch (rtc_reset_reason) {
     case POWERON_RESET:
+#if SOC_EFUSE_HAS_EFUSE_RST_BUG
+    case EFUSE_RESET:
+#endif
         return ESP_RST_POWERON;
 
     case RTC_SW_CPU_RESET:
