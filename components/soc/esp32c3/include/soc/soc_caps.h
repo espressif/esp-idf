@@ -53,6 +53,7 @@
  * bootloader "security" configuration and accordingly prevent its usage for ECO2 and
  * earlier revisions */
 #define SOC_SECURE_BOOT_SUPPORTED       1
+#define SOC_MEMPROT_SUPPORTED           1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
@@ -316,6 +317,10 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+
+/*-------------------------- MEMPROT CAPS ------------------------------------*/
+#define SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE   16
+#define SOC_MEMPROT_MEM_ALIGN_SIZE          512
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C3 has 2 UARTs
