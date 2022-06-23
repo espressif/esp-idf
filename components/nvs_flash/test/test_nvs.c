@@ -49,6 +49,35 @@ TEST_CASE("flash erase deinitializes initialized partition", "[nvs]")
     nvs_flash_deinit();
 }
 
+TEST_CASE("nvs_flash_init_partition_ptr() works correctly", "[nvs]")
+{
+    // First, open and write to partition using normal initialization
+    nvs_handle_t handle;
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        nvs_flash_erase();
+        err = nvs_flash_init();
+    }
+    TEST_ESP_OK(err);
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_set_i32(handle, "foo", 0x12345678));
+    nvs_close(handle);
+    nvs_flash_deinit();
+
+    // Then open and read using partition ptr initialization
+    const esp_partition_t* nvs_partition = esp_partition_find_first(
+            ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "nvs");
+    TEST_ESP_OK(nvs_flash_init_partition_ptr(nvs_partition));
+
+    TEST_ESP_OK(nvs_open("uninit_ns", NVS_READWRITE, &handle));
+    int32_t foo = 0;
+    TEST_ESP_OK(nvs_get_i32(handle, "foo", &foo));
+    nvs_close(handle);
+    TEST_ASSERT_EQUAL_INT32(foo, 0x12345678);
+
+    nvs_flash_deinit();
+}
+
 // test could have different output on host tests
 TEST_CASE("nvs deinit with open handle", "[nvs]")
 {
