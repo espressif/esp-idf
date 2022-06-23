@@ -74,6 +74,7 @@ menu "Serial flasher config"
         default ESPTOOLPY_FLASHFREQ_48M if IDF_TARGET_ESP32H2
         config ESPTOOLPY_FLASHFREQ_120M
             bool "120 MHz"
+            select SPI_FLASH_HPM_ENABLE
             depends on SOC_MEMSPI_SRC_FREQ_120M && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"

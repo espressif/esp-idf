@@ -165,9 +165,16 @@ esp_err_t spi_flash_enable_high_performance_mode(void);
  *        This can be used when one flash has several dummy configurations to enable the high performance mode.
  * @note Don't forget to subtract one when assign to the register of mspi e.g. if the value you get is 4, (4-1=3) should be assigned to the register.
  *
- * @return Pointer to bootlaoder_flash_dummy_conf_t.
+ * @return Pointer to spi_flash_hpm_dummy_conf_t.
  */
-const spi_flash_hpm_dummy_conf_t *spi_flash_get_dummy(void);
+const spi_flash_hpm_dummy_conf_t *spi_flash_hpm_get_dummy(void);
+
+/**
+ * @brief Used to judge whether flash works under HPM mode with dummy adjustment.
+ *
+ * @return true Yes, and work under HPM with adjusting dummy. Otherwise, false.
+ */
+bool spi_flash_hpm_dummy_adjust(void);
 
 typedef enum {
     FLASH_WRAP_MODE_8B = 0,

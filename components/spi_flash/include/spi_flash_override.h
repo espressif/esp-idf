@@ -27,7 +27,8 @@ typedef struct {
 } spi_flash_hpm_dummy_conf_t;
 
 typedef enum {
-    SPI_FLASH_HPM_NEEDED,             // Means that in the certain condition, flash needs to enter the high performance mode.
+    SPI_FLASH_HPM_CMD_NEEDED,      // Means that in the certain condition, flash needs to enter the high performance mode by command.
+    SPI_FLASH_HPM_DUMMY_NEEDED,    // Means that in the certain condition, flash needs to enter the high performance mode by adjusting dummy.
     SPI_FLASH_HPM_UNNEEDED,           // Means that flash doesn't need to enter the high performance mode.
     SPI_FLASH_HPM_BEYOND_LIMIT,       // Means that flash has no capability to meet that condition.
 } spi_flash_requirement_t;
