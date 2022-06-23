@@ -17,6 +17,7 @@
 #include "esp_err.h"
 #include "esp_cpu.h"
 #include "esp_memory_utils.h"
+#include "esp_fault.h"
 #if __XTENSA__
 #include "xtensa/config/core-isa.h"
 #else
@@ -425,7 +426,7 @@ void esp_cpu_configure_region_protection(void)
     const unsigned RX      = PMP_L | PMP_R | PMP_X;
     const unsigned RWX     = PMP_L | PMP_R | PMP_W | PMP_X;
 
-    /* There are 3 configuration scenarios for PMPADDR 0-2
+    /* There are 4 configuration scenarios for PMPADDR 0-2
      *
      * 1. Bootloader build:
      *    - We cannot set the lock bit as we need to reconfigure it again for the application.
@@ -441,18 +442,36 @@ void esp_cpu_configure_region_protection(void)
      *      so for that we set PMPADDR 0-1 to cover entire valid IRAM range and PMPADDR 2-3 to cover entire DRAM region.
      *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
      *
+     * 4. CPU is in OCD debug mode
+     *    - The IRAM-DRAM split is not enabled so that OpenOCD can write and execute from IRAM.
+     *      We set PMPADDR 0-1 to cover entire valid IRAM range and PMPADDR 2-3 to cover entire DRAM region.
+     *      We also lock these entries so the R/W/X permissions are enforced even for machine mode
+     *
      *  PMPADDR 3-15 are hard-coded and are appicable to both, bootloader and application. So we configure and lock
      *  these during BOOTLOADER build itself. During application build, reconfiguration of these PMPADDR entries
      *  are silently ignored by the CPU
      */
 
-    // 1. IRAM
-    PMP_ENTRY_SET(0, SOC_DIRAM_IRAM_LOW, CONDITIONAL_NONE);
-    PMP_ENTRY_SET(1, IRAM_END, PMP_TOR | CONDITIONAL_RX);
+    if (esp_cpu_in_ocd_debug_mode()) {
+        // Anti-FI check that cpu is really in ocd mode
+        ESP_FAULT_ASSERT(esp_cpu_in_ocd_debug_mode());
 
-    // 2. DRAM
-    PMP_ENTRY_SET(2, DRAM_START, CONDITIONAL_NONE);
-    PMP_ENTRY_CFG_SET(3, PMP_TOR | CONDITIONAL_RW);
+        // 1. IRAM
+        PMP_ENTRY_SET(0, SOC_DIRAM_IRAM_LOW, NONE);
+        PMP_ENTRY_SET(1, SOC_DIRAM_IRAM_HIGH, PMP_TOR | RWX);
+
+        // 2. DRAM
+        PMP_ENTRY_SET(2, SOC_DIRAM_DRAM_LOW, NONE);
+        PMP_ENTRY_CFG_SET(3, PMP_TOR | RW);
+    } else {
+        // 1. IRAM
+        PMP_ENTRY_SET(0, SOC_DIRAM_IRAM_LOW, CONDITIONAL_NONE);
+        PMP_ENTRY_SET(1, IRAM_END, PMP_TOR | CONDITIONAL_RX);
+
+        // 2. DRAM
+        PMP_ENTRY_SET(2, DRAM_START, CONDITIONAL_NONE);
+        PMP_ENTRY_CFG_SET(3, PMP_TOR | CONDITIONAL_RW);
+    }
 
     // 3. Debug region
     PMP_ENTRY_CFG_SET(4, PMP_NAPOT | RWX);
