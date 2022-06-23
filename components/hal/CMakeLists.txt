@@ -86,6 +86,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "lcd_hal.c")
     endif()
 
+    if(CONFIG_SOC_ECC_SUPPORTED)
+        list(APPEND srcs "ecc_hal.c")
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "dac_hal.c"
@@ -158,7 +162,6 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
-              "ecc_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
               "esp32c2/brownout_hal.c"
