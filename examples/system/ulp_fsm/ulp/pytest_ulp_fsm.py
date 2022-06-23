@@ -8,8 +8,11 @@ import pytest
 from pytest_embedded import Dut
 
 
-def ulp_fsm_test_function(dut: Dut) -> None:
-
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.generic
+def test_ulp_fsm(dut: Dut) -> None:
     dut.expect_exact('Not ULP wakeup')
     dut.expect_exact('Entering deep sleep')
 
@@ -39,16 +42,3 @@ def ulp_fsm_test_function(dut: Dut) -> None:
         nvs_value = new_count
         logging.info('Pulse count written to NVS: {}. Entering deep sleep...'.format(nvs_value))
         dut.expect_exact('Entering deep sleep', timeout=5)
-
-
-@pytest.mark.esp32
-@pytest.mark.generic
-def test_ulp_fsm(dut: Dut) -> None:
-    ulp_fsm_test_function(dut)
-
-
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.deepsleep_temp_tag  # S2/S3 runner on isolated runners for now, IDF-5213
-def test_ulp_fsm_s2_s3(dut: Dut) -> None:
-    ulp_fsm_test_function(dut)
