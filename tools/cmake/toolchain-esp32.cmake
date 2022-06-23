@@ -12,3 +12,5 @@ remove_duplicated_flags("-mlongcalls -Wno-frame-address ${CMAKE_C_FLAGS}" UNIQ_C
 set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)
 remove_duplicated_flags("-mlongcalls -Wno-frame-address ${CMAKE_CXX_FLAGS}" UNIQ_CMAKE_CXX_FLAGS)
 set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Flags" FORCE)
+remove_duplicated_flags("-mlongcalls ${CMAKE_ASM_FLAGS}" UNIQ_CMAKE_ASM_FLAGS)
+set(CMAKE_ASM_FLAGS "${UNIQ_CMAKE_ASM_FLAGS}" CACHE STRING "ASM Compiler Base Flags" FORCE)
