@@ -138,75 +138,35 @@ esp_eth_handle_t eth_init_spi(spi_eth_module_config_t *spi_eth_module_config, ui
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
 
+    // Set module specific PHY config
+    phy_config.phy_addr = spi_eth_module_config->phy_addr;
+    phy_config.reset_gpio_num = spi_eth_module_config->phy_reset_gpio;
+
     // Configure SPI interface and Ethernet driver for specific SPI module
     esp_eth_mac_t *mac;
     esp_eth_phy_t *phy;
 
-    spi_device_handle_t spi_handle;
-#if CONFIG_EXAMPLE_USE_KSZ8851SNL
-    spi_device_interface_config_t devcfg = {
+    spi_device_interface_config_t spi_devcfg = {
         .mode = 0,
         .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .queue_size = 20
+        .queue_size = 20,
+        .spics_io_num = spi_eth_module_config->spi_cs_gpio
     };
-
-    // Set SPI module Chip Select GPIO
-    devcfg.spics_io_num = spi_eth_module_config->spi_cs_gpio;
-
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    // KSZ8851SNL ethernet driver is based on spi driver
-    eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_handle);
-
-    // Set remaining GPIO numbers and configuration used by the SPI module
+#if CONFIG_EXAMPLE_USE_KSZ8851SNL
+    eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     ksz8851snl_config.int_gpio_num = spi_eth_module_config->int_gpio;
-    phy_config.phy_addr = spi_eth_module_config->phy_addr;
-    phy_config.reset_gpio_num = spi_eth_module_config->phy_reset_gpio;
 
     mac = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config);
     phy = esp_eth_phy_new_ksz8851snl(&phy_config);
 #elif CONFIG_EXAMPLE_USE_DM9051
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 1,
-        .address_bits = 7,
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .queue_size = 20
-    };
-
-    // Set SPI module Chip Select GPIO
-    devcfg.spics_io_num = spi_eth_module_config->spi_cs_gpio;
-
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    // dm9051 ethernet driver is based on spi driver
-    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
-
-    // Set remaining GPIO numbers and configuration used by the SPI module
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     dm9051_config.int_gpio_num = spi_eth_module_config->int_gpio;
-    phy_config.phy_addr = spi_eth_module_config->phy_addr;
-    phy_config.reset_gpio_num = spi_eth_module_config->phy_reset_gpio;
 
     mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     phy = esp_eth_phy_new_dm9051(&phy_config);
 #elif CONFIG_EXAMPLE_USE_W5500
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 16, // Actually it's the address phase in W5500 SPI frame
-        .address_bits = 8,  // Actually it's the control phase in W5500 SPI frame
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .queue_size = 20
-    };
-
-    // Set SPI module Chip Select GPIO
-    devcfg.spics_io_num = spi_eth_module_config->spi_cs_gpio;
-
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    // w5500 ethernet driver is based on spi driver
-    eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(spi_handle);
-
-    // Set remaining GPIO numbers and configuration used by the SPI module
+    eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     w5500_config.int_gpio_num = spi_eth_module_config->int_gpio;
-    phy_config.phy_addr = spi_eth_module_config->phy_addr;
-    phy_config.reset_gpio_num = spi_eth_module_config->phy_reset_gpio;
 
     mac = esp_eth_mac_new_w5500(&w5500_config, &mac_config);
     phy = esp_eth_phy_new_w5500(&phy_config);

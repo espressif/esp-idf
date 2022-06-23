@@ -571,6 +571,7 @@ static esp_err_t emac_ksz8851_del(esp_eth_mac_t *mac)
 {
     emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
     vTaskDelete(emac->rx_task_hdl);
+    spi_bus_remove_device(emac->spi_hdl);
     vSemaphoreDelete(emac->spi_lock);
     heap_caps_free(emac->rx_buffer);
     heap_caps_free(emac->tx_buffer);
@@ -666,9 +667,12 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
     emac = calloc(1, sizeof(emac_ksz8851snl_t));
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "no mem for MAC instance");
 
+    /* SPI device init */
+    ESP_GOTO_ON_FALSE(spi_bus_add_device(ksz8851snl_config->spi_host_id, ksz8851snl_config->spi_devcfg, &emac->spi_hdl) == ESP_OK,
+                                            NULL, err, TAG, "adding device to SPI host #%d failed", ksz8851snl_config->spi_host_id + 1);
+
     emac->sw_reset_timeout_ms           = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num                  = ksz8851snl_config->int_gpio_num;
-    emac->spi_hdl                       = ksz8851snl_config->spi_hdl;
     emac->parent.set_mediator           = emac_ksz8851_set_mediator;
     emac->parent.init                   = emac_ksz8851_init;
     emac->parent.deinit                 = emac_ksz8851_deinit;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,8 +21,9 @@ extern "C" {
  *
  */
 typedef struct {
-    spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
-    int int_gpio_num;            /*!< Interrupt GPIO number */
+    spi_host_device_t spi_host_id;              /*!< SPI peripheral */
+    spi_device_interface_config_t *spi_devcfg;  /*!< SPI device configuration */
+    int int_gpio_num;                           /*!< Interrupt GPIO number */
 } eth_enc28j60_config_t;
 
 /**
@@ -40,10 +41,11 @@ typedef enum {
  * @brief Default ENC28J60 specific configuration
  *
  */
-#define ETH_ENC28J60_DEFAULT_CONFIG(spi_device) \
-    {                                           \
-        .spi_hdl = spi_device,                  \
-        .int_gpio_num = 4,                      \
+#define ETH_ENC28J60_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
+    {                                             \
+        .spi_host_id = spi_host,                  \
+        .spi_devcfg = spi_devcfg_p,               \
+        .int_gpio_num = 4,                        \
     }
 
 /**
