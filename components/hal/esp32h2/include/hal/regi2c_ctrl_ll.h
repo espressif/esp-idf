@@ -64,6 +64,24 @@ static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibrati
     return REG_GET_BIT(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_CAL_DONE);
 }
 
+/**
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+{
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
+}
+
+/**
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ */
+static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+{
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PU);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PD);
+}
+
 #ifdef __cplusplus
 }
 #endif

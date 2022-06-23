@@ -11,6 +11,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "freertos/FreeRTOS.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
@@ -93,6 +94,7 @@ esp_err_t temp_sensor_start(void)
         ESP_LOGE(TAG, "Is already running or not be configured");
         err = ESP_ERR_INVALID_STATE;
     }
+    regi2c_saradc_enable();
     periph_module_enable(PERIPH_TEMPSENSOR_MODULE);
     temperature_sensor_ll_enable(true);
     temperature_sensor_ll_clk_enable(true);
@@ -103,6 +105,7 @@ esp_err_t temp_sensor_start(void)
 
 esp_err_t temp_sensor_stop(void)
 {
+    regi2c_saradc_disable();
     temperature_sensor_ll_enable(false);
     tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
     return ESP_OK;

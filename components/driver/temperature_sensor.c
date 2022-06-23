@@ -25,12 +25,9 @@
 #include "esp_efuse_rtc_calib.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/temperature_sensor_ll.h"
+#include "soc/temperature_sensor_periph.h"
 
 static const char *TAG = "temperature_sensor";
-
-extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
-#define TEMPERATURE_SENSOR_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
-#define TEMPERATURE_SENSOR_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
 typedef enum {
     TEMP_SENSOR_FSM_INIT,
@@ -42,33 +39,33 @@ static float s_deltaT = NAN; // unused number
 typedef struct temperature_sensor_obj_t temperature_sensor_obj_t;
 
 struct temperature_sensor_obj_t {
-    const temp_sensor_ll_attribute_t *tsens_attribute;
+    const temperature_sensor_attribute_t *tsens_attribute;
     temp_sensor_fsm_t  fsm;
     temperature_sensor_clk_src_t clk_src;
 };
 
-static temp_sensor_ll_attribute_t *s_tsens_attribute_copy;
+static temperature_sensor_attribute_t *s_tsens_attribute_copy;
 
 static int inline accuracy_compare(const void *p1, const void *p2)
 {
-    return ((*(temp_sensor_ll_attribute_t *)p1).error_max < (*(temp_sensor_ll_attribute_t *)p2).error_max) ? -1 : 1;
+    return ((*(temperature_sensor_attribute_t *)p1).error_max < (*(temperature_sensor_attribute_t *)p2).error_max) ? -1 : 1;
 }
 
 static esp_err_t temperature_sensor_attribute_table_sort(void)
 {
-    s_tsens_attribute_copy = (temp_sensor_ll_attribute_t *)heap_caps_malloc(sizeof(temp_sensor_ll_attributes), MALLOC_CAP_DEFAULT);
+    s_tsens_attribute_copy = (temperature_sensor_attribute_t *)heap_caps_malloc(sizeof(temperature_sensor_attributes), MALLOC_CAP_DEFAULT);
     ESP_RETURN_ON_FALSE(s_tsens_attribute_copy != NULL, ESP_ERR_NO_MEM, TAG, "No space for s_tsens_attribute_copy");
-    for (int i = 0 ; i < TEMPERATURE_SENSOR_LL_RANGE_NUM; i++) {
-        s_tsens_attribute_copy[i] = temp_sensor_ll_attributes[i];
+    for (int i = 0 ; i < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; i++) {
+        s_tsens_attribute_copy[i] = temperature_sensor_attributes[i];
     }
     // Sort from small to large by error_max.
-    qsort(s_tsens_attribute_copy, TEMPERATURE_SENSOR_LL_RANGE_NUM, sizeof(s_tsens_attribute_copy[0]), accuracy_compare);
+    qsort(s_tsens_attribute_copy, TEMPERATURE_SENSOR_ATTR_RANGE_NUM, sizeof(s_tsens_attribute_copy[0]), accuracy_compare);
     return ESP_OK;
 }
 
 static esp_err_t temperature_sensor_choose_best_range(temperature_sensor_handle_t tsens, const temperature_sensor_config_t *tsens_config)
 {
-    for (int i = 0 ; i < TEMPERATURE_SENSOR_LL_RANGE_NUM; i++) {
+    for (int i = 0 ; i < TEMPERATURE_SENSOR_ATTR_RANGE_NUM; i++) {
         if ((tsens_config->range_min >= s_tsens_attribute_copy[i].range_min) && (tsens_config->range_max <= s_tsens_attribute_copy[i].range_max)) {
             tsens->tsens_attribute = &s_tsens_attribute_copy[i];
             break;
@@ -101,10 +98,9 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
              tsens->tsens_attribute->range_max,
              tsens->tsens_attribute->error_max);
 
-    TEMPERATURE_SENSOR_ENTER_CRITICAL();
+    regi2c_saradc_enable();
     temperature_sensor_ll_set_range(tsens->tsens_attribute->reg_val);
     temperature_sensor_ll_enable(false); // disable the sensor by default
-    TEMPERATURE_SENSOR_EXIT_CRITICAL();
 
     tsens->fsm = TEMP_SENSOR_FSM_INIT;
     *ret_tsens = tsens;
@@ -123,6 +119,7 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
         free(s_tsens_attribute_copy);
     }
     s_tsens_attribute_copy = NULL;
+    regi2c_saradc_disable();
 
     periph_module_disable(PERIPH_TEMPSENSOR_MODULE);
     free(tsens);

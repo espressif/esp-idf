@@ -86,7 +86,6 @@ api-reference/storage/index
 api-reference/peripherals/adc
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/lcd
-api-reference/peripherals/temp_sensor
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth

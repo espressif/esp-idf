@@ -15,12 +15,14 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 #include "soc/apb_saradc_struct.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_struct.h"
+#include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "hal/temperature_sensor_types.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,9 +39,7 @@ extern "C" {
  */
 static inline void temperature_sensor_ll_enable(bool enable)
 {
-    SENS.sar_tctrl.tsens_power_up_force = enable;
-    SENS.sar_tctrl2.tsens_xpd_force = enable;
-    SENS.sar_tctrl.tsens_power_up = enable;
+    APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_pu = enable;
 }
 
 /**
@@ -47,16 +47,30 @@ static inline void temperature_sensor_ll_enable(bool enable)
  */
 static inline void temperature_sensor_ll_clk_enable(bool enable)
 {
-    SENS.sar_peri_clk_gate_conf.tsens_clk_en = enable;
+    // No need to enable the temperature clock on esp32c2
 }
 
 /**
- * @brief Choose the clock. No need to choose the clock source on ESP32-S3. ESP32-S3
- *        can use RTC clock.
+ * @brief Select the clock source for temperature sensor. On ESP32-C2, temperautre sensor
+ *        can use XTAL or FOSC. To make it convenience, suggest using XTAL all the time.
+ *
+ * @param clk_src refer to ``temperature_sensor_clk_src_t``
  */
 static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t clk_src)
 {
-    // No need to select the temperature sensor clock on esp32s3.
+    uint8_t clk_sel = 0;
+    switch (clk_src) {
+        case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
+            clk_sel = 1;
+            break;
+        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
+            clk_sel = 0;
+            break;
+        default:
+            HAL_ASSERT(false);
+            break;
+    }
+    APB_SARADC.saradc_apb_tsens_ctrl2.saradc_tsens_clk_sel = clk_sel;
 }
 
 /**
@@ -64,9 +78,9 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
  *
  * @param tsens_dac ``reg_val`` in table ``temperature_sensor_attributes``
  */
-static inline void temperature_sensor_ll_set_range(uint32_t tsens_dac)
+static inline void temperature_sensor_ll_set_range(uint32_t range)
 {
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, tsens_dac);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, range);
 }
 
 /**
@@ -76,11 +90,7 @@ static inline void temperature_sensor_ll_set_range(uint32_t tsens_dac)
  */
 static inline uint32_t temperature_sensor_ll_get_raw_value(void)
 {
-    SENS.sar_tctrl.tsens_dump_out = 1;
-    while (!SENS.sar_tctrl.tsens_ready) {
-    }
-    SENS.sar_tctrl.tsens_dump_out = 0;
-    return SENS.sar_tctrl.tsens_out;
+    return APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_out;
 }
 
 /**
@@ -104,7 +114,7 @@ static inline uint32_t temperature_sensor_ll_get_offset(void)
  */
 static inline uint32_t temperature_sensor_ll_get_clk_div(void)
 {
-    return SENS.sar_tctrl.tsens_clk_div;
+    return APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_clk_div;
 }
 
 /**
@@ -117,7 +127,7 @@ static inline uint32_t temperature_sensor_ll_get_clk_div(void)
  */
 static inline void temperature_sensor_ll_set_clk_div(uint8_t clk_div)
 {
-    SENS.sar_tctrl.tsens_clk_div = clk_div;
+    APB_SARADC.saradc_apb_tsens_ctrl.saradc_reg_tsens_clk_div = clk_div;
 }
 
 #ifdef __cplusplus

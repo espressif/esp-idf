@@ -43,6 +43,10 @@ config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     bool
     default y
 
+config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
 config SOC_SHA_SUPPORTED
     bool
     default y
