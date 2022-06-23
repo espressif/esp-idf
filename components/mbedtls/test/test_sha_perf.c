@@ -18,8 +18,6 @@
 #include "ccomp_timer.h"
 #include "test_mbedtls_utils.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5141
 TEST_CASE("mbedtls SHA performance", "[aes]")
 {
     const unsigned CALLS = 256;
@@ -62,4 +60,3 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
     TEST_PERFORMANCE_CCOMP_GREATER_THAN(SHA256_THROUGHPUT_MBSEC, "%.3fMB/sec", mb_sec);
 #endif
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

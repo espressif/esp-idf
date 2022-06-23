@@ -50,7 +50,7 @@ typedef struct {
     esp_mbedtls_sha256_mode mode;
 } mbedtls_sha256_context;
 
-#elif SOC_SHA_SUPPORT_DMA
+#elif SOC_SHA_SUPPORT_DMA || SOC_SHA_SUPPORT_RESUME
 typedef enum {
     ESP_SHA256_STATE_INIT,
     ESP_SHA256_STATE_IN_PROCESS
