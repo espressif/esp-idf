@@ -53,7 +53,6 @@ tools/ci/check_api_violation.sh
 tools/ci/check_build_warnings.py
 tools/ci/check_callgraph.py
 tools/ci/check_codeowners.py
-tools/ci/check_copyright.py
 tools/ci/check_deprecated_kconfigs.py
 tools/ci/check_esp_memory_utils_headers.sh
 tools/ci/check_examples_rom_header.sh
