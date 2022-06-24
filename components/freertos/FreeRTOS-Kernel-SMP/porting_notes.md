@@ -1,5 +1,10 @@
 # Overview
 
+This document outlines some useful notes about
+
+- The porting of SMP FreeRTOS to ESP-IDF
+- And the difference between IDF FreeRTOS and SMP FreeRTOS
+
 # Terminology
 
 The following terms will be used in this document to avoid confusion between the different FreeRTOS versions currently in ESP-IDF
@@ -9,17 +14,16 @@ The following terms will be used in this document to avoid confusion between the
 
 # Organization
 
-This directory contains a copy of SMP FreeRTOS based off of upstream commit [a97741a](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/a97741a08d36ac08d913b8bc86abf128df627e85)
+This directory contains a copy of SMP FreeRTOS based off of upstream commit [2eff03708](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/2eff037080996e67a79e381667f0b77252e653b8)
 
 - IDF FreeRTOS remains in  `components/freertos/FreeRTOS-Kernel`
 - SMP FreeRTOS is entirely contained in `components/freertos/FreeRTOS-Kernel-SMP`
-  - The Xtensa port files are copied from IDF FreeRTOS with minimal modifications.
   - `port.c` and `portmacro.h` were mostly re-written from scratch
   - Some changes were made to SMP FreeRTOS `tasks.c` in order to be compatible with IDF.
     - All of these changes are wrapped in `#ifdef ESP_PLATFORM`
     - These additions will be removed after the compatibility issues are resolved in IDF.
 - SMP FreeRTOS is only compiled if `CONFIG_FREERTOS_SMP` is set in `menuconfig`
-- All changes made to the rest of ESP-IDF to support SMP FreeRTOS are wrapped in `#ifdef CONFIG_FREERTOS_SMP`. Thus SMP FreeRTOS changes should have no effect on mainline ESP-IDF.
+- All changes made to the rest of ESP-IDF to support SMP FreeRTOS are wrapped in `#ifdef CONFIG_FREERTOS_SMP`. Thus SMP FreeRTOS changes should have no effect on mainline ESP-IDF if `CONFIG_FREERTOS_SMP` is disabled.
 
 # Behavioral Differences and Porting
 
@@ -28,6 +32,21 @@ This section covers
 - The major feature/behavior differences between SMP FreeRTOS vs IDF FreeRTOS
 - The changes made to the port or SMP FreeRTOS sources to remedy these differences
 - Future Todos
+
+## Task Core Affinity
+
+IDF FreeRTOS:
+
+- Tasks can either be pinned to a core or completely unpinned
+
+SMP FreeRTOS:
+
+- Tasks in SMP FreeRTOS use an affinity mask thus can run on any combination of cores
+
+Changes Made:
+
+- Upstreamed `xTaskCreate...AffinitySet()` to allow creation of tasks with affinity (instead of requiring a separate call to set the affinity).
+- Wrapped the IDF `xTaskCreate...PinnedToCore()` functions to call `xTaskCreate...AffinitySet()`
 
 ## Scheduler Suspension
 
@@ -49,9 +68,10 @@ Changes Made:
 
 IDF FreeRTOS:
 
-- IDF FreeRTOS uses granualar spin locks for critical sections 
+- IDF FreeRTOS uses granular spin locks for critical sections
   - Callers need to instantiate and provide their own spinlocks
-  - But allows different cores to simultaneously enter separate critical sections using different locks without contesting
+  - Allows different cores to simultaneously enter separate critical sections using different locks without contention
+  - Some FreeRTOS objects (such as queues and timers) have their own spinlocks
 - `portENTER_CRITICAL()`/`portEXIT_CRITICAL()` modified to accept a spinlock argument
 - Added variant `portTRY_ENTER_CRITICAL()` to allow for timeout to be specified when entering critical sections
 
@@ -59,7 +79,7 @@ SMP FreeRTOS:
 
 - Uses a giant lock (task and ISR locks to be specific). Cores simultaneously entering a critical section will contest with each other.
 - `portENTER_CRITICAL()`/`portEXIT_CRITICAL()` does not accept arguments. Maps directly to `vTaskEnterCritical()`/`vTaskExitCritical()`
-- Has added capability of checking for state change, allowing critical section contester to yield
+- The critical sections now **checks for state change**. This means if a task has just entered a critical section and another higher priority task can run, the critical section will exit to yield and then retry entering.
 
 Changes Made:
 
@@ -84,29 +104,23 @@ IDF FreeRTOS:
 
 SMP FreeRTOS:
 
-- There are now two idle task functions. `prvIdleTask()` and `prvMinimalIdleTask()`
-  - `prvMinimalIdleTask()` simply calls the `vApplicationMinimalIdleHook()` and handles idle yielding
-  - `prvIdleTask()` has the added responsibility of calling `prvCheckTasksWaitingTermination()` and `vApplicationIdleHook()`.
-  - One `prvIdleTask()`  is created, the remaining idle tasks are `prvMinimalIdleTask()`
-- The created idle tasks are all unpinned.
+- There are now two types of idle task functions. The `prvIdleTask()` and `prvMinimalIdleTask()`
+  - `prvMinimalIdleTask()` simply calls the `vApplicationMinimalIdleHook()`
+  - `prvIdleTask()` calls `prvCheckTasksWaitingTermination()`, `vApplicationIdleHook()`, `vApplicationMinimalIdleHook()`, and handles tickless idle.
+  - On an N core build, one `prvIdleTask()` task is created and N-1 `prvMinimalIdleTask()` tasks are created.
+- The created idle tasks are all unpinned. The idle tasks are run on a "first come first serve" basis meaning when a core goes idle, it selects whatever available idle task it can run.
 
 Changes Made:
 
-- Idle tasks were now pinned in order to be compatible with ESP-IDF
-- Currently, `vApplicationIdleHook()` and `vApplicationMinimalIdleHook()` both just call `esp_vApplicationIdleHook()` in order to feed the task watchdog.
+- The `esp_vApplicationIdleHook()` is now called from `vApplicationMinimalIdleHook()` since every idle task calls the `vApplicationMinimalIdleHook()`.
+- Since the idle tasks are unpinned, the task WDT has been updated to use the "User" feature. Thus, feeding the task watchdog now tracks which "core" has fed the task WDT instead of which specific idle task has fed.
+- Since `prvIdleTask()` is solely responsible for calling `prvCheckTasksWaitingTermination()` but can run on any core, multiple IDF cleanup routines are now routed through `portCLEAN_UP_TCB()`
+  - FPU registers of a task are now cleaned up via `portCLEAN_UP_TCB() -> vPortCleanUpCoprocArea()` and can clean FPU save areas across cores.
+  - TLSP Deletion callbacks are now run via `portCLEAN_UP_TCB() -> vPortTLSPointersDelCb()`
 
 Todo:
 
-- Remove the pinning of idle tasks.
-  - Find some way to handle how FPU register contexts are cleaned up on task deletion. Idle tasks are no longer pinned, thus we need to handle the case where FPU cleanup is triggered across cores.
-  - Check if unpinned idle tasks will affect the feeding of the idle watchdog timer.
-- Find some way to integrate TLSP Deletion Callbacks to the idle tasks.
-- Check if tickless Idle (and automatic light sleep) works in SMP FreeRTOS
-- Separate out `esp_vApplicationIdleHook()` from the SMP FreeRTOS Idle hooks for the following reasons:
-  - Users may want to provide their own `vApplicationIdleHook()` and `vApplicationMinimalIdleHook()`, thus IDF should not use those identifiers
-  - `prvIdleTask()` will call both `vApplicationIdleHook()` and `vApplicationMinimalIdleHook()`, thus the watchdog is fed twice.
 - Add support for `configIDLE_SHOULD_YIELD`
-- See if TLSP Deletion Callbacks can be upstreamed as a new feature
 
 ## Tick Interrupt
 
@@ -120,7 +134,7 @@ IDF FreeRTOS:
 
 SMP FreeRTOS:
 
-- Only core 0 calls `xTaskIncrementTick()`. Thus core 0 is solely responsible for:
+- SMP FreeRTOS requires that `xTaskIncrementTick()` only be called from one core (core 0 in our case). That core's tick interrupt is solely responsible for the following via its call to `xTaskIncrementTick()`:
   - Time keeping (increment ticks and unblocking timed out tasks)
   - Time slicing (calls `prvYieldCore()` on each core that needs to yield)
   - Calls `vApplicationTickHook()`
@@ -128,39 +142,52 @@ SMP FreeRTOS:
 
 Changes Made:
 
-- Each core still has a tick interrupt (to call `esp_vApplicationTickHook()`). But only core 0 will call `xTaskIncrementTick()`
+- Each core still has a HW tick interrupt that occurs (where the ISR `xPortSysTickHandler()`) and will:
+  - Call `esp_vApplicationTickHook()` in order to feed the interrupt WDT on behalf of the current core.
+  - Call `xTaskIncrementTick()` only on core 0.
 
 Todo:
 
 - See if we can find another way to implement the interrupt watchdog. Requiring each core to interrupt just to feed the watchdog loses the benefit of having core 0 handling the time slicing of all cores.
 
-## Additional API
+## IDF Additional Features and API
 
-IDF FreeRTOS added several APIs. These are copied over to SMP FreeRTOS to maintain compatibility. These API can either be:
+IDF FreeRTOS added multiple features/APIs that are specific to IDF. For SMP FreeRTOS, these features/APIs have either been:
+
 - Upstreamed to SMP FreeRTOS officially
-- Moved to `freertos_tasks_c_additions.h`
-- Removed from IDF entirely
+- Moved their definition/declaration to `freertos_tasks_c_additions.h`/`idf_additions.h` respectively. Users should  `#include "freertos/idf_additions.h` manually so that we can keep the SMP FreeRTOS API clean.
+- Deprecated/Removed from IDF entirely
 
 ### `xTaskCreatePinnedToCore()`/`xTaskCreateStaticPinnedToCore()`
 
-- `xTaskCreate...AffinitySet()` have been upstreamed
-- `xTaskCreate...PinnedToCore()` now just map to the `xTaskCreate...AffinitySet()` equivalent functions.
+- The `xTaskCreate...AffinitySet()` API has been added in order to apply a core affinity on task creation.
+- `xTaskCreate...PinnedToCore()` now just wrap the `xTaskCreate...AffinitySet()` equivalent functions and handle the conversion of a core ID into a core affinity mask.
+- `xTaskCreate...PinnedToCore()` is now provided via `idf_additions.h`
 
 ### `vTaskSetThreadLocalStoragePointerAndDelCallback()`
 
-- Used to set the TLSP deletion callbacks.
+- If TLSP deletion callbacks are used, `configNUM_THREAD_LOCAL_STORAGE_POINTERS` will be doubled (in order to store the callback pointers in the same array as the TLSPs themselves)
+- `vTaskSetThreadLocalStoragePointerAndDelCallback()` moved to `freertos_tasks_c_additions.h`/`idf_additions.h`
+- Deletion callbacks invoked from the main idle task via `portCLEAN_UP_TCB()`
 
 ### `xTaskGetCurrentTaskHandleForCPU()`
 
 - Convenience function to the get current task of a particular CPU
-- Check if this can be upstreamed
+- Moved to `freertos_tasks_c_additions.h`/`idf_additions.h` for now
+
+Todo: Check if this can be upstreamed
 
 ### `xTaskGetIdleTaskHandleForCPU()`
 
-- Convenience function to the get the idle task handle for a particular CPU
-- Can be entirely replaced with `xTaskGetIdleTaskHandle()`
+- Currently moved to `freertos_tasks_c_additions.h`/`idf_additions.h`
+
+Todo: This needs to be deprecated as there is no longer the concept of idle tasks pinned to a particular CPU
 
 ### `xTaskGetAffinity()`
 
-- Returns what core a task is pinned to, and not an affinity mask.
-- Can be entirely replaced with `vTaskCoreAffinityGet()`
+- Returns what core a task is pinned to, and not the task's affinity mask.
+- Moved to  `freertos_tasks_c_additions.h`/`idf_additions.h` and simple wraps `vTaskCoreAffinityGet()`
+- If the task's affinity mask has more than one permissible core, we simply return `tskNO_AFFINITY` even if the task is not completely unpinned.
+
+Todo: This needs to be deprecated and users should call `vTaskCoreAffinityGet()` instead
+
