@@ -74,7 +74,7 @@
 /components/bootloader_support/bootloader_flash/    @esp-idf-codeowners/peripherals
 /components/bt/                       @esp-idf-codeowners/bluetooth
 /components/cmock/                    @esp-idf-codeowners/system
-/components/console/                  @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
+/components/console/                  @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities/console
 /components/cxx/                      @esp-idf-codeowners/system
 /components/driver/                   @esp-idf-codeowners/peripherals
 /components/efuse/                    @esp-idf-codeowners/system
@@ -116,7 +116,7 @@
 /components/linux/                    @esp-idf-codeowners/system
 /components/log/                      @esp-idf-codeowners/system
 /components/lwip/                     @esp-idf-codeowners/lwip
-/components/mbedtls/                  @esp-idf-codeowners/app-utilities @esp-idf-codeowners/security
+/components/mbedtls/                  @esp-idf-codeowners/app-utilities/mbedtls @esp-idf-codeowners/security
 /components/mdns/                     @esp-idf-codeowners/network
 /components/mqtt/                     @esp-idf-codeowners/network
 /components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/tools
@@ -125,7 +125,7 @@
 /components/partition_table/          @esp-idf-codeowners/system
 /components/perfmon/                  @esp-idf-codeowners/tools
 /components/protobuf-c/               @esp-idf-codeowners/app-utilities
-/components/protocomm/                @esp-idf-codeowners/app-utilities
+/components/protocomm/                @esp-idf-codeowners/app-utilities/provisioning
 /components/pthread/                  @esp-idf-codeowners/system
 /components/riscv/                    @esp-idf-codeowners/system
 /components/sdmmc/                    @esp-idf-codeowners/storage
@@ -140,7 +140,7 @@
 /components/usb/                      @esp-idf-codeowners/peripherals/usb
 /components/vfs/                      @esp-idf-codeowners/storage
 /components/wear_levelling/           @esp-idf-codeowners/storage
-/components/wifi_provisioning/        @esp-idf-codeowners/app-utilities
+/components/wifi_provisioning/        @esp-idf-codeowners/app-utilities/provisioning
 /components/wpa_supplicant/           @esp-idf-codeowners/wifi
 /components/xtensa/                   @esp-idf-codeowners/system
 
@@ -149,7 +149,7 @@
 /docs/**/api-reference/network/         @esp-idf-codeowners/network
 /docs/**/api-reference/peripherals/     @esp-idf-codeowners/peripherals
 /docs/**/api-reference/protocols/       @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
-/docs/**/api-reference/provisioning/    @esp-idf-codeowners/app-utilities
+/docs/**/api-reference/provisioning/    @esp-idf-codeowners/app-utilities/provisioning
 /docs/**/api-reference/storage/         @esp-idf-codeowners/storage
 /docs/**/api-reference/system/          @esp-idf-codeowners/system
 /docs/**/security/                      @esp-idf-codeowners/security
@@ -170,10 +170,11 @@
 /examples/peripherals/        @esp-idf-codeowners/peripherals
 /examples/peripherals/usb/    @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
 /examples/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
-/examples/provisioning/       @esp-idf-codeowners/app-utilities
+/examples/provisioning/       @esp-idf-codeowners/app-utilities/provisioning
 /examples/security/           @esp-idf-codeowners/security
 /examples/storage/            @esp-idf-codeowners/storage
 /examples/system/             @esp-idf-codeowners/system
+/examples/system/ota/         @esp-idf-codeowners/app-utilities
 /examples/wifi/               @esp-idf-codeowners/wifi
 /examples/zigbee/             @esp-idf-codeowners/ieee802154
 
