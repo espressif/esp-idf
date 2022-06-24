@@ -20,7 +20,7 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "regi2c_dig_reg.h"
+#include "soc/regi2c_dig_reg.h"
 #include "sdkconfig.h"
 
 static const char *TAG = "rtc_clk";

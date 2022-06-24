@@ -15,7 +15,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include "esp_private/regi2c_ctrl.h"
+#include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/rtc_cntl_reg.h"
