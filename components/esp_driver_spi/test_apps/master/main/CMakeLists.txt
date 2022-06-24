@@ -4,6 +4,7 @@ set(srcs
     "test_spi_master.c"
     "test_spi_sio.c"
     "test_spi_bus_lock.c"
+    "test_spi_master_sct.c"
 )
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,

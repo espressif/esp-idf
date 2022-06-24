@@ -1,0 +1,408 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stdio.h>
+#include "sdkconfig.h"
+#include "esp_attr.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "unity.h"
+#include "test_utils.h"
+#include "esp_heap_caps.h"
+#include "driver/spi_master.h"
+#include "driver/spi_slave_hd.h"
+#include "driver/spi_slave.h"
+#include "soc/spi_pins.h"
+#include "test_spi_utils.h"
+
+
+__attribute__((unused)) static const char *TAG = "SCT";
+
+#if SOC_SPI_SCT_SUPPORTED
+/*-----------------------------------------------------------
+ * FD SCT Functional Test
+ *-----------------------------------------------------------*/
+#define TEST_FD_SEG_NUM     4
+#define TEST_FD_LEN         8
+#define TEST_FD_LEN_STEP    8
+#define TEST_FD_LEN_MAX     32
+
+
+#include "soc/spi_struct.h"
+
+static void fd_master(void)
+{
+    spi_device_handle_t handle;
+
+    spi_bus_config_t buscfg={
+        .mosi_io_num = SPI2_IOMUX_PIN_NUM_MOSI,
+        .miso_io_num = SPI2_IOMUX_PIN_NUM_MISO,
+        .sclk_io_num = SPI2_IOMUX_PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4092 * 10,
+    };
+
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 0,
+        .address_bits = 0,
+        .dummy_bits = 0,
+        .clock_speed_hz = 10 * 1000,
+        .duty_cycle_pos = 128,        //50% duty cycle
+        .mode = 0,
+        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
+        .cs_ena_posttrans = 3,        //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
+        .queue_size = 3,
+    };
+
+    TEST_ESP_OK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(SPI2_HOST, &devcfg, &handle));
+    unity_send_signal("Master ready");
+
+    uint8_t *master_tx_buf[TEST_FD_SEG_NUM] = {};
+    uint8_t *master_rx_buf[TEST_FD_SEG_NUM] = {};
+    uint8_t *slave_tx_buf[TEST_FD_SEG_NUM] = {};
+    uint32_t seed = 199;
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        master_tx_buf[i] = heap_caps_calloc(1, TEST_FD_LEN_MAX, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        master_rx_buf[i] = heap_caps_calloc(1, TEST_FD_LEN_MAX, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        slave_tx_buf[i] = heap_caps_calloc(1, TEST_FD_LEN_MAX, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        get_tx_buffer(seed, master_tx_buf[i], slave_tx_buf[i], TEST_FD_LEN_MAX);
+        seed++;
+    }
+
+    uint32_t test_len = TEST_FD_LEN;
+    spi_seg_transaction_t seg_trans[TEST_FD_SEG_NUM] = {};
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        seg_trans[i].base.tx_buffer = master_tx_buf[i];
+        seg_trans[i].base.rx_buffer = master_rx_buf[i];
+        seg_trans[i].base.length = test_len * 8;
+        test_len += TEST_FD_LEN_STEP;
+    }
+
+    unity_wait_for_signal("Slave ready");
+    spi_seg_transaction_t *ret_seg_trans = NULL;
+    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, true));
+    TEST_ESP_OK(spi_device_queue_segment_trans(handle, seg_trans, TEST_FD_SEG_NUM, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_segment_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ASSERT(ret_seg_trans == seg_trans);
+
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        ESP_LOG_BUFFER_HEX("master tx:", ret_seg_trans[i].base.tx_buffer, ret_seg_trans[i].base.length / 8);
+        ESP_LOG_BUFFER_HEX("master rx:", ret_seg_trans[i].base.rx_buffer, ret_seg_trans[i].base.length / 8);
+        printf("\n");
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tx_buf[i], master_rx_buf[i], ret_seg_trans[i].base.length / 8);
+
+        free(master_tx_buf[i]);
+        free(master_rx_buf[i]);
+        free(slave_tx_buf[i]);
+    }
+
+    TEST_ESP_OK(spi_bus_remove_device(handle));
+    TEST_ESP_OK(spi_bus_free(SPI2_HOST));
+}
+
+static void fd_slave(void)
+{
+    unity_wait_for_signal("Master ready");
+    spi_bus_config_t buscfg = {
+        .mosi_io_num = SPI2_IOMUX_PIN_NUM_MOSI,
+        .miso_io_num = SPI2_IOMUX_PIN_NUM_MISO,
+        .sclk_io_num = SPI2_IOMUX_PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+    };
+
+    spi_slave_interface_config_t slvcfg = {
+        .mode = 0,
+        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
+        .queue_size = 4,
+    };
+    TEST_ESP_OK(spi_slave_initialize(SPI2_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+    uint8_t *slave_tx_buf[TEST_FD_SEG_NUM] = {};
+    uint8_t *slave_rx_buf[TEST_FD_SEG_NUM] = {};
+    uint8_t *master_tx_buf[TEST_FD_SEG_NUM] = {};
+    uint32_t seed = 199;
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        slave_tx_buf[i] = heap_caps_calloc(1, TEST_FD_LEN_MAX, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        slave_rx_buf[i] = heap_caps_calloc(1, TEST_FD_LEN_MAX, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        master_tx_buf[i] = heap_caps_calloc(1, TEST_FD_LEN_MAX, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+        get_tx_buffer(seed, master_tx_buf[i], slave_tx_buf[i], TEST_FD_LEN_MAX);
+        seed++;
+    }
+
+    uint32_t test_len = TEST_FD_LEN;
+    spi_slave_transaction_t trans[TEST_FD_SEG_NUM] = {};
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        trans[i].tx_buffer = slave_tx_buf[i];
+        trans[i].rx_buffer = slave_rx_buf[i];
+        trans[i].length = test_len * 8;
+        test_len += TEST_FD_LEN_STEP;
+    }
+
+    unity_send_signal("Slave ready");
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        TEST_ESP_OK(spi_slave_queue_trans(SPI2_HOST, &trans[i], portMAX_DELAY));
+    }
+
+    spi_slave_transaction_t *ret_trans = NULL;
+    for (int i = 0; i < TEST_FD_SEG_NUM; i++) {
+        ESP_LOGI(TAG, "Slave Trans %d", i);
+        TEST_ESP_OK(spi_slave_get_trans_result(SPI2_HOST, &ret_trans, portMAX_DELAY));
+        TEST_ASSERT(ret_trans == &trans[i]);
+
+        //show result
+        ESP_LOGI("slave", "trans_len: %d", trans[i].trans_len / 8);
+        ESP_LOG_BUFFER_HEX("slave tx:", trans[i].tx_buffer, trans[i].length / 8);
+        ESP_LOG_BUFFER_HEX("slave rx:", trans[i].rx_buffer, trans[i].length / 8);
+        printf("\n");
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(master_tx_buf[i], slave_rx_buf[i], trans[i].length / 8);
+
+        free(slave_tx_buf[i]);
+        free(slave_rx_buf[i]);
+        free(master_tx_buf[i]);
+    }
+
+    TEST_ESP_OK(spi_slave_free(SPI2_HOST));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master_SCT_FD_Functional", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", fd_master, fd_slave);
+#endif  //#if SOC_SPI_SCT_SUPPORTED
+
+#if (SOC_SPI_SUPPORT_SLAVE_HD_VER2 && SOC_SPI_SCT_SUPPORTED)
+/*-----------------------------------------------------------
+ * HD SCT Functional Test
+ *-----------------------------------------------------------*/
+#define TEST_HD_TIMES                  4
+//Master write, slave read, wrt slave reg
+#define TEST_HD_BUF_0_ID               12
+#define TEST_HD_BUF_0_VAL              0x99
+//Master read, slave write, wrt slave reg
+#define TEST_HD_BUF_1_ID               13
+#define TEST_HD_BUF_1_VAL              0xAA
+
+#define TEST_HD_DATA_LEN               64
+#define TEST_HD_DATA_LEN_PER_SEG       32
+
+static void hd_master(void)
+{
+    spi_device_handle_t handle;
+
+    spi_bus_config_t buscfg={
+        .mosi_io_num = SPI2_IOMUX_PIN_NUM_MOSI,
+        .miso_io_num = SPI2_IOMUX_PIN_NUM_MISO,
+        .sclk_io_num = SPI2_IOMUX_PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4092 * 10,
+    };
+
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 8,
+        .address_bits = 8,
+        .dummy_bits = 8,
+        .clock_speed_hz = 10 * 1000,
+        .duty_cycle_pos = 128,        //50% duty cycle
+        .mode = 0,
+        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
+        .cs_ena_posttrans = 3,        //Keep the CS low 3 cycles after transaction, to stop slave from missing the last bit when CS has less propagation delay than CLK
+        .queue_size = 3,
+        .flags = SPI_DEVICE_HALFDUPLEX,
+    };
+
+    TEST_ESP_OK(spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(SPI2_HOST, &devcfg, &handle));
+    unity_send_signal("Master ready");
+
+    //Test data preparation
+    uint32_t master_tx_val = TEST_HD_BUF_0_VAL;
+    uint8_t *master_tx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *master_rx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint32_t master_rx_val = 0;
+    uint8_t *slave_tx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    get_tx_buffer(199, master_tx_buf, slave_tx_buf, TEST_HD_DATA_LEN);
+
+    spi_seg_transaction_t *ret_seg_trans = NULL;
+
+    //---------------------Master TX---------------------------//
+    spi_seg_transaction_t tx_seg_trans[TEST_HD_TIMES] = {
+        {
+            .base = {
+                .cmd = 0x1,
+                .addr = TEST_HD_BUF_0_ID,
+                .length = 4 * 8,
+                .tx_buffer = (uint8_t *)&master_tx_val,
+            },
+        },
+        //TEST_HD_DATA_LEN of TX data, splitted into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
+        {
+            .base = {
+                .cmd = 0x3,
+                .length = TEST_HD_DATA_LEN_PER_SEG * 8,
+                .tx_buffer = master_tx_buf,
+            },
+            .dummy_bits = 8,
+            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+        },
+        {
+            .base = {
+                .cmd = 0x3,
+                .length = TEST_HD_DATA_LEN_PER_SEG * 8,
+                .tx_buffer = master_tx_buf + TEST_HD_DATA_LEN_PER_SEG,
+            },
+            .dummy_bits = 8,
+            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+        },
+        {
+            .base = {
+                .cmd = 0x7,
+            }
+        },
+    };
+
+    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, true));
+    unity_wait_for_signal("Slave ready");
+    TEST_ESP_OK(spi_device_queue_segment_trans(handle, tx_seg_trans, TEST_HD_TIMES, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_segment_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ASSERT(ret_seg_trans == tx_seg_trans);
+    ESP_LOG_BUFFER_HEX("Master tx", master_tx_buf, TEST_HD_DATA_LEN);
+    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, false));
+
+
+    //---------------------Master RX---------------------------//
+    spi_seg_transaction_t rx_seg_trans[TEST_HD_TIMES] = {
+        {
+            .base = {
+                .cmd = 0x2,
+                .addr = TEST_HD_BUF_1_ID,
+                .rxlength = 4 * 8,
+                .rx_buffer = (uint8_t *)&master_rx_val,
+            },
+        },
+        // TEST_HD_DATA_LEN of TX data, splitted into 2 segments. `TEST_HD_DATA_LEN_PER_SEG` per segment
+        {
+            .base = {
+                .cmd = 0x4,
+                .rxlength = TEST_HD_DATA_LEN_PER_SEG * 8,
+                .rx_buffer = master_rx_buf,
+            },
+            .dummy_bits = 8,
+            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+        },
+        {
+            .base = {
+                .cmd = 0x4,
+                .rxlength = TEST_HD_DATA_LEN_PER_SEG * 8,
+                .rx_buffer = master_rx_buf + TEST_HD_DATA_LEN_PER_SEG,
+            },
+            .dummy_bits = 8,
+            .seg_trans_flags = SPI_SEG_TRANS_DUMMY_LEN_UPDATED,
+        },
+        {
+            .base = {
+                .cmd = 0x8,
+            }
+        },
+    };
+    TEST_ESP_OK(spi_bus_segment_trans_mode_enable(handle, true));
+
+    unity_wait_for_signal("Slave ready");
+    TEST_ESP_OK(spi_device_queue_segment_trans(handle, rx_seg_trans, TEST_HD_TIMES, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_segment_trans_result(handle, &ret_seg_trans, portMAX_DELAY));
+    TEST_ASSERT(ret_seg_trans == rx_seg_trans);
+
+    ESP_LOGI("Master", "Slave Reg[%d] value is: 0x%" PRIx32, TEST_HD_BUF_1_ID, master_rx_val);
+    TEST_ASSERT(master_rx_val == TEST_HD_BUF_1_VAL);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tx_buf, master_rx_buf, TEST_HD_DATA_LEN);
+    ESP_LOG_BUFFER_HEX("Master rx", master_rx_buf, TEST_HD_DATA_LEN);
+
+    //Memory Recycle
+    free(master_tx_buf);
+    free(master_rx_buf);
+    free(slave_tx_buf);
+
+    TEST_ESP_OK(spi_bus_remove_device(handle));
+    TEST_ESP_OK(spi_bus_free(SPI2_HOST));
+}
+
+static void hd_slave(void)
+{
+    spi_bus_config_t bus_cfg = {
+        .miso_io_num = SPI2_IOMUX_PIN_NUM_MISO,
+        .mosi_io_num = SPI2_IOMUX_PIN_NUM_MOSI,
+        .sclk_io_num = SPI2_IOMUX_PIN_NUM_CLK,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 4092 * 4,
+    };
+
+    spi_slave_hd_slot_config_t slave_hd_cfg = {
+        .spics_io_num = SPI2_IOMUX_PIN_NUM_CS,
+        .dma_chan = SPI_DMA_CH_AUTO,
+        .flags = 0,
+        .mode = 0,
+        .command_bits = 8,
+        .address_bits = 8,
+        .dummy_bits = 8,
+        .queue_size = 4,
+    };
+    TEST_ESP_OK(spi_slave_hd_init(SPI2_HOST, &bus_cfg, &slave_hd_cfg));
+
+    spi_slave_hd_data_t *ret_trans = NULL;
+
+    //Test data preparation
+    uint32_t slave_tx_val = TEST_HD_BUF_1_VAL;
+    uint8_t *slave_tx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint8_t *slave_rx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    uint32_t slave_rx_val = 0;
+    uint8_t *master_tx_buf = heap_caps_calloc(1, TEST_HD_DATA_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    get_tx_buffer(199, master_tx_buf, slave_tx_buf, TEST_HD_DATA_LEN);
+
+    unity_wait_for_signal("Master ready");
+
+    //---------------------Slave RX---------------------------//
+    spi_slave_hd_data_t slave_rx_trans = {
+        .data = slave_rx_buf,
+        .len = TEST_HD_DATA_LEN,
+    };
+    TEST_ESP_OK(spi_slave_hd_queue_trans(SPI2_HOST, SPI_SLAVE_CHAN_RX, &slave_rx_trans, portMAX_DELAY));
+    unity_send_signal("slave ready");
+    TEST_ESP_OK(spi_slave_hd_get_trans_res(SPI2_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
+    TEST_ASSERT(ret_trans == &slave_rx_trans);
+
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(master_tx_buf, slave_rx_buf, TEST_HD_DATA_LEN);
+    ESP_LOG_BUFFER_HEX("Slave rx", slave_rx_buf, TEST_HD_DATA_LEN);
+
+    spi_slave_hd_read_buffer(SPI2_HOST, TEST_HD_BUF_0_ID, (uint8_t *)&slave_rx_val, 4);
+    ESP_LOGI("Slave", "Slave Reg[%d] value is: 0x%" PRIx32, TEST_HD_BUF_0_ID, slave_rx_val);
+    TEST_ASSERT(slave_rx_val == TEST_HD_BUF_0_VAL);
+
+    //---------------------Slave TX---------------------------//
+    spi_slave_hd_write_buffer(SPI2_HOST, TEST_HD_BUF_1_ID, (uint8_t *)&slave_tx_val, 4);
+    spi_slave_hd_data_t slave_tx_trans = {
+        .data = slave_tx_buf,
+        .len = TEST_HD_DATA_LEN,
+    };
+    TEST_ESP_OK(spi_slave_hd_queue_trans(SPI2_HOST, SPI_SLAVE_CHAN_TX, &slave_tx_trans, portMAX_DELAY));
+    unity_send_signal("slave ready");
+    TEST_ESP_OK(spi_slave_hd_get_trans_res(SPI2_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+    TEST_ASSERT(ret_trans == &slave_tx_trans);
+    ESP_LOG_BUFFER_HEX("Slave tx", slave_tx_buf, TEST_HD_DATA_LEN);
+
+    //Memory Recycle
+    free(slave_tx_buf);
+    free(slave_rx_buf);
+    free(master_tx_buf);
+
+    TEST_ESP_OK(spi_slave_hd_deinit(SPI2_HOST));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master_SCT_HD_Functional", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", hd_master, hd_slave);
+
+#endif  //#if (SOC_SPI_SUPPORT_SLAVE_HD_VER2 && SOC_SPI_SCT_SUPPORTED)
