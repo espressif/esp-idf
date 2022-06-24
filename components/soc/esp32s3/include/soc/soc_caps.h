@@ -332,6 +332,11 @@
 #define SOC_SPI_MAX_PRE_DIVIDER                     16
 #define SOC_SPI_SUPPORT_OCT                         1
 
+#define SOC_SPI_SCT_SUPPORTED                     1
+#define SOC_SPI_SCT_SUPPORTED_PERIPH(PERIPH_NUM)  ((PERIPH_NUM==1) ? 1 : 0)    //Support Segmented-Configure-Transfer
+#define SOC_SPI_SCT_REG_NUM                       14
+#define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 14-word-regs
+
 #define SOC_MEMSPI_SRC_FREQ_120M         1
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED          1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED          1

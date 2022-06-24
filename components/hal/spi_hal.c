@@ -52,6 +52,34 @@ void spi_hal_deinit(spi_hal_context_t *hal)
     }
 }
 
+#if SOC_SPI_SCT_SUPPORTED
+static void s_sct_reset_dma_link(spi_hal_context_t *hal)
+{
+    hal->tx_free_desc_num = hal->dmadesc_n;
+    hal->rx_free_desc_num = hal->dmadesc_n;
+    hal->cur_tx_seg_link = hal->dmadesc_tx;
+    hal->cur_rx_seg_link = hal->dmadesc_rx;
+    hal->tx_seg_link_tail = NULL;
+    hal->rx_seg_link_tail = NULL;
+}
+
+void spi_hal_sct_init(spi_hal_context_t *hal)
+{
+    s_sct_reset_dma_link(hal);
+    spi_ll_conf_state_enable(hal->hw, true);
+    spi_ll_set_magic_number(hal->hw, SPI_LL_SCT_MAGIC_NUMBER);
+    spi_ll_enable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_set_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+}
+
+void spi_hal_sct_deinit(spi_hal_context_t *hal)
+{
+    spi_ll_conf_state_enable(hal->hw, false);
+    spi_ll_disable_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+    spi_ll_clear_intr(hal->hw, SPI_LL_INTR_SEG_DONE);
+}
+#endif  //#if SOC_SPI_SCT_SUPPORTED
+
 esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi_hal_timing_conf_t *timing_conf)
 {
     spi_hal_timing_conf_t temp_conf = {};
