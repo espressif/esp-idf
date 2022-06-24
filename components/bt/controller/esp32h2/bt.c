@@ -57,6 +57,9 @@
 #define OSI_COEX_VERSION              0x00010006
 #define OSI_COEX_MAGIC_VALUE          0xFADEBEAD
 
+#define EXT_FUNC_VERSION             0x20220125
+#define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
+
 /* Types definition
  ************************************************************************
  */
@@ -86,6 +89,9 @@ struct ext_funcs_t {
     void (* _task_delete)(void *task_handle);
     void (*_osi_assert)(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
     uint32_t (* _os_random)(void);
+    int (* _ecc_gen_key_pair)(uint8_t *pub, uint8_t *priv);
+    int (* _ecc_gen_dh_key)(const uint8_t *remote_pub_key_x, const uint8_t *remote_pub_key_y, const uint8_t *local_priv_key, uint8_t *dhkey);
+    int (* _esp_reset_rpa_moudle)(void);
     uint32_t magic;
 };
 
@@ -118,6 +124,10 @@ extern void r_ble_ll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg, vo
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
 extern void bt_bb_set_le_tx_on_delay(uint32_t delay_us);
+extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
+                                const uint8_t *peer_pub_key_y,
+                                const uint8_t *our_priv_key, uint8_t *out_dhkey);
+extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 
 /* Local Function Declaration
  *********************************************************************
@@ -140,6 +150,9 @@ static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler,
 static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
 static uint32_t osi_random_wrapper(void);
+
+static int esp_reset_rpa_moudle(void);
+
 
 /* Local variable definition
  ***************************************************************************
@@ -177,7 +190,7 @@ static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
 };
 
 struct ext_funcs_t ext_funcs_ro = {
-    .ext_version = 0xE0000001,
+    .ext_version = EXT_FUNC_VERSION,
     ._esp_intr_alloc = esp_intr_alloc_wrapper,
     ._esp_intr_free = esp_intr_free_wrapper,
     ._malloc = bt_osi_mem_malloc_internal,
@@ -194,8 +207,17 @@ struct ext_funcs_t ext_funcs_ro = {
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
-    .magic = 0xA5A5A5A5,
+    ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
+    ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
+    ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
+    .magic = EXT_FUNC_MAGIC_VALUE,
 };
+
+static int IRAM_ATTR esp_reset_rpa_moudle(void)
+{
+    // periph_module_reset(PERIPH_MODEM_RPA_MODULE);
+    return 0;
+}
 
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2)
 {
