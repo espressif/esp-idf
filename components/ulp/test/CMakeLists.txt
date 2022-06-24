@@ -3,8 +3,8 @@ if(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
     return()
 endif()
 
-if(IDF_TARGET STREQUAL "esp32c2")
-    # IDF-5048
+if(NOT CONFIG_ULP_COPROC_TYPE_FSM AND NOT CONFIG_ULP_COPROC_TYPE_RISCV)
+    # Nothing to test if no co-processor enabled
     return()
 endif()
 
