@@ -127,6 +127,10 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_MEMPROT_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_RTC_CTRL_SUPPORTED
     bool
     default y
@@ -774,6 +778,14 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
 config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
+
+config SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
+    int
+    default 16
+
+config SOC_MEMPROT_MEM_ALIGN_SIZE
+    int
+    default 4
 
 config SOC_AES_CRYPTO_DMA
     bool

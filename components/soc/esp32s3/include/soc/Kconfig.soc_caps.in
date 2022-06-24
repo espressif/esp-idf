@@ -183,6 +183,10 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_MEMPROT_SUPPORTED
+    bool
+    default y
+
 config SOC_APPCPU_HAS_CLOCK_GATING_BUG
     bool
     default y
@@ -906,6 +910,14 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
 config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
+
+config SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
+    int
+    default 16
+
+config SOC_MEMPROT_MEM_ALIGN_SIZE
+    int
+    default 256
 
 config SOC_PHY_DIG_REGS_MEM_SIZE
     int

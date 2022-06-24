@@ -129,15 +129,9 @@ menu "ESP System Settings"
                 for the data part (above the splitting address). The memory protection is effective
                 on all access through the IRAM0 and DRAM0 buses.
 
-        config ESP_SYSTEM_MEMPROT_DEPCHECK
-            bool
-            default y if IDF_TARGET_ESP32S2
-            default y if IDF_TARGET_ESP32C3
-            default y if IDF_TARGET_ESP32S3
-
         config ESP_SYSTEM_MEMPROT_FEATURE
             bool "Enable memory protection"
-            depends on ESP_SYSTEM_MEMPROT_DEPCHECK
+            depends on SOC_MEMPROT_SUPPORTED
             default "y"
             help
                 If enabled, the permission control module watches all the memory access and fires the panic handler
@@ -154,20 +148,6 @@ menu "ESP System Settings"
             help
                 Once locked, memory protection settings cannot be changed anymore.
                 The lock is reset only on the chip startup.
-
-        config ESP_SYSTEM_MEMPROT_CPU_PREFETCH_PAD_SIZE
-            # Hidden option for linker script usage
-            int
-            depends on ESP_SYSTEM_MEMPROT_DEPCHECK
-            default 16
-
-        config ESP_SYSTEM_MEMPROT_MEM_ALIGN_SIZE
-            # Hidden option for linker script usage
-            int
-            depends on ESP_SYSTEM_MEMPROT_DEPCHECK
-            default 4   if IDF_TARGET_ESP32S2
-            default 256 if IDF_TARGET_ESP32S3
-            default 512
 
     endmenu  # Memory protection
 
