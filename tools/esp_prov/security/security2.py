@@ -9,10 +9,10 @@ from typing import Any, Type
 
 import proto
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from future.utils import tobytes
+from utils import long_to_bytes, str_to_bytes
 
 from .security import Security
-from .srp6a import Srp6a, bytes_to_long, generate_salt_and_verifier, long_to_bytes
+from .srp6a import Srp6a, generate_salt_and_verifier
 
 AES_KEY_LEN = 256 // 8
 
@@ -70,7 +70,7 @@ class Security2(Security):
             self.setup1_response(response_data)
             return None
 
-        print('Unexpected state')
+        print('---- Unexpected state! ----')
         return None
 
     def _print_verbose(self, data: str) -> None:
@@ -83,34 +83,30 @@ class Security2(Security):
         setup_req.sec_ver = proto.session_pb2.SecScheme2
         setup_req.sec2.msg = proto.sec2_pb2.S2Session_Command0
 
-        setup_req.sec2.sc0.client_username = tobytes(self.username)
+        setup_req.sec2.sc0.client_username = str_to_bytes(self.username)
         self.srp6a_ctx = Srp6a(self.username, self.password)
         if self.srp6a_ctx is None:
-            print('Failed to initialize SRP6a instance!')
-            exit(1)
+            raise RuntimeError('Failed to initialize SRP6a instance!')
 
         client_pubkey = long_to_bytes(self.srp6a_ctx.A)
         setup_req.sec2.sc0.client_pubkey = client_pubkey
 
-        self._print_verbose('Client Public Key:\t' + hex(bytes_to_long(client_pubkey)))
+        self._print_verbose(f'Client Public Key:\t0x{client_pubkey.hex()}')
         return setup_req.SerializeToString().decode('latin-1')
 
     def setup0_response(self, response_data: bytes) -> None:
         # Interpret SessionResp0 response packet
         setup_resp = proto.session_pb2.SessionData()
-        setup_resp.ParseFromString(tobytes(response_data))
-        self._print_verbose('Security version:\t' + str(setup_resp.sec_ver))
+        setup_resp.ParseFromString(str_to_bytes(response_data))
+        self._print_verbose(f'Security version:\t{str(setup_resp.sec_ver)}')
         if setup_resp.sec_ver != proto.session_pb2.SecScheme2:
-            print('Incorrect sec scheme')
-            exit(1)
+            raise RuntimeError('Incorrect security scheme')
 
         # Device public key, random salt and password verifier
         device_pubkey = setup_resp.sec2.sr0.device_pubkey
         device_salt = setup_resp.sec2.sr0.device_salt
 
-        self._print_verbose('Device Public Key:\t' + hex(bytes_to_long(device_pubkey)))
-        self._print_verbose('Device Salt:\t' + hex(bytes_to_long(device_salt)))
-
+        self._print_verbose(f'Device Public Key:\t0x{device_pubkey.hex()}')
         self.client_pop_key = self.srp6a_ctx.process_challenge(device_salt, device_pubkey)
 
     def setup1_request(self) -> Any:
@@ -120,7 +116,10 @@ class Security2(Security):
         setup_req.sec2.msg = proto.sec2_pb2.S2Session_Command1
 
         # Encrypt device public key and attach to the request packet
-        self._print_verbose('Client Proof:\t' + hex(bytes_to_long(self.client_pop_key)))
+        if self.client_pop_key is None:
+            raise RuntimeError('Failed to generate client proof!')
+
+        self._print_verbose(f'Client Proof:\t0x{self.client_pop_key.hex()}')
         setup_req.sec2.sc1.client_proof = self.client_pop_key
 
         return setup_req.SerializeToString().decode('latin-1')
@@ -128,37 +127,36 @@ class Security2(Security):
     def setup1_response(self, response_data: bytes) -> Any:
         # Interpret SessionResp1 response packet
         setup_resp = proto.session_pb2.SessionData()
-        setup_resp.ParseFromString(tobytes(response_data))
+        setup_resp.ParseFromString(str_to_bytes(response_data))
         # Ensure security scheme matches
         if setup_resp.sec_ver == proto.session_pb2.SecScheme2:
             # Read encrypyed device proof string
             device_proof = setup_resp.sec2.sr1.device_proof
-            self._print_verbose('Device Proof:\t' + hex(bytes_to_long(device_proof)))
+            self._print_verbose(f'Device Proof:\t0x{device_proof.hex()}')
             self.srp6a_ctx.verify_session(device_proof)
             if not self.srp6a_ctx.authenticated():
-                print('Failed to verify device proof')
-                exit(1)
+                raise RuntimeError('Failed to verify device proof')
         else:
-            print('Unsupported security protocol')
-            exit(1)
+            raise RuntimeError('Unsupported security protocol')
 
         # Getting the shared secret
         shared_secret = self.srp6a_ctx.get_session_key()
-        self._print_verbose('Shared Secret:\t' + hex(bytes_to_long(shared_secret)))
+        self._print_verbose(f'Shared Secret:\t0x{shared_secret.hex()}')
 
         # Using the first 256 bits of a 512 bit key
         session_key = shared_secret[:AES_KEY_LEN]
-        self._print_verbose('Session Key:\t' + hex(bytes_to_long(session_key)))
+        self._print_verbose(f'Session Key:\t0x{session_key.hex()}')
 
         # 96-bit nonce
         self.nonce = setup_resp.sec2.sr1.device_nonce
-        self._print_verbose('Nonce:\t' + hex(bytes_to_long(self.nonce)))
+        if self.nonce is None:
+            raise RuntimeError('Received invalid nonce from device!')
+        self._print_verbose(f'Nonce:\t0x{self.nonce.hex()}')
 
         # Initialize the encryption engine with Shared Key and initialization vector
         self.cipher = AESGCM(session_key)
         if self.cipher is None:
-            print('Failed to initialize AES-GCM cryptographic engine!')
-            exit(1)
+            raise RuntimeError('Failed to initialize AES-GCM cryptographic engine!')
 
     def encrypt_data(self, data: bytes) -> Any:
         return self.cipher.encrypt(self.nonce, data, None)

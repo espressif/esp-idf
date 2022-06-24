@@ -206,7 +206,6 @@ tools/esp_prov/transport/transport.py
 tools/esp_prov/transport/transport_ble.py
 tools/esp_prov/transport/transport_console.py
 tools/esp_prov/transport/transport_http.py
-tools/esp_prov/utils/convenience.py
 tools/find_apps.py
 tools/find_build_apps/common.py
 tools/gen_esp_err_to_name.py
