@@ -100,7 +100,7 @@ static void create_config_network(otInstance *instance)
         return;
     }
 
-    uint16_t network_name_len = strnlen(CONFIG_OPENTHREAD_NETWORK_NAME, OT_NETWORK_NAME_MAX_SIZE + 1);
+    uint16_t network_name_len = strlen(CONFIG_OPENTHREAD_NETWORK_NAME);
 
     assert(network_name_len <= OT_NETWORK_NAME_MAX_SIZE);
 
