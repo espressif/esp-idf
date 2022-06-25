@@ -448,6 +448,13 @@ BaseType_t xPortStartScheduler( void )
 
     port_xSchedulerRunning[xPortGetCoreID()] = 1;
 
+#if configNUM_CORES > 1
+    // Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+    if (xPortGetCoreID() != 0) {
+        vTaskStartSchedulerOtherCores();
+    }
+#endif // configNUM_CORES > 1
+
     // Cannot be directly called from C; never returns
     __asm__ volatile ("call0    _frxt_dispatch\n");
 
