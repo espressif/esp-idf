@@ -51,7 +51,7 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
     dut.expect('control: esp_local_ctrl service started with name : my_esp_ctrl_device')
 
     def dut_expect_read() -> None:
-        dut.expect_exact('control: Reading property : timestamp (us)')
+        dut.expect_exact('control: Reading property : timestamp (us)', timeout=20)
         dut.expect_exact('control: Reading property : property1')
         dut.expect_exact('control: Reading property : property2')
         dut.expect_exact('control: Reading property : property3')
