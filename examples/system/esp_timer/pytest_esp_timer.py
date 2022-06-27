@@ -63,7 +63,7 @@ def test_esp_timer(dut: Dut) -> None:
     one_shot_timer_time = int(match.group(1))
     diff = start_time + ONE_SHOT_TIMER_PERIOD - one_shot_timer_time
     logging.info('One-shot timer, time: {} us, diff: {}'.format(one_shot_timer_time, diff))
-    assert(abs(diff) < 220)
+    assert(abs(diff) < 350)
 
     match = dut.expect(RESTART_REGEX, timeout=3)
     start_time = int(match.group(1))
