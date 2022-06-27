@@ -239,6 +239,7 @@ LCD
 
 - The LCD panel initialization flow is slightly changed. Now the :cpp:func:`esp_lcd_panel_init` won't turn on the display automatically. User needs to call :cpp:func:`esp_lcd_panel_disp_on_off` to manually turn on the display. Note, this is different from turning on backlight. With this breaking change, user can flush a predefined pattern to the screen before turning on the screen. This can help avoid random noise on the screen after a power on reset.
 - :cpp:func:`esp_lcd_panel_disp_off` is deprecated, please use :cpp:func:`esp_lcd_panel_disp_on_off` instead.
+- ``dc_as_cmd_phase`` is removed. The SPI LCD driver currently doesn't support a 9bit SPI LCD. Please always use a dedicated GPIO to control the LCD D/C line.
 
 .. only:: SOC_MCPWM_SUPPORTED
 
