@@ -243,7 +243,7 @@ void app_main(void)
     while (1) {
         // The rotation direction is controlled by inverting the hall sensor value
         hall_sensor_value = bldc_get_hall_sensor_value(false);
-        if (hall_sensor_value >= 1 && hall_sensor_value <= sizeof(s_hall_actions) / sizeof(s_hall_actions[0])) {
+        if (hall_sensor_value >= 1 && hall_sensor_value < sizeof(s_hall_actions) / sizeof(s_hall_actions[0])) {
             s_hall_actions[hall_sensor_value]();
         } else {
             ESP_LOGE(TAG, "invalid bldc phase, wrong hall sensor value:%d", hall_sensor_value);
