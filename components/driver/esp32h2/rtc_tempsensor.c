@@ -111,6 +111,7 @@ esp_err_t temp_sensor_stop(void)
 {
     APB_SARADC.apb_tsens_ctrl.tsens_pu = 0;
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = 0;
+    tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
     return ESP_OK;
 }
 
