@@ -89,6 +89,15 @@ unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting 
 BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
 BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 
+/*
+*******************************************************************************
+* Interrupt stack. The size of the interrupt stack is determined by the config
+* parameter "configISR_STACK_SIZE" in FreeRTOSConfig.h
+*******************************************************************************
+*/
+volatile StackType_t DRAM_ATTR __attribute__((aligned(16))) port_IntStack[portNUM_PROCESSORS][configISR_STACK_SIZE];
+/* One flag for each individual CPU. */
+volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 
 /* ------------------------------------------------ FreeRTOS Portable --------------------------------------------------
  * - Provides implementation for functions required by FreeRTOS
