@@ -105,7 +105,7 @@ esp_err_t esp_psram_init(void)
     ret = esp_psram_impl_get_physical_size(&psram_physical_size);
     assert(ret == ESP_OK);
 
-    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device", psram_physical_size / (1024 * 1024));
+    ESP_EARLY_LOGI(TAG, "Found %dMB SPI RAM device", psram_physical_size / (1024 * 1024));
     ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 #if CONFIG_IDF_TARGET_ESP32
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
