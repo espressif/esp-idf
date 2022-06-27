@@ -121,6 +121,29 @@ typedef struct {
 #define i2c_hal_set_source_clk(hal, src_clk) i2c_ll_set_source_clk((hal)->dev, src_clk)
 
 /**
+ * @brief  Configure I2C SCL timing
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
+ * @param  wait_high_period The I2C SCL wait rising edge period.
+ *
+ * @return None.
+ */
+#define i2c_hal_set_scl_clk_timing(hal, high_period, low_period, wait_high_period) i2c_ll_set_scl_clk_timing((hal)->dev, high_period, low_period, wait_high_period)
+
+/**
+ * @brief  Get I2C SCL timing configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period Pointer to accept the SCL high period
+ * @param  low_period Pointer to accept the SCL low period
+ *
+ * @return None
+ */
+#define i2c_hal_get_scl_clk_timing(hal, high_period, low_period, wait_high_period) i2c_ll_get_scl_clk_timing((hal)->dev, high_period, low_period, wait_high_period)
+
+/**
  * @brief  Init the I2C master.
  *
  * @param  hal Context of the HAL layer

@@ -890,6 +890,39 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
     ;// ESP32 do not support
 }
 
+/**
+ * @brief  Configure I2C SCL timing
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
+ * @param  wait_high_period The I2C SCL wait rising edge period.
+ *
+ * @return None.
+ */
+static inline void i2c_ll_set_scl_clk_timing(i2c_dev_t *hw, int high_period, int low_period, int wait_high_period)
+{
+    (void)wait_high_period;
+    hw->scl_low_period.period = low_period;
+    hw->scl_high_period.period = high_period;
+}
+
+/**
+ * @brief  Get I2C SCL timing configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period Pointer to accept the SCL high period
+ * @param  low_period Pointer to accept the SCL low period
+ *
+ * @return None
+ */
+static inline void i2c_ll_get_scl_clk_timing(i2c_dev_t *hw, int *high_period, int *low_period, int *wait_high_period)
+{
+    *wait_high_period = 0; // Useless
+    *high_period = hw->scl_high_period.period;
+    *low_period = hw->scl_low_period.period;
+}
+
 #ifdef __cplusplus
 }
 #endif
