@@ -12,7 +12,7 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_flash.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -229,9 +229,9 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
  * This can be done using esp_partition_erase_range function.
  *
  * Partitions marked with an encryption flag will automatically be
- * written via the spi_flash_write_encrypted() function. If writing to
+ * written via the esp_flash_write_encrypted() function. If writing to
  * an encrypted partition, all write offsets and lengths must be
- * multiples of 16 bytes. See the spi_flash_write_encrypted() function
+ * multiples of 16 bytes. See the esp_flash_write_encrypted() function
  * for more details. Unencrypted partitions do not have this
  * restriction.
  *
@@ -403,7 +403,6 @@ bool esp_partition_check_identity(const esp_partition_t* partition_1, const esp_
  * @param[out] out_partition  Output, if non-NULL, receives the pointer to the resulting esp_partition_t structure
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NOT_SUPPORTED if CONFIG_CONFIG_SPI_FLASH_USE_LEGACY_IMPL is enabled
  *      - ESP_ERR_NO_MEM if memory allocation has failed
  *      - ESP_ERR_INVALID_ARG if the new partition overlaps another partition on the same flash chip
  *      - ESP_ERR_INVALID_SIZE if the partition doesn't fit into the flash chip size

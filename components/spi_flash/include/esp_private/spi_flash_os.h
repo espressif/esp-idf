@@ -139,6 +139,101 @@ esp_err_t spi_flash_enable_high_performance_mode(void);
  */
 const spi_flash_hpm_dummy_conf_t *spi_flash_get_dummy(void);
 
+typedef enum {
+    FLASH_WRAP_MODE_8B = 0,
+    FLASH_WRAP_MODE_16B = 2,
+    FLASH_WRAP_MODE_32B = 4,
+    FLASH_WRAP_MODE_64B = 6,
+    FLASH_WRAP_MODE_DISABLE = 1
+} spi_flash_wrap_mode_t;
+
+/**
+ * @brief set wrap mode of flash
+ *
+ * @param mode: wrap mode support disable, 16 32, 64 byte
+ *
+ * @return esp_err_t : ESP_OK for successful.
+ *
+ */
+esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode);
+
+/**
+ * @brief SPI flash critical section enter function.
+ *
+ */
+typedef void (*spi_flash_guard_start_func_t)(void);
+/**
+ * @brief SPI flash critical section exit function.
+ */
+typedef void (*spi_flash_guard_end_func_t)(void);
+
+/**
+ * Structure holding SPI flash access critical sections management functions.
+ *
+ * Flash API uses two types of flash access management functions:
+ * 1) Functions which prepare/restore flash cache and interrupts before calling
+ *    appropriate ROM functions (SPIWrite, SPIRead and SPIEraseBlock):
+ *   - 'start' function should disables flash cache and non-IRAM interrupts and
+ *      is invoked before the call to one of ROM function above.
+ *   - 'end' function should restore state of flash cache and non-IRAM interrupts and
+ *      is invoked after the call to one of ROM function above.
+ *    These two functions are not recursive.
+ *
+ * Different versions of the guarding functions should be used depending on the context of
+ * execution (with or without functional OS). In normal conditions when flash API is called
+ * from task the functions use OS primitives. When there is no OS at all or when
+ * it is not guaranteed that OS is functional (accessing flash from exception handler) these
+ * functions cannot use OS primitives or even does not need them (multithreaded access is not possible).
+ *
+ * @note Structure and corresponding guard functions should not reside in flash.
+ *       For example structure can be placed in DRAM and functions in IRAM sections.
+ */
+typedef struct {
+    spi_flash_guard_start_func_t        start;      /**< critical section start function. */
+    spi_flash_guard_end_func_t          end;        /**< critical section end function. */
+} spi_flash_guard_funcs_t;
+
+
+/**
+ * @brief  Sets guard functions to access flash.
+ *
+ * @note Pointed structure and corresponding guard functions should not reside in flash.
+ *       For example structure can be placed in DRAM and functions in IRAM sections.
+ *
+ * @param funcs pointer to structure holding flash access guard functions.
+ */
+void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
+
+/**
+ * @brief Get the guard functions used for flash access
+ *
+ * @return The guard functions that were set via spi_flash_guard_set(). These functions
+ * can be called if implementing custom low-level SPI flash operations.
+ */
+const spi_flash_guard_funcs_t *spi_flash_guard_get(void);
+
+/**
+ * @brief Default OS-aware flash access guard functions
+ */
+extern const spi_flash_guard_funcs_t g_flash_guard_default_ops;
+
+/**
+ * @brief Non-OS flash access guard functions
+ *
+ * @note This version of flash guard functions is to be used when no OS is present or from panic handler.
+ *       It does not use any OS primitives and IPC and implies that only calling CPU is active.
+ */
+extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
+
+/**
+ * @brief This function is used to re-initialize the flash mmap when using ROM flash
+ * implementations.
+ *
+ * @note Only called in startup. User should not call this function.
+ */
+void spi_flash_rom_impl_init(void);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -12,7 +12,7 @@
 #include "soc/efuse_reg.h"
 #include "esp_efuse.h"
 #include "esp_chip_info.h"
-#include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
 #include "esp_efuse_table.h"
@@ -91,6 +91,7 @@ static void example_print_chip_info(void)
 {
     /* Print chip information */
     esp_chip_info_t chip_info;
+    uint32_t flash_size;
     esp_chip_info(&chip_info);
     printf("This is %s chip with %d CPU core(s), WiFi%s%s, ",
             CONFIG_IDF_TARGET,
@@ -99,8 +100,12 @@ static void example_print_chip_info(void)
             (chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : "");
 
     printf("silicon revision %d, ", chip_info.revision);
+    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
+        printf("Get flash size failed");
+        return;
+    }
 
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+    printf("%dMB %s flash\n", flash_size / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 
@@ -147,7 +152,7 @@ static void example_read_write_flash(void)
     ESP_ERROR_CHECK(esp_partition_read(partition, 0, read_data, data_size));
     ESP_LOG_BUFFER_HEXDUMP(TAG, read_data, data_size, ESP_LOG_INFO);
 
-    printf("Reading with spi_flash_read:\n");
-    ESP_ERROR_CHECK(spi_flash_read(partition->address, read_data, data_size));
+    printf("Reading with esp_flash_read:\n");
+    ESP_ERROR_CHECK(esp_flash_read(NULL, read_data, partition->address, data_size));
     ESP_LOG_BUFFER_HEXDUMP(TAG, read_data, data_size, ESP_LOG_INFO);
 }

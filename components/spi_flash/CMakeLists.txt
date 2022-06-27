@@ -22,6 +22,7 @@ else()
         "flash_ops.c"
         "${target}/flash_ops_${target}.c"
     )
+
     set(srcs
         "partition.c"
         "partition_target.c"

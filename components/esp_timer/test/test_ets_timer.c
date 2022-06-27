@@ -6,8 +6,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_rom_sys.h"
+#include "esp_private/spi_flash_os.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"  // for ETSTimer type
 #elif CONFIG_IDF_TARGET_ESP32S2

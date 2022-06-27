@@ -24,11 +24,7 @@ extern "C" {
  *
  * Called by OS startup code. You do not need to call this in your own applications.
  */
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#define esp_flash_init_default_chip(...) ({ESP_OK;})
-#else
 esp_err_t esp_flash_init_default_chip(void);
-#endif
 
 /**
  *  Enable OS-level SPI flash protections in IDF
@@ -37,11 +33,7 @@ esp_err_t esp_flash_init_default_chip(void);
  *
  * @return ESP_OK if success, otherwise failed. See return value of ``esp_flash_init_os_functions``.
  */
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#define esp_flash_app_init(...) ({ESP_OK;})
-#else
 esp_err_t esp_flash_app_init(void);
-#endif
 
 /**
  *  Disable (or enable) OS-level SPI flash protections in IDF
@@ -50,11 +42,7 @@ esp_err_t esp_flash_app_init(void);
  *
  * @return always ESP_OK.
  */
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#define esp_flash_app_disable_protect(...) ({ESP_OK;})
-#else
 esp_err_t esp_flash_app_disable_protect(bool disable);
-#endif
 
 /**
  *  Initialize OS-level functions for a specific chip.

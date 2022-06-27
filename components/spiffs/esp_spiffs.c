@@ -9,7 +9,7 @@
 #include "spiffs_nucleus.h"
 #include "esp_log.h"
 #include "esp_partition.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_image_format.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

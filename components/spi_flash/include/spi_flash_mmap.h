@@ -6,7 +6,7 @@
 
 /**
  * This file contains `spi_flash_mmap_xx` APIs, mainly for doing memory mapping
- * to an SPI-connected external Flash, as well as some helper functions to
+ * to an SPI0-connected external Flash, as well as some helper functions to
  * convert between virtual and physical address
  **/
 

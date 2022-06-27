@@ -8,7 +8,6 @@
 #include <sys/param.h>  //For max/min
 #include "esp_attr.h"
 #include "esp_private/system_internal.h"
-#include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
 #include "freertos/FreeRTOS.h"
@@ -19,6 +18,7 @@
 #include "esp_compiler.h"
 #include "esp_rom_sys.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/cache_utils.h"
 
 #include "esp_private/spi_common_internal.h"
 
@@ -61,14 +61,14 @@ static inline bool on_spi1_check_yield(spi1_app_func_arg_t* ctx);
 IRAM_ATTR static void cache_enable(void* arg)
 {
 #ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
-    g_flash_guard_default_ops.end();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
 #endif
 }
 
 IRAM_ATTR static void cache_disable(void* arg)
 {
 #ifndef CONFIG_SPI_FLASH_AUTO_SUSPEND
-    g_flash_guard_default_ops.start();
+    spi_flash_disable_interrupts_caches_and_other_cpu();
 #endif
 }
 

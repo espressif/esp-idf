@@ -35,14 +35,27 @@ ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can direct
 Breaking changes in legacy APIs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In order to make spi_flash driver more stable, legacy spi_flash driver is removed on v5.0. Legacy spi_flash driver refers to default spi_flash driver since v3.0 and spi_flash driver with configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` switched on on v4.0 series. The major breaking change is we don't support legacy spi_flash driver on v5.0 anymore. Therefore, the configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is removed. After that, following functions will no longer exist. But meanwhile, you can use our new APIs instead.
+In order to make spi_flash driver more stable, legacy spi_flash driver is removed on v5.0. Legacy spi_flash driver refers to default spi_flash driver since v3.0 and spi_flash driver with configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` switched on on v4.0 series. The major breaking change is legacy spi_flash driver is not supported on new version anymore. Therefore, the configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is removed. After that, following functions will no longer exist. But meanwhile, you can use our new APIs instead.
 
-- ``spi_flash_erase_sector`` is replaced by ``esp_flash_erase_region``.
-- ``spi_flash_erase_range`` is replaced by ``esp_flash_erase_region``.
-- ``spi_flash_write`` is replaced by ``esp_flash_write``.
-- ``spi_flash_read`` is replaced by ``esp_flash_read``.
-- ``spi_flash_write_encrypted`` is replaced by ``esp_flash_write_encrypted``
-- ``spi_flash_read_encrypted`` is replaced by ``esp_flash_read_encrypted``
++---------------------------------+-------------------------------+
+|         Removed items           |          Replacement          |
++=================================+===============================+
+| ``spi_flash_erase_sector()``    | ``esp_flash_erase_region``    |
++---------------------------------+-------------------------------+
+| ``spi_flash_erase_range()``     | ``esp_flash_erase_region``    |
++---------------------------------+-------------------------------+
+| ``spi_flash_write``             | ``esp_flash_write``           |
++---------------------------------+-------------------------------+
+| ``spi_flash_read()``            | ``esp_flash_read``            |
++---------------------------------+-------------------------------+
+| ``spi_flash_write_encrypted()`` | ``esp_flash_write_encrypted`` |
++---------------------------------+-------------------------------+
+| ``spi_flash_read_encrypted``    | ``esp_flash_read_encrypted``  |
++---------------------------------+-------------------------------+
+
+.. note::
+
+    New functions with prefix ``esp_flash`` accept an additional ``esp_flash_t*`` parameter.  You can simply set it to NULL means that the function will operate the main flash(``esp_flash_default_chip``)
 
 Header ``esp_spi_flash.h`` has been deprecated, system functions are no longer public. To make use of flash memory mapping APIs, you should include ``spi_flash_mmap.h`` instead.
 

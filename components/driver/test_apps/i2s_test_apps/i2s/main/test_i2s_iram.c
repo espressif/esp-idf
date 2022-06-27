@@ -11,10 +11,10 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "driver/i2s_std.h"
-#include "esp_spi_flash.h"
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
 #include "esp_private/i2s_platform.h"
+#include "esp_private/spi_flash_os.h"
 #include "test_inc/test_i2s.h"
 
 #if CONFIG_I2S_ISR_IRAM_SAFE

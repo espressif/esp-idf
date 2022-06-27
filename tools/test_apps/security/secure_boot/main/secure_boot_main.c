@@ -13,7 +13,7 @@
 #include "esp_efuse.h"
 #include "esp_secure_boot.h"
 #include "esp_chip_info.h"
-#include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "esp_log.h"
 #include "esp_efuse_table.h"
 #include <string.h>
@@ -36,12 +36,17 @@ static void example_print_chip_info(void)
 {
     /* Print chip information */
     esp_chip_info_t chip_info;
+    uint32_t flash_size;
     esp_chip_info(&chip_info);
     printf("This is %s chip with %d CPU cores\n", CONFIG_IDF_TARGET, chip_info.cores);
 
     printf("silicon revision %d, ", chip_info.revision);
+    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
+        printf("Get flash size failed");
+        return;
+    }
 
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024),
+    printf("%dMB %s flash\n", flash_size / (1024 * 1024),
             (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 

@@ -12,11 +12,11 @@
 #include <freertos/semphr.h>
 
 #include <unity.h>
-#include <esp_spi_flash.h>
+#include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
 
-#include "../cache_utils.h"
+#include "esp_private/cache_utils.h"
 
 static QueueHandle_t result_queue;
 
