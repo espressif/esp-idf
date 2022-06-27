@@ -2,8 +2,6 @@
   extends: .rules:test:host_test
   stage: host_test
   image: $ESP_ENV_IMAGE
-  variables:
-    PYTHON_VER: 3.7.10
   tags:
     - host_test
   dependencies: []
