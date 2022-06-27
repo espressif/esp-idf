@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_partition.h"
 #include "wear_levelling.h"
 #include "WL_Flash.h"
