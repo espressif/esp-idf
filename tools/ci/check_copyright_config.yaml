@@ -83,7 +83,8 @@ freertos_component:
 
 ethernet_component:
   include:
-    - 'components/esp_eth/**'
+    - 'components/esp_eth/include/**'
+    - 'components/esp_eth/src/**'
   allowed_licenses:
     - Apache-2.0
     - MIT           # To allow contributed drivers
