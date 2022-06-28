@@ -17,7 +17,7 @@
 #include "ccomp_timer.h"
 #include "sys/param.h"
 
-#if CONFIG_MBEDTLS_HARDWARE_GCM
+#if CONFIG_MBEDTLS_HARDWARE_AES
 
 /*
     Python example code for generating test vectors
@@ -830,4 +830,4 @@ TEST_CASE("mbedtls AES GCM - Combine different IV/Key/Plaintext/AAD lengths", "[
     }
 }
 
-#endif //CONFIG_MBEDTLS_HARDWARE_GCM
+#endif //CONFIG_MBEDTLS_HARDWARE_AES
