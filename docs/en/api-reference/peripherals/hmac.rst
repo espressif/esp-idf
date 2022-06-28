@@ -32,7 +32,7 @@ Furthermore, the {IDF_TARGET_NAME} has three different application scenarios for
 #. HMAC is used as a key for the Digital Signature (DS) module
 #. HMAC is used for enabling the soft-disabled JTAG interface
 
-The first mode is also called *Upstream* mode, while the last two modes are also called *Downstream* modes.
+The first mode is called *Upstream* mode, while the last two modes are called *Downstream* modes.
 
 eFuse Keys for HMAC
 ^^^^^^^^^^^^^^^^^^^
@@ -59,7 +59,7 @@ This is to prevent the usage of a key for a different function than originally i
 
 To calculate an HMAC, the software has to provide the ID of the key block containing the secret key as well as the *key purpose* (see *{IDF_TARGET_NAME} Technical Reference Manual* > *eFuse Controller (eFuse)* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__]).
 Before the HMAC key calculation, the HMAC module looks up the purpose of the provided key block.
-The calculation only proceeds if the provided key purpose matches the purpose stored in the eFuses of the key block provided by the ID.
+The calculation only proceeds if the purpose of the provided key block matches the purpose stored in the eFuses of the key block provided by the ID.
 
 HMAC Generation for Software
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,8 +68,7 @@ Key Purpose value: 8
 In this case, the HMAC is given out to the software (e.g. to authenticate a message).
 
 The API to calculate the HMAC is :cpp:func:`esp_hmac_calculate`.
-Only the message, message length and the eFuse key block ID have to be provided to that function.
-The rest, like setting the key purpose, is done automatically.
+The input arguments for the function are the message, message length and the eFuse key block ID which contains the secret and has efuse key purpose set to Upstream mode.
 
 HMAC for Digital Signature
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -95,7 +94,15 @@ Setup
 1. Generate a 256-bit HMAC secret key to use for JTAG re-enable.
 2. Write the key to an eFuse block with key purpose HMAC_DOWN_ALL (5) or HMAC_DOWN_JTAG (6). This can be done using the ets_efuse_write_key() function in the firmware or using espefuse.py from the host.
 3. Configure the eFuse key block to be read protected using the esp_efuse_set_read_protect(), so that software cannot read back the value.
-4. Burn the "soft JTAG disable" bit by esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG). This will permanently disable JTAG unless the correct key value is provided by software.
+4. Burn the "soft JTAG disable" bit/bits on {IDF_TARGET_NAME}. This will permanently disable JTAG unless the correct key value is provided by software.
+
+.. only:: esp32s2
+
+    .. note:: The API *esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG)* can be used to burn "soft JTAG disable" bit on {IDF_TARGET_NAME}.
+
+.. only:: esp32s3 or esp32c3 or esp32h2
+
+    .. note:: The API *esp_efuse_write_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count)* can be used to burn "soft JTAG disable" bits on {IDF_TARGET_NAME}.
 
 JTAG enable
 
