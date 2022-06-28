@@ -559,7 +559,6 @@ static void rsa_key_operations(int keysize, bool check_performance, bool generat
     mbedtls_rsa_free(&rsa);
 }
 
-#endif // CONFIG_MBEDTLS_HARDWARE_MPI
 
 TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
 {
@@ -598,3 +597,5 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
 #endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
 }
+
+#endif // CONFIG_MBEDTLS_HARDWARE_MPI
