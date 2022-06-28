@@ -31,7 +31,7 @@ extern "C" {
 
 #if defined(MBEDTLS_GCM_ALT)
 
-#if SOC_AES_SUPPORT_GCM
+
 #include "aes/esp_aes_gcm.h"
 
 
@@ -45,8 +45,6 @@ typedef esp_gcm_context mbedtls_gcm_context;
 #define mbedtls_gcm_finish          esp_aes_gcm_finish
 #define mbedtls_gcm_auth_decrypt    esp_aes_gcm_auth_decrypt
 #define mbedtls_gcm_crypt_and_tag   esp_aes_gcm_crypt_and_tag
-
-#endif // SOC_AES_SUPPORT_GCM
 
 #endif /* MBEDTLS_GCM_ALT */
 
