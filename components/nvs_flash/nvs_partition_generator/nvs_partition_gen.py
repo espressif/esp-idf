@@ -3,19 +3,8 @@
 # esp-idf NVS partition generation tool. Tool helps in generating NVS-compatible
 # partition binary, with key-value pair entries provided via a CSV file.
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 from __future__ import division, print_function
@@ -24,6 +13,7 @@ import argparse
 import array
 import binascii
 import codecs
+import csv
 import datetime
 import distutils.dir_util
 import os
@@ -33,8 +23,6 @@ import sys
 import zlib
 from builtins import bytes, int, range
 from io import open
-
-from future.moves.itertools import zip_longest
 
 try:
     from cryptography.hazmat.backends import default_backend
@@ -547,23 +535,22 @@ class NVS(object):
     We don't have to guard re-invocation with try-except since no entry can span multiple pages.
     """
     def write_entry(self, key, value, encoding):
+        # Encoding-specific handling
         if encoding == 'hex2bin':
             value = value.strip()
             if len(value) % 2 != 0:
                 raise InputError('%s: Invalid data length. Should be multiple of 2.' % key)
             value = binascii.a2b_hex(value)
-
-        if encoding == 'base64':
+        elif encoding == 'base64':
             value = binascii.a2b_base64(value)
-
-        if encoding == 'string':
+        elif encoding == 'string':
             if type(value) == bytes:
                 value = value.decode()
             value += '\0'
 
         encoding = encoding.lower()
-        varlen_encodings = ['string', 'binary', 'hex2bin', 'base64']
-        primitive_encodings = ['u8', 'i8', 'u16', 'i16', 'u32', 'i32', 'u64', 'i64']
+        varlen_encodings = {'string', 'binary', 'hex2bin', 'base64'}
+        primitive_encodings = {'u8', 'i8', 'u16', 'i16', 'u32', 'i32', 'u64', 'i64'}
 
         if encoding in varlen_encodings:
             try:
@@ -904,46 +891,23 @@ def generate(args, is_encr_enabled=False, encr_key=None):
     if is_encr_enabled and not encr_key:
         encr_key = generate_key(args)
 
-    input_file = open(args.input, 'rt', encoding='utf8')
-    output_file = open(args.output, 'wb')
-
     with open(args.input, 'rt', encoding='utf8') as input_file,\
             open(args.output, 'wb') as output_file,\
             nvs_open(output_file, input_size, args.version, is_encrypt=is_encr_enabled, key=encr_key) as nvs_obj:
-
+        # Comments are skipped
+        reader = csv.DictReader(filter(lambda row: row[0] != '#',input_file), delimiter=',')
         if nvs_obj.version == Page.VERSION1:
             version_set = VERSION1_PRINT
         else:
             version_set = VERSION2_PRINT
-
         print('\nCreating NVS binary with version:', version_set)
 
-        line = input_file.readline().strip()
-
-        # Comments are skipped
-        while line.startswith('#'):
-            line = input_file.readline().strip()
-        if not isinstance(line, str):
-            line = line.encode('utf-8')
-
-        header = line.split(',')
-
-        while True:
-            line = input_file.readline().strip()
-            if not isinstance(line, str):
-                line = line.encode('utf-8')
-
-            value = line.split(',')
-            if len(value) == 1 and '' in value:
-                break
-
-            data = dict(zip_longest(header, value))
-
+        for row in reader:
             try:
-                # Check key length
-                if len(data['key']) > 15:
-                    raise InputError('Length of key `{}` should be <= 15 characters.'.format(data['key']))
-                write_entry(nvs_obj, data['key'], data['type'], data['encoding'], data['value'])
+                max_key_len = 15
+                if len(row['key']) > max_key_len:
+                    raise InputError('Length of key `%s` should be <= 15 characters.' % row['key'])
+                write_entry(nvs_obj, row['key'], row['type'], row['encoding'], row['value'])
             except InputError as e:
                 print(e)
                 filedir, filename = os.path.split(args.output)
