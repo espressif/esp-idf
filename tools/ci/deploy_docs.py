@@ -14,11 +14,12 @@ import stat
 import subprocess
 import sys
 import tarfile
+from typing import Any, List, Tuple
 
 import packaging.version
 
 
-def env(variable, default=None):
+def env(variable: str, default: str=None) -> str:
     """ Shortcut to return the expanded version of an environment variable """
     return os.path.expandvars(os.environ.get(variable, default) if default else os.environ[variable])
 
@@ -28,7 +29,7 @@ sys.path.append(os.path.join(env('IDF_PATH'), 'docs'))
 from sanitize_version import sanitize_version  # noqa
 
 
-def main():
+def main() -> None:
     # if you get KeyErrors on the following lines, it's probably because you're not running in Gitlab CI
     git_ver = env('GIT_VER')  # output of git describe --always
     ci_ver = env('CI_COMMIT_REF_NAME', git_ver)  # branch or tag we're building for (used for 'release' & URL)
@@ -87,8 +88,8 @@ def main():
         deploy('stable', tarball_path, docs_path, docs_server)
 
 
-def deploy(version, tarball_path, docs_path, docs_server):
-    def run_ssh(commands):
+def deploy(version: str, tarball_path: str, docs_path: str, docs_server: str) -> None:
+    def run_ssh(commands: List) -> None:
         """ Log into docs_server and run a sequence of commands using ssh """
         print('Running ssh: {}'.format(commands))
         subprocess.run(['ssh', '-o', 'BatchMode=yes', docs_server, '-x', ' && '.join(commands)], check=True)
@@ -110,7 +111,7 @@ def deploy(version, tarball_path, docs_path, docs_server):
     # another thing made much more complex by the directory structure putting language before version...
 
 
-def build_doc_tarball(version, git_ver, build_dir):
+def build_doc_tarball(version: str, git_ver: str, build_dir: str) -> Tuple[str, List]:
     """ Make a tar.gz archive of the docs, in the directory structure used to deploy as
         the given version """
     version_paths = []
@@ -126,7 +127,8 @@ def build_doc_tarball(version, git_ver, build_dir):
     # add symlink for stable and latest and adds them to PDF blob
     symlinks = create_and_add_symlinks(version, git_ver, pdfs)
 
-    def not_sources_dir(ti):
+    def not_sources_dir(ti: Any) -> Any:
+        print(type(ti))
         """ Filter the _sources directories out of the tarballs """
         if ti.name.endswith('/_sources'):
             return None
@@ -171,7 +173,7 @@ def build_doc_tarball(version, git_ver, build_dir):
     return (os.path.abspath(tarball_path), version_paths)
 
 
-def create_and_add_symlinks(version, git_ver, pdfs):
+def create_and_add_symlinks(version: str, git_ver: str, pdfs: List) -> List:
     """ Create symbolic links for PDFs for 'latest' and 'stable' releases """
 
     symlinks = []
@@ -187,7 +189,7 @@ def create_and_add_symlinks(version, git_ver, pdfs):
     return symlinks
 
 
-def is_stable_version(version):
+def is_stable_version(version: str) -> bool:
     """ Heuristic for whether this is the latest stable release """
     if not version.startswith('v'):
         return False  # branch name
@@ -197,11 +199,11 @@ def is_stable_version(version):
     git_out = subprocess.check_output(['git', 'tag', '-l']).decode('utf-8')
 
     versions = [v.strip() for v in git_out.split('\n')]
-    versions = [v for v in versions if re.match(r'^v[\d\.]+$', v)]  # include vX.Y.Z only
+    versions = [v for v in versions if re.match(r'^v[\d\.]+$', v.strip())]  # include vX.Y.Z only
 
-    versions = [packaging.version.parse(v) for v in versions]
+    versions_pack = [packaging.version.parse(v) for v in versions]
 
-    max_version = max(versions)
+    max_version = max(versions_pack)
 
     if max_version.public != version[1:]:
         print('Stable version is v{}. This version is {}.'.format(max_version.public, version))

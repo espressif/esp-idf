@@ -9,7 +9,7 @@ import os
 import sys
 
 
-def main():
+def main() -> None:
     # Sanitize environment variables
     vars_to_remove = []
     for var_name in os.environ.keys():

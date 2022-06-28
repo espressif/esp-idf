@@ -6,6 +6,7 @@
 import argparse
 import os
 import sys
+from typing import Iterable, List
 
 try:
     from idf_ci_utils import is_executable
@@ -15,7 +16,7 @@ except ImportError:
     from idf_ci_utils import is_executable
 
 
-def _strip_each_item(iterable):
+def _strip_each_item(iterable: Iterable) -> List:
     res = []
     for item in iterable:
         if item:
@@ -28,7 +29,7 @@ EXECUTABLE_LIST_FN = os.path.join(IDF_PATH, 'tools/ci/executable-list.txt')
 known_executables = _strip_each_item(open(EXECUTABLE_LIST_FN).readlines())
 
 
-def check_executable_list():
+def check_executable_list() -> int:
     ret = 0
     for index, fn in enumerate(known_executables):
         if not os.path.exists(os.path.join(IDF_PATH, fn)):
@@ -37,7 +38,7 @@ def check_executable_list():
     return ret
 
 
-def check_executables(files):
+def check_executables(files: List) -> int:
     ret = 0
     for fn in files:
         fn_executable = is_executable(fn)
@@ -51,7 +52,7 @@ def check_executables(files):
     return ret
 
 
-def main():
+def check() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--action', choices=['executables', 'list'], required=True,
                         help='if "executables", pass all your executables to see if it\'s in the list.'
@@ -70,4 +71,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    sys.exit(check())

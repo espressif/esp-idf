@@ -9,6 +9,7 @@ import argparse
 import os
 import sys
 from io import open
+from typing import Set, Tuple
 
 from check_kconfigs import valid_directory
 from idf_ci_utils import get_submodule_dirs
@@ -19,11 +20,11 @@ FILES_TO_CHECK = ('sdkconfig.ci', 'sdkconfig.defaults')
 # ignored directories (makes sense only when run on IDF_PATH)
 # Note: IGNORE_DIRS is a tuple in order to be able to use it directly with the startswith() built-in function which
 # accepts tuples but no lists.
-IGNORE_DIRS = (
+IGNORE_DIRS: Tuple = (
 )
 
 
-def _parse_path(path, sep=None):
+def _parse_path(path: os.PathLike[str], sep: str=None) -> Set:
     ret = set()
     with open(path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -33,13 +34,13 @@ def _parse_path(path, sep=None):
     return ret
 
 
-def _valid_directory(path):
+def _valid_directory(path: os.PathLike[str]) -> os.PathLike[str]:
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
     return path
 
 
-def main():
+def check() -> int:
     parser = argparse.ArgumentParser(description='Kconfig options checker')
     parser.add_argument('files', nargs='*',
                         help='Kconfig files')
@@ -102,5 +103,9 @@ def main():
     return 0
 
 
+def main() -> None:
+    sys.exit(check())
+
+
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

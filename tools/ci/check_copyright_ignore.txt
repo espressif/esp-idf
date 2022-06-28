@@ -2028,7 +2028,6 @@ tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
 tools/ble/lib_gatt.py
 tools/catch/catch.hpp
-tools/esp_app_trace/test/sysview/blink.c
 tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
