@@ -33,10 +33,6 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "mcpwm.c")
 endif()
 
-if(CONFIG_SOC_GDMA_SUPPORTED)
-    list(APPEND srcs "gdma.c")
-endif()
-
 if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
     list(APPEND srcs "gpio/dedic_gpio.c")
 endif()

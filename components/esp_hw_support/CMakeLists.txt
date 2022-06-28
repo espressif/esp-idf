@@ -5,8 +5,7 @@ set(priv_requires efuse spi_flash bootloader_support)
 
 set(srcs "compare_set.c" "cpu.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "esp_async_memcpy.c"
-                     "esp_clk.c"
+    list(APPEND srcs "esp_clk.c"
                      "clk_ctrl_os.c"
                      "hw_random.c"
                      "intr_alloc.c"
@@ -17,6 +16,7 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
                      "regi2c_ctrl.c")
+
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
     endif()
@@ -26,6 +26,18 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")
+    endif()
+
+    if(CONFIG_SOC_GDMA_SUPPORTED)
+        list(APPEND srcs "gdma.c" "port/async_memcpy_impl_gdma.c")
+    endif()
+
+    if(CONFIG_SOC_CP_DMA_SUPPORTED)
+        list(APPEND srcs "port/async_memcpy_impl_cp_dma.c")
+    endif()
+
+    if(CONFIG_SOC_GDMA_SUPPORTED OR CONFIG_SOC_CP_DMA_SUPPORTED)
+        list(APPEND srcs "esp_async_memcpy.c")
     endif()
 
 else()

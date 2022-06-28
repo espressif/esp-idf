@@ -12,10 +12,9 @@ set(srcs
    )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "../async_memcpy_impl_gdma.c"
-        "esp_hmac.c"
-        "esp_ds.c"
-        "esp_crypto_lock.c")
+    list(APPEND srcs "esp_hmac.c"
+                     "esp_ds.c"
+                     "esp_crypto_lock.c")
 
     if(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
         list(APPEND srcs "esp_memprot.c" "../esp_memprot_conv.c")
