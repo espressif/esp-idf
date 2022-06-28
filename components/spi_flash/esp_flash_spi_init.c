@@ -14,7 +14,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "hal/spi_flash_hal.h"
 #include "hal/gpio_hal.h"
 #include "esp_flash_internal.h"

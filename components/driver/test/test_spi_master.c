@@ -28,7 +28,7 @@
 #include "sdkconfig.h"
 #include "../cache_utils.h"
 #include "soc/soc_memory_layout.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
 #include "test_utils.h"
 

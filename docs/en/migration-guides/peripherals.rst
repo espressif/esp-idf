@@ -109,6 +109,8 @@ SPI
 | ``spi_cal_clock()``      | :cpp:func:`spi_get_actual_clock` | Get SPI real working frequency. |
 +--------------------------+----------------------------------+---------------------------------+
 
+- The internal header file ``spi_common_internal.h`` has been moved to ``esp_private/spi_common_internal.h``.
+
 .. only:: SOC_SDMMC_HOST_SUPPORTED
 
     SDMMC

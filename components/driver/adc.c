@@ -35,7 +35,7 @@
 #include "esp_private/gdma.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "hal/spi_types.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #elif CONFIG_IDF_TARGET_ESP32
 #include "hal/i2s_types.h"
 #include "driver/i2s_types.h"
