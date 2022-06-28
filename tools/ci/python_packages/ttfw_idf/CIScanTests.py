@@ -35,6 +35,8 @@ BUILD_ALL_LABELS = [
 
 BUILD_PER_JOB = 30  # each build takes 1 mins around
 
+SCAN_TARGETS = SUPPORTED_TARGETS + PREVIEW_TARGETS
+
 
 def _has_build_all_label():  # type: () -> bool
     for label in BUILD_ALL_LABELS:
@@ -131,10 +133,8 @@ def main():  # type: () -> None
             if e.errno != errno.EEXIST:
                 raise e
 
-    SUPPORTED_TARGETS.extend(PREVIEW_TARGETS)
-
     if (not build_standalone_apps) and (not build_test_case_apps):
-        for target in SUPPORTED_TARGETS:
+        for target in SCAN_TARGETS:
             output_json([], target, args.build_system, args.output_path)
             SystemExit(0)
 
@@ -167,7 +167,7 @@ def main():  # type: () -> None
     build_system = args.build_system.lower()
     build_system_class = BUILD_SYSTEMS[build_system]
 
-    for target in SUPPORTED_TARGETS:
+    for target in SCAN_TARGETS:
         exclude_apps = deepcopy(default_exclude)
 
         if build_test_case_apps:
@@ -195,7 +195,7 @@ def main():  # type: () -> None
     test_case_apps_preserve_default = True if build_system == 'cmake' else False
     output_files = []
     build_items_total_count = 0
-    for target in SUPPORTED_TARGETS:
+    for target in SCAN_TARGETS:
         # get pytest apps paths
         pytest_app_paths = set()
         for path in paths:
