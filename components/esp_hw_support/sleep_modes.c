@@ -846,14 +846,17 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
+#endif //CONFIG_IDF_TARGET_ESP32
+
+#if CONFIG_ULP_COPROC_TYPE_FSM
     s_config.wakeup_triggers |= RTC_ULP_TRIG_EN;
     return ESP_OK;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+#elif CONFIG_ULP_COPROC_TYPE_RISCV
+    s_config.wakeup_triggers |= (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
 #else
     return ESP_ERR_NOT_SUPPORTED;
-#endif
+#endif //CONFIG_ULP_COPROC_TYPE_FSM
 }
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
