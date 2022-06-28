@@ -1461,7 +1461,6 @@ components/touch_element/test/test_touch_element.c
 components/touch_element/test/test_touch_matrix.c
 components/touch_element/test/test_touch_slider.c
 components/touch_element/touch_button.c
-components/touch_element/touch_element.c
 components/touch_element/touch_matrix.c
 components/touch_element/touch_slider.c
 components/ulp/esp32ulp_mapgen.py

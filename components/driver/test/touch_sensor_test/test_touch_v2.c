@@ -434,7 +434,8 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
     }
 
     TEST_ESP_OK( touch_pad_set_cnt_mode(pad_num, slope, TOUCH_PAD_TIE_OPT_DEFAULT) );
-    TEST_ESP_OK( touch_pad_set_meas_time(slp_time, meas_time) );
+    TEST_ESP_OK( touch_pad_set_measurement_interval(slp_time) );
+    TEST_ESP_OK( touch_pad_set_charge_discharge_times(meas_time) );
     TEST_ESP_OK( touch_pad_set_voltage(vol_h, vol_l, vol_a) );
     TEST_ESP_OK( touch_pad_set_idle_channel_connect(is_conn_gnd) );
     ESP_LOGI(TAG, "meas_time[%d]_slp_time[%d]_vol_h[%d]_vol_l[%d]_vol_a[%d]_slope[%d]_is_conn_gnd[%d]",
@@ -1984,7 +1985,8 @@ TEST_CASE("Touch Sensor sleep pad wakeup deep sleep test", "[touch][ignore]")
     test_deep_sleep_init();
 
     /* Change the work duty of touch sensor to reduce current. */
-    touch_pad_set_meas_time(100, TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
+    touch_pad_set_measurement_interval(100);
+    touch_pad_set_charge_discharge_times(TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
 
     /* Close PD current in deep sleep. */
     RTCCNTL.bias_conf.pd_cur_deep_slp = 1;
