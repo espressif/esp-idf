@@ -8,8 +8,7 @@ set(srcs "rtc_clk_init.c"
          )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "../async_memcpy_impl_gdma.c"
-                     "esp_hmac.c"
+    list(APPEND srcs "esp_hmac.c"
                      "esp_crypto_lock.c"
                      "esp_ds.c")
 

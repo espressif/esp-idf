@@ -23,3 +23,8 @@ entries:
         periph_ctrl: periph_module_reset (noflash)
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
+    if GDMA_CTRL_FUNC_IN_IRAM = y:
+        gdma: gdma_start (noflash)
+        gdma: gdma_stop (noflash)
+        gdma: gdma_append (noflash)
+        gdma: gdma_reset (noflash)
