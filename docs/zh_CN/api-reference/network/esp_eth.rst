@@ -32,7 +32,7 @@
 以太网 PHY 公共寄存器
 -----------------------------
 
-    * :component_file:`esp_eth/include/eth_phy_regs_struct.h`
+    * :component_file:`esp_eth/include/eth_phy_802_3_regs.h`
 
 API 参考 -- 驱动程序模型
 ----------------------------
