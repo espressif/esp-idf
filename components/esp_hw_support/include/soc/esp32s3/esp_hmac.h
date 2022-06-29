@@ -38,7 +38,7 @@ typedef enum {
  *        The corresponding purpose field of the key block in the efuse must be set to the HMAC upstream purpose value.
  * @param message the message for which to calculate the HMAC
  * @param message_len message length
- * @param [out] hmac the hmac result; the buffer behind the provided pointer must be 32 bytes long
+ * @param [out] hmac the hmac result; the buffer behind the provided pointer must be a writeable buffer of 32 bytes
  *
  * @return
  *      * ESP_OK, if the calculation was successful,
@@ -61,12 +61,15 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
  *        programmed to a eFuse key block. The key block number is provided as the first parameter to this function.
  *
  * @return
- *      * ESP_OK, if the calculation was successful,
- *                if the calculated HMAC value matches with provided token,
- *                JTAG will be re-enable otherwise JTAG will remain disabled.
- *                Return value does not indicate the JTAG status.
- *      * ESP_FAIL, if the hmac calculation failed or JTAG is permanently disabled by EFUSE_HARD_DIS_JTAG eFuse parameter.
+ *      * ESP_OK, if the key_purpose of the key_id matches to HMAC downstread mode,
+ *                The API returns success even if calculated HMAC does not match with the provided token.
+ *                However, The JTAG will be re-enabled only if the calculated HMAC value matches with provided token,
+ *                otherwise JTAG will remain disabled.
+ *      * ESP_FAIL, if the key_purpose of the key_id is not set to HMAC downstream purpose
+ *                  or JTAG is permanently disabled by EFUSE_HARD_DIS_JTAG eFuse parameter.
  *      * ESP_ERR_INVALID_ARG, invalid input arguments
+ *
+ * @note  Return value of the API does not indicate the JTAG status.
  */
 esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token);
 
