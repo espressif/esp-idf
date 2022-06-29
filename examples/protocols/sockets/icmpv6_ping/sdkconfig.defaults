@@ -1,0 +1,5 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_EXAMPLE_CONNECT_IPV6_PREF_GLOBAL=y
+CONFIG_LWIP_IPV6_AUTOCONFIG=y
