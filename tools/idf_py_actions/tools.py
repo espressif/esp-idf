@@ -214,7 +214,7 @@ class RunTool:
                     output_file.write(output)
 
                     # print output in progression way but only the progression related (that started with '[') and if verbose flag is not set
-                    if self.force_progression and output[0] == '[' and '-v' not in self.args:
+                    if self.force_progression and output[0] == '[' and '-v' not in self.args and output_stream.isatty():
                         print_progression(output)
                     else:
                         print(output, end='', file=output_stream)
