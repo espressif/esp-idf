@@ -819,6 +819,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     cp ${IDF_PATH}/components/partition_table/partitions_singleapp.csv partitions.csv
     ${SED} -i "s/factory,  app,  factory, ,        1M/factory,  app,  factory, ,        170K/" partitions.csv
     echo "CONFIG_PARTITION_TABLE_CUSTOM=y" > sdkconfig
+    # don't use FreeRTOS SMP build for this test - follow up ticket: IDF-5386
+    echo "CONFIG_FREERTOS_SMP=n" >> sdkconfig
     ( idf.py build 2>&1 | grep "partition is nearly full" ) || failure "No warning for nearly full smallest partition was given when the condition is fulfilled"
     rm -f partitions.csv sdkconfig
     ( idf.py build 2>&1 | grep "partition is nearly full" ) && failure "Warning for nearly full smallest partition was given when the condition is not fulfilled"
