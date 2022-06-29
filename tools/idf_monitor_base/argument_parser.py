@@ -114,10 +114,4 @@ def get_parser():  # type: () -> argparse.ArgumentParser
         help='Set a strftime()-compatible timestamp format'
     )
 
-    parser.add_argument(
-        '--force-color',
-        help='Always colored monitor output, even if output is redirected.',
-        default=False,
-        action='store_true')
-
     return parser

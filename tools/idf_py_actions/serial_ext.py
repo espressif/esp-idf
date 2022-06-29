@@ -10,7 +10,7 @@ import click
 from idf_monitor_base.output_helpers import yellow_print
 from idf_py_actions.errors import FatalError, NoSerialPortFoundError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import PropertyDict, RunTool, ensure_build_directory, get_sdkconfig_value, run_target
+from idf_py_actions.tools import PropertyDict, ensure_build_directory, get_sdkconfig_value, run_target, run_tool
 
 PYTHON = sys.executable
 
@@ -83,7 +83,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         return result
 
     def monitor(action: str, ctx: click.core.Context, args: PropertyDict, print_filter: str, monitor_baud: str, encrypted: bool,
-                no_reset: bool, timestamps: bool, timestamp_format: str, force_color: bool) -> None:
+                no_reset: bool, timestamps: bool, timestamp_format: str) -> None:
         """
         Run idf_monitor.py to watch build output
         """
@@ -149,14 +149,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if timestamp_format:
             monitor_args += ['--timestamp-format', timestamp_format]
 
-        if force_color or os.name == 'nt':
-            monitor_args += ['--force-color']
-
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
-        hints = not args.no_hints
 
-        RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints)()
+        run_tool('idf_monitor', monitor_args, args.project_dir)
 
     def flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         """
@@ -175,7 +171,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         ensure_build_directory(args, ctx.info_name)
         esptool_args = _get_esptool_args(args)
         esptool_args += ['erase_flash']
-        RunTool('esptool.py', esptool_args, args.build_dir)()
+        run_tool('esptool.py', esptool_args, args.build_dir)
 
     def global_callback(ctx: click.core.Context, global_args: Dict, tasks: PropertyDict) -> None:
         encryption = any([task.name in ('encrypted-flash', 'encrypted-app-flash') for task in tasks])
@@ -289,10 +285,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'help': ('Set the formatting of timestamps compatible with strftime(). '
                                  'For example, "%Y-%m-%d %H:%M:%S".'),
                         'default': None
-                    }, {
-                        'names': ['--force-color'],
-                        'is_flag': True,
-                        'help': 'Always print ANSI for colors',
                     }
 
                 ],
