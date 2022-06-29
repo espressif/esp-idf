@@ -349,8 +349,17 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
         wr_data[i] = i;
         rd_data[i] = 0;
     }
+
+    size_t tx_buffer_free_space;
+    uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+    TEST_ASSERT_EQUAL_INT(2048, tx_buffer_free_space); // full tx buffer space is free
     uart_write_bytes(uart_num, (const char*)wr_data, 1024);
+    uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+    TEST_ASSERT_LESS_THAN(2048, tx_buffer_free_space); // tx transmit in progress: tx buffer has content
+    TEST_ASSERT_GREATER_OR_EQUAL(1024, tx_buffer_free_space);
     uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+    uart_get_tx_buffer_free_size(uart_num, &tx_buffer_free_space);
+    TEST_ASSERT_EQUAL_INT(2048, tx_buffer_free_space); // tx done: tx buffer back to empty
     uart_read_bytes(uart_num, rd_data, 1024, (TickType_t)1000);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(wr_data, rd_data, 1024);
     TEST_ESP_OK(uart_driver_delete(uart_num));
