@@ -42,7 +42,7 @@ FATFS_SECONDS_GRANULARITY: int = 2
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
-ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
+ALLOWED_SECTOR_SIZES: List[int] = [4096]
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
@@ -181,7 +181,7 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--fat_type',
                         default=0,
                         type=int,
-                        choices=[12, 16, 0],
+                        choices=[FAT12, FAT16, 0],
                         help="""
                         Type of fat. Select 12 for fat12, 16 for fat16. Don't set, or set to 0 for automatic
                         calculation using cluster size and partition size.
@@ -269,3 +269,5 @@ class FATDefaults:
     VERSION: int = 2
     TEMP_BUFFER_SIZE: int = 32
     UPDATE_RATE: int = 16
+    WR_SIZE: int = 16
+    WL_SECTOR_SIZE: int = 4096

@@ -47,7 +47,7 @@ class Entry:
         'DIR_Name' / PaddedString(MAX_NAME_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Name_ext' / PaddedString(MAX_EXT_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Attr' / Int8ul,
-        'DIR_NTRes' / Const(EMPTY_BYTE),
+        'DIR_NTRes' / Int8ul,  # this tagged for lfn (0x00 for lfn prefix, 0x18 for short name in lfn)
         'DIR_CrtTimeTenth' / Const(EMPTY_BYTE),  # ignored by esp-idf fatfs library
         'DIR_CrtTime' / Int16ul,  # ignored by esp-idf fatfs library
         'DIR_CrtDate' / Int16ul,  # ignored by esp-idf fatfs library
@@ -159,6 +159,7 @@ class Entry:
                        lfn_order: int = SHORT_ENTRY,
                        lfn_names: Optional[List[bytes]] = None,
                        lfn_checksum_: int = 0,
+                       fits_short: bool = False,
                        lfn_is_last: bool = False) -> None:
         """
         :param first_cluster_id: id of the first data cluster for given entry
@@ -172,6 +173,7 @@ class Entry:
         :param lfn_names: if the entry is dedicated for long names the lfn_names contains
             LDIR_Name1, LDIR_Name2 and LDIR_Name3 in this order
         :param lfn_checksum_: use only for long file names, checksum calculated lfn_checksum function
+        :param fits_short: determines if the name fits in 8.3 filename
         :param lfn_is_last: determines if the long file name entry is holds last part of the name,
             thus its address is first in the physical order
         :returns: None
@@ -213,6 +215,7 @@ class Entry:
                 DIR_Name=pad_string(object_name, size=MAX_NAME_SIZE),
                 DIR_Name_ext=pad_string(object_extension, size=MAX_EXT_SIZE),
                 DIR_Attr=entity_type,
+                DIR_NTRes=0x00 if (not self.fatfs_state.long_names_enabled) or (not fits_short) else 0x18,
                 DIR_FstClusLO=first_cluster_id,
                 DIR_FileSize=size,
                 DIR_CrtDate=date_entry_,  # ignored by esp-idf fatfs library
