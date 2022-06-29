@@ -20,6 +20,8 @@ extern "C" {
  * @param[out] out_vstart PSRAM virtual address start
  * @param[out] out_vend   PSRAM virtual address end
  *
+ * @note [out_vstart, out_vend), `out_vend` isn't included.
+ *
  * @return
  *        - ESP_OK                  On success
  *        - ESP_ERR_INVALID_STATE   PSRAM is not initialized successfully
@@ -31,6 +33,8 @@ esp_err_t esp_psram_extram_get_mapped_range(intptr_t *out_vstart, intptr_t *out_
  *
  * @param[out] out_vstart PSRAM virtual address start
  * @param[out] out_vend   PSRAM virtual address end
+ *
+ * @note [out_vstart, out_vend), `out_vend` isn't included.
  *
  * @return
  *        - ESP_OK                  On success
