@@ -1343,6 +1343,15 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t *size)
     return ESP_OK;
 }
 
+esp_err_t uart_get_tx_buffer_free_size(uart_port_t uart_num, size_t *size)
+{
+    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
+    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_ARG, UART_TAG, "uart driver error");
+    ESP_RETURN_ON_FALSE((size != NULL), ESP_ERR_INVALID_ARG, UART_TAG, "arg pointer is NULL");
+    *size = p_uart_obj[uart_num]->tx_buf_size - p_uart_obj[uart_num]->tx_len_tot;
+    return ESP_OK;
+}
+
 esp_err_t uart_flush(uart_port_t uart_num) __attribute__((alias("uart_flush_input")));
 
 esp_err_t uart_flush_input(uart_port_t uart_num)
