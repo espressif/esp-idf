@@ -88,7 +88,7 @@ class PublicHeaderChecker:
         self.error_macro = re.compile(r'#error')
         self.error_orphan_kconfig = re.compile(r'#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED')
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
-        self.assembly_nocode = r'^\s*(\.file|\.text|\.ident).*$'
+        self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute).*$'
         self.check_threads = []
 
         self.job_queue = queue.Queue()
