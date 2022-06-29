@@ -118,9 +118,13 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
-
-#define CONFIG_VERSION  0x20220409
-#define CONFIG_MAGIC    0x5A5AA5A5
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
+    #define CONFIG_VERSION  0x20220409
+    #define CONFIG_MAGIC    0x5A5AA5A5
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+    #define CONFIG_VERSION  0x20211021
+    #define CONFIG_MAGIC    0x5A5AA5A5
+#endif
 /**
  * @brief Controller config options, depend on config mask.
  *        Config mask indicate which functions enabled, this means
@@ -169,12 +173,16 @@ typedef struct {
     uint8_t ble_hci_uart_uart_parity;
     uint8_t enable_tx_cca;
     uint8_t cca_rssi_thresh;
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     uint8_t cca_drop_mode;
     int8_t  cca_low_tx_pwr;
+#endif
     uint8_t sleep_en;
     uint8_t coex_phy_coded_tx_rx_time_limit;
     uint8_t dis_scan_backoff;
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     uint8_t scan_classify_filter_enable;
+#endif
     uint32_t config_magic;
 } esp_bt_controller_config_t;
 

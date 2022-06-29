@@ -8,6 +8,7 @@
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
 #include "esp_nimble_mem.h"
+#include "nimble/nimble_port.h"
 #include "host/ble_hs.h"
 
 static TaskHandle_t host_task_h;
@@ -18,6 +19,21 @@ static struct ble_hs_stop_listener stop_listener;
 static struct ble_npl_eventq g_eventq_dflt;
 static struct ble_npl_sem ble_hs_stop_sem;
 static struct ble_npl_event ble_hs_ev_stop;
+
+/**
+ * Called when the host stop procedure has completed.
+ */
+static void
+ble_hs_stop_cb(int status, void *arg)
+{
+    ble_npl_sem_release(&ble_hs_stop_sem);
+}
+
+static void
+nimble_port_stop_cb(struct ble_npl_event *ev)
+{
+    ble_npl_sem_release(&ble_hs_stop_sem);
+}
 
 esp_err_t esp_nimble_init(void)
 {
@@ -63,11 +79,11 @@ esp_err_t esp_nimble_disable(void)
     ble_npl_sem_init(&ble_hs_stop_sem, 0);
 
     /* Initiate a host stop procedure. */
-    rc = ble_hs_stop(&stop_listener, ble_hs_stop_cb,
+    err = ble_hs_stop(&stop_listener, ble_hs_stop_cb,
                      NULL);
-    if (rc != 0) {
+    if (err != 0) {
         ble_npl_sem_deinit(&ble_hs_stop_sem);
-        return rc;
+        return err;
     }
 
     /* Wait till the host stop procedure is complete */

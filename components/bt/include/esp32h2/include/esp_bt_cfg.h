@@ -196,7 +196,10 @@ extern "C" {
 #if CONFIG_RTC_CLK_SRC_EXT_CRYS
 #define RTC_FREQ_N                          (32768) /* in Hz */
 #else
-#pragma message "RTC clock source not available"
+#define RTC_FREQ_N                          (32000) /* in Hz */
+#if CONFIG_RTC_CLK_SRC_EXT_OSC || CONFIG_RTC_CLK_SRC_INT_RC32K
+#pragma message "RTC clock source may not available"
+#endif
 #endif
 
 
