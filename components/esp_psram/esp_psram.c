@@ -248,22 +248,26 @@ esp_err_t esp_psram_extram_get_alloced_range(intptr_t *out_vstart, intptr_t *out
     return ESP_OK;
 }
 
-#if CONFIG_IDF_TARGET_ESP32
-esp_err_t esp_psram_extram_reserve_dma_pool(size_t size) {
-    ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size/1024);
+esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
+{
+    if (size == 0) {
+        return ESP_OK; //no-op
+    }
+
+    ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size / 1024);
     /* Pool may be allocated in multiple non-contiguous chunks, depending on available RAM */
     while (size > 0) {
-        size_t next_size = heap_caps_get_largest_free_block(MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+        size_t next_size = heap_caps_get_largest_free_block(MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         next_size = MIN(next_size, size);
 
         ESP_EARLY_LOGD(TAG, "Allocating block of size %d bytes", next_size);
-        uint8_t *dma_heap = heap_caps_malloc(next_size, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+        uint8_t *dma_heap = heap_caps_malloc(next_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
         if (!dma_heap || next_size == 0) {
             return ESP_ERR_NO_MEM;
         }
 
-        uint32_t caps[] = { 0, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT };
-        esp_err_t e = heap_caps_add_region_with_caps(caps, (intptr_t) dma_heap, (intptr_t) dma_heap+next_size-1);
+        uint32_t caps[] = {0, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT};
+        esp_err_t e = heap_caps_add_region_with_caps(caps, (intptr_t)dma_heap, (intptr_t)dma_heap + next_size - 1);
         if (e != ESP_OK) {
             return e;
         }
@@ -271,21 +275,6 @@ esp_err_t esp_psram_extram_reserve_dma_pool(size_t size) {
     }
     return ESP_OK;
 }
-#else
-esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
-{
-    if (size == 0) {
-        return ESP_OK; //no-op
-    }
-    ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size/1024);
-    uint8_t *dma_heap = heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    if (!dma_heap) {
-        return ESP_ERR_NO_MEM;
-    }
-    uint32_t caps[] = {MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT};
-    return heap_caps_add_region_with_caps(caps, (intptr_t) dma_heap, (intptr_t) dma_heap + size);
-}
-#endif
 
 bool IRAM_ATTR esp_psram_is_initialized(void)
 {
