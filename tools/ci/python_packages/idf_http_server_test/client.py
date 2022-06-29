@@ -6,6 +6,7 @@
 from __future__ import print_function, unicode_literals
 
 import argparse
+import errno
 import http.client
 import logging
 from builtins import str
@@ -146,6 +147,11 @@ def test_put_handler(ip, port, verbosity=False):
         except http.client.HTTPException:
             # Catch socket error as we tried to communicate with an already closed socket
             pass
+        except IOError as err:
+            if err.errno == errno.EPIPE:
+                # Sometimes Broken Pipe error is returned
+                # when sending data to a closed socket
+                pass
 
     except http.client.HTTPException:
         verbose_print(verbosity, 'Socket closed by server')
