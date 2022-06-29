@@ -235,8 +235,14 @@ class PublicHeaderChecker:
     def list_public_headers(self, ignore_dirs, ignore_files, only_dir=None):
         idf_path = os.getenv('IDF_PATH')
         project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
-        subprocess.check_call(['idf.py', 'reconfigure'], cwd=project_dir)
-        build_commands_json = os.path.join(project_dir, 'build', 'compile_commands.json')
+        build_dir = tempfile.mkdtemp()
+        sdkconfig = os.path.join(build_dir, 'sdkconfig')
+        try:
+            os.unlink(os.path.join(project_dir, 'sdkconfig'))
+        except FileNotFoundError:
+            pass
+        subprocess.check_call(['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', 'reconfigure'], cwd=project_dir)
+        build_commands_json = os.path.join(build_dir, 'compile_commands.json')
         with open(build_commands_json, 'r', encoding='utf-8') as f:
             build_command = json.load(f)[0]['command'].split()
         include_dir_flags = []
@@ -249,13 +255,13 @@ class PublicHeaderChecker:
                     include_dirs.append(item[2:])  # Removing the leading "-I"
             if item.startswith('-D'):
                 include_dir_flags.append(item.replace('\\',''))  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
-        include_dir_flags.append('-I' + os.path.join(project_dir, 'build', 'config'))
+        include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
         include_dir_flags.append('-DCI_HEADER_CHECK')
-        sdkconfig_h = os.path.join(project_dir, 'build', 'config', 'sdkconfig.h')
+        sdkconfig_h = os.path.join(build_dir, 'config', 'sdkconfig.h')
         # prepares a main_c file for easier sdkconfig checks and avoid compilers warning when compiling headers directly
         with open(sdkconfig_h, 'a') as f:
             f.write('#define IDF_SDKCONFIG_INCLUDED')
-        main_c = os.path.join(project_dir, 'build', 'compile.c')
+        main_c = os.path.join(build_dir, 'compile.c')
         with open(main_c, 'w') as f:
             f.write('#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
                     '#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED\n'
