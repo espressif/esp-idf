@@ -7,7 +7,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
-#include "lib/tinyxml2/tinyxml2.h"
+#include "tinyxml2.h"
 
 using namespace tinyxml2;
 
