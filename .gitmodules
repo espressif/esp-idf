@@ -39,10 +39,6 @@
 	path = components/unity/unity
 	url = ../../ThrowTheSwitch/Unity.git
 
-[submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
-	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
-	url = ../../leethomason/tinyxml2.git
-
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
 	url = ../../espressif/esp-nimble.git

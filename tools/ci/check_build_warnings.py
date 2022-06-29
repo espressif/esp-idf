@@ -39,7 +39,6 @@ IGNORE_WARNS = [
         r'crosstool_version_check\.cmake',
         r'CryptographyDeprecationWarning',
         r'Warning: \d+/\d+ app partitions are too small for binary',
-        r'CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy\)',
     ]
 ]
 
