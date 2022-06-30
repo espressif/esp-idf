@@ -1,20 +1,8 @@
-/******************************************************************************
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
- *  Copyright (C) 2009-2012 Broadcom Corporation
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- ******************************************************************************/
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /************************************************************************************
  *
@@ -68,6 +56,7 @@ static hf_local_param_t *hf_local_param;
                              BTA_AG_FEAT_VREC   | \
                              BTA_AG_FEAT_INBAND | \
                              BTA_AG_FEAT_CODEC  | \
+                             BTA_AG_FEAT_ESCO_S4| \
                              BTA_AG_FEAT_UNAT)
 #endif
 #else
@@ -78,6 +67,7 @@ static hf_local_param_t *hf_local_param;
                              BTA_AG_FEAT_EXTERR | \
                              BTA_AG_FEAT_VREC   | \
                              BTA_AG_FEAT_INBAND | \
+                             BTA_AG_FEAT_ESCO_S4| \
                              BTA_AG_FEAT_UNAT)
 #endif
 #endif
