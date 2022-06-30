@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import fnmatch
+import json
 import locale
 import os
 import re
@@ -193,7 +194,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         for target in SUPPORTED_TARGETS:
             print(target)
 
-        if 'preview' in ctx.params:
+        if ctx.params.get('preview'):
             for target in PREVIEW_TARGETS:
                 print(target)
 
@@ -237,6 +238,24 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         except ValueError:
             language = 'en'
         return language
+
+    def help_and_exit(action: str, ctx: Context, param: List, json_option: bool, add_options: bool) -> None:
+        if json_option:
+            output_dict = {}
+            output_dict['target'] = get_target(param.project_dir)  # type: ignore
+            output_dict['actions'] = []
+            actions = ctx.to_info_dict().get('command').get('commands')
+            for a in actions:
+                action_info = {}
+                action_info['name'] = a
+                action_info['description'] = actions[a].get('help')
+                if add_options:
+                    action_info['options'] = actions[a].get('params')
+                output_dict['actions'].append(action_info)
+            print(json.dumps(output_dict, sort_keys=True, indent=4))
+        else:
+            print(ctx.get_help())
+        ctx.exit()
 
     root_options = {
         'global_options': [
@@ -286,6 +305,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
             {
                 'names': ['--preview'],
                 'help': 'Enable IDF features that are still in preview.',
+                'is_eager': True,
                 'is_flag': True,
                 'default': False,
             },
@@ -530,4 +550,26 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         }
     }
 
-    return merge_action_lists(root_options, build_actions, clean_actions)
+    help_action = {
+        'actions': {
+            'help': {
+                'callback': help_and_exit,
+                'help': 'Show help message and exit.',
+                'hidden': True,
+                'options': [
+                    {
+                        'names': ['--json', 'json_option'],
+                        'is_flag': True,
+                        'help': 'Print out actions in machine-readable format for selected target.'
+                    },
+                    {
+                        'names': ['--add-options'],
+                        'is_flag': True,
+                        'help': 'Add options about actions to machine-readable format.'
+                    }
+                ],
+            }
+        }
+    }
+
+    return merge_action_lists(root_options, build_actions, clean_actions, help_action)

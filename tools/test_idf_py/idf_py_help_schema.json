@@ -1,0 +1,46 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://github.com/espressif/esp-idf/blob/master/tools/test_idf_py/idf_py_help_schema.json",
+    "type": "object",
+    "properties": {
+        "target": {
+            "type": ["string", "null"],
+            "description": "Selected target"
+        },
+        "actions": {
+            "type": "array",
+            "description": "List of supported actions",
+            "items": {
+                "$ref": "#/definitions/actionInfo"
+            }
+        }
+    },
+    "required": [
+        "target",
+        "actions"
+    ],
+    "definitions": {
+        "actionInfo": {
+            "type": "object",
+            "description": "Information about one action",
+            "properties": {
+                "name" : {
+                    "description": "Action name",
+                    "type": "string"
+                },
+                "description" : {
+                    "description": "Description of the action",
+                    "type": "string"
+                },
+                "options": {
+                    "description": "Additional info about action's options",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "name",
+                "description"
+            ]
+        }
+    }
+}

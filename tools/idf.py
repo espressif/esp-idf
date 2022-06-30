@@ -37,8 +37,8 @@ import python_version_checker  # noqa: E402
 
 try:
     from idf_py_actions.errors import FatalError  # noqa: E402
-    from idf_py_actions.tools import (PropertyDict, executable_exists, idf_version, merge_action_lists,  # noqa: E402
-                                      realpath)
+    from idf_py_actions.tools import (PropertyDict, executable_exists, get_target, idf_version,  # noqa: E402
+                                      merge_action_lists, realpath)
 except ImportError:
     # For example, importing click could cause this.
     print('Please use idf.py only in an ESP-IDF shell environment.', file=sys.stderr)
@@ -376,6 +376,7 @@ def init_cli(verbose_output: List=None) -> Any:
                 chain=True,
                 invoke_without_command=True,
                 result_callback=self.execute_tasks,
+                no_args_is_help=True,
                 context_settings={'max_content_width': 140},
                 help=help,
             )
@@ -530,10 +531,6 @@ def init_cli(verbose_output: List=None) -> Any:
             ctx = click.get_current_context()
             global_args = PropertyDict(kwargs)
 
-            def _help_and_exit() -> None:
-                print(ctx.get_help())
-                ctx.exit()
-
             # Show warning if some tasks are present several times in the list
             dupplicated_tasks = sorted(
                 [item for item, count in Counter(task.name for task in tasks).items() if count > 1])
@@ -546,10 +543,6 @@ def init_cli(verbose_output: List=None) -> Any:
                     'Only first occurrence will be executed.')
 
             for task in tasks:
-                # Show help and exit if help is in the list of commands
-                if task.name == 'help':
-                    _help_and_exit()
-
                 # Set propagated global options.
                 # These options may be set on one subcommand, but available in the list of global arguments
                 for key in list(task.action_args):
@@ -576,10 +569,6 @@ def init_cli(verbose_output: List=None) -> Any:
             # Execute all global action callback - first from idf.py itself, then from extensions
             for action_callback in ctx.command.global_action_callbacks:
                 action_callback(ctx, global_args, tasks)
-
-            # Always show help when command is not provided
-            if not tasks:
-                _help_and_exit()
 
             # Build full list of tasks to and deal with dependencies and order dependencies
             tasks_to_run: OrderedDict = OrderedDict()
@@ -634,7 +623,9 @@ def init_cli(verbose_output: List=None) -> Any:
                     if task.aliases:
                         name_with_aliases += ' (aliases: %s)' % ', '.join(task.aliases)
 
-                    print('Executing action: %s' % name_with_aliases)
+                    # When machine-readable json format for help is printed, don't show info about executing action so the output is deserializable
+                    if name_with_aliases != 'help' or not task.action_args.get('json_option', False):
+                        print('Executing action: %s' % name_with_aliases)
                     task(ctx, global_args, task.action_args)
 
                 self._print_closing_message(global_args, tasks_to_run.keys())
@@ -715,7 +706,8 @@ def init_cli(verbose_output: List=None) -> Any:
 
     cli_help = (
         'ESP-IDF CLI build management tool. '
-        'For commands that are not known to idf.py an attempt to execute it as a build system target will be made.')
+        'For commands that are not known to idf.py an attempt to execute it as a build system target will be made. '
+        'Selected target: {}'.format(get_target(project_dir)))
 
     return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
