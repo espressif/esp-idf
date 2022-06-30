@@ -3,6 +3,10 @@ archive: libapp_trace.a
 entries:
     app_trace (noflash)
     app_trace_util (noflash)
+    if APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE:
+      app_trace_membufs_proto (noflash)
+    if APPTRACE_DEST_JTAG = y:
+      port (noflash)
     if APPTRACE_SV_ENABLE = y:
       SEGGER_SYSVIEW (noflash)
       SEGGER_RTT_esp (noflash)
