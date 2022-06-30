@@ -415,7 +415,18 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 }
 #endif
 
-TEST_CASE("test performance RSA key operations", "[bignum]")
+/** NOTE:
+* For ESP32-S3, CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG is enabled
+* by default; allocating a lock of 92 bytes, which is never freed.
+*
+* MR !18574 adds the MPI crypto lock for S3 increasing the leakage by
+* 92 bytes. This caused the RSA UT to fail with a leakage more than
+* 1024 bytes.
+*
+* The allocations made by ESP32-S2 (944 bytes) and ESP32-S3 are the same,
+* except for the JTAG lock (92 + 944 > 1024).
+*/
+TEST_CASE("test performance RSA key operations", "[bignum][leaks=1088]")
 {
     for (int keysize = 2048; keysize <= SOC_RSA_MAX_BIT_LEN; keysize += 1024) {
         rsa_key_operations(keysize, true, false, false);

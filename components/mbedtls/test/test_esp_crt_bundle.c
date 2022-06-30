@@ -83,9 +83,6 @@ typedef enum {
 
 int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
-// TODO ESP32-S3 IDF-1878
-
 static const char *TAG = "cert_bundle_test";
 
 static volatile bool exit_flag;
@@ -298,6 +295,12 @@ int client_task(const uint8_t *bundle, size_t bundle_size, esp_crt_validate_res_
 
     *res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
 
+    if (*res == ESP_CRT_VALIDATE_OK) {
+        ESP_LOGI(TAG, "Certificate verification passed!");
+    } else {
+        ESP_LOGE(TAG, "Certificate verification failed!");
+    }
+
 
     // Reset session before new connection
     mbedtls_ssl_close_notify(&client.ssl);
@@ -348,8 +351,6 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    vSemaphoreDelete(signal_sem);
 }
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
 {
