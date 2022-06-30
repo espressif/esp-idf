@@ -30,3 +30,8 @@ The file ``portmacro_deprecated.h`` which was added to maintain backward compati
 - ``vPortCPUAcquireMutex()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
 - ``vPortCPUAcquireMutexTimeout()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
 - ``vPortCPUReleaseMutex()`` is removed. Users should use the ``spinlock_release()`` function instead.
+
+
+Placing FreeRTOS Functions in Flash
+-----------------------------------
+Previously, the :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH` would also place the functions from :component`esp_ringbuf` in flash. ESP-Ringbuf function placement are now controlled by its own configs: :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH` and :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`.
