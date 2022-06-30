@@ -270,6 +270,14 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
 #endif
 
         if (mode == I2C_MODE_SLAVE) {
+
+#if CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
+            if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+                ESP_LOGE(I2C_TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
+                goto err;
+            }
+#endif
+
             //we only use ringbuffer for slave mode.
             if (slv_rx_buf_len > 0) {
                 p_i2c->rx_ring_buf = xRingbufferCreate(slv_rx_buf_len, RINGBUF_TYPE_BYTEBUF);
