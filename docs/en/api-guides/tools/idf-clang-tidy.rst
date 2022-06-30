@@ -27,7 +27,7 @@ If you have never run this tool before, take the following steps to get this too
 
       This toolchain is still under development. After the final release, you don't have to install them manually.
 
-#. Get file from the `llvm repository <https://github.com/llvm/llvm-project/blob/main/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py>`_  and add the folder of this script to the ``$PATH``. Or you could pass an optional argument ``--run-clang-tidy-py`` later when you call ``idf.py clang-check``.
+#. Get file from the `llvm repository <https://github.com/llvm/llvm-project/blob/main/clang-tools-extra/clang-tidy/tool/run-clang-tidy.py>`_ and add the folder of this script to the ``$PATH``. Or you could pass an optional argument ``--run-clang-tidy-py`` later when you call ``idf.py clang-check``. Please don't forget to make the script executable.
 
    .. note::
 
