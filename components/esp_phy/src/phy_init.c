@@ -330,6 +330,7 @@ void esp_phy_pd_mem_deinit(void)
 
     s_phy_backup_mem_ref--;
     if (s_phy_backup_mem_ref == 0) {
+        s_is_phy_calibrated = false;
         free(s_phy_digital_regs_mem);
         s_phy_digital_regs_mem = NULL;
     }
