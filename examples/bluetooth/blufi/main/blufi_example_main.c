@@ -21,6 +21,7 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -53,6 +54,19 @@ static bool ble_is_connected = false;
 static uint8_t gl_sta_bssid[6];
 static uint8_t gl_sta_ssid[32];
 static int gl_sta_ssid_len;
+static wifi_sta_list_t gl_sta_list;
+
+static int softap_get_current_connection_number(void)
+{
+    esp_err_t ret;
+    ret = esp_wifi_ap_get_sta_list(&gl_sta_list);
+    if (ret == ESP_OK)
+    {
+        return gl_sta_list.num;
+    }
+
+    return 0;
+}
 
 static void ip_event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -72,7 +86,7 @@ static void ip_event_handler(void* arg, esp_event_base_t event_base,
         info.sta_ssid = gl_sta_ssid;
         info.sta_ssid_len = gl_sta_ssid_len;
         if (ble_is_connected == true) {
-            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
+            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, softap_get_current_connection_number(), &info);
         } else {
             BLUFI_INFO("BLUFI BLE is not connected yet\n");
         }
@@ -117,9 +131,9 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         /* TODO: get config or information of softap, then set to report extra_info */
         if (ble_is_connected == true) {
             if (gl_sta_connected) {
-                esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
+                esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, softap_get_current_connection_number(), NULL);
             } else {
-                esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
+                esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, softap_get_current_connection_number(), NULL);
             }
         } else {
             BLUFI_INFO("BLUFI BLE is not connected yet\n");
@@ -163,6 +177,17 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         free(blufi_ap_list);
         break;
     }
+    case WIFI_EVENT_AP_STACONNECTED: {
+        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+        BLUFI_INFO("station "MACSTR" join, AID=%d", MAC2STR(event->mac), event->aid);
+        break;
+    }
+    case WIFI_EVENT_AP_STADISCONNECTED: {
+        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+        BLUFI_INFO("station "MACSTR" leave, AID=%d", MAC2STR(event->mac), event->aid);
+        break;
+    }
+
     default:
         break;
     }
@@ -176,6 +201,8 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);
+    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
+    assert(ap_netif);
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
 
@@ -244,15 +271,17 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
 
         esp_wifi_get_mode(&mode);
 
+
+
         if (gl_sta_connected) {
             memset(&info, 0, sizeof(esp_blufi_extra_info_t));
             memcpy(info.sta_bssid, gl_sta_bssid, 6);
             info.sta_bssid_set = true;
             info.sta_ssid = gl_sta_ssid;
             info.sta_ssid_len = gl_sta_ssid_len;
-            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
+            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, softap_get_current_connection_number(), &info);
         } else {
-            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
+            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, softap_get_current_connection_number(), NULL);
         }
         BLUFI_INFO("BLUFI get wifi status from AP\n");
 
