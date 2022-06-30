@@ -23,6 +23,23 @@ except Exception as e:
     sys.exit('Please check IDF_PATH')
 
 
+def create_temp_files(args):
+    new_filenames = []
+    for filename in [args.conf, args.values]:
+        name, ext = os.path.splitext(filename)
+        new_filename = name + '_tmp' + ext
+        strip_blank_lines(filename, new_filename)
+        new_filenames.append(new_filename)
+    return new_filenames
+
+
+def strip_blank_lines(input_filename, output_filename):
+    with open(input_filename, 'r') as read_from, open(output_filename,'w', newline='') as write_to:
+        for line in read_from:
+            if not line.isspace():
+                write_to.write(line)
+
+
 def verify_values_exist(input_values_file, keys_in_values_file):
     """ Verify all keys have corresponding values in values file
     """
@@ -237,10 +254,6 @@ def set_repeat_value(total_keys_repeat, keys, csv_file, target_filename):
 
 def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=False):
     file_identifier_value = '0'
-    csv_str = 'csv'
-    bin_str = 'bin'
-    set_output_keyfile = False
-
     # Add config data per namespace to `config_data_to_write` list
     config_data_to_write = add_config_data_per_namespace(args.conf)
 
@@ -261,11 +274,9 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
             next(values_file_reader)
 
             # Create new directory(if doesn't exist) to store csv file generated
-            output_csv_target_dir = create_dir(csv_str, args.outdir)
+            output_csv_target_dir = create_dir('csv', args.outdir)
             # Create new directory(if doesn't exist) to store bin file generated
-            output_bin_target_dir = create_dir(bin_str, args.outdir)
-            if args.keygen:
-                set_output_keyfile = True
+            output_bin_target_dir = create_dir('bin', args.outdir)
 
             for values_data_line in values_file_reader:
                 key_value_data = list(zip_longest(keys_in_values_file, values_data_line))
@@ -276,7 +287,7 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
                 key_value_pair = key_value_data[:]
 
                 # Verify if output csv file does not exist
-                csv_filename = args.prefix + '-' + file_identifier_value + '.' + csv_str
+                csv_filename = args.prefix + '-' + file_identifier_value + '.' + 'csv'
                 output_csv_file = output_csv_target_dir + csv_filename
                 if os.path.isfile(output_csv_file):
                     raise SystemExit('Target csv file: %s already exists.`' % output_csv_file)
@@ -286,14 +297,14 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
                 print('\nCreated CSV file: ===>', output_csv_file)
 
                 # Verify if output bin file does not exist
-                bin_filename = args.prefix + '-' + file_identifier_value + '.' + bin_str
+                bin_filename = args.prefix + '-' + file_identifier_value + '.' + 'bin'
                 output_bin_file = output_bin_target_dir + bin_filename
                 if os.path.isfile(output_bin_file):
                     raise SystemExit('Target binary file: %s already exists.`' % output_bin_file)
 
                 args.input = output_csv_file
-                args.output = os.path.join(bin_str, bin_filename)
-                if set_output_keyfile:
+                args.output = os.path.join('bin', bin_filename)
+                if args.keygen:
                     args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
 
                 if is_encr:
@@ -308,57 +319,38 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
         exit(1)
 
 
-def verify_empty_lines_exist(args, input_file):
-    input_file_reader = csv.reader(input_file, delimiter=',')
-    for file_data in input_file_reader:
-        for data in file_data:
-            if len(data.strip()) == 0:
-                raise SystemExit('Error: config file: %s cannot have empty lines. ' % args.conf)
-            else:
-                break
-        if not file_data:
-            raise SystemExit('Error: config file: %s cannot have empty lines.' % args.conf)
-
-    input_file.seek(0)
-    return input_file_reader
-
-
 def verify_file_format(args):
     keys_in_config_file = []
     keys_in_values_file = []
     keys_repeat = []
 
-    # Verify config file is not empty
+    # Verify files have csv extension
+    conf_name, conf_extension = os.path.splitext(args.conf)
+    if conf_extension != '.csv':
+        raise SystemExit('Error: config file: %s does not have the .csv extension.' % args.conf)
+    values_name, values_extension = os.path.splitext(args.values)
+    if values_extension != '.csv':
+        raise SystemExit('Error: values file: %s does not have the .csv extension.' % args.values)
+
+    # Verify files are not empty
     if os.stat(args.conf).st_size == 0:
         raise SystemExit('Error: config file: %s is empty.' % args.conf)
-
-    # Verify values file is not empty
     if os.stat(args.values).st_size == 0:
         raise SystemExit('Error: values file: %s is empty.' % args.values)
 
-    # Verify config file does not have empty lines
-    with open(args.conf, 'r') as csv_config_file:
-        try:
-            config_file_reader = verify_empty_lines_exist(args, csv_config_file)
-            # Extract keys from config file
-            for config_data in config_file_reader:
-                if 'namespace' not in config_data:
-                    keys_in_config_file.append(config_data[0])
-                if 'REPEAT' in config_data:
-                    keys_repeat.append(config_data[0])
+    # Extract keys from config file
+    with open(args.conf, 'r') as config_file:
+        config_file_reader = csv.reader(config_file, delimiter=',')
+        for config_data in config_file_reader:
+            if 'namespace' not in config_data:
+                keys_in_config_file.append(config_data[0])
+            if 'REPEAT' in config_data:
+                keys_repeat.append(config_data[0])
 
-        except Exception as e:
-            print(e)
-
-    # Verify values file does not have empty lines
-    with open(args.values, 'r') as csv_values_file:
-        try:
-            values_file_reader = verify_empty_lines_exist(args, csv_values_file)
-            # Extract keys from values file
-            keys_in_values_file = next(values_file_reader)
-
-        except Exception as e:
-            print(e)
+    # Extract keys from values file
+    with open(args.values, 'r') as values_file:
+        values_file_reader = csv.reader(values_file, delimiter=',')
+        keys_in_values_file = next(values_file_reader)
 
     # Verify file identifier exists in values file
     if args.fileid:
@@ -371,7 +363,9 @@ def verify_file_format(args):
 
 
 def generate(args):
-    args.outdir = os.path.join(args.outdir, '')
+    # Create work files with no blank lines
+    args.conf, args.values = create_temp_files(args)
+
     # Verify input config and values file format
     keys_in_config_file, keys_in_values_file, keys_repeat = verify_file_format(args)
 
