@@ -218,7 +218,8 @@
 #define SOC_MEM_INTERNAL_HIGH       0x403E2000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x3fcebf10
+#define SOC_ROM_STACK_START         0x3fceb710
+#define SOC_ROM_STACK_SIZE          0x2000
 
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************

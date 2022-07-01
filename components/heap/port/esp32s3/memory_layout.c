@@ -52,6 +52,13 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  *       this list should always be sorted from low to high by start address.
  *
  */
+
+/**
+ * Register the shared buffer area of the last memory block into the heap during heap initialization
+ */
+#define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
+#define DRAM0_TO_IRAM0(dram_addr)     (dram_addr + 0x6F0000)
+
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 4, 0}, //SPI SRAM, if available
@@ -59,13 +66,14 @@ const soc_memory_region_t soc_memory_regions[] = {
 #if CONFIG_ESP32S3_INSTRUCTION_CACHE_16KB
     { 0x40374000, 0x4000,  3, 0},          //Level 1, IRAM
 #endif
-    { 0x3FC88000, 0x8000,  2, 0x40378000}, //Level 2, IDRAM, can be used as trace memroy
-    { 0x3FC90000, 0x10000, 2, 0x40380000}, //Level 3, IDRAM, can be used as trace memroy
-    { 0x3FCA0000, 0x10000, 2, 0x40390000}, //Level 4, IDRAM, can be used as trace memroy
-    { 0x3FCB0000, 0x10000, 2, 0x403A0000}, //Level 5, IDRAM, can be used as trace memroy
-    { 0x3FCC0000, 0x10000, 2, 0x403B0000}, //Level 6, IDRAM, can be used as trace memroy
-    { 0x3FCD0000, 0x10000, 2, 0x403C0000}, //Level 7, IDRAM, can be used as trace memroy
-    { 0x3FCE0000, 0x10000, 1, 0},          //Level 8, IDRAM, can be used as trace memroy, contains stacks used by startup flow, recycled by heap allocator in app_main task
+    { 0x3FC88000,          0x8000,                                    2, 0x40378000}, //Level 2, IDRAM, can be used as trace memroy
+    { 0x3FC90000,          0x10000,                                   2, 0x40380000}, //Level 3, IDRAM, can be used as trace memroy
+    { 0x3FCA0000,          0x10000,                                   2, 0x40390000}, //Level 4, IDRAM, can be used as trace memroy
+    { 0x3FCB0000,          0x10000,                                   2, 0x403A0000}, //Level 5, IDRAM, can be used as trace memroy
+    { 0x3FCC0000,          0x10000,                                   2, 0x403B0000}, //Level 6, IDRAM, can be used as trace memroy
+    { 0x3FCD0000,          0x10000,                                   2, 0x403C0000}, //Level 7, IDRAM, can be used as trace memroy
+    { 0x3FCE0000,          (APP_USABLE_DRAM_END-0x3FCE0000),          2, 0x403D0000}, //Level 8, IDRAM, can be used as trace memroy,
+    { APP_USABLE_DRAM_END, (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), 1, DRAM0_TO_IRAM0(APP_USABLE_DRAM_END)}, //Level 8, IDRAM, can be used as trace memroy, ROM reserved area, recycled by heap allocator in app_main task
 #if CONFIG_ESP32S3_DATA_CACHE_16KB || CONFIG_ESP32S3_DATA_CACHE_32KB
     { 0x3FCF0000, 0x8000,  0, 0},          //Level 9, DRAM
 #endif

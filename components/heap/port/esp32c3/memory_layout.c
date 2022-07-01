@@ -31,16 +31,20 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT,  MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, MALLOC_CAP_RETENTION }, false, true},
     // Type 2: DRAM which has an alias on the I-port
     { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
-    // Type 3: IRAM
-    { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
-    // Type 4: RTCRAM
+    // Type 3: RTCRAM
     { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT }, false, false},
 };
 
+/* Index of memory in `soc_memory_types[]` */
+#define SOC_MEMORY_TYPE_DRAM        0
+#define SOC_MEMORY_TYPE_STACK_DRAM  1
+#define SOC_MEMORY_TYPE_DIRAM       2
+#define SOC_MEMORY_TYPE_RTCRAM      3
+
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#define SOC_MEMORY_TYPE_DEFAULT 0
+#define SOC_MEMORY_TYPE_DEFAULT SOC_MEMORY_TYPE_DRAM
 #else
-#define SOC_MEMORY_TYPE_DEFAULT 2
+#define SOC_MEMORY_TYPE_DEFAULT SOC_MEMORY_TYPE_DIRAM
 #endif
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -52,12 +56,20 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  *       this list should always be sorted from low to high by start address.
  *
  */
+
+/**
+ * Register the shared buffer area of the last memory block into the heap during heap initialization
+ */
+#define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
+#define DRAM0_TO_IRAM0(dram_addr)     (dram_addr + 0x700000)
+
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x3FC80000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x40380000}, //Block 4,  can be remapped to ROM, can be used as trace memory
-    { 0x3FCA0000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x403A0000}, //Block 5,  can be remapped to ROM, can be used as trace memory
-    { 0x3FCC0000, 0x20000, 1, 0x403C0000}, //Block 9,  can be used as trace memory
+    { 0x3FC80000,           0x20000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x40380000}, //D/IRAM level1, can be used as trace memory
+    { 0x3FCA0000,           0x20000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x403A0000}, //D/IRAM level2, can be used as trace memory
+    { 0x3FCC0000,           (APP_USABLE_DRAM_END-0x3FCC0000),          SOC_MEMORY_TYPE_DEFAULT,     0x403C0000}, //D/IRAM level3, can be used as trace memory
+    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DRAM,  DRAM0_TO_IRAM0(APP_USABLE_DRAM_END)}, //D/IRAM level3, can be used as trace memory (ROM reserved area)
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
+    { 0x50000000, 0x2000,  SOC_MEMORY_TYPE_RTCRAM,      0},          //Fast RTC memory
 #endif
 };
 
