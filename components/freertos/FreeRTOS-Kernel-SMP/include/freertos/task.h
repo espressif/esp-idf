@@ -3279,6 +3279,15 @@ void vTaskYieldWithinAPI( void );
 
 #ifdef ESP_PLATFORM
 
+#if ( configNUM_CORES > 1 )
+/*
+Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+This function must be called with interrupts disabled on all cores other than
+core 0 during startup.
+*/
+void vTaskStartSchedulerOtherCores( void );
+#endif // configNUM_CORES > 1
+
 #include "idf_additions.h"
 
 #endif //ESP_PLATFORM
