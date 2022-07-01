@@ -5,7 +5,7 @@
 
 #include <unity.h>
 #include <test_utils.h>
-#include <esp_spi_flash.h>
+#include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
 #include <string.h>
@@ -39,10 +39,9 @@ static void verify_erased_flash(size_t offset, size_t length)
     uint8_t *readback = (uint8_t *)heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     printf("verify erased 0x%x - 0x%x\n", offset, offset + length);
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                          spi_flash_read(offset, readback, length));
+                          esp_flash_read(NULL, readback, offset, length));
     for (int i = 0; i < length; i++) {
-        char message[32];
-        TEST_ASSERT_EQUAL_HEX_MESSAGE(0xFF, readback[i], message);
+        TEST_ASSERT_EQUAL_HEX8(0xFF, readback[i]);
     }
     free(readback);
 }
@@ -52,7 +51,7 @@ TEST_CASE("test 16 byte encrypted writes", "[flash_encryption][test_env=UT_T1_Fl
     setup_tests();
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                      spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE));
+                      esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
 
     uint8_t fortyeight_bytes[0x30]; // 0, 1, 2, 3, 4... 47
     for(int i = 0; i < sizeof(fortyeight_bytes); i++) {
@@ -61,10 +60,10 @@ TEST_CASE("test 16 byte encrypted writes", "[flash_encryption][test_env=UT_T1_Fl
 
     /* Verify unaligned start or length fails */
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG,
-                      spi_flash_write_encrypted(start+1, fortyeight_bytes, 32));
+                      esp_flash_write_encrypted(NULL, start + 1, fortyeight_bytes, 32));
 
     TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_SIZE,
-                      spi_flash_write_encrypted(start, fortyeight_bytes, 15));
+                      esp_flash_write_encrypted(NULL, start, fortyeight_bytes, 15));
 
     /* ensure nothing happened to the flash yet */
     verify_erased_flash(start, 0x20);
@@ -73,9 +72,9 @@ TEST_CASE("test 16 byte encrypted writes", "[flash_encryption][test_env=UT_T1_Fl
     test_encrypted_write(start, fortyeight_bytes, 0x20);
     verify_erased_flash(start + 0x20, 0x20);
 
-    /* Slip in an unaligned spi_flash_read_encrypted() test */
+    /* Slip in an unaligned esp_flash_read_encrypted() test */
     uint8_t buf[0x10];
-    spi_flash_read_encrypted(start+0x10, buf, 0x10);
+    esp_flash_read_encrypted(NULL, start+0x10, buf, 0x10);
     TEST_ASSERT_EQUAL_HEX8_ARRAY(fortyeight_bytes+0x10, buf, 16);
 
     /* Write 16 bytes unaligned */
@@ -100,10 +99,10 @@ static void test_encrypted_write(size_t offset, const uint8_t *data, size_t leng
     uint8_t readback[length];
     printf("encrypt %d bytes at 0x%x\n", length, offset);
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                          spi_flash_write_encrypted(offset, data, length));
+                          esp_flash_write_encrypted(NULL, offset, data, length));
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                          spi_flash_read_encrypted(offset, readback, length));
+                          esp_flash_read_encrypted(NULL, offset, readback, length));
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data, readback, length);
 }
@@ -118,13 +117,13 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption][test_en
 
     setup_tests();
 
-    esp_err_t err = spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE);
+    esp_err_t err = esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE);
     TEST_ESP_OK(err);
 
     //initialize the buffer to compare
     uint8_t *cmp_buf = heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     assert(((intptr_t)cmp_buf % 4) == 0);
-    err = spi_flash_read_encrypted(start, cmp_buf, SPI_FLASH_SEC_SIZE);
+    err = esp_flash_read_encrypted(NULL, start, cmp_buf, SPI_FLASH_SEC_SIZE);
     TEST_ESP_OK(err);
 
     srand(789);
@@ -148,7 +147,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption][test_en
         }
 
         printf("write %d bytes to 0x%08x...\n", len, start + offset);
-        err = spi_flash_write_encrypted(start + offset, data_buf, len);
+        err = esp_flash_write_encrypted(NULL, start + offset, data_buf, len);
         TEST_ESP_OK(err);
 
         memcpy(cmp_buf + offset, data_buf, len);
@@ -162,7 +161,7 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption][test_en
             len = SPI_FLASH_SEC_SIZE - offset;
         }
 
-        err = spi_flash_read_encrypted(start + offset, data_buf, len);
+        err = esp_flash_read_encrypted(NULL, start + offset, data_buf, len);
         TEST_ESP_OK(err);
 
         printf("compare %d bytes at 0x%08x...\n", len, start + offset);
@@ -173,8 +172,6 @@ TEST_CASE("test read & write random encrypted data", "[flash_encryption][test_en
 
     free(cmp_buf);
 }
-
-#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 static char TAG[] = "flash_encrypt_test";
 static const char plainttext_data[] = "$$$$#### Welcome! This is flash encryption test, ..., ..., hello_world. &&&&***";
@@ -198,7 +195,7 @@ TEST_CASE("test 16 byte encrypted writes (esp_flash)", "[esp_flash_enc][flash_en
     setup_tests();
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
-                      spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE));
+                      esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
 
     uint8_t fortyeight_bytes[0x30]; // 0, 1, 2, 3, 4... 47
     for(int i = 0; i < sizeof(fortyeight_bytes); i++) {
@@ -245,7 +242,7 @@ TEST_CASE("test read & write encrypted data(32 bytes alianed address)", "[esp_fl
 {
     setup_tests();
 
-    TEST_ESP_OK(spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
     start = (start + 31) & (~31); // round up to 32 byte boundary
 
     ESP_LOG_BUFFER_HEXDUMP(TAG, plainttext_data, sizeof(plainttext_data), ESP_LOG_INFO);
@@ -270,7 +267,7 @@ TEST_CASE("test read & write encrypted data(32 bytes alianed address)", "[esp_fl
 TEST_CASE("test read & write encrypted data(16 bytes alianed but 32 bytes unaligned)", "[esp_flash_enc][flash_encryption][test_env=UT_T1_FlashEncryption]")
 {
     setup_tests();
-    TEST_ESP_OK(spi_flash_erase_sector(start/SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
     do {
         start++;
     } while ((start % 16) != 0);
@@ -327,5 +324,5 @@ TEST_CASE("test read & write encrypted data with large buffer(n*64+32+16)", "[es
     TEST_ASSERT_EQUAL_HEX8_ARRAY(buf, large_const_buffer, sizeof(large_const_buffer));
     free(buf);
 }
-#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+
 #endif // CONFIG_SECURE_FLASH_ENC_ENABLED

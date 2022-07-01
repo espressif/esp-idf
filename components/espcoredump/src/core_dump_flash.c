@@ -11,6 +11,7 @@
 #include "esp_flash_internal.h"
 #include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
+#include "esp_private/spi_flash_os.h"
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
@@ -41,15 +42,9 @@ typedef struct _core_dump_flash_config_t
 /* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
 
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           spi_flash_write(_off_, _data_, _len_)
-#define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) spi_flash_write_encrypted(_off_, _data_, _len_)
-#define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   spi_flash_erase_range(_off_, _len_)
-#else
 #define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
 #define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) esp_flash_write_encrypted(esp_flash_default_chip, _off_, _data_, _len_)
 #define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
-#endif
 
 esp_err_t esp_core_dump_image_check(void);
 static esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);

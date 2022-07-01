@@ -1,4 +1,4 @@
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_partition.h"
 
 #include "esp_err.h"

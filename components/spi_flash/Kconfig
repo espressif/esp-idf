@@ -100,19 +100,10 @@ menu "SPI Flash driver"
             bool "Allowed"
     endchoice
 
-    config SPI_FLASH_USE_LEGACY_IMPL
-        bool "Use the legacy implementation before IDF v4.0"
-        default n
-        help
-            The implementation of SPI flash has been greatly changed in IDF v4.0.
-            Enable this option to use the legacy implementation.
-
     config SPI_FLASH_SHARE_SPI1_BUS
         bool  "Support other devices attached to SPI1 bus"
         default n
-        # The bus lock on SPI1 is meaningless when the legacy implementation is used, or the SPI
-        # driver does not support SPI1.
-        depends on !SPI_FLASH_USE_LEGACY_IMPL && !IDF_TARGET_ESP32S2
+        depends on !IDF_TARGET_ESP32S2
         help
             Each SPI bus needs a lock for arbitration among devices. This allows multiple
             devices on a same bus, but may reduce the speed of esp_flash driver access to the
@@ -160,7 +151,7 @@ menu "SPI Flash driver"
     config SPI_FLASH_AUTO_SUSPEND
         bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_USE_LEGACY_IMPL && !SPI_FLASH_ROM_IMPL
+        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_ROM_IMPL
         help
             This option is default n before ESP32-C3, because it needs bootloader support.
 
@@ -191,14 +182,12 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         bool "Flash timeout checkout disabled"
-        depends on !SPI_FLASH_USE_LEGACY_IMPL
         default n
         help
             This option is helpful if you are using a flash chip whose timeout is quite large or unpredictable.
 
     config SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
         bool "Override default chip driver list"
-        depends on !SPI_FLASH_USE_LEGACY_IMPL
         default n
         help
             This option allows the chip driver list to be customized, instead of using the default list provided by

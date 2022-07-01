@@ -29,8 +29,9 @@
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_attr.h"
+#include "esp_private/spi_flash_os.h"
 
 // Enable internal routing for the output and input gpio pins
 #define TEST_GPIO_INTERNAL_ROUTING    1

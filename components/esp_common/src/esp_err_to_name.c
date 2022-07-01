@@ -47,9 +47,6 @@
 #if __has_include("esp_ping.h")
 #include "esp_ping.h"
 #endif
-#if __has_include("esp_spi_flash.h")
-#include "esp_spi_flash.h"
-#endif
 #if __has_include("esp_tls_errors.h")
 #include "esp_tls_errors.h"
 #endif
@@ -70,6 +67,9 @@
 #endif
 #if __has_include("soc/esp32s2/esp_ds.h")
 #include "soc/esp32s2/esp_ds.h"
+#endif
+#if __has_include("spi_flash_mmap.h")
+#include "spi_flash_mmap.h"
 #endif
 #if __has_include("ulp_fsm_common.h")
 #include "ulp_fsm_common.h"
@@ -565,7 +565,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_FLASH_BASE
     ERR_TBL_IT(ESP_ERR_FLASH_BASE),                             /* 24576 0x6000 Starting number of flash error codes */
 #   endif
-    // components/spi_flash/include/esp_spi_flash.h
+    // components/spi_flash/include/spi_flash_mmap.h
 #   ifdef      ESP_ERR_FLASH_OP_FAIL
     ERR_TBL_IT(ESP_ERR_FLASH_OP_FAIL),                          /* 24577 0x6001 */
 #   endif

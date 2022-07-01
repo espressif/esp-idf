@@ -123,7 +123,8 @@ TEST_CASE("Test esp_partition_get_sha256() that it can handle a big partition", 
     spi_flash_mmap_handle_t handle;
 
     uint8_t sha256[32] = { 0 };
-    size_t size_flash_chip = spi_flash_get_chip_size();
+    uint32_t size_flash_chip;
+    esp_flash_get_size(NULL, &size_flash_chip);
 
     printf("size_flash_chip = %d bytes\n", size_flash_chip);
 

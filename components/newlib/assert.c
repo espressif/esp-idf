@@ -7,8 +7,9 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_system.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "soc/soc_memory_layout.h"
+#include "esp_private/cache_utils.h"
 
 #define ASSERT_STR              "assert failed: "
 #define CACHE_DISABLED_STR      "<cached disabled>"

@@ -648,7 +648,6 @@ components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h
 components/esp_serial_slave_link/include/essl_spi/esp32c3_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s2_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s3_defs.h
-components/esp_system/esp_err.c
 components/esp_system/include/eh_frame_parser.h
 components/esp_system/include/esp_expression_with_stack.h
 components/esp_system/include/esp_freertos_hooks.h
@@ -1002,7 +1001,6 @@ components/nvs_flash/test_nvs_host/esp_error_check_stub.cpp
 components/nvs_flash/test_nvs_host/main.cpp
 components/nvs_flash/test_nvs_host/sdkconfig.h
 components/nvs_flash/test_nvs_host/spi_flash_emulation.cpp
-components/nvs_flash/test_nvs_host/spi_flash_emulation.h
 components/nvs_flash/test_nvs_host/test_fixtures.hpp
 components/nvs_flash/test_nvs_host/test_intrusive_list.cpp
 components/nvs_flash/test_nvs_host/test_nvs_cxx_api.cpp
@@ -1010,7 +1008,6 @@ components/nvs_flash/test_nvs_host/test_nvs_handle.cpp
 components/nvs_flash/test_nvs_host/test_nvs_initialization.cpp
 components/nvs_flash/test_nvs_host/test_nvs_partition.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
-components/nvs_flash/test_nvs_host/test_spi_flash_emulation.cpp
 components/openthread/include/esp_openthread.h
 components/openthread/include/esp_openthread_lock.h
 components/openthread/include/esp_openthread_netif_glue.h
@@ -1431,6 +1428,7 @@ components/spi_flash/sim/SpiFlash.cpp
 components/spi_flash/sim/flash_mock.cpp
 components/spi_flash/sim/flash_mock_util.c
 components/spi_flash/sim/sdkconfig/sdkconfig.h
+components/spi_flash/sim/stubs/bsd/strlcpy.c
 components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_gd.c
 components/spi_flash/spi_flash_chip_issi.c

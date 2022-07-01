@@ -3,7 +3,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp32s2/memprot.h"
 #include "soc/soc.h"
 

@@ -1034,7 +1034,7 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
   add_library(foo bar.c fizz.cpp buzz.cpp)
 
   if(ESP_PLATFORM)
-    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_spi_flash.h
+    # 在 ESP-IDF 中、 bar.c 需要包含 spi_flash 组件中的 esp_flash.h
     target_link_libraries(foo PRIVATE idf::spi_flash)
   endif()
 

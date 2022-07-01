@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 
 #include "soc/extmem_reg.h"
 #include "esp_private/panic_internal.h"

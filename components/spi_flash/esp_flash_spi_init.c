@@ -20,6 +20,8 @@
 #include "esp_flash_internal.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/spi_flash_os.h"
+#include "esp_private/cache_utils.h"
+#include "esp_spi_flash_counters.h"
 #include "esp_rom_spiflash.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
@@ -28,8 +30,6 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #if !CONFIG_SPI_FLASH_ROM_IMPL
 esp_flash_t *esp_flash_default_chip = NULL;
 #endif
-
-#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 #if defined CONFIG_ESPTOOLPY_FLASHFREQ_120M
 #define DEFAULT_FLASH_SPEED 120
@@ -387,6 +387,11 @@ esp_err_t esp_flash_init_default_chip(void)
 esp_err_t esp_flash_app_init(void)
 {
     esp_err_t err = ESP_OK;
+    spi_flash_init_lock();
+    spi_flash_guard_set(&g_flash_guard_default_ops);
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+    spi_flash_reset_counters();
+#endif
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     err = esp_flash_init_main_bus_lock();
     if (err != ESP_OK) return err;
@@ -394,5 +399,3 @@ esp_err_t esp_flash_app_init(void)
     err = esp_flash_app_enable_os_functions(&default_chip);
     return err;
 }
-
-#endif //!CONFIG_SPI_FLASH_USE_LEGACY_IMPL

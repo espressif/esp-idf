@@ -11,7 +11,8 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "driver/gptimer.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
+#include "esp_flash.h"
 #include "soc/soc_caps.h"
 
 #if CONFIG_GPTIMER_ISR_IRAM_SAFE
@@ -41,7 +42,7 @@ static void flash_read_task(void *varg)
 {
     read_task_arg_t *arg = (read_task_arg_t *)varg;
     for (size_t i = 0; i < arg->repeat_count; i++) {
-        TEST_ESP_OK(spi_flash_read(arg->flash_addr, arg->buf, arg->buf_size));
+        TEST_ESP_OK(esp_flash_read(NULL, arg->buf, arg->flash_addr, arg->buf_size));
     }
     xSemaphoreGive(arg->done_sem);
     vTaskDelete(NULL);

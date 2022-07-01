@@ -15,11 +15,12 @@
 #include "soc/mmu.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
-#include "cache_utils.h"
+#include "esp_private/cache_utils.h"
 #include "hal/mmu_ll.h"
+#include "esp_rom_spiflash.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -129,7 +130,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
     if (src_addr & INVALID_PHY_PAGE(CONFIG_MMU_PAGE_SIZE)) {
         return ESP_ERR_INVALID_ARG;
     }
-    if ((src_addr + size) > spi_flash_get_chip_size()) {
+    if ((src_addr + size) > g_rom_flashchip.chip_size) {
         return ESP_ERR_INVALID_ARG;
     }
     // region which should be mapped
@@ -162,7 +163,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
         return ESP_ERR_INVALID_ARG;
     }
     for (int i = 0; i < page_count; i++) {
-        if (pages[i] < 0 || pages[i]*SPI_FLASH_MMU_PAGE_SIZE >= spi_flash_get_chip_size()) {
+        if (pages[i] < 0 || pages[i]*SPI_FLASH_MMU_PAGE_SIZE >= g_rom_flashchip.chip_size) {
             return ESP_ERR_INVALID_ARG;
         }
     }

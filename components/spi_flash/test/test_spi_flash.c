@@ -5,7 +5,7 @@
 #include <freertos/semphr.h>
 
 #include <unity.h>
-#include <esp_spi_flash.h>
+#include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include "esp_intr_alloc.h"
 #include "test_utils.h"
@@ -47,7 +47,7 @@ static void flash_test_task(void *arg)
     const uint32_t sector = start / SPI_FLASH_SEC_SIZE + ctx->offset;
     printf("t%d\n", sector);
     printf("es%d\n", sector);
-    if (spi_flash_erase_sector(sector) != ESP_OK) {
+    if (esp_flash_erase_region(NULL, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE) != ESP_OK) {
         ctx->fail = true;
         printf("Erase failed\r\n");
         xSemaphoreGive(ctx->done);
@@ -59,7 +59,7 @@ static void flash_test_task(void *arg)
 
     uint32_t val = 0xabcd1234;
     for (uint32_t offset = 0; offset < SPI_FLASH_SEC_SIZE; offset += 4) {
-        if (spi_flash_write(sector * SPI_FLASH_SEC_SIZE + offset, (const uint8_t *) &val, 4) != ESP_OK) {
+        if (esp_flash_write(NULL, (const uint8_t *) &val, sector * SPI_FLASH_SEC_SIZE + offset, 4) != ESP_OK) {
             printf("Write failed at offset=%d\r\n", offset);
             ctx->fail = true;
             break;
@@ -71,7 +71,7 @@ static void flash_test_task(void *arg)
 
     uint32_t val_read;
     for (uint32_t offset = 0; offset < SPI_FLASH_SEC_SIZE; offset += 4) {
-        if (spi_flash_read(sector * SPI_FLASH_SEC_SIZE + offset, (uint8_t *) &val_read, 4) != ESP_OK) {
+        if (esp_flash_read(NULL, (uint8_t *) &val_read, sector * SPI_FLASH_SEC_SIZE + offset, 4) != ESP_OK) {
             printf("Read failed at offset=%d\r\n", offset);
             ctx->fail = true;
             break;
@@ -151,7 +151,7 @@ static uint32_t measure_erase(const esp_partition_t* part)
     time_meas_ctx_t time_ctx = {.name = "erase", .len = total_len};
 
     time_measure_start(&time_ctx);
-    esp_err_t err = spi_flash_erase_range(part->address, total_len);
+    esp_err_t err = esp_flash_erase_region(NULL, part->address, total_len);
     TEST_ESP_OK(err);
     return time_measure_end(&time_ctx);
 }
@@ -170,7 +170,7 @@ static uint32_t measure_write(const char* name, const esp_partition_t* part, con
 
         while (len) {
             int len_write = MIN(seg_len, len);
-            esp_err_t err = spi_flash_write(part->address + offset, data_to_write + offset, len_write);
+            esp_err_t err = esp_flash_write(NULL, data_to_write + offset, part->address + offset, len_write);
             TEST_ESP_OK(err);
 
             offset += len_write;
@@ -192,7 +192,7 @@ static uint32_t measure_read(const char* name, const esp_partition_t* part, uint
 
         while (len) {
             int len_read = MIN(seg_len, len);
-            esp_err_t err = spi_flash_read(part->address + offset, data_read + offset, len_read);
+            esp_err_t err = esp_flash_read(NULL, data_read + offset, part->address + offset, len_read);
             TEST_ESP_OK(err);
 
             offset += len_read;
@@ -294,7 +294,7 @@ TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash
 
     for (int i = 0; i < 1000; i++) {
         uint32_t dummy;
-        TEST_ESP_OK(spi_flash_read(0, &dummy, sizeof(dummy)));
+        TEST_ESP_OK(esp_flash_read(NULL, &dummy, 0, sizeof(dummy)));
     }
 
     arg.done = true;
