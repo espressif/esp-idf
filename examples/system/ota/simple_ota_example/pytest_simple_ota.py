@@ -128,7 +128,7 @@ def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_ota
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
+@pytest.mark.xfail(run=False)
 def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
     """
     steps: |
