@@ -9,13 +9,20 @@
 #include <stdbool.h>
 #include "soc/systimer_struct.h"
 #include "hal/assert.h"
+#include "sdkconfig.h"
 
 #define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
 #define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
 #define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
 #define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
 
+#ifdef CONFIG_ESP32C2_XTAL_FREQ_26
+#define SYSTIMER_LL_TICKS_PER_US        (52) // (26 / 2.5) = 10.4 = 52/5 systimer ticks per us
+#define SYSTIMER_LL_TICKS_PER_US_DIV    (5)
+#else
 #define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
+#define SYSTIMER_LL_TICKS_PER_US_DIV    (1)
+#endif // ESP32C2_XTAL_FREQ_*
 
 #ifdef __cplusplus
 extern "C" {

@@ -603,9 +603,9 @@ config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 20
 
-config SOC_SYSTIMER_FIXED_TICKS_US
-    int
-    default 16
+config SOC_SYSTIMER_HAS_FIXED_TICKS_PER_US
+    bool
+    default y
 
 config SOC_SYSTIMER_INT_LEVEL
     bool
