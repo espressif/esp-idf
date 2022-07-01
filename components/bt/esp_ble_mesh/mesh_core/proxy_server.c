@@ -92,13 +92,7 @@ static struct bt_mesh_proxy_client {
 #endif
     struct k_delayed_work sar_timer;
     struct net_buf_simple buf;
-} clients[BLE_MESH_MAX_CONN] = {
-    [0 ... (BLE_MESH_MAX_CONN - 1)] = {
-#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
-        .send_beacons = _K_WORK_INITIALIZER(proxy_send_beacons),
-#endif
-    },
-};
+} clients[BLE_MESH_MAX_CONN];
 
 static uint8_t client_buf_data[CLIENT_BUF_SIZE * BLE_MESH_MAX_CONN];
 
@@ -1459,7 +1453,9 @@ int bt_mesh_proxy_server_init(void)
 
         client->buf.size = CLIENT_BUF_SIZE;
         client->buf.__buf = client_buf_data + (i * CLIENT_BUF_SIZE);
-
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
+        k_work_init(&client->send_beacons, proxy_send_beacons);
+#endif
         k_delayed_work_init(&client->sar_timer, proxy_sar_timeout);
     }
 
