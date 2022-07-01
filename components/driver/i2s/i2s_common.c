@@ -46,6 +46,9 @@
 #include "esp_attr.h"
 
 #include "esp_rom_gpio.h"
+#if CONFIG_SPIRAM && !CONFIG_IDF_TARGET_ESP32
+#include "esp_psram.h"
+#endif
 
 #define I2S_DMA_BUFFER_MAX_SIZE     (4092)
 
@@ -59,6 +62,7 @@
 #define I2S_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
+#define I2S_PSRAM_ALLOC_CAPS    (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
 
 /**
  * @brief Global i2s platform object
@@ -204,7 +208,6 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
         portENTER_CRITICAL(&g_i2s.spinlock);
         if (g_i2s.controller[id]) {
             i2s_obj = g_i2s.controller[id];
-        } else {
         }
         portEXIT_CRITICAL(&g_i2s.spinlock);
         if (i2s_obj == NULL) {
@@ -407,12 +410,22 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     handle->dma.desc_num = num;
     handle->dma.buf_size = bufsize;
 
-    handle->dma.desc = (lldesc_t **)heap_caps_calloc(num, sizeof(lldesc_t *), I2S_MEM_ALLOC_CAPS);
+    uint32_t dma_alloc_caps = I2S_DMA_ALLOC_CAPS;
+    uint32_t mem_alloc_caps = I2S_MEM_ALLOC_CAPS;
+
+#if (CONFIG_SPIRAM_USE_MALLOC || CONFIG_SPIRAM_USE_CAPS_ALLOC) && !CONFIG_IDF_TARGET_ESP32
+    if (handle->dma.psram_en && esp_psram_is_initialized()) {
+        ESP_LOGD(TAG, "DMA buffer will be allocate in the psram");
+        dma_alloc_caps = I2S_PSRAM_ALLOC_CAPS;
+        mem_alloc_caps = I2S_PSRAM_ALLOC_CAPS;
+    }
+#endif
+    handle->dma.desc = (lldesc_t **)heap_caps_aligned_calloc(4, num, sizeof(lldesc_t *), mem_alloc_caps);
     ESP_GOTO_ON_FALSE(handle->dma.desc, ESP_ERR_NO_MEM, err, TAG, "create I2S DMA decriptor array failed");
-    handle->dma.bufs = (uint8_t **)heap_caps_calloc(num, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
+    handle->dma.bufs = (uint8_t **)heap_caps_aligned_calloc(4, num, sizeof(uint8_t *), mem_alloc_caps);
     for (int i = 0; i < num; i++) {
         /* Allocate DMA descriptor */
-        handle->dma.desc[i] = (lldesc_t *) heap_caps_calloc(1, sizeof(lldesc_t), I2S_DMA_ALLOC_CAPS);
+        handle->dma.desc[i] = (lldesc_t *) heap_caps_aligned_calloc(4, 1, sizeof(lldesc_t), dma_alloc_caps);
         ESP_GOTO_ON_FALSE(handle->dma.desc[i], ESP_ERR_NO_MEM, err, TAG,  "allocate DMA description failed");
         handle->dma.desc[i]->owner = 1;
         handle->dma.desc[i]->eof = 1;
@@ -420,7 +433,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
         handle->dma.desc[i]->length = bufsize;
         handle->dma.desc[i]->size = bufsize;
         handle->dma.desc[i]->offset = 0;
-        handle->dma.bufs[i] = (uint8_t *) heap_caps_calloc(1, bufsize * sizeof(uint8_t), I2S_DMA_ALLOC_CAPS);
+        handle->dma.bufs[i] = (uint8_t *) heap_caps_aligned_calloc(4, 1, bufsize * sizeof(uint8_t), dma_alloc_caps);
         handle->dma.desc[i]->buf = handle->dma.bufs[i];
         ESP_GOTO_ON_FALSE(handle->dma.desc[i]->buf, ESP_ERR_NO_MEM, err, TAG,  "allocate DMA buffer failed");
     }
@@ -782,6 +795,7 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
                           err, TAG, "register I2S tx channel failed");
         i2s_obj->tx_chan->role = chan_cfg->role;
         i2s_obj->tx_chan->dma.auto_clear = chan_cfg->auto_clear;
+        i2s_obj->tx_chan->dma.psram_en = chan_cfg->dma_buf_in_psram;
         i2s_obj->tx_chan->dma.desc_num = chan_cfg->dma_desc_num;
         i2s_obj->tx_chan->dma.frame_num = chan_cfg->dma_frame_num;
         i2s_obj->tx_chan->start = i2s_tx_channel_start;
@@ -794,6 +808,7 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
         ESP_GOTO_ON_ERROR(i2s_register_channel(i2s_obj, I2S_DIR_RX, chan_cfg->dma_desc_num),
                           err, TAG, "register I2S rx channel failed");
         i2s_obj->rx_chan->role = chan_cfg->role;
+        i2s_obj->rx_chan->dma.psram_en = chan_cfg->dma_buf_in_psram;
         i2s_obj->rx_chan->dma.desc_num = chan_cfg->dma_desc_num;
         i2s_obj->rx_chan->dma.frame_num = chan_cfg->dma_frame_num;
         i2s_obj->rx_chan->start = i2s_rx_channel_start;

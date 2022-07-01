@@ -24,6 +24,7 @@ extern "C" {
     .role = i2s_role, \
     .dma_desc_num = 6, \
     .dma_frame_num = 250, \
+    .dma_buf_in_psram = false, \
     .auto_clear = false, \
 }
 
@@ -36,43 +37,45 @@ extern "C" {
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
-    i2s_isr_callback_t on_recv;         /**< Callback of data received event, only for rx channel
-                                         *   The event data includes DMA buffer address and size that just finished receiving data
-                                         */
-    i2s_isr_callback_t on_recv_q_ovf;   /**< Callback of receiving queue overflowed event, only for rx channel
-                                         *   The event data includes buffer size that has been overwritten
-                                         */
-    i2s_isr_callback_t on_sent;         /**< Callback of data sent event, only for tx channel
-                                         *   The event data includes DMA buffer address and size that just finished sending data
-                                         */
-    i2s_isr_callback_t on_send_q_ovf;   /**< Callback of sending queue overflowed evnet, only for tx channel
-                                         *   The event data includes buffer size that has been overwritten
-                                         */
+    i2s_isr_callback_t on_recv;             /**< Callback of data received event, only for rx channel
+                                             *   The event data includes DMA buffer address and size that just finished receiving data
+                                             */
+    i2s_isr_callback_t on_recv_q_ovf;       /**< Callback of receiving queue overflowed event, only for rx channel
+                                             *   The event data includes buffer size that has been overwritten
+                                             */
+    i2s_isr_callback_t on_sent;             /**< Callback of data sent event, only for tx channel
+                                             *   The event data includes DMA buffer address and size that just finished sending data
+                                             */
+    i2s_isr_callback_t on_send_q_ovf;       /**< Callback of sending queue overflowed evnet, only for tx channel
+                                             *   The event data includes buffer size that has been overwritten
+                                             */
 } i2s_event_callbacks_t;
 
 /**
  * @brief I2S controller channel configuration
 */
 typedef struct {
-    i2s_port_t              id;             /*!< I2S port id */
-    i2s_role_t              role;           /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
+    i2s_port_t          id;                 /*!< I2S port id */
+    i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
 
     /* DMA configurations */
-    uint32_t                dma_desc_num;   /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
-    uint32_t                dma_frame_num;  /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots */
-    bool                    auto_clear;     /*!< Set to auto clear DMA TX buffer, i2s will always send zero automatically if no data to send */
-
+    uint32_t            dma_desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
+    uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots */
+    bool                dma_buf_in_psram;   /*!< Prefer to allocate the DMA buffers in the psram (not supported on ESP32)
+                                             *   To allocate the DMA buffers in the psram, SPIRAM should be enabled in menuconfig
+                                             */
+    bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, i2s will always send zero automatically if no data to send */
 } i2s_chan_config_t;
 
 /**
  * @brief I2S channel information
  */
 typedef struct {
-    i2s_port_t              id;             /*!< I2S port id */
-    i2s_role_t              role;           /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
-    i2s_dir_t               dir;            /*!< I2S channel direction */
-    i2s_comm_mode_t         mode;           /*!< I2S channel communication mode */
-    i2s_chan_handle_t       pair_chan;      /*!< I2S pair channel handle in duplex mode, always NULL in simplex mode */
+    i2s_port_t          id;                 /*!< I2S port id */
+    i2s_role_t          role;               /*!< I2S role, I2S_ROLE_MASTER or I2S_ROLE_SLAVE */
+    i2s_dir_t           dir;                /*!< I2S channel direction */
+    i2s_comm_mode_t     mode;               /*!< I2S channel communication mode */
+    i2s_chan_handle_t   pair_chan;          /*!< I2S pair channel handle in duplex mode, always NULL in simplex mode */
 } i2s_chan_info_t;
 
 /**

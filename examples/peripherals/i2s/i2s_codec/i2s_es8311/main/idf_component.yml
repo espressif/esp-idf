@@ -1,16 +1,17 @@
 ## IDF Component Manager Manifest File
-## Version of your project. Should conform Semantic Versioning 2.0 rules https://semver.org/
-version: "1.0.0"
-
 dependencies:
-  espressif/es8311: ">=0.0.2"
+  espressif/es8311: "==1.0.0"
   ## Required IDF version
   idf:
-    version: "^5.0"
+    version: ">=4.1.0"
   # # Put list of dependencies here
   # # For components maintained by Espressif:
-  # component:
-  #   version: "~1.0.0"
+  # component: "~1.0.0"
   # # For 3rd party components:
-  # username/component:
+  # username/component: ">=1.0.0,<2.0.0"
+  # username2/component2:
   #   version: "~1.0.0"
+  #   # For transient dependencies `public` flag can be set.
+  #   # `public` flag doesn't have an effect dependencies of the `main` component.
+  #   # All dependencies of `main` are public by default.
+  #   public: true

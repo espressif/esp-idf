@@ -67,8 +67,10 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
     i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+#if SOC_I2S_HW_VERSION_2
     /* Work aroud for PDM TX clock, set the raw division directly to reduce the noise */
     i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, 1, 1, 0, 0);
+#endif
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: clock configuration */
