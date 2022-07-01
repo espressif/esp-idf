@@ -14,7 +14,8 @@
  * Auto ProductID layout's Bitmap:
  *   [MSB]         HID | MSC | CDC          [LSB]
  */
-#define USB_TUSB_PID (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | _PID_MAP(MIDI, 3))
+#define USB_TUSB_PID (0x4000 | _PID_MAP(CDC, 0) | _PID_MAP(MSC, 1) | _PID_MAP(HID, 2) | \
+    _PID_MAP(MIDI, 3) ) //| _PID_MAP(AUDIO, 4) | _PID_MAP(VENDOR, 5) )
 
 /**** TinyUSB default ****/
 tusb_desc_device_t descriptor_tinyusb = {
@@ -55,7 +56,8 @@ tusb_desc_strarray_device_t descriptor_str_tinyusb = {
     "123456",             // 3: Serials, should use chip ID
     "TinyUSB CDC",        // 4: CDC Interface
     "TinyUSB MSC",        // 5: MSC Interface
-    "TinyUSB HID"         // 6: HID
+    "TinyUSB HID",        // 6: HID
+    "TinyUSB MIDI"        // 7: MIDI
 };
 /* End of TinyUSB default */
 
@@ -125,6 +127,12 @@ tusb_desc_strarray_device_t descriptor_str_kconfig = {
     "",
 #endif
 
+#if CONFIG_TINYUSB_MIDI_ENABLED
+    CONFIG_TINYUSB_DESC_MIDI_STRING           // 7: MIDI
+#else
+    "",
+#endif
+
 };
 
 //------------- HID Report Descriptor -------------//
@@ -137,34 +145,66 @@ enum {
 
 //------------- Configuration Descriptor -------------//
 enum {
-#   if CFG_TUD_CDC
+#if CFG_TUD_CDC
     ITF_NUM_CDC = 0,
     ITF_NUM_CDC_DATA,
-#   endif
+#endif
 
-#   if CFG_TUD_CDC > 1
+#if CFG_TUD_CDC > 1
     ITF_NUM_CDC1,
     ITF_NUM_CDC1_DATA,
-#   endif
+#endif
 
-#   if CFG_TUD_MSC
+#if CFG_TUD_MSC
     ITF_NUM_MSC,
-#   endif
+#endif
 
-#   if CFG_TUD_HID
+#if CFG_TUD_HID
     ITF_NUM_HID,
-#   endif
+#endif
+
+#if CFG_TUD_MIDI
+    ITF_NUM_MIDI,
+    ITF_NUM_MIDI_STREAMING,
+#endif
 
     ITF_NUM_TOTAL
 };
 
 enum {
-    TUSB_DESC_TOTAL_LEN = TUD_CONFIG_DESC_LEN + CFG_TUD_CDC * TUD_CDC_DESC_LEN + CFG_TUD_MSC * TUD_MSC_DESC_LEN +
-                       CFG_TUD_HID * TUD_HID_DESC_LEN
+    TUSB_DESC_TOTAL_LEN = TUD_CONFIG_DESC_LEN +
+                        CFG_TUD_CDC * TUD_CDC_DESC_LEN +
+                        CFG_TUD_MSC * TUD_MSC_DESC_LEN +
+                        CFG_TUD_HID * TUD_HID_DESC_LEN +
+                        CFG_TUD_MIDI * TUD_MIDI_DESC_LEN
 };
 
-#define EPNUM_MSC ((CFG_TUD_CDC * 2) + 1)
-#define EPNUM_HID (EPNUM_MSC + 1)
+//------------- USB Endpoint numbers -------------//
+enum {
+    // Available USB Endpoints: 5 IN/OUT EPs and 1 IN EP
+    EP_EMPTY = 0,
+#if CFG_TUD_CDC
+    EPNUM_0_CDC_NOTIF,
+    EPNUM_0_CDC,
+#endif
+
+#if CFG_TUD_CDC > 1
+    EPNUM_1_CDC_NOTIF,
+    EPNUM_1_CDC,
+#endif
+
+#if CFG_TUD_MSC
+    EPNUM_MSC,
+#endif
+
+#if CFG_TUD_HID
+    EPNUM_HID,
+#endif
+
+#if CFG_TUD_MIDI
+    EPNUM_MIDI,
+#endif
+};
 
 #if CFG_TUD_HID //HID Report Descriptor
 uint8_t const desc_hid_report[] = {
@@ -177,25 +217,30 @@ uint8_t const descriptor_cfg_kconfig[] = {
     // interface count, string index, total length, attribute, power in mA
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
 
-#   if CFG_TUD_CDC
+#if CFG_TUD_CDC
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, CFG_TUD_CDC_EP_BUFSIZE),
-#   endif
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x80 | EPNUM_0_CDC_NOTIF, 8, EPNUM_0_CDC, 0x80 | EPNUM_0_CDC, CFG_TUD_CDC_EP_BUFSIZE),
+#endif
 
-#   if CFG_TUD_CDC > 1
+#if CFG_TUD_CDC > 1
     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC1, 4, 0x83, 8, 0x04, 0x84, CFG_TUD_CDC_EP_BUFSIZE),
-#   endif
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC1, 4, 0x80 | EPNUM_1_CDC_NOTIF, 8, EPNUM_1_CDC, 0x80 | EPNUM_1_CDC, CFG_TUD_CDC_EP_BUFSIZE),
+#endif
 
-#   if CFG_TUD_MSC
+#if CFG_TUD_MSC
     // Interface number, string index, EP Out & EP In address, EP size
     TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
-#   endif
+#endif
 
-#   if CFG_TUD_HID
+#if CFG_TUD_HID
     // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
     TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x80 | EPNUM_HID, 16, 10)
-#   endif
+#endif
+
+#if CFG_TUD_MIDI
+    // Interface number, string index, EP Out & EP In address, EP size
+    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 7, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64) // highspeed 512
+#endif
 };
 
 /* End of Kconfig driven Descriptor */

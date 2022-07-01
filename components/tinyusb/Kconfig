@@ -112,6 +112,13 @@ menu "TinyUSB Stack"
                 default "Espressif HID Device"
                 help
                     Name of the HID device
+
+            config TINYUSB_DESC_MIDI_STRING
+                depends on TINYUSB_MIDI_ENABLED
+                string "MIDI Device String"
+                default "Espressif MIDI Device"
+                help
+                    Name of the MIDI device
         endmenu # "Descriptor configuration"
 
         menu "Massive Storage Class (MSC)"
@@ -160,6 +167,14 @@ menu "TinyUSB Stack"
                 help
                     CDC FIFO size of TX channel.
         endmenu # "Communication Device Class"
+
+        menu "MIDI"
+            config TINYUSB_MIDI_ENABLED
+                bool "Enable TinyUSB MIDI feature"
+                default n
+                help
+                    Enable TinyUSB MIDI feature.
+        endmenu # "MIDI"
     endif # TINYUSB
 
 endmenu # "TinyUSB Stack"

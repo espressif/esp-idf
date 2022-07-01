@@ -125,6 +125,12 @@ xtensa:
   allowed_licenses:
     - Apache-2.0    #Files added to the xtensa component by us
     - MIT           #Cadence sources
+tinyusb:
+  include:
+    - 'examples/peripherals/usb/device/tusb_midi/'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
 
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
