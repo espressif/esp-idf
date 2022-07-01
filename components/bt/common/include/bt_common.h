@@ -42,6 +42,12 @@
 #define BTC_DYNAMIC_MEMORY         FALSE
 #endif
 
+#if UC_BT_BLUEDROID_MEM_DEBUG
+#define HEAP_MEMORY_DEBUG   TRUE
+#else
+#define HEAP_MEMORY_DEBUG   FALSE
+#endif
+
 #ifndef BT_BLE_DYNAMIC_ENV_MEMORY
 #define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
 #endif
