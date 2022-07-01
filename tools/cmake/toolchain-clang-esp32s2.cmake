@@ -1,3 +1,5 @@
+include($ENV{IDF_PATH}/tools/cmake/utilities.cmake)
+
 set(CMAKE_SYSTEM_NAME Generic)
 
 set(CMAKE_C_COMPILER clang)
@@ -11,6 +13,20 @@ set(CMAKE_OBJDUMP xtensa-esp32-elf-objdump)
 # -freestanding is a hack to force Clang to use its own stdatomic.h,
 # without falling back to the (incompatible) GCC stdatomic.h
 # https://github.com/espressif/llvm-project/blob/d9341b81/clang/lib/Headers/stdatomic.h#L13-L18
-set(CMAKE_C_FLAGS "--target=xtensa -mcpu=esp32s2 -ffreestanding" CACHE STRING "C Compiler Base Flags")
-set(CMAKE_CXX_FLAGS "--target=xtensa -mcpu=esp32s2 -ffreestanding" CACHE STRING "C++ Compiler Base Flags")
-set(CMAKE_ASM_FLAGS "--target=xtensa -mcpu=esp32s2" CACHE STRING "Assembler Base Flags")
+remove_duplicated_flags("--target=xtensa -mcpu=esp32s2 -ffreestanding ${CMAKE_C_FLAGS}"
+                        UNIQ_CMAKE_C_FLAGS)
+set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}"
+    CACHE STRING "C Compiler Base Flags"
+    FORCE)
+
+remove_duplicated_flags("--target=xtensa -mcpu=esp32s2 -ffreestanding ${CMAKE_CXX_FLAGS}"
+                        UNIQ_CMAKE_CXX_FLAGS)
+set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}"
+    CACHE STRING "C++ Compiler Base Flags"
+    FORCE)
+
+remove_duplicated_flags("--target=xtensa -mcpu=esp32s2 ${CMAKE_ASM_FLAGS}"
+                        UNIQ_CMAKE_ASM_FLAGS)
+set(CMAKE_ASM_FLAGS "${UNIQ_CMAKE_ASM_FLAGS}"
+    CACHE STRING "Assembler Base Flags"
+    FORCE)

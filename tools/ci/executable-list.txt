@@ -22,8 +22,16 @@ components/spiffs/test_spiffsgen/test_spiffsgen.py
 components/ulp/esp32ulp_mapgen.py
 docs/check_lang_folder_sync.sh
 examples/build_system/cmake/idf_as_lib/build-esp32.sh
+examples/build_system/cmake/idf_as_lib/build-esp32c3.sh
+examples/build_system/cmake/idf_as_lib/build-esp32h2.sh
+examples/build_system/cmake/idf_as_lib/build-esp32s2.sh
+examples/build_system/cmake/idf_as_lib/build-esp32s3.sh
 examples/build_system/cmake/idf_as_lib/build.sh
 examples/build_system/cmake/idf_as_lib/run-esp32.sh
+examples/build_system/cmake/idf_as_lib/run-esp32c3.sh
+examples/build_system/cmake/idf_as_lib/run-esp32h2.sh
+examples/build_system/cmake/idf_as_lib/run-esp32s2.sh
+examples/build_system/cmake/idf_as_lib/run-esp32s3.sh
 examples/build_system/cmake/idf_as_lib/run.sh
 examples/storage/parttool/parttool_example.py
 examples/storage/parttool/parttool_example.sh

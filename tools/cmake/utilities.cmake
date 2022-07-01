@@ -283,6 +283,17 @@ function(add_c_compile_options)
     endforeach()
 endfunction()
 
+# add_compile_options variant for ASM code only
+#
+# This adds global options, set target properties for
+# component-specific flags
+function(add_asm_compile_options)
+    foreach(option ${ARGV})
+        # note: the Visual Studio Generator doesn't support this...
+        add_compile_options($<$<COMPILE_LANGUAGE:ASM>:${option}>)
+    endforeach()
+endfunction()
+
 
 # add_prebuild_library
 #
@@ -352,4 +363,18 @@ function(add_deprecated_target_alias old_target new_target)
         Please use \"${new_target}\" instead."
     )
     add_dependencies(${old_target} ${new_target})
+endfunction()
+
+
+# Remove duplicates from a string containing compilation flags
+function(remove_duplicated_flags FLAGS UNIQFLAGS)
+    set(FLAGS_LIST "${FLAGS}")
+    # Convert the given flags, as a string, into a CMake list type
+    separate_arguments(FLAGS_LIST)
+    # Remove all the duplicated flags
+    list(REMOVE_DUPLICATES FLAGS_LIST)
+    # Convert the list back to a string
+    string(REPLACE ";" " " FLAGS_LIST "${FLAGS_LIST}")
+    # Return that string to the caller
+    set(${UNIQFLAGS} "${FLAGS_LIST}" PARENT_SCOPE)
 endfunction()
