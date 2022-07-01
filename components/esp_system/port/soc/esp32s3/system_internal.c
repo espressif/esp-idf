@@ -95,10 +95,10 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     SET_PERI_REG_MASK(SYSTEM_CORE_RST_EN_REG,
-                      SYSTEM_BB_RST | SYSTEM_FE_RST | SYSTEM_MAC_RST |
-                      SYSTEM_BT_RST | SYSTEM_BTMAC_RST | SYSTEM_SDIO_RST |
-                      SYSTEM_SDIO_HOST_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
-                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_BLE_REG_RST | SYSTEM_PWR_REG_RST | SYSTEM_BB_REG_RST);
+                      SYSTEM_WIFIBB_RST | SYSTEM_FE_RST | SYSTEM_WIFIMAC_RST |
+                      SYSTEM_SDIO_RST | SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
+                      SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
     REG_WRITE(SYSTEM_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
