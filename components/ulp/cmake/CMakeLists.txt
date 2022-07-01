@@ -17,10 +17,10 @@ string(REGEX MATCH "\\(GNU Binutils\\) (${version_pattern})" as_version ${as_out
 set(as_version ${CMAKE_MATCH_1})
 
 
-message(STATUS "Building ULP app ${ULP_APP_NAME}")
+message(STATUS "Building ULP app ${ULP_APP_NAME} for ${IDF_TARGET}")
 
 if(ULP_COCPU_IS_RISCV)
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32s2.ulp.riscv.ld)
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.ulp.riscv.ld)
 else()
     message(STATUS "ULP assembler version: ${as_version}")
 
@@ -38,7 +38,7 @@ else()
                         the toolchain, or proceed at your own risk.")
     endif()
 
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
 endif()
 
 

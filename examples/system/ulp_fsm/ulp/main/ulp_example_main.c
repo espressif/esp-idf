@@ -16,7 +16,15 @@
 #include "soc/rtc_periph.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/ulp.h"
+#endif
+
 #include "ulp_main.h"
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
@@ -28,6 +36,7 @@ static void update_pulse_count(void);
 void app_main(void)
 {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    printf("cause %d\n", cause);
     if (cause != ESP_SLEEP_WAKEUP_ULP) {
         printf("Not ULP wakeup, initializing ULP\n");
         init_ulp_program();
@@ -74,12 +83,15 @@ static void init_ulp_program(void)
     rtc_gpio_pullup_dis(gpio_num);
     rtc_gpio_hold_en(gpio_num);
 
+#if CONFIG_IDF_TARGET_ESP32
     /* Disconnect GPIO12 and GPIO15 to remove current drain through
-     * pullup/pulldown resistors.
+     * pullup/pulldown resistors on modules which have these (e.g. ESP32-WROVER)
      * GPIO12 may be pulled high to select flash voltage.
      */
     rtc_gpio_isolate(GPIO_NUM_12);
     rtc_gpio_isolate(GPIO_NUM_15);
+#endif // CONFIG_IDF_TARGET_ESP32
+
     esp_deep_sleep_disable_rom_logging(); // suppress boot messages
 
     /* Set ULP wake up period to T = 20ms.

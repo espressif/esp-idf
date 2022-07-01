@@ -1,20 +1,12 @@
-// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
-/* This file contains definitions that are common between esp32/ulp.h
-   and esp32s2/ulp.h
+/* This file contains definitions that are common between esp32/ulp.h,
+   esp32s2/ulp.h and esp32s3/ulp.h
 */
 
 #ifdef __cplusplus
@@ -110,6 +102,22 @@ esp_err_t ulp_run(uint32_t entry_point);
  *      - ESP_ERR_INVALID_ARG if period_index is out of range
  */
 esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us);
+
+/**
+ * @brief Stop the ULP timer
+ *
+ * @note This will stop the ULP from waking up if halted, but will not abort any program
+ *       currently executing on the ULP.
+ */
+void ulp_timer_stop(void);
+
+/**
+ * @brief Resume the ULP timer
+ *
+ * @note This will resume an already configured timer, but does no other configuration
+ *
+ */
+void ulp_timer_resume(void);
 
 #ifdef __cplusplus
 }

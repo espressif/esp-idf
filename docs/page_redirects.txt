@@ -57,6 +57,7 @@ get-started-cmake/get-started-pico-kit-v3       hw-reference/esp32/get-started-p
 api-guides/build-system-cmake                   api-guides/build-system
 api-guides/ulp-cmake                            api-guides/ulp
 api-guides/unit-tests-cmake                     api-guides/unit-tests
+api-guides/ulps2_instruction_set.rst            api-guides/ulp_extended_instruction_set.rst
 
 api-reference/network/tcpip_adapter            api-reference/network/esp_netif
 

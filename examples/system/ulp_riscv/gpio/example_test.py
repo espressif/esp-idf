@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
 
 import re
+import time
 
 import tiny_test_fw
 import ttfw_idf
 from tiny_test_fw import DUT
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32s3'])
 def test_examples_ulp_riscv(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
     dut = env.get_dut('ulp_riscv', 'examples/system/ulp_riscv/gpio')
     dut.start_app()
@@ -15,6 +16,9 @@ def test_examples_ulp_riscv(env, extra_data):  # type: (tiny_test_fw.Env.Env, No
     dut.expect_all('Not a ULP-RISC-V wakeup, initializing it!',
                    'Entering in deep sleep',
                    timeout=30)
+
+    # Give the chip time to enter deepsleep
+    time.sleep(1)
 
     # Run two times to make sure device sleep
     # and wake up properly

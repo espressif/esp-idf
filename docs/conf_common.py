@@ -80,7 +80,9 @@ FTDI_JTAG_DOCS = ['api-guides/jtag-debugging/configure-ft2232h-jtag.rst']
 USB_SERIAL_JTAG_DOCS = ['api-guides/jtag-debugging/configure-builtin-jtag.rst',
                         'api-guides/usb-serial-jtag-console.rst']
 
-ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
+ULP_DOCS = ['api-guides/ulp.rst',
+            'api-guides/ulp_macros.rst',
+            'api-guides/ulp_instruction_set.rst']
 
 RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
 
@@ -89,8 +91,7 @@ XTENSA_DOCS = ['api-guides/hlinterrupts.rst',
 
 RISCV_DOCS = []  # type: list[str]
 
-ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
-              'api-reference/system/himem.rst',
+ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
@@ -99,7 +100,6 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'hw-reference/esp32/**'] + LEGACY_DOCS + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
-                'api-guides/ulps2_instruction_set.rst',
                 'api-guides/usb-console.rst',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/spi_slave_hd.rst',

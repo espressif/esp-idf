@@ -16,17 +16,25 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "sdkconfig.h"
+
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp32/ulp.h"
 #include "ulp_private.h"
 
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 
-#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/ulp.h"
+#endif
+
 
 static const char* TAG = "ulp";
 

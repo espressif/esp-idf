@@ -4,6 +4,6 @@ export ULP_AS := $(ULP_BINUTILS_PREFIX)as
 export ULP_LD := $(ULP_BINUTILS_PREFIX)ld
 export ULP_OBJCOPY := $(ULP_BINUTILS_PREFIX)objcopy
 export ULP_OBJDUMP := $(ULP_BINUTILS_PREFIX)objdump
-export ULP_LD_TEMPLATE := $(IDF_PATH)/components/ulp/ld/esp32.ulp.ld
+export ULP_LD_TEMPLATE := $(IDF_PATH)/components/ulp/ld/ulp_fsm.ld
 export ULP_NM := $(ULP_BINUTILS_PREFIX)nm
 export ULP_MAP_GEN := $(IDF_PATH)/components/ulp/esp32ulp_mapgen.py

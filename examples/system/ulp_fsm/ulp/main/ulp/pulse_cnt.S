@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* ULP Example: pulse counting
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -22,9 +27,11 @@
 /* ULP assembly files are passed through C preprocessor first, so include directives
    and C macros may be used in these files
  */
+#include "sdkconfig.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/soc_ulp.h"
+#include "soc/sens_reg.h"
 
 	/* Define variables, which go into .bss section (zero-initialized data) */
 	.bss
@@ -69,6 +76,14 @@ entry:
 	/* Load io_number */
 	move r3, io_number
 	ld r3, r3, 0
+
+#if CONFIG_IDF_TARGET_ESP32S2
+    /* ESP32S2 powers down RTC periph when entering deep sleep and thus by association SENS_SAR_IO_MUX_CONF_REG */
+	WRITE_RTC_FIELD(SENS_SAR_IO_MUX_CONF_REG, SENS_IOMUX_CLK_GATE_EN, 1)
+#elif CONFIG_IDF_TARGET_ESP32S3
+    /* ESP32S3 powers down RTC periph when entering deep sleep and thus by association SENS_SAR_PERI_CLK_GATE_CONF_REG */
+    WRITE_RTC_FIELD(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_IOMUX_CLK_EN, 1);
+#endif
 
 	/* Lower 16 IOs and higher need to be handled separately,
 	 * because r0-r3 registers are 16 bit wide.

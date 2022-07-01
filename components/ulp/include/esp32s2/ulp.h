@@ -1,16 +1,8 @@
-// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stdint.h>
@@ -23,9 +15,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ULP_FSM_PREPARE_SLEEP_CYCLES 2    /*!< Cycles spent by FSM preparing ULP for sleep */
-#define ULP_FSM_WAKEUP_SLEEP_CYCLES  2    /*!< Cycles spent by FSM waking up ULP from sleep */
 
 /**
  * @defgroup ulp_registers ULP coprocessor registers
@@ -63,7 +52,9 @@ extern "C" {
 #define OPCODE_ADC 5            /*!< Instruction: SAR ADC measurement (not implemented yet) */
 
 #define OPCODE_ST 6             /*!< Instruction: store indirect to RTC memory */
-#define SUB_OPCODE_ST 4         /*!< Store 32 bits, 16 MSBs contain PC, 16 LSBs contain value from source register */
+#define SUB_OPCODE_ST_AUTO 1    /*!< Automatic Storage Mode - Access continuous addresses. Use SUB_OPCODE_ST_OFFSET to configure the initial address before using this instruction. */
+#define SUB_OPCODE_ST_OFFSET 3  /*!< Automatic Storage Mode - Configure the initial address. */
+#define SUB_OPCODE_ST 4         /*!< Manual Storage Mode. Store 32 bits, 16 MSBs contain PC, 16 LSBs contain value from source register */
 
 #define OPCODE_ALU 7            /*!< Arithmetic instructions */
 #define SUB_OPCODE_ALU_REG 0    /*!< Arithmetic instruction, both source values are in register */
@@ -76,15 +67,23 @@ extern "C" {
 #define ALU_SEL_MOV 4           /*!< Copy value (immediate to destination register or source register to destination register */
 #define ALU_SEL_LSH 5           /*!< Shift left by given number of bits */
 #define ALU_SEL_RSH 6           /*!< Shift right by given number of bits */
+#define ALU_SEL_STAGE_INC 0     /*!< Increment stage count register */
+#define ALU_SEL_STAGE_DEC 1     /*!< Decrement stage count register */
+#define ALU_SEL_STAGE_RST 2     /*!< Reset stage count register */
 
 #define OPCODE_BRANCH 8         /*!< Branch instructions */
-#define SUB_OPCODE_BX  0        /*!< Branch to absolute PC (immediate or in register) */
+#define SUB_OPCODE_B  0         /*!< Branch to a relative offset */
+#define SUB_OPCODE_BX  1        /*!< Branch to absolute PC (immediate or in register) */
+#define SUB_OPCODE_BS  2        /*!< Branch to a relative offset by comparing the stage_cnt register */
 #define BX_JUMP_TYPE_DIRECT 0   /*!< Unconditional jump */
 #define BX_JUMP_TYPE_ZERO 1     /*!< Branch if last ALU result is zero */
 #define BX_JUMP_TYPE_OVF 2      /*!< Branch if last ALU operation caused and overflow */
-#define SUB_OPCODE_B  1         /*!< Branch to a relative offset */
 #define B_CMP_L 0               /*!< Branch if R0 is less than an immediate */
-#define B_CMP_GE 1              /*!< Branch if R0 is greater than or equal to an immediate */
+#define B_CMP_G 1               /*!< Branch if R0 is greater than an immediate */
+#define B_CMP_E 2               /*!< Branch if R0 is equal to an immediate */
+#define BS_CMP_L 0              /*!< Branch if stage_cnt is less than an immediate */
+#define BS_CMP_GE 1             /*!< Branch if stage_cnt is greater than or equal to an immediate */
+#define BS_CMP_LE 2             /*!< Branch if stage_cnt is less than or equal to an immediate */
 
 #define OPCODE_END 9            /*!< Stop executing the program */
 #define SUB_OPCODE_END 0        /*!< Stop executing the program and optionally wake up the chip */
@@ -99,6 +98,7 @@ extern "C" {
 #define OPCODE_MACRO 15         /*!< Not a real opcode. Used to identify labels and branches in the program */
 #define SUB_OPCODE_MACRO_LABEL 0    /*!< Label macro */
 #define SUB_OPCODE_MACRO_BRANCH 1   /*!< Branch macro */
+#define SUB_OPCODE_MACRO_LABELPC 2  /*!< Label pointer macro */
 /**@}*/
 
 /**
@@ -126,7 +126,10 @@ union ulp_insn {
     struct {
         uint32_t dreg : 2;          /*!< Register which contains data to store */
         uint32_t sreg : 2;          /*!< Register which contains address in RTC memory (expressed in words) */
-        uint32_t unused1 : 6;       /*!< Unused */
+        uint32_t label: 2;          /*!< Data label, 2-bit user defined unsigned value */
+        uint32_t upper: 1;          /*!< 0: write the low half-word; 1: write the high half-word */
+        uint32_t wr_way: 2;         /*!< 0: write the full-word; 1: with the label; 3: without the label */
+        uint32_t unused1 : 1;       /*!< Unused */
         uint32_t offset : 11;       /*!< Offset to add to sreg */
         uint32_t unused2 : 4;       /*!< Unused */
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ST) */
@@ -138,7 +141,8 @@ union ulp_insn {
         uint32_t sreg : 2;          /*!< Register which contains address in RTC memory (expressed in words) */
         uint32_t unused1 : 6;       /*!< Unused */
         uint32_t offset : 11;       /*!< Offset to add to sreg */
-        uint32_t unused2 : 7;       /*!< Unused */
+        uint32_t unused2 : 6;       /*!< Unused */
+        uint32_t rd_upper: 1;       /*!< 0: read the high half-word; 1: read the low half-word*/
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_LD) */
     } ld;                           /*!< Format of LD instruction */
 
@@ -150,19 +154,20 @@ union ulp_insn {
     struct {
         uint32_t dreg : 2;          /*!< Register which contains target PC, expressed in words (used if .reg == 1) */
         uint32_t addr : 11;         /*!< Target PC, expressed in words (used if .reg == 0) */
-        uint32_t unused : 8;        /*!< Unused */
+        uint32_t unused1 : 8;       /*!< Unused */
         uint32_t reg : 1;           /*!< Target PC in register (1) or immediate (0) */
         uint32_t type : 3;          /*!< Jump condition (BX_JUMP_TYPE_xxx) */
-        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_BX) */
+        uint32_t unused2 : 1;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_BX) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
     } bx;                           /*!< Format of BRANCH instruction (absolute address) */
 
     struct {
         uint32_t imm : 16;          /*!< Immediate value to compare against */
-        uint32_t cmp : 1;           /*!< Comparison to perform: B_CMP_L or B_CMP_GE */
+        uint32_t cmp : 2;           /*!< Comparison to perform: B_CMP_L or B_CMP_GE */
         uint32_t offset : 7;        /*!< Absolute value of target PC offset w.r.t. current PC, expressed in words */
         uint32_t sign : 1;          /*!< Sign of target PC offset: 0: positive, 1: negative */
-        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_B) */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_B) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
     } b;                            /*!< Format of BRANCH instruction (relative address) */
 
@@ -170,9 +175,10 @@ union ulp_insn {
         uint32_t dreg : 2;          /*!< Destination register */
         uint32_t sreg : 2;          /*!< Register with operand A */
         uint32_t treg : 2;          /*!< Register with operand B */
-        uint32_t unused : 15;       /*!< Unused */
+        uint32_t unused1 : 15;      /*!< Unused */
         uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_xxx */
-        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_REG) */
+        uint32_t unused2 : 1;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_ALU_REG) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
     } alu_reg;                      /*!< Format of ALU instruction (both sources are registers) */
 
@@ -180,11 +186,22 @@ union ulp_insn {
         uint32_t dreg : 2;          /*!< Destination register */
         uint32_t sreg : 2;          /*!< Register with operand A */
         uint32_t imm : 16;          /*!< Immediate value of operand B */
-        uint32_t unused : 1;        /*!< Unused */
+        uint32_t unused1: 1;        /*!< Unused */
         uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_xxx */
-        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_IMM) */
+        uint32_t unused2 : 1;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_ALU_IMM) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
     } alu_imm;                      /*!< Format of ALU instruction (one source is an immediate) */
+
+    struct {
+        uint32_t unused1: 4;        /*!< Unused */
+        uint32_t imm : 8;           /*!< Immediate value */
+        uint32_t unused2: 9;        /*!< Unused */
+        uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_xxx */
+        uint32_t unused3 : 1;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_ALU_CNT) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
+    } alu_cnt;                      /*!< Format of ALU instruction with stage count register and an immediate */
 
     struct {
         uint32_t addr : 8;          /*!< Address within either RTC_CNTL, RTC_IO, or SARADC */
@@ -234,17 +251,10 @@ union ulp_insn {
 
     struct {
         uint32_t wakeup : 1;        /*!< Set to 1 to wake up chip */
-        uint32_t unused : 24;       /*!< Unused */
-        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_WAKEUP) */
+        uint32_t unused : 25;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_WAKEUP) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_END) */
     } end;                          /*!< Format of END instruction with wakeup */
-
-    struct {
-        uint32_t cycle_sel : 4;     /*!< Select which one of SARADC_ULP_CP_SLEEP_CYCx_REG to get the sleep duration from */
-        uint32_t unused : 21;       /*!< Unused */
-        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_SLEEP) */
-        uint32_t opcode : 4;        /*!< Opcode (OPCODE_END) */
-    } sleep;                        /*!< Format of END instruction with sleep */
 
     struct {
         uint32_t label : 16;        /*!< Label number */
@@ -254,8 +264,6 @@ union ulp_insn {
     } macro;                        /*!< Format of tokens used by LABEL and BRANCH macros */
 
 };
-
-typedef union ulp_insn ulp_insn_t;
 
 _Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should be 4 bytes");
 
@@ -286,7 +294,8 @@ _Static_assert(sizeof(ulp_insn_t) == 4, "ULP coprocessor instruction size should
  * @param reg peripheral register in RTC_CNTL_, RTC_IO_, SENS_, RTC_I2C peripherals.
  * @return periph_sel value for the peripheral to which this register belongs.
  */
-static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
+static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg)
+{
     uint32_t ret = 3;
     if (reg < DR_REG_RTCCNTL_BASE) {
         assert(0 && "invalid register base");
@@ -294,9 +303,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         ret = RD_REG_PERIPH_RTC_CNTL;
     } else if (reg < DR_REG_SENS_BASE) {
         ret = RD_REG_PERIPH_RTC_IO;
-    } else if (reg < DR_REG_RTC_I2C_BASE){
+    } else if (reg < DR_REG_RTC_I2C_BASE) {
         ret = RD_REG_PERIPH_SENS;
-    } else if (reg < DR_REG_IO_MUX_BASE){
+    } else if (reg < DR_REG_IO_MUX_BASE) {
         ret = RD_REG_PERIPH_RTC_I2C;
     } else {
         assert(0 && "invalid register base");
@@ -354,7 +363,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  *
  * To disable the timer which start ULP program, use I_END()
  * instruction. I_END instruction clears the
- * RTC_CNTL_ULP_CP_SLP_TIMER_EN_S bit of RTC_CNTL_STATE0_REG
+ * RTC_CNTL_ULP_CP_SLP_TIMER_EN_S bit of RTC_CNTL_ULP_CP_TIMER_REG
  * register, which controls the ULP timer.
  */
 #define I_WAKE() { .end = { \
@@ -374,27 +383,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * the currently running program, use I_HALT().
  */
 #define I_END() \
-    I_WR_REG_BIT(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN_S, 0)
-/**
- * Select the time interval used to run ULP program.
- *
- * This instructions selects which of the SENS_SLEEP_CYCLES_Sx
- * registers' value is used by the ULP program timer.
- * When the ULP program stops at I_HALT instruction, ULP program
- * timer start counting. When the counter reaches the value of
- * the selected SENS_SLEEP_CYCLES_Sx register, ULP program
- * start running again from the start address (passed to the ulp_run
- * function).
- * There are 5 SENS_SLEEP_CYCLES_Sx registers, so 0 <= timer_idx < 5.
- *
- * By default, SENS_SLEEP_CYCLES_S0 register is used by the ULP
- * program timer.
- */
-#define I_SLEEP_CYCLE_SEL(timer_idx) { .sleep = { \
-        .cycle_sel = timer_idx, \
-        .unused = 0, \
-        .sub_opcode = SUB_OPCODE_SLEEP, \
-        .opcode = OPCODE_END } }
+    I_WR_REG_BIT(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN_S, 0)
 
 /**
  * Perform temperature sensor measurement and store it into reg_dest.
@@ -424,45 +413,247 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         .opcode = OPCODE_ADC } }
 
 /**
- * Store value from register reg_val into RTC memory.
+ * Store lower half-word, upper half-word or full-word data from register reg_val into RTC memory address.
  *
- * The value is written to an offset calculated by adding value of
+ * This instruction can be used to write data to discontinuous addresses in the RTC_SLOW_MEM.
+ * The value is written to an offset calculated by adding the value of
  * reg_addr register and offset_ field (this offset is expressed in 32-bit words).
- * 32 bits written to RTC memory are built as follows:
- * - bits [31:21] hold the PC of current instruction, expressed in 32-bit words
- * - bits [20:18] = 3'b0
- * - bits [17:16] reg_addr (0..3)
- * - bits [15:0] are assigned the contents of reg_val
+ * The storage method is dictated by the wr_way and upper field settings as summarized in the following table:
  *
- * RTC_SLOW_MEM[addr + offset_] = { insn_PC[10:0], 3'b0, reg_addr, reg_val[15:0] }
+ * @verbatim
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * | wr_way | upper |                                        data                                            |          operation         |
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |       |                                                                                        | Write full-word, including |
+ * |   0    |   X   | RTC_SLOW_MEM[addr + offset_]{31:0} = {insn_PC[10:0], 3’b0, label_[1:0], reg_val[15:0]} | the PC and the data        |
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |       |                                                                                        | Store the data with label  |
+ * |   1    |   0   | RTC_SLOW_MEM[addr + offset_]{15:0} = {label_[1:0], reg_val[13:0]}                      | in the low half-word       |
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |       |                                                                                        | Store the data with label  |
+ * |   1    |   1   | RTC_SLOW_MEM[addr + offset_]{31:16} = {label_[1:0], reg_val[13:0]}                     | in the high half-word      |
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |       |                                                                                        | Store the data without     |
+ * |   3    |   0   | RTC_SLOW_MEM[addr + offset_]{15:0} = reg_val[15:0]                                     | label in the low half-word |
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |       |                                                                                        | Store the data without     |
+ * |   3    |   1   | RTC_SLOW_MEM[addr + offset_]{31:16} = reg_val[15:0]                                    | label in the high half-word|
+ * |--------|-------|----------------------------------------------------------------------------------------|----------------------------|
+ * @endverbatim
+ *
+ * SUB_OPCODE_ST = manual_en:1, offset_set:0, wr_auto:0
  */
-#define I_ST(reg_val, reg_addr, offset_) { .st = { \
+#define I_ST_MANUAL(reg_val, reg_addr, offset_, label_, upper_, wr_way_) { .st = { \
     .dreg = reg_val, \
     .sreg = reg_addr, \
+    .label = label_, \
+    .upper = upper_, \
+    .wr_way = wr_way_, \
     .unused1 = 0, \
     .offset = offset_, \
     .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ST, \
     .opcode = OPCODE_ST } }
 
+/**
+ * Store value from register reg_val into RTC memory.
+ *
+ * I_ST() instruction provides backward compatibility for code written for esp32 to be run on esp32s2.
+ * This instruction is equivalent to calling I_ST_MANUAL() instruction with label = 0, upper = 0 and wr_way = 3.
+ */
+#define I_ST(reg_val, reg_addr, offset_)  I_ST_MANUAL(reg_val, reg_addr, offset_, 0, 0, 3)
 
 /**
- * Load value from RTC memory into reg_dest register.
+ * Store value from register reg_val to lower 16 bits of the RTC memory address.
  *
- * Loads 16 LSBs from RTC memory word given by the sum of value in reg_addr and
- * value of offset_.
+ * This instruction is equivalent to calling I_ST_MANUAL() instruction with label = 0, upper = 0 and wr_way = 3.
  */
-#define I_LD(reg_dest, reg_addr, offset_) { .ld = { \
+#define I_STL(reg_val, reg_addr, offset_)  I_ST_MANUAL(reg_val, reg_addr, offset_, 0, 0, 3)
+
+/**
+ * Store value from register reg_val to upper 16 bits of the RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_MANUAL() instruction with label = 0, upper = 1 and wr_way = 3.
+ */
+#define I_STH(reg_val, reg_addr, offset_)  I_ST_MANUAL(reg_val, reg_addr, offset_, 0, 1, 3)
+
+/**
+ * Store value from register reg_val to full 32 bit word of the RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_MANUAL() instruction with wr_way = 0.
+ */
+#define I_ST32(reg_val, reg_addr, offset_, label_)  I_ST_MANUAL(reg_val, reg_addr, offset_, label_, 0, 0)
+
+/**
+ * Store value from register reg_val with label to lower 16 bits of RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_MANUAL() instruction with label = label_, upper = 0 and wr_way = 1.
+ */
+#define I_STL_LABEL(reg_val, reg_addr, offset_, label_)  I_ST_MANUAL(reg_val, reg_addr, offset_, label_, 0, 1)
+
+/**
+ * Store value from register reg_val with label to upper 16 bits of RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_MANUAL() instruction with label = label_, upper = 1 and wr_way = 1.
+ */
+#define I_STH_LABEL(reg_val, reg_addr, offset_, label_)  I_ST_MANUAL(reg_val, reg_addr, offset_, label_, 1, 1)
+
+/**
+ * Store lower half-word, upper half-word or full-word data from register reg_val into RTC memory address with auto-increment of the offset value.
+ *
+ * This instruction can be used to write data to continuous addresses in the RTC_SLOW_MEM.
+ * The initial address must be set using the SUB_OPCODE_ST_OFFSET instruction before the auto store instruction is called.
+ * The data written to the RTC memory address could be written to the full 32 bit word or to the lower half-word or the
+ * upper half-word. The storage method is dictated by the wr_way field and the number of times the SUB_OPCODE_ST_AUTO instruction is called.
+ * write_cnt indicates the later. The following table summarizes the storage method:
+ *
+ * @verbatim
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * | wr_way | write_cnt |                                        data                                            |          operation         |
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |           |                                                                                        | Write full-word, including |
+ * |   0    |     X     | RTC_SLOW_MEM[addr + offset_]{31:0} = {insn_PC[10:0], 3’b0, label_[1:0], reg_val[15:0]} | the PC and the data        |
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |           |                                                                                        | Store the data with label  |
+ * |   1    |    odd    | RTC_SLOW_MEM[addr + offset_]{15:0} = {label_[1:0], reg_val[13:0]}                      | in the low half-word       |
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |           |                                                                                        | Store the data with label  |
+ * |   1    |    even   | RTC_SLOW_MEM[addr + offset_]{31:16} = {label_[1:0], reg_val[13:0]}                     | in the high half-word      |
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |           |                                                                                        | Store the data without     |
+ * |   3    |    odd    | RTC_SLOW_MEM[addr + offset_]{15:0} = reg_val[15:0]                                     | label in the low half-word |
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * |        |           |                                                                                        | Store the data without     |
+ * |   3    |    even   | RTC_SLOW_MEM[addr + offset_]{31:16} = reg_val[15:0]                                    | label in the high half-word|
+ * |--------|-----------|----------------------------------------------------------------------------------------|----------------------------|
+ * @endverbatim
+ *
+ * The initial address offset is incremented after each store operation as follows:
+ * - When a full-word is written, the offset is automatically incremented by 1 after each SUB_OPCODE_ST_AUTO operation.
+ * - When a half-word is written (lower half-word first), the offset is automatically incremented by 1 after two
+ *   SUB_OPCODE_ST_AUTO operations.
+ *
+ *   SUB_OPCODE_ST_AUTO =  manual_en:0, offset_set:0, wr_auto:1
+ */
+#define I_ST_AUTO(reg_val, reg_addr, label_, wr_way_) { .st = { \
+    .dreg = reg_addr, \
+    .sreg = reg_val, \
+    .label = label_, \
+    .upper = 0, \
+    .wr_way = wr_way_, \
+    .unused1 = 0, \
+    .offset = 0, \
+    .unused2 = 0, \
+    .sub_opcode = SUB_OPCODE_ST_AUTO, \
+    .opcode = OPCODE_ST } }
+
+/**
+ * Set the initial address offset for auto-store operation
+ *
+ * This instruction sets the initial address of the RTC_SLOW_MEM to be used by the auto-store operation.
+ * The offset is incremented automatically.
+ * Refer I_ST_AUTO() for detailed explaination.
+ *
+ * SUB_OPCODE_ST_OFFSET = manual_en:0, offset_set:1, wr_auto:1
+ */
+#define I_STO(offset_) { .st = { \
+    .dreg = 0, \
+    .sreg = 0, \
+    .label = 0, \
+    .upper = 0, \
+    .wr_way = 0, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused2 = 0, \
+    .sub_opcode = SUB_OPCODE_ST_OFFSET, \
+    .opcode = OPCODE_ST } }
+
+/**
+ * Store value from register reg_val to 32 bit word of the RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_AUTO() instruction with label = 0 and wr_way = 3.
+ * The data in reg_val will be either written to the lower half-word or the upper half-word of the RTC memory address
+ * depending on the count of the number of times the I_STI() instruction is called.
+ * The initial offset is automatically incremented with I_STI() is called twice.
+ * Refer I_ST_AUTO() for detailed explaination.
+ */
+#define I_STI(reg_val, reg_addr) I_ST_AUTO(reg_val, reg_addr, 0, 3)
+
+/**
+ * Store value from register reg_val with label to 32 bit word of the RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_AUTO() instruction with label = label_ and wr_way = 1.
+ * The data in reg_val will be either written to the lower half-word or the upper half-word of the RTC memory address
+ * depending on the count of the number of times the I_STI_LABEL() instruction is called.
+ * The initial offset is automatically incremented with I_STI_LABEL() is called twice.
+ * Refer I_ST_AUTO() for detailed explaination.
+ */
+#define I_STI_LABEL(reg_val, reg_addr, label_) I_ST_AUTO(reg_val, reg_addr, label_, 1)
+
+/**
+ * Store value from register reg_val to full 32 bit word of the RTC memory address.
+ *
+ * This instruction is equivalent to calling I_ST_AUTO() instruction with label = label_ and wr_way = 0.
+ * The data in reg_val will be written to the RTC memory address along with the label and the PC.
+ * The initial offset is automatically incremented each time the I_STI32() instruction is called.
+ * Refer I_ST_AUTO() for detailed explaination.
+ */
+#define I_STI32(reg_val, reg_addr, label_) I_ST_AUTO(reg_val, reg_addr, label_, 0)
+
+/**
+ * Load lower half-word, upper half-word or full-word data from RTC memory address into the register reg_dest.
+ *
+ * This instruction reads the lower half-word or upper half-word of the RTC memory address depending on the value
+ * of rd_upper_. The following table summarizes the loading method:
+ *
+ * @verbatim
+ * |----------|------------------------------------------------------|-------------------------|
+ * | rd_upper |                       data                           |        operation        |
+ * |----------|------------------------------------------------------|-------------------------|
+ * |          |                                                      | Read lower half-word of |
+ * |    0     | reg_dest{15:0} = RTC_SLOW_MEM[addr + offset_]{31:16} | the memory              |
+ * |----------|------------------------------------------------------|-------------------------|
+ * |          |                                                      | Read upper half-word of |
+ * |    1     | reg_dest{15:0} = RTC_SLOW_MEM[addr + offset_]{15:0}  | the memory              |
+ * |----------|------------------------------------------------------|-------------------------|
+ * @endverbatim
+ *
+ */
+#define I_LD_MANUAL(reg_dest, reg_addr, offset_, rd_upper_) { .ld = { \
     .dreg = reg_dest, \
     .sreg = reg_addr, \
     .unused1 = 0, \
     .offset = offset_, \
     .unused2 = 0, \
+    .rd_upper = rd_upper_, \
     .opcode = OPCODE_LD } }
 
+/**
+ * Load lower 16 bits value from RTC memory into reg_dest register.
+ *
+ * Loads 16 LSBs (rd_upper = 1) from RTC memory word given by the sum of value in reg_addr and
+ * value of offset_.
+ * I_LD() instruction provides backward compatibility for code written for esp32 to be run on esp32s2.
+ */
+#define I_LD(reg_dest, reg_addr, offset_) I_LD_MANUAL(reg_dest, reg_addr, offset_, 0)
 
 /**
- *  Branch relative if R0 less than immediate value.
+ * Load lower 16 bits value from RTC memory into reg_dest register.
+ *
+ * I_LDL() instruction and I_LD() instruction can be used interchangably.
+ */
+#define I_LDL(reg_dest, reg_addr, offset_) I_LD(reg_dest, reg_addr, offset_)
+
+/**
+ * Load upper 16 bits value from RTC memory into reg_dest register.
+ *
+ * Loads 16 MSBs (rd_upper = 0) from RTC memory word given by the sum of value in reg_addr and
+ * value of offset_.
+ */
+#define I_LDH(reg_dest, reg_addr, offset_) I_LD_MANUAL(reg_dest, reg_addr, offset_, 1)
+
+/**
+ *  Branch relative if R0 register less than the immediate value.
  *
  *  pc_offset is expressed in words, and can be from -127 to 127
  *  imm_value is a 16-bit value to compare R0 against
@@ -476,14 +667,28 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .opcode = OPCODE_BRANCH } }
 
 /**
- *  Branch relative if R0 greater or equal than immediate value.
+ *  Branch relative if R0 register greater than the immediate value.
  *
  *  pc_offset is expressed in words, and can be from -127 to 127
  *  imm_value is a 16-bit value to compare R0 against
  */
-#define I_BGE(pc_offset, imm_value) { .b = { \
+#define I_BG(pc_offset, imm_value) { .b = { \
     .imm = imm_value, \
-    .cmp = B_CMP_GE, \
+    .cmp = B_CMP_G, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_B, \
+    .opcode = OPCODE_BRANCH } }
+
+/**
+ *  Branch relative if R0 register is equal to the immediate value.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is a 16-bit value to compare R0 against
+ */
+#define I_BE(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = B_CMP_E, \
     .offset = abs(pc_offset), \
     .sign = (pc_offset >= 0) ? 0 : 1, \
     .sub_opcode = SUB_OPCODE_B, \
@@ -498,9 +703,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_BXR(reg_pc) { .bx = { \
     .dreg = reg_pc, \
     .addr = 0, \
-    .unused = 0, \
+    .unused1 = 0, \
     .reg = 1, \
     .type = BX_JUMP_TYPE_DIRECT, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -512,9 +718,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_BXI(imm_pc) { .bx = { \
     .dreg = 0, \
     .addr = imm_pc, \
-    .unused = 0, \
+    .unused1 = 0, \
     .reg = 0, \
     .type = BX_JUMP_TYPE_DIRECT, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -527,9 +734,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_BXZR(reg_pc) { .bx = { \
     .dreg = reg_pc, \
     .addr = 0, \
-    .unused = 0, \
+    .unused1 = 0, \
     .reg = 1, \
     .type = BX_JUMP_TYPE_ZERO, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -541,9 +749,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_BXZI(imm_pc) { .bx = { \
     .dreg = 0, \
     .addr = imm_pc, \
-    .unused = 0, \
+    .unused1 = 0, \
     .reg = 0, \
     .type = BX_JUMP_TYPE_ZERO, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -556,9 +765,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_BXFR(reg_pc) { .bx = { \
     .dreg = reg_pc, \
     .addr = 0, \
-    .unused = 0, \
+    .unused1 = 0, \
     .reg = 1, \
     .type = BX_JUMP_TYPE_OVF, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -570,12 +780,54 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define I_BXFI(imm_pc) { .bx = { \
     .dreg = 0, \
     .addr = imm_pc, \
-    .unused = 0, \
+    .unused1 = 0, \
     .reg = 0, \
     .type = BX_JUMP_TYPE_OVF, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
+/**
+ *  Branch relative if stage_cnt is less than or equal to the immediate value.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is a 16-bit value to compare R0 against
+ */
+#define I_BSLE(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = BS_CMP_LE, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_BS, \
+    .opcode = OPCODE_BRANCH } }
+
+/**
+ *  Branch relative if stage_cnt register is greater than or equal to the immediate value.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is a 16-bit value to compare R0 against
+ */
+#define I_BSGE(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = BS_CMP_GE, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_BS, \
+    .opcode = OPCODE_BRANCH } }
+
+/**
+ *  Branch relative if stage_cnt register is less than the immediate value.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is a 16-bit value to compare R0 against
+ */
+#define I_BSL(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = BS_CMP_L, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_BS, \
+    .opcode = OPCODE_BRANCH } }
 
 /**
  * Addition: dest = src1 + src2
@@ -584,8 +836,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src1, \
     .treg = reg_src2, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_ADD, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -596,8 +849,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src1, \
     .treg = reg_src2, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_SUB, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -608,8 +862,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src1, \
     .treg = reg_src2, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_AND, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -620,8 +875,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src1, \
     .treg = reg_src2, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_OR, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -632,8 +888,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .treg = 0, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_MOV, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -644,8 +901,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .treg = reg_shift, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_LSH, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -657,8 +915,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .treg = reg_shift, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_RSH, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -669,8 +928,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_ADD, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -682,8 +942,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_SUB, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -694,8 +955,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_AND, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -706,8 +968,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_OR, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -718,8 +981,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = 0, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_MOV, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -730,8 +994,9 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_LSH, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -743,9 +1008,46 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .dreg = reg_dest, \
     .sreg = reg_src, \
     .imm = imm_, \
-    .unused = 0, \
+    .unused1 = 0, \
     .sel = ALU_SEL_RSH, \
+    .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
+    .opcode = OPCODE_ALU } }
+
+/**
+ * Increment stage_cnt register by an immediate: stage_cnt = stage_cnt + imm
+ */
+#define I_STAGE_INC(reg_dest, reg_src, imm_) { .alu_cnt = { \
+    .unused1 = 0, \
+    .imm = imm_, \
+    .unused2 = 0, \
+    .sel = ALU_SEL_STAGE_INC, \
+    .unused3 = 0, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+
+/**
+ * Decrement stage_cnt register by an immediate: stage_cnt = stage_cnt - imm
+ */
+#define I_STAGE_DEC(reg_dest, reg_src, imm_) { .alu_cnt = { \
+    .unused1 = 0, \
+    .imm = imm_, \
+    .unused2 = 0, \
+    .sel = ALU_SEL_STAGE_DEC, \
+    .unused3 = 0, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+
+/**
+ * Reset stage_cnt register by an immediate: stage_cnt = 0
+ */
+#define I_STAGE_RST(reg_dest, reg_src, imm_) { .alu_cnt = { \
+    .unused1 = 0, \
+    .imm = imm_, \
+    .unused2 = 0, \
+    .sel = ALU_SEL_STAGE_RST, \
+    .unused3 = 0, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
     .opcode = OPCODE_ALU } }
 
 /**
@@ -784,16 +1086,28 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_BL(0, imm_value)
 
 /**
- * Macro: branch to label label_num if R0 is greater or equal than immediate value
+ * Macro: branch to label label_num if R0 is greater than immediate value
  *
  * This macro generates two ulp_insn_t values separated by a comma, and should
  * be used when defining contents of ulp_insn_t arrays. First value is not a
  * real instruction; it is a token which is removed by ulp_process_macros_and_load
  * function.
  */
-#define M_BGE(label_num, imm_value) \
+#define M_BG(label_num, imm_value) \
     M_BRANCH(label_num), \
-    I_BGE(0, imm_value)
+    I_BG(0, imm_value)
+
+/**
+ * Macro: branch to label label_num if R0 equal to the immediate value
+ *
+ * This macro generates two ulp_insn_t values separated by a comma, and should
+ * be used when defining contents of ulp_insn_t arrays. First value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_BE(label_num, imm_value) \
+    M_BRANCH(label_num), \
+    I_BE(0, imm_value)
 
 /**
  * Macro: unconditional branch to label
@@ -830,7 +1144,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
 #define M_BXF(label_num) \
     M_BRANCH(label_num), \
     I_BXFI(0)
-
 
 
 #define RTC_SLOW_MEM ((uint32_t*) 0x50000000)       /*!< RTC slow memory, 8k size */

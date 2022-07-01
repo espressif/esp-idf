@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -824,7 +824,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
-#if defined(CONFIG_ESP32_ULP_COPROC_ENABLED) || defined(CONFIG_ESP32S2_ULP_COPROC_ENABLED)
+#if defined(CONFIG_ESP32_ULP_COPROC_ENABLED) || defined(CONFIG_ESP32S2_ULP_COPROC_ENABLED) || defined(CONFIG_ESP32S3_ULP_COPROC_ENABLED)
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
@@ -854,8 +854,13 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
     return ESP_ERR_INVALID_STATE;
 #endif // CONFIG_ESP32_ULP_COPROC_ENABLED
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+#if CONFIG_ESP32S2_ULP_COPROC_RISCV || CONFIG_ESP32S3_ULP_COPROC_RISCV
+    s_config.wakeup_triggers |= (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
+#else // ULP_FSM
+    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN);
+    return ESP_OK;
+#endif //ESP32S2_ULP_COPROC_RISCV || ESP32S3_ULP_COPROC_RISCV
 #else
     return ESP_ERR_NOT_SUPPORTED;
 #endif
@@ -1194,7 +1199,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_BT_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_BT;
 #endif
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_RISCV_COPROC_SUPPORTED
     } else if (wakeup_cause & RTC_COCPU_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
     } else if (wakeup_cause & RTC_COCPU_TRAP_TRIG_EN) {
