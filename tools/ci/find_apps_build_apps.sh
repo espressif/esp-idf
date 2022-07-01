@@ -161,7 +161,7 @@ if [ "${TEST_TYPE}" = "unit_test" ]; then
 
     rm -rf ${dst}
     mkdir -p ${dst}
-    cp ${src}/{*.bin,*.elf,*.map,sdkconfig,flasher_args.json} ${dst}/
+    cp ${src}/{*.bin,*.elf,*.map,sdkconfig,flasher_args.json,flash_project_args} ${dst}/
 
     mkdir -p ${dst}/bootloader
     cp ${src}/bootloader/*.bin ${dst}/bootloader/
