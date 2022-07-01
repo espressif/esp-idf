@@ -26,18 +26,28 @@
 #include "osi/thread.h"
 #include "esp_bt.h"
 #include "stack/hcimsgs.h"
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+#include "osi/mutex.h"
+#endif
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 #include "stack/hcimsgs.h"
 
+#define HCI_RECV_HEAP_MONITOR_SIZE (5120)  // 5k buffer
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
 extern bool BTU_check_queue_is_congest(void);
 
+typedef enum {
+    ADV_PKT   = 0,
+    OTHER_PKT = 1
+} hci_recv_pkt_type_t;
+
+typedef void (* hci_recv_fail_cb_t)(hci_recv_pkt_type_t type, uint16_t pkt_len, uint32_t free_heap_size);
 
 static const uint8_t preamble_sizes[] = {
     HCI_COMMAND_PREAMBLE_SIZE,
@@ -65,6 +75,11 @@ static const hci_hal_t interface;
 static const hci_hal_callbacks_t *callbacks;
 static const esp_vhci_host_callback_t vhci_host_cb;
 static osi_thread_t *hci_h4_thread;
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+static osi_mutex_t adv_flow_lock;
+static esp_timer_handle_t monitor_timer = NULL;
+#endif
+static hci_recv_fail_cb_t hci_recv_fail_cb = NULL;
 
 static void host_send_pkt_available_cb(void);
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len);
@@ -72,11 +87,30 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len);
 static void hci_hal_h4_rx_handler(void *arg);
 static void event_uart_has_bytes(fixed_queue_t *queue);
 
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+static void monitor_timer_cb(void* arg);
+#endif
+
+esp_err_t esp_bt_register_hci_recv_fail_callback(hci_recv_fail_cb_t callback)
+{
+    if (callback) {
+        hci_recv_fail_cb = callback;
+        return ESP_OK;
+    }
+
+    return ESP_FAIL;
+}
 
 static void hci_hal_env_init(
     size_t buffer_size,
     size_t max_buffer_count)
 {
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    const esp_timer_create_args_t monitor_timer_args = {
+        .callback = &monitor_timer_cb,
+        .name = "monitor_timer"
+    };
+#endif
     assert(buffer_size > 0);
     assert(max_buffer_count > 0);
 
@@ -90,6 +124,13 @@ static void hci_hal_env_init(
         HCI_TRACE_ERROR("%s unable to create rx queue.\n", __func__);
     }
 
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_mutex_new(&adv_flow_lock);
+    esp_timer_create(&monitor_timer_args, &monitor_timer);
+    assert(monitor_timer);
+    esp_timer_start_periodic(monitor_timer, 5000000);
+#endif
+
     return;
 }
 
@@ -97,6 +138,15 @@ static void hci_hal_env_deinit(void)
 {
     fixed_queue_free(hci_hal_env.rx_q, osi_free_func);
     hci_hal_env.rx_q = NULL;
+
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_mutex_free(&adv_flow_lock);
+    if (monitor_timer) {
+        esp_timer_stop(monitor_timer);
+        esp_timer_delete(monitor_timer);
+        monitor_timer = NULL;
+    }
+#endif
 }
 
 static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thread)
@@ -205,13 +255,12 @@ static void hci_packet_complete(BT_HDR *packet){
 }
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
-bool host_recv_adv_packet(BT_HDR *packet)
+bool host_recv_adv_packet(uint8_t *data)
 {
-    assert(packet);
-    if(packet->data[0] == DATA_TYPE_EVENT && packet->data[1] == HCI_BLE_EVENT) {
-        if(packet->data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT 
+    if(data[0] == DATA_TYPE_EVENT && data[1] == HCI_BLE_EVENT) {
+        if(data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT || (data[3] == HCI_BLE_DIRECT_ADV_EVT)
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-        || packet->data[3] ==  HCI_BLE_ADV_DISCARD_REPORT_EVT
+        || (data[3] == HCI_BLE_ADV_DISCARD_REPORT_EVT)
 #endif
         ) {
             return true;
@@ -221,21 +270,37 @@ bool host_recv_adv_packet(BT_HDR *packet)
 }
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-static void hci_update_adv_report_flow_control(BT_HDR *packet)
+static void hci_update_adv_report_flow_control(bool need_add)
 {
-    // this is adv packet
-    if(host_recv_adv_packet(packet)) {
+    uint16_t temp_adv_free_num;
+
+    osi_mutex_lock(&adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    if (need_add) {
         // update adv free number
         hci_hal_env.adv_free_num ++;
-        if (esp_vhci_host_check_send_available()){
-            // send hci cmd
-            btsnd_hcic_ble_update_adv_report_flow_control(hci_hal_env.adv_free_num);
-            hci_hal_env.adv_free_num = 0;
-        } else {
-            //do nothing
-        }
     }
 
+    temp_adv_free_num = hci_hal_env.adv_free_num;
+    osi_mutex_unlock(&adv_flow_lock);
+
+    if ((temp_adv_free_num > 0) && (esp_vhci_host_check_send_available())){
+        // send hci cmd
+        if (btsnd_hcic_ble_update_adv_report_flow_control(temp_adv_free_num)) {
+            // update adv free number
+            osi_mutex_lock(&adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+            hci_hal_env.adv_free_num -= temp_adv_free_num;
+            osi_mutex_unlock(&adv_flow_lock);
+        } else {
+            HCI_TRACE_ERROR("Send Adv Flow HCI command fail");
+        }
+    } else {
+        //do nothing
+    }
+}
+
+static void monitor_timer_cb(void* arg)
+{
+    hci_update_adv_report_flow_control(false);
 }
 #endif
 
@@ -296,11 +361,13 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     }
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-    hci_update_adv_report_flow_control(packet);
+    if (host_recv_adv_packet(packet->data)) {
+        hci_update_adv_report_flow_control(true);
+    }
 #endif
 
 #if SCAN_QUEUE_CONGEST_CHECK
-    if(BTU_check_queue_is_congest() && host_recv_adv_packet(packet)) {
+    if(BTU_check_queue_is_congest() && host_recv_adv_packet(packet->data)) {
         HCI_TRACE_DEBUG("BtuQueue is congested");
         osi_free(packet);
         return;
@@ -336,13 +403,20 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         return 0;
     }
 
+    // Determine whether it is a broadcase packet, if so, check the free heap size.
+    if (host_recv_adv_packet(data)) {
+        if (esp_get_free_heap_size() < HCI_RECV_HEAP_MONITOR_SIZE) {
+            goto hci_recv_fail;
+        }
+    }
+
     pkt_size = BT_HDR_SIZE + len;
     pkt = (BT_HDR *) osi_calloc(pkt_size);
-    //pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
     if (!pkt) {
         HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
-        return -1;
+        goto hci_recv_fail;
     }
+
     pkt->offset = 0;
     pkt->len = len;
     pkt->layer_specific = 0;
@@ -352,6 +426,23 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
+
+    return 0;
+
+hci_recv_fail:
+
+    if (host_recv_adv_packet(data)) {
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+        hci_update_adv_report_flow_control(true);
+#endif
+        if (hci_recv_fail_cb) {
+            hci_recv_fail_cb(ADV_PKT, len, esp_get_free_heap_size());
+        }
+    } else {
+        if (hci_recv_fail_cb) {
+            hci_recv_fail_cb(OTHER_PKT, len, esp_get_free_heap_size());
+        }
+    }
 
     return 0;
 }

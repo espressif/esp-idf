@@ -30,6 +30,15 @@ typedef enum {
     ESP_BLUEDROID_STATUS_ENABLED                     /*!< Bluetooth initialized and enabled */
 } esp_bluedroid_status_t;
 
+typedef enum {
+    ADV_PKT   = 0,
+    OTHER_PKT = 1
+} hci_recv_pkt_type_t;
+
+typedef void (* hci_recv_fail_cb_t)(hci_recv_pkt_type_t type, uint16_t pkt_len, uint32_t free_heap_size);
+
+extern esp_err_t esp_bt_register_hci_recv_fail_callback(hci_recv_fail_cb_t callback);
+
 /**
  * @brief     Get bluetooth stack status
  *
