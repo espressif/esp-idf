@@ -1006,7 +1006,6 @@ components/sdmmc/sdmmc_mmc.c
 components/sdmmc/sdmmc_sd.c
 components/soc/esp32/adc_periph.c
 components/soc/esp32/dac_periph.c
-components/soc/esp32/gpio_periph.c
 components/soc/esp32/i2c_periph.c
 components/soc/esp32/include/soc/apb_ctrl_reg.h
 components/soc/esp32/include/soc/apb_ctrl_struct.h
@@ -1075,7 +1074,6 @@ components/soc/esp32/sigmadelta_periph.c
 components/soc/esp32/spi_periph.c
 components/soc/esp32/touch_sensor_periph.c
 components/soc/esp32/uart_periph.c
-components/soc/esp32c3/gpio_periph.c
 components/soc/esp32c3/i2c_bbpll.h
 components/soc/esp32c3/i2c_periph.c
 components/soc/esp32c3/include/soc/apb_ctrl_reg.h
@@ -1251,7 +1249,6 @@ components/soc/esp32s2/touch_sensor_periph.c
 components/soc/esp32s2/uart_periph.c
 components/soc/esp32s2/usb_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
-components/soc/esp32s3/gpio_periph.c
 components/soc/esp32s3/i2c_periph.c
 components/soc/esp32s3/include/soc/apb_ctrl_reg.h
 components/soc/esp32s3/include/soc/apb_ctrl_struct.h
