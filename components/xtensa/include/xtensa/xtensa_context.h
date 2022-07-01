@@ -71,10 +71,18 @@ We need to undef due to redefinition from xtruntime.h
 
 #if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
 
+#ifdef __clang__
+#define STRUCT_BEGIN                            .set XT_STRUCT_OFFSET, 0
+#define STRUCT_FIELD(ctype,size,asname,name)    .set asname, XT_STRUCT_OFFSET; .set XT_STRUCT_OFFSET, asname + size
+#define STRUCT_AFIELD(ctype,size,asname,name,n) .set asname, XT_STRUCT_OFFSET;\
+                                                .set XT_STRUCT_OFFSET, asname + (size)*(n);
+#define STRUCT_END(sname)                       .set sname##Size, XT_STRUCT_OFFSET;
+#else // __clang__
 #define STRUCT_BEGIN            .pushsection .text; .struct 0
 #define STRUCT_FIELD(ctype,size,asname,name)    asname: .space  size
 #define STRUCT_AFIELD(ctype,size,asname,name,n) asname: .space  (size)*(n)
 #define STRUCT_END(sname)       sname##Size:; .popsection
+#endif // __clang__
 
 #else
 
