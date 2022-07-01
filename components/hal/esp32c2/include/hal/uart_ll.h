@@ -11,6 +11,7 @@
 #pragma once
 #include "hal/uart_types.h"
 #include "soc/uart_periph.h"
+#include "hal/clk_tree_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -157,7 +158,7 @@ static inline uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
         case 2:
             return RTC_CLK_FREQ;
         case 3:
-            return XTAL_CLK_FREQ;
+            return clk_ll_xtal_load_freq_mhz() * MHZ;
     }
 }
 
