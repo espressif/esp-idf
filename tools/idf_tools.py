@@ -1022,9 +1022,20 @@ class IDFRecord:
     def features(self) -> List[str]:
         return self._features
 
-    def extend_features(self, features: List[str]) -> None:
-        # Features can be only updated, but always maintain existing features.
-        self._features = list(set(features + self._features))
+    def update_features(self, add: Tuple[str, ...] = (), remove: Tuple[str, ...] = ()) -> None:
+        # Update features, but maintain required feature 'core'
+        # If the same feature is present in both argument's tuples, do not update this feature
+        add_set = set(add)
+        remove_set = set(remove)
+        # Remove duplicates
+        features_to_add = add_set.difference(remove_set)
+        features_to_remove = remove_set.difference(add_set)
+
+        features = set(self._features)
+        features.update(features_to_add)
+        features.difference_update(features_to_remove)
+        features.add('core')
+        self._features = list(features)
 
     @property
     def targets(self) -> List[str]:
@@ -1051,7 +1062,7 @@ class IDFRecord:
             # When some of these key attributes, which are irreplaceable with default values, are not found, raise VallueError
             raise ValueError('Inconsistent record')
 
-        idf_record_obj.extend_features(record_dict.get('features', []))
+        idf_record_obj.update_features(record_dict.get('features', []))
         idf_record_obj.extend_targets(record_dict.get('targets', []))
 
         unset = record_dict.get('unset')
@@ -1328,13 +1339,18 @@ def feature_to_requirements_path(feature):  # type: (str) -> str
     return os.path.join(global_idf_path or '', 'tools', 'requirements', 'requirements.{}.txt'.format(feature))
 
 
-def add_and_check_features(idf_env_obj, features_str):  # type: (IDFEnv, str) -> list[str]
+def process_and_check_features(idf_env_obj, features_str):  # type: (IDFEnv, str) -> list[str]
     new_features = []
+    remove_features = []
     for new_feature_candidate in features_str.split(','):
-        if os.path.isfile(feature_to_requirements_path(new_feature_candidate)):
-            new_features += [new_feature_candidate]
-
-    idf_env_obj.get_active_idf_record().extend_features(new_features)
+        if new_feature_candidate.startswith('-'):
+            remove_features += [new_feature_candidate.lstrip('-')]
+        else:
+            new_feature_candidate = new_feature_candidate.lstrip('+')
+            # Feature to be added needs to be checked if is valid
+            if os.path.isfile(feature_to_requirements_path(new_feature_candidate)):
+                new_features += [new_feature_candidate]
+    idf_env_obj.get_active_idf_record().update_features(tuple(new_features), tuple(remove_features))
     return idf_env_obj.get_active_idf_record().features
 
 
@@ -1847,7 +1863,7 @@ def get_wheels_dir():  # type: () -> Optional[str]
 
 def get_requirements(new_features):  # type: (str) -> list[str]
     idf_env_obj = IDFEnv.get_idf_env()
-    features = add_and_check_features(idf_env_obj, new_features)
+    features = process_and_check_features(idf_env_obj, new_features)
     idf_env_obj.save()
     return [feature_to_requirements_path(feature) for feature in features]
 
