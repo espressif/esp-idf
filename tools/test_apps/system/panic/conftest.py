@@ -13,11 +13,11 @@ import pexpect
 import pytest
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
+from panic_utils import NoGdbProcessError, attach_logger, quote_string, sha256, verify_valid_gdb_subprocess
 from pygdbmi.gdbcontroller import GdbController
 from pytest_embedded_idf.app import IdfApp
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.serial import IdfSerial
-from utils import NoGdbProcessError, attach_logger, quote_string, sha256, verify_valid_gdb_subprocess
 
 
 class PanicTestDut(IdfDut):
