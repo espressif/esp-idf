@@ -125,7 +125,7 @@ def test_examples_protocol_advanced_https_ota_example(dut: Dut) -> None:
         thread1.daemon = True
         thread1.start()
         for i in range(iterations):
-            dut.expect('Loaded app from partition at offset', timeout=30)
+            dut.expect('Loaded app from partition at offset', timeout=60)
             try:
                 ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
                 print('Connected to AP with IP: {}'.format(ip_address))
