@@ -120,6 +120,26 @@ void esp_efuse_utility_clear_program_registers(void)
     ets_efuse_clear_program_registers();
 }
 
+esp_err_t esp_efuse_utility_check_errors(void)
+{
+    if (REG_GET_BIT(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_ERR_RST_ENABLE)) {
+        for (unsigned i = 0; i < 5; i++) {
+            uint32_t error_reg = REG_READ(EFUSE_RD_REPEAT_ERR0_REG + i * 4);
+            if (error_reg) {
+                uint32_t data_reg = REG_READ(EFUSE_RD_REPEAT_DATA0_REG + i * 4);
+                if (error_reg & data_reg) {
+                    // For 0001 situation (4x coding scheme):
+                    // an error bit points that data bit is wrong in case the data bit equals 1. (need to reboot in this case).
+                    ESP_EARLY_LOGE(TAG, "Error in EFUSE_RD_REPEAT_DATA%d_REG of BLOCK0 (error_reg=0x%08x, data_reg=0x%08x). Need to reboot", i, error_reg, data_reg);
+                    efuse_read();
+                    return ESP_FAIL;
+                }
+            }
+        }
+    }
+    return ESP_OK;
+}
+
 // Burn values written to the efuse write registers
 esp_err_t esp_efuse_utility_burn_chip(void)
 {

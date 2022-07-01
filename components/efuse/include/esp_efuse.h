@@ -761,6 +761,20 @@ esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t key
 esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys);
 #endif
 
+/**
+ * @brief   Checks eFuse errors in BLOCK0.
+ *
+ * @note Refers to ESP32-C3 only.
+ *
+ * It does a BLOCK0 check if eFuse EFUSE_ERR_RST_ENABLE is set.
+ * If BLOCK0 has an error, it prints the error and returns ESP_FAIL, which should be treated as esp_restart.
+ *
+ * @return
+ *         - ESP_OK: No errors in BLOCK0.
+ *         - ESP_FAIL: Error in BLOCK0 requiring reboot.
+ */
+esp_err_t esp_efuse_check_errors(void);
+
 #ifdef __cplusplus
 }
 #endif

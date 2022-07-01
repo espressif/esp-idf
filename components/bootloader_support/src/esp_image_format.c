@@ -250,7 +250,11 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 #if CONFIG_BOOTLOADER_SKIP_VALIDATE_ALWAYS
     mode = ESP_IMAGE_LOAD_NO_VALIDATE;
 #elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
-    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON
+#if SOC_EFUSE_HAS_EFUSE_RST_BUG
+        || esp_rom_get_reset_reason(0) == RESET_REASON_CORE_EFUSE_CRC
+#endif
+        ) {
         mode = ESP_IMAGE_LOAD_NO_VALIDATE;
     }
 #endif // CONFIG_BOOTLOADER_SKIP_...
