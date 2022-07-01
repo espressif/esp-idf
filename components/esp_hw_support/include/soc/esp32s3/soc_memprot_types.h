@@ -78,27 +78,42 @@ typedef struct {
     int target_cpu[portNUM_PROCESSORS];  /*!< Array of CPU/core IDs required to receive given PMS protection */
 } esp_memp_config_t;
 
+//2-CPU configuration
 #if portNUM_PROCESSORS > 1
+
+//default IDF configuration (basic memory regions, split line detection, locked, panic mode on)
 #define ESP_MEMPROT_DEFAULT_CONFIG() { \
     .invoke_panic_handler = true, \
     .lock_feature = true, \
     .split_addr = NULL, \
     /* .mem_type_mask = MEMPROT_TYPE_ALL, \ - unless IDF-5208 gets merged */ \
     .mem_type_mask = MEMPROT_TYPE_IRAM0_SRAM | MEMPROT_TYPE_DRAM0_SRAM, \
-    .target_cpu_count = portNUM_PROCESSORS, \
+    .target_cpu_count = 2, \
     .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM} \
 }
-#else
+//zero (no-go) configuration
+#define ESP_MEMPROT_ZERO_CONFIG() { \
+    .target_cpu_count = 2, \
+    .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM} \
+}
+
+#else //1-CPU configuration
+
 #define ESP_MEMPROT_DEFAULT_CONFIG() { \
     .invoke_panic_handler = true, \
     .lock_feature = true, \
     .split_addr = NULL,                \
     /* .mem_type_mask = MEMPROT_TYPE_ALL, \ - unless IDF-5208 gets merged */ \
     .mem_type_mask = MEMPROT_TYPE_IRAM0_SRAM | MEMPROT_TYPE_DRAM0_SRAM, \
-    .target_cpu_count = portNUM_PROCESSORS, \
+    .target_cpu_count = 1, \
     .target_cpu = {PRO_CPU_NUM} \
 }
-#endif
+#define ESP_MEMPROT_ZERO_CONFIG() { \
+    .target_cpu_count = 1, \
+    .target_cpu = {PRO_CPU_NUM} \
+}
+
+#endif //end of CPU-count based defines
 
 /**
  * @brief Converts Memory protection type to string
