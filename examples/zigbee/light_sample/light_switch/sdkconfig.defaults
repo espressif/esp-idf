@@ -31,6 +31,6 @@ CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0=n
 # Zboss
 #
 CONFIG_ZB_ENABLED=y
-CONFIG_ZB_ZED=y
+CONFIG_ZB_ZCZR=y
 # end of Zboss
 # end of Component config

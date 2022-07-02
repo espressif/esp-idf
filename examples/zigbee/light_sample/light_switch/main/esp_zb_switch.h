@@ -42,6 +42,7 @@
 /* Zigbee configuration */
 #define IEEE_CHANNEL_MASK               (1l << 13)  /* ZigBee default setting is channel 13 for light example usage */
 #define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example  */
+#define MAX_CHILDREN                    10          /* the max number of connected devices */
 
 /* ZCL configuration */
 #define HA_ONOFF_SWITCH_ENDPOINT             1
@@ -58,7 +59,6 @@ typedef struct light_switch_bulb_params_s {
 typedef struct {
     zb_zcl_basic_attrs_t            basic_attr;
     zb_zcl_identify_attrs_t         identify_attr;
-    zb_zcl_on_off_attrs_t           on_off_attr;
     light_switch_bulb_params_t      bulb_params;
 } switch_device_ctx_t;
 #define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \

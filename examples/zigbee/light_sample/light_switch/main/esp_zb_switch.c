@@ -36,13 +36,15 @@
  */
 
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_zb_switch.h"
 
 /**
- * @note Make sure set idf.py menuconfig in zigbee component as zigbee end device!
+ * @note Make sure set idf.py menuconfig in zigbee component as zigbee coordinator device!
 */
-#if !defined ZB_ED_ROLE
-#error Define ZB_ED_ROLE in idf.py menuconfig to compile light switch (End Device) source code.
+#if defined ZB_ED_ROLE
+#error Define ZB_COORDINATOR_ROLE in idf.py menuconfig to compile light switch source code.
 #endif
 
 /* define Button function currently only 1 switch define */
@@ -56,8 +58,6 @@ static switch_device_ctx_t esp_switch_ctx = {
     .basic_attr.power_source = ZB_ZCL_BASIC_POWER_SOURCE_UNKNOWN,
     /* identify cluster attributes data */
     .identify_attr.identify_time = 0,
-    /* On_Off cluster attributes data */
-    .on_off_attr.on_off = 0,
     /* bulb parameters */
     .bulb_params.short_addr = 0xffff,
 };
@@ -233,11 +233,12 @@ static void bdb_start_top_level_commissioning_cb(zb_uint8_t mode_mask)
  */
 void zboss_signal_handler(zb_bufid_t bufid)
 {
-    zb_zdo_app_signal_hdr_t       *p_sg_p = NULL;
-    zb_zdo_app_signal_type_t       sig    = zb_get_app_signal(bufid, &p_sg_p);
-    zb_ret_t                       status = ZB_GET_APP_SIGNAL_STATUS(bufid);
+    zb_zdo_app_signal_hdr_t *p_sg_p       = NULL;
+    zb_uint8_t status = ZB_GET_APP_SIGNAL_STATUS(bufid);
+    zb_zdo_app_signal_type_t sig = zb_get_app_signal(bufid, &p_sg_p);
+    zb_zdo_signal_device_annce_params_t *dev_annce_params = NULL;
     zb_ret_t                       zb_err_code;
-
+    zb_nlme_permit_joining_request_t *request = NULL;
     switch (sig) {
     case ZB_ZDO_SIGNAL_SKIP_STARTUP:
         ESP_LOGI(TAG, "Zigbee stack initialized");
@@ -245,13 +246,13 @@ void zboss_signal_handler(zb_bufid_t bufid)
         break;
     case ZB_BDB_SIGNAL_DEVICE_FIRST_START:
         if (status == RET_OK) {
-            ESP_LOGI(TAG, "Start network steering");
-            bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
+            ESP_LOGI(TAG, "Start network formation");
+            bdb_start_top_level_commissioning(ZB_BDB_NETWORK_FORMATION);
         } else {
             ESP_LOGE(TAG, "Failed to initialize Zigbee stack (status: %d)", status);
         }
         break;
-    case ZB_BDB_SIGNAL_STEERING:
+    case ZB_BDB_SIGNAL_FORMATION:
         if (status == RET_OK) {
             zb_ext_pan_id_t extended_pan_id;
             zb_get_extended_pan_id(extended_pan_id);
@@ -259,17 +260,29 @@ void zboss_signal_handler(zb_bufid_t bufid)
                      extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                      extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
                      ZB_PIBCACHE_PAN_ID());
-            /* check the light device address */
-            if (!esp_zb_already_find_light_bulb()) {
-                zb_err_code = ZB_SCHEDULE_APP_ALARM(esp_zb_find_light_bulb, bufid, MATCH_DESC_REQ_START_DELAY);
-                ESP_ERROR_CHECK(zb_err_code);
-                zb_err_code = ZB_SCHEDULE_APP_ALARM(esp_zb_find_light_bulb_timeout, 0, MATCH_DESC_REQ_TIMEOUT);
-                ESP_ERROR_CHECK(zb_err_code);
-                bufid = 0; /* Do not free buffer - it will be reused by find_light_bulb callback */
-            }
+            bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
         } else {
-            ESP_LOGI(TAG, "Network steering was not successful (status: %d)", status);
-            ZB_SCHEDULE_APP_ALARM((zb_callback_t)bdb_start_top_level_commissioning_cb, ZB_BDB_NETWORK_STEERING, ZB_TIME_ONE_SECOND);
+            ESP_LOGI(TAG, "Restart network formation (status: %d)", status);
+            ZB_SCHEDULE_APP_ALARM((zb_callback_t)bdb_start_top_level_commissioning_cb, ZB_BDB_NETWORK_FORMATION, ZB_TIME_ONE_SECOND);
+        }
+        break;
+    case ZB_BDB_SIGNAL_STEERING:
+        if (status == RET_OK) {
+            request = ZB_BUF_GET_PARAM(bufid, zb_nlme_permit_joining_request_t);
+            ESP_LOGI(TAG, "Network steering started/refreshed");
+            ZB_SCHEDULE_APP_ALARM((zb_callback_t)bdb_start_top_level_commissioning_cb, ZB_BDB_NETWORK_STEERING, (request->permit_duration)*ZB_TIME_ONE_SECOND);
+        }
+        break;
+    case ZB_ZDO_SIGNAL_DEVICE_ANNCE:
+        dev_annce_params = ZB_ZDO_SIGNAL_GET_PARAMS(p_sg_p, zb_zdo_signal_device_annce_params_t);
+        ESP_LOGI(TAG, "New device commissioned or rejoined (short: 0x%04hx)", dev_annce_params->device_short_addr);
+        /* check the light device address */
+        if (!esp_zb_already_find_light_bulb()) {
+            zb_err_code = ZB_SCHEDULE_APP_ALARM(esp_zb_find_light_bulb, bufid, MATCH_DESC_REQ_START_DELAY);
+            ESP_ERROR_CHECK(zb_err_code);
+            zb_err_code = ZB_SCHEDULE_APP_ALARM(esp_zb_find_light_bulb_timeout, 0, MATCH_DESC_REQ_TIMEOUT);
+            ESP_ERROR_CHECK(zb_err_code);
+            bufid = 0; /* Do not free buffer - it will be reused by find_light_bulb callback */
         }
         break;
     default:
@@ -281,29 +294,30 @@ void zboss_signal_handler(zb_bufid_t bufid)
     }
 }
 
-void app_main(void)
+static void zboss_task(void *pvParameters)
 {
-    zb_ret_t    zb_err_code;
-    zb_esp_platform_config_t config = {
-        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
-        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
-    };
-
-    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
     /* initialize Zigbee stack. */
     ZB_INIT("light_switch");
-    zb_set_network_ed_role(IEEE_CHANNEL_MASK);
+    zb_set_network_coordinator_role(IEEE_CHANNEL_MASK);
+    zb_set_max_children(MAX_CHILDREN);
     zb_set_nvram_erase_at_start(ERASE_PERSISTENT_CONFIG);
-    zb_set_ed_timeout(ED_AGING_TIMEOUT_64MIN);
-    zb_set_keepalive_timeout(ZB_MILLISECONDS_TO_BEACON_INTERVAL(3000));
     /* hardware related and device init */
     switch_driver_init(button_func_pair, PAIR_SIZE(button_func_pair), esp_zb_buttons_handler);
     /* register on_off switch device context (endpoints) */
     ZB_AF_REGISTER_DEVICE_CTX(&on_off_switch_ctx);
-    zb_err_code = zboss_start_no_autostart();
-    ESP_ERROR_CHECK(zb_err_code);
+    ESP_ERROR_CHECK(zboss_start_no_autostart());
 
     while (1) {
         zboss_main_loop_iteration();
     }
+}
+void app_main(void)
+{
+    zb_esp_platform_config_t config = {
+        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
+        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
+    };
+    /* load Zigbee switch platform config to initialization */
+    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
+    xTaskCreate(zboss_task, "zboss_main", 4096, NULL, 5, NULL);
 }
