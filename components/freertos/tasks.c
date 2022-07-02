@@ -3741,6 +3741,12 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
 
     taskENTER_CRITICAL();
 
+    if ( listLIST_ITEM_CONTAINER( pxEventListItem ) == NULL ) {
+      // XXX: https://github.com/espressif/esp-idf/issues/8336
+      taskEXIT_CRITICAL();
+      return;
+    }
+
     /* Store the new item value in the event list. */
     listSET_LIST_ITEM_VALUE( pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
 
