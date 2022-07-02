@@ -3734,7 +3734,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 }
 /*-----------------------------------------------------------*/
 
-void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
                                         const TickType_t xItemValue )
 {
     TCB_t * pxUnblockedTCB;
@@ -3744,7 +3744,7 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
     if ( listLIST_ITEM_CONTAINER( pxEventListItem ) == NULL ) {
       // XXX: https://github.com/espressif/esp-idf/issues/8336
       taskEXIT_CRITICAL();
-      return;
+      return pdFALSE;
     }
 
     /* Store the new item value in the event list. */
@@ -3774,6 +3774,8 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
     }
 
     taskEXIT_CRITICAL();
+
+    return pdTRUE;
 }
 /*-----------------------------------------------------------*/
 
