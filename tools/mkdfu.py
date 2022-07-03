@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2020-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 # This program creates archives compatible with ESP32-S* ROM DFU implementation.
 #
@@ -114,6 +103,26 @@ ESPRESSIF_VID = 12346
 # This CRC32 gets added after DFUSUFFIX_STRUCT
 DFUCRC_STRUCT = b'<I'
 
+# Flash chip parameters file related things
+FlashParamsData = namedtuple(
+    'FlashParamsData',
+    [
+        'ishspi',
+        'legacy',
+        'deviceId',
+        'chip_size',
+        'block_size',
+        'sector_size',
+        'page_size',
+        'status_mask',
+    ],
+)
+FLASH_PARAMS_STRUCT = b'<IIIIIIII'
+FLASH_PARAMS_FILE = 'flash_params.dat'
+DFU_INFO_FLAG_PARAM = (1 << 2)
+DFU_INFO_FLAG_NOERASE = (1 << 3)
+DFU_INFO_FLAG_IGNORE_MD5 = (1 << 4)
+
 
 def dfu_crc(data, crc=0):  # type: (bytes, int) -> int
     """ Calculate CRC32/JAMCRC of data, with an optional initial value """
@@ -127,6 +136,17 @@ def pad_bytes(b, multiple, padding=b'\x00'):  # type: (bytes, int, bytes) -> byt
     return b + padding * (padded_len - len(b))
 
 
+def flash_size_bytes(size):  # type: (str) -> int
+    """
+    Given a flash size passed in args.flash_size
+    (ie 4MB), return the size in bytes.
+    """
+    try:
+        return int(size.rstrip('MB'), 10) * 1024 * 1024
+    except ValueError:
+        raise argparse.ArgumentTypeError('Unknown size {}'.format(size))
+
+
 class EspDfuWriter(object):
     def __init__(self, dest_file, pid, part_size):  # type: (typing.BinaryIO, int, int) -> None
         self.dest = dest_file
@@ -134,6 +154,29 @@ class EspDfuWriter(object):
         self.part_size = part_size
         self.entries = []  # type: typing.List[bytes]
         self.index = []  # type: typing.List[DFUInfo]
+
+    def add_flash_params_file(self, flash_size):   # type: (str) -> None
+        """
+        Add a file containing flash chip parameters
+
+        Corresponds to the "flashchip" data structure that the ROM
+        has in RAM.
+
+        See flash_set_parameters() in esptool.py for more info
+        """
+        flash_params = FlashParamsData(
+            ishspi=0,
+            legacy=0,
+            deviceId=0,  # ignored
+            chip_size=flash_size_bytes(flash_size),  # flash size in bytes
+            block_size=64 * 1024,
+            sector_size=4 * 1024,
+            page_size=256,
+            status_mask=0xffff,
+        )
+        data = struct.pack(FLASH_PARAMS_STRUCT, *flash_params)
+        flags = DFU_INFO_FLAG_PARAM | DFU_INFO_FLAG_NOERASE | DFU_INFO_FLAG_IGNORE_MD5
+        self._add_cpio_flash_entry(FLASH_PARAMS_FILE, 0, data, flags)
 
     def add_file(self, flash_addr, path):  # type: (int, str) -> None
         """
@@ -177,14 +220,14 @@ class EspDfuWriter(object):
         self.dest.write(out_data)
 
     def _add_cpio_flash_entry(
-        self, filename, flash_addr, data
-    ):  # type: (str, int, bytes) -> None
+        self, filename, flash_addr, data, flags=0
+    ):  # type: (str, int, bytes, int) -> None
         md5 = hashlib.md5()
         md5.update(data)
         self.index.append(
             DFUInfo(
                 address=flash_addr,
-                flags=0,
+                flags=flags,
                 name=filename.encode('utf-8'),
                 md5=md5.digest(),
             )
@@ -207,6 +250,8 @@ class EspDfuWriter(object):
 
 def action_write(args):  # type: (typing.Mapping[str, typing.Any]) -> None
     writer = EspDfuWriter(args['output_file'], args['pid'], args['part_size'])
+    print('Adding flash chip parameters file with flash_size = {}'.format(args['flash_size']))
+    writer.add_flash_params_file(args['flash_size'])
     for addr, f in args['files']:
         print('Adding {} at {:#x}'.format(f, addr))
         writer.add_file(addr, f)
@@ -239,6 +284,10 @@ def main():  # type: () -> None
     write_parser.add_argument('files',
                               metavar='<address> <file>', help='Add <file> at <address>',
                               nargs='*')
+    write_parser.add_argument('-fs', '--flash-size',
+                              help='SPI Flash size in MegaBytes (1MB, 2MB, 4MB, 8MB, 16MB, 32MB, 64MB, 128MB)',
+                              choices=['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB'],
+                              default='2MB')
 
     args = parser.parse_args()
 
@@ -272,6 +321,7 @@ def main():  # type: () -> None
                 'files': files,
                 'pid': args.pid,
                 'part_size': args.part_size,
+                'flash_size': args.flash_size,
                 }
 
     {'write': action_write

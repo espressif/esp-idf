@@ -42,7 +42,7 @@ Tencent IoT
 Tencentyun IoT
 --------------
 
-`https://github.com/espressif/esp-qcloud <https://github.com/espressif/esp-qcloud>`_ is an open source repository for {IDF_TARGET_NAME} based on Tencentyun's `qcloud-iot-sdk-embedded-c SDK <https://github.com/tencentyun/qcloud-iot-sdk-embedded-c>`_.
+`https://github.com/espressif/esp-qcloud <https://github.com/espressif/esp-qcloud>`_ is an open source repository for {IDF_TARGET_NAME} based on Tencentyun's `qcloud-iot-sdk-embedded-c SDK <https://github.com/TencentCloud/tencentcloud-iot-sdk-embedded-c>`_.
 
 Baidu IoT
 ---------

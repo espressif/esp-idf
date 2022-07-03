@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Semihosting VFS driver example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -54,7 +57,7 @@ This example also requires [OpenOCD](https://docs.espressif.com/projects/esp-idf
 
 ### Overriding the base directory for semihosting
 
-When the example application calls `esp_vfs_semihost_register("/host", NULL)`, the path `/host` on the ESP target is mapped to the semihosting _base directory_. By default, this is the directory where OpenOCD program is started from. In the instructions above, OpenOCD is started in `data` subdirectory of the example project.
+When the example application calls `esp_vfs_semihost_register("/host")`, the path `/host` on the ESP target is mapped to the semihosting _base directory_. By default, this is the directory where OpenOCD program is started from. In the instructions above, OpenOCD is started in `data` subdirectory of the example project.
 
 When debugging with Xtensa based SoCs (ESP32, ESP32-S2, ESP32-S3) it is possible to override the semihosting base directory using an additional flag of `openocd` command. For example, on Linux and macOS:
 
@@ -101,9 +104,9 @@ There are two outputs produced by example:
    but they're the best we can do in text.  A graphics file illustrating
    the character set should be available from the same archive as this
    file.
-   
+
    Hex Description                 Hex Description
-   
+
    20  SPACE
    ...
    7D  RIGHT CURLY BRACKET         FD  SMALL LETTER Y WITH ACUTE

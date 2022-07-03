@@ -46,7 +46,7 @@ static esp_err_t panel_ssd1306_invert_color(esp_lcd_panel_t *panel, bool invert_
 static esp_err_t panel_ssd1306_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_ssd1306_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_ssd1306_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t panel_ssd1306_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t panel_ssd1306_disp_on_off(esp_lcd_panel_t *panel, bool off);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -91,7 +91,7 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     ssd1306->base.set_gap = panel_ssd1306_set_gap;
     ssd1306->base.mirror = panel_ssd1306_mirror;
     ssd1306->base.swap_xy = panel_ssd1306_swap_xy;
-    ssd1306->base.disp_off = panel_ssd1306_disp_off;
+    ssd1306->base.disp_on_off = panel_ssd1306_disp_on_off;
     *ret_panel = &(ssd1306->base);
     ESP_LOGD(TAG, "new ssd1306 panel @%p", ssd1306);
 
@@ -144,9 +144,6 @@ static esp_err_t panel_ssd1306_init(esp_lcd_panel_t *panel)
     esp_lcd_panel_io_tx_param(io, SSD1306_CMD_SET_CHARGE_PUMP, (uint8_t[]) {
         0x14 // enable charge pump
     }, 1);
-    esp_lcd_panel_io_tx_param(io, SSD1306_CMD_DISP_ON, NULL, 0);
-    // SEG/COM will be ON after 100ms after sending DISP_ON command
-    vTaskDelay(pdMS_TO_TICKS(100));
     return ESP_OK;
 }
 
@@ -227,16 +224,18 @@ static esp_err_t panel_ssd1306_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_
     return ESP_OK;
 }
 
-static esp_err_t panel_ssd1306_disp_off(esp_lcd_panel_t *panel, bool off)
+static esp_err_t panel_ssd1306_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 {
     ssd1306_panel_t *ssd1306 = __containerof(panel, ssd1306_panel_t, base);
     esp_lcd_panel_io_handle_t io = ssd1306->io;
     int command = 0;
-    if (off) {
-        command = SSD1306_CMD_DISP_OFF;
-    } else {
+    if (on_off) {
         command = SSD1306_CMD_DISP_ON;
+    } else {
+        command = SSD1306_CMD_DISP_OFF;
     }
     esp_lcd_panel_io_tx_param(io, command, NULL, 0);
+    // SEG/COM will be ON/OFF after 100ms after sending DISP_ON/OFF command
+    vTaskDelay(pdMS_TO_TICKS(100));
     return ESP_OK;
 }

@@ -32,6 +32,8 @@
 
 #endif
 
+// H2 and C2 will not support external flash.
+#define TEST_FLASH_FREQ_MHZ      5
 
 typedef struct {
     union {
@@ -41,7 +43,7 @@ typedef struct {
     bool finished;
 } task_context_t;
 
-#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
+#if !(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
 
 const static char TAG[] = "test_spi";
 
@@ -235,7 +237,7 @@ static void test_bus_lock(bool test_flash)
         .cs_id = 2,
         .cs_io_num = TEST_BUS_PIN_NUM_CS,
         .io_mode = SPI_FLASH_DIO,
-        .speed = ESP_FLASH_5MHZ,
+        .freq_mhz = TEST_FLASH_FREQ_MHZ,
         .input_delay_ns = 0,
     };
 
@@ -281,11 +283,12 @@ static void test_bus_lock(bool test_flash)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2)
 //no runners
+//IDF-5049
 TEST_CASE("spi bus lock, with flash","[spi][test_env=UT_T1_ESP_FLASH]")
 {
     test_bus_lock(true);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(...)
 
 
 TEST_CASE("spi bus lock","[spi]")
@@ -345,4 +348,4 @@ TEST_CASE("spi master can be used on SPI1", "[spi]")
 
 //TODO: add a case when a non-polling transaction happened in the bus-acquiring time and then release the bus then queue a new trans
 
-#endif //!CONFIG_ESP32_SPIRAM_SUPPORT
+#endif //!(CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)

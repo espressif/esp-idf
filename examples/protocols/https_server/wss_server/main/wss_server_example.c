@@ -18,6 +18,7 @@
 
 #include <esp_https_server.h>
 #include "keep_alive.h"
+#include "sdkconfig.h"
 
 #if !CONFIG_HTTPD_WS_SUPPORT
 #error This example cannot be used unless HTTPD_WS_SUPPORT is enabled in esp-http-server component configuration
@@ -73,8 +74,18 @@ static esp_err_t ws_handler(httpd_req_t *req)
                 httpd_req_to_sockfd(req));
 
     // If it was a TEXT message, just echo it back
-    } else if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
-        ESP_LOGI(TAG, "Received packet with message: %s", ws_pkt.payload);
+    } else if (ws_pkt.type == HTTPD_WS_TYPE_TEXT || ws_pkt.type == HTTPD_WS_TYPE_PING || ws_pkt.type == HTTPD_WS_TYPE_CLOSE) {
+        if (ws_pkt.type == HTTPD_WS_TYPE_TEXT) {
+            ESP_LOGI(TAG, "Received packet with message: %s", ws_pkt.payload);
+        } else if (ws_pkt.type == HTTPD_WS_TYPE_PING) {
+            // Response PONG packet to peer
+            ESP_LOGI(TAG, "Got a WS PING frame, Replying PONG");
+            ws_pkt.type = HTTPD_WS_TYPE_PONG;
+        } else if (ws_pkt.type == HTTPD_WS_TYPE_CLOSE) {
+            // Response CLOSE packet with no payload to peer
+            ws_pkt.len = 0;
+            ws_pkt.payload = NULL;
+        }
         ret = httpd_ws_send_frame(req, &ws_pkt);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "httpd_ws_send_frame failed with %d", ret);
@@ -206,12 +217,12 @@ static httpd_handle_t start_wss_echo_server(void)
     return server;
 }
 
-static void stop_wss_echo_server(httpd_handle_t server)
+static esp_err_t stop_wss_echo_server(httpd_handle_t server)
 {
     // Stop keep alive thread
     wss_keep_alive_stop(httpd_get_global_user_ctx(server));
     // Stop the httpd server
-    httpd_ssl_stop(server);
+    return httpd_ssl_stop(server);
 }
 
 static void disconnect_handler(void* arg, esp_event_base_t event_base,
@@ -219,8 +230,11 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base,
 {
     httpd_handle_t* server = (httpd_handle_t*) arg;
     if (*server) {
-        stop_wss_echo_server(*server);
-        *server = NULL;
+        if (stop_wss_echo_server(*server) == ESP_OK) {
+            *server = NULL;
+        } else {
+            ESP_LOGE(TAG, "Failed to stop https server");
+        }
     }
 }
 

@@ -28,7 +28,7 @@ static void *esp_memprot_iram0_get_def_split_addr(void)
 
 static void *esp_memprot_dram0_get_def_split_addr(void)
 {
-    return MAP_IRAM_TO_DRAM(&_iram_text_end);
+    return (void *)MAP_IRAM_TO_DRAM((uint32_t)&_iram_text_end);
 }
 
 static void *esp_memprot_rtcfast_get_min_split_addr(void)

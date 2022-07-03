@@ -67,43 +67,43 @@ ESP-WIFI-MESH Concepts
 Terminology
 ^^^^^^^^^^^
 
-.. list-table::			
-   :header-rows: 1			
-   :widths: 25 75 			
-			
+.. list-table::
+   :header-rows: 1
+   :widths: 25 75
+
    * - Term
-     - Description			
+     - Description
    * - Node
-     - Any device that **is** or **can be** part of an ESP-WIFI-MESH network			
+     - Any device that **is** or **can be** part of an ESP-WIFI-MESH network
    * - Root Node
-     - The top node in the network			
+     - The top node in the network
    * - Child Node
-     - A node X is a child node when it is connected to another node Y where the connection makes node X more distant from the root node than node Y (in terms of number of connections).			
+     - A node X is a child node when it is connected to another node Y where the connection makes node X more distant from the root node than node Y (in terms of number of connections).
    * - Parent Node
-     - The converse notion of a child node			
+     - The converse notion of a child node
    * - Descendant Node
-     - Any node reachable by repeated proceeding from parent to child			
+     - Any node reachable by repeated proceeding from parent to child
    * - Sibling Nodes
-     - Nodes that share the same parent node			
+     - Nodes that share the same parent node
    * - Connection
-     - A traditional Wi-Fi association between an AP and a station. A node in ESP-WIFI-MESH will use its station interface to associate with the softAP interface of another node, thus forming a connection. The connection process includes the authentication and association processes in Wi-Fi.			
+     - A traditional Wi-Fi association between an AP and a station. A node in ESP-WIFI-MESH will use its station interface to associate with the softAP interface of another node, thus forming a connection. The connection process includes the authentication and association processes in Wi-Fi.
    * - Upstream Connection
-     - The connection from a node to its parent node			
+     - The connection from a node to its parent node
    * - Downstream Connection
-     - The connection from a node to one of its child nodes			
+     - The connection from a node to one of its child nodes
    * - Wireless Hop
-     - The portion of the path between source and destination nodes that corresponds to a single wireless connection. A data packet that traverses a single connection is known as **single-hop** whereas traversing multiple connections is known as **multi-hop**.			
+     - The portion of the path between source and destination nodes that corresponds to a single wireless connection. A data packet that traverses a single connection is known as **single-hop** whereas traversing multiple connections is known as **multi-hop**.
    * - Subnetwork
-     - A subnetwork is subdivision of an ESP-WIFI-MESH network which consists of a node and all of its descendant nodes. Therefore the subnetwork of the root node consists of all nodes in an ESP-WIFI-MESH network.			
+     - A subnetwork is subdivision of an ESP-WIFI-MESH network which consists of a node and all of its descendant nodes. Therefore the subnetwork of the root node consists of all nodes in an ESP-WIFI-MESH network.
    * - MAC Address
-     - Media Access Control Address used to uniquely identify each node or router within an ESP-WIFI-MESH network.			
+     - Media Access Control Address used to uniquely identify each node or router within an ESP-WIFI-MESH network.
    * - DS
      - Distribution System (External IP Network)
 
 Tree Topology
 ^^^^^^^^^^^^^
 
-ESP-WIFI-MESH is built atop the infrastructure Wi-Fi protocol and can be thought of as a networking protocol that combines many individual Wi-Fi networks into a single WLAN. In Wi-Fi, stations are limited to a single connection with an AP (upstream connection) at any time, whilst an AP can be simultaneously connected to multiple stations (downstream connections). However ESP-WIFI-MESH allows nodes to simultaneously act as a station and an AP. Therefore a node in ESP-WIFI-MESH can have **multiple downstream connections using its softAP interface**, whilst simultaneously having **a single upstream connection using its station interface**. This naturally results in a tree network topology with a parent-child hierarchy consisting of multiple layers. 
+ESP-WIFI-MESH is built atop the infrastructure Wi-Fi protocol and can be thought of as a networking protocol that combines many individual Wi-Fi networks into a single WLAN. In Wi-Fi, stations are limited to a single connection with an AP (upstream connection) at any time, whilst an AP can be simultaneously connected to multiple stations (downstream connections). However ESP-WIFI-MESH allows nodes to simultaneously act as a station and an AP. Therefore a node in ESP-WIFI-MESH can have **multiple downstream connections using its softAP interface**, whilst simultaneously having **a single upstream connection using its station interface**. This naturally results in a tree network topology with a parent-child hierarchy consisting of multiple layers.
 
 .. figure:: ../../_static/mesh-tree-topology.png
     :align: center
@@ -138,13 +138,13 @@ Node Types
 Beacon Frames & RSSI Thresholding
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Every node in ESP-WIFI-MESH that is able to form downstream connections (i.e. has a softAP interface) will periodically transmit Wi-Fi beacon frames. A node uses beacon frames to allow other nodes to detect its presence and know of its status. Idle nodes will listen for beacon frames to generate a list of potential parent nodes, one of which  the idle node will form an upstream connection with. ESP-WIFI-MESH uses the Vendor Information Element to store metadata such as:
+Every node in ESP-WIFI-MESH that is able to form downstream connections (i.e. has a softAP interface) will periodically transmit Wi-Fi beacon frames. A node uses beacon frames to allow other nodes to detect its presence and know of its status. Idle nodes will listen for beacon frames to generate a list of potential parent nodes, one of which the idle node will form an upstream connection with. ESP-WIFI-MESH uses the Vendor Information Element to store metadata such as:
 
 - Node Type (Root, Intermediate Parent, Leaf, Idle)
 - Current layer of Node
 - Maximum number of layers permitted in the network
 - Current number of child nodes
-- Maximum number of downstream connections to accept 
+- Maximum number of downstream connections to accept
 
 The signal strength of a potential upstream connection is represented by RSSI (Received Signal Strength Indication) of the beacon frames of the potential parent node. To prevent nodes from forming a weak upstream connection, ESP-WIFI-MESH implements an RSSI threshold mechanism for beacon frames. If a node detects a beacon frame with an RSSI below a preconfigured threshold, the transmitting node will be disregarded when forming an upstream connection.
 
@@ -160,17 +160,17 @@ The signal strength of a potential upstream connection is represented by RSSI (R
 **Panel B** of the illustration above demonstrates how an RF shielding object can lower the RSSI of a potential parent node. Due to the RF shielding object, the area in which the RSSI of node X is above the threshold is significantly reduced. This causes the idle node to disregard node X even though node X is physically adjacent. The idle node will instead form an upstream connection with the physically distant node Y due to a stronger RSSI.
 
 .. note::
-    Nodes technically still receive all beacon frames on the MAC layer. The RSSI threshold is an ESP-WIFI-MESH feature that simply filters out all received beacon frames that are below the preconfigured threshold. 
+    Nodes technically still receive all beacon frames on the MAC layer. The RSSI threshold is an ESP-WIFI-MESH feature that simply filters out all received beacon frames that are below the preconfigured threshold.
 
-Preferred Parent Node 
+Preferred Parent Node
 ^^^^^^^^^^^^^^^^^^^^^
 
 When an idle node has multiple parent nodes candidates (potential parent nodes), the idle node will form an upstream connection with the **preferred parent node**. The preferred parent node is determined based on the following criteria:
 
-- Which layer the parent node candidate is situated on 
+- Which layer the parent node candidate is situated on
 - The number of downstream connections (child nodes) the parent node candidate currently has
 
-The selection of the preferred parent node will always prioritize the parent node candidate on the shallowest layer of the network (including the root node). This helps minimize the total number of layers in an ESP-WIFI-MESH network when upstream connections are formed. For example, given a second layer node and a third layer node, the second layer node will always be preferred. 
+The selection of the preferred parent node will always prioritize the parent node candidate on the shallowest layer of the network (including the root node). This helps minimize the total number of layers in an ESP-WIFI-MESH network when upstream connections are formed. For example, given a second layer node and a third layer node, the second layer node will always be preferred.
 
 If there are multiple parent node candidates within the same layer, the parent node candidate with the least child nodes will be preferred. This criteria has the effect of balancing the number of downstream connections amongst nodes of the same layer.
 
@@ -180,7 +180,7 @@ If there are multiple parent node candidates within the same layer, the parent n
     :figclass: align-center
 
     Preferred Parent Node Selection
-    
+
 **Panel A** of the illustration above demonstrates an example of how the idle node G selects a preferred parent node given the five parent node candidates B/C/D/E/F. Nodes on the shallowest layer are preferred, hence nodes B/C are prioritized since they are second layer nodes whereas nodes D/E/F are on the third layer. Node C is selected as the preferred parent node due it having fewer downstream connections (fewer child nodes) compared to node B.
 
 **Panel B** of the illustration above demonstrates the case where the root node is within range of the idle node G. In other words, the root node's beacon frames are above the RSSI threshold when received by node G. The root node is always the shallowest node in an ESP-WIFI-MESH network hence is always the preferred parent node given multiple parent node candidates.
@@ -253,11 +253,11 @@ To prevent the network from exceeding the maximum permitted number of layers, no
 Automatic Root Node Selection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The automatic selection of a root node involves an election process amongst all idle nodes based on their signal strengths with the router. Each idle node will transmit their MAC addresses and router RSSI values via Wi-Fi beacon frames. **The MAC address is used to uniquely identify each node in the network** whilst the **router RSSI** is used to indicate a node's signal strength with reference to the router. 
+The automatic selection of a root node involves an election process amongst all idle nodes based on their signal strengths with the router. Each idle node will transmit their MAC addresses and router RSSI values via Wi-Fi beacon frames. **The MAC address is used to uniquely identify each node in the network** whilst the **router RSSI** is used to indicate a node's signal strength with reference to the router.
 
-Each node will then simultaneously scan for the beacon frames from other idle nodes. If a node detects a beacon frame with a stronger router RSSI, the node will begin transmitting the contents of that beacon frame (i.e. voting for the node with the stronger router RSSI). The process of transmission and scanning will repeat for a preconfigured minimum number of iterations (10 iterations by default) and result in the beacon frame with the strongest router RSSI being propagated throughout the network. 
+Each node will then simultaneously scan for the beacon frames from other idle nodes. If a node detects a beacon frame with a stronger router RSSI, the node will begin transmitting the contents of that beacon frame (i.e. voting for the node with the stronger router RSSI). The process of transmission and scanning will repeat for a preconfigured minimum number of iterations (10 iterations by default) and result in the beacon frame with the strongest router RSSI being propagated throughout the network.
 
-After all iterations, each node will individually check for its **vote percentage** (``number of votes/number of nodes participating in election``) to determine if it should become the root node. **If a node has a vote percentage larger than a preconfigured threshold (90% by default), the node will become a root node**. 
+After all iterations, each node will individually check for its **vote percentage** (``number of votes/number of nodes participating in election``) to determine if it should become the root node. **If a node has a vote percentage larger than a preconfigured threshold (90% by default), the node will become a root node**.
 
 The following diagram demonstrates how an ESP-WIFI-MESH network is built when the root node is automatically selected.
 
@@ -277,7 +277,7 @@ The following diagram demonstrates how an ESP-WIFI-MESH network is built when th
 **4.** Node F and G connect with nodes D and E respectively and the network building process is complete.
 
 .. note::
-    The minimum number of iterations for the election process can be configured using :cpp:func:`esp_mesh_set_attempts`. Users should adjust the number of iterations based on the number of nodes within the network (i.e. the larger the network the larger number of scan iterations required). 
+    The minimum number of iterations for the election process can be configured using :cpp:func:`esp_mesh_set_attempts`. Users should adjust the number of iterations based on the number of nodes within the network (i.e. the larger the network the larger number of scan iterations required).
 
 .. warning::
     **Vote percentage threshold** can also be configured using :cpp:func:`esp_mesh_set_vote_percentage`. Setting a low vote percentage threshold **can result in two or more nodes becoming root nodes** within the same ESP-WIFI-MESH network leading to the building of multiple networks. If such is the case, ESP-WIFI-MESH has internal mechanisms to autonomously resolve the **root node conflict**. The networks of the multiple root nodes will be combined into a single network with a single root node. However, root node conflicts where two or more root nodes have the same router SSID but different router BSSID are not handled.
@@ -321,7 +321,7 @@ ESP-WIFI-MESH network building can be affected by the order in which nodes power
 
 **Rule 2:** If a delayed node forms an upstream connection and becomes an intermediate parent node, it may also become the new preferred parent of other nodes (i.e. being a shallower node). This will cause the other nodes to switch their upstream connections to connect with the delayed node (see `Parent Node Switching`_).
 
-**Rule 3:** If an idle node has a designated parent node which is delayed in powering-on, the idle node will not attempt to form any upstream connections in the absence of its designated parent node. The idle node will remain idle indefinitely until its designated parent node powers-on. 
+**Rule 3:** If an idle node has a designated parent node which is delayed in powering-on, the idle node will not attempt to form any upstream connections in the absence of its designated parent node. The idle node will remain idle indefinitely until its designated parent node powers-on.
 
 The following example demonstrates the effects of asynchronous power-on with regards to network building.
 
@@ -370,11 +370,11 @@ If the root node and multiple downstream layers simultaneously break down (e.g. 
 
 .. figure:: ../../_static/mesh-root-node-failure.png
     :align: center
-    :alt: Diagram of Self Healing From Root Node Failure 
+    :alt: Diagram of Self Healing From Root Node Failure
     :figclass: align-center
 
     Self Healing From Root Node Failure
-    
+
 **1.** Node C is the root node of the network. Nodes A/B/D/E are second layer nodes connected to node C.
 
 **2.** Node C breaks down. After multiple failed attempts to reconnect, the second layer nodes begin the election process by broadcasting their router RSSIs. Node B has the strongest router RSSI.
@@ -395,10 +395,10 @@ The following diagram illustrates an example of self healing from an Intermediat
 
 .. figure:: ../../_static/mesh-parent-node-failure.png
     :align: center
-    :alt: Diagram of Self Healing From Intermediate Parent Node Failure 
+    :alt: Diagram of Self Healing From Intermediate Parent Node Failure
     :figclass: align-center
 
-    Self Healing From Intermediate Parent Node Failure 
+    Self Healing From Intermediate Parent Node Failure
 
 **1.** The following branch of the network consists of nodes A to G.
 
@@ -425,13 +425,13 @@ The following diagram illustrates an example of a root node switch.
     :alt: Diagram of Root Node Switch Example
     :figclass: align-center
 
-    Root Node Switch Example 
+    Root Node Switch Example
 
 **1.** Node C is the current root node but has degraded signal strength with the router (-85db). The node C triggers a new election and all nodes begin transmitting and scanning for beacon frames **whilst still being connected**.
 
 **2.** After multiple rounds of transmission and scanning, node B is elected as the new root node. Node B sends node C a **switch request** and node C responds with an acknowledgment.
 
-**3.** Node B disconnects from its parent and connects with the router becoming the network's new root node. Node C disconnects from the router, enters the idle state, and begins scanning for and selecting a new preferred parent node. **Node C maintains all its downstream connections throughout this process**. 
+**3.** Node B disconnects from its parent and connects with the router becoming the network's new root node. Node C disconnects from the router, enters the idle state, and begins scanning for and selecting a new preferred parent node. **Node C maintains all its downstream connections throughout this process**.
 
 **4.** Node C selects node B as its preferred parent node, forms an upstream connection, and becomes a second layer node. The network layout is similar after the switch as node C still maintains the same subnetwork. However each node in node C's subnetwork has been placed one layer deeper as a result of the switch. `Parent Node Switching`_ may adjust the network layout afterwards if any nodes have a new preferred parent node as a result of the root node switch.
 
@@ -441,7 +441,7 @@ The following diagram illustrates an example of a root node switch.
 Parent Node Switching
 ^^^^^^^^^^^^^^^^^^^^^
 
-Parent Node Switching entails a child node switching its upstream connection to another parent node of a shallower layer. **Parent Node Switching occurs autonomously** meaning that a child node will change its upstream connection automatically if a potential parent node of a shallower layer becomes available (i.e. due to a `Asynchronous Power-on Reset`_). 
+Parent Node Switching entails a child node switching its upstream connection to another parent node of a shallower layer. **Parent Node Switching occurs autonomously** meaning that a child node will change its upstream connection automatically if a potential parent node of a shallower layer becomes available (i.e. due to a `Asynchronous Power-on Reset`_).
 
 All potential parent nodes periodically transmit beacon frames (see `Beacon Frames & RSSI Thresholding`_) allowing for a child node to scan for the availability of a shallower parent node. Due to parent node switching, a self-organized ESP-WIFI-MESH network can dynamically adjust its network layout to ensure each connection has a good RSSI and that the number of layers in the network is minimized.
 
@@ -465,7 +465,7 @@ The following diagram shows the structure of an ESP-WIFI-MESH packet and its rel
     :alt: Diagram of ESP-WIFI-MESH Packet
     :figclass: align-center
 
-    ESP-WIFI-MESH Packet 
+    ESP-WIFI-MESH Packet
 
 **The header** of an ESP-WIFI-MESH packet contains the MAC addresses of the source and destination nodes. The options field contains information pertaining to the special types of ESP-WIFI-MESH packets such as a group transmission or a packet originating from the external IP network (see :c:macro:`MESH_OPT_SEND_GROUP` and :c:macro:`MESH_OPT_RECV_DS_ADDR`).
 
@@ -484,14 +484,14 @@ To multicast by specifying a list of target nodes, users must first set the ESP-
 Multicasting by group allows a ESP-WIFI-MESH packet to be transmitted to a preconfigured group of nodes. Each grouping is identified by a unique ID, and a node can be placed into a group via :cpp:func:`esp_mesh_set_group_id`. Multicasting to a group involves setting the destination address of the ESP-WIFI-MESH packet to the target group ID. Furthermore, the :c:macro:`MESH_DATA_GROUP` flag must set. Using groups to multicast incurs less overhead, but requires nodes to previously added into groups.
 
 .. note::
-    During a multicast, all nodes within the network still receive the ESP-WIFI-MESH packet on the MAC layer. However, nodes not included in the MAC address list or the target group will simply filter out the packet. 
+    During a multicast, all nodes within the network still receive the ESP-WIFI-MESH packet on the MAC layer. However, nodes not included in the MAC address list or the target group will simply filter out the packet.
 
 Broadcasting
 ^^^^^^^^^^^^
 
 Broadcasting is a feature that allows a single ESP-WIFI-MESH packet to be transmitted simultaneously to all nodes within the network. Each node essentially forwards a broadcast packet to all of its upstream and downstream connections such that the packet propagates throughout the network as quickly as possible. However, ESP-WIFI-MESH utilizes the following methods to avoid wasting bandwidth during a broadcast.
 
-**1.** When an intermediate parent node receives a broadcast packet from its parent, it will forward the packet to each of its child nodes whilst storing a copy of the packet for itself. 
+**1.** When an intermediate parent node receives a broadcast packet from its parent, it will forward the packet to each of its child nodes whilst storing a copy of the packet for itself.
 
 **2.** When an intermediate parent node is the source node of the broadcast, it will transmit the broadcast packet upstream to is parent node and downstream to each of its child nodes.
 
@@ -501,7 +501,7 @@ Broadcasting is a feature that allows a single ESP-WIFI-MESH packet to be transm
 
 **5.** When the root node is the source node of a broadcast, the root node will transmit the packet to all of its child nodes.
 
-**6.** When the root node receives a broadcast packet from one of its child nodes, it will forward the packet to each of its remaining child nodes whilst storing a copy of the packet for itself. 
+**6.** When the root node receives a broadcast packet from one of its child nodes, it will forward the packet to each of its remaining child nodes whilst storing a copy of the packet for itself.
 
 **7.** When a node receives a broadcast packet with a source address matching its own MAC address, the node will discard the broadcast packet.
 
@@ -562,7 +562,7 @@ A CSA element contains information regarding the **New Channel Number** and a **
 ESP-WIFI-MESH Network Channel Switching
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-ESP-WIFI-MESH Network Channel Switching also utilize beacon frames that contain a CSA element. However, being a multi-hop network makes the switching process in ESP-WIFI-MESH is more complex due to the fact that a beacon frame might not be able to reach all nodes within the network (i.e. in a single hop). Therefore, an ESP-WIFI-MESH network relies on nodes to forward the CSA element so that it is propagated throughout the network. 
+ESP-WIFI-MESH Network Channel Switching also utilize beacon frames that contain a CSA element. However, being a multi-hop network makes the switching process in ESP-WIFI-MESH is more complex due to the fact that a beacon frame might not be able to reach all nodes within the network (i.e. in a single hop). Therefore, an ESP-WIFI-MESH network relies on nodes to forward the CSA element so that it is propagated throughout the network.
 
 When an intermediate parent node with one or more child nodes receives a beacon frame containing a CSA, the node will forward the CSA element by including the element in its next transmitted beacon frame (i.e. with the same **New Channel Number** and **Channel Switch Count**). Given that all nodes within an ESP-WIFI-MESH network receive the same CSA, the nodes can synchronize their channel switches using the Channel Switch Count, albeit with a short delay due to CSA element forwarding.
 
@@ -574,7 +574,7 @@ Root Node Triggered
 
 Router Triggered
 """"""""""""""""
-When an ESP-WIFI-MESH network is connected to a router, the entire network must use the same channel as the router. Therefore, **the root node will not be permitted to trigger a channel switch when it is connected to a router**. 
+When an ESP-WIFI-MESH network is connected to a router, the entire network must use the same channel as the router. Therefore, **the root node will not be permitted to trigger a channel switch when it is connected to a router**.
 
 When the root node receives beacon frame containing a CSA element from the router, **the root node will set Channel Switch Count value in the CSA element to a custom value before forwarding it downstream via beacon frames**. It will also decrement the Channel Switch Count of subsequent CSA elements relative to the custom value. This custom value can be based on factors such as the number of network layers, the current number of nodes etc.
 
@@ -612,14 +612,14 @@ ESP-WIFI-MESH allows for autonomous channel switching to be enabled/disabled via
 
 **Allow Router Switch:** This parameter is set via the ``allow_router_switch`` field of the :cpp:type:`mesh_router_t` and permits an ESP-WIFI-MESH to dynamically switch to a different router when set.
 
-**Preset Router BSSID:** An ESP-WIFI-MESH network can have a preset router by setting the ``bssid`` field of the :cpp:type:`mesh_router_t` structure to the 
+**Preset Router BSSID:** An ESP-WIFI-MESH network can have a preset router by setting the ``bssid`` field of the :cpp:type:`mesh_router_t` structure to the
 BSSID of the desired router. If this field is unset, the ``allow_router_switch`` parameter is overridden such that router switches are always permitted.
 
 **Root Node Present:** The presence of a root node will can also affect whether or a channel or router switch is permitted.
 
 The following table illustrates how the different combinations of parameters/conditions affect whether channel switching and/or router switching is permitted. Note that `X` represents a "don't care" for the parameter.
 
-.. list-table:: 
+.. list-table::
     :widths: 15 15 15 15 15 15
     :header-rows: 1
 
@@ -688,7 +688,7 @@ The following table illustrates how the different combinations of parameters/con
       - Y
       - Y
       - X
-      - Channel and Router 
+      - Channel and Router
     * - Y
       - N
       - Y
@@ -722,19 +722,19 @@ The performance of an ESP-WIFI-MESH network can be evaluated based on multiple m
 The following table lists the common performance figures of an ESP-WIFI-MESH network:
 
 * Network Building Time: < 60 seconds
-* Healing time: 
+* Healing time:
     * Root node break down: < 10 seconds
     * Child node break down: < 5 seconds
 * Per-hop latency: 10 to 30 milliseconds
- 
+
 .. note::
     The following test conditions were used to generate the performance figures above.
-    
+
     - Number of test devices: **100**
     - Maximum Downstream Connections to Accept: **6**
     - Maximum Permissible Layers: **6**
 
-.. note:: 
+.. note::
     Throughput depends on packet error rate and hop count.
 
 .. note::

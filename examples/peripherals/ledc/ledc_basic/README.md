@@ -9,7 +9,7 @@ To use `HIGH SPEED` mode check if the selected SoC supports this mode.
 
 ### Hardware Required
 
-* A development board with ESP32, ESP32-S2, ESP32-C3 or ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with any Espressif SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for power supply and programming
 
 Connect the GPIO to an oscilloscope to see the generated signal:

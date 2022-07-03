@@ -370,6 +370,8 @@ typedef u64 __bitwise le64;
 #endif /* __GNUC__ */
 #endif /* __must_check */
 
+#define SSID_MAX_LEN 32
+
 int hwaddr_aton(const char *txt, u8 *addr);
 int hwaddr_masked_aton(const char *txt, u8 *addr, u8 *mask, u8 maskable);
 int hwaddr_compact_aton(const char *txt, u8 *addr);
@@ -387,7 +389,7 @@ int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
 
 int hwaddr_mask_txt(char *buf, size_t len, const u8 *addr, const u8 *mask);
 u8 rssi_to_rcpi(int rssi);
-int os_time_expired(struct os_time *now,
+int os_reltime_expired(struct os_time *now,
 		struct os_time *ts,
 		os_time_t timeout_secs);
 
@@ -406,6 +408,7 @@ const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len);
 
 char * wpa_config_parse_string(const char *value, size_t *len);
 int wpa_is_hex(const u8 *data, size_t len);
+int has_ctrl_char(const u8 *data, size_t len);
 size_t wpa_merge_byte_arrays(u8 *res, size_t res_len,
 			 const u8 *src1, size_t src1_len,
 			 const u8 *src2, size_t src2_len);
@@ -445,8 +448,7 @@ struct wpa_freq_range_list {
 #define TEST_FAIL() 0
 #endif
 
-void wpa_bin_clear_free(void *bin, size_t len);
-int int_array_len(const int *a);
+size_t int_array_len(const int *a);
 void bin_clear_free(void *bin, size_t len);
 void str_clear_free(char *str);
 char * get_param(const char *cmd, const char *param);
@@ -472,5 +474,6 @@ void * __hide_aliasing_typecast(void *foo);
 #endif /* CONFIG_VALGRIND */
 
 #define IANA_SECP256R1 19
-
+#define IANA_SECP384R1 20
+#define IANA_SECP521R1 21
 #endif /* COMMON_H */

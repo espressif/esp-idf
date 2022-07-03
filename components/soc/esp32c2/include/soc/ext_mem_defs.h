@@ -14,36 +14,30 @@ extern "C" {
 
 #include <stdint.h>
 
-//TODO IDF-3821, for now it's always 64KB
-#define MMU_PAGE_MODE			        2
-
 /*IRAM0 is connected with Cache IBUS0*/
 #define IRAM0_ADDRESS_LOW               0x40000000
-#define IRAM0_ADDRESS_HIGH              IRAM0_CACHE_ADDRESS_HIGH
+#define IRAM0_ADDRESS_HIGH(page_size)              IRAM0_CACHE_ADDRESS_HIGH(page_size)
 #define IRAM0_CACHE_ADDRESS_LOW         0x42000000
-#define IRAM0_CACHE_ADDRESS_HIGH        (IRAM0_CACHE_ADDRESS_LOW + (0x100000 << (MMU_PAGE_MODE)))
+#define IRAM0_CACHE_ADDRESS_HIGH(page_size)        (IRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64)) // MMU has 64 pages
 
 /*DRAM0 is connected with Cache DBUS0*/
 #define DRAM0_ADDRESS_LOW               0x3C000000
 #define DRAM0_ADDRESS_HIGH              0x40000000
 #define DRAM0_CACHE_ADDRESS_LOW         0x3C000000
-#define DRAM0_CACHE_ADDRESS_HIGH        (DRAM0_CACHE_ADDRESS_LOW + (0x100000 << (MMU_PAGE_MODE)))
-#define DRAM0_CACHE_OPERATION_HIGH      DRAM0_CACHE_ADDRESS_HIGH
+#define DRAM0_CACHE_ADDRESS_HIGH(page_size)        (DRAM0_CACHE_ADDRESS_LOW + ((page_size) * 64))
+#define DRAM0_CACHE_OPERATION_HIGH(page_size)      DRAM0_CACHE_ADDRESS_HIGH(page_size)
 #define ESP_CACHE_TEMP_ADDR             0x3C000000
 
-#define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
-#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
+#define BUS_SIZE(bus_name, page_size)                 (bus_name##_ADDRESS_HIGH(page_size) - bus_name##_ADDRESS_LOW)
+#define ADDRESS_IN_BUS(bus_name, vaddr, page_size)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) <= bus_name##_ADDRESS_HIGH(page_size))
 
-#define ADDRESS_IN_IRAM0(vaddr)            ADDRESS_IN_BUS(IRAM0, vaddr)
-#define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
-#define ADDRESS_IN_DRAM0(vaddr)            ADDRESS_IN_BUS(DRAM0, vaddr)
-#define ADDRESS_IN_DRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr)
+#define ADDRESS_IN_IRAM0(vaddr, page_size)            ADDRESS_IN_BUS(IRAM0, vaddr, page_size)
+#define ADDRESS_IN_IRAM0_CACHE(vaddr, page_size)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr, page_size)
+#define ADDRESS_IN_DRAM0(vaddr, page_size)            ADDRESS_IN_BUS(DRAM0, vaddr, page_size)
+#define ADDRESS_IN_DRAM0_CACHE(vaddr, page_size)      ADDRESS_IN_BUS(DRAM0_CACHE, vaddr, page_size)
 
-#define BUS_IRAM0_CACHE_SIZE              BUS_SIZE(IRAM0_CACHE)
-#define BUS_DRAM0_CACHE_SIZE              BUS_SIZE(DRAM0_CACHE)
-
-//IDF-3821
-// #define MMU_SIZE                        0x100
+#define BUS_IRAM0_CACHE_SIZE(page_size)              BUS_SIZE(IRAM0_CACHE, page_size)
+#define BUS_DRAM0_CACHE_SIZE(page_size)              BUS_SIZE(DRAM0_CACHE, page_size)
 
 #define CACHE_IBUS                      0
 #define CACHE_IBUS_MMU_START            0
@@ -81,30 +75,26 @@ extern "C" {
 #define FLASH_MMU_TABLE ((volatile uint32_t*) DR_REG_MMU_TABLE)
 #define FLASH_MMU_TABLE_SIZE (ICACHE_MMU_SIZE/sizeof(uint32_t))
 
-#define MMU_TABLE_INVALID_VAL 		MMU_INVALID
-#define FLASH_MMU_TABLE_INVALID_VAL DPORT_MMU_TABLE_INVALID_VAL
 /**
  * MMU entry valid bit mask for mapping value. For an entry:
  * valid bit + value bits
  * valid bit is BIT(6), so value bits are 0x3f
  */
 #define MMU_VALID_VAL_MASK 		        0x3f
+
 /**
- * Helper macro to make a MMU entry invalid
- * Check this! IDF-3821
+ * Max MMU available paddr page num.
+ * `MMU_MAX_PADDR_PAGE_NUM * CONFIG_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * 64 * 64KB, means MMU can support 4MB paddr at most
  */
-#define INVALID_PHY_PAGE                0x7f
-/**
- * Max MMU entry num.
- * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
- * 64 * 64KB, means MMU can map 4MB at most
- */
-#define MMU_MAX_ENTRY_NUM    64
+#define MMU_MAX_PADDR_PAGE_NUM    64
 /**
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
-#define MMU_VADDR_MASK ((0x100000 << (MMU_PAGE_MODE)) - 1)
+#define MMU_VADDR_MASK(page_size)                 ((page_size) * 64 - 1)
+//MMU entry num
+#define MMU_ENTRY_NUM  64
 
 #define BUS_PMS_MASK  0xffffff
 

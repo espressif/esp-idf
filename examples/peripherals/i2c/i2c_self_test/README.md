@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # I2C Self-Test Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -81,7 +84,7 @@ To run this example, you should have one ESP development board (e.g. ESP32-WROVE
 - Connection:
   - connect SDA/SCL of BH1750 sensor to GPIO5/GPIO6
 
-**Note:** There is only one i2c device on esp32c3, so you can't try any master-slave example for esp32/s2 in this repo. But you can try external devices. If you find anything wrong with your device, please try connecting pull-up resistors by yourself.
+**Note:** There is only one i2c device on ESP32-C3/ESP32-C2/ESP32-H2, so it is not possible to perform any ESP32/ESP32-S2 self-test example from this repo. However it is possible to test I2C with external devices. If you find anything wrong with your device, please try connecting external pull-up resistors.
 
 ### Configure the project
 

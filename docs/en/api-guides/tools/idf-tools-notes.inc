@@ -2,6 +2,16 @@
 .. Comments "tool-NAME-notes" act as delimiters.
 
 
+.. tool-xtensa-esp-elf-gdb-notes
+
+
+---
+
+.. tool-riscv32-esp-elf-gdb-notes
+
+
+---
+
 .. tool-xtensa-esp32-elf-notes
 
 

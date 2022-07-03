@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 ## SPI slave example
 
 These two projects illustrate the SPI Slave driver. They're supposed to be flashed into two separate Espressif chips connected to eachother using the SPI pins defined in app_main.c. Once connected and flashed, they will use the spi master and spi slave driver to communicate with eachother. The example also includes a handshaking line to allow the master to only poll the  slave when it is actually ready to parse a transaction.

@@ -227,7 +227,7 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
 
     gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
     };
@@ -241,6 +241,7 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
     };
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, &fd));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
 
     struct timeval wait_time;
@@ -258,6 +259,7 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
     TEST_ASSERT(FD_ISSET(fd, &read_fds));
     TEST_ASSERT_EQUAL(0, close(fd));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 

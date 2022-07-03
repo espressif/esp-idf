@@ -65,14 +65,6 @@ void wpa_debug_print_timestamp(void);
 #define wpa_dbg(ctx, level, fmt, args...) wpa_printf(level, fmt, ##args)
 
 void wpa_dump_mem(char* desc, uint8_t *addr, uint16_t len);
-static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
-{
-
-}
-
-static inline void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf, size_t len)
-{
-}
 
 /**
  * wpa_hexdump - conditional hex dump
@@ -86,6 +78,16 @@ static inline void wpa_hexdump_ascii_key(int level, const char *title, const u8 
  * configuration. The contents of buf is printed out has hex dump.
  */
 void wpa_hexdump(int level, const char *title, const u8 *buf, size_t len);
+
+static inline void wpa_hexdump_ascii(int level, const char *title, const void *buf, size_t len)
+{
+	wpa_hexdump(level, title, buf, len);
+}
+
+static inline void wpa_hexdump_ascii_key(int level, const char *title, const void *buf, size_t len)
+{
+	wpa_hexdump(level, title, buf, len);
+}
 
 static inline void wpa_hexdump_buf(int level, const char *title,
 				   const struct wpabuf *buf)
@@ -108,7 +110,6 @@ static inline void wpa_hexdump_buf(int level, const char *title,
  */
 void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len);
 
-
 static inline void wpa_hexdump_buf_key(int level, const char *title,
 				       const struct wpabuf *buf)
 {
@@ -128,7 +129,7 @@ static inline void wpa_hexdump_buf_key(int level, const char *title,
  * the hex numbers and ASCII characters (for printable range) are shown. 16
  * bytes per line will be shown.
  */
-void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
+void wpa_hexdump_ascii(int level, const char *title, const void *buf,
 		       size_t len);
 
 /**
@@ -145,7 +146,7 @@ void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
  * bytes per line will be shown. This works like wpa_hexdump_ascii(), but by
  * default, does not include secret keys (passwords, etc.) in debug output.
  */
-void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
+void wpa_hexdump_ascii_key(int level, const char *title, const void *buf,
 			   size_t len);
 #else
 #define wpa_printf(level,fmt, args...) do {} while(0)
@@ -159,8 +160,8 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #define wpa_dbg(...) do {} while(0)
 #endif
 
-#define wpa_auth_logger
-#define wpa_auth_vlogger
+#define wpa_auth_logger(...) do {} while(0)
+#define wpa_auth_vlogger(...) do {} while(0)
 
 /**
  * wpa_msg - Conditional printf for default target and ctrl_iface monitors
@@ -195,15 +196,5 @@ PRINTF_FORMAT(3, 4);
 
 typedef void (*wpa_msg_cb_func)(void *ctx, int level, const char *txt,
 				size_t len);
-
-typedef void (*eloop_timeout_handler)(void *eloop_data, void *user_ctx);
-
-int eloop_cancel_timeout(eloop_timeout_handler handler,
-			 void *eloop_data, void *user_data);
-
-int eloop_register_timeout(unsigned int secs, unsigned int usecs,
-			   eloop_timeout_handler handler,
-			   void *eloop_data, void *user_data);
-
 
 #endif /* WPA_DEBUG_H */

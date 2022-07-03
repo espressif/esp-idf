@@ -4,16 +4,22 @@ import argparse
 import os
 import re
 import shutil
-import subprocess
+import sys
 from copy import deepcopy
 
-import CreateSectionTable
 import yaml
 
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader as Loader  # type: ignore
+
+try:
+    from ElfUnitTestParser import parse_elf_test_cases
+except ImportError:
+    sys.path.append(os.path.expandvars(os.path.join('$IDF_PATH', 'tools', 'unit-test-app', 'tools')))
+    from ElfUnitTestParser import parse_elf_test_cases
+
 
 TEST_CASE_PATTERN = {
     'initial condition': 'UTINIT1',
@@ -50,12 +56,6 @@ class Parser(object):
     ELF_FILE = 'unit-test-app.elf'
     SDKCONFIG_FILE = 'sdkconfig'
     STRIP_CONFIG_PATTERN = re.compile(r'(.+?)(_\d+)?$')
-    TOOLCHAIN_FOR_TARGET = {
-        'esp32': 'xtensa-esp32-elf-',
-        'esp32s2': 'xtensa-esp32s2-elf-',
-        'esp32s3': 'xtensa-esp32s3-elf-',
-        'esp32c3': 'riscv32-esp-elf-',
-    }
 
     def __init__(self, binary_folder, node_index):
         idf_path = os.getenv('IDF_PATH')
@@ -67,7 +67,6 @@ class Parser(object):
         self.idf_target = idf_target
         self.node_index = node_index
         self.ut_bin_folder = binary_folder
-        self.objdump = Parser.TOOLCHAIN_FOR_TARGET.get(idf_target, '') + 'objdump'
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), 'r'), Loader=Loader)
         self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), 'r'), Loader=Loader)
         self.config_dependencies = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), 'r'),
@@ -89,62 +88,43 @@ class Parser(object):
         test_groups = self.get_test_groups(os.path.join(configs_folder, config_name))
 
         elf_file = os.path.join(config_output_folder, self.ELF_FILE)
-        subprocess.check_output('{} -t {} | grep test_desc > case_address.tmp'.format(self.objdump, elf_file),
-                                shell=True)
-        subprocess.check_output('{} -s {} > section_table.tmp'.format(self.objdump, elf_file), shell=True)
+        bin_test_cases = parse_elf_test_cases(elf_file, self.idf_target)
 
-        table = CreateSectionTable.SectionTable('section_table.tmp')
         test_cases = []
+        for bin_tc in bin_test_cases:
+            # we could split cases of same config into multiple binaries as we have limited rom space
+            # we should regard those configs like `default` and `default_2` as the same config
+            match = self.STRIP_CONFIG_PATTERN.match(config_name)
+            stripped_config_name = match.group(1)
 
-        # we could split cases of same config into multiple binaries as we have limited rom space
-        # we should regard those configs like `default` and `default_2` as the same config
-        match = self.STRIP_CONFIG_PATTERN.match(config_name)
-        stripped_config_name = match.group(1)
+            tc = self.parse_one_test_case(bin_tc['name'], bin_tc['desc'], config_name, stripped_config_name, tags)
 
-        with open('case_address.tmp', 'rb') as f:
-            for line in f:
-                # process symbol table like: "3ffb4310 l     O .dram0.data	00000018 test_desc_33$5010"
-                line = line.split()
-                test_addr = int(line[0], 16)
-                section = line[3]
+            # check if duplicated case names
+            # we need to use it to select case,
+            # if duplicated IDs, Unity could select incorrect case to run
+            # and we need to check all cases no matter if it's going te be executed by CI
+            # also add app_name here, we allow same case for different apps
+            if (tc['summary'] + stripped_config_name) in self.test_case_names:
+                self.parsing_errors.append('{} ({}): duplicated test case ID: {}'.format(stripped_config_name, config_name, tc['summary']))
+            else:
+                self.test_case_names.add(tc['summary'] + stripped_config_name)
 
-                name_addr = table.get_unsigned_int(section, test_addr, 4)
-                desc_addr = table.get_unsigned_int(section, test_addr + 4, 4)
-                function_count = table.get_unsigned_int(section, test_addr + 20, 4)
-                name = table.get_string('any', name_addr)
-                desc = table.get_string('any', desc_addr)
+            test_group_included = True
+            if test_groups is not None and tc['group'] not in test_groups:
+                test_group_included = False
 
-                tc = self.parse_one_test_case(name, desc, config_name, stripped_config_name, tags)
-
-                # check if duplicated case names
-                # we need to use it to select case,
-                # if duplicated IDs, Unity could select incorrect case to run
-                # and we need to check all cases no matter if it's going te be executed by CI
-                # also add app_name here, we allow same case for different apps
-                if (tc['summary'] + stripped_config_name) in self.test_case_names:
-                    self.parsing_errors.append('{} ({}): duplicated test case ID: {}'.format(stripped_config_name, config_name, tc['summary']))
+            if tc['CI ready'] == 'Yes' and test_group_included:
+                # update test env list and the cases of same env list
+                if tc['test environment'] in self.test_env_tags:
+                    self.test_env_tags[tc['test environment']].append(tc['ID'])
                 else:
-                    self.test_case_names.add(tc['summary'] + stripped_config_name)
+                    self.test_env_tags.update({tc['test environment']: [tc['ID']]})
 
-                test_group_included = True
-                if test_groups is not None and tc['group'] not in test_groups:
-                    test_group_included = False
+                if bin_tc['function_count'] > 1:
+                    tc.update({'child case num': bin_tc['function_count']})
 
-                if tc['CI ready'] == 'Yes' and test_group_included:
-                    # update test env list and the cases of same env list
-                    if tc['test environment'] in self.test_env_tags:
-                        self.test_env_tags[tc['test environment']].append(tc['ID'])
-                    else:
-                        self.test_env_tags.update({tc['test environment']: [tc['ID']]})
-
-                    if function_count > 1:
-                        tc.update({'child case num': function_count})
-
-                    # only add  cases need to be executed
-                    test_cases.append(tc)
-
-        os.remove('section_table.tmp')
-        os.remove('case_address.tmp')
+                # only add  cases need to be executed
+                test_cases.append(tc)
 
         return test_cases
 
@@ -219,7 +199,7 @@ class Parser(object):
     def parse_tags(self, sdkconfig_file):
         """
         Some test configs could requires different DUTs.
-        For example, if CONFIG_ESP32_SPIRAM_SUPPORT is enabled, we need WROVER-Kit to run test.
+        For example, if CONFIG_SPIRAM is enabled, we need kit with PSRAM to run test.
         This method will get tags for runners according to ConfigDependency.yml(maps tags to sdkconfig).
 
         We support to the following syntax::

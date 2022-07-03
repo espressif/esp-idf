@@ -13,6 +13,9 @@
 
 #include "test_utils.h"
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5138
 static uint32_t buffer[1024];
 
 /* read-only region used for mmap tests, intialised in setup_mmap_tests() */
@@ -20,6 +23,7 @@ static uint32_t start;
 static uint32_t end;
 
 static spi_flash_mmap_handle_t handle1, handle2, handle3;
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static esp_err_t spi_flash_read_maybe_encrypted(size_t src_addr, void *des_addr, size_t size)
 {
@@ -30,6 +34,8 @@ static esp_err_t spi_flash_read_maybe_encrypted(size_t src_addr, void *des_addr,
     }
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5138
 static esp_err_t spi_flash_write_maybe_encrypted(size_t des_addr, const void *src_addr, size_t size)
 {
     if (!esp_flash_encryption_enabled()) {
@@ -356,6 +362,7 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
 
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 {
@@ -391,6 +398,8 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_HEX8_ARRAY(constant_data, buf, sizeof(constant_data));
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5138
 TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash][mmap]")
 {
     const void *ptr = NULL;
@@ -459,3 +468,4 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
     spi_flash_munmap(handle);
     TEST_ASSERT_EQUAL(0, memcmp(buf, read_data, sizeof(buf)));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

@@ -10,7 +10,7 @@
 #ifdef EAP_PEAP
 #include "utils/common.h"
 #include "crypto/sha1.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/eap_tlv_common.h"
 #include "eap_peer/eap_peap_common.h"
 #include "eap_peer/eap_i.h"
@@ -1115,9 +1115,9 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 			 * label by default, but allow it to be configured with
 			 * phase1 parameter peaplabel=1. */
 			if (data->peap_version > 1 || data->force_new_label)
-				strcpy(label, "client PEAP encryption");
+				os_strlcpy(label, "client PEAP encryption", 24);
 			else
-				strcpy(label, "client EAP encryption");
+				os_strlcpy(label, "client EAP encryption", 24);
 			wpa_printf(MSG_DEBUG, "EAP-PEAP: using label '%s' in "
 				   "key derivation", label);
 			data->key_data =

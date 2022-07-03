@@ -1,17 +1,25 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
+
+/* Define a structure that contains some function pointers that point to OS-related functions.
+   An instance of this structure will be provided to the heap in ROM for use if needed.
+*/
+typedef struct {
+    void (*lock)(void *lock);
+    void (*unlock)(void *lock);
+} multi_heap_os_funcs_t;
+
+/** @brief Initialize structure pointer that points a structure that contains OS-related functions pointers.
+ *
+ * @param heap_os_funcs Points to a structure that contains some OS-related function pointers.
+ * @return None.
+ *
+ */
+void multi_heap_os_funcs_init(multi_heap_os_funcs_t *heap_os_funcs);
 
 /* Opaque handle to a heap block */
 typedef const struct block_header_t *multi_heap_block_handle_t;

@@ -496,7 +496,7 @@ esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
   * @brief     Set protocol type of specified interface
   *            The default protocol is (WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N)
   *
-  * @attention Currently we only support 802.11b or 802.11bg or 802.11bgn mode
+  * @attention Support 802.11b or 802.11bg or 802.11bgn or LR mode
   *
   * @param     ifx  interfaces
   * @param     protocol_bitmap  WiFi protocol bitmap
@@ -1209,30 +1209,17 @@ esp_err_t esp_wifi_ftm_resp_set_offset(int16_t offset_cm);
 esp_err_t esp_wifi_config_11b_rate(wifi_interface_t ifx, bool disable);
 
 /**
-  * @brief      Config ESPNOW rate of specified interface
+  * @brief      Set wake interval for connectionless modules to wake up periodically.
   *
-  * @attention  1. This API should be called after esp_wifi_init() and before esp_wifi_start().
+  * @attention 1. Only one wake interval for all connectionless modules.
+  * @attention 2. This configuration could work at connected status.
+  *               When ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is enabled, this configuration could work at disconnected status.
+  * @attention 3. Event WIFI_EVENT_CONNECTIONLESS_MODULE_WAKE_INTERVAL_START would be posted each time wake interval starts.
+  * @attention 4. Recommend to configure interval in multiples of hundred. (e.g. 100ms)
   *
-  * @param      ifx  Interface to be configured.
-  * @param      rate Phy rate to be configured.
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - others: failed
+  * @param      wake_interval  Milliseconds after would the chip wake up, from 1 to 65535.
   */
-esp_err_t esp_wifi_config_espnow_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
-
-/**
-  * @brief      Set interval for station to wake up periodically at disconnected.
-  *
-  * @attention 1. Only when ESP_WIFI_STA_DISCONNECTED_PM_ENABLE is enabled, this configuration could work
-  * @attention 2. This configuration only work for station mode and disconnected status
-  * @attention 3. This configuration would influence nothing until some module configure wake_window
-  * @attention 4. A sensible interval which is not too small is recommended (e.g. 100ms)
-  *
-  * @param      interval  how much micriosecond would the chip wake up, from 1 to 65535.
-  */
-esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
+esp_err_t esp_wifi_connectionless_module_set_wake_interval(uint16_t wake_interval);
 
 /**
   * @brief     configure country
@@ -1255,7 +1242,7 @@ esp_err_t esp_wifi_set_connectionless_wake_interval(uint16_t interval);
   *               "RO","SE","SI","SK","TW","US"
   *
   * @attention 7. When country code "01" (world safe mode) is set, SoftAP mode won't contain country IE.
-  * @attention 8. The default country is "CN" and ieee80211d_enabled is TRUE.
+  * @attention 8. The default country is "01" (world safe mode) and ieee80211d_enabled is TRUE.
   *
   * @param     country   the configured country ISO code
   * @param     ieee80211d_enabled   802.11d is enabled or not
@@ -1292,6 +1279,19 @@ esp_err_t esp_wifi_get_country_code(char *country);
   *    - others: failed
   */
 esp_err_t esp_wifi_config_80211_tx_rate(wifi_interface_t ifx, wifi_phy_rate_t rate);
+
+/**
+  * @brief      Disable PMF configuration for specified interface
+  *
+  * @attention  This API should be called after esp_wifi_set_config() and before esp_wifi_start().
+  *
+  * @param      ifx  Interface to be configured.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_disable_pmf_config(wifi_interface_t ifx);
 
 #ifdef __cplusplus
 }

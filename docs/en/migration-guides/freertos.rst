@@ -14,7 +14,19 @@ Tasks Snapshot
 
 The header ``task_snapshot.h`` has been removed from ``freertos/task.h``. ESP-IDF developers should include ``"freertos/task_snapshot.h``` in case they need tasks snapshot API.
 
+The function :cpp:func:`vTaskGetSnapshot` now returns ``BaseType_t``. Return value shall be ``pdTRUE`` on success and ``pdFALSE`` otherwise.
 
 FreeRTOS Asserts
 ----------------
 Previously FreeRTOS asserts were configured separately from the rest of the system using the `FREERTOS_ASSERT` kconfig option. This option has now been removed and the configuration is now done through `COMPILER_OPTIMIZATION_ASSERTION_LEVEL`.
+
+Port Macro APIs
+---------------
+The file ``portmacro_deprecated.h`` which was added to maintain backward compatibility for deprecated APIs is removed. Users are advised to use the alternate functions for the deprecated APIs as listed below:
+
+- ``portENTER_CRITICAL_NESTED()`` is removed. Users should use the ``portSET_INTERRUPT_MASK_FROM_ISR()`` macro instead.
+- ``portEXIT_CRITICAL_NESTED()`` is removed. Users should use the ``portCLEAR_INTERRUPT_MASK_FROM_ISR()`` macro instead.
+- ``vPortCPUInitializeMutex()`` is removed. Users should use the ``spinlock_initialize()`` function instead.
+- ``vPortCPUAcquireMutex()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
+- ``vPortCPUAcquireMutexTimeout()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
+- ``vPortCPUReleaseMutex()`` is removed. Users should use the ``spinlock_release()`` function instead.

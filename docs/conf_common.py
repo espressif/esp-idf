@@ -39,6 +39,9 @@ BT_DOCS = ['api-guides/blufi.rst',
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
                    'api-reference/bluetooth/esp_avrc.rst',
+                   'api-reference/bluetooth/esp_hidd.rst',
+                   'api-reference/bluetooth/esp_l2cap_bt.rst',
+                   'api-reference/bluetooth/esp_sdp.rst',
                    'api-reference/bluetooth/esp_hf_defs.rst',
                    'api-reference/bluetooth/esp_hf_client.rst',
                    'api-reference/bluetooth/esp_hf_ag.rst',
@@ -160,6 +163,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'esp32c3':ESP32C3_DOCS}
 
 extensions += ['sphinx_copybutton',
+               'sphinxcontrib.wavedrom',
                # Note: order is important here, events must
                # be registered by one extension before they can be
                # connected to another extension
@@ -172,6 +176,9 @@ extensions += ['sphinx_copybutton',
                'esp_docs.idf_extensions.gen_idf_tools_links',
                'esp_docs.esp_extensions.run_doxygen',
                ]
+
+# Use wavedrompy as backend, insted of wavedrom-cli
+render_using_wavedrompy = True
 
 # link roles config
 github_repo = 'espressif/esp-idf'
@@ -190,6 +197,21 @@ languages = ['en', 'zh_CN']
 google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
 
 project_homepage = 'https://github.com/espressif/esp-idf'
+
+linkcheck_anchors = False
+
+linkcheck_exclude_documents = ['index',  # several false positives due to the way we link to different sections
+                               'api-reference/protocols/esp_local_ctrl',  # Fails due to `https://<mdns-hostname>.local`
+                               'api-reference/provisioning/wifi_provisioning',  # Fails due to `https://<mdns-hostname>.local`
+                               ]
+
+
+linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
+                    'https://dl.espressif.com/dl/esp32s3_rom.elf',  # Not published
+                    'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
+                    'https://www.espressif.com/sites/default/files/documentation/esp32-c2_datasheet_en.pdf',  # Not published
+                    ]
+
 
 # Custom added feature to allow redirecting old URLs
 with open('../page_redirects.txt') as f:

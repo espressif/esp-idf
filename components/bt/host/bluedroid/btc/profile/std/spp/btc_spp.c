@@ -106,7 +106,7 @@ static int init_slot_data(slot_data_t *slot_data, size_t queue_size)
     return 0;
 }
 
-void free_slot_data(slot_data_t *slot_data)
+static void free_slot_data(slot_data_t *slot_data)
 {
     fixed_queue_free(slot_data->queue, spp_osi_free);
     slot_data->queue = NULL;
@@ -266,7 +266,7 @@ static void spp_free_slot(spp_slot_t *slot)
 
 static inline void btc_spp_cb_to_app(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
-    esp_spp_cb_t *btc_spp_cb = (esp_spp_cb_t *)btc_profile_cb_get(BTC_PID_SPP);
+    esp_spp_cb_t btc_spp_cb = (esp_spp_cb_t)btc_profile_cb_get(BTC_PID_SPP);
     if (btc_spp_cb) {
         btc_spp_cb(event, param);
     }
@@ -352,6 +352,20 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         }
         new_user_data = (void *)(uintptr_t)slot->id;
         break;
+    case BTA_JV_RFCOMM_CL_INIT_EVT:
+        slot = spp_find_slot_by_id(id);
+        if (!slot) {
+            BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
+            p_data->rfc_cl_init.status = ESP_SPP_FAILURE;
+            break;
+        }
+
+        if (p_data->rfc_cl_init.status == BTA_JV_SUCCESS) {
+            slot->rfc_handle = p_data->rfc_cl_init.handle;
+        } else {
+            spp_free_slot(slot);
+        }
+        break;
     case BTA_JV_RFCOMM_OPEN_EVT:
         slot = spp_find_slot_by_id(id);
         if (!slot) {
@@ -359,7 +373,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             p_data->rfc_open.status = ESP_SPP_NO_CONNECTION;
             break;
         }
-        slot->connected = TRUE;
+        slot->connected = true;
         slot->rfc_handle = p_data->rfc_open.handle;
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_open.handle);
         BTA_JvSetPmProfile(p_data->rfc_open.handle, BTA_JV_PM_ID_1, BTA_JV_CONN_OPEN);
@@ -371,7 +385,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             p_data->rfc_close.status = ESP_SPP_NO_CONNECTION;
             break;
         }
-        if (slot->connected && p_data->rfc_close.port_status != PORT_LOCAL_CLOSED) {
+        if (slot->rfc_handle && p_data->rfc_close.port_status != PORT_LOCAL_CLOSED) {
             BTA_JvRfcommClose(slot->rfc_handle, NULL, (void *)slot->id);
         }
         p_data->rfc_close.status = BTA_JV_SUCCESS;
@@ -505,6 +519,7 @@ static void btc_spp_init(btc_spp_args_t *arg)
         }
         if ((spp_local_param.tx_event_group = xEventGroupCreate()) == NULL) {
             BTC_TRACE_ERROR("%s create tx_event_group failed\n", __func__);
+            osi_mutex_free(&spp_local_param.spp_slot_mutex);
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
@@ -567,11 +582,6 @@ static void btc_spp_uninit(void)
         BTA_JvDisable((tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb);
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     } while(0);
-
-    if (spp_local_param.tx_event_group) {
-        vEventGroupDelete(spp_local_param.tx_event_group);
-        spp_local_param.tx_event_group = NULL;
-    }
 
     if (ret != ESP_SPP_SUCCESS) {
         esp_spp_cb_param_t param;
@@ -1056,6 +1066,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 BT_HDR *p_buf;
                 serial = slot->serial;
                 if ((p_buf = fixed_queue_try_peek_first(slot->tx.queue)) == NULL) {
+                    osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                     break;
                 }
                 if (p_data->rfc_write.status == BTA_JV_SUCCESS) {
@@ -1121,7 +1132,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 // if rx still has data, delay free slot
                 if (slot->close_alarm == NULL && slot->rx.queue && fixed_queue_length(slot->rx.queue) > 0) {
                     tBTA_JV *p_arg = NULL;
-                    if ((p_arg = malloc(sizeof(tBTA_JV))) == NULL) {
+                    if ((p_arg = osi_malloc(sizeof(tBTA_JV))) == NULL) {
                         param.close.status = ESP_SPP_NO_RESOURCE;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                         BTC_TRACE_ERROR("%s unable to malloc slot close_alarm arg!", __func__);
@@ -1241,6 +1252,10 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         param.uninit.status = ESP_SPP_SUCCESS;
         BTA_JvFree();
         osi_mutex_free(&spp_local_param.spp_slot_mutex);
+        if (spp_local_param.tx_event_group) {
+            vEventGroupDelete(spp_local_param.tx_event_group);
+            spp_local_param.tx_event_group = NULL;
+        }
 #if SPP_DYNAMIC_MEMORY == TRUE
         osi_free(spp_local_param_ptr);
         spp_local_param_ptr = NULL;

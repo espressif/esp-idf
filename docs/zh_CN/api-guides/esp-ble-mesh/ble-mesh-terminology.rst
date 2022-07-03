@@ -214,7 +214,7 @@ ESP-BLE-MESH Terminology
     - "A node can also use an IV Update procedure to signal to peer nodes that it is updating the IV Index."
     - IV 更新程序用于更新 ESP-BLE-MESH 网络的 IV Index 的值，这个值和消息加密时所需的随机数相关。为了保证随机数的值不重复，所以将这个值定期增加。IV Index 是一个 32 位的值，是一种共享网络资源，比如一个 mesh 网中的所有节点共享一个 IV Index 值。IV Index 从 0x00000000 开始，在 IV 更新过程中递增，并由特定的进程维护，以保证整个 Mesh 网内共享一个 IV Index。当节点认为它有耗尽其序列号的风险，或它确定另一个节点即将耗尽其序列号时，可以启动该程序。注意：每次的更新时间不得低于 96 小时。节点接收到 secure network beacon 或者确定自己的序列号大于特定值时，会触发 IV 更新程序。
 
-官方定义摘自 `ESP-BLE-MESH Glossary of Terms <https://www.bluetooth.com/bluetooth-technology/topology-options/le-mesh/mesh-glossary/>`_.
+官方定义摘自 `ESP-BLE-MESH Glossary of Terms <https://www.bluetooth.com/learn-about-bluetooth/recent-enhancements/mesh/mesh-glossary/>`_.
 查看更多术语，也请参照上述网址。
 
 

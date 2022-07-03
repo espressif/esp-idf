@@ -140,7 +140,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 请参考 :component_file:`lwip/port/esp32/vfs_lwip.c` 以了解使用 LWIP 的套接字驱动参考实现。
 
 .. note::
-    如果 :cpp:func:`select` 用于套接字文件描述符，您可以禁用 :envvar:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
+    如果 :cpp:func:`select` 用于套接字文件描述符，您可以禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
     不要在 :cpp:func:`select` 调用过程中更改套接字驱动，否则会出现一些未定义行为。
 
 路径

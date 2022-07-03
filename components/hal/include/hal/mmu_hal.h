@@ -40,7 +40,7 @@ uint32_t mmu_hal_pages_to_bytes(uint32_t mmu_id, uint32_t page_num);
  * @param bytes     length in byte
  *
  * @return
- *         length in MMU_PAGE_SIZE
+ *         length in CONFIG_MMU_PAGE_SIZE
  */
 uint32_t mmu_hal_bytes_to_pages(uint32_t mmu_id, uint32_t bytes);
 
@@ -54,7 +54,7 @@ uint32_t mmu_hal_bytes_to_pages(uint32_t mmu_id, uint32_t bytes);
  * @param len          length to be mapped, in bytes
  * @param[out] out_len actual mapped length
  *
- * @note vaddr and paddr should be aligned with the MMU_PAGE_SIZE, see `mmu_ll.h`
+ * @note vaddr and paddr should be aligned with the mmu page size, see CONFIG_MMU_PAGE_SIZE
  */
 void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len);
 #endif

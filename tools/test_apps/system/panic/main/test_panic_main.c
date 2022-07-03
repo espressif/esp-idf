@@ -194,12 +194,17 @@ static const char* get_test_name(void)
         c = getchar();
         if (c == EOF) {
             vTaskDelay(pdMS_TO_TICKS(10));
-        } else if (c == '\r') {
-            continue;
-        } else if (c == '\n') {
+        } else if ((c == '\r' || c == '\n') && p != test_name_str) {
+            /* terminate the line */
+            puts("\n\r");
+            fflush(stdout);
             *p = '\0';
             break;
         } else {
+            /* echo the received character */
+            putchar(c);
+            fflush(stdout);
+            /* and save it */
             *p = c;
             ++p;
         }

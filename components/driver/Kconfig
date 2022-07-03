@@ -1,6 +1,6 @@
-menu "Driver configurations"
+menu "Driver Configurations"
 
-    menu "ADC configuration"
+    menu "ADC Configuration"
 
         config ADC_FORCE_XPD_FSM
             bool "Use the FSM to control ADC power"
@@ -21,20 +21,7 @@ menu "Driver configurations"
 
     endmenu  # ADC Configuration
 
-    menu "MCPWM configuration"
-        depends on SOC_MCPWM_SUPPORTED
-        config MCPWM_ISR_IN_IRAM
-            bool "Place MCPWM ISR function into IRAM"
-            default n
-            help
-                If this option is not selected, the MCPWM interrupt will be deferred when the Cache
-                is in a disabled state (e.g. Flash write/erase operation).
-
-                Note that if this option is selected, all user registered ISR callbacks should never
-                try to use cache as well. (with IRAM_ATTR)
-    endmenu # MCPWM Configuration
-
-    menu "SPI configuration"
+    menu "SPI Configuration"
 
         config SPI_MASTER_IN_IRAM
             bool "Place transmitting functions of SPI master into IRAM"
@@ -84,12 +71,13 @@ menu "Driver configurations"
 
     endmenu # SPI Configuration
 
-    menu "TWAI configuration"
+    menu "TWAI Configuration"
         depends on SOC_TWAI_SUPPORTED
 
         config TWAI_ISR_IN_IRAM
             bool "Place TWAI ISR function into IRAM"
             default n
+            select PERIPH_CTRL_FUNC_IN_IRAM if TWAI_ERRATA_FIX_RX_FRAME_INVALID || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
             help
                 Place the TWAI ISR in to IRAM. This will allow the ISR to avoid
                 cache misses, and also be able to run whilst the cache is disabled
@@ -165,7 +153,7 @@ menu "Driver configurations"
 
     endmenu # TEMP_SENSOR Configuration
 
-    menu "UART configuration"
+    menu "UART Configuration"
 
         config UART_ISR_IN_IRAM
             bool "Place UART ISR function into IRAM"
@@ -185,6 +173,13 @@ menu "Driver configurations"
                 pullup/pulldown mode in sleep.
                 If this option is selected, chip will automatically emulate the behaviour of switching,
                 and about 450B of source codes would be placed into IRAM.
+
+        config GPIO_CTRL_FUNC_IN_IRAM
+            bool "Place GPIO control functions into IRAM"
+            default n
+            help
+                Place GPIO control functions (like intr_disable/set_level) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu # GPIO Configuration
 
     menu "GDMA Configuration"
@@ -270,5 +265,67 @@ menu "Driver configurations"
                 Wether to enable the debug log message for PCNT driver.
                 Note that, this option only controls the PCNT driver log, won't affect other drivers.
     endmenu # PCNT Configuration
+
+    menu "RMT Configuration"
+        depends on SOC_RMT_SUPPORTED
+        config RMT_ISR_IRAM_SAFE
+            bool "RMT ISR IRAM-Safe"
+            default n
+            select GDMA_ISR_IRAM_SAFE if SOC_RMT_SUPPORT_DMA     # RMT basic functionality relies on GDMA callback
+            select GDMA_CTRL_FUNC_IN_IRAM if SOC_RMT_SUPPORT_DMA # RMT needs to restart the GDMA in the interrupt
+            help
+                Ensure the RMT interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config RMT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        config RMT_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for RMT driver.
+                Note that, this option only controls the RMT driver log, won't affect other drivers.
+    endmenu # RMT Configuration
+
+    menu "MCPWM Configuration"
+        depends on SOC_MCPWM_SUPPORTED
+        config MCPWM_ISR_IRAM_SAFE
+            bool "Place MCPWM ISR function into IRAM"
+            default n
+            help
+                This will ensure the MCPWM interrupt handle is IRAM-Safe, allow to avoid flash
+                cache misses, and also be able to run whilst the cache is disabled.
+                (e.g. SPI Flash write)
+
+    endmenu # MCPWM Configuration
+
+    menu "I2S Configuration"
+        depends on SOC_I2S_SUPPORTED
+        config I2S_ISR_IRAM_SAFE
+            bool "I2S ISR IRAM-Safe"
+            default n
+            help
+                Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config I2S_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress leagcy driver deprecated warning"
+            default n
+            help
+                Enable this option will suppress the deprecation warnings of using APIs in legacy I2S driver.
+
+        config I2S_ENABLE_DEBUG_LOG
+            bool "Enable I2S debug log"
+            default n
+            help
+                Wether to enable the debug log message for I2S driver.
+                Note that, this option only controls the I2S driver log, will not affect other drivers.
+    endmenu # I2S Configuration
 
 endmenu  # Driver configurations

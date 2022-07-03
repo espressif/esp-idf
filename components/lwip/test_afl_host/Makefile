@@ -1,35 +1,72 @@
-COMPONENTS_DIR=../..
-COMPILER_ICLUDE_DIR=$(shell echo `which xtensa-esp32-elf-gcc | xargs dirname | xargs dirname`/xtensa-esp32-elf)
-CFLAGS=-std=gnu99 -Og -ggdb -ffunction-sections -fdata-sections -nostdlib -Wall  -Werror=all -Wno-int-to-pointer-cast -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=deprecated-declarations -Wno-macro-redefined -Wno-constant-conversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-typedef-redefinition -Wno-incompatible-pointer-types  -Wextra \
--Wno-unused-parameter -Wno-sign-compare -Wno-address   -Wno-unused-variable -DESP_PLATFORM -D IDF_VER=\"v3.1\" -MMD -MP -DWITH_POSIX -DLWIP_NO_CTYPE_H=1
-INC_DIRS=-I . -I ./build/config -I $(COMPONENTS_DIR)/newlib/platform_include -I $(COMPONENTS_DIR)/newlib/include -I $(COMPONENTS_DIR)/driver/include -I $(COMPONENTS_DIR)/esp32/include -I $(COMPONENTS_DIR)/ethernet/include -I $(COMPONENTS_DIR)/freertos/esp_additions/include -I $(COMPONENTS_DIR)/freertos/esp_additions/include/freertos -I $(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel/include -I $(COMPONENTS_DIR)/heap/include -I $(COMPONENTS_DIR)/lwip/lwip/src/include  -I $(COMPONENTS_DIR)/lwip/include/apps -I $(COMPONENTS_DIR)/lwip/lwip/src/include/netif -I $(COMPONENTS_DIR)/lwip/lwip/src/include/posix -I $(COMPONENTS_DIR)/lwip/port/esp32/include -I $(COMPONENTS_DIR)/lwip/lwip/src/include/posix -I $(COMPONENTS_DIR)/lwip/include/apps/ping -I $(COMPONENTS_DIR)/lwip/include/apps/sntp  -I $(COMPONENTS_DIR)/soc/esp32/include -I $(COMPONENTS_DIR)/soc/include -I $(COMPONENTS_DIR)/esp_rom/include  -I $(COMPONENTS_DIR)/esp_common/include -I $(COMPONENTS_DIR)/esp_hw_support/include -I $(COMPONENTS_DIR)/xtensa/include -I $(COMPONENTS_DIR)/xtensa/esp32/include -I $(COMPONENTS_DIR)/esp_wifi/include -I $(COMPONENTS_DIR)/esp_event/include -I $(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel/portable/xtensa/include  -I $(COMPONENTS_DIR)/esp_system/include -I $(COMPONENTS_DIR)/esp_timer/include -I $(COMPONENTS_DIR)/soc/include -I $(COMPONENTS_DIR)/soc/include -I $(COMPONENTS_DIR)/soc/src/esp32/include -I $(COMPONENTS_DIR)/soc/esp32/include -I $(COMPONENTS_DIR)/esp_netif/include -I $(COMPONENTS_DIR)/esp_eth/include -I $(COMPONENTS_DIR)/esp_netif/lwip -I $(COMPONENTS_DIR)/hal/include -I $(COMPONENTS_DIR)/hal/esp32/include -I $(COMPILER_ICLUDE_DIR)/include
+LWIP_COMPONENT_DIR=../
+
+CFLAGS=-D IDF_VER=\"v3.1\" \
+		-DESP_PLATFORM \
+		-DLWIP_NO_CTYPE_H=1 \
+		-DWITH_POSIX \
+		-fdata-sections \
+		-ffunction-sections \
+		-ggdb \
+		-MMD \
+		-MP \
+		-nostdlib \
+		-Og \
+		-std=gnu99 \
+		-Wall \
+		-Werror=all \
+		-Wextra \
+		-Wno-address \
+		-Wno-constant-conversion \
+		-Wno-error=deprecated-declarations \
+		-Wno-error=unused-function \
+		-Wno-error=unused-variable \
+		-Wno-incompatible-pointer-types \
+		-Wno-incompatible-pointer-types-discards-qualifiers \
+		-Wno-int-to-pointer-cast \
+		-Wno-macro-redefined \
+		-Wno-sign-compare \
+		-Wno-typedef-redefinition \
+		-Wno-unused-parameter \
+		-Wno-unused-variable
+
+INC_DIRS=-I . \
+		-I ./build/config \
+		-I $(LWIP_COMPONENT_DIR)/include/apps \
+		-I $(LWIP_COMPONENT_DIR)/include/apps/ping \
+		-I $(LWIP_COMPONENT_DIR)/include/apps/sntp \
+		-I $(LWIP_COMPONENT_DIR)/lwip/src/include \
+		-I $(LWIP_COMPONENT_DIR)/lwip/src/include/netif \
+		-I $(LWIP_COMPONENT_DIR)/lwip/src/include/posix \
+		-I $(LWIP_COMPONENT_DIR)/lwip/src/include/posix \
+		-I $(LWIP_COMPONENT_DIR)/port/esp32/include
+
 TEST_NAME=test
 FUZZ=afl-fuzz
 GEN_CFG=generate_config
 LD=$(CC)
 ifeq ($(MODE),dhcp_client)
-    DEPENDENCY_INJECTION=-include dhcp_di.h
-    OBJECTS=dhcp.o def.o network_mock.o test_dhcp_client.o
-    SAMPLE_PACKETS=in_dhcp_client
+	DEPENDENCY_INJECTION=-include dhcp_di.h
+	OBJECTS=dhcp.o def.o esp32_mock.o test_dhcp_client.o
+	SAMPLE_PACKETS=in_dhcp_client
 else ifeq ($(MODE),dhcp_server)
-    DEPENDENCY_INJECTION=-include dhcpserver_di.h
-    OBJECTS=dhcpserver.o def.o test_dhcp_server.o network_mock.o esp_netif_loopback_mock.o
-    SAMPLE_PACKETS=in_dhcp_server
+	DEPENDENCY_INJECTION=-include dhcpserver_di.h
+	OBJECTS=dhcpserver.o def.o esp32_mock.o test_dhcp_server.o
+	SAMPLE_PACKETS=in_dhcp_server
 else ifeq ($(MODE),dns)
-    CFLAGS+=-DNOT_MOCK_DNS
-    DEPENDENCY_INJECTION=-include dns_di.h
-    OBJECTS=dns.o def.o test_dns.o network_mock.o
-    SAMPLE_PACKETS=in_dns
+	CFLAGS+=-DNOT_MOCK_DNS
+	DEPENDENCY_INJECTION=-include dns_di.h
+	OBJECTS=dns.o def.o esp32_mock.o test_dns.o
+	SAMPLE_PACKETS=in_dns
 else
-    $(error Please specify MODE: dhcp_server, dhcp_client, dns)
+	$(error Please specify MODE: dhcp_server, dhcp_client, dns)
 endif
 
 ifeq ($(INSTR),off)
-    CC=gcc
-    CFLAGS+=-DINSTR_IS_OFF
-    TEST_NAME=test_sim
+	CC=gcc
+	CFLAGS+=-DINSTR_IS_OFF
+	TEST_NAME=test_sim
 else
-    CC=afl-clang-fast
+	CC=afl-clang-fast
 endif
 
 CFLAGS+=$(INC_DIRS)

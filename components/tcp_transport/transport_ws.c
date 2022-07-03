@@ -41,6 +41,7 @@ static const char *TAG = "TRANSPORT_WS";
 
 typedef struct {
     uint8_t opcode;
+    bool fin;                           /*!< Frame fin flag, for continuations */
     char mask_key[4];                   /*!< Mask key for this payload */
     int payload_len;                    /*!< Total length of the payload */
     int bytes_remaining;                /*!< Bytes left to read of the payload  */
@@ -151,6 +152,15 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     unsigned char client_key[28] = {0};
 
     const char *user_agent_ptr = (ws->user_agent) ? (ws->user_agent) : "ESP32 Websocket Client";
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+    if (!ws->buffer) {
+        ws->buffer = malloc(WS_BUFFER_SIZE);
+        if (!ws->buffer) {
+            ESP_LOGE(TAG, "Cannot allocate buffer for connect, need-%d", WS_BUFFER_SIZE);
+            return -1;
+        }
+    }
+#endif
 
     size_t outlen = 0;
     esp_crypto_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
@@ -237,6 +247,10 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+    free(ws->buffer);
+    ws->buffer = NULL;
+#endif
     return 0;
 }
 
@@ -382,6 +396,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
         return rlen;
     }
     ws->frame_state.header_received = true;
+    ws->frame_state.fin = (*data_ptr & 0x80) != 0;
     ws->frame_state.opcode = (*data_ptr & 0x0F);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
@@ -709,6 +724,12 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
     ws->propagate_control_frames = config->propagate_control_frames;
 
     return err;
+}
+
+bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t)
+{
+  transport_ws_t *ws = esp_transport_get_context_data(t);
+  return ws->frame_state.fin;
 }
 
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)

@@ -120,6 +120,7 @@ static void example_task(void *p)
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(arg->gptimer, &cbs, arg));
     ESP_ERROR_CHECK(gptimer_set_alarm_action(arg->gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_enable(arg->gptimer));
     ESP_ERROR_CHECK(gptimer_start(arg->gptimer));
     while (1) {
         SYSVIEW_EXAMPLE_WAIT_EVENT_START();
@@ -146,7 +147,7 @@ void app_main(void)
 
     for (int i = 0; i < portNUM_PROCESSORS; i++) {
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = 1000000,
         };

@@ -13,6 +13,7 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 * `idf.py -T <component> -T <component> ... build` with `component` set to names of the components to be included in the test app. Or `idf.py -T all build` to build the test app with all the tests for components having `test` subdirectory.
 * Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
 * Unit test have a few preset sdkconfigs. It provides command `idf.py ut-clean-config_name` and `idf.py ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `idf.py -T all ut-build-default` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
+* You may extract the test cases presented in the built elf file by calling `ElfUnitTestParser.py <your_elf>`.
 
 # Flash Size
 
@@ -38,7 +39,7 @@ Unit test uses 3 stages in CI: `build`, `assign_test`, `unit_test`.
 
 ### Build Stage:
 
-`build_esp_idf_tests` job will build all UT configs and parse test cases form built elf files. Built binary (`tools/unit-test-app/output`) and parsed cases (`components/idf_test/unit_test/TestCaseAll.yml`) will be saved as artifacts.
+`build_esp_idf_tests` job will build all UT configs and run script `UnitTestParser.py` to parse test cases form built elf files. Built binary (`tools/unit-test-app/output`) and parsed cases (`components/idf_test/unit_test/TestCaseAll.yml`) will be saved as artifacts.
 
 When we add new test case, it will construct a structure to save case data during build. We'll parse the test case from this structure. The description (defined in test case: `TEST_CASE("name", "description")`) is used to extend test case definition. The format of test description is a list of tags:
 
@@ -46,7 +47,7 @@ When we add new test case, it will construct a structure to save case data durin
 2. the rest tags should be [type=value]. Tags could have default value and omitted value. For example, reset tag default value is "POWERON_RESET", omitted value is "" (do not reset) :
     * "[reset]" equal to [reset=POWERON_RESET]
     * if reset tag doesn't exist, then it equals to [reset=""]
-3. the `[leaks]` tag is used to disable the leak checking. A specific maximum memory leakage can be set as follows: `[leaks=500]`. This allows no more than 500 bytes of heap to be leaked. Also there is a special function to set the critical level of leakage not through a tag, just directly in the test code ``test_utils_set_critical_leak_level()``. 
+3. the `[leaks]` tag is used to disable the leak checking. A specific maximum memory leakage can be set as follows: `[leaks=500]`. This allows no more than 500 bytes of heap to be leaked. Also there is a special function to set the critical level of leakage not through a tag, just directly in the test code ``test_utils_set_critical_leak_level()``.
 
 The priority of using leakage level is as follows:
 
@@ -58,7 +59,7 @@ Tests marked as `[leaks]` or `[leaks=xxx]` reset the device after completion (or
 
 `TagDefinition.yml` defines how we should parse the description. In `TagDefinition.yml`, we declare the tags we are interested in, their default value and omitted value. Parser will parse the properities of test cases according to this file, and add them as test case attributes.
 
-We will build unit-test-app with different sdkconfigs. Some config items requires specific board to run. For example, if `CONFIG_ESP32_SPIRAM_SUPPORT` is enabled, then unit test app must run on board supports PSRAM. `ConfigDependency.yml` is used to define the mapping between sdkconfig items and tags. The tags will be saved as case attributes, used to select jobs and runners. In the previous example, `psram` tag is generated, will only select jobs and runners also contains `psram` tag.
+We will build unit-test-app with different sdkconfigs. Some config items requires specific board to run. For example, if `CONFIG_SPIRAM` is enabled, then unit test app must run on board supports PSRAM. `ConfigDependency.yml` is used to define the mapping between sdkconfig items and tags. The tags will be saved as case attributes, used to select jobs and runners. In the previous example, `psram` tag is generated, will only select jobs and runners also contains `psram` tag.
 
 ### Assign Test Stage:
 
@@ -117,6 +118,7 @@ If you want to reproduce locally, you need to:
         * You can refer to [unit test document](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/unit-tests.html#running-unit-tests) to run test manually.
         * Or, you can use `tools/unit-test-app/unit_test.py` to run the test cases (see below)
 
+# Testing and debugging on local machine
 ## Running unit tests on local machine by `unit_test.py`
 
 First, install Python dependencies and export the Python path where the IDF CI Python modules are found:

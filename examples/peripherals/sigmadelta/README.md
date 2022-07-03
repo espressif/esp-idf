@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Sigma Delta Modulation Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -12,7 +15,7 @@ This example uses the sigma-delta driver to generate modulated output on a GPIO.
 Besides the [ESP32 development board](https://www.espressif.com/en/products/hardware/development-boards) you need a LED and a resistor to limit the LED current. Connect them as below:
 
 ```
-             330R            LED     
+             330R            LED
 GPIO4 +----/\/\/\----+------|>|-----+ GND
 ```
 

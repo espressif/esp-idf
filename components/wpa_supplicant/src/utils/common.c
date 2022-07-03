@@ -1,35 +1,18 @@
 /*
  * wpa_supplicant/hostapd / common helper functions, etc.
- * Copyright (c) 2002-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
+#include <limits.h>
 
-#include "utils/common.h"
 #include <time.h>
+#include "common/ieee802_11_defs.h"
+#include "common.h"
 
-/**
- * inc_byte_array - Increment arbitrary length byte array by one
- * @counter: Pointer to byte array
- * @len: Length of the counter in bytes
- *
- * This function increments the last byte of the counter by one and continues
- * rolling over to more significant bytes if the byte was incremented from
- * 0xff to 0x00.
- */
-void inc_byte_array(u8 *counter, size_t len)
-{
-	int pos = len - 1;
-	while (pos >= 0) {
-		counter[pos]++;
-		if (counter[pos] != 0)
-			break;
-		pos--;
-	}
-}
 
 static int hex2num(char c)
 {
@@ -57,6 +40,36 @@ int hex2byte(const char *hex)
 
 
 /**
+ * hwaddr_aton2 - Convert ASCII string to MAC address (in any known format)
+ * @txt: MAC address as a string (e.g., 00:11:22:33:44:55 or 0011.2233.4455)
+ * @addr: Buffer for the MAC address (ETH_ALEN = 6 bytes)
+ * Returns: Characters used (> 0) on success, -1 on failure
+ */
+int hwaddr_aton2(const char *txt, u8 *addr)
+{
+	int i;
+	const char *pos = txt;
+
+	for (i = 0; i < 6; i++) {
+		int a, b;
+
+		while (*pos == ':' || *pos == '.' || *pos == '-')
+			pos++;
+
+		a = hex2num(*pos++);
+		if (a < 0)
+			return -1;
+		b = hex2num(*pos++);
+		if (b < 0)
+			return -1;
+		*addr++ = (a << 4) | b;
+	}
+
+	return pos - txt;
+}
+
+
+/**
  * hexstr2bin - Convert ASCII hex string into binary data
  * @hex: ASCII hex string (e.g., "01ab")
  * @buf: Buffer for the binary data
@@ -80,6 +93,28 @@ int hexstr2bin(const char *hex, u8 *buf, size_t len)
 	}
 	return 0;
 }
+
+
+/**
+ * inc_byte_array - Increment arbitrary length byte array by one
+ * @counter: Pointer to byte array
+ * @len: Length of the counter in bytes
+ *
+ * This function increments the last byte of the counter by one and continues
+ * rolling over to more significant bytes if the byte was incremented from
+ * 0xff to 0x00.
+ */
+void inc_byte_array(u8 *counter, size_t len)
+{
+	int pos = len - 1;
+	while (pos >= 0) {
+		counter[pos]++;
+		if (counter[pos] != 0)
+			break;
+		pos--;
+	}
+}
+
 
 void wpa_get_ntp_timestamp(u8 *buf)
 {
@@ -133,7 +168,7 @@ void printf_encode(char *txt, size_t maxlen, const u8 *data, size_t len)
 			*txt++ = 't';
 			break;
 		default:
-			if (data[i] >= 32 && data[i] <= 127) {
+			if (data[i] >= 32 && data[i] <= 126) {
 				*txt++ = data[i];
 			} else {
 				txt += os_snprintf(txt, end - txt, "\\x%02x",
@@ -229,6 +264,39 @@ size_t printf_decode(u8 *buf, size_t maxlen, const char *str)
 }
 
 
+/**
+ * wpa_ssid_txt - Convert SSID to a printable string
+ * @ssid: SSID (32-octet string)
+ * @ssid_len: Length of ssid in octets
+ * Returns: Pointer to a printable string
+ *
+ * This function can be used to convert SSIDs into printable form. In most
+ * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
+ * does not limit the used character set, so anything could be used in an SSID.
+ *
+ * This function uses a static buffer, so only one call can be used at the
+ * time, i.e., this is not re-entrant and the returned buffer must be used
+ * before calling this again.
+ */
+const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len)
+{
+	static char ssid_txt[SSID_MAX_LEN * 4 + 1];
+
+	if (ssid == NULL) {
+		ssid_txt[0] = '\0';
+		return ssid_txt;
+	}
+
+	printf_encode(ssid_txt, sizeof(ssid_txt), ssid, ssid_len);
+	return ssid_txt;
+}
+
+
+void * __hide_aliasing_typecast(void *foo)
+{
+	return foo;
+}
+
 
 char * wpa_config_parse_string(const char *value, size_t *len)
 {
@@ -312,6 +380,19 @@ int wpa_is_hex(const u8 *data, size_t len)
 }
 
 
+int has_ctrl_char(const u8 *data, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i++) {
+		if (data[i] < 32 || data[i] == 127)
+			return 1;
+	}
+	return 0;
+}
+
+
+
 size_t wpa_merge_byte_arrays(u8 *res, size_t res_len,
 			 const u8 *src1, size_t src1_len,
 			 const u8 *src2, size_t src2_len)
@@ -358,38 +439,35 @@ char * dup_binstr(const void *src, size_t len)
 
 	return res;
 }
-void wpa_bin_clear_free(void *bin, size_t len)
-{
-	if (bin) {
-		os_memset(bin, 0, len);
-		os_free(bin);
-	}
-}
 
-int int_array_len(const int *a)
+
+size_t int_array_len(const int *a)
 {
-	int i;
+	size_t i;
+
 	for (i = 0; a && a[i]; i++)
 		;
 	return i;
-}
-
-void bin_clear_free(void *bin, size_t len)
-{
-	if (bin) {
-		os_memset(bin, 0, len);
-		os_free(bin);
-	}
 }
 
 void str_clear_free(char *str)
 {
 	if (str) {
 		size_t len = os_strlen(str);
-		os_memset(str, 0, len);
+		forced_memzero(str, len);
 		os_free(str);
 	}
 }
+
+
+void bin_clear_free(void *bin, size_t len)
+{
+	if (bin) {
+		forced_memzero(bin, len);
+		os_free(bin);
+	}
+}
+
 
 int os_gmtime(os_time_t t, struct os_tm *tm)
 {
@@ -430,6 +508,39 @@ int os_mktime(int year, int month, int day, int hour, int min, int sec,
 	return 0;
 }
 
+void * os_memdup(const void *src, size_t len)
+{
+	void *r = os_malloc(len);
+
+	if (r && src)
+		os_memcpy(r, src, len);
+	return r;
+}
+
+int os_reltime_expired(struct os_time *now,
+			struct os_time *ts,
+			os_time_t timeout_secs)
+{
+	struct os_time age;
+
+	os_time_sub(now, ts, &age);
+	return (age.sec > timeout_secs) ||
+		(age.sec == timeout_secs && age.usec > 0);
+}
+
+
+u8 rssi_to_rcpi(int rssi)
+{
+	if (!rssi)
+		return 255; /* not available */
+	if (rssi < -110)
+		return 0;
+	if (rssi > 0)
+		return 220;
+	return (rssi + 110) * 2;
+}
+
+
 char * get_param(const char *cmd, const char *param)
 {
 	const char *pos, *end;
@@ -452,103 +563,4 @@ char * get_param(const char *cmd, const char *param)
 	os_memcpy(val, pos, len);
 	val[len] = '\0';
 	return val;
-}
-
-void * os_memdup(const void *src, size_t len)
-{
-	void *r = os_malloc(len);
-
-	if (r && src)
-		os_memcpy(r, src, len);
-	return r;
-}
-
-/**
- * hwaddr_aton2 - Convert ASCII string to MAC address (in any known format)
- * @txt: MAC address as a string (e.g., 00:11:22:33:44:55 or 0011.2233.4455)
- * @addr: Buffer for the MAC address (ETH_ALEN = 6 bytes)
- * Returns: Characters used (> 0) on success, -1 on failure
- */
-int hwaddr_aton2(const char *txt, u8 *addr)
-{
-	int i;
-	const char *pos = txt;
-
-	for (i = 0; i < 6; i++) {
-		int a, b;
-
-		while (*pos == ':' || *pos == '.' || *pos == '-')
-			pos++;
-
-		a = hex2num(*pos++);
-		if (a < 0)
-			return -1;
-		b = hex2num(*pos++);
-		if (b < 0)
-			return -1;
-		*addr++ = (a << 4) | b;
-	}
-
-	return pos - txt;
-}
-
-static inline int os_reltime_expired(struct os_time *now,
-				     struct os_time *ts,
-				     os_time_t timeout_secs)
-{
-	struct os_time age;
-
-	os_time_sub(now, ts, &age);
-	return (age.sec > timeout_secs) ||
-		(age.sec == timeout_secs && age.usec > 0);
-}
-
-int os_time_expired(struct os_time *now,
-		struct os_time *ts,
-		os_time_t timeout_secs)
-{
-	return os_reltime_expired(now, ts, timeout_secs);
-}
-
-u8 rssi_to_rcpi(int rssi)
-{
-	if (!rssi)
-		return 255; /* not available */
-	if (rssi < -110)
-		return 0;
-	if (rssi > 0)
-		return 220;
-	return (rssi + 110) * 2;
-}
-
-/**
- * wpa_ssid_txt - Convert SSID to a printable string
- * @ssid: SSID (32-octet string)
- * @ssid_len: Length of ssid in octets
- * Returns: Pointer to a printable string
- *
- * This function can be used to convert SSIDs into printable form. In most
- * cases, SSIDs do not use unprintable characters, but IEEE 802.11 standard
- * does not limit the used character set, so anything could be used in an SSID.
- *
- * This function uses a static buffer, so only one call can be used at the
- * time, i.e., this is not re-entrant and the returned buffer must be used
- * before calling this again.
- */
-const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len)
-{
-	static char ssid_txt[SSID_MAX_LEN * 4 + 1];
-
-	if (ssid == NULL) {
-		ssid_txt[0] = '\0';
-		return ssid_txt;
-	}
-
-	printf_encode(ssid_txt, sizeof(ssid_txt), ssid, ssid_len);
-	return ssid_txt;
-}
-
-void * __hide_aliasing_typecast(void *foo)
-{
-	return foo;
 }

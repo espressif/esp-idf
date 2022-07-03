@@ -1,24 +1,27 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # GDBstub example
 
-This example shows how to use gdbstub and it's functionality at runtime to debug an application with GDB. 
-With the gdbstub component it is possible to run GDB from IDF Monitor by pressing Ctrl+C and debug  
-the application using GDB. It is also possible to read/modify memory values, interrupt and continue 
+This example shows how to use gdbstub and it's functionality at runtime to debug an application with GDB.
+With the gdbstub component it is possible to run GDB from IDF Monitor by pressing Ctrl+C and debug
+the application using GDB. It is also possible to read/modify memory values, interrupt and continue
 the application, set breakpoints, make steps and so on.
 Upon exit from GDB, the application will continue to work in IDF Monitor as before.
 
 ## How to use example
 ### Hardware Required
 
-The example can run on any commonly available ESP32 development board.  
+The example can run on any commonly available ESP32 development board.
 There are two possible ways to execute gdbstub with GDB: from IDF Monitor and as standalone application.
-gdbstub support ESP32, ESP32-S2 and ESP32-S3 chips. 
+gdbstub support ESP32, ESP32-S2 and ESP32-S3 chips.
 
 ### Configure the project
 
 By default, the example is already pre-configured, but the user can change configuration options with the following command:
 ```
 idf.py menuconfig
-``` 
+```
 Current example is pre-configured. The user can scroll through the system parameters and see the settings.
 Most important one is:
 -> Component Config -> ESP System Settings -> Panic handler behaviour -> GDBStub on runtime
@@ -46,16 +49,16 @@ This will execute GDB and GDB will connect to your Esp32 by serial port COM10 wi
 
 ## Example Output
 
-The example demonstrates how to switch to GDB, watch values, change values, continue to run, and exit from GDB to the application.  
+The example demonstrates how to switch to GDB, watch values, change values, continue to run, and exit from GDB to the application.
 To switch to GDB, the user presses Ctrl+C. This will stop the application and run the GDB.
 In GDB, the user can print values "print call_count" and "print update_log_level" and then
 change them  "set call_count 100" and "set update_log_level = ESP_LOG_WARN".
 The user can continue running the application in GDB by entering "continue" and then interrupt the application by pressing Ctrl+C.
 The user can check again that the application has worked by checking variable "print call_count".
-The user can exit from GDB to continue seeing the trace from IDF Monitor by pressing "quit" and then "y".  
+The user can exit from GDB to continue seeing the trace from IDF Monitor by pressing "quit" and then "y".
 The user will see in IDF Monitor that call_count and logging level have changed.
 The user can add breakpoint to the label test_point2 by entering "break test_point2" and then enter "continue" or "c". The application will break at this line.
-If user will continue again, the application will break at this line again. 
+If user will continue again, the application will break at this line again.
 Also, user can try to step application by entering "si".
 A typical console output for such a scenario is shown below:
 ```
@@ -160,7 +163,7 @@ task4test (param=0x0) at ../main/gdbstub_main.c:38
 To reproduce this scenario run the application by: idf.py -P PORT flash monitor
 Then:
 1. Interrupt the application by pressing Ctrl+C
-2. In GDB, print the application values by typing in GDB command line "print call_count" or "print update_log_level"  
+2. In GDB, print the application values by typing in GDB command line "print call_count" or "print update_log_level"
 3. Modify the application values by typing in GDB command line "set call_count = 100" or "set update_log_level = ESP_LOG_WARN"
 4. Continue the application by typing in GDB command line "continue"
 5. Interrupt application by pressing Ctrl+C
@@ -170,7 +173,7 @@ Then:
 9. Add breakpoint by typing in GDB command line "break test_point2" or break 40 (break at line 40).
 10. Continue the application by typing in GDB command line "continue"
 11. After application stop at label "test_point2".
-12. Make stepping by typing "si" 
+12. Make stepping by typing "si"
 13. To exit from GDB to monitor type "exit" and press "y"
 
 To exit from monitor please use Ctrl+]

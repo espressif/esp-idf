@@ -71,7 +71,7 @@ void esp_supp_dpp_deinit(void);
   *
   * @param chan_list List of channels device will be available on for listening
   * @param type Bootstrap method type, only QR Code method is supported for now.
-  * @param key (Optional) Private Key used to generate a Bootstrapping Public Key
+  * @param key (Optional) 32 byte Raw Private Key for generating a Bootstrapping Public Key
   * @param info (Optional) Ancilliary Device Information like Serial Number
   *
   * @return

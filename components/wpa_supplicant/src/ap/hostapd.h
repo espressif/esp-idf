@@ -63,6 +63,25 @@ struct hostapd_frame_info {
 	int ssi_signal; /* dBm */
 };
 
+#ifdef CONFIG_WPS
+enum hapd_wps_status {
+	WPS_SUCCESS_STATUS = 1,
+	WPS_FAILURE_STATUS
+};
+
+enum pbc_status {
+	WPS_PBC_STATUS_DISABLE,
+	WPS_PBC_STATUS_ACTIVE,
+	WPS_PBC_STATUS_TIMEOUT,
+	WPS_PBC_STATUS_OVERLAP
+};
+
+struct wps_stat {
+	enum hapd_wps_status status;
+	enum pbc_status pbc_status;
+	u8 peer_addr[ETH_ALEN];
+};
+#endif
 
 /**
  * struct hostapd_data - hostapd per-BSS data structure
@@ -73,9 +92,13 @@ struct hostapd_data {
 	int interface_added; /* virtual interface added for this BSS */
 
 	u8 own_addr[ETH_ALEN];
-
+	struct sta_info *sta_list; /* STA info list head */
+#define STA_HASH_SIZE 16
+#define STA_HASH(sta) (sta[5] & 0xf)
+	struct sta_info *sta_hash[STA_HASH_SIZE];
 	int num_sta; /* number of entries in sta_list */
 
+	struct eapol_authenticator *eapol_auth;
 	struct wpa_authenticator *wpa_auth;
 
 #ifdef CONFIG_FULL_DYNAMIC_VLAN
@@ -83,10 +106,15 @@ struct hostapd_data {
 #endif /* CONFIG_FULL_DYNAMIC_VLAN */
 
 #ifdef CONFIG_WPS
+	struct wps_context *wps;
 	unsigned int ap_pin_failures;
 	unsigned int ap_pin_failures_consecutive;
 	struct upnp_wps_device_sm *wps_upnp;
 	unsigned int ap_pin_lockout_time;
+
+	struct wps_stat wps_stats;
+	void (*wps_event_cb)(void *ctx, enum wps_event event,
+			     union wps_event_data *data);
 #endif /* CONFIG_WPS */
 
 #ifdef CONFIG_P2P
@@ -111,5 +139,11 @@ struct hostapd_data {
 	struct hostapd_eap_user tmp_eap_user;
 #endif /* CONFIG_SQLITE */
 };
+
+struct hostapd_data *hostapd_get_hapd_data(void);
+
+const struct hostapd_eap_user *
+hostapd_get_eap_user(struct hostapd_data *hapd, const u8 *identity,
+		     size_t identity_len, int phase2);
 
 #endif /* HOSTAPD_H */

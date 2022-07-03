@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,24 +14,9 @@ extern "C" {
 
 /**
  * @brief GPTimer clock source
- * @note The clock source listed here is not supported on all targets
- * @note User should select the clock source based on real requirements:
- * @verbatim embed:rst:leading-asterisk
- * +----------------------+----------------------------------+--------------------------+
- * | GPTimer clock source | Features                         | Power Management         |
- * +======================+==================================+==========================+
- * | GPTIMER_CLK_SRC_APB  | High resolution                  | ESP_PM_APB_FREQ_MAX lock |
- * +----------------------+----------------------------------+--------------------------+
- * | GPTIMER_CLK_SRC_XTAL | Medium resolution, high accuracy | No PM lock               |
- * +----------------------+----------------------------------+--------------------------+
- * @endverbatim
+ * @note User should select the clock source based on the power and resolution requirement
  */
-typedef enum {
-    GPTIMER_CLK_SRC_APB,  /*!< Select APB as the source clock */
-#if SOC_TIMER_GROUP_SUPPORT_XTAL
-    GPTIMER_CLK_SRC_XTAL, /*!< Select XTAL as the source clock */
-#endif
-} gptimer_clock_source_t;
+typedef soc_periph_gptimer_clk_src_t gptimer_clock_source_t;
 
 /**
  * @brief GPTimer count direction

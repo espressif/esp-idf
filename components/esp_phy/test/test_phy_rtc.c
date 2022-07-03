@@ -7,12 +7,16 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
-#include "esp_phy_init.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
 #include "soc/soc_caps.h"
 #include "esp_private/wifi.h"
+
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5046
+#include "esp_phy_init.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
@@ -126,3 +130,5 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
     vSemaphoreDelete(semphr_done);
 }
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

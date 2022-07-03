@@ -10,5 +10,5 @@ For the full list of error codes defined in ESP-IDF, see :doc:`Error Code Refere
 API Reference
 -------------
 
+.. include-build-file:: inc/esp_check.inc
 .. include-build-file:: inc/esp_err.inc
-

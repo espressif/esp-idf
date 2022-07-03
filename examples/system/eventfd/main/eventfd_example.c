@@ -16,6 +16,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_eventfd.h"
+#include "esp_timer.h"
 #include "driver/gptimer.h"
 
 #define TIMER_RESOLUTION      1000000 // 1MHz, 1 tick = 1us
@@ -46,7 +47,7 @@ static bool eventfd_timer_isr_callback(gptimer_handle_t timer, const gptimer_ala
 static void eventfd_timer_init(void)
 {
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = TIMER_RESOLUTION,
     };
@@ -62,6 +63,7 @@ static void eventfd_timer_init(void)
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(s_gptimer, &cbs, NULL));
     ESP_ERROR_CHECK(gptimer_set_alarm_action(s_gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_enable(s_gptimer));
     ESP_ERROR_CHECK(gptimer_start(s_gptimer));
 }
 
@@ -149,6 +151,7 @@ static void collector_task(void *arg)
     }
 
     gptimer_stop(s_gptimer);
+    gptimer_disable(s_gptimer);
     gptimer_del_timer(s_gptimer);
     close(s_timer_fd);
     close(s_progress_fd);

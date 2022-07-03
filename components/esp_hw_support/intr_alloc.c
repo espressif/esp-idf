@@ -20,6 +20,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "hal/cpu_hal.h"
+#include "esp_private/rtc_ctrl.h"
 #include "hal/interrupt_controller_hal.h"
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -68,7 +69,7 @@ struct shared_vector_desc_t {
 
 //Pack using bitfields for better memory use
 struct vector_desc_t {
-    int flags: 16;                          //OR of VECDESC_FLAG_* defines
+    int flags: 16;                          //OR of VECDESC_FL_* defines
     unsigned int cpu: 1;
     unsigned int intno: 5;
     int source: 8;                          //Interrupt mux flags, used when not shared
@@ -692,7 +693,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
-        handle->vector_desc->flags&=!(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED);
+        handle->vector_desc->flags&=~(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED|VECDESC_FL_SHARED);
         //Also kill non_iram mask bit.
         non_iram_int_mask[handle->vector_desc->cpu]&=~(1<<(handle->vector_desc->intno));
     }
@@ -797,6 +798,8 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
     non_iram_int_disabled_flag[cpu] = true;
     oldint = interrupt_controller_hal_read_interrupt_mask();
     interrupt_controller_hal_disable_interrupts(non_iram_ints);
+    // Disable the RTC bit which don't want to be put in IRAM.
+    rtc_isr_noniram_disable(cpu);
     // Save disabled ints
     non_iram_int_disabled[cpu] = oldint & non_iram_ints;
     portEXIT_CRITICAL_SAFE(&spinlock);
@@ -812,6 +815,7 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
     }
     non_iram_int_disabled_flag[cpu] = false;
     interrupt_controller_hal_enable_interrupts(non_iram_ints);
+    rtc_isr_noniram_enable(cpu);
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 

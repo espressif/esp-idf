@@ -4,8 +4,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_ENABLED
         bool
-        default "n" if IDF_TARGET_ESP32C2 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
-        default "y" if !IDF_TARGET_ESP32H2
+        default y if SOC_WIFI_SUPPORTED
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
@@ -98,7 +97,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_CACHE_TX_BUFFER_NUM
         int "Max number of WiFi cache TX buffers"
-        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
+        depends on SPIRAM
         range 16 128
         default 32
         help
@@ -171,7 +170,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_AMSDU_TX_ENABLED
         bool "WiFi AMSDU TX"
-        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT || ESP32S3_SPIRAM_SUPPORT)
+        depends on SPIRAM
         default n
         help
             Select this option to enable AMSDU TX feature
@@ -226,7 +225,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
-        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
         default y
         help
             Select this option to place frequently called Wi-Fi library functions in IRAM.
@@ -235,7 +234,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_RX_IRAM_OPT
         bool "WiFi RX IRAM speed optimization"
-        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default n if (BT_ENABLED && SPIRAM && IDF_TARGET_ESP32)
         default y
         help
             Select this option to place frequently called Wi-Fi library RX functions in IRAM.
@@ -251,9 +250,19 @@ menu "Wi-Fi"
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
             explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
 
+    config ESP32_WIFI_ENABLE_WPA3_OWE_STA
+        bool "Enable OWE STA"
+        default y
+        select WPA_MBEDTLS_CRYPTO
+        help
+            Select this option to allow the device to establish OWE connection with eligible AP's.
+            PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
+            explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
+
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
         select PM_SLP_DEFAULT_PARAMS_OPT
+        select PERIPH_CTRL_FUNC_IN_IRAM
         help
             Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
             Some functions can be put in IRAM either by ESP32_WIFI_IRAM_OPT and ESP32_WIFI_RX_IRAM_OPT, or this one.
@@ -281,7 +290,7 @@ menu "Wi-Fi"
     config ESP_WIFI_FTM_ENABLE
         bool "WiFi FTM"
         default n
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on SOC_WIFI_FTM_SUPPORT
         help
             Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
@@ -316,7 +325,7 @@ menu "Wi-Fi"
     config ESP_WIFI_GCMP_SUPPORT
         bool "WiFi GCMP Support(GCMP128 and GCMP256)"
         default n
-        depends on (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on SOC_WIFI_GCMP_SUPPORT
         help
             Select this option to enable GCMP support. GCMP support is compulsory for WiFi Suite-B support.
 
@@ -331,5 +340,46 @@ menu "Wi-Fi"
         default y
         help
             WiFi module can be compiled without SoftAP to save code size.
+
+    config ESP_WIFI_SLP_BEACON_LOST_OPT
+        bool "Wifi sleep optimize when beacon lost"
+        help
+            Enable wifi sleep optimization when beacon loss occurs and immediately enter
+            sleep mode when the WiFi module detects beacon loss.
+
+    config ESP_WIFI_SLP_BEACON_LOST_TIMEOUT
+        int "Beacon loss timeout"
+        range 5 100
+        default 10
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Timeout time for close rf phy when beacon loss occurs, Unit: 1024 microsecond.
+
+    config ESP_WIFI_SLP_BEACON_LOST_THRESHOLD
+        int "Maximum number of consecutive lost beacons allowed"
+        range 0 8
+        default 3
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Maximum number of consecutive lost beacons allowed, WiFi keeps Rx state when
+            the number of consecutive beacons lost is greater than the given threshold.
+
+    config ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
+        int "Delta early time for RF PHY on"
+        range 0 100
+        default 2
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Delta early time for rf phy on, When the beacon is lost, the next rf phy on will
+            be earlier the time specified by the configuration item, Unit: 32 microsecond.
+
+    config ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME
+        int "Delta timeout time for RF PHY off"
+        range 0 8
+        default 2
+        depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+        help
+            Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
+            be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
 
 endmenu  # Wi-Fi

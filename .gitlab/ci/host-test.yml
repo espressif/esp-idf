@@ -7,7 +7,11 @@
   tags:
     - host_test
   dependencies: []
-  needs: []  # run host_test jobs immediately
+  needs:
+    - job: upload-pip-cache-shiny
+      optional: true  # run host_test jobs immediately, only after upload cache
+    - job: upload-pip-cache-brew
+      optional: true  # run host_test jobs immediately, only after upload cache
 
 test_nvs_on_host:
   extends: .host_test_template
@@ -142,6 +146,7 @@ test_fatfsgen_on_host:
     - cd components/fatfs/test_fatfsgen/
     - ./test_fatfsgen.py
     - ./test_wl_fatfsgen.py
+    - ./test_fatfsparse.py
 
 test_multi_heap_on_host:
   extends: .host_test_template
@@ -185,6 +190,7 @@ test_idf_monitor:
       - tools/test_idf_monitor/outputs/*
     expire_in: 1 week
   script:
+    - eval $($IDF_PATH/tools/idf_tools.py export)
     - cd ${IDF_PATH}/tools/test_idf_monitor
     - ./run_test_idf_monitor.py
 
@@ -276,6 +282,7 @@ test_espcoredump:
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
+    - eval $($IDF_PATH/tools/idf_tools.py export)
     - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b $IDF_COREDUMP_ELF_TAG
     - cd ${IDF_PATH}/components/espcoredump/test/
     - ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf
@@ -355,6 +362,13 @@ test_nvs_page:
     - idf.py build
     - build/test_nvs_page_host.elf
 
+test_mqtt_on_host:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/mqtt/host_test
+    - idf.py build
+    - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
+
 test_log:
   extends: .host_test_template
   script:
@@ -431,3 +445,12 @@ test_gen_soc_caps_kconfig:
   script:
     - cd ${IDF_PATH}/tools/gen_soc_caps_kconfig/
     - ./test/test_gen_soc_caps_kconfig.py
+
+test_pytest_qemu:
+  extends:
+    - .host_test_template
+    - .before_script_pytest
+  image: $QEMU_IMAGE
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py . --target esp32 -m qemu -vv
+    - pytest --target esp32 -m qemu --embedded-services idf,qemu

@@ -15,6 +15,8 @@
 #include "freertos/task.h"
 #include "esp_check.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
+#include "esp_timer.h"
 #include "iperf.h"
 
 typedef struct {
@@ -137,29 +139,59 @@ static void socket_recv(int recv_socket, struct sockaddr_storage listen_addr, ui
     }
 }
 
-static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint8_t type)
+static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint8_t type, int bw_lim)
 {
     uint8_t *buffer;
-    uint8_t delay = 1;
+    int32_t *pkt_id_p;
+    int32_t pkt_cnt = 0;
     int actual_send = 0;
     int want_send = 0;
+    int period_us = -1;
+    int delay_us = 0;
+    int64_t prev_time = 0;
+    int64_t send_time = 0;
     int err = 0;
     const socklen_t socklen = (s_iperf_ctrl.cfg.type == IPERF_IP_TYPE_IPV6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in);
     const char *error_log = (type == IPERF_TRANS_TYPE_TCP) ? "tcp client send" : "udp client send";
 
     buffer = s_iperf_ctrl.buffer;
+    pkt_id_p = (int32_t *)s_iperf_ctrl.buffer;
     want_send = s_iperf_ctrl.buffer_len;
     iperf_start_report();
 
+    if (bw_lim > 0) {
+        period_us = want_send * 8 / bw_lim;
+    }
+
     while (!s_iperf_ctrl.finish) {
+        if (period_us > 0) {
+            send_time = esp_timer_get_time();
+            if (actual_send > 0){
+                // Last packet "send" was successful, check how much off the previous loop duration was to the ideal send period. Result will adjust the
+                // next send delay.
+                delay_us += period_us + (int32_t)(prev_time - send_time);
+            } else {
+                // Last packet "send" was not successful. Ideally we should try to catch up the whole previous loop duration (e.g. prev_time - send_time).
+                // However, that's not possible since the most probable reason why the send was unsuccessful is the HW was not able to process the packet.
+                // Hence, we cannot queue more packets with shorter (or no) delay to catch up since we are already at the performance edge. The best we
+                // can do is to reset the send delay (which is probably big negative number) and start all over again.
+                delay_us = 0;
+            }
+            prev_time = send_time;
+        }
+        *pkt_id_p = htonl(pkt_cnt); // datagrams need to be sequentially numbered
+        if (pkt_cnt >= INT32_MAX) {
+            pkt_cnt = 0;
+        }
+        else {
+            pkt_cnt++;
+        }
         actual_send = sendto(send_socket, buffer, want_send, 0, (struct sockaddr *)&dest_addr, socklen);
         if (actual_send != want_send) {
             if (type == IPERF_TRANS_TYPE_UDP) {
                 err = iperf_get_socket_error_code(send_socket);
-                if (err == ENOMEM) {
-                    vTaskDelay(delay);
-                    delay = MIN(delay << 1, IPERF_MAX_DELAY);
-                } else {
+                // ENOMEM is expected under heavy load => do not print it
+                if (err != ENOMEM) {
                     iperf_show_socket_error_reason(error_log, send_socket);
                 }
             } else if (type == IPERF_TRANS_TYPE_TCP) {
@@ -167,8 +199,11 @@ static void socket_send(int send_socket, struct sockaddr_storage dest_addr, uint
                 break;
             }
         } else {
-            delay = 1;
             s_iperf_ctrl.actual_len += actual_send;
+        }
+        // The send delay may be negative, it indicates we are trying to catch up and hence to not delay the loop at all.
+        if (delay_us > 0) {
+            esp_rom_delay_us(delay_us);
         }
     }
 }
@@ -290,7 +325,7 @@ static esp_err_t iperf_run_tcp_client(void)
         memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
     }
 
-    socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_TCP);
+    socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_TCP, s_iperf_ctrl.cfg.bw_lim);
 exit:
     if (client_socket != -1) {
         shutdown(client_socket, 0);
@@ -397,7 +432,7 @@ static esp_err_t iperf_run_udp_client(void)
         memcpy(&dest_addr, &dest_addr4, sizeof(dest_addr4));
     }
 
-    socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_UDP);
+    socket_send(client_socket, dest_addr, IPERF_TRANS_TYPE_UDP, s_iperf_ctrl.cfg.bw_lim);
 exit:
     if (client_socket != -1) {
         shutdown(client_socket, 0);

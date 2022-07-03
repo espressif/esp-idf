@@ -153,8 +153,12 @@ typedef UINT8 tBTA_HF_CLIENT_IND_TYPE;
 #define BTA_HF_CLIENT_AT_CMD_BINP   13
 #define BTA_HF_CLIENT_AT_CMD_BLDN   14
 #define BTA_HF_CLIENT_AT_CMD_NREC   15
+#define BTA_HF_CLIENT_AT_CMD_XAPL   16
+#define BTA_HF_CLIENT_AT_CMD_IPHONEACCEV   17
 
 typedef UINT8 tBTA_HF_CLIENT_AT_CMD_TYPE;
+
+#define BTA_HF_CLIENT_MAX_LEN 32
 
 /* data associated with most non-AT events */
 /* placeholder, if not needed should be removed*/

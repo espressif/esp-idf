@@ -23,7 +23,9 @@
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "driver/ledc.h"
+#include "hal/ledc_ll.h"
 #include "driver/gpio.h"
 
 #define PULSE_IO      18
@@ -36,6 +38,12 @@
 #else
 #define TEST_SPEED_MODE LEDC_LOW_SPEED_MODE
 #define SPEED_MODE_LIST {LEDC_LOW_SPEED_MODE}
+#endif
+
+#if SOC_LEDC_SUPPORT_APB_CLOCK
+#define TEST_DEFAULT_CLK_CFG LEDC_USE_APB_CLK
+#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+#define TEST_DEFAULT_CLK_CFG LEDC_USE_PLL_DIV_CLK
 #endif
 
 static ledc_channel_config_t initialize_channel_config(void)
@@ -60,7 +68,7 @@ static ledc_timer_config_t create_default_timer_config(void)
     ledc_time_config.duty_resolution = LEDC_TIMER_13_BIT;
     ledc_time_config.timer_num = LEDC_TIMER_0;
     ledc_time_config.freq_hz = TEST_PWM_FREQ;
-    ledc_time_config.clk_cfg = LEDC_USE_APB_CLK;
+    ledc_time_config.clk_cfg = TEST_DEFAULT_CLK_CFG;
     return ledc_time_config;
 }
 
@@ -178,7 +186,7 @@ TEST_CASE("LEDC timer config basic parameter test", "[ledc]")
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 }
 
-TEST_CASE("LEDC error log channel and timer config", "[ledc]")
+TEST_CASE("LEDC output idle level test", "[ledc]")
 {
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     ledc_channel_config_t ledc_ch_config = initialize_channel_config();
@@ -308,8 +316,8 @@ TEST_CASE("LEDC fast switching duty with fade_wait_done", "[ledc]")
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
     TEST_ASSERT_EQUAL_INT32(1000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
     fade_stop = esp_timer_get_time();
-    int time_ms = (fade_stop - fade_start) / 1000;
-    TEST_ASSERT_TRUE(fabs(time_ms - 350) < 20);
+    int64_t time_ms = (fade_stop - fade_start) / 1000;
+    TEST_ASSERT_TRUE(llabs(time_ms - 350) < 20);
 
     // next duty update will not take place until last fade reaches its target duty
     TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 200));
@@ -340,8 +348,8 @@ TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
     first_fade_complete = esp_timer_get_time();
     // duty should not be too far from first fade target duty
     TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
-    int time_ms = (first_fade_complete - fade_start) / 1000;
-    TEST_ASSERT_TRUE(fabs(time_ms - 200) < 20);
+    int64_t time_ms = (first_fade_complete - fade_start) / 1000;
+    TEST_ASSERT_TRUE(llabs(time_ms - 200) < 20);
     vTaskDelay(158 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(1000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
@@ -365,7 +373,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     fade_setup();
 
     int64_t fade_start, fade_stop;
-    int time_ms = 0;
+    int64_t time_ms = 0;
     fade_start = esp_timer_get_time();
     TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 500));
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
@@ -376,7 +384,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
     fade_stop = esp_timer_get_time();
     time_ms = (fade_stop - fade_start) / 1000;
-    TEST_ASSERT_TRUE(fabs(time_ms - 127) < 20);
+    TEST_ASSERT_TRUE(llabs(time_ms - 127) < 20);
     // Get duty value after fade_stop returns (give at least one cycle for the duty set in fade_stop to take effective)
     uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ASSERT_INT32_WITHIN(4, duty_before_stop, duty_after_stop); // 4 is the scale for one step in the last fade
@@ -390,7 +398,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
 }
 #endif // SOC_LEDC_SUPPORT_FADE_STOP
 
-#if SOC_PCNT_SUPPORTED
+#if SOC_PCNT_SUPPORTED // Note. C3, C2, H2 do not have PCNT peripheral, the following test cases cannot be tested
 
 #include "driver/pulse_cnt.h"
 
@@ -414,10 +422,12 @@ static void setup_testbench(void)
     TEST_ESP_OK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
     TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
     TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
 }
 
 static void tear_testbench(void)
 {
+    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit));
     TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
     TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
 }
@@ -487,7 +497,29 @@ TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60][ignore]")
     tear_testbench();
 }
 
-TEST_CASE("LEDC timer set", "[ledc]")
+static void timer_set_clk_src_and_freq_test(ledc_mode_t speed_mode, ledc_clk_cfg_t clk_src, uint32_t duty_res,
+        uint32_t freq_hz)
+{
+    ledc_timer_config_t ledc_time_config = {
+        .speed_mode = speed_mode,
+        .duty_resolution = duty_res,
+        .timer_num = LEDC_TIMER_0,
+        .freq_hz = freq_hz,
+        .clk_cfg = clk_src,
+    };
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    if (clk_src == LEDC_USE_RTC8M_CLK) {
+        // RTC8M_CLK freq is get from calibration, it is reasonable that divider calculation does a rounding
+        TEST_ASSERT_UINT32_WITHIN(5, ledc_get_freq(speed_mode, LEDC_TIMER_0), freq_hz);
+    } else {
+        TEST_ASSERT_EQUAL_INT32(ledc_get_freq(speed_mode, LEDC_TIMER_0), freq_hz);
+    }
+    int count = wave_count(1000);
+    TEST_ASSERT_UINT32_WITHIN(10, count, freq_hz);
+}
+
+TEST_CASE("LEDC timer select specific clock source", "[ledc]")
 {
     setup_testbench();
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
@@ -502,44 +534,32 @@ TEST_CASE("LEDC timer set", "[ledc]")
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
 
-    ledc_timer_config_t ledc_time_config = {
-        .speed_mode = test_speed_mode,
-        .duty_resolution = 13,
-        .timer_num = LEDC_TIMER_0,
-        .freq_hz = 5000,
-        .clk_cfg = LEDC_USE_APB_CLK,
-    };
-    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-
-    uint32_t freq_get;
-    int count;
-#if SOC_LEDC_SUPPORT_REF_TICK
-    //set timer 0 as 250Hz, use REF_TICK
-    TEST_ESP_OK(ledc_timer_set(test_speed_mode, LEDC_TIMER_0, 1000, 10, LEDC_REF_TICK));
-    TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
-    TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 250);
-    freq_get = ledc_get_freq(test_speed_mode, LEDC_TIMER_0);
-    count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(10, count, freq_get);
+    if (test_speed_mode == LEDC_LOW_SPEED_MODE) {
+        printf("Check LEDC_USE_RTC8M_CLK for a 100Hz signal\n");
+        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_RTC8M_CLK, 10, 100);
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+        printf("Check LEDC_USE_XTAL_CLK for a 400Hz signal\n");
+        timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_XTAL_CLK, 13, 400);
 #endif
-
-    //set timer 0 as 500Hz, use APB_CLK
-    TEST_ESP_OK(ledc_timer_set(test_speed_mode, LEDC_TIMER_0, 5000, 13, LEDC_APB_CLK));
-    TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
-    TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 500);
-    freq_get = ledc_get_freq(test_speed_mode, LEDC_TIMER_0);
-    count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(50, count, freq_get);
+    }
+#if SOC_LEDC_SUPPORT_REF_TICK
+    printf("Check LEDC_USE_REF_TICK for a 250Hz signal\n");
+    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_REF_TICK, 10, 250);
+#endif
+#if SOC_LEDC_SUPPORT_APB_CLOCK
+    printf("Check LEDC_USE_APB_CLK for a 500Hz signal\n");
+    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_APB_CLK, 13, 500);
+#endif
+#if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+    printf("Check LEDC_USE_PLL_DIV_CLK for a 500Hz signal\n");
+    timer_set_clk_src_and_freq_test(test_speed_mode, LEDC_USE_PLL_DIV_CLK, 13, 500);
+#endif
 
     printf("Bind channel 0 to timer 0\n");
     TEST_ESP_OK(ledc_bind_channel_timer(test_speed_mode, LEDC_CHANNEL_0, LEDC_TIMER_0));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 500);
 
-    uint32_t current_level = LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv;
-    TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    TEST_ASSERT_EQUAL_INT32( LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv, !current_level);
     tear_testbench();
 }
 
@@ -564,10 +584,11 @@ TEST_CASE("LEDC timer pause and resume", "[ledc]")
         .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
-        .clk_cfg = LEDC_USE_APB_CLK,
+        .clk_cfg = TEST_DEFAULT_CLK_CFG,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
     TEST_ASSERT_INT16_WITHIN(5, count, 5000);
 

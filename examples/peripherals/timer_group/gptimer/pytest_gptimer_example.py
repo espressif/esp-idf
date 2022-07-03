@@ -26,7 +26,7 @@ def test_gptimer_example(dut: Dut) -> None:
     assert 0 <= int(reloaded_count) < 10
 
     dut.expect_exact('Stop timer')
-    dut.expect_exact('Update alarm value dynamically')
+    dut.expect_exact('Start timer, update alarm value dynamically')
     for i in range(1,5):
         res = dut.expect(r'Timer alarmed, count=(\d+)', timeout=5)
         alarm_count = res.group(1).decode('utf8')

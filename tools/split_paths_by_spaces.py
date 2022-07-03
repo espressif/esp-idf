@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 # This script converts space-separated EXTRA_COMPONENT_DIRS and COMPONENT_DIRS
 # CMake variables into semicolon-separated lists.
 #
-# IDF versions <=v4.3 didn't support spaces in paths to ESP-IDF or projects.
+# IDF versions <=v4.4 didn't support spaces in paths to ESP-IDF or projects.
 # Therefore it was okay to use spaces as separators in EXTRA_COMPONENT_DIRS,
 # same as it was done in the legacy GNU Make based build system.
 # CMake build system used 'spaces2list' function to convert space-separated
 # variables into semicolon-separated lists, replacing every space with a
 # semicolon.
 #
-# In IDF 4.4 and later, spaces in project path and ESP-IDF path are supported.
+# In IDF 5.0 and later, spaces in project path and ESP-IDF path are supported.
 # This means that EXTRA_COMPONENT_DIRS and COMPONENT_DIRS variables now should
 # be semicolon-separated CMake lists.
 #
@@ -69,7 +69,7 @@ def main() -> None:
 
     if errors or ctx['warnings']:
         print(textwrap.dedent("""
-            Note: In ESP-IDF v4.4 and later, COMPONENT_DIRS and EXTRA_COMPONENT_DIRS should be defined
+            Note: In ESP-IDF v5.0 and later, COMPONENT_DIRS and EXTRA_COMPONENT_DIRS should be defined
                   as CMake lists, not as space separated strings.
 
             Examples:
@@ -100,7 +100,7 @@ def main() -> None:
                 list(APPEND component2)
 
             Defining COMPONENT_DIRS and EXTRA_COMPONENT_DIRS as CMake lists is backwards compatible
-            with ESP-IDF 4.3 and below.
+            with ESP-IDF 4.4 and below.
 
             (If you think these variables are defined correctly in your project and this message
             is not relevant, please report this as an issue.)

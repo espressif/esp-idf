@@ -72,7 +72,8 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(spi_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for spi panel io");
 
     spi_device_interface_config_t devcfg = {
-        .flags = SPI_DEVICE_HALFDUPLEX, // only use TX path, so half duplex is enough
+        // currently the driver only supports TX path, so half duplex is enough
+        .flags = SPI_DEVICE_HALFDUPLEX | (io_config->flags.lsb_first ? SPI_DEVICE_TXBIT_LSBFIRST : 0),
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
         .spics_io_num = io_config->cs_gpio_num,
@@ -254,7 +255,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
     // split to chunks if required:
-    // the SPI bus has a maximum transaction size determined by SPI_USR_MOSI_DBITLEN's bit width
+    // the SPI bus has a maximum transaction size determined by SPI_LL_DATA_MAX_BIT_LEN
     do {
         size_t chunk_size = color_size;
 

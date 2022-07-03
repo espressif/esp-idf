@@ -6,15 +6,6 @@ Overview
 
 Bluetooth device reference APIs.
 
-`Instructions`_
-
-Application Example
--------------------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
 API Reference
 -------------
 

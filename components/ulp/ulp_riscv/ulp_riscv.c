@@ -20,6 +20,8 @@
 #include "ulp_common.h"
 #include "esp_rom_sys.h"
 
+__attribute__((unused)) static const char* TAG = "ulp-riscv";
+
 static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup_source)
 {
     esp_err_t ret = ESP_OK;
@@ -45,6 +47,7 @@ static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup
 esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
 {
     esp_err_t ret = ESP_OK;
+
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset COCPU when power on. */
@@ -151,8 +154,12 @@ esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_si
     uint8_t* base = (uint8_t*) RTC_SLOW_MEM;
 
     //Start by clearing memory reserved with zeros, this will also will initialize the bss:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     memset(base, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     memcpy(base, program_binary, program_size_bytes);
+#pragma GCC diagnostic pop
 
     return ESP_OK;
 }

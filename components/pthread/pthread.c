@@ -59,7 +59,7 @@ static SLIST_HEAD(esp_thread_list_head, esp_pthread_entry) s_threads_list
 static pthread_key_t s_pthread_cfg_key;
 
 
-static int IRAM_ATTR pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
+static int pthread_mutex_lock_internal(esp_pthread_mutex_t *mux, TickType_t tmo);
 
 static void esp_pthread_cfg_key_destructor(void *value)
 {

@@ -1,0 +1,56 @@
+choice ESP32_REV_MIN
+    prompt "Minimum Supported ESP32 Revision"
+    default ESP32_REV_MIN_0
+    help
+        Minimum revision that ESP-IDF would support.
+        ESP-IDF performs different strategy on different esp32 revision.
+
+    config ESP32_REV_MIN_0
+        bool "Rev 0"
+        # Brownout on Rev 0 is bugged, must use interrupt
+        select ESP_SYSTEM_BROWNOUT_INTR
+    config ESP32_REV_MIN_1
+        bool "Rev 1"
+    config ESP32_REV_MIN_2
+        bool "Rev 2"
+    config ESP32_REV_MIN_3
+        bool "Rev 3"
+        select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
+endchoice
+
+config ESP32_REV_MIN
+    int
+    default 0 if ESP32_REV_MIN_0
+    default 1 if ESP32_REV_MIN_1
+    default 2 if ESP32_REV_MIN_2
+    default 3 if ESP32_REV_MIN_3
+
+choice ESP32_XTAL_FREQ_SEL
+    prompt "Main XTAL frequency"
+    default ESP32_XTAL_FREQ_40
+    help
+        ESP32 currently supports the following XTAL frequencies:
+
+        - 26 MHz
+        - 40 MHz
+
+        Startup code can automatically estimate XTAL frequency. This feature
+        uses the internal 8MHz oscillator as a reference. Because the internal
+        oscillator frequency is temperature dependent, it is not recommended
+        to use automatic XTAL frequency detection in applications which need
+        to work at high ambient temperatures and use high-temperature
+        qualified chips and modules.
+    config ESP32_XTAL_FREQ_40
+        bool "40 MHz"
+    config ESP32_XTAL_FREQ_26
+        bool "26 MHz"
+    config ESP32_XTAL_FREQ_AUTO
+        bool "Autodetect"
+endchoice
+
+# Keep these values in sync with rtc_xtal_freq_t enum in soc/rtc.h
+config ESP32_XTAL_FREQ
+    int
+    default 0 if ESP32_XTAL_FREQ_AUTO
+    default 40 if ESP32_XTAL_FREQ_40
+    default 26 if ESP32_XTAL_FREQ_26

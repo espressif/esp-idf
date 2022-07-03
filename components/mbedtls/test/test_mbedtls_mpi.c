@@ -15,6 +15,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "test_utils.h"
 
 #define MBEDTLS_OK 0
 

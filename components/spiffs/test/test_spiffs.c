@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <fcntl.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
 #include "unity.h"
@@ -21,6 +22,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_partition.h"
+#include "esp_random.h"
 #include "esp_rom_sys.h"
 
 const char* spiffs_test_hello_str = "Hello, World!\n";
@@ -163,6 +165,111 @@ void test_spiffs_rename(const char* filename_prefix)
     TEST_ASSERT_EQUAL(0, fseek(fdst, 0, SEEK_END));
     TEST_ASSERT_EQUAL(4000, ftell(fdst));
     TEST_ASSERT_EQUAL(0, fclose(fdst));
+}
+
+void test_spiffs_truncate(const char *filename)
+{
+    int read = 0;
+    int truncated_len = 0;
+
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char output[sizeof(input)];
+
+    test_spiffs_create_file_with_text(filename, input);
+
+    // Extending file beyond size is not supported
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+
+    // Truncating should succeed
+    const char truncated_1[] = "ABCDEFGHIJ";
+    truncated_len = strlen(truncated_1);
+    TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+
+    FILE* f = fopen(filename, "rb");
+    TEST_ASSERT_NOT_NULL(f);
+    memset(output, 0, sizeof(output));
+    read = fread(output, 1, sizeof(output), f);
+    TEST_ASSERT_EQUAL(truncated_len, read);
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+    // Once truncated, the new file size should be the basis
+    // whether truncation should succeed or not
+    TEST_ASSERT_EQUAL(-1, truncate(filename, truncated_len + 1));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input)));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+
+
+    // Truncating a truncated file should succeed
+    const char truncated_2[] = "ABCDE";
+    truncated_len = strlen(truncated_2);
+    TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+    f = fopen(filename, "rb");
+    TEST_ASSERT_NOT_NULL(f);
+    memset(output, 0, sizeof(output));
+    read = fread(output, 1, sizeof(output), f);
+    TEST_ASSERT_EQUAL(truncated_len, read);
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+}
+
+void test_spiffs_ftruncate(const char *filename)
+{
+    int truncated_len = 0;
+
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char output[sizeof(input)];
+
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    TEST_ASSERT_EQUAL(strlen(input), write(fd, input, strlen(input)));
+
+    // Extending file beyond size is not supported
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+
+    // Truncating should succeed
+    const char truncated_1[] = "ABCDEFGHIJ";
+    truncated_len = strlen(truncated_1);
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    memset(output, 0, sizeof(output));
+    TEST_ASSERT_EQUAL(truncated_len, read(fd, output, sizeof(output)));
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // further truncate the file
+    fd = open(filename, O_WRONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    // Once truncated, the new file size should be the basis
+    // whether truncation should succeed or not
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, truncated_len + 1));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input)));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+
+    // Truncating a truncated file should succeed
+    const char truncated_2[] = "ABCDE";
+    truncated_len = strlen(truncated_2);
+
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // open file for reading and validate the content
+    fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    memset(output, 0, sizeof(output));
+    TEST_ASSERT_EQUAL(truncated_len, read(fd, output, sizeof(output)));
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, close(fd));
 }
 
 void test_spiffs_can_opendir(const char* path)
@@ -396,11 +503,13 @@ void test_spiffs_concurrent(const char* filename_prefix)
     read_write_test_arg_t args1 = READ_WRITE_TEST_ARG_INIT(names[0], 1);
     read_write_test_arg_t args2 = READ_WRITE_TEST_ARG_INIT(names[1], 2);
 
+    const uint32_t stack_size = 3072;
+
     printf("writing f1 and f2\n");
     const int cpuid_0 = 0;
     const int cpuid_1 = portNUM_PROCESSORS - 1;
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, cpuid_0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -416,10 +525,10 @@ void test_spiffs_concurrent(const char* filename_prefix)
 
     printf("reading f1 and f2, writing f3 and f4\n");
 
-    xTaskCreatePinnedToCore(&read_write_task, "rw3", 2048, &args3, 3, NULL, cpuid_1);
-    xTaskCreatePinnedToCore(&read_write_task, "rw4", 2048, &args4, 3, NULL, cpuid_0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw1", 2048, &args1, 3, NULL, cpuid_0);
-    xTaskCreatePinnedToCore(&read_write_task, "rw2", 2048, &args2, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw3", stack_size, &args3, 3, NULL, cpuid_1);
+    xTaskCreatePinnedToCore(&read_write_task, "rw4", stack_size, &args4, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw1", stack_size, &args1, 3, NULL, cpuid_0);
+    xTaskCreatePinnedToCore(&read_write_task, "rw2", stack_size, &args2, 3, NULL, cpuid_1);
 
     xSemaphoreTake(args1.done, portMAX_DELAY);
     printf("f1 done\n");
@@ -574,6 +683,20 @@ TEST_CASE("rename moves a file", "[spiffs]")
     test_teardown();
 }
 
+TEST_CASE("truncate a file", "[spiffs]")
+{
+    test_setup();
+    test_spiffs_truncate("/spiffs/truncate.txt");
+    test_teardown();
+}
+
+TEST_CASE("ftruncate a file", "[spiffs]")
+{
+    test_setup();
+    test_spiffs_ftruncate("/spiffs/ftrunc.txt");
+    test_teardown();
+}
+
 TEST_CASE("can opendir root directory of FS", "[spiffs]")
 {
     test_setup();
@@ -708,3 +831,85 @@ TEST_CASE("utime() works well", "[spiffs]")
     test_teardown();
 }
 #endif // CONFIG_SPIFFS_USE_MTIME
+
+static void test_spiffs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool is_write)
+{
+    const size_t buf_count = file_size / buf_size;
+
+    FILE* f = fopen(filename, (is_write) ? "wb" : "rb");
+    TEST_ASSERT_NOT_NULL(f);
+
+    struct timeval tv_start;
+    gettimeofday(&tv_start, NULL);
+    for (size_t n = 0; n < buf_count; ++n) {
+        if (is_write) {
+            TEST_ASSERT_EQUAL(buf_size, write(fileno(f), buf, buf_size));
+        } else {
+            if (read(fileno(f), buf, buf_size) != buf_size) {
+                printf("reading at n=%d, eof=%d", n, feof(f));
+                TEST_FAIL();
+            }
+        }
+    }
+
+    struct timeval tv_end;
+    gettimeofday(&tv_end, NULL);
+
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+    float t_s = tv_end.tv_sec - tv_start.tv_sec + 1e-6f * (tv_end.tv_usec - tv_start.tv_usec);
+    printf("%s %d bytes (block size %d) in %.3fms (%.3f MB/s)\n",
+            (is_write)?"Wrote":"Read", file_size, buf_size, t_s * 1e3,
+                    file_size / (1024.0f * 1024.0f * t_s));
+}
+
+TEST_CASE("write/read speed test", "[spiffs][timeout=60]")
+{
+    /* Erase partition before running the test to get consistent results */
+    const esp_partition_t* part = get_test_data_partition();
+    esp_partition_erase_range(part, 0, part->size);
+
+    test_setup();
+
+    const size_t buf_size = 16 * 1024;
+    uint32_t* buf = (uint32_t*) calloc(1, buf_size);
+    esp_fill_random(buf, buf_size);
+    const size_t file_size = 256 * 1024;
+    const char* file = "/spiffs/256k.bin";
+
+    test_spiffs_rw_speed(file, buf, 4 * 1024, file_size, true);
+    TEST_ASSERT_EQUAL(0, unlink(file));
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, file_size));
+
+    test_spiffs_rw_speed(file, buf, 8 * 1024, file_size, true);
+    TEST_ASSERT_EQUAL(0, unlink(file));
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, file_size));
+
+    test_spiffs_rw_speed(file, buf, 16 * 1024, file_size, true);
+
+    test_spiffs_rw_speed(file, buf, 4 * 1024, file_size, false);
+    test_spiffs_rw_speed(file, buf, 8 * 1024, file_size, false);
+    test_spiffs_rw_speed(file, buf, 16 * 1024, file_size, false);
+    TEST_ASSERT_EQUAL(0, unlink(file));
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, file_size));
+
+    free(buf);
+    test_teardown();
+}
+
+TEST_CASE("SPIFFS garbage-collect", "[spiffs][timeout=60]")
+{
+    // should fail until the partition is initialized
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_spiffs_gc(spiffs_test_partition_label, 4096));
+
+    test_setup();
+
+    // reclaiming one block should be possible
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, 4096));
+
+    // shouldn't be possible to reclaim more than the partition size
+    const esp_partition_t* part = get_test_data_partition();
+    TEST_ESP_ERR(ESP_ERR_NOT_FINISHED, esp_spiffs_gc(spiffs_test_partition_label, part->size * 2));
+
+    test_teardown();
+}

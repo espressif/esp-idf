@@ -527,10 +527,10 @@ TEST_SPI_LOCAL(MODE, mode_pgroup)
 TEST_CASE("Slave receive correct data", "[spi]")
 {
    // Initialize device handle and spi bus
-    uint32_t master_seed_send = MASTER_DATA_RAND_SEED;
-    uint32_t slave_seed_send = SLAVE_DATA_RAND_SEED;
-    uint32_t master_seed_cmp = slave_seed_send;
-    uint32_t slave_seed_cmp = master_seed_send;
+    unsigned int master_seed_send = MASTER_DATA_RAND_SEED;
+    unsigned int slave_seed_send = SLAVE_DATA_RAND_SEED;
+    unsigned int master_seed_cmp = slave_seed_send;
+    unsigned int slave_seed_cmp = master_seed_send;
 
     const int buf_size = 20;
 
@@ -622,7 +622,7 @@ TEST_CASE("Slave receive correct data", "[spi]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
@@ -1175,6 +1175,6 @@ spitest_param_set_t mode_conf[] = {
 };
 TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
 
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 
 #endif // #if (TEST_SPI_PERIPH_NUM >= 2)

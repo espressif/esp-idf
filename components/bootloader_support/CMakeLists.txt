@@ -18,7 +18,7 @@ set(srcs
 
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "bootloader_flash/include"
-        "include_bootloader")
+        "private_include")
     set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
     "src/bootloader_init.c"
@@ -35,7 +35,7 @@ else()
     list(APPEND srcs
         "src/idf/bootloader_sha.c")
     set(include_dirs "include" "bootloader_flash/include")
-    set(priv_include_dirs "include_bootloader")
+    set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
     set(priv_requires spi_flash mbedtls efuse app_update heap)
 endif()
@@ -55,11 +55,9 @@ if(BOOTLOADER_BUILD)
                              "src/${IDF_TARGET}/secure_boot_secure_features.c")
         endif()
 
-        if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
-            list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_bootloader.c")
-        endif()
         if(CONFIG_SECURE_BOOT_V2_ENABLED)
-            list(APPEND srcs "src/secure_boot_v2/secure_boot.c"
+            list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_bootloader.c"
+                             "src/secure_boot_v2/secure_boot.c"
                              "src/${IDF_TARGET}/secure_boot_secure_features.c")
         endif()
     endif()
@@ -71,6 +69,11 @@ else()
 
         if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
             list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_app.c")
+            list(APPEND srcs "src/secure_boot_v2/secure_boot_rsa_signature.c")
+        endif()
+        if(CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+            list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_app.c")
+            list(APPEND srcs "src/secure_boot_v2/secure_boot_ecdsa_signature.c")
         endif()
     endif()
 endif()

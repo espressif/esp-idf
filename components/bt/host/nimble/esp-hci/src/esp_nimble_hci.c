@@ -7,7 +7,9 @@
 #include <assert.h>
 #include "sysinit/sysinit.h"
 #include "nimble/hci_common.h"
+#if CONFIG_BT_NIMBLE_ENABLED
 #include "host/ble_hs.h"
+#endif //CONFIG_BT_NIMBLE_ENABLED
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "esp_nimble_hci.h"

@@ -93,6 +93,7 @@ static esp_pm_lock_handle_t s_pm_sleep_lock;
 #endif //SOC_PSRAM_DMA_CAPABLE
 
 static const char *TAG = "esp-aes";
+static bool s_check_dma_capable(const void *p);
 
 /* These are static due to:
  *  * Must be in DMA capable memory, so stack is not a safe place to put them
@@ -349,11 +350,11 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         }
 #endif
         /* DMA cannot access memory in the iCache range, copy input to internal ram */
-        if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input)) {
+        if (!s_check_dma_capable(input)) {
             input_needs_realloc = true;
         }
 
-        if (!esp_ptr_dma_ext_capable(output) && !esp_ptr_dma_capable(output)) {
+        if (!s_check_dma_capable(output)) {
             output_needs_realloc = true;
         }
 
@@ -1039,4 +1040,15 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
     *nc_off = n + (length % AES_BLOCK_BYTES);
 
     return r;
+}
+
+static bool s_check_dma_capable(const void *p)
+{
+    bool is_capable = false;
+#if CONFIG_SPIRAM
+    is_capable |= esp_ptr_dma_ext_capable(p);
+#endif
+    is_capable |= esp_ptr_dma_capable(p);
+
+    return is_capable;
 }

@@ -104,17 +104,20 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
     const char *str;
     switch (bootloader_hdr->spi_speed) {
-    case ESP_IMAGE_SPI_SPEED_40M:
-        str = "40MHz";
+    case ESP_IMAGE_SPI_SPEED_DIV_2:
+        str = "30MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_26M:
-        str = "26.7MHz";
-        break;
-    case ESP_IMAGE_SPI_SPEED_20M:
+    case ESP_IMAGE_SPI_SPEED_DIV_3:
         str = "20MHz";
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_4:
+        str = "15MHz";
+        break;
+    case ESP_IMAGE_SPI_SPEED_DIV_1:
+        str = "60MHz";
         break;
     default:
-        str = "20MHz";
+        str = "15MHz";
         break;
     }
     ESP_LOGI(TAG, "SPI Speed      : %s", str);
@@ -184,13 +187,6 @@ static void bootloader_spi_flash_resume(void)
 static esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
-#ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
-    if (spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_SPI && spiconfig != ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI) {
-        ESP_LOGE(TAG, "SPI flash pins are overridden. Enable CONFIG_SPI_FLASH_ROM_DRIVER_PATCH in menuconfig");
-        return ESP_FAIL;
-    }
-#endif
 
     bootloader_spi_flash_resume();
     bootloader_flash_unlock();
@@ -267,6 +263,8 @@ esp_err_t bootloader_init(void)
     cache_hal_init();
     //reset mmu
     mmu_hal_init();
+    // config mmu page size
+    mmu_ll_set_page_size(0, SPI_FLASH_MMU_PAGE_SIZE);
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log

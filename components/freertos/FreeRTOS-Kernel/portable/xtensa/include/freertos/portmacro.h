@@ -76,17 +76,22 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
-#include "esp_timer.h"              /* required for esp_timer_get_time. [refactor-todo] make this common between archs */
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
+#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 #include "portbenchmark.h"
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/xtensa_api.h>
+
+/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -359,7 +364,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @return true Core can yield
  * @return false Core cannot yield
  */
-static inline bool IRAM_ATTR xPortCanYield(void);
+static inline bool xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
@@ -398,7 +403,7 @@ void vPortSetStackWatchpoint( void *pxStackStart );
  * @note [refactor-todo] IDF should call a FreeRTOS like macro instead of port function directly
  * @return BaseType_t Core ID
  */
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
+static inline BaseType_t xPortGetCoreID(void);
 
 /**
  * @brief Wrapper for atomic compare-and-set instruction
@@ -756,16 +761,10 @@ extern uint32_t port_switch_flag[];
 // --------------------- Debugging -------------------------
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#define UNTESTED_FUNCTION() do{ esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
 #else
 #define UNTESTED_FUNCTION()
 #endif
-
-/* ---------------------------------------------------- Deprecate ------------------------------------------------------
- * - Pull in header containing deprecated macros here
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#include "portmacro_deprecated.h"
 
 #ifdef __cplusplus
 }

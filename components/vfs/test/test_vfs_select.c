@@ -95,7 +95,7 @@ static void uart1_init(void)
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = UART_SCLK_APB,
+        .source_clk = UART_SCLK_DEFAULT,
     };
     uart_driver_install(UART_NUM_1, 256, 256, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
@@ -544,6 +544,8 @@ TEST_CASE("concurrent selects work", "[vfs]")
     close(dummy_socket_fd);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5139
 TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
 {
     wl_handle_t test_wl_handle;
@@ -583,7 +585,7 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     start_select_task(&param);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
 
@@ -596,7 +598,7 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     start_select_task(&param);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
 
@@ -605,3 +607,4 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     deinit(uart_fd, socket_fd);
     close(dummy_socket_fd);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

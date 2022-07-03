@@ -27,11 +27,11 @@
 extern "C" {
 #endif
 
-IRAM_ATTR void *bt_mesh_malloc(size_t size);
+void *bt_mesh_malloc(size_t size);
 
-IRAM_ATTR void *bt_mesh_calloc(size_t size);
+void *bt_mesh_calloc(size_t size);
 
-IRAM_ATTR void bt_mesh_free(void *ptr);
+void bt_mesh_free(void *ptr);
 
 /**
  * @brief This function allocates memory to store outgoing message.

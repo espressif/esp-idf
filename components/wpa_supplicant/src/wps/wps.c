@@ -5,20 +5,191 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-#include <string.h>
 
-#include "utils/includes.h"
-#include "rsn_supp/wpa.h"
-#include "utils/common.h"
-#include "common/eapol_common.h"
-#include "utils/wpa_debug.h"
+#include "includes.h"
+
+#include "common.h"
+#include "crypto/dh_group5.h"
 #include "common/ieee802_11_defs.h"
+#include "wps_i.h"
+#include "wps_dev_attr.h"
 
-#include "wps/wps_i.h"
-#include "wps/wps_dev_attr.h"
 
-#include "eap_peer/eap_defs.h"
-#include "eap_peer/eap_common.h"
+#ifdef CONFIG_WPS_TESTING
+int wps_version_number = 0x20;
+int wps_testing_stub_cred = 0;
+int wps_corrupt_pkhash = 0;
+int wps_force_auth_types_in_use = 0;
+u16 wps_force_auth_types = 0;
+int wps_force_encr_types_in_use = 0;
+u16 wps_force_encr_types = 0;
+#endif /* CONFIG_WPS_TESTING */
+
+
+/**
+ * wps_init - Initialize WPS Registration protocol data
+ * @cfg: WPS configuration
+ * Returns: Pointer to allocated data or %NULL on failure
+ *
+ * This function is used to initialize WPS data for a registration protocol
+ * instance (i.e., each run of registration protocol as a Registrar of
+ * Enrollee. The caller is responsible for freeing this data after the
+ * registration run has been completed by calling wps_deinit().
+ */
+struct wps_data * wps_init(const struct wps_config *cfg)
+{
+	struct wps_data *data = os_zalloc(sizeof(*data));
+	if (data == NULL)
+		return NULL;
+	data->wps = cfg->wps;
+	data->registrar = cfg->registrar;
+	if (cfg->registrar) {
+		os_memcpy(data->uuid_r, cfg->wps->uuid, WPS_UUID_LEN);
+	} else {
+		os_memcpy(data->mac_addr_e, cfg->wps->dev.mac_addr, ETH_ALEN);
+		os_memcpy(data->uuid_e, cfg->wps->uuid, WPS_UUID_LEN);
+	}
+	if (cfg->pbc == 0 && cfg->pin_len) {
+		data->dev_pw_id = cfg->dev_pw_id;
+		data->dev_password = os_memdup(cfg->pin, cfg->pin_len);
+		if (data->dev_password == NULL) {
+			os_free(data);
+			return NULL;
+		}
+		data->dev_password_len = cfg->pin_len;
+		wpa_hexdump_key(MSG_DEBUG, "WPS: AP PIN dev_password",
+				data->dev_password, data->dev_password_len);
+	}
+
+#ifdef CONFIG_WPS_NFC
+	if (cfg->pin == NULL &&
+	    cfg->dev_pw_id == DEV_PW_NFC_CONNECTION_HANDOVER)
+		data->dev_pw_id = cfg->dev_pw_id;
+
+	if (cfg->wps->ap && !cfg->registrar && cfg->wps->ap_nfc_dev_pw_id) {
+		/* Keep AP PIN as alternative Device Password */
+		data->alt_dev_pw_id = data->dev_pw_id;
+		data->alt_dev_password = data->dev_password;
+		data->alt_dev_password_len = data->dev_password_len;
+
+		data->dev_pw_id = cfg->wps->ap_nfc_dev_pw_id;
+		data->dev_password =
+			os_memdup(wpabuf_head(cfg->wps->ap_nfc_dev_pw),
+				  wpabuf_len(cfg->wps->ap_nfc_dev_pw));
+		if (data->dev_password == NULL) {
+			os_free(data);
+			return NULL;
+		}
+		data->dev_password_len = wpabuf_len(cfg->wps->ap_nfc_dev_pw);
+		wpa_hexdump_key(MSG_DEBUG, "WPS: NFC dev_password",
+			    data->dev_password, data->dev_password_len);
+	}
+#endif /* CONFIG_WPS_NFC */
+
+	data->pbc = cfg->pbc;
+	if (cfg->pbc) {
+		/* Use special PIN '00000000' for PBC */
+		data->dev_pw_id = DEV_PW_PUSHBUTTON;
+		bin_clear_free(data->dev_password, data->dev_password_len);
+		data->dev_password = (u8 *) os_strdup("00000000");
+		if (data->dev_password == NULL) {
+			os_free(data);
+			return NULL;
+		}
+		data->dev_password_len = 8;
+	}
+
+	data->state = data->registrar ? RECV_M1 : SEND_M1;
+
+#ifndef ESP_SUPPLICANT
+	if (cfg->assoc_wps_ie) {
+		struct wps_parse_attr attr;
+		wpa_hexdump_buf(MSG_DEBUG, "WPS: WPS IE from (Re)AssocReq",
+				cfg->assoc_wps_ie);
+		if (wps_parse_msg(cfg->assoc_wps_ie, &attr) < 0) {
+			wpa_printf(MSG_DEBUG, "WPS: Failed to parse WPS IE "
+				   "from (Re)AssocReq");
+		} else if (attr.request_type == NULL) {
+			wpa_printf(MSG_DEBUG, "WPS: No Request Type attribute "
+				   "in (Re)AssocReq WPS IE");
+		} else {
+			wpa_printf(MSG_DEBUG, "WPS: Request Type (from WPS IE "
+				   "in (Re)AssocReq WPS IE): %d",
+				   *attr.request_type);
+			data->request_type = *attr.request_type;
+		}
+	}
+
+	if (cfg->new_ap_settings) {
+		data->new_ap_settings =
+			os_memdup(cfg->new_ap_settings,
+				  sizeof(*data->new_ap_settings));
+		if (data->new_ap_settings == NULL) {
+			bin_clear_free(data->dev_password,
+				       data->dev_password_len);
+			os_free(data);
+			return NULL;
+		}
+	}
+
+	if (cfg->peer_addr)
+		os_memcpy(data->peer_dev.mac_addr, cfg->peer_addr, ETH_ALEN);
+	if (cfg->p2p_dev_addr)
+		os_memcpy(data->p2p_dev_addr, cfg->p2p_dev_addr, ETH_ALEN);
+
+	data->use_psk_key = cfg->use_psk_key;
+	data->pbc_in_m1 = cfg->pbc_in_m1;
+
+	if (cfg->peer_pubkey_hash) {
+		os_memcpy(data->peer_pubkey_hash, cfg->peer_pubkey_hash,
+			  WPS_OOB_PUBKEY_HASH_LEN);
+		data->peer_pubkey_hash_set = 1;
+	}
+
+	data->multi_ap_backhaul_sta = cfg->multi_ap_backhaul_sta;
+
+#endif
+	return data;
+}
+
+
+/**
+ * wps_deinit - Deinitialize WPS Registration protocol data
+ * @data: WPS Registration protocol data from wps_init()
+ */
+void wps_deinit(struct wps_data *data)
+{
+#ifdef CONFIG_WPS_NFC
+	if (data->registrar && data->nfc_pw_token)
+		wps_registrar_remove_nfc_pw_token(data->wps->registrar,
+						  data->nfc_pw_token);
+#endif /* CONFIG_WPS_NFC */
+
+#ifdef CONFIG_WPS_REGISTRAR
+	if (data->wps_pin_revealed) {
+		wpa_printf(MSG_DEBUG, "WPS: Full PIN information revealed and "
+			   "negotiation failed");
+		if (data->registrar)
+			wps_registrar_invalidate_pin(data->wps->registrar,
+						     data->uuid_e);
+	} else if (data->registrar)
+		wps_registrar_unlock_pin(data->wps->registrar, data->uuid_e);
+#endif
+
+	wpabuf_clear_free(data->dh_privkey);
+	wpabuf_free(data->dh_pubkey_e);
+	wpabuf_free(data->dh_pubkey_r);
+	wpabuf_free(data->last_msg);
+	bin_clear_free(data->dev_password, data->dev_password_len);
+#ifndef ESP_SUPPLICANT
+	bin_clear_free(data->alt_dev_password, data->alt_dev_password_len);
+	bin_clear_free(data->new_psk, data->new_psk_len);
+#endif /* ESP_SUPPLICANT */
+	wps_device_data_free(&data->peer_dev);
+	bin_clear_free(data->new_ap_settings, sizeof(*data->new_ap_settings));
+	dh5_free(data->dh_ctx);
+	os_free(data);
+}
 
 
 /**
@@ -55,10 +226,7 @@ enum wps_process_res wps_process_msg(struct wps_data *wps,
  */
 struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code)
 {
-    if (wps->registrar)
         return wps_registrar_get_msg(wps, op_code);
-    else
-        return wps_enrollee_get_msg(wps, op_code);
 }
 
 
@@ -69,7 +237,7 @@ struct wpabuf * wps_get_msg(struct wps_data *wps, enum wsc_op_code *op_code)
  */
 int wps_is_selected_pbc_registrar(const struct wpabuf *msg)
 {
-    struct wps_parse_attr *attr = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
+    struct wps_parse_attr *attr = os_zalloc(sizeof(struct wps_parse_attr));
 
     if (!attr)
         return 0;
@@ -103,7 +271,6 @@ int wps_is_selected_pbc_registrar(const struct wpabuf *msg)
     return 1;
 }
 
-#ifdef CONFIG_WPS_PIN
 
 static int is_selected_pin_registrar(struct wps_parse_attr *attr)
 {
@@ -143,7 +310,7 @@ int wps_is_selected_pin_registrar(const struct wpabuf *msg)
     struct wps_parse_attr *attr;
     int ret;
 
-    attr = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
+    attr = os_zalloc(sizeof(struct wps_parse_attr));
     if (attr == NULL)
         return -99;
 
@@ -157,7 +324,6 @@ int wps_is_selected_pin_registrar(const struct wpabuf *msg)
 
     return ret;
 }
-#endif
 
 /**
  * wps_is_addr_authorized - Check whether WPS IE authorizes MAC address
@@ -176,7 +342,7 @@ int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
     const u8 *pos;
     const u8 bcast[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-    attr = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
+    attr = os_zalloc(sizeof(struct wps_parse_attr));
     if (attr == NULL) {
         ret = 0;
         goto _out;
@@ -192,11 +358,9 @@ int wps_is_addr_authorized(const struct wpabuf *msg, const u8 *addr,
          * Version 1.0 AP - AuthorizedMACs not used, so revert back to
          * old mechanism of using SelectedRegistrar.
          */
-#ifdef CONFIG_WPS_PIN
 
         ret = is_selected_pin_registrar(attr);
         goto _out;
-#endif
     }
 
     if (!attr->authorized_macs) {
@@ -343,7 +507,7 @@ struct wpabuf * wps_build_assoc_req_ie(enum wps_request_type req_type)
 
     if (wps_build_version(ie) ||
         wps_build_req_type(ie, req_type) ||
-        wps_build_wfa_ext(ie, 0, NULL, 0)) {
+        wps_build_wfa_ext(ie, 0, NULL, 0, 0)) {
         wpabuf_free(ie);
         return NULL;
     }
@@ -377,7 +541,7 @@ struct wpabuf * wps_build_assoc_resp_ie(void)
 
     if (wps_build_version(ie) ||
         wps_build_resp_type(ie, WPS_RESP_AP) ||
-        wps_build_wfa_ext(ie, 0, NULL, 0)) {
+        wps_build_wfa_ext(ie, 0, NULL, 0, 0)) {
         wpabuf_free(ie);
         return NULL;
     }
@@ -410,30 +574,26 @@ struct wpabuf * wps_build_probe_req_ie(u16 pw_id, struct wps_device_data *dev,
 {
     struct wpabuf *ie;
 
-    wpa_printf(MSG_DEBUG,  "WPS: Building WPS IE for Probe Request\n");
+    wpa_printf(MSG_DEBUG, "WPS: Building WPS IE for Probe Request");
 
-    ie = wpabuf_alloc(400);
-    if (ie == NULL) {
-        wpa_printf(MSG_ERROR, "WPS: ie alloc failed.");
+    ie = wpabuf_alloc(500);
+    if (ie == NULL)
         return NULL;
-    }
 
     if (wps_build_version(ie) ||
         wps_build_req_type(ie, req_type) ||
         wps_build_config_methods(ie, dev->config_methods) ||
         wps_build_uuid_e(ie, uuid) ||
         wps_build_primary_dev_type(dev, ie) ||
-        wps_build_rf_bands(dev, ie) ||
+        wps_build_rf_bands(dev, ie, 0) ||
         wps_build_assoc_state(NULL, ie) ||
         wps_build_config_error(ie, WPS_CFG_NO_ERROR) ||
         wps_build_dev_password_id(ie, pw_id) ||
-#ifdef CONFIG_WPS2
         wps_build_manufacturer(dev, ie) ||
         wps_build_model_name(dev, ie) ||
         wps_build_model_number(dev, ie) ||
         wps_build_dev_name(dev, ie) ||
-        wps_build_wfa_ext(ie, req_type == WPS_REQ_ENROLLEE, NULL, 0) ||
-#endif /* CONFIG_WPS2 */
+        wps_build_wfa_ext(ie, req_type == WPS_REQ_ENROLLEE, NULL, 0, 0) ||
         wps_build_req_dev_type(dev, ie, num_req_dev_types, req_dev_types)
         ||
         wps_build_secondary_dev_type(dev, ie)
@@ -441,13 +601,6 @@ struct wpabuf * wps_build_probe_req_ie(u16 pw_id, struct wps_device_data *dev,
         wpabuf_free(ie);
         return NULL;
     }
-
-#ifndef CONFIG_WPS2
-    if (dev->p2p && wps_build_dev_name(dev, ie)) {
-        wpabuf_free(ie);
-        return NULL;
-    }
-#endif /* CONFIG_WPS2 */
 
     return wps_ie_encapsulate(ie);
 }

@@ -256,7 +256,8 @@ class BuildItem(object):
 
         map_file = find_first_match('*.map', self.build_path)
         if not map_file:
-            raise ValueError('.map file not found under "{}"'.format(self.build_path))
+            logging.info('.map file not found under "{}"'.format(self.build_path))
+            return None
 
         size_json_fp = os.path.join(self.build_path, SIZE_JSON_FN)
         idf_size_args = [
@@ -271,7 +272,8 @@ class BuildItem(object):
 
     def write_size_info(self, size_info_fs):
         if not self.size_json_fp or (not os.path.exists(self.size_json_fp)):
-            raise OSError('Run get_size_json_fp() for app {} after built binary'.format(self.app_dir))
+            logging.info(f'No size info found for app {self._app_name}')
+            return
         size_info_dict = {
             'app_name': self._app_name,
             'config_name': self.config_name,

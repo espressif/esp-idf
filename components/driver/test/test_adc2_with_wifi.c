@@ -219,36 +219,45 @@ TEST_CASE("adc2 work with wifi","[adc]")
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 
-#include "driver/i2s.h"
+#include "driver/adc.h"
 
 #define ADC1_CHANNEL_4_IO      (32)
-#define SAMPLE_RATE            (36000)
-#define SAMPLE_BITS            (16)
+#define ADC_SAMPLE_RATE        (36000)
+#define ADC_TEST_CHANNEL       ADC1_CHANNEL_4
 
-static void i2s_adc_init(void)
+static void adc_dma_init(void)
 {
-    i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
-        .sample_rate =  SAMPLE_RATE,
-        .bits_per_sample = SAMPLE_BITS,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-        .intr_alloc_flags = 0,
-        .dma_desc_num = 2,
-        .dma_frame_num = 1024,
-        .use_apll = 0,
+    adc_digi_init_config_t adc_dma_config = {
+        .max_store_buf_size = 1024,
+        .conv_num_each_intr = 256,
+        .adc1_chan_mask = 1 << ADC_TEST_CHANNEL,
+        .adc2_chan_mask = 0,
     };
-    // install and start I2S driver
-    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
-    // init ADC pad
-    i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_4);
-    // enable adc sampling, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11 hard-coded in adc_i2s_mode_init
-    i2s_adc_enable(I2S_NUM_0);
+    TEST_ESP_OK(adc_digi_initialize(&adc_dma_config));
+
+    adc_digi_pattern_config_t adc_pattern = {
+        .atten = ADC_ATTEN_DB_0,
+        .channel = ADC_TEST_CHANNEL,
+        .unit = 0,
+        .bit_width = SOC_ADC_DIGI_MAX_BITWIDTH
+    };
+    adc_digi_configuration_t dig_cfg = {
+        .conv_limit_en = 1,
+        .conv_limit_num = 250,
+        .sample_freq_hz = ADC_SAMPLE_RATE,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
+        .format = ADC_DIGI_OUTPUT_FORMAT_TYPE1,
+        .pattern_num = 1,
+        .adc_pattern = &adc_pattern
+    };
+    TEST_ESP_OK(adc_digi_controller_configure(&dig_cfg));
+    TEST_ESP_OK(adc_digi_start());
 }
 
-static void i2s_adc_test(void)
+static void continuous_adc_test(void)
 {
-    uint16_t *i2sReadBuffer = (uint16_t *)calloc(1024, sizeof(uint16_t));
-    size_t bytesRead;
+    uint16_t *adcReadBuffer = (uint16_t *)calloc(1024, sizeof(uint16_t));
+    uint32_t bytesRead;
     for (int loop = 0; loop < 10; loop++) {
         for (int level = 0; level <= 1; level++) {
             if (level == 0) {
@@ -258,12 +267,11 @@ static void i2s_adc_test(void)
             }
             vTaskDelay(200 / portTICK_PERIOD_MS);
             // read data from adc, will block until buffer is full
-            i2s_read(I2S_NUM_0, (void *)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
-
+            adc_digi_read_bytes((uint8_t *)adcReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, ADC_MAX_DELAY);
             // calc average
             int64_t adcSumValue = 0;
             for (size_t i = 0; i < 1024; i++) {
-                adcSumValue += i2sReadBuffer[i] & 0xfff;
+                adcSumValue += adcReadBuffer[i] & 0xfff;
             }
             int adcAvgValue = adcSumValue / 1024;
             printf("adc average val: %d\n", adcAvgValue);
@@ -275,19 +283,19 @@ static void i2s_adc_test(void)
             }
         }
     }
-    free(i2sReadBuffer);
+    free(adcReadBuffer);
 }
 
-static void i2s_adc_release(void)
+static void adc_deinit(void)
 {
-    i2s_adc_disable(I2S_NUM_0);
-    i2s_driver_uninstall(I2S_NUM_0);
+    adc_digi_stop();
+    TEST_ESP_OK(adc_digi_deinitialize());
 }
 
 TEST_CASE("adc1 and i2s work with wifi","[adc][ignore]")
 {
 
-    i2s_adc_init();
+    adc_dma_init();
     //init wifi
     printf("nvs init\n");
     esp_err_t r = nvs_flash_init();
@@ -310,12 +318,12 @@ TEST_CASE("adc1 and i2s work with wifi","[adc][ignore]")
     };
     TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    i2s_adc_test();
+    continuous_adc_test();
     //now start wifi
     printf("wifi start...\n");
     TEST_ESP_OK(esp_wifi_start());
     //test reading during wifi on
-    i2s_adc_test();
+    continuous_adc_test();
     //wifi stop again
     printf("wifi stop...\n");
 
@@ -326,8 +334,8 @@ TEST_CASE("adc1 and i2s work with wifi","[adc][ignore]")
     event_deinit();
 
     nvs_flash_deinit();
-    i2s_adc_test();
-    i2s_adc_release();
+    continuous_adc_test();
+    adc_deinit();
     printf("test passed...\n");
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }

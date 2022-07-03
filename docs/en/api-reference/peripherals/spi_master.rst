@@ -118,11 +118,11 @@ An SPI Host can send full-duplex transactions, during which the read and write p
 
 While the member :cpp:member:`spi_transaction_t::rxlength` only determines the length of data received into the buffer.
 
-In half-duplex transactions, the read and write phases are not simultaneous (one direction at a time). The lengths of the write and read phases are determined by :cpp:member:`length` and :cpp:member:`rxlength` members of the struct :cpp:type:`spi_transaction_t` respectively.
+In half-duplex transactions, the read and write phases are not simultaneous (one direction at a time). The lengths of the write and read phases are determined by :cpp:member:`spi_transaction_t::length` and :cpp:member:`spi_transaction_t::rxlength` respectively.
 
-The command and address phases are optional, as not every SPI device requires a command and/or address. This is reflected in the Device's configuration: if :cpp:member:`command_bits` and/or :cpp:member:`address_bits` are set to zero, no command or address phase will occur.
+The command and address phases are optional, as not every SPI device requires a command and/or address. This is reflected in the Device's configuration: if :cpp:member:`spi_device_interface_config_t::command_bits` and/or :cpp:member:`spi_device_interface_config_t::address_bits` are set to zero, no command or address phase will occur.
 
-The read and write phases can also be optional, as not every transaction requires both writing and reading data. If :cpp:member:`rx_buffer` is NULL and :cpp:type:`SPI_TRANS_USE_RXDATA` is not set, the read phase is skipped. If :cpp:member:`tx_buffer` is NULL and :cpp:type:`SPI_TRANS_USE_TXDATA` is not set, the write phase is skipped.
+The read and write phases can also be optional, as not every transaction requires both writing and reading data. If :cpp:member:`spi_transaction_t::rx_buffer` is NULL and :c:macro:`SPI_TRANS_USE_RXDATA` is not set, the read phase is skipped. If :cpp:member:`spi_transaction_t::tx_buffer` is NULL and :c:macro:`SPI_TRANS_USE_TXDATA` is not set, the write phase is skipped.
 
 The driver supports two types of transactions: the interrupt transactions and polling transactions. The programmer can choose to use a different transaction type per Device. If your Device requires both transaction types, see :ref:`mixed_transactions`.
 
@@ -205,9 +205,9 @@ Supported line modes for {IDF_TARGET_NAME} are listed as follows, to make use of
 Command and Address Phases
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-During the command and address phases, the members :cpp:member:`cmd` and :cpp:member:`addr` in the struct :cpp:type:`spi_transaction_t` are sent to the bus, nothing is read at this time. The default lengths of the command and address phases are set in :cpp:type:`spi_device_interface_config_t` by calling :cpp:func:`spi_bus_add_device`. If the flags :cpp:type:`SPI_TRANS_VARIABLE_CMD` and :cpp:type:`SPI_TRANS_VARIABLE_ADDR` in the member :cpp:member:`spi_transaction_t::flags` are not set, the driver automatically sets the length of these phases to default values during Device initialization.
+During the command and address phases, the members :cpp:member:`spi_transaction_t::cmd` and :cpp:member:`spi_transaction_t::addr` are sent to the bus, nothing is read at this time. The default lengths of the command and address phases are set in :cpp:type:`spi_device_interface_config_t` by calling :cpp:func:`spi_bus_add_device`. If the flags :c:macro:`SPI_TRANS_VARIABLE_CMD` and :c:macro:`SPI_TRANS_VARIABLE_ADDR` in the member :cpp:member:`spi_transaction_t::flags` are not set, the driver automatically sets the length of these phases to default values during Device initialization.
 
-If the lengths of the command and address phases need to be variable, declare the struct :cpp:type:`spi_transaction_ext_t`, set the flags :cpp:type:`SPI_TRANS_VARIABLE_CMD` and/or :cpp:type:`SPI_TRANS_VARIABLE_ADDR` in the member :cpp:member:`spi_transaction_ext_t::base` and configure the rest of base as usual. Then the length of each phase will be equal to :cpp:member:`command_bits` and :cpp:member:`address_bits` set in the struct :cpp:type:`spi_transaction_ext_t`.
+If the lengths of the command and address phases need to be variable, declare the struct :cpp:type:`spi_transaction_ext_t`, set the flags :c:macro:`SPI_TRANS_VARIABLE_CMD` and/or :c:macro:`SPI_TRANS_VARIABLE_ADDR` in the member :cpp:member:`spi_transaction_ext_t::base` and configure the rest of base as usual. Then the length of each phase will be equal to :cpp:member:`spi_transaction_ext_t::command_bits` and :cpp:member:`spi_transaction_ext_t::address_bits` set in the struct :cpp:type:`spi_transaction_ext_t`.
 
 If the command and address phase need to be as the same number of lines as data phase, you need to set `SPI_TRANS_MULTILINE_CMD` and/or `SPI_TRANS_MULTILINE_ADDR` to the `flags` member in the struct :cpp:type:`spi_transaction_t`. Also see :ref:`transaction-line-mode`.
 
@@ -215,7 +215,7 @@ If the command and address phase need to be as the same number of lines as data 
 Write and Read Phases
 ^^^^^^^^^^^^^^^^^^^^^
 
-Normally, the data that needs to be transferred to or from a Device will be read from or written to a chunk of memory indicated by the members :cpp:member:`rx_buffer` and :cpp:member:`tx_buffer` of the structure :cpp:type:`spi_transaction_t`. If DMA is enabled for transfers, the buffers are required to be:
+Normally, the data that needs to be transferred to or from a Device will be read from or written to a chunk of memory indicated by the members :cpp:member:`spi_transaction_t::rx_buffer` and :cpp:member:`spi_transaction_t::tx_buffer`. If DMA is enabled for transfers, the buffers are required to be:
 
   1. Allocated in DMA-capable internal memory. If :ref:`external PSRAM is enabled<dma-capable-memory>`, this means using ``pvPortMallocCaps(size, MALLOC_CAP_DMA)``.
   2. 32-bit aligned (staring from a 32-bit boundary and having a length of multiples of 4 bytes).
@@ -287,7 +287,7 @@ The example code for the SPI master driver can be found in the :example:`periphe
 Transactions with Data Not Exceeding 32 Bits
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When the transaction data size is equal to or less than 32 bits, it will be sub-optimal to allocate a buffer for the data. The data can be directly stored in the transaction struct instead. For transmitted data, it can be achieved by using the :cpp:member:`tx_data` member and setting the :cpp:type:`SPI_TRANS_USE_TXDATA` flag on the transmission. For received data, use :cpp:member:`rx_data` and set :cpp:type:`SPI_TRANS_USE_RXDATA`. In both cases, do not touch the :cpp:member:`tx_buffer` or :cpp:member:`rx_buffer` members, because they use the same memory locations as :cpp:member:`tx_data` and :cpp:member:`rx_data`.
+When the transaction data size is equal to or less than 32 bits, it will be sub-optimal to allocate a buffer for the data. The data can be directly stored in the transaction struct instead. For transmitted data, it can be achieved by using the :cpp:member:`spi_transaction_t::tx_data` member and setting the :c:macro:`SPI_TRANS_USE_TXDATA` flag on the transmission. For received data, use :cpp:member:`spi_transaction_t::rx_data` and set :c:macro:`SPI_TRANS_USE_RXDATA`. In both cases, do not touch the :cpp:member:`spi_transaction_t::tx_buffer` or :cpp:member:`spi_transaction_t::rx_buffer` members, because they use the same memory locations as :cpp:member:`spi_transaction_t::tx_data` and :cpp:member:`spi_transaction_t::rx_data`.
 
 
 Transactions with Integers Other Than ``uint8_t``
@@ -419,7 +419,7 @@ To have better control of the calling sequence of functions, send mixed transact
     | QUADHD   | 4    | 21   |
     +----------+------+------+
 
-    * Only the first Device attached to the bus can use the CS0 pin.
+    \* Only the first Device attached to the bus can use the CS0 pin.
 
 
 .. _speed_considerations:
@@ -493,7 +493,7 @@ For an interrupt transaction, the overall cost is *20+8n/Fspi[MHz]* [us] for n b
 
 When a transaction length is short, the cost of transaction interval is high. If possible, try to squash several short transactions into one transaction to achieve a higher transfer speed.
 
-Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :cpp:class:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations will be handled by the ISR in parallel. Also note that the callback of each Device and their callee functions should be in IRAM, or your callback will crash due to cache miss. For more details, see :ref:`iram-safe-interrupt-handlers`.
+Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :c:macro:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations will be handled by the ISR in parallel. Also note that the callback of each Device and their callee functions should be in IRAM, or your callback will crash due to cache miss. For more details, see :ref:`iram-safe-interrupt-handlers`.
 
 
 .. only:: esp32
@@ -509,13 +509,11 @@ Please note that the ISR is disabled during flash operation by default. To keep 
         :scale: 40 %
         :align: center
 
-    .. wavedrom does not support rendering pdflatex till now(1.3.1), so we use the png here
-
-    .. image:: /../_static/miso_timing_waveform.png
+    .. wavedrom:: /../_static/diagrams/spi/miso_timing_waveform.json
 
     The maximum allowed frequency is dependent on:
 
-    - ``input_delay_ns`` - maximum data valid time on the MISO bus after a clock cycle on SCLK starts
+    - :cpp:member:`spi_device_interface_config_t::input_delay_ns` - maximum data valid time on the MISO bus after a clock cycle on SCLK starts
     - If the IO_MUX pin or the GPIO Matrix is used
 
     When the GPIO matrix is used, the maximum allowed frequency is reduced to about 33~77% in comparison to the existing *input delay*. To retain a higher frequency, you have to use the IO_MUX pins or the *dummy bit workaround*. You can obtain the maximum reading frequency of the master by using the function :cpp:func:`spi_get_freq_limit`.
@@ -540,7 +538,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
 
     :cpp:member:`spi_device_interface_config_t::flags`
 
-    The SPI master driver still works even if the :cpp:member:`input_delay_ns` in the structure :cpp:type:`spi_device_interface_config_t` is set to 0. However, setting an accurate value helps to:
+    The SPI master driver still works even if the :cpp:member:`spi_device_interface_config_t::input_delay_ns` in the structure :cpp:type:`spi_device_interface_config_t` is set to 0. However, setting an accurate value helps to:
 
     - Calculate the frequency limit for full-duplex transactions
     - Compensate the timing correctly with dummy bits for half-duplex transactions

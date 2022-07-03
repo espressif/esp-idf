@@ -1,0 +1,7 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_ESP32H2_RTC_CLK_SRC_INT_RC                         CONFIG_RTC_CLK_SRC_INT_RC
+CONFIG_ESP32H2_RTC_CLK_SRC_EXT_CRYS                       CONFIG_RTC_CLK_SRC_EXT_CRYS
+CONFIG_ESP32H2_RTC_CLK_SRC_EXT_OSC                        CONFIG_RTC_CLK_SRC_EXT_OSC
+CONFIG_ESP32H2_RTC_CLK_CAL_CYCLES                         CONFIG_RTC_CLK_CAL_CYCLES

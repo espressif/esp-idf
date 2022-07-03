@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,6 @@
 #include "soc/soc_caps.h"
 
 #if SOC_DAC_SUPPORTED
-#include "driver/i2s.h"
 #include "driver/dac.h"
 #include "esp_adc_cal.h"
 

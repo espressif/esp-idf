@@ -1,6 +1,6 @@
 /*
  * hostapd - IEEE 802.11i-2004 / WPA Authenticator: Internal definitions
- * Copyright (c) 2004-2007, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2015, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -83,7 +83,7 @@ struct wpa_state_machine {
 	unsigned int mgmt_frame_prot:1;
 	unsigned int rx_eapol_key_secure:1;
 	unsigned int update_snonce:1;
-#ifdef CONFIG_IEEE80211R
+#ifdef CONFIG_IEEE80211R_AP
 	unsigned int ft_completed:1;
 	unsigned int pmk_r1_name_valid:1;
 #endif /* CONFIG_IEEE80211R */
@@ -103,9 +103,12 @@ struct wpa_state_machine {
 	int pairwise; /* Pairwise cipher suite, WPA_CIPHER_* */
 	int wpa_key_mgmt; /* the selected WPA_KEY_MGMT_* */
 
-#ifdef CONFIG_IEEE80211R
-	u8 xxkey[PMK_LEN]; /* PSK or the second 256 bits of MSK */
+#ifdef CONFIG_IEEE80211R_AP
+	u8 xxkey[PMK_LEN_MAX]; /* PSK or the second 256 bits of MSK, or the
+				* first 384 bits of MSK */
 	size_t xxkey_len;
+	u8 pmk_r1[PMK_LEN_MAX];
+	unsigned int pmk_r1_len;
 	u8 pmk_r1_name[WPA_PMK_NAME_LEN]; /* PMKR1Name derived from FT Auth
 					   * Request */
 	u8 r0kh_id[FT_R0KH_ID_MAX_LEN]; /* R0KH-ID from FT Auth Request */
@@ -113,11 +116,20 @@ struct wpa_state_machine {
 	u8 sup_pmk_r1_name[WPA_PMK_NAME_LEN]; /* PMKR1Name from EAPOL-Key
 					       * message 2/4 */
 	u8 *assoc_resp_ftie;
-#endif /* CONFIG_IEEE80211R */
+
+	void (*ft_pending_cb)(void *ctx, const u8 *dst, const u8 *bssid,
+			      u16 auth_transaction, u16 status,
+			      const u8 *ies, size_t ies_len);
+	void *ft_pending_cb_ctx;
+	struct wpabuf *ft_pending_req_ies;
+	u8 ft_pending_pull_nonce[FT_RRB_NONCE_LEN];
+	u8 ft_pending_auth_transaction;
+	u8 ft_pending_current_ap[ETH_ALEN];
+	int ft_pending_pull_left_retries;
+#endif /* CONFIG_IEEE80211R_AP */
 
 	int pending_1_of_4_timeout;
 	u32 index;
-	ETSTimer resend_eapol;
 	struct rsn_sppamsdu_sup spp_sup;
 };
 
@@ -165,6 +177,10 @@ struct wpa_authenticator {
 	size_t wpa_ie_len;
 
 	u8 addr[ETH_ALEN];
+#ifdef CONFIG_IEEE80211R
+	struct rsn_pmksa_cache *pmksa;
+	struct wpa_ft_pmk_cache *ft_pmk_cache;
+#endif
 
 };
 
@@ -182,17 +198,6 @@ int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
 int wpa_auth_for_each_auth(struct wpa_authenticator *wpa_auth,
 			   int (*cb)(struct wpa_authenticator *a, void *ctx),
 			   void *cb_ctx);
-
-#ifdef CONFIG_PEERKEY
-int wpa_stsl_remove(struct wpa_authenticator *wpa_auth,
-		    struct wpa_stsl_negotiation *neg);
-void wpa_smk_error(struct wpa_authenticator *wpa_auth,
-		   struct wpa_state_machine *sm, struct wpa_eapol_key *key);
-void wpa_smk_m1(struct wpa_authenticator *wpa_auth,
-		struct wpa_state_machine *sm, struct wpa_eapol_key *key);
-void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
-		struct wpa_state_machine *sm, struct wpa_eapol_key *key);
-#endif /* CONFIG_PEERKEY */
 
 #ifdef CONFIG_IEEE80211R
 int wpa_write_mdie(struct wpa_auth_config *conf, u8 *buf, size_t len);

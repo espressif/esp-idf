@@ -18,10 +18,6 @@
 
 #define TEST_SPI_HOST_ID  SPI2_HOST
 
-void test_app_include_spi_lcd(void)
-{
-}
-
 void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done,
                                     void *user_data, int cmd_bits, int param_bits, bool oct_mode)
 {
@@ -83,6 +79,8 @@ static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_ha
     esp_lcd_panel_invert_color(panel_handle, true);
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    // turn on display
+    esp_lcd_panel_disp_on_off(panel_handle, true);
     // turn on backlight
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
@@ -94,7 +92,7 @@ static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_ha
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 200, y_start + 200, img);
     }
     // turn off screen
-    esp_lcd_panel_disp_off(panel_handle, true);
+    esp_lcd_panel_disp_on_off(panel_handle, false);
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));

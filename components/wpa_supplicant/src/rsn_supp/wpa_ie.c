@@ -197,6 +197,10 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     } else if (key_mgmt == WPA_KEY_MGMT_SAE) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE);
 #endif /* CONFIG_WPA3_SAE */
+#ifdef CONFIG_OWE_STA
+    } else if (key_mgmt == WPA_KEY_MGMT_OWE) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_OWE);
+#endif /* CONFIG_OWE_STA */
 #endif /* CONFIG_IEEE80211W */
     } else if (key_mgmt == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192);
@@ -214,7 +218,7 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 #ifdef CONFIG_IEEE80211W
     if (sm->pmf_cfg.capable) {
         capab |= WPA_CAPABILITY_MFPC;
-        if (sm->pmf_cfg.required || key_mgmt == WPA_KEY_MGMT_SAE) {
+        if (sm->pmf_cfg.required || key_mgmt == WPA_KEY_MGMT_SAE || key_mgmt == WPA_KEY_MGMT_OWE) {
             capab |= WPA_CAPABILITY_MFPR;
         }
     }

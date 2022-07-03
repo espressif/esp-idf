@@ -32,7 +32,7 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 - ``light_sleep_enable``: Whether the system should automatically enter light sleep when no locks are acquired (``true``/``false``).
 
 
-  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
+  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
 
 .. note::
 
@@ -72,7 +72,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
 {IDF_TARGET_NAME} Power Management Algorithm
 ---------------------------------------
 
-The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ`.
+The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`.
 
 .. only:: esp32
 
@@ -100,10 +100,10 @@ When DFS is enabled, the APB frequency can be changed multiple times within a si
 
 The following peripherals work normally even when the APB frequency is changing:
 
-- **UART**: if REF_TICK is used as a clock source. See `use_ref_tick` member of :cpp:class:`uart_config_t`.
+- **UART**: if REF_TICK or XTAL is used as a clock source. See :cpp:member:`uart_config_t::source_clk`.
 - **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
-- **RMT**: if REF_TICK or XTAL is used as a clock source. See `flags` member of :cpp:class:`rmt_config_t` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
-- **GPTimer**: if APB is used as the clock source. See :c:member:`clk_src` member of :c:type:`gptimer_config_t`.
+- **RMT**: if REF_TICK or XTAL is used as a clock source. See :cpp:member:`rmt_config_t::flags` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
+- **GPTimer**: if APB is used as the clock source. See :cpp:member:`gptimer_config_t::clk_src`.
 - **TSENS**: XTAL or RTC_8M is used as a clock source. So, APB frequency changing will not influence it.
 
 Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:

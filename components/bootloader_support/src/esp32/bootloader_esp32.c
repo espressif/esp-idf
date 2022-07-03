@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,8 @@
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "hal/gpio_hal.h"
+#include "xtensa/config/core.h"
+#include "xt_instr_macros.h"
 
 #include "esp32/rom/cache.h"
 #include "esp_rom_gpio.h"
@@ -126,9 +128,9 @@ static void bootloader_reset_mmu(void)
 static esp_err_t bootloader_check_rated_cpu_clock(void)
 {
     int rated_freq = bootloader_clock_get_rated_freq_mhz();
-    if (rated_freq < CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ) {
+    if (rated_freq < CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ) {
         ESP_LOGE(TAG, "Chip CPU frequency rated for %dMHz, configured for %dMHz. Modify CPU frequency in menuconfig",
-                 rated_freq, CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+                 rated_freq, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -175,16 +177,16 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
     const char *str;
     switch (bootloader_hdr->spi_speed) {
-    case ESP_IMAGE_SPI_SPEED_40M:
+    case ESP_IMAGE_SPI_SPEED_DIV_2:
         str = "40MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_26M:
+    case ESP_IMAGE_SPI_SPEED_DIV_3:
         str = "26.7MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_20M:
+    case ESP_IMAGE_SPI_SPEED_DIV_4:
         str = "20MHz";
         break;
-    case ESP_IMAGE_SPI_SPEED_80M:
+    case ESP_IMAGE_SPI_SPEED_DIV_1:
         str = "80MHz";
         break;
     default:
@@ -349,6 +351,11 @@ static void bootloader_check_wdt_reset(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+
+#if XCHAL_ERRATUM_572
+    uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
+    WSR(MEMCTL, memctl);
+#endif // XCHAL_ERRATUM_572
 
     bootloader_init_mem();
 

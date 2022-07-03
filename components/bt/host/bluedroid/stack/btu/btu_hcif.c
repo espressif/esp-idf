@@ -111,12 +111,15 @@ static void btu_hcif_rem_oob_request_evt (UINT8 *p);
 #if (SMP_INCLUDED == TRUE)
 static void btu_hcif_simple_pair_complete_evt (UINT8 *p);
 #endif  ///SMP_INCLUDED == TRUE
+static void btu_hcif_link_supv_to_changed_evt (UINT8 *p);
 #if L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE
 static void btu_hcif_enhanced_flush_complete_evt (void);
 #endif
 
 #if (BTM_SSR_INCLUDED == TRUE)
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len);
+#else
+static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len);
 #endif /* BTM_SSR_INCLUDED == TRUE */
 
 #if BLE_INCLUDED == TRUE
@@ -300,11 +303,13 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
     case HCI_ESCO_CONNECTION_CHANGED_EVT:
         btu_hcif_esco_connection_chg_evt (p);
         break;
-#if (BTM_SSR_INCLUDED == TRUE)
     case HCI_SNIFF_SUB_RATE_EVT:
+#if (BTM_SSR_INCLUDED == TRUE)
         btu_hcif_ssr_evt (p, hci_evt_len);
-        break;
+#else
+        btu_hcif_ssr_evt_dump (p, hci_evt_len);
 #endif  /* BTM_SSR_INCLUDED == TRUE */
+        break;
     case HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT:
         btu_hcif_host_support_evt (p);
         break;
@@ -338,6 +343,9 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         btu_hcif_keypress_notif_evt (p);
         break;
 #endif  ///SMP_INCLUDED == TRUE
+    case HCI_LINK_SUPER_TOUT_CHANGED_EVT:
+        btu_hcif_link_supv_to_changed_evt (p);
+        break;
 #if L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE
     case HCI_ENHANCED_FLUSH_COMPLETE_EVT:
         btu_hcif_enhanced_flush_complete_evt ();
@@ -651,6 +659,7 @@ static void btu_hcif_connection_comp_evt (UINT8 *p)
         btm_sco_connected (status, bda, handle, &esco_data);
     }
 #endif /* BTM_SCO_INCLUDED */
+    HCI_TRACE_WARNING("hcif conn complete: hdl 0x%x, st 0x%x", handle, status);
 }
 
 
@@ -707,9 +716,7 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
-    if (reason != HCI_ERR_PEER_USER && reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) {
-        HCI_TRACE_WARNING("DiscCmpl evt: hdl=%d, rsn=0x%x", handle, reason);
-    }
+    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
 
 #if BTM_SCO_INCLUDED == TRUE
     /* If L2CAP doesn't know about it, send it to SCO */
@@ -1554,6 +1561,8 @@ static void btu_hcif_mode_change_evt (UINT8 *p)
     btm_sco_chk_pend_unpark (status, handle);
 #endif
     btm_pm_proc_mode_change (status, handle, current_mode, interval);
+    HCI_TRACE_WARNING("hcif mode change: hdl 0x%x, mode %d, intv %d, status 0x%x",
+                    handle, current_mode, interval, status);
 
     /*
     #if (HID_DEV_INCLUDED == TRUE) && (HID_DEV_PM_INCLUDED == TRUE)
@@ -1575,6 +1584,26 @@ static void btu_hcif_mode_change_evt (UINT8 *p)
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len)
 {
     btm_pm_proc_ssr_evt(p, evt_len);
+}
+#else
+static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len)
+{
+    UINT8       status;
+    UINT16      handle;
+    UINT16      max_tx_lat;
+    UINT16      max_rx_lat;
+
+    STREAM_TO_UINT8 (status, p);
+    STREAM_TO_UINT16 (handle, p);
+    STREAM_TO_UINT16 (max_tx_lat, p);
+    STREAM_TO_UINT16 (max_rx_lat, p);
+
+    UNUSED(status);
+    UNUSED(handle);
+    UNUSED(max_tx_lat);
+    UNUSED(max_rx_lat);
+
+    HCI_TRACE_WARNING("hcif ssr evt: st 0x%x, hdl 0x%x, tx_lat %d rx_lat %d", status, handle, max_tx_lat, max_rx_lat);
 }
 #endif
 
@@ -1920,6 +1949,30 @@ static void btu_hcif_simple_pair_complete_evt (UINT8 *p)
     btm_simple_pair_complete(p);
 }
 #endif  ///SMP_INCLUDED == TRUE
+
+/*******************************************************************************
+**
+** Function         btu_hcif_link_supv_to_changed_evt
+**
+** Description      Process event HCI_LINK_SUPER_TOUT_CHANGED_EVT
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btu_hcif_link_supv_to_changed_evt (UINT8 *p)
+{
+    UINT16 handle;
+    UINT16 supv_to;
+
+    STREAM_TO_UINT16(handle, p);
+    STREAM_TO_UINT16(supv_to, p);
+
+    UNUSED(handle);
+    UNUSED(supv_to);
+
+    HCI_TRACE_WARNING("hcif link supv_to changed: hdl 0x%x, supv_to %d", handle, supv_to);
+}
+
 /*******************************************************************************
 **
 ** Function         btu_hcif_enhanced_flush_complete_evt

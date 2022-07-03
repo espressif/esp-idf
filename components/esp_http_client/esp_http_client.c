@@ -512,6 +512,20 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
     client->process_again = 0;
     client->response->data_process = 0;
     client->first_line_prepared = false;
+    /**
+     * Clear location field before making a new HTTP request. Location
+     * field should not be cleared in http_on_header* callbacks because
+     * callbacks can be invoked multiple times for same header, and
+     * hence can lead to data corruption.
+     */
+    if (client->location != NULL) {
+        free(client->location);
+        client->location = NULL;
+    }
+    if (client->auth_header != NULL) {
+        free(client->auth_header);
+        client->auth_header = NULL;
+    }
     http_parser_init(client->parser, HTTP_RESPONSE);
     if (client->connection_info.username) {
         char *auth_response = NULL;
@@ -821,7 +835,9 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     switch (client->response->status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_SeeOther:
         case HttpStatus_TemporaryRedirect:
+        case HttpStatus_PermanentRedirect:
             if (client->disable_auto_redirect) {
                 http_dispatch_event(client, HTTP_EVENT_REDIRECT, NULL, 0);
             }
@@ -1047,9 +1063,8 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         if (rlen <= 0) {
             if (errno != 0) {
                 esp_log_level_t sev = ESP_LOG_WARN;
-                /* On connection close from server, recv should ideally return 0 but we have error conversion
-                 * in `tcp_transport` SSL layer which translates it `-1` and hence below additional checks */
-                if (rlen == -1 && errno == ENOTCONN && client->response->is_chunked) {
+                /* Check for cleanly closed connection */
+                if (rlen == ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN && client->response->is_chunked) {
                     /* Explicit call to parser for invoking `message_complete` callback */
                     http_parser_execute(client->parser, client->parser_settings, res_buffer->data, 0);
                     /* ...and lowering the message severity, as closed connection from server side is expected in chunked transport */
@@ -1057,14 +1072,21 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
-#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
-            if (rlen == ESP_TLS_ERR_SSL_WANT_READ || errno == EAGAIN) {
-#else
-            if (errno == EAGAIN) {
-#endif
-                ESP_LOGD(TAG, "Received EAGAIN! rlen = %d, errno %d", rlen, errno);
-                return ridx;
+
+            if (rlen == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
+                ESP_LOGD(TAG, "Connection timed out before data was ready!");
+                /* Returning the number of bytes read upto the point where connection timed out */
+                if (ridx) {
+                    return ridx;
+                }
+                return -ESP_ERR_HTTP_EAGAIN;
             }
+
+            if (rlen != ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN) {
+                esp_err_t err = esp_transport_translate_error(rlen);
+                ESP_LOGE(TAG, "transport_read: error - %d | %s", err, esp_err_to_name(err));
+            }
+
             if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
                 http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
                 return ESP_FAIL;
@@ -1126,8 +1148,9 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 /* Disable caching response body, as data should
                  * be handled by application event handler */
                 client->cache_data_in_fetch_hdr = 0;
-                if (esp_http_client_fetch_headers(client) < 0) {
-                    if (client->is_async && errno == EAGAIN) {
+                int64_t ret = esp_http_client_fetch_headers(client);
+                if (ret < 0) {
+                    if ((client->is_async && errno == EAGAIN) || ret == -ESP_ERR_HTTP_EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
                     /* Enable caching after error condition because next
@@ -1203,6 +1226,10 @@ int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client)
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
         buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size_rx, client->timeout_ms);
         if (buffer->len <= 0) {
+            if (buffer->len == ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT) {
+                ESP_LOGW(TAG, "Connection timed out before data was ready!");
+                return -ESP_ERR_HTTP_EAGAIN;
+            }
             return ESP_FAIL;
         }
         http_parser_execute(client->parser, client->parser_settings, buffer->data, buffer->len);

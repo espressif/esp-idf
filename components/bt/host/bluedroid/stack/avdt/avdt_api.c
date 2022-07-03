@@ -63,6 +63,9 @@ void avdt_process_timeout(TIMER_LIST_ENT *p_tle)
     UINT8   err_code = AVDT_ERR_TIMEOUT;
 
     switch (p_tle->event) {
+    case BTU_TTYPE_AVDT_SCB_DELAY_RPT:
+        event = AVDT_SCB_DELAY_RPT_RSP_TOUT_EVT;
+        break;
     case BTU_TTYPE_AVDT_CCB_RET:
         event = AVDT_CCB_RET_TOUT_EVT + AVDT_CCB_MKR;
         break;
@@ -474,6 +477,9 @@ UINT16 AVDT_DelayReport(UINT8 handle, UINT8 seid, UINT16 delay)
     tAVDT_SCB       *p_scb;
     UINT16          result = AVDT_SUCCESS;
     tAVDT_SCB_EVT   evt;
+    UNUSED(seid);
+
+    AVDT_TRACE_DEBUG("%s: delay value: 0x%04x\n", __func__, delay);
 
     /* map handle to scb */
     if ((p_scb = avdt_scb_by_hdl(handle)) == NULL) {
@@ -481,9 +487,14 @@ UINT16 AVDT_DelayReport(UINT8 handle, UINT8 seid, UINT16 delay)
     } else
         /* send event to scb */
     {
-        evt.apidelay.hdr.seid   = seid;
-        evt.apidelay.delay      = delay;
-        avdt_scb_event(p_scb, AVDT_SCB_API_DELAY_RPT_REQ_EVT, &evt);
+        if ((p_scb->cs.tsep == AVDT_TSEP_SNK) && (p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
+            evt.apidelay.hdr.seid   = p_scb->peer_seid;
+            evt.apidelay.delay      = delay;
+            avdt_scb_event(p_scb, AVDT_SCB_API_DELAY_RPT_REQ_EVT, &evt);
+        } else {
+            AVDT_TRACE_WARNING("%s: peer device does not supported\n", __func__);
+            result = AVDT_BAD_PARAMS;
+        }
     }
 
     return result;
@@ -1259,6 +1270,34 @@ UINT8 AVDT_SetTraceLevel (UINT8 new_level)
     }
 
     return (avdt_cb.trace_level);
+}
+
+/*******************************************************************************
+**
+** Function         AVDT_SetDelayValue
+**
+** Description      Set delay reporting value.
+**
+** Returns          void
+**
+*******************************************************************************/
+void AVDT_SetDelayValue(UINT16 delay_value)
+{
+    avdt_cb.delay_value = delay_value;
+}
+
+/*******************************************************************************
+**
+** Function         AVDT_GetDelayValue
+**
+** Description      Get delay reporting value.
+**
+** Returns          delay value
+**
+*******************************************************************************/
+UINT16 AVDT_GetDelayValue(void)
+{
+    return avdt_cb.delay_value;
 }
 
 #endif /*  #if (defined(AVDT_INCLUDED) && AVDT_INCLUDED == TRUE) */

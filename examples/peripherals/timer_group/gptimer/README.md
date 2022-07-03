@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 | ESP32-C2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Example: General Purpose Timer
 
 This example illustrates how to use gptimer APIs to generate periodic alarm events and how different alarm actions behave on events.
@@ -20,25 +23,31 @@ See the [ESP-IDF Getting Started Guide](https://idf.espressif.com/) for all the 
 
 ```
 I (0) cpu_start: Starting scheduler on APP CPU.
-I (323) example: Create timer handle
-I (323) example: Start timer, stop it at alarm event
-I (1333) example: Timer stopped, count=1000002
-I (1333) example: Set count value
-I (1333) example: Get count value
-I (1333) example: Timer count value=100
-I (1343) example: Start timer, auto-reload at alarm event
-I (2343) example: Timer reloaded, count=2
-I (3343) example: Timer reloaded, count=2
-I (4343) example: Timer reloaded, count=2
-I (5343) example: Timer reloaded, count=2
-I (5343) example: Stop timer
-I (5343) example: Update alarm value dynamically
-I (6353) example: Timer alarmed, count=1000002
-I (7353) example: Timer alarmed, count=2000002
-I (8353) example: Timer alarmed, count=3000002
-I (9353) example: Timer alarmed, count=4000002
-I (9353) example: Stop timer
-I (9353) example: Delete timer
+I (326) example: Create timer handle
+I (326) example: Enable timer
+I (336) example: Start timer, stop it at alarm event
+I (1336) example: Timer stopped, count=1000002
+I (1336) example: Set count value
+I (1336) example: Get count value
+I (1346) example: Timer count value=100
+I (1346) example: Disable timer
+I (1346) example: Enable timer
+I (1356) example: Start timer, auto-reload at alarm event
+I (2356) example: Timer reloaded, count=2
+I (3356) example: Timer reloaded, count=2
+I (4356) example: Timer reloaded, count=2
+I (5356) example: Timer reloaded, count=2
+I (5356) example: Stop timer
+I (5356) example: Disable timer
+I (5356) example: Enable timer
+I (5366) example: Start timer, update alarm value dynamically
+I (6366) example: Timer alarmed, count=1000002
+I (7366) example: Timer alarmed, count=2000002
+I (8366) example: Timer alarmed, count=3000002
+I (9366) example: Timer alarmed, count=4000002
+I (9376) example: Stop timer
+I (9376) example: Disable timer
+I (9376) example: Delete timer
 ```
 
 ## Troubleshooting

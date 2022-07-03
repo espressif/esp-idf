@@ -6,7 +6,7 @@ Migration of Protocol Components to ESP-IDF 5.0
 Mbed TLS
 --------
 
-For ESP-IDF v5.0, `Mbed TLS <https://github.com/ARMmbed/mbedtls>`_ has been updated from v2.x to v3.1.0.
+For ESP-IDF v5.0, `Mbed TLS <https://github.com/Mbed-TLS/mbedtls>`_ has been updated from v2.x to v3.1.0.
 
 The official guide for Mbed TLS to migrate from version 2.x to version 3.0 or greater can be found `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md>`__.
 
@@ -19,6 +19,7 @@ Most structure fields are now private
 - Direct access to fields of structures (``struct`` types) declared in public headers is no longer supported.
 - Appropriate accessor functions (getter/setter) must be used for the same. A temporary workaround would be to use ``MBEDTLS_PRIVATE`` macro (**not recommended**).
 - For more details, refer to the official guide `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md#most-structure-fields-are-now-private>`__.
+
 
 SSL
 ^^^
@@ -60,26 +61,98 @@ The Diffie-Hellman Key Exchange modes have now been disabled by default due to s
 
 .. note:: During the initial step of the handshake (i.e. ``client_hello``), the server selects a cipher from the list that the client publishes. As the DHE_PSK/DHE_RSA ciphers have now been disabled by the above change, the server would fall back to an alternative cipher; if in a rare case, it does not support any other cipher, the handshake would fail. To retrieve the list of ciphers supported by the server, one must attempt to connect with the server with a specific cipher from the client-side. Few utilities can help do this, e.g. ``sslscan``.
 
+Remove ``certs`` module from X509 library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ESP HTTPS SERVER
------------------
+- The ``mbedtls/certs.h`` header is no longer available in mbedtls 3.1, most applications can safely remove it from the list of includes.
+
+Breaking change for ``esp_crt_bundle_set`` API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The :cpp:func:`esp_crt_bundle_set()` API now requires one additional argument named ``bundle_size``. The return type of the API has also been changed to :cpp:type:`esp_err_t` from ``void``.
+
+Breaking change for ``esp_ds_rsa_sign`` API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The :cpp:func:`esp_ds_rsa_sign()` API now requires one less argument. The argument ``mode`` is no longer required.
+
+HTTPS Server
+------------
 
 Breaking Changes (Summary)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Names of variables holding different certs in :cpp:type:`httpd_ssl_config_t` structure have been updated.
 
 .. list::
-    * :cpp:member:`servercert` variable inherits role of :cpp:member:`cacert_pem` variable.
-    * :cpp:member:`servercert_len` variable inherits role of :cpp:member:`cacert_len` variable
-    * :cpp:member:`cacert_pem` variable inherits role of :cpp:member:`client_verify_cert_pem` variable
-    * :cpp:member:`cacert_len` variable inherits role of :cpp:member:`client_verify_cert_len` variable
+    * :cpp:member:`httpd_ssl_config::servercert` variable inherits role of `cacert_pem` variable.
+    * :cpp:member:`httpd_ssl_config::servercert_len` variable inherits role of `cacert_len` variable
+    * :cpp:member:`httpd_ssl_config::cacert_pem` variable inherits role of `client_verify_cert_pem` variable
+    * :cpp:member:`httpd_ssl_config::cacert_len` variable inherits role of `client_verify_cert_len` variable
 
+The return type of the :cpp:func:`httpd_ssl_stop` API has been changed to :cpp:type:`esp_err_t` from ``void``.
 
 ESP HTTPS OTA
 --------------
 
 Breaking Changes (Summary)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- The function :cpp:func:`esp_https_ota()` now requires pointer to :cpp:type:`esp_https_ota_config_t` as argument instead of pointer to :cpp:type:`esp_http_client_config_t`.
+- The function :cpp:func:`esp_https_ota` now requires pointer to :cpp:type:`esp_https_ota_config_t` as argument instead of pointer to :cpp:type:`esp_http_client_config_t`.
+
+
+ESP-TLS
+--------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``esp_tls_t`` structure is now private
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :cpp:type:`esp_tls_t` has now been made completely private. You cannot access its internal structures directly. Any necessary data that needs to be obtained from the esp-tls handle can be done through respective getter/setter functions. If there is a requirement of a specific getter/setter function please raise an issue on ESP-IDF.
+
+
+The list of newly added getter/setter function is as as follows:
+
+.. list::
+    * :cpp:func:`esp_tls_get_ssl_context` - Obtain the ssl context of the underlying ssl stack from the esp-tls handle.
+
+Function deprecations and recommended alternatives
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Following table summarizes the deprecated functions removed and their alternatives to be used from ESP-IDF v5.0 onwards.
+
++-----------------------------------+----------------------------------------+
+| Function                          | Alternative                            |
++===================================+========================================+
+| :cpp:func:`esp_tls_conn_new`      | :cpp:func:`esp_tls_conn_new_sync`      |
++-----------------------------------+----------------------------------------+
+| :cpp:func:`esp_tls_conn_delete`   | :cpp:func:`esp_tls_conn_destroy`       |
++-----------------------------------+----------------------------------------+
+
+- The function :cpp:func:`esp_tls_conn_http_new` has now been termed as deprecated. Please use the alternative function :cpp:func:`esp_tls_conn_http_new_sync` (or its asynchronous :cpp:func:`esp_tls_conn_http_new_async`). Note that the alternatives need an additional parameter :cpp:type:`esp_tls_t` which has to be initialized using the :cpp:func:`esp_tls_init` function.
+
+HTTP Server
+-----------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``http_server.h`` header is no longer available in ``esp_http_server``. Please use ``esp_http_server.h`` instead.
+
+ESP HTTP Client
+---------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The functions :cpp:func:`esp_http_client_read` and :cpp:func:`esp_http_client_fetch_headers` now return an additional return value ``-ESP_ERR_HTTP_EAGAIN`` for timeout errors - call timed-out before any data was ready.
+
+
+TCP Transport
+-------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The function :cpp:func:`esp_transport_read` now returns ``0`` for a connection timeout and ``< 0`` for other errors. Please refer :cpp:enum:`esp_tcp_transport_err_t` for all possible return values.

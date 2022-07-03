@@ -5,7 +5,7 @@ idf_component_register(SRCS "vfs.c"
                             "vfs_console.c"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS private_include
-                    PRIV_REQUIRES driver)
+                    PRIV_REQUIRES driver esp_timer)
 
 if(CONFIG_ESP_CONSOLE_USB_CDC)
     target_sources(${COMPONENT_LIB} PRIVATE "vfs_cdcacm.c")

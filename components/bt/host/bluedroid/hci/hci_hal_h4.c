@@ -26,12 +26,13 @@
 #include "osi/thread.h"
 #include "esp_bt.h"
 #include "stack/hcimsgs.h"
-
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 #include "stack/hcimsgs.h"
-
+#if SOC_ESP_NIMBLE_CONTROLLER
+#include "nimble/ble_hci_trans.h"
+#endif
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
@@ -342,7 +343,44 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 
     return 0;
 }
+#if SOC_ESP_NIMBLE_CONTROLLER
 
+int
+ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
+{
+    if(esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
+	return 0;
+    }
+    uint8_t len = hci_ev[1] + 3;
+    uint8_t *data = (uint8_t *)malloc(len);
+    data[0] = 0x04;
+    memcpy(&data[1], hci_ev, len - 1);
+    ble_hci_trans_buf_free(hci_ev);
+    host_recv_pkt_cb(data, len);
+    free(data);
+    return 0;
+}
+
+static void *trans_om;
+void hci_trans_free_mbuf(void)
+{
+    os_mbuf_free_chain(trans_om);
+}
+int
+ble_hs_rx_data(struct os_mbuf *om, void *arg)
+{
+    uint8_t len = om->om_len + 1;
+    uint8_t *data = (uint8_t *)malloc(len);
+    data[0] = 0x02;
+    memcpy(&data[1], om->om_data, len - 1);
+    host_recv_pkt_cb(data, len);
+    trans_om = om;
+    free(data);
+    hci_trans_free_mbuf();
+    return 0;
+}
+
+#endif
 static const esp_vhci_host_callback_t vhci_host_cb = {
     .notify_host_send_available = host_send_pkt_available_cb,
     .notify_host_recv = host_recv_pkt_cb,

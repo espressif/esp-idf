@@ -1,16 +1,8 @@
-// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -48,19 +40,16 @@ typedef struct {
  * ``ESP_FLSH_SPEED_MAX-1`` or highest frequency supported by your flash, and
  * decrease the speed until the probing success.
  */
-typedef enum {
-    ESP_FLASH_5MHZ = 0, ///< The flash runs under 5MHz
-    ESP_FLASH_10MHZ,    ///< The flash runs under 10MHz
-    ESP_FLASH_20MHZ,    ///< The flash runs under 20MHz
-    ESP_FLASH_26MHZ,    ///< The flash runs under 26MHz
-    ESP_FLASH_40MHZ,    ///< The flash runs under 40MHz
-    ESP_FLASH_80MHZ,    ///< The flash runs under 80MHz
-    ESP_FLASH_120MHZ,   ///< The flash runs under 120MHz, 120MHZ can only be used by main flash after timing tuning in system. Do not use this directely in any API.
+typedef enum esp_flash_speed_s {
+    ESP_FLASH_5MHZ = 5, ///< The flash runs under 5MHz
+    ESP_FLASH_10MHZ = 10,    ///< The flash runs under 10MHz
+    ESP_FLASH_20MHZ = 20,    ///< The flash runs under 20MHz
+    ESP_FLASH_26MHZ = 26,    ///< The flash runs under 26MHz
+    ESP_FLASH_40MHZ = 40,    ///< The flash runs under 40MHz
+    ESP_FLASH_80MHZ = 80,    ///< The flash runs under 80MHz
+    ESP_FLASH_120MHZ = 120,   ///< The flash runs under 120MHz, 120MHZ can only be used by main flash after timing tuning in system. Do not use this directely in any API.
     ESP_FLASH_SPEED_MAX, ///< The maximum frequency supported by the host is ``ESP_FLASH_SPEED_MAX-1``.
-} esp_flash_speed_t;
-
-///Lowest speed supported by the driver, currently 5 MHz
-#define ESP_FLASH_SPEED_MIN     ESP_FLASH_5MHZ
+} esp_flash_speed_t __attribute__((deprecated));
 
 // These bits are not quite like "IO mode", but are able to be appended into the io mode and used by the HAL.
 #define SPI_FLASH_CONFIG_CONF_BITS      BIT(31) ///< OR the io_mode with this mask, to enable the dummy output feature or replace the first several dummy bits into address to meet the requirements of conf bits. (Used in DIO/QIO/OIO mode)
@@ -180,7 +169,11 @@ struct spi_flash_host_driver_s {
      * Program a page of the flash. Check ``max_write_bytes`` for the maximum allowed writing length.
      */
     void (*program_page)(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length);
-    /** Check whether given buffer can be directly used to write */
+    /**
+     * @brief Check whether the SPI host supports direct write
+     *
+     * When cache is disabled, SPI1 doesn't support directly write when buffer isn't internal.
+     */
     bool (*supports_direct_write)(spi_flash_host_inst_t *host, const void *p);
     /**
      * Slicer for write data. The `program_page` should be called iteratively with the return value
@@ -198,7 +191,11 @@ struct spi_flash_host_driver_s {
      * Read data from the flash. Check ``max_read_bytes`` for the maximum allowed reading length.
      */
     esp_err_t (*read)(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len);
-    /** Check whether given buffer can be directly used to read */
+    /**
+     * @brief Check whether the SPI host supports direct read
+     *
+     * When cache is disabled, SPI1 doesn't support directly read when the given buffer isn't internal.
+     */
     bool (*supports_direct_read)(spi_flash_host_inst_t *host, const void *p);
     /**
      * Slicer for read data. The `read` should be called iteratively with the return value

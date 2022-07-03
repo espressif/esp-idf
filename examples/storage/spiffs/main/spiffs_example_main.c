@@ -42,12 +42,40 @@ void app_main(void)
         return;
     }
 
+#ifdef CONFIG_EXAMPLE_SPIFFS_CHECK_ON_START
+    ESP_LOGI(TAG, "Performing SPIFFS_check().");
+    ret = esp_spiffs_check(conf.partition_label);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "SPIFFS_check() failed (%s)", esp_err_to_name(ret));
+        return;
+    } else {
+        ESP_LOGI(TAG, "SPIFFS_check() successful");
+    }
+#endif
+
     size_t total = 0, used = 0;
     ret = esp_spiffs_info(conf.partition_label, &total, &used);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s). Formatting...", esp_err_to_name(ret));
+        esp_spiffs_format(conf.partition_label);
+        return;
     } else {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+    }
+
+#
+    // Check consistency of reported partiton size info.
+    if (used > total) {
+        ESP_LOGW(TAG, "Number of used bytes cannot be larger than total. Performing SPIFFS_check().");
+        ret = esp_spiffs_check(conf.partition_label);
+        // Could be also used to mend broken files, to clean unreferenced pages, etc.
+        // More info at https://github.com/pellepl/spiffs/wiki/FAQ#powerlosses-contd-when-should-i-run-spiffs_check
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "SPIFFS_check() failed (%s)", esp_err_to_name(ret));
+            return;
+        } else {
+            ESP_LOGI(TAG, "SPIFFS_check() successful");
+        }
     }
 
     // Use POSIX and C standard library functions to work with files.

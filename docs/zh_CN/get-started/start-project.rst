@@ -1,108 +1,8 @@
-{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1", esp32c2="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
-
-现在您已经具备了使用 ESP-IDF 的所有条件，接下来将介绍如何开始您的第一个工程。
-
-本指南将帮助您完成使用 ESP-IDF 的第一步。按照本指南，您将能使用 {IDF_TARGET_NAME} 开始创建第一个工程，并构建、烧录和监控设备输出。
-
-.. note::
-
-    如果您还没有安装 ESP-IDF，请前往 :ref:`get-started-step-by-step` 并按照说明操作，以获得使用本指南所需的所有软件。
-
-开始创建工程
-================
-
-现在，您可以开始准备开发 {IDF_TARGET_NAME} 应用程序了。您可以从 ESP-IDF 中 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程开始。
-
-.. important::
-
-    ESP-IDF 编译系统不支持 ESP-IDF 路径或其工程路径中带有空格。
-
-将 :example:`get-started/hello_world` 工程复制至您本地的 ``~/esp`` 目录下：
-
-Windows 操作系统
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp
-    xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
-
-Linux 和 macOS 操作系统
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp
-    cp -r $IDF_PATH/examples/get-started/hello_world .
-
-.. note:: ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，您可以按照上述方法复制并运行其中的任何示例，也可以直接编译示例，无需进行复制。
-
-连接设备
-==============
-
-现在，请将您的 {IDF_TARGET_NAME} 开发板连接到 PC，并查看开发板使用的串口。
-
-通常，串口在不同操作系统下显示的名称有所不同：
-
-- **Windows 操作系统：** ``COM1`` 等
-- **Linux 操作系统：** 以 ``/dev/tty`` 开始
-- **macOS 操作系统：** 以 ``/dev/cu.`` 开始
-
-有关如何查看串口名称的详细信息，请见 :doc:`establish-serial-connection`。
-
-.. note::
-
-    请记住串口名，您会在后续步骤中使用。
-
-配置工程
-=============
-
-请进入 ``hello_world`` 目录，设置 {IDF_TARGET_NAME} 为目标芯片，然后运行工程配置工具 ``menuconfig``。
-
-Windows 操作系统
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp\hello_world
-    idf.py set-target {IDF_TARGET_PATH_NAME}
-    idf.py menuconfig
-
-Linux 和 macOS 操作系统
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp/hello_world
-    idf.py set-target {IDF_TARGET_PATH_NAME}
-    idf.py menuconfig
-
-打开一个新工程后，应首先使用 ``idf.py set-target {IDF_TARGET_PATH_NAME}`` 设置“目标”芯片。注意，此操作将清除并初始化项目之前的编译和配置（如有）。 您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
-
-如果之前的步骤都正确，则会显示下面的菜单：
-
-.. figure:: ../../_static/project-configuration.png
-    :align: center
-    :alt: 工程配置 — 主窗口
-    :figclass: align-center
-
-    工程配置 — 主窗口
-
-您可以通过此菜单设置项目的具体变量，包括 Wi-Fi 网络名称、密码和处理器速度等。``hello_world`` 示例项目会以默认配置运行，因此可以跳过使用 ``menuconfig`` 进行项目配置这一步骤。
-
-.. only:: esp32
-
-    .. attention::
-
-        如果您使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组）或 ESP32-DevKitM-1（板载 ESP32-MINI-1(1U) 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
-
-.. note::
-
-    您终端窗口中显示出的菜单颜色可能会与上图不同。您可以通过选项 ``--style`` 来改变外观。请运行 ``idf.py menuconfig --help`` 命令，获取更多信息。
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332"}
 
 编译工程
 =========================
@@ -160,7 +60,7 @@ Linux 和 macOS 操作系统
 烧录过程中可能遇到的问题
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
+{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9"}
 
 如果在运行给定命令时出现如“连接失败”这样的错误，造成该错误的原因之一可能是运行 ``esptool.py`` 时出现错误。``esptool.py`` 是构建系统调用的程序，用于重置芯片、与 ROM 引导加载器交互以及烧录固件的工具。可以按照以下步骤进行手动复位，轻松解决该问题。如果问题仍未解决，请参考 `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_. 获取更多信息。
 
@@ -307,6 +207,49 @@ Linux 和 macOS 操作系统
         Done
 
 
+.. only:: esp32c2
+
+    .. code-block:: none
+
+        ...
+        esptool.py esp32c2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 60m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py v3.3.1
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-C2 (revision 1)
+        Features: Wi-Fi
+        Crystal is 40MHz
+        MAC: 10:97:bd:f0:e5:0c
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Flash will be erased from 0x00000000 to 0x00004fff...
+        Flash will be erased from 0x00010000 to 0x0002ffff...
+        Flash will be erased from 0x00008000 to 0x00008fff...
+        Compressed 18192 bytes to 10989...
+        Writing at 0x00000000... (100 %)
+        Wrote 18192 bytes (10989 compressed) at 0x00000000 in 0.6 seconds (effective 248.5 kbit/s)...
+        Hash of data verified.
+        Compressed 128640 bytes to 65895...
+        Writing at 0x00010000... (20 %)
+        Writing at 0x00019539... (40 %)
+        Writing at 0x00020bf2... (60 %)
+        Writing at 0x00027de1... (80 %)
+        Writing at 0x0002f480... (100 %)
+        Wrote 128640 bytes (65895 compressed) at 0x00010000 in 1.7 seconds (effective 603.0 kbit/s)...
+        Hash of data verified.
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 360.1 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
+
+
 .. only:: esp32c3
 
     .. code-block:: none
@@ -435,3 +378,44 @@ Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ESP-IDF 支持 Python 3.7 及以上版本，建议升级操作系统到最新版本从而更新 Python。也可选择从 `sources <https://www.python.org/downloads/>`_ 安装最新版 Python，或使用 Python 管理系统如 `pyenv <https://github.com/pyenv/pyenv>`_ 对版本进行升级管理。
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    ..
+        当在上述行中添加新目标时，请同时更新 windows-start-project.rst 和 linux-macos-start-project.rst 中的列表。
+
+
+    上手板级支持包
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    您可以使用 `板级支持包 (BSP) <https://github.com/espressif/esp-bsp>`_，协助您在开发板上的原型开发。仅需要调用几个函数，便可以完成对特定开发板的初始化。
+
+    一般来说，BSP 支持开发板上所有硬件组件。除了管脚定义和初始化功能外，BSP 还附带如传感器、显示器、音频编解码器等外部元件的驱动程序。
+
+    BSP 通过 `IDF 组件管理器 <../api-guides/tools/idf-component-manager>`_ 发布，您可以前往 `IDF 组件注册器 <https://components.espressif.com>`_ 进行下载。
+
+    .. only:: esp32
+
+        **以下示例演示了如何将 ESP-WROVER-KIT BSP 添加到项目中：**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp_wrover_kit 
+
+    .. only:: esp32s2
+
+        **以下示例演示了如何将 ESP32-S2-Kaluga-Kit BSP 添加到项目中：**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp32_s2_kaluga_kit
+
+    .. only:: esp32s3
+
+        **以下示例演示了如何将 ESP-BOX BSP 添加到项目中：**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp-box 
+
+    更多有关使用 BSP 的示例，请前往 `BSP 示例文件夹 <https://github.com/espressif/esp-bsp/tree/master/examples>`_。

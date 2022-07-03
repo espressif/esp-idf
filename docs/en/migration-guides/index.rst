@@ -11,8 +11,10 @@ ESP-IDF 5.0 Migration Guides
     freertos
     peripherals
     protocols
+    provisioning
     removed-components
     storage
     system
     tools
     tcpip-adapter
+    gcc

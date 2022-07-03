@@ -5,7 +5,6 @@
 #include "no_warn_host.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
-#include "esp_netif.h"
 
 #ifndef BUILDING_DEF
 

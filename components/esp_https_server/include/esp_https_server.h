@@ -22,10 +22,21 @@ typedef enum {
 } httpd_ssl_transport_mode_t;
 
 /**
+ * @brief Indicates the state at which the user callback is executed,
+ *        i.e at session creation or session close
+ */
+typedef enum {
+    HTTPD_SSL_USER_CB_SESS_CREATE,
+    HTTPD_SSL_USER_CB_SESS_CLOSE
+} httpd_ssl_user_cb_state_t;
+
+/**
  * @brief Callback data struct, contains the ESP-TLS connection handle
+ * and the connection state at which the callback is executed
  */
 typedef struct esp_https_server_user_cb_arg {
-    const esp_tls_t *tls;
+    httpd_ssl_user_cb_state_t user_cb_state; /*!< State of user callback */
+    esp_tls_t *tls;                    /*!< ESP-TLS connection handle */
 } esp_https_server_user_cb_arg_t;
 
 /**
@@ -79,6 +90,9 @@ struct httpd_ssl_config {
 
     /** Enable tls session tickets */
     bool session_tickets;
+
+    /** Enable secure element for server session */
+    bool use_secure_element;
 
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
@@ -146,8 +160,12 @@ esp_err_t httpd_ssl_start(httpd_handle_t *handle, httpd_ssl_config_t *config);
  * Stop the server. Blocks until the server is shut down.
  *
  * @param[in] handle
+ * @return
+ *    - ESP_OK: Server stopped successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_FAIL: Failure to shut down server
  */
-void httpd_ssl_stop(httpd_handle_t handle);
+esp_err_t httpd_ssl_stop(httpd_handle_t handle);
 
 #ifdef __cplusplus
 }

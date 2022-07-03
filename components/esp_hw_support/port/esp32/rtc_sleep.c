@@ -8,13 +8,11 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/rtc.h"
 #include "soc/i2s_periph.h"
 #include "soc/timer_periph.h"
 #include "soc/bb_reg.h"
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
-#include "soc/rtc.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
 #include "hal/rtc_cntl_ll.h"
@@ -82,6 +80,40 @@ static void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
     REG_SET_FIELD(NRXPD_CTRL, NRX_DEMAP_FORCE_PU, ~cfg.nrx_pd);
     REG_SET_FIELD(FE_GEN_CTRL, FE_IQ_EST_FORCE_PU, ~cfg.fe_pd);
     REG_SET_FIELD(FE2_TX_INTERP_CTRL, FE2_TX_INF_FORCE_PU, ~cfg.fe_pd);
+}
+
+void rtc_sleep_get_default_config(uint32_t sleep_flags, rtc_sleep_config_t *out_config)
+{
+    *out_config = (rtc_sleep_config_t) {
+        .lslp_mem_inf_fpu = 0,
+        .rtc_mem_inf_fpu = 0,
+        .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0,
+        .rtc_fastmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_FAST_MEM) ? 1 : 0,
+        .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0,
+        .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0,
+        .wifi_pd_en = 0,
+        .int_8m_pd_en = ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0,
+        .rom_mem_pd_en = 0,
+        .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0,
+        .wdt_flashboot_mod_en = 0,
+        .lslp_meminf_pd = 1,
+        .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0,
+        .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1,
+        .deep_slp_reject = 1,
+        .light_slp_reject = 1,
+    };
+
+    if ((sleep_flags) & RTC_SLEEP_PD_DIG) {
+        out_config->dig_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->dig_dbias_slp = RTC_CNTL_DBIAS_0V90;
+        out_config->rtc_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->rtc_dbias_slp = RTC_CNTL_DBIAS_0V90;
+    } else {
+        out_config->dig_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->dig_dbias_slp = !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 : RTC_CNTL_DBIAS_0V90;
+        out_config->rtc_dbias_wak = RTC_CNTL_DBIAS_1V10;
+        out_config->rtc_dbias_slp = !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 : RTC_CNTL_DBIAS_0V90;
+    }
 }
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
@@ -180,14 +212,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
 
     REG_SET_FIELD(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_XTL_FORCE_PU, cfg.xtal_fpu);
 
-    if (REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL) == RTC_SLOW_FREQ_8MD256) {
-        REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
-    } else {
-        REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
-    }
-    //Keep the RTC8M_CLK on in light_sleep mode if the ledc low-speed channel is clocked by RTC8M_CLK.
-    if (!cfg.int_8m_pd_en && GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M)) {
-        REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PD);
+    if (!cfg.int_8m_pd_en) {
         REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
     } else {
         REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
@@ -201,6 +226,9 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, cfg.rtc_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, cfg.dig_dbias_wak);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_SLP, cfg.dig_dbias_slp);
+
+    REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_DEEP_SLP_REJECT_EN, cfg.deep_slp_reject);
+    REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_LIGHT_SLP_REJECT_EN, cfg.light_slp_reject);
 }
 
 void rtc_sleep_low_init(uint32_t slowclk_period)

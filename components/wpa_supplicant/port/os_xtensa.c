@@ -61,7 +61,7 @@ void os_sleep(os_time_t sec, os_time_t usec)
     }
 }
 
-#ifdef USE_MBEDTLS_CRYPTO
+#ifdef CONFIG_CRYPTO_MBEDTLS
 void forced_memzero(void *ptr, size_t len)
 {
     mbedtls_platform_zeroize(ptr, len);

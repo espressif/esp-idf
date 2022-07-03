@@ -6,14 +6,15 @@
  * See README for more details.
  */
 
-#include "utils/includes.h"
+#include "includes.h"
 
-#include "utils/common.h"
-#include "tls/asn1.h"
-#include "tls/bignum.h"
-#include "tls/rsa.h"
-#include "tls/pkcs5.h"
-#include "tls/pkcs8.h"
+#include "common.h"
+#include "asn1.h"
+#include "bignum.h"
+#include "rsa.h"
+#include "pkcs5.h"
+#include "pkcs8.h"
+
 
 struct crypto_private_key * pkcs8_key_import(const u8 *buf, size_t len)
 {
@@ -26,22 +27,17 @@ struct crypto_private_key * pkcs8_key_import(const u8 *buf, size_t len)
 	/* PKCS #8, Chapter 6 */
 
 	/* PrivateKeyInfo ::= SEQUENCE */
-	if (asn1_get_next(buf, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Does not start with PKCS #8 "
-			   "header (SEQUENCE); assume PKCS #8 not used");
+	if (asn1_get_next(buf, len, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #8: Does not start with PKCS #8 header (SEQUENCE)");
 		return NULL;
 	}
 	pos = hdr.payload;
 	end = pos + hdr.length;
 
 	/* version Version (Version ::= INTEGER) */
-	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL || hdr.tag != ASN1_TAG_INTEGER) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Expected INTEGER - found "
-			   "class %d tag 0x%x; assume PKCS #8 not used",
-			   hdr.class, hdr.tag);
+	if (asn1_get_next(pos, end - pos, &hdr) < 0 || !asn1_is_integer(&hdr)) {
+		asn1_unexpected(&hdr, "PKCS #8: Expected INTEGER");
 		return NULL;
 	}
 
@@ -67,13 +63,9 @@ struct crypto_private_key * pkcs8_key_import(const u8 *buf, size_t len)
 
 	/* privateKeyAlgorithm PrivateKeyAlgorithmIdentifier
 	 * (PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier) */
-	if (asn1_get_next(pos, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Expected SEQUENCE "
-			   "(AlgorithmIdentifier) - found class %d tag 0x%x; "
-			   "assume PKCS #8 not used",
-			   hdr.class, hdr.tag);
+	if (asn1_get_next(pos, len, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #8: Expected SEQUENCE (AlgorithmIdentifier); assume PKCS #8 not used");
 		return NULL;
 	}
 
@@ -103,11 +95,9 @@ struct crypto_private_key * pkcs8_key_import(const u8 *buf, size_t len)
 
 	/* privateKey PrivateKey (PrivateKey ::= OCTET STRING) */
 	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_OCTETSTRING) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Expected OCTETSTRING "
-			   "(privateKey) - found class %d tag 0x%x",
-			   hdr.class, hdr.tag);
+	    !asn1_is_octetstring(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #8: Expected OCTETSTRING (privateKey)");
 		return NULL;
 	}
 	wpa_printf(MSG_DEBUG, "PKCS #8: Try to parse RSAPrivateKey");
@@ -138,12 +128,9 @@ pkcs8_enc_key_import(const u8 *buf, size_t len, const char *passwd)
 	 * EncryptedData ::= OCTET STRING
 	 */
 
-	if (asn1_get_next(buf, len, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Does not start with PKCS #8 "
-			   "header (SEQUENCE); assume encrypted PKCS #8 not "
-			   "used");
+	if (asn1_get_next(buf, len, &hdr) < 0 || !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #8: Does not start with PKCS #8 header (SEQUENCE); assume encrypted PKCS #8 not used");
 		return NULL;
 	}
 	pos = hdr.payload;
@@ -151,12 +138,9 @@ pkcs8_enc_key_import(const u8 *buf, size_t len, const char *passwd)
 
 	/* encryptionAlgorithm EncryptionAlgorithmIdentifier */
 	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_SEQUENCE) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Expected SEQUENCE "
-			   "(AlgorithmIdentifier) - found class %d tag 0x%x; "
-			   "assume encrypted PKCS #8 not used",
-			   hdr.class, hdr.tag);
+	    !asn1_is_sequence(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #8: Expected SEQUENCE (AlgorithmIdentifier); assume encrypted PKCS #8 not used");
 		return NULL;
 	}
 	enc_alg = hdr.payload;
@@ -165,11 +149,9 @@ pkcs8_enc_key_import(const u8 *buf, size_t len, const char *passwd)
 
 	/* encryptedData EncryptedData */
 	if (asn1_get_next(pos, end - pos, &hdr) < 0 ||
-	    hdr.class != ASN1_CLASS_UNIVERSAL ||
-	    hdr.tag != ASN1_TAG_OCTETSTRING) {
-		wpa_printf(MSG_DEBUG, "PKCS #8: Expected OCTETSTRING "
-			   "(encryptedData) - found class %d tag 0x%x",
-			   hdr.class, hdr.tag);
+	    !asn1_is_octetstring(&hdr)) {
+		asn1_unexpected(&hdr,
+				"PKCS #8: Expected OCTETSTRING (encryptedData)");
 		return NULL;
 	}
 

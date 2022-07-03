@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # I2S ES8311 Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -62,7 +65,7 @@ The component can be installed by esp component manager. Since this example alre
 idf.py add-dependency espressif/es8311==0.0.2-alpha
 ```
 
-If dependency is added, you can check `idf_component.yml` for more detail. When building this example or other project with managed-component in it, the component manager will search the componet online and download it under `managed_componets` folder.
+If the dependency is added, you can check `idf_component.yml` for more detail. When building this example or other project with managed component in it, the component manager will search the component online and download it under the `managed_componets` folder.
 
 ### Configure the Project
 
@@ -134,7 +137,7 @@ The example have contained a piece of music in canon.pcm, if you want to play yo
 5. Transfer the music format into .pcm. ```ffmpeg -i a_cut.mp3 -f s16ls -ar 16000 -ac -1 -acodec pcm_s16le a.pcm```
 6. Move 'a.pcm' under 'main' directory
 7. Replace 'canon.pcm' with 'a.pcm' in 'CMakeLists.txt' under 'main' directory
-8. Replace '_binary_canon_pcm_start' and '_binary_canon_pcm_end' with '_binary_a_pcm_start' and '_binary_a_pcm_end' in `i2s_es9311_example.c`(line 46/47)
+8. Replace '_binary_canon_pcm_start' and '_binary_canon_pcm_end' with '_binary_a_pcm_start' and '_binary_a_pcm_end' in `i2s_es8311_example.c`
 9. Download the example and enjoy your own music
 
 ## Troubleshooting

@@ -269,6 +269,9 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
 /**
  * @brief Set DMA descriptor address and start engine
  *
+ * @note This function is allowed to run within ISR context
+ * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
+ *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
  * @param[in] desc_base_addr Base address of descriptors (usually the descriptors are chained into a link or ring)
  * @return
@@ -281,6 +284,9 @@ esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr);
 /**
  * @brief Stop DMA engine
  *
+ * @note This function is allowed to run within ISR context
+ * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
+ *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
  * @return
  *      - ESP_OK: Stop DMA engine successfully
@@ -291,6 +297,9 @@ esp_err_t gdma_stop(gdma_channel_handle_t dma_chan);
 
 /**
  * @brief Make the appended descriptors be aware to the DMA engine
+ *
+ * @note This function is allowed to run within ISR context
+ * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
  * @note This API could also resume a paused DMA engine, make sure new descriptors have been appended to the descriptor chain before calling it.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`
@@ -303,6 +312,9 @@ esp_err_t gdma_append(gdma_channel_handle_t dma_chan);
 
 /**
  * @brief Reset DMA channel FIFO and internal finite state machine
+ *
+ * @note This function is allowed to run within ISR context
+ * @note This function is also allowed to run when Cache is disabled, if `CONFIG_GDMA_CTRL_FUNC_IN_IRAM` is enabled
  * @note Resetting a DMA channel won't break the connection with the target peripheral
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_channel`

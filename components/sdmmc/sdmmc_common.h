@@ -37,7 +37,9 @@
  */
 #define SDMMC_DEFAULT_CMD_TIMEOUT_MS  1000   // Max timeout of ordinary commands
 #define SDMMC_WRITE_CMD_TIMEOUT_MS    5000   // Max timeout of write commands
-#define SDMMC_ERASE_BLOCK_TIMEOUT_MS  500    // Max timeout of erase per block
+
+
+#define SDMMC_SD_DISCARD_TIMEOUT  250    // SD erase (discard) timeout
 
 /* Maximum retry/error count for SEND_OP_COND (CMD1).
  * These are somewhat arbitrary, values originate from OpenBSD driver.
@@ -79,6 +81,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count);
 esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
         size_t start_block, size_t block_count);
+uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
 /* SD specific */
 esp_err_t sdmmc_check_scr(sdmmc_card_t* card);
@@ -86,6 +89,7 @@ esp_err_t sdmmc_decode_cid(sdmmc_response_t resp, sdmmc_cid_t* out_cid);
 esp_err_t sdmmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd);
 esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr);
 esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr);
+uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
 /* SDIO specific */
 esp_err_t sdmmc_io_reset(sdmmc_card_t* card);
@@ -103,6 +107,7 @@ esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8
 esp_err_t sdmmc_mmc_decode_cid(int mmc_ver, sdmmc_response_t resp, sdmmc_cid_t* out_cid);
 esp_err_t sdmmc_mmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd);
 esp_err_t sdmmc_mmc_enable_hs_mode(sdmmc_card_t* card);
+uint32_t sdmmc_mmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
 
 /* Parts of card initialization flow */
 esp_err_t sdmmc_init_sd_if_cond(sdmmc_card_t* card);
@@ -126,7 +131,7 @@ esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card);
-esp_err_t sdmmc_init_mmc_check_csd(sdmmc_card_t* card);
+esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card);
 
 /* Various helper functions */
 static inline bool host_is_spi(const sdmmc_card_t* card)

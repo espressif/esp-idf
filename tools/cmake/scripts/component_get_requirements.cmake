@@ -66,7 +66,7 @@ macro(idf_component_mock)
 endmacro()
 
 macro(idf_component_register)
-    set(options)
+    set(options WHOLE_ARCHIVE)
     set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
@@ -122,8 +122,6 @@ foreach(__component_target ${__component_targets})
     set(__component_registered 0)
 
     __component_get_requirements()
-
-    list(APPEND __component_requires "${__common_reqs}")
 
     # Remove duplicates and the component itself from its requirements
     __component_get_property(__component_alias ${__component_target} COMPONENT_ALIAS)

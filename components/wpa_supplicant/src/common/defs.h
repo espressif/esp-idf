@@ -47,6 +47,7 @@ typedef enum { FALSE = 0, TRUE = 1 } Boolean;
 #define WPA_KEY_MGMT_OSEN BIT(15)
 #define WPA_KEY_MGMT_IEEE8021X_SUITE_B BIT(16)
 #define WPA_KEY_MGMT_IEEE8021X_SUITE_B_192 BIT(17)
+#define WPA_KEY_MGMT_OWE BIT(22)
 
 static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 {
@@ -87,7 +88,8 @@ static inline int wpa_key_mgmt_sha256(int akm)
 			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
 			 WPA_KEY_MGMT_OSEN |
 			 WPA_KEY_MGMT_SAE |
-			 WPA_KEY_MGMT_IEEE8021X_SUITE_B));
+			 WPA_KEY_MGMT_IEEE8021X_SUITE_B |
+			 WPA_KEY_MGMT_OWE));
 }
 
 static inline int wpa_key_mgmt_sha384(int akm)
@@ -101,11 +103,17 @@ static inline int wpa_key_mgmt_suite_b(int akm)
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
 }
 
+static inline int wpa_key_mgmt_owe(int akm)
+{
+	return akm == WPA_KEY_MGMT_OWE;
+}
+
 static inline int wpa_key_mgmt_wpa(int akm)
 {
 	return wpa_key_mgmt_wpa_ieee8021x(akm) ||
 		wpa_key_mgmt_wpa_psk(akm) ||
-		wpa_key_mgmt_sae(akm);
+		wpa_key_mgmt_sae(akm) ||
+		wpa_key_mgmt_owe(akm);
 }
 
 static inline int wpa_key_mgmt_wpa_any(int akm)

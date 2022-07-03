@@ -96,7 +96,7 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
         .data = sd_ssr,
         .datalen = SD_SSR_SIZE,
         .blklen = SD_SSR_SIZE,
-        .opcode = MMC_SEND_STATUS,
+        .opcode = SD_APP_SD_STATUS,
         .arg = 0,
         .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ
     };
@@ -387,6 +387,16 @@ esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr)
     return ESP_OK;
 }
 
+static const uint32_t s_au_to_size_kb[] = {
+    0, 16, 32, 64,
+    128, 256, 512, 1024,
+    2 * 1024, 4 * 1024,
+    8 * 1024, 12 * 1024,
+    16 * 1024, 24 * 1024,
+    32 * 1024, 64 * 1024
+};
+_Static_assert(sizeof(s_au_to_size_kb)/sizeof(s_au_to_size_kb[0]) == 16, "invalid number of elements in s_au_to_size_kb");
+
 esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr)
 {
     uint32_t ssr[(SD_SSR_SIZE/sizeof(uint32_t))] = { 0 };
@@ -399,6 +409,41 @@ esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr)
     out_ssr->cur_bus_width = SSR_DAT_BUS_WIDTH(ssr);
     out_ssr->discard_support = SSR_DISCARD_SUPPORT(ssr);
     out_ssr->fule_support = SSR_FULE_SUPPORT(ssr);
+    uint32_t au = SSR_AU_SIZE(ssr);
+    out_ssr->alloc_unit_kb = s_au_to_size_kb[au];
+    out_ssr->erase_timeout = SSR_ERASE_TIMEOUT(ssr);
+    out_ssr->erase_size_au = SSR_ERASE_SIZE(ssr);
+    out_ssr->erase_offset = SSR_ERASE_OFFSET(ssr);
 
     return ESP_OK;
+}
+
+uint32_t sdmmc_sd_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb)
+{
+    if (arg == SDMMC_SD_DISCARD_ARG) {
+        return SDMMC_SD_DISCARD_TIMEOUT;
+    } else if (arg == SDMMC_SD_ERASE_ARG) {
+        if (card->ssr.alloc_unit_kb != 0 &&
+                card->ssr.erase_size_au != 0 &&
+                card->ssr.erase_timeout != 0 &&
+                card->ssr.erase_offset != 0) {
+            /* Card supports erase timeout estimation. See the erase timeout equation in SD spec. */
+            uint32_t timeout_sec = card->ssr.erase_offset +
+                card->ssr.erase_timeout * (erase_size_kb + card->ssr.alloc_unit_kb - 1) /
+                    (card->ssr.erase_size_au * card->ssr.alloc_unit_kb);
+            ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, ES=%u, ET=%u, EO=%u, AU=%u kB)",
+                     __func__, timeout_sec, erase_size_kb, card->ssr.erase_size_au,
+                     card->ssr.erase_timeout, card->ssr.erase_offset, card->ssr.alloc_unit_kb);
+            return timeout_sec * 1000;
+        } else {
+            uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
+            timeout_ms = MAX(1000, timeout_ms);
+            ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
+                     __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+            return timeout_ms;
+        }
+    } else {
+        assert(false && "unexpected SD erase argument");
+        return 0;
+    }
 }

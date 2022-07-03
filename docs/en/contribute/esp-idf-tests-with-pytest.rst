@@ -19,6 +19,11 @@ In ESP-IDF, we use the following plugins by default:
 
 All the introduced concepts and usages are based on the default behavior in ESP-IDF. Not all of them are available in vanilla pytest.
 
+Installation
+------------
+
+All dependencies could be installed by running the install script with the ``--enable-pytest`` argument, e.g. ``$ install.sh --enable-pytest``.
+
 Basic Concepts
 --------------
 
@@ -95,12 +100,12 @@ Pytest Execution Process
 
    1. Get all the python files with the prefix ``pytest_``
    2. Get all the test functions with the prefix ``test_``
-   3. Apply the `params <https://docs.pytest.org/en/latest/how-to/parametrize.html>`__, duplicate the test functions.
-   4. Filter the test cases with CLI options. Introduced detail usages `here <#filter-the-test-cases>`__
+   3. Apply the `params <https://docs.pytest.org/en/latest/how-to/parametrize.html>`__, and duplicate the test functions.
+   4. Filter the test cases with CLI options. Introduced detailed usages `here <#filter-the-test-cases>`__
 
 3. Test Running Phase
 
-   1. Construct the `fixtures <https://docs.pytest.org/en/latest/how-to/fixtures.html>`__. In ESP-IDF, the common fixtures are initialized with this order:
+   1. Construct the `fixtures <https://docs.pytest.org/en/latest/how-to/fixtures.html>`__. In ESP-IDF, the common fixtures are initialized in this order:
 
       1. ``pexpect_proc``: `pexpect <https://github.com/pexpect/pexpect>`__ instance
 
@@ -116,7 +121,7 @@ Pytest Execution Process
 
    2. Run the real test function
 
-   3. Deconstruct the fixtures with this order:
+   3. Deconstruct the fixtures in this order:
 
       1. ``dut``
 
@@ -160,7 +165,7 @@ This code example is taken from :idf_file:`pytest_console_basic.py <examples/sys
        elif config == 'nohistory':
            dut.expect('Command history disabled')
 
-.. note:: 
+.. note::
 
    Using ``expect_exact`` is better here. For further reading about the different types of ``expect`` functions, please refer to the `pytest-embedded Expecting documentation <https://docs.espressif.com/projects/pytest-embedded/en/latest/expecting>`__.
 
@@ -198,7 +203,7 @@ You can use ``pytest.mark.parametrize`` with “config” to apply the same test
        'nohistory',   # <-- run with app built by sdkconfig.ci.nohistory
    ], indirect=True)  # <-- `indirect=True` is required
 
-Overall, this test case would be duplicated to 4 test functions:
+Overall, this test function would be replicated to 4 test cases:
 
 -  esp32.history.test_console_advanced
 -  esp32.nohistory.test_console_advanced
@@ -207,6 +212,80 @@ Overall, this test case would be duplicated to 4 test functions:
 
 Advanced Examples
 ~~~~~~~~~~~~~~~~~
+
+Multi Dut Tests with the Same App
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This code example is taken from :idf_file:`pytest_usb_host.py <tools/test_apps/peripherals/usb/pytest_usb_host.py>`.
+
+.. code:: python
+
+    @pytest.mark.esp32s2
+    @pytest.mark.esp32s3
+    @pytest.mark.usb_host
+    @pytest.mark.parametrize('count', [
+        2,
+    ], indirect=True)
+    def test_usb_host(dut: Tuple[IdfDut, IdfDut]) -> None:
+        device = dut[0]  # <-- assume the first dut is the device
+        host = dut[1]    # <-- and the second dut is the host
+        ...
+
+After setting the param ``count`` to 2, all these fixtures are changed into tuples.
+
+Multi Dut Tests with Different Apps
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This code example is taken from :idf_file:`pytest_wifi_getting_started.py <examples/wifi/getting_started/pytest_wifi_getting_started.py>`.
+
+.. code:: python
+
+    @pytest.mark.esp32
+    @pytest.mark.multi_dut_generic
+    @pytest.mark.parametrize(
+        'count, app_path', [
+            (2,
+             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}'),
+        ], indirect=True
+    )
+    def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
+        softap = dut[0]
+        station = dut[1]
+        ...
+
+Here the first dut was flashed with the app :idf_file:`softap <examples/wifi/getting_started/softAP/main/softap_example_main.c>`, and the second dut was flashed with the app :idf_file:`station <examples/wifi/getting_started/station/main/station_example_main.c>`.
+
+.. note::
+
+   Here the ``app_path`` should be set with absolute path. the ``__file__`` macro in python would return the absolute path of the test script itself.
+
+Multi Dut Tests with Different Apps, and Targets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This code example is taken from :idf_file:`pytest_wifi_getting_started.py <examples/wifi/getting_started/pytest_wifi_getting_started.py>`. As the comment says, for now it's not running in the ESP-IDF CI.
+
+.. code:: python
+
+    @pytest.mark.parametrize(
+        'count, app_path, target', [
+            (2,
+             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
+             'esp32|esp32s2'),
+            (2,
+             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
+             'esp32s2|esp32'),
+        ],
+        indirect=True,
+    )
+    def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
+        softap = dut[0]
+        station = dut[1]
+        ...
+
+Overall, this test function would be replicated to 2 test cases:
+
+- softap with esp32 target, and station with esp32s2 target
+- softap with esp32s2 target, and station with esp32 target
 
 Support different targets with different sdkconfig files
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -278,7 +357,7 @@ Mark Known Failure Cases
 Sometimes a test couldn't pass for the following reasons:
 
 - Has a bug
-- Success ratio too low because of environment issue, such as network issue. Retry couldn't help
+- The success ratio is too low because of environment issue, such as network issue. Retry couldn't help
 
 Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ with a user-friendly readable reason.
 
@@ -397,7 +476,7 @@ You can call pytest with ``--junitxml <filepath>`` to generate the JUnit report.
 Skip Auto Flash Binary
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Skipping auto-flash binary everytime would be useful when you're debugging your test script.
+Skipping auto-flash binary every time would be useful when you're debugging your test script.
 
 You can call pytest with ``--skip-autoflash y`` to achieve it.
 

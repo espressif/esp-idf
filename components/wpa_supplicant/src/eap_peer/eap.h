@@ -46,6 +46,8 @@ extern u8 *g_wpa_pac_file;
 extern int g_wpa_pac_file_len;
 
 extern bool g_wpa_suiteb_certification;
+extern bool g_wpa_default_cert_bundle;
+extern int (*esp_crt_bundle_attach_fn)(void *conf);
 
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);

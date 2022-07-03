@@ -26,7 +26,7 @@
     Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
+            https://openocd.org/doc/doxygen/bugs.html
     none separate
     adapter speed: 20000 kHz
     force hard breakpoints
@@ -133,8 +133,6 @@
       - TCK
     * - MTMS / GPIO14
       - TMS
-    * - GND
-      - GND
 
 ---
 

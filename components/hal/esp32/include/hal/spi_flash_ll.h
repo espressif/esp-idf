@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -36,13 +28,7 @@
 extern "C" {
 #endif
 
-//Supported clock register values
-#define SPI_FLASH_LL_CLKREG_VAL_5MHZ    ((spi_flash_ll_clock_reg_t){.val=0x0000F1CF})   ///< Clock set to 5 MHz
-#define SPI_FLASH_LL_CLKREG_VAL_10MHZ   ((spi_flash_ll_clock_reg_t){.val=0x000070C7})   ///< Clock set to 10 MHz
-#define SPI_FLASH_LL_CLKREG_VAL_20MHZ   ((spi_flash_ll_clock_reg_t){.val=0x00003043})   ///< Clock set to 20 MHz
-#define SPI_FLASH_LL_CLKREG_VAL_26MHZ   ((spi_flash_ll_clock_reg_t){.val=0x00002002})   ///< Clock set to 26 MHz
-#define SPI_FLASH_LL_CLKREG_VAL_40MHZ   ((spi_flash_ll_clock_reg_t){.val=0x00001001})   ///< Clock set to 40 MHz
-#define SPI_FLASH_LL_CLKREG_VAL_80MHZ   ((spi_flash_ll_clock_reg_t){.val=0x80000000})   ///< Clock set to 80 MHz
+#define SPI_FLASH_LL_CLOCK_FREQUENCY_MHZ (80)
 
 /// Get the start address of SPI peripheral registers by the host ID
 #define spi_flash_ll_get_hw(host_id) ( ((host_id)==SPI1_HOST) ? &SPI1 :(\
@@ -60,7 +46,7 @@ extern "C" {
 #define spi_flash_ll_set_dummy_out(dev, out_en, out_lev)
 
 /// type to store pre-calculated register value in above layers
-typedef typeof(SPI1.clock) spi_flash_ll_clock_reg_t;
+typedef typeof(SPI1.clock.val) spi_flash_ll_clock_reg_t;
 
 /*------------------------------------------------------------------------------
  * Control
@@ -289,7 +275,7 @@ static inline void spi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mode_
  */
 static inline void spi_flash_ll_set_clock(spi_dev_t *dev, spi_flash_ll_clock_reg_t *clock_val)
 {
-    dev->clock = *clock_val;
+    dev->clock.val = *clock_val;
 }
 
 /**
@@ -370,7 +356,7 @@ static inline void spi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, i
         dev->addr = addr;
         dev->slv_wr_status = UINT32_MAX;
     } else {
-        uint32_t padding_ones = (bit_len == 32? 0 : UINT32_MAX >> bit_len);
+        uint32_t padding_ones = UINT32_MAX >> bit_len;
         dev->addr = (addr << (32 - bit_len)) | padding_ones;
     }
 }
@@ -408,6 +394,41 @@ static inline void spi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup_t
 {
     dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
     dev->ctrl2.setup_time = cs_setup_time - 1;
+}
+
+/**
+ * Get the spi flash source clock frequency. Used for calculating
+ * the divider parameters.
+ *
+ * @param host_id SPI host id. Not used in this function, but to keep
+ * compatibility with other targets.
+ *
+ * @return the frequency of spi flash clock source.(MHz)
+ */
+static inline uint32_t spi_flash_ll_get_source_clock_freq_mhz(uint8_t host_id)
+{
+    return SPI_FLASH_LL_CLOCK_FREQUENCY_MHZ;
+}
+
+/**
+ * Calculate spi_flash clock frequency division parameters for register.
+ *
+ * @param host_id SPI host id. Not used in this function, but to keep
+ * compatibility with other targets.
+ * @param clkdiv frequency division factor
+ *
+ * @return Register setting for the given clock division factor.
+ */
+static inline uint32_t spi_flash_ll_calculate_clock_reg(uint8_t host_id, uint8_t clkdiv)
+{
+    uint32_t div_parameter;
+    // See comments of `clock` in `spi_struct.h`
+    if (clkdiv == 1) {
+        div_parameter = (1 << 31);
+    } else {
+        div_parameter = ((clkdiv - 1) | (((clkdiv/2 - 1) & 0xff) << 6 ) | (((clkdiv - 1) & 0xff) << 12));
+    }
+    return div_parameter;
 }
 
 #ifdef __cplusplus

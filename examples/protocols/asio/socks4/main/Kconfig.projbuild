@@ -6,11 +6,11 @@ menu "Example Configuration"
         help
             Address of the proxy to be used.
 
-    config EXAMPLE_PROXY_PORT
-        string "Proxy port"
+    config EXAMPLE_PROXY_SERVICE
+        string "Proxy Service Type"
         default "myport"
         help
-            Port for the proxy. Due to a limitation of lwip, must
-            be a number e.g. "1080".
+            Service type. Due to a limitation of lwip, must
+            be the port number e.g. "1080".
 
 endmenu

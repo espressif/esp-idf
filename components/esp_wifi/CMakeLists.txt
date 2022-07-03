@@ -31,7 +31,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include"
                     REQUIRES esp_event esp_phy
                     PRIV_REQUIRES driver esptool_py esp_netif esp_pm esp_timer nvs_flash
-                                  wpa_supplicant hal ${extra_priv_requires}
+                                  wpa_supplicant hal lwip ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
 if(CONFIG_ESP32_WIFI_ENABLED)
@@ -41,7 +41,11 @@ if(CONFIG_ESP32_WIFI_ENABLED)
     target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
 
     if(link_binary_libs)
-        set(blobs coexist core espnow mesh net80211 pp smartconfig wapi)
+        if(CONFIG_IDF_TARGET_ESP32C2)
+            set(blobs coexist core espnow net80211 pp smartconfig)
+        else()
+            set(blobs coexist core espnow mesh net80211 pp smartconfig wapi)
+        endif()
 
         foreach(blob ${blobs})
             add_prebuilt_library(${blob} "${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}/lib${blob}.a"

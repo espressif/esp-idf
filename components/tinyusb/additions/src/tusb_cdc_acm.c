@@ -10,12 +10,14 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/ringbuf.h"
 #include "tusb.h"
 #include "tusb_cdc_acm.h"
 #include "cdc.h"
 #include "sdkconfig.h"
 
 #define RX_UNREADBUF_SZ_DEFAULT 64 // buffer storing all unread RX data
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
 
 typedef struct {
@@ -77,7 +79,6 @@ void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
         }
     }
 }
-
 
 /* Invoked when CDC interface received data from host */
 void tud_cdc_rx_cb(uint8_t itf)
@@ -156,8 +157,6 @@ void tud_cdc_rx_wanted_cb(uint8_t itf, char wanted_char)
     }
 }
 
-
-
 esp_err_t tinyusb_cdcacm_register_callback(tinyusb_cdcacm_itf_t itf,
         cdcacm_event_type_t event_type,
         tusb_cdcacm_callback_t callback)
@@ -186,7 +185,6 @@ esp_err_t tinyusb_cdcacm_register_callback(tinyusb_cdcacm_itf_t itf,
         return ESP_ERR_INVALID_STATE;
     }
 }
-
 
 esp_err_t tinyusb_cdcacm_unregister_callback(tinyusb_cdcacm_itf_t itf,
         cdcacm_event_type_t event_type)
@@ -272,7 +270,6 @@ esp_err_t tinyusb_cdcacm_read(tinyusb_cdcacm_itf_t itf, uint8_t *out_buf, size_t
     return ESP_OK;
 }
 
-
 size_t tinyusb_cdcacm_write_queue_char(tinyusb_cdcacm_itf_t itf, char ch)
 {
     if (!get_acm(itf)) { // non-initialized
@@ -281,13 +278,13 @@ size_t tinyusb_cdcacm_write_queue_char(tinyusb_cdcacm_itf_t itf, char ch)
     return tud_cdc_n_write_char(itf, ch);
 }
 
-
 size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, const uint8_t *in_buf, size_t in_size)
 {
     if (!get_acm(itf)) { // non-initialized
         return 0;
     }
-    return tud_cdc_n_write(itf, in_buf, in_size);
+    const uint32_t size_available = tud_cdc_n_write_available(itf);
+    return tud_cdc_n_write(itf, in_buf, MIN(in_size, size_available));
 }
 
 static uint32_t tud_cdc_n_write_occupied(tinyusb_cdcacm_itf_t itf)

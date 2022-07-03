@@ -8,10 +8,13 @@
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include <stdlib.h>
 #include <sys/param.h>
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5167
 #ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 TEST_CASE("Capabilities allocator test", "[heap]")
 {
@@ -103,6 +106,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     printf("Done.\n");
 }
 #endif
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("IRAM_8BIT capability test", "[heap]")
@@ -123,7 +127,7 @@ TEST_CASE("IRAM_8BIT capability test", "[heap]")
     TEST_ASSERT((((int)ptr)&0xFF000000)==0x40000000);
 
     /* As the heap allocator may present an overhead for allocated blocks,
-     * we need to check that the free heap size is now smaller than former free size. */
+     * we need to check that the free heap size is now smaller or equal to the former free size. */
     TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT) <= (free_size - heap_caps_get_allocated_size(ptr)));
     TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_32BIT) <= (free_size32 - heap_caps_get_allocated_size(ptr)));
 
@@ -165,6 +169,8 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     TEST_ASSERT(after.minimum_free_bytes < original.total_free_bytes);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5167
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
@@ -189,6 +195,7 @@ TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
 {
     TEST_ASSERT( iram_malloc_test() );
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
 TEST_CASE("When enabled, allocation operation failure generates an abort", "[heap][reset=abort,SW_CPU_RESET]")

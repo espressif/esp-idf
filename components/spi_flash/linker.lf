@@ -9,6 +9,7 @@ entries:
     spi_flash_chip_boya (noflash)
     spi_flash_chip_th (noflash)
     memspi_host_driver (noflash)
+    flash_brownout_hook (noflash)
 
     if IDF_TARGET_ESP32S3 = y:
         spi_flash_timing_tuning (noflash)

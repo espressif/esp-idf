@@ -15,7 +15,7 @@
 
 #if (defined BTC_HH_INCLUDED && BTC_HH_INCLUDED == TRUE)
 
-esp_err_t esp_bt_hid_host_register_callback(esp_hh_cb_t *callback)
+esp_err_t esp_bt_hid_host_register_callback(esp_hh_cb_t callback)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 

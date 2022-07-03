@@ -99,14 +99,20 @@ Application creates a protocomm instance which is mapped to a specific transport
 
 Security Schemes
 >>>>>>>>>>>>>>>>
-At present unified provisioning supports two security schemes:
-1. Security0 - No security (No encryption)
-2. Security1 - Curve25519 based key exchange, shared key derivation and AES256-CTR mode encryption of the data. It supports two modes :
+At present, unified provisioning supports the following security schemes:
 
+1. Security0 - No security (No encryption)
+2. Security1 - Curve25519-based key exchange, shared key derivation and AES256-CTR mode encryption of the data. It supports two modes :
     a. Authorized - Proof of Possession (PoP) string used to authorize session and derive shared key
     b. No Auth (Null PoP) - Shared key derived through key exchange only
+3. Security2 - SRP6a-based shared key derivation and AES256-GCM mode encryption of the data.
 
-Security1 scheme details are shown in the below sequence diagram
+.. note:: The respective security schemes need to be enabled through the project configuration menu. Please refer to the Enabling protocom security version section in :doc:`protocomm` (Protocol Communication) for more details.
+
+Security1 Scheme
+>>>>>>>>>>>>>>>>
+
+Security1 scheme details are shown in the below sequence diagram -
 
 .. seqdiag::
     :caption: Security1
@@ -138,6 +144,71 @@ Security1 scheme details are shown in the below sequence diagram
         DEVICE -> DEVICE [label = "Verification\nToken", leftnote = "dev_verify = aes_ctr_enc(key=shared_key, data=cli_pubkey, nonce=(prev-context))"];
         DEVICE -> CLIENT [label = "SessionResp1(dev_verify)"];
         CLIENT -> CLIENT [label = "Verify Device", rightnote = "check (cli_pubkey == aes_ctr_dec(dev_verify...)"];
+    }
+
+.. note:: We shall soon migrate to ``Security2 scheme`` as the default scheme in our examples as it provides enhanced security. This change shall be done once we have our phone apps (Android/iOS) upgraded to handle ``Security2 scheme``.
+
+Security2 Scheme
+>>>>>>>>>>>>>>>>
+
+Security2 scheme is based on the Secure Remote Password (SRP6a) protocol - `RFC 5054 <https://datatracker.ietf.org/doc/html/rfc5054>`_.
+The protocol requires the Salt and Verifier to be generated beforehand with help of the identifying username ``I`` and the plaintext password ``p``. The Salt and Verifier are then stored on {IDF_TARGET_NAME}.
+- The password ``p`` and username ``I`` are to be provided to the Phone App (Provisioning entity) by suitable means for example QR code sticker.
+
+Security2 scheme details are shown in the below sequence diagram -
+
+.. seqdiag::
+    :caption: Security2
+    :align: center
+
+    seqdiag security2 {
+        activation = none;
+        node_width = 80;
+        node_height = 60;
+        edge_length = 550;
+        span_height = 5;
+        default_shape = roundedbox;
+        default_fontsize = 12;
+
+        CLIENT  [label = "Client\n(PhoneApp)"];
+        DEVICE  [label = "Device\n(ESP)"];
+
+        === Security 2 ===
+        CLIENT -> CLIENT [label = "Generate\nKey Pair", rightnote = "a (cli_privkey) = 256 bit random value,
+        A (cli_pubkey) = g^a.
+        g - generator, N - large safe prime,
+        All arithmetic operations are performed in ring of integers modulo N,
+        thus all occurrences like y^z should be read as y^z modulo N."];
+                CLIENT -> DEVICE [label = "SessionCmd0(cli_pubkey A, username I)"];
+                DEVICE -> DEVICE [label = "Obtain\n Salt and Verifier", leftnote = "Obtain salt and verifier stored on esp
+        Salt s = 256 bit random value,
+        Verifier v  = g^x where x = H(s | I | p)"];
+                DEVICE -> DEVICE [label = "Generate\nKey Pair", leftnote = "b (dev_privkey) = 256 bit random value
+        B(dev_pubkey) = k*v + g^b where k = H(N, g)"];
+                DEVICE -> DEVICE [label = "Shared Key", leftnote = "Shared Key K = H(S) where, 
+        S = (A * v^u) ^ b 
+        u = H(A, B)"];
+                DEVICE -> CLIENT [label = "SessionResp0(dev_pubkey B, dev_rand)"];
+                CLIENT -> CLIENT [label = "Shared Key", rightnote = "shared_key(K) = H(S) where,
+        S = (B - k*v) ^ (a + ux),
+        u = H(A, B),
+        k = H(N, g),
+        v = g^x,
+        x = H(s | I | p).
+        
+        "];
+                CLIENT -> CLIENT [label = "Verification\nToken", rightnote = "client_proof M =  H[H(N) XOR H(g) | H(I) | s | A | B | K]"];
+                CLIENT -> DEVICE [label = "SessionCmd1(client_proof M1)"];
+                DEVICE -> DEVICE [label = "Verify Client", leftnote = "device generates M1 =  H[H(N) XOR H(g) | H(I) | s | A | B | K]
+        device verifies this M1 with the M1 obtained from Client"];
+                DEVICE -> DEVICE [label = "Verification\nToken", leftnote = "
+        Device generate device_proof M2 = H(A, M, K)"];
+                DEVICE -> DEVICE [label = "Initialization\nVector", leftnote = "dev_rand = gen_16byte_random()
+        This random number is to be used for AES-GCM operation
+         for encryption and decryption of data using the shared secret"];
+                DEVICE -> CLIENT [label = "SessionResp1(device_proof M2, dev_rand)"];
+                CLIENT -> CLIENT [label = "Verify Device", rightnote = "Client calculates device proof M2 as M2 = H(A, M, K)
+        client verifies this M2 with M2 obtained from device"];
     }
 
 Sample Code

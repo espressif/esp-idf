@@ -18,7 +18,7 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #include "esp_rom_sys.h"
-#include "soc/soc_memory_types.h"
+#include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"
@@ -256,7 +256,11 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 #if CONFIG_BOOTLOADER_SKIP_VALIDATE_ALWAYS
     mode = ESP_IMAGE_LOAD_NO_VALIDATE;
 #elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
-    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON
+#if SOC_EFUSE_HAS_EFUSE_RST_BUG
+        || esp_rom_get_reset_reason(0) == RESET_REASON_CORE_EFUSE_CRC
+#endif
+        ) {
         mode = ESP_IMAGE_LOAD_NO_VALIDATE;
     }
 #endif // CONFIG_BOOTLOADER_SKIP_...
@@ -789,7 +793,7 @@ static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_
     length = length - unpadded_length;
 
     // Verify checksum
-    WORD_ALIGNED_ATTR uint8_t buf[16];
+    WORD_ALIGNED_ATTR uint8_t buf[16] = {0};
     if (!skip_check_checksum || sha_handle != NULL) {
         CHECK_ERR(bootloader_flash_read(data->start_addr + unpadded_length, buf, length, true));
     }
@@ -827,7 +831,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(simple_hash);
     }
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#if CONFIG_SECURE_BOOT_V2_ENABLED
     // End of the image needs to be padded all the way to a 4KB boundary, after the simple hash
     // (for apps they are usually already padded due to --secure-pad-v2, only a problem if this option was not used.)
     uint32_t padded_end = (end + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE-1);
@@ -846,18 +850,18 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
 
     // Use hash to verify signature block
     esp_err_t err = ESP_ERR_IMAGE_INVALID;
-#if defined(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME) || defined(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
     const void *sig_block;
     ESP_FAULT_ASSERT(memcmp(image_digest, verified_digest, HASH_LEN) != 0); /* sanity check that these values start differently */
-#ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+#if defined(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
     sig_block = bootloader_mmap(data->start_addr + data->image_len, sizeof(esp_secure_boot_sig_block_t));
     err = esp_secure_boot_verify_ecdsa_signature_block(sig_block, image_digest, verified_digest);
 #else
     sig_block = bootloader_mmap(end, sizeof(ets_secure_boot_signature_t));
-    err = esp_secure_boot_verify_rsa_signature_block(sig_block, image_digest, verified_digest);
+    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, image_digest, verified_digest);
 #endif
     bootloader_munmap(sig_block);
-#endif // CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME or CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#endif // CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure boot signature verification failed");
 
@@ -877,7 +881,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         return ESP_ERR_IMAGE_INVALID;
     }
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
     // Adjust image length result to include the appended signature
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
 #endif

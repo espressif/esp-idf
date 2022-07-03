@@ -4,8 +4,9 @@ Unit Testing in {IDF_TARGET_NAME}
 
 ESP-IDF provides the following methods to test software.
 
-- Target based tests using a central unit test application which runs on the {IDF_TARGET_PATH_NAME}. These tests use the `Unity <https://www.throwtheswitch.org/unity>` unit test framework. They can be integrated into an ESP-IDF component by placing them in the component's ``test`` subdirectory. For the most part, this document is about target based tests.
-- Linux-host based unit tests in which all the hardware is abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components support them, currently. They are covered here: :doc:`target based unit testing <linux-host-testing>`.
+- Target based tests using a central unit test application which runs on the {IDF_TARGET_PATH_NAME}. These tests use the `Unity <https://www.throwtheswitch.org/unity>`_ unit test framework. They can be integrated into an ESP-IDF component by placing them in the component's ``test`` subdirectory. This document mainly introduces this target based tests.
+
+- Linux-host based unit tests in which all the hardwares are abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components support them, currently. They are covered here: :doc:`Unit Testing on Linux <linux-host-testing>`.
 
 Normal Test Cases
 ------------------
@@ -45,7 +46,7 @@ See http://www.throwtheswitch.org/unity for more information about writing tests
 Multi-device Test Cases
 -------------------------
 
-The normal test cases will be executed on one DUT (Device Under Test). However, components that require some form of communication (e.g., GPIO, SPI) require another device to communicate with, thus cannot be tested normal test cases. Multi-device test cases involve writing multiple test functions, and running them on multiple DUTs.
+The normal test cases will be executed on one DUT (Device Under Test). However, components that require some form of communication (e.g., GPIO, SPI) require another device to communicate with, thus cannot be tested through normal test cases. Multi-device test cases involve writing multiple test functions, and running them on multiple DUTs.
 
 The following is an example of a multi-device test case:
 
@@ -178,7 +179,7 @@ When the build finishes, it will print instructions for flashing the chip. You c
 
 You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
 
-Use menuconfig to set the serial port for flashing.
+Use menuconfig to set the serial port for flashing. For more information, see :idf_file:`tools/unit-test-app/README.md`.
 
 Running Unit Tests
 ------------------
@@ -300,17 +301,15 @@ Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on
 
 Requirements
 ^^^^^^^^^^^^
-The following requirements are necessary to generate the mocks:
+The Linux target is the only target where mocking currently works. The following requirements are necessary to generate the mocks:
 
-.. list::
-    - Installed ESP-IDF with all its requirements
-    - ``ruby``
-    - On the Linux target, which is the only target where mocking currently works, ``libbsd`` is required, too
+.. include:: inc/linux-host-requirements.rst
+
 
 Mock a Component
 ^^^^^^^^^^^^^^^^
 
-To create a mock version of a component, called a *component mock*, the component needs to be overwritten in a particular way. Overriding a component entails creating a component with the exact same name as the original component, then let the build system discover it later than the original component (see `Multiple components with the same name <cmake-components-same-name>` for more details).
+To create a mock version of a component, called a *component mock*, the component needs to be overwritten in a particular way. Overriding a component entails creating a component with the exact same name as the original component, then let the build system discover it later than the original component (see :ref:`Multiple components with the same name <cmake-components-same-name>` for more details).
 
 In the component mock, the following parts are specified:
 
@@ -342,7 +341,7 @@ For more details about the CMock configuration yaml file, have a look at :compon
 
 Note that the component mock does not have to mock the original component in its entirety. As long as the test project's dependencies and dependencies of other code to the original components are satisfied by the component mock, partial mocking is adequate. In fact, most of the component mocks in IDF in ``tools/mocks`` are only partially mocking the original component.
 
-Examples of component mocks can be found under :idf:`tools/mocks` in the IDF directory. General information on how to *override an IDF component* can be found under the section "Multiple components with the same name" in the :doc:`IDF build system documentation`</api-guides/build-system>`.
+Examples of component mocks can be found under :idf:`tools/mocks` in the IDF directory. General information on how to *override an IDF component* can be found in :ref:`Multiple components with the same name <cmake-components-same-name>`.
 
 Adjustments in Unit Test
 ^^^^^^^^^^^^^^^^^^^^^^^^

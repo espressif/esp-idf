@@ -10,11 +10,16 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_mac.h"
+#include "sys/socket.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"
 #elif SOC_SHA_SUPPORT_DMA
 #include "sha/sha_dma.h"
 #endif
+#include "test_utils.h"
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5044
 
 const char *test_cert_pem =   "-----BEGIN CERTIFICATE-----\n"\
                               "MIICrDCCAZQCCQD88gCs5AFs/jANBgkqhkiG9w0BAQsFADAYMRYwFAYDVQQDDA1F\n"\
@@ -119,3 +124,5 @@ TEST_CASE("esp_tls_server session create delete", "[esp-tls][leaks=0]")
     esp_tls_server_session_delete(tls);
 }
 #endif
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

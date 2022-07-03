@@ -36,7 +36,12 @@ typedef enum {
 
 typedef enum {
     LEDC_SLOW_CLK_RTC8M = 0,  /*!< LEDC low speed timer clock source is 8MHz RTC clock*/
+#if SOC_LEDC_SUPPORT_APB_CLOCK
     LEDC_SLOW_CLK_APB,     /*!< LEDC low speed timer clock source is 80MHz APB clock*/
+#endif
+#if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+    LEDC_SLOW_CLK_PLL_DIV, /*!< LEDC low speed timer clock source is a PLL_DIV clock*/
+#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_SLOW_CLK_XTAL,    /*!< LEDC low speed timer clock source XTAL clock*/
 #endif
@@ -49,8 +54,13 @@ typedef enum {
  * here.
  */
 typedef enum {
-    LEDC_AUTO_CLK = 0,    /*!< The driver will automatically select the source clock(REF_TICK or APB) based on the giving resolution and duty parameter when init the timer*/
+    LEDC_AUTO_CLK = 0,    /*!< The driver will automatically select the source clock based on the giving resolution and duty parameter when init the timer*/
+#if SOC_LEDC_SUPPORT_APB_CLOCK
     LEDC_USE_APB_CLK,     /*!< LEDC timer select APB clock as source clock*/
+#endif
+#if SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+    LEDC_USE_PLL_DIV_CLK, /*!< LEDC timer select the PLL_DIV clock available to LEDC peripheral as source clock*/
+#endif
     LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
 #if SOC_LEDC_SUPPORT_REF_TICK
     LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
@@ -67,8 +77,12 @@ typedef enum  {
 #if SOC_LEDC_SUPPORT_REF_TICK
     LEDC_REF_TICK = LEDC_USE_REF_TICK, /*!< LEDC timer clock divided from reference tick (1Mhz) */
 #endif
+#if SOC_LEDC_SUPPORT_APB_CLOCK
     LEDC_APB_CLK = LEDC_USE_APB_CLK,  /*!< LEDC timer clock divided from APB clock (80Mhz) */
-    LEDC_SCLK = LEDC_USE_APB_CLK      /*!< Selecting this value for LEDC_TICK_SEL_TIMER let the hardware take its source clock from LEDC_APB_CLK_SEL */
+    LEDC_SCLK = LEDC_USE_APB_CLK,     /*!< Selecting this value for LEDC_TICK_SEL_TIMER let the hardware take its source clock from LEDC_APB_CLK_SEL */
+#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
+    LEDC_SCLK = LEDC_USE_PLL_DIV_CLK, /*!< Selecting this value for LEDC_TICK_SEL_TIMER let the hardware take its source clock from LEDC_CLK_SEL */
+#endif
 } ledc_clk_src_t;
 
 typedef enum {

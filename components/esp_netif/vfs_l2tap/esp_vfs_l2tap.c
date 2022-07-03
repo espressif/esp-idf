@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,14 +18,13 @@
 #include "esp_vfs.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_netif_net_stack.h"
+#include "esp_netif.h"
+#include "esp_eth_driver.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 
-
-#if CONFIG_ESP_NETIF_L2_TAP
 
 #define INVALID_FD          (-1)
 
@@ -41,10 +40,13 @@ typedef enum {
 typedef struct {
     _Atomic l2tap_socket_state_t state;
     bool non_blocking;
-    esp_netif_t *netif;
+    l2tap_iodriver_handle driver_handle;
     uint16_t ethtype_filter;
     QueueHandle_t rx_queue;
     SemaphoreHandle_t close_done_sem;
+
+    esp_err_t (*driver_transmit)(l2tap_iodriver_handle io_handle, void *buffer, size_t len);
+    void (*driver_free_rx_buffer)(l2tap_iodriver_handle io_handle, void* buffer);
 } l2tap_context_t;
 
 typedef struct {
@@ -122,7 +124,7 @@ static ssize_t pop_rx_queue(l2tap_context_t *l2tap_socket, void *buff, size_t le
             len = frame_info.len;
         }
         memcpy(buff, frame_info.buff, len);
-        free(frame_info.buff);
+        l2tap_socket->driver_free_rx_buffer(l2tap_socket->driver_handle, frame_info.buff);
     } else {
         goto err;
     }
@@ -163,8 +165,13 @@ static inline void l2tap_unlock(void)
     portEXIT_CRITICAL(&s_critical_section_lock);
 }
 
-/* ================== ESP NETIF intf ====================== */
-esp_err_t l2tap_eth_filter(esp_netif_t *esp_netif, void *buff, size_t *size)
+static inline void default_free_rx_buffer(l2tap_iodriver_handle io_handle, void* buffer)
+{
+    free(buffer);
+}
+
+/* ================== ESP NETIF L2 TAP intf ====================== */
+esp_err_t esp_vfs_l2tap_eth_filter(l2tap_iodriver_handle driver_handle, void *buff, size_t *size)
 {
     struct eth_hdr *eth_header = buff;
     uint16_t eth_type = ntohs(eth_header->type);
@@ -172,14 +179,14 @@ esp_err_t l2tap_eth_filter(esp_netif_t *esp_netif, void *buff, size_t *size)
     for (int i = 0; i < L2TAP_MAX_FDS; i++) {
         if (atomic_load(&s_l2tap_sockets[i].state) == L2TAP_SOCK_STATE_OPENED) {
             l2tap_lock(); // read of socket config needs to be atomic since it can be manipulated from other task
-            if (s_l2tap_sockets[i].netif == esp_netif && (s_l2tap_sockets[i].ethtype_filter == eth_type ||
+            if (s_l2tap_sockets[i].driver_handle == driver_handle && (s_l2tap_sockets[i].ethtype_filter == eth_type ||
                     // IEEE 802.2 Frame is identified based on its length which is less than IEEE802.3 max length (Ethernet II Types IDs start over this value)
                     // Note that IEEE 802.2 LLC resolution is expected to be performed by upper stream app
                     (s_l2tap_sockets[i].ethtype_filter <= ETH_IEEE802_3_MAX_LEN && eth_type <= ETH_IEEE802_3_MAX_LEN))) {
                 l2tap_unlock();
                 if (push_rx_queue(&s_l2tap_sockets[i], buff, *size) != ESP_OK) {
                     // just tail drop when queue is full
-                    free(buff);
+                    s_l2tap_sockets[i].driver_free_rx_buffer(s_l2tap_sockets[i].driver_handle, buff);
                     ESP_LOGD(TAG, "fd %d rx queue is full", i);
                 }
                 l2tap_lock();
@@ -188,13 +195,11 @@ esp_err_t l2tap_eth_filter(esp_netif_t *esp_netif, void *buff, size_t *size)
                 }
                 l2tap_unlock();
                 *size = 0; // the frame is not passed to IP stack when size set to 0
-                goto end;
             } else {
                 l2tap_unlock();
             }
         }
     }
-end:
     return ESP_OK;
 }
 
@@ -213,8 +218,10 @@ static int l2tap_open(const char *path, int flags, int mode)
                 goto err;
             }
             s_l2tap_sockets[fd].ethtype_filter = 0x0;
-            s_l2tap_sockets[fd].netif = NULL;
+            s_l2tap_sockets[fd].driver_handle = NULL;
             s_l2tap_sockets[fd].non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
+            s_l2tap_sockets[fd].driver_transmit = esp_eth_transmit;
+            s_l2tap_sockets[fd].driver_free_rx_buffer = default_free_rx_buffer;
             return fd;
         }
     }
@@ -238,7 +245,7 @@ static ssize_t l2tap_write(int fd, const void *data, size_t size)
             goto err;
         }
 
-        if (esp_netif_transmit(s_l2tap_sockets[fd].netif, (void *)data, size) == ESP_OK) {
+        if (s_l2tap_sockets[fd].driver_transmit(s_l2tap_sockets[fd].driver_handle, (void *)data, size) == ESP_OK) {
             ret = size;
         } else {
             // I/O error
@@ -273,46 +280,6 @@ static ssize_t l2tap_read(int fd, void *data, size_t size)
     return actual_size;
 }
 
-// This function checks if any other socket is associated with inputting ESP netif. If there is no other socket associated with that netif, Raw Ethernet
-// filter function is detached so the netif hook could be used by other components.
-static esp_err_t l2tap_eth_filter_fn_detach(l2tap_context_t *l2tap_socket)
-{
-    esp_netif_t *netif = l2tap_socket->netif;
-    if (netif == NULL) {
-        return ESP_FAIL;
-    }
-
-    l2tap_socket->netif = NULL;
-
-    for (int i = 0; i < L2TAP_MAX_FDS; i++) {
-        if (s_l2tap_sockets[i].netif == netif) {
-            // other socket is associated to the same ESP netif, keep the filter function attached
-            return ESP_OK;
-        }
-    }
-
-    // no socket is associated to the ESP netif, we are free to detach the filter function
-    return esp_netif_recv_hook_detach(netif);
-}
-
-static esp_err_t l2tap_eth_filter_fn_attach(l2tap_context_t *l2tap_socket, esp_netif_t *new_netif)
-{
-    if (new_netif == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    // check if filter function can be detached from the old netif
-    l2tap_eth_filter_fn_detach(l2tap_socket);
-
-    l2tap_socket->netif = new_netif;
-    // Try to attach filter function to newly selected netif
-    if (esp_netif_recv_hook_attach(l2tap_socket->netif, &l2tap_eth_filter) != ESP_OK) {
-        l2tap_socket->netif = NULL;
-        return ESP_FAIL;
-    }
-    return ESP_OK;
-}
-
 void l2tap_clean_task(void *task_param)
 {
     l2tap_context_t *l2tap_socket = (l2tap_context_t *)task_param;
@@ -326,12 +293,6 @@ void l2tap_clean_task(void *task_param)
     // by L2TAP_SOCK_STATE_CLOSING => we are free to free queue resources
     flush_rx_queue(l2tap_socket);
     delete_rx_queue(l2tap_socket);
-
-    // check if filter function can be detached & detach
-    // lock, we don't want to other tasks modify other sockets context info
-    l2tap_lock();
-    l2tap_eth_filter_fn_detach(l2tap_socket);
-    l2tap_unlock();
 
     // unblock task which originally called close
     xSemaphoreGive(l2tap_socket->close_done_sem);
@@ -374,15 +335,24 @@ static int l2tap_close(int fd)
 
 static int l2tap_ioctl(int fd, int cmd, va_list args)
 {
+    esp_netif_t *esp_netif;
     switch (cmd) {
     case L2TAP_S_RCV_FILTER: ;
         uint16_t *new_ethtype_filter = va_arg(args, uint16_t *);
         l2tap_lock();
+        // socket needs to be assigned to interface at first
+        if (s_l2tap_sockets[fd].driver_handle == NULL) {
+            // Permission denied (filter change is denied at this state)
+            errno = EACCES;
+            l2tap_unlock();
+            goto err;
+        }
         // do nothing when same filter is to be set
         if (s_l2tap_sockets[fd].ethtype_filter != *new_ethtype_filter) {
-            // check if the ethtype filter is not already used by other socket
+            // check if the ethtype filter is not already used by other socket of the same interface
             for (int i = 0; i < L2TAP_MAX_FDS; i++) {
                 if (atomic_load(&s_l2tap_sockets[i].state) == L2TAP_SOCK_STATE_OPENED &&
+                        s_l2tap_sockets[i].driver_handle == s_l2tap_sockets[fd].driver_handle &&
                         s_l2tap_sockets[i].ethtype_filter == *new_ethtype_filter) {
                     // invalid argument
                     errno = EINVAL;
@@ -400,28 +370,40 @@ static int l2tap_ioctl(int fd, int cmd, va_list args)
         break;
     case L2TAP_S_INTF_DEVICE: ;
         const char *str = va_arg(args, const char *);
-        esp_netif_t *new_netif = esp_netif_get_handle_from_ifkey(str);
-        if (new_netif == NULL) {
+        esp_netif = esp_netif_get_handle_from_ifkey(str);
+        if (esp_netif == NULL) {
             // No such device
             errno = ENODEV;
             goto err;
         }
         l2tap_lock();
-        if (l2tap_eth_filter_fn_attach(&s_l2tap_sockets[fd], new_netif) != ESP_OK) {
-            // No space on device - netif hook is already taken
-            errno = ENOSPC;
-            l2tap_unlock();
-            goto err;
-        }
+        s_l2tap_sockets[fd].driver_handle = esp_netif_get_io_driver(esp_netif);
         l2tap_unlock();
         break;
     case L2TAP_G_INTF_DEVICE: ;
         const char **str_p = va_arg(args, const char **);
-        if (s_l2tap_sockets[fd].netif != NULL) {
-            *str_p = esp_netif_get_ifkey(s_l2tap_sockets[fd].netif);
-        } else {
-            *str_p = NULL;
+        *str_p = NULL;
+        esp_netif = NULL;
+        while ((esp_netif = esp_netif_next(esp_netif)) != NULL) {
+            if (s_l2tap_sockets[fd].driver_handle == esp_netif_get_io_driver(esp_netif)) {
+                *str_p = esp_netif_get_ifkey(esp_netif);
+            }
         }
+        break;
+    case L2TAP_S_DEVICE_DRV_HNDL: ;
+        l2tap_iodriver_handle set_driver_hdl = va_arg(args, l2tap_iodriver_handle);
+        if (set_driver_hdl == NULL) {
+            // No such device (not valid driver handle)
+            errno = ENODEV;
+            goto err;
+        }
+        l2tap_lock();
+        s_l2tap_sockets[fd].driver_handle = set_driver_hdl;
+        l2tap_unlock();
+        break;
+    case L2TAP_G_DEVICE_DRV_HNDL: ;
+        l2tap_iodriver_handle *get_driver_hdl = va_arg(args, l2tap_iodriver_handle*);
+        *get_driver_hdl = s_l2tap_sockets[fd].driver_handle;
         break;
     default:
         // unsupported operation
@@ -642,4 +624,3 @@ esp_err_t esp_vfs_l2tap_intf_unregister(const char *base_path)
 
     return ESP_OK;
 }
-#endif // CONFIG_ESP_NETIF_L2_TAP

@@ -146,7 +146,7 @@ SECTIONS
     . = . + SIZEOF(.flash.text);
     /* Prepare the alignment of the section above. Few bytes (0x20) must be
      * added for the mapping header. */
-    . = ALIGN(0x10000) + 0x20;
+    . = ALIGN(_esp_mmu_block_size) + 0x20;
     _rodata_reserved_start = .;
   } > default_rodata_seg
 

@@ -11,18 +11,9 @@
 #include "soc/soc.h"
 #include "esp_system.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "spiram.h"
+#include "esp_private/esp_psram_extram.h"
 #endif
-
-static __NOINIT_ATTR uint32_t s_noinit;
-static RTC_NOINIT_ATTR uint32_t s_rtc_noinit;
-static RTC_DATA_ATTR uint32_t s_rtc_data;
-static RTC_RODATA_ATTR uint32_t s_rtc_rodata;
-static RTC_FAST_ATTR uint32_t s_rtc_force_fast;
-static RTC_SLOW_ATTR uint32_t s_rtc_force_slow;
-#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
-#endif
+#include "test_utils.h"
 
 extern int _rtc_noinit_start;
 extern int _rtc_noinit_end;
@@ -39,6 +30,19 @@ extern int _ext_ram_noinit_end;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5045
+//Variables for test: Attributes place variables into correct sections
+static __NOINIT_ATTR uint32_t s_noinit;
+static RTC_NOINIT_ATTR uint32_t s_rtc_noinit;
+static RTC_DATA_ATTR uint32_t s_rtc_data;
+static RTC_RODATA_ATTR uint32_t s_rtc_rodata;
+static RTC_FAST_ATTR uint32_t s_rtc_force_fast;
+static RTC_SLOW_ATTR uint32_t s_rtc_force_slow;
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+static EXT_RAM_NOINIT_ATTR uint32_t s_noinit_ext;
+#endif
 
 static bool data_in_segment(void *ptr, int *seg_start, int *seg_end)
 {
@@ -57,8 +61,7 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 
 #if CONFIG_ESP32_RTCDATA_IN_FAST_MEM   || \
     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM || \
-    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM || \
-    CONFIG_ESP32C3_RTCDATA_IN_FAST_MEM
+    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
     TEST_ASSERT(data_in_segment(&s_rtc_data, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_rodata, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_noinit, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
@@ -76,6 +79,7 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 #endif
 }
 
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
@@ -91,7 +95,7 @@ static void write_spiram_and_reset(void)
     }
     printf("Flushing cache\n");
     // Flush the cache out to SPIRAM before resetting.
-    esp_spiram_writeback_cache();
+    esp_psram_extram_writeback_cache();
 
     printf("Restarting\n");
     // Reset to test that noinit memory is left intact.
@@ -117,8 +121,8 @@ TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[spiram]", write_spiram_
 
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-#define TEST_BSS_NUM    256
-static EXT_RAM_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
+#define TEST_BSS_NUM    (256 * 1024)
+static EXT_RAM_BSS_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
 
 TEST_CASE("Test variables placed in external .bss segment", "[ld]")
 {

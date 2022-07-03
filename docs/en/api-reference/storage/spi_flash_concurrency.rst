@@ -35,7 +35,7 @@ Under this condition, all CPUs should always execute code and access data from i
 
     The way that these APIs disable the caches will also disable non-IRAM-safe interrupts. These will be restored until the Flash operation completes.
 
-See also :ref:`esp_flash_os_func`, :ref:`spi_bus_lock`.
+See also :ref:`esp_flash_os_func` and :ref:`spi_bus_lock`.
 
 There are no such constraints and impacts for flash chips on other SPI buses than SPI0/1.
 
@@ -55,7 +55,7 @@ If a function or symbol is not correctly put into IRAM/DRAM, and the interrupt h
 
 .. note::
 
-   When working with string in ISRs, it is not advised to use ``printf`` and other output functions. For debugging purposes, use :cpp:func:`ESP_DRAM_LOGE` and similar macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
+    When working with strings in ISRs, it is not advised to use ``printf`` and other output functions. For debugging purposes, use :cpp:func:`ESP_DRAM_LOGE` and similar macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
 
 Non-IRAM-Safe Interrupt Handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

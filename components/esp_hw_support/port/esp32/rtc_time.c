@@ -6,11 +6,10 @@
 
 #include <stdint.h>
 #include "esp_rom_sys.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/rtc.h"
 #include "soc/timer_periph.h"
 #include "esp_hw_log.h"
-
-#define MHZ (1000000)
 
 static const char* TAG = "rtc_time";
 
@@ -36,13 +35,16 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
 {
     assert(slowclk_cycles < 32767);
     /* Enable requested clock (150k clock is always on) */
-    int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
-        REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
+    bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
+    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+        clk_ll_xtal32k_digi_enable();
     }
 
+    bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
+    bool rc_fast_d256_enabled = clk_ll_rc_fast_d256_is_enabled();
     if (cal_clk == RTC_CAL_8MD256) {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        rtc_clk_8m_enable(true, true);
+        clk_ll_rc_fast_d256_digi_enable();
     }
     /* Prepare calibration */
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_CLK_SEL, cal_clk);
@@ -50,15 +52,15 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, slowclk_cycles);
     /* Figure out how long to wait for calibration to finish */
     uint32_t expected_freq;
-    rtc_slow_freq_t slow_freq = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL);
+    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     if (cal_clk == RTC_CAL_32K_XTAL ||
-        (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_32K_XTAL)) {
-        expected_freq = 32768; /* standard 32k XTAL */
+        (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)) {
+        expected_freq = SOC_CLK_XTAL32K_FREQ_APPROX; /* standard 32k XTAL */
     } else if (cal_clk == RTC_CAL_8MD256 ||
-            (cal_clk == RTC_CAL_RTC_MUX && slow_freq == RTC_SLOW_FREQ_8MD256)) {
-        expected_freq = RTC_FAST_CLK_FREQ_APPROX / 256;
+            (cal_clk == RTC_CAL_RTC_MUX && slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256)) {
+        expected_freq = SOC_CLK_RC_FAST_D256_FREQ_APPROX;
     } else {
-        expected_freq = 150000; /* 150k internal oscillator */
+        expected_freq = SOC_CLK_RC_SLOW_FREQ_APPROX; /* 150k internal oscillator */
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Check if the required number of slowclk_cycles may result in an overflow of TIMG_RTC_CALI_VALUE */
@@ -88,10 +90,14 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         esp_rom_delay_us(1);
     }
 
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, dig_32k_xtal_state);
+    /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
+    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+        clk_ll_xtal32k_digi_disable();
+    }
 
     if (cal_clk == RTC_CAL_8MD256) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        clk_ll_rc_fast_d256_digi_disable();
+        rtc_clk_8m_enable(rc_fast_enabled, rc_fast_d256_enabled);
     }
     if (timeout_us == 0) {
         /* timed out waiting for calibration */
@@ -135,8 +141,14 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
 uint64_t rtc_time_get(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
+    int attempts = 1000;
     while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
         esp_rom_delay_us(1); // might take 1 RTC slowclk period, don't flood RTC bus
+        if (attempts) {
+            if (--attempts == 0 && clk_ll_xtal32k_digi_is_enabled()) {
+                ESP_HW_LOGE(TAG, "rtc_time_get() 32kHz xtal has been stopped");
+            }
+        }
     }
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_TIME_VALID_INT_CLR);
     uint64_t t = READ_PERI_REG(RTC_CNTL_TIME0_REG);
@@ -155,8 +167,14 @@ void rtc_clk_wait_for_slow_cycle(void)
     REG_SET_FIELD(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_MAX, 0);
     REG_SET_BIT(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     esp_rom_delay_us(1); /* RDY needs some time to go low */
+    int attempts = 1000;
     while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)) {
         esp_rom_delay_us(1);
+        if (attempts) {
+            if (--attempts == 0 && clk_ll_xtal32k_digi_is_enabled()) {
+                ESP_HW_LOGE(TAG, "32kHz xtal has been stopped");
+            }
+        }
     }
 }
 

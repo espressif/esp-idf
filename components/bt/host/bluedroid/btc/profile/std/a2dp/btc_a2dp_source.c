@@ -424,7 +424,6 @@ void btc_a2dp_source_set_tx_flush(BOOLEAN enable)
 ** Returns
 **
 *******************************************************************************/
-
 void btc_a2dp_source_setup_codec(void)
 {
     tBTC_AV_MEDIA_FEEDINGS media_feeding;
@@ -615,6 +614,30 @@ BOOLEAN btc_a2dp_source_tx_flush_req(void)
 #endif
 
     return TRUE;
+}
+
+/*****************************************************************************
+**
+** Function        btc_source_report_delay_value
+**
+** Description
+**
+** Returns
+**
+*******************************************************************************/
+void btc_source_report_delay_value(UINT16 delay_value)
+{
+    esp_a2d_cb_param_t param;
+
+#if A2D_DYNAMIC_MEMORY == TRUE
+    if (a2dp_source_local_param_ptr == NULL) {
+        return;
+    }
+#endif
+
+    param.a2d_report_delay_value_stat.delay_value = delay_value;
+
+    btc_aa_cb_to_app(ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT, &param);
 }
 
 /*****************************************************************************

@@ -1,16 +1,8 @@
-// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -25,7 +17,6 @@
 #include "hal/spi_flash_ll.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
-#include "soc/soc_memory_types.h"
 
 /* Hardware host-specific constants */
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
@@ -79,13 +70,15 @@ typedef struct {
     };
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock, used for timing compensation.
-    esp_flash_speed_t speed;///< SPI flash clock speed to work at.
+    enum esp_flash_speed_s speed __attribute__((deprecated));      ///< SPI flash clock speed to work at. Replaced by freq_mhz
     spi_host_device_t host_id;            ///< SPI peripheral ID.
     int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
     bool octal_mode_en;     ///< Octal spi flash mode enable bit 1: enable, 0: disable.
     bool using_timing_tuning;               ///< System exist SPI0/1 timing tuning, using value from system directely if set to 1.
     esp_flash_io_mode_t default_io_mode;        ///< Default flash io mode.
+    int freq_mhz;         ///< SPI flash clock speed (MHZ).
+    int clock_src_freq;    ///< SPI flash clock source (MHZ).
 } spi_flash_hal_config_t;
 
 /**

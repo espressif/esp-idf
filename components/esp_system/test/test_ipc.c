@@ -129,6 +129,32 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
         }
     }
 }
-#endif /* CONFIG_ESP_IPC_USE_CALLERS_PRIORITY */
+#endif /* CONFIG_ESP_IPC_USES_CALLERS_PRIORITY */
+
+static void test_func_ipc_cb2(void *arg)
+{
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    int *val = (int *)arg;
+    *val = *val + 1;
+}
+
+static void test_func_ipc_cb3(void *arg)
+{
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    int *val = (int *)arg;
+    *val = *val + 1;
+}
+
+TEST_CASE("Test ipc_task can not wake up blocking task early", "[ipc]")
+{
+    int val1 = 20;
+    esp_ipc_call(1, test_func_ipc_cb2, &val1);
+    TEST_ASSERT_EQUAL(20, val1);
+
+    int val2 = 30;
+    esp_ipc_call_blocking(1, test_func_ipc_cb3, &val2);
+    TEST_ASSERT_EQUAL(21, val1);
+    TEST_ASSERT_EQUAL(31, val2);
+}
 
 #endif /* !CONFIG_FREERTOS_UNICORE */

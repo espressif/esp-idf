@@ -204,6 +204,16 @@ class Gitlab(object):
 
         return os.path.join(os.path.realpath(destination), root_name)
 
+    def get_job_tags(self, job_id: int) -> str:
+        """
+        Get tags of a job
+
+        :param job_id: job id
+        :return: comma-separated tags of the job
+        """
+        job = self.project.jobs.get(job_id)
+        return ','.join(job.tag_list)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -231,6 +241,9 @@ def main() -> None:
     elif args.action == 'get_project_id':
         ret = gitlab_inst.get_project_id(args.project_name)
         print('project id: {}'.format(ret))
+    elif args.action == 'get_job_tags':
+        ret = gitlab_inst.get_job_tags(args.job_id)
+        print(ret)
 
 
 if __name__ == '__main__':

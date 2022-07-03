@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 
 // forward declaration
-IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps);
+static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps);
 
 /*
 This file, combined with a region allocator that supports multiple heaps, solves the problem that the ESP32 has RAM
@@ -574,6 +574,7 @@ void heap_caps_dump_all(void)
 size_t heap_caps_get_allocated_size( void *ptr )
 {
     heap_t *heap = find_containing_heap(ptr);
+    assert(heap);
     size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
     return size;
 }

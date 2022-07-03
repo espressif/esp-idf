@@ -195,15 +195,20 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
     portEXIT_CRITICAL(&s_time_update_lock);
 }
 
-void esp_timer_impl_advance(int64_t time_diff_us)
+void esp_timer_impl_set(uint64_t new_us)
 {
     portENTER_CRITICAL(&s_time_update_lock);
-    uint64_t now = esp_timer_impl_get_time();
-    timer_64b_reg_t dst = { .val = (now + time_diff_us) * TICKS_PER_US };
+    timer_64b_reg_t dst = { .val = new_us * TICKS_PER_US };
     REG_WRITE(LOAD_LO_REG, dst.lo);
     REG_WRITE(LOAD_HI_REG, dst.hi);
     REG_WRITE(LOAD_REG, 1);
     portEXIT_CRITICAL(&s_time_update_lock);
+}
+
+void esp_timer_impl_advance(int64_t time_diff_us)
+{
+    uint64_t now = esp_timer_impl_get_time();
+    esp_timer_impl_set(now + time_diff_us);
 }
 
 esp_err_t esp_timer_impl_early_init(void)
@@ -286,6 +291,7 @@ uint64_t esp_timer_impl_get_alarm_reg(void)
 }
 
 void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
-void esp_timer_private_advance(int64_t time_us) __attribute__((alias("esp_timer_impl_advance")));
+void esp_timer_private_set(uint64_t new_us) __attribute__((alias("esp_timer_impl_set")));
+void esp_timer_private_advance(int64_t time_diff_us) __attribute__((alias("esp_timer_impl_advance")));
 void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
 void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));

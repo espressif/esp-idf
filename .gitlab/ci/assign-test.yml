@@ -4,7 +4,7 @@
   tags:
     - assign_test
   variables:
-    SUBMODULES_TO_FETCH: components/esptool_py/esptool
+    SUBMODULES_TO_FETCH: "none"
   artifacts:
     paths:
       - ${TEST_DIR}/test_configs
@@ -23,6 +23,9 @@ assign_example_test:
       artifacts: false
       optional: true
     - job: build_examples_cmake_esp32s2
+      artifacts: false
+      optional: true
+    - job: build_examples_cmake_esp32c2
       artifacts: false
       optional: true
     - job: build_examples_cmake_esp32c3
@@ -47,6 +50,9 @@ assign_custom_test:
     - job: build_test_apps_esp32s2
       artifacts: false
       optional: true
+    - job: build_test_apps_esp32c2
+      artifacts: false
+      optional: true
     - job: build_test_apps_esp32c3
       artifacts: false
       optional: true
@@ -66,6 +72,8 @@ assign_unit_test:
     - job: build_esp_idf_tests_cmake_esp32
       optional: true
     - job: build_esp_idf_tests_cmake_esp32s2
+      optional: true
+    - job: build_esp_idf_tests_cmake_esp32c2
       optional: true
     - job: build_esp_idf_tests_cmake_esp32c3
       optional: true

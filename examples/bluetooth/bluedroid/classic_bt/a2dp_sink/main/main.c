@@ -23,7 +23,6 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
-#include "driver/i2s.h"
 
 /* device name */
 #define LOCAL_DEVICE_NAME    "ESP_SPEAKER"
@@ -110,6 +109,9 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         assert(esp_a2d_sink_init() == ESP_OK);
         esp_a2d_register_callback(&bt_app_a2d_cb);
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
+
+        /* Get the default value of the delay value */
+        esp_a2d_sink_get_delay_value();
 
         /* set discoverable and connectable mode, wait to be connected */
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);

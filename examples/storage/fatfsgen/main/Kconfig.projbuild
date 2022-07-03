@@ -7,4 +7,11 @@ menu "Example Configuration"
             If read-only mode is set, the generated fatfs image will be raw (without wear levelling support).
             Otherwise it will support wear levelling that enables read-write mounting.
 
+    config EXAMPLE_FATFS_DEFAULT_DATETIME
+        bool "Default modification date and time for generated FATFS image"
+        default n
+        help
+            If default datetime is set, all files created in the generated FATFS partition have default time
+            equal to FATFS origin time (1 January 1980)
+
 endmenu

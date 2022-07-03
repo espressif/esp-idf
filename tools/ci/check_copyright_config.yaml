@@ -59,14 +59,6 @@ examples_and_unit_tests:
   - CC0-1.0
   license_for_new_files: Unlicense OR CC0-1.0
 
-freemodbus_component:
-  include:
-    - 'components/freemodbus/**'
-  allowed_licenses:
-    - Apache-2.0
-    - BSD-3-Clause
-  license_for_new_files: Apache-2.0
-
 lwip_component:
   include:
     - 'components/lwip/**'
@@ -88,6 +80,13 @@ freertos_component:
   allowed_licenses:
     - Apache-2.0    #Files added to the freertos added by us
     - MIT           #FreeRTOS sources and port files
+
+ethernet_component:
+  include:
+    - 'components/esp_eth/**'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT           # To allow contributed drivers
 
 systemview:
   include:
@@ -111,6 +110,13 @@ sdmmc:
   allowed_licenses:
     - Apache-2.0
     - ISC
+
+argtable3:
+  include:
+    - 'components/console/argtable3/'
+  allowed_licenses:
+    - BSD-3-Clause
+    - Apache-2.0
 
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.

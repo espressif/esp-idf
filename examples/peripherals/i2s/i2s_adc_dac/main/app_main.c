@@ -1,3 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+/* ADC/DAC are not supported in the new I2S driver, but still available in the legacy I2S driver for backward compatibility
+ * Please turn to the dedicated ADC/DAC driver instead */
+#pragma message("ADC/DAC on ESP32 will no longer supported via I2S driver")
+
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -13,7 +23,6 @@
 #include "esp_rom_sys.h"
 
 #if CONFIG_IDF_TARGET_ESP32
-
 static const char* TAG = "ad/da";
 #define V_REF   1100
 #define ADC1_TEST_CHANNEL (ADC1_CHANNEL_7)
@@ -277,9 +286,9 @@ void adc_read_task(void* arg)
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, &characteristics);
     while(1) {
         uint32_t voltage;
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
         ESP_LOGI(TAG, "%d mV", voltage);
-        vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }
 

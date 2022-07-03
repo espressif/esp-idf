@@ -17,18 +17,13 @@
 #include "soc/rtc_periph.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/efuse_periph.h"
-#include "soc/syscon_reg.h"
 #include "hal/cpu_hal.h"
-#include "regi2c_ctrl.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
-#include "rtc_clk_common.h"
 #include "esp_rom_uart.h"
-#include "soc/efuse_reg.h"
-#include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
-#include "rtc_clk_common.h"
 #include "esp_rom_sys.h"
+
 static const char *TAG = "rtc_clk_init";
 
 void rtc_clk_init(rtc_clk_config_t cfg)
@@ -68,7 +63,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_cpu_freq_get_config(&old_config);
     uint32_t freq_before = old_config.freq_mhz;
 
-    root_clk_slt(cfg.root_clk_slt);
+    rtc_clk_select_root_clk(cfg.root_clk_slt);
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
     if (!res) {
         ESP_HW_LOGE(TAG, "invalid CPU frequency value");
@@ -80,12 +75,12 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
-    if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
+    if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         rtc_clk_32k_enable(true);
     }
-    if (cfg.fast_freq == RTC_FAST_FREQ_8M) {
+    if (cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_RC_FAST) {
         rtc_dig_clk8m_enable();
     }
-    rtc_clk_fast_freq_set(cfg.fast_freq);
-    rtc_clk_slow_freq_set(cfg.slow_freq);
+    rtc_clk_fast_src_set(cfg.fast_clk_src);
+    rtc_clk_slow_src_set(cfg.slow_clk_src);
 }

@@ -3,19 +3,8 @@
 # Demonstrates the use of otatool.py, a tool for performing ota partition level
 # operations.
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
 import re
@@ -32,11 +21,17 @@ def get_running_partition(port=None):
 
     IDF_PATH = os.path.expandvars('$IDF_PATH')
     sys.path.append(os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool'))
-    import esptool
+
+    try:
+        # esptool>=4.0
+        from esptool.loader import ESPLoader
+    except (AttributeError, ModuleNotFoundError):
+        # esptool<4.0
+        from esptool import ESPLoader
 
     ESPTOOL_PY = os.path.join(IDF_PATH, 'components', 'esptool_py', 'esptool', 'esptool.py')
 
-    baud = os.environ.get('ESPTOOL_BAUD', esptool.ESPLoader.ESP_ROM_BAUD)
+    baud = os.environ.get('ESPTOOL_BAUD', ESPLoader.ESP_ROM_BAUD)
 
     if not port:
         error_message = 'Unable to obtain default target device port.\nSerial log:\n\n'

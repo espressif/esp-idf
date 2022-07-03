@@ -3,10 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_CPU_CORES_NUM
-    bool
-    default y
-
 config SOC_ADC_SUPPORTED
     bool
     default y
@@ -21,31 +17,23 @@ config SOC_GDMA_SUPPORTED
 
 config SOC_BT_SUPPORTED
     bool
-    default n
+    default y
 
-config SOC_WIFI_SUPPORTED
-    bool
-    default n
-
-config SOC_ASYNC_MEMCPY_SUPPORTED
+config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y
 
-config SOC_ECC_SUPPORTED
+config SOC_WIFI_SUPPORTED
+    bool
+    default y
+
+config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
-
-config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    bool
-    default y
-
-config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-    bool
-    default n
 
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
@@ -55,27 +43,19 @@ config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     bool
     default y
 
-config SOC_RTC_FAST_MEM_SUPPORTED
+config SOC_SHA_SUPPORTED
     bool
     default n
 
-config SOC_RTC_SLOW_MEM_SUPPORTED
-    bool
-    default n
-
-config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
-    bool
-    default n
-
-config SOC_FLASH_ENCRYPTION_XTS_AES
+config SOC_ECC_SUPPORTED
     bool
     default y
 
-config SOC_AES_SUPPORT_DMA
+config SOC_FLASH_ENC_SUPPORTED
     bool
     default y
 
-config SOC_AES_GDMA
+config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
@@ -97,11 +77,15 @@ config SOC_ADC_MONITOR_SUPPORTED
 
 config SOC_ADC_PERIPH_NUM
     int
-    default 2
+    default 1
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
     default 5
+
+config SOC_ADC_ATTEN_NUM
+    int
+    default 2
 
 config SOC_ADC_DIGI_CONTROLLER_NUM
     int
@@ -131,11 +115,15 @@ config SOC_ADC_SAMPLE_FREQ_THRES_LOW
     int
     default 611
 
-config SOC_ADC_MAX_BITWIDTH
+config SOC_ADC_RTC_MIN_BITWIDTH
     int
     default 12
 
-config SOC_APB_BACKUP_DMA
+config SOC_ADC_RTC_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256
     bool
     default y
 
@@ -147,6 +135,18 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_CPU_INTR_NUM
+    int
+    default 32
+
+config SOC_CPU_HAS_FLEXIBLE_INTC
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2
@@ -155,13 +155,13 @@ config SOC_CPU_WATCHPOINTS_NUM
     int
     default 2
 
-config SOC_CPU_HAS_FLEXIBLE_INTC
-    bool
-    default y
-
 config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
+
+config SOC_CPU_IDRAM_SPLIT_USING_PMP
+    bool
+    default y
 
 config SOC_GDMA_GROUPS
     int
@@ -223,10 +223,6 @@ config SOC_I2C_FIFO_LEN
     int
     default 32
 
-config SOC_I2C_SUPPORT_HW_FSM_RST
-    bool
-    default y
-
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
     default y
@@ -236,6 +232,10 @@ config SOC_I2C_SUPPORT_XTAL
     default y
 
 config SOC_I2C_SUPPORT_RTC
+    bool
+    default y
+
+config SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
     bool
     default y
 
@@ -383,6 +383,26 @@ config SOC_SPI_MEM_SUPPORT_CHECK_SUS
     bool
     default y
 
+config SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
+    bool
+    default y
+
+config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
@@ -427,6 +447,10 @@ config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
 
+config SOC_TIMER_GROUP_SUPPORT_PLL_F40M
+    bool
+    default y
+
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 1
@@ -435,9 +459,33 @@ config SOC_TOUCH_SENSOR_NUM
     int
     default 0
 
+config SOC_SECURE_BOOT_V2_ECC
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
+    int
+    default 1
+
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
     default 32
+
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+    bool
+    default y
 
 config SOC_UART_NUM
     int
@@ -467,10 +515,6 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
-config SOC_WIFI_HW_TSF
-    bool
-    default y
-
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -495,14 +539,30 @@ config SOC_PM_SUPPORT_BT_WAKEUP
     bool
     default y
 
-config SOC_PM_SUPPORT_CPU_PD
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
+
+config SOC_PM_SUPPORT_CPU_PD
+    bool
+    default n
 
 config SOC_PM_SUPPORT_WIFI_PD
     bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_BT_PD
     bool
+    default n
+
+config SOC_WIFI_HW_TSF
+    bool
     default y
+
+config SOC_WIFI_FTM_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_GCMP_SUPPORT
+    bool
+    default n

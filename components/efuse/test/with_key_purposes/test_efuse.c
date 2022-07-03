@@ -105,7 +105,7 @@ TEST_CASE("Test a real write (FPGA)2", "[efuse]")
     esp_efuse_utility_debug_dump_blocks();
 
     ESP_LOGI(TAG, "2. Set a read protection for KEY3");
-    TEST_ESP_OK(esp_efuse_set_read_protect(ESP_EFUSE_KEY3));
+    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK_KEY3));
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
 #ifndef CONFIG_EFUSE_VIRTUAL
     TEST_ASSERT_EACH_EQUAL_HEX8(0, key, sizeof(key));

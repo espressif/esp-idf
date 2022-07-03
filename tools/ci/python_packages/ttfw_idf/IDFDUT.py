@@ -34,6 +34,17 @@ except ImportError:  # cheat and use IDF's copy of esptool if available
     sys.path.insert(0, os.path.join(idf_path, 'components', 'esptool_py', 'esptool'))
     import esptool
 
+try:
+    # esptool>=4.0
+    detect_chip = esptool.cmds.detect_chip
+    FatalError = esptool.util.FatalError
+    targets = esptool.targets
+except (AttributeError, ModuleNotFoundError):
+    # esptool<4.0
+    detect_chip = esptool.ESPLoader.detect_chip
+    FatalError = esptool.FatalError
+    targets = esptool
+
 import espefuse
 import espsecure
 
@@ -118,7 +129,7 @@ def _uses_esptool(func):
         try:
             if not self.rom_inst:
                 if not self.secure_boot_en:
-                    self.rom_inst = esptool.ESPLoader.detect_chip(self.port_inst)
+                    self.rom_inst = detect_chip(self.port_inst)
                 else:
                     self.rom_inst = self.get_rom()(self.port_inst)
             self.rom_inst.connect('hard_reset')
@@ -201,11 +212,11 @@ class IDFDUT(DUT.SerialDUT):
         try:
             # TODO: check whether 8266 works with this logic
             # Otherwise overwrite it in ESP8266DUT
-            inst = esptool.ESPLoader.detect_chip(port)
+            inst = detect_chip(port)
             if expected_rom_class and type(inst) != expected_rom_class:
                 raise RuntimeError('Target not expected')
             return inst.read_mac() is not None, get_target_by_rom_class(type(inst))
-        except(esptool.FatalError, RuntimeError):
+        except(FatalError, RuntimeError):
             return False, None
         finally:
             if inst is not None:
@@ -302,6 +313,8 @@ class IDFDUT(DUT.SerialDUT):
                     'ignore_flash_encryption_efuse_setting': ignore_flash_encryption_efuse_setting,
                     'erase_all': False,
                     'after': 'no_reset',
+                    'force': False,
+                    'chip': esp.CHIP_NAME.lower().replace('-', ''),
                 })
 
                 esp.change_baud(baud_rate)
@@ -567,7 +580,7 @@ class ESP32DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32ROM
+        return targets.ESP32ROM
 
 
 class ESP32S2DUT(IDFDUT):
@@ -576,7 +589,7 @@ class ESP32S2DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32S2ROM
+        return targets.ESP32S2ROM
 
 
 class ESP32S3DUT(IDFDUT):
@@ -585,10 +598,19 @@ class ESP32S3DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32S3ROM
+        return targets.ESP32S3ROM
 
     def erase_partition(self, esp, partition):
         raise NotImplementedError()
+
+
+class ESP32C2DUT(IDFDUT):
+    TARGET = 'esp32c2'
+    TOOLCHAIN_PREFIX = 'riscv32-esp-elf-'
+
+    @classmethod
+    def get_rom(cls):
+        return targets.ESP32C2ROM
 
 
 class ESP32C3DUT(IDFDUT):
@@ -597,7 +619,7 @@ class ESP32C3DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32C3ROM
+        return targets.ESP32C3ROM
 
 
 class ESP32C6DUT(IDFDUT):
@@ -606,7 +628,7 @@ class ESP32C6DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32C6BETAROM
+        return targets.ESP32C6BETAROM
 
 
 class ESP32H2DUT(IDFDUT):
@@ -615,7 +637,7 @@ class ESP32H2DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32H2ROM
+        return targets.ESP32H2ROM
 
 
 class ESP8266DUT(IDFDUT):
@@ -624,11 +646,11 @@ class ESP8266DUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP8266ROM
+        return targets.ESP8266ROM
 
 
 def get_target_by_rom_class(cls):
-    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C3DUT, ESP32C6DUT, ESP32H2DUT, ESP8266DUT, IDFQEMUDUT]:
+    for c in [ESP32DUT, ESP32S2DUT, ESP32S3DUT, ESP32C2DUT, ESP32C3DUT, ESP32C6DUT, ESP32H2DUT, ESP8266DUT, IDFQEMUDUT]:
         if c.get_rom() == cls:
             return c.TARGET
     return None
@@ -677,7 +699,7 @@ class IDFQEMUDUT(IDFDUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32ROM
+        return targets.ESP32ROM
 
     @classmethod
     def get_mac(cls, app, port):
@@ -833,7 +855,7 @@ class ESP32C3FPGADUT(IDFFPGADUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32C3ROM
+        return targets.ESP32C3ROM
 
     def erase_partition(self, esp, partition):
         raise NotImplementedError()
@@ -870,7 +892,7 @@ class ESP32S3FPGADUT(IDFFPGADUT):
 
     @classmethod
     def get_rom(cls):
-        return esptool.ESP32S3ROM
+        return targets.ESP32S3ROM
 
     def erase_partition(self, esp, partition):
         raise NotImplementedError()

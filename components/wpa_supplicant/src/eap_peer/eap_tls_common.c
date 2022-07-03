@@ -10,7 +10,7 @@
 
 #include "utils/common.h"
 #include "crypto/sha1.h"
-#include "tls/tls.h"
+#include "crypto/tls.h"
 #include "eap_peer/eap_i.h"
 #include "eap_peer/eap_tls_common.h"
 #include "eap_peer/eap_config.h"
@@ -84,6 +84,11 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 		params->flags |= TLS_CONN_SUITEB;
 	else
 		params->flags &= (~TLS_CONN_SUITEB);
+
+	if (config->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE)
+		params->flags |= TLS_CONN_USE_DEFAULT_CERT_BUNDLE;
+	else
+		params->flags &= (~TLS_CONN_USE_DEFAULT_CERT_BUNDLE);
 }
 
 static int eap_tls_params_from_conf(struct eap_sm *sm,

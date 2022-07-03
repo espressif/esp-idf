@@ -84,6 +84,46 @@ esp_err_t esp_spiffs_format(const char* partition_label);
  */
 esp_err_t esp_spiffs_info(const char* partition_label, size_t *total_bytes, size_t *used_bytes);
 
+/**
+ * Check integrity of SPIFFS
+ *
+ * @param partition_label  Same label as passed to esp_vfs_spiffs_register
+ * @return
+ *          - ESP_OK                  if successful
+ *          - ESP_ERR_INVALID_STATE   if not mounted
+ *          - ESP_FAIL                on error
+ */
+esp_err_t esp_spiffs_check(const char* partition_label);
+
+
+/**
+ * @brief Perform garbage collection in SPIFFS partition
+ *
+ * Call this function to run GC and ensure that at least the given amount of
+ * space is available in the partition. This function will fail with ESP_ERR_NOT_FINISHED
+ * if it is not possible to reclaim the requested space (that is, not enough free
+ * or deleted pages in the filesystem). This function will also fail if it fails to
+ * reclaim the requested space after CONFIG_SPIFFS_GC_MAX_RUNS number of GC iterations.
+ * On one GC iteration, SPIFFS will erase one logical block (4kB). Therefore the value
+ * of CONFIG_SPIFFS_GC_MAX_RUNS should be set at least to the maximum expected size_to_gc,
+ * divided by 4096. For example, if the application expects to make room for a 1MB file and
+ * calls esp_spiffs_gc(label, 1024 * 1024), CONFIG_SPIFFS_GC_MAX_RUNS should be set to
+ * at least 256.
+ * On the other hand, increasing CONFIG_SPIFFS_GC_MAX_RUNS value increases the maximum
+ * amount of time for which any SPIFFS GC or write operation may potentially block.
+ *
+ * @param partition_label  Label of the partition to be garbage-collected.
+ *                         The partition must be already mounted.
+ * @param size_to_gc       The number of bytes that the GC process should attempt
+ *                         to make available.
+ * @return
+ *          - ESP_OK on success
+ *          - ESP_ERR_NOT_FINISHED if GC fails to reclaim the size given by size_to_gc
+ *          - ESP_ERR_INVALID_STATE if the partition is not mounted
+ *          - ESP_FAIL on all other errors
+ */
+esp_err_t esp_spiffs_gc(const char* partition_label, size_t size_to_gc);
+
 #ifdef __cplusplus
 }
 #endif

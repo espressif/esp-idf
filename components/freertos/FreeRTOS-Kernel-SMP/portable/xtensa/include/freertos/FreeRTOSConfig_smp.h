@@ -128,7 +128,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define configUSE_PREEMPTION                            1
 #define configUSE_TASK_PREEMPTION_DISABLE               1
 #define configUSE_TICKLESS_IDLE                         0
-#define configCPU_CLOCK_HZ                              (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#define configCPU_CLOCK_HZ                              (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #define configTICK_RATE_HZ                              CONFIG_FREERTOS_HZ
 #define configMAX_PRIORITIES                            ( 25 )  //This has impact on speed of search for highest priority
 #define configMINIMAL_STACK_SIZE                        ( 768 + configSTACK_OVERHEAD_TOTAL )
@@ -148,7 +148,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #endif
 #define configUSE_CORE_AFFINITY                         1
 #define configRUN_MULTIPLE_PRIORITIES                   1
-#define configUSE_MINIMAL_IDLE_HOOK                     1
+#define configUSE_MINIMAL_IDLE_HOOK                     1   // This is always enabled to call IDF style idle hooks, by can be "--Wl,--wrap" if users enable CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
 
 // ------------- Synchronization Primitives ----------------
 
@@ -164,9 +164,20 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 #define configMAX_TASK_NAME_LEN                         CONFIG_FREERTOS_MAX_TASK_NAME_LEN
 
+#if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
+/* If thread local storage pointer deletion callbacks are registered
+ * then we double the storage space reserved for the thread local
+ * storage pointers in the task TCB. The first half of the storage area
+ * is used to store the TLS pointers themselves while the second half
+ * is used to store the respective deletion callbacks.
+ */
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS         ( CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS * 2 )
+#else
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS         CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+#endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 #define configSTACK_DEPTH_TYPE                          uint32_t
 #define configUSE_NEWLIB_REENTRANT                      1
+#define configNEWLIB_REENTRANT_IS_DYNAMIC               1   // IDF Newlib supports dynamic reentrancy. We provide our own __getreent() function
 #define configENABLE_BACKWARD_COMPATIBILITY             0
 #define configASSERT(a)                                 assert(a)
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
@@ -183,8 +194,16 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 // ------------------------ Hooks --------------------------
 
+#if CONFIG_FREERTOS_USE_IDLE_HOOK
 #define configUSE_IDLE_HOOK                             1
+#else
+#define configUSE_IDLE_HOOK                             0
+#endif
+#if CONFIG_FREERTOS_USE_TICK_HOOK
 #define configUSE_TICK_HOOK                             1
+#else
+#define configUSE_TICK_HOOK                             0
+#endif
 #if CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE
 #define configCHECK_FOR_STACK_OVERFLOW                  0
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL
@@ -192,7 +211,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY
 #define configCHECK_FOR_STACK_OVERFLOW                  2
 #endif
-#define configRECORD_STACK_HIGH_ADDRESS                 1
+#define configRECORD_STACK_HIGH_ADDRESS                 1   // This must be set as the port requires TCB.pxEndOfStack
 
 // ------------------- Run-time Stats ----------------------
 
@@ -272,8 +291,6 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 #define configTASKLIST_INCLUDE_COREID                   1
 #endif
 
-#define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS     1
-
 #ifndef __ASSEMBLER__
 #if CONFIG_APPTRACE_SV_ENABLE
 extern uint32_t port_switch_flag[];
@@ -285,12 +302,6 @@ extern uint32_t port_switch_flag[];
 
 // ---------------------- Features -------------------------
 
-#ifdef CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-#define configENABLE_TASK_SNAPSHOT                      1
-#else
-#define configENABLE_TASK_SNAPSHOT                      0
-#endif
-
 /* These currently aren't required, but could be useful additions in the future */
 #if 0
 #ifndef configIDLE_TASK_STACK_SIZE
@@ -300,13 +311,6 @@ extern uint32_t port_switch_flag[];
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                1
 #else
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                0
-#endif
-
-#ifndef __ASSEMBLER__
-#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-extern void vPortCleanUpTCB ( void *pxTCB );
-#define portCLEAN_UP_TCB( pxTCB )                       vPortCleanUpTCB( pxTCB )
-#endif
 #endif
 #endif //0
 

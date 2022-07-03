@@ -1,12 +1,13 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+import io
 import os
 import queue
-import subprocess
-import sys
 import tempfile
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 from typing import Generator
 
-from .constants import COREDUMP_SCRIPT, TAG_KEY
+from .constants import TAG_KEY
 from .logger import Logger
 from .output_helpers import yellow_print
 from .web_socket_client import WebSocketClient
@@ -46,46 +47,45 @@ class CoreDump:
         if self._decode_coredumps != COREDUMP_DECODE_INFO:
             raise NotImplementedError('process_coredump: %s not implemented' % self._decode_coredumps)
         coredump_file = None
-        try:
-            # On Windows, the temporary file can't be read unless it is closed.
-            # Set delete=False and delete the file manually later.
-            with tempfile.NamedTemporaryFile(mode='wb', delete=False) as coredump_file:
-                coredump_file.write(self._coredump_buffer)
-                coredump_file.flush()
+        # On Windows, the temporary file can't be read unless it is closed.
+        # Set delete=False and delete the file manually later.
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as coredump_file:
+            coredump_file.write(self._coredump_buffer)
+            coredump_file.flush()
 
-            if self.websocket_client:
-                self.logger.output_enabled = True
-                yellow_print('Communicating through WebSocket')
-                self.websocket_client.send({'event': 'coredump',
-                                            'file': coredump_file.name,
-                                            'prog': self.elf_file})
-                yellow_print('Waiting for debug finished event')
-                self.websocket_client.wait([('event', 'debug_finished')])
-                yellow_print('Communications through WebSocket is finished')
-            else:
-                cmd = [sys.executable,
-                       COREDUMP_SCRIPT,
-                       'info_corefile',
-                       '--core', coredump_file.name,
-                       '--core-format', 'b64',
-                       self.elf_file
-                       ]
-                output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-                self.logger.output_enabled = True
-                self.logger.print(output)  # noqa: E999
-                self.logger.output_enabled = False  # Will be reenabled in check_coredump_trigger_after_print
-        except subprocess.CalledProcessError as e:
-            yellow_print('Failed to run espcoredump script: {}\n{}\n\n'.format(e, e.output))
+        if self.websocket_client:
             self.logger.output_enabled = True
-            self.logger.print(COREDUMP_UART_START + b'\n')
-            self.logger.print(self._coredump_buffer)
-            # end line will be printed in handle_serial_input
-        finally:
-            if coredump_file is not None:
-                try:
-                    os.unlink(coredump_file.name)
-                except OSError as e:
-                    yellow_print('Couldn\'t remote temporary core dump file ({})'.format(e))
+            yellow_print('Communicating through WebSocket')
+            self.websocket_client.send({'event': 'coredump',
+                                        'file': coredump_file.name,
+                                        'prog': self.elf_file})
+            yellow_print('Waiting for debug finished event')
+            self.websocket_client.wait([('event', 'debug_finished')])
+            yellow_print('Communications through WebSocket is finished')
+        else:
+            try:
+                import esp_coredump
+            except ImportError as e:
+                yellow_print('Failed to parse core dump info: '
+                             'Module {} is not installed \n\n'.format(e.name))
+                self.logger.output_enabled = True
+                self.logger.print(COREDUMP_UART_START + b'\n')
+                self.logger.print(self._coredump_buffer)
+                # end line will be printed in handle_serial_input
+            else:
+                coredump = esp_coredump.CoreDump(core=coredump_file.name, core_format='b64', prog=self.elf_file)
+                f = io.StringIO()
+                with redirect_stdout(f):
+                    coredump.info_corefile()
+                output = f.getvalue()
+                self.logger.output_enabled = True
+                self.logger.print(output.encode('utf-8'))
+                self.logger.output_enabled = False  # Will be reenabled in check_coredump_trigger_after_print
+        if coredump_file is not None:
+            try:
+                os.unlink(coredump_file.name)
+            except OSError as e:
+                yellow_print('Couldn\'t remote temporary core dump file ({})'.format(e))
 
     def _check_coredump_trigger_before_print(self, line):  # type: (bytes) -> None
         if self._decode_coredumps == COREDUMP_DECODE_DISABLE:

@@ -1,4 +1,3 @@
-
 # Encrypted Binary OTA
 
 This example demonstrates OTA updates with pre-encrypted binary using `esp_encrypted_img` component's APIs and tool.

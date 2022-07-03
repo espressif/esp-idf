@@ -1,4 +1,5 @@
 set(include_dirs
+    include
     include/apps
     include/apps/sntp
     lwip/src/include
@@ -85,7 +86,9 @@ set(srcs
     "port/esp32/hooks/lwip_default_hooks.c"
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
-    "port/esp32/netif/wlanif.c")
+    "port/esp32/sockets_ext.c"
+    "port/esp32/netif/wlanif.c"
+    "port/esp32/netif/esp_pbuf_ref.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
     list(APPEND srcs
@@ -160,14 +163,9 @@ idf_component_register(SRCS "${srcs}"
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
 
 set_source_files_properties(
-    lwip/src/netif/ppp/ppp.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-uninitialized
-    )
-set_source_files_properties(
     lwip/src/netif/ppp/pppos.c
     PROPERTIES COMPILE_FLAGS
-    -Wno-implicit-fallthrough
+    -Wno-type-limits
     )
 # "comparison is always false due to limited range of data type" warning
 # when setting CONFIG_LWIP_TCP_WND_DEFAULT to 65535

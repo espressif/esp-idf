@@ -96,7 +96,7 @@ void app_main(void)
     g_index = 0;
     gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
     };
@@ -116,6 +116,7 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, raw_val));
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_enable(gptimer));
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
     while (1) {

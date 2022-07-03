@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include "hal/cpu_hal.h"
 #include "compare_set.h"
+#include "soc/soc.h"
 
 #if __XTENSA__
 #include "xtensa/xtruntime.h"
@@ -35,6 +36,19 @@ typedef struct {
     NEED_VOLATILE_MUX uint32_t owner;
     NEED_VOLATILE_MUX uint32_t count;
 }spinlock_t;
+
+#if (CONFIG_SPIRAM)
+/**
+ * @brief Check if the pointer is on external ram
+ * @param p pointer
+ * @return true: on external ram; false: not on external ram
+ */
+static inline bool __attribute__((always_inline)) spinlock_ptr_external_ram(const void *p)
+{
+    //On esp32, this external virtual address rergion is for psram
+    return ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
+}
+#endif
 
 /**
  * @brief Initialize a lock to its default state - unlocked
@@ -94,13 +108,13 @@ static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *l
          */
         result = core_id;
 
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
-        if (esp_ptr_external_ram(lock)) {
+#if (CONFIG_SPIRAM)
+        if (spinlock_ptr_external_ram(lock)) {
             compare_and_set_extram(&lock->owner, SPINLOCK_FREE, &result);
         } else {
 #endif
         compare_and_set_native(&lock->owner, SPINLOCK_FREE, &result);
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if (CONFIG_SPIRAM)
         }
 #endif
         if(result != other_core_id) {

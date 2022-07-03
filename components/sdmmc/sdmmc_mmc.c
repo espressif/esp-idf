@@ -47,7 +47,6 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
         goto out;
     }
     card_type = ext_csd[EXT_CSD_CARD_TYPE];
-
     card->is_ddr = 0;
     if (card_type & EXT_CSD_CARD_TYPE_F_52M_1_8V) {
         card->max_freq_khz = SDMMC_FREQ_52M;
@@ -237,33 +236,65 @@ esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8
     return err;
 }
 
-esp_err_t sdmmc_init_mmc_check_csd(sdmmc_card_t* card)
+esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
 {
-    esp_err_t err;
-    assert(card->is_mem == 1);
-    assert(card->rca != 0);
-    //The card will not respond to send_csd command in the transfer state.
-    //Deselect it first.
-    err = sdmmc_send_cmd_select_card(card, 0);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: select_card returned 0x%x", __func__, err);
-        return err;
+    assert(card->is_mem == 1 && card->rca != 0);
+
+    /*
+     * Integrity check required if card switched to HS mode
+     * card->max_freq_khz = MIN(card->max_freq_khz, card->host.max_freq_khz)
+     * For 26MHz limit background see sdmmc_mmc_enable_hs_mode()
+     */
+    if (card->max_freq_khz <= SDMMC_FREQ_26M) {
+        return ESP_OK;
     }
 
-    sdmmc_csd_t csd;
-    /* Get the contents of CSD register to verify the communication over CMD line
-       is OK. */
-    err = sdmmc_send_cmd_send_csd(card, &csd);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: send_csd returned 0x%x", __func__, err);
-        return err;
+    /* ensure EXT_CSD buffer is available before starting any SD-card operation */
+    uint8_t* ext_csd = heap_caps_malloc(EXT_CSD_MMC_SIZE, MALLOC_CAP_DMA);
+    if (!ext_csd) {
+        ESP_LOGE(TAG, "%s: could not allocate ext_csd", __func__);
+        return ESP_ERR_NO_MEM;
     }
 
-    //Select the card again
-    err = sdmmc_send_cmd_select_card(card, card->rca);
+    /* ensure card is in transfer state before read ext_csd */
+    uint32_t status;
+    esp_err_t err = sdmmc_send_cmd_send_status(card, &status);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: select_card returned 0x%x", __func__, err);
-        return err;
+        ESP_LOGE(TAG, "%s: send_status returned 0x%x", __func__, err);
+        goto out;
     }
-    return ESP_OK;
+    status = ((status & MMC_R1_CURRENT_STATE_MASK) >> MMC_R1_CURRENT_STATE_POS);
+    if (status != MMC_R1_CURRENT_STATE_TRAN) {
+        ESP_LOGE(TAG, "%s: card not in transfer state", __func__);
+        err = ESP_ERR_INVALID_STATE;
+        goto out;
+    }
+
+    /* read EXT_CSD to ensure device works fine in HS mode */
+    err = sdmmc_mmc_send_ext_csd_data(card, ext_csd, EXT_CSD_MMC_SIZE);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: send_ext_csd_data error 0x%x", __func__, err);
+        goto out;
+    }
+
+    /* EXT_CSD static fields should match the previous read values in sdmmc_card_init */
+    if ((card->ext_csd.rev != ext_csd[EXT_CSD_REV]) ||
+            (card->ext_csd.sec_feature != ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT])) {
+        ESP_LOGE(TAG, "%s: Data integrity test fail in HS mode", __func__);
+        err = ESP_FAIL;
+    }
+
+out:
+    free(ext_csd);
+    return err;
+}
+
+uint32_t sdmmc_mmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb)
+{
+    /* TODO: calculate erase timeout based on ext_csd (trim_timeout) */
+    uint32_t timeout_ms = SDMMC_SD_DISCARD_TIMEOUT * erase_size_kb / card->csd.sector_size;
+    timeout_ms = MAX(1000, timeout_ms);
+    ESP_LOGD(TAG, "%s: erase timeout %u s (erasing %u kB, %ums per sector)",
+             __func__, timeout_ms / 1000, erase_size_kb, SDMMC_SD_DISCARD_TIMEOUT);
+    return timeout_ms;
 }

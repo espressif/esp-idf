@@ -4,21 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
+#include "utils/includes.h"
+#include "utils/common.h"
+#include "common/defs.h"
 
 #include "esp_dpp_i.h"
 #include "esp_dpp.h"
 #include "esp_wpa.h"
-#include "esp_timer.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
 
 #ifdef CONFIG_DPP
-static TaskHandle_t s_dpp_task_hdl = NULL;
+static void *s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
@@ -27,8 +25,8 @@ static int s_dpp_auth_retries;
 struct esp_dpp_context_t s_dpp_ctx;
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
 
-#define DPP_API_LOCK() xSemaphoreTakeRecursive(s_dpp_api_lock, portMAX_DELAY)
-#define DPP_API_UNLOCK() xSemaphoreGiveRecursive(s_dpp_api_lock)
+#define DPP_API_LOCK() os_mutex_lock(s_dpp_api_lock)
+#define DPP_API_UNLOCK() os_mutex_unlock(s_dpp_api_lock)
 
 struct action_rx_param {
     u8 sa[ETH_ALEN];
@@ -55,7 +53,7 @@ static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
         ret = ESP_ERR_DPP_FAILURE;
         goto end;
     }
-    if (xQueueSend(s_dpp_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
+    if (os_queue_send(s_dpp_evt_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
         DPP_API_UNLOCK();
         ret = ESP_ERR_DPP_FAILURE;
         goto end;
@@ -348,10 +346,8 @@ static void esp_dpp_task(void *pvParameters )
     bool task_del = false;
 
     for (;;) {
-        if (xQueueReceive(s_dpp_evt_queue, &evt, portMAX_DELAY) == pdTRUE) {
-            if (evt->id < SIG_DPP_MAX) {
-                DPP_API_LOCK();
-            } else {
+        if (os_queue_recv(s_dpp_evt_queue, &evt, OS_BLOCK) == TRUE) {
+            if (evt->id >= SIG_DPP_MAX) {
                 os_free(evt);
                 continue;
             }
@@ -394,7 +390,6 @@ static void esp_dpp_task(void *pvParameters )
             }
 
             os_free(evt);
-            DPP_API_UNLOCK();
 
             if (task_del) {
                 break;
@@ -402,16 +397,16 @@ static void esp_dpp_task(void *pvParameters )
         }
     }
 
-    vQueueDelete(s_dpp_evt_queue);
+    os_queue_delete(s_dpp_evt_queue);
     s_dpp_evt_queue = NULL;
 
     if (s_dpp_api_lock) {
-        vSemaphoreDelete(s_dpp_api_lock);
+        os_semphr_delete(s_dpp_api_lock);
         s_dpp_api_lock = NULL;
     }
 
     /* At this point, we completed */
-    vTaskDelete(NULL);
+    os_task_delete(NULL);
 }
 
 int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel)
@@ -559,27 +554,9 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         }
     }
 
-    if (key) {
-        params->key_len = strlen(key);
-        if (params->key_len) {
-            char prefix[] = "30310201010420";
-            char postfix[] = "a00a06082a8648ce3d030107";
-
-            params->key = os_zalloc(params->key_len +
-                                    sizeof(prefix) + sizeof(postfix));
-            if (!params->key) {
-                os_free(command);
-                ret = ESP_ERR_NO_MEM;
-                goto fail;
-            }
-            sprintf(params->key, "%s%s%s", prefix, key, postfix);
-        }
-    }
-
-    sprintf(command, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
+    os_snprintf(command, 1200, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
             MAC2STR(params->mac), uri_chan_list,
-            params->key_len ? "key=" : "",
-            params->key_len ? params->key : "",
+            key ? "key=" : "", key ? key : "",
             params->info_len ? " info=" : "",
             params->info_len ? params->info : "");
 
@@ -589,10 +566,6 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         if (params->info) {
             os_free(params->info);
             params->info = NULL;
-        }
-        if (params->key) {
-            os_free(params->key);
-            params->key = NULL;
         }
         goto fail;
     }
@@ -635,14 +608,14 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
     s_dpp_ctx.dpp_global = dpp_global_init(&cfg);
 
     s_dpp_stop_listening = false;
-    s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
-    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
-    if (ret != pdPASS) {
+    s_dpp_evt_queue = os_queue_create(3, sizeof(dpp_event_t));
+    ret = os_task_create(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
+    if (ret != TRUE) {
         wpa_printf(MSG_ERROR, "DPP: failed to create task");
         return ESP_FAIL;
     }
 
-    s_dpp_api_lock = xSemaphoreCreateRecursiveMutex();
+    s_dpp_api_lock = os_recursive_mutex_create();
     if (!s_dpp_api_lock) {
         esp_supp_dpp_deinit();
         wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API lock");
@@ -666,10 +639,6 @@ void esp_supp_dpp_deinit(void)
     if (params->info) {
         os_free(params->info);
         params->info = NULL;
-    }
-    if (params->key) {
-        os_free(params->key);
-        params->key = NULL;
     }
 
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,

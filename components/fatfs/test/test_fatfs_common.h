@@ -47,6 +47,8 @@ void test_fatfs_ftruncate_file(const char* path);
 
 void test_fatfs_stat(const char* filename, const char* root_dir);
 
+void test_fatfs_mtime_dst(const char* filename, const char* root_dir);
+
 void test_fatfs_utime(const char* filename, const char* root_dir);
 
 void test_fatfs_unlink(const char* filename);
@@ -64,3 +66,5 @@ void test_fatfs_opendir_readdir_rewinddir(const char* dir_prefix);
 void test_fatfs_opendir_readdir_rewinddir_utf_8(const char* dir_prefix);
 
 void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool write);
+
+void test_fatfs_info(const char* base_path, const char* filepath);

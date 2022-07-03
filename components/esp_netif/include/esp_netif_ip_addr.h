@@ -81,25 +81,37 @@ extern "C" {
 #define ESP_IP4ADDR_INIT(a, b, c, d)  { .type = ESP_IPADDR_TYPE_V4, .u_addr = { .ip4 = { .addr = ESP_IP4TOADDR(a, b, c, d) }}};
 #define ESP_IP6ADDR_INIT(a, b, c, d)  { .type = ESP_IPADDR_TYPE_V6, .u_addr = { .ip6 = { .addr = { a, b, c, d }, .zone = 0 }}};
 
+/**
+ * @brief IPv6 address
+ *
+ */
 struct esp_ip6_addr {
-    uint32_t addr[4];
-    uint8_t zone;
+    uint32_t addr[4]; /*!< IPv6 address */
+    uint8_t zone;     /*!< zone ID */
 };
 
+/**
+ * @brief IPv4 address
+ *
+ */
 struct esp_ip4_addr {
-    uint32_t addr;
+    uint32_t addr;  /*!< IPv4 address */
 };
 
 typedef struct esp_ip4_addr esp_ip4_addr_t;
 
 typedef struct esp_ip6_addr esp_ip6_addr_t;
 
+/**
+ * @brief IP address
+ *
+ */
 typedef struct _ip_addr {
     union {
-        esp_ip6_addr_t ip6;
-        esp_ip4_addr_t ip4;
-    } u_addr;
-    uint8_t type;
+        esp_ip6_addr_t ip6; /*!< IPv6 address type */
+        esp_ip4_addr_t ip4; /*!< IPv4 address type */
+    } u_addr;               /*!< IP address union */
+    uint8_t type;           /*!< ipaddress type */
 } esp_ip_addr_t;
 
 typedef enum {

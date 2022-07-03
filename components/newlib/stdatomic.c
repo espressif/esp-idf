@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 
@@ -38,6 +39,16 @@
 
 // Single core SoC: atomics can be implemented using portSET_INTERRUPT_MASK_FROM_ISR
 // and portCLEAR_INTERRUPT_MASK_FROM_ISR, which disables and enables interrupts.
+#if CONFIG_FREERTOS_SMP
+#define _ATOMIC_ENTER_CRITICAL() ({ \
+    unsigned state = portDISABLE_INTERRUPTS(); \
+    state; \
+})
+
+#define _ATOMIC_EXIT_CRITICAL(state)   do { \
+    portRESTORE_INTERRUPTS(state); \
+    } while (0)
+#else // CONFIG_FREERTOS_SMP
 #define _ATOMIC_ENTER_CRITICAL() ({ \
     unsigned state = portSET_INTERRUPT_MASK_FROM_ISR(); \
     state; \
@@ -46,7 +57,7 @@
 #define _ATOMIC_EXIT_CRITICAL(state)   do { \
     portCLEAR_INTERRUPT_MASK_FROM_ISR(state); \
     } while (0)
-
+#endif
 #else // SOC_CPU_CORES_NUM
 
 _Static_assert(HAS_ATOMICS_32, "32-bit atomics should be supported if SOC_CPU_CORES_NUM > 1");
@@ -494,3 +505,18 @@ ATOMIC_LOAD(8, long long unsigned int)
 ATOMIC_STORE(8, long long unsigned int)
 
 #endif // !HAS_ATOMICS_64
+
+// Clang generates calls to the __atomic_load/__atomic_store functions for object size more then 4 bytes
+void CLANG_ATOMIC_SUFFIX( __atomic_load ) (size_t size, const volatile void *src, void *dest, int model) {
+    unsigned state = _ATOMIC_ENTER_CRITICAL();
+    memcpy(dest, (const void *)src, size);
+    _ATOMIC_EXIT_CRITICAL(state);
+}
+CLANG_DECLARE_ALIAS( __atomic_load )
+
+void CLANG_ATOMIC_SUFFIX( __atomic_store ) (size_t size, volatile void *dest, void *src, int model) {
+    unsigned state = _ATOMIC_ENTER_CRITICAL();
+    memcpy((void *)dest, (const void *)src, size);
+    _ATOMIC_EXIT_CRITICAL(state);
+}
+CLANG_DECLARE_ALIAS( __atomic_store)

@@ -59,7 +59,6 @@ api-guides/external-ram
 api-guides/ulp-risc-v
 api-guides/hardware-abstraction
 api-guides/wifi-security
-api-guides/index
 api-guides/openthread
 api-guides/unit-tests-legacy
 api-guides/fatal-errors
@@ -86,17 +85,8 @@ api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/peripherals/adc
 api-reference/peripherals/sdspi_host
-api-reference/peripherals/spi_slave
 api-reference/peripherals/lcd
-api-reference/peripherals/secure_element
-api-reference/peripherals/ledc
 api-reference/peripherals/temp_sensor
-api-reference/peripherals/spi_features
-api-reference/peripherals/spi_slave_hd
-api-reference/peripherals/i2c
-api-reference/peripherals/dedic_gpio
-api-reference/peripherals/spi_master
-api-reference/peripherals/index
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth
@@ -114,7 +104,6 @@ api-reference/system/ota
 api-reference/system/app_trace
 api-reference/system/perfmon
 api-reference/system/esp_function_with_shared_stack
-api-reference/system/efuse
 api-reference/system/async_memcpy
 api-reference/system/random
 api-reference/system/esp_timer
@@ -156,6 +145,7 @@ api-reference/bluetooth/esp_a2dp
 api-reference/bluetooth/esp_blufi
 api-reference/bluetooth/bt_le
 api-reference/bluetooth/esp_hf_defs
+api-reference/bluetooth/esp_hidd
 api-reference/bluetooth/esp_gap_bt
 api-reference/bluetooth/esp_gatt_defs
 api-reference/bluetooth/esp-ble-mesh
@@ -163,7 +153,6 @@ api-reference/bluetooth/index
 api-reference/bluetooth/esp_gap_ble
 api-reference/bluetooth/classic_bt
 api-reference/error-codes
-api-reference/index
 api-reference/protocols/icmp_echo
 api-reference/protocols/esp_serial_slave_link
 api-reference/protocols/mqtt
@@ -176,13 +165,10 @@ api-reference/protocols/esp_http_client
 api-reference/protocols/esp_https_server
 api-reference/protocols/openssl_apis
 api-reference/protocols/esp_spi_slave_protocol
-api-reference/protocols/modbus
 api-reference/protocols/esp_tls
 api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
-security/flash-encryption
-security/secure-boot-v2
 get-started/establish-serial-connection
 get-started/macos-setup-scratch
 get-started/vscode-setup

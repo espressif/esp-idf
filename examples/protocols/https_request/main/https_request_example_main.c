@@ -1,26 +1,18 @@
-/* HTTPS GET Example using plain mbedTLS sockets
+/*
+ * HTTPS GET Example using plain Mbed TLS sockets
  *
  * Contacts the howsmyssl.com API via TLS v1.2 and reads a JSON
  * response.
  *
- * Adapted from the ssl_client1 example in mbedtls.
+ * Adapted from the ssl_client1 example in Mbed TLS.
  *
- * Original Copyright (C) 2006-2016, ARM Limited, All Rights Reserved, Apache 2.0 License.
- * Additions Copyright (C) Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD, Apache 2.0 License.
+ * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-FileContributor: 2015-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -32,6 +24,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "protocol_examples_common.h"
@@ -45,7 +38,10 @@
 #include "lwip/dns.h"
 
 #include "esp_tls.h"
+#include "sdkconfig.h"
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
+#endif
 #include "time_sync.h"
 
 /* Constants that aren't configurable in menuconfig */
@@ -89,7 +85,7 @@ extern const uint8_t local_server_cert_pem_start[] asm("_binary_local_server_cer
 extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cert_pem_end");
 
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
-esp_tls_client_session_t *tls_client_session = NULL;
+static esp_tls_client_session_t *tls_client_session = NULL;
 static bool save_client_session = false;
 #endif
 
@@ -98,22 +94,27 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
     char buf[512];
     int ret, len;
 
-    struct esp_tls *tls = esp_tls_conn_http_new(WEB_SERVER_URL, &cfg);
+    esp_tls_t *tls = esp_tls_init();
+    if (!tls) {
+        ESP_LOGE(TAG, "Failed to allocate esp_tls handle!");
+        goto exit;
+    }
 
-    if (tls != NULL) {
+    if (esp_tls_conn_http_new_sync(WEB_SERVER_URL, &cfg, tls) == 1) {
         ESP_LOGI(TAG, "Connection established...");
     } else {
         ESP_LOGE(TAG, "Connection failed...");
-        goto exit;
+        goto cleanup;
     }
 
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
     /* The TLS session is successfully established, now saving the session ctx for reuse */
     if (save_client_session) {
-        free(tls_client_session);
+        esp_tls_free_client_session(tls_client_session);
         tls_client_session = esp_tls_get_client_session(tls);
     }
 #endif
+
     size_t written_bytes = 0;
     do {
         ret = esp_tls_conn_write(tls,
@@ -124,27 +125,22 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
             written_bytes += ret;
         } else if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_LOGE(TAG, "esp_tls_conn_write  returned: [0x%02X](%s)", ret, esp_err_to_name(ret));
-            goto exit;
+            goto cleanup;
         }
     } while (written_bytes < strlen(REQUEST));
 
     ESP_LOGI(TAG, "Reading HTTP response...");
-
     do {
         len = sizeof(buf) - 1;
-        bzero(buf, sizeof(buf));
+        memset(buf, 0x00, sizeof(buf));
         ret = esp_tls_conn_read(tls, (char *)buf, len);
 
         if (ret == ESP_TLS_ERR_SSL_WANT_WRITE  || ret == ESP_TLS_ERR_SSL_WANT_READ) {
             continue;
-        }
-
-        if (ret < 0) {
+        } else if (ret < 0) {
             ESP_LOGE(TAG, "esp_tls_conn_read  returned [-0x%02X](%s)", -ret, esp_err_to_name(ret));
             break;
-        }
-
-        if (ret == 0) {
+        } else if (ret == 0) {
             ESP_LOGI(TAG, "connection closed");
             break;
         }
@@ -158,14 +154,16 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
         putchar('\n'); // JSON output doesn't have a newline at end
     } while (1);
 
-exit:
+cleanup:
     esp_tls_conn_destroy(tls);
+exit:
     for (int countdown = 10; countdown >= 0; countdown--) {
         ESP_LOGI(TAG, "%d...", countdown);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void https_get_request_using_crt_bundle(void)
 {
     ESP_LOGI(TAG, "https_request using crt bundle");
@@ -174,8 +172,7 @@ static void https_get_request_using_crt_bundle(void)
     };
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
 }
-
-
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 static void https_get_request_using_cacert_buf(void)
 {
@@ -223,7 +220,7 @@ static void https_get_request_using_already_saved_session(const char *url)
         .client_session = tls_client_session,
     };
     https_get_request(cfg, url, LOCAL_SRV_REQUEST);
-    free(tls_client_session);
+    esp_tls_free_client_session(tls_client_session);
     save_client_session = false;
     tls_client_session = NULL;
 }
@@ -255,8 +252,10 @@ static void https_request_task(void *pvparameters)
     https_get_request_using_already_saved_session(server_url);
 #endif
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_get_request_using_crt_bundle();
-    printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
+#endif
+    ESP_LOGI(TAG, "Minimum free heap size: %d bytes", esp_get_minimum_free_heap_size());
     https_get_request_using_cacert_buf();
     https_get_request_using_global_ca_store();
     ESP_LOGI(TAG, "Finish https_request example");
@@ -265,7 +264,7 @@ static void https_request_task(void *pvparameters)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
+    ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 

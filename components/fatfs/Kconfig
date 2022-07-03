@@ -180,8 +180,6 @@ menu "FAT Filesystem support"
 
         config FATFS_API_ENCODING_ANSI_OEM
             bool "API uses ANSI/OEM encoding"
-        config FATFS_API_ENCODING_UTF_16
-            bool "API uses UTF-16 encoding"
         config FATFS_API_ENCODING_UTF_8
             bool "API uses UTF-8 encoding"
     endchoice

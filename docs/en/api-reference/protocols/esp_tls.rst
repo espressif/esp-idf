@@ -8,7 +8,9 @@ The ESP-TLS component provides a simplified API interface for accessing the comm
 It supports common scenarios like CA certification validation, SNI, ALPN negotiation, non-blocking connection among others.
 All the configuration can be specified in the ``esp_tls_cfg_t`` data structure. Once done, TLS communication can be conducted using the following APIs:
 
-    * :cpp:func:`esp_tls_conn_new`: for opening a new TLS connection.
+    * :cpp:func:`esp_tls_init`: for initializing the TLS connection handle.
+    * :cpp:func:`esp_tls_conn_new_sync`: for opening a new blocking TLS connection.
+    * :cpp:func:`esp_tls_conn_new_async`: for opening a new non-blocking TLS connection.
     * :cpp:func:`esp_tls_conn_read`: for reading from the connection.
     * :cpp:func:`esp_tls_conn_write`: for writing into the connection.
     * :cpp:func:`esp_tls_conn_destroy`: for freeing up the connection.
@@ -37,6 +39,8 @@ Tree structure for ESP-TLS component
 The ESP-TLS  component has a file :component_file:`esp-tls/esp_tls.h` which contain the public API headers for the component. Internally ESP-TLS component uses one
 of the two SSL/TLS Libraries between mbedtls and wolfssl for its operation. API specific to mbedtls are present in :component_file:`esp-tls/private_include/esp_tls_mbedtls.h` and API
 specific to wolfssl are present in :component_file:`esp-tls/private_include/esp_tls_wolfssl.h`.
+
+.. _esp_tls_server_verification:
 
 TLS Server verification
 -----------------------
@@ -175,3 +179,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_tls.inc
+.. include-build-file:: inc/esp_tls_errors.inc

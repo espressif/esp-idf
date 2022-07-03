@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/timer_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
@@ -14,13 +15,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Frequency of the clock on the input of the timer groups
- * @note  This macro is not correct for Timer Groups with multiple clock sources (e.g. APB, XTAL)
- *        So please don't use it in your application, we keep it here only for backward compatible
- */
-#define TIMER_BASE_CLK _Pragma ("GCC warning \"'TIMER_BASE_CLK' macro is deprecated\"") APB_CLK_FREQ
 
 /**
  * @brief Timer-Group ID
@@ -105,12 +99,7 @@ typedef enum {
 /**
  * @brief Timer group clock source
  */
-typedef enum {
-    TIMER_SRC_CLK_APB = GPTIMER_CLK_SRC_APB,   /*!< Select APB as the source clock*/
-#if SOC_TIMER_GROUP_SUPPORT_XTAL
-    TIMER_SRC_CLK_XTAL = GPTIMER_CLK_SRC_XTAL, /*!< Select XTAL as the source clock*/
-#endif
-} timer_src_clk_t;
+typedef soc_periph_tg_clk_src_legacy_t timer_src_clk_t;
 
 /**
  * @brief Interrupt handler callback function

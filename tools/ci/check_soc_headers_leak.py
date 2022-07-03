@@ -16,7 +16,7 @@ allowed_soc_headers = (
     'soc/soc_caps.h',
     'soc/reset_reasons.h',
     'soc/reg_base.h',
-    'soc/efuse_periph.h',  # 'soc/efuse_periph.h' should not be allowed , remove it from the list in IDF-1256
+    'soc/clk_tree_defs.h',
 )
 
 include_header_pattern = re.compile(r'[\s]*#[\s]*include ["<](.*)[">].*')

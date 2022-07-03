@@ -50,6 +50,8 @@ typedef enum {
     BTC_HF_CLIENT_REQUEST_LAST_VOICE_TAG_NUMBER_EVT,
     BTC_HF_CLIENT_REGISTER_DATA_CALLBACK_EVT,
     BTC_HF_CLIENT_SEND_NREC_EVT,
+    BTC_HF_CLIENT_SEND_XAPL_EVT,
+    BTC_HF_CLIENT_SEND_IPHONEACCEV_EVT,
 } btc_hf_client_act_t;
 
 /* btc_hf_client_args_t */
@@ -103,6 +105,18 @@ typedef union {
         esp_hf_client_incoming_data_cb_t recv;
         esp_hf_client_outgoing_data_cb_t send;
     } reg_data_cb;
+
+    //BTC_HF_CLIENT_SEND_XAPL_EVT
+    struct send_xapl_args {
+        char information[ESP_BT_HF_AT_SEND_XAPL_LEN + 1];
+        uint32_t features;
+    } send_xapl;
+
+    // BTC_HF_CLIENT_SEND_IPHONEACCEV_EVT
+    struct send_iphoneaccev_args {
+        uint32_t bat_level;
+        bool docked;
+    } send_iphoneaccev;
 } btc_hf_client_args_t;
 
 /************************************************************************************

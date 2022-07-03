@@ -4,18 +4,25 @@
 
 ESP-IDF is the development framework for Espressif SoCs supported on Windows, Linux and macOS.
 
+# ESP-IDF Release Support Schedule
+
+![Support Schedule](https://dl.espressif.com/dl/esp-idf/support-periods.svg)
+
+- Please read [the support policy](SUPPORT_POLICY.md) and [the documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) for more information about ESP-IDF versions.
+- Please see the [End-of-Life Advisories](https://www.espressif.com/en/support/documents/advisories?keys=&field_type_of_advisory_tid%5B%5D=817) for information about ESP-IDF releases with discontinued support.
+
 # ESP-IDF Release and SoC Compatibility
 
 The following table shows ESP-IDF support of Espressif SoCs where ![alt text][preview] and ![alt text][supported] denote preview status and support, respectively. The preview support is usually limited in time and intended for beta versions of chips. Please use an ESP-IDF release where the desired SoC is already supported.
 
-|Chip         |         v3.3           |           v4.1         |          v4.2          |         v4.3           |          v4.4          |          v5.0          |                                                            |
-|:----------- |:---------------------: | :---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:---------------------------------------------------------- |
-|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
-|ESP32-S2     |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
-|ESP32-C3     |                        |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
-|ESP32-S3     |                        |                        |                        | ![alt text][preview]   | ![alt text][supported] | ![alt text][supported] | [Announcement](https://www.espressif.com/en/news/ESP32_S3) |
-|ESP32-H2     |                        |                        |                        |                        | ![alt text][preview]   | ![alt text][preview]   | [Announcement](https://www.espressif.com/en/news/ESP32_H2) |
-|ESP32-C2     |                        |                        |                        |                        |                        | ![alt text][preview]   |                                                            |
+|Chip         |          v4.1         |          v4.2          |         v4.3           |          v4.4          |          v5.0          |                                                                                      |
+|:----------- |:---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:------------------------------------------------------------------------------------ |
+|ESP32        |![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                                      |
+|ESP32-S2     |                       | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                                      |
+|ESP32-C3     |                       |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                                                      |
+|ESP32-S3     |                       |                        |                        | ![alt text][supported] | ![alt text][supported] | [Announcement](https://www.espressif.com/en/news/ESP32_S3)                           |
+|ESP32-C2     |                       |                        |                        |                        | ![alt text][supported] | [Announcement](https://blog.espressif.com/esp32-c2-and-why-it-matter-s-bcf4d7d0b2c6) |
+|ESP32-H2     |                       |                        |                        | ![alt text][preview]   | ![alt text][preview]   | [Announcement](https://www.espressif.com/en/news/ESP32_H2)                           |
 
 [supported]: https://img.shields.io/badge/-supported-green "supported"
 [preview]: https://img.shields.io/badge/-preview-orange "preview"

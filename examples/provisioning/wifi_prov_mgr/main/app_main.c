@@ -32,6 +32,72 @@
 
 static const char *TAG = "app";
 
+#if CONFIG_EXAMPLE_PROV_SECURITY_VERSION_2
+#if CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE
+#define EXAMPLE_PROV_SEC2_USERNAME          "testuser"
+#define EXAMPLE_PROV_SEC2_PWD               "testpassword"
+
+/* This salt,verifier has been generated for username = "testuser" and password = "testpassword"
+ * IMPORTANT NOTE: For production cases, this must be unique to every device
+ * and should come from device manufacturing partition.*/
+static const char sec2_salt[] = {
+    0x2f, 0x3d, 0x3c, 0xf8, 0x0d, 0xbd, 0x0c, 0xa9, 0x6f, 0x30, 0xb4, 0x4d, 0x89, 0xd5, 0x2f, 0x0e
+};
+
+static const char sec2_verifier[] = {
+    0xf2, 0x9f, 0xc1, 0xf5, 0x28, 0x4a, 0x11, 0x74, 0xb4, 0x24, 0x09, 0x23, 0xd8, 0x27, 0xb7, 0x5a,
+    0x95, 0x3a, 0x99, 0xed, 0xf4, 0x6e, 0xe9, 0x8c, 0x4f, 0x07, 0xf2, 0xf5, 0x43, 0x3d, 0x7f, 0x9a,
+    0x11, 0x60, 0x66, 0xaf, 0xcd, 0xa5, 0xf6, 0xfa, 0xcb, 0x06, 0xe9, 0xc5, 0x3f, 0x4d, 0x77, 0x16,
+    0x4c, 0x68, 0x6d, 0x7f, 0x7c, 0xd7, 0xc7, 0x5a, 0x83, 0xc0, 0xfb, 0x94, 0x2d, 0xa9, 0x60, 0xf0,
+    0x09, 0x11, 0xa0, 0xe1, 0x95, 0x33, 0xd1, 0x30, 0x7f, 0x82, 0x1b, 0x1b, 0x0f, 0x6d, 0xf1, 0xdc,
+    0x93, 0x1c, 0x20, 0xa7, 0xc0, 0x8d, 0x48, 0x38, 0xff, 0x46, 0xb9, 0xaf, 0xf7, 0x93, 0x78, 0xae,
+    0xff, 0xb8, 0x3b, 0xdf, 0x99, 0x7b, 0x64, 0x47, 0x02, 0xba, 0x01, 0x39, 0x0f, 0x5c, 0xd8, 0x4e,
+    0x6f, 0xc8, 0xd0, 0x82, 0x7f, 0x2d, 0x33, 0x1a, 0x09, 0x65, 0x77, 0x85, 0xbc, 0x8a, 0x84, 0xe0,
+    0x46, 0x7e, 0x3b, 0x0e, 0x6e, 0x3b, 0xdf, 0x70, 0x17, 0x70, 0x0a, 0xbc, 0x84, 0x67, 0xfa, 0xf9,
+    0x84, 0x53, 0xda, 0xb4, 0xca, 0x38, 0x71, 0xe4, 0x06, 0xf6, 0x7d, 0xc8, 0x32, 0xbb, 0x91, 0x0c,
+    0xe7, 0xd3, 0x59, 0xb6, 0x03, 0xed, 0x8e, 0x0d, 0x91, 0x9c, 0x09, 0xd7, 0x6f, 0xd5, 0xca, 0x55,
+    0xc5, 0x58, 0x0f, 0x95, 0xb5, 0x83, 0x65, 0x6f, 0x2d, 0xbc, 0x94, 0x0f, 0xbb, 0x0f, 0xd3, 0x42,
+    0xa5, 0xfe, 0x15, 0x7f, 0xf9, 0xa8, 0x16, 0xe6, 0x58, 0x9b, 0x4c, 0x0f, 0xd3, 0x83, 0x2c, 0xac,
+    0xe4, 0xbf, 0xa3, 0x96, 0x1e, 0xb6, 0x6f, 0x59, 0xe6, 0xd1, 0x0e, 0xd4, 0x27, 0xb6, 0x05, 0x34,
+    0xec, 0x8c, 0xf8, 0x72, 0xbb, 0x04, 0x7b, 0xa4, 0x49, 0x3d, 0x6d, 0xa9, 0x99, 0xfc, 0x0a, 0x2b,
+    0xd8, 0x46, 0xa8, 0xd1, 0x46, 0x61, 0x5c, 0x96, 0xd2, 0x43, 0xcd, 0xea, 0x7f, 0x6a, 0x50, 0x59,
+    0x0d, 0x0e, 0xa1, 0xb3, 0x94, 0x5a, 0x34, 0xe0, 0x1e, 0x95, 0x56, 0x68, 0xb4, 0xbc, 0xf1, 0x08,
+    0x54, 0xcb, 0x42, 0x41, 0xc6, 0x78, 0xad, 0x71, 0x84, 0x1c, 0x29, 0xb8, 0x33, 0x79, 0x1c, 0x10,
+    0xdd, 0x07, 0xc8, 0x91, 0x21, 0x85, 0x89, 0x76, 0xd7, 0x37, 0xdf, 0x5b, 0x19, 0x33, 0x4e, 0x17,
+    0x67, 0x02, 0x0f, 0x1b, 0xb9, 0x2f, 0xa4, 0xdc, 0xdd, 0x75, 0x32, 0x96, 0x87, 0xdd, 0x66, 0xc3,
+    0x33, 0xc1, 0xfc, 0x4c, 0x27, 0x63, 0xb9, 0x14, 0x72, 0x76, 0x65, 0xb8, 0x90, 0x2b, 0xeb, 0x7a,
+    0xde, 0x71, 0x97, 0xf3, 0x6b, 0xc9, 0x8e, 0xdf, 0xfc, 0x6e, 0x13, 0xcc, 0x1b, 0x2b, 0x54, 0x1a,
+    0x6e, 0x3d, 0xe6, 0x1c, 0xec, 0x5d, 0xa1, 0xf1, 0xd4, 0x86, 0x9d, 0xcd, 0xb9, 0xe8, 0x98, 0xf1,
+    0xe5, 0x16, 0xa5, 0x48, 0xe5, 0xec, 0x12, 0xe8, 0x17, 0xe2, 0x55, 0xb5, 0xb3, 0x7c, 0xce, 0xfd
+};
+#endif
+
+static esp_err_t example_get_sec2_salt(const char **salt, uint16_t *salt_len) {
+#if CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE
+    ESP_LOGI(TAG, "Development mode: using hard coded salt");
+    *salt = sec2_salt;
+    *salt_len = sizeof(sec2_salt);
+    return ESP_OK;
+#elif CONFIG_EXAMPLE_PROV_SEC2_PROD_MODE
+    ESP_LOGE(TAG, "Not implemented!");
+    return ESP_FAIL;
+#endif
+}
+
+static esp_err_t example_get_sec2_verifier(const char **verifier, uint16_t *verifier_len) {
+#if CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE
+    ESP_LOGI(TAG, "Development mode: using hard coded verifier");
+    *verifier = sec2_verifier;
+    *verifier_len = sizeof(sec2_verifier);
+    return ESP_OK;
+#elif CONFIG_EXAMPLE_PROV_SEC2_PROD_MODE
+    /* This code needs to be updated with appropriate implementation to provide verifier */
+    ESP_LOGE(TAG, "Not implemented!");
+    return ESP_FAIL;
+#endif
+}
+#endif
+
 /* Signal Wi-Fi events on this event-group */
 const int WIFI_CONNECTED_EVENT = BIT0;
 static EventGroupHandle_t wifi_event_group;
@@ -140,7 +206,7 @@ esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ss
     return ESP_OK;
 }
 
-static void wifi_prov_print_qr(const char *name, const char *pop, const char *transport)
+static void wifi_prov_print_qr(const char *name, const char *username, const char *pop, const char *transport)
 {
     if (!name || !transport) {
         ESP_LOGW(TAG, "Cannot generate QR code payload. Data missing.");
@@ -148,9 +214,15 @@ static void wifi_prov_print_qr(const char *name, const char *pop, const char *tr
     }
     char payload[150] = {0};
     if (pop) {
+#if CONFIG_EXAMPLE_PROV_SECURITY_VERSION_1
         snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
                     ",\"pop\":\"%s\",\"transport\":\"%s\"}",
                     PROV_QR_VERSION, name, pop, transport);
+#elif CONFIG_EXAMPLE_PROV_SECURITY_VERSION_2
+        snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
+                    ",\"username\":\"%s\",\"pop\":\"%s\",\"transport\":\"%s\"}",
+                    PROV_QR_VERSION, name, username, pop, transport);
+#endif
     } else {
         snprintf(payload, sizeof(payload), "{\"ver\":\"%s\",\"name\":\"%s\"" \
                     ",\"transport\":\"%s\"}",
@@ -248,11 +320,14 @@ void app_main(void)
         char service_name[12];
         get_device_service_name(service_name, sizeof(service_name));
 
-        /* What is the security level that we want (0 or 1):
+#ifdef CONFIG_EXAMPLE_PROV_SECURITY_VERSION_1
+        /* What is the security level that we want (0, 1, 2):
          *      - WIFI_PROV_SECURITY_0 is simply plain text communication.
          *      - WIFI_PROV_SECURITY_1 is secure communication which consists of secure handshake
          *          using X25519 key exchange and proof of possession (pop) and AES-CTR
          *          for encryption/decryption of messages.
+         *      - WIFI_PROV_SECURITY_2 SRP6a based authentication and key exchange
+         *        + AES-GCM encryption/decryption of messages
          */
         wifi_prov_security_t security = WIFI_PROV_SECURITY_1;
 
@@ -261,7 +336,45 @@ void app_main(void)
          *      - NULL if not used
          */
         const char *pop = "abcd1234";
+        /* This is the structure for passing security parameters
+         * for the protocomm security 1.
+         * This does not need not be static i.e. could be dynamically allocated
+         */
+        wifi_prov_security1_params_t sec1_params = {
+            .data = (const uint8_t *)pop,
+            .len = strlen(pop),
+        };
+        wifi_prov_security1_params_t *sec_params = &sec1_params;
+        const char *username  = NULL;
 
+#elif CONFIG_EXAMPLE_PROV_SECURITY_VERSION_2
+        wifi_prov_security_t security = WIFI_PROV_SECURITY_2;
+        /* The username must be the same one, which has been used in the generation of salt and verifier */
+
+#if CONFIG_EXAMPLE_PROV_SEC2_DEV_MODE
+        /* This pop field represents the password that will be used to generate salt and verifier.
+         * The field is present here in order to generate the QR code containing password.
+         * In production this password field shall not be stored on the device */
+        const char *username  = EXAMPLE_PROV_SEC2_USERNAME;
+        const char *pop = EXAMPLE_PROV_SEC2_PWD;
+#elif CONFIG_EXAMPLE_PROV_SEC2_PROD_MODE
+        /* The username and password shall not be embedded in the firmware,
+         * they should be provided to the user by other means.
+         * e.g. QR code sticker */
+        const char *username  = NULL;
+        const char *pop = NULL;
+#endif
+        /* This is the structure for passing security parameters
+         * for the protocomm security 2.
+         * This does not need not be static i.e. could be dynamically allocated
+         */
+        wifi_prov_security2_params_t sec2_params = {};
+
+        ESP_ERROR_CHECK(example_get_sec2_salt(&sec2_params.salt, &sec2_params.salt_len));
+        ESP_ERROR_CHECK(example_get_sec2_verifier(&sec2_params.verifier, &sec2_params.verifier_len));
+
+        wifi_prov_security2_params_t *sec_params = &sec2_params;
+#endif
         /* What is the service key (could be NULL)
          * This translates to :
          *     - Wi-Fi password when scheme is wifi_prov_scheme_softap
@@ -300,7 +413,8 @@ void app_main(void)
          */
         wifi_prov_mgr_endpoint_create("custom-data");
         /* Start provisioning service */
-        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key));
+
+        ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, (const void *) sec_params, service_name, service_key));
 
         /* The handler for the optional endpoint created above.
          * This call must be made after starting the provisioning, and only if the endpoint
@@ -315,9 +429,9 @@ void app_main(void)
         // wifi_prov_mgr_deinit();
         /* Print QR code for provisioning */
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
-        wifi_prov_print_qr(service_name, pop, PROV_TRANSPORT_BLE);
+        wifi_prov_print_qr(service_name, username, pop, PROV_TRANSPORT_BLE);
 #else /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
-        wifi_prov_print_qr(service_name, pop, PROV_TRANSPORT_SOFTAP);
+        wifi_prov_print_qr(service_name, username, pop, PROV_TRANSPORT_SOFTAP);
 #endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
     } else {
         ESP_LOGI(TAG, "Already provisioned, starting Wi-Fi STA");

@@ -1,5 +1,5 @@
 # Designed to be included from an IDF app's CMakeLists.txt file
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 include(${CMAKE_CURRENT_LIST_DIR}/targets.cmake)
 # Initialize build target for this build using the environment variable or
@@ -37,6 +37,14 @@ if(WARN_UNINITIALIZED)
 else()
     idf_build_set_property(EXTRA_CMAKE_ARGS "")
 endif()
+
+
+# Enable the component manager for regular projects if not explicitly disabled.
+if(NOT "$ENV{IDF_COMPONENT_MANAGER}" EQUAL "0")
+    idf_build_set_property(IDF_COMPONENT_MANAGER 1)
+endif()
+# Set component manager interface version
+idf_build_set_property(__COMPONENT_MANAGER_INTERFACE_VERSION 1)
 
 #
 # Get the project version from either a version file or the Git revision. This is passed
@@ -345,7 +353,7 @@ macro(project project_name)
         # Set the variables that project() normally sets, documented in the
         # command's docs.
         #
-        # https://cmake.org/cmake/help/v3.5/command/project.html
+        # https://cmake.org/cmake/help/v3.16/command/project.html
         #
         # There is some nuance when it comes to setting version variables in terms of whether
         # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original
@@ -358,6 +366,8 @@ macro(project project_name)
         set(PROJECT_VERSION_MINOR "${PROJECT_VERSION_MINOR}" PARENT_SCOPE)
         set(PROJECT_VERSION_PATCH "${PROJECT_VERSION_PATCH}" PARENT_SCOPE)
         set(PROJECT_VERSION_TWEAK "${PROJECT_VERSION_TWEAK}" PARENT_SCOPE)
+        set(PROJECT_DESCRIPTION "${PROJECT_DESCRIPTION}" PARENT_SCOPE)
+        set(PROJECT_HOMEPAGE_URL "${PROJECT_HOMEPAGE_URL}" PARENT_SCOPE)
 
         set(${PROJECT_NAME}_BINARY_DIR "${${PROJECT_NAME}_BINARY_DIR}" PARENT_SCOPE)
         set(${PROJECT_NAME}_SOURCE_DIR "${${PROJECT_NAME}_SOURCE_DIR}" PARENT_SCOPE)
@@ -366,6 +376,8 @@ macro(project project_name)
         set(${PROJECT_NAME}_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}" PARENT_SCOPE)
         set(${PROJECT_NAME}_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}" PARENT_SCOPE)
         set(${PROJECT_NAME}_VERSION_TWEAK "${${PROJECT_NAME}_VERSION_TWEAK}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_DESCRIPTION "${${PROJECT_NAME}_DESCRIPTION}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_HOMEPAGE_URL "${${PROJECT_NAME}_HOMEPAGE_URL}" PARENT_SCOPE)
     endfunction()
 
     # Prepare the following arguments for the idf_build_process() call using external
@@ -439,8 +451,10 @@ macro(project project_name)
         __component_get_target(main_target idf::main)
         __component_get_property(reqs ${main_target} REQUIRES)
         __component_get_property(priv_reqs ${main_target} PRIV_REQUIRES)
-        idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
-        if(reqs STREQUAL common_reqs AND NOT priv_reqs) #if user has not set any requirements
+        __component_get_property(managed_reqs ${main_target} MANAGED_REQUIRES)
+        __component_get_property(managed_priv_reqs ${main_target} MANAGED_PRIV_REQUIRES)
+        #if user has not set any requirements, except ones added with the component manager
+        if((NOT reqs OR reqs STREQUAL managed_reqs) AND (NOT priv_reqs OR priv_reqs STREQUAL managed_priv_reqs))
             if(test_components)
                 list(REMOVE_ITEM build_components ${test_components})
             endif()
@@ -467,30 +481,44 @@ macro(project project_name)
     add_dependencies(${project_elf} _project_elf_src)
 
     if(__PROJECT_GROUP_LINK_COMPONENTS)
-        target_link_libraries(${project_elf} "-Wl,--start-group")
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--start-group")
     endif()
 
     if(test_components)
-        target_link_libraries(${project_elf} "-Wl,--whole-archive")
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--whole-archive")
         foreach(test_component ${test_components})
             if(TARGET ${test_component})
-                target_link_libraries(${project_elf} ${test_component})
+                target_link_libraries(${project_elf} PRIVATE ${test_component})
             endif()
         endforeach()
-        target_link_libraries(${project_elf} "-Wl,--no-whole-archive")
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--no-whole-archive")
     endif()
 
     idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
     if(test_components)
         list(REMOVE_ITEM build_components ${test_components})
     endif()
-    target_link_libraries(${project_elf} ${build_components})
+
+    foreach(build_component ${build_components})
+        __component_get_target(build_component_target ${build_component})
+        __component_get_property(whole_archive ${build_component_target} WHOLE_ARCHIVE)
+        if(whole_archive)
+            message(STATUS "Component ${build_component} will be linked with -Wl,--whole-archive")
+            target_link_libraries(${project_elf} PRIVATE
+                                  "-Wl,--whole-archive"
+                                   ${build_component}
+                                   "-Wl,--no-whole-archive")
+        else()
+            target_link_libraries(${project_elf} PRIVATE ${build_component})
+        endif()
+    endforeach()
+
 
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
         set(mapfile "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map")
         set(idf_target "${IDF_TARGET}")
         string(TOUPPER ${idf_target} idf_target)
-        target_link_libraries(${project_elf} "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
+        target_link_libraries(${project_elf} PRIVATE "-Wl,--cref" "-Wl,--defsym=IDF_TARGET_${idf_target}=0"
         "-Wl,--Map=\"${mapfile}\"")
         unset(idf_target)
     endif()

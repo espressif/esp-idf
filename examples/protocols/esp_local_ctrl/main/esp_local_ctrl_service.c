@@ -181,7 +181,7 @@ void start_esp_local_ctrl_service(void)
         .proto_sec = {
             .version = 0,
             .custom_handle = NULL,
-            .pop = NULL,
+            .sec_params = NULL,
         },
         .handlers = {
             /* User defined handler functions */

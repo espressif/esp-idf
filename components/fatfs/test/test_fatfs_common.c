@@ -382,13 +382,14 @@ void test_fatfs_ftruncate_file(const char* filename)
 
 void test_fatfs_stat(const char* filename, const char* root_dir)
 {
-    struct tm tm;
-    tm.tm_year = 2017 - 1900;
-    tm.tm_mon = 11;
-    tm.tm_mday = 8;
-    tm.tm_hour = 19;
-    tm.tm_min = 51;
-    tm.tm_sec = 10;
+    struct tm tm = {
+        .tm_year = 2017 - 1900,
+        .tm_mon = 11,
+        .tm_mday = 8,
+        .tm_hour = 19,
+        .tm_min = 51,
+        .tm_sec = 10
+    };
     time_t t = mktime(&tm);
     printf("Setting time: %s", asctime(&tm));
     struct timeval now = { .tv_sec = t };
@@ -402,7 +403,7 @@ void test_fatfs_stat(const char* filename, const char* root_dir)
     struct tm mtm;
     localtime_r(&mtime, &mtm);
     printf("File time: %s", asctime(&mtm));
-    TEST_ASSERT(abs(mtime - t) < 2);    // fatfs library stores time with 2 second precision
+    TEST_ASSERT(llabs(mtime - t) < 2);    // fatfs library stores time with 2 second precision
 
     TEST_ASSERT(st.st_mode & S_IFREG);
     TEST_ASSERT_FALSE(st.st_mode & S_IFDIR);
@@ -411,6 +412,34 @@ void test_fatfs_stat(const char* filename, const char* root_dir)
     TEST_ASSERT_EQUAL(0, stat(root_dir, &st));
     TEST_ASSERT(st.st_mode & S_IFDIR);
     TEST_ASSERT_FALSE(st.st_mode & S_IFREG);
+}
+
+void test_fatfs_mtime_dst(const char* filename, const char* root_dir)
+{
+    struct timeval tv = { 1653638041, 0 };
+    settimeofday(&tv, NULL);
+    setenv("TZ", "MST7MDT,M3.2.0,M11.1.0", 1);
+    tzset();
+
+    struct tm tm;
+    time_t sys_time = tv.tv_sec;
+    localtime_r(&sys_time, &tm);
+    printf("Setting time: %s", asctime(&tm));
+
+    test_fatfs_create_file_with_text(filename, "foo\n");
+
+    struct stat st;
+    TEST_ASSERT_EQUAL(0, stat(filename, &st));
+
+    time_t mtime = st.st_mtime;
+    struct tm mtm;
+    localtime_r(&mtime, &mtm);
+    printf("File time: %s", asctime(&mtm));
+
+    TEST_ASSERT(llabs(mtime - sys_time) < 2);    // fatfs library stores time with 2 second precision
+
+    unsetenv("TZ");
+    tzset();
 }
 
 void test_fatfs_utime(const char* filename, const char* root_dir)
@@ -891,4 +920,31 @@ void test_fatfs_rw_speed(const char* filename, void* buf, size_t buf_size, size_
     printf("%s %d bytes (block size %d) in %.3fms (%.3f MB/s)\n",
             (is_write)?"Wrote":"Read", file_size, buf_size, t_s * 1e3,
                     file_size / (1024.0f * 1024.0f * t_s));
+}
+
+void test_fatfs_info(const char* base_path, const char* filepath)
+{
+    // Empty FS
+    uint64_t total_bytes = 0;
+    uint64_t free_bytes = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_fat_info(base_path, &total_bytes, &free_bytes));
+    ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes=%llu", total_bytes, free_bytes);
+    TEST_ASSERT_NOT_EQUAL(0, total_bytes);
+
+    // FS with a file
+    FILE* f = fopen(filepath, "wb");
+    TEST_ASSERT_NOT_NULL(f);
+    TEST_ASSERT_TRUE(fputs(fatfs_test_hello_str, f) != EOF);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+    uint64_t free_bytes_new = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_fat_info(base_path, &total_bytes, &free_bytes_new));
+    ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes_new=%llu", total_bytes, free_bytes_new);
+    TEST_ASSERT_NOT_EQUAL(free_bytes, free_bytes_new);
+
+    // File removed
+    TEST_ASSERT_EQUAL(0, remove(filepath));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_fat_info(base_path, &total_bytes, &free_bytes_new));
+    ESP_LOGD("fatfs info", "total_bytes=%llu, free_bytes_after_delete=%llu", total_bytes, free_bytes_new);
+    TEST_ASSERT_EQUAL(free_bytes, free_bytes_new);
 }

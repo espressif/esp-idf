@@ -16,7 +16,7 @@ menu "LWIP"
             instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
 
     config LWIP_TCPIP_CORE_LOCKING
-        bool "Enable tcpip　core locking"
+        bool "Enable tcpip core locking"
         default n
         help
             If Enable tcpip　core locking,Creates a global mutex that is held
@@ -998,6 +998,13 @@ menu "LWIP"
 
             All lwIP debug features increase the size of the final binary.
 
+    config LWIP_DEBUG_ESP_LOG
+        bool "Route LWIP debugs through ESP_LOG interface"
+        depends on LWIP_DEBUG
+        default n
+        help
+            Enabling this option routes all enabled LWIP debugs through ESP_LOGD.
+
     config LWIP_NETIF_DEBUG
         bool "Enable netif debug messages"
         depends on LWIP_DEBUG
@@ -1060,6 +1067,11 @@ menu "LWIP"
 
     config LWIP_SNTP_DEBUG
         bool "Enable SNTP debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_DNS_DEBUG
+        bool "Enable DNS debug messages"
         depends on LWIP_DEBUG
         default n
 

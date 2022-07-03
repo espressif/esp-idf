@@ -1,0 +1,5 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_ESP32_ULP_COPROC_ENABLED                         CONFIG_ULP_COPROC_ENABLED
+CONFIG_ESP32_ULP_COPROC_RESERVE_MEM                     CONFIG_ULP_COPROC_RESERVE_MEM

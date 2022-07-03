@@ -91,7 +91,7 @@ If a suitable block of preferred internal/external memory is not available, the 
 
 Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
 
-.. only:: esp32 or esp32s2
+.. only:: SOC_SPIRAM_SUPPORTED
 
     .. _external_ram_config_bss:
 
@@ -102,7 +102,7 @@ Because some buffers can only be allocated in internal memory, a second configur
 
     If enabled, a region of the address space starting from {IDF_TARGET_PSRAM_ADDR_START} will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
-    Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_ATTR`` to any static declaration (which is not initialized to a non-zero value).
+    Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_BSS_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
     It is also possible to place the BSS section of a component or a library to external RAM using linker fragment scheme ``extram_bss``.
 
@@ -129,8 +129,8 @@ External RAM use has the following restrictions:
 
  * When flash cache is disabled (for example, if the flash is being written to), the external RAM also becomes inaccessible; any reads from or writes to it will lead to an illegal cache access exception. This is also the reason why ESP-IDF does not by default allocate any task stacks in external RAM (see below).
 
-  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffers that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call. 
-  
+  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call.
+
   .. only:: SOC_PSRAM_DMA_CAPABLE
 
     Note, although {IDF_TARGET_NAME} has hardware support for DMA to/from external RAM, this is not yet supported in ESP-IDF.

@@ -6,14 +6,13 @@ ESP32-S3-DevKitC-1
 
 本指南将帮助您快速上手 ESP32-S3-DevKitC-1，并提供该款开发板的详细信息。
 
-ESP32-S3-DevKitC-1 是一款入门级开发板，搭载的是 Wi-Fi + Bluetooth® LE 模组 ESP32-S3-WROOM-1 或 ESP32-S3-WROOM-1U。
+ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE 模组 ESP32-S3-WROOM-1、ESP32-S3-WROOM-1U 或 ESP32-S3-WROOM-2。
 
 板上模组的大部分管脚均已引出至开发板两侧排针，开发人员可根据实际需求，轻松通过跳线连接多种外围设备，也可将开发板插在面包板上使用。
 
 .. figure:: ../../../_static/esp32-s3-devkitc-1-v1-isometric.png
     :align: center
     :alt: ESP32-S3-DevKitC-1（板载 ESP32-S3-WROOM-1 模组）
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1（板载 ESP32-S3-WROOM-1 模组）
     
@@ -37,10 +36,9 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载的是 Wi-Fi + Bluetooth�
 
 .. _user-guide-s3-devkitc-1-v1-board-front:
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1-annotated-photo.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-annotated-photo.png
     :align: center
     :alt: ESP32-S3-DevKitC-1 - 正面
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1 - 正面
 
@@ -52,8 +50,8 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载的是 Wi-Fi + Bluetooth�
 
    * - 主要组件
      - 介绍
-   * - ESP32-S3-WROOM-1/1U
-     - ESP32-S3-WROOM-1 和 ESP32-S3-WROOM-1U 是通用型 Wi-Fi + 低功耗蓝牙 MCU 模组，具有丰富的外设接口、强大的神经网络运算能力和信号处理能力，专为人工智能和 AIoT 市场打造。ESP32-S3-WROOM-1 采用 PCB 板载天线，ESP32-S3-WROOM-1U 采用连接器连接外部天线。
+   * - ESP32-S3-WROOM-1/1U/2
+     - ESP32-S3-WROOM-1、ESP32-S3-WROOM-1U 和 ESP32-S3-WROOM-2 是通用型 Wi-Fi + 低功耗蓝牙 MCU 模组，具有丰富的外设接口、强大的神经网络运算能力和信号处理能力，专为人工智能和 AIoT 市场打造。ESP32-S3-WROOM-1 和 ESP32-S3-WROOM-2 采用 PCB 板载天线，ESP32-S3-WROOM-1U 采用连接器连接外部天线。
    * - 5 V to 3.3 V LDO（5 V 转 3.3 V LDO）
      - 电源转换器，输入 5 V，输出 3.3 V。
    * - Pin Headers（排针）
@@ -72,6 +70,10 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载的是 Wi-Fi + Bluetooth�
      - 可寻址 RGB 发光二极管，由 GPIO48 驱动。
    * - 3.3 V Power On LED（3.3 V 电源指示灯）
      - 开发板连接 USB 电源后，该指示灯亮起。
+
+.. note::
+
+  板载 ESP32-S3-WROOM-2 模组系列的开发板中，管脚 GPIO35、GPIO36 和 GPIO37 已用于内部 ESP32-S3 芯片与 SPI flash/PSRAM 之间的通信，外部不可使用。
 
 
 开始开发应用
@@ -107,6 +109,65 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载的是 Wi-Fi + Bluetooth�
 内含组件和包装
 ---------------
 
+订购信息
+^^^^^^^^^^^^^^
+
+该开发板有多种型号可供选择，详见下表。
+
+.. list-table::
+   :widths: 28 29 19 17 15
+   :header-rows: 1
+
+   * - 订购代码
+     - 搭载模组
+     - Flash
+     - PSRAM
+     - SPI 电压
+   * - ESP32-S3-DevKitC-1-N8
+     - ESP32-S3-WROOM-1-N8
+     - 8 MB QD
+     - —
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1-N8R2
+     - ESP32-S3-WROOM-1-N8R2
+     - 8 MB QD
+     - 2 MB QD
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1-N8R8
+     - ESP32-S3-WROOM-1-N8R8
+     - 8 MB QD
+     - 8 MB OT
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1-N16R8V
+     - ESP32-S3-WROOM-2-N16R8V
+     - 16 MB OT
+     - 8 MB OT
+     - 1.8 V
+   * - ESP32-S3-DevKitC-1-N32R8V
+     - ESP32-S3-WROOM-2-N32R8V
+     - 32 MB OT
+     - 8 MB OT
+     - 1.8 V
+   * - ESP32-S3-DevKitC-1U-N8
+     - ESP32-S3-WROOM-1U-N8
+     - 8 MB QD
+     - —
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1U-N8R2
+     - ESP32-S3-WROOM-1U-N8R2
+     - 8 MB QD
+     - 2 MB QD
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1U-N8R8
+     - ESP32-S3-WROOM-1U-N8R8
+     - 8 MB QD
+     - 8 MB OT
+     - 3.3 V
+
+.. note::
+
+  上表中，QD 指代 Quad SPI，OT 指代 Octal SPI。
+
 零售订单
 ^^^^^^^^
 
@@ -134,11 +195,10 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载的是 Wi-Fi + Bluetooth�
 
 ESP32-S3-DevKitC-1 的主要组件和连接方式如下图所示。
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1_SystemBlock.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-SystemBlock.png
     :align: center
     :scale: 70%
     :alt: ESP32-S3-DevKitC-1（点击放大）
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1（点击放大）
 
@@ -236,7 +296,6 @@ J3
     :align: center
     :scale: 50%
     :alt: ESP32-S3-DevKitC-1（点击放大）
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1 管脚布局（点击放大）
 
@@ -252,6 +311,7 @@ J3
 
 - `ESP32-S3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-S3-WROOM-1 & ESP32-S3-WROOM-1U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_cn.pdf>`_ (PDF)
+- `ESP32-S3-WROOM-2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-2_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 原理图 <https://dl.espressif.com/dl/SCH_ESP32-S3-DEVKITC-1_V1_20210312C.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/PCB_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)

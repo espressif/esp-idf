@@ -331,21 +331,6 @@ esp_err_t spi_device_acquire_bus(spi_device_handle_t device, TickType_t wait);
  */
 void spi_device_release_bus(spi_device_handle_t dev);
 
-
-/**
- * @brief Calculate the working frequency that is most close to desired frequency, and also the register value.
- *
- * @param fapb The frequency of apb clock, should be ``APB_CLK_FREQ``.
- * @param hz Desired working frequency
- * @param duty_cycle Duty cycle of the spi clock
- * @param reg_o Output of value to be set in clock register, or NULL if not needed.
- *
- * @deprecated The app shouldn't care about the register. Call ``spi_get_actual_clock`` instead.
- *
- * @return Actual working frequency that most fit.
- */
-int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o) __attribute__((deprecated));
-
 /**
  * @brief Calculate the working frequency that is most close to desired frequency.
  *
@@ -362,7 +347,7 @@ int spi_get_actual_clock(int fapb, int hz, int duty_cycle);
   *
   * @param gpio_is_used True if using GPIO matrix, or False if iomux pins are used.
   * @param input_delay_ns Input delay from SCLK launch edge to MISO data valid.
-  * @param eff_clk Effective clock frequency (in Hz) from spi_cal_clock.
+  * @param eff_clk Effective clock frequency (in Hz) from `spi_get_actual_clock()`.
   * @param dummy_o Address of dummy bits used output. Set to NULL if not needed.
   * @param cycles_remain_o Address of cycles remaining (after dummy bits are used) output.
   *         - -1 If too many cycles remaining, suggest to compensate half a clock.

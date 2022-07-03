@@ -128,9 +128,24 @@ static void a2d_sdp_cback(UINT16 status)
 ** Returns          None
 **
 *******************************************************************************/
-void a2d_set_avdt_sdp_ver (UINT16 avdt_sdp_ver)
+void a2d_set_avdt_sdp_ver(UINT16 avdt_sdp_ver)
 {
     a2d_cb.avdt_sdp_ver = avdt_sdp_ver;
+}
+
+/*******************************************************************************
+ *
+ * Function         a2d_set_a2dp_sdp_ver
+ *
+ * Description      This function allows the script wrapper to change the
+ *                  a2dp version
+ *
+ * Returns          None
+ *
+ ******************************************************************************/
+void a2d_set_a2dp_sdp_ver(UINT16 a2dp_sdp_ver)
+{
+    a2d_cb.a2dp_sdp_ver = a2dp_sdp_ver;
 }
 
 /******************************************************************************
@@ -195,7 +210,7 @@ tA2D_STATUS A2D_AddRecord(UINT16 service_uuid, char *p_service_name, char *p_pro
     result &= SDP_AddProtocolList(sdp_handle, A2D_NUM_PROTO_ELEMS, proto_list);
 
     /* add profile descriptor list   */
-    result &= SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION, A2D_VERSION);
+    result &= SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION, a2d_cb.a2dp_sdp_ver);
 
     /* add supported feature */
     if (features != 0) {
@@ -386,6 +401,7 @@ bt_status_t A2D_Init(void)
     memset(&a2d_cb, 0, sizeof(tA2D_CB));
 
     a2d_cb.avdt_sdp_ver = AVDT_VERSION;
+    a2d_cb.a2dp_sdp_ver = A2D_VERSION;
 
 #if defined(A2D_INITIAL_TRACE_LEVEL)
     a2d_cb.trace_level  = A2D_INITIAL_TRACE_LEVEL;

@@ -3,6 +3,9 @@ High Resolution Timer
 
 {IDF_TARGET_HR_TIMER:default = "SYSTIMER", esp32 = "LAC timer"}
 
+{IDF_TARGET_HR_TIMER_Resolution:default = "Not updated", esp32 = "64", esp32s2 = "64", esp32c3 = "52", esp32s3 = "52", esp32c2 = "52"}
+
+
 Overview
 --------
 
@@ -15,9 +18,9 @@ Hardware timers are free from both of the limitations, but often they are less c
 
 An interrupt level of the handler depends on the :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` option. It allows to set this: 1, 2 or 3 level (by default 1). Raising the level, the interrupt handler can reduce the timer processing delay.
 
-``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and 64-bit range.
+``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and {IDF_TARGET_HR_TIMER_Resolution}-bit range.
 
-Internally, ``esp_timer`` uses a 64-bit hardware timer, where the implementation depends on the target. {IDF_TARGET_HR_TIMER} is used for {IDF_TARGET_NAME}.
+Internally, ``esp_timer`` uses a {IDF_TARGET_HR_TIMER_Resolution}-bit hardware timer, where the implementation depends on the target. {IDF_TARGET_HR_TIMER} is used for {IDF_TARGET_NAME}.
 
 Timer callbacks can be dispatched by two methods:
 

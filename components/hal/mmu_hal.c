@@ -30,20 +30,9 @@
 
 void mmu_hal_init(void)
 {
-#if CONFIG_IDF_TARGET_ESP32
-    mmu_init(0);
+    mmu_ll_unmap_all(0);
 #if !CONFIG_FREERTOS_UNICORE
-    /**
-     * The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are necessary to work around a hardware bug.
-     * See ESP32 Errata 3.1
-     */
-    DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
-    mmu_init(1);
-    DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
-#endif
-
-#else //!esp32
-    Cache_MMU_Init();
+    mmu_ll_unmap_all(1);
 #endif
 }
 
@@ -94,7 +83,7 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
     HAL_ASSERT(paddr % page_size_in_bytes == 0);
-    HAL_ASSERT((paddr + len) <= mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_ENTRY_NUM));
+    HAL_ASSERT((paddr + len) <= mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_PADDR_PAGE_NUM));
     HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, len));
 
     uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;

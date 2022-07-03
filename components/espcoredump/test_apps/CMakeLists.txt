@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 # Here for reproducible builds, we use the CI compile options to make sure they're same.
 # Use -ffile-prefix-map to map the local path prefix to ci path prefix

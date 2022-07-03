@@ -13,17 +13,6 @@
 
 #define CHECK_VALUE 0x89abcdef
 
-static __NOINIT_ATTR uint32_t s_noinit_val;
-static RTC_NOINIT_ATTR uint32_t s_rtc_noinit_val;
-static RTC_DATA_ATTR uint32_t s_rtc_data_val;
-static RTC_BSS_ATTR uint32_t s_rtc_bss_val;
-/* There is no practical difference between placing something into RTC_DATA and
- * RTC_RODATA. This only checks a usage pattern where the variable has a non-zero
- * initializer (should be initialized by the bootloader).
- */
-static RTC_RODATA_ATTR uint32_t s_rtc_rodata_val = CHECK_VALUE;
-static RTC_FAST_ATTR uint32_t s_rtc_force_fast_val;
-static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 
 #if CONFIG_IDF_TARGET_ESP32
 #define DEEPSLEEP           "DEEPSLEEP_RESET"
@@ -49,7 +38,7 @@ static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 #define BROWNOUT            "BROWN_OUT_RST"
 #define STORE_ERROR         "StoreProhibited"
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
 #define DEEPSLEEP           "DSLEEP"
 #define LOAD_STORE_ERROR    "Store access fault"
 #define RESET               "RTC_SW_CPU_RST"
@@ -61,6 +50,30 @@ static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
 
 #endif // CONFIG_IDF_TARGET_ESP32
 
+
+/* This test needs special test runners: rev1 silicon, and SPI flash with
+ * fast start-up time. Otherwise reset reason will be RTCWDT_RESET.
+ */
+TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
+{
+    TEST_ASSERT_EQUAL(ESP_RST_POWERON, esp_reset_reason());
+}
+
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5059
+static __NOINIT_ATTR uint32_t s_noinit_val;
+static RTC_NOINIT_ATTR uint32_t s_rtc_noinit_val;
+static RTC_DATA_ATTR uint32_t s_rtc_data_val;
+static RTC_BSS_ATTR uint32_t s_rtc_bss_val;
+/* There is no practical difference between placing something into RTC_DATA and
+ * RTC_RODATA. This only checks a usage pattern where the variable has a non-zero
+ * initializer (should be initialized by the bootloader).
+ */
+static RTC_RODATA_ATTR uint32_t s_rtc_rodata_val = CHECK_VALUE;
+static RTC_FAST_ATTR uint32_t s_rtc_force_fast_val;
+static RTC_SLOW_ATTR uint32_t s_rtc_force_slow_val;
+
 static void setup_values(void)
 {
     s_noinit_val = CHECK_VALUE;
@@ -71,14 +84,6 @@ static void setup_values(void)
             "s_rtc_rodata_val should already be set up");
     s_rtc_force_fast_val = CHECK_VALUE;
     s_rtc_force_slow_val = CHECK_VALUE;
-}
-
-/* This test needs special test runners: rev1 silicon, and SPI flash with
- * fast start-up time. Otherwise reset reason will be RTCWDT_RESET.
- */
-TEST_CASE("reset reason ESP_RST_POWERON", "[reset][ignore]")
-{
-    TEST_ASSERT_EQUAL(ESP_RST_POWERON, esp_reset_reason());
 }
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
@@ -181,7 +186,11 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", 
 static void do_int_wdt(void)
 {
     setup_values();
+#if CONFIG_FREERTOS_SMP
+    BaseType_t prev_level = portDISABLE_INTERRUPTS();
+#else
     BaseType_t prev_level = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
     (void) prev_level;
     while(1);
 }
@@ -216,8 +225,12 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog
 static void do_task_wdt(void)
 {
     setup_values();
-    esp_task_wdt_init(1, true);
-    esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = 1000,
+        .idle_core_mask = (1 << 0), // Watch core 0 idle
+        .trigger_panic = true,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
     while(1);
 }
 
@@ -289,6 +302,8 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
         "[reset_reason][ignore][reset="BROWNOUT"]",
         do_brownout,
         check_reset_reason_brownout);
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 
 #ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY

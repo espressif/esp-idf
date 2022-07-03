@@ -22,6 +22,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/temperature_sensor_types.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,15 +79,14 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
 {
     uint8_t clk_sel = 0;
     switch (clk_src) {
-        case TEMPERATURE_SENSOR_CLK_SRC_DEFAULT:
         case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
             clk_sel = 1;
             break;
-        case TEMPERATURE_SENSOR_CLK_SRC_FAST_RC:
+        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
             clk_sel = 0;
             break;
         default:
-            abort();
+            HAL_ASSERT(false);
             break;
     }
     APB_SARADC.apb_tsens_ctrl2.tsens_clk_sel = clk_sel;

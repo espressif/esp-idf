@@ -22,8 +22,9 @@ static int ble_spp_client_gap_event(struct ble_gap_event *event, void *arg);
 QueueHandle_t spp_common_uart_queue = NULL;
 void ble_store_config_init(void);
 static bool is_connect = false;
-uint16_t connection_handle;
-uint16_t attribute_handle;
+uint16_t attribute_handle[CONFIG_BT_NIMBLE_MAX_CONNECTIONS + 1];
+static void ble_spp_client_scan(void);
+
 /* 16 Bit Alert Notification Service UUID */
 #define GATT_SVR_SVC_ALERT_UUID                            0x1811
 
@@ -34,13 +35,13 @@ uint16_t attribute_handle;
 #define GATT_SPP_CHR_UUID                                  0xABF1
 
 static void
-ble_spp_client_set_handles(const struct peer *peer){
-	 const struct peer_chr *chr;
-	 chr = peer_chr_find_uuid(peer,
-                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
-                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
-        connection_handle = peer->conn_handle;
-        attribute_handle = chr->chr.val_handle;
+ble_spp_client_set_handle(const struct peer *peer)
+{
+    const struct peer_chr *chr;
+    chr = peer_chr_find_uuid(peer,
+                             BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
+                             BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
+    attribute_handle[peer->conn_handle] = chr->chr.val_handle;
 }
 
 /**
@@ -49,7 +50,6 @@ ble_spp_client_set_handles(const struct peer *peer){
 static void
 ble_spp_client_on_disc_complete(const struct peer *peer, int status, void *arg)
 {
-
     if (status != 0) {
         /* Service discovery failed.  Terminate the connection. */
         MODLOG_DFLT(ERROR, "Error: Service discovery failed; status=%d "
@@ -65,7 +65,8 @@ ble_spp_client_on_disc_complete(const struct peer *peer, int status, void *arg)
     MODLOG_DFLT(INFO, "Service discovery complete; status=%d "
                 "conn_handle=%d\n", status, peer->conn_handle);
 
-     ble_spp_client_set_handles(peer);
+    ble_spp_client_set_handle(peer);
+    ble_spp_client_scan();
 }
 
 /**
@@ -267,6 +268,7 @@ ble_spp_client_gap_event(struct ble_gap_event *event, void *arg)
         MODLOG_DFLT(INFO, "\n");
 
         /* Forget about peer. */
+	attribute_handle[event->disconnect.conn.conn_handle] = 0;
         peer_delete(event->disconnect.conn.conn_handle);
 
         /* Resume scanning. */
@@ -336,6 +338,7 @@ void ble_client_uart_task(void *pvParameters)
 {
 	ESP_LOGI(tag,"BLE client UART task started\n");
 	int rc;
+	int i;
 	uart_event_t event;
         for (;;) {
             //Waiting for UART event.
@@ -354,12 +357,17 @@ void ble_client_uart_task(void *pvParameters)
                      }
                      memset(temp, 0x0, event.size);
                      uart_read_bytes(UART_NUM_0,temp,event.size,portMAX_DELAY);
-		     rc = ble_gattc_write_flat(connection_handle, attribute_handle,temp, event.size,NULL, NULL);
-		     if(rc == 0){
-		     	ESP_LOGI(tag,"Write in uart task success!");
-		     }
-		     else{
-		     	ESP_LOGI(tag,"Error in writing characteristic");
+		     for ( i = 1; i <= CONFIG_BT_NIMBLE_MAX_CONNECTIONS; i++) {
+	                 if (attribute_handle[i] != 0) {
+			     rc = ble_gattc_write_flat(i, attribute_handle[i],temp, event.size,NULL, NULL);
+			     if (rc == 0) {
+			         ESP_LOGI(tag,"Write in uart task success!");
+			     }
+			     else {
+			         ESP_LOGI(tag,"Error in writing characteristic rc=%d",rc);
+			     }
+			     vTaskDelay(10);
+			 }
 		     }
 		     free(temp);
 		 }
@@ -381,7 +389,7 @@ static void ble_spp_uart_init(void)
          .stop_bits = UART_STOP_BITS_1,
          .flow_ctrl = UART_HW_FLOWCTRL_RTS,
          .rx_flow_ctrl_thresh = 122,
-         .source_clk = UART_SCLK_APB,
+         .source_clk = UART_SCLK_DEFAULT,
      };
 
      //Install UART driver, and get the queue.
@@ -390,7 +398,7 @@ static void ble_spp_uart_init(void)
      uart_param_config(UART_NUM_0, &uart_config);
      //Set UART pins
      uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-     xTaskCreate(ble_client_uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
+     xTaskCreate(ble_client_uart_task, "uTask", 4096, (void*)UART_NUM_0, 8, NULL);
 }
 void
 app_main(void)

@@ -1,15 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
 #include "esp_netif.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "esp_eth_netif_glue.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#if CONFIG_ESP_NETIF_L2_TAP
+#include "esp_vfs_l2tap.h"
+#endif
 
 const static char *TAG = "esp_eth.netif.netif_glue";
 
@@ -27,7 +30,19 @@ struct esp_eth_netif_glue_t {
 
 static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
 {
+#if CONFIG_ESP_NETIF_L2_TAP
+    esp_err_t ret = ESP_OK;
+    ret = esp_vfs_l2tap_eth_filter(eth_handle, buffer, (size_t *)&length);
+    if (length == 0) {
+        return ret;
+    }
+#endif
     return esp_netif_receive((esp_netif_t *)priv, buffer, length, NULL);
+}
+
+static void eth_l2_free(void *h, void* buffer)
+{
+    free(buffer);
 }
 
 static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
@@ -42,7 +57,7 @@ static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
     esp_netif_driver_ifconfig_t driver_ifconfig = {
         .handle =  netif_glue->eth_driver,
         .transmit = esp_eth_transmit,
-        .driver_free_rx_buffer = NULL
+        .driver_free_rx_buffer = eth_l2_free
     };
 
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));

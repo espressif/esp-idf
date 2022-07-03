@@ -46,8 +46,6 @@ struct wpa_bss_tmp_disallowed {
 	u8 bssid[ETH_ALEN];
 #ifndef ESP_SUPPLICANT
 	int rssi_threshold;
-#else
-	esp_timer_handle_t blacklist_timer;
 #endif
 };
 
@@ -70,11 +68,6 @@ enum scan_trigger_reason {
 };
 
 struct wpa_supplicant {
-	int disable_btm;
-	unsigned int disable_mbo_oce;
-	/* rrm ie */
-	uint8_t rrm_ie[5];
-	u8 extend_caps[8];
 
 	int scanning;
 	enum scan_trigger_reason scan_reason;
@@ -104,6 +97,9 @@ struct wpa_supplicant {
 	uint32_t type, subtype;
 	u8 next_scan_chan;
 #ifdef CONFIG_WNM
+	int disable_btm;
+	unsigned int disable_mbo_oce;
+	u8 extend_caps[8];
 	u8 wnm_dialog_token;
 	u8 wnm_reply;
 	u8 wnm_num_neighbor_report;
@@ -135,9 +131,13 @@ struct wpa_supplicant {
 	struct dl_list bss_tmp_disallowed;
 #endif /* CONFIG_MBO */
 #endif /* CONFIG_WNM */
+#ifdef CONFIG_RRM
+	/* rrm ie */
+	uint8_t rrm_ie[5];
 	struct rrm_data rrm;
 	struct beacon_rep_data beacon_rep_data;
 	struct os_reltime beacon_rep_scan;
+#endif
 };
 
 struct non_pref_chan_s;

@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_TRANSPORT_H_
 #define _ESP_TRANSPORT_H_
@@ -44,6 +36,22 @@ typedef int (*connect_async_func)(esp_transport_handle_t t, const char *host, in
 typedef esp_transport_handle_t (*payload_transfer_func)(esp_transport_handle_t);
 
 typedef struct esp_tls_last_error* esp_tls_error_handle_t;
+
+/**
+ * @brief Error types for TCP connection issues not covered in socket's errno
+ */
+enum esp_tcp_transport_err_t {
+    ERR_TCP_TRANSPORT_NO_MEM = -3,
+    ERR_TCP_TRANSPORT_CONNECTION_FAILED = -2,
+    ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN = -1,
+    ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT = 0,
+};
+
+#define ESP_ERR_TCP_TRANSPORT_BASE                      (0xe000)                          /*!< Starting number of TCP Transport error codes */
+#define ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT        (ESP_ERR_TCP_TRANSPORT_BASE + 1)  /*!< Connection has timed out */
+#define ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN  (ESP_ERR_TCP_TRANSPORT_BASE + 2)  /*!< Read FIN from peer and the connection has closed (in a clean way) */
+#define ESP_ERR_TCP_TRANSPORT_CONNECTION_FAILED         (ESP_ERR_TCP_TRANSPORT_BASE + 3)  /*!< Failed to connect to the peer */
+#define ESP_ERR_TCP_TRANSPORT_NO_MEM                    (ESP_ERR_TCP_TRANSPORT_BASE + 4)  /*!< Memory allocation failed */
 
 /**
  * @brief      Create transport list
@@ -146,7 +154,7 @@ esp_err_t esp_transport_set_default_port(esp_transport_handle_t t, int port);
  * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
- * - socket for will use by this transport
+ * - 0 in case of successful connection
  * - (-1) if there are any errors, should check errno
  */
 int esp_transport_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
@@ -160,8 +168,10 @@ int esp_transport_connect(esp_transport_handle_t t, const char *host, int port, 
  * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates wait forever)
  *
  * @return
- * - socket for will use by this transport
- * - (-1) if there are any errors, should check errno
+ *             - -1      If connection establishment fails.
+ *             -  0      If connection establishment is in progress.
+ *             -  1      If connection establishment is successful.
+ *
  */
 int esp_transport_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
 
@@ -175,7 +185,11 @@ int esp_transport_connect_async(esp_transport_handle_t t, const char *host, int 
  *
  * @return
  *  - Number of bytes was read
- *  - (-1) if there are any errors, should check errno
+ *  - 0    Read timed-out
+ *  - (<0) For other errors
+ *
+ * @note: Please refer to the enum `esp_tcp_transport_err_t` for all the possible return values
+ *
  */
 int esp_transport_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms);
 
@@ -339,6 +353,15 @@ esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t);
  *   - -1  Invalid transport handle or invalid transport's internal error storage
  */
 int esp_transport_get_errno(esp_transport_handle_t t);
+
+/**
+ * @brief Translates the TCP transport error codes to esp_err_t error codes
+ *
+ * @param[in] error TCP Transport specific error code
+ *
+ * @return Corresponding esp_err_t based error code
+ */
+esp_err_t esp_transport_translate_error(enum esp_tcp_transport_err_t error);
 
 #ifdef __cplusplus
 }

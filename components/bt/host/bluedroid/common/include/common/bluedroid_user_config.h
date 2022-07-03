@@ -45,6 +45,13 @@
 #define UC_BT_SPP_ENABLED                   FALSE
 #endif
 
+//L2CAP
+#ifdef CONFIG_BT_L2CAP_ENABLED
+#define UC_BT_L2CAP_ENABLED                   CONFIG_BT_L2CAP_ENABLED
+#else
+#define UC_BT_L2CAP_ENABLED                   FALSE
+#endif
+
 //HFP(AG)
 #ifdef CONFIG_BT_HFP_AG_ENABLE
 #define UC_BT_HFP_AG_ENABLED            CONFIG_BT_HFP_AG_ENABLE

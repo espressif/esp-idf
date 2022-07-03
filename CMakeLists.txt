@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 project(esp-idf C CXX ASM)
 
 if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
@@ -62,23 +62,6 @@ if(CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS)
     list(APPEND compile_options "-msave-restore")
 endif()
 
-if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
-    list(APPEND compile_options "-Wno-parentheses"
-                                "-Wno-sizeof-pointer-memaccess"
-                                "-Wno-clobbered")
-
-    list(APPEND compile_options "-Wno-format-overflow"
-                                "-Wno-stringop-truncation"
-                                "-Wno-misleading-indentation"
-                                "-Wno-cast-function-type"
-                                "-Wno-implicit-fallthrough"
-                                "-Wno-unused-const-variable"
-                                "-Wno-switch-unreachable"
-                                "-Wno-format-truncation"
-                                "-Wno-memset-elt-size"
-                                "-Wno-int-in-bool-context")
-endif()
-
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     list(APPEND c_compile_options "-Wno-old-style-declaration")
 endif()
@@ -116,6 +99,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
     # Multiple cases of attributes unknown to clang, for example
     # __attribute__((optimize("-O3")))
     list(APPEND compile_options "-Wno-unknown-attributes")
+    # Disable Clang warnings for atomic operations with access size
+    # more then 4 bytes
+    list(APPEND compile_options "-Wno-atomic-alignment")
     # Clang also produces many -Wunused-function warnings which GCC doesn't.
     # However these aren't treated as errors.
 endif()
@@ -195,12 +181,19 @@ if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
 endif()
 
 list(APPEND link_options "-fno-lto")
-list(APPEND link_options "-Wl,--warn-common")
 
 if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND link_options "-Wl,-dead_strip")
+    list(APPEND link_options "-Wl,-warn_commons")
 else()
     list(APPEND link_options "-Wl,--gc-sections")
+    list(APPEND link_options "-Wl,--warn-common")
+endif()
+
+# SMP FreeRTOS user provided minimal idle hook. This allows the user to provide
+# their own copy of vApplicationMinimalIdleHook()
+if(CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK)
+    list(APPEND link_options "-Wl,--wrap=vApplicationMinimalIdleHook")
 endif()
 
 # Placing jump tables in flash would cause issues with code that required

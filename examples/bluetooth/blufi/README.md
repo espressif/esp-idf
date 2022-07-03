@@ -81,8 +81,4 @@ I (1198) BLUFI_EXAMPLE: BLUFI init finish
 
 ## Troubleshooting
 
-<<<<<<< HEAD:examples/bluetooth/blufi/README.md
-* [Bluetooth Network User Guide CN](https://www.espressif.com/sites/default/files/documentation/esp32_bluetooth_networking_user_guide_cn.pdf)
-=======
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
->>>>>>> c552024ca7 (Changes on README files on ANCS, Eddystone, HID and NimBLE):examples/bluetooth/bluedroid/ble/blufi/README.md

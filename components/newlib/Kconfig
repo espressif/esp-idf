@@ -50,7 +50,7 @@ menu "Newlib"
 
     config NEWLIB_NANO_FORMAT
         bool "Enable 'nano' formatting options for printf/scanf family"
-        default n
+        default y if IDF_TARGET_ESP32C2
         help
             ESP32 ROM contains parts of newlib C library, including printf/scanf family
             of functions. These functions have been compiled with so-called "nano"
@@ -68,5 +68,43 @@ menu "Newlib"
 
             If you need 64-bit integer formatting support or C99 features, keep this
             option disabled.
+
+    choice NEWLIB_TIME_SYSCALL
+        prompt "Timers used for gettimeofday function"
+        default NEWLIB_TIME_SYSCALL_USE_RTC_HRT
+        help
+            This setting defines which hardware timers are used to
+            implement 'gettimeofday' and 'time' functions in C library.
+
+            - If both high-resolution (systimer for all targets except ESP32)
+                and RTC timers are used, timekeeping will continue in deep sleep.
+                Time will be reported at 1 microsecond resolution.
+                This is the default, and the recommended option.
+            - If only high-resolution timer (systimer) is used, gettimeofday will
+                provide time at microsecond resolution.
+                Time will not be preserved when going into deep sleep mode.
+            - If only RTC timer is used, timekeeping will continue in
+                deep sleep, but time will be measured at 6.(6) microsecond
+                resolution. Also the gettimeofday function itself may take
+                longer to run.
+            - If no timers are used, gettimeofday and time functions
+                return -1 and set errno to ENOSYS.
+            - When RTC is used for timekeeping, two RTC_STORE registers are
+                used to keep time in deep sleep mode.
+
+        config NEWLIB_TIME_SYSCALL_USE_RTC_HRT
+            bool "RTC and high-resolution timer"
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
+        config NEWLIB_TIME_SYSCALL_USE_RTC
+            bool "RTC"
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+        config NEWLIB_TIME_SYSCALL_USE_HRT
+            bool "High-resolution timer"
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
+        config NEWLIB_TIME_SYSCALL_USE_NONE
+            bool "None"
+            select ESP_TIME_FUNCS_USE_NONE
+    endchoice
 
 endmenu # Newlib

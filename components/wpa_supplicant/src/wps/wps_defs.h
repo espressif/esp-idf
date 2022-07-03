@@ -12,16 +12,17 @@
 #ifdef CONFIG_WPS_TESTING
 
 extern int wps_version_number;
-extern int wps_testing_dummy_cred;
+extern int wps_testing_stub_cred;
+extern int wps_corrupt_pkhash;
+extern int wps_force_auth_types_in_use;
+extern u16 wps_force_auth_types;
+extern int wps_force_encr_types_in_use;
+extern u16 wps_force_encr_types;
 #define WPS_VERSION wps_version_number
 
 #else /* CONFIG_WPS_TESTING */
 
-#ifdef CONFIG_WPS2
 #define WPS_VERSION 0x20
-#else /* CONFIG_WPS2 */
-#define WPS_VERSION 0x10
-#endif /* CONFIG_WPS2 */
 
 #endif /* CONFIG_WPS_TESTING */
 
@@ -44,6 +45,11 @@ extern int wps_testing_dummy_cred;
 #define WPS_OOB_DEVICE_PASSWORD_MIN_LEN 16
 #define WPS_OOB_DEVICE_PASSWORD_LEN 32
 #define WPS_OOB_PUBKEY_HASH_LEN 20
+#define WPS_DEV_NAME_MAX_LEN 32
+#define WPS_MANUFACTURER_MAX_LEN 64
+#define WPS_MODEL_NAME_MAX_LEN 32
+#define WPS_MODEL_NUMBER_MAX_LEN 32
+#define WPS_SERIAL_NUMBER_MAX_LEN 32
 
 /* Attribute Types */
 enum wps_attribute {
@@ -145,7 +151,9 @@ enum {
 	WFA_ELEM_AUTHORIZEDMACS = 0x01,
 	WFA_ELEM_NETWORK_KEY_SHAREABLE = 0x02,
 	WFA_ELEM_REQUEST_TO_ENROLL = 0x03,
-	WFA_ELEM_SETTINGS_DELAY_TIME = 0x04
+	WFA_ELEM_SETTINGS_DELAY_TIME = 0x04,
+	WFA_ELEM_REGISTRAR_CONFIGURATION_METHODS = 0x05,
+	WFA_ELEM_MULTI_AP = 0x06
 };
 
 /* Device Password ID */
@@ -155,13 +163,9 @@ enum wps_dev_password_id {
 	DEV_PW_MACHINE_SPECIFIED = 0x0002,
 	DEV_PW_REKEY = 0x0003,
 	DEV_PW_PUSHBUTTON = 0x0004,
-	DEV_PW_REGISTRAR_SPECIFIED = 0x0005
-};
-
-/* WPS message flag */
-enum wps_msg_flag {
-	WPS_MSG_FLAG_MORE = 0x01,
-	WPS_MSG_FLAG_LEN = 0x02
+	DEV_PW_REGISTRAR_SPECIFIED = 0x0005,
+	DEV_PW_NFC_CONNECTION_HANDOVER = 0x0007,
+	DEV_PW_P2PS_DEFAULT = 0x0008
 };
 
 /* Message Type */
@@ -184,18 +188,18 @@ enum wps_msg_type {
 };
 
 /* Authentication Type Flags */
-#define WPS_WIFI_AUTH_OPEN 0x0001
+#define WPS_AUTH_OPEN 0x0001
 #define WPS_AUTH_WPAPSK 0x0002
-#define WPS_AUTH_SHARED 0x0004
+#define WPS_AUTH_SHARED 0x0004 /* deprecated */
 #define WPS_AUTH_WPA 0x0008
 #define WPS_AUTH_WPA2 0x0010
 #define WPS_AUTH_WPA2PSK 0x0020
-#define WPS_AUTH_TYPES (WPS_WIFI_AUTH_OPEN | WPS_AUTH_WPAPSK | WPS_AUTH_SHARED | \
+#define WPS_AUTH_TYPES (WPS_AUTH_OPEN | WPS_AUTH_WPAPSK | WPS_AUTH_SHARED | \
 			WPS_AUTH_WPA | WPS_AUTH_WPA2 | WPS_AUTH_WPA2PSK)
 
 /* Encryption Type Flags */
 #define WPS_ENCR_NONE 0x0001
-#define WPS_ENCR_WEP 0x0002
+#define WPS_ENCR_WEP 0x0002 /* deprecated */
 #define WPS_ENCR_TKIP 0x0004
 #define WPS_ENCR_AES 0x0008
 #define WPS_ENCR_TYPES (WPS_ENCR_NONE | WPS_ENCR_WEP | WPS_ENCR_TKIP | \
@@ -221,7 +225,9 @@ enum wps_config_error {
 	WPS_CFG_SETUP_LOCKED = 15,
 	WPS_CFG_MSG_TIMEOUT = 16,
 	WPS_CFG_REG_SESS_TIMEOUT = 17,
-	WPS_CFG_DEV_PASSWORD_AUTH_FAILURE = 18
+	WPS_CFG_DEV_PASSWORD_AUTH_FAILURE = 18,
+	WPS_CFG_60G_CHAN_NOT_SUPPORTED = 19,
+	WPS_CFG_PUBLIC_KEY_HASH_MISMATCH = 20
 };
 
 /* Vendor specific Error Indication for WPS event messages */
@@ -229,12 +235,14 @@ enum wps_error_indication {
 	WPS_EI_NO_ERROR,
 	WPS_EI_SECURITY_TKIP_ONLY_PROHIBITED,
 	WPS_EI_SECURITY_WEP_PROHIBITED,
+	WPS_EI_AUTH_FAILURE,
 	NUM_WPS_EI_VALUES
 };
 
 /* RF Bands */
 #define WPS_RF_24GHZ 0x01
 #define WPS_RF_50GHZ 0x02
+#define WPS_RF_60GHZ 0x04
 
 /* Config Methods */
 #define WPS_CONFIG_USBA 0x0001
@@ -246,12 +254,11 @@ enum wps_error_indication {
 #define WPS_CONFIG_NFC_INTERFACE 0x0040
 #define WPS_CONFIG_PUSHBUTTON 0x0080
 #define WPS_CONFIG_KEYPAD 0x0100
-#ifdef CONFIG_WPS2
 #define WPS_CONFIG_VIRT_PUSHBUTTON 0x0280
 #define WPS_CONFIG_PHY_PUSHBUTTON 0x0480
+#define WPS_CONFIG_P2PS 0x1000
 #define WPS_CONFIG_VIRT_DISPLAY 0x2008
 #define WPS_CONFIG_PHY_DISPLAY 0x4008
-#endif /* CONFIG_WPS2 */
 
 /* Connection Type Flags */
 #define WPS_CONN_ESS 0x01
@@ -285,7 +292,8 @@ enum wps_dev_categ {
 	WPS_DEV_DISPLAY = 7,
 	WPS_DEV_MULTIMEDIA = 8,
 	WPS_DEV_GAMING = 9,
-	WPS_DEV_PHONE = 10
+	WPS_DEV_PHONE = 10,
+	WPS_DEV_AUDIO = 11,
 };
 
 enum wps_dev_subcateg {
@@ -333,9 +341,5 @@ enum wps_response_type {
 #define WPS_PBC_WALK_TIME 120
 
 #define WPS_MAX_AUTHORIZED_MACS 5
-
-#define WPS_IGNORE_SEL_REG_MAX_CNT	4
-
-#define WPS_MAX_DIS_AP_NUM	10
 
 #endif /* WPS_DEFS_H */

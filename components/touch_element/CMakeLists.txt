@@ -4,5 +4,6 @@ if(IDF_TARGET STREQUAL "esp32s2")
             "touch_slider.c"
             "touch_matrix.c"
             INCLUDE_DIRS include
-            REQUIRES driver)
+            REQUIRES driver
+            PRIV_REQUIRES esp_timer)
 endif()

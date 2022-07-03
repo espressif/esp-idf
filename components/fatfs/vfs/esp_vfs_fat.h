@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stddef.h>
@@ -70,7 +62,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path);
 
 
 /**
- * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount and esp_vfs_fat_spiflash_mount functions
+ * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount and esp_vfs_fat_spiflash_mount_rw_wl functions
  */
 typedef struct {
     /**
@@ -93,6 +85,17 @@ typedef struct {
      * sector size.
      */
     size_t allocation_unit_size;
+    /**
+     * Enables real ff_disk_status function implementation for SD cards
+     * (ff_sdmmc_status). Possibly slows down IO performance.
+     *
+     * Try to enable if you need to handle situations when SD cards
+     * are not unmounted properly before physical removal
+     * or you are experiencing issues with SD cards.
+     *
+     * Doesn't do anything for other memory storage media.
+     */
+    bool disk_status_check_enable;
 } esp_vfs_fat_mount_config_t;
 
 // Compatibility definition
@@ -124,8 +127,6 @@ typedef esp_vfs_fat_mount_config_t esp_vfs_fat_sdmmc_mount_config_t;
  * @param slot_config   Pointer to structure with slot configuration.
  *                      For SDMMC peripheral, pass a pointer to sdmmc_slot_config_t
  *                      structure initialized using SDMMC_SLOT_CONFIG_DEFAULT.
- *                      (Deprecated) For SPI peripheral, pass a pointer to sdspi_slot_config_t
- *                      structure initialized using SDSPI_SLOT_CONFIG_DEFAULT().
  * @param mount_config  pointer to structure with extra parameters for mounting FATFS
  * @param[out] out_card  if not NULL, pointer to the card information structure will be returned via this argument
  * @return
@@ -204,7 +205,7 @@ esp_err_t esp_vfs_fat_sdmmc_unmount(void);
  *      - ESP_ERR_INVALID_ARG if the card argument is unregistered
  *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_sdmmc_mount hasn't been called
  */
-esp_err_t esp_vfs_fat_sdcard_unmount(const char *base_path, sdmmc_card_t *card);
+esp_err_t esp_vfs_fat_sdcard_unmount(const char* base_path, sdmmc_card_t *card);
 
 /**
  * @brief Convenience function to initialize FAT filesystem in SPI flash and register it in VFS
@@ -227,28 +228,27 @@ esp_err_t esp_vfs_fat_sdcard_unmount(const char *base_path, sdmmc_card_t *card);
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_FOUND if the partition table does not contain FATFS partition with given label
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount was already called
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_rw_wl was already called
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  *      - ESP_FAIL if partition can not be mounted
  *      - other error codes from wear levelling library, SPI flash driver, or FATFS drivers
  */
-esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config,
     wl_handle_t* wl_handle);
 
 /**
- * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_spiflash_mount
+ * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_spiflash_mount_rw_wl
  *
  * @param base_path  path where partition should be registered (e.g. "/spiflash")
- * @param wl_handle  wear levelling driver handle returned by esp_vfs_fat_spiflash_mount
+ * @param wl_handle  wear levelling driver handle returned by esp_vfs_fat_spiflash_mount_rw_wl
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount hasn't been called
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_rw_wl hasn't been called
  */
- esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle);
-
+esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t wl_handle);
 
 /**
  * @brief Convenience function to initialize read-only FAT filesystem and register it in VFS
@@ -268,27 +268,53 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_FOUND if the partition table does not contain FATFS partition with given label
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_rawflash_mount was already called for the same partition
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_ro was already called for the same partition
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  *      - ESP_FAIL if partition can not be mounted
  *      - other error codes from SPI flash driver, or FATFS drivers
  */
-esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config);
 
 /**
- * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_rawflash_mount
+ * @brief Unmount FAT filesystem and release resources acquired using esp_vfs_fat_spiflash_mount_ro
  *
  * @param base_path  path where partition should be registered (e.g. "/spiflash")
  * @param partition_label label of partition to be unmounted
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount hasn't been called
+ *      - ESP_ERR_INVALID_STATE if esp_vfs_fat_spiflash_mount_rw_wl hasn't been called
  */
- esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label);
+esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label);
 
+esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config,
+    wl_handle_t* wl_handle)
+    __attribute__((deprecated("esp_vfs_fat_spiflash_mount is deprecated, please use esp_vfs_fat_spiflash_mount_rw_wl instead")));
+esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle)
+    __attribute__((deprecated("esp_vfs_fat_spiflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_rw_wl instead")));
+esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config)
+    __attribute__((deprecated("esp_vfs_fat_rawflash_mount is deprecated, please use esp_vfs_fat_spiflash_mount_ro instead")));
+esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
+    __attribute__((deprecated("esp_vfs_fat_rawflash_unmount is deprecated, please use esp_vfs_fat_spiflash_unmount_ro instead")));
+
+/**
+ * @brief  Get information for FATFS partition
+ *
+ * @param base_path  Path where partition should be registered (e.g. "/spiflash")
+ * @param[out] out_total_bytes  Size of the file system
+ * @param[out] out_free_bytes   Current used bytes in the file system
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_STATE if partition not found
+ *      - ESP_FAIL if another FRESULT error (saved in errno)
+ */
+esp_err_t esp_vfs_fat_info(const char* base_path, uint64_t* out_total_bytes, uint64_t* out_free_bytes);
 
 #ifdef __cplusplus
 }

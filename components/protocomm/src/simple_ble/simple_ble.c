@@ -42,13 +42,13 @@ const uint8_t *simple_ble_get_uuid128(uint16_t handle)
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
-    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
+    case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
         adv_config_done &= (~adv_config_flag);
         if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
         }
         break;
-    case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
+    case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
         adv_config_done &= (~scan_rsp_config_flag);
         if (adv_config_done == 0) {
             esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
@@ -94,15 +94,13 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGE(TAG, "set device name failed, error code = 0x%x", ret);
             return;
         }
-        ret = esp_ble_gap_config_adv_data_raw(g_ble_cfg_p->raw_adv_data_p,
-                                              g_ble_cfg_p->raw_adv_data_len);
+        ret = esp_ble_gap_config_adv_data(g_ble_cfg_p->adv_data_p);
         if (ret) {
             ESP_LOGE(TAG, "config raw adv data failed, error code = 0x%x ", ret);
             return;
         }
         adv_config_done |= adv_config_flag;
-        ret = esp_ble_gap_config_scan_rsp_data_raw(g_ble_cfg_p->raw_scan_rsp_data_p,
-                                                   g_ble_cfg_p->raw_scan_rsp_data_len);
+        ret = esp_ble_gap_config_adv_data(g_ble_cfg_p->scan_rsp_data_p);
         if (ret) {
             ESP_LOGE(TAG, "config raw scan rsp data failed, error code = 0x%x", ret);
             return;
@@ -269,11 +267,12 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     ESP_LOGD(TAG, "Free mem at end of simple_ble_init %d", esp_get_free_heap_size());
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
-    esp_ble_auth_req_t auth_req;
+    esp_ble_auth_req_t auth_req= ESP_LE_AUTH_REQ_MITM;
     if (cfg->ble_bonding) {
-	auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;     //bonding with peer device after authentication
-    } else {
-	auth_req = ESP_LE_AUTH_REQ_SC_MITM;
+	auth_req |= ESP_LE_AUTH_BOND;     //bonding with peer device after authentication
+    }
+    if (cfg->ble_sm_sc) {
+	auth_req |= ESP_LE_AUTH_REQ_SC_ONLY;
     }
     esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;           //set the IO capability to No output No input
     uint8_t key_size = 16;      //the key size should be 7~16 bytes

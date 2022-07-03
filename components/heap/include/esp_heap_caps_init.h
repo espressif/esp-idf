@@ -49,6 +49,20 @@ void heap_caps_enable_nonos_stack_heaps(void);
  *
  * Use heap_caps_add_region_with_caps() to register a region with custom capabilities.
  *
+ * @note Please refer to following example for memory regions allowed for addition to heap based on an existing region
+ * (address range for demonstration purpose only):
+ @verbatim
+       Existing region: 0x1000 <-> 0x3000
+       New region:      0x1000 <-> 0x3000 (Allowed)
+       New region:      0x1000 <-> 0x2000 (Allowed)
+       New region:      0x0000 <-> 0x1000 (Allowed)
+       New region:      0x3000 <-> 0x4000 (Allowed)
+       New region:      0x0000 <-> 0x2000 (NOT Allowed)
+       New region:      0x0000 <-> 0x4000 (NOT Allowed)
+       New region:      0x1000 <-> 0x4000 (NOT Allowed)
+       New region:      0x2000 <-> 0x4000 (NOT Allowed)
+ @endverbatim
+ *
  * @param start Start address of new region.
  * @param end End address of new region.
  *
@@ -62,6 +76,20 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end);
  * @brief Add a region of memory to the collection of heaps at runtime, with custom capabilities.
  *
  * Similar to heap_caps_add_region(), only custom memory capabilities are specified by the caller.
+ *
+ * @note Please refer to following example for memory regions allowed for addition to heap based on an existing region
+ * (address range for demonstration purpose only):
+ @verbatim
+       Existing region: 0x1000 <-> 0x3000
+       New region:      0x1000 <-> 0x3000 (Allowed)
+       New region:      0x1000 <-> 0x2000 (Allowed)
+       New region:      0x0000 <-> 0x1000 (Allowed)
+       New region:      0x3000 <-> 0x4000 (Allowed)
+       New region:      0x0000 <-> 0x2000 (NOT Allowed)
+       New region:      0x0000 <-> 0x4000 (NOT Allowed)
+       New region:      0x1000 <-> 0x4000 (NOT Allowed)
+       New region:      0x2000 <-> 0x4000 (NOT Allowed)
+ @endverbatim
  *
  * @param caps Ordered array of capability masks for the new region, in order of priority. Must have length
  * SOC_MEMORY_TYPE_NO_PRIOS. Does not need to remain valid after the call returns.

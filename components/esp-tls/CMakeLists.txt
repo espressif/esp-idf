@@ -12,6 +12,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS . esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
+                    # mbedtls is public requirements becasue esp_tls.h
+                    # includes mbedtls header files.
                     REQUIRES mbedtls
                     PRIV_REQUIRES lwip http_parser)
 

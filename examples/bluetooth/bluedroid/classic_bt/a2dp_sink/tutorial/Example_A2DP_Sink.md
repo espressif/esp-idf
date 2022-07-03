@@ -87,37 +87,48 @@ For example, after executing `esp_bt_gap_start_discovery()`, an event of `ESP_BT
 The main function installs I2S to play the audio. A loudspeaker, additional ADC or hardware requirements and possibly an external I2S codec may be needed.
 
 ```c
-    /* I2S configuration parameters */
-    i2s_config_t i2s_config = {
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-#else
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,              /* only TX */
-#endif
-        .sample_rate = 44100,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
-        .intr_alloc_flags = 0,                              /* default interrupt priority */
-        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
-    };
+    #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+        /* I2S configuration parameters */
+        i2s_config_t i2s_config = {
+            .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
+            .sample_rate = 44100,
+            .bits_per_sample = 16,
+            .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
+            .communication_format = I2S_COMM_FORMAT_STAND_MSB,
+            .dma_buf_count = 6,
+            .dma_buf_len = 60,
+            .intr_alloc_flags = 0,                              /* default interrupt priority */
+            .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
+        };
 
-    /* enable I2S */
-    i2s_driver_install(0, &i2s_config, 0, NULL);
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-    i2s_set_pin(0, NULL);
-#else
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = CONFIG_EXAMPLE_I2S_BCK_PIN,
-        .ws_io_num = CONFIG_EXAMPLE_I2S_LRCK_PIN,
-        .data_out_num = CONFIG_EXAMPLE_I2S_DATA_PIN,
-        .data_in_num = -1                                   /* not used */
-    };
-    i2s_set_pin(0, &pin_config);
-#endif
+        /* enable I2S */
+        ESP_ERROR_CHECK(i2s_driver_install(0, &i2s_config, 0, NULL));
+        ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
+        ESP_ERROR_CHECK(i2s_set_pin(0, NULL));
+    #else
+        i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+        chan_cfg.auto_clear = true;
+        i2s_std_config_t std_cfg = {
+            .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
+            .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+            .gpio_cfg = {
+                .mclk = I2S_GPIO_UNUSED,
+                .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
+                .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+                .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
+                .din = I2S_GPIO_UNUSED,
+                .invert_flags = {
+                    .mclk_inv = false,
+                    .bclk_inv = false,
+                    .ws_inv = false,
+                },
+            },
+        };
+        /* enable I2S */
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
+    #endif
 ```
 
 ### Paring Parameter Settings

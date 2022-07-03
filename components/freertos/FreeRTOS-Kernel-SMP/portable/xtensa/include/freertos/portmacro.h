@@ -17,6 +17,7 @@
 #include "portbenchmark.h"
 #include "esp_macros.h"
 #include "hal/cpu_hal.h"
+#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 #include "esp_private/crosscore_int.h"
 
 /*
@@ -126,6 +127,10 @@ static inline void __attribute__((always_inline)) vPortYieldFromISR( void );
 
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
 
+// ----------------------- TCB Cleanup --------------------------
+
+void vPortCleanUpTCB ( void *pxTCB );
+
 /* ----------------------------------------- FreeRTOS SMP Porting Interface --------------------------------------------
  * - Contains all the mappings of the macros required by FreeRTOS SMP
  * - Must come after forward declare as some porting macros map to declared functions
@@ -215,6 +220,10 @@ extern void vTaskExitCritical( void );
 #define portALT_GET_RUN_TIME_COUNTER_VALUE(x)       ({x = (uint32_t)esp_timer_get_time();})
 #endif
 
+// ------------------- TCB Cleanup ----------------------
+
+#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
+
 /* --------------------------------------------- Inline Implementations ------------------------------------------------
  * - Implementation of inline functions of the forward declares
  * - Should come after forward declare and FreeRTOS Porting interface, as implementation may use both.
@@ -247,54 +256,6 @@ static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void )
     return (BaseType_t) cpu_hal_get_core_id();
 }
 
-/* ------------------------------------------------------ Misc ---------------------------------------------------------
- * - Miscellaneous porting macros
- * - These are not part of the FreeRTOS porting interface, but are used by other FreeRTOS dependent components
- * - [refactor-todo] Remove dependency on MPU wrappers by modifying TCB
- * ------------------------------------------------------------------------------------------------------------------ */
-
-// -------------------- Co-Processor -----------------------
-
-// When coprocessors are defined, we maintain a pointer to coprocessors area.
-// We currently use a hack: redefine field xMPU_SETTINGS in TCB block as a structure that can hold:
-// MPU wrappers, coprocessor area pointer, trace code structure, and more if needed.
-// The field is normally used for memory protection. FreeRTOS should create another general purpose field.
-typedef struct {
-#if XCHAL_CP_NUM > 0
-    volatile StackType_t *coproc_area; // Pointer to coprocessor save area; MUST BE FIRST
-#endif
-
-#if portUSING_MPU_WRAPPERS
-    // Define here mpu_settings, which is port dependent
-    int mpu_setting; // Just a dummy example here; MPU not ported to Xtensa yet
-#endif
-} xMPU_SETTINGS;
-
-// Main hack to use MPU_wrappers even when no MPU is defined (warning: mpu_setting should not be accessed; otherwise move this above xMPU_SETTINGS)
-#if (XCHAL_CP_NUM > 0) && !portUSING_MPU_WRAPPERS   // If MPU wrappers not used, we still need to allocate coproc area
-#undef portUSING_MPU_WRAPPERS
-#define portUSING_MPU_WRAPPERS 1   // Enable it to allocate coproc area
-#define MPU_WRAPPERS_H             // Override mpu_wrapper.h to disable unwanted code
-#define PRIVILEGED_FUNCTION
-#define PRIVILEGED_DATA
-#endif
-
-void _xt_coproc_release(volatile void *coproc_sa_base);
-
-/*
- * The structures and methods of manipulating the MPU are contained within the
- * port layer.
- *
- * Fills the xMPUSettings structure with the memory region information
- * contained in xRegions.
- */
-#if( portUSING_MPU_WRAPPERS == 1 )
-struct xMEMORY_REGION;
-void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION *const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth ) PRIVILEGED_FUNCTION;
-void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings );
-#endif
-
-
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
  * - These macros and functions need to be defined for IDF to compile
  * ------------------------------------------------------------------------------------------------------------------ */
@@ -307,7 +268,7 @@ static inline BaseType_t xPortInIsrContext(void)
     return xPortCheckIfInISR();
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void);
+BaseType_t xPortInterruptedFromISRContext(void);
 
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
@@ -395,6 +356,9 @@ static inline bool IRAM_ATTR xPortCanYield(void)
     return ((ps_reg & PS_INTLEVEL_MASK) == 0);
 }
 
+// Added for backward compatibility with IDF
+#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
+
 // ----------------------- System --------------------------
 
 void vPortSetStackWatchpoint(void *pxStackStart);
@@ -422,7 +386,6 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include <stdarg.h>
 #include <xtensa/hal.h>
 #include "esp_attr.h"
-#include "esp_timer.h"
 #include "esp_newlib.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
@@ -431,6 +394,11 @@ portmacro.h. Therefore, we need to keep these headers around for now to allow th
 #include <limits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/xtensa_api.h>
+
+/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 
 #ifdef __cplusplus
 }

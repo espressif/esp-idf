@@ -6,6 +6,7 @@
 
 #pragma once
 #include "esp_tls.h"
+#include "esp_tls_private.h"
 
 /**
  * Internal Callback for creating ssl handle for wolfssl
@@ -62,6 +63,11 @@ void esp_wolfssl_free_global_ca_store(void);
  * Callback function for Initializing the global ca store for TLS?SSL using wolfssl
  */
 esp_err_t esp_wolfssl_init_global_ca_store(void);
+
+/**
+ *  Return ssl context for wolfSSL stack
+ */
+void *esp_wolfssl_get_ssl_context(esp_tls_t *tls);
 
 /**
  * wolfSSL function for Initializing socket wrappers (no-operation for wolfSSL)

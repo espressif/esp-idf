@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_lcd_panel_io.h"
@@ -20,7 +21,7 @@
 // To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many.
 // More means more memory use, but less overhead for setting up / finishing transfers. Make sure 240
 // is dividable by this.
-#define PARALLEL_LINES 16
+#define PARALLEL_LINES CONFIG_EXAMPLE_LCD_FLUSH_PARALLEL_LINES
 // The number of frames to show before rotate the graph
 #define ROTATE_FRAME   30
 
@@ -144,6 +145,9 @@ void app_main(void)
 
     // Initialize LCD panel
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
+
+    // Turn on the screen
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
     // Swap x and y axis (Different LCD screens may need different options)
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));

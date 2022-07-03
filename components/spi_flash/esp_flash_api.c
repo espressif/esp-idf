@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include <string.h>
 
+#include "esp_memory_utils.h"
 #include "spi_flash_chip_driver.h"
 #include "memspi_host_driver.h"
 #include "esp_log.h"
@@ -291,21 +292,21 @@ esp_err_t IRAM_ATTR esp_flash_init_main(esp_flash_t *chip)
     uint32_t size;
     err = esp_flash_get_size(chip, &size);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "failed to get chip size");
+        ESP_EARLY_LOGE(TAG, "failed to get chip size");
         return err;
     }
 
     if (chip->chip_drv->get_chip_caps == NULL) {
         // chip caps get failed, pass the flash capability check.
-        ESP_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
+        ESP_EARLY_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
     } else {
         if (((chip->chip_drv->get_chip_caps(chip) & SPI_FLASH_CHIP_CAP_32MB_SUPPORT) == 0) && (size > (16 *1024 * 1024))) {
-            ESP_LOGW(TAG, "Detected flash size > 16 MB, but access beyond 16 MB is not supported for this flash model yet.");
+            ESP_EARLY_LOGW(TAG, "Detected flash size > 16 MB, but access beyond 16 MB is not supported for this flash model yet.");
             size = (16 * 1024 * 1024);
         }
     }
 
-    ESP_LOGI(TAG, "flash io: %s", io_mode_str[chip->read_mode]);
+    ESP_EARLY_LOGI(TAG, "flash io: %s", io_mode_str[chip->read_mode]);
     err = rom_spiflash_api_funcs->start(chip);
     if (err != ESP_OK) {
         return err;
@@ -422,7 +423,7 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
         chip->chip_drv = *drivers;
         // start/end SPI operation each time, for multitasking
         // and also so esp_flash_registered_flash_drivers can live in flash
-        ESP_LOGD(TAG, "trying chip: %s", chip->chip_drv->name);
+        ESP_EARLY_LOGD(TAG, "trying chip: %s", chip->chip_drv->name);
 
         err = rom_spiflash_api_funcs->start(chip);
         if (err != ESP_OK) {
@@ -443,7 +444,7 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
     if (!esp_flash_chip_driver_initialized(chip)) {
         return ESP_ERR_NOT_FOUND;
     }
-    ESP_LOGI(TAG, "detected chip: %s", chip->chip_drv->name);
+    ESP_EARLY_LOGI(TAG, "detected chip: %s", chip->chip_drv->name);
     return ESP_OK;
 }
 
@@ -782,7 +783,11 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to receive in another buffer in DRAM.
-    bool direct_read = chip->host->driver->supports_direct_read(chip->host, buffer);
+    bool direct_read = false;
+    //If the buffer is internal already, it's ok to use it directly
+    direct_read |= esp_ptr_in_dram(buffer);
+    //If not, we need to check if the HW support direct write
+    direct_read |= chip->host->driver->supports_direct_read(chip->host, buffer);
     uint8_t* temp_buffer = NULL;
 
     //each time, we at most read this length
@@ -850,7 +855,11 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to copy the data first
-    bool direct_write = chip->host->driver->supports_direct_write(chip->host, buffer);
+    bool direct_write = false;
+    //If the buffer is internal already, it's ok to write it directly
+    direct_write |= esp_ptr_in_dram(buffer);
+    //If not, we need to check if the HW support direct write
+    direct_write |= chip->host->driver->supports_direct_write(chip->host, buffer);
 
     // Indicate whether the bus is acquired by the driver, needs to be released before return
     bool bus_acquired = false;

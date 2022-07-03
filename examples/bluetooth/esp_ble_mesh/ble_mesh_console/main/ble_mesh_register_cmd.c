@@ -5,6 +5,7 @@
  */
 
 #include "esp_bt.h"
+#include "esp_timer.h"
 #include "soc/soc.h"
 
 #include "test.h"

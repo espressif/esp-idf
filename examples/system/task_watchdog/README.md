@@ -1,8 +1,11 @@
 # Task Watchdog Example
 
-This test code shows how to initialize the task watchdog, add tasks to the
-watchdog task list, feeding the tasks, deleting tasks from the watchdog task
-list, and deinitializing the task watchdog.
+The following example demonstrates how to use the following features of the task watchdog timer (TWDT):
+
+- How to initialize and deinitialize the TWDT
+- How to subscribe and unsubscribe tasks to the TWDT
+- How to subscribe and unsubscribe users to the TWDT
+- How to tasks and users can reset (i.e., feed) the TWDT
 
 ## How to use example
 
@@ -15,7 +18,7 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Configure the project
 
-Program should run without error. Comment out `esp_task_wdt_reset()` to observe a watchdog timeout.
+Program should run correctly without needing any special configuration. However, users can disable `CONFIG_ESP_TASK_WDT` which will prevent the TWDT from being automatically initialized on startup. If disabled, the example will manually initialize the TWDT.
 
 ### Build and Flash
 
@@ -29,31 +32,33 @@ See the [ESP-IDF Getting Started Guide](https://idf.espressif.com/) for all the 
 
 ## Example Output
 
-As you run the example, you will see the following log:
-
-With `esp_task_wdt_reset()`:
+When the example runs normally, the following output will be observed:
 
 ```
+I (316) cpu_start: Starting scheduler on PRO CPU.
 I (0) cpu_start: Starting scheduler on APP CPU.
-Initialize TWDT
+TWDT initialized
+Subscribed to TWDT
 Delay for 10 seconds
-Unsubscribing and deleting tasks
-Complete
+Unsubscribed from TWDT
+TWDT deinitialized
+Example complete
 ```
 
-Without `esp_task_wdt_reset()`:
+Users can comment out any of the `esp_task_wdt_reset()` or `esp_task_wdt_reset_user()` calls to trigger the TWDT, which in turn will result in the following output:
+
 ```
+I (316) cpu_start: Starting scheduler on PRO CPU.
 I (0) cpu_start: Starting scheduler on APP CPU.
-Initialize TWDT
+TWDT initialized
+Subscribed to TWDT
 Delay for 10 seconds
-E (6316) task_wdt: Task watchdog got triggered. The following tasks did not reset the watchdog in time:
-E (6316) task_wdt:  - reset task (CPU 0)
-E (6316) task_wdt:  - reset task (CPU 1)
-E (6316) task_wdt: Tasks currently running:
-E (6316) task_wdt: CPU 0: IDLE
-E (6316) task_wdt: CPU 1: IDLE
-E (6316) task_wdt: Print CPU 0 (current core) backtrace
-
+E (6326) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+E (6326) task_wdt:  - task (CPU 0)
+E (6326) task_wdt: Tasks currently running:
+E (6326) task_wdt: CPU 0: IDLE
+E (6326) task_wdt: CPU 1: IDLE
+E (6326) task_wdt: Print CPU 0 (current core) backtrace
 ```
 
 ## Troubleshooting

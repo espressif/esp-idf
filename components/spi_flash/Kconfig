@@ -53,9 +53,14 @@ menu "SPI Flash driver"
             to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
             SPI flash chip is manufactured by ISSI.
 
+    config SPI_FLASH_HAS_ROM_IMPL
+        bool
+        depends on IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
+        default y if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2
+
     config SPI_FLASH_ROM_IMPL
         bool "Use esp_flash implementation in ROM"
-        depends on IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+        depends on SPI_FLASH_HAS_ROM_IMPL
         default n
         help
             Enable this flag to use new SPI flash driver functions from ROM instead of ESP-IDF.
@@ -203,6 +208,28 @@ menu "SPI Flash driver"
             `default_registered_chips` structure must be provided by the user.
 
             See example: custom_chip_driver under examples/storage for more details.
+
+    menu "SPI Flash behavior when brownout"
+
+        config SPI_FLASH_BROWNOUT_RESET_XMC
+            bool "Enable sending reset when brownout for XMC flash chips"
+            default y
+            select SPI_FLASH_BROWNOUT_RESET
+            help
+                When this option is selected, the patch will be enabled for XMC.
+                Follow the recommended flow by XMC for better stability.
+
+                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+        config SPI_FLASH_BROWNOUT_RESET
+            bool
+            default y
+            select ESP_SYSTEM_BROWNOUT_INTR
+            help
+                When brownout happens during flash erase/write operations,
+                send reset command to stop the flash operations to improve stability.
+
+    endmenu
 
     menu "Auto-detect flash chips"
         visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST

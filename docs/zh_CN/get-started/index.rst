@@ -51,6 +51,14 @@
     * 多种外设
     * 内置安全硬件
 
+.. only:: esp32c2
+
+    * 2.4 GHz Wi-Fi
+    * 低功耗蓝牙
+    * 高性能 32 位 RISC-V 单核处理器
+    * 多种外设
+    * 适用于较简单、大批量生产的物联网应用
+
 {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
 
 乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
@@ -110,6 +118,13 @@
         ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
         ESP32-S3-DevKitM-1 <../hw-reference/esp32s3/user-guide-devkitm-1>
 
+.. only:: esp32c2
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP8684-DevKitM-1 <https://docs.espressif.com/projects/espressif-esp-dev-kits/zh_CN/latest/esp8684/esp8684-devkitm-1/index.html>
+
 .. _get-started-get-prerequisites:
 
 软件：
@@ -142,8 +157,8 @@ IDE
 .. toctree::
     :maxdepth: 1
 
-    Eclipse Plugin <../get-started/eclipse-setup>
-    VSCode Extension <../get-started/vscode-setup>
+    Eclipse Plugin <eclipse-setup>
+    VSCode Extension <vscode-setup>
 
 手动安装
 ~~~~~~~~~~~~~~~~~~~
@@ -153,18 +168,12 @@ IDE
 .. toctree::
     :maxdepth: 1
 
-    Windows Installer <../get-started/windows-setup>
-    Linux and macOS <../get-started/linux-macos-setup>
+    Windows Installer <windows-setup>
+    Linux and macOS <linux-macos-setup>
 
 编译第一个工程
 ===================
 
-如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`get-started-first-steps` 编译第一个工程。
-
-.. toctree::
-   :hidden:
-
-   Windows <windows-setup>
-   Manual <linux-macos-setup>
+如果您已经安装好 ESP-IDF 且没有使用集成开发环境 (IDE)，请在命令提示行中按照 :ref:`在 Windows 中开始创建工程 <get-started-windows-first-steps>` 或 :ref:`在 Linux 和 macOS 中开始创建工程 <get-started-linux-macos-first-steps>` 编译第一个工程。
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/

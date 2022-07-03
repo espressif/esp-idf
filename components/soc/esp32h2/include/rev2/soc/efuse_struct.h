@@ -353,22 +353,22 @@ typedef union {
          *  The value of DIS_DOWNLOAD_MODE.
          */
         uint32_t dis_download_mode:1;
-        /** dis_legacy_spi_boot : RO; bitpos: [1]; default: 0;
-         *  The value of DIS_LEGACY_SPI_BOOT.
+        /** dis_direct_boot : RO; bitpos: [1]; default: 0;
+         *  The value of DIS_DIRECT_BOOT.
          */
-        uint32_t dis_legacy_spi_boot:1;
-        /** uart_print_channel : RO; bitpos: [2]; default: 0;
-         *  The value of UART_PRINT_CHANNEL.
+        uint32_t dis_direct_boot:1;
+        /** dis_usb_serial_jtag_rom_print : RO; bitpos: [2]; default: 0;
+         *  The value of DIS_USB_SERIAL_JTAG_ROM_PRINT.
          */
-        uint32_t uart_print_channel:1;
+        uint32_t dis_usb_serial_jtag_rom_print:1;
         /** rpt4_reserved8 : RO; bitpos: [3]; default: 0;
          *  Reserved.
          */
         uint32_t rpt4_reserved8:1;
-        /** dis_usb_download_mode : RO; bitpos: [4]; default: 0;
-         *  The value of DIS_USB_DOWNLOAD_MODE.
+        /** dis_usb_serial_jtag_download_mode : RO; bitpos: [4]; default: 0;
+         *  The value of DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE.
          */
-        uint32_t dis_usb_download_mode:1;
+        uint32_t dis_usb_serial_jtag_download_mode:1;
         /** enable_security_download : RO; bitpos: [5]; default: 0;
          *  The value of ENABLE_SECURITY_DOWNLOAD.
          */
@@ -1616,22 +1616,22 @@ typedef union {
          *  If DIS_DOWNLOAD_MODE is 1, then it indicates a programming error.
          */
         uint32_t dis_download_mode_err:1;
-        /** dis_legacy_spi_boot_err : RO; bitpos: [1]; default: 0;
-         *  If DIS_LEGACY_SPI_BOOT is 1, then it indicates a programming error.
+        /** dis_direct_boot_err : RO; bitpos: [1]; default: 0;
+         *  If DIS_DIRECT_BOOT is 1, then it indicates a programming error.
          */
-        uint32_t dis_legacy_spi_boot_err:1;
-        /** uart_print_channel_err : RO; bitpos: [2]; default: 0;
-         *  If UART_PRINT_CHANNEL is 1, then it indicates a programming error.
+        uint32_t dis_direct_boot_err:1;
+        /** dis_usb_serial_jtag_rom_print_err : RO; bitpos: [2]; default: 0;
+         *  If DIS_USB_SERIAL_JTAG_ROM_PRINT is 1, then it indicates a programming error.
          */
-        uint32_t uart_print_channel_err:1;
+        uint32_t dis_usb_serial_jtag_rom_print_err:1;
         /** rpt4_reserved8_err : RO; bitpos: [3]; default: 0;
          *  Reserved.
          */
         uint32_t rpt4_reserved8_err:1;
-        /** dis_usb_download_mode_err : RO; bitpos: [4]; default: 0;
-         *  If DIS_USB_DOWNLOAD_MODE is 1, then it indicates a programming error.
+        /** dis_usb_serial_jtag_download_mode_err : RO; bitpos: [4]; default: 0;
+         *  If DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE is 1, then it indicates a programming error.
          */
-        uint32_t dis_usb_download_mode_err:1;
+        uint32_t dis_usb_serial_jtag_download_mode_err:1;
         /** enable_security_download_err : RO; bitpos: [5]; default: 0;
          *  If ENABLE_SECURITY_DOWNLOAD is 1, then it indicates a programming error.
          */
@@ -2166,6 +2166,7 @@ typedef struct {
     volatile efuse_date_reg_t date;
 } efuse_dev_t;
 
+extern efuse_dev_t EFUSE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(efuse_dev_t) == 0x200, "Invalid size of efuse_dev_t structure");

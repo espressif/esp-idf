@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 
 # Asio chat client and server examples
 
@@ -48,7 +51,7 @@ Set following parameters under Example Configuration Options:
 - Connect to the server using multiple clients, for example using any option below.
     - build and run asio chat client on your host machine
     - run chat_client asio example on ESP platform
-    - since chat messages consists of ASCII size and message, it is possible to 
+    - since chat messages consists of ASCII size and message, it is possible to
         netcat `nc IP PORT` and type for example ` 4ABC<CR>` to transmit 'ABC\n'
 
 ## Running the example in client mode

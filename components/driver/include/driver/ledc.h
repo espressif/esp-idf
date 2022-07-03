@@ -15,8 +15,21 @@
 extern "C" {
 #endif
 
-#define LEDC_APB_CLK_HZ         (APB_CLK_FREQ)
-#define LEDC_REF_CLK_HZ         (REF_CLK_FREQ)
+#if SOC_LEDC_SUPPORT_APB_CLOCK
+/**
+ * @brief Frequency of one of the LEDC peripheral clock sources, APB_CLK
+ * @note  This macro should have no use in your application, we keep it here only for backward compatible
+ */
+#define LEDC_APB_CLK_HZ _Pragma ("GCC warning \"'LEDC_APB_CLK_HZ' macro is deprecated\"") (APB_CLK_FREQ)
+#endif
+#if SOC_LEDC_SUPPORT_REF_TICK
+/**
+ * @brief Frequency of one of the LEDC peripheral clock sources, REF_TICK
+ * @note  This macro should have no use in your application, we keep it here only for backward compatible
+ */
+#define LEDC_REF_CLK_HZ _Pragma ("GCC warning \"'LEDC_REF_CLK_HZ' macro is deprecated\"") (REF_CLK_FREQ)
+#endif
+
 #define LEDC_ERR_DUTY           (0xFFFFFFFF)
 #define LEDC_ERR_VAL            (-1)
 
@@ -42,15 +55,16 @@ typedef struct {
  */
 typedef struct {
     ledc_mode_t speed_mode;                /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
-    union {
-        ledc_timer_bit_t duty_resolution;  /*!< LEDC channel duty resolution */
-        ledc_timer_bit_t bit_num __attribute__((deprecated)); /*!< Deprecated in ESP-IDF 3.0. This is an alias to 'duty_resolution' for backward compatibility with ESP-IDF 2.1 */
-    };
+    ledc_timer_bit_t duty_resolution;      /*!< LEDC channel duty resolution */
     ledc_timer_t  timer_num;               /*!< The timer source of channel (0 - 3) */
     uint32_t freq_hz;                      /*!< LEDC timer frequency (Hz) */
-    ledc_clk_cfg_t clk_cfg;                /*!< Configure LEDC source clock.
-                                                For low speed channels and high speed channels, you can specify the source clock using LEDC_USE_REF_TICK, LEDC_USE_APB_CLK or LEDC_AUTO_CLK.
-                                                For low speed channels, you can also specify the source clock using LEDC_USE_RTC8M_CLK, in this case, all low speed channel's source clock must be RTC8M_CLK*/
+    ledc_clk_cfg_t clk_cfg;                /*!< Configure LEDC source clock from ledc_clk_cfg_t.
+                                                Note that LEDC_USE_RTC8M_CLK and LEDC_USE_XTAL_CLK are
+                                                non-timer-specific clock sources. You can not have one LEDC timer uses
+                                                RTC8M_CLK as the clock source and have another LEDC timer uses XTAL_CLK
+                                                as its clock source. All chips except esp32 and esp32s2 do not have
+                                                timer-specific clock sources, which means clock source for all timers
+                                                must be the same one. */
 } ledc_timer_config_t;
 
 typedef intr_handle_t ledc_isr_handle_t;

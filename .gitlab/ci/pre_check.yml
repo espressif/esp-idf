@@ -113,15 +113,22 @@ check_public_headers:
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
-check_soc_component:
+check_chip_support_components:
   extends:
     - .pre_check_base_template
     - .rules:build
   tags:
     - build
+  artifacts:
+    when: on_failure
+    paths:
+      - esp_hw_support_part.h
+      - bootloader_support_part.h
+    expire_in: 1 week
   script:
     - python tools/ci/check_soc_headers_leak.py
     - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+    - tools/ci/check_esp_memory_utils_headers.sh
 
 check_esp_err_to_name:
   extends:
@@ -153,13 +160,6 @@ scan_tests:
       - $TEST_APPS_OUTPUT_DIR
       - $COMPONENT_UT_OUTPUT_DIR
     expire_in: 1 week
-  cache:
-    key: pip-cache
-    paths:
-      - .cache/pip
-    # pull only for most of the use cases since it's cache dir.
-    # Only set "pull-push" policy for "scan_test" since it would **possibly** install all pypi packages
-    policy: pull-push
   variables:
     EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs

@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import json
 import os
 import re
@@ -7,21 +9,22 @@ import sys
 import threading
 import time
 from threading import Thread
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
+from click.core import Context
 from idf_py_actions.errors import FatalError
-from idf_py_actions.tools import ensure_build_directory
+from idf_py_actions.tools import PropertyDict, ensure_build_directory
 
 PYTHON = sys.executable
 
 
-def action_extensions(base_actions, project_path):
+def action_extensions(base_actions: Dict, project_path: str) -> Dict:
     OPENOCD_OUT_FILE = 'openocd_out.txt'
     GDBGUI_OUT_FILE = 'gdbgui_out.txt'
     # Internal dictionary of currently active processes, threads and their output files
-    processes = {'threads_to_join': [], 'openocd_issues': None}
+    processes: Dict = {'threads_to_join': [], 'openocd_issues': None}
 
-    def _check_for_common_openocd_issues(file_name, print_all=True):
+    def _check_for_common_openocd_issues(file_name: str, print_all: bool=True) -> Any:
         if processes['openocd_issues'] is not None:
             return processes['openocd_issues']
         try:
@@ -37,7 +40,7 @@ def action_extensions(base_actions, project_path):
             processes['openocd_issues'] = message
             return message
 
-    def _check_openocd_errors(fail_if_openocd_failed, target, ctx):
+    def _check_openocd_errors(fail_if_openocd_failed: Dict, target: str, ctx: Context) -> None:
         if fail_if_openocd_failed:
             if 'openocd' in processes and processes['openocd'] is not None:
                 p = processes['openocd']
@@ -60,7 +63,7 @@ def action_extensions(base_actions, project_path):
                 # OpenOCD exited or error message detected -> print possible output and terminate
                 raise FatalError('Action "{}" failed due to errors in OpenOCD:\n{}'.format(target, _check_for_common_openocd_issues(name)), ctx)
 
-    def _terminate_async_target(target):
+    def _terminate_async_target(target: str) -> None:
         if target in processes and processes[target] is not None:
             try:
                 if target + '_outfile' in processes:
@@ -84,8 +87,18 @@ def action_extensions(base_actions, project_path):
                 print('Failed to close/kill {}'.format(target))
             processes[target] = None  # to indicate this has ended
 
-    def create_local_gdbinit(gdbinit, elf_file):
+    def is_gdb_with_python(gdb: str) -> bool:
+        # execute simple python command to check is it supported
+        return subprocess.run([gdb, '--batch-silent', '--ex', 'python import os'], stderr=subprocess.DEVNULL).returncode == 0
+
+    def create_local_gdbinit(gdb: str, gdbinit: str, elf_file: str) -> None:
         with open(gdbinit, 'w') as f:
+            if is_gdb_with_python(gdb):
+                f.write('python\n')
+                f.write('import sys\n')
+                f.write(f'sys.path = {sys.path}\n')
+                f.write('import freertos_gdb\n')
+                f.write('end\n')
             if os.name == 'nt':
                 elf_file = elf_file.replace('\\','\\\\')
             f.write('file {}\n'.format(elf_file))
@@ -95,7 +108,7 @@ def action_extensions(base_actions, project_path):
             f.write('thb app_main\n')
             f.write('c\n')
 
-    def debug_cleanup():
+    def debug_cleanup() -> None:
         print('cleaning up debug targets')
         for t in processes['threads_to_join']:
             if threading.currentThread() != t:
@@ -104,7 +117,7 @@ def action_extensions(base_actions, project_path):
         _terminate_async_target('gdbgui')
         _terminate_async_target('gdb')
 
-    def post_debug(action, ctx, args, **kwargs):
+    def post_debug(action: str, ctx: Context, args: PropertyDict, **kwargs: str) -> None:
         """ Deal with asynchronous targets, such as openocd running in background """
         if kwargs['block'] == 1:
             for target in ['openocd', 'gdbgui']:
@@ -131,7 +144,7 @@ def action_extensions(base_actions, project_path):
         _terminate_async_target('openocd')
         _terminate_async_target('gdbgui')
 
-    def get_project_desc(args, ctx):
+    def get_project_desc(args: PropertyDict, ctx: Context) -> Any:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
@@ -139,7 +152,7 @@ def action_extensions(base_actions, project_path):
             project_desc = json.load(f)
             return project_desc
 
-    def openocd(action, ctx, args, openocd_scripts, openocd_commands):
+    def openocd(action: str, ctx: Context, args: PropertyDict, openocd_scripts: Optional[str], openocd_commands: str) -> None:
         """
         Execute openocd as external tool
         """
@@ -176,14 +189,14 @@ def action_extensions(base_actions, project_path):
         processes['openocd_outfile_name'] = openocd_out_name
         print('OpenOCD started as a background task {}'.format(process.pid))
 
-    def get_gdb_args(gdbinit, project_desc: Dict[str, Any]) -> List[str]:
+    def get_gdb_args(gdbinit: str, project_desc: Dict[str, Any]) -> List:
         args = ['-x={}'.format(gdbinit)]
         debug_prefix_gdbinit = project_desc.get('debug_prefix_map_gdbinit')
         if debug_prefix_gdbinit:
             args.append('-ix={}'.format(debug_prefix_gdbinit))
         return args
 
-    def gdbui(action, ctx, args, gdbgui_port, gdbinit, require_openocd):
+    def gdbui(action: str, ctx: Context, args: PropertyDict, gdbgui_port: Optional[str], gdbinit: Optional[str], require_openocd: bool) -> None:
         """
         Asynchronous GDB-UI target
         """
@@ -192,15 +205,15 @@ def action_extensions(base_actions, project_path):
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
         if gdbinit is None:
             gdbinit = os.path.join(local_dir, 'gdbinit')
-            create_local_gdbinit(gdbinit, os.path.join(args.build_dir, project_desc['app_elf']))
+            create_local_gdbinit(gdb, gdbinit, os.path.join(args.build_dir, project_desc['app_elf']))
 
         # this is a workaround for gdbgui
         # gdbgui is using shlex.split for the --gdb-args option. When the input is:
         # - '"-x=foo -x=bar"', would return ['foo bar']
         # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
         # so for one item, use extra double quotes. for more items, use no extra double quotes.
-        gdb_args = get_gdb_args(gdbinit, project_desc)
-        gdb_args = '"{}"'.format(' '.join(gdb_args)) if len(gdb_args) == 1 else ' '.join(gdb_args)
+        gdb_args_list = get_gdb_args(gdbinit, project_desc)
+        gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
         args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
         print(args)
 
@@ -226,8 +239,8 @@ def action_extensions(base_actions, project_path):
         print('gdbgui started as a background task {}'.format(process.pid))
         _check_openocd_errors(fail_if_openocd_failed, action, ctx)
 
-    def global_callback(ctx, global_args, tasks):
-        def move_to_front(task_name):
+    def global_callback(ctx: Context, global_args: PropertyDict, tasks: List) -> None:
+        def move_to_front(task_name: str) -> None:
             for index, task in enumerate(tasks):
                 if task.name == task_name:
                     tasks.insert(0, tasks.pop(index))
@@ -252,29 +265,25 @@ def action_extensions(base_actions, project_path):
                 if task.name in ('gdb', 'gdbgui', 'gdbtui'):
                     task.action_args['require_openocd'] = True
 
-    def run_gdb(gdb_args):
+    def run_gdb(gdb_args: List) -> int:
         p = subprocess.Popen(gdb_args)
         processes['gdb'] = p
         return p.wait()
 
-    def gdbtui(action, ctx, args, gdbinit, require_openocd):
+    def gdbtui(action: str, ctx: Context, args: PropertyDict, gdbinit: str, require_openocd: bool) -> None:
         """
         Synchronous GDB target with text ui mode
         """
         gdb(action, ctx, args, 1, gdbinit, require_openocd)
 
-    def gdb(action, ctx, args, gdb_tui, gdbinit, require_openocd):
+    def gdb(action: str, ctx: Context, args: PropertyDict, gdb_tui: Optional[int], gdbinit: Optional[str], require_openocd: bool) -> None:
         """
         Synchronous GDB target
         """
         watch_openocd = Thread(target=_check_openocd_errors, args=(fail_if_openocd_failed, action, ctx, ))
         watch_openocd.start()
         processes['threads_to_join'].append(watch_openocd)
-        desc_path = os.path.join(args.build_dir, 'project_description.json')
-        if not os.path.exists(desc_path):
-            ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r') as f:
-            project_desc = json.load(f)
+        project_desc = get_project_desc(args, ctx)
 
         elf_file = os.path.join(args.build_dir, project_desc['app_elf'])
         if not os.path.exists(elf_file):
@@ -283,7 +292,7 @@ def action_extensions(base_actions, project_path):
         local_dir = project_desc['build_dir']
         if gdbinit is None:
             gdbinit = os.path.join(local_dir, 'gdbinit')
-            create_local_gdbinit(gdbinit, elf_file)
+            create_local_gdbinit(gdb, gdbinit, elf_file)
         args = [gdb, *get_gdb_args(gdbinit, project_desc)]
         if gdb_tui is not None:
             args += ['-tui']
@@ -389,8 +398,10 @@ def action_extensions(base_actions, project_path):
             'post_debug': {
                 'callback': post_debug,
                 'deprecated': {
+                    'since': 'v4.4',
                     'removed': 'v5.0',
-                    'message': 'Please use "post-debug" instead.',
+                    'exit_with_error': True,
+                    'message': 'Have you wanted to run "post-debug" instead?',
                 },
                 'hidden': True,
                 'help': 'Utility target to read the output of async debug action and stop them.',

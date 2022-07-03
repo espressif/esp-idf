@@ -5,7 +5,7 @@
  */
 #pragma once
 
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 
 #ifdef __cplusplus
 extern "C" {

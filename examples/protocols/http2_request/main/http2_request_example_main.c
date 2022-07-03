@@ -22,12 +22,13 @@
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
 #include "esp_netif.h"
+#include "sdkconfig.h"
+
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
 
 #include "sh2lib.h"
-
-
-extern const uint8_t server_root_cert_pem_start[] asm("_binary_http2_github_io_root_cert_pem_start");
-extern const uint8_t server_root_cert_pem_end[]   asm("_binary_http2_github_io_root_cert_pem_end");
 
 /* The HTTP/2 server to connect to */
 #define HTTP2_SERVER_URI  "https://http2.github.io"
@@ -102,10 +103,12 @@ static void http2_task(void *args)
 
     /* HTTP2: one connection multiple requests. Do the TLS/TCP connection first */
     printf("Connecting to server\n");
+
     struct sh2lib_config_t cfg = {
         .uri = HTTP2_SERVER_URI,
-        .cacert_buf = server_root_cert_pem_start,
-        .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        .crt_bundle_attach = esp_crt_bundle_attach,
+#endif
     };
     struct sh2lib_handle hd;
 

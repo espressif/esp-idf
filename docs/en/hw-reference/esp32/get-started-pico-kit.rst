@@ -225,7 +225,7 @@ Related Documents
 * `ESP32-PICO-KIT V4 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT V4.1 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT Reference Design <https://www.espressif.com/sites/default/files/documentation/esp32-pico-kit_v4.1_20180314_en.zip>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
-* `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
+* `ESP32-PICO-D4 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`
 
 

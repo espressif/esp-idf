@@ -112,6 +112,7 @@ void rtc_init(rtc_config_t cfg)
     }
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_CK, 1);
 }
 
 rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
@@ -126,17 +127,8 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
 
 static void set_ocode_by_efuse(int calib_version)
 {
-#if !CONFIG_IDF_TARGET_ESP32C2 //TODO: Need check for esp32c2
-    assert(calib_version == 1);
-    // use efuse ocode.
-    uint32_t ocode;
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_OCODE, &ocode, 8);
-    assert(err == ESP_OK);
-    (void) err;
-    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
-    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
-#endif
-    abort();
+    // ESP32C2-TODO: IDF-4940
+    ESP_HW_LOGW(TAG, "set_ocode_by_efuse not supported yet");
 }
 
 static void calibrate_ocode(void)
@@ -150,13 +142,11 @@ static void calibrate_ocode(void)
     4. wait o-code calibration done flag(odone_flag & bg_odone_flag) or timeout;
     5. set cpu to old-config.
     */
-    rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
-    rtc_slow_freq_t rtc_slow_freq_x32k = RTC_SLOW_FREQ_32K_XTAL;
-    rtc_slow_freq_t rtc_slow_freq_8MD256 = RTC_SLOW_FREQ_8MD256;
+    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
-    if (slow_clk_freq == (rtc_slow_freq_x32k)) {
-        cal_clk = RTC_CAL_32K_XTAL;
-    } else if (slow_clk_freq == rtc_slow_freq_8MD256) {
+    if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
+        cal_clk = RTC_CAL_EXT_CLK;
+    } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
         cal_clk  = RTC_CAL_8MD256;
     }
 
@@ -249,7 +239,7 @@ uint32_t get_rtc_dbias_by_efuse(uint8_t chip_version, uint32_t dig_dbias)
 static void set_rtc_dig_dbias()
 {
     /*
-    1. a reasonable dig_dbias which by scaning pvt to make 160 CPU run successful stored in efuse;
+    1. a reasonable dig_dbias which by scaning pvt to make 120 CPU run successful stored in efuse;
     2. also we store some value in efuse, include:
         k_rtc_ldo (slope of rtc voltage & rtc_dbias);
         k_dig_ldo (slope of digital voltage & digital_dbias);
@@ -257,7 +247,7 @@ static void set_rtc_dig_dbias()
         v_dig_bias20 (digital voltage when digital dbais is 20).
     3. a reasonable rtc_dbias can be calculated by a certion formula.
     */
-    uint32_t rtc_dbias = 28, dig_dbias = 28;
+    uint32_t rtc_dbias = 31, dig_dbias = 26;
     uint8_t chip_version = esp_efuse_get_chip_ver();
     if (chip_version >= 3) {
         dig_dbias = get_dig_dbias_by_efuse(chip_version);

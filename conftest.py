@@ -12,11 +12,11 @@
 #
 # This is an experimental feature, and if you found any bug or have any question, please report to
 # https://github.com/espressif/pytest-embedded/issues
-
 import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from fnmatch import fnmatch
 from typing import Callable, List, Optional, Tuple
 
@@ -29,11 +29,12 @@ from _pytest.python import Function
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
-from pytest_embedded.plugin import parse_configuration
+from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
+from pytest_embedded_idf.dut import IdfDut
 
-SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
-PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp32c2']
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
+PREVIEW_TARGETS = ['linux', 'esp32h2']
 DEFAULT_SDKCONFIG = 'default'
 
 
@@ -41,10 +42,7 @@ DEFAULT_SDKCONFIG = 'default'
 # Help Functions #
 ##################
 def is_target_marker(marker: str) -> bool:
-    if marker.startswith('esp32'):
-        return True
-
-    if marker.startswith('esp8'):
+    if marker.startswith('esp32') or marker.startswith('esp8') or marker == 'linux':
         return True
 
     return False
@@ -58,10 +56,65 @@ def item_marker_names(item: Item) -> List[str]:
     return [marker.name for marker in item.iter_markers()]
 
 
+def get_target_marker(markexpr: str) -> str:
+    candidates = set()
+    # we use `-m "esp32 and generic"` in our CI to filter the test cases
+    for marker in markexpr.split('and'):
+        marker = marker.strip()
+        if is_target_marker(marker):
+            candidates.add(marker)
+
+    if len(candidates) > 1:
+        raise ValueError(
+            f'Specified more than one target markers: {candidates}. Please specify no more than one.'
+        )
+    elif len(candidates) == 1:
+        return candidates.pop()
+    else:
+        raise ValueError(
+            'Please specify one target marker via "--target [TARGET]" or via "-m [TARGET]"'
+        )
+
+
 ############
 # Fixtures #
 ############
+_TEST_SESSION_TMPDIR = os.path.join(
+    os.path.dirname(__file__),
+    'pytest_embedded_log',
+    datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+)
+os.makedirs(_TEST_SESSION_TMPDIR, exist_ok=True)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def session_tempdir() -> str:
+    return _TEST_SESSION_TMPDIR
+
+
+@pytest.fixture()
+def log_minimum_free_heap_size(dut: IdfDut, config: str) -> Callable[..., None]:
+    def real_func() -> None:
+        res = dut.expect(r'Minimum free heap size: (\d+) bytes')
+        logging.info(
+            '\n------ heap size info ------\n'
+            '[app_name] {}\n'
+            '[config_name] {}\n'
+            '[target] {}\n'
+            '[minimum_free_heap_size] {} Bytes\n'
+            '------ heap size end ------'.format(
+                os.path.basename(dut.app.app_path),
+                config,
+                dut.target,
+                res.group(1).decode('utf8'),
+            )
+        )
+
+    return real_func
+
+
 @pytest.fixture
+@multi_dut_argument
 def config(request: FixtureRequest) -> str:
     return getattr(request, 'param', None) or DEFAULT_SDKCONFIG
 
@@ -77,10 +130,8 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 
 @pytest.fixture
-@parse_configuration
-def build_dir(
-    request: FixtureRequest, app_path: str, target: Optional[str], config: Optional[str]
-) -> str:
+@multi_dut_fixture
+def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
     """
     Check local build dir with the following priority:
 
@@ -90,7 +141,6 @@ def build_dir(
     4. build
 
     Args:
-        request: pytest fixture
         app_path: app path
         target: target
         config: config
@@ -98,11 +148,6 @@ def build_dir(
     Returns:
         valid build directory
     """
-    param_or_cli: str = getattr(request, 'param', None) or request.config.getoption(
-        'build_dir'
-    )
-    if param_or_cli is not None:  # respect the param and the cli
-        return param_or_cli
 
     check_dirs = []
     if target is not None and config is not None:
@@ -131,6 +176,7 @@ def build_dir(
 
 
 @pytest.fixture(autouse=True)
+@multi_dut_fixture
 def junit_properties(
     test_case_name: str, record_xml_attribute: Callable[[str, object], None]
 ) -> None:
@@ -158,8 +204,20 @@ _idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
 
 
 def pytest_configure(config: Config) -> None:
+    # cli option "--target"
+    target = config.getoption('target') or ''
+
+    help_commands = ['--help', '--fixtures', '--markers', '--version']
+    for cmd in help_commands:
+        if cmd in config.invocation_params.args:
+            target = 'unneeded'
+            break
+
+    if not target:  # also could specify through markexpr via "-m"
+        target = get_target_marker(config.getoption('markexpr') or '')
+
     config.stash[_idf_pytest_embedded_key] = IdfPytestEmbedded(
-        target=config.getoption('target'),
+        target=target,
         sdkconfig=config.getoption('sdkconfig'),
         known_failure_cases_file=config.getoption('known_failure_cases_file'),
     )
@@ -188,16 +246,24 @@ class IdfPytestEmbedded:
         )
 
         self._failed_cases: List[
-            Tuple[str, bool]
-        ] = []  # (test_case_name, is_known_failure_cases)
+            Tuple[str, bool, bool]
+        ] = []  # (test_case_name, is_known_failure_cases, is_xfail)
 
     @property
     def failed_cases(self) -> List[str]:
-        return [case for case, is_known in self._failed_cases if not is_known]
+        return [
+            case
+            for case, is_known, is_xfail in self._failed_cases
+            if not is_known and not is_xfail
+        ]
 
     @property
     def known_failure_cases(self) -> List[str]:
-        return [case for case, is_known in self._failed_cases if is_known]
+        return [case for case, is_known, _ in self._failed_cases if is_known]
+
+    @property
+    def xfail_cases(self) -> List[str]:
+        return [case for case, _, is_xfail in self._failed_cases if is_xfail]
 
     @staticmethod
     def _parse_known_failure_cases_file(
@@ -239,13 +305,13 @@ class IdfPytestEmbedded:
 
         # add markers for special markers
         for item in items:
-            if 'supported_targets' in item_marker_names(item):
+            if 'supported_targets' in item.keywords:
                 for _target in SUPPORTED_TARGETS:
                     item.add_marker(_target)
-            if 'preview_targets' in item_marker_names(item):
+            if 'preview_targets' in item.keywords:
                 for _target in PREVIEW_TARGETS:
                     item.add_marker(_target)
-            if 'all_targets' in item_marker_names(item):
+            if 'all_targets' in item.keywords:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
 
@@ -271,7 +337,8 @@ class IdfPytestEmbedded:
         if report.outcome == 'failed':
             test_case_name = item.funcargs.get('test_case_name', '')
             is_known_failure = self._is_known_failure(test_case_name)
-            self._failed_cases.append((test_case_name, is_known_failure))
+            is_xfail = report.keywords.get('xfail', False)
+            self._failed_cases.append((test_case_name, is_known_failure, is_xfail))
 
         return report
 
@@ -319,6 +386,10 @@ class IdfPytestEmbedded:
         if self.known_failure_cases:
             terminalreporter.section('Known failure cases', bold=True, yellow=True)
             terminalreporter.line('\n'.join(self.known_failure_cases))
+
+        if self.xfail_cases:
+            terminalreporter.section('xfail cases', bold=True, yellow=True)
+            terminalreporter.line('\n'.join(self.xfail_cases))
 
         if self.failed_cases:
             terminalreporter.section('Failed cases', bold=True, red=True)

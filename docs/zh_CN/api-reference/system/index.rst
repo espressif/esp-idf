@@ -23,13 +23,14 @@ System API
     :not CONFIG_FREERTOS_UNICORE: ipc
     intr_alloc
     log
-    system
+    misc_system_api
     ota
     :CONFIG_IDF_TARGET_ARCH_XTENSA: perfmon
     power_management
     pthread
     random
     sleep_modes
+    soc_caps
     system_time
     :SOC_ASYNC_MEMCPY_SUPPORTED: async_memcpy
     :esp32: himem

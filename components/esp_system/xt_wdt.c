@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 #if SOC_XT_WDT_SUPPORTED
 
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "hal/xt_wdt_hal.h"
 #include "hal/xt_wdt_ll.h"
 #include "soc/rtc.h"
@@ -62,7 +62,7 @@ esp_err_t esp_xt_wdt_init(const esp_xt_wdt_config_t *cfg)
         xt_wdt_hal_enable_backup_clk(&s_hal_ctx, rtc_clk_frequency_khz);
     }
 
-    ESP_GOTO_ON_ERROR(rtc_isr_register(rtc_xt_wdt_default_isr_handler, NULL, XT_WDT_LL_XTAL32_DEAD_INTR_MASK), err, TAG, "Failed to register isr");
+    ESP_GOTO_ON_ERROR(rtc_isr_register(rtc_xt_wdt_default_isr_handler, NULL, XT_WDT_LL_XTAL32_DEAD_INTR_MASK, 0), err, TAG, "Failed to register isr");
 
     xt_wdt_hal_enable(&s_hal_ctx, 1);
 

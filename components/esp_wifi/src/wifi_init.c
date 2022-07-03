@@ -12,10 +12,9 @@
 #include "esp_pm.h"
 #include "esp_sleep.h"
 #include "esp_private/pm_impl.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "esp_wpa.h"
 #include "esp_netif.h"
-#include "driver/adc.h"
 #include "esp_coexist_internal.h"
 #include "esp_phy_init.h"
 #include "phy.h"
@@ -45,7 +44,7 @@ uint64_t g_wifi_feature_caps =
 #if CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE
     CONFIG_FEATURE_WPA3_SAE_BIT |
 #endif
-#if (CONFIG_ESP32_SPIRAM_SUPPORT || CONFIG_ESP32S2_SPIRAM_SUPPORT || CONFIG_ESP32S3_SPIRAM_SUPPORT)
+#if CONFIG_SPIRAM
     CONFIG_FEATURE_CACHE_TX_BUF_BIT |
 #endif
 #if CONFIG_ESP_WIFI_FTM_INITIATOR_SUPPORT
@@ -56,7 +55,6 @@ uint64_t g_wifi_feature_caps =
 #endif
 0;
 
-static bool s_wifi_adc_xpd_flag;
 
 static const char* TAG = "wifi_init";
 
@@ -113,6 +111,10 @@ esp_err_t esp_wifi_deinit(void)
         return err;
     }
 
+#if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
+    esp_wifi_beacon_monitor_configure(false, 0, 0, 0, 0);
+#endif
+
 #if CONFIG_ESP_WIFI_SLP_IRAM_OPT
     esp_pm_unregister_light_sleep_default_params_config_callback();
 #endif
@@ -131,6 +133,11 @@ esp_err_t esp_wifi_deinit(void)
     phy_init_flag();
 #endif
     esp_wifi_power_domain_off();
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_deinit();
+#endif
+    esp_phy_pd_mem_deinit();
+
     return err;
 }
 
@@ -240,6 +247,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         esp_mac_bb_pd_mem_init();
         esp_wifi_internal_set_mac_sleep(true);
 #endif
+        esp_phy_pd_mem_init();
 #if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
 #endif
@@ -255,6 +263,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
             return result;
         }
     }
+#if CONFIG_ESP_WIFI_SLP_BEACON_LOST_OPT
+    esp_wifi_beacon_monitor_configure(true, CONFIG_ESP_WIFI_SLP_BEACON_LOST_TIMEOUT,
+            CONFIG_ESP_WIFI_SLP_BEACON_LOST_THRESHOLD, CONFIG_ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME,
+            CONFIG_ESP_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME);
+#endif
     adc2_cal_include(); //This enables the ADC2 calibration constructor at start up.
 
     esp_wifi_config_info();
@@ -266,8 +279,8 @@ void wifi_apb80m_request(void)
 {
     assert(s_wifi_modem_sleep_lock);
     esp_pm_lock_acquire(s_wifi_modem_sleep_lock);
-    if (rtc_clk_apb_freq_get() != APB_CLK_FREQ) {
-        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", rtc_clk_apb_freq_get());
+    if (esp_clk_apb_freq() != APB_CLK_FREQ) {
+        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", esp_clk_apb_freq());
     }
 }
 
@@ -277,24 +290,6 @@ void wifi_apb80m_release(void)
     esp_pm_lock_release(s_wifi_modem_sleep_lock);
 }
 #endif //CONFIG_PM_ENABLE
-
-/* Coordinate ADC power with other modules. This overrides the function from PHY lib. */
-// It seems that it is only required on ESP32, but we still compile it for all chips, in case it is
-// called by PHY unexpectedly.
-void set_xpd_sar(bool en)
-{
-    if (s_wifi_adc_xpd_flag == en) {
-        /* ignore repeated calls to set_xpd_sar when the state is already correct */
-        return;
-    }
-
-    s_wifi_adc_xpd_flag = en;
-    if (en) {
-        adc_power_acquire();
-    } else {
-        adc_power_release();
-    }
-}
 
 #ifndef CONFIG_ESP_WIFI_FTM_ENABLE
 void ieee80211_ftm_attach(void)

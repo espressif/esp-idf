@@ -75,7 +75,8 @@ class SourceChecker(BaseChecker):
     # allow to source only files which will be also checked by the script
     # Note: The rules are complex and the LineRuleChecker cannot be used
     def process_line(self, line, line_number):
-        m = re.search(r'^\s*source(\s*)"([^"]+)"', line)
+        m = re.search(r'^\s*[ro]{0,2}source(\s*)"([^"]+)"', line)
+
         if m:
             if len(m.group(1)) == 0:
                 raise InputError(self.path_in_idf, line_number, '"source" has to been followed by space',
@@ -140,6 +141,9 @@ class IndentAndNameChecker(BaseChecker):
                                               |(help)
                                               |(if)
                                               |(source)
+                                              |(osource)
+                                              |(rsource)
+                                              |(orsource)
                                           )
                                        ''', re.X)
 
@@ -199,7 +203,7 @@ class IndentAndNameChecker(BaseChecker):
             print('level+', new_item, ': ', self.level_stack, end=' -> ')
         # "config" and "menuconfig" don't have a closing pair. So if new_item is an item which need to be indented
         # outside the last "config" or "menuconfig" then we need to find to a parent where it belongs
-        if new_item in ['config', 'menuconfig', 'menu', 'choice', 'if', 'source']:
+        if new_item in ['config', 'menuconfig', 'menu', 'choice', 'if', 'source', 'rsource', 'osource', 'orsource']:
             # item is not belonging to a previous "config" or "menuconfig" so need to indent to parent
             for i, item in enumerate(reversed(self.level_stack)):
                 if item in ['menu', 'mainmenu', 'choice', 'if']:

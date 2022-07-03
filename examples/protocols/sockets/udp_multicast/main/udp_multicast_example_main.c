@@ -417,8 +417,12 @@ static void mcast_example_task(void *pvParameters)
 #ifdef CONFIG_EXAMPLE_IPV4_ONLY
                 hints.ai_family = AF_INET; // For an IPv4 socket
 #else
+
+#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP  // Resolving IPv4 mapped IPv6 addresses is supported only in the official TCPIP_LWIP stack (esp-lwip)
                 hints.ai_family = AF_INET6; // For an IPv4 socket with V4 mapped addresses
                 hints.ai_flags |= AI_V4MAPPED;
+#endif // CONFIG_ESP_NETIF_TCPIP_LWIP
+
 #endif
                 int err = getaddrinfo(CONFIG_EXAMPLE_MULTICAST_IPV4_ADDR,
                                       NULL,

@@ -117,7 +117,7 @@ typedef struct {
     UINT8           uint8_val;
     UINT32          uint32_val1;
     UINT32          uint32_val2;
-    char            str[BTA_HF_CLIENT_NUMBER_LEN + 1];
+    char            str[BTA_HF_CLIENT_MAX_LEN + 1];
 } tBTA_HF_CLIENT_DATA_VAL;
 
 /* union of all event datatypes */
@@ -268,6 +268,8 @@ extern void bta_hf_client_send_at_cnum(void);
 extern void bta_hf_client_send_at_nrec(void);
 extern void bta_hf_client_send_at_binp(UINT32 action);
 extern void bta_hf_client_send_at_bia(void);
+extern void bta_hf_client_send_at_xapl(char *information, UINT32 features);
+extern void bta_hf_client_send_at_iphoneaccev(UINT32 bat_level, BOOLEAN docked);
 
 /* Action functions */
 extern void bta_hf_client_register(tBTA_HF_CLIENT_DATA *p_data);

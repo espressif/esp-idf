@@ -12,7 +12,6 @@
 
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_ota_ops.h"
 
 #include "sdkconfig.h"
 
@@ -27,7 +26,6 @@
 #include "esp_spi_flash.h"
 #include "esp_flash_internal.h"
 #include "esp_newlib.h"
-#include "esp_vfs_dev.h"
 #include "esp_timer.h"
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
@@ -35,11 +33,16 @@
 #include "esp_sleep.h"
 #include "esp_xt_wdt.h"
 
+#if __has_include("esp_ota_ops.h")
+#include "esp_ota_ops.h"
+#define HAS_ESP_OTA 1
+#endif
+
 /***********************************************/
 // Headers for other components init functions
-#include "nvs_flash.h"
-
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "esp_coexist_internal.h"
+#endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
@@ -50,23 +53,27 @@
 #endif
 
 #include "esp_private/dbg_stubs.h"
+
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
-#include "esp_pthread.h"
-#include "esp_vfs_console.h"
-#include "esp_private/esp_clk.h"
+#endif
 
+#if CONFIG_VFS_SUPPORT_IO
+#include "esp_vfs_dev.h"
+#include "esp_vfs_console.h"
+#endif
+
+#include "esp_pthread.h"
+#include "esp_private/esp_clk.h"
+#include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
 
 #include "esp_rom_sys.h"
 
-// [refactor-todo] make this file completely target-independent
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/spiram.h"
+#if CONFIG_SPIRAM
+#include "esp_psram.h"
+#include "esp_private/esp_psram_extram.h"
 #endif
 /***********************************************/
 
@@ -240,9 +247,9 @@ static void do_core_init(void)
     esp_timer_early_init();
     esp_newlib_init();
 
-    if (g_spiram_ok) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-        esp_err_t r=esp_spiram_add_to_heapalloc();
+    if (esp_psram_is_initialized()) {
+        esp_err_t r=esp_psram_extram_add_to_heap_allocator();
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
             abort();
@@ -250,8 +257,8 @@ static void do_core_init(void)
 #if CONFIG_SPIRAM_USE_MALLOC
         heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
-#endif
     }
+#endif
 
 #if CONFIG_ESP_BROWNOUT_DET
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
@@ -290,6 +297,9 @@ static void do_core_init(void)
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
     (void)flash_ret;
+#if CONFIG_SPI_FLASH_BROWNOUT_RESET
+    spi_flash_needs_reset_check();
+#endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
 
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
@@ -368,6 +378,7 @@ static void start_cpu0_default(void)
     int cpu_freq = esp_clk_cpu_freq();
     ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
+#if HAS_ESP_OTA // [refactor-todo] find a better way to handle this.
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
@@ -389,6 +400,7 @@ static void start_cpu0_default(void)
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
     }
+#endif //HAS_ESP_OTA
 
     // Initialize core components and services.
     do_core_init();

@@ -27,18 +27,13 @@
 #include "soc/dport_reg.h"
 #include "esp32/rtc.h"
 #include "esp32/rom/cache.h"
-#include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rtc.h"
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/spiram.h"
-#include "esp32s2/dport_access.h"
 #include "esp32s2/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rtc.h"
 #include "esp32s3/rom/cache.h"
-#include "esp32s3/spiram.h"
-#include "esp32s3/dport_access.h"
 #include "esp_memprot.h"
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
@@ -58,6 +53,11 @@
 #include "esp32c2/memprot.h"
 #endif
 
+#if CONFIG_SPIRAM
+#include "esp_psram.h"
+#include "esp_private/esp_psram_extram.h"
+#endif
+
 #include "esp_private/spi_flash_os.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_flash.h"
@@ -71,7 +71,8 @@
 #include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
+#include "esp_spi_flash.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "esp_private/trax.h"
@@ -95,9 +96,6 @@
 #define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
 #endif
 
-//This will be replaced with a kconfig, TODO: IDF-3821
-//Besides, the MMU setting will be abstracted later. So actually we don't need this define in the future
-#define MMU_PAGE_SIZE    0x10000
 //This dependency will be removed in the future
 #include "soc/ext_mem_defs.h"
 
@@ -129,9 +127,6 @@ static volatile bool s_cpu_inited[SOC_CPU_CORES_NUM] = { false };
 
 static volatile bool s_resume_cores;
 #endif
-
-// If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
-bool g_spiram_ok = true;
 
 static void core_intr_matrix_clear(void)
 {
@@ -347,16 +342,20 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Resume_DCache(0);
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
+    if (esp_efuse_check_errors() != ESP_OK) {
+        esp_restart();
+    }
+
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     extern int _rodata_reserved_start;
-    uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
-    uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+    uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
+    uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 
 #if CONFIG_IDF_TARGET_ESP32S3
     extern int _rodata_reserved_end;
-    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE) * sizeof(uint32_t);
 #endif
 
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
@@ -388,28 +387,19 @@ void IRAM_ATTR call_start_cpu0(void)
 
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
-    if (esp_spiram_init() != ESP_OK) {
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
+    if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
 #endif
-#endif
 
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
-        g_spiram_ok = false;
 #else
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM!");
         abort();
 #endif
     }
-    //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
-    if (g_spiram_ok) {
-        esp_spiram_init_cache();
-    }
-#endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -438,44 +428,25 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // SOC_CPU_CORES_NUM > 1
 
 #if CONFIG_SPIRAM_MEMTEST
-    //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
-    if (g_spiram_ok) {
-        bool ext_ram_ok = esp_spiram_test();
+    if (esp_psram_is_initialized()) {
+        bool ext_ram_ok = esp_psram_extram_test();
         if (!ext_ram_ok) {
             ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
             abort();
         }
     }
-#endif  //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
 #endif  //CONFIG_SPIRAM_MEMTEST
 
-    //TODO: IDF-4382
+//TODO: IDF-5023, replace with MMU driver
 #if CONFIG_IDF_TARGET_ESP32S3
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    extern void instruction_flash_page_info_init(void);
-    instruction_flash_page_info_init();
-#endif
-#if CONFIG_SPIRAM_RODATA
-    extern void rodata_flash_page_info_init(void);
-    rodata_flash_page_info_init();
-#endif
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    extern void esp_spiram_enable_instruction_access(void);
-    esp_spiram_enable_instruction_access();
-#endif
-#if CONFIG_SPIRAM_RODATA
-    extern void esp_spiram_enable_rodata_access(void);
-    esp_spiram_enable_rodata_access();
-#endif
-
     int s_instr_flash2spiram_off = 0;
     int s_rodata_flash2spiram_off = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    extern int instruction_flash2spiram_offset(void);
     s_instr_flash2spiram_off = instruction_flash2spiram_offset();
 #endif
 #if CONFIG_SPIRAM_RODATA
+    extern int rodata_flash2spiram_offset(void);
     s_rodata_flash2spiram_off = rodata_flash2spiram_offset();
 #endif
 
@@ -544,7 +515,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
 #ifdef CONFIG_ESP_CONSOLE_UART
-    uint32_t clock_hz = rtc_clk_apb_freq_get();
+    uint32_t clock_hz = esp_clk_apb_freq();
 #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif
@@ -601,7 +572,7 @@ void IRAM_ATTR call_start_cpu0(void)
     __attribute__((unused)) esp_image_header_t fhdr = {0};
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM
     fhdr.spi_mode = ESP_IMAGE_SPI_MODE_DIO;
-    fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_40M;
+    fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2;
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
@@ -615,7 +586,14 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read
     // the binary header through cache by accessing SOC_DROM_LOW address.
+#pragma GCC diagnostic push
+#if     __GNUC__ >= 11
+#pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
+#pragma GCC diagnostic ignored "-Warray-bounds"
     memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
+#pragma GCC diagnostic pop
+
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
 #if CONFIG_IDF_TARGET_ESP32

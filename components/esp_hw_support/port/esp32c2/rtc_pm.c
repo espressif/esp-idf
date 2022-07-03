@@ -43,7 +43,6 @@ pm_sw_reject_t pm_set_sleep_mode(pm_sleep_mode_t sleep_mode, void(*pmac_save_par
 
     switch (sleep_mode) {
     case PM_LIGHT_SLEEP:
-        cfg.wifi_pd_en = 1;
         cfg.dig_dbias_wak = 4;
         cfg.dig_dbias_slp = 0;
         cfg.rtc_dbias_wak = 0;

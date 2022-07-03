@@ -623,8 +623,6 @@ Flash 加密范围
 - 通过函数 :cpp:func:`esp_flash_read` 读取不会被解密的原（加密）数据。
 - 通过函数 :cpp:func:`esp_flash_read_encrypted` 读取和解密数据。
 
-ROM 函数 :cpp:func:`SPIRead` 可以在不解密的情况下读取数据，但是在 esp-idf 应用程序中不支持该函数。
-
 使用非易失性存储器 (NVS) API 存储的数据始终从 flash 加密的角度进行存储和读取解密。如有需要，则由库提供加密功能。详情可参考 :ref:`NVS 加密 <nvs_encryption>`。
 
 

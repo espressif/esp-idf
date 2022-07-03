@@ -102,6 +102,8 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
 tBTA_SDP_STATUS BTA_SdpDisable(void)
 {
     tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
+
+    bta_sys_deregister(BTA_ID_SDP);
 #if BTA_DYNAMIC_MEMORY == TRUE
     /* Free buffer for SDP configuration structure */
     osi_free(p_bta_sdp_cfg->p_sdp_db);

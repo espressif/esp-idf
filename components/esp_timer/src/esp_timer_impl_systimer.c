@@ -14,7 +14,7 @@
 #include "esp_compiler.h"
 #include "soc/periph_defs.h"
 #include "soc/soc_caps.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
@@ -101,10 +101,19 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 #endif
 }
 
-void esp_timer_impl_advance(int64_t time_us)
+void esp_timer_impl_set(uint64_t new_us)
 {
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
-    systimer_hal_counter_value_advance(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK, time_us);
+    systimer_counter_value_t new_count = { .val = new_us * SYSTIMER_LL_TICKS_PER_US };
+    systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_CLOCK, new_count.val);
+    systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_CLOCK);
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+}
+
+void esp_timer_impl_advance(int64_t time_diff_us)
+{
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
+    systimer_hal_counter_value_advance(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK, time_diff_us);
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
@@ -113,7 +122,8 @@ esp_err_t esp_timer_impl_early_init(void)
     systimer_hal_init(&systimer_hal);
 
 #if !SOC_SYSTIMER_FIXED_TICKS_US
-    assert(rtc_clk_xtal_freq_get() == 40 && "update the step for xtal to support other XTAL:APB frequency ratios");
+    assert(esp_clk_xtal_freq() == (40 * 1000000) &&
+            "update the step for xtal to support other XTAL:APB frequency ratios");
     systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal
     systimer_hal_set_steps_per_tick(&systimer_hal, 1, 1); // for pll
 #endif
@@ -191,6 +201,7 @@ uint64_t esp_timer_impl_get_alarm_reg(void)
 }
 
 void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
-void esp_timer_private_advance(int64_t time_us) __attribute__((alias("esp_timer_impl_advance")));
+void esp_timer_private_set(uint64_t new_us) __attribute__((alias("esp_timer_impl_set")));
+void esp_timer_private_advance(int64_t time_diff_us) __attribute__((alias("esp_timer_impl_advance")));
 void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
 void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));

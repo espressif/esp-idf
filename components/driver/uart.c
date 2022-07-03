@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <sys/param.h>
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -25,6 +26,7 @@
 #include "esp_private/esp_clk.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
+#include "clk_ctrl_os.h"
 
 #ifdef CONFIG_UART_ISR_IN_IRAM
 #define UART_ISR_ATTR     IRAM_ATTR
@@ -62,6 +64,9 @@ static const char *UART_TAG = "uart";
                             | (UART_INTR_PARITY_ERR))
 #endif
 
+
+#define UART_ENTER_CRITICAL_SAFE(mux)   portENTER_CRITICAL_SAFE(mux)
+#define UART_EXIT_CRITICAL_SAFE(mux)    portEXIT_CRITICAL_SAFE(mux)
 #define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
 #define UART_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
@@ -76,10 +81,6 @@ static const char *UART_TAG = "uart";
     .spinlock = portMUX_INITIALIZER_UNLOCKED,\
     .hw_enabled = false,\
 }
-
-#if SOC_UART_SUPPORT_RTC_CLK
-#define RTC_ENABLED(uart_num)    (BIT(uart_num))
-#endif
 
 typedef struct {
     uart_event_type_t type;        /*!< UART TX data type */
@@ -164,34 +165,6 @@ static uart_context_t uart_context[UART_NUM_MAX] = {
 };
 
 static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
-
-#if SOC_UART_SUPPORT_RTC_CLK
-
-static uint8_t rtc_enabled = 0;
-static portMUX_TYPE rtc_num_spinlock = portMUX_INITIALIZER_UNLOCKED;
-
-static void rtc_clk_enable(uart_port_t uart_num)
-{
-    portENTER_CRITICAL(&rtc_num_spinlock);
-    if (!(rtc_enabled & RTC_ENABLED(uart_num))) {
-        rtc_enabled |= RTC_ENABLED(uart_num);
-    }
-    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-    portEXIT_CRITICAL(&rtc_num_spinlock);
-}
-
-static void rtc_clk_disable(uart_port_t uart_num)
-{
-    assert(rtc_enabled & RTC_ENABLED(uart_num));
-
-    portENTER_CRITICAL(&rtc_num_spinlock);
-    rtc_enabled &= ~RTC_ENABLED(uart_num);
-    if (rtc_enabled == 0) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-    }
-    portEXIT_CRITICAL(&rtc_num_spinlock);
-}
-#endif
 
 static void uart_module_enable(uart_port_t uart_num)
 {
@@ -712,7 +685,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uart_module_enable(uart_num);
 #if SOC_UART_SUPPORT_RTC_CLK
     if (uart_config->source_clk == UART_SCLK_RTC) {
-        rtc_clk_enable(uart_num);
+        periph_rtc_dig_clk8m_enable();
     }
 #endif
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -769,6 +742,19 @@ static int UART_ISR_ATTR uart_find_pattern_from_last(uint8_t *buf, int length, u
         len --;
     }
     return len;
+}
+
+static uint32_t UART_ISR_ATTR uart_enable_tx_write_fifo(uart_port_t uart_num, const uint8_t *pbuf, uint32_t len)
+{
+    uint32_t sent_len = 0;
+    UART_ENTER_CRITICAL_SAFE(&(uart_context[uart_num].spinlock));
+    if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
+        uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
+        uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
+    }
+    uart_hal_write_txfifo(&(uart_context[uart_num].hal), pbuf, len, &sent_len);
+    UART_EXIT_CRITICAL_SAFE(&(uart_context[uart_num].spinlock));
+    return sent_len;
 }
 
 //internal isr handler for default driver code.
@@ -840,19 +826,9 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                         }
                     }
                     if (p_uart->tx_len_tot > 0 && p_uart->tx_ptr && p_uart->tx_len_cur > 0) {
-                        //To fill the TX FIFO.
-                        uint32_t send_len = 0;
-                        // Set RS485 RTS pin before transmission if the half duplex mode is enabled
-                        if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
-                            UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
-                            uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
-                            uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
-                            UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
-                        }
-                        uart_hal_write_txfifo(&(uart_context[uart_num].hal),
-                                              (const uint8_t *)p_uart->tx_ptr,
-                                              (p_uart->tx_len_cur > tx_fifo_rem) ? tx_fifo_rem : p_uart->tx_len_cur,
-                                              &send_len);
+                        // To fill the TX FIFO.
+                        uint32_t send_len = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) p_uart->tx_ptr,
+                                                                      MIN(p_uart->tx_len_cur, tx_fifo_rem));
                         p_uart->tx_ptr += send_len;
                         p_uart->tx_len_tot -= send_len;
                         p_uart->tx_len_cur -= send_len;
@@ -1056,6 +1032,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 // Workaround for RS485: If the RS485 half duplex mode is active
                 // and transmitter is in idle state then reset received buffer and reset RTS pin
                 // skip this behavior for other UART modes
+                uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
                 uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                 if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
@@ -1063,7 +1040,6 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                     uart_hal_set_rts(&(uart_context[uart_num].hal), 1);
                 }
                 UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
-                uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                 xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
             }
         }
@@ -1139,13 +1115,7 @@ int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
     }
     int tx_len = 0;
     xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)portMAX_DELAY);
-    if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
-        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-        uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
-        uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
-        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    }
-    uart_hal_write_txfifo(&(uart_context[uart_num].hal), (const uint8_t *) buffer, len, (uint32_t *)&tx_len);
+    tx_len = (int)uart_enable_tx_write_fifo(uart_num, (const uint8_t *) buffer, len);
     xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
     return tx_len;
 }
@@ -1183,14 +1153,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         while (size) {
             //semaphore for tx_fifo available
             if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (TickType_t)portMAX_DELAY)) {
-                uint32_t sent = 0;
-                if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
-                    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-                    uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
-                    uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
-                    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-                }
-                uart_hal_write_txfifo(&(uart_context[uart_num].hal), (const uint8_t *)src, size, &sent);
+                uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
                     uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
@@ -1620,7 +1583,7 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     uart_sclk_t sclk = 0;
     uart_hal_get_sclk(&(uart_context[uart_num].hal), &sclk);
     if (sclk == UART_SCLK_RTC) {
-        rtc_clk_disable(uart_num);
+        periph_rtc_dig_clk8m_disable();
     }
 #endif
     uart_module_disable(uart_num);

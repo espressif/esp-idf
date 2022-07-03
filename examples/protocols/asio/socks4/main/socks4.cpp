@@ -378,7 +378,7 @@ extern "C" void app_main(void)
 
     asio::io_context io_context;
     Http::Request request(Http::Method::GET, "www.httpbin.org", "80", "/get");
-    Socks::async_connect(io_context, CONFIG_EXAMPLE_PROXY_ADDRESS, CONFIG_EXAMPLE_PROXY_PORT, request.host(), request.service_port(),
+    Socks::async_connect(io_context, CONFIG_EXAMPLE_PROXY_ADDRESS, CONFIG_EXAMPLE_PROXY_SERVICE, request.host(), request.service_port(),
     [&request](std::shared_ptr<Connection> connection) {
         // Now we create a HTTP::Session and inject the necessary connection.
         std::make_shared<Http::Session>(connection)->send_request(request, [](std::shared_ptr<Http::Session> session, Http::Response response) {

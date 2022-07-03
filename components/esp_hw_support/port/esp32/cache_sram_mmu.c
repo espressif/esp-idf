@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
+#include "esp_attr.h"
 #include "string.h"
 #include "esp_spi_flash.h"
 

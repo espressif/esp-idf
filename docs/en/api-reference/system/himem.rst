@@ -8,13 +8,13 @@ The ESP32 can access external SPI RAM transparently, so you can use it as normal
 space for external memory is limited in size, only the first 4MiB can be used as such. Access to the remaining memory is still possible,
 however this needs to go through a bankswitching scheme controlled by the himem API.
 
-Specifically, what is implemented by the himem API is a bankswitching scheme. Hardware-wise, the 4MiB region for external SPI RAM is 
+Specifically, what is implemented by the himem API is a bankswitching scheme. Hardware-wise, the 4MiB region for external SPI RAM is
 mapped into the CPU address space by a MMU, which maps a configurable 32K bank/page of external SPI RAM into each of the 32K pages in the
 4MiB region accessed by the CPU. For external memories that are <=4MiB, this MMU is configured to unity mapping, effectively mapping each
 CPU address 1-to-1 to the external SPI RAM address.
 
-In order to use the himem API, you have to enable it in the menuconfig using :envvar:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`, as well as set the amount 
-of banks reserved for this in :envvar:`CONFIG_SPIRAM_BANKSWITCH_RESERVE`. This decreases
+In order to use the himem API, you have to enable it in the menuconfig using :ref:`CONFIG_SPIRAM_BANKSWITCH_ENABLE`, as well as set the amount
+of banks reserved for this in :ref:`CONFIG_SPIRAM_BANKSWITCH_RESERVE`. This decreases
 the amount of external memory allocated by functions like ``malloc()``, but it allows you to use the himem api to map any of the remaining memory
 into the reserved banks.
 
@@ -30,4 +30,4 @@ An example doing a simple memory test of the high memory range is available in e
 API Reference
 -------------
 
-.. include-build-file:: inc/esp_himem.inc
+.. include-build-file:: inc/himem.inc

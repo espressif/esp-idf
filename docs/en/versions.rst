@@ -43,6 +43,8 @@ Which Version Should I Start With?
 
 - If a required feature is not yet available in a stable release, but you do not want to use the master branch, it is possible to check out a pre-release version or a release branch. It is recommended to start from a stable version and then follow the instructions for :ref:`updating-pre-release` or :ref:`updating-release-branch`.
 
+- If you plan to use another project which is based on ESP-IDF, please check the documentation of that project to determine the version(s) of ESP-IDF it is compatible with.
+
 See :ref:`updating` if you already have a local copy of ESP-IDF and wish to update it.
 
 .. _versioning-scheme:
@@ -50,7 +52,7 @@ See :ref:`updating` if you already have a local copy of ESP-IDF and wish to upda
 Versioning Scheme
 -----------------
 
-ESP-IDF uses `Semantic Versioning <http://semver.org/>`_. This means that:
+ESP-IDF uses `Semantic Versioning <https://semver.org/>`_. This means that:
 
 - Major Releases, like ``v3.0``, add new functionality and may change functionality. This includes removing deprecated functionality.
 
@@ -252,7 +254,7 @@ Each time you ``git pull`` this branch, ESP-IDF will be updated with fixes for t
 
     There is no dedicated documentation for release branches. It is recommended to use the documentation for the closest version to the branch which is currently checked out.
 
-.. _`Releases page`: http://github.com/espressif/esp-idf/releases
+.. _`Releases page`: https://github.com/espressif/esp-idf/releases
 .. _`list of branches`: https://github.com/espressif/esp-idf/branches
 .. _`list of tags`: https://github.com/espressif/esp-idf/tags
 .. _`current stable version`: https://docs.espressif.com/projects/esp-idf/en/stable/

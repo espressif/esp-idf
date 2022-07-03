@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -208,8 +208,7 @@ class RulesWriter:
         else:
             if not (name.endswith('-preview') or name.startswith('labels:')):
                 _rules.append(self.RULE_PROTECTED)
-            # Special case for esp32c3 example_test, for now it only run with label
-            if name.startswith('test:') or name == 'labels:example_test-esp32c3':
+            if name.startswith('test:'):
                 _rules.append(self.RULE_BUILD_ONLY)
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))

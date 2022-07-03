@@ -107,8 +107,10 @@
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
   Please change this when the tcb structure is changed
 */
-#define TASKTCB_XCOREID_OFFSET (0x38+configMAX_TASK_NAME_LEN+3)&~3
 .extern pxCurrentTCBs
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+.extern offset_uxCoreAffinityMask
+#endif // ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
 
 /*
 --------------------------------------------------------------------------------
@@ -854,8 +856,24 @@ _xt_coproc_mask:
 _xt_coproc_owner_sa:
     .space  (XCHAL_CP_MAX * portNUM_PROCESSORS) << 2
 
-    .section .iram1,"ax"
+/* Spinlock per core for accessing _xt_coproc_owner_sa array
+ *
+ * 0 = Spinlock available
+ * 1 = Spinlock taken
+ *
+ * The lock provides mutual exclusion for accessing the _xt_coproc_owner_sa array.
+ * This array can be modified by both _xt_coproc_exc and _xt_coproc_release routines
+ * simultaneously owing to the fact that the FreeRTOS SMP Kernel allows cross-core
+ * task deletion. Therefore, the same memory location in the owner save-area array
+ * could be modified at the same time.
+ */
+    .global _xt_coproc_owner_sa_lock
+    .type   _xt_coproc_owner_sa_lock,@object
+    .align  16                      /* minimize crossing cache boundaries */
+_xt_coproc_owner_sa_lock:
+    .space  (portNUM_PROCESSORS) << 2
 
+    .section .iram1,"ax"
 
     .align  4
 .L_goto_invalid:
@@ -906,37 +924,56 @@ _xt_coproc_exc:
     s32i    a4,  sp, XT_STK_A4
     s32i    a15, sp, XT_STK_A15
 
+    /* Aquire spinlock before proceeding with the exception handler.
+     * (Refer _xt_coproc_release for competing routine for the lock.)
+     *
+     * [refactor-todo]: The spinlock aquire/release routine can be
+     * refactored in to a macro later if the need arises to use it
+     * at more than one place in the port assembler files.
+     */
+.L_spinlock_loop:
+    movi        a2, _xt_coproc_owner_sa_lock    /* a2 = base address of lock variable */
+    getcoreid   a0                              /* get the core ID in a0 to calculate the offset of the lock variable */
+    addx4       a2, a0, a2                      /* a2 = address of desired lock variable */
+    movi        a0, 0                           /* a0 = 0 */
+    wsr         a0, scompare1                   /* scompare1 = a0 :- Expect the spinlock to be free (value = 0) */
+    movi        a0, 1                           /* a0 = 1 :- Write 1 to take the spinlock */
+    s32c1i      a0, a2, 0                       /* if (lock == scompare1) {tmp = lock; lock = a0; a0 = tmp} else {a0 = lock} */
+    bnez        a0, .L_spinlock_loop            /* if (a0 != 0) {loop} :- Keep spinning until the spinlock is available */
+
     /* Get co-processor state save area of new owner thread. */
     call0   XT_RTOS_CP_STATE                /* a15 = new owner's save area */
-
-    #ifndef CONFIG_FREERTOS_FPU_IN_ISR
-    beqz    a15, .L_goto_invalid
+    #if CONFIG_FREERTOS_FPU_IN_ISR
+    beqz    a15, .L_skip_core_pin           /* CP used in ISR, skip task pinning */
+    #else
+    beqz    a15, .L_goto_invalid            /* not in a thread (invalid) */
     #endif
 
-    /*When FPU in ISR is enabled we could deal with zeroed a15 */
+#if ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+    /* CP operations are incompatible with unpinned tasks. Thus we pin the task
+    to the current running core. */
+    movi    a2, pxCurrentTCBs
+    getcoreid a3                            /* a3 = current core ID */
+    addx4   a2, a3, a2
+    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCBs[cpuid] */
+    movi    a4, offset_uxCoreAffinityMask
+    l32i    a4, a4, 0                       /* a4 = offset_uxCoreAffinityMask */
+    add     a2, a2, a4                      /* a2 = &TCB.uxCoreAffinityMask */
+    ssl     a3                              /* Use core ID as shift amount */
+    movi    a4, 1
+    sll     a4, a4                          /* a4 = uxCoreAffinityMask = (1 << core ID) */
+    s32i    a4, a2, 0                       /* Store affinity mask to TCB.uxCoreAffinityMask */
+#endif // ( XCHAL_CP_NUM > 0 && configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+
+#if CONFIG_FREERTOS_FPU_IN_ISR
+.L_skip_core_pin:
+#endif
 
     /* Enable the co-processor's bit in CPENABLE. */
     movi    a0, _xt_coproc_mask
     rsr     a4, CPENABLE                    /* a4 = CPENABLE */
     addx4   a0, a5, a0                      /* a0 = &_xt_coproc_mask[n] */
     l32i    a0, a0, 0                       /* a0 = (n << 16) | (1 << n) */
-
-    /* FPU operations are incompatible with non-pinned tasks. If we have a FPU operation
-       here, to keep the entire thing from crashing, it's better to pin the task to whatever
-       core we're running on now. */
-    movi    a2, pxCurrentTCBs
-    getcoreid a3
-    addx4     a2,  a3, a2
-    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCBs[cpuid] */
-    addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
-    s32i    a3, a2, 0                       /* store current cpuid */
-
-    /* Grab correct xt_coproc_owner_sa for this core */
-    movi    a2, XCHAL_CP_MAX << 2
-    mull    a2, a2, a3                      /* multiply by current processor id */
-    movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
-
     extui   a2, a0, 0, 16                   /* coprocessor bitmask portion */
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
     wsr     a4, CPENABLE
@@ -946,7 +983,12 @@ Keep loading _xt_coproc_owner_sa[n] atomic (=load once, then use that value
 everywhere): _xt_coproc_release assumes it works like this in order not to need
 locking.
 */
-
+    /* Grab correct xt_coproc_owner_sa for this core */
+    getcoreid a3                            /* a3 = current core ID */
+    movi    a2, XCHAL_CP_MAX << 2
+    mull    a2, a2, a3                      /* multiply by current processor id */
+    movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
+    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
 
     /* Get old coprocessor owner thread (save area ptr) and assign new one.  */
     addx4   a3,  a5, a3                      /* a3 = &_xt_coproc_owner_sa[n] */
@@ -1030,6 +1072,14 @@ locking.
     /* Restore interruptee's saved registers. */
     /* Can omit rsync for wsr.CPENABLE here because _xt_user_exit does it. */
 .L_xt_coproc_done:
+
+    /* Release spinlock */
+    movi        a2, _xt_coproc_owner_sa_lock    /* a2 = base address of the lock variable */
+    getcoreid   a0                              /* a0 = core ID to calculate the offset of the lock variable */
+    addx4       a2, a0, a2                      /* a2 = address of the lock variable */
+    movi        a0, 0                           /* a0 = 0 */
+    s32ri       a0, a2, 0                       /* a2 = a0 :- Write 0 to release the lock */
+
     l32i    a15, sp, XT_STK_A15
     l32i    a5,  sp, XT_STK_A5
     l32i    a4,  sp, XT_STK_A4
@@ -1057,6 +1107,14 @@ locking.
 
     /* Co-processor exception occurred outside a thread (not supported). */
 .L_xt_coproc_invalid:
+
+    /* Release spinlock */
+    movi        a2, _xt_coproc_owner_sa_lock    /* a2 = base address of the lock variable */
+    getcoreid   a0                              /* a0 = core ID to calculate the offset of the lock variable */
+    addx4       a2, a0, a2                      /* a2 = address of the lock variable */
+    movi        a0, 0                           /* a0 = 0 */
+    s32ri       a0, a2, 0                       /* a2 = a0 :- Write 0 to release the lock */
+
     movi    a0,PANIC_RSN_COPROCEXCEPTION
     wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* not in a thread (invalid) */

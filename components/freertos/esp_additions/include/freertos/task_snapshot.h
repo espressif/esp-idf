@@ -6,77 +6,75 @@
 
 #pragma once
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-#if ( configENABLE_TASK_SNAPSHOT == 1 )
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT || defined __DOXYGEN__
 /**
- * Check `freertos_tasks_c_additions.h` file for more info
- * about these functions declaration.
- */
-UBaseType_t pxTCBGetSize ( void );
-ListItem_t*	pxTCBGetStateListItem ( void *pxTCB );
-StackType_t* pxTCBGetStartOfStack ( void *pxTCB );
-StackType_t* pxTCBGetTopOfStack ( void *pxTCB );
-StackType_t* pxTCBGetEndOfStack ( void *pxTCB );
-List_t* pxListGetReadyTask ( UBaseType_t idx );
-List_t* pxListGetReadyPendingTask ( UBaseType_t idx );
-List_t* pxGetDelayedTaskList ( void );
-List_t* pxGetOverflowDelayedTaskList ( void );
-List_t* pxGetTasksWaitingTermination ( void );
-List_t* pxGetSuspendedTaskList ( void );
-
-/**
- * Used with the uxTaskGetSnapshotAll() function to save memory snapshot of each task in the system.
- * We need this struct because TCB_t is defined (hidden) in tasks.c.
+ * @brief Task Snapshot structure
+ *
+ * - Used with the uxTaskGetSnapshotAll() function to save memory snapshot of each task in the system.
+ * - We need this structure because TCB_t is defined (hidden) in tasks.c.
  */
 typedef struct xTASK_SNAPSHOT
 {
-	void        *pxTCB;         /*!< Address of task control block. */
-	StackType_t *pxTopOfStack;  /*!< Points to the location of the last item placed on the tasks stack. */
-	StackType_t *pxEndOfStack;  /*!< Points to the end of the stack. pxTopOfStack < pxEndOfStack, stack grows hi2lo
-									pxTopOfStack > pxEndOfStack, stack grows lo2hi*/
+    void        *pxTCB;         /*!< Address of the task control block. */
+    StackType_t *pxTopOfStack;  /*!< Points to the location of the last item placed on the tasks stack. */
+    StackType_t *pxEndOfStack;  /*!< Points to the end of the stack. pxTopOfStack < pxEndOfStack, stack grows hi2lo
+                                    pxTopOfStack > pxEndOfStack, stack grows lo2hi*/
 } TaskSnapshot_t;
 
-
-/*
- * This function fills array with TaskSnapshot_t structures for every task in the system.
- * Used by panic handling code to get snapshots of all tasks in the system.
- * Only available when configENABLE_TASK_SNAPSHOT is set to 1.
- * @param pxTaskSnapshotArray Pointer to array of TaskSnapshot_t structures to store tasks snapshot data.
- * @param uxArraySize Size of tasks snapshots array.
- * @param pxTcbSz Pointer to store size of TCB.
- * @return Number of elements stored in array.
- */
-UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArraySize, UBaseType_t * const pxTcbSz );
-
-/*
- * This function iterates over all tasks in the system.
- * Used by panic handling code to iterate over tasks in the system.
- * Only available when configENABLE_TASK_SNAPSHOT is set to 1.
- * @note This function should not be used while FreeRTOS is running (as it doesn't acquire any locks).
- * @param pxTask task handle.
- * @return Handle for the next task. If pxTask is NULL, returns hadnle for the first task.
+/**
+ * @brief Iterate over all tasks in the system
+ *
+ * - This function can be used to iterate over every task in the system
+ * - The first call to this function must set pxTask to NULL
+ * - When all functions have been iterated, this function will return NULL.
+ * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
+ *
+ * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
+ * 		 does not acquire any locks.
+ * @param pxTask Handle of the previous task (or NULL on the first call of this function)
+ * @return TaskHandle_t Handle of the next task (or NULL when all tasks have been iterated over)
  */
 TaskHandle_t pxTaskGetNext( TaskHandle_t pxTask );
 
-/*
- * This function fills TaskSnapshot_t structure for specified task.
- * Used by panic handling code to get snapshot of a task.
- * Only available when configENABLE_TASK_SNAPSHOT is set to 1.
- * @note This function should not be used while FreeRTOS is running (as it doesn't acquire any locks).
- * @param pxTask task handle.
- * @param pxTaskSnapshot address of TaskSnapshot_t structure to fill.
+/**
+ * @brief Fill a TaskSnapshot_t structure for specified task.
+ *
+ * - This function is used by the panic handler to get the snapshot of a particular task.
+ * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
+ *
+ * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
+ * 		 does not acquire any locks.
+ * @param[in] pxTask Task's handle
+ * @param[out] pxTaskSnapshot Snapshot of the task
+ * @return pdTRUE if operation was successful else pdFALSE
  */
-void vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
+BaseType_t vTaskGetSnapshot( TaskHandle_t pxTask, TaskSnapshot_t *pxTaskSnapshot );
+
+/**
+ * @brief Fill an array of TaskSnapshot_t structures for every task in the system
+ *
+ * - This function is used by the panic handler to get a snapshot of all tasks in the system
+ * - This function is only available when CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT is set to 1.
+ *
+ * @note This function should only be called when FreeRTOS is no longer running (e.g., during a panic) as this function
+ * 		 does not acquire any locks.
+ * @param[out] pxTaskSnapshotArray Array of TaskSnapshot_t structures filled by this function
+ * @param[in] uxArrayLength Length of the provided array
+ * @param[out] pxTCBSize Size of the a task's TCB structure
+ * @return UBaseType_t
+ */
+UBaseType_t uxTaskGetSnapshotAll( TaskSnapshot_t * const pxTaskSnapshotArray, const UBaseType_t uxArrayLength, UBaseType_t * const pxTCBSize );
+
+#endif // CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT || defined __DOXYGEN__
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

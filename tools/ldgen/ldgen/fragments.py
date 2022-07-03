@@ -32,6 +32,7 @@ class Fragment:
     def __init__(self, name: str, entries: Set[Union[str, Tuple[str]]]):
         self.name = name
         self.entries = entries
+        self.path = ''
 
     def __repr__(self):
         return str(self.__dict__)
@@ -469,5 +470,8 @@ def parse_fragment_file(path, sdkconfig):
     parser = ZeroOrMore(fragment).ignore(comment).set_parse_action(parse)
     fragment_file = parser.parse_file(path, parse_all=True)[0]
     fragment_file.path = path
+
+    for frag in fragment_file.fragments:
+        frag.path = path
 
     return fragment_file

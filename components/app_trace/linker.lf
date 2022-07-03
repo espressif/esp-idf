@@ -2,6 +2,7 @@
 archive: libapp_trace.a
 entries:
     app_trace (noflash)
+    port_uart (noflash)
     app_trace_util (noflash)
     if APPTRACE_SV_ENABLE = y:
       SEGGER_SYSVIEW (noflash)

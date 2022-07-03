@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -21,7 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc_caps.h"
-
+#include "soc/clk_tree_defs.h"
 
 /**
  * @brief UART port number, can be UART_NUM_0 ~ (UART_NUM_MAX -1).
@@ -98,18 +90,7 @@ typedef enum {
 /**
  * @brief UART source clock
  */
-typedef enum {
-    UART_SCLK_APB = 0x0,            /*!< UART source clock from APB*/
-#if SOC_UART_SUPPORT_RTC_CLK
-    UART_SCLK_RTC = 0x1,            /*!< UART source clock from RTC*/
-#endif
-#if SOC_UART_SUPPORT_XTAL_CLK
-    UART_SCLK_XTAL = 0x2,           /*!< UART source clock from XTAL*/
-#endif
-#if SOC_UART_SUPPORT_REF_TICK
-    UART_SCLK_REF_TICK = 0x3,       /*!< UART source clock from REF_TICK*/
-#endif
-} uart_sclk_t;
+typedef soc_periph_uart_clk_src_legacy_t uart_sclk_t;
 
 /**
  * @brief UART AT cmd char configuration parameters
@@ -143,10 +124,7 @@ typedef struct {
     uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
     uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
     uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
-    union {
-        uart_sclk_t source_clk;         /*!< UART source clock selection */
-        bool use_ref_tick  __attribute__((deprecated)); /*!< Deprecated method to select ref tick clock source, set source_clk field instead */
-    };
+    uart_sclk_t source_clk;             /*!< UART source clock selection */
 } uart_config_t;
 
 #ifdef __cplusplus

@@ -22,4 +22,4 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS src proto-c ../protocomm/proto-c
                     REQUIRES lwip protocomm
-                    PRIV_REQUIRES protobuf-c bt mdns json esp_timer)
+                    PRIV_REQUIRES protobuf-c bt json esp_timer)

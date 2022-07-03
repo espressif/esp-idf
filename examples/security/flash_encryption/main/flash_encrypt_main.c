@@ -22,6 +22,8 @@ static void example_print_chip_info(void);
 static void example_print_flash_encryption_status(void);
 static void example_read_write_flash(void);
 
+#define CUSTOM_NVS_PART_NAME "custom_nvs"
+
 static const char* TAG = "example";
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -31,6 +33,35 @@ static const char* TAG = "example";
 #define TARGET_CRYPT_CNT_EFUSE ESP_EFUSE_SPI_BOOT_CRYPT_CNT
 #define TARGET_CRYPT_CNT_WIDTH  3
 #endif
+
+static esp_err_t example_custom_nvs_part_init(const char *name)
+{
+#if CONFIG_NVS_ENCRYPTION
+    esp_err_t ret = ESP_FAIL;
+    const esp_partition_t *key_part = esp_partition_find_first(
+                                          ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+    if (key_part == NULL) {
+        ESP_LOGE(TAG, "CONFIG_NVS_ENCRYPTION is enabled, but no partition with subtype nvs_keys found in the partition table.");
+        return ret;
+    }
+
+    nvs_sec_cfg_t cfg = {};
+    ret = nvs_flash_read_security_cfg(key_part, &cfg);
+    if (ret != ESP_OK) {
+        /* We shall not generate keys here as that must have been done in default NVS partition initialization case */
+        ESP_LOGE(TAG, "Failed to read NVS security cfg: [0x%02X] (%s)", ret, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ret = nvs_flash_secure_init_partition(name, &cfg);
+    if (ret == ESP_OK) {
+        ESP_LOGI(TAG, "NVS partition \"%s\" is encrypted.", name);
+    }
+    return ret;
+#else
+    return nvs_flash_init_partition(name);
+#endif
+}
 
 void app_main(void)
 {
@@ -46,8 +77,15 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-}
 
+    /* Initialize the custom NVS partition */
+    ret = example_custom_nvs_part_init(CUSTOM_NVS_PART_NAME);
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase_partition(CUSTOM_NVS_PART_NAME));
+        ret = example_custom_nvs_part_init(CUSTOM_NVS_PART_NAME);
+    }
+    ESP_ERROR_CHECK(ret);
+}
 
 static void example_print_chip_info(void)
 {

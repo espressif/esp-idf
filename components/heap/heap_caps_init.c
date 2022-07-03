@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "heap_private.h"
 #include <assert.h>
 #include <string.h>
@@ -57,6 +49,10 @@ void heap_caps_enable_nonos_stack_heaps(void)
  */
 void heap_caps_init(void)
 {
+#ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
+    extern void multi_heap_in_rom_init(void);
+    multi_heap_in_rom_init();
+#endif
     /* Get the array of regions that we can use for heaps
        (with reserved memory removed already.)
      */
@@ -170,6 +166,41 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
     return ESP_ERR_NOT_FOUND;
 }
 
+/* This API is used for internal test purpose and hence its not marked as static */
+bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, intptr_t start, intptr_t end)
+{
+    /*
+     *  We assume that in any region, the "start" must be stictly less than the end.
+     *  Specially, the 3rd scenario can be allowed. For example, allocate memory from heap,
+     *  then change the capability and call this function to create a new region for special
+     *  application.
+     *  In the following chart, 'start = start' and 'end = end' is contained in 4th scenario.
+     *  This all equal scenario is incorrect because the same region cannot be add twice. For example,
+     *  add the .bss memory to region twice, if not do the check, it will cause exception.
+     *
+     *  the existing heap region                                  s(tart)                e(nd)
+     *                                                            |----------------------|
+     *
+     *  1.add region  (e1<s)                                |-----|                                      correct: bool condition_1 = end < heap_start;
+     *
+     *  2.add region  (s2<s && e2>s)                        |-----------------|                          wrong:   bool condition_2 = start < heap_start && end > heap_start;
+     *                                                      |---------------------------------|          wrong
+     *
+     *  3.add region  (s3>=s && e3<e)                             |---------------|                      correct: bool condition_3 = start >= heap_start && end < heap_end;
+     *                                                                  |--------------|                 correct
+     *
+     *  4.add region  (s4<e && e4>e)                              |------------------------|             wrong:   bool condition_4 = start < heap_end && end > heap_end;
+     *                                                                  |---------------------|          wrong
+     *
+     *  5.add region  (s5>=e)                                                            |----|          correct: bool condition_5 = start >= heap_end;
+     */
+
+    bool condition_2 = start < heap_start && end > heap_start;        // if true then region not allowed
+    bool condition_4 = start < heap_end && end > heap_end;            // if true then region not allowed
+
+    return (condition_2 || condition_4) ? false: true;
+}
+
 esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, intptr_t end)
 {
     esp_err_t err = ESP_FAIL;
@@ -179,29 +210,10 @@ esp_err_t heap_caps_add_region_with_caps(const uint32_t caps[], intptr_t start, 
 
     //Check if region overlaps the start and/or end of an existing region. If so, the
     //region is invalid (or maybe added twice)
-    /*
-     *  assume that in on region, start must be less than end (cannot equal to) !!
-     *  Specially, the 4th scenario can be allowed. For example, allocate memory from heap,
-     *  then change the capability and call this function to create a new region for special
-     *  application.
-     *  In the following chart, 'start = start' and 'end = end' is contained in 3rd scenario.
-     *  This all equal scenario is incorrect because the same region cannot be add twice. For example,
-     *  add the .bss memory to region twice, if not do the check, it will cause exception.
-     *
-     *  the existing heap region                                  s(tart)                e(nd)
-     *                                                            |----------------------|
-     *  1.add region  [Correct]   (s1<s && e1<=s)           |-----|
-     *  2.add region  [Incorrect] (s2<=s && s<e2<=e)        |---------------|
-     *  3.add region  [Incorrect] (s3<=s && e<e3)           |-------------------------------------|
-     *  4 add region  [Correct]   (s<s4<e && s<e4<=e)                  |-------|
-     *  5.add region  [Incorrect] (s<s5<e && e<e5)                     |----------------------------|
-     *  6.add region  [Correct]   (e<=s6 && e<e6)                                        |----|
-     */
-
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
-        if ((start <= heap->start && end > heap->start)
-                || (start < heap->end && end > heap->end)) {
+        if (!heap_caps_check_add_region_allowed(heap->start, heap->end, start, end)) {
+            ESP_EARLY_LOGD(TAG, "invalid overlap detected with existing heap region");
             return ESP_FAIL;
         }
     }

@@ -43,3 +43,4 @@ API Guides
    :SOC_WIFI_SUPPORTED: wifi
    :SOC_WIFI_SUPPORTED: wifi-security
    :SOC_SUPPORT_COEXISTENCE: coexist
+   reproducible-builds

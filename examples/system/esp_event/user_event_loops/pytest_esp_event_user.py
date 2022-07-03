@@ -12,7 +12,11 @@ TASK_ITERATION_POSTING = 'posting TASK_EVENTS:TASK_ITERATION_EVENT to {}, iterat
 TASK_ITERATION_HANDLING = 'handling TASK_EVENTS:TASK_ITERATION_EVENT from {}, iteration {}'
 
 
-@pytest.mark.supported_targets
+# IDF-5051
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c3
 @pytest.mark.generic
 def test_esp_event_user_event_loops(dut: Dut) -> None:
 

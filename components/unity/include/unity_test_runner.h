@@ -1,16 +1,8 @@
-// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdint.h>
@@ -131,7 +123,6 @@ void unity_testcase_register(test_desc_t* desc);
     }
 
 
-
 /*
  * First argument is a free-form description,
  * second argument is (by convention) a list of identifiers, each one in square brackets.
@@ -156,6 +147,18 @@ void unity_testcase_register(test_desc_t* desc);
         }; \
         unity_testcase_register( & UNITY_TEST_UID(test_desc_) ); \
     }
+
+
+/*
+  Test case macro to be ignored in CI.
+  Tests will still be built (to check for compile error) but not linked if IDF_CI_BUILD.
+ */
+#if IDF_CI_BUILD
+#define TEST_CASE_CI_IGNORE(name_, desc_) \
+    __attribute__((unused)) static void UNITY_TEST_UID(test_func_) (void)
+#else
+#define TEST_CASE_CI_IGNORE(name_, desc_) TEST_CASE(name_, desc_)
+#endif
 
 /**
  * Note: initialization of test_desc_t fields above has to be done exactly

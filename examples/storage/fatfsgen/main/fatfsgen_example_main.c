@@ -45,9 +45,9 @@ void app_main(void)
     };
     esp_err_t err;
     if (EXAMPLE_FATFS_MODE_READ_ONLY){
-        err = esp_vfs_fat_rawflash_mount(base_path, "storage", &mount_config);
+        err = esp_vfs_fat_spiflash_mount_ro(base_path, "storage", &mount_config);
     } else {
-        err = esp_vfs_fat_spiflash_mount(base_path, "storage", &mount_config, &s_wl_handle);
+        err = esp_vfs_fat_spiflash_mount_rw_wl(base_path, "storage", &mount_config, &s_wl_handle);
     }
 
     if (err != ESP_OK) {
@@ -106,6 +106,20 @@ void app_main(void)
         host_filename2 = "/spiflash/hello.txt";
     }
 
+    struct stat info;
+    struct tm timeinfo;
+    char buffer[32];
+
+    if(stat(host_filename1, &info) < 0){
+        ESP_LOGE(TAG, "Failed to read file stats");
+        return;
+    }
+    localtime_r(&info.st_mtime, &timeinfo);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", &timeinfo);
+
+    ESP_LOGI(TAG, "The file '%s' was modified at date: %s", host_filename1, buffer);
+
+
     if (EXAMPLE_FATFS_MODE_READ_ONLY){
         f = fopen(host_filename1, "rb");
     } else {
@@ -127,9 +141,9 @@ void app_main(void)
     // Unmount FATFS
     ESP_LOGI(TAG, "Unmounting FAT filesystem");
     if (EXAMPLE_FATFS_MODE_READ_ONLY){
-        ESP_ERROR_CHECK(esp_vfs_fat_rawflash_unmount(base_path, "storage"));
+        ESP_ERROR_CHECK(esp_vfs_fat_spiflash_unmount_ro(base_path, "storage"));
     } else {
-        ESP_ERROR_CHECK(esp_vfs_fat_spiflash_unmount(base_path, s_wl_handle));
+        ESP_ERROR_CHECK(esp_vfs_fat_spiflash_unmount_rw_wl(base_path, s_wl_handle));
     }
     ESP_LOGI(TAG, "Done");
 }

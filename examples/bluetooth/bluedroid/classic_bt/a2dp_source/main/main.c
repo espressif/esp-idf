@@ -393,6 +393,7 @@ static void bt_app_av_sm_hdlr(uint16_t event, void *param)
 
 static void bt_app_av_state_unconnected_hdlr(uint16_t event, void *param)
 {
+    esp_a2d_cb_param_t *a2d = NULL;
     /* handle the events of intrest in unconnected state */
     switch (event) {
     case ESP_A2D_CONNECTION_STATE_EVT:
@@ -407,6 +408,11 @@ static void bt_app_av_state_unconnected_hdlr(uint16_t event, void *param)
         esp_a2d_source_connect(s_peer_bda);
         s_a2d_state = APP_AV_STATE_CONNECTING;
         s_connecting_intv = 0;
+        break;
+    }
+    case ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(param);
+        ESP_LOGI(BT_AV_TAG, "%s, delay value: %u * 1/10 ms", __func__, a2d->a2d_report_delay_value_stat.delay_value);
         break;
     }
     default: {
@@ -448,6 +454,11 @@ static void bt_app_av_state_connecting_hdlr(uint16_t event, void *param)
             s_connecting_intv = 0;
         }
         break;
+    case ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(param);
+        ESP_LOGI(BT_AV_TAG, "%s, delay value: %u * 1/10 ms", __func__, a2d->a2d_report_delay_value_stat.delay_value);
+        break;
+    }
     default:
         ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
         break;
@@ -554,6 +565,11 @@ static void bt_app_av_state_connected_hdlr(uint16_t event, void *param)
         bt_app_av_media_proc(event, param);
         break;
     }
+    case ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(param);
+        ESP_LOGI(BT_AV_TAG, "%s, delay value: %u * 1/10 ms", __func__, a2d->a2d_report_delay_value_stat.delay_value);
+        break;
+    }
     default: {
         ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
         break;
@@ -581,6 +597,11 @@ static void bt_app_av_state_disconnecting_hdlr(uint16_t event, void *param)
     case ESP_A2D_MEDIA_CTRL_ACK_EVT:
     case BT_APP_HEART_BEAT_EVT:
         break;
+    case ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT: {
+        a2d = (esp_a2d_cb_param_t *)(param);
+        ESP_LOGI(BT_AV_TAG, "%s, delay value: 0x%u * 1/10 ms", __func__, a2d->a2d_report_delay_value_stat.delay_value);
+        break;
+    }
     default: {
         ESP_LOGE(BT_AV_TAG, "%s unhandled event: %d", __func__, event);
         break;

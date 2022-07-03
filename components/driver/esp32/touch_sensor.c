@@ -19,7 +19,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
 #include "driver/touch_pad.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_check.h"
 
@@ -70,13 +70,13 @@ static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, t
 esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
 {
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch_Pad ISR null");
-    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M, 0);
 }
 
 esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg)
 {
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch_Pad ISR null");
-    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M, 0);
 }
 
 static uint32_t _touch_filter_iir(uint32_t in_now, uint32_t out_last, uint32_t k)
@@ -266,12 +266,12 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
         uint16_t meas_cycle = 0;
         uint32_t wait_time_ms = 0;
         uint32_t wait_tick = 0;
-        uint32_t rtc_clk = rtc_clk_slow_freq_get_hz();
+        uint32_t rtc_clk_freq = rtc_clk_slow_freq_get_hz();
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
         touch_pad_get_meas_time(&sleep_time, &meas_cycle);
         //If the FSM mode is 'TOUCH_FSM_MODE_TIMER', The data will be ready after one measurement cycle
         //after this function is executed, otherwise, the "touch_value" by "touch_pad_read" is 0.
-        wait_time_ms = sleep_time / (rtc_clk / 1000) + meas_cycle / (RTC_FAST_CLK_FREQ_APPROX / 1000);
+        wait_time_ms = sleep_time / (rtc_clk_freq / 1000) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);
         wait_tick = wait_time_ms / portTICK_PERIOD_MS;
         vTaskDelay(wait_tick ? wait_tick : 1);
         s_touch_pad_init_bit |= (1 << touch_num);
@@ -283,10 +283,10 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
 
 esp_err_t touch_pad_init(void)
 {
-#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+#ifdef CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2
     ESP_LOGE(TOUCH_TAG, "Touch Pad can't work because it provides current to external XTAL");
     return ESP_ERR_NOT_SUPPORTED;
-#endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+#endif // CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2
     if (rtc_touch_mux == NULL) {
         rtc_touch_mux = xSemaphoreCreateMutex();
     }

@@ -9,7 +9,7 @@ The following terms will be used in this document to avoid confusion between the
 
 # Organization
 
-This directory contains a copy of SMP FreeRTOS based off of upstream commit [483237711](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/4832377117b4198db43009f2b548497d9cdbf8da)
+This directory contains a copy of SMP FreeRTOS based off of upstream commit [a97741a](https://github.com/FreeRTOS/FreeRTOS-Kernel/commit/a97741a08d36ac08d913b8bc86abf128df627e85)
 
 - IDF FreeRTOS remains in  `components/freertos/FreeRTOS-Kernel`
 - SMP FreeRTOS is entirely contained in `components/freertos/FreeRTOS-Kernel-SMP`
@@ -143,12 +143,8 @@ IDF FreeRTOS added several APIs. These are copied over to SMP FreeRTOS to mainta
 
 ### `xTaskCreatePinnedToCore()`/`xTaskCreateStaticPinnedToCore()`
 
-- Used to create a task with a preset affinity on creation
-- When a task can only run on a particular core, this function saves the need of adding logic to:
-  - Disabling preemption on all cores
-  - Setting the created task's affinity
-  - Reenabling preemption on all cores.
-- Check if this (or something similar) can be upstreamed
+- `xTaskCreate...AffinitySet()` have been upstreamed
+- `xTaskCreate...PinnedToCore()` now just map to the `xTaskCreate...AffinitySet()` equivalent functions.
 
 ### `vTaskSetThreadLocalStoragePointerAndDelCallback()`
 

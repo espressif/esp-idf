@@ -75,5 +75,5 @@ ESP32-PICO-KIT V3 上电前，请首先确认开发板完好无损。
 -----------------
 
 * `ESP32-PICO-KIT V3 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
-* `《ESP32-PICO-D4 技术规格书》 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
+* `《ESP32-PICO-D4 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`

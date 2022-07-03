@@ -16,7 +16,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         config HAL_ASSERTION_DISABLE
             bool "Disabled"
             depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 0
-        config HAL_ASSERTION_SILIENT
+        config HAL_ASSERTION_SILENT
             bool "Silent"
             depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 1
         config HAL_ASSERTION_ENABLE
@@ -28,6 +28,66 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         int
         default COMPILER_OPTIMIZATION_ASSERTION_LEVEL if HAL_ASSERTION_EQUALS_SYSTEM
         default 0 if HAL_ASSERTION_DISABLE
-        default 1 if HAL_ASSERTION_SILIENT
+        default 1 if HAL_ASSERTION_SILENT
         default 2 if HAL_ASSERTION_ENABLE
+
+    choice HAL_LOG_LEVEL
+        bool "HAL layer log verbosity"
+        default HAL_LOG_LEVEL_INFO
+        # If LOG component is linked, one of the following configuration symbol will be defined.
+        # Else, none will be defined, in that case, we need this HAL_LOG_LEVEL symbol.
+        depends on !LOG_DEFAULT_LEVEL_NONE && !LOG_DEFAULT_LEVEL_ERROR && !LOG_DEFAULT_LEVEL_WARN && \
+            !LOG_DEFAULT_LEVEL_INFO && !LOG_DEFAULT_LEVEL_DEBUG && !LOG_DEFAULT_LEVEL_VERBOSE
+
+        help
+            Specify how much output to see in HAL logs.
+
+        config HAL_LOG_LEVEL_NONE
+            bool "No output"
+        config HAL_LOG_LEVEL_ERROR
+            bool "Error"
+        config HAL_LOG_LEVEL_WARN
+            bool "Warning"
+        config HAL_LOG_LEVEL_INFO
+            bool "Info"
+        config HAL_LOG_LEVEL_DEBUG
+            bool "Debug"
+        config HAL_LOG_LEVEL_VERBOSE
+            bool "Verbose"
+    endchoice
+
+    config HAL_LOG_LEVEL
+        int
+        default 0 if HAL_LOG_LEVEL_NONE
+        default 1 if HAL_LOG_LEVEL_ERROR
+        default 2 if HAL_LOG_LEVEL_WARN
+        default 3 if HAL_LOG_LEVEL_INFO
+        default 4 if HAL_LOG_LEVEL_DEBUG
+        default 5 if HAL_LOG_LEVEL_VERBOSE
+
+    config HAL_SYSTIMER_USE_ROM_IMPL
+        bool "Use ROM implementation of SysTimer HAL driver"
+        depends on ESP_ROM_HAS_HAL_SYSTIMER
+        default y
+        help
+            Enable this flag to use HAL functions from ROM instead of ESP-IDF.
+
+            If keeping this as "n" in your project, you will have less free IRAM.
+            If making this as "y" in your project, you will increase free IRAM,
+            but you will lose the possibility to debug this module, and some new
+            features will be added and bugs will be fixed in the IDF source
+            but cannot be synced to ROM.
+
+    config HAL_WDT_USE_ROM_IMPL
+        bool "Use ROM implementation of WDT HAL driver"
+        depends on ESP_ROM_HAS_HAL_WDT
+        default y
+        help
+            Enable this flag to use HAL functions from ROM instead of ESP-IDF.
+
+            If keeping this as "n" in your project, you will have less free IRAM.
+            If making this as "y" in your project, you will increase free IRAM,
+            but you will lose the possibility to debug this module, and some new
+            features will be added and bugs will be fixed in the IDF source
+            but cannot be synced to ROM.
 endmenu

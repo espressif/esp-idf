@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,6 @@ static void test_initializers()
 #endif
     sdmmc_host_t sdspi_host = SDSPI_HOST_DEFAULT();
     (void) sdspi_host;
-    sdspi_slot_config_t sdspi_slot = SDSPI_SLOT_CONFIG_DEFAULT();
-    (void) sdspi_slot;
     sdspi_device_config_t sdspi_dev = SDSPI_DEVICE_CONFIG_DEFAULT();
     (void) sdspi_dev;
 }

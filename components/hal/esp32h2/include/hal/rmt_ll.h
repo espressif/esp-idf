@@ -95,10 +95,10 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     dev->sys_conf.sclk_div_a = divider_numerator;
     dev->sys_conf.sclk_div_b = divider_denominator;
     switch (src) {
-    case RMT_CLK_SRC_APB:
+    case RMT_CLK_SRC_AHB:
         dev->sys_conf.sclk_sel = 1;
         break;
-    case RMT_CLK_SRC_FAST_RC:
+    case RMT_CLK_SRC_RC_FAST:
         dev->sys_conf.sclk_sel = 2;
         break;
     case RMT_CLK_SRC_XTAL:
@@ -637,7 +637,19 @@ static inline uint32_t rmt_ll_tx_get_interrupt_status(rmt_dev_t *dev, uint32_t c
  */
 static inline uint32_t rmt_ll_tx_get_interrupt_status_raw(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->int_raw.val & RMT_LL_EVENT_TX_MASK(channel);
+    return dev->int_raw.val & (RMT_LL_EVENT_TX_MASK(channel) | RMT_LL_EVENT_TX_ERROR(channel));
+}
+
+/**
+ * @brief Get interrupt raw status for RX channel
+ *
+ * @param dev Peripheral instance address
+ * @param channel RMT RX channel number
+ * @return Interrupt raw status
+ */
+static inline uint32_t rmt_ll_rx_get_interrupt_status_raw(rmt_dev_t *dev, uint32_t channel)
+{
+    return dev->int_raw.val & (RMT_LL_EVENT_RX_MASK(channel) | RMT_LL_EVENT_RX_ERROR(channel));
 }
 
 /**
@@ -701,13 +713,13 @@ static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
-    rmt_clock_source_t clk_src = RMT_CLK_SRC_APB;
+    rmt_clock_source_t clk_src = RMT_CLK_SRC_AHB;
     switch (dev->sys_conf.sclk_sel) {
     case 1:
-        clk_src = RMT_CLK_SRC_APB;
+        clk_src = RMT_CLK_SRC_AHB;
         break;
     case 2:
-        clk_src = RMT_CLK_SRC_FAST_RC;
+        clk_src = RMT_CLK_SRC_RC_FAST;
         break;
     case 3:
         clk_src = RMT_CLK_SRC_XTAL;

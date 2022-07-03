@@ -1,22 +1,19 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_TRANSPORT_INTERNAL_H_
 #define _ESP_TRANSPORT_INTERNAL_H_
 
 #include "esp_transport.h"
+#include "sys/socket.h"
 #include "sys/queue.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef int (*get_socket_func)(esp_transport_handle_t t);
 
@@ -49,18 +46,6 @@ struct esp_transport_item_t {
 };
 
 /**
- * @brief Internal error types for TCP connection issues not covered in socket's errno
- */
-enum tcp_transport_errors {
-    ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT,
-    ERR_TCP_TRANSPORT_CANNOT_RESOLVE_HOSTNAME,
-    ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN,
-    ERR_TCP_TRANSPORT_CONNECTION_FAILED,
-    ERR_TCP_TRANSPORT_SETOPT_FAILED,
-    ERR_TCP_TRANSPORT_NO_MEM,
-};
-
-/**
  * @brief      Captures internal tcp connection error
  *
  * This is internally translated to esp-tls return codes of esp_err_t type, since the esp-tls
@@ -70,7 +55,7 @@ enum tcp_transport_errors {
  * @param[in] error Internal tcp-transport's error
  *
  */
-void capture_tcp_transport_error(esp_transport_handle_t t, enum tcp_transport_errors error);
+void capture_tcp_transport_error(esp_transport_handle_t t, enum esp_tcp_transport_err_t error);
 
 /**
  * @brief Returns underlying socket for the supplied transport handle
@@ -115,5 +100,9 @@ void esp_transport_esp_tls_destroy(struct transport_esp_tls* transport_esp_tls);
  *
  */
 void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_TRANSPORT_INTERNAL_H_

@@ -6,13 +6,13 @@ ESP-IDF 提供了 ``console`` 组件，它包含了开发基于串口的交互�
 
 -  行编辑，由 `linenoise <https://github.com/antirez/linenoise>`_ 库具体实现，它支持处理退格键和方向键，支持回看命令的历史记录，支持命令的自动补全和参数提示。
 -  将命令行拆分为参数列表。
--  参数解析，由 `argtable3 <http://www.argtable.org/>`_ 库具体实现，该库提供解析 GNU 样式的命令行参数的 API。
+-  参数解析，由 `argtable3 <https://www.argtable.org/>`_ 库具体实现，该库提供解析 GNU 样式的命令行参数的 API。
 -  用于注册和调度命令的函数。
 -  帮助创建 REPL (Read-Evaluate-Print-Loop) 环境的函数。
 
 .. note::
 
-  这些功能模块可以一起使用也可以独立使用，例如仅使用行编辑和命令注册的功能，然后使用 ``getopt`` 函数或者自定义的函数来实现参数解析，而不是直接使用 `argtable3 <http://www.argtable.org/>`_ 库。同样地，还可以使用更简单的命令输入方法（比如 ``fgets`` 函数）和其他用于命令分割和参数解析的方法。
+  这些功能模块可以一起使用也可以独立使用，例如仅使用行编辑和命令注册的功能，然后使用 ``getopt`` 函数或者自定义的函数来实现参数解析，而不是直接使用 `argtable3 <https://www.argtable.org/>`_ 库。同样地，还可以使用更简单的命令输入方法（比如 ``fgets`` 函数）和其他用于命令分割和参数解析的方法。
 
 行编辑
 ------
@@ -127,7 +127,7 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 参数解析
 --------
 
-对于参数解析，``console`` 组件使用 `argtable3 <http://www.argtable.org/>`_ 库。有关 `argtable3 <http://www.argtable.org/>`_ 的介绍请查看 `教程 <http://www.argtable.org/tutorial/>`_ 或者 Github 仓库中的 `示例代码 <https://github.com/argtable/argtable3/tree/master/examples>`_ 。
+对于参数解析，``console`` 组件使用 `argtable3 <https://www.argtable.org/>`_ 库。有关 `argtable3 <https://www.argtable.org/>`_ 的介绍请查看 `教程 <https://www.argtable.org/tutorial/>`_ 或者 Github 仓库中的 `示例代码 <https://github.com/argtable/argtable3/tree/master/examples>`_ 。
 
 
 命令的注册与调度

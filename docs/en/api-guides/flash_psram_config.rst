@@ -43,7 +43,7 @@ The Flash related configurations are under ``Serial flasher config`` menu.
 Configure the PSRAM
 ^^^^^^^^^^^^^^^^^^^
 
-To enable PSRAM, please enable the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_SPIRAM_SUPPORT` under ``Component config / {IDF_TARGET_NAME}-Specific`` menu. Then all the PSRAM related configurations will be visible under ``SPI RAM config`` menu.
+To enable PSRAM, please enable the :ref:`CONFIG_SPIRAM` under ``Component config / Hardware Settings`` menu. Then all the PSRAM related configurations will be visible under ``SPI RAM config`` menu.
 
 1. PSRAM type used on the board. Select a type in :ref:`CONFIG_SPIRAM_MODE` for Quad or Octal PSRAM.
 2. PSRAM speed. Select a PSRAM frequency in :ref:`CONFIG_SPIRAM_SPEED`.

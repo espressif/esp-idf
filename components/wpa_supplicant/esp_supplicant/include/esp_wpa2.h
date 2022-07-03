@@ -32,7 +32,7 @@ extern "C" {
 /**
   * @brief  Enable wpa2 enterprise authentication.
   *
-  * @attention 1. wpa2 enterprise authentication can only be used when ESP32 station is enabled.
+  * @attention 1. wpa2 enterprise authentication can only be used when station mode is enabled.
   * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
   * @return
@@ -44,7 +44,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable(void);
 /**
   * @brief  Disable wpa2 enterprise authentication.
   *
-  * @attention 1. wpa2 enterprise authentication can only be used when ESP32 station is enabled.
+  * @attention 1. wpa2 enterprise authentication can only be used when station mode is enabled.
   * @attention 2. wpa2 enterprise authentication can only support TLS, PEAP-MSCHAPv2 and TTLS-MSCHAPv2 method.
   *
   * @return
@@ -245,6 +245,17 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_pac_file(const unsigned char *pac_file, int 
   *    - ESP_ERR_NO_MEM: fail(internal memory malloc fail)
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_fast_phase1_params(esp_eap_fast_config config);
+
+/**
+  * @brief  Use default CA cert bundle for server validation
+  *
+  * @use_default_bundle : whether to use bundle or not
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_FAIL: fail
+  */
+esp_err_t esp_wifi_sta_wpa2_use_default_cert_bundle(bool use_default_bundle);
 
 #ifdef __cplusplus
 }

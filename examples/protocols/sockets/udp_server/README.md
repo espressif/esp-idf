@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 | ESP32-C2 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 
 # UDP Server example
 
@@ -9,9 +12,10 @@ The application creates UDP socket with the specified port number and waits for 
 
 In order to create UDP client that communicates with UDP server example, choose one of the following options.
 
-There are many host-side tools which can be used to interact with the UDP/TCP server/client. 
-One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets. 
+There are many host-side tools which can be used to interact with the UDP/TCP server/client.
+One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets.
 Note: please replace `192.168.0.167 3333` with desired IPV4/IPV6 address (displayed in monitor console) and port number in the following commands.
+If want to use this RECVINFO function, please enable LWIP_NETBUF_RECVINFO in menuconfig,this function can only resolve the destination address of IPV4.
 
 In addition to those tools, simple Python scripts can be found under sockets/scripts directory. Every script is designed to interact with one of the examples.
 

@@ -1,0 +1,10 @@
+pytest-embedded-serial-esp
+pytest-embedded-idf
+pytest-embedded-qemu
+pytest-rerunfailures
+scapy
+websocket-client
+netifaces
+rangehttpserver
+dbus-python; sys_platform != 'win32'
+protobuf

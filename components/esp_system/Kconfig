@@ -1,5 +1,13 @@
 
 menu "ESP System Settings"
+    # Insert chip-specific cpu config
+    rsource "./port/soc/$IDF_TARGET/Kconfig.cpu"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.cache"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.memory"
+
+    orsource "./port/soc/$IDF_TARGET/Kconfig.tracemem"
 
     choice ESP_SYSTEM_PANIC
         prompt "Panic handler behaviour"
@@ -48,7 +56,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_RTC_EXT_XTAL
         # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
-        # e.g. It will be selected on when ESP32_RTC_CLK_SRC_EXT_CRYS is on
+        # e.g. It will be selected on when RTC_CLK_SRC_EXT_CRYS is on
         bool
         default n
 
@@ -108,6 +116,18 @@ menu "ESP System Settings"
             This option shall NOT be used for production.
 
     menu "Memory protection"
+
+        config ESP_SYSTEM_PMP_IDRAM_SPLIT
+            bool "Enable IRAM/DRAM split protection"
+            depends on SOC_CPU_IDRAM_SPLIT_USING_PMP
+            default "y"
+            help
+                If enabled, the CPU watches all the memory access and raises an exception in case
+                of any memory violation. This feature automatically splits
+                the SRAM memory, using PMP, into data and instruction segments and sets Read/Execute permissions
+                for the instruction part (below given splitting address) and Read/Write permissions
+                for the data part (above the splitting address). The memory protection is effective
+                on all access through the IRAM0 and DRAM0 buses.
 
         config ESP_SYSTEM_MEMPROT_DEPCHECK
             bool
@@ -227,7 +247,6 @@ menu "ESP System Settings"
             depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
-            select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32S3  #ESPTOOL-251
             select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32C3  #ESPTOOL-252
             depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         config ESP_CONSOLE_UART_CUSTOM
@@ -300,6 +319,7 @@ menu "ESP System Settings"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 1 if IDF_TARGET_ESP32
+        default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
         default 43
         help
@@ -314,6 +334,7 @@ menu "ESP System Settings"
         depends on ESP_CONSOLE_UART_CUSTOM
         range 0 46
         default 3 if IDF_TARGET_ESP32
+        default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
         default 44
         help
@@ -365,6 +386,7 @@ menu "ESP System Settings"
 
     config ESP_INT_WDT
         bool "Interrupt watchdog"
+        default n if IDF_TARGET_ESP32C2 # add support in IDF-4114
         default y
         help
             This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
@@ -375,8 +397,8 @@ menu "ESP System Settings"
     config ESP_INT_WDT_TIMEOUT_MS
         int "Interrupt watchdog timeout (ms)"
         depends on ESP_INT_WDT
-        default 300 if !ESP32_SPIRAM_SUPPORT
-        default 800 if ESP32_SPIRAM_SUPPORT
+        default 300 if !(SPIRAM && IDF_TARGET_ESP32)
+        default 800 if (SPIRAM && IDF_TARGET_ESP32)
         range 10 10000
         help
             The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
@@ -510,6 +532,18 @@ menu "ESP System Settings"
 
     # Insert chip-specific system config
     rsource "./port/soc/$IDF_TARGET/Kconfig.system"
+
+    config ESP_SYSTEM_BROWNOUT_INTR
+        bool
+        default n
+        help
+            This config allows to trigger an interrupt when brownout detected. Software restart will be done
+            at the end of the default callback.
+            Two occasions need to restart the chip with interrupt so far.
+            (1). For ESP32 version 1, brown-out reset function doesn't work (see ESP32 errata 3.4).
+                  So that we must restart from interrupt.
+            (2). For special workflow, the chip needs do more things instead of restarting directly. This part
+                 needs to be done in callback function of interrupt.
 
 endmenu  # ESP System Settings
 

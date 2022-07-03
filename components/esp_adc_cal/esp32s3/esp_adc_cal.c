@@ -93,7 +93,7 @@ static esp_err_t get_reference_point(int version_num, adc_unit_t adc_num, adc_at
 
     uint32_t voltage = 0;
     uint32_t digi = 0;
-    ret = esp_efuse_rtc_calib_get_cal_voltage(version_num, ((adc_num == ADC_UNIT_1) ? 0 : 1), atten, &digi, &voltage);
+    ret = esp_efuse_rtc_calib_get_cal_voltage(version_num, adc_num, atten, &digi, &voltage);
     assert(ret == ESP_OK);
     calib_info->ref_data.ver1.voltage = voltage;
     calib_info->ref_data.ver1.digi = digi;
@@ -134,7 +134,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     // Check parameters
     ESP_RETURN_ON_FALSE(adc_num == ADC_UNIT_1 || adc_num == ADC_UNIT_2, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid unit num");
     ESP_RETURN_ON_FALSE(chars != NULL, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Ivalid characteristic");
-    ESP_RETURN_ON_FALSE(atten < ADC_ATTEN_MAX, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid attenuation");
+    ESP_RETURN_ON_FALSE(atten < SOC_ADC_ATTEN_NUM, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid attenuation");
 
     int version_num = esp_efuse_rtc_calib_get_ver();
     ESP_RETURN_ON_FALSE(version_num == 1, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "No calibration efuse burnt");

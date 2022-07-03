@@ -9,8 +9,6 @@
 #include "esp_check.h"
 #include "sdkconfig.h"
 
-#define DELAY_RTC_CLK_SWITCH 5
-
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static uint8_t s_periph_ref_counts = 0;
@@ -28,15 +26,13 @@ bool periph_rtc_dig_clk8m_enable(void)
     portENTER_CRITICAL(&periph_spinlock);
     if (s_periph_ref_counts == 0) {
         rtc_dig_clk8m_enable();
-#if CONFIG_IDF_TARGET_ESP32H2
-        s_rtc_clk_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_RC32K, 100));
-#else
+#if !CONFIG_IDF_TARGET_ESP32H2
         s_rtc_clk_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, 100));
-#endif
         if (s_rtc_clk_freq == 0) {
             portEXIT_CRITICAL(&periph_spinlock);
             return false;
         }
+#endif
     }
     s_periph_ref_counts++;
     portEXIT_CRITICAL(&periph_spinlock);
@@ -45,7 +41,12 @@ bool periph_rtc_dig_clk8m_enable(void)
 
 uint32_t periph_rtc_dig_clk8m_get_freq(void)
 {
+#if CONFIG_IDF_TARGET_ESP32H2
+    /* Workaround: H2 doesn't have 8MD256 clk, so calibration cannot be done, we just return its theoretic frequency */
+    return SOC_CLK_RC_FAST_FREQ_APPROX;
+#else
     return s_rtc_clk_freq * 256;
+#endif
 }
 
 void periph_rtc_dig_clk8m_disable(void)
@@ -120,4 +121,4 @@ esp_err_t periph_rtc_apll_freq_set(uint32_t expt_freq, uint32_t *real_freq)
 
     return ESP_OK;
 }
-#endif // SOC_I2S_SUPPORTS_APLL
+#endif // SOC_CLK_APLL_SUPPORTED

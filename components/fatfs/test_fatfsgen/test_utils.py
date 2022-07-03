@@ -42,3 +42,26 @@ def generate_test_dir_2() -> None:
 def fill_sector(fatfs: fatfsgen.FATFS, file_prefix: str = 'A') -> None:
     for i in range(CFG['sector_size'] // CFG['entry_size']):
         fatfs.create_file(f'{file_prefix}{str(i).upper()}', path_from_root=['TESTFOLD'])
+
+
+def generate_local_folder_structure(structure_: dict, path_: str) -> None:
+    if structure_['type'] == 'folder':
+        new_path_ = os.path.join(path_, structure_['name'])
+        os.makedirs(new_path_)
+        for item_ in structure_['content']:
+            generate_local_folder_structure(item_, new_path_)
+    else:
+        new_path_ = os.path.join(path_, structure_['name'])
+        with open(new_path_, 'w') as f_:
+            f_.write(structure_['content'])
+
+
+def compare_folders(fp1: str, fp2: str) -> bool:
+    if os.path.isdir(fp1) != os.path.isdir(fp2):
+        return False
+    if os.path.isdir(fp1):
+        if set(os.listdir(fp1)) != set(os.listdir(fp2)):
+            return False
+        return all([compare_folders(os.path.join(fp1, path_), os.path.join(fp2, path_)) for path_ in os.listdir(fp1)])
+    with open(fp1, 'rb') as f1_, open(fp2, 'rb') as f2_:
+        return f1_.read() == f2_.read()

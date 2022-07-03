@@ -10,7 +10,8 @@
 #include <stdbool.h>
 
 #include "esp_private/system_internal.h"
-#include "driver/rtc_cntl.h"
+#include "esp_private/rtc_ctrl.h"
+#include "esp_private/spi_flash_os.h"
 
 #include "esp_rom_sys.h"
 
@@ -18,6 +19,9 @@
 #include "esp_cpu.h"
 #include "soc/rtc_periph.h"
 #include "hal/cpu_hal.h"
+#include "esp_attr.h"
+#include "bootloader_flash.h"
+#include "esp_intr_alloc.h"
 
 #include "hal/brownout_hal.h"
 
@@ -29,48 +33,58 @@
 #define BROWNOUT_DET_LVL 0
 #endif
 
-#if SOC_BROWNOUT_RESET_SUPPORTED
-#define BROWNOUT_RESET_EN true
-#else
-#define BROWNOUT_RESET_EN false
-#endif // SOC_BROWNOUT_RESET_SUPPORTED
-
-#ifndef SOC_BROWNOUT_RESET_SUPPORTED
-static void rtc_brownout_isr_handler(void *arg)
+#if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
+IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
 {
     /* Normally RTC ISR clears the interrupt flag after the application-supplied
      * handler returns. Since restart is called here, the flag needs to be
      * cleared manually.
      */
     brownout_hal_intr_clear();
-    /* Stall the other CPU to make sure the code running there doesn't use UART
-     * at the same time as the following esp_rom_printf.
-     */
+    // Stop the other core.
     esp_cpu_stall(!cpu_hal_get_core_id());
     esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
-    esp_rom_printf("\r\nBrownout detector was triggered\r\n\r\n");
+#if CONFIG_SPI_FLASH_BROWNOUT_RESET
+    if (spi_flash_brownout_need_reset()) {
+        bootloader_flash_reset_chip();
+    } else
+#endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
+    {
+        esp_rom_printf("\r\nBrownout detector was triggered\r\n\r\n");
+    }
+
     esp_restart_noos();
 }
-#endif // not SOC_BROWNOUT_RESET_SUPPORTED
+#endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 
 void esp_brownout_init(void)
 {
+#if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
     brownout_hal_config_t cfg = {
         .threshold = BROWNOUT_DET_LVL,
         .enabled = true,
-        .reset_enabled = BROWNOUT_RESET_EN,
+        .reset_enabled = false,
         .flash_power_down = true,
         .rf_power_down = true,
     };
 
     brownout_hal_config(&cfg);
-
-
-#ifndef SOC_BROWNOUT_RESET_SUPPORTED
-    rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M);
-
+    brownout_hal_intr_clear();
+    rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M, RTC_INTR_FLAG_IRAM);
     brownout_hal_intr_enable(true);
-#endif // not SOC_BROWNOUT_RESET_SUPPORTED
+
+#else // brownout without interrupt
+
+    brownout_hal_config_t cfg = {
+        .threshold = BROWNOUT_DET_LVL,
+        .enabled = true,
+        .reset_enabled = true,
+        .flash_power_down = true,
+        .rf_power_down = true,
+    };
+
+    brownout_hal_config(&cfg);
+#endif
 }
 
 void esp_brownout_disable(void)
@@ -80,10 +94,8 @@ void esp_brownout_disable(void)
     };
 
     brownout_hal_config(&cfg);
-
-#ifndef SOC_BROWNOUT_RESET_SUPPORTED
+#if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
     brownout_hal_intr_enable(false);
-
     rtc_isr_deregister(rtc_brownout_isr_handler, NULL);
-#endif // not SOC_BROWNOUT_RESET_SUPPORTED
+#endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
 }

@@ -223,7 +223,7 @@ light_handle_t iot_light_create(ledc_timer_t timer, ledc_mode_t speed_mode, uint
 
     if (g_hw_timer_started == false) {
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = GPTIMER_RESOLUTION_HZ,
         };
@@ -238,6 +238,7 @@ light_handle_t iot_light_create(ledc_timer_t timer, ledc_mode_t speed_mode, uint
         };
         gptimer_register_event_callbacks(light_ptr->gptimer, &cbs, NULL);
         gptimer_set_alarm_action(light_ptr->gptimer, &alarm_config);
+        gptimer_enable(light_ptr->gptimer);
         gptimer_start(light_ptr->gptimer);
         g_hw_timer_started = true;
     }
@@ -285,6 +286,7 @@ esp_err_t iot_light_delete(light_handle_t light_handle)
     g_fade_installed = false;
     g_hw_timer_started = false;
     gptimer_stop(light->gptimer);
+    gptimer_disable(light->gptimer);
     gptimer_del_timer(light->gptimer);
 FREE_MEM:
     free(light_handle);

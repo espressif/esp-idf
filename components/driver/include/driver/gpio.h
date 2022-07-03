@@ -10,11 +10,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#if !CONFIG_IDF_TARGET_LINUX
-#include "esp_attr.h"
-#include "esp_types.h"
 #include "soc/soc_caps.h"
-#endif // !CONFIG_IDF_TARGET_LINUX
 #include "hal/gpio_types.h"
 #include "esp_rom_gpio.h"
 
@@ -24,9 +20,11 @@ extern "C" {
 
 #define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
 /// Check whether it is a valid GPIO number
-#define GPIO_IS_VALID_GPIO(gpio_num)        (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0)
+#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
 /// Check whether it can be a valid GPIO number of output mode
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0)
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
 
 
 typedef intr_handle_t gpio_isr_handle_t;
@@ -74,7 +72,7 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 /**
  * @brief  Enable GPIO module interrupt signal
  *
- * @note Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi with sleep mode enabled.
+ * @note Please do not use the interrupt of GPIO36 and GPIO39 when using ADC or Wi-Fi and Bluetooth with sleep mode enabled.
  *       Please refer to the comments of `adc1_get_raw`.
  *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
  *       As a workaround, call adc_power_acquire() in the app. This will result in higher power consumption (by ~1mA),
@@ -92,6 +90,8 @@ esp_err_t gpio_intr_enable(gpio_num_t gpio_num);
 /**
  * @brief  Disable GPIO module interrupt signal
  *
+ * @note This function is allowed to be executed when Cache is disabled within ISR context, by enabling `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`
+ *
  * @param  gpio_num GPIO number. If you want to disable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
  * @return
@@ -103,6 +103,8 @@ esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
 
 /**
  * @brief  GPIO set output level
+ *
+ * @note This function is allowed to be executed when Cache is disabled within ISR context, by enabling `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`
  *
  * @param  gpio_num GPIO number. If you want to set the output level of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  level Output level. 0: low ; 1: high
@@ -475,7 +477,8 @@ esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
-#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)        ((gpio_num & ~SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK) == 0)
+#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)    ((gpio_num >= 0) && \
+                                                          (((1ULL << (gpio_num)) & SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK) != 0))
 
 /**
  * @brief Enable GPIO deep-sleep wake-up function.

@@ -24,7 +24,11 @@ bootloader_sha256_handle_t bootloader_sha256_start()
 void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
 {
     assert(handle != NULL);
-    assert(data_len % 4 == 0);
+    /* C2 secure boot key field consists of 1 byte of curve identifier and 64 bytes of ECDSA public key.
+     * While verifying the signature block, we need to calculate the SHA of this key field which is of 65 bytes.
+     * ets_sha_update handles it cleanly so we can safely remove the check:
+     * assert(data_len % 4) == 0
+     */
     ets_sha_update(&ctx, data, data_len, false);
 }
 

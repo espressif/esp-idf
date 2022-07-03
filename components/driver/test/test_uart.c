@@ -32,8 +32,6 @@
 // Wait timeout for uart driver
 #define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
 
-#define TEST_DEFAULT_CLK UART_SCLK_APB
-
 static void uart_config(uint32_t baud_rate, uart_sclk_t source_clk)
 {
     uart_config_t uart_config = {
@@ -80,7 +78,7 @@ static void test_task2(void *pvParameters)
 
 TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]")
 {
-    uart_config(UART_BAUD_11520, TEST_DEFAULT_CLK);
+    uart_config(UART_BAUD_11520, UART_SCLK_DEFAULT);
 
     SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
     exit_flag = false;
@@ -112,7 +110,7 @@ TEST_CASE("test uart get baud-rate", "[uart]")
 #endif
     uint32_t baud_rate2 = 0;
     printf("init uart%d, unuse reftick, baud rate : %d\n", (int)UART_NUM1, (int)UART_BAUD_115200);
-    uart_config(UART_BAUD_115200, TEST_DEFAULT_CLK);
+    uart_config(UART_BAUD_115200, UART_SCLK_DEFAULT);
     uart_get_baudrate(UART_NUM1, &baud_rate2);
     printf("get  baud rate when don't use reftick: %d\n", (int)baud_rate2);
     TEST_ASSERT_UINT32_WITHIN(UART_BAUD_115200 * TOLERANCE, UART_BAUD_115200, baud_rate2);
@@ -129,7 +127,7 @@ TEST_CASE("test uart tx data with break", "[uart]")
     char *psend = (char *)malloc(buf_len);
     TEST_ASSERT_NOT_NULL(psend);
     memset(psend, '0', buf_len);
-    uart_config(UART_BAUD_115200, TEST_DEFAULT_CLK);
+    uart_config(UART_BAUD_115200, UART_SCLK_DEFAULT);
     printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
     uart_write_bytes_with_break(UART_NUM1, (const char *)psend, send_len, brk_len);
     uart_wait_tx_done(UART_NUM1, (TickType_t)portMAX_DELAY);
@@ -215,7 +213,7 @@ TEST_CASE("uart general API test", "[uart]")
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = TEST_DEFAULT_CLK,
+        .source_clk = UART_SCLK_DEFAULT,
     };
     uart_param_config(uart_num, &uart_config);
     uart_word_len_set_get_test(uart_num);
@@ -268,7 +266,7 @@ TEST_CASE("uart read write test", "[uart]")
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
-        .source_clk = TEST_DEFAULT_CLK,
+        .source_clk = UART_SCLK_DEFAULT,
         .rx_flow_ctrl_thresh = 120
     };
     TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
@@ -337,7 +335,7 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
         .rx_flow_ctrl_thresh = 120,
-        .source_clk = TEST_DEFAULT_CLK,
+        .source_clk = UART_SCLK_DEFAULT,
     };
     uart_wait_tx_idle_polling(uart_num);
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
@@ -373,7 +371,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = UART_SCLK_APB,
+        .source_clk = UART_SCLK_DEFAULT,
     };
 
     const uart_port_t uart_echo = UART_NUM_1;

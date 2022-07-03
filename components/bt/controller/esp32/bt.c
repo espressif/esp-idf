@@ -36,6 +36,7 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "esp_coexist_internal.h"
+#include "esp_timer.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
 #endif
@@ -151,8 +152,8 @@ struct osi_funcs_t {
     void (* _task_delete)(void *task_handle);
     bool (* _is_in_isr)(void);
     int (* _cause_sw_intr_to_core)(int core_id, int intr_no);
-    void *(* _malloc)(uint32_t size);
-    void *(* _malloc_internal)(uint32_t size);
+    void *(* _malloc)(size_t size);
+    void *(* _malloc_internal)(size_t size);
     void (* _free)(void *p);
     int32_t (* _read_efuse_mac)(uint8_t mac[6]);
     void (* _srand)(unsigned int seed);
@@ -273,15 +274,15 @@ static bool btdm_queue_generic_deregister(btdm_queue_item_t *queue);
 
 #if CONFIG_BTDM_CTRL_HLI
 static xt_handler set_isr_hlevel_wrapper(int n, xt_handler f, void *arg);
-static void IRAM_ATTR interrupt_hlevel_disable(void);
-static void IRAM_ATTR interrupt_hlevel_restore(void);
+static void interrupt_hlevel_disable(void);
+static void interrupt_hlevel_restore(void);
 #endif /* CONFIG_BTDM_CTRL_HLI */
-static void IRAM_ATTR task_yield(void);
-static void IRAM_ATTR task_yield_from_isr(void);
+static void task_yield(void);
+static void task_yield_from_isr(void);
 static void *semphr_create_wrapper(uint32_t max, uint32_t init);
 static void semphr_delete_wrapper(void *semphr);
-static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw);
-static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw);
+static int32_t semphr_take_from_isr_wrapper(void *semphr, void *hptw);
+static int32_t semphr_give_from_isr_wrapper(void *semphr, void *hptw);
 static int32_t  semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
 static int32_t  semphr_give_wrapper(void *semphr);
 static void *mutex_create_wrapper(void);
@@ -291,30 +292,30 @@ static int32_t mutex_unlock_wrapper(void *mutex);
 #if CONFIG_BTDM_CTRL_HLI
 static void *queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
 static void queue_delete_hlevel_wrapper(void *queue);
-static int32_t IRAM_ATTR queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
-static int32_t IRAM_ATTR queue_recv_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_recv_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
+static int32_t queue_send_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t queue_send_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
+static int32_t queue_recv_hlevel_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t queue_recv_from_isr_hlevel_wrapper(void *queue, void *item, void *hptw);
 #else
 static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
 static void queue_delete_wrapper(void *queue);
-static int32_t IRAM_ATTR queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
-static int32_t IRAM_ATTR queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
 #endif /* CONFIG_BTDM_CTRL_HLI */
 static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
-static bool IRAM_ATTR is_in_isr_wrapper(void);
-static void IRAM_ATTR cause_sw_intr(void *arg);
-static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no);
+static bool is_in_isr_wrapper(void);
+static void cause_sw_intr(void *arg);
+static int cause_sw_intr_to_core_wrapper(int core_id, int intr_no);
 static void *malloc_internal_wrapper(size_t size);
-static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6]);
-static void IRAM_ATTR srand_wrapper(unsigned int seed);
-static int IRAM_ATTR rand_wrapper(void);
-static uint32_t IRAM_ATTR btdm_lpcycles_2_us(uint32_t cycles);
-static uint32_t IRAM_ATTR btdm_us_2_lpcycles(uint32_t us);
-static bool IRAM_ATTR btdm_sleep_check_duration(uint32_t *slot_cnt);
+static int32_t read_mac_wrapper(uint8_t mac[6]);
+static void srand_wrapper(unsigned int seed);
+static int rand_wrapper(void);
+static uint32_t btdm_lpcycles_2_us(uint32_t cycles);
+static uint32_t btdm_us_2_lpcycles(uint32_t us);
+static bool btdm_sleep_check_duration(uint32_t *slot_cnt);
 static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles);
 static void btdm_sleep_enter_phase2_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
@@ -336,8 +337,8 @@ static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
 #if CONFIG_BTDM_CTRL_HLI
 static void *customer_queue_create_hlevel_wrapper(uint32_t queue_len, uint32_t item_size);
 #endif /* CONFIG_BTDM_CTRL_HLI */
-static void IRAM_ATTR interrupt_l3_disable(void);
-static void IRAM_ATTR interrupt_l3_restore(void);
+static void interrupt_l3_disable(void);
+static void interrupt_l3_restore(void);
 
 /* Local variable definition
  ***************************************************************************
@@ -1628,6 +1629,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
+    esp_phy_pd_mem_init();
+
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -1647,7 +1650,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #if CONFIG_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
     // check whether or not EXT_CRYS is working
-    if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32kHz XTAL
 #ifdef CONFIG_PM_ENABLE
         s_btdm_allow_light_sleep = true;
@@ -1665,7 +1668,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     bool set_div_ret __attribute__((unused));
     if (btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
         select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
-        set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2 - 1);
+        set_div_ret = btdm_lpclk_set_div(esp_clk_xtal_freq() * 2 / MHZ - 1);
         assert(select_src_ret && set_div_ret);
         btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
         btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
@@ -1793,6 +1796,8 @@ esp_err_t esp_bt_controller_deinit(void)
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 
     esp_bt_power_domain_off();
+
+    esp_phy_pd_mem_deinit();
 
     return ESP_OK;
 }

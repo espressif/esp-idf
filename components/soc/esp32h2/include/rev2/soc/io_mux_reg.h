@@ -124,6 +124,12 @@
 #define SPI_D_GPIO_NUM               18
 #define SPI_Q_GPIO_NUM               14
 
+#define USB_DM_GPIO_NUM              24
+#define USB_DP_GPIO_NUM              25
+
+#define XTAL32K_P_GPIO_NUM           10
+#define XTAL32K_N_GPIO_NUM           11
+
 #define MAX_RTC_GPIO_NUM             12            // GPIO7~12 are the rtc_io pads
 #define MAX_PAD_GPIO_NUM             25
 #define MAX_GPIO_NUM                 29

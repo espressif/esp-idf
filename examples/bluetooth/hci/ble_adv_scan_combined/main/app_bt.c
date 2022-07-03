@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "esp_bt.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 #include "freertos/queue.h"
 #include "bt_hci_common.h"

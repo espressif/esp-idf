@@ -26,3 +26,8 @@ CONFIG_FATFS_ALLOC_PREFER_EXTRAM=y
 CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL=y
 CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH=3000
 CONFIG_MQTT_TEST_BROKER_URI="mqtt://${EXAMPLE_MQTT_BROKER_TCP}"
+# Set sufficient number of GC runs for SPIFFS:
+# size of the storage partition divided by flash sector size.
+# See esp_spiffs_gc description for more info.
+CONFIG_SPIFFS_GC_MAX_RUNS=132
+CONFIG_NVS_ASSERT_ERROR_CHECK=y

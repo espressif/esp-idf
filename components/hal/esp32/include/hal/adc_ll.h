@@ -1,29 +1,27 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include "soc/adc_periph.h"
+#include <stdbool.h>
 #include "hal/adc_types.h"
+#include "hal/misc.h"
+#include "hal/assert.h"
+#include "soc/adc_periph.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/sens_struct.h"
 #include "soc/syscon_struct.h"
 #include "soc/rtc_cntl_struct.h"
-#include <stdbool.h>
-#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef enum {
-    ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
-    ADC_NUM_2 = 1,          /*!< SAR ADC 2 */
-    ADC_NUM_MAX,
-} adc_ll_num_t;
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
@@ -182,11 +180,11 @@ static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
  *
  * @prarm adc_n ADC unit.
  */
-static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
+static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SYSCON.saradc_ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SYSCON.saradc_ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
     }
 }
@@ -210,11 +208,11 @@ static inline void adc_ll_digi_set_data_source(bool src)
  * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 16.
  */
-static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
+static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t patt_len)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SYSCON.saradc_ctrl.sar1_patt_len = patt_len - 1;
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SYSCON.saradc_ctrl.sar2_patt_len = patt_len - 1;
     }
 }
@@ -229,7 +227,7 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_
  * @param pattern_index Items index. Range: 0 ~ 15.
  * @param pattern Stored conversion rules, see ``adc_digi_pattern_table_t``.
  */
-static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
+static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
 {
     uint32_t tab;
     uint8_t index = pattern_index / 4;
@@ -255,12 +253,12 @@ static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pa
     }
     pattern.val = (table.atten & 0x3) | ((bit_width) << 2) | ((table.channel & 0xF) << 4);
 
-    if (table.unit == ADC_NUM_1) {
+    if (table.unit == ADC_UNIT_1) {
         tab = SYSCON.saradc_sar1_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
         SYSCON.saradc_sar1_patt_tab[index] = tab;   // Write back
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         tab = SYSCON.saradc_sar2_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
@@ -273,12 +271,12 @@ static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pa
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_clear_pattern_table(adc_ll_num_t adc_n)
+static inline void adc_ll_digi_clear_pattern_table(adc_unit_t adc_n)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SYSCON.saradc_ctrl.sar1_patt_p_clear = 1;
         SYSCON.saradc_ctrl.sar1_patt_p_clear = 0;
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SYSCON.saradc_ctrl.sar2_patt_p_clear = 1;
         SYSCON.saradc_ctrl.sar2_patt_p_clear = 0;
     }
@@ -328,11 +326,11 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
  *
  * @param div Division factor.
  */
-static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
+static inline void adc_ll_set_sar_clk_div(adc_unit_t adc_n, uint32_t div)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl, sar1_clk_div, div);
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl2, sar2_clk_div, div);
     }
 }
@@ -343,14 +341,31 @@ static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
  * @param adc_n ADC unit.
  * @param bits Output data bits width option, see ``adc_bits_width_t``.
  */
-static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_width_t bits)
+static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
-    if (adc_n == ADC_NUM_1) {
-        SENS.sar_start_force.sar1_bit_width = bits;
-        SENS.sar_read_ctrl.sar1_sample_bit = bits;
-    } else { // adc_n == ADC_NUM_2
-        SENS.sar_start_force.sar2_bit_width = bits;
-        SENS.sar_read_ctrl2.sar2_sample_bit = bits;
+    uint32_t reg_val = 0;
+    switch (bits) {
+        case ADC_BITWIDTH_9:
+            reg_val = 0;
+            break;
+        case ADC_BITWIDTH_10:
+            reg_val = 1;
+            break;
+        case ADC_BITWIDTH_11:
+            reg_val = 2;
+            break;
+        case ADC_BITWIDTH_12:
+            reg_val = 3;
+            break;
+        default:
+            HAL_ASSERT(false);
+    }
+    if (adc_n == ADC_UNIT_1) {
+        SENS.sar_start_force.sar1_bit_width = reg_val;
+        SENS.sar_read_ctrl.sar1_sample_bit = reg_val;
+    } else { // adc_n == ADC_UNIT_2
+        SENS.sar_start_force.sar2_bit_width = reg_val;
+        SENS.sar_read_ctrl2.sar2_sample_bit = reg_val;
     }
 }
 
@@ -362,11 +377,11 @@ static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_wid
  * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
+static inline void adc_oneshot_ll_set_channel(adc_unit_t adc_n, int channel)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SENS.sar_meas_start1.sar1_en_pad = (1 << channel); //only one channel is selected.
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SENS.sar_meas_start2.sar2_en_pad = (1 << channel); //only one channel is selected.
     }
 }
@@ -378,11 +393,11 @@ static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n)
+static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SENS.sar_meas_start1.sar1_en_pad = 0; //only one channel is selected.
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SENS.sar_meas_start2.sar2_en_pad = 0; //only one channel is selected.
     }
 }
@@ -393,35 +408,47 @@ static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n)
  * @note It may be block to wait conversion idle for ADC1.
  *
  * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0) {}
         SENS.sar_meas_start1.meas1_start_sar = 0;
         SENS.sar_meas_start1.meas1_start_sar = 1;
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SENS.sar_meas_start2.meas2_start_sar = 0; //start force 0
         SENS.sar_meas_start2.meas2_start_sar = 1; //start force 1
     }
 }
 
 /**
- * Check the conversion done flag for each ADCn for RTC controller.
+ * Clear the event for each ADCn for Oneshot mode
  *
- * @param adc_n ADC unit.
+ * @param event ADC event
+ */
+static inline void adc_oneshot_ll_clear_event(uint32_t event)
+{
+    //For compatibility
+}
+
+/**
+ * Check the event for each ADCn for Oneshot mode
+ *
+ * @param event ADC event
+ *
  * @return
  *      -true  : The conversion process is finish.
  *      -false : The conversion process is not finish.
  */
-static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
+static inline bool adc_oneshot_ll_get_event(uint32_t event)
 {
     bool ret = true;
-    if (adc_n == ADC_NUM_1) {
+    if (event == ADC_LL_EVENT_ADC1_ONESHOT_DONE) {
         ret = (bool)SENS.sar_meas_start1.meas1_done_sar;
-    } else { // adc_n == ADC_NUM_2
+    } else if (event == ADC_LL_EVENT_ADC2_ONESHOT_DONE) {
         ret = (bool)SENS.sar_meas_start2.meas2_done_sar;
+    } else {
+        HAL_ASSERT(false);
     }
     return ret;
 }
@@ -433,12 +460,12 @@ static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
  * @return
  *      - Converted value.
  */
-static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
+static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
-    int ret_val = 0;
-    if (adc_n == ADC_NUM_1) {
+    uint32_t ret_val = 0;
+    if (adc_n == ADC_UNIT_1) {
         ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas_start1, meas1_data_sar);
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas_start2, meas2_data_sar);
     }
     return ret_val;
@@ -449,11 +476,11 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
+static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SENS.sar_read_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SENS.sar_read_ctrl2.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
     }
 }
@@ -462,24 +489,24 @@ static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
  * Analyze whether the obtained raw data is correct.
  *
  * @param adc_n ADC unit.
- * @param raw_data ADC raw data input (convert value).
+ * @param raw   ADC raw data input (convert value).
  * @return
- *      - 0: The data is correct to use.
+ *      - true: raw data is valid
  */
-static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t adc_n, uint16_t raw_data)
+static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw)
 {
-    /* ADC1 don't need check data */
-    return ADC_RTC_DATA_OK;
+    /* No arbiter, don't need check data */
+    return true;
 }
 
 /**
  * Set the attenuation of a particular channel on ADCn.
  */
-static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
+static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         SENS.sar_atten2 = ( SENS.sar_atten2 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
     }
 }
@@ -491,13 +518,32 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
  * @param channel ADCn channel number.
  * @return atten The attenuation option.
  */
-static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
+static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
     } else {
         return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
+}
+
+/**
+ * Enable oneshot conversion trigger
+ *
+ * @param adc_n  Not used, for compatibility
+ */
+static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
+{
+    (void)adc_n;
+    //For compatibility
+}
+
+/**
+ * Disable oneshot conversion trigger for all the ADC units
+ */
+static inline void adc_oneshot_ll_disable_all_unit(void)
+{
+    //For compatibility
 }
 
 /*---------------------------------------------------------------
@@ -531,9 +577,9 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         switch ( ctrl ) {
         case ADC_LL_CTRL_RTC:
             SENS.sar_read_ctrl.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
@@ -559,7 +605,7 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t
         default:
             break;
         }
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         switch ( ctrl ) {
         case ADC_LL_CTRL_RTC:
             SENS.sar_meas_start2.meas2_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
@@ -669,9 +715,11 @@ static inline void adc_ll_set_hall_controller(adc_ll_hall_controller_t hall_ctrl
  *  @param[in]  channel ADC2 channel number
  *  @param[in]  en Enable/disable the reference voltage output
  */
-static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, bool en)
+static inline void adc_ll_vref_output(adc_unit_t adc, adc_channel_t channel, bool en)
 {
-    if (adc != ADC_NUM_2) return;
+    if (adc != ADC_UNIT_2) {
+        return;
+    }
 
     if (en) {
         RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode

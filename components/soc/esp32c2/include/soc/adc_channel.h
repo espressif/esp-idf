@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SOC_ADC_CHANNEL_H
-#define _SOC_ADC_CHANNEL_H
+#pragma once
 
 #define ADC1_GPIO1_CHANNEL     ADC1_CHANNEL_0
 #define ADC1_CHANNEL_0_GPIO_NUM 0
@@ -24,5 +23,3 @@
 
 #define ADC2_GPIO5_CHANNEL      ADC2_CHANNEL_0
 #define ADC2_CHANNEL_0_GPIO_NUM 5
-
-#endif

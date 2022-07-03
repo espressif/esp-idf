@@ -1,7 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <setjmp.h>
-#include "esp_system.h"
+#include "esp_chip_info.h"
 
 extern jmp_buf buf;
 

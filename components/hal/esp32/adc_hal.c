@@ -20,11 +20,11 @@ int adc_hal_hall_convert(void)
     int hall_value;
     // convert for 4 times with different phase and outputs
     adc_ll_hall_phase_disable();      // hall phase
-    adc_hal_convert( ADC_NUM_1, ADC_CHANNEL_0, &Sens_Vp0 );
-    adc_hal_convert( ADC_NUM_1, ADC_CHANNEL_3, &Sens_Vn0 );
+    adc_hal_convert( ADC_UNIT_1, ADC_CHANNEL_0, &Sens_Vp0 );
+    adc_hal_convert( ADC_UNIT_1, ADC_CHANNEL_3, &Sens_Vn0 );
     adc_ll_hall_phase_enable();
-    adc_hal_convert( ADC_NUM_1, ADC_CHANNEL_0, &Sens_Vp1 );
-    adc_hal_convert( ADC_NUM_1, ADC_CHANNEL_3, &Sens_Vn1 );
+    adc_hal_convert( ADC_UNIT_1, ADC_CHANNEL_0, &Sens_Vp1 );
+    adc_hal_convert( ADC_UNIT_1, ADC_CHANNEL_3, &Sens_Vn1 );
     hall_value = (Sens_Vp1 - Sens_Vp0) - (Sens_Vn1 - Sens_Vn0);
     return hall_value;
 }

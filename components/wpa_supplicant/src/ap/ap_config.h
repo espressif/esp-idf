@@ -12,7 +12,7 @@
 #include "common/defs.h"
 #include "common/wpa_common.h"
 
-#define MAX_STA_COUNT 4
+#define MAX_STA_COUNT 10
 #define MAX_VLAN_ID 4094
 
 typedef u8 macaddr[ETH_ALEN];
@@ -105,7 +105,6 @@ struct hostapd_wpa_psk {
 	u8 addr[ETH_ALEN];
 };
 
-#if 0
 struct hostapd_eap_user {
 	struct hostapd_eap_user *next;
 	u8 *identity;
@@ -124,6 +123,7 @@ struct hostapd_eap_user {
 	int ttls_auth; /* EAP_TTLS_AUTH_* bitfield */
 };
 
+#if 0
 struct hostapd_radius_attr {
 	u8 type;
 	struct wpabuf *val;
@@ -219,7 +219,6 @@ struct hostapd_bss_config {
 	int rsn_pairwise;
 	int rsn_preauth;
 	char *rsn_preauth_interfaces;
-	int peerkey;
 
 #ifdef CONFIG_IEEE80211R
 	/* IEEE 802.11r - Fast BSS Transition */
@@ -248,7 +247,11 @@ struct hostapd_bss_config {
 	 */
 	u16 max_listen_interval;
 
+	int wps_state;
 #ifdef CONFIG_WPS
+#define WPS_DEV_TYPE_LEN 8
+/* maximum number of advertised WPS vendor extension attributes */
+#define MAX_WPS_VENDOR_EXTENSIONS 10
 	int ap_setup_locked;
 	u8 uuid[16];
 	char *wps_pin_requests;
@@ -369,7 +372,8 @@ int hostapd_wep_key_cmp(struct hostapd_wep_keys *a,
 const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
-bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable);
-bool wpa_ap_remove(void* sm);
+struct sta_info;
+bool wpa_ap_join(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable);
+bool wpa_ap_remove(void* sta_info);
 
 #endif /* HOSTAPD_CONFIG_H */

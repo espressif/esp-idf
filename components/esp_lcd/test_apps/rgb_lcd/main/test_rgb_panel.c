@@ -12,7 +12,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_random.h"
 #include "esp_attr.h"
-#include "nvs_flash.h"
+#include "esp_spi_flash.h"
 #include "test_rgb_board.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
@@ -23,17 +23,13 @@
 
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 
-void test_app_include_rgb_lcd(void)
-{
-}
-
 static esp_lcd_panel_handle_t test_rgb_panel_initialization(bool stream_mode, esp_lcd_rgb_panel_frame_trans_done_cb_t cb, void *user_data)
 {
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16,
         .psram_trans_align = 64,
-        .clk_src = LCD_CLK_SRC_PLL160M,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
         .pclk_gpio_num = TEST_LCD_PCLK_GPIO,
         .vsync_gpio_num = TEST_LCD_VSYNC_GPIO,
@@ -134,13 +130,31 @@ TEST_CASE("lcd_rgb_panel_one_shot_mode", "[lcd]")
 }
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
-TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
+TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
+{
+    uint32_t *count = (uint32_t *)user_ctx;
+    *count = *count + 1;
+    return false;
+}
+
+static void IRAM_ATTR test_disable_flash_cache(void)
+{
+    // disable flash cache
+    spi_flash_guard_get()->start();
+    esp_rom_delay_us(100000);
+    // enable flash cache
+    spi_flash_guard_get()->end();
+}
+
+TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
 {
     uint8_t *img = malloc(TEST_IMG_SIZE);
     TEST_ASSERT_NOT_NULL(img);
 
+    uint32_t callback_calls = 0;
+
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, test_rgb_panel_count_in_callback, &callback_calls);
     printf("flush one clock block to the LCD\r\n");
     uint8_t color_byte = esp_random() & 0xFF;
     int x_start = esp_random() % (TEST_LCD_H_RES - 100);
@@ -150,31 +164,11 @@ TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
     printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
 
     // read/write the SPI Flash by NVS APIs, the LCD driver should stay work
-    printf("initialize NVS flash\r\n");
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        TEST_ESP_OK(nvs_flash_erase());
-        // Retry nvs_flash_init
-        err = nvs_flash_init();
-    }
-    TEST_ESP_OK(err);
-    printf("open NVS storage\r\n");
-    nvs_handle_t my_handle;
-    TEST_ESP_OK(nvs_open("storage", NVS_READWRITE, &my_handle));
-    TEST_ESP_OK(nvs_erase_all(my_handle));
-    int test_count;
-    for (int i = 0; i < 50; i++) {
-        printf("write %d to NVS partition\r\n", i);
-        TEST_ESP_OK(nvs_set_i32(my_handle, "test_count", i));
-        TEST_ESP_OK(nvs_commit(my_handle));
-        TEST_ESP_OK(nvs_get_i32(my_handle, "test_count", &test_count));
-        TEST_ASSERT_EQUAL(i, test_count);
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-    printf("close NVS storage\r\n");
-    nvs_close(my_handle);
-    TEST_ESP_OK(nvs_flash_deinit());
+    printf("disable the cache for a while\r\n");
+    test_disable_flash_cache();
+    printf("the RGB ISR handle should keep working while the flash cache is disabled\r\n");
+    printf("callback calls: %d\r\n", callback_calls);
+    TEST_ASSERT(callback_calls > 5);
 
     printf("delete RGB panel\r\n");
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));

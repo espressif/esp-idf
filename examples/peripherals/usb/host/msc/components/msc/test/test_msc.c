@@ -2,7 +2,7 @@
 /*
  * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: CC0-1.0
  */
 
 #include "unity.h"
@@ -50,7 +50,7 @@ static usb_phy_handle_t phy_hdl = NULL;
 
 static void force_conn_state(bool connected, TickType_t delay_ticks)
 {
-    TEST_ASSERT_NOT_EQUAL(NULL, phy_hdl);
+    TEST_ASSERT(phy_hdl);
     if (delay_ticks > 0) {
         //Delay of 0 ticks causes a yield. So skip if delay_ticks is 0.
         vTaskDelay(delay_ticks);
@@ -62,7 +62,7 @@ static void msc_event_cb(const msc_host_event_t *event, void *arg)
 {
     if (waiting_for_sudden_disconnect) {
         waiting_for_sudden_disconnect = false;
-        TEST_ASSERT(event->event == MSC_DEVICE_DISCONNECTED);
+        TEST_ASSERT_EQUAL(MSC_DEVICE_DISCONNECTED, event->event);
     }
 
     if (event->event == MSC_DEVICE_CONNECTED) {
@@ -83,12 +83,12 @@ static void write_read_file(const char *file_path)
 
     ESP_LOGI(TAG, "Writing file");
     FILE *f = fopen(file_path, "w");
-    TEST_ASSERT( f != NULL);
+    TEST_ASSERT(f);
     fprintf(f, TEST_STRING);
     fclose(f);
 
     ESP_LOGI(TAG, "Reading file");
-    TEST_ASSERT( fopen(file_path, "r") != NULL);
+    TEST_ASSERT(fopen(file_path, "r"));
     fgets(line, sizeof(line), f);
     fclose(f);
     // strip newline
@@ -138,7 +138,7 @@ static void check_file_content(const char *file_path, const char *expected)
 {
     ESP_LOGI(TAG, "Reading %s:", file_path);
     FILE *file = fopen(file_path, "r");
-    TEST_ASSERT(file != NULL)
+    TEST_ASSERT(file)
 
     char content[200];
     fread(content, 1, sizeof(content), file);
@@ -153,12 +153,12 @@ static void check_sudden_disconnect(void)
 
     ESP_LOGI(TAG, "Creating test.tx");
     FILE *file = fopen("/usb/test.txt", "w");
-    TEST_ASSERT( file != NULL);
+    TEST_ASSERT(file);
 
     ESP_LOGI(TAG, "Write data");
-    TEST_ASSERT( fwrite(data, 1, DATA_SIZE, file) == DATA_SIZE );
-    TEST_ASSERT( fwrite(data, 1, DATA_SIZE, file) == DATA_SIZE );
-    TEST_ASSERT( fflush(file) == 0 );
+    TEST_ASSERT_EQUAL(DATA_SIZE, fwrite(data, 1, DATA_SIZE, file));
+    TEST_ASSERT_EQUAL(DATA_SIZE, fwrite(data, 1, DATA_SIZE, file));
+    TEST_ASSERT_EQUAL(0, fflush(file));
 
     ESP_LOGI(TAG, "Trigger a disconnect");
     //Trigger a disconnect
@@ -167,10 +167,10 @@ static void check_sudden_disconnect(void)
 
     // Make sure flag was leared in callback
     vTaskDelay( pdMS_TO_TICKS(100) );
-    TEST_ASSERT( waiting_for_sudden_disconnect == false );
+    TEST_ASSERT_FALSE(waiting_for_sudden_disconnect);
 
     ESP_LOGI(TAG, "Write data after disconnect");
-    TEST_ASSERT( fwrite(data, 1, DATA_SIZE, file) != DATA_SIZE );
+    TEST_ASSERT_NOT_EQUAL( DATA_SIZE, fwrite(data, 1, DATA_SIZE, file));
 
     fclose(file);
 }
@@ -191,14 +191,14 @@ static void msc_setup(void)
         .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
         .gpio_conf = NULL,
     };
-    TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_hdl));
+    ESP_OK_ASSERT(usb_new_phy(&phy_config, &phy_hdl));
     const usb_host_config_t host_config = {
         .skip_phy_setup = true,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_OK_ASSERT( usb_host_install(&host_config) );
 
-    task_created = xTaskCreate(handle_usb_events, "usb_events", 2048, NULL, 2, NULL);
+    task_created = xTaskCreatePinnedToCore(handle_usb_events, "usb_events", 2048, NULL, 2, NULL, 0);
     TEST_ASSERT(task_created);
 
     const msc_host_driver_config_t msc_config = {
@@ -212,7 +212,7 @@ static void msc_setup(void)
     ESP_LOGI(TAG, "Waiting for USB stick to be connected");
     msc_host_event_t app_event;
     xQueueReceive(app_queue, &app_event, portMAX_DELAY);
-    TEST_ASSERT( app_event.event == MSC_DEVICE_CONNECTED );
+    TEST_ASSERT_EQUAL(MSC_DEVICE_CONNECTED, app_event.event);
     uint8_t device_addr = app_event.device.address;
 
     ESP_OK_ASSERT( msc_host_install_device(device_addr, &device) );
@@ -232,7 +232,7 @@ static void msc_teardown(void)
     vSemaphoreDelete(ready_to_deinit_usb);
     ESP_OK_ASSERT( usb_host_uninstall() );
     //Tear down USB PHY
-    TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_hdl));
+    ESP_OK_ASSERT(usb_del_phy(phy_hdl));
     phy_hdl = NULL;
 
     vQueueDelete(app_queue);
@@ -262,35 +262,40 @@ static void erase_storage(void)
     }
 }
 
-static void check_readme_content(void)
-{
-    msc_setup();
-    check_file_content("/usb/README.TXT", README_CONTENTS);
-    msc_teardown();
-}
-
-TEST_CASE("Write and read file", "[usb_msc][ignore]")
+TEST_CASE("write_and_read_file", "[usb_msc]")
 {
     msc_setup();
     write_read_file(FILE_NAME);
     msc_teardown();
 }
 
-TEST_CASE("Sudden disconnect", "[usb_msc][ignore]")
+TEST_CASE("sudden_disconnect", "[usb_msc]")
 {
     msc_setup();
     check_sudden_disconnect();
     msc_teardown();
 }
 
-void read_write_sectors(void)
+TEST_CASE("sectors_can_be_written_and_read", "[usb_msc]")
 {
     msc_setup();
     write_read_sectors();
     msc_teardown();
 }
 
-void check_formatting(void)
+TEST_CASE("check_README_content", "[usb_msc]")
+{
+    msc_setup();
+    check_file_content("/usb/README.TXT", README_CONTENTS);
+    msc_teardown();
+}
+
+/**
+ * @brief USB MSC format testcase
+ * @attention This testcase deletes all content on the USB MSC device.
+ *            The device must be reset in order to contain the FILE_NAME again.
+ */
+TEST_CASE("can_be_formated", "[usb_msc]")
 {
     printf("Create file\n");
     msc_setup();
@@ -299,7 +304,7 @@ void check_formatting(void)
 
     printf("File exists after mounting again\n");
     msc_setup();
-    TEST_ASSERT( file_exists(FILE_NAME) );
+    TEST_ASSERT(file_exists(FILE_NAME));
     printf("Erase storage device\n");
     erase_storage();
     msc_teardown();
@@ -307,15 +312,14 @@ void check_formatting(void)
     printf("Check file does not exist after formatting\n");
     mount_config.format_if_mount_failed = true;
     msc_setup();
-    TEST_ASSERT( !file_exists(FILE_NAME) );
+    TEST_ASSERT_FALSE(file_exists(FILE_NAME));
     msc_teardown();
     mount_config.format_if_mount_failed = false;
 }
 
-TEST_CASE_MULTIPLE_DEVICES("Sectors can be written and read", "[usb_msc][ignore]", read_write_sectors, device_app);
-
-TEST_CASE_MULTIPLE_DEVICES("Can be Formated", "[usb_msc][ignore]", check_formatting, device_app);
-
-TEST_CASE_MULTIPLE_DEVICES("Check README content", "[usb_msc][ignore]", check_readme_content, device_app);
+TEST_CASE("mock_device_app", "[usb_msc_device][ignore]")
+{
+    device_app();
+}
 
 #endif

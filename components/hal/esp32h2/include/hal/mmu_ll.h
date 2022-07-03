@@ -36,12 +36,12 @@ static inline mmu_page_size_t mmu_ll_get_page_size(uint32_t mmu_id)
 /**
  * Set MMU page size
  *
- * @param size  See `mmu_page_size_t`
+ * @param size  MMU page size
  *
  * @note On esp32h2, only supports `MMU_PAGE_64KB`
  */
 __attribute__((always_inline))
-static inline void mmu_ll_set_page_size(uint32_t mmu_id, mmu_page_size_t size)
+static inline void mmu_ll_set_page_size(uint32_t mmu_id, uint32_t size)
 {
     HAL_ASSERT(size == MMU_PAGE_64KB);
 }
@@ -109,11 +109,70 @@ static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32
 {
     (void)mmu_id;
     HAL_ASSERT(target == MMU_TARGET_FLASH0);
-    HAL_ASSERT(entry_id < MMU_MAX_ENTRY_NUM);
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
 
     *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = mmu_val | MMU_ACCESS_FLASH | MMU_VALID;
 }
 
+/**
+ * Read the raw value from MMU table
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * @param mmu_val  Value to be read from MMU table
+ */
+__attribute__((always_inline))
+static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    return *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4);
+}
+
+/**
+ * Set MMU table entry as invalid
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = MMU_INVALID;
+}
+
+/**
+ * Unmap all the items in the MMU table
+ *
+ * @param mmu_id MMU ID
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_unmap_all(uint32_t mmu_id)
+{
+    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
+        mmu_ll_set_entry_invalid(mmu_id, i);
+    }
+}
+
+/**
+ * Get MMU table entry is invalid
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * return ture for MMU entry is invalid, false for valid
+ */
+__attribute__((always_inline))
+static inline bool mmu_ll_get_entry_is_invalid(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    return (*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) & MMU_INVALID) ? true : false;
+}
 
 #ifdef __cplusplus
 }

@@ -148,7 +148,6 @@
 // time exceeds specified timeout value operation is canceled and ESP_ERR_TIMEOUT code is returned.
 #include "sdkconfig.h"
 #include "soc/soc.h"
-#include "soc/dport_access.h"
 #include "soc/dport_reg.h"
 #include "soc/tracemem_config.h"
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
@@ -209,12 +208,6 @@ static uint8_t * const s_trax_blocks[] = {
     (uint8_t *)TRACEMEM_BLK0_ADDR,
     (uint8_t *)TRACEMEM_BLK1_ADDR
 };
-
-
-esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
-{
-    return NULL;
-}
 
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 {

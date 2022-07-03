@@ -71,7 +71,7 @@ static const int adc2_ch[ADC2_TEST_CHANNEL_NUM] = {
 void adc_fake_tie_middle(adc_unit_t adc_unit, adc_channel_t channel)
 {
     gpio_num_t gpio_num = 0;
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         gpio_num = ADC_GET_IO_NUM(0, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
@@ -79,7 +79,7 @@ void adc_fake_tie_middle(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_PULLDOWN));
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
     }
-    if (adc_unit & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         gpio_num = ADC_GET_IO_NUM(1, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
@@ -93,7 +93,7 @@ void adc_fake_tie_middle(adc_unit_t adc_unit, adc_channel_t channel)
 void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
 {
     gpio_num_t gpio_num = 0;
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         gpio_num = ADC_GET_IO_NUM(0, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
@@ -102,7 +102,7 @@ void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
         TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 1));
     }
-    if (adc_unit & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         gpio_num = ADC_GET_IO_NUM(1, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_en(gpio_num));
@@ -117,7 +117,7 @@ void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
 void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
 {
     gpio_num_t gpio_num = 0;
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         gpio_num = ADC_GET_IO_NUM(0, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
@@ -126,7 +126,7 @@ void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
         TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 0));
     }
-    if (adc_unit & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         gpio_num = ADC_GET_IO_NUM(1, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
@@ -141,7 +141,7 @@ void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
 void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
 {
     gpio_num_t gpio_num = 0;
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         gpio_num = ADC_GET_IO_NUM(0, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));
@@ -149,7 +149,7 @@ void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
     }
-    if (adc_unit & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         gpio_num = ADC_GET_IO_NUM(1, channel);
         TEST_ESP_OK(rtc_gpio_init(gpio_num));
         TEST_ESP_OK(rtc_gpio_pullup_dis(gpio_num));

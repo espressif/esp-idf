@@ -207,6 +207,14 @@ menu "Bootloader config"
             The GPIO must be held low continuously for this period of time after reset
             before a factory reset or test partition boot (as applicable) is performed.
 
+    config BOOTLOADER_REGION_PROTECTION_ENABLE
+        bool "Enable protection for unmapped memory regions"
+        default y
+        help
+            Protects the unmapped memory regions of the entire address space from unintended accesses.
+            This will ensure that an exception will be triggered whenever the CPU performs a memory
+            operation on unmapped regions of the address space.
+
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
         default y
@@ -218,7 +226,7 @@ menu "Bootloader config"
             source for slow_clk - and ends calling app_main.
             Re-set timeout is needed due to WDT uses a SLOW_CLK clock source. After changing a frequency slow_clk a
             time of WDT needs to re-set for new frequency.
-            slow_clk depends on ESP32_RTC_CLK_SRC (INTERNAL_RC or EXTERNAL_CRYSTAL).
+            slow_clk depends on RTC_CLK_SRC (INTERNAL_RC or EXTERNAL_CRYSTAL).
 
     config BOOTLOADER_WDT_DISABLE_IN_USER_CODE
         bool "Allows RTC watchdog disable in user code"
@@ -315,7 +323,7 @@ menu "Bootloader config"
         # options, allowing to turn on "allow insecure options" and have secure boot with
         # "skip validation when existing deep sleep". Keeping this to avoid a breaking change,
         # but - as noted in help - it invalidates the integrity of Secure Boot checks
-        depends on (SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT
+        depends on SOC_RTC_FAST_MEM_SUPPORTED && ((SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT)
         default n
         help
             This option disables the normal validation of an image coming out of
@@ -371,6 +379,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_RESERVE_RTC_SIZE
         hex
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
         default 0x10 if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP || BOOTLOADER_CUSTOM_RESERVE_RTC
         default 0
         help
@@ -382,6 +391,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC
         bool "Reserve RTC FAST memory for custom purposes"
+        depends on SOC_RTC_FAST_MEM_SUPPORTED
         default n
         help
             This option allows the customer to place data in the RTC FAST memory,
@@ -437,16 +447,39 @@ menu "Security features"
         select MBEDTLS_ECDSA_C
         depends on SECURE_SIGNED_ON_BOOT || SECURE_SIGNED_ON_UPDATE
 
-    config SECURE_BOOT_SUPPORTS_RSA
+    config SECURE_BOOT_V2_RSA_SUPPORTED
         bool
         default y
-        depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        # RSA secure boot is supported in ESP32 revision >= ECO3
+        depends on (IDF_TARGET_ESP32 && ESP32_REV_MIN >= 3) || SOC_SECURE_BOOT_V2_RSA
 
-    config SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+    config SECURE_BOOT_V2_ECC_SUPPORTED
         bool
         default y
-        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        depends on SOC_SECURE_BOOT_V2_ECC
 
+    config SECURE_BOOT_V1_SUPPORTED
+        bool
+        default y
+        depends on SOC_SECURE_BOOT_V1
+
+    config SECURE_BOOT_V2_PREFERRED
+        bool
+        default y
+        depends on ESP32_REV_MIN >= 3
+
+    config SECURE_BOOT_V2_ECDSA_ENABLED
+        bool
+        default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_ECC_SUPPORTED
+
+    config SECURE_BOOT_V2_RSA_ENABLED
+        bool
+        default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_RSA_SUPPORTED
+
+    config SECURE_BOOT_FLASH_ENC_KEYS_BURN_TOGETHER
+        bool
+        default y if SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK && SECURE_BOOT && SECURE_FLASH_ENC_ENABLED
+        # ESP32-C2 has one key block for SB and FE keys. These keys must be burned at the same time.
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
@@ -463,29 +496,66 @@ menu "Security features"
         bool "App Signing Scheme"
         depends on SECURE_BOOT || SECURE_SIGNED_APPS_NO_SECURE_BOOT
         default SECURE_SIGNED_APPS_ECDSA_SCHEME if SECURE_BOOT_V1_ENABLED
-        default SECURE_SIGNED_APPS_RSA_SCHEME if SECURE_BOOT_V2_ENABLED
+        default SECURE_SIGNED_APPS_RSA_SCHEME if SECURE_BOOT_V2_RSA_SUPPORTED
+        default SECURE_SIGNED_APPS_ECDSA_V2_SCHEME if SECURE_BOOT_V2_ECC_SUPPORTED
         help
             Select the Secure App signing scheme. Depends on the Chip Revision.
-            There are two options:
-            1. ECDSA based secure boot scheme. (Only choice for Secure Boot V1)
-            Supported in ESP32 and ESP32-ECO3.
-            2. The RSA based secure boot scheme. (Only choice for Secure Boot V2)
-            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3, ESP32-S3.
+            There are two secure boot versions:
+
+            1. Secure boot V1
+                - Legacy custom secure boot scheme. Supported in ESP32 SoC.
+
+            2. Secure boot V2
+                - RSA based secure boot scheme.
+                  Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3, ESP32-S3 SoCs.
+
+                - ECDSA based secure boot scheme. Supported in ESP32-C2 SoC.
 
         config SECURE_SIGNED_APPS_ECDSA_SCHEME
             bool "ECDSA"
-            depends on IDF_TARGET_ESP32 && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V1_ENABLED)
+            depends on SECURE_BOOT_V1_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V1_ENABLED)
             help
                 Embeds the ECDSA public key in the bootloader and signs the application with an ECDSA key.
-
                 Refer to the documentation before enabling.
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
-            depends on SECURE_BOOT_SUPPORTS_RSA && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            depends on SECURE_BOOT_V2_RSA_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
+
+        config SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+            bool "ECDSA (V2)"
+            depends on SECURE_BOOT_V2_ECC_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            help
+                For Secure boot V2 (e.g., ESP32-C2 SoC), appends ECDSA based signature block to the application.
+                Refer to documentation before enabling.
+
+    endchoice
+
+    choice SECURE_BOOT_ECDSA_KEY_LEN_SIZE
+        bool "ECDSA key size"
+        depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+        default SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
+        help
+            Select the ECDSA key size. Two key sizes are supported
+
+            - 192 bit key using NISTP192 curve
+            - 256 bit key using NISTP256 curve (Recommended)
+
+            The advantage of using 256 bit key is the extra randomness which makes it difficult to be
+            bruteforced compared to 192 bit key.
+            At present, both key sizes are practically implausible to bruteforce.
+
+        config SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
+            bool "Using ECC curve NISTP192"
+            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+
+        config SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
+            bool "Using ECC curve NISTP256 (Recommended)"
+            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+
     endchoice
 
     config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
@@ -517,7 +587,8 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3 || IDF_TARGET_ESP32S3
+        # Secure boot is not supported for ESP32-C3 revision < ECO3
+        depends on SOC_SECURE_BOOT_SUPPORTED && !(IDF_TARGET_ESP32C3 && ESP32C3_REV_MIN < 3)
         select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
@@ -530,25 +601,31 @@ menu "Security features"
 
     choice SECURE_BOOT_VERSION
         bool "Select secure boot version"
-        default SECURE_BOOT_V2_ENABLED if ESP32_REV_MIN_3
+        default SECURE_BOOT_V2_ENABLED if SECURE_BOOT_V2_PREFERRED
         depends on SECURE_BOOT
         help
             Select the Secure Boot Version. Depends on the Chip Revision.
-            Secure Boot V2 is the new RSA based secure boot scheme.
-            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3 ECO3.
-            Secure Boot V1 is the AES based secure boot scheme.
-            Supported in ESP32 and ESP32-ECO3.
+            Secure Boot V2 is the new RSA / ECDSA based secure boot scheme.
+
+                - RSA based scheme is supported in ESP32 (Revision 3 onwards), ESP32-S2, ESP32-C3 (ECO3), ESP32-S3.
+                - ECDSA based scheme is supported in ESP32-C2 SoC.
+
+            Please note that, RSA or ECDSA secure boot is property of specific SoC based on its HW design, supported
+            crypto accelerators, die-size, cost and similar parameters. Please note that RSA scheme has requirement
+            for bigger key sizes but at the same time it is comparatively faster than ECDSA verification.
+
+            Secure Boot V1 is the AES based (custom) secure boot scheme supported in ESP32 SoC.
 
         config SECURE_BOOT_V1_ENABLED
             bool "Enable Secure Boot version 1"
-            depends on IDF_TARGET_ESP32
+            depends on SECURE_BOOT_V1_SUPPORTED
             help
                 Build a bootloader which enables secure boot version 1 on first boot.
                 Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version before enabling.
 
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
-            depends on SECURE_BOOT_SUPPORTS_RSA
+            depends on SECURE_BOOT_V2_RSA_SUPPORTED || SECURE_BOOT_V2_ECC_SUPPORTED
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
                 Refer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.
@@ -632,7 +709,7 @@ menu "Security features"
 
     config SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
         bool "Enable Aggressive key revoke strategy"
-        depends on SECURE_BOOT && (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on SECURE_BOOT && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
         default N
         help
             If this option is set, ROM bootloader will revoke the public key digest burned in efuse block
@@ -697,23 +774,29 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2) && SECURE_FLASH_ENC_ENABLED
+        depends on SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
-            AES-128 uses a 256-bit key (32 bytes) which occupies one Efuse key block.
-            AES-256 uses a 512-bit key (64 bytes) which occupies two Efuse key blocks.
+            - AES-128 uses a 256-bit key (32 bytes) derived from 128 bits (16 bytes) burned in half Efuse key block.
+              Internally, it calculates SHA256(128 bits)
+            - AES-128 uses a 256-bit key (32 bytes) which occupies one Efuse key block.
+            - AES-256 uses a 512-bit key (64 bytes) which occupies two Efuse key blocks.
 
             This setting is ignored if either type of key is already burned to Efuse before the first boot.
             In this case, the pre-burned key is used and no new key is generated.
 
+        config SECURE_FLASH_ENCRYPTION_AES128_DERIVED
+            bool "AES-128 key derived from 128 bits (SHA256(128 bits))"
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
-            depends on !IDF_TARGET_ESP32C2 # TODO: IDF-3899
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_128 && !(IDF_TARGET_ESP32C2 && SECURE_BOOT)
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
-            depends on !IDF_TARGET_ESP32C2 # TODO: IDF-3899
+            depends on SOC_FLASH_ENCRYPTION_XTS_AES_256
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE
@@ -737,12 +820,12 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
-            select PARTITION_TABLE_MD5 if !ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+            select PARTITION_TABLE_MD5 if !APP_COMPATIBLE_PRE_V3_1_BOOTLOADERS
 
     endchoice
 
     menu "Potentially insecure options"
-        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE
+        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT # NOERROR
 
         # NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
         # and/or SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT in "depends on", as the menu
@@ -779,7 +862,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
             bool "Allow app partition length not 64KB aligned"
-            depends on SECURE_BOOT_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
             help
                 If not set (default), app partition size must be a multiple of 64KB. App images are padded to 64KB
                 length, and the bootloader checks any trailing bytes after the signature (before the next 64KB
@@ -813,7 +896,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
-            depends on SECURE_BOOT_INSECURE && !IDF_TARGET_ESP32
+            depends on SECURE_BOOT_INSECURE && SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
             default N
             help
                 If not set (default), during startup in the app all unused digest slots will be revoked.
@@ -882,7 +965,7 @@ menu "Security features"
 
     config SECURE_ROM_DL_MODE_ENABLED
         bool
-        default y if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+        default y if SOC_SUPPORTS_SECURE_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 
     choice SECURE_UART_ROM_DL_MODE
         bool "UART ROM download mode"
@@ -908,7 +991,7 @@ menu "Security features"
 
         config SECURE_ENABLE_SECURE_ROM_DL_MODE
             bool "UART ROM download mode (Permanently switch to Secure mode (recommended))"
-            depends on SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+            depends on SOC_SUPPORTS_SECURE_DL_MODE
             select ESPTOOLPY_NO_STUB
             help
                 If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM

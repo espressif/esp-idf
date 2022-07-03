@@ -113,7 +113,24 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from light sleep", "[ulp]")
     while (ulp_command_resp != RISCV_LIGHT_SLEEP_WAKEUP_TEST)
         ;
     gettimeofday(&end, NULL);
-    printf("Response time %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
+    printf("Response time 1st: %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
+
+    /* Verify test data */
+    TEST_ASSERT(ulp_command_resp == RISCV_LIGHT_SLEEP_WAKEUP_TEST);
+    TEST_ASSERT(ulp_main_cpu_reply == RISCV_COMMAND_OK);
+
+    /* Enter Light Sleep again */
+    TEST_ASSERT(esp_light_sleep_start() == ESP_OK);
+
+    /* Wait for wakeup from ULP RISC-V Coprocessor */
+    TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP);
+
+    /* Wait till we receive the correct command response */
+    gettimeofday(&start, NULL);
+    while (ulp_command_resp != RISCV_LIGHT_SLEEP_WAKEUP_TEST)
+        ;
+    gettimeofday(&end, NULL);
+    printf("Response time 2nd: %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
 
     /* Verify test data */
     TEST_ASSERT(ulp_command_resp == RISCV_LIGHT_SLEEP_WAKEUP_TEST);
@@ -184,6 +201,8 @@ TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]"
     TEST_ASSERT(ulp_riscv_is_running());
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 /*
 * Keep this test case as the last test case in this suite as a CPU reset occurs.
 * Add new test cases above in order to ensure they run when all test cases are run together.
@@ -203,3 +222,5 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][reset=
     esp_deep_sleep_start();
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

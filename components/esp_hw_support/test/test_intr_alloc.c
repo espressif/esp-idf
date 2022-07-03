@@ -38,7 +38,7 @@ static void timer_test(int flags)
     intr_handle_t inth[SOC_TIMER_GROUP_TOTAL_TIMERS];
 
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
         .flags.intr_shared = (flags & ESP_INTR_FLAG_SHARED) == ESP_INTR_FLAG_SHARED,
@@ -59,6 +59,7 @@ static void timer_test(int flags)
         TEST_ESP_OK(gptimer_register_event_callbacks(gptimers[i], &cbs, &count[i]));
         alarm_config.alarm_count += 10000 * i;
         TEST_ESP_OK(gptimer_set_alarm_action(gptimers[i], &alarm_config));
+        TEST_ESP_OK(gptimer_enable(gptimers[i]));
         TEST_ESP_OK(gptimer_start(gptimers[i]));
         TEST_ESP_OK(gptimer_get_intr_handle(gptimers[i], &inth[i]));
         printf("Interrupts allocated: %d\r\n", esp_intr_get_intno(inth[i]));
@@ -93,6 +94,7 @@ static void timer_test(int flags)
 
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
         TEST_ESP_OK(gptimer_stop(gptimers[i]));
+        TEST_ESP_OK(gptimer_disable(gptimers[i]));
         TEST_ESP_OK(gptimer_del_timer(gptimers[i]));
     }
 }
@@ -194,6 +196,9 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one", "[in
     esp_intr_free(handle1);
 }
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5061
 static void dummy(void *arg)
 {
 }
@@ -221,6 +226,8 @@ TEST_CASE("Can allocate IRAM int only with an IRAM handler", "[intr_alloc]")
     err = esp_intr_free(ih);
     TEST_ESP_OK(err);
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #ifndef CONFIG_FREERTOS_UNICORE
 void isr_free_task(void *param)

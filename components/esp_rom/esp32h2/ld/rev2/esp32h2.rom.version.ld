@@ -1,9 +1,8 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 /* ROM version variables for esp32h2
  *
  * These addresses should be compatible with any ROM version for this chip.

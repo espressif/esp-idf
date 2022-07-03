@@ -118,12 +118,11 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 #define BTU_TTYPE_HSP2_SDP_RTRY_TO  56
 
 /* BTU internal */
-/* unused                           60 */
-
-#define BTU_TTYPE_AVDT_CCB_RET      61
-#define BTU_TTYPE_AVDT_CCB_RSP      62
-#define BTU_TTYPE_AVDT_CCB_IDLE     63
-#define BTU_TTYPE_AVDT_SCB_TC       64
+#define BTU_TTYPE_AVDT_SCB_DELAY_RPT 60
+#define BTU_TTYPE_AVDT_CCB_RET       61
+#define BTU_TTYPE_AVDT_CCB_RSP       62
+#define BTU_TTYPE_AVDT_CCB_IDLE      63
+#define BTU_TTYPE_AVDT_SCB_TC        64
 
 #define BTU_TTYPE_HID_DEV_REPAGE_TO 65
 #define BTU_TTYPE_HID_HOST_REPAGE_TO 66

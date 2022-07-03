@@ -16,7 +16,6 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
-#include "freertos/xtensa_api.h"
 #include "freertos/portmacro.h"
 #include "freertos/xtensa_api.h"
 #include "esp_types.h"
@@ -28,6 +27,7 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_heap_caps.h"
+#include "esp_timer.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
@@ -41,8 +41,7 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
-#include "esp32/dport_access.h"
-#include "esp_timer.h"
+#include "dport_access.h"
 #include "esp_rom_sys.h"
 #include "esp32/rom/ets_sys.h"
 
@@ -647,12 +646,21 @@ static int coex_schm_curr_phase_idx_get_wrapper(void)
 #endif
 }
 
+static int coex_register_start_cb_wrapper(int (* cb)(void))
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_register_start_cb(cb);
+#else
+    return 0;
+#endif
+}
+
 static void IRAM_ATTR esp_empty_wrapper(void)
 {
 
 }
 
-int32_t IRAM_ATTR coex_is_in_isr_wrapper(void)
+int IRAM_ATTR coex_is_in_isr_wrapper(void)
 {
     return !xPortCanYield();
 }
@@ -774,6 +782,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_curr_phase_get = coex_schm_curr_phase_get_wrapper,
     ._coex_schm_curr_phase_idx_set = coex_schm_curr_phase_idx_set_wrapper,
     ._coex_schm_curr_phase_idx_get = coex_schm_curr_phase_idx_get_wrapper,
+    ._coex_register_start_cb = coex_register_start_cb_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
 

@@ -23,6 +23,7 @@
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
 #include "hal/wdt_hal.h"
+#include "hal/cpu_hal.h"
 #include "esp_private/cache_err_int.h"
 
 #include "esp32c2/rom/cache.h"

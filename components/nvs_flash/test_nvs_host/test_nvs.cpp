@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "catch.hpp"
 #include "nvs.hpp"
 #include "nvs_test_api.h"
@@ -738,6 +730,49 @@ TEST_CASE("deinit partition doesn't affect other partition's open handles", "[nv
     TEST_ESP_OK(nvs_flash_deinit_partition(OTHER_PARTITION_NAME));
 }
 
+TEST_CASE("nvs iterator nvs_entry_find invalid parameter test", "[nvs]")
+{
+    nvs_iterator_t it = reinterpret_cast<nvs_iterator_t>(0xbeef);
+    CHECK(nvs_entry_find(nullptr, NULL, NVS_TYPE_ANY, &it) == ESP_ERR_INVALID_ARG);
+    CHECK(nvs_entry_find("nvs", NULL, NVS_TYPE_ANY, nullptr) == ESP_ERR_INVALID_ARG);
+}
+
+TEST_CASE("nvs iterator nvs_entry_find doesn't change iterator on parameter error", "[nvs]")
+{
+    nvs_iterator_t it = reinterpret_cast<nvs_iterator_t>(0xbeef);
+    REQUIRE(nvs_entry_find(nullptr, NULL, NVS_TYPE_ANY, &it) == ESP_ERR_INVALID_ARG);
+    CHECK(it == reinterpret_cast<nvs_iterator_t>(0xbeef));
+
+    it = nullptr;
+    REQUIRE(nvs_entry_find(nullptr, NULL, NVS_TYPE_ANY, &it) == ESP_ERR_INVALID_ARG);
+    CHECK(it == nullptr);
+}
+
+TEST_CASE("nvs_entry_next return ESP_ERR_INVALID_ARG on parameter is NULL", "[nvs]")
+{
+    CHECK(nvs_entry_next(nullptr) == ESP_ERR_INVALID_ARG);
+}
+
+TEST_CASE("nvs_entry_info fails with ESP_ERR_INVALID_ARG if a parameter is NULL", "[nvs]")
+{
+    nvs_iterator_t it = reinterpret_cast<nvs_iterator_t>(0xbeef);
+    nvs_entry_info_t info;
+    CHECK(nvs_entry_info(it, nullptr) == ESP_ERR_INVALID_ARG);
+    CHECK(nvs_entry_info(nullptr, &info) == ESP_ERR_INVALID_ARG);
+}
+
+TEST_CASE("nvs_entry_info doesn't change iterator on parameter error", "[nvs]")
+{
+    nvs_iterator_t it = reinterpret_cast<nvs_iterator_t>(0xbeef);
+    nvs_entry_info_t info;
+    REQUIRE(nvs_entry_info(it, nullptr) == ESP_ERR_INVALID_ARG);
+    CHECK(it == reinterpret_cast<nvs_iterator_t>(0xbeef));
+
+    it = nullptr;
+    REQUIRE(nvs_entry_info(it, nullptr) == ESP_ERR_INVALID_ARG);
+    CHECK(it == nullptr);
+}
+
 TEST_CASE("nvs iterators tests", "[nvs]")
 {
     PartitionEmulationFixture f(0, 5);
@@ -780,30 +815,76 @@ TEST_CASE("nvs iterators tests", "[nvs]")
     TEST_ESP_OK(nvs_set_u64(handle_2, "value4", 555));
 
     auto entry_count = [](const char *part, const char *name, nvs_type_t type)-> int {
-        int count;
-        nvs_iterator_t it = nvs_entry_find(part, name, type);
-        for (count = 0; it != nullptr; count++) {
-            it = nvs_entry_next(it);
+        int count = 0;
+        nvs_iterator_t it = nullptr;
+        esp_err_t res = nvs_entry_find(part, name, type, &it);
+        for (count = 0; res == ESP_OK; count++) {
+            res = nvs_entry_next(&it);
         }
+        CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop or if no entry was found to begin with,
+                                             // res has to be ESP_ERR_NVS_NOT_FOUND or some internal error
+                                             // or programming error occurred
+        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
         return count;
     };
 
-   SECTION("Number of entries found for specified namespace and type is correct")
-   {
-        CHECK(nvs_entry_find("", NULL, NVS_TYPE_ANY) == NULL);
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_ANY) == 15);
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY) == 11);
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32) == 3);
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_I32) == 5);
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_U64) == 1);
-   }
+    SECTION("No partition found return ESP_ERR_NVS_NOT_FOUND")
+    {
+        CHECK(nvs_entry_find("", NULL, NVS_TYPE_ANY, &it) == ESP_ERR_NVS_NOT_FOUND);
+    }
 
-   SECTION("New entry is not created when existing key-value pair is set")
-   {
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_2, NVS_TYPE_ANY) == 4);
-        TEST_ESP_OK(nvs_set_i32(handle_2, "value1", -222));
-        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_2, NVS_TYPE_ANY) == 4);
-   }
+    SECTION("No matching namespace found return ESP_ERR_NVS_NOT_FOUND")
+    {
+        CHECK(nvs_entry_find(NVS_DEFAULT_PART_NAME, "nonexistent", NVS_TYPE_ANY, &it) == ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("nvs_entry_find sets iterator to null if no matching element found")
+    {
+        it = reinterpret_cast<nvs_iterator_t>(0xbeef);
+        REQUIRE(nvs_entry_find(NVS_DEFAULT_PART_NAME, "nonexistent", NVS_TYPE_I16, &it) == ESP_ERR_NVS_NOT_FOUND);
+        CHECK(it == nullptr);
+    }
+
+    SECTION("Finding iterator means iterator is valid")
+    {
+        it = nullptr;
+        CHECK(nvs_entry_find(NVS_DEFAULT_PART_NAME, nullptr, NVS_TYPE_ANY, &it) == ESP_OK);
+        CHECK(it != nullptr);
+        nvs_release_iterator(it);
+    }
+
+    SECTION("Return ESP_ERR_NVS_NOT_FOUND after iterating over last matching element")
+    {
+        it = nullptr;
+        REQUIRE(nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I16, &it) == ESP_OK);
+        REQUIRE(it != nullptr);
+        CHECK(nvs_entry_next(&it) == ESP_ERR_NVS_NOT_FOUND);
+    }
+
+    SECTION("Set iterator to NULL after iterating over last matching element")
+    {
+        it = nullptr;
+        REQUIRE(nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I16, &it) == ESP_OK);
+        REQUIRE(it != nullptr);
+        REQUIRE(nvs_entry_next(&it) == ESP_ERR_NVS_NOT_FOUND);
+        CHECK(it == nullptr);
+    }
+
+    SECTION("Number of entries found for specified namespace and type is correct")
+    {
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_ANY) == 15);
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY) == 11);
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32) == 3);
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_I32) == 5);
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_U64) == 1);
+    }
+
+    SECTION("New entry is not created when existing key-value pair is set")
+    {
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_2, NVS_TYPE_ANY) == 4);
+         TEST_ESP_OK(nvs_set_i32(handle_2, "value1", -222));
+         CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_2, NVS_TYPE_ANY) == 4);
+    }
 
     SECTION("Number of entries found decrease when entry is erased")
     {
@@ -814,30 +895,34 @@ TEST_CASE("nvs iterators tests", "[nvs]")
 
     SECTION("All fields of nvs_entry_info_t structure are correct")
     {
-        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32);
-        CHECK(it != nullptr);
+        it = nullptr;
+        esp_err_t res = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32, &it);
+        REQUIRE(res == ESP_OK);
         string key = "value5";
-        do {
-            nvs_entry_info(it, &info);
+        while (res == ESP_OK) {
+            REQUIRE(nvs_entry_info(it, &info) == ESP_OK);
 
             CHECK(string(name_1) == info.namespace_name);
             CHECK(key == info.key);
             CHECK(info.type == NVS_TYPE_I32);
 
-            it = nvs_entry_next(it);
+            res = nvs_entry_next(&it);
             key[5]++;
-        } while (it != NULL);
-        nvs_release_iterator(it);
+        }
+        CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop, res has to be ESP_ERR_NVS_NOT_FOUND
+                                             // or some internal error or programming error occurred
+        CHECK(key == "value8");
+        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
     }
 
     SECTION("Entry info is not affected by subsequent erase")
     {
         nvs_entry_info_t info_after_erase;
 
-        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY);
-        nvs_entry_info(it, &info);
+        CHECK(nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY, &it) == ESP_OK);
+        REQUIRE(nvs_entry_info(it, &info) == ESP_OK);
         TEST_ESP_OK(nvs_erase_key(handle_1, "value1"));
-        nvs_entry_info(it, &info_after_erase);
+        REQUIRE(nvs_entry_info(it, &info_after_erase) == ESP_OK);
         CHECK(memcmp(&info, &info_after_erase, sizeof(info)) == 0);
         nvs_release_iterator(it);
     }
@@ -846,10 +931,10 @@ TEST_CASE("nvs iterators tests", "[nvs]")
     {
         nvs_entry_info_t info_after_set;
 
-        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY);
-        nvs_entry_info(it, &info);
+        CHECK(nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY, &it) == ESP_OK);
+        REQUIRE(nvs_entry_info(it, &info) == ESP_OK);
         TEST_ESP_OK(nvs_set_u8(handle_1, info.key, 44));
-        nvs_entry_info(it, &info_after_set);
+        REQUIRE(nvs_entry_info(it, &info_after_set) == ESP_OK);
         CHECK(memcmp(&info, &info_after_set, sizeof(info)) == 0);
         nvs_release_iterator(it);
     }
@@ -867,14 +952,17 @@ TEST_CASE("nvs iterators tests", "[nvs]")
         }
 
         int entries_found = 0;
-        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_3, NVS_TYPE_ANY);
-        while(it != nullptr) {
+        it = nullptr;
+        esp_err_t res = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_3, NVS_TYPE_ANY, &it);
+        while(res == ESP_OK) {
             entries_found++;
-            it = nvs_entry_next(it);
+            res = nvs_entry_next(&it);
         }
+        CHECK(res == ESP_ERR_NVS_NOT_FOUND); // after finishing the loop, res has to be ESP_ERR_NVS_NOT_FOUND
+                                             // or some internal error or programming error occurred
         CHECK(entries_created == entries_found);
 
-        nvs_release_iterator(it);
+        nvs_release_iterator(it); // unneccessary call but emphasizes the programming pattern
         nvs_close(handle_3);
     }
 
@@ -926,8 +1014,7 @@ TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
     TEST_ESP_OK(nvs_commit(my_handle));
     nvs_close(my_handle);
 
-    it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_I32);
-    CHECK(it == NULL);
+    CHECK(nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_I32, &it) == ESP_ERR_NVS_NOT_FOUND);
 
     // re-init to trigger cleaning up of broken items -> a corrupted string will be erased
     nvs_flash_deinit();
@@ -935,8 +1022,7 @@ TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
             NVS_FLASH_SECTOR,
             NVS_FLASH_SECTOR_COUNT_MIN));
 
-    it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_STR);
-    CHECK(it != NULL);
+    CHECK(nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_STR, &it) == ESP_OK);
     nvs_release_iterator(it);
 
     // without deinit it affects "nvs api tests"
@@ -2596,6 +2682,96 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
     TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
     CHECK(i32v == -2147483648);
 
+    char string_buf[256];
+    const char test_str[] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
+                             "Fusce quis risus justo.\n"
+                             "Suspendisse egestas in nisi sit amet auctor.\n"
+                             "Pellentesque rhoncus dictum sodales.\n"
+                             "In justo erat, viverra at interdum eget, interdum vel dui.";
+    size_t str_len = sizeof(test_str);
+    TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", string_buf, &str_len));
+    CHECK(strncmp(string_buf, test_str, str_len) == 0);
+
+    char buf[64] = {0};
+    uint8_t hexdata[] = {0x01, 0x02, 0x03, 0xab, 0xcd, 0xef};
+    size_t buflen = 64;
+    int j;
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyHex2BinKey", buf, &buflen));
+    CHECK(memcmp(buf, hexdata, buflen) == 0);
+
+    uint8_t base64data[] = {'1', '2', '3', 'a', 'b', 'c'};
+    TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
+    CHECK(memcmp(buf, base64data, buflen) == 0);
+
+    buflen = 64;
+    uint8_t hexfiledata[] = {0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+    TEST_ESP_OK( nvs_get_blob(handle, "hexFileKey", buf, &buflen));
+    CHECK(memcmp(buf, hexfiledata, buflen) == 0);
+
+    buflen = 64;
+    uint8_t strfiledata[64] = "abcdefghijklmnopqrstuvwxyz\0";
+    TEST_ESP_OK( nvs_get_str(handle, "stringFileKey", buf, &buflen));
+    CHECK(memcmp(buf, strfiledata, buflen) == 0);
+
+    char bin_data[5200];
+    size_t bin_len = sizeof(bin_data);
+    char binfiledata[5200];
+    ifstream file;
+    file.open(filename);
+    file.read(binfiledata,5200);
+    TEST_ESP_OK( nvs_get_blob(handle, "binFileKey", bin_data, &bin_len));
+    CHECK(memcmp(bin_data, binfiledata, bin_len) == 0);
+
+    file.close();
+
+    nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(part_name));
+}
+
+static void check_nvs_part_gen_args_mfg(SpiFlashEmulator *spi_flash_emulator,
+        char const *part_name,
+        int size,
+        char const *filename,
+        bool is_encr,
+        nvs_sec_cfg_t* xts_cfg)
+{
+    nvs_handle_t handle;
+
+    esp_partition_t esp_part;
+    esp_part.encrypted = false; // we're not testing generic flash encryption here, only the legacy NVS encryption
+    esp_part.address = 0;
+    esp_part.size = size * SPI_FLASH_SEC_SIZE;
+    strncpy(esp_part.label, part_name, PART_NAME_MAX_SIZE);
+    shared_ptr<Partition> part;
+
+    if (is_encr) {
+        NVSEncryptedPartition *enc_part = new NVSEncryptedPartition(&esp_part);
+        TEST_ESP_OK(enc_part->init(xts_cfg));
+        part.reset(enc_part);
+    } else {
+        part.reset(new PartitionEmulation(spi_flash_emulator, 0, size, part_name));
+    }
+
+    TEST_ESP_OK( NVSPartitionManager::get_instance()->init_custom(part.get(), 0, size) );
+
+    TEST_ESP_OK( nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
+    uint8_t u8v;
+    TEST_ESP_OK( nvs_get_u8(handle, "dummyU8Key", &u8v));
+    CHECK(u8v == 127);
+    int8_t i8v;
+    TEST_ESP_OK( nvs_get_i8(handle, "dummyI8Key", &i8v));
+    CHECK(i8v == -128);
+    uint16_t u16v;
+    TEST_ESP_OK( nvs_get_u16(handle, "dummyU16Key", &u16v));
+    CHECK(u16v == 32768);
+    uint32_t u32v;
+    TEST_ESP_OK( nvs_get_u32(handle, "dummyU32Key", &u32v));
+    CHECK(u32v == 4294967295);
+    int32_t i32v;
+    TEST_ESP_OK( nvs_get_i32(handle, "dummyI32Key", &i32v));
+    CHECK(i32v == -2147483648);
+
     char buf[64] = {0};
     size_t buflen = 64;
     TEST_ESP_OK( nvs_get_str(handle, "dummyStringKey", buf, &buflen));
@@ -2636,7 +2812,6 @@ static void check_nvs_part_gen_args(SpiFlashEmulator *spi_flash_emulator,
 
     TEST_ESP_OK(nvs_flash_deinit_partition(part_name));
 }
-
 
 TEST_CASE("check and read data from partition generated via partition generation utility with multipage blob support disabled", "[nvs_part_gen]")
 {
@@ -2800,10 +2975,10 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
     SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
-    check_nvs_part_gen_args(&emu1, "test", 3, "mfg_testdata/sample_singlepage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu1, "test", 3, "mfg_testdata/sample_singlepage_blob.bin", false, NULL);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition.bin");
-    check_nvs_part_gen_args(&emu2, "test", 3, "testdata/sample_singlepage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu2, "test", 3, "testdata/sample_singlepage_blob.bin", false, NULL);
 
 
     childpid = fork();
@@ -2881,10 +3056,10 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
     SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
-    check_nvs_part_gen_args(&emu1, "test", 4, "mfg_testdata/sample_multipage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu1, "test", 4, "mfg_testdata/sample_multipage_blob.bin", false, NULL);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition.bin");
-    check_nvs_part_gen_args(&emu2, "test", 4, "testdata/sample_multipage_blob.bin", false, NULL);
+    check_nvs_part_gen_args_mfg(&emu2, "test", 4, "testdata/sample_multipage_blob.bin", false, NULL);
 
     childpid = fork();
     if (childpid == 0) {
@@ -3379,11 +3554,11 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         cfg.tky[count] = 0x22;
     }
 
-    check_nvs_part_gen_args(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted.bin");
 
-    check_nvs_part_gen_args(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
 
 
     childpid = fork();
@@ -3499,11 +3674,11 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         cfg.tky[count] = buffer[count+32] & 255;
     }
 
-    check_nvs_part_gen_args(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu1, NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted.bin");
 
-    check_nvs_part_gen_args(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args_mfg(&emu2, NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
 
     childpid = fork();
     if (childpid == 0) {

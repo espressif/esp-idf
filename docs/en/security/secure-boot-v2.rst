@@ -3,15 +3,19 @@
 Secure Boot V2
 ==============
 
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA"}
+
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192"}
+
 .. important::
 
-    This document is about Secure Boot V2, supported on the following chips: ESP32 (ECO3 onwards), ESP32-S2, ESP32-S3 and ESP32-C3 (ECO3 onwards). Except for ESP32, it is the only supported Secure Boot scheme.
+    This document is about Secure Boot V2, supported on the following chips: ESP32 (ECO3 onwards), ESP32-S2, ESP32-S3, ESP32-C3 (ECO3 onwards), and ESP32-C2. Except for ESP32, it is the only supported Secure Boot scheme.
 
     .. only:: esp32
 
         For ESP32 before ECO3, refer to :doc:`Secure Boot <secure-boot-v1>`. It is recommended that users use Secure Boot V2 if they have a chip version that supports it. Secure Boot V2 is safer and more flexible than Secure Boot V1.
 
-    Secure Boot V2 uses RSA based app and bootloader verification. This document can also be used as a reference for signing apps using the RSA scheme without signing the bootloader.
+    Secure Boot V2 uses {IDF_TARGET_SBV2_SCHEME} based app and bootloader verification. This document can also be used as a reference for signing apps using the {IDF_TARGET_SBV2_SCHEME} scheme without signing the bootloader.
 
 
 .. only:: esp32
@@ -27,18 +31,26 @@ Background
 
 Secure Boot protects a device from running any unauthorized (i.e., unsigned) code by checking that each piece of software that is being booted is signed. On an {IDF_TARGET_NAME}, these pieces of software include the second stage bootloader and each application binary. Note that the first stage bootloader does not require signing as it is ROM code thus cannot be changed.
 
-A new RSA based Secure Boot verification scheme (Secure Boot V2) has been introduced on the ESP32 (ECO3 onwards), ESP32-S2, ESP32-S3 and ESP32-C3 (ECO3 onwards).
+.. only:: SOC_SECURE_BOOT_V2_RSA
+
+    A new RSA based Secure Boot verification scheme (Secure Boot V2) has been introduced on the ESP32 (ECO3 onwards), ESP32-S2, ESP32-S3 and ESP32-C3 (ECO3 onwards).
+
+.. only:: SOC_SECURE_BOOT_V2_ECC
+
+    A new ECC based Secure Boot verification scheme (Secure Boot V2) has been introduced on the ESP32-C2.
 
 The Secure Boot process on the {IDF_TARGET_NAME} involves the following steps:
-1. When the first stage bootloader loads the second stage bootloader, the second stage bootloader's RSA-PSS signature is verified. If the verification is successful, the second stage bootloader is executed.
-2. When the second stage bootloader loads a particular application image, the application's RSA-PSS signature is verified. If the verification is successful, the application image is executed.
+
+1. When the first stage bootloader loads the second stage bootloader, the second stage bootloader's {IDF_TARGET_SBV2_SCHEME} signature is verified. If the verification is successful, the second stage bootloader is executed.
+
+2. When the second stage bootloader loads a particular application image, the application's {IDF_TARGET_SBV2_SCHEME} signature is verified. If the verification is successful, the application image is executed.
 
 Advantages
 ----------
 
-- The RSA public key is stored on the device. The corresponding RSA private key is kept at a secret place and is never accessed by the device.
+- The {IDF_TARGET_SBV2_SCHEME} public key is stored on the device. The corresponding {IDF_TARGET_SBV2_SCHEME} private key is kept at a secret place and is never accessed by the device.
 
-.. only:: esp32
+.. only:: esp32 or esp32c2
 
     - Only one public key can be generated and stored in the chip during manufacturing.
 
@@ -66,11 +78,15 @@ Secure Boot V2 verifies the bootloader image and application binary images using
 
   Only one signature block can be appended to the bootloader or application image in ESP32 ECO3.
 
+.. only:: esp32c2
+
+  Only one signature block can be appended to the bootloader or application image in {IDF_TARGET_NAME}
+
 .. only:: esp32s2 or esp32c3 or esp32s3
 
   Up to 3 signature blocks can be appended to the bootloader or application image in {IDF_TARGET_NAME}.
 
-Each signature block contains a signature of the preceding image as well as the corresponding RSA-3072 public key. For more details about the format, refer to :ref:`signature-block-format`. A digest of the RSA-3072 public key is stored in the eFuse. 
+Each signature block contains a signature of the preceding image as well as the corresponding {IDF_TARGET_SBV2_KEY} public key. For more details about the format, refer to :ref:`signature-block-format`. A digest of the {IDF_TARGET_SBV2_KEY} public key is stored in the eFuse. 
 
 The application image is not only verified on every boot but also on each over the air (OTA) update. If the currently selected OTA app image cannot be verified, the bootloader will fall back and look for another correctly signed application image.
 
@@ -99,50 +115,92 @@ The bootloader and application images are padded to the next 4096 byte boundary,
 
 The content of each signature block is shown in the following table:
 
-.. list-table:: Content of a Signature Block
-    :widths: 10 10 40
-    :header-rows: 1
+.. only:: not esp32c2
 
-    * - **Offset**
-      - **Size (bytes)**
-      - **Description**
-    * - 0
-      - 1
-      - Magic byte
-    * - 1
-      - 1
-      - Version number byte (currently 0x02), 0x01 is for Secure Boot V1.
-    * - 2
-      - 2
-      - Padding bytes, Reserved. Should be zero.
-    * - 4
-      - 32
-      - SHA-256 hash of only the image content, not including the signature block.
-    * - 36
-      - 384 
-      - RSA Public Modulus used for signature verification. (value ‘n’ in RFC8017).
-    * - 420
-      - 4 
-      - RSA Public Exponent used for signature verification (value ‘e’ in RFC8017).
-    * - 424
-      - 384 
-      - Pre-calculated R, derived from ‘n’.
-    * - 808
-      - 4 
-      - Pre-calculated M’, derived from ‘n’
-    * - 812
-      - 384 
-      - RSA-PSS Signature result (section 8.1.1 of RFC8017) of image content, computed using following PSS parameters: SHA256 hash, MFG1 function, salt length 32 bytes, default trailer field (0xBC).
-    * - 1196
-      - 4 
-      - CRC32 of the preceding 1095 bytes.
-    * - 1200
-      - 16 
-      - Zero padding to length 1216 bytes.
+    .. list-table:: Content of a Signature Block
+        :widths: 10 10 40
+        :header-rows: 1
+
+        * - **Offset**
+          - **Size (bytes)**
+          - **Description**
+        * - 0
+          - 1
+          - Magic byte
+        * - 1
+          - 1
+          - Version number byte (currently 0x02), 0x01 is for Secure Boot V1.
+        * - 2
+          - 2
+          - Padding bytes, Reserved. Should be zero.
+        * - 4
+          - 32
+          - SHA-256 hash of only the image content, not including the signature block.
+        * - 36
+          - 384
+          - RSA Public Modulus used for signature verification. (value ‘n’ in RFC8017).
+        * - 420
+          - 4
+          - RSA Public Exponent used for signature verification (value ‘e’ in RFC8017).
+        * - 424
+          - 384
+          - Pre-calculated R, derived from ‘n’.
+        * - 808
+          - 4
+          - Pre-calculated M’, derived from ‘n’
+        * - 812
+          - 384
+          - RSA-PSS Signature result (section 8.1.1 of RFC8017) of image content, computed using following PSS parameters: SHA256 hash, MFG1 function, salt length 32 bytes, default trailer field (0xBC).
+        * - 1196
+          - 4
+          - CRC32 of the preceding 1196 bytes.
+        * - 1200
+          - 16
+          - Zero padding to length 1216 bytes.
 
 
-.. note::
-  R and M' are used for hardware-assisted Montgomery Multiplication.
+    .. note::
+      R and M' are used for hardware-assisted Montgomery Multiplication.
+
+.. only:: SOC_SECURE_BOOT_V2_ECC
+
+    .. list-table:: Content of a Signature Block
+        :widths: 10 10 40
+        :header-rows: 1
+
+        * - **Offset**
+          - **Size (bytes)**
+          - **Description**
+        * - 0
+          - 1
+          - Magic byte.
+        * - 1
+          - 1
+          - Version number byte (currently 0x03).
+        * - 2
+          - 2
+          - Padding bytes, Reserved. Should be zero.
+        * - 4
+          - 32
+          - SHA-256 hash of only the image content, not including the signature block.
+        * - 36
+          - 1
+          - Curve ID (1 for NIST192p curve. 2 for NIST256p curve).
+        * - 37
+          - 64
+          - ECDSA Public key: 32 byte X coordinate followed by 32 byte Y coordinate.
+        * - 101
+          - 64
+          - ECDSA Signature result (section 5.3.2 of RFC6090) of the image content: 32 byte R component followed by 32 byte S component.
+        * - 165
+          - 1031
+          - Reserved.
+        * - 1196
+          - 4
+          - CRC32 of the preceding 1196 bytes.
+        * - 1200
+          - 16
+          - Zero padding to length 1216 bytes.
 
 The remainder of the signature sector is erased flash (0xFF) which allows writing other signature blocks after previous signature block.
 
@@ -164,7 +222,15 @@ An image is “verified” if the public key stored in any signature block is va
 
 2. Generate the application image digest and match it with the image digest in the signature block. If the digests don't match, the verification fails.
 
-3. Use the public key to verify the signature of the bootloader image, using RSA-PSS (section 8.1.2 of RFC8017) with the image digest calculated in step (2) for comparison.
+.. only:: not esp32c2
+
+    3. Use the public key to verify the signature of the bootloader image, using RSA-PSS (section 8.1.2 of RFC8017) with the image digest calculated in step (2) for comparison.
+
+.. only:: esp32c2
+
+    3. Use the public key to verify the signature of the bootloader image, using ECDSA signature verification (section 5.3.3 of RFC6090) with the image digest calculated in step (2) for comparison.
+
+
 
 Bootloader Size
 ---------------
@@ -261,15 +327,39 @@ Restrictions after Secure Boot is enabled
 Generating Secure Boot Signing Key
 ----------------------------------
 
-The build system will prompt you with a command to generate a new signing key via ``espsecure.py generate_signing_key``. The --version 2 parameter will generate the RSA 3072 private key for Secure Boot V2.
+The build system will prompt you with a command to generate a new signing key via ``espsecure.py generate_signing_key``.
 
-The strength of the signing key is proportional to (a) the random number source of the system, and (b) the correctness of the algorithm used. For production devices, we recommend generating signing keys from a system with a quality entropy source, and using the best available RSA key generation utilities.
+.. only:: not esp32c2
+
+    The ``--version 2`` parameter will generate the RSA 3072 private key for Secure Boot V2.
+
+.. only:: esp32c2
+
+   Select the ECDSA scheme by passing ``--version 2 --scheme ecdsa256`` or ``--version 2 --scheme ecdsa192`` to generate corresponding ECDSA private key
+
+The strength of the signing key is proportional to (a) the random number source of the system, and (b) the correctness of the algorithm used. For production devices, we recommend generating signing keys from a system with a quality entropy source, and using the best available {IDF_TARGET_SBV2_SCHEME} key generation utilities.
 
 For example, to generate a signing key using the openssl command line:
 
-```
-openssl genrsa -out my_secure_boot_signing_key.pem 3072
-```
+.. only:: not esp32c2
+
+    ```
+    openssl genrsa -out my_secure_boot_signing_key.pem 3072
+    ```
+
+.. only:: esp32c2
+
+    For NIST192p curve
+
+    ```
+    openssl ecparam -name prime192v1 -genkey -noout -out my_secure_boot_signing_key.pem
+    ```
+
+    For NIST256p curve
+
+    ```
+    openssl ecparam -name prime256v1 -genkey -noout -out my_secure_boot_signing_key.pem
+    ```
 
 Remember that the strength of the Secure Boot system depends on keeping the signing key private.
 
@@ -374,7 +464,7 @@ To sign a binary image::
 
   espsecure.py sign_data --version 2 --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
 
-Keyfile is the PEM file containing an RSA-3072 private signing key.
+Keyfile is the PEM file containing an {IDF_TARGET_SBV2_KEY} private signing key.
 
 .. _secure-boot-v2-and-flash-encr:
 
@@ -382,6 +472,11 @@ Secure Boot & Flash Encryption
 ------------------------------
 
 If Secure Boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
+
+.. only:: esp32c2
+
+    .. important::
+       {IDF_TARGET_NAME} has only one eFuse key block, which is used for both keys: Secure Boot and Flash Encryption. The eFuse key block can only be burned once. Therefore these keys should be burned together at the same time. Please note that "Secure Boot" and "Flash Encryption" can not be enabled separately as subsequent writes to eFuse key block shall return an error.
 
 .. _signed-app-verify-v2:
 
@@ -415,9 +510,14 @@ How To Enable Signed App Verification
 
     2. Ensure `App Signing Scheme` is `RSA`. For ESP32 ECO3 chip, select :ref:`CONFIG_ESP32_REV_MIN` to `Rev 3` to get `RSA` option available
 
-.. only:: not esp32
+.. only:: not esp32 and not esp32c2
 
     2. Ensure `App Signing Scheme` is `RSA`
+
+.. only:: esp32c2
+
+    2. Ensure `App Signing Scheme` is `ECDSA (V2)`
+
 
 3. Enable :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT`
 

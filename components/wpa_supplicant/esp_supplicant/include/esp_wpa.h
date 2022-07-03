@@ -26,7 +26,7 @@ extern "C" {
   */
 
 /** \defgroup WPA_APIs  WPS APIs
-  * @brief ESP32 Supplicant APIs
+  * @brief Supplicant APIs
   *
   */
 

@@ -1,108 +1,8 @@
-{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1", esp32c2="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="[NEEDS TO BE UPDATED]", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c2="WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
-
-Now you have all requirements met, the next topic will guide you on how to start your first project.
-
-This guide will help you on the first steps using ESP-IDF. Follow this guide to start a new project on the {IDF_TARGET_NAME} and build, flash, and monitor the device output.
-
-.. note::
-
-    If you haven't yet installed the ESP-IDF, please go to :ref:`get-started-step-by-step` and follow the instruction in oder to get all the software needed to use this guide.
-
-Start a Project
-===================
-
-Now you are ready to prepare your application for {IDF_TARGET_NAME}. You can start with :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
-
-.. important::
-
-    The ESP-IDF build system does not support spaces in the paths to either ESP-IDF or to projects.
-
-Copy the project :example:`get-started/hello_world` to ``~/esp`` directory:
-
-Windows
-~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp
-    xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
-
-Linux/macOS
-~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp
-    cp -r $IDF_PATH/examples/get-started/hello_world .
-
-.. note:: There is a range of example projects in the :idf:`examples` directory in ESP-IDF. You can copy any project in the same way as presented above and run it. It is also possible to build examples in-place, without copying them first.
-
-Connect Your Device
-===================
-
-Now connect your {IDF_TARGET_NAME} board to the computer and check under what serial port the board is visible.
-
-Serial ports have the following patterns in their names:
-
-- **Windows**: names like ``COM1``
-- **Linux**: starting with ``/dev/tty``
-- **macOS**: starting with ``/dev/cu.``
-
-If you are not sure how to check the serial port name, please refer to :doc:`establish-serial-connection` for full details.
-
-.. note::
-
-    Keep the port name handy as you will need it in the next steps.
-
-Configure your Project
-======================
-
-Navigate to your ``hello_world`` directory, set {IDF_TARGET_NAME} chip as the target and run the project configuration utility ``menuconfig``.
-
-Windows
-~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp\hello_world
-    idf.py set-target {IDF_TARGET_PATH_NAME}
-    idf.py menuconfig
-
-Linux/macOS
-~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp/hello_world
-    idf.py set-target {IDF_TARGET_PATH_NAME}
-    idf.py menuconfig
-
-Setting the target with ``idf.py set-target {IDF_TARGET_PATH_NAME}`` should be done once  after opening a new project. If the project contains some existing builds and configurations, they will be cleared and initialized. The target may be saved in the environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
-
-If the previous steps have been done correctly, the following menu appears:
-
-.. figure:: ../../_static/project-configuration.png
-    :align: center
-    :alt: Project configuration - Home window
-    :figclass: align-center
-
-    Project configuration - Home window
-
-You are using this menu to set up project specific variables, e.g. Wi-Fi network name and password, the processor speed, etc. Setting up the project with menuconfig may be skipped for "hello_word". This example will run with default configuration.
-
-.. only:: esp32
-
-    .. attention::
-
-        If you use ESP32-DevKitC board with the **ESP32-SOLO-1** module, or ESP32-DevKitM-1 board with the **ESP32-MIN1-1(1U)** module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing examples.
-
-.. note::
-
-    The colors of the menu could be different in your terminal. You can change the appearance with the option ``--style``. Please run ``idf.py menuconfig --help`` for further information.
+{IDF_TARGET_HEAP_SIZE:default="[NEEDS TO BE UPDATED]", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c2="203888", esp32c3="337332"}
 
 Build the Project
 =================
@@ -160,7 +60,7 @@ For more information on idf.py arguments, see :ref:`idf.py`.
 Encountered Issues While Flashing?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
+{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9"}
 
 If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
 
@@ -307,6 +207,49 @@ When flashing, you will see the output log similar to the following:
         Done
 
 
+.. only:: esp32c2
+
+    .. code-block:: none
+
+        ...
+        esptool.py esp32c2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 60m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py v3.3.1
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-C2 (revision 1)
+        Features: Wi-Fi
+        Crystal is 40MHz
+        MAC: 10:97:bd:f0:e5:0c
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Flash will be erased from 0x00000000 to 0x00004fff...
+        Flash will be erased from 0x00010000 to 0x0002ffff...
+        Flash will be erased from 0x00008000 to 0x00008fff...
+        Compressed 18192 bytes to 10989...
+        Writing at 0x00000000... (100 %)
+        Wrote 18192 bytes (10989 compressed) at 0x00000000 in 0.6 seconds (effective 248.5 kbit/s)...
+        Hash of data verified.
+        Compressed 128640 bytes to 65895...
+        Writing at 0x00010000... (20 %)
+        Writing at 0x00019539... (40 %)
+        Writing at 0x00020bf2... (60 %)
+        Writing at 0x00027de1... (80 %)
+        Writing at 0x0002f480... (100 %)
+        Wrote 128640 bytes (65895 compressed) at 0x00010000 in 1.7 seconds (effective 603.0 kbit/s)...
+        Hash of data verified.
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 360.1 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
+
+
 .. only:: esp32c3
 
     .. code-block:: none
@@ -435,3 +378,44 @@ Python compatibility
 ~~~~~~~~~~~~~~~~~~~~
 
 ESP-IDF supports Python 3.7 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    ..
+        When adding new targets to the line above, please update this list in windows-start-project.rst and linux-macos-start-project.rst
+
+
+    Start with Board Support Package
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    To speed up prototyping on some development boards, you can use `Board Support Packages (BSPs) <https://github.com/espressif/esp-bsp>`_, which makes initialization of a particular board as easy as few function calls.
+
+    A BSP typically supports all of the hardware components provided on development board. Apart from the pinout definition and initialization functions, a BSP ships with drivers for the external components such as sensors, displays, audio codecs etc.
+
+    The BSPs are distributed via `IDF Component Manager <../api-guides/tools/idf-component-manager>`_, so they can be found in `IDF Component Registry <https://components.espressif.com>`_.
+
+    .. only:: esp32
+
+        **Here's an example of how to add ESP-WROVER-KIT BSP to your project:**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp_wrover_kit 
+
+    .. only:: esp32s2
+
+        **Here's an example of how to add ESP32-S2-Kaluga-Kit BSP to your project:**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp32_s2_kaluga_kit
+
+    .. only:: esp32s3
+
+        **Here's an example of how to add ESP-BOX BSP to your project:**
+        
+        .. code-block:: bash
+        
+            idf.py add-dependency esp-box 
+
+    More examples of BSP usage can be found in `BSP examples folder <https://github.com/espressif/esp-bsp/tree/master/examples>`_.

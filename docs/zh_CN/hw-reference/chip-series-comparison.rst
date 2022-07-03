@@ -76,10 +76,10 @@
      - ✔️ 8 路组相连，32 位数据/指令总线宽度
      - ✔️ 指令 cache 可配置为 4 路组相连或 8 路组相连，数据 cache 固定为 4 路组相连，32 位数据/指令总线宽度
    * - **外设**
-     - 
-     - 
      -
-     - 
+     -
+     -
+     -
    * - 模/数转换器 (ADC)
      - 两个 12 位 SAR ADC，多达 18 个通道
      - 两个 12 位 SAR ADC，多达 20 个通道
@@ -88,13 +88,13 @@
    * - 数/模转换器 (DAC)
      - 两个 8 位通道
      - 两个 8 位通道
-     - ✖️ 
-     - ✖️ 
+     - ✖️
+     - ✖️
    * - 定时器
      - 4 个 64 位通用定时器，3 个看门狗定时器
      - 4 个 64 位通用定时器，3 个看门狗定时器
-     - 2 个 54 位通用定时器，3 个看门狗定时器     
-     - 4 个 54 位通用定时器，3 个看门狗定时器     
+     - 2 个 54 位通用定时器，3 个看门狗定时器
+     - 4 个 54 位通用定时器，3 个看门狗定时器
    * - 温度传感器
      - ✖️
      - 1
@@ -146,7 +146,7 @@
      - ✖️
      - 1
    * - DMA
-     - UART、SPI、I2S、SDIO 从机、SD/MMC 主机、EMAC、BT 和 Wi-Fi 都有专用的 DMA 控制器 
+     - UART、SPI、I2S、SDIO 从机、SD/MMC 主机、EMAC、BT 和 Wi-Fi 都有专用的 DMA 控制器
      - UART、SPI、AES、SHA、I2S 和 ADC 控制器都有专用的 DMA 控制器
      - 通用 DMA 控制器，3 个接收通道和 3 个发送通道
      - 通用 DMA 控制器，5 个接收通道和 5 个发送通道
@@ -167,13 +167,13 @@
      - 8 通道 [#one]_
    * - MCPWM
      - 2，提供六个 PWM 输出
-     - ✖️ 
-     - ✖️ 
+     - ✖️
+     - ✖️
      - 2，提供六个 PWM 输出
    * - USB OTG
      - ✖️
      - 1
-     - ✖️           
+     - ✖️
      - 1
    * - TWAI® 控制器（兼容 ISO 11898-1 协议）
      - 1
@@ -206,10 +206,10 @@
      - 1
      - ✖️
    * - **安全机制**
-     - 
      -
-     - 
-     - 
+     -
+     -
+     -
    * - 安全启动
      - ✔️
      - ✔️ 比 ESP32 更快更安全
@@ -227,14 +227,14 @@
      - 4096 位
    * - AES
      - ✔️ AES-128, AES-192, AES-256 (FIPS PUB 197)
-     - ✔️ AES-128, AES-192, AES-256 (FIPS PUB 197); 支持 DMA 
-     - ✔️ AES-128, AES-256 (FIPS PUB 197); 支持 DMA 
-     - ✔️ AES-128, AES-256 (FIPS PUB 197); 支持 DMA 
+     - ✔️ AES-128, AES-192, AES-256 (FIPS PUB 197); 支持 DMA
+     - ✔️ AES-128, AES-256 (FIPS PUB 197); 支持 DMA
+     - ✔️ AES-128, AES-256 (FIPS PUB 197); 支持 DMA
    * - HASH
      - SHA-1, SHA-256, SHA-384, SHA-512 (FIPS PUB 180-4)
-     - SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256, SHA-512/t (FIPS PUB 180-4); 支持 DMA 
-     - SHA-1, SHA-224, SHA-256 (FIPS PUB 180-4); 支持 DMA 
-     - SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256, SHA-512/t (FIPS PUB 180-4); 支持 DMA  
+     - SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256, SHA-512/t (FIPS PUB 180-4); 支持 DMA
+     - SHA-1, SHA-224, SHA-256 (FIPS PUB 180-4); 支持 DMA
+     - SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256, SHA-512/t (FIPS PUB 180-4); 支持 DMA
    * - RSA
      - 高达 4096 位
      - 高达 4096 位
@@ -261,10 +261,10 @@
      - ✔️ XTS-AES-128
      - ✔️ XTS-AES-128, XTS-AES-256
    * - **其它**
-     - 
      -
-     - 
-     - 
+     -
+     -
+     -
    * - Deep-sleep 功耗（超低功耗传感器监测方式）
      - 100 μA（ADC 以 1% 占空比工作时）
      - 22 μA（触摸传感器以 1% 占空比工作时）
@@ -272,15 +272,15 @@
      - TBD
    * - 封装尺寸
      - QFN48 5*5、6*6，不同型号有差异
-     - QFN56 7*7 
+     - QFN56 7*7
      - QFN32 5*5
-     - QFN56 7*7 
+     - QFN56 7*7
 
 .. note::
 
-    .. [#one] 与 ESP32 相比，减小了芯片面积 
+    .. [#one] 与 ESP32 相比，减小了芯片面积
 
-    .. [#two] 与 ESP32 和 ESP32-S2 相比，减小了芯片面积  
+    .. [#two] 与 ESP32 和 ESP32-S2 相比，减小了芯片面积
 
 .. note::
 
@@ -299,4 +299,4 @@
 - `ESP32-S2 技术规格书 (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>`_
 - `ESP32-C3 技术规格书 (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf>`_
 - `ESP32-S3 技术规格书 (PDF) <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_
-- `ESP 产品选型 <http://products.espressif.com:8000/#/>`_
+- `ESP 产品选型 <https://products.espressif.com/#/>`_

@@ -436,7 +436,8 @@ static void coap_example_client(void *p)
          *   coap_insert_optlist(&optlist,
          *                       coap_new_optlist(COAP_OPTION_CONTENT_FORMAT,
          *                                        coap_encode_var_safe (buf, sizeof (buf),
-         *                                                              COAP_MEDIATYPE_APPLICATION_JSON));
+         *                                                              COAP_MEDIATYPE_APPLICATION_JSON),
+         *                                        buf));
          * Add in here the POST data of length length. E.G.
          *   coap_add_data_large_request(session, request length, data, NULL, NULL);
          */

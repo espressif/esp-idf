@@ -27,7 +27,7 @@
 #include "esp_coexist_internal.h"
 #endif
 
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #include "transport/uart/ble_hci_uart.h"
 #else
 #include "transport/ram/ble_hci_ram.h"
@@ -42,14 +42,15 @@
 #include "esp_phy_init.h"
 #include "soc/system_reg.h"
 #include "hal/hal_uart.h"
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+#include "hci/hci_hal.h"
+#endif
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "host/ble_hs.h"
-
 #include "esp_private/periph_ctrl.h"
-
+#include "nimble/hci_common.h"
 /* Macro definition
  ************************************************************************
  */
@@ -90,11 +91,6 @@ struct ext_funcs_t {
     uint32_t magic;
 };
 
-struct ble_ll_trace_func_t {
-    void (*_ble_ll_trace_u32_func)(uint32_t id, uint32_t p1);
-    void (*_ble_ll_trace_u32x2_func)(uint32_t id, uint32_t p1, uint32_t p2);
-    void (*_ble_ll_trace_u32x3_func)(uint32_t id, uint32_t p1, uint32_t p2, uint32_t p3);
-};
 
 /* External functions or variables
  ************************************************************************
@@ -113,7 +109,9 @@ extern int esp_ble_ll_set_public_addr(const uint8_t *addr);
 extern int esp_register_npl_funcs (struct npl_funcs_t *p_npl_func);
 extern void esp_unregister_npl_funcs (void);
 extern void npl_freertos_mempool_deinit(void);
-extern void coex_pti_v2(void);
+/* TX power */
+int ble_txpwr_set(int power_type, int power_level);
+int ble_txpwr_get(int power_type);
 extern void bt_bb_v2_init_cmplx(uint8_t i);
 extern int os_msys_buf_alloc(void);
 extern uint32_t r_os_cputime_get32(void);
@@ -226,7 +224,88 @@ static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
     coex_schm_status_bit_clear(type, status);
 #endif
 }
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+bool esp_vhci_host_check_send_available(void)
+{
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return false;
+    }
+    return true;
+}
 
+/**
+ * Allocates an mbuf for use by the nimble host.
+ */
+static struct os_mbuf *
+ble_hs_mbuf_gen_pkt(uint16_t leading_space)
+{
+    struct os_mbuf *om;
+    int rc;
+
+    om = os_msys_get_pkthdr(0, 0);
+    if (om == NULL) {
+        return NULL;
+    }
+
+    if (om->om_omp->omp_databuf_len < leading_space) {
+        rc = os_mbuf_free_chain(om);
+        assert(rc == 0);
+        return NULL;
+    }
+
+    om->om_data += leading_space;
+
+    return om;
+}
+
+/**
+ * Allocates an mbuf suitable for an HCI ACL data packet.
+ *
+ * @return                  An empty mbuf on success; null on memory
+ *                              exhaustion.
+ */
+struct os_mbuf *
+ble_hs_mbuf_acl_pkt(void)
+{
+    return ble_hs_mbuf_gen_pkt(4 + 1);
+}
+
+void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
+{
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return;
+    }
+
+    if (*(data) == DATA_TYPE_COMMAND) {
+        struct ble_hci_cmd *cmd = NULL;
+        cmd = (struct ble_hci_cmd *) ble_hci_trans_buf_alloc(BLE_HCI_TRANS_BUF_CMD);
+        memcpy((uint8_t *)cmd, data + 1, len - 1);
+        ble_hci_trans_hs_cmd_tx((uint8_t *)cmd);
+    }
+
+    if (*(data) == DATA_TYPE_ACL) {
+        struct os_mbuf *om = os_msys_get_pkthdr(0, 0);
+        assert(om);
+        memcpy(om->om_data, &data[1], len - 1);
+        om->om_len = len - 1;
+        OS_MBUF_PKTHDR(om)->omp_len = len - 1;
+        ble_hci_trans_hs_acl_tx(om);
+    }
+
+}
+
+esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
+{
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_FAIL;
+    }
+
+    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt,NULL,ble_hs_rx_data,NULL);
+
+    return ESP_OK;
+}
+
+#endif
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
 {
     return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < portNUM_PROCESSORS ? core_id : tskNO_AFFINITY));
@@ -239,7 +318,7 @@ static void task_delete_wrapper(void *task_handle)
 
 static void hal_uart_start_tx_wrapper(int uart_no)
 {
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     hal_uart_start_tx(uart_no);
 #endif
 }
@@ -248,7 +327,7 @@ static int hal_uart_init_cbs_wrapper(int uart_no, hal_uart_tx_char tx_func,
                                      hal_uart_tx_done tx_done, hal_uart_rx_char rx_func, void *arg)
 {
     int rc = -1;
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     rc = hal_uart_init_cbs(uart_no, tx_func, tx_done, rx_func, arg);
 #endif
     return rc;
@@ -258,7 +337,7 @@ static int hal_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits,
                                    enum hal_uart_parity parity, enum hal_uart_flow_ctl flow_ctl)
 {
     int rc = -1;
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     rc = hal_uart_config(uart_no, speed, databits, stopbits, parity, flow_ctl);
 #endif
     return rc;
@@ -267,7 +346,7 @@ static int hal_uart_config_wrapper(int uart_no, int32_t speed, uint8_t databits,
 static int hal_uart_close_wrapper(int uart_no)
 {
     int rc = -1;
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     rc = hal_uart_close(uart_no);
 #endif
     return rc;
@@ -275,7 +354,7 @@ static int hal_uart_close_wrapper(int uart_no)
 
 static void hal_uart_blocking_tx_wrapper(int port, uint8_t data)
 {
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     hal_uart_blocking_tx(port, data);
 #endif
 }
@@ -283,7 +362,7 @@ static void hal_uart_blocking_tx_wrapper(int port, uint8_t data)
 static int hal_uart_init_wrapper(int uart_no, void *cfg)
 {
     int rc = -1;
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
     rc = hal_uart_init(uart_no, cfg);
 #endif
     return rc;
@@ -444,10 +523,10 @@ error:
         esp_timer_delete(s_btdm_slp_tmr);
         s_btdm_slp_tmr = NULL;
     }
-#endif // CONFIG_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
+#endif // CONFIG_BT_NIMBLE_WAKEUP_SOURCE_CPU_RTC_TIMER
 #ifdef CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
     esp_sleep_disable_bt_wakeup();
-#endif // CONFIG_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
+#endif // CONFIG_BT_NIMBLE_WAKEUP_SOURCE_BLE_RTC_TIMER
 #endif
 
 }
@@ -483,7 +562,6 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
     }
-
     if (cfg == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -518,11 +596,11 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
     }
 
     os_msys_init();
-
+#if CONFIG_BT_NIMBLE_ENABLED
     // ble_npl_eventq_init() need to use npl function in rom and must be called after esp_bt_controller_init()
     /* Initialize default event queue */
     ble_npl_eventq_init(nimble_port_get_dflt_eventq());
-
+#endif
     periph_module_enable(PERIPH_BT_MODULE);
 
     // init phy
@@ -537,7 +615,7 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
     }
 
 #if CONFIG_SW_COEXIST_ENABLE
-    coex_enable();
+    coex_init();
 #endif
 
     if (ble_controller_init(cfg) != 0) {
@@ -554,7 +632,9 @@ esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg)
     esp_ble_ll_set_public_addr(mac);
 
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
-
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+    ble_hci_trans_cfg_hs(ble_hs_hci_rx_evt,NULL,ble_hs_rx_data,NULL);
+#endif
     return ESP_OK;
 }
 
@@ -570,10 +650,10 @@ esp_err_t esp_bt_controller_deinit(void)
     if (ble_controller_deinit() != 0) {
         return ESP_FAIL;
     }
-
+#if CONFIG_BT_NIMBLE_ENABLED
     /* De-initialize default event queue */
     ble_npl_eventq_deinit(nimble_port_get_dflt_eventq());
-
+#endif
     os_msys_buf_free();
 
     esp_unregister_npl_funcs();
@@ -592,6 +672,70 @@ esp_err_t esp_bt_controller_deinit(void)
     return ESP_OK;
 }
 
+esp_bt_controller_status_t esp_bt_controller_get_status(void)
+{
+    return ble_controller_status;
+}
+
+/* extra functions */
+esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level)
+{
+    esp_err_t stat = ESP_FAIL;
+
+    switch (power_type) {
+    case ESP_BLE_PWR_TYPE_ADV:
+    case ESP_BLE_PWR_TYPE_SCAN:
+    case ESP_BLE_PWR_TYPE_DEFAULT:
+        if (ble_txpwr_set(power_type, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    default:
+        stat = ESP_ERR_NOT_SUPPORTED;
+        break;
+    }
+
+    return stat;
+}
+
+int ble_txpwr_get(int power_type)
+{
+    return 0;
+}
+
+int ble_txpwr_set(int power_type, int power_level)
+{
+    return 0;
+}
+esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
+{
+    esp_power_level_t lvl;
+
+    switch (power_type) {
+    case ESP_BLE_PWR_TYPE_ADV:
+    case ESP_BLE_PWR_TYPE_SCAN:
+        lvl = (esp_power_level_t)ble_txpwr_get(power_type);
+        break;
+    case ESP_BLE_PWR_TYPE_CONN_HDL0:
+    case ESP_BLE_PWR_TYPE_CONN_HDL1:
+    case ESP_BLE_PWR_TYPE_CONN_HDL2:
+    case ESP_BLE_PWR_TYPE_CONN_HDL3:
+    case ESP_BLE_PWR_TYPE_CONN_HDL4:
+    case ESP_BLE_PWR_TYPE_CONN_HDL5:
+    case ESP_BLE_PWR_TYPE_CONN_HDL6:
+    case ESP_BLE_PWR_TYPE_CONN_HDL7:
+    case ESP_BLE_PWR_TYPE_CONN_HDL8:
+    case ESP_BLE_PWR_TYPE_DEFAULT:
+        lvl = (esp_power_level_t)ble_txpwr_get(ESP_BLE_PWR_TYPE_DEFAULT);
+        break;
+    default:
+        lvl = ESP_PWR_LVL_INVALID;
+        break;
+    }
+
+    return lvl;
+}
+
 esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 {
     if (mode != ESP_BT_MODE_BLE) {
@@ -602,6 +746,11 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
     }
+
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_enable();
+#endif
+
     if (ble_controller_enable(mode) != 0) {
         return ESP_FAIL;
     }
@@ -619,6 +768,12 @@ esp_err_t esp_bt_controller_disable(void)
     if (ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
+    return ESP_OK;
+}
+
+esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
+{
+    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
     return ESP_OK;
 }
 

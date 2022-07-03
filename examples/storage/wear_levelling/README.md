@@ -1,10 +1,13 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Wear levelling example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use wear levelling library and FATFS library to store files in a partition inside SPI flash. Example does the following steps:
 
-1. Use an "all-in-one" `esp_vfs_fat_spiflash_mount` function to:
+1. Use an "all-in-one" `esp_vfs_fat_spiflash_mount_rw_wl` function to:
     - find a partition in SPI flash,
     - initialize wear levelling library using this partition
     - mount FAT filesystem using FATFS library (and format the filesystem, if the filesystem can not be mounted),
@@ -36,7 +39,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example output
 
-Here is a typical example console output. 
+Here is a typical example console output.
 
 ```
 I (280) example: Mounting FAT filesystem

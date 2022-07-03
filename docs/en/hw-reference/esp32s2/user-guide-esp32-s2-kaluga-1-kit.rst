@@ -224,6 +224,8 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 
 The programming guide and application examples for your ESP32-S2-Kaluga-1 kit can be found in `esp-dev-kits <https://github.com/espressif/esp-dev-kits/tree/master/esp32-s2-kaluga-1>`_ repository on GitHub.
 
+A Board Support Package can be found in `IDF Component Registry <https://components.espressif.com/component/espressif/esp32_s2_kaluga_kit>`_.
+
 
 Contents and Packaging
 ----------------------
@@ -257,7 +259,7 @@ The contents are as follows:
     - Screws (x4)
     - Nuts (x4)
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 
 Wholesale Orders
@@ -393,4 +395,3 @@ Related Documents
 For other design documentation for the board, please contact us at sales@espressif.com.
 
 
-    

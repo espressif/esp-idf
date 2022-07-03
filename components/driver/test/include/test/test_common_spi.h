@@ -86,7 +86,7 @@
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2
 //NOTE: On these chips, there is only 1 GPSPI controller, so master-slave test on single board should be disabled
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI2_HOST

@@ -1546,6 +1546,58 @@ void bta_hf_client_send_at_clcc(void)
     bta_hf_client_send_at(BTA_HF_CLIENT_AT_CLCC, buf, strlen(buf));
 }
 
+
+void bta_hf_client_send_at_xapl(char *information, UINT32 features)
+{
+    APPL_TRACE_DEBUG("%s(%s, %u)", __FUNCTION__, information, features);
+
+    char *buf = osi_malloc(BTA_HF_CLIENT_AT_MAX_LEN);
+
+    /*
+    Format: AT+XAPL=vendorID-productID-version,features
+    Parameters:
+        *vendorID: A string representation of the hex value of the vendor ID from the manufacturer, without the 0x prefix.
+        *productID: A string representation of the hex value of the product ID from the manufacturer, without the 0x prefix.
+        *version: The revision of the software.
+        *Fatures: A base-10 representation of a bit field. Available features are:
+            *Bit 0 = reserved
+            *Bit 1 = The accessory supports battery reporting (reserved only for battery operated accessories).
+            *Bit 2 = The accessory is docked or powered (reserved only for battery operated accessories).
+            *Bit 3 = The accessory supports Siri status reporting.
+            *Bit 4 = the accessory supports noise reduction (NR) status reporting.
+            *All other values are reserved.
+    */
+
+    snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN, "AT+XAPL=%s,%u\r", information, features);
+
+    bta_hf_client_send_at(BTA_HF_CLIENT_AT_XAPL, buf, strlen(buf));
+    osi_free(buf);
+}
+
+void bta_hf_client_send_at_iphoneaccev(UINT32 bat_level, BOOLEAN docked)
+{
+    APPL_TRACE_DEBUG("%s(%u, %s)", __FUNCTION__, bat_level, docked ? "docked" : "undocked");
+
+    char *buf = osi_malloc(BTA_HF_CLIENT_AT_MAX_LEN);
+
+    /*
+    Format: AT+IPHONEACCEV=Number of key/value pairs,key1,val1,key2,val2,...
+    Parameters:
+        * Number of key/value pairs: The number of parameters coming next.
+        * key: the type of change being reported:
+            * 1 = Battery Level
+            * 2 = Dock State
+        * val: the value of the change:
+            * Battery Level: string value between '0' and '9'
+            * Dock State: 0 = undocked, 1 = docked
+    */
+
+    snprintf(buf, BTA_HF_CLIENT_AT_MAX_LEN, "AT+IPHONEACCEV=2,1,%u,2,%u\r", bat_level, docked ? 1 : 0);
+
+    bta_hf_client_send_at(BTA_HF_CLIENT_AT_IPHONEACCEV, buf, strlen(buf));
+    osi_free(buf);
+}
+
 void bta_hf_client_send_at_bvra(BOOLEAN enable)
 {
     char *buf;

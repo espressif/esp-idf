@@ -116,7 +116,6 @@ menu "TinyUSB Stack"
 
         menu "Massive Storage Class (MSC)"
             config TINYUSB_MSC_ENABLED
-                depends on TINYUSB_CDC_COUNT < 2
                 bool "Enable TinyUSB MSC feature"
                 default n
                 help
@@ -126,6 +125,7 @@ menu "TinyUSB Stack"
                 depends on TINYUSB_MSC_ENABLED
                 int "MSC FIFO size"
                 default 512
+                range 64 10000
                 help
                     MSC FIFO size, in bytes.
         endmenu # "Massive Storage Class"
@@ -149,6 +149,7 @@ menu "TinyUSB Stack"
                 depends on TINYUSB_CDC_ENABLED
                 int "CDC FIFO size of RX channel"
                 default 64
+                range 64 10000
                 help
                     CDC FIFO size of RX channel.
 

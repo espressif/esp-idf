@@ -21,6 +21,7 @@
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
+#include "sdkconfig.h"
 
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER "example.com"

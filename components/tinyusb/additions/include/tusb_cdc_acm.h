@@ -12,7 +12,6 @@ extern "C" {
 
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/ringbuf.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "tusb.h"

@@ -1,23 +1,12 @@
 #!/usr/bin/env python
 #
-# Copyright 2019 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import subprocess
 import sys
-import unittest
+from unittest import TestCase, main, mock
 
 try:
     from StringIO import StringIO
@@ -36,7 +25,20 @@ extension_path = os.path.join(current_dir, 'test_idf_extensions', 'test_ext')
 link_path = os.path.join(current_dir, '..', 'idf_py_actions', 'test_ext')
 
 
-class TestExtensions(unittest.TestCase):
+class TestWithoutExtensions(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # Disable the component manager and extra extensions for these tests
+        cls.env_patcher = mock.patch.dict(os.environ, {
+            'IDF_COMPONENT_MANAGER': '0',
+            'IDF_EXTRA_ACTIONS_PATH': '',
+        })
+        cls.env_patcher.start()
+
+        super().setUpClass()
+
+
+class TestExtensions(TestWithoutExtensions):
     def test_extension_loading(self):
         try:
             os.symlink(extension_path, link_path)
@@ -78,7 +80,7 @@ class TestExtensions(unittest.TestCase):
             os.remove(link_path)
 
 
-class TestDependencyManagement(unittest.TestCase):
+class TestDependencyManagement(TestWithoutExtensions):
     def test_dependencies(self):
         result = idf.init_cli()(
             args=['--dry-run', 'flash'],
@@ -129,7 +131,7 @@ class TestDependencyManagement(unittest.TestCase):
             'WARNING: Command "clean" is found in the list of commands more than once.', capturedOutput.getvalue())
 
 
-class TestVerboseFlag(unittest.TestCase):
+class TestVerboseFlag(TestWithoutExtensions):
     def test_verbose_messages(self):
         output = subprocess.check_output(
             [
@@ -155,7 +157,7 @@ class TestVerboseFlag(unittest.TestCase):
         self.assertNotIn('Verbose mode on', output)
 
 
-class TestGlobalAndSubcommandParameters(unittest.TestCase):
+class TestGlobalAndSubcommandParameters(TestWithoutExtensions):
     def test_set_twice_same_value(self):
         """Can set -D twice: globally and for subcommand if values are the same"""
 
@@ -174,21 +176,24 @@ class TestGlobalAndSubcommandParameters(unittest.TestCase):
             )
 
 
-class TestDeprecations(unittest.TestCase):
+class TestDeprecations(TestWithoutExtensions):
     def test_exit_with_error_for_subcommand(self):
         try:
-            subprocess.check_output([sys.executable, idf_py_path, '-C%s' % current_dir, 'test-2'], env=os.environ,
-                                    stderr=subprocess.STDOUT)
+            subprocess.check_output(
+                [sys.executable, idf_py_path, '-C%s' % current_dir, 'test-2'], env=os.environ, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             self.assertIn('Error: Command "test-2" is deprecated and was removed.', e.output.decode('utf-8', 'ignore'))
 
     def test_exit_with_error_for_option(self):
         try:
-            subprocess.check_output([sys.executable, idf_py_path, '-C%s' % current_dir, '--test-5=asdf'],
-                                    env=os.environ, stderr=subprocess.STDOUT)
+            subprocess.check_output(
+                [sys.executable, idf_py_path, '-C%s' % current_dir, '--test-5=asdf'],
+                env=os.environ,
+                stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
-            self.assertIn('Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
-                          e.output.decode('utf-8', 'ignore'))
+            self.assertIn(
+                'Error: Option "test_5" is deprecated since v2.0 and was removed in v3.0.',
+                e.output.decode('utf-8', 'ignore'))
 
     def test_deprecation_messages(self):
         output = subprocess.check_output(
@@ -206,7 +211,8 @@ class TestDeprecations(unittest.TestCase):
                 'ta',
                 'test-1',
             ],
-            env=os.environ, stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
+            env=os.environ,
+            stderr=subprocess.STDOUT).decode('utf-8', 'ignore')
 
         self.assertIn('Warning: Option "test_sub_1" is deprecated and will be removed in future versions.', output)
         self.assertIn(
@@ -222,4 +228,4 @@ class TestDeprecations(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main()

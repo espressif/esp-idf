@@ -159,9 +159,15 @@ static void example_change_led_state(uint8_t onoff)
     /* When the node receives the first Generic OnOff Get/Set/Set Unack message, it will
      * start the timer used to disable fast provisioning functionality.
      */
+#pragma GCC diagnostic push
+#if     __GNUC__ >= 9
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#endif
     if (!bt_mesh_atomic_test_and_set_bit(fast_prov_server.srv_flags, DISABLE_FAST_PROV_START)) {
         k_delayed_work_submit(&fast_prov_server.disable_fast_prov_timer, DISABLE_FAST_PROV_TIMEOUT);
     }
+#pragma GCC diagnostic pop
+
 }
 
 static void node_prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
@@ -231,12 +237,17 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
         }
         if (fast_prov_server.node_addr_cnt != FAST_PROV_NODE_COUNT_MIN &&
             fast_prov_server.node_addr_cnt <= fast_prov_server.max_node_num) {
+#pragma GCC diagnostic push
+#if     __GNUC__ >= 9
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#endif
             if (bt_mesh_atomic_test_and_clear_bit(fast_prov_server.srv_flags, GATT_PROXY_ENABLE_START)) {
                 k_delayed_work_cancel(&fast_prov_server.gatt_proxy_enable_timer);
             }
             if (!bt_mesh_atomic_test_and_set_bit(fast_prov_server.srv_flags, GATT_PROXY_ENABLE_START)) {
                 k_delayed_work_submit(&fast_prov_server.gatt_proxy_enable_timer, GATT_PROXY_ENABLE_TIMEOUT);
             }
+#pragma GCC diagnostic pop
         }
     } else {
         /* When a device is provisioned, the non-primary Provisioner shall reset the timer
@@ -250,6 +261,10 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
         }
     }
 
+#pragma GCC diagnostic push
+#if     __GNUC__ >= 9
+#pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#endif
     if (bt_mesh_atomic_test_bit(fast_prov_server.srv_flags, DISABLE_FAST_PROV_START)) {
         /* When a device is provisioned, and the stop_prov flag of the Provisioner has been
          * set, the Provisioner shall reset the timer which is used to stop the provisioner
@@ -258,6 +273,7 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
         k_delayed_work_cancel(&fast_prov_server.disable_fast_prov_timer);
         k_delayed_work_submit(&fast_prov_server.disable_fast_prov_timer, DISABLE_FAST_PROV_TIMEOUT);
     }
+#pragma GCC diagnostic pop
 
     /* The Provisioner will send Config AppKey Add to the node. */
     example_msg_common_info_t info = {

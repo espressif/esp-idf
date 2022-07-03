@@ -1,8 +1,9 @@
-/**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
+
 #pragma once
 
 #include <stdint.h>
@@ -14,7 +15,7 @@ extern "C" {
 /** SYSTEM_SYSCLK_CONF_REG register
  *  register description
  */
-#define SYSTEM_SYSCLK_CONF_REG (DR_REG_SYSTEM_BASE + 0x0)
+#define SYSTEM_SYSCLK_CONF_REG (DR_REG_CLKRST_BASE + 0x0)
 /** SYSTEM_CLK_XTAL_FREQ : RO; bitpos: [7:0]; default: 0;
  *  Need add description
  */
@@ -40,7 +41,7 @@ extern "C" {
 /** SYSTEM_CPUCLK_CONF_REG register
  *  register description
  */
-#define SYSTEM_CPUCLK_CONF_REG (DR_REG_SYSTEM_BASE + 0x4)
+#define SYSTEM_CPUCLK_CONF_REG (DR_REG_CLKRST_BASE + 0x4)
 /** SYSTEM_CPU_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  Need add description
  */
@@ -48,13 +49,19 @@ extern "C" {
 #define SYSTEM_CPU_DIV_NUM_M  (SYSTEM_CPU_DIV_NUM_V << SYSTEM_CPU_DIV_NUM_S)
 #define SYSTEM_CPU_DIV_NUM_V  0x000000FFU
 #define SYSTEM_CPU_DIV_NUM_S  0
-/** SYSTEM_PRE_DIV_CNT : R/W; bitpos: [13:8]; default: 0;
+
+#define SYSTEM_PRE_DIV_CNT  SYSTEM_CPU_DIV_NUM
+#define SYSTEM_PRE_DIV_CNT_M  SYSTEM_CPU_DIV_NUM_M
+#define SYSTEM_PRE_DIV_CNT_V  SYSTEM_CPU_DIV_NUM_V
+#define SYSTEM_PRE_DIV_CNT_S  SYSTEM_CPU_DIV_NUM_S
+
+/** SYSTEM_CPU_DIV_NUMERATOR : R/W; bitpos: [13:8]; default: 0;
  *  Need add description
  */
-#define SYSTEM_PRE_DIV_CNT    0x0000003FU
-#define SYSTEM_PRE_DIV_CNT_M  (SYSTEM_PRE_DIV_CNT_V << SYSTEM_PRE_DIV_CNT_S)
-#define SYSTEM_PRE_DIV_CNT_V  0x0000003FU
-#define SYSTEM_PRE_DIV_CNT_S  8
+#define SYSTEM_CPU_DIV_NUMERATOR    0x0000003FU
+#define SYSTEM_CPU_DIV_NUMERATOR_M  (SYSTEM_CPU_DIV_NUMERATOR_V << SYSTEM_CPU_DIV_NUMERATOR_S)
+#define SYSTEM_CPU_DIV_NUMERATOR_V  0x0000003FU
+#define SYSTEM_CPU_DIV_NUMERATOR_S  8
 /** SYSTEM_CPU_DIV_DENOMINATOR : R/W; bitpos: [21:16]; default: 0;
  *  Need add description
  */
@@ -66,7 +73,7 @@ extern "C" {
 /** SYSTEM_BUSCLK_CONF_REG register
  *  register description
  */
-#define SYSTEM_BUSCLK_CONF_REG (DR_REG_SYSTEM_BASE + 0x8)
+#define SYSTEM_BUSCLK_CONF_REG (DR_REG_CLKRST_BASE + 0x8)
 /** SYSTEM_APB_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  Need add description
  */
@@ -85,7 +92,7 @@ extern "C" {
 /** SYSTEM_MODCLK_CONF_REG register
  *  register description
  */
-#define SYSTEM_MODCLK_CONF_REG (DR_REG_SYSTEM_BASE + 0xc)
+#define SYSTEM_MODCLK_CONF_REG (DR_REG_CLKRST_BASE + 0xc)
 /** SYSTEM_MODEM_CLK_SEL : R/W; bitpos: [1:0]; default: 1;
  *  Need add description
  */
@@ -121,11 +128,18 @@ extern "C" {
 #define SYSTEM_COEX_LPCLK_DIV_M  (SYSTEM_COEX_LPCLK_DIV_V << SYSTEM_COEX_LPCLK_DIV_S)
 #define SYSTEM_COEX_LPCLK_DIV_V  0x000003FFU
 #define SYSTEM_COEX_LPCLK_DIV_S  6
+/** SYSTEM_BT_DFM_CLK_INV_PHASE : R/W; bitpos: [17:16]; default: 0;
+ *  Need add description
+ */
+#define SYSTEM_BT_DFM_CLK_INV_PHASE    0x00000003U
+#define SYSTEM_BT_DFM_CLK_INV_PHASE_M  (SYSTEM_BT_DFM_CLK_INV_PHASE_V << SYSTEM_BT_DFM_CLK_INV_PHASE_S)
+#define SYSTEM_BT_DFM_CLK_INV_PHASE_V  0x00000003U
+#define SYSTEM_BT_DFM_CLK_INV_PHASE_S  16
 
 /** SYSTEM_CLK_OUT_EN_REG register
  *  register description
  */
-#define SYSTEM_CLK_OUT_EN_REG (DR_REG_SYSTEM_BASE + 0x10)
+#define SYSTEM_CLK_OUT_EN_REG (DR_REG_CLKRST_BASE + 0x10)
 /** SYSTEM_CLK_8M_BT_OEN : R/W; bitpos: [3]; default: 1;
  *  Need add description
  */
@@ -200,7 +214,7 @@ extern "C" {
 /** SYSTEM_MODEM_CLK_EN_REG register
  *  register description
  */
-#define SYSTEM_MODEM_CLK_EN_REG (DR_REG_SYSTEM_BASE + 0x14)
+#define SYSTEM_MODEM_CLK_EN_REG (DR_REG_CLKRST_BASE + 0x14)
 /** SYSTEM_FE_CAL_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Need add description
  */
@@ -355,11 +369,18 @@ extern "C" {
 #define SYSTEM_DATA_DUMP_CLK_EN_M  (SYSTEM_DATA_DUMP_CLK_EN_V << SYSTEM_DATA_DUMP_CLK_EN_S)
 #define SYSTEM_DATA_DUMP_CLK_EN_V  0x00000001U
 #define SYSTEM_DATA_DUMP_CLK_EN_S  21
+/** SYSTEM_BT_DFM_CLK_EN : R/W; bitpos: [22]; default: 0;
+ *  Need add description
+ */
+#define SYSTEM_BT_DFM_CLK_EN    (BIT(22))
+#define SYSTEM_BT_DFM_CLK_EN_M  (SYSTEM_BT_DFM_CLK_EN_V << SYSTEM_BT_DFM_CLK_EN_S)
+#define SYSTEM_BT_DFM_CLK_EN_V  0x00000001U
+#define SYSTEM_BT_DFM_CLK_EN_S  22
 
 /** SYSTEM_MODEM_RST_EN_REG register
  *  register description
  */
-#define SYSTEM_MODEM_RST_EN_REG (DR_REG_SYSTEM_BASE + 0x18)
+#define SYSTEM_MODEM_RST_EN_REG (DR_REG_CLKRST_BASE + 0x18)
 /** SYSTEM_FE_RST : R/W; bitpos: [0]; default: 0;
  *  Need add description
  */
@@ -511,7 +532,7 @@ extern "C" {
 /** SYSTEM_PERIP_CLK_CONF_REG register
  *  register description
  */
-#define SYSTEM_PERIP_CLK_CONF_REG (DR_REG_SYSTEM_BASE + 0x1c)
+#define SYSTEM_PERIP_CLK_CONF_REG (DR_REG_CLKRST_BASE + 0x1c)
 /** SYSTEM_SEC_DIV_NUM : R/W; bitpos: [7:0]; default: 1;
  *  Need add description
  */
@@ -544,7 +565,7 @@ extern "C" {
 /** SYSTEM_PERIP_CLK_EN0_REG register
  *  register description
  */
-#define SYSTEM_PERIP_CLK_EN0_REG (DR_REG_SYSTEM_BASE + 0x20)
+#define SYSTEM_PERIP_CLK_EN0_REG (DR_REG_CLKRST_BASE + 0x20)
 /** SYSTEM_TIMERS_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Need add description
  */
@@ -773,7 +794,7 @@ extern "C" {
 /** SYSTEM_PERIP_CLK_EN1_REG register
  *  register description
  */
-#define SYSTEM_PERIP_CLK_EN1_REG (DR_REG_SYSTEM_BASE + 0x24)
+#define SYSTEM_PERIP_CLK_EN1_REG (DR_REG_CLKRST_BASE + 0x24)
 /** SYSTEM_RETENTION_TOP_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Need add description
  */
@@ -890,7 +911,7 @@ extern "C" {
 /** SYSTEM_PERIP_RST_EN0_REG register
  *  register description
  */
-#define SYSTEM_PERIP_RST_EN0_REG (DR_REG_SYSTEM_BASE + 0x28)
+#define SYSTEM_PERIP_RST_EN0_REG (DR_REG_CLKRST_BASE + 0x28)
 /** SYSTEM_TIMERS_RST : R/W; bitpos: [0]; default: 0;
  *  Need add description
  */
@@ -1119,7 +1140,7 @@ extern "C" {
 /** SYSTEM_PERIP_RST_EN1_REG register
  *  register description
  */
-#define SYSTEM_PERIP_RST_EN1_REG (DR_REG_SYSTEM_BASE + 0x2c)
+#define SYSTEM_PERIP_RST_EN1_REG (DR_REG_CLKRST_BASE + 0x2c)
 /** SYSTEM_RETENTION_TOP_RST : R/W; bitpos: [0]; default: 0;
  *  Need add description
  */
@@ -1236,7 +1257,7 @@ extern "C" {
 /** SYSTEM_FPGA_DBG_REG register
  *  register description
  */
-#define SYSTEM_FPGA_DBG_REG (DR_REG_SYSTEM_BASE + 0x30)
+#define SYSTEM_FPGA_DBG_REG (DR_REG_CLKRST_BASE + 0x30)
 /** SYSTEM_FPGA_DEBUG : R/W; bitpos: [31:0]; default: 4294967295;
  *  Need add description
  */
@@ -1248,7 +1269,7 @@ extern "C" {
 /** SYSTEM_REGCLK_CONF_REG register
  *  register description
  */
-#define SYSTEM_REGCLK_CONF_REG (DR_REG_SYSTEM_BASE + 0x34)
+#define SYSTEM_REGCLK_CONF_REG (DR_REG_CLKRST_BASE + 0x34)
 /** SYSTEM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Need add description
  */
@@ -1257,17 +1278,17 @@ extern "C" {
 #define SYSTEM_CLK_EN_V  0x00000001U
 #define SYSTEM_CLK_EN_S  0
 
-/** SYSTEM_DATE_REG register
+/** SYSTEM_CLKRST_DATE_REG register
  *  register description
  */
-#define SYSTEM_DATE_REG (DR_REG_SYSTEM_BASE + 0x38)
-/** SYSTEM_DATE : R/W; bitpos: [27:0]; default: 34640435;
+#define SYSTEM_CLKRST_DATE_REG (DR_REG_SYSTEM_BASE + 0x38)
+/** CLKRST_DATE : R/W; bitpos: [27:0]; default: 34672962;
  *  Need add description
  */
-#define SYSTEM_DATE    0x0FFFFFFFU
-#define SYSTEM_DATE_M  (SYSTEM_DATE_V << SYSTEM_DATE_S)
-#define SYSTEM_DATE_V  0x0FFFFFFFU
-#define SYSTEM_DATE_S  0
+#define CLKRST_DATE    0x0FFFFFFFU
+#define CLKRST_DATE_M  (CLKRST_DATE_V << CLKRST_DATE_S)
+#define CLKRST_DATE_V  0x0FFFFFFFU
+#define CLKRST_DATE_S  0
 
 #ifdef __cplusplus
 }

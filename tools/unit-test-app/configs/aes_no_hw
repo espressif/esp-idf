@@ -1,4 +1,4 @@
-# This config is for all targets
+CONFIG_IDF_TARGET="esp32"
 TEST_EXCLUDE_COMPONENTS=bt app_update test_utils
 TEST_COMPONENTS=mbedtls
 CONFIG_MBEDTLS_HARDWARE_AES=n

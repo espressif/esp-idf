@@ -1,4 +1,6 @@
 menu "Hardware Settings"
+    orsource "./port/$IDF_TARGET/Kconfig.spiram"
+
     menu "MAC Config"
         config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
             bool
@@ -13,7 +15,7 @@ menu "Hardware Settings"
             bool
 
             # Insert chip-specific MAC config
-            rsource "./port/$IDF_TARGET/Kconfig.mac"
+        rsource "./port/$IDF_TARGET/Kconfig.mac"
     endmenu
 
     menu "Sleep Config"
@@ -36,10 +38,10 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
-                esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
+                esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
                 pulse during light sleep, with specific condition
 
                 - GPIO needs to be configured as input-mode only
@@ -69,11 +71,33 @@ menu "Hardware Settings"
                 increase during light sleep. If the CS pin of Flash has an external
                 pull-up, you do not need to select this option, otherwise, you
                 should enable this option.
+
+        config ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
+            int "Extra delay in deep sleep wake stub (in us)"
+            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+            default 2000
+            range 0 5000
+            help
+                When the chip exits deep sleep, the CPU and the flash chip are powered on
+                at the same time. CPU will run deep sleep stub first, and then
+                proceed to load code from flash. Some flash chips need sufficient
+                time to pass between power on and first read operation. By default,
+                without any extra delay, this time is approximately 900us, although
+                some flash chip types need more than that.
+
+                By default extra delay is set to 2000us. When optimizing startup time
+                for applications which require it, this value may be reduced.
+
+                If you are seeing "flash read err, 1000" message printed to the
+                console after deep sleep reset, try increasing this value.
+
     endmenu
 
     menu "RTC Clock Config"
-        # This is used for configure the RTC clock.
+        orsource "./port/$IDF_TARGET/Kconfig.rtc"
+
         config RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
+            # This is used for configure the RTC clock.
             bool "Keep BBPLL clock always work"
             depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
             default y
@@ -85,4 +109,56 @@ menu "Hardware Settings"
                 If you want to use USB_SERIAL_JTAG under sw_reset case or sleep-wakeup case, you shoule select
                 this option. But be aware that this might increase the power consumption.
     endmenu
+
+    menu "Peripheral Control"
+        config PERIPH_CTRL_FUNC_IN_IRAM
+            bool "Place peripheral control functions into IRAM"
+            default n
+            help
+                Place peripheral control functions (e.g. periph_module_reset) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+    endmenu
+
+    menu "MMU Config"
+        # This Config is used for configure the MMU.
+        # Be configured based on flash size selection.
+        # Invisible to users.
+
+        config MMU_PAGE_SIZE_16KB
+            bool
+            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_1MB
+            default n
+
+        config MMU_PAGE_SIZE_32KB
+            bool
+            default y if IDF_TARGET_ESP32C2 && ESPTOOLPY_FLASHSIZE_2MB
+            default n
+
+        config MMU_PAGE_SIZE_64KB
+            bool
+            default y if !MMU_PAGE_SIZE_32KB && !MMU_PAGE_SIZE_16KB
+            default n
+
+        config MMU_PAGE_MODE
+            string
+            default "16KB" if MMU_PAGE_SIZE_16KB
+            default "32KB" if MMU_PAGE_SIZE_32KB
+            default "64KB" if MMU_PAGE_SIZE_64KB
+
+        config MMU_PAGE_SIZE
+            # Some chips support different flash MMU page sizes: 64k, 32k, 16k.
+            # Since the number of MMU pages is limited, the maximum flash size supported
+            # for each page size is reduced proportionally: 4 MB, 2MB, 1MB. To make best
+            # use of small flash sizes (reducing the wasted space due to alignment), we
+            # need to use the smallest possible MMU page size for the given flash size.
+            hex
+            default 0x4000 if MMU_PAGE_SIZE_16KB
+            default 0x8000 if MMU_PAGE_SIZE_32KB
+            default 0x10000 if MMU_PAGE_SIZE_64KB
+
+    endmenu
+
+    # Insert chip-specific HW config
+    orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+
 endmenu

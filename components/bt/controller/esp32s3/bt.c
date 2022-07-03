@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,37 +138,37 @@ typedef void (* osi_intr_handler)(void);
 struct osi_funcs_t {
     uint32_t _magic;
     uint32_t _version;
-    void (*_interrupt_set)(int32_t cpu_no, int32_t intr_source, int32_t interrupt_no, int32_t interrpt_prio);
-    void (*_interrupt_clear)(int32_t interrupt_source, int32_t interrupt_no);
-    void (*_interrupt_handler_set)(int32_t interrupt_no, void *fn, void *arg);
+    void (*_interrupt_set)(int cpu_no, int intr_source, int interrupt_no, int interrpt_prio);
+    void (*_interrupt_clear)(int interrupt_source, int interrupt_no);
+    void (*_interrupt_handler_set)(int interrupt_no, void *fn, void *arg);
     void (*_interrupt_disable)(void);
     void (*_interrupt_restore)(void);
     void (*_task_yield)(void);
     void (*_task_yield_from_isr)(void);
     void *(*_semphr_create)(uint32_t max, uint32_t init);
     void (*_semphr_delete)(void *semphr);
-    int32_t (*_semphr_take_from_isr)(void *semphr, void *hptw);
-    int32_t (*_semphr_give_from_isr)(void *semphr, void *hptw);
-    int32_t (*_semphr_take)(void *semphr, uint32_t block_time_ms);
-    int32_t (*_semphr_give)(void *semphr);
+    int (*_semphr_take_from_isr)(void *semphr, void *hptw);
+    int (*_semphr_give_from_isr)(void *semphr, void *hptw);
+    int (*_semphr_take)(void *semphr, uint32_t block_time_ms);
+    int (*_semphr_give)(void *semphr);
     void *(*_mutex_create)(void);
     void (*_mutex_delete)(void *mutex);
-    int32_t (*_mutex_lock)(void *mutex);
-    int32_t (*_mutex_unlock)(void *mutex);
+    int (*_mutex_lock)(void *mutex);
+    int (*_mutex_unlock)(void *mutex);
     void *(* _queue_create)(uint32_t queue_len, uint32_t item_size);
     void (* _queue_delete)(void *queue);
-    int32_t (* _queue_send)(void *queue, void *item, uint32_t block_time_ms);
-    int32_t (* _queue_send_from_isr)(void *queue, void *item, void *hptw);
-    int32_t (* _queue_recv)(void *queue, void *item, uint32_t block_time_ms);
-    int32_t (* _queue_recv_from_isr)(void *queue, void *item, void *hptw);
-    int32_t (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
+    int (* _queue_send)(void *queue, void *item, uint32_t block_time_ms);
+    int (* _queue_send_from_isr)(void *queue, void *item, void *hptw);
+    int (* _queue_recv)(void *queue, void *item, uint32_t block_time_ms);
+    int (* _queue_recv_from_isr)(void *queue, void *item, void *hptw);
+    int (* _task_create)(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
     void (* _task_delete)(void *task_handle);
     bool (* _is_in_isr)(void);
     int (* _cause_sw_intr_to_core)(int core_id, int intr_no);
     void *(* _malloc)(size_t size);
     void *(* _malloc_internal)(size_t size);
     void (* _free)(void *p);
-    int32_t (* _read_efuse_mac)(uint8_t mac[6]);
+    int (* _read_efuse_mac)(uint8_t mac[6]);
     void (* _srand)(unsigned int seed);
     int (* _rand)(void);
     uint32_t (* _btdm_lpcycles_2_hus)(uint32_t cycles, uint32_t *error_corr);
@@ -239,6 +239,7 @@ extern bool btdm_deep_sleep_mem_init(void);
 extern void btdm_deep_sleep_mem_deinit(void);
 extern void btdm_ble_power_down_dma_copy(bool copy);
 extern uint8_t btdm_sleep_clock_sync(void);
+extern void sdk_config_extend_set_pll_track(bool enable);
 
 #if CONFIG_MAC_BB_PD
 extern void esp_mac_bb_power_down(void);
@@ -268,38 +269,38 @@ extern char _bt_tmp_bss_end;
 /* Local Function Declare
  *********************************************************************
  */
-static void interrupt_set_wrapper(int32_t cpu_no, int32_t intr_source, int32_t intr_num, int32_t intr_prio);
-static void interrupt_clear_wrapper(int32_t intr_source, int32_t intr_num);
+static void interrupt_set_wrapper(int cpu_no, int intr_source, int intr_num, int intr_prio);
+static void interrupt_clear_wrapper(int intr_source, int intr_num);
 static void interrupt_handler_set_wrapper(int n, void *fn, void *arg);
-static void IRAM_ATTR interrupt_disable(void);
-static void IRAM_ATTR interrupt_restore(void);
-static void IRAM_ATTR task_yield_from_isr(void);
+static void interrupt_disable(void);
+static void interrupt_restore(void);
+static void task_yield_from_isr(void);
 static void *semphr_create_wrapper(uint32_t max, uint32_t init);
 static void semphr_delete_wrapper(void *semphr);
-static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw);
-static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw);
-static int32_t  semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
-static int32_t  semphr_give_wrapper(void *semphr);
+static int semphr_take_from_isr_wrapper(void *semphr, void *hptw);
+static int semphr_give_from_isr_wrapper(void *semphr, void *hptw);
+static int  semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
+static int  semphr_give_wrapper(void *semphr);
 static void *mutex_create_wrapper(void);
 static void mutex_delete_wrapper(void *mutex);
-static int32_t mutex_lock_wrapper(void *mutex);
-static int32_t mutex_unlock_wrapper(void *mutex);
+static int mutex_lock_wrapper(void *mutex);
+static int mutex_unlock_wrapper(void *mutex);
 static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
 static void queue_delete_wrapper(void *queue);
-static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
-static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
-static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
-static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
+static int queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
+static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
-static bool IRAM_ATTR is_in_isr_wrapper(void);
+static bool is_in_isr_wrapper(void);
 static void *malloc_internal_wrapper(size_t size);
-static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6]);
-static void IRAM_ATTR srand_wrapper(unsigned int seed);
-static int IRAM_ATTR rand_wrapper(void);
-static uint32_t IRAM_ATTR btdm_lpcycles_2_hus(uint32_t cycles, uint32_t *error_corr);
-static uint32_t IRAM_ATTR btdm_hus_2_lpcycles(uint32_t hus);
-static bool IRAM_ATTR btdm_sleep_check_duration(int32_t *slot_cnt);
+static int read_mac_wrapper(uint8_t mac[6]);
+static void srand_wrapper(unsigned int seed);
+static int rand_wrapper(void);
+static uint32_t btdm_lpcycles_2_hus(uint32_t cycles, uint32_t *error_corr);
+static uint32_t btdm_hus_2_lpcycles(uint32_t hus);
+static bool btdm_sleep_check_duration(int32_t *slot_cnt);
 static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles);
 static void btdm_sleep_enter_phase2_wrapper(void);
 static void btdm_sleep_exit_phase3_wrapper(void);
@@ -431,16 +432,16 @@ static inline void esp_bt_power_domain_off(void)
     esp_wifi_bt_power_domain_off();
 }
 
-static void interrupt_set_wrapper(int32_t cpu_no, int32_t intr_source, int32_t intr_num, int32_t intr_prio)
+static void interrupt_set_wrapper(int cpu_no, int intr_source, int intr_num, int intr_prio)
 {
     esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 }
 
-static void interrupt_clear_wrapper(int32_t intr_source, int32_t intr_num)
+static void interrupt_clear_wrapper(int intr_source, int intr_num)
 {
 }
 
-static void interrupt_handler_set_wrapper(int32_t n, void *fn, void *arg)
+static void interrupt_handler_set_wrapper(int n, void *fn, void *arg)
 {
     xt_set_interrupt_handler(n, (xt_handler)fn, arg);
 }
@@ -872,25 +873,21 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode)
     return ESP_OK;
 }
 
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_MAC_BB_PD
 static void IRAM_ATTR btdm_mac_bb_power_down_cb(void)
 {
     if (s_lp_cntl.mac_bb_pd && s_lp_stat.mac_bb_pd == 0) {
-#if (CONFIG_MAC_BB_PD)
         btdm_ble_power_down_dma_copy(true);
-#endif
         s_lp_stat.mac_bb_pd = 1;
     }
 }
 
 static void IRAM_ATTR btdm_mac_bb_power_up_cb(void)
 {
-#if (CONFIG_MAC_BB_PD)
     if (s_lp_cntl.mac_bb_pd && s_lp_stat.mac_bb_pd) {
         btdm_ble_power_down_dma_copy(false);
         s_lp_stat.mac_bb_pd = 0;
     }
-#endif
 }
 #endif
 
@@ -934,9 +931,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     // overwrite some parameters
     cfg->magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL;
 
+    sdk_config_extend_set_pll_track(false);
+
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_pd_mem_init();
 #endif
+    esp_phy_pd_mem_init();
     esp_bt_power_domain_on();
 
     btdm_controller_mem_init();
@@ -978,7 +978,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         s_lp_cntl.no_light_sleep = 1;
 
         if (s_lp_cntl.enable) {
-#if (CONFIG_MAC_BB_PD)
+#if CONFIG_MAC_BB_PD
             if (!btdm_deep_sleep_mem_init()) {
                 err = ESP_ERR_NO_MEM;
                 goto error;
@@ -1016,16 +1016,16 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
 #if CONFIG_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
         // check whether or not EXT_CRYS is working
-        if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // External 32 kHz XTAL
             s_lp_cntl.no_light_sleep = 0;
         } else {
             ESP_LOGW(BT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
                  "light sleep mode will not be able to apply when bluetooth is enabled");
         }
-#elif (CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW)
+#elif CONFIG_BT_CTRL_LPCLK_SEL_RTC_SLOW
         // check whether or not EXT_CRYS is working
-        if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) {
+        if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_SLOW) {
             s_lp_cntl.lpclk_sel = BTDM_LPCLK_SEL_RTC_SLOW; // Internal 150 kHz RC oscillator
             ESP_LOGW(BTDM_LOG_TAG, "Internal 150kHz RC osciallator. The accuracy of this clock is a lot larger than 500ppm which is "
                  "required in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.");
@@ -1041,7 +1041,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         bool set_div_ret __attribute__((unused));
         if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
             select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
-            set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2);
+            set_div_ret = btdm_lpclk_set_div(esp_clk_xtal_freq() * 2 / MHZ);
             assert(select_src_ret && set_div_ret);
             btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
             btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
@@ -1125,7 +1125,7 @@ error:
             s_btdm_slp_tmr = NULL;
         }
 
-#if (CONFIG_MAC_BB_PD)
+#if CONFIG_MAC_BB_PD
         if (s_lp_cntl.mac_bb_pd) {
             btdm_deep_sleep_mem_deinit();
             s_lp_cntl.mac_bb_pd = 0;
@@ -1171,7 +1171,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
     // deinit low power control resources
     do {
-#if (CONFIG_MAC_BB_PD)
+#if CONFIG_MAC_BB_PD
         btdm_deep_sleep_mem_deinit();
 #endif
 
@@ -1208,6 +1208,10 @@ esp_err_t esp_bt_controller_deinit(void)
 #endif
 
     esp_bt_power_domain_off();
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_deinit();
+#endif
+    esp_phy_pd_mem_deinit();
 
     free(osi_funcs_p);
     osi_funcs_p = NULL;

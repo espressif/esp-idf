@@ -53,6 +53,9 @@
 #if __has_include("esp_tls_errors.h")
 #include "esp_tls_errors.h"
 #endif
+#if __has_include("esp_transport.h")
+#include "esp_transport.h"
+#endif
 #if __has_include("esp_wifi.h")
 #include "esp_wifi.h"
 #endif
@@ -132,8 +135,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_NVS_NOT_INITIALIZED),                    /*  4353 0x1101 The storage driver is not initialized */
 #   endif
 #   ifdef      ESP_ERR_NVS_NOT_FOUND
-    ERR_TBL_IT(ESP_ERR_NVS_NOT_FOUND),                          /*  4354 0x1102 Id namespace doesn’t exist yet and mode
-                                                                                is NVS_READONLY */
+    ERR_TBL_IT(ESP_ERR_NVS_NOT_FOUND),                          /*  4354 0x1102 A requested entry couldn't be found or
+                                                                                namespace doesn’t exist yet and mode is
+                                                                                NVS_READONLY */
 #   endif
 #   ifdef      ESP_ERR_NVS_TYPE_MISMATCH
     ERR_TBL_IT(ESP_ERR_NVS_TYPE_MISMATCH),                      /*  4355 0x1103 The type of set or get operation doesn't
@@ -183,7 +187,8 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 and call nvs_flash_init again. */
 #   endif
 #   ifdef      ESP_ERR_NVS_VALUE_TOO_LONG
-    ERR_TBL_IT(ESP_ERR_NVS_VALUE_TOO_LONG),                     /*  4366 0x110e String or blob length is longer than
+    ERR_TBL_IT(ESP_ERR_NVS_VALUE_TOO_LONG),                     /*  4366 0x110e Value doesn't fit into the entry or
+                                                                                string or blob length is longer than
                                                                                 supported by the implementation */
 #   endif
 #   ifdef      ESP_ERR_NVS_PART_NOT_FOUND
@@ -794,6 +799,23 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_MEMPROT_AREA_INVALID
     ERR_TBL_IT(ESP_ERR_MEMPROT_AREA_INVALID),                   /* 53255 0xd007 */
+#   endif
+    // components/tcp_transport/include/esp_transport.h
+#   ifdef      ESP_ERR_TCP_TRANSPORT_BASE
+    ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_BASE),                     /* 57344 0xe000 Starting number of TCP Transport error codes */
+#   endif
+#   ifdef      ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT),       /* 57345 0xe001 Connection has timed out */
+#   endif
+#   ifdef      ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN
+    ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN), /* 57346 0xe002 Read FIN from peer and the connection
+                                                                                has closed (in a clean way) */
+#   endif
+#   ifdef      ESP_ERR_TCP_TRANSPORT_CONNECTION_FAILED
+    ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_CONNECTION_FAILED),        /* 57347 0xe003 Failed to connect to the peer */
+#   endif
+#   ifdef      ESP_ERR_TCP_TRANSPORT_NO_MEM
+    ERR_TBL_IT(ESP_ERR_TCP_TRANSPORT_NO_MEM),                   /* 57348 0xe004 Memory allocation failed */
 #   endif
 };
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP

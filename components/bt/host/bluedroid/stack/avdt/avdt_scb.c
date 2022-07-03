@@ -100,7 +100,8 @@ const char *const avdt_scb_evt_str[] = {
     "TC_CLOSE_EVT",
     "TC_CONG_EVT",
     "TC_DATA_EVT",
-    "CC_CLOSE_EVT"
+    "CC_CLOSE_EVT",
+    "DELAY_RPT_RSP_TOUT_EVT"
 };
 
 #endif
@@ -170,7 +171,10 @@ const tAVDT_SCB_ACTION avdt_scb_action[] = {
     avdt_scb_chk_snd_pkt,
     avdt_scb_tc_timer,
     avdt_scb_clr_vars,
-    avdt_scb_dealloc
+    avdt_scb_dealloc,
+    avdt_scb_hdl_delay_rpt_tout,
+    avdt_scb_init_open_req,
+    avdt_scb_send_delay_report_cmd
 };
 
 /* state table information */
@@ -192,7 +196,7 @@ const UINT8 avdt_scb_st_idle[][AVDT_SCB_NUM_COLS] = {
     /* API_SECURITY_REQ_EVT */  {AVDT_SCB_CB_ERR,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* API_ABORT_REQ_EVT */     {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* API_GETCONFIG_RSP_EVT */ {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
-    /* API_SETCONFIG_RSP_EVT */ {AVDT_SCB_SND_SETCONFIG_RSP,    AVDT_SCB_IGNORE,            AVDT_SCB_CONF_ST},
+    /* API_SETCONFIG_RSP_EVT */ {AVDT_SCB_SND_SETCONFIG_RSP,    AVDT_SCB_SEND_DELAY_REPORT_CMD_EVT, AVDT_SCB_CONF_ST},
     /* API_SETCONFIG_REJ_EVT */ {AVDT_SCB_SND_SETCONFIG_REJ,    AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* API_OPEN_RSP_EVT */      {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* API_CLOSE_RSP_EVT */     {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
@@ -210,7 +214,7 @@ const UINT8 avdt_scb_st_idle[][AVDT_SCB_NUM_COLS] = {
     /* MSG_SECURITY_CMD_EVT */  {AVDT_SCB_REJ_STATE,            AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* MSG_DELAY_RPT_CMD_EVT */ {AVDT_SCB_REJ_STATE,            AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* MSG_DELAY_RPT_RSP_EVT */ {AVDT_SCB_HDL_DELAY_RPT_RSP,    AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
-    /* MSG_SETCONFIG_RSP_EVT */ {AVDT_SCB_HDL_SETCONFIG_RSP,    AVDT_SCB_IGNORE,            AVDT_SCB_CONF_ST},
+    /* MSG_SETCONFIG_RSP_EVT */ {AVDT_SCB_HDL_SETCONFIG_RSP,    AVDT_SCB_INIT_OPEN_REQ_EVT, AVDT_SCB_CONF_ST},
     /* MSG_GETCONFIG_RSP_EVT */ {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* MSG_OPEN_RSP_EVT */      {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* MSG_START_RSP_EVT */     {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
@@ -228,7 +232,8 @@ const UINT8 avdt_scb_st_idle[][AVDT_SCB_NUM_COLS] = {
     /* TC_CLOSE_EVT */          {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* TC_CONG_EVT */           {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* TC_DATA_EVT */           {AVDT_SCB_DROP_PKT,             AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
-    /* CC_CLOSE_EVT */          {AVDT_SCB_CLR_VARS,             AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST}
+    /* CC_CLOSE_EVT */          {AVDT_SCB_CLR_VARS,             AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
+    /* DELAY_RPT_RSP_TOUT_EVT */{AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST}
 };
 
 /* state table for configured state */
@@ -281,7 +286,8 @@ const UINT8 avdt_scb_st_conf[][AVDT_SCB_NUM_COLS] = {
     /* TC_CLOSE_EVT */          {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_CONF_ST},
     /* TC_CONG_EVT */           {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_CONF_ST},
     /* TC_DATA_EVT */           {AVDT_SCB_DROP_PKT,             AVDT_SCB_IGNORE,            AVDT_SCB_CONF_ST},
-    /* CC_CLOSE_EVT */          {AVDT_SCB_HDL_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST}
+    /* CC_CLOSE_EVT */          {AVDT_SCB_HDL_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
+    /* DELAY_RPT_RSP_TOUT_EVT */{AVDT_SCB_HDL_DELAY_RPT_TOUT,   AVDT_SCB_IGNORE,            AVDT_SCB_CONF_ST}
 };
 
 /* state table for opening state */
@@ -334,7 +340,8 @@ const UINT8 avdt_scb_st_opening[][AVDT_SCB_NUM_COLS] = {
     /* TC_CLOSE_EVT */          {AVDT_SCB_HDL_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* TC_CONG_EVT */           {AVDT_SCB_CONG_STATE,           AVDT_SCB_IGNORE,            AVDT_SCB_OPENING_ST},
     /* TC_DATA_EVT */           {AVDT_SCB_DROP_PKT,             AVDT_SCB_IGNORE,            AVDT_SCB_OPENING_ST},
-    /* CC_CLOSE_EVT */          {AVDT_SCB_SND_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST}
+    /* CC_CLOSE_EVT */          {AVDT_SCB_SND_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST},
+    /* DELAY_RPT_RSP_TOUT_EVT */{AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_OPENING_ST}
 };
 
 /* state table for open state */
@@ -392,7 +399,8 @@ const UINT8 avdt_scb_st_open[][AVDT_SCB_NUM_COLS] = {
 #endif
     /* TC_CONG_EVT */           {AVDT_SCB_CONG_STATE,           AVDT_SCB_IGNORE,            AVDT_SCB_OPEN_ST},
     /* TC_DATA_EVT */           {AVDT_SCB_DROP_PKT,             AVDT_SCB_IGNORE,            AVDT_SCB_OPEN_ST},
-    /* CC_CLOSE_EVT */          {AVDT_SCB_SND_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST}
+    /* CC_CLOSE_EVT */          {AVDT_SCB_SND_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST},
+    /* DELAY_RPT_RSP_TOUT_EVT */{AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_OPEN_ST}
 };
 
 /* state table for streaming state */
@@ -445,7 +453,8 @@ const UINT8 avdt_scb_st_stream[][AVDT_SCB_NUM_COLS] = {
     /* TC_CLOSE_EVT */          {AVDT_SCB_HDL_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* TC_CONG_EVT */           {AVDT_SCB_CONG_STATE,           AVDT_SCB_CHK_SND_PKT,       AVDT_SCB_STREAM_ST},
     /* TC_DATA_EVT */           {AVDT_SCB_HDL_PKT,              AVDT_SCB_IGNORE,            AVDT_SCB_STREAM_ST},
-    /* CC_CLOSE_EVT */          {AVDT_SCB_SND_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST}
+    /* CC_CLOSE_EVT */          {AVDT_SCB_SND_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST},
+    /* DELAY_RPT_RSP_TOUT_EVT */{AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_STREAM_ST}
 };
 
 /* state table for closing state */
@@ -498,7 +507,8 @@ const UINT8 avdt_scb_st_closing[][AVDT_SCB_NUM_COLS] = {
     /* TC_CLOSE_EVT */          {AVDT_SCB_HDL_TC_CLOSE,         AVDT_SCB_IGNORE,            AVDT_SCB_IDLE_ST},
     /* TC_CONG_EVT */           {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST},
     /* TC_DATA_EVT */           {AVDT_SCB_DROP_PKT,             AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST},
-    /* CC_CLOSE_EVT */          {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST}
+    /* CC_CLOSE_EVT */          {AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST},
+    /* DELAY_RPT_RSP_TOUT_EVT */{AVDT_SCB_IGNORE,               AVDT_SCB_IGNORE,            AVDT_SCB_CLOSING_ST}
 };
 
 /* type for state table */
@@ -570,6 +580,7 @@ void avdt_scb_init(void)
 {
     memset(&avdt_cb.scb[0], 0, sizeof(tAVDT_SCB) * AVDT_NUM_SEPS);
     avdt_cb.p_scb_act = (tAVDT_SCB_ACTION *) avdt_scb_action;
+    avdt_cb.delay_value = AVDT_DELAY_RPT_DFT_VALUE;
 }
 
 

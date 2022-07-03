@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -22,6 +14,7 @@
 #include "esp_vfs_dev.h"
 #include "esp_vfs_fat.h"
 #include "wear_levelling.h"
+#include "test_utils.h"
 
 static wl_handle_t test_wl_handle;
 
@@ -75,12 +68,12 @@ static inline void test_spi_flash_setup(void)
         .max_files = 5
     };
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
 }
 
 static inline void test_spi_flash_teardown(void)
 {
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
 }
 
 static inline void test_fatfs_create_file(const char *name)
@@ -96,6 +89,8 @@ static inline void test_fatfs_delete_file(const char *name)
     TEST_ASSERT_EQUAL(ret, 0);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5139
 TEST_CASE("Can use access() for FATFS", "[vfs][fatfs][wear_levelling]")
 {
     const char *path = "/spiflash/access.txt";
@@ -135,3 +130,4 @@ TEST_CASE("Can use access() for FATFS", "[vfs][fatfs][wear_levelling]")
 
     test_spi_flash_teardown();
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

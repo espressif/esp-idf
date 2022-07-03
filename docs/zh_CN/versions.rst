@@ -43,6 +43,8 @@ ESP-IDF 在 GitHub 平台上的完整发布历史请见 `发布说明页面`_。
 
 - 如需使用稳定版本中没有的新特性，但同时又不希望受到 master 分支更新的影响，您可以将一个最适合您的稳定版本 :ref:`更新至一个预发布版本` 或 :ref:`更新至一个发布分支`。
 
+- 如需使用其他基于 ESP-IDF 的项目，请先查看该项目的文档，以确定其兼容的 ESP-IDF 版本。
+
 有关如何更新 ESP-IDF 本地副本的内容，请参考 :ref:`updating` 章节。
 
 .. _versioning-scheme:
@@ -50,7 +52,7 @@ ESP-IDF 在 GitHub 平台上的完整发布历史请见 `发布说明页面`_。
 版本管理
 -----------------
 
-ESP-IDF 采用了 `语义版本管理方法 <http://semver.org/>`_，即您可以从字面含义理解每个版本的差异。其中
+ESP-IDF 采用了 `语义版本管理方法 <https://semver.org/>`_，即您可以从字面含义理解每个版本的差异。其中
 
 - 主要版本（例 ``v3.0``）代表有重大更新，包括增加新特性、改变现有特性及移除已弃用的特性。
 
@@ -252,7 +254,7 @@ Git 工作流
 
     发布分支并不会有专门的配套文档，建议您使用与本分支最接近版本的文档。
 
-.. _`发布说明页面`: http://github.com/espressif/esp-idf/releases
+.. _`发布说明页面`: https://github.com/espressif/esp-idf/releases
 .. _`分支列表`: https://github.com/espressif/esp-idf/branches
 .. _`标签列表`: https://github.com/espressif/esp-idf/tags
 .. _`最新稳定版本`: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/

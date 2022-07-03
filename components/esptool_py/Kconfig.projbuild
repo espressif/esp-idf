@@ -68,34 +68,56 @@ menu "Serial flasher config"
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
-        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C2
-        default ESPTOOLPY_FLASHFREQ_80M
-        help
-            The SPI flash frequency to be used.
-
+        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32
+        default ESPTOOLPY_FLASHFREQ_80M if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+        default ESPTOOLPY_FLASHFREQ_60M if IDF_TARGET_ESP32C2
+        default ESPTOOLPY_FLASHFREQ_48M if IDF_TARGET_ESP32H2
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
             bool "120 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_120M && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_60M
+            bool "60 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_48M
+            bool "48 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_48M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_40M
             bool "40 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_30M
+            bool "30 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_26M
             bool "26 MHz"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            depends on SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_24M
+            bool "24 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_24M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_20M
             bool "20 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_15M
+            bool "15 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
     endchoice
 
     config ESPTOOLPY_FLASHFREQ
         string
         # On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
         # We currently define this to `80m`.
-        default "80m" if ESPTOOLPY_FLASHFREQ_120M
-        default "80m" if ESPTOOLPY_FLASHFREQ_80M
-        default "40m" if ESPTOOLPY_FLASHFREQ_40M
-        default "26m" if ESPTOOLPY_FLASHFREQ_26M
-        default "20m" if ESPTOOLPY_FLASHFREQ_20M
+        default '80m' if ESPTOOLPY_FLASHFREQ_120M
+        default '80m' if ESPTOOLPY_FLASHFREQ_80M
+        default '60m' if ESPTOOLPY_FLASHFREQ_60M
+        default '48m' if ESPTOOLPY_FLASHFREQ_48M
+        default '30m' if ESPTOOLPY_FLASHFREQ_30M
+        default '24m' if ESPTOOLPY_FLASHFREQ_24M
+        default '40m' if ESPTOOLPY_FLASHFREQ_40M
+        default '26m' if ESPTOOLPY_FLASHFREQ_26M
+        default '20m' if ESPTOOLPY_FLASHFREQ_20M
+        default '20m' # if no clock can match in bin headers, go with minimal.
 
 
     choice ESPTOOLPY_FLASHSIZE
@@ -133,13 +155,17 @@ menu "Serial flasher config"
         default "64MB" if ESPTOOLPY_FLASHSIZE_64MB
         default "128MB" if ESPTOOLPY_FLASHSIZE_128MB
 
-    config ESPTOOLPY_FLASHSIZE_DETECT
+    config ESPTOOLPY_HEADER_FLASHSIZE_UPDATE
         bool "Detect flash size when flashing bootloader"
-        default y
+        default n
         help
             If this option is set, flashing the project will automatically detect
             the flash size of the target chip and update the bootloader image
             before it is flashed.
+
+            Enabling this option turns off the image protection against corruption
+            by a SHA256 digest. Updating the bootloader image before flashing would
+            invalidate the digest.
 
     choice ESPTOOLPY_BEFORE
         prompt "Before flashing"

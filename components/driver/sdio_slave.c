@@ -403,10 +403,6 @@ esp_err_t sdio_slave_start(void)
     critical_enter_recv();
     sdio_slave_hal_recv_start(context.hal);
     critical_exit_recv();
-    ret = ESP_OK;
-    if (ret != ESP_OK) {
-        return ret;
-    }
 
     sdio_slave_hal_set_ioready(context.hal, true);
     return ESP_OK;

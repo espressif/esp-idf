@@ -1,5 +1,5 @@
 /**
- *  SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1435,7 +1435,7 @@ typedef struct {
     mcpwm_fh_status_reg_t fh_status;
 } mcpwm_operator_reg_t;
 
-typedef struct {
+typedef struct mcpwm_dev_t {
     volatile mcpwm_clk_cfg_reg_t clk_cfg;
     volatile mcpwm_timer_regs_t timer[3];
     volatile mcpwm_timer_synci_cfg_reg_t timer_synci_cfg;
