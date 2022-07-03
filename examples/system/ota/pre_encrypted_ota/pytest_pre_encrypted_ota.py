@@ -76,11 +76,11 @@ def test_examples_protocol_pre_encrypted_ota_example(dut: Dut) -> None:
 
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting Pre Encrypted OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + enc_bin_name))

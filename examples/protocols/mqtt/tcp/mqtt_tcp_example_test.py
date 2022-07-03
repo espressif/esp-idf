@@ -76,10 +76,10 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     dut1.start_app()
     # waiting for getting the IP address
     try:
-        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
+        ip_address = dut1.expect(re.compile(r'IPv4 address: ([^,]+),'), timeout=30)
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
     print('writing to device: {}'.format('mqtt://' + host_ip + '\n'))
     dut1.write('mqtt://' + host_ip + '\n')

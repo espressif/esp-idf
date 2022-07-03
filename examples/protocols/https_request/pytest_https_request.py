@@ -98,10 +98,10 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut.expect(r' (sta|eth) ip: (\d+\.\d+\.\d+\.\d+)', timeout=60)[2].decode()
-        print('Connected to AP with IP: {}'.format(ip_address))
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[2].decode()
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
     dut.expect('Start https_request example', timeout=30)
 
@@ -150,10 +150,10 @@ def test_examples_protocol_https_request_dynamic_buffers(dut: Dut) -> None:
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut.expect(r' (sta|eth) ip: (\d+\.\d+\.\d+\.\d+)', timeout=60)[2].decode()
-        print('Connected to AP with IP: {}'.format(ip_address))
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[1].decode()
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
     # only check if one connection is established
     logging.info("Testing for \"https_request using crt bundle\" with mbedtls dynamic resource enabled")
@@ -188,10 +188,10 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut.expect(r' (sta|eth) ip: (\d+\.\d+\.\d+\.\d+)', timeout=60)[2].decode()
-        print('Connected to AP with IP: {}'.format(ip_address))
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[1].decode()
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
     # Check for connection using crt bundle
     logging.info("Testing for \"https_request using crt bundle\"")

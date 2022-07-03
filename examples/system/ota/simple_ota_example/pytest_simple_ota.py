@@ -138,11 +138,11 @@ def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
         check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
         check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
         try:
-            ip_address = dut.expect(r' sta ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -172,13 +172,13 @@ def test_examples_protocol_simple_ota_example_ethernet_with_spiram_config(dut: D
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-        dut.expect('Loaded app from partition at offset 0x10000', timeout=30)
+        dut.expect('Loaded app from partition at offset 0x10000', timeout=30))
         try:
-            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -215,11 +215,11 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(dut: Dut) ->
         dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
         dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
         try:
-            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -255,11 +255,11 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
         dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
         dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
         try:
-            ip_address = dut.expect(r' sta ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -295,11 +295,11 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
         check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
         check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
         try:
-            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
@@ -338,11 +338,11 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
         check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
         check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
         try:
-            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))

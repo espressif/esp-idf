@@ -45,7 +45,7 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')
     idf_path = get_sdk_path()
 
-    dut_ip = dut.expect(r'esp_netif_handlers: sta ip: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')[1].decode()
+    dut_ip = dut.expect(r'IPv4 address: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')[1].decode()
     dut.expect('esp_https_server: Starting server')
     dut.expect('esp_https_server: Server listening on port 443')
     dut.expect('control: esp_local_ctrl service started with name : my_esp_ctrl_device')

@@ -154,11 +154,11 @@ def test_examples_protocol_native_ota_example(dut: Dut) -> None:
         for i in range(iterations):
             dut.expect('Loaded app from partition at offset', timeout=60)
             try:
-                ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-                print('Connected to AP with IP: {}'.format(ip_address))
+                ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+                print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
             except pexpect.exceptions.TIMEOUT:
                 thread1.terminate()
-                raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+                raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
             dut.expect('Starting OTA example', timeout=30)
 
             print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
@@ -203,11 +203,11 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
         thread1.start()
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
@@ -253,11 +253,11 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
         thread1.start()
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
@@ -302,11 +302,11 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
         thread1.start()
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
@@ -336,10 +336,10 @@ def test_examples_protocol_native_ota_example_chunked(dut: Dut) -> None:
     try:
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
-            print('Connected to AP with IP: {}'.format(ip_address))
+            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
         dut.expect('Starting OTA example', timeout=30)
         print('writing to device: {}'.format('https://' + host_ip + ':8070/' + bin_name))
