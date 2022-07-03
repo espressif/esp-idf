@@ -93,7 +93,7 @@ success_response = '<h1>Hello Secure World!</h1>'
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_protocol_https_server_simple(dut: Dut) -> None:
     """
     steps: |
@@ -168,7 +168,7 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 @pytest.mark.parametrize('config', ['dynamic_buffer',], indirect=True)
 def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None:
     # Test with mbedTLS dynamic buffer feature

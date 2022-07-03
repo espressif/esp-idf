@@ -7,17 +7,10 @@ import time
 from threading import Thread
 
 import ttfw_idf
+from common_test_methods import get_my_ip4_by_dest_ip
 from tiny_test_fw import DUT
 
 msgid = -1
-
-
-def get_my_ip():
-    s1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s1.connect(('8.8.8.8', 80))
-    my_ip = s1.getsockname()[0]
-    s1.close()
-    return my_ip
 
 
 def mqqt_server_sketch(my_ip, port):
@@ -68,18 +61,19 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, 'mqtt_tcp.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('mqtt_tcp_bin_size', '{}KB'.format(bin_size // 1024))
-    # 1. start mqtt broker sketch
-    host_ip = get_my_ip()
-    thread1 = Thread(target=mqqt_server_sketch, args=(host_ip,1883))
-    thread1.start()
-    # 2. start the dut test and wait till client gets IP address
+    # 1. start the dut test and wait till client gets IP address
     dut1.start_app()
     # waiting for getting the IP address
     try:
-        ip_address = dut1.expect(re.compile(r'IPv4 address: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r'IPv4 address: ([^,]+),'), timeout=30)[0]
         print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+    # 2. start mqtt broker sketch
+    host_ip = get_my_ip4_by_dest_ip(ip_address)
+    thread1 = Thread(target=mqqt_server_sketch, args=(host_ip,1883))
+    thread1.start()
 
     print('writing to device: {}'.format('mqtt://' + host_ip + '\n'))
     dut1.write('mqtt://' + host_ip + '\n')

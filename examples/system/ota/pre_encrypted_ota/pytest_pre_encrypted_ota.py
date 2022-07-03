@@ -9,21 +9,13 @@ from typing import Callable
 
 import pexpect
 import pytest
+from common_test_methods import get_my_ip4_by_dest_ip
 from pytest_embedded import Dut
 from RangeHTTPServer import RangeRequestHandler
 
 server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'server_certs/ca_cert.pem')
 key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'server_certs/server_key.pem')
 enc_bin_name = 'pre_encrypted_ota_secure.bin'
-
-
-def get_my_ip() -> str:
-    s1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s1.connect(('8.8.8.8', 80))
-    my_ip = ''
-    my_ip = s1.getsockname()[0]
-    s1.close()
-    return my_ip
 
 
 def https_request_handler() -> Callable[...,http.server.BaseHTTPRequestHandler]:
@@ -64,25 +56,24 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.ethernet_ota
+@pytest.mark.ethernet_router
 def test_examples_protocol_pre_encrypted_ota_example(dut: Dut) -> None:
+    server_port = 8001
+    dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        server_port = 8001
-        # start test
-        host_ip = get_my_ip()
-        thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, server_port))
-        thread1.daemon = True
-        thread1.start()
+        ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+    except pexpect.exceptions.TIMEOUT:
+        thread1.terminate()
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+    # Start server
+    host_ip = get_my_ip4_by_dest_ip(ip_address)
+    thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, server_port))
+    thread1.daemon = True
+    thread1.start()
 
-        dut.expect('Loaded app from partition at offset', timeout=30)
-        try:
-            ip_address = dut.expect(r'IPv4 address: ([^,]+),', timeout=30)
-            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
-        except pexpect.exceptions.TIMEOUT:
-            thread1.terminate()
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+    try:
         dut.expect('Starting Pre Encrypted OTA example', timeout=30)
-
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + enc_bin_name))
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + enc_bin_name)
         dut.expect('Magic Verified', timeout=30)

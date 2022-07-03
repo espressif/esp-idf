@@ -10,17 +10,9 @@ from typing import Callable
 
 import pexpect
 import pytest
+from common_test_methods import get_my_ip4_by_dest_ip
 from pytest_embedded import Dut
 from RangeHTTPServer import RangeRequestHandler
-
-
-def get_my_ip() -> str:
-    s1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s1.connect(('8.8.8.8', 80))
-    my_ip = ''
-    my_ip = s1.getsockname()[0]
-    s1.close()
-    return my_ip
 
 
 def get_server_status(host_ip: str, port: int) -> bool:
@@ -86,7 +78,15 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
     bin_size = os.path.getsize(binary_file)
     logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
     # start test
-    host_ip = get_my_ip()
+    dut.expect('Loaded app from partition at offset', timeout=30)
+    try:
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[1].decode()
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+    except pexpect.exceptions.TIMEOUT:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+
+    # start https server
+    host_ip = get_my_ip4_by_dest_ip(ip_address)
     server_port = 8070
     server_file = os.path.join(os.path.dirname(__file__), 'main', 'local_server_cert.pem')
     key_file = os.path.join(os.path.dirname(__file__), 'main', 'local_server_key.pem')
@@ -96,17 +96,9 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
         thread1.start()
     logging.info('The server started on {}:{}'.format(host_ip, server_port))
 
-    dut.expect('Loaded app from partition at offset', timeout=30)
-    try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[2].decode()
-        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
-
     dut.expect('Start https_request example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port)))
-
     dut.write('https://' + host_ip + ':' + str(server_port))
     logging.info("Testing for \"https_request using saved session\"")
 

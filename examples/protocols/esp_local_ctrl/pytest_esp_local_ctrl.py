@@ -39,7 +39,7 @@ class CustomProcess(object):
 
 
 @pytest.mark.supported_targets
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_esp_local_ctrl(dut: Dut) -> None:
 
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')

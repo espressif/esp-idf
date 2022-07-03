@@ -51,7 +51,7 @@ class WsClient:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_protocol_http_ws_echo_server(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'ws_echo_server.bin')

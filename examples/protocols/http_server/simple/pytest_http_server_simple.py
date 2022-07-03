@@ -62,7 +62,7 @@ class http_client_thread(threading.Thread):
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_protocol_http_server_simple(dut: Dut) -> None:
 
     # Get binary file
@@ -130,7 +130,7 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_protocol_http_server_lru_purge_enable(dut: Dut) -> None:
 
     # Get binary file

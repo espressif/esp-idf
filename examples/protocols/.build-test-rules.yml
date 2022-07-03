@@ -108,7 +108,7 @@ examples/protocols/https_x509_bundle:
 
 examples/protocols/icmp_echo:
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32c2"
       temporary: true
       reason: lack of runners
 

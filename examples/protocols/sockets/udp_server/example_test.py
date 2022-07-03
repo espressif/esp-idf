@@ -14,10 +14,10 @@ import socket
 import sys
 
 import ttfw_idf
+from common_test_methods import get_env_config, get_my_interface_by_dest_ip
 
 # -----------  Config  ----------
 PORT = 3333
-INTERFACE = 'eth0'
 # -------------------------------
 
 
@@ -49,7 +49,7 @@ def udp_client(address, payload):
     return reply.decode()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='wifi_router')
 def test_examples_protocol_socket_udpserver(env, extra_data):
     MESSAGE = 'Data to ESP'
     MAX_RETRIES = 3
@@ -59,6 +59,11 @@ def test_examples_protocol_socket_udpserver(env, extra_data):
       2. have the board connect to the server
       3. send and receive data
     """
+    # get env config
+    env_config = get_env_config('wifi_router')
+    ap_ssid = env_config['ap_ssid']
+    ap_password = env_config['ap_password']
+
     dut1 = env.get_dut('udp_server', 'examples/protocols/sockets/udp_server', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'udp_server.bin')
@@ -67,6 +72,8 @@ def test_examples_protocol_socket_udpserver(env, extra_data):
 
     # start test
     dut1.start_app()
+    dut1.expect('Please input ssid password:')
+    dut1.write(' '.join([ap_ssid, ap_password]))
 
     ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
@@ -74,6 +81,7 @@ def test_examples_protocol_socket_udpserver(env, extra_data):
     print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
     dut1.expect(re.compile(r'Waiting for data'), timeout=10)
 
+    interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
     for _ in range(MAX_RETRIES):
         print('Testing UDP on IPv4...')
@@ -88,7 +96,7 @@ def test_examples_protocol_socket_udpserver(env, extra_data):
     # test IPv6
     for _ in range(MAX_RETRIES):
         print('Testing UDP on IPv6...')
-        received = udp_client('{}%{}'.format(ipv6, INTERFACE), MESSAGE)
+        received = udp_client('{}%{}'.format(ipv6, interface), MESSAGE)
         if received == MESSAGE:
             print('OK')
             break

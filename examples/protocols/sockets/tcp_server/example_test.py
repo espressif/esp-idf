@@ -14,10 +14,10 @@ import socket
 import sys
 
 import ttfw_idf
+from common_test_methods import get_env_config, get_my_interface_by_dest_ip
 
 # -----------  Config  ----------
 PORT = 3333
-INTERFACE = 'eth0'
 # -------------------------------
 
 
@@ -46,7 +46,7 @@ def tcp_client(address, payload):
     return data.decode()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='wifi_router')
 def test_examples_protocol_socket_tcpserver(env, extra_data):
     MESSAGE = 'Data to ESP'
     """
@@ -55,6 +55,11 @@ def test_examples_protocol_socket_tcpserver(env, extra_data):
       2. have the board connect to the server
       3. send and receive data
     """
+    # get env config
+    env_config = get_env_config('wifi_router')
+    ap_ssid = env_config['ap_ssid']
+    ap_password = env_config['ap_password']
+
     dut1 = env.get_dut('tcp_client', 'examples/protocols/sockets/tcp_server', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'tcp_server.bin')
@@ -63,19 +68,22 @@ def test_examples_protocol_socket_tcpserver(env, extra_data):
 
     # start test
     dut1.start_app()
+    dut1.expect('Please input ssid password:')
+    dut1.write(' '.join([ap_ssid, ap_password]))
 
     ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
     print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
 
+    interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
     received = tcp_client(ipv4, MESSAGE)
     if not received == MESSAGE:
         raise
     dut1.expect(MESSAGE)
     # test IPv6
-    received = tcp_client('{}%{}'.format(ipv6, INTERFACE), MESSAGE)
+    received = tcp_client('{}%{}'.format(ipv6, interface), MESSAGE)
     if not received == MESSAGE:
         raise
     dut1.expect(MESSAGE)

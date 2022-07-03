@@ -11,8 +11,14 @@
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
+  variables:
+    GIT_DEPTH: 1
   script:
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
+    # get runner env config file
+    - retry_failed git clone $TEST_ENV_CONFIG_REPO
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    - cp ./ci-test-runner-configs/${CI_RUNNER_DESCRIPTION}/EnvConfig.yml EnvConfig.yml || true
     # using runner tags as markers to filter the test cases
     # Runner tags are comma separated, replace the comma with " and " for markers
     - job_tags=$(python tools/ci/python_packages/gitlab_api.py get_job_tags $CI_PROJECT_ID --job_id $CI_JOB_ID)
@@ -80,13 +86,13 @@ example_test_pytest_esp32c3_flash_suspend:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_suspend ]
 
-example_test_pytest_esp32_ethernet_ota:
+example_test_pytest_esp32_ethernet_router:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-ota-related_changes
   needs:
     - build_pytest_examples_esp32
-  tags: [ esp32, ethernet_ota ]
+  tags: [ esp32, ethernet_router ]
 
 example_test_pytest_esp32_wifi_ota:
   extends:
@@ -128,21 +134,29 @@ example_test_pytest_esp32_8mb_flash:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet_flash_8m ]
 
-example_test_pytest_esp32_wifi:
+example_test_pytest_esp32_wifi_nearby:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32-wifi-related_changes
   needs:
     - build_pytest_examples_esp32
-  tags: [ esp32, wifi ]
+  tags: [ esp32, wifi_nearby ]
 
-example_test_pytest_esp32_wifi_bt:
+example_test_pytest_esp32_wifi_router:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
     - build_pytest_examples_esp32
-  tags: [ esp32, wifi_bt ]
+  tags: [ esp32, wifi_router ]
+
+example_test_pytest_esp32_wifi_wlan:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  tags: [ esp32, wifi_wlan ]
 
 example_test_pytest_esp32_ethernet_ip101:
   extends:
@@ -340,6 +354,7 @@ test_app_test_pytest_esp32s2_usb_host:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
     expire_in: 1 week
   variables:
+    GIT_DEPTH: 1
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
@@ -434,7 +449,7 @@ example_test_protocols:
   extends: .example_test_esp32_template
   tags:
     - ESP32
-    - Example_WIFI_Protocols
+    - wifi_router
 
 example_test_002:
   extends: .example_test_esp32_template
@@ -446,7 +461,7 @@ example_test_ethernet:
   extends: .example_test_esp32_template
   tags:
     - ESP32
-    - Example_Ethernet
+    - ethernet_router
 
 .example_test_003:
   extends: .example_test_esp32_template
@@ -559,6 +574,7 @@ example_test_ESP32C3_SDSPI:
   needs:
     - assign_custom_test
   variables:
+    GIT_DEPTH: 1
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
 
@@ -605,7 +621,7 @@ test_app_test_eth:
   extends: .test_app_esp32_template
   tags:
     - ESP32
-    - Example_EthKitV1
+    - ethernet_router
 
 test_app_test_003:
   extends: .test_app_esp32_template
@@ -666,6 +682,7 @@ test_app_test_flash_psram_f8r8:
   needs: # the assign already needs all the build jobs
     - assign_unit_test
   variables:
+    GIT_DEPTH: 1
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/test_configs"
 
