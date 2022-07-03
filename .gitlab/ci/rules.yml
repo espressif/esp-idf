@@ -29,6 +29,7 @@
   - "tools/ci/python_packages/idf_iperf_test_util/**/*"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
+  - "tools/ci/python_packages/common_test_methods.py"
 
   - "tools/esp_prov/**/*"
   - "examples/**/*"
@@ -56,6 +57,7 @@
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
+  - "tools/ci/python_packages/common_test_methods.py"
 
   - "tools/test_apps/**/*"
   - "tools/ldgen/**/*"
@@ -64,6 +66,7 @@
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
+  - "tools/ci/python_packages/common_test_methods.py"
 
   - "tools/unit-test-app/**/*"
 
@@ -73,6 +76,7 @@
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
+  - "tools/ci/python_packages/common_test_methods.py"
 
   - "components/**/*"
 
