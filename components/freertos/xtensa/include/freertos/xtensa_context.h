@@ -86,16 +86,16 @@ NOTE: The Xtensa architecture requires stack pointer alignment to 16 bytes.
   INTERRUPT/EXCEPTION STACK FRAME FOR A THREAD OR NESTED INTERRUPT
 
   A stack frame of this structure is allocated for any interrupt or exception.
-  It goes on the current stack. If the RTOS has a system stack for handling 
-  interrupts, every thread stack must allow space for just one interrupt stack 
+  It goes on the current stack. If the RTOS has a system stack for handling
+  interrupts, every thread stack must allow space for just one interrupt stack
   frame, then nested interrupt stack frames go on the system stack.
 
-  The frame includes basic registers (explicit) and "extra" registers introduced 
+  The frame includes basic registers (explicit) and "extra" registers introduced
   by user TIE or the use of the MAC16 option in the user's Xtensa config.
   The frame size is minimized by omitting regs not applicable to user's config.
 
   For Windowed ABI, this stack frame includes the interruptee's base save area,
-  another base save area to manage gcc nested functions, and a little temporary 
+  another base save area to manage gcc nested functions, and a little temporary
   space to help manage the spilling of the register windows.
 -------------------------------------------------------------------------------
 */
@@ -163,7 +163,7 @@ STRUCT_END(XtExcFrame)
 
 #else
 
-#define XT_STK_NEXT2            XT_STK_NEXT1   
+#define XT_STK_NEXT2            XT_STK_NEXT1
 
 #endif
 
@@ -180,20 +180,28 @@ STRUCT_END(XtExcFrame)
 -------------------------------------------------------------------------------
   SOLICITED STACK FRAME FOR A THREAD
 
-  A stack frame of this structure is allocated whenever a thread enters the 
+  A stack frame of this structure is allocated whenever a thread enters the
   RTOS kernel intentionally (and synchronously) to submit to thread scheduling.
   It goes on the current thread's stack.
 
   The solicited frame only includes registers that are required to be preserved
-  by the callee according to the compiler's ABI conventions, some space to save 
+  by the callee according to the compiler's ABI conventions, some space to save
   the return address for returning to the caller, and the caller's PS register.
+
+  Note: Although the xtensa ABI considers the threadptr as "global" across
+  functions (meaning it is neither caller or callee saved), it is treated as a
+  callee-saved register in a solicited stack frame. This omits the need for the
+  OS to include extra logic to save "global" registers on each context switch.
+  Only the threadptr register is treated as callee-saved, as all other NCP
+  (non-coprocessor extra) registers are caller-saved. See "tie.h" for more
+  details.
 
   For Windowed ABI, this stack frame includes the caller's base save area.
 
   Note on XT_SOL_EXIT field:
       It is necessary to distinguish a solicited from an interrupt stack frame.
       This field corresponds to XT_STK_EXIT in the interrupt stack frame and is
-      always at the same offset (0). It can be written with a code (usually 0) 
+      always at the same offset (0). It can be written with a code (usually 0)
       to distinguish a solicted frame from an interrupt frame. An RTOS port may
       opt to ignore this field if it has another way of distinguishing frames.
 -------------------------------------------------------------------------------
@@ -204,7 +212,11 @@ STRUCT_BEGIN
 STRUCT_FIELD (long, 4, XT_SOL_EXIT, exit)
 STRUCT_FIELD (long, 4, XT_SOL_PC,   pc)
 STRUCT_FIELD (long, 4, XT_SOL_PS,   ps)
-STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)
+#if XCHAL_HAVE_THREADPTR
+STRUCT_FIELD (long, 4, XT_SOL_THREADPTR, threadptr)
+#else
+STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)   /* Dummy register for 16-byte alignment */
+#endif
 STRUCT_FIELD (long, 4, XT_SOL_A12,  a12)    /* should be on 16-byte alignment */
 STRUCT_FIELD (long, 4, XT_SOL_A13,  a13)
 STRUCT_FIELD (long, 4, XT_SOL_A14,  a14)
@@ -213,7 +225,11 @@ STRUCT_FIELD (long, 4, XT_SOL_A15,  a15)
 STRUCT_FIELD (long, 4, XT_SOL_EXIT, exit)
 STRUCT_FIELD (long, 4, XT_SOL_PC,   pc)
 STRUCT_FIELD (long, 4, XT_SOL_PS,   ps)
-STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)
+#if XCHAL_HAVE_THREADPTR
+STRUCT_FIELD (long, 4, XT_SOL_THREADPTR, threadptr)
+#else
+STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)   /* Dummy register for 16-byte alignment */
+#endif
 STRUCT_FIELD (long, 4, XT_SOL_A0,   a0)    /* should be on 16-byte alignment */
 STRUCT_FIELD (long, 4, XT_SOL_A1,   a1)
 STRUCT_FIELD (long, 4, XT_SOL_A2,   a2)
@@ -238,7 +254,7 @@ STRUCT_END(XtSolFrame)
   and the context switch of that co-processor is then peformed by the handler.
   Ownership represents which thread's state is currently in the co-processor.
 
-  Co-processors may not be used by interrupt or exception handlers. If an 
+  Co-processors may not be used by interrupt or exception handlers. If an
   co-processor instruction is executed by an interrupt or exception handler,
   the co-processor exception handler will trigger a kernel panic and freeze.
   This restriction is introduced to reduce the overhead of saving and restoring
@@ -249,7 +265,7 @@ STRUCT_END(XtSolFrame)
   such as in the thread control block or above the thread stack area. It need
   not be in the interrupt stack frame since interrupts don't use co-processors.
 
-  Along with the save area for each co-processor, two bitmasks with flags per 
+  Along with the save area for each co-processor, two bitmasks with flags per
   co-processor (laid out as in the CPENABLE reg) help manage context-switching
   co-processors as efficiently as possible:
 
@@ -265,10 +281,10 @@ STRUCT_END(XtSolFrame)
 
   XT_CPSTORED
     A bitmask with the same layout as CPENABLE, a bit per co-processor.
-    Indicates whether the state of each co-processor is saved in the state 
+    Indicates whether the state of each co-processor is saved in the state
     save area. When a thread enters the kernel, only the state of co-procs
-    still enabled in CPENABLE is saved. When the co-processor exception 
-    handler assigns ownership of a co-processor to a thread, it restores 
+    still enabled in CPENABLE is saved. When the co-processor exception
+    handler assigns ownership of a co-processor to a thread, it restores
     the saved state only if this bit is set, and clears this bit.
 
   XT_CP_CS_ST
@@ -349,7 +365,7 @@ STRUCT_END(XtSolFrame)
   For framed functions the frame is created and the return address saved at
   base of frame (Call0 ABI) or as determined by hardware (Windowed ABI).
   For frameless functions, there is no frame and return address remains in a0.
-  Note: Because CPP macros expand to a single line, macros requiring multi-line 
+  Note: Because CPP macros expand to a single line, macros requiring multi-line
   expansions are implemented as assembler macros.
 -------------------------------------------------------------------------------
 */
@@ -362,7 +378,7 @@ STRUCT_END(XtSolFrame)
     addi    sp, sp, -\size
     s32i    a0, sp, 0
     .endm
-  #define ENTRY0      
+  #define ENTRY0
   #define RET(sz)       ret1    sz
     .macro  ret1 size=0x10
     l32i    a0, sp, 0
