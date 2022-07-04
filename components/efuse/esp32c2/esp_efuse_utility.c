@@ -42,7 +42,7 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    // no need to set special timing values
+    efuse_hal_set_timing(0);
     return ESP_OK;
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL

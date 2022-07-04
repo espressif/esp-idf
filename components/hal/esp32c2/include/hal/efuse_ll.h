@@ -120,6 +120,10 @@ __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint1
     EFUSE.wr_tim_conf2.pwr_off_num = value;
 }
 
+__attribute__((always_inline)) static inline void efuse_ll_set_tpgm_inactive(uint8_t value)
+{
+    EFUSE.wr_tim_conf0.tpgm_inactive = value;
+}
 /******************* eFuse control functions *************************/
 
 #ifdef __cplusplus
