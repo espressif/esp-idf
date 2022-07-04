@@ -88,11 +88,6 @@ def test_examples_protocol_socket_tcpclient(env, extra_data):
       2. have the board connect to the server
       3. send and receive data
     """
-    # get env config
-    env_config = get_env_config('wifi_router')
-    ap_ssid = env_config['ap_ssid']
-    ap_password = env_config['ap_password']
-
     dut1 = env.get_dut('tcp_client', 'examples/protocols/sockets/tcp_client', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'tcp_client.bin')
@@ -101,8 +96,12 @@ def test_examples_protocol_socket_tcpclient(env, extra_data):
 
     # start test
     dut1.start_app()
-    dut1.expect('Please input ssid password:')
-    dut1.write(' '.join([ap_ssid, ap_password]))
+    if dut1.app.get_sdkconfig_config_value('CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN'):
+        env_config = get_env_config('wifi_router')
+        ap_ssid = env_config['ap_ssid']
+        ap_password = env_config['ap_password']
+        dut1.expect('Please input ssid password:')
+        dut1.write(' '.join([ap_ssid, ap_password]))
 
     ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)

@@ -15,7 +15,6 @@ from pytest_embedded import Dut
 def test_get_time_from_sntp_server(dut: Dut) -> None:
     dut.expect('Time is not set yet. Connecting to WiFi and getting time over NTP.')
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-        # get env config
         env_config = get_env_config('wifi_nearby')
         ap_ssid = env_config['ap_ssid']
         ap_password = env_config['ap_password']
