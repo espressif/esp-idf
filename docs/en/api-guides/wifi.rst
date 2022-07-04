@@ -2339,6 +2339,66 @@ The parameters not mentioned in the following table should be set to the default
           - 44.5
           - 44.2
 
+.. only:: esp32c2
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15
+
+        * - Rank
+          - Iperf
+          - Default
+          - Minimum
+        * - Available memory (KB)
+          - 37
+          - 56
+          - 84
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 14
+          - 7
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 18
+          - 14
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 18
+          - 14
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 16
+          - 12
+          - 6
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 18
+          - 14
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 18
+          - 14
+          - 6
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+        * - TCP TX throughput (Mbit/s)
+          - 21.6
+          - 21.4
+          - 14.3
+        * - TCP RX throughput (Mbit/s)
+          - 19.1
+          - 17.9
+          - 12.4
+        * - UDP TX throughput (Mbit/s)
+          - 26.4
+          - 26.3
+          - 25.0
+        * - UDP RX throughput (Mbit/s)
+          - 32.3
+          - 31.5
+          - 27.7
+
+
 .. only:: esp32s3
 
      .. list-table::
@@ -2435,6 +2495,14 @@ The parameters not mentioned in the following table should be set to the default
     .. note::
         The test was performed with a single stream in a shielded box using an ASUS RT-N66U router.
         {IDF_TARGET_NAME}'s CPU is single core with 160 MHz. {IDF_TARGET_NAME}'s flash is in QIO mode with 80 MHz.
+
+
+.. only:: esp32c2
+
+    .. note::
+        The test was performed with a single stream in a shielded box using an Redmi RM2100 router.
+        {IDF_TARGET_NAME}'s CPU is single core with 120 MHz. {IDF_TARGET_NAME}'s flash is in QIO mode with 60 MHz.
+
 
 .. only:: esp32
 

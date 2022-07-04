@@ -2339,6 +2339,65 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
           - 44.5
           - 44.2
 
+.. only:: esp32c2
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15
+
+        * - 等级
+          - Iperf
+          - 默认
+          - 最小
+        * - 可用内存 (KB)
+          - 37
+          - 56
+          - 84
+        * - WIFI_STATIC_RX_BUFFER_NUM
+          - 14
+          - 7
+          - 3
+        * - WIFI_DYNAMIC_RX_BUFFER_NUM
+          - 18
+          - 14
+          - 6
+        * - WIFI_DYNAMIC_TX_BUFFER_NUM
+          - 18
+          - 14
+          - 6
+        * - WIFI_RX_BA_WIN
+          - 16
+          - 12
+          - 6
+        * - TCP_SND_BUF_DEFAULT (KB)
+          - 18
+          - 14
+          - 6
+        * - TCP_WND_DEFAULT (KB)
+          - 18
+          - 14
+          - 6
+        * - LWIP_IRAM_OPTIMIZATION
+          - 13
+          - 13
+          - 0
+        * - TCP 发送数据吞吐量 (Mbit/s)
+          - 21.6
+          - 21.4
+          - 14.3
+        * - TCP 接收数据吞吐量 (Mbit/s)
+          - 19.1
+          - 17.9
+          - 12.4
+        * - UDP 发送数据吞吐量 (Mbit/s)
+          - 26.4
+          - 26.3
+          - 25.0
+        * - UDP 接收数据吞吐量 (Mbit/s)
+          - 32.3
+          - 31.5
+          - 27.7
+
 .. only:: esp32s3
 
      .. list-table::
@@ -2435,6 +2494,12 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
     .. note::
         以上结果使用华硕 RT-N66U 路由器，在屏蔽箱中进行单流测试得出。
         {IDF_TARGET_NAME} 的 CPU 为单核，频率为 160 MHz，flash 为 QIO 模式，频率为 80 MHz。
+
+.. only:: esp32c2
+
+    .. note::
+        以上结果使用红米 RM2100 路由器，在屏蔽箱中进行单流测试得出。
+        {IDF_TARGET_NAME} 的 CPU 为单核，频率为 120 MHz，flash 为 QIO 模式，频率为 60 MHz。
 
 .. only:: esp32
 
