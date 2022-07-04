@@ -14,9 +14,9 @@
 #include "soc/rtc_io_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_bbpll.h"
-#include "regi2c_apll.h"
+#include "hal/regi2c_ctrl.h"
+#include "soc/regi2c_bbpll.h"
+#include "soc/regi2c_apll.h"
 #include "hal/assert.h"
 #include "esp32/rom/rtc.h"
 

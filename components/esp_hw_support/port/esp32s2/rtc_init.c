@@ -13,7 +13,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
-#include "regi2c_ulp.h"
+#include "soc/regi2c_ulp.h"
 #include "regi2c_ctrl.h"
 #include "esp_hw_log.h"
 #include "esp_efuse.h"
