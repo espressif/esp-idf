@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ESP_NEWLIB_H__
-#define __ESP_NEWLIB_H__
+#pragma once
 
 #include <sys/reent.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Initialize newlib time functions
@@ -57,4 +60,6 @@ void esp_sync_timekeeping_timers(void);
  */
 void esp_newlib_locks_init(void);
 
-#endif //__ESP_NEWLIB_H__
+#ifdef __cplusplus
+}
+#endif

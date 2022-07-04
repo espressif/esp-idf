@@ -7,7 +7,6 @@ components/xtensa/esp32s2/include/xtensa/config/
 components/xtensa/esp32s3/include/xtensa/config/
 
 
-components/newlib/platform_include/
 
 components/freertos/esp_additions/include/freertos_tasks_c_additions.h
 components/freertos/FreeRTOS-Kernel/include/freertos/
