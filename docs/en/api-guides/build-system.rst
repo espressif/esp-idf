@@ -303,7 +303,7 @@ The minimal component ``CMakeLists.txt`` file simply registers the component to 
 
 - ``SRCS`` is a list of source files (``*.c``, ``*.cpp``, ``*.cc``, ``*.S``). These source files will be compiled into the component library.
 - ``INCLUDE_DIRS`` is a list of directories to add to the global include search path for any component which requires this component, and also the main source files.
-- ``REQUIRES`` is not actually required, but it is very often required to declare what other components this component will use. See :ref:`component requirements`.
+- ``REQUIRES`` is not actually required, but it is very often required to declare what other components this component will use. See :ref:`component requirements <component-requirements>`.
 
 A library with the name of the component will be built and linked into the final app.
 
@@ -395,7 +395,7 @@ The ESP-IDF build system adds the following C preprocessor definitions on the co
 - ``ESP_PLATFORM`` : Can be used to detect that build happens within ESP-IDF.
 - ``IDF_VER`` : Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
 
-.. _component requirements:
+.. _component-requirements:
 
 Component Requirements
 ======================
