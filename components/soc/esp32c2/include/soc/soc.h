@@ -142,7 +142,6 @@
 //Periheral Clock {{
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
-#define  UART_CLK_FREQ_ROM                           ( 40*1000000)
 #define  EFUSE_CLK_FREQ_ROM                          ( 20*1000000)
 #define  CPU_CLK_FREQ                                APB_CLK_FREQ
 #define  APB_CLK_FREQ                                ( 40*1000000 )
