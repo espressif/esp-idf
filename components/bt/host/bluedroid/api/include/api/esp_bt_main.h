@@ -39,6 +39,10 @@ typedef void (* hci_recv_fail_cb_t)(hci_recv_pkt_type_t type, uint16_t pkt_len, 
 
 extern esp_err_t esp_bt_register_hci_recv_fail_callback(hci_recv_fail_cb_t callback);
 
+extern uint32_t get_lld_evt_sch_num(void);
+
+extern uint32_t get_llm_adv_ind_num(void);
+
 /**
  * @brief     Get bluetooth stack status
  *
