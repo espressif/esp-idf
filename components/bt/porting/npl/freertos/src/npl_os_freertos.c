@@ -762,12 +762,16 @@ IRAM_ATTR npl_freertos_callout_deinit(struct ble_npl_callout *co)
     BLE_LL_ASSERT(callout->handle);
 
 #if CONFIG_BT_NIMBLE_USE_ESP_TIMER
-    if(esp_timer_stop(callout->handle))
-        ESP_LOGW(TAG, "Timer not stopped");
-
-    if(esp_timer_delete(callout->handle))
+    esp_err_t err = esp_timer_stop(callout->handle);
+    if(err != ESP_OK) {
+        if (err != ESP_ERR_INVALID_STATE) { // ESP_ERR_INVALID_STATE is expected when timer is already stopped
+            ESP_LOGW(TAG, "Timer not stopped");
+        }
+    }
+    err = esp_timer_delete(callout->handle);
+    if(err != ESP_OK) {
         ESP_LOGW(TAG, "Timer not deleted");
-
+    }
 #else
 
     xTimerDelete(callout->handle, portMAX_DELAY);

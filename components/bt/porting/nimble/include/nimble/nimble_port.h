@@ -41,13 +41,21 @@ void nimble_port_deinit(void);
 void nimble_port_run(void);
 int nimble_port_stop(void);
 
-struct ble_npl_eventq *nimble_port_get_dflt_eventq(void);
-
+/**
+ * @brief esp_nimble_init - Initialize the NimBLE host stack
+ *
+ * @return esp_err_t
+ */
 esp_err_t esp_nimble_init(void);
-esp_err_t esp_nimble_enable(void *host_task);
 
-esp_err_t esp_nimble_disable(void);
+/**
+ * @brief esp_nimble_deinit - Deinitialize the NimBLE host stack
+ *
+ * @return esp_err_t
+ */
 esp_err_t esp_nimble_deinit(void);
+
+struct ble_npl_eventq *nimble_port_get_dflt_eventq(void);
 
 
 #ifdef __cplusplus
