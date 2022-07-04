@@ -55,10 +55,23 @@ static SemaphoreHandle_t s_semph_get_ip_addrs = NULL;
 #define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
 #endif
 
+static int s_retry_num = 0;
 
 static void example_handler_on_wifi_disconnect(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
+    s_retry_num++;
+    if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
+        ESP_LOGI(TAG, "WiFi Connect failed %d times, stop reconnect.", s_retry_num);
+        if (s_semph_get_ip_addrs) {
+            /* let example_wifi_sta_do_connect() return */
+            xSemaphoreGive(s_semph_get_ip_addrs);
+#if CONFIG_EXAMPLE_CONNECT_IPV6
+            xSemaphoreGive(s_semph_get_ip_addrs);
+#endif
+        }
+        return;
+    }
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
     esp_err_t err = esp_wifi_connect();
     if (err == ESP_ERR_WIFI_NOT_STARTED) {
@@ -78,6 +91,7 @@ static void example_handler_on_wifi_connect(void *esp_netif, esp_event_base_t ev
 static void example_handler_on_sta_got_ip(void *arg, esp_event_base_t event_base,
                       int32_t event_id, void *event_data)
 {
+    s_retry_num = 0;
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     if (!example_is_our_netif(EXAMPLE_NETIF_DESC_STA, event->esp_netif)) {
         return;
@@ -150,7 +164,7 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
     if (wait) {
         s_semph_get_ip_addrs = xSemaphoreCreateCounting(NR_OF_IP_ADDRESSES_TO_WAIT_FOR, 0);
     }
-
+    s_retry_num = 0;
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &example_handler_on_wifi_disconnect, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &example_handler_on_sta_got_ip, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &example_handler_on_wifi_connect, s_example_sta_netif));
@@ -169,6 +183,9 @@ esp_err_t example_wifi_sta_do_connect(wifi_config_t wifi_config, bool wait)
         ESP_LOGI(TAG, "Waiting for IP(s)");
         for (int i = 0; i < NR_OF_IP_ADDRESSES_TO_WAIT_FOR; ++i) {
             xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+        }
+        if (s_retry_num > CONFIG_EXAMPLE_WIFI_CONN_MAX_RETRY) {
+            return ESP_FAIL;
         }
     }
     return ESP_OK;
@@ -228,8 +245,7 @@ esp_err_t example_wifi_connect(void)
         wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
     }
 #endif
-    example_wifi_sta_do_connect(wifi_config, true);
-    return ESP_OK;
+    return example_wifi_sta_do_connect(wifi_config, true);
 }
 
 

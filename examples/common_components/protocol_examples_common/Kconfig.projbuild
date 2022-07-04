@@ -39,6 +39,13 @@ menu "Example Connection Configuration"
                 WiFi password (WPA or WPA2) for the example to use.
                 Can be left blank if the network has no security set.
 
+        config EXAMPLE_WIFI_CONN_MAX_RETRY
+            int "Maximum retry"
+            default 6
+            help
+                Set the Maximum retry to avoid station reconnecting to the AP unlimited,
+                in case the AP is really inexistent.
+
         choice EXAMPLE_WIFI_SCAN_METHOD
             prompt "WiFi Scan Method"
             default EXAMPLE_WIFI_SCAN_METHOD_ALL_CHANNEL

@@ -82,24 +82,28 @@ void example_print_all_netif_ips(const char *prefix)
 esp_err_t example_connect(void)
 {
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
-    example_ethernet_connect();
+    if (example_ethernet_connect() != ESP_OK) {
+        return ESP_FAIL;
+    }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_ethernet_shutdown));
 #endif
 #if CONFIG_EXAMPLE_CONNECT_WIFI
-    example_wifi_connect();
+    if (example_wifi_connect() != ESP_OK) {
+        return ESP_FAIL;
+    }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_wifi_shutdown));
 #endif
 
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_ETH);
 #endif
+
 #if CONFIG_EXAMPLE_CONNECT_WIFI
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_STA);
 #endif
 
     return ESP_OK;
 }
-
 
 
 esp_err_t example_disconnect(void)
