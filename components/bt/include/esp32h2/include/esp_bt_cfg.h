@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,67 +54,67 @@ extern "C" {
     #if defined(CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
         #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
     #else
-        #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (0)
+        #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (5)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
         #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
     #else
-        #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (0)
+        #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (1)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_CONNECTIONS)
         #define DEFAULT_BT_LE_MAX_CONNECTIONS (CONFIG_BT_LE_MAX_CONNECTIONS)
     #else
-        #define DEFAULT_BT_LE_MAX_CONNECTIONS (0)
+        #define DEFAULT_BT_LE_MAX_CONNECTIONS (2)
     #endif
 
     #if defined(CONFIG_BT_LE_ACL_BUF_SIZE)
         #define DEFAULT_BT_LE_ACL_BUF_SIZE (CONFIG_BT_LE_ACL_BUF_SIZE)
     #else
-        #define DEFAULT_BT_LE_ACL_BUF_SIZE (0)
+        #define DEFAULT_BT_LE_ACL_BUF_SIZE (255)
     #endif
 
     #if defined(CONFIG_BT_LE_ACL_BUF_COUNT)
         #define DEFAULT_BT_LE_ACL_BUF_COUNT (CONFIG_BT_LE_ACL_BUF_COUNT)
     #else
-        #define DEFAULT_BT_LE_ACL_BUF_COUNT (0)
+        #define DEFAULT_BT_LE_ACL_BUF_COUNT (24)
     #endif
 
     #if defined(CONFIG_BT_LE_HCI_EVT_BUF_SIZE)
         #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (CONFIG_BT_LE_HCI_EVT_BUF_SIZE)
     #else
-        #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (0)
+        #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (70)
     #endif
 
     #if defined(CONFIG_BT_LE_EXT_ADV_MAX_SIZE)
         #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (CONFIG_BT_LE_EXT_ADV_MAX_SIZE)
     #else
-        #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (0)
+        #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (31)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES)
         #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES)
     #else
-        #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (0)
+        #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (1)
     #endif
 
     #if defined(CONFIG_BT_LE_WHITELIST_SIZE)
         #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (CONFIG_BT_LE_WHITELIST_SIZE)
     #else
-        #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (0)
+        #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (12)
     #endif
 
     #if defined(CONFIG_BT_LE_HCI_EVT_HI_BUF_COUNT)
         #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (CONFIG_BT_LE_HCI_EVT_HI_BUF_COUNT)
     #else
-        #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (0)
+        #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (30)
     #endif
 
     #if defined(CONFIG_BT_LE_HCI_EVT_LO_BUF_COUNT)
         #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (CONFIG_BT_LE_HCI_EVT_LO_BUF_COUNT)
     #else
-        #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (0)
+        #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (8)
     #endif
 
     #define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
@@ -192,7 +193,15 @@ extern "C" {
 
 #define BLE_LL_CONN_DEF_AUTH_PYLD_TMO_N     (3000)
 
+#if CONFIG_RTC_CLK_SRC_EXT_CRYS
+#define RTC_FREQ_N                          (32768) /* in Hz */
+#else
 #define RTC_FREQ_N                          (32000) /* in Hz */
+#if CONFIG_RTC_CLK_SRC_EXT_OSC || CONFIG_RTC_CLK_SRC_INT_RC32K
+#pragma message "RTC clock source may not available"
+#endif
+#endif
+
 
 #define BLE_LL_TX_PWR_DBM_N                 (0)
 

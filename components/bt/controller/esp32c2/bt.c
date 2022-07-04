@@ -121,6 +121,10 @@ extern void r_ble_lll_rfmgmt_set_sleep_cb(void *s_cb, void *w_cb, void *s_arg, v
 extern void r_ble_rtc_wake_up_state_clr(void);
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
+extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
+                                const uint8_t *peer_pub_key_y,
+                                const uint8_t *our_priv_key, uint8_t *out_dhkey);
+extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 
 /* Local Function Declaration
  *********************************************************************
@@ -145,10 +149,6 @@ static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param
 static uint32_t osi_random_wrapper(void);
 static void esp_reset_rpa_moudle(void);
 
-extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
-                                const uint8_t *peer_pub_key_y,
-                                const uint8_t *our_priv_key, uint8_t *out_dhkey);
-extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
 /* Local variable definition
  ***************************************************************************
  */

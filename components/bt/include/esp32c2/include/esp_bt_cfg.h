@@ -53,67 +53,67 @@ extern "C" {
     #if defined(CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
         #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
     #else
-        #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (0)
+        #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (5)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
         #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
     #else
-        #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (0)
+        #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (1)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_CONNECTIONS)
         #define DEFAULT_BT_LE_MAX_CONNECTIONS (CONFIG_BT_LE_MAX_CONNECTIONS)
     #else
-        #define DEFAULT_BT_LE_MAX_CONNECTIONS (0)
+        #define DEFAULT_BT_LE_MAX_CONNECTIONS (2)
     #endif
 
     #if defined(CONFIG_BT_LE_ACL_BUF_SIZE)
         #define DEFAULT_BT_LE_ACL_BUF_SIZE (CONFIG_BT_LE_ACL_BUF_SIZE)
     #else
-        #define DEFAULT_BT_LE_ACL_BUF_SIZE (0)
+        #define DEFAULT_BT_LE_ACL_BUF_SIZE (255)
     #endif
 
     #if defined(CONFIG_BT_LE_ACL_BUF_COUNT)
         #define DEFAULT_BT_LE_ACL_BUF_COUNT (CONFIG_BT_LE_ACL_BUF_COUNT)
     #else
-        #define DEFAULT_BT_LE_ACL_BUF_COUNT (0)
+        #define DEFAULT_BT_LE_ACL_BUF_COUNT (24)
     #endif
 
     #if defined(CONFIG_BT_LE_HCI_EVT_BUF_SIZE)
         #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (CONFIG_BT_LE_HCI_EVT_BUF_SIZE)
     #else
-        #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (0)
+        #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (70)
     #endif
 
     #if defined(CONFIG_BT_LE_EXT_ADV_MAX_SIZE)
         #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (CONFIG_BT_LE_EXT_ADV_MAX_SIZE)
     #else
-        #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (0)
+        #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (31)
     #endif
 
     #if defined(CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES)
         #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES)
     #else
-        #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (0)
+        #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (1)
     #endif
 
     #if defined(CONFIG_BT_LE_WHITELIST_SIZE)
         #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (CONFIG_BT_LE_WHITELIST_SIZE)
     #else
-        #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (0)
+        #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (12)
     #endif
 
     #if defined(CONFIG_BT_LE_HCI_EVT_HI_BUF_COUNT)
         #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (CONFIG_BT_LE_HCI_EVT_HI_BUF_COUNT)
     #else
-        #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (0)
+        #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (30)
     #endif
 
     #if defined(CONFIG_BT_LE_HCI_EVT_LO_BUF_COUNT)
         #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (CONFIG_BT_LE_HCI_EVT_LO_BUF_COUNT)
     #else
-        #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (0)
+        #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (8)
     #endif
 
     #define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
