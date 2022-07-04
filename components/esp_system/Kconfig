@@ -331,6 +331,7 @@ menu "ESP System Settings"
         int
         prompt "UART console baud rate" if ESP_CONSOLE_UART_CUSTOM
         depends on ESP_CONSOLE_UART
+        default 74880 if ESP32C2_XTAL_FREQ_26
         default 115200
         range 1200 4000000 if !PM_ENABLE
         range 1200 1000000 if PM_ENABLE
