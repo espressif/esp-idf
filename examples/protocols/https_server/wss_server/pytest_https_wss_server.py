@@ -14,6 +14,7 @@ from typing import Any, Optional
 
 import pytest
 import websocket
+from common_test_methods import get_env_config
 from pytest_embedded import Dut
 
 OPCODE_TEXT = 0x1
@@ -119,10 +120,15 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
 
     logging.info('Starting wss_server test app')
 
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        env_config = get_env_config('wifi_router')
+        ap_ssid = env_config['ap_ssid']
+        ap_password = env_config['ap_password']
+        dut.expect('Please input ssid password:')
+        dut.write(' '.join([ap_ssid, ap_password]))
     # Parse IP address of STA
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    logging.info('Waiting to connect with AP')
-
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
 
     logging.info('Got IP   : {}'.format(got_ip))

@@ -9,6 +9,7 @@ import sys
 
 import pexpect
 import pytest
+from common_test_methods import get_env_config
 from pytest_embedded import Dut
 
 
@@ -45,6 +46,12 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')
     idf_path = get_sdk_path()
 
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        env_config = get_env_config('wifi_router')
+        ap_ssid = env_config['ap_ssid']
+        ap_password = env_config['ap_password']
+        dut.expect('Please input ssid password:')
+        dut.write(' '.join([ap_ssid, ap_password]))
     dut_ip = dut.expect(r'IPv4 address: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')[1].decode()
     dut.expect('esp_https_server: Starting server')
     dut.expect('esp_https_server: Server listening on port 443')

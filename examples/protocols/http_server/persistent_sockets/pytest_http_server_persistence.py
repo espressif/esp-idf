@@ -19,6 +19,7 @@ except ModuleNotFoundError:
     sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'tools', 'ci', 'python_packages'))
     from idf_http_server_test import adder as client
 
+from common_test_methods import get_env_config
 from pytest_embedded import Dut
 
 # When running on local machine execute the following before running this script
@@ -43,6 +44,12 @@ def test_examples_protocol_http_server_persistence(dut: Dut) -> None:
 
     # Parse IP address of STA
     logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        env_config = get_env_config('wifi_router')
+        ap_ssid = env_config['ap_ssid']
+        ap_password = env_config['ap_password']
+        dut.expect('Please input ssid password:')
+        dut.write(' '.join([ap_ssid, ap_password]))
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
     got_port = dut.expect(r"(?:[\s\S]*)Starting server on port: '(\d+)'", timeout=30)[1].decode()
 

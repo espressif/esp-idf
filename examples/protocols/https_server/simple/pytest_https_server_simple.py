@@ -9,6 +9,7 @@ import os
 import ssl
 
 import pytest
+from common_test_methods import get_env_config
 from pytest_embedded import Dut
 
 server_cert_pem = '-----BEGIN CERTIFICATE-----\n'\
@@ -106,11 +107,16 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
     bin_size = os.path.getsize(binary_file)
     logging.info('https_server_simple_bin_size : {}KB'.format(bin_size // 1024))
     # start test
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        env_config = get_env_config('wifi_router')
+        ap_ssid = env_config['ap_ssid']
+        ap_password = env_config['ap_password']
+        dut.expect('Please input ssid password:')
+        dut.write(' '.join([ap_ssid, ap_password]))
     # Parse IP address and port of the server
     dut.expect(r'Starting server')
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    logging.info('Waiting to connect with AP')
-
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
 
     # Expected logs
@@ -174,11 +180,16 @@ def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None
     # Test with mbedTLS dynamic buffer feature
 
     # start test
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        env_config = get_env_config('wifi_router')
+        ap_ssid = env_config['ap_ssid']
+        ap_password = env_config['ap_password']
+        dut.expect('Please input ssid password:')
+        dut.write(' '.join([ap_ssid, ap_password]))
     # Parse IP address and port of the server
     dut.expect(r'Starting server')
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    logging.info('Waiting to connect with AP')
-
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
 
     # Expected logs
