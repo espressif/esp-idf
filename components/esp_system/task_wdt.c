@@ -272,7 +272,7 @@ static void unsubscribe_idle(uint32_t core_mask)
         if (core_mask & 0x1) {
 #if CONFIG_FREERTOS_SMP
         assert(core_user_handles[core_num]);
-        ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
+        esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
         ESP_ERROR_CHECK(esp_task_wdt_delete_user(core_user_handles[core_num]));
         core_user_handles[core_num] = NULL;
 #else
