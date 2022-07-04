@@ -101,8 +101,6 @@ check_fuzzer_compilation:
      - make MODE=dhcp_server
      - make MODE=dhcp_client
      - make MODE=dns
-     - cd ${IDF_PATH}/components/mdns/test_afl_fuzz_host
-     - make
 
 check_public_headers:
   extends:

@@ -165,7 +165,6 @@ api-reference/protocols/esp_https_server
 api-reference/protocols/openssl_apis
 api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/esp_tls
-api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
 get-started/establish-serial-connection

@@ -11,6 +11,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `jsmn <https://components.espressif.com/component/espressif/jsmn>`_
 * `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_
 * `nghttp <https://components.espressif.com/component/espressif/nghttp>`_
+* `mdns <https://components.espressif.com/component/espressif/mdns>`_
 * `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_
 * `freemodbus <https://components.espressif.com/component/espressif/esp-modbus>`_
 

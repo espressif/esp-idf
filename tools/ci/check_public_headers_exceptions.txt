@@ -69,8 +69,6 @@ components/esp-tls/private_include/
 
 components/protobuf-c/
 
-components/mdns/include/mdns_console.h
-
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 
