@@ -449,6 +449,10 @@ _frxt_dispatch:
 .L_frxt_dispatch_sol:
 
     /* Solicited stack frame. Restore minimal context and return from vPortYield(). */
+    #if XCHAL_HAVE_THREADPTR
+    l32i    a2,  sp, XT_SOL_THREADPTR
+    wur.threadptr a2
+    #endif
     l32i    a3,  sp, XT_SOL_PS
     #ifdef __XTENSA_CALL0_ABI__
     l32i    a12, sp, XT_SOL_A12
@@ -536,6 +540,10 @@ vPortYield:
     rsr     a2,  PS
     s32i    a0,  sp, XT_SOL_PC
     s32i    a2,  sp, XT_SOL_PS
+    #if XCHAL_HAVE_THREADPTR
+    rur.threadptr a2
+    s32i    a2,  sp, XT_SOL_THREADPTR
+    #endif
     #ifdef __XTENSA_CALL0_ABI__
     s32i    a12, sp, XT_SOL_A12         /* save callee-saved registers      */
     s32i    a13, sp, XT_SOL_A13

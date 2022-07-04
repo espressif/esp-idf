@@ -188,6 +188,14 @@ STRUCT_END(XtExcFrame)
   by the callee according to the compiler's ABI conventions, some space to save
   the return address for returning to the caller, and the caller's PS register.
 
+  Note: Although the xtensa ABI considers the threadptr as "global" across
+  functions (meaning it is neither caller or callee saved), it is treated as a
+  callee-saved register in a solicited stack frame. This omits the need for the
+  OS to include extra logic to save "global" registers on each context switch.
+  Only the threadptr register is treated as callee-saved, as all other NCP
+  (non-coprocessor extra) registers are caller-saved. See "tie.h" for more
+  details.
+
   For Windowed ABI, this stack frame includes the caller's base save area.
 
   Note on XT_SOL_EXIT field:
@@ -204,7 +212,11 @@ STRUCT_BEGIN
 STRUCT_FIELD (long, 4, XT_SOL_EXIT, exit)
 STRUCT_FIELD (long, 4, XT_SOL_PC,   pc)
 STRUCT_FIELD (long, 4, XT_SOL_PS,   ps)
-STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)
+#if XCHAL_HAVE_THREADPTR
+STRUCT_FIELD (long, 4, XT_SOL_THREADPTR, threadptr)
+#else
+STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)   /* Dummy register for 16-byte alignment */
+#endif
 STRUCT_FIELD (long, 4, XT_SOL_A12,  a12)    /* should be on 16-byte alignment */
 STRUCT_FIELD (long, 4, XT_SOL_A13,  a13)
 STRUCT_FIELD (long, 4, XT_SOL_A14,  a14)
@@ -213,7 +225,11 @@ STRUCT_FIELD (long, 4, XT_SOL_A15,  a15)
 STRUCT_FIELD (long, 4, XT_SOL_EXIT, exit)
 STRUCT_FIELD (long, 4, XT_SOL_PC,   pc)
 STRUCT_FIELD (long, 4, XT_SOL_PS,   ps)
-STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)
+#if XCHAL_HAVE_THREADPTR
+STRUCT_FIELD (long, 4, XT_SOL_THREADPTR, threadptr)
+#else
+STRUCT_FIELD (long, 4, XT_SOL_NEXT, next)   /* Dummy register for 16-byte alignment */
+#endif
 STRUCT_FIELD (long, 4, XT_SOL_A0,   a0)    /* should be on 16-byte alignment */
 STRUCT_FIELD (long, 4, XT_SOL_A1,   a1)
 STRUCT_FIELD (long, 4, XT_SOL_A2,   a2)
