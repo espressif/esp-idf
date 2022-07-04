@@ -18,23 +18,28 @@
 #include "esp_private/esp_memprot_internal.h"
 #include "esp_memprot.h"
 
+/*
+ * LD section boundaries
+ */
 extern int _iram_text_start;
 extern int _iram_text_end;
 extern int _rtc_text_end;
 
+/*
+ * Local holder of the Memprot config required by the last esp_mprot_set_prot() call.
+ * The structure is zeroed on creation => 'mem_type_mask == MEMPROT_TYPE_NONE' guarantees no interference before proper
+ * update by the API function
+ */
+static esp_memp_config_t s_memp_cfg = ESP_MEMPROT_ZERO_CONFIG();
+
+
 //////////////////////////////////////////////////////////////////////////////
 // internal helpers
 
-#if portNUM_PROCESSORS > 1
-static const int s_chip_cpu[] = {PRO_CPU_NUM, APP_CPU_NUM};
-#else
-static const int s_chip_cpu[] = {PRO_CPU_NUM};
-#endif
-
 static esp_err_t esp_mprot_cpuid_valid(const int core)
 {
-    for (size_t x = 0; x < portNUM_PROCESSORS; x++) {
-        if (core == s_chip_cpu[x]) {
+    for (size_t x = 0; x < s_memp_cfg.target_cpu_count; x++) {
+        if (core == s_memp_cfg.target_cpu[x]) {
             return ESP_OK;
         }
     }
@@ -510,43 +515,67 @@ esp_err_t IRAM_ATTR esp_mprot_get_active_intr(esp_memp_intr_source_t *active_mem
         uint32_t intr_on = 0;
         esp_err_t err;
 
-        mt = MEMPROT_TYPE_IRAM0_SRAM;
-        c = PRO_CPU_NUM;
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_iram0_get_monitor_status_intr(c, &intr_on)))
-        if (intr_on) {
-            break;
+        //IRAM0
+        if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_SRAM) {
+
+            mt = MEMPROT_TYPE_IRAM0_SRAM;
+
+            c = PRO_CPU_NUM;
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_iram0_get_monitor_status_intr(c, &intr_on)))
+            if (intr_on) {
+                break;
+            }
+
+            //2-core
+            if (s_memp_cfg.target_cpu_count > 1) {
+                c = APP_CPU_NUM;
+                ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_iram0_get_monitor_status_intr(c, &intr_on)))
+                if (intr_on) {
+                    break;
+                }
+            }
         }
 
-        c = APP_CPU_NUM;
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_iram0_get_monitor_status_intr(c, &intr_on)))
-        if (intr_on) {
-            break;
+        //DRAM0
+        if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_DRAM0_SRAM) {
+
+            mt = MEMPROT_TYPE_DRAM0_SRAM;
+
+            c = PRO_CPU_NUM;
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_dram0_get_monitor_status_intr(c, &intr_on)))
+            if (intr_on) {
+                break;
+            }
+
+            //2-core
+            if (s_memp_cfg.target_cpu_count > 1) {
+                c = APP_CPU_NUM;
+                ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_dram0_get_monitor_status_intr(c, &intr_on)))
+                if (intr_on) {
+                    break;
+                }
+            }
         }
 
-        mt = MEMPROT_TYPE_DRAM0_SRAM;
-        c = PRO_CPU_NUM;
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_dram0_get_monitor_status_intr(c, &intr_on)))
-        if (intr_on) {
-            break;
-        }
+        //RTCFAST
+        if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_RTCFAST) {
 
-        c = APP_CPU_NUM;
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_dram0_get_monitor_status_intr(c, &intr_on)))
-        if (intr_on) {
-            break;
-        }
+            mt = MEMPROT_TYPE_IRAM0_RTCFAST;
 
-        mt = MEMPROT_TYPE_IRAM0_RTCFAST;
-        c = PRO_CPU_NUM;
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_monitor_status_intr(c, &intr_on)))
-        if (intr_on) {
-            break;
-        }
+            c = PRO_CPU_NUM;
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_monitor_status_intr(c, &intr_on)))
+            if (intr_on) {
+                break;
+            }
 
-        c = APP_CPU_NUM;
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_monitor_status_intr(c, &intr_on)))
-        if (intr_on) {
-            break;
+            //2-core
+            if (s_memp_cfg.target_cpu_count > 1) {
+                c = APP_CPU_NUM;
+                ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_monitor_status_intr(c, &intr_on)))
+                if (intr_on) {
+                    break;
+                }
+            }
         }
 
         mt = MEMPROT_TYPE_NONE;
@@ -592,32 +621,64 @@ esp_err_t IRAM_ATTR esp_mprot_is_conf_locked_any(bool *locked)
     }
 
     bool lock_on = false;
-
     esp_err_t err;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, PRO_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, APP_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, PRO_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, APP_CPU_NUM))
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, PRO_CPU_NUM));
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, APP_CPU_NUM));
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, PRO_CPU_NUM));
-    *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, APP_CPU_NUM));
-    *locked |= lock_on;
+
+    //IRAM0
+    if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_SRAM) {
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
+        *locked |= lock_on;
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
+        *locked |= lock_on;
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, PRO_CPU_NUM))
+        *locked |= lock_on;
+
+        //2-core
+        if (s_memp_cfg.target_cpu_count > 1) {
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, APP_CPU_NUM))
+            *locked |= lock_on;
+        }
+    }
+
+    //DRAM0
+    if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_DRAM0_SRAM) {
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
+        *locked |= lock_on;
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
+        *locked |= lock_on;
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, PRO_CPU_NUM));
+        *locked |= lock_on;
+
+        //2-core
+        if (s_memp_cfg.target_cpu_count > 1) {
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, APP_CPU_NUM));
+            *locked |= lock_on;
+        }
+    }
+
+    //RTCFAST
+    if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_RTCFAST) {
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, PRO_CPU_NUM))
+        *locked |= lock_on;
+
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, PRO_CPU_NUM));
+        *locked |= lock_on;
+
+        //2-core
+        if (s_memp_cfg.target_cpu_count > 1) {
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, APP_CPU_NUM))
+            *locked |= lock_on;
+
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, APP_CPU_NUM));
+            *locked |= lock_on;
+        }
+    }
 
     return ESP_OK;
 }
@@ -629,20 +690,40 @@ esp_err_t IRAM_ATTR esp_mprot_is_intr_ena_any(bool *enabled)
     }
 
     bool ena_on = false;
-
     esp_err_t err;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &ena_on, PRO_CPU_NUM))
-    *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &ena_on, APP_CPU_NUM))
-    *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &ena_on, PRO_CPU_NUM))
-    *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &ena_on, APP_CPU_NUM))
-    *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, &ena_on, PRO_CPU_NUM))
-    *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, &ena_on, APP_CPU_NUM))
-    *enabled |= ena_on;
+
+    //IRAM0
+    if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_SRAM) {
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &ena_on, PRO_CPU_NUM))
+        *enabled |= ena_on;
+        //2-core
+        if (s_memp_cfg.target_cpu_count > 1) {
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &ena_on, APP_CPU_NUM))
+            *enabled |= ena_on;
+        }
+    }
+
+    //DRAM0
+    if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_DRAM0_SRAM) {
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &ena_on, PRO_CPU_NUM))
+        *enabled |= ena_on;
+        //2-core
+        if (s_memp_cfg.target_cpu_count > 1) {
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &ena_on, APP_CPU_NUM))
+            *enabled |= ena_on;
+        }
+    }
+
+    //RTCFAST
+    if (s_memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_RTCFAST) {
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, &ena_on, PRO_CPU_NUM))
+        *enabled |= ena_on;
+        //2-core
+        if (s_memp_cfg.target_cpu_count > 1) {
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, &ena_on, APP_CPU_NUM))
+            *enabled |= ena_on;
+        }
+    }
 
     return ESP_OK;
 }
@@ -953,20 +1034,20 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
 
         if (memprot_ll_get_iram0_split_line_main_I_D_regval() != check_val) {
             esp_rom_printf(
-                    "Fatal error: Main I/D split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
-                    check_val, memprot_ll_get_iram0_split_line_main_I_D_regval());
+                "Fatal error: Main I/D split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
+                check_val, memprot_ll_get_iram0_split_line_main_I_D_regval());
             abort();
         }
         if (memprot_ll_get_iram0_split_line_main_I_0_regval() != check_val) {
             esp_rom_printf(
-                    "Fatal error: IRAM0 I_0 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
-                    check_val, memprot_ll_get_iram0_split_line_main_I_0_regval());
+                "Fatal error: IRAM0 I_0 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
+                check_val, memprot_ll_get_iram0_split_line_main_I_0_regval());
             abort();
         }
         if (memprot_ll_get_iram0_split_line_main_I_1_regval() != check_val) {
             esp_rom_printf(
-                    "Fatal error: IRAM0 I_1 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
-                    check_val, memprot_ll_get_iram0_split_line_main_I_1_regval());
+                "Fatal error: IRAM0 I_1 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
+                check_val, memprot_ll_get_iram0_split_line_main_I_1_regval());
             abort();
         }
 
@@ -975,14 +1056,14 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
 
         if (memprot_ll_get_dram0_split_line_main_D_0_regval() != check_val) {
             esp_rom_printf(
-                    "Fatal error: DRAM0 D_0 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
-                    check_val, memprot_ll_get_dram0_split_line_main_D_0_regval());
+                "Fatal error: DRAM0 D_0 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
+                check_val, memprot_ll_get_dram0_split_line_main_D_0_regval());
             abort();
         }
         if (memprot_ll_get_dram0_split_line_main_D_1_regval() != check_val) {
             esp_rom_printf(
-                    "Fatal error: DRAM0 D_1 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
-                    check_val, memprot_ll_get_dram0_split_line_main_D_1_regval());
+                "Fatal error: DRAM0 D_1 split line configuration corrupted (expected 0x%08X, stored 0x%08X)\n",
+                check_val, memprot_ll_get_dram0_split_line_main_D_1_regval());
             abort();
         }
 
@@ -1049,11 +1130,11 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         if (use_iram0) {
             for (size_t x = 0; x < core_count; x++) {
                 ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &enabled,
-                                                                    memp_config->target_cpu[x]))
+                                      memp_config->target_cpu[x]))
                 if (!enabled) {
                     esp_rom_printf(
-                            "Fatal error: IRAM0 PMS configuration corrupted (memory protection not enabled on core %d)\n",
-                            memp_config->target_cpu[x]);
+                        "Fatal error: IRAM0 PMS configuration corrupted (memory protection not enabled on core %d)\n",
+                        memp_config->target_cpu[x]);
                     abort();
                 }
             }
@@ -1061,11 +1142,11 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         if (use_dram0) {
             for (size_t x = 0; x < core_count; x++) {
                 ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &enabled,
-                                                                    memp_config->target_cpu[x]))
+                                      memp_config->target_cpu[x]))
                 if (!enabled) {
                     esp_rom_printf(
-                            "Fatal error: DRAM0 PMS configuration corrupted (memory protection not enabled on core %d)\n",
-                            memp_config->target_cpu[x]);
+                        "Fatal error: DRAM0 PMS configuration corrupted (memory protection not enabled on core %d)\n",
+                        memp_config->target_cpu[x]);
                     abort();
                 }
             }
@@ -1081,22 +1162,22 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
                                       esp_mprot_get_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM, &locked, DEFAULT_CPU_NUM))
                 if (!locked) {
                     esp_rom_printf(
-                            "Fatal error: IRAM0 PMS configuration corrupted (memory protection not locked - split address lock)\n");
+                        "Fatal error: IRAM0 PMS configuration corrupted (memory protection not locked - split address lock)\n");
                     abort();
                 }
                 ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_SRAM, &locked, DEFAULT_CPU_NUM))
                 if (!locked) {
                     esp_rom_printf(
-                            "Fatal error: IRAM0 PMS configuration corrupted (memory protection not locked - global PMS lock)\n");
+                        "Fatal error: IRAM0 PMS configuration corrupted (memory protection not locked - global PMS lock)\n");
                     abort();
                 }
                 for (size_t x = 0; x < core_count; x++) {
                     ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &locked,
-                                                                          memp_config->target_cpu[x]))
+                                          memp_config->target_cpu[x]))
                     if (!locked) {
                         esp_rom_printf(
-                                "Fatal error: IRAM0 PMS configuration corrupted (memory protection not locked - monitor lock on core %d)\n",
-                                memp_config->target_cpu[x]);
+                            "Fatal error: IRAM0 PMS configuration corrupted (memory protection not locked - monitor lock on core %d)\n",
+                            memp_config->target_cpu[x]);
                         abort();
                     }
                 }
@@ -1107,27 +1188,32 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
                                       esp_mprot_get_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM, &locked, DEFAULT_CPU_NUM))
                 if (!locked) {
                     esp_rom_printf(
-                            "Fatal error: DRAM0 PMS configuration corrupted (memory protection not locked - split address lock)\n");
+                        "Fatal error: DRAM0 PMS configuration corrupted (memory protection not locked - split address lock)\n");
                     abort();
                 }
                 ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_pms_lock(MEMPROT_TYPE_DRAM0_SRAM, &locked, DEFAULT_CPU_NUM))
                 if (!locked) {
                     esp_rom_printf(
-                            "Fatal error: DRAM0 PMS configuration corrupted (memory protection not locked - global PMS lock)\n");
+                        "Fatal error: DRAM0 PMS configuration corrupted (memory protection not locked - global PMS lock)\n");
                     abort();
                 }
                 for (size_t x = 0; x < core_count; x++) {
                     ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &locked,
-                                                                          memp_config->target_cpu[x]))
+                                          memp_config->target_cpu[x]))
                     if (!locked) {
                         esp_rom_printf(
-                                "Fatal error: DRAM0 PMS configuration corrupted (memory protection not locked - monitor lock on core %d)\n",
-                                memp_config->target_cpu[x]);
+                            "Fatal error: DRAM0 PMS configuration corrupted (memory protection not locked - monitor lock on core %d)\n",
+                            memp_config->target_cpu[x]);
                         abort();
                     }
                 }
             }
         }
+    }
+
+    //keep current configuration copy if all went well
+    if (ret == ESP_OK) {
+        s_memp_cfg = *memp_config;
     }
 
     return ret;
@@ -1199,9 +1285,8 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
     memprot_ll_dram0_get_pms_area_2(&ar2d, &aw2d);
     memprot_ll_dram0_get_pms_area_3(&ar3d, &aw3d);
 
-    bool rtc_line_lock_0, rtc_line_lock_1;
+    bool rtc_line_lock_0;
     memprot_ll_get_pif_constraint_lock(PRO_CPU_NUM, &rtc_line_lock_0);
-    memprot_ll_get_pif_constraint_lock(APP_CPU_NUM, &rtc_line_lock_1);
 
     sprintf((*dump_info_string + offset),
             "PMS area settings:\n"
@@ -1234,27 +1319,33 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
 
     offset = strlen(*dump_info_string);
 
-    sprintf((*dump_info_string + offset), " RTCFAST (APP_CPU, lock=%u):\n", rtc_line_lock_1);
+    //2-CPU setup
+    if (s_memp_cfg.target_cpu_count > 1) {
 
-    offset = strlen(*dump_info_string);
+        bool rtc_line_lock_1;
+        memprot_ll_get_pif_constraint_lock(APP_CPU_NUM, &rtc_line_lock_1);
+        sprintf((*dump_info_string + offset), " RTCFAST (APP_CPU, lock=%u):\n", rtc_line_lock_1);
 
-    err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arl0rtc, &awl0rtc, &axl0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_LOW));
-    if (err != ESP_OK) {
-        sprintf((*dump_info_string + offset), "   area low: N/A - %s\n", esp_err_to_name(err));
-    } else {
-        sprintf((*dump_info_string + offset), "   area low: r=%u,w=%u,x=%u\n", arl0rtc, awl0rtc, axl0rtc);
+        offset = strlen(*dump_info_string);
+
+        err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arl0rtc, &awl0rtc, &axl0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_LOW));
+        if (err != ESP_OK) {
+            sprintf((*dump_info_string + offset), "   area low: N/A - %s\n", esp_err_to_name(err));
+        } else {
+            sprintf((*dump_info_string + offset), "   area low: r=%u,w=%u,x=%u\n", arl0rtc, awl0rtc, axl0rtc);
+        }
+
+        offset = strlen(*dump_info_string);
+
+        err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arh0rtc, &awh0rtc, &axh0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_HIGH));
+        if (err != ESP_OK) {
+            sprintf((*dump_info_string + offset), "   area high: N/A - %s\n", esp_err_to_name(err));
+        } else {
+            sprintf((*dump_info_string + offset), "   area high: r=%u,w=%u,x=%u\n", arh0rtc, awh0rtc, axh0rtc);
+        }
+
+        offset = strlen(*dump_info_string);
     }
-
-    offset = strlen(*dump_info_string);
-
-    err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arh0rtc, &awh0rtc, &axh0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_HIGH));
-    if (err != ESP_OK) {
-        sprintf((*dump_info_string + offset), "   area high: N/A - %s\n", esp_err_to_name(err));
-    } else {
-        sprintf((*dump_info_string + offset), "   area high: r=%u,w=%u,x=%u\n", arh0rtc, awh0rtc, axh0rtc);
-    }
-
-    offset = strlen(*dump_info_string);
 
     return ESP_OK;
 }
