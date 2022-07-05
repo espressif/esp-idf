@@ -894,7 +894,7 @@ UT_S2_SDSPI:
 
 UT_C2:
   extends: .unit_test_esp32c2_template
-  parallel: 20
+  parallel: 21
   tags:
     - ESP32C2_IDF
     - UT_T1_1

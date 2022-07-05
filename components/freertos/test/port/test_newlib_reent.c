@@ -22,8 +22,6 @@
 volatile static int done;
 volatile static int error;
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5140
 static void tskTestRand(void *pvParameters)
 {
     int l;
@@ -61,4 +59,3 @@ TEST_CASE("Test for per-task non-reentrant tasks", "[freertos]")
     }
     TEST_ASSERT(error == 0);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
