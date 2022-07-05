@@ -2195,7 +2195,7 @@ coex_schm_unlock = 0x400021a8;
 coex_status_get = 0x400021ac;
 coex_wifi_release = 0x400021b0;
 esp_coex_ble_conn_dynamic_prio_get = 0x400021b4;
-coex_hw_timer_tick_get = 0x400021b8;
+/*coex_hw_timer_tick_get = 0x400021b8;*/
 /* Data (.data, .bss, .rodata) */
 coex_env_ptr = 0x3fcdfabc;
 coex_pti_tab_ptr = 0x3fcdfab8;
