@@ -62,6 +62,9 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 {
     esp_err_t ret = ESP_OK;
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)(handle->mode_info);
+    ESP_RETURN_ON_FALSE(std_cfg->slot_cfg.data_bit_width != I2S_DATA_BIT_WIDTH_24BIT ||
+                        (clk_cfg->mclk_multiple % 3 == 0), ESP_ERR_INVALID_ARG, TAG,
+                        "The 'mclk_multiple' should be the multiple of 3 while using 24-bit data width");
 
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
@@ -86,10 +89,6 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 
 static esp_err_t i2s_std_set_slot(i2s_chan_handle_t handle, const i2s_std_slot_config_t *slot_cfg)
 {
-    /* Check configuration validity */
-    ESP_RETURN_ON_FALSE((slot_cfg->slot_mode == I2S_SLOT_MODE_STEREO) || (slot_cfg->slot_mask != I2S_STD_SLOT_LEFT_RIGHT),
-                        ESP_ERR_INVALID_ARG, TAG, "Can't select both left and right slot in mono mode");
-
     /* Update the total slot num and active slot num */
     handle->total_slot = 2;
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;

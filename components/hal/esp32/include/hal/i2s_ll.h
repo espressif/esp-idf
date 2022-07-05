@@ -746,27 +746,106 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
 }
 
 /**
+ * @brief Set I2S PDM TX chan mode
+ * @param slot_mask select slot to send data
+ * @param is_mono is mono mode
+ */
+static inline void i2s_ll_tx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t slot_mask, bool is_mono)
+{
+    if (is_mono) {
+        switch (slot_mask)
+        {
+        case I2S_PDM_SLOT_RIGHT:
+            hw->conf_chan.tx_chan_mod = 3;
+            break;
+        case I2S_PDM_SLOT_LEFT:
+            hw->conf_chan.tx_chan_mod = 4;
+            break;
+        case I2S_PDM_SLOT_BOTH:
+            hw->conf_chan.tx_chan_mod = 1; // 1 & 2 has same effect
+            break;
+        default:
+            break;
+        }
+    } else {
+        switch (slot_mask)
+        {
+        case I2S_PDM_SLOT_RIGHT:
+            hw->conf_chan.tx_chan_mod = 1;
+            break;
+        case I2S_PDM_SLOT_LEFT:
+            hw->conf_chan.tx_chan_mod = 2;
+            break;
+        case I2S_PDM_SLOT_BOTH:
+            hw->conf_chan.tx_chan_mod = 0;
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+/**
+ * @brief Set I2S PDM RX chan mode
+ * @param slot_mask select slot to send data
+ */
+static inline void i2s_ll_rx_select_pdm_slot(i2s_dev_t *hw, i2s_pdm_slot_mask_t slot_mask)
+{
+    switch (slot_mask)
+    {
+    case I2S_PDM_SLOT_RIGHT:
+        hw->conf_chan.rx_chan_mod = 1;
+        break;
+    case I2S_PDM_SLOT_LEFT:
+        hw->conf_chan.rx_chan_mod = 2;
+        break;
+    case I2S_PDM_SLOT_BOTH:
+        hw->conf_chan.rx_chan_mod = 0;
+        break;
+    default:
+        break;
+    }
+}
+
+/**
  * @brief Set I2S tx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param slot_mask select slot to send data
- * @param is_msb_right the slot sequence is affected by msb_right according to TRM
+ * @param is_mono is mono mode
  */
-static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
+static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_mono)
 {
-    switch (slot_mask)
-    {
-    case I2S_STD_SLOT_ONLY_RIGHT:
-        hw->conf_chan.tx_chan_mod = is_msb_right ? 1 : 2;
-        break;
-    case I2S_STD_SLOT_ONLY_LEFT:
-        hw->conf_chan.tx_chan_mod = is_msb_right ? 2 : 1;
-        break;
-    case I2S_STD_SLOT_LEFT_RIGHT:
-        hw->conf_chan.tx_chan_mod = 0;
-        break;
-    default:
-        break;
+    if (is_mono) {
+        switch (slot_mask)
+        {
+        case I2S_STD_SLOT_RIGHT:
+            hw->conf_chan.tx_chan_mod = 3;
+            break;
+        case I2S_STD_SLOT_LEFT:
+            hw->conf_chan.tx_chan_mod = 4;
+            break;
+        case I2S_STD_SLOT_BOTH:
+            hw->conf_chan.tx_chan_mod = 1; // 1 & 2 has same effect
+            break;
+        default:
+            break;
+        }
+    } else {
+        switch (slot_mask)
+        {
+        case I2S_STD_SLOT_RIGHT:
+            hw->conf_chan.tx_chan_mod = 1;
+            break;
+        case I2S_STD_SLOT_LEFT:
+            hw->conf_chan.tx_chan_mod = 2;
+            break;
+        case I2S_STD_SLOT_BOTH:
+            hw->conf_chan.tx_chan_mod = 0;
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -777,17 +856,17 @@ static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot
  * @param slot_mask select slot to receive data
  * @param is_msb_right the slot sequence is affected by msb_right according to TRM
  */
-static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
+static inline void i2s_ll_rx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask, bool is_msb_right)
 {
     switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_RIGHT:
+    case I2S_STD_SLOT_RIGHT:
         hw->conf_chan.rx_chan_mod = is_msb_right ? 1 : 2;
         break;
-    case I2S_STD_SLOT_ONLY_LEFT:
+    case I2S_STD_SLOT_LEFT:
         hw->conf_chan.rx_chan_mod = is_msb_right ? 2 : 1;
         break;
-    case I2S_STD_SLOT_LEFT_RIGHT:
+    case I2S_STD_SLOT_BOTH:
         hw->conf_chan.rx_chan_mod = 0;
         break;
     default:

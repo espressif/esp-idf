@@ -6,6 +6,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define EXAMPLE_BUFF_SIZE   2048
 
 /**
@@ -21,3 +25,7 @@ void i2s_example_pdm_tx_task(void *args);
  * @param args  The user data given from task creating, not used in this example
  */
 void i2s_example_pdm_rx_task(void *args);
+
+#ifdef __cplusplus
+}
+#endif

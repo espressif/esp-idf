@@ -23,8 +23,7 @@ extern "C" {
     .id = i2s_num, \
     .role = i2s_role, \
     .dma_desc_num = 6, \
-    .dma_frame_num = 250, \
-    .dma_buf_in_psram = false, \
+    .dma_frame_num = 240, \
     .auto_clear = false, \
 }
 
@@ -60,9 +59,8 @@ typedef struct {
 
     /* DMA configurations */
     uint32_t            dma_desc_num;       /*!< I2S DMA buffer number, it is also the number of DMA descriptor */
-    uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots */
-    bool                dma_buf_in_psram;   /*!< Prefer to allocate the DMA buffers in the psram (not supported on ESP32)
-                                             *   To allocate the DMA buffers in the psram, SPIRAM should be enabled in menuconfig
+    uint32_t            dma_frame_num;      /*!< I2S frame number in one DMA buffer. One frame means one-time sample data in all slots,
+                                             *   it should be the multiple of '3' when the data bit width is 24.
                                              */
     bool                auto_clear;         /*!< Set to auto clear DMA TX buffer, i2s will always send zero automatically if no data to send */
 } i2s_chan_config_t;

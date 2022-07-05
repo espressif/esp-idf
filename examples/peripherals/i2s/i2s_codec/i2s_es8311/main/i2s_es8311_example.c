@@ -36,9 +36,9 @@
 #define I2S_DI_IO       (GPIO_NUM_19)
 #endif
 /* Example configurations */
-#define EXAMPLE_RECV_BUF_SIZE   (2048)
+#define EXAMPLE_RECV_BUF_SIZE   (2400)
 #define EXAMPLE_SAMPLE_RATE     (16000)
-#define EXAMPLE_MCLK_MULTIPLE   (256)
+#define EXAMPLE_MCLK_MULTIPLE   (384) // If not using 24-bit data width, 256 should be enough
 #define EXAMPLE_MCLK_FREQ_HZ    (EXAMPLE_SAMPLE_RATE * EXAMPLE_MCLK_MULTIPLE)
 #define EXAMPLE_VOICE_VOLUME    CONFIG_EXAMPLE_VOICE_VOLUME
 #if CONFIG_EXAMPLE_MODE_ECHO
@@ -114,6 +114,7 @@ static esp_err_t i2s_driver_init(void)
             },
         },
     };
+    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
 
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));

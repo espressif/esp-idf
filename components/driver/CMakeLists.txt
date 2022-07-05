@@ -116,7 +116,7 @@ else()
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS ${includes}
                         PRIV_INCLUDE_DIRS "include/driver"
-                        PRIV_REQUIRES efuse esp_timer esp_adc esp_psram
+                        PRIV_REQUIRES efuse esp_timer esp_adc
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                         LDFRAGMENTS linker.lf)
 endif()

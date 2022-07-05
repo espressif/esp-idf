@@ -68,7 +68,8 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     /* Set clock configurations in HAL*/
     i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
 #if SOC_I2S_HW_VERSION_2
-    /* Work aroud for PDM TX clock, set the raw division directly to reduce the noise */
+    /* Work aroud for PDM TX clock, overwrite the raw division directly to reduce the noise
+     * This set of coefficients is a special division to reduce the background noise in PDM TX mode */
     i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, 1, 1, 0, 0);
 #endif
     portEXIT_CRITICAL(&g_i2s.spinlock);
@@ -167,9 +168,10 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     }
     handle->mode_info = calloc(1, sizeof(i2s_pdm_tx_config_t));
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
-    ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, &pdm_tx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
-    /* i2s_set_pdm_tx_slot should be called before i2s_set_pdm_tx_clock while initializing, because clock is relay on the slot */
+    /* i2s_set_pdm_tx_slot should be called before i2s_set_pdm_tx_clock and i2s_pdm_tx_set_gpio
+     * while initializing, because clock and gpio is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_slot(handle, &pdm_tx_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
+    ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, &pdm_tx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
 #if SOC_I2S_SUPPORTS_APLL
     /* Enable APLL and acquire its lock when the clock source is APLL */
     if (pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {

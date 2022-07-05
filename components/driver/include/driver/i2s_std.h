@@ -16,11 +16,13 @@
 #include "hal/gpio_types.h"
 #include "driver/i2s_common.h"
 
+#include "sdkconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_I2S_HW_VERSION_1 // For esp32/esp32-s2
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Philip format in 2 slots
  * @param bits_per_sample i2s data bit width
@@ -31,7 +33,63 @@ extern "C" {
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
-                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
+                I2S_STD_SLOT_LEFT : I2S_STD_SLOT_BOTH, \
+    .ws_width = bits_per_sample, \
+    .ws_pol = false, \
+    .bit_shift = true, \
+    .msb_right = (bits_per_sample <= I2S_DATA_BIT_WIDTH_16BIT) ? \
+                true : false, \
+}
+
+/**
+ * @brief PCM(short) format in 2 slots
+ * @note  PCM(long) is sample as philip in 2 slots
+ * @param bits_per_sample i2s data bit width
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_STD_PCM_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_LEFT : I2S_STD_SLOT_BOTH, \
+    .ws_width = 1, \
+    .ws_pol = true, \
+    .bit_shift = true, \
+    .msb_right = (bits_per_sample <= I2S_DATA_BIT_WIDTH_16BIT) ? \
+                true : false, \
+}
+
+/**
+ * @brief MSB format in 2 slots
+ * @param bits_per_sample i2s data bit width
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_STD_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_LEFT : I2S_STD_SLOT_BOTH, \
+    .ws_width = bits_per_sample, \
+    .ws_pol = false, \
+    .bit_shift = false, \
+    .msb_right = (bits_per_sample <= I2S_DATA_BIT_WIDTH_16BIT) ? \
+                true : false, \
+}
+
+#elif CONFIG_IDF_TARGET_ESP32S2
+/**
+ * @brief Philip format in 2 slots
+ * @param bits_per_sample i2s data bit width
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_LEFT : I2S_STD_SLOT_BOTH, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = true, \
@@ -49,7 +107,7 @@ extern "C" {
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
-                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
+                I2S_STD_SLOT_LEFT : I2S_STD_SLOT_BOTH, \
     .ws_width = 1, \
     .ws_pol = true, \
     .bit_shift = true, \
@@ -66,7 +124,7 @@ extern "C" {
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
-                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
+                I2S_STD_SLOT_LEFT : I2S_STD_SLOT_BOTH, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = false, \
@@ -83,8 +141,7 @@ extern "C" {
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
-    .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
-                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
+    .slot_mask = I2S_STD_SLOT_BOTH, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = true, \
@@ -103,8 +160,7 @@ extern "C" {
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
-    .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
-                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
+    .slot_mask = I2S_STD_SLOT_BOTH, \
     .ws_width = 1, \
     .ws_pol = true, \
     .bit_shift = true, \
@@ -122,8 +178,7 @@ extern "C" {
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
-    .slot_mask = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
-                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
+    .slot_mask = I2S_STD_SLOT_BOTH, \
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = false, \
@@ -152,7 +207,10 @@ typedef struct {
     /* General fields */
     i2s_data_bit_width_t    data_bit_width;     /*!< I2S sample data bit width (valid data bits per sample) */
     i2s_slot_bit_width_t    slot_bit_width;     /*!< I2S slot bit width (total bits per slot) */
-    i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
+    i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+                                                 *   In TX direction, mono means the written buffer contains only one slot data
+                                                 *   and stereo means the written buffer contains both left and right data
+                                                 */
 
     /* Particular fields */
     i2s_std_slot_mask_t     slot_mask;          /*!< Select the left, right or both slot */
@@ -175,7 +233,11 @@ typedef struct {
     /* General fields */
     uint32_t                sample_rate_hz;     /*!< I2S sample rate */
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
-    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate */
+    i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of mclk to the sample rate
+                                                 *   Default is 256 in the helper macro, it can satisfy most of cases,
+                                                 *   but please set this field a multiple of '3' (like 384) when using 24-bit data width,
+                                                 *   otherwise the sample rate might be inaccurate
+                                                 */
 } i2s_std_clk_config_t;
 
 /**

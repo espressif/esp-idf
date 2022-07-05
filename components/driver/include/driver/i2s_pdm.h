@@ -191,6 +191,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = I2S_PDM_SLOT_BOTH, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
@@ -243,6 +244,9 @@ typedef struct {
                                                  *   Stereo means the data buffer contains two slots data
                                                  */
     /* Particular fields */
+#if SOC_I2S_HW_VERSION_1
+    i2s_pdm_slot_mask_t     slot_mask;          /*!< Slot mask to choose left or right slot */
+#endif
     uint32_t                sd_prescale;        /*!< Sigma-delta filter prescale */
     i2s_pdm_sig_scale_t     sd_scale;           /*!< Sigma-delta filter scaling value */
     i2s_pdm_sig_scale_t     hp_scale;           /*!< High pass filter scaling value */

@@ -32,7 +32,7 @@
 #include "soc/pcnt_periph.h"
 #endif
 
-#include "test_inc/test_i2s.h"
+#include "../../test_inc/test_i2s.h"
 
 #define I2S_TEST_MODE_SLAVE_TO_MASTER 0
 #define I2S_TEST_MODE_MASTER_TO_SLAVE 1
@@ -416,7 +416,7 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     };
     i2s_std_config_t rx_std_cfg = tx_std_cfg;
     rx_std_cfg.slot_cfg.slot_mode = I2S_SLOT_MODE_MONO;
-    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_ONLY_RIGHT;
+    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
 
     /* TX channel basic test */
     TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
@@ -463,7 +463,7 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
      * rx receive: 0x00[R] 0x02[R] ... */
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
-    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_ONLY_LEFT;
+    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT;
     TEST_ESP_OK(i2s_channel_reconfig_std_slot(rx_handle, &rx_std_cfg.slot_cfg));
     TEST_ESP_OK(i2s_channel_enable(tx_handle));
     TEST_ESP_OK(i2s_channel_enable(rx_handle));
@@ -493,7 +493,7 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
     rx_std_cfg.slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
-    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_LEFT_RIGHT;
+    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_BOTH;
     TEST_ESP_OK(i2s_channel_reconfig_std_slot(rx_handle, &rx_std_cfg.slot_cfg));
     TEST_ESP_OK(i2s_channel_enable(tx_handle));
     TEST_ESP_OK(i2s_channel_enable(rx_handle));

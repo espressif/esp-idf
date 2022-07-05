@@ -17,7 +17,7 @@
  * Set 0 to allocate rx & tx channels in simplex mode, these two channels will be totally separated,
  * Specifically, due to the hardware limitation, the simplex rx & tx channels can't be registered on the same controllers on ESP32 and ESP32-S2,
  * and ESP32-S2 has only one I2S controller, so it can't allocate two simplex channels */
-#define EXAMPLE_I2S_DUPLEX_MODE     (1 || CONFIG_IDF_TARGET_ESP32S2)
+#define EXAMPLE_I2S_DUPLEX_MODE         CONFIG_USE_DUPLEX
 
 #if CONFIG_IDF_TARGET_ESP32
     #define EXAMPLE_STD_BCLK_IO1        GPIO_NUM_4      // I2S bit clock io number
@@ -187,7 +187,7 @@ static void i2s_example_init_std_simplex(void)
     };
     /* Default is only receiving left slot in mono mode,
      * update to right here to show how to change the default configuration */
-    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_ONLY_RIGHT;
+    rx_std_cfg.slot_cfg.slot_mask = I2S_STD_SLOT_RIGHT;
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_chan, &rx_std_cfg));
 }
 #endif

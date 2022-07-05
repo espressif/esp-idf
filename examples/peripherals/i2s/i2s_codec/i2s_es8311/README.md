@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 | ESP32-H2 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # I2S ES8311 Example
 
@@ -34,21 +34,21 @@ For more details, see [ES8311 datasheet](http://www.everest-semi.com/pdf/ES8311%
 ┌─────────────────┐           ┌──────────────────────────┐
 │       ESP       │           │          ES8311          │
 │                 │           │                          │
-│     MCLK-GPIO 0 ├──────────►│PIN2-MCLK                 │
+│       I2S_MCK_IO├──────────►│PIN2-MCLK                 │
 │                 │           │                          │           ┌─────────┐
-│     BCLK-GPIO 4 ├──────────►│PIN6-BCLK       PIN12-OUTP├───────────┤         │
+│       I2S_BCK_IO├──────────►│PIN6-BCLK       PIN12-OUTP├───────────┤         │
 │                 │           │                          │           │ EARPHONE│
-│       WS-GPIO 5 ├──────────►│PIN8-LRCK       PIN13-OUTN├───────────┤         │
+│        I2S_WS_IO├──────────►│PIN8-LRCK       PIN13-OUTN├───────────┤         │
 │                 │           │                          │           └─────────┘
-│    SDOUT-GPIO 18├──────────►│PIN9-SDIN                 │
-│         (GPIO 2)│           │                          │
-│     SDIN-GPIO 19│◄──────────┤PIN7-SDOUT                │
-│         (GPIO 3)│           │                          │           ┌─────────┐
+│        I2S_DO_IO├──────────►│PIN9-SDIN                 │
+│                 │           │                          │
+│        I2S_DI_IO│◄──────────┤PIN7-SDOUT                │
+│                 │           │                          │           ┌─────────┐
 │                 │           │               PIN18-MIC1P├───────────┤         │
-│      SCL-GPIO 16├──────────►│PIN1 -CCLK                │           │  MIC    │
-│         (GPIO 6)│           │               PIN17-MIC1N├───────────┤         │
-│      SDA-GPIO 17│◄─────────►│PIN19-CDATA               │           └─────────┘
-│         (GPIO 7)│           │                          │
+│       I2C_SCL_IO├──────────►│PIN1 -CCLK                │           │  MIC    │
+│                 │           │               PIN17-MIC1N├───────────┤         │
+│       I2C_SDA_IO│◄─────────►│PIN19-CDATA               │           └─────────┘
+│                 │           │                          │
 │          VCC 3.3├───────────┤VCC                       │
 │                 │           │                          │
 │              GND├───────────┤GND                       │

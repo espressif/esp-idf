@@ -135,7 +135,7 @@ Standard mode always has left and right two sound channels which are called 'slo
     PDM Mode (TX)
     ^^^^^^^^^^^^^
 
-    PDM mode for tx channel can convert PCM data into PDM format which always has left and right slots. PDM TX can only support 16 bits width sample data. PDM TX only needs CLK pin for clock signal and DOUT pin for data signal (i.e. WS and SD signal in the following figure, the BCK signal is an internal bit sampling clock, not needed between PDM devices). This mode allows user to configure the up-sampling parameters :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`. The up-sampling rate can be calculated by ``up_sample_rate = fp / fs``, there are up-sampling modes in PDM TX:
+    PDM(Pulse-density Modulation) mode for tx channel can convert PCM data into PDM format which always has left and right slots. PDM TX can only support 16 bits width sample data. PDM TX only needs CLK pin for clock signal and DOUT pin for data signal (i.e. WS and SD signal in the following figure, the BCK signal is an internal bit sampling clock, not needed between PDM devices). This mode allows user to configure the up-sampling parameters :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`. The up-sampling rate can be calculated by ``up_sample_rate = fp / fs``, there are up-sampling modes in PDM TX:
 
     - **Fixed Clock Frequency**: In this mode the up-sampling rate will change according to the sample rate. Setting ``fp = 960`` and ``fs = sample_rate / 100``, then the clock frequency(Fpdm) on CLK pin will be fixed to 128 * 48 KHz = 6.144 MHz, note that this frequency is not equal to the sample rate(Fpcm).
     - **Fixed Up-sampling Rate**: In this mode the up-sampling rate is fixed to 2. Setting ``fp = 960`` and ``fs = 480``, then the clock frequency(Fpdm) on CLK pin will be ``128 * sample_rate``
@@ -148,7 +148,7 @@ Standard mode always has left and right two sound channels which are called 'slo
     PDM Mode (RX)
     ^^^^^^^^^^^^^
 
-    PDM mode for rx channel can receive PDM format data and convert the data into PCM format. PDM RX can only support 16 bits width sample data. PDM RX only need WS pin for clock signal and DIN pin for data signal. This mode allows user to configure the down-sampling parameter :cpp:member:`i2s_pdm_rx_clk_config_t::dn_sample_mode`, there are two down-sampling modes in PDM RX:
+    PDM(Pulse-density Modulation) mode for rx channel can receive PDM format data and convert the data into PCM format. PDM RX can only support 16 bits width sample data. PDM RX only need WS pin for clock signal and DIN pin for data signal. This mode allows user to configure the down-sampling parameter :cpp:member:`i2s_pdm_rx_clk_config_t::dn_sample_mode`, there are two down-sampling modes in PDM RX:
 
     - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_8S`: In this mode, the clock frequency(Fpdm) on WS pin will be sample_rate(Fpcm) * 64.
     - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_16S`: In this mode, the clock frequency(Fpdm) on WS pin will be sample_rate(Fpcm) * 128.
@@ -159,9 +159,9 @@ Standard mode always has left and right two sound channels which are called 'slo
     TDM Mode
     ^^^^^^^^
 
-    TDM mode supports upto 16 slots, these slots can be enabled by :cpp:member:`i2s_tdm_slot_config_t::slot_mask`. But due to the hardware limitation, only upto 4 slots are supported while the slot is set to 32 bit-width, and 8 slots for 16 bit-width, 16 slots for 8 bit-width. The slot communication format of TDM is almost same as standard mode, but there are some small differences between them.
+    TDM(Time Division Multiplexing) mode supports upto 16 slots, these slots can be enabled by :cpp:member:`i2s_tdm_slot_config_t::slot_mask`. But due to the hardware limitation, only upto 4 slots are supported while the slot is set to 32 bit-width, and 8 slots for 16 bit-width, 16 slots for 8 bit-width. The slot communication format of TDM is almost same as standard mode, but there are some small differences between them.
 
-    - **Philip Format**： Data signal have one bit shift comparing to the WS(word select) signal. And no matter how many slots are contained in one frame, the duty of WS signal will always keep 50%.
+    - **Philip Format**: Data signal have one bit shift comparing to the WS(word select) signal. And no matter how many slots are contained in one frame, the duty of WS signal will always keep 50%.
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_philip.json
 
@@ -228,7 +228,7 @@ The ``<mode>`` in the diagram can be replaced by corresponding I2S communication
 Data Transport
 ^^^^^^^^^^^^^^
 
-The data transport of I2S peripheral, including sending and receiving, is realized by DMA. Before transporting data, please call :cpp:func:`i2s_channel_enable` to enable the specific channel. When the sent or received data reach the size of one DMA buffer, ``I2S_OUT_EOF`` or ``I2S_IN_SUC_EOF`` interrupt will be triggered. Note that the DMA buffer size is not equal to :cpp:member:`i2s_std_slot_config_t::dma_frame_num`, one frame here means all the sampled data in one WS circle. Therefore, ``dma_buffer_size = dma_frame_num * slot_num * slot_bit_width / 8``. For the transmit case, users can input the data by calling :cpp:func:`i2s_channel_write`. This function will help users to copy the data from the source buffer to the DMA tx buffer and wait for the transmition finished. Then it'll repeat until the sent bytes reach the given size. For the receive case, the function :cpp:func:`i2s_channel_read` will wait for receiving the message queue which contains the DMA buffer address, it will help users to copy the data from DMA rx buffer to the destination buffer.
+The data transport of I2S peripheral, including sending and receiving, is realized by DMA. Before transporting data, please call :cpp:func:`i2s_channel_enable` to enable the specific channel. When the sent or received data reach the size of one DMA buffer, ``I2S_OUT_EOF`` or ``I2S_IN_SUC_EOF`` interrupt will be triggered. Note that the DMA buffer size is not equal to :cpp:member:`i2s_chan_config_t::dma_frame_num`, one frame here means all the sampled data in one WS circle. Therefore, ``dma_buffer_size = dma_frame_num * slot_num * slot_bit_width / 8``. For the transmit case, users can input the data by calling :cpp:func:`i2s_channel_write`. This function will help users to copy the data from the source buffer to the DMA tx buffer and wait for the transmition finished. Then it'll repeat until the sent bytes reach the given size. For the receive case, the function :cpp:func:`i2s_channel_read` will wait for receiving the message queue which contains the DMA buffer address, it will help users to copy the data from DMA rx buffer to the destination buffer.
 
 Both :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` are blocking functions, they will keep waiting until the whole source buffer are sent or the whole destination buffer loaded, unless they exceed the max blocking time, then the error code `ESP_ERR_TIMEOUT` will return in this case. To send or receive data asynchronously, callbacks can be registered by  :cpp:func:`i2s_channel_register_event_callback`, users are able to access the DMA buffer directly in the callback function instead of transmitting or receiving by the two blocking functions. However, please be aware that it is an interrupt callback, don't do complex logic, floating operation or call non-reentrant functions in the callback.
 
@@ -268,7 +268,7 @@ Application Example
 The examples of the I2S driver can be found in the directory :example:`peripherals/i2s`.
 Here are some simple usages of each mode:
 
-Standard TX/RX usage
+Standard TX/RX Usage
 ^^^^^^^^^^^^^^^^^^^^
 
 Different slot communication formats can be generated by following helper macros for standard mode. As described above, there are three formats in standard mode, their helper macros are:
@@ -283,6 +283,87 @@ The clock config helper macro is:
 
 Please refer to :ref:`i2s-api-reference-i2s_std` for STD API information.
 And for more details, please refer to :component_file:`driver/include/driver/i2s_std.h`.
+
+STD TX Mode
+~~~~~~~~~~~
+
+Take 16-bit data width for example, when the data in a ``uint16_t`` writting buffer are:
+
++--------+--------+--------+--------+--------+--------+--------+--------+--------+
+| data 0 | data 1 | data 2 | data 3 | data 4 | data 5 | data 6 | data 7 |  ...   |
++========+========+========+========+========+========+========+========+========+
+| 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x0008 |  ...   |
++--------+--------+--------+--------+--------+--------+--------+--------+--------+
+
+Here is the table of the real data on the line with different :cpp:member:`i2s_std_slot_config_t::slot_mode` and :cpp:member:`i2s_std_slot_config_t::slot_mask`
+
+.. only:: esp32
+
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    | data bit width | slot mode | slot mask | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  |
+    +================+===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+    |                |  mono     |   left    | 0x0002   | 0x0000   | 0x0001   | 0x0000   | 0x0004   | 0x0000   | 0x0003   | 0x0000   |
+    |     16 bit     |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   right   | 0x0000   | 0x0002   | 0x0000   | 0x0001   | 0x0000   | 0x0004   | 0x0000   | 0x0003   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   both    | 0x0002   | 0x0002   | 0x0001   | 0x0001   | 0x0004   | 0x0004   | 0x0003   | 0x0003   |
+    |                +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |  stereo   |   left    | 0x0001   | 0x0001   | 0x0003   | 0x0003   | 0x0005   | 0x0005   | 0x0007   | 0x0007   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   right   | 0x0002   | 0x0002   | 0x0004   | 0x0004   | 0x0006   | 0x0006   | 0x0008   | 0x0008   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   both    | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. note::
+
+        It's similar when the data is 32-bit width, but take care when using 8-bit and 24-bit data width. For 8-bit width, the written buffer should still using ``uint16_t`` (i.e. align with 2 bytes), and only the high 8 bits will be valid, the low 8 bits are dropped, and for 24-bit width, the buffer is supposed to use ``uint32_t`` (i.e. align with 4 bytes), and only the high 24 bits valid, the low 8 bits are dropped.
+
+        Another point is that, for the ``8-bit`` and ``16-bit`` mono mode, the real data on the line are swapped. To get the correct sequence, the writting buffer need to swap the data every two bytes.
+
+.. only:: esp32s2
+
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    | data bit width | slot mode | slot mask | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  |
+    +================+===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+    |                |  mono     |   left    | 0x0001   | 0x0000   | 0x0002   | 0x0000   | 0x0003   | 0x0000   | 0x0004   | 0x0000   |
+    |     16 bit     |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   right   | 0x0000   | 0x0001   | 0x0000   | 0x0002   | 0x0000   | 0x0003   | 0x0000   | 0x0004   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   both    | 0x0001   | 0x0001   | 0x0002   | 0x0002   | 0x0003   | 0x0003   | 0x0004   | 0x0004   |
+    |                +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |  stereo   |   left    | 0x0001   | 0x0001   | 0x0003   | 0x0003   | 0x0005   | 0x0005   | 0x0007   | 0x0007   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   right   | 0x0002   | 0x0002   | 0x0004   | 0x0004   | 0x0006   | 0x0006   | 0x0008   | 0x0008   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   both    | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. note::
+
+        Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writting buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
+
+.. only:: esp32c3 or esp32s3 or esp32h2
+
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    | data bit width | slot mode | slot mask | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  | ws low   | ws high  |
+    +================+===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+    |                |  mono     |   left    | 0x0001   | 0x0000   | 0x0002   | 0x0000   | 0x0003   | 0x0000   | 0x0004   | 0x0000   |
+    |     16 bit     |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   right   | 0x0000   | 0x0001   | 0x0000   | 0x0002   | 0x0000   | 0x0003   | 0x0000   | 0x0004   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   both    | 0x0001   | 0x0001   | 0x0002   | 0x0002   | 0x0003   | 0x0003   | 0x0004   | 0x0004   |
+    |                +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |  stereo   |   left    | 0x0001   | 0x0001   | 0x0003   | 0x0003   | 0x0005   | 0x0005   | 0x0007   | 0x0007   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   right   | 0x0002   | 0x0002   | 0x0004   | 0x0004   | 0x0006   | 0x0006   | 0x0008   | 0x0008   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |           |   both    | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. note::
+
+        Similar for 8-bit and 32-bit data width, the type of the buffer is better to be ``uint8_t`` and ``uint32_t`` type. But specially, when the data width is 24-bit, the data buffer should aligned with 3-byte(i.e. every 3 bytes stands for a 24-bit data in one slot), additionally, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the writting buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
 
 .. code-block:: c
 
@@ -335,6 +416,69 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
     i2s_channel_disable(tx_handle);
     /* If the handle is not needed any more, delete it to release the channel resources */
     i2s_del_channel(tx_handle);
+
+STD RX Mode
+~~~~~~~~~~~
+
+Take 16-bit data width for example, when the data on the line are:
+
++--------+--------+--------+--------+--------+--------+--------+--------+--------+
+| ws low | ws high| ws low | ws high| ws low | ws high| ws low | ws high|  ...   |
++========+========+========+========+========+========+========+========+========+
+| 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x0008 |  ...   |
++--------+--------+--------+--------+--------+--------+--------+--------+--------+
+
+Here is the table of the data that received in the buffer with different :cpp:member:`i2s_std_slot_config_t::slot_mode` and :cpp:member:`i2s_std_slot_config_t::slot_mask`
+
+.. only:: esp32
+
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    | data bit width | slot mode | slot mask | data 0   | data 1   | data 2   | data 3   | data 4   | data 5   | data 6   | data 7   |
+    +================+===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+    |                |  mono     |   left    | 0x0001   | 0x0000   | 0x0005   | 0x0003   | 0x0009   | 0x0007   | 0x000d   | 0x000b   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |     16 bit     |           |   right   | 0x0002   | 0x0000   | 0x0006   | 0x0004   | 0x000a   | 0x0008   | 0x000e   | 0x000c   |
+    |                +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |  stereo   |   any     | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. note::
+
+        The receive case is a little bit complicated on ESP32.
+        Firstly, when the data width are ``8-bit`` or ``24-bit``, the received data will still align with two bytes or four bytes, which means the valid data are put in the high 8 bits in every two bytes and high 24 bits in every four bytes. For example, the received data will be ``0x5A00`` when the data on the line is ``0x5A`` in 8-bit width, and receive ``0x0000 5A00`` if the data ``0x00 005A`` on the line.
+        Secondly, for ``8-bit`` and ``16-bit`` mono case, the data in buffer are swapped every two data, they may need to be swapped back manually to get the correct order.
+
+.. only:: esp32s2
+
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    | data bit width | slot mode | slot mask | data 0   | data 1   | data 2   | data 3   | data 4   | data 5   | data 6   | data 7   |
+    +================+===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+    |                |  mono     |   left    | 0x0001   | 0x0003   | 0x0005   | 0x0007   | 0x0009   | 0x000b   | 0x000d   | 0x000f   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |     16 bit     |           |   right   | 0x0002   | 0x0004   | 0x0006   | 0x0008   | 0x000a   | 0x000c   | 0x000e   | 0x0010   |
+    |                +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |  stereo   |   any     | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. note::
+
+        ``8-bit``, ``24-bit`` and ``32-bit`` are similar as ``16-bit``, the data bit-width in the receiving buffer are equal to the data bit-width on the line. Additionally, when using ``24-bit`` data width, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the receiving buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
+
+.. only:: esp32c3 or esp32s3 or esp32h2
+
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    | data bit width | slot mode | slot mask | data 0   | data 1   | data 2   | data 3   | data 4   | data 5   | data 6   | data 7   |
+    +================+===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+    |                |  mono     |   left    | 0x0001   | 0x0003   | 0x0005   | 0x0007   | 0x0009   | 0x000b   | 0x000d   | 0x000f   |
+    |                |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |     16 bit     |           |   right   | 0x0002   | 0x0004   | 0x0006   | 0x0008   | 0x000a   | 0x000c   | 0x000e   | 0x0010   |
+    |                +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+    |                |  stereo   |   any     | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+    +----------------+-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. note::
+
+        ``8-bit``, ``24-bit`` and ``32-bit`` are similar as ``16-bit``, the data bit-width in the receiving buffer are equal to the data bit-width on the line. Additionally, when using ``24-bit`` data width, :cpp:member:`i2s_chan_config_t::dma_frame_num`, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` and the receiving buffer size should be the multiple of ``3``, otherwise the data on the line or the sample rate will be incorrect.
 
 .. code-block:: c
 
@@ -397,6 +541,61 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
     Please refer to :ref:`i2s-api-reference-i2s_pdm` for PDM TX API information.
     And for more details, please refer to :component_file:`driver/include/driver/i2s_pdm.h`.
 
+    The PDM data width is fixed to 16-bit, when the data in a ``int16_t`` writting buffer are:
+
+    +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+    | data 0 | data 1 | data 2 | data 3 | data 4 | data 5 | data 6 | data 7 |  ...   |
+    +========+========+========+========+========+========+========+========+========+
+    | 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x0008 |  ...   |
+    +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+
+    .. only:: esp32
+
+        Here is the table of the real data on the line with different :cpp:member:`i2s_pdm_tx_slot_config_t::slot_mode` and :cpp:member:`i2s_pdm_tx_slot_config_t::slot_mask` (The PDM format on the line is transferred to PCM format for better comprehension).
+
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        | slot mode | slot mask |  left    |  right   |  left    |  right   |  left    |  right   |  left    |  right   |
+        +===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+        |  mono     |   left    | 0x0001   | 0x0000   | 0x0002   | 0x0000   | 0x0003   | 0x0000   | 0x0004   | 0x0000   |
+        |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |           |   right   | 0x0000   | 0x0001   | 0x0000   | 0x0002   | 0x0000   | 0x0003   | 0x0000   | 0x0004   |
+        |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |           |   both    | 0x0001   | 0x0001   | 0x0002   | 0x0002   | 0x0003   | 0x0003   | 0x0004   | 0x0004   |
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |  stereo   |   left    | 0x0001   | 0x0001   | 0x0003   | 0x0003   | 0x0005   | 0x0005   | 0x0007   | 0x0007   |
+        |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |           |   right   | 0x0002   | 0x0002   | 0x0004   | 0x0004   | 0x0006   | 0x0006   | 0x0008   | 0x0008   |
+        |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |           |   both    | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. only:: esp32c3 or esp32s3 or esp32h2
+
+        Here is the table of the real data on the line with different :cpp:member:`i2s_pdm_tx_slot_config_t::slot_mode` and :cpp:member:`i2s_pdm_tx_slot_config_t::line_mode` (The PDM format on the line is transferred to PCM format for easier comprehension).
+
+        +----------------+-----------+------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |    line mode   | slot mode | line |  left  |  right |  left  |  right |  left  |  right |  left  |  right |
+        +================+===========+======+========+========+========+========+========+========+========+========+
+        |                |    mono   | dout | 0x0001 | 0x0000 | 0x0002 | 0x0000 | 0x0003 | 0x0000 | 0x0004 | 0x0000 |
+        | one-line codec +-----------+------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |                |   stereo  | dout | 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x0008 |
+        +----------------+-----------+------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |  one-line dac  |    mono   | dout | 0x0001 | 0x0001 | 0x0002 | 0x0002 | 0x0003 | 0x0003 | 0x0004 | 0x0004 |
+        +----------------+-----------+------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |                |    mono   | dout | 0x0002 | 0x0002 | 0x0004 | 0x0004 | 0x0006 | 0x0006 | 0x0008 | 0x0008 |
+        |                |           +------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |                |           | dout2| 0x0000 | 0x0000 | 0x0000 | 0x0000 | 0x0000 | 0x0000 | 0x0000 | 0x0000 |
+        |  two-line dac  +-----------+------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |                |   stereo  | dout | 0x0002 | 0x0002 | 0x0004 | 0x0004 | 0x0006 | 0x0006 | 0x0008 | 0x0008 |
+        |                |           +------+--------+--------+--------+--------+--------+--------+--------+--------+
+        |                |           | dout2| 0x0001 | 0x0001 | 0x0003 | 0x0003 | 0x0005 | 0x0005 | 0x0007 | 0x0007 |
+        +----------------+-----------+------+--------+--------+--------+--------+--------+--------+--------+--------+
+
+        .. note::
+
+            There are three line modes for PDM TX mode, they are ``I2S_PDM_TX_ONE_LINE_CODEC``, ``I2S_PDM_TX_ONE_LINE_DAC`` and ``I2S_PDM_TX_TWO_LINE_DAC``. One-line codec is for the PDM codecs those require clock signal, the PDM codec can differentiate the left and right slots by the clock level, and the other two are used to driver power amplifiers directly with a low-pass filter, they do not need the clock signal, so there are two lines to differentiate the left and right slots. Additionally, for the mono mode of one-line codec, the slot can be force to change to the right by setting the clock invert flag in gpio configuration.
+
+
     .. code-block:: c
 
         #include "driver/i2s_pdm.h"
@@ -438,6 +637,44 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
 
     Please refer to :ref:`i2s-api-reference-i2s_pdm` for PDM RX API information.
     And for more details, please refer to :component_file:`driver/include/driver/i2s_pdm.h`.
+
+    The PDM data width is fixed to 16-bit, when the data on the line (The PDM format on the line is transferred to PCM format for easier comprehension) are:
+
+    +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+    |  left  |  right |  left  |  right |  left  |  right |  left  |  right |  ...   |
+    +========+========+========+========+========+========+========+========+========+
+    | 0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0007 | 0x0008 |  ...   |
+    +--------+--------+--------+--------+--------+--------+--------+--------+--------+
+
+    Here is the table of the data that received in a 'int16_t' buffer with different :cpp:member:`i2s_pdm_rx_slot_config_t::slot_mode` and :cpp:member:`i2s_pdm_rx_slot_config_t::slot_mask`
+
+    .. only:: esp32
+
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        | slot mode | slot mask | data 0   | data 1   | data 2   | data 3   | data 4   | data 5   | data 6   | data 7   |
+        +===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+        |  mono     |   left    | 0x0001   | 0x0003   | 0x0005   | 0x0007   | 0x0009   | 0x000b   | 0x000d   | 0x000f   |
+        |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |           |   right   | 0x0002   | 0x0004   | 0x0006   | 0x0008   | 0x000a   | 0x000c   | 0x000e   | 0x0010   |
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |  stereo   |   both    | 0x0001   | 0x0002   | 0x0003   | 0x0004   | 0x0005   | 0x0006   | 0x0007   | 0x0008   |
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+    .. only:: esp32s3
+
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        | slot mode | slot mask | data 0   | data 1   | data 2   | data 3   | data 4   | data 5   | data 6   | data 7   |
+        +===========+===========+==========+==========+==========+==========+==========+==========+==========+==========+
+        |  mono     |   left    | 0x0001   | 0x0003   | 0x0005   | 0x0007   | 0x0009   | 0x000b   | 0x000d   | 0x000f   |
+        |           +-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |           |   right   | 0x0002   | 0x0004   | 0x0006   | 0x0008   | 0x000a   | 0x000c   | 0x000e   | 0x0010   |
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+        |  stereo   |   both    | 0x0002   | 0x0001   | 0x0004   | 0x0003   | 0x0006   | 0x0005   | 0x0008   | 0x0007   |
+        +-----------+-----------+----------+----------+----------+----------+----------+----------+----------+----------+
+
+        .. note::
+
+            The right slot is received first in stereo mode. To switch the left and right slot in the buffer, please set the :cpp:member:`i2s_pdm_rx_gpio_config_t::invert_flags::clk_inv` to force invert the clock signal.
 
     .. code-block:: c
 
@@ -486,6 +723,9 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
     Please refer to :ref:`i2s-api-reference-i2s_tdm` for TDM API information.
     And for more details, please refer to :component_file:`driver/include/driver/i2s_tdm.h`.
 
+    TDM TX Mode
+    ~~~~~~~~~~~
+
     .. code-block:: c
 
         #include "driver/i2s_tdm.h"
@@ -516,6 +756,9 @@ And for more details, please refer to :component_file:`driver/include/driver/i2s
         i2s_channel_init_tdm_mode(tx_handle, &tdm_cfg);
 
         ...
+
+    TDM RX Mode
+    ~~~~~~~~~~~
 
     .. code-block:: c
 

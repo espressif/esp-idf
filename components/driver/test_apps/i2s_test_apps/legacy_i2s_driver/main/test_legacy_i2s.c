@@ -30,7 +30,7 @@
 #include "soc/pcnt_periph.h"
 #endif
 
-#include "test_inc/test_i2s.h"
+#include "../../test_inc/test_i2s.h"
 
 #define PERCENT_DIFF 0.0001
 
@@ -254,9 +254,9 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s_legacy]")
     TEST_ESP_OK(i2s_stop(I2S_NUM_0));
     /* Config TX as stereo channel directly, because legacy driver can't support config tx&rx separately */
 #if SOC_I2S_HW_VERSION_1
-    i2s_ll_tx_select_slot(&I2S0, I2S_STD_SLOT_LEFT_RIGHT, true);
+    i2s_ll_tx_select_std_slot(&I2S0, I2S_STD_SLOT_BOTH, false);
 #else
-    i2s_ll_tx_select_slot(&I2S0, I2S_STD_SLOT_LEFT_RIGHT);
+    i2s_ll_tx_select_std_slot(&I2S0, I2S_STD_SLOT_BOTH);
 #endif
     i2s_ll_tx_enable_mono_mode(&I2S0, false);
 
@@ -352,9 +352,9 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s_legacy]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_stop(I2S_NUM_0));
 #if SOC_I2S_HW_VERSION_1
-    i2s_ll_tx_select_slot(&I2S0, I2S_STD_SLOT_LEFT_RIGHT, true);
+    i2s_ll_tx_select_std_slot(&I2S0, I2S_STD_SLOT_BOTH, false);
 #else
-    i2s_ll_tx_select_slot(&I2S0, I2S_STD_SLOT_LEFT_RIGHT);
+    i2s_ll_tx_select_std_slot(&I2S0, I2S_STD_SLOT_BOTH);
 #endif
     i2s_ll_tx_enable_mono_mode(&I2S0, false);
 
@@ -676,7 +676,7 @@ TEST_CASE("I2S_write_and_read_test_master_rx_and_slave_tx", "[i2s_legacy]")
 TEST_CASE("I2S_memory_leaking_test", "[i2s_legacy]")
 {
     i2s_config_t master_i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX,
+        .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX,
         .sample_rate = SAMPLE_RATE,
         .bits_per_sample = SAMPLE_BITS,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
@@ -701,20 +701,33 @@ TEST_CASE("I2S_memory_leaking_test", "[i2s_legacy]")
         .data_out_num = -1,
         .data_in_num = DATA_IN_IO
     };
+    uint8_t *w_buf = calloc(1, 2000);
+    TEST_ASSERT(w_buf);
+    uint8_t *r_buf = calloc(1, 2000);
+    TEST_ASSERT(r_buf);
+    size_t w_bytes = 0;
+    size_t r_bytes = 0;
 
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+    TEST_ESP_OK(i2s_write(I2S_NUM_0, w_buf, 2000, &w_bytes, portMAX_DELAY));
+    TEST_ESP_OK(i2s_read(I2S_NUM_0, r_buf, 2000, &r_bytes, portMAX_DELAY));
     i2s_driver_uninstall(I2S_NUM_0);
     int initial_size = esp_get_free_heap_size();
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 50; i++) {
         TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
         TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+        TEST_ESP_OK(i2s_write(I2S_NUM_0, w_buf, 2000, &w_bytes, portMAX_DELAY));
+        TEST_ESP_OK(i2s_read(I2S_NUM_0, r_buf, 2000, &r_bytes, portMAX_DELAY));
         i2s_driver_uninstall(I2S_NUM_0);
         TEST_ASSERT(initial_size == esp_get_free_heap_size());
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
+
+    free(w_buf);
+    free(r_buf);
 }
 
 #if SOC_I2S_SUPPORTS_APLL

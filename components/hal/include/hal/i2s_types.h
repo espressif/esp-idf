@@ -64,7 +64,12 @@ typedef enum {
     I2S_SLOT_BIT_WIDTH_32BIT          = (32),     /*!< I2S channel slot bit-width: 32 */
 } i2s_slot_bit_width_t;
 
+#if SOC_I2S_SUPPORTED
 typedef soc_periph_i2s_clk_src_t    i2s_clock_src_t; /*!< I2S clock source */
+#else
+typedef int                         i2s_clock_src_t; /*!< Define a default type to avoid compiling warnings */
+#endif
+
 
 #if SOC_I2S_SUPPORTS_PCM
 /**
@@ -119,11 +124,13 @@ typedef enum {
 
 /**
  * @brief I2S slot select in standard mode
+ * @note  It has different meanings in tx/rx/mono/stereo mode, and it may have differen behaviors on different targets
+ *        For the details, please refer to the I2S API reference
  */
 typedef enum {
-    I2S_STD_SLOT_ONLY_LEFT  = BIT(0),           /*!< I2S only transmits or receives left slot */
-    I2S_STD_SLOT_ONLY_RIGHT = BIT(1),           /*!< I2S only transmits or receives right slot */
-    I2S_STD_SLOT_LEFT_RIGHT = BIT(0) | BIT(1),  /*!< I2S transmits or receives both left and right slot */
+    I2S_STD_SLOT_LEFT   = BIT(0),               /*!< I2S transmits or receives left slot */
+    I2S_STD_SLOT_RIGHT  = BIT(1),               /*!< I2S transmits or receives right slot */
+    I2S_STD_SLOT_BOTH   = BIT(0) | BIT(1),      /*!< I2S transmits or receives both left and right slot */
 } i2s_std_slot_mask_t;
 
 /**

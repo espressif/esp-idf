@@ -67,6 +67,9 @@ typedef struct {
 #if SOC_I2S_SUPPORTS_PDM_TX
         /* PDM TX configurations */
         struct {
+#if SOC_I2S_HW_VERSION_1
+            i2s_pdm_slot_mask_t     slot_mask;          /*!< Slot mask to choose left or right slot */
+#endif
             uint32_t                sd_prescale;        /*!< Sigma-delta filter prescale */
             i2s_pdm_sig_scale_t     sd_scale;           /*!< Sigma-delta filter scaling value */
             i2s_pdm_sig_scale_t     hp_scale;           /*!< High pass filter scaling value */

@@ -591,7 +591,7 @@ static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
  * @param hw Peripheral I2S hardware instance address.
  * @param slot_mask select slot to send data
  */
-static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
+static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
 {
     /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
      * Otherwise always enable the first two slots */
@@ -599,13 +599,13 @@ static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot
     hw->tx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
     switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_LEFT:
+    case I2S_STD_SLOT_LEFT:
         hw->tx_tdm_ctrl.val |= 0x01;
         break;
-    case I2S_STD_SLOT_ONLY_RIGHT:
+    case I2S_STD_SLOT_RIGHT:
         hw->tx_tdm_ctrl.val |= 0x02;
         break;
-    case I2S_STD_SLOT_LEFT_RIGHT:
+    case I2S_STD_SLOT_BOTH:
         hw->tx_tdm_ctrl.val |= 0x03;
         break;
     default:
@@ -619,7 +619,7 @@ static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot
  * @param hw Peripheral I2S hardware instance address.
  * @param slot_mask select slot to receive data
  */
-static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
+static inline void i2s_ll_rx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
 {
     /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
      * Otherwise always enable the first two slots */
@@ -627,13 +627,13 @@ static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot
     hw->rx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
     switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_LEFT:
+    case I2S_STD_SLOT_LEFT:
         hw->rx_tdm_ctrl.val |= 0x01;
         break;
-    case I2S_STD_SLOT_ONLY_RIGHT:
+    case I2S_STD_SLOT_RIGHT:
         hw->rx_tdm_ctrl.val |= 0x02;
         break;
-    case I2S_STD_SLOT_LEFT_RIGHT:
+    case I2S_STD_SLOT_BOTH:
         hw->rx_tdm_ctrl.val |= 0x03;
         break;
     default:
@@ -1084,6 +1084,8 @@ static inline void i2s_ll_tx_pdm_dma_take_mode(i2s_dev_t *hw, bool is_mono, bool
  *           Mono     Left            Left            2               1
  *           Mono     Left            Single          3               1
  *           Mono     Single          Right           4               1
+ * @note  The 'Single' above means always sending the value of `conf_single_data` reg
+ *        The default value of `conf_single_data` reg is '0', it is not public for now
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param is_mono   The DMA data only has one slot (mono) or contains two slots (stereo)

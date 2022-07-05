@@ -1,7 +1,7 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S3 | ESP32-H2 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- |
 
-# I2S Basic Standard Mode Example
+# I2S Basic PDM Mode Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -18,68 +18,72 @@ This example is going to show how to use the PDM TX and RX mode.
 
 #### PDM RX
 
-* A PDM microphone whose `sel` pin is supposed to be pulled down, and connecting its `clk` pin to `GPIO_NUM_4`, `data` pin to `GPIO_NUM_5`.
+* A PDM microphone whose `sel` pin is supposed to be pulled down, and connecting its `clk` pin to `EXAMPLE_PDM_RX_CLK_IO`, `data` pin to `EXAMPLE_PDM_RX_DIN_IO`.
 
 ```
-┌─────────────┐               ┌──────────────────┐
-│     ESP     │               │   PDM microphone │
-│             │   PDM clock   │                  │
-│      GPIO 0 ├──────────────►│ CLK              │
-│             │   PDM data    │                  │
-│      GPIO 2 │◄──────────────┤ DATA             │
-│             │               │                  │
-│             │         ┌─────┤ SEL              │
-│             │         │     │                  │
-│         GND ├─────────┴─────┤ GND              │
-│             │               │                  │
-│         VCC ├───────────────┤ VCC              │
-└─────────────┘               └──────────────────┘
+┌───────────────────────┐               ┌──────────────────┐
+│          ESP          │               │   PDM microphone │
+│                       │   PDM clock   │                  │
+│ EXAMPLE_PDM_RX_CLK_IO ├──────────────►│ CLK              │
+│                       │   PDM data    │                  │
+│ EXAMPLE_PDM_RX_DIN_IO │◄──────────────┤ DATA             │
+│                       │               │                  │
+│                       │         ┌─────┤ SEL              │
+│                       │         │     │                  │
+│                   GND ├─────────┴─────┤ GND              │
+│                       │               │                  │
+│                   VCC ├───────────────┤ VCC              │
+└───────────────────────┘               └──────────────────┘
 ```
 
 #### PDM TX
 
 * An earphone or a speaker
-* An audio power amplifier that can input PDM signal. If the power amplifier can only receive the analog signal without PDM clock, a band-pass filter is required to restore the PDM data wave into analog signal, before it is transmitted to the power amplifier.
+* An audio power amplifier that can input PDM signal. If the power amplifier can only receive the analog signal without PDM clock, a low-pass passive or active filter is required to restore the PDM data wave into analog signal, before it is transmitted to the power amplifier.
 
 **MAX98358**
 
+Please refer to the [Datasheet of MAX98358](https://datasheets.maximintegrated.com/en/ds/MAX98358.pdf) for more details.
+
 ```
-┌─────────────┐               ┌───────────────┐
-│     ESP     │               │   MAX 98358   │
-│             │   PDM clock   │               │
-│      GPIO 4 ├──────────────►│ CLK           │   ┌─────────┐
-│             │   PDM data    │               │   │ Speaker │
-│      GPIO 5 ├──────────────►│ DATA     OUTP ├───┤         │
-│             │               │               │   │         │
-│             │         ┌─────┤ SD_MODE  OUTN ├───┤         │
-│             │         │     │               │   │         │
-│         VCC ├─────────┴─────┤ VCC           │   └─────────┘
-│             │               │               │
-│         GND ├───────────────┤ GND           │
-└─────────────┘               └───────────────┘
+┌────────────────────────┐               ┌───────────────┐
+│          ESP           │               │   MAX 98358   │
+│                        │   PDM clock   │               │
+│  EXAMPLE_PDM_TX_CLK_IO ├──────────────►│ CLK           │   ┌─────────┐
+│                        │   PDM data    │               │   │ Speaker │
+│ EXAMPLE_PDM_TX_DOUT_IO ├──────────────►│ DATA     OUTP ├───┤         │
+│                        │               │               │   │         │
+│                        │         ┌─────┤ SD_MODE  OUTN ├───┤         │
+│                        │         │     │               │   │         │
+│                    VCC ├─────────┴─────┤ VCC           │   └─────────┘
+│                        │               │               │
+│                    GND ├───────────────┤ GND           │
+└────────────────────────┘               └───────────────┘
 ```
 
 **NS4150**
 
+Please refer to the [Datasheet of NS4150](http://www.nsiway.com.cn/product/44.html) for more details.
+
 ```
-┌─────────────┐                              ┌───────────────┐
-│     ESP     │                              │    NS 4150    │
-│             │                              │               │
-│      GPIO 4 │                              │ INN           │   ┌─────────┐
-│             │PDM data┌────────────────┐    │               │   │ Speaker │
-│      GPIO 5 ├────────┤Band-pass Filter├───►│ INP       VoP ├───┤         │
-│             │        └────────────────┘    │               │   │         │
-│             │                          ┌───┤ CTRL      VoN ├───┤         │
-│             │                          │   │               │   │         │
-│         VCC ├──────────────────────────┴───┤ VCC           │   └─────────┘
-│             │                              │               │
-│         GND ├──────────────────────────────┤ GND           │
-└─────────────┘                              └───────────────┘
+┌────────────────────────┐                              ┌───────────────┐
+│          ESP           │                              │    NS 4150    │
+│                        │                              │               │
+│  EXAMPLE_PDM_TX_CLK_IO │(No need to connect)          │ INN           │   ┌─────────┐
+│                        │PDM data┌────────────────┐    │               │   │ Speaker │
+│ EXAMPLE_PDM_TX_DOUT_IO ├────────┤ Low-pass Filter├───►│ INP       VoP ├───┤         │
+│                        │        └────────────────┘    │               │   │         │
+│                        │                          ┌───┤ CTRL      VoN ├───┤         │
+│                        │                          │   │               │   │         │
+│                    VCC ├──────────────────────────┴───┤ VCC           │   └─────────┘
+│                        │                              │               │
+│                    GND ├──────────────────────────────┤ GND           │
+└────────────────────────┘                              └───────────────┘
 ```
 
 ### Configure the Project
 
-PDM can only works in simplex mode, setting the macro `EXAMPLE_PDM_DIR` to `EXAMPLE_PDM_TX` or `EXAMPLE_PDM_RX` can choose the PDM direction of this example. But currently ESP32-C3 does not support PDM RX mode.
+PDM can only works in simplex mode, you can select the PDM direction in the menu config, or just setting the macro `EXAMPLE_PDM_DIR` directly. Setting it to `EXAMPLE_PDM_TX` or `EXAMPLE_PDM_RX` can choose the PDM direction of this example. But currently ESP32-C3 does not support PDM RX mode.
 
 ### Build and Flash
 
@@ -113,7 +117,7 @@ Playing treble `twinkle twinkle little star`
 ...
 ```
 
-You can hear the audio 'twinkle twinkle little star' in three tones if you connected a speaker.on it.
+You can hear the audio 'twinkle twinkle little star' in three tones if you connect a speaker to it.
 
 ### PDM RX
 
@@ -141,7 +145,7 @@ Read Task: i2s read 2048 bytes
 [4] -30935 [5] -30935 [6] -30935 [7] -30935
 ```
 
-And only if you connect a PDM microphone, you can see the data is change:
+And only if you connect a PDM microphone, you can see the data changes:
 
 ```
 I2S PDM RX example start

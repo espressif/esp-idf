@@ -15,7 +15,7 @@
 #include "soc/soc_caps.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/spi_flash_os.h"
-#include "test_inc/test_i2s.h"
+#include "../../test_inc/test_i2s.h"
 
 #if CONFIG_I2S_ISR_IRAM_SAFE
 

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 | ESP32-S3 | ESP32-H2 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # I2S Basic Standard Mode Example
 
@@ -16,7 +16,7 @@ This example is going to show how to use the standard mode in simplex mode or fu
 
 ### Configure the Project
 
-There are simplex mode and duplex mode can be chosen in this example, setting `EXAMPLE_I2S_DUPLEX_MODE` to `0` will adopt the simplex mode, otherwise it will adopt the full-duplex mode.
+There are simplex mode and duplex mode can be chosen in this example, you can choose the mode in the menuconfig or just setting `EXAMPLE_I2S_DUPLEX_MODE` derectly, when `EXAMPLE_I2S_DUPLEX_MODE` is `0` the example will adopt the simplex mode, otherwise it will adopt the full-duplex mode.
 
 Note that ESP32-S2 simplex mode is not available because this example requires both TX & RX channels, however, ESP32-S2 has only one I2S controller and the simplex TX & RX channels can't coexist in a same controller. By the way, the simplex TX & RX channels can't coexist on ESP32 as well, but ESP32 has two I2S controllers so the simplex TX & RX channels can be registered on the different I2S controllers.
 
