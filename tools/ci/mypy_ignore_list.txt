@@ -62,11 +62,6 @@ examples/peripherals/sdio/sdio_test.py
 examples/peripherals/twai/twai_alert_and_recovery/example_test.py
 examples/peripherals/twai/twai_network/example_test.py
 examples/peripherals/twai/twai_self_test/example_test.py
-examples/protocols/asio/chat_client/asio_chat_client_test.py
-examples/protocols/asio/chat_server/asio_chat_server_test.py
-examples/protocols/asio/ssl_client_server/example_test.py
-examples/protocols/asio/tcp_echo_server/asio_tcp_server_test.py
-examples/protocols/asio/udp_echo_server/asio_udp_server_test.py
 examples/protocols/cbor/example_test.py
 examples/protocols/esp_http_client/esp_http_client_test.py
 examples/protocols/esp_local_ctrl/example_test.py

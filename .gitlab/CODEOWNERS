@@ -69,7 +69,6 @@
 
 /components/app_trace/                @esp-idf-codeowners/tools
 /components/app_update/               @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
-/components/asio/                     @esp-idf-codeowners/network
 /components/bootloader*/              @esp-idf-codeowners/system @esp-idf-codeowners/security
 /components/bootloader_support/bootloader_flash/    @esp-idf-codeowners/peripherals
 /components/bt/                       @esp-idf-codeowners/bluetooth
