@@ -25,6 +25,7 @@
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
+#include "esp_private/cache_utils.h"
 #endif
 
 
