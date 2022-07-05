@@ -209,17 +209,34 @@ SECTIONS
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *
- *  +--------+--------------+------+ 0x3FCC_B0B0
- *  |        ^              |
- *  |        |              |
- *  |        | data/bss     |
- *  |        |              |
- *  |        v              |
- *  +------------------------------+ 0x3FCD_C9C0
- *  |        ^              |
- *  |        |              |
- *  |        | stack        |
- *  |        |              |
- *  |        v              |
- *  +------------------------------+ 0x3FCD_E9C0
+ * 0x3fccb264 ------------------> _dram0_0_start
+ *            |               |
+ *            |               |
+ *            |               |   1. Large buffers that are only used in certain boot modes, see shared_buffers.h
+ *            |               |
+ *            |               |
+ * 0x3fcdcb70 ------------------> __stack_sentry
+ *            |               |
+ *            |               |   2. Startup pro cpu stack (freed when IDF app is running)
+ *            |               |
+ * 0x3fcdeb70 ------------------> __stack (pro cpu)
+ *            |               |
+ *            |               |
+ *            |               |   3. Shared memory only used in startup code or nonos/early boot*
+ *            |               |      (can be freed when IDF runs)
+ *            |               |
+ *            |               |
+ * 0x3fcdf4bc ------------------> _dram0_rtos_reserved_start
+ *            |               |
+ *            |               |
+ *            |               |   4. Shared memory used in startup code and when IDF runs
+ *            |               |
+ *            |               |
+ * 0x3fcdfa70 ------------------> _dram0_rtos_reserved_end
+ *            |               |
+ * 0x3fcdfa74 ------------------> _data_start_interface
+ *            |               |
+ *            |               |   5. End of DRAM is the 'interface' data with constant addresses (ECO compatible)
+ *            |               |
+ * 0x3fce0000 ------------------> _data_end_interface
  */
