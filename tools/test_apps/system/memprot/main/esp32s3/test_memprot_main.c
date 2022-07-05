@@ -9,6 +9,7 @@
 #include "esp_attr.h"
 #include "hal/memprot_types.h"
 #include "soc/memprot_defs.h"
+#include "soc/sensitive_reg.h"
 #include "esp_private/esp_memprot_internal.h"
 #include "esp_memprot.h"
 #include "esp_rom_sys.h"
@@ -94,7 +95,9 @@
     slli a2, a2, 1
     ret.n
  */
-static uint8_t s_fnc_buff[] = {0xf0, 0x22, 0x11, 0x0d, 0xf0, 0x00, 0x00, 0x00};
+
+/* disabled unless IDF-5519 gets merged */
+//static uint8_t s_fnc_buff[] = {0xf0, 0x22, 0x11, 0x0d, 0xf0, 0x00, 0x00, 0x00};
 typedef int (*fnc_ptr)(int);
 
 //testing buffers
@@ -492,6 +495,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type, const int core)
     esp_mprot_monitor_clear_intr(mem_type, core);
 }
 
+#if 0 /* disabled unless IDF-5519 gets merged */
 static void test_mprot_exec(esp_mprot_mem_t mem_type, const int core)
 {
     if (!(mem_type & MEMPROT_TYPE_IRAM0_ANY)) {
@@ -614,13 +618,14 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type, const int core)
 
     esp_mprot_monitor_clear_intr(mem_type, core);
 }
+#endif
 
 // testing per-CPU tasks
 esp_memp_config_t memp_cfg = {
     .invoke_panic_handler = false,
     .lock_feature = false,
     .split_addr = NULL,
-    .mem_type_mask = MEMPROT_TYPE_IRAM0_SRAM | MEMPROT_TYPE_DRAM0_SRAM,
+    .mem_type_mask = MEMPROT_TYPE_ALL,
 #if portNUM_PROCESSORS > 1
     .target_cpu_count = 2,
     .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM}
@@ -642,7 +647,7 @@ static void task_on_CPU(void *arg)
     if (memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_SRAM) {
         test_mprot_read(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
         test_mprot_write(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
-        /* temporarily disabled */
+        /* disabled unless IDF-5519 gets merged */
         //test_mprot_exec(MEMPROT_TYPE_IRAM0_SRAM, ctx->core);
     }
 
@@ -654,7 +659,8 @@ static void task_on_CPU(void *arg)
     if (memp_cfg.mem_type_mask & MEMPROT_TYPE_IRAM0_RTCFAST) {
         test_mprot_read(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
         test_mprot_write(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
-        test_mprot_exec(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
+        /* disabled unless IDF-5519 gets merged */
+        //test_mprot_exec(MEMPROT_TYPE_IRAM0_RTCFAST, ctx->core);
     }
 
     xSemaphoreGive(ctx->sem);

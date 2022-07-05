@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -124,16 +116,16 @@ static inline bool memprot_ll_peri1_rtcslow_is_intr_mine(void)
     return false;
 }
 
-static inline memprot_ll_err_t memprot_ll_peri1_rtcslow_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
+static inline memprot_hal_err_t memprot_ll_peri1_rtcslow_set_prot(uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //check corresponding range fit & aligment to 32bit boundaries
     if (addr < PERI1_RTCSLOW_ADDRESS_LOW || addr > PERI1_RTCSLOW_ADDRESS_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     uint32_t reg_split_addr = PERI1_RTCSLOW_ADDR_TO_CONF_REG(addr);
@@ -156,7 +148,7 @@ static inline memprot_ll_err_t memprot_ll_peri1_rtcslow_set_prot(uint32_t *split
     //write PERIBUS1 RTC SLOW cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_DPORT_1_REG, reg_split_addr | permission_mask);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_peri1_rtcslow_get_split_sgnf_bits(bool *lw, bool *lr, bool *hw, bool *hr)
@@ -282,16 +274,16 @@ static inline bool memprot_ll_peri2_rtcslow_0_is_intr_mine(void)
     return false;
 }
 
-static inline memprot_ll_err_t memprot_ll_peri2_rtcslow_0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
+static inline memprot_hal_err_t memprot_ll_peri2_rtcslow_0_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //check corresponding range fit & aligment to 32bit boundaries
     if (addr < PERI2_RTCSLOW_0_ADDRESS_LOW || addr > PERI2_RTCSLOW_0_ADDRESS_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     uint32_t reg_split_addr = PERI2_RTCSLOW_0_ADDR_TO_CONF_REG(addr);
@@ -320,7 +312,7 @@ static inline memprot_ll_err_t memprot_ll_peri2_rtcslow_0_set_prot(uint32_t *spl
     //write PERIBUS1 RTC SLOW cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_AHB_1_REG, reg_split_addr | permission_mask);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_peri2_rtcslow_0_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
@@ -370,16 +362,16 @@ static inline bool memprot_ll_peri2_rtcslow_1_is_intr_mine(void)
     return false;
 }
 
-static inline memprot_ll_err_t memprot_ll_peri2_rtcslow_1_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
+static inline memprot_hal_err_t memprot_ll_peri2_rtcslow_1_set_prot(uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx)
 {
     uint32_t addr = (uint32_t)split_addr;
 
     //check corresponding range fit & aligment to 32bit boundaries
     if (addr < PERI2_RTCSLOW_1_ADDRESS_LOW || addr > PERI2_RTCSLOW_1_ADDRESS_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_INVALID;
+        return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     uint32_t reg_split_addr = PERI2_RTCSLOW_1_ADDR_TO_CONF_REG(addr);
@@ -408,7 +400,7 @@ static inline memprot_ll_err_t memprot_ll_peri2_rtcslow_1_set_prot(uint32_t *spl
     //write PERIBUS1 RTC SLOW cfg register
     DPORT_WRITE_PERI_REG(DPORT_PMS_PRO_AHB_2_REG, reg_split_addr | permission_mask);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_peri2_rtcslow_1_get_split_sgnf_bits(bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx)
