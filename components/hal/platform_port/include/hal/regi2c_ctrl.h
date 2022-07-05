@@ -17,5 +17,16 @@
     #include "esp_private/regi2c_ctrl.h"
 #else
     #include "esp_rom_regi2c.h"
-    #define REGI2C_WRITE_MASK(block, reg_add, indata) esp_rom_regi2c_write_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
+
+    #define REGI2C_WRITE_MASK(block, reg_add, indata) \
+        esp_rom_regi2c_write_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
+
+    #define REGI2C_WRITE(block, reg_add, indata) \
+        esp_rom_regi2c_write(block, block##_HOSTID,  reg_add, indata)
+
+    #define REGI2C_READ_MASK(block, reg_add) \
+        esp_rom_regi2c_read_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB)
+
+    #define REGI2C_READ(block, reg_add) \
+        esp_rom_regi2c_read(block, block##_HOSTID,  reg_add)
 #endif
