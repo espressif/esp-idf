@@ -315,6 +315,16 @@ class IdfPytestEmbedded:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
 
+        # filter all the test cases with "nightly_run" marker
+        if os.getenv('NIGHTLY_RUN') == '1':
+            items[:] = [
+                item for item in items if 'nightly_run' in item_marker_names(item)
+            ]
+        else:
+            items[:] = [
+                item for item in items if 'nightly_run' not in item_marker_names(item)
+            ]
+
         # filter all the test cases with "--target"
         if self.target:
             items[:] = [
