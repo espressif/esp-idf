@@ -224,7 +224,7 @@ struct ext_funcs_t ext_funcs_ro = {
 
 static int IRAM_ATTR esp_reset_rpa_moudle(void)
 {
-    // periph_module_reset(PERIPH_MODEM_RPA_MODULE);
+    periph_module_reset(PERIPH_MODEM_RPA_MODULE);
     return 0;
 }
 
