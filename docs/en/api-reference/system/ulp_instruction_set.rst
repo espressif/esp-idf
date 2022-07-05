@@ -796,10 +796,10 @@ The detailed description of all instructions is presented below:
   Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
 
     // JUMPR target, threshold, LE is implemented as:
-    
+
              JUMPR target, threshold, EQ
              JUMPR target, threshold, LT
- 
+
     // JUMPR target, threshold, GE is implemented as:
 
              JUMPR target, threshold, EQ
@@ -1041,27 +1041,28 @@ The detailed description of all instructions is presented below:
   2:        .set  wait_cnt, 10  // Set a constant
             WAIT  wait_cnt      // wait for 10 cycles
 
+.. only:: not esp32
 
-**TSENS** – do measurement with temperature sensor
---------------------------------------------------
+    **TSENS** – do measurement with temperature sensor
+    --------------------------------------------------
 
-**Syntax**
-   - **TSENS**   *Rdst, Wait_Delay*
+    **Syntax**
+      - **TSENS**   *Rdst, Wait_Delay*
 
-**Operands**
-  - *Rdst* – Destination Register R[0..3], result will be stored to this register
-  - *Wait_Delay* – number of cycles used to perform the measurement
+    **Operands**
+      - *Rdst* – Destination Register R[0..3], result will be stored to this register
+      - *Wait_Delay* – number of cycles used to perform the measurement
 
-**Cycles**
-  2 + *Wait_Delay* + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
+    **Cycles**
+      2 + *Wait_Delay* + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
 
-**Description**
-   The instruction performs measurement using TSENS and stores the result into a general purpose register.
+    **Description**
+      The instruction performs measurement using TSENS and stores the result into a general purpose register.
 
-**Examples**::
+    **Examples**::
 
-  1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
-                                   // and store result to R1
+      1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
+                                      // and store result to R1
 
 
 **ADC** – do measurement with ADC
