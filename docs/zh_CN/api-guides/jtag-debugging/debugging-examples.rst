@@ -245,6 +245,7 @@
 5. :ref:`jtag-debugging-examples-command-line-05`
 6. :ref:`jtag-debugging-examples-command-line-06`
 7. :ref:`jtag-debugging-examples-command-line-07`
+8. :ref:`jtag-debugging-examples-command-line-08`
 
 
 .. _jtag-debugging-examples-command-line-01:
@@ -621,6 +622,34 @@
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:34
     34          gpio_set_level(BLINK_GPIO, 0);
     (gdb)
+
+
+.. _jtag-debugging-examples-command-line-08:
+
+调试 FreeRTOS 对象
+^^^^^^^^^^^^^^^^^^
+
+该部分内容或许可以帮助您调试 FreeRTOS 任务交互。
+需要调试 FreeRTOS 任务交互的用户可使用 GDB 命令 ``freertos``。该命令并非 GDB 原生命令，而是来自于 Python 扩展模块 `freertos-gdb <https://pypi.org/project/freertos-gdb>`_，其包含一系列子命令::
+
+    (gdb) freertos
+    "freertos" 后面必须紧随子命令的名称
+    freertos 子命令如下：
+
+    freertos queue --  打印当前队列信息
+    freertos semaphore --  打印当前信号量信息
+    freertos task --  打印当前任务及其状态
+    freertos timer --  打印当前定时器信息
+
+点击 https://pypi.org/project/freertos-gdb 链接了解此扩展模块的详细信息。
+
+.. note::
+
+    ESP-IDF 在安装 Pyhton 包时会自动安装 freertos-gdb Python 模块，详情请参考 :ref:`get-started-set-up-tools`。
+
+    如果使用 ``idf.py gdb`` 命令运行 GDB，FreeRTOS 扩展会自动加载。也可以使用 GDB 内部命令 ``python import freertos_gdb`` 使能该模块。
+
+    请保证使用 Python 3.6 及以上版本，该版本具有 Python 共享库。
 
 
 获得命令的帮助信息

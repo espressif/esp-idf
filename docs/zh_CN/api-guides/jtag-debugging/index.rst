@@ -249,6 +249,11 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 此外还会提供在 :ref:`在命令行终端进行调试 <jtag-debugging-examples-command-line>` 下使用 GDB 调试的案例。
 
+.. note::
+
+    :ref:`jtag-debugging-examples-command-line-08` 目前仅适用于命令行调试。
+
+
 在演示之前，请完成 {IDF_TARGET_NAME} 目标板设置并加载 :example:`get-started/blink` 至 {IDF_TARGET_NAME} 中。
 
 
