@@ -2330,7 +2330,7 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
             break;
         }
 
-        if ((GATT_CH_OPEN != gatt_get_ch_state(p_tcb)) || (p_tcb->payload_size == 0)) {
+        if (!gatt_check_connection_state_by_tcb(p_tcb)) {
             L2CAP_TRACE_ERROR("connection not established\n");
             xSemaphoreGive(buff_semaphore);
             break;
