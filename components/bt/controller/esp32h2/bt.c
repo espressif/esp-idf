@@ -58,13 +58,9 @@
 #define OSI_COEX_VERSION              0x00010006
 #define OSI_COEX_MAGIC_VALUE          0xFADEBEAD
 
-#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
 #define EXT_FUNC_VERSION             0x20220125
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
-#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
-#define EXT_FUNC_VERSION             0xE0000001
-#define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
-#endif
+
 /* Types definition
  ************************************************************************
  */
@@ -94,11 +90,9 @@ struct ext_funcs_t {
     void (* _task_delete)(void *task_handle);
     void (*_osi_assert)(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
     uint32_t (* _os_random)(void);
-#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     int (* _ecc_gen_key_pair)(uint8_t *pub, uint8_t *priv);
     int (* _ecc_gen_dh_key)(const uint8_t *remote_pub_key_x, const uint8_t *remote_pub_key_y, const uint8_t *local_priv_key, uint8_t *dhkey);
     int (* _esp_reset_rpa_moudle)(void);
-#endif
     uint32_t magic;
 };
 
@@ -214,11 +208,9 @@ struct ext_funcs_t ext_funcs_ro = {
     ._task_delete = task_delete_wrapper,
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
-#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
     ._ecc_gen_key_pair = ble_sm_alg_gen_key_pair,
     ._ecc_gen_dh_key = ble_sm_alg_gen_dhkey,
     ._esp_reset_rpa_moudle = esp_reset_rpa_moudle,
-#endif
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
 

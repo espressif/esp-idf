@@ -614,6 +614,7 @@ ets_secure_boot_revoke_public_key_digest = 0x40000994;
  ***************************************/
 
 /* Functions */
+/*
 ble_controller_rom_data_init = 0x40000b08;
 ble_osi_coex_funcs_register = 0x40000b0c;
 bt_rf_coex_cfg_get_default = 0x40000b10;
@@ -1605,7 +1606,9 @@ r_sec_phy_valid = 0x40001a74;
 r_sub24 = 0x40001a78;
 r_swap_buf = 0x40001a7c;
 r_swap_in_place = 0x40001a80;
+*/
 /* Data (.data, .bss, .rodata) */
+/*
 ble_hci_uart_reset_cmd = 0x3ff1ffe0;
 ble_hci_trans_env_p = 0x3fcdffc4;
 ble_hci_trans_mode = 0x3fcdfebc;
@@ -1673,7 +1676,7 @@ sync_dynamic_param_rom = 0x3ff1fbe4;
 g_ble_plf_log_level = 0x3fcdfe60;
 g_msys_pool_list = 0x3fcdfe58;
 g_os_mempool_list = 0x3fcdfe50;
-
+*/
 
 /***************************************
  Group rom_phy
