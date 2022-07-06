@@ -352,7 +352,7 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -389,7 +389,7 @@ esp_err_t esp_ble_gattc_read_by_type (esp_gatt_if_t gattc_if,
     }
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -421,7 +421,7 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -458,7 +458,7 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -491,7 +491,7 @@ esp_err_t esp_ble_gattc_write_char(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -529,7 +529,7 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -567,7 +567,7 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -603,7 +603,7 @@ esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
