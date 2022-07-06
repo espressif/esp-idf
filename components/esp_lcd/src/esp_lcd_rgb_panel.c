@@ -338,6 +338,15 @@ esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint3
     return ESP_OK;
 }
 
+esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    ESP_RETURN_ON_FALSE(!rgb_panel->flags.stream_mode, ESP_ERR_INVALID_STATE, TAG, "refresh on demand is not enabled");
+    lcd_rgb_panel_start_transmission(rgb_panel);
+    return ESP_OK;
+}
+
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);

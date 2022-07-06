@@ -268,6 +268,7 @@ LCD
 - :cpp:func:`esp_lcd_panel_disp_off` is deprecated, please use :cpp:func:`esp_lcd_panel_disp_on_off` instead.
 - ``dc_as_cmd_phase`` is removed. The SPI LCD driver currently doesn't support a 9bit SPI LCD. Please always use a dedicated GPIO to control the LCD D/C line.
 - The way to register RGB panel event callbacks has been moved from the :cpp:type:`esp_lcd_rgb_panel_config_t` into a separate API :cpp:func:`esp_lcd_rgb_panel_register_event_callbacks`. However, the event callback signature is not changed.
+- If the RGB LCD is created with the ``refresh_on_demand`` flag enabled, the driver won't start a refresh in the :cpp:func:`esp_lcd_panel_draw_bitmap`. Now you have to call :cpp:func:`esp_lcd_rgb_panel_refresh` to refresh the screen by yourself.
 
 .. only:: SOC_MCPWM_SUPPORTED
 

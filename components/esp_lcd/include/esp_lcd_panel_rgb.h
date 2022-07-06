@@ -181,12 +181,19 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
  *      - ESP_OK: Get frame buffer address successfully
  */
 esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint32_t fb_num, void **fb0, ...);
+
+/**
+ * @brief Manually trigger once transmission of the frame buffer to the LCD panel
+ *
+ * @note This function should only be called when the RGB panel is working under the `refresh_on_demand` mode.
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
  * @return
- *          - ESP_ERR_NOT_SUPPORTED   if frequency is unreachable
- *          - ESP_ERR_INVALID_ARG     if parameter panel is invalid
- *          - ESP_OK                  on success
+ *      - ESP_ERR_INVALID_ARG: Start a refresh failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Start a refresh failed because the LCD panel is not created with the `refresh_on_demand` flag enabled.
+ *      - ESP_OK: Start a refresh successfully
  */
-esp_err_t esp_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq_hz);
+esp_err_t esp_lcd_rgb_panel_refresh(esp_lcd_panel_handle_t panel);
 
 #endif // SOC_LCD_RGB_SUPPORTED
 
