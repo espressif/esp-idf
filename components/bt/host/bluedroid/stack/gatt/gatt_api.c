@@ -583,6 +583,11 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
         return (tGATT_STATUS) GATT_INVALID_CONN_ID;
     }
 
+    if ((GATT_CH_OPEN != gatt_get_ch_state(p_tcb)) || (p_tcb->payload_size == 0)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
+    }
+
     if (! GATT_HANDLE_IS_VALID (attr_handle)) {
         return GATT_ILLEGAL_PARAMETER;
     }
@@ -648,6 +653,11 @@ tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
     if ( (p_reg == NULL) || (p_tcb == NULL)) {
         GATT_TRACE_ERROR ("GATTS_HandleValueNotification Unknown  conn_id: %u \n", conn_id);
         return (tGATT_STATUS) GATT_INVALID_CONN_ID;
+    }
+
+    if ((GATT_CH_OPEN != gatt_get_ch_state(p_tcb)) || (p_tcb->payload_size == 0)) {
+        GATT_TRACE_ERROR("connection not established\n");
+        return GATT_WRONG_STATE;
     }
 
     if (GATT_HANDLE_IS_VALID (attr_handle)) {
