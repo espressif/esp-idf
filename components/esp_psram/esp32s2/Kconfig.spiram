@@ -8,10 +8,6 @@ config SPIRAM
 menu "SPI RAM config"
     depends on SPIRAM
 
-    config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
-        bool
-        default "y"
-
     config SPIRAM_MODE_QUAD
         bool
         default "y"
@@ -32,6 +28,17 @@ menu "SPI RAM config"
         config SPIRAM_TYPE_ESPPSRAM64
             bool "ESP-PSRAM64 or LY68L6400"
     endchoice
+
+    config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+        bool "Allow external memory as an argument to xTaskCreateStatic"
+        default y
+        help
+            Accessing memory in SPIRAM has certain restrictions, so task stacks allocated by xTaskCreate
+            are by default allocated from internal RAM.
+
+            This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
+            This should only be used for tasks where the stack is never accessed while the cache is disabled.
+            Cannot be used together with ESP_COREDUMP_ENABLE_TO_FLASH.
 
     menu "PSRAM clock and cs IO for ESP32S2"
         depends on SPIRAM
