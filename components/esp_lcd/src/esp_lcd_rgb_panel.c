@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <stdarg.h>
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <string.h>
@@ -38,7 +39,7 @@
 #include "soc/lcd_periph.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
-#include <rom/cache.h>
+#include "rom/cache.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define LCD_RGB_INTR_ALLOC_FLAGS     (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
@@ -316,6 +317,24 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
     rgb_panel->flags.need_update_pclk = true;
     rgb_panel->timings.pclk_hz = freq_hz;
     portEXIT_CRITICAL(&rgb_panel->spinlock);
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint32_t fb_num, void **fb0, ...)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(fb_num && fb_num <= 2, ESP_ERR_INVALID_ARG, TAG, "invalid frame buffer number");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    void **fb_itor = fb0;
+    va_list args;
+    va_start(args, fb0);
+    for (int i = 0; i < fb_num; i++) {
+        if (fb_itor) {
+            *fb_itor = rgb_panel->fbs[i];
+            fb_itor = va_arg(args, void **);
+        }
+    }
+    va_end(args);
     return ESP_OK;
 }
 

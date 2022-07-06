@@ -168,6 +168,19 @@ esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t pane
  *
  * @param panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
  * @param freq_hz Frequency of pixel clock, in Hz
+
+/**
+ * @brief Get the address of the frame buffer(s) that allocated by the driver
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] fb_num Number of frame buffer(s) to get. This value must be the same as the number of the following parameters.
+ * @param[out] fb0 Returned address of the frame buffer 0
+ * @param[out] ... List of other frame buffer addresses
+ * @return
+ *      - ESP_ERR_INVALID_ARG: Get frame buffer address failed because of invalid argument
+ *      - ESP_OK: Get frame buffer address successfully
+ */
+esp_err_t esp_lcd_rgb_panel_get_frame_buffer(esp_lcd_panel_handle_t panel, uint32_t fb_num, void **fb0, ...);
  * @return
  *          - ESP_ERR_NOT_SUPPORTED   if frequency is unreachable
  *          - ESP_ERR_INVALID_ARG     if parameter panel is invalid
