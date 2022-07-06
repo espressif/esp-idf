@@ -139,7 +139,7 @@ esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type);
   * address, then the first octet is XORed with 0x4 in order to create a different
   * locally administered MAC address.
   *
-  * @param  mac base MAC address, length: 6 bytes/8 bytes.
+  * @param  local_mac base MAC address, length: 6 bytes/8 bytes.
   *         length: 6 bytes for MAC-48
   *                 8 bytes for EUI-64(used for IEEE 802.15.4)
   * @param  universal_mac  Source universal MAC address, length: 6 bytes.

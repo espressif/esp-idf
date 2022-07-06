@@ -58,13 +58,14 @@ check_docs_lang_sync:
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   tags:
     - build_docs
   dependencies: []
   script:
-    - cd docs
     - pip install -r requirements.txt
+    - cd docs
+    - pip install -U -r requirements.txt
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
   parallel:
     matrix:
@@ -74,13 +75,14 @@ check_docs_lang_sync:
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   extends:
     - .pre_check_job_template
     - .doc-rules:build:docs
   script:
-    - cd docs
     - pip install -r requirements.txt
+    - cd docs
+    - pip install -U -r requirements.txt
     - build-docs gh-linkcheck
 
 # stage: build_doc
@@ -150,20 +152,19 @@ build_docs_pdf:
   extends:
     - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
-  variables:
-    PYTHON_VER: 3.6.13
   stage: test_deploy
   tags:
     - deploy
     - shiny
   variables:
+    PYTHON_VER: 3.7.10
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
   dependencies: []
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
-    - pip install -r docs/requirements.txt
+    - pip install -U -r docs/requirements.txt
     - deploy-docs
 
 # stage: test_deploy
@@ -224,7 +225,7 @@ check_doc_links:
     expire_in: 1 week
   allow_failure: true
   script:
-    - cd docs
     - pip install -r requirements.txt
-    # At the moment this check will always fail due to multiple known limitations, ignore result
-    - build-docs -t $DOCTGT -l $DOCLANG linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }
+    - cd docs
+    - pip install -U -r requirements.txt
+    - build-docs -t $DOCTGT -l $DOCLANG linkcheck

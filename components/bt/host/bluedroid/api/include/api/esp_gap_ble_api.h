@@ -1455,7 +1455,7 @@ esp_err_t esp_ble_gap_config_local_privacy (bool privacy_enable);
  *
  *
  * @param[in]       icon   - External appearance value, these values are defined by the Bluetooth SIG, please refer to
- *                  https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.characteristic.gap.appearance.xml
+ *                  https://specificationrefs.bluetooth.com/assigned-values/Appearance%20Values.pdf
  *
  * @return
  *                  - ESP_OK : success

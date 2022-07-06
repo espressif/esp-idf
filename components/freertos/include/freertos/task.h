@@ -392,7 +392,7 @@ typedef enum
  * example, to create a privileged task at priority 2 the uxPriority parameter
  * should be set to ( 2 | portPRIVILEGE_BIT ).
  *
- * @param pvCreatedTask Used to pass back a handle by which the created task
+ * @param pxCreatedTask Used to pass back a handle by which the created task
  * can be referenced.
  *
  * @return pdPASS if the task was successfully created and added to a ready
@@ -538,7 +538,7 @@ typedef enum
  *
  * @param uxPriority The priority at which the task will run.
  *
- * @param pxStackBuffer Must point to a StackType_t array that has at least
+ * @param puxStackBuffer Must point to a StackType_t array that has at least
  * ulStackDepth indexes - the array will then be used as the task's stack,
  * removing the need for the stack to be allocated dynamically.
  *
@@ -2368,7 +2368,7 @@ uint32_t ulTaskGetIdleRunTimeCounter( void ) PRIVILEGED_FUNCTION;
  * notification value at that index being updated.  ulValue is not used and
  * xTaskNotifyIndexed() always returns pdPASS in this case.
  *
- * pulPreviousNotificationValue -
+ * @param pulPreviousNotificationValue -
  * Can be used to pass out the subject task's notification value before any
  * bits are modified by the notify function.
  *
@@ -2531,6 +2531,10 @@ BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
  * be requested before the interrupt is exited.  How a context switch is
  * requested from an ISR is dependent on the port - see the documentation page
  * for the port in use.
+ *
+ * @param pulPreviousNotificationValue -
+ * Can be used to pass out the subject task's notification value before any
+ * bits are modified by the notify function.
  *
  * @return Dependent on the value of eAction.  See the description of the
  * eAction parameter.
@@ -2778,11 +2782,10 @@ BaseType_t xTaskGenericNotifyWait( UBaseType_t uxIndexToWaitOn,
  * @endcond
  * \ingroup TaskNotifications
  */
-#define xTaskNotifyGive( xTaskToNotify ) \
-    xTaskGenericNotify( ( xTaskToNotify ), ( tskDEFAULT_INDEX_TO_NOTIFY ), ( 0 ), eIncrement, NULL )
 #define xTaskNotifyGiveIndexed( xTaskToNotify, uxIndexToNotify ) \
     xTaskGenericNotify( ( xTaskToNotify ), ( uxIndexToNotify ), ( 0 ), eIncrement, NULL )
-
+#define xTaskNotifyGive( xTaskToNotify ) \
+    xTaskGenericNotify( ( xTaskToNotify ), ( tskDEFAULT_INDEX_TO_NOTIFY ), ( 0 ), eIncrement, NULL )
 /**
  * @cond !DOC_EXCLUDE_HEADER_SECTION
  * task. h

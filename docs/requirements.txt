@@ -1,1 +1,1 @@
-esp-docs==0.1.1
+esp-docs~=1.1.0

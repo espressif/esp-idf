@@ -14,7 +14,8 @@ extern "C" {
 #endif
 
 /**
- * @file PHY init parameters and API
+ * @file
+ *          init parameters and API
  */
 
 
@@ -34,6 +35,10 @@ typedef struct {
     uint8_t opaque[1894];                   /*!< calibration data */
 } esp_phy_calibration_data_t;
 
+/**
+ * @brief PHY calibration mode
+ *
+ */
 typedef enum {
     PHY_RF_CAL_PARTIAL = 0x00000000,        /*!< Do part of RF calibration. This should be used after power-on reset. */
     PHY_RF_CAL_NONE    = 0x00000001,        /*!< Don't do any RF calibration. This mode is only suggested to be used after deep sleep reset. */
@@ -223,6 +228,10 @@ int64_t esp_phy_rf_get_on_ts(void);
 
 /**
  * @brief Update the corresponding PHY init type according to the country code of Wi-Fi.
+ *
+ * @param country country code
+ * @return ESP_OK on success.
+ * @return esp_err_t code describing the error on fail
  */
 esp_err_t esp_phy_update_country_info(const char *country);
 

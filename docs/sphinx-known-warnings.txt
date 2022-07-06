@@ -6,76 +6,60 @@
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
-#
-# Breathe known issue: https://github.com/michaeljones/breathe/issues/405
-# Sphinx known issue: https://github.com/sphinx-doc/sphinx/pull/5901
-#
-# Note: warnings below have been identified after upgrade
-#       to the following package==version
-#
-#       sphinx==1.8.4
-#       breathe==4.11.1
-#
-ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
-ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
-ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
-ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
-ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
-ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
-ulp-risc-v.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
-README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
-
-
-# This seems like a bug, as the field are ::model_id and ::vnd::model_id
-esp_ble_mesh_defs.inc:line: WARNING: Duplicate declaration, uint16_t esp_ble_mesh_model::model_id
-WARNING:esp_bt_defs, use :noindex: for one of them
-WARNING:esp_blufi, use :noindex: for one of them
-esp_bt_defs.inc:line: WARNING: Duplicate declaration, uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN]
-
-#
-# Issue present only when building on msys2 / mingw32 START >>>
-#
+ulp-legacy.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_load_binary (uint32_t load_addr, const uint8_t *program_binary, size_t program_size)'.
+ulp-legacy.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_run (uint32_t entry_point)'.
+ulp-legacy.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_set_wakeup_period (size_t period_index, uint32_t period_us)'.
+README.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/ulp:line.
+Declaration is '.. cpp:function:: esp_err_t ulp_run (uint32_t entry_point)'.
+esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
+Declaration is '.. cpp:member:: uint16_t model_id'.
+esp_bt_defs.inc:line: WARNING: Duplicate C declaration, also defined at api-reference/bluetooth/esp_blufi:line.
+Declaration is '.. c:macro:: ESP_BD_ADDR_LEN'.
+esp_bt_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp_blufi:line.
+Declaration is '.. cpp:type:: uint8_t esp_bd_addr_t [6]'.
 esp_spp_api.inc:line: WARNING: Error in type declaration.
 If typedef-like declaration:
   Type must be either just a name or a typedef-like declaration.
   If just a name:
-    Error in declarator or parameters and qualifiers
-    Invalid definition: Expected identifier in nested name, got keyword: void [error at 4]
-      void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+    Error in declarator or parameters-and-qualifiers
+    Invalid C++ declaration: Expected identifier in nested name, got keyword: void [error at 4]
+      void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
       ----^
   If typedef-like declaration:
     Error in declarator
-    If pointer to member declarator:
-      Invalid definition: Expected identifier in nested name. [error at 4]
-        void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
-        ----^
-    If declId, parameters, and qualifiers:
-      Invalid definition: Expected identifier in nested name. [error at 4]
-        void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+    If declarator-id with parameters-and-qualifiers:
+      Invalid C++ declaration: Expected identifier in nested name. [error at 4]
+        void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         ----^
     If parenthesis in noptr-declarator:
-      Error in declarator or parameters and qualifiers
+      Error in declarator or parameters-and-qualifiers
       If pointer to member declarator:
-        Invalid definition: Expected identifier in nested name. [error at 5]
-          void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+        Invalid C++ declaration: Expected identifier in nested name. [error at 5]
+          void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
           -----^
       If declarator-id:
-        Invalid definition: Expected identifier in nested name. [error at 5]
-          void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+        Invalid C++ declaration: Expected identifier in nested name. [error at 5]
+          void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
           -----^
 If type alias or template alias:
-  Invalid definition: Expected identifier in nested name, got keyword: void [error at 4]
-    void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+  Invalid C++ declaration: Expected identifier in nested name, got keyword: void [error at 4]
+    void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     ----^
 
-#
-# Issue present only when building on msys2 / mingw32 END <<<
-#
-spi_master.inc:line: WARNING: Duplicate declaration, struct spi_transaction_t spi_transaction_t
-spi_slave.inc:line: WARNING: Duplicate declaration, struct spi_slave_transaction_t spi_slave_transaction_t
-esp_flash.inc:line: WARNING: Duplicate declaration, struct esp_flash_t esp_flash_t
-spi_flash_types.inc:line: WARNING: Duplicate declaration, struct spi_flash_host_driver_t spi_flash_host_driver_t
-wear-levelling.rst:line: WARNING: Duplicate declaration, bool esp_vfs_fat_mount_config_t::format_if_mount_failed
-wear-levelling.rst:line: WARNING: Duplicate declaration, int esp_vfs_fat_mount_config_t::max_files
-wear-levelling.rst:line: WARNING: Duplicate declaration, size_t esp_vfs_fat_mount_config_t::allocation_unit_size
-wear-levelling.rst:line: WARNING: Duplicate declaration, esp_vfs_fat_mount_config_t
+spi_master.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_master:line.
+Declaration is '.. cpp:type:: struct spi_transaction_t spi_transaction_t'.
+spi_slave.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_slave:line.
+Declaration is '.. cpp:type:: struct spi_slave_transaction_t spi_slave_transaction_t'.
+esp_flash.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/spi_flash:line.
+Declaration is '.. cpp:type:: struct esp_flash_t esp_flash_t'.
+wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
+Declaration is '.. cpp:struct:: esp_vfs_fat_mount_config_t'.
+wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
+Declaration is '.. cpp:member:: bool format_if_mount_failed'.
+wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
+Declaration is '.. cpp:member:: int max_files'.
+wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
+Declaration is '.. cpp:member:: size_t allocation_unit_size'.

@@ -527,11 +527,13 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 3.2 Why is the Wi-Fi throughput so low when Wi-Fi and ESP-BLE-MESH coexist?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The `ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>`_ board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
+    .. only:: esp32
 
-    And some configurations in menuconfig shall be enabled to support PSRAM.
+        The :doc:`ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>` board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
 
-        - :code:`ESP32-specific --> Support for external,SPI-connected RAM --> Try to allocate memories of Wi-Fi and LWIP...`
+    Some configurations in menuconfig shall be enabled to support PSRAM.
+
+        - :code:`{IDF_TARGET_NAME}-specific --> Support for external,SPI-connected RAM --> Try to allocate memories of Wi-Fi and LWIP...`
         - :code:`Bluetooth --> Bluedroid Enable --> BT/BLE will first malloc the memory from the PSRAM`
         - :code:`Bluetooth --> Bluedroid Enable --> Use dynamic memory allocation in BT/BLE stack.`
         - :code:`Bluetooth --> Bluetooth controller --> BLE full scan feature supported.`

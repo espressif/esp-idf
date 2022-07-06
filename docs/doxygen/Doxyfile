@@ -183,7 +183,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
-    $(PROJECT_PATH)/components/esp_ipc/include/esp_ipc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/app_update/include/esp_ota_ops.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \
@@ -200,8 +199,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_pm/include/$(IDF_TARGET)/pm.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
@@ -215,7 +212,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
-    $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/freemodbus/common/include/esp_modbus_common.h \
     $(PROJECT_PATH)/components/freemodbus/common/include/esp_modbus_slave.h \
     $(PROJECT_PATH)/components/freemodbus/common/include/esp_modbus_master.h \
@@ -237,7 +233,7 @@ WARN_NO_PARAMDOC = YES
 ##
 ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
-EXPAND_ONLY_PREDEF     = YES
+EXPAND_ONLY_PREDEF     = NO
 PREDEFINED             = \
     $(ENV_DOXYGEN_DEFINES) \
     __DOXYGEN__=1 \
@@ -253,6 +249,8 @@ PREDEFINED             = \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
     configUSE_APPLICATION_TASK_TAG=1 \
     configTASKLIST_INCLUDE_COREID=1 \
+    portUSING_MPU_WRAPPERS=1 \
+    PRIVILEGED_FUNCTION= \
     "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 
 ## Do not complain about not having dot
@@ -276,6 +274,5 @@ QUIET = YES
 
 ## Enable Section Tags for conditional documentation
 ##
-ENABLED_SECTIONS += \
-    DOC_EXCLUDE_HEADER_SECTION \   ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
-    DOC_SINGLE_GROUP        ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.
+ENABLED_SECTIONS += DOC_EXCLUDE_HEADER_SECTION  ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
+ENABLED_SECTIONS += DOC_SINGLE_GROUP            ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.

@@ -12,6 +12,7 @@
 from __future__ import print_function, unicode_literals
 
 import os.path
+import re
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
 
@@ -171,6 +172,19 @@ languages = ['en', 'zh_CN']
 google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
 
 project_homepage = 'https://github.com/espressif/esp-idf'
+
+linkcheck_anchors = False
+
+linkcheck_exclude_documents = ['index',  # several false positives due to the way we link to different sections
+                               'api-reference/protocols/esp_local_ctrl',  # Fails due to `https://<mdns-hostname>.local`
+                               'api-reference/provisioning/wifi_provisioning',  # Fails due to `https://<mdns-hostname>.local`
+                               ]
+
+
+linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
+                    'https://dl.espressif.com/dl/esp32s3_rom.elf',  # Not published
+                    ]
+
 
 # Custom added feature to allow redirecting old URLs
 with open('../page_redirects.txt') as f:
