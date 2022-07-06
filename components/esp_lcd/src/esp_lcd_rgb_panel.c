@@ -230,8 +230,9 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(rgb_panel->hal.dev, UINT32_MAX); // clear pending interrupt
+
     // install DMA service
-    rgb_panel->flags.stream_mode = !rgb_panel_config->flags.relax_on_idle;
+    rgb_panel->flags.stream_mode = !rgb_panel_config->flags.refresh_on_demand;
     ret = lcd_rgb_panel_create_trans_link(rgb_panel);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // configure GPIO

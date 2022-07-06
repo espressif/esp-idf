@@ -125,9 +125,9 @@ typedef struct {
     int bounce_buffer_size_px; /*!< If not-zero, the driver uses a bounce buffer in internal memory to DMA from. Value is in pixels. */
     struct {
         unsigned int disp_active_low: 1; /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
-        unsigned int relax_on_idle: 1;   /*!< If this flag is enabled, the host won't refresh the LCD if nothing changed in host's frame buffer (this is usefull for LCD with built-in GRAM) */
         unsigned int fb_in_psram: 1;     /*!< If this flag is enabled, the frame buffer will be allocated from PSRAM preferentially */
         unsigned int bb_do_cache_invalidate:1; /*!< If this flag is enabled, in bounceback mode we'll do a cache invalidate on the read data, freeing the cache. Can be dangerous if data is written from other core. */
+        uint32_t refresh_on_demand: 1;   /*!< If this flag is enabled, the host only refresh the frame buffer when `esp_lcd_panel_draw_bitmap` is called.
     } flags;                             /*!< LCD RGB panel configuration flags */
 } esp_lcd_rgb_panel_config_t;
 
