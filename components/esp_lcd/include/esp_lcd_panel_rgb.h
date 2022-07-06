@@ -98,60 +98,6 @@ typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const
 typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
 
 /**
- * @brief LCD RGB framebuffer operation modes
- *
- * With regards to how the framebuffer is accessed and where it is located, the RGB LCD panel driver can
- * operate in four modes:
- *
- * - Framebuffer in internal memory.
- * - Framebuffer in PSRAM, accessed using EDMA
- * - Framebuffer in PSRAM, smaller bounce buffers in internal memory.
- * - No framebuffer in driver, bounce buffers in internal memory filled by callback.
- *
- * The first option (framebuffer in internal memory) is the default and simplest. There is a framebuffer in
- * internal memory that is read out once a frame using DMA and the data is sent out to the LCD verbatim. It
- * needs no CPU intervention to function, but it has the downside that it uses up a fair bit of the limited
- * amount of internal memory. This is the default if you do not specify flags or bounce buffer options.
- *
- * The second option is useful if you have PSRAM and want to store the framebuffer there rather than in the
- * limited internal memory. The LCD peripheral will use EDMA to fetch frame data directly from the PSRAM,
- * bypassing the internal cache. If you use this, after writing to the framebuffer, make sure to use e.g.
- * Cache_WriteBack_Addr to make sure the framebuffer is actually written back to the PSRAM. Not doing this
- * will lead to image corruption.
- * The downside of this is that when both the CPU as well as peripherals need access to the EDMA, the
- * bandwidth will be shared between the two, that is, EDMA gets half and the CPUs the other half. If
- * there's other peripherals using EDMA as well, with a high enough pixel clock this can lead to starvation
- * of the LCD peripheral, leading to display corruption. However, if the pixel clock is low enough for this
- * not to be an issue, this is a solution that uses almost no CPU intervention. This option can be enabled
- * by setting the ``fb_in_psram`` flag.
- *
- * The third option makes use of two so-called 'bounce buffers' in internal memory, but a main framebuffer that
- * is still in PSRAM. These bounce buffers are buffers large enough to hold e.g. a few lines of display data,
- * but still significantly less than the main framebuffer. The LCD peripheral will use DMA to read data from
- * one of the bounce buffers, and meanwhile an interrupt routine will use the CPU to copy data from the main
- * PSRAM framebuffer into the other bounce buffer. Once the LCD peripheral has finished reading the bounce
- * buffer, the two buffers change place and the CPU can fill the others. Note that as the CPU reads the
- * framebuffer data through the cache, it's not needed to call Cache_WriteBack_Addr() anymore.
- * The advantage here is that, as it's easier to control CPU memory bandwith use than EDMA memory bandwith
- * use, doing this can lead to higher pixel clocks being supported. As the bounce buffers are larger than
- * the FIFOs in the EDMA path, this method is also more robust against short bandwidth spikes. The
- * downside is a major increase in CPU use. This mode is selected by setting the ``fb_in_psram`` flag and
- * additionally specifying a (non-zero) bounce_buffer_size_px value. This value is dependent on your use
- * case, but a suggested initial value would be e.g. 8 times the amount of pixels in one LCD line.
- *
- * Note that this third option also allows for a ``bb_do_cache_invalidate`` flag to be set. Enabling this
- * frees up the cache lines after they're used to read out the framebuffer data from PSRAM, but it may lead
- * to slight corruption if the other core writes data to the framebuffer at the exact time the cache lines
- * are freed up. (Technically, a write to the framebuffer can be ignored if it falls between the cache
- * writeback and the cache invalidate calls.)
- *
- * Finally, the fourth option is the same as the third option, but there is no PSRAM frame buffer initialized
- * by the LCD driver. Instead, the user supplies a callback function that is responsible for filling the
- * bounce buffers. As this driver does not care where the written pixels come from, this allows for
- * the callback doing e.g. on-the-fly conversion from a smaller, 8-bit-per-pixel PSRAM framebuffer to
- * an 16-bit LCD, or even procedurally-generated framebuffer-less graphics. This option is selected
- * by not setting the ``fb_in_psram`` flag but supplying both a ``bounce_buffer_size_px`` value as well
- * as a ``on_bounce_empty`` callback.
  * @brief Group of supported RGB LCD panel callbacks
  * @note The callbacks are all running under ISR environment
  * @note When CONFIG_LCD_RGB_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.

@@ -104,23 +104,8 @@ struct esp_rgb_panel_t {
     dma_descriptor_t dma_nodes[]; // DMA descriptor pool of size `num_dma_nodes`
 };
 
-/*
-A note about DMA desync:
 
-It should never happen in a well-designed embedded application, but it can in theory be possible
- that GDMA cannot deliver data as fast as the LCD consumes it. In the ESP32-S3 hardware, this
-leads to the LCD simply outputting dummy bytes while GDMA waits for data. If we were to run
-DMA in a simple circular fashion, this would mean a de-sync between the LCD address the GDMA
-reads the data for and the LCD address the LCD peripheral thinks it outputs data for,
-leading to a permanently shifted image.
 
-In order to stop this from happening, we restart GDMA in the VBlank interrupt; this way we always
-know where it starts. However, the LCD peripheral also has a FIFO, and at the time of the VBlank,
-it already has read some data in there. We cannot reset this FIFO entirely, there's always one
-pixel that remains. So instead, when we restart DMA, we take into account it does not need to
-output the data that already is in the FIFO and we restart it using a descriptor that starts
-at the position after the last pixel in the LCD fifo.
-*/
 
 esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_lcd_panel_handle_t *ret_panel)
 {
