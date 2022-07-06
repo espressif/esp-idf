@@ -39,7 +39,11 @@ static uint8_t ext_adv_pattern_1[] = {
 
 static const char *tag = "NimBLE_BLE_PRPH";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+static uint8_t own_addr_type = BLE_OWN_ADDR_RANDOM;
+#else
 static uint8_t own_addr_type;
+#endif
 
 void ble_store_config_init(void);
 
@@ -368,13 +372,40 @@ bleprph_on_reset(int reason)
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
 }
 
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+static void
+ble_app_set_addr(void)
+{
+    ble_addr_t addr;
+    int rc;
+
+    /* generate new non-resolvable private address */
+    rc = ble_hs_id_gen_rnd(0, &addr);
+    assert(rc == 0);
+
+    /* set generated address */
+    rc = ble_hs_id_set_rnd(addr.val);
+
+    assert(rc == 0);
+}
+#endif
+
 static void
 bleprph_on_sync(void)
 {
     int rc;
 
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+    /* Generate a non-resolvable private address. */
+    ble_app_set_addr();
+#endif
+
     /* Make sure we have proper identity address set (public preferred) */
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+    rc = ble_hs_util_ensure_addr(1);
+#else
     rc = ble_hs_util_ensure_addr(0);
+#endif
     assert(rc == 0);
 
     /* Figure out address to use while advertising (no privacy for now) */
