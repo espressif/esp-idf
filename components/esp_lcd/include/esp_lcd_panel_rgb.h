@@ -116,6 +116,8 @@ typedef struct {
     size_t data_width;            /*!< Number of data lines */
     size_t sram_trans_align;      /*!< Alignment for framebuffer that allocated in SRAM */
     size_t psram_trans_align;     /*!< Alignment for framebuffer that allocated in PSRAM */
+    size_t bits_per_pixel;        /*!< Color depth, in bpp, specially, if set to zero, it will default to `data_width`.
+                                       When using a Serial RGB interface, this value could be different from `data_width` */
     int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */
     int vsync_gpio_num;           /*!< GPIO used for VSYNC signal */
     int de_gpio_num;              /*!< GPIO used for DE signal, set to -1 if it's not used */

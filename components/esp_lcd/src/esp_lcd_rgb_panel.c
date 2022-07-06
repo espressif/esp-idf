@@ -51,7 +51,6 @@ static const char *TAG = "lcd_panel.rgb";
 
 typedef struct esp_rgb_panel_t esp_rgb_panel_t;
 
-
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_reset(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel);
@@ -71,7 +70,8 @@ struct esp_rgb_panel_t {
     esp_lcd_panel_t base;  // Base class of generic lcd panel
     int panel_id;          // LCD panel ID
     lcd_hal_context_t hal; // Hal layer object
-    size_t data_width;     // Number of data lines (e.g. for RGB565, the data width is 16)
+    size_t data_width;     // Number of data lines
+    size_t bits_per_pixel; // Color depth, in bpp
     size_t sram_trans_align;  // Alignment for framebuffer that allocated in SRAM
     size_t psram_trans_align; // Alignment for framebuffer that allocated in PSRAM
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
@@ -127,6 +127,10 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
     if (rgb_panel_config->on_frame_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(rgb_panel_config->on_frame_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_frame_trans_done callback not in IRAM");
+    // bpp defaults to the number of data lines, but for serial RGB interface, they're not equal
+    size_t bits_per_pixel = rgb_panel_config->data_width;
+    if (rgb_panel_config->bits_per_pixel) { // override bpp if it's set
+        bits_per_pixel = rgb_panel_config->bits_per_pixel;
     }
     if (rgb_panel_config->user_ctx) {
         ESP_RETURN_ON_FALSE(esp_ptr_internal(rgb_panel_config->user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
@@ -242,6 +246,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     memcpy(rgb_panel->data_gpio_nums, rgb_panel_config->data_gpio_nums, SOC_LCD_RGB_DATA_WIDTH);
     rgb_panel->timings = rgb_panel_config->timings;
     rgb_panel->data_width = rgb_panel_config->data_width;
+    rgb_panel->bits_per_pixel = bits_per_pixel;
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
     rgb_panel->flags.bb_do_cache_invalidate = rgb_panel_config->flags.bb_do_cache_invalidate;
