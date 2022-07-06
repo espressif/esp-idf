@@ -224,16 +224,45 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
     (void)pll_freq_mhz;
-    (void)xtal_freq_mhz;
-    // ESP32C2 only support 40M XTAL, all the parameters are given as 40M XTAL directly
-    uint8_t div_ref = 0;
-    uint8_t div7_0 = 8;
-    uint8_t dr1 = 0;
-    uint8_t dr3 = 0;
-    uint8_t dchgp = 5;
-    uint8_t dcur = 3;
-    uint8_t dbias = 2;
+    uint8_t div_ref;
+    uint8_t div7_0;
+    uint8_t dr1;
+    uint8_t dr3;
+    uint8_t dchgp;
+    uint8_t dcur;
+    uint8_t dbias;
 
+    /* Configure 480M PLL */
+    switch (xtal_freq_mhz) {
+    case RTC_XTAL_FREQ_26M:
+        div_ref = 12;
+        div7_0 = 236;
+        dr1 = 4;
+        dr3 = 4;
+        dchgp = 0;
+        dcur = 0;
+        dbias = 2;
+        break;
+    case RTC_XTAL_FREQ_32M:
+        div_ref = 0;
+        div7_0 = 11;
+        dr1 = 0;
+        dr3 = 0;
+        dchgp = 5;
+        dcur = 3;
+        dbias = 2;
+        break;
+    case RTC_XTAL_FREQ_40M:
+    default:
+        div_ref = 0;
+        div7_0 = 8;
+        dr1 = 0;
+        dr3 = 0;
+        dchgp = 5;
+        dcur = 3;
+        dbias = 2;
+        break;
+    }
     REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
     uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_bbpll_div_7_0 = div7_0;
@@ -492,12 +521,14 @@ static inline void clk_ll_xtal_store_freq_mhz(uint32_t xtal_freq_mhz)
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_load_freq_mhz(void)
 {
-    // ESP32C2 has a fixed crystal frequency (40MHz), but we will still read from the RTC storage register
+    // Read from RTC storage register
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
-    if ((xtal_freq_reg & UINT16_MAX) != RTC_XTAL_FREQ_40M) {
-        return 0;
+    if ((xtal_freq_reg & 0xFFFF) == ((xtal_freq_reg >> 16) & 0xFFFF) &&
+        xtal_freq_reg != 0 && xtal_freq_reg != UINT32_MAX) {
+        return xtal_freq_reg & UINT16_MAX;
     }
-    return (uint32_t)RTC_XTAL_FREQ_40M;
+    // If the format in reg is invalid
+    return 0;
 }
 
 /**
