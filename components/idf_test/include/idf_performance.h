@@ -81,7 +81,7 @@
 #define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      18000
 #endif
 #ifndef IDF_PERFORMANCE_MIN_EVENT_DISPATCH_PSRAM
-#define IDF_PERFORMANCE_MIN_EVENT_DISPATCH_PSRAM                                16000
+#define IDF_PERFORMANCE_MIN_EVENT_DISPATCH_PSRAM                                14000
 #endif
 #endif
 
