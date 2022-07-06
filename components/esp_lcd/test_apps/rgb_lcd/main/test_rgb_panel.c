@@ -24,12 +24,15 @@
 
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 
-static esp_lcd_panel_handle_t test_rgb_panel_initialization(bool stream_mode, esp_lcd_rgb_panel_frame_trans_done_cb_t cb, void *user_data)
+static esp_lcd_panel_handle_t test_rgb_panel_initialization(size_t data_width, size_t bpp, size_t bb_pixels, bool refresh_on_demand,
+        esp_lcd_rgb_panel_vsync_cb_t vsync_cb, void *user_data)
 {
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
-        .data_width = 16,
+        .data_width = data_width,
         .psram_trans_align = 64,
+        .bounce_buffer_size_px = bb_pixels,
+        .bits_per_pixel = bpp,
         .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
         .pclk_gpio_num = TEST_LCD_PCLK_GPIO,
@@ -65,13 +68,16 @@ static esp_lcd_panel_handle_t test_rgb_panel_initialization(bool stream_mode, es
             .vsync_front_porch = 4,
             .vsync_pulse_width = 1,
         },
-        .on_frame_trans_done = cb,
-        .user_ctx = user_data,
         .flags.fb_in_psram = 1, // allocate frame buffer in PSRAM
-        .flags.relax_on_idle = !stream_mode,
+        .flags.refresh_on_demand = refresh_on_demand,
     };
 
     TEST_ESP_OK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
+
+    esp_lcd_rgb_panel_event_callbacks_t cbs = {
+        .on_vsync = vsync_cb,
+    };
+    TEST_ESP_OK(esp_lcd_rgb_panel_register_event_callbacks(panel_handle, &cbs, user_data));
     TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
 
@@ -84,7 +90,7 @@ TEST_CASE("lcd_rgb_panel_stream_mode", "[lcd]")
     TEST_ASSERT_NOT_NULL(img);
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 0, false, NULL, NULL);
     printf("flush random color block\r\n");
     for (int i = 0; i < 200; i++) {
         uint8_t color_byte = esp_random() & 0xFF;
@@ -98,7 +104,27 @@ TEST_CASE("lcd_rgb_panel_stream_mode", "[lcd]")
     free(img);
 }
 
-TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_trans_done(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
+TEST_CASE("lcd_rgb_panel_8bit_interface", "[lcd]")
+{
+    uint8_t *img = malloc(100 * 100 * 3);
+    TEST_ASSERT_NOT_NULL(img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    // bpp for RGB888 is 24
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(8, 24, 0, false, NULL, NULL);
+    uint8_t color_byte = esp_random() & 0xFF;
+    printf("flush random color block 0x%x\r\n", color_byte);
+    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    memset(img, color_byte, 100 * 100 * 3);
+    esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
+TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_trans_done(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
 {
     TaskHandle_t task_to_notify = (TaskHandle_t)user_ctx;
     BaseType_t high_task_wakeup;
@@ -106,14 +132,39 @@ TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_trans_done(esp_lcd_panel_handl
     return high_task_wakeup == pdTRUE;
 }
 
-TEST_CASE("lcd_rgb_panel_one_shot_mode", "[lcd]")
+TEST_CASE("lcd_rgb_panel_refresh_on_demand", "[lcd]")
 {
     uint8_t *img = malloc(TEST_IMG_SIZE);
     TEST_ASSERT_NOT_NULL(img);
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
 
-    printf("initialize RGB panel with ont-shot mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(false, test_rgb_panel_trans_done, cur_task);
+    printf("initialize RGB panel with non-stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 0, true, test_rgb_panel_trans_done, cur_task);
+    printf("flush random color block\r\n");
+    for (int i = 0; i < 200; i++) {
+        uint8_t color_byte = esp_random() & 0xFF;
+        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        memset(img, color_byte, TEST_IMG_SIZE);
+        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+        esp_lcd_rgb_panel_refresh(panel_handle);
+        // wait for flush done
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    }
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
+TEST_CASE("lcd_rgb_panel_bounce_buffer", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+
+    printf("initialize RGB panel with non-stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 10 * TEST_LCD_H_RES, false, test_rgb_panel_trans_done, cur_task);
     printf("flush random color block\r\n");
     for (int i = 0; i < 200; i++) {
         uint8_t color_byte = esp_random() & 0xFF;
@@ -130,8 +181,36 @@ TEST_CASE("lcd_rgb_panel_one_shot_mode", "[lcd]")
     free(img);
 }
 
+TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 0, false, NULL, NULL);
+    printf("flush one clock block to the LCD\r\n");
+    uint8_t color_byte = esp_random() & 0xFF;
+    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    memset(img, color_byte, TEST_IMG_SIZE);
+    esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+    printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    printf("Update the PCLK in the background\r\n");
+    const uint32_t test_pclk_freq[] = {10000000, 12000000, 8000000};
+    for (size_t i = 0; i < sizeof(test_pclk_freq) / sizeof(test_pclk_freq[0]); i++) {
+        esp_lcd_rgb_panel_set_pclk(panel_handle, test_pclk_freq[i]);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
-TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
+TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
 {
     uint32_t *count = (uint32_t *)user_ctx;
     *count = *count + 1;
@@ -142,7 +221,7 @@ static void IRAM_ATTR test_disable_flash_cache(void)
 {
     // disable flash cache
     spi_flash_guard_get()->start();
-    esp_rom_delay_us(100000);
+    esp_rom_delay_us(200000);
     // enable flash cache
     spi_flash_guard_get()->end();
 }
@@ -155,7 +234,7 @@ TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
     uint32_t callback_calls = 0;
 
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, test_rgb_panel_count_in_callback, &callback_calls);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 0, false, test_rgb_panel_count_in_callback, &callback_calls);
     printf("flush one clock block to the LCD\r\n");
     uint8_t color_byte = esp_random() & 0xFF;
     int x_start = esp_random() % (TEST_LCD_H_RES - 100);
@@ -169,7 +248,7 @@ TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
     test_disable_flash_cache();
     printf("the RGB ISR handle should keep working while the flash cache is disabled\r\n");
     printf("callback calls: %d\r\n", callback_calls);
-    TEST_ASSERT(callback_calls > 5);
+    TEST_ASSERT(callback_calls > 2);
 
     printf("delete RGB panel\r\n");
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
