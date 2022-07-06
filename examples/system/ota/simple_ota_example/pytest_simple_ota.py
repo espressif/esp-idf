@@ -72,15 +72,6 @@ def get_my_ip() -> str:
     return my_ip
 
 
-def get_server_status(host_ip: str, server_port: int) -> bool:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_status = sock.connect_ex((host_ip, server_port))
-    sock.close()
-    if server_status == 0:
-        return True
-    return False
-
-
 def start_https_server(ota_image_dir: str, server_ip: str, server_port: int, server_file: str = None, key_file: str = None) -> None:
     os.chdir(ota_image_dir)
 
@@ -136,29 +127,30 @@ def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    sha256_bootloader, sha256_app = calc_all_sha256(dut)
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, 8000) is False):
+    try:
+        sha256_bootloader, sha256_app = calc_all_sha256(dut)
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset 0x10000', timeout=30)
-    check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
-    check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
-    try:
-        ip_address = dut.expect(r' sta ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset 0x10000', timeout=30)
+        check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
+        check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
+        try:
+            ip_address = dut.expect(r' sta ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
-    dut.write('https://' + host_ip + ':8000/simple_ota.bin')
-    dut.expect('Loaded app from partition at offset 0x110000', timeout=60)
-    dut.expect('Starting OTA example', timeout=30)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+        dut.write('https://' + host_ip + ':8000/simple_ota.bin')
+        dut.expect('Loaded app from partition at offset 0x110000', timeout=60)
+        dut.expect('Starting OTA example', timeout=30)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.esp32
@@ -174,26 +166,27 @@ def test_examples_protocol_simple_ota_example_ethernet_with_spiram_config(dut: D
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, 8000) is False):
+    try:
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset 0x10000', timeout=30)
-    try:
-        ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset 0x10000', timeout=30)
+        try:
+            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
-    dut.write('https://' + host_ip + ':8000/simple_ota.bin')
-    dut.expect('Loaded app from partition at offset 0x110000', timeout=60)
-    dut.expect('Starting OTA example', timeout=30)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+        dut.write('https://' + host_ip + ':8000/simple_ota.bin')
+        dut.expect('Loaded app from partition at offset 0x110000', timeout=60)
+        dut.expect('Starting OTA example', timeout=30)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.esp32
@@ -210,31 +203,32 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(dut: Dut) ->
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    # Erase flash
-    dut.serial.erase_flash()
-    dut.serial.flash()
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, 8000) is False):
+    try:
+        # Erase flash
+        dut.serial.erase_flash()
+        dut.serial.flash()
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
-    dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
-    try:
-        ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
+        dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
+        try:
+            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
-    dut.write('https://' + host_ip + ':8000/simple_ota.bin')
-    dut.expect('Loaded app from partition at offset 0x120000', timeout=60)
-    dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
-    dut.expect('Starting OTA example', timeout=30)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+        dut.write('https://' + host_ip + ':8000/simple_ota.bin')
+        dut.expect('Loaded app from partition at offset 0x120000', timeout=60)
+        dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
+        dut.expect('Starting OTA example', timeout=30)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.esp32c3
@@ -249,31 +243,32 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    # start test
-    # Erase flash
-    dut.serial.erase_flash()
-    dut.serial.flash()
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, 8000) is False):
+    try:
+        # start test
+        # Erase flash
+        dut.serial.erase_flash()
+        dut.serial.flash()
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
-    dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
-    try:
-        ip_address = dut.expect(r' sta ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
-        thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
+        dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
+        dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
+        try:
+            ip_address = dut.expect(r' sta ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
 
-    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
-    dut.write('https://' + host_ip + ':8000/simple_ota.bin')
-    dut.expect('Loaded app from partition at offset 0x120000', timeout=60)
-    dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
-    dut.expect('Starting OTA example', timeout=30)
-    thread1.terminate()
+        print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+        dut.write('https://' + host_ip + ':8000/simple_ota.bin')
+        dut.expect('Loaded app from partition at offset 0x120000', timeout=60)
+        dut.expect('Flash encryption mode is DEVELOPMENT', timeout=10)
+        dut.expect('Starting OTA example', timeout=30)
+    finally:
+        thread1.terminate()
 
 
 @pytest.mark.esp32
@@ -289,33 +284,34 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    sha256_bootloader, sha256_app = calc_all_sha256(dut)
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, 8000) is False):
+    try:
+        sha256_bootloader, sha256_app = calc_all_sha256(dut)
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
-    check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
-    check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
-    try:
-        ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
+        dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
+        check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
+        check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
+        try:
+            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+        dut.write('https://' + host_ip + ':8000/simple_ota.bin')
+        dut.expect('Writing to partition subtype 16 at offset 0x120000', timeout=20)
+
+        dut.expect('Verifying image signature...', timeout=60)
+
+        dut.expect('Loaded app from partition at offset 0x120000', timeout=20)
+        dut.expect('Starting OTA example', timeout=30)
+    finally:
         thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
-
-    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
-    dut.write('https://' + host_ip + ':8000/simple_ota.bin')
-    dut.expect('Writing to partition subtype 16 at offset 0x120000', timeout=20)
-
-    dut.expect('Verifying image signature...', timeout=60)
-
-    dut.expect('Loaded app from partition at offset 0x120000', timeout=20)
-    dut.expect('Starting OTA example', timeout=30)
-    thread1.terminate()
 
 
 @pytest.mark.esp32
@@ -331,36 +327,37 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
       2. Fetch OTA image over HTTPS
       3. Reboot with the new OTA image
     """
-    sha256_bootloader, sha256_app = calc_all_sha256(dut)
-    # start test
-    host_ip = get_my_ip()
-    if (get_server_status(host_ip, 8000) is False):
+    try:
+        sha256_bootloader, sha256_app = calc_all_sha256(dut)
+        # start test
+        host_ip = get_my_ip()
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, host_ip, 8000))
         thread1.daemon = True
         thread1.start()
-    dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
-    check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
-    check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
-    try:
-        ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
-        print('Connected to AP with IP: {}'.format(ip_address))
-    except pexpect.exceptions.TIMEOUT:
+        dut.expect('Loaded app from partition at offset 0x20000', timeout=30)
+        check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
+        check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
+        try:
+            ip_address = dut.expect(r' eth ip: ([^,]+),', timeout=30)
+            print('Connected to AP with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        dut.expect('Starting OTA example', timeout=30)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
+        dut.write('https://' + host_ip + ':8000/simple_ota.bin')
+        dut.expect('Writing to partition subtype 16 at offset 0x120000', timeout=20)
+
+        dut.expect('Verifying image signature...', timeout=60)
+        dut.expect('#0 app key digest == #0 trusted key digest', timeout=10)
+        dut.expect('Verifying with RSA-PSS...', timeout=10)
+        dut.expect('Signature verified successfully!', timeout=10)
+
+        dut.expect('Loaded app from partition at offset 0x120000', timeout=20)
+        dut.expect('Starting OTA example', timeout=30)
+    finally:
         thread1.terminate()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut.expect('Starting OTA example', timeout=30)
-
-    print('writing to device: {}'.format('https://' + host_ip + ':8000/simple_ota.bin'))
-    dut.write('https://' + host_ip + ':8000/simple_ota.bin')
-    dut.expect('Writing to partition subtype 16 at offset 0x120000', timeout=20)
-
-    dut.expect('Verifying image signature...', timeout=60)
-    dut.expect('#0 app key digest == #0 trusted key digest', timeout=10)
-    dut.expect('Verifying with RSA-PSS...', timeout=10)
-    dut.expect('Signature verified successfully!', timeout=10)
-
-    dut.expect('Loaded app from partition at offset 0x120000', timeout=20)
-    dut.expect('Starting OTA example', timeout=30)
-    thread1.terminate()
 
 
 if __name__ == '__main__':
