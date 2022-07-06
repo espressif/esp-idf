@@ -83,14 +83,13 @@ struct esp_rgb_panel_t {
     uint32_t src_clk_hz;   // Peripheral source clock resolution
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     gdma_channel_handle_t dma_chan; // DMA channel handle
-    esp_lcd_rgb_panel_frame_trans_done_cb_t on_frame_trans_done; // Callback, invoked after frame trans done
     int bounce_buffer_size_bytes;   //If not-zero, the driver uses a bounce buffer in internal memory to DMA from. It's in bytes here.
     uint8_t *bounce_buffer[2];      //Pointer to the bounce buffers
     int bounce_buf_frame_start;     //If frame restarts, which bb has the initial frame data?
-    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // If we use a bounce buffer, this function gets called to fill it rather than copying from the framebuffer
-    void *bounce_buffer_cb_user_ctx;   //Callback data pointer
-    void *user_ctx;                // Reserved user's data of callback functions
     int bounce_pos_px;                 // Position in whatever source material is used for the bounce buffer, in pixels
+    esp_lcd_rgb_panel_vsync_cb_t on_vsync; // VSYNC event callback
+    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // callback used to fill a bounce buffer rather than copying from the frame buffer
+    void *user_ctx;                 // Reserved user's data of callback functions
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     portMUX_TYPE spinlock;          // to protect panel specific resource from concurrent access (e.g. between task and ISR)
@@ -303,6 +302,27 @@ err:
 }
 
 esp_err_t esp_rgb_panel_set_pclk(esp_lcd_panel_handle_t panel, uint32_t freq_hz)
+esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_callbacks_t *callbacks, void *user_ctx)
+{
+    ESP_RETURN_ON_FALSE(panel && callbacks, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+    if (callbacks->on_vsync) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_vsync), ESP_ERR_INVALID_ARG, TAG, "on_vsync callback not in IRAM");
+    }
+    if (callbacks->on_bounce_empty) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(callbacks->on_bounce_empty), ESP_ERR_INVALID_ARG, TAG, "on_bounce_empty callback not in IRAM");
+    }
+    if (user_ctx) {
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
+    }
+#endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
+    rgb_panel->on_vsync = callbacks->on_vsync;
+    rgb_panel->on_bounce_empty = callbacks->on_bounce_empty;
+    rgb_panel->user_ctx = user_ctx;
+    return ESP_OK;
+}
+
 {
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);

@@ -76,26 +76,26 @@ typedef struct {
 } esp_lcd_rgb_panel_event_data_t;
 
 /**
- * @brief Declare the prototype of the function that will be invoked when panel IO finishes transferring color data
+ * @brief RGB LCD VSYNC event callback prototype
  *
  * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
  * @param[in] edata Panel event data, fed by driver
- * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_config_t`
+ * @param[in] user_ctx User data, passed from `esp_lcd_rgb_panel_register_event_callbacks()`
  * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*esp_lcd_rgb_panel_frame_trans_done_cb_t)(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
+typedef bool (*esp_lcd_rgb_panel_vsync_cb_t)(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx);
 
 /**
- * @brief Prototype for function to re-fill a bounce buffer. Note this is called in ISR context.
+ * @brief Prototype for function to re-fill a bounce buffer, rather than copying from the frame buffer
  *
- * @param bounce_buf Bounce buffer to write data into
- * @param pos_px How many pixels already were sent to the display this frame, in other words, at what pixel
- *            the routine should start putting data into bounce_buf
- * @param len_bytes Length, in bytes, of the bounce buffer. Routine should fill this length fully.
- * @param user_ctx Opaque pointer that was passed as bounce_buffer_cb_user_ctx to esp_lcd_new_rgb_panel
- * @return True if the callback woke up a higher-priority task, false otherwise.
+ * @param[in] bounce_buf Bounce buffer to write data into
+ * @param[in] pos_px How many pixels already were sent to the display in this frame, in other words,
+ *                   at what pixel the routine should start putting data into bounce_buf
+ * @param[in] len_bytes Length, in bytes, of the bounce buffer. Routine should fill this length fully.
+ * @param[in] user_ctx Opaque pointer that was passed from `esp_lcd_rgb_panel_register_event_callbacks()`
+ * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
+typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(esp_lcd_panel_handle_t panel, void *bounce_buf, int pos_px, int len_bytes, void *user_ctx);
 
 /**
  * @brief LCD RGB framebuffer operation modes
@@ -152,7 +152,14 @@ typedef bool (*esp_lcd_rgb_panel_bounce_buf_fill_cb_t)(void *bounce_buf, int pos
  * an 16-bit LCD, or even procedurally-generated framebuffer-less graphics. This option is selected
  * by not setting the ``fb_in_psram`` flag but supplying both a ``bounce_buffer_size_px`` value as well
  * as a ``on_bounce_empty`` callback.
+ * @brief Group of supported RGB LCD panel callbacks
+ * @note The callbacks are all running under ISR environment
+ * @note When CONFIG_LCD_RGB_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  */
+typedef struct {
+    esp_lcd_rgb_panel_vsync_cb_t on_vsync;                  /*!< VSYNC event callback */
+    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; /*!< Bounce buffer empty callback. */
+} esp_lcd_rgb_panel_event_callbacks_t;
 
 /**
  * @brief LCD RGB panel configuration structure
@@ -169,11 +176,7 @@ typedef struct {
     int pclk_gpio_num;            /*!< GPIO used for PCLK signal */
     int data_gpio_nums[SOC_LCD_RGB_DATA_WIDTH]; /*!< GPIOs used for data lines */
     int disp_gpio_num; /*!< GPIO used for display control signal, set to -1 if it's not used */
-    esp_lcd_rgb_panel_frame_trans_done_cb_t on_frame_trans_done; /*!< Callback invoked when one frame buffer has transferred done */
     int bounce_buffer_size_px; /*!< If not-zero, the driver uses a bounce buffer in internal memory to DMA from. Value is in pixels. */
-    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; /*!< If we use a bounce buffer, this function gets called to fill that, rather than copying from the framebuffer */
-    void *bounce_buffer_cb_user_ctx; /*!< Opaque parameter to pass to the on_bounce_empty function */
-    void *user_ctx; /*!< User data which would be passed to on_frame_trans_done's user_ctx */
     struct {
         unsigned int disp_active_low: 1; /*!< If this flag is enabled, a low level of display control signal can turn the screen on; vice versa */
         unsigned int relax_on_idle: 1;   /*!< If this flag is enabled, the host won't refresh the LCD if nothing changed in host's frame buffer (this is usefull for LCD with built-in GRAM) */
@@ -194,6 +197,19 @@ typedef struct {
  *          - ESP_OK                on success
  */
 esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_lcd_panel_handle_t *ret_panel);
+
+/**
+ * @brief Register LCD RGB panel event callbacks
+ *
+ * @param[in] panel LCD panel handle, returned from `esp_lcd_new_rgb_panel()`
+ * @param[in] callbacks Group of callback functions
+ * @param[in] user_ctx User data, which will be passed to the callback functions directly
+ * @return
+ *      - ESP_OK: Set event callbacks successfully
+ *      - ESP_ERR_INVALID_ARG: Set event callbacks failed because of invalid argument
+ *      - ESP_FAIL: Set event callbacks failed because of other error
+ */
+esp_err_t esp_lcd_rgb_panel_register_event_callbacks(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_callbacks_t *callbacks, void *user_ctx);
 
 /**
  * @brief Set frequency of PCLK for RGB LCD panel
