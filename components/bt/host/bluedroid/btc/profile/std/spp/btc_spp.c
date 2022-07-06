@@ -499,6 +499,7 @@ static void btc_spp_dm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
                 user_data->slot_id = slot->id;
             } else {
                 BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                assert(0);
             }
             BTA_JvFreeChannel(slot->scn, BTA_JV_CONN_TYPE_RFCOMM,
                               (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -608,11 +609,8 @@ static void btc_spp_uninit(void)
                     user_data->server_status = BTA_JV_SERVER_RUNNING;
                     user_data->slot_id = spp_local_param.spp_slots[i]->id;
                 } else {
-                    esp_spp_cb_param_t param;
                     BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
-                    param.srv_stop.status = ESP_SPP_NO_RESOURCE;
-                    param.srv_stop.scn = spp_local_param.spp_slots[i]->scn;
-                    btc_spp_cb_to_app(ESP_SPP_SRV_STOP_EVT, &param);
+                    assert(0);
                 }
                 BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM,
                                   (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
@@ -789,7 +787,7 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
         }
 
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-        // [1] find all server
+        // [1] find all unconnected server
         for (i = 1; i <= MAX_RFC_PORTS; i++) {
             if (spp_local_param.spp_slots[i] != NULL && !spp_local_param.spp_slots[i]->connected &&
                 spp_local_param.spp_slots[i]->sdp_handle > 0) {
@@ -844,11 +842,8 @@ static void btc_spp_stop_srv(btc_spp_args_t *arg)
                         user_data->server_status = BTA_JV_SERVER_RUNNING;
                         user_data->slot_id = spp_local_param.spp_slots[i]->id;
                     } else {
-                        esp_spp_cb_param_t param;
                         BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
-                        param.srv_stop.status = ESP_SPP_NO_RESOURCE;
-                        param.srv_stop.scn = spp_local_param.spp_slots[i]->scn;
-                        btc_spp_cb_to_app(ESP_SPP_SRV_STOP_EVT, &param);
+                        assert(0);
                     }
                     BTA_JvFreeChannel(spp_local_param.spp_slots[i]->scn, BTA_JV_CONN_TYPE_RFCOMM,
                                       (tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb, (void *)user_data);
