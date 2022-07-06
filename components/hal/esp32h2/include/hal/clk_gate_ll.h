@@ -67,6 +67,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_TSENS_CLK_EN;
     case PERIPH_ETM_MODULE:
         return SYSTEM_ETM_CLK_EN;
+    case PERIPH_MODEM_RPA_MODULE:
+        return SYSTEM_BLE_SEC_AAR_CLK_EN;
     default:
         return 0;
     }
@@ -142,6 +144,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_CRYPTO_DS_RST;
     case PERIPH_ETM_MODULE:
         return SYSTEM_ETM_RST;
+    case PERIPH_MODEM_RPA_MODULE:
+        return SYSTEM_BLE_SEC_AAR_RST;
     default:
         return 0;
     }
@@ -162,6 +166,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
         return SYSTEM_PERIP_CLK_EN1_REG;
     case PERIPH_BT_MODULE:
     	return SYSTEM_MODEM_CLK_EN_REG;
+    case PERIPH_MODEM_RPA_MODULE:
+        return SYSTEM_MODEM_CLK_EN_REG;
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
     }
@@ -182,6 +188,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
         return SYSTEM_PERIP_RST_EN1_REG;
     case PERIPH_BT_MODULE:
 	    return SYSTEM_MODEM_RST_EN_REG;
+    case PERIPH_MODEM_RPA_MODULE:
+        return SYSTEM_MODEM_RST_EN_REG;
     default:
         return SYSTEM_PERIP_RST_EN0_REG;
     }
