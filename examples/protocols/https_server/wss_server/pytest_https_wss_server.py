@@ -14,7 +14,7 @@ from typing import Any, Optional
 
 import pytest
 import websocket
-from common_test_methods import get_env_config
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 OPCODE_TEXT = 0x1
@@ -122,11 +122,11 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
 
     logging.info('Waiting to connect with AP')
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-        env_config = get_env_config('wifi_router')
-        ap_ssid = env_config['ap_ssid']
-        ap_password = env_config['ap_password']
         dut.expect('Please input ssid password:')
-        dut.write(' '.join([ap_ssid, ap_password]))
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
     # Parse IP address of STA
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
     got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
@@ -146,7 +146,7 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
         opcode, data = ws.read()
         data = data.decode('UTF-8')
         if data != DATA:
-            raise RuntimeError('Failed to receive the correct echo response')
+            raise RuntimeError(f'Failed to receive the correct echo response.')
         logging.info('Correct echo response obtained from the wss server')
 
         # Test for PING

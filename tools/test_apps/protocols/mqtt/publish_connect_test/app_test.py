@@ -15,7 +15,7 @@ from threading import Event, Lock, Thread
 
 import paho.mqtt.client as mqtt
 import ttfw_idf
-from common_test_methods import get_my_ip4_by_dest_ip
+from common_test_methods import get_host_ip4_by_dest_ip
 
 DEFAULT_MSG_SIZE = 16
 
@@ -236,7 +236,7 @@ class TlsServer:
 
 
 def connection_tests(dut, cases, dut_ip):
-    ip = get_my_ip4_by_dest_ip(dut_ip)
+    ip = get_host_ip4_by_dest_ip(dut_ip)
     set_server_cert_cn(ip)
     server_port = 2222
 
@@ -336,7 +336,7 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
         raise
 
     dut1.start_app()
-    esp_ip = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
+    esp_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
     print('Got IP={}'.format(esp_ip))
 
     if not os.getenv('MQTT_SKIP_CONNECT_TEST'):

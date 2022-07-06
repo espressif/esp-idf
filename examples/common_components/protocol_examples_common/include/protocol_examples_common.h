@@ -81,9 +81,10 @@ esp_netif_t *get_example_netif_from_desc(const char *desc);
 /**
  * @brief Register wifi connect commands
  *
- * @note Provide wifi connect commands using esp_console.
+ * Provide a simple wifi_connect command in esp_console.
+ * This function can be used after esp_console is initialized.
  */
-void register_wifi_connect_commands(void);
+void example_register_wifi_connect_commands(void);
 #endif
 
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET

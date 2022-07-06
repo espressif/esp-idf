@@ -6,20 +6,20 @@ import logging
 from typing import Any, Tuple
 
 import pytest
-from common_test_methods import get_env_config
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.wifi_nearby
+@pytest.mark.wifi_ap
 def test_get_time_from_sntp_server(dut: Dut) -> None:
     dut.expect('Time is not set yet. Connecting to WiFi and getting time over NTP.')
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-        env_config = get_env_config('wifi_nearby')
-        ap_ssid = env_config['ap_ssid']
-        ap_password = env_config['ap_password']
         dut.expect('Please input ssid password:')
-        dut.write(' '.join([ap_ssid, ap_password]))
+        env_name = 'wifi_ap'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
     dut.expect('IPv4 address:')
 
     dut.expect('Initializing SNTP')

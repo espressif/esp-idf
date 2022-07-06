@@ -229,18 +229,20 @@ esp_err_t example_wifi_connect(void)
     };
 #if CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN
     example_configure_stdin_stdout();
-    char buf[32+64+2] = {0};
+    char buf[sizeof(wifi_config.sta.ssid)+sizeof(wifi_config.sta.password)+2] = {0};
     ESP_LOGI(TAG, "Please input ssid password:");
     fgets(buf, sizeof(buf), stdin);
     int len = strlen(buf);
-    buf[len-1] = '\0';
-    memset(wifi_config.sta.ssid, 0, 32);
-    char *temp = strtok(buf, " ");
-    strncpy((char*)wifi_config.sta.ssid, temp, 32);
-    memset(wifi_config.sta.password, 0, 64);
-    temp = strtok(NULL, " ");
+    buf[len-1] = '\0'; /* removes '\n' */
+    memset(wifi_config.sta.ssid, 0, sizeof(wifi_config.sta.ssid));
+
+    char *rest = NULL;
+    char *temp = strtok_r(buf, " ", &rest);
+    strncpy((char*)wifi_config.sta.ssid, temp, sizeof(wifi_config.sta.ssid));
+    memset(wifi_config.sta.password, 0, sizeof(wifi_config.sta.password));
+    temp = strtok_r(NULL, " ", &rest);
     if (temp) {
-        strncpy((char*)wifi_config.sta.password, temp, 64);
+        strncpy((char*)wifi_config.sta.password, temp, sizeof(wifi_config.sta.password));
     } else {
         wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
     }

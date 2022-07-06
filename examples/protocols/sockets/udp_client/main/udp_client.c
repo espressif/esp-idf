@@ -73,6 +73,13 @@ static void udp_client_task(void *pvParameters)
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
         }
+
+        // Set timeout
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+
         ESP_LOGI(TAG, "Socket created, sending to %s:%d", HOST_IP_ADDR, PORT);
 
         while (1) {

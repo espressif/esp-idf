@@ -6,12 +6,12 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32
-@pytest.mark.wifi_nearby
+@pytest.mark.wifi_ap
 @pytest.mark.parametrize('config', [
     'mem',
 ], indirect=True)
 def test_examples_simple_sniffer(dut: Dut) -> None:
-    sniffer_num = 10
+    sniffer_num = 9
     dut.expect('sniffer>')
     dut.write('pcap --open -f simple-sniffer')
     dut.expect('cmd_pcap: open file successfully')
@@ -27,8 +27,8 @@ def test_examples_simple_sniffer(dut: Dut) -> None:
     dut.expect(r'Minor Version: [0-9]+')
     dut.expect(r'SnapLen: [0-9]+')
     dut.expect(r'LinkType: [0-9]+')
-    # Allow "save captured packet failed" once
-    for i in range(0, sniffer_num - 1):
+    # Allow "save captured packet failed" twice
+    for i in range(0, sniffer_num - 2):
         dut.expect(f'Packet {i}:')
         dut.expect(r'Timestamp \(Seconds\): [0-9]+')
         dut.expect(r'Timestamp \(Microseconds\): [0-9]+')
@@ -38,7 +38,7 @@ def test_examples_simple_sniffer(dut: Dut) -> None:
         dut.expect(r'Frame Subtype:\s+\w+')
         dut.expect(r'Destination:\s+\w+')
         dut.expect(r'Source:\s+\w+')
-    dut.expect(r'Pcap packet Number: \d+')
+    dut.expect(r'Pcap packet Number: [7-9]')
     dut.write('pcap --close -f simple-sniffer')
     dut.expect('cmd_pcap: free memory successfully')
     dut.expect('cmd_pcap: .pcap file close done')

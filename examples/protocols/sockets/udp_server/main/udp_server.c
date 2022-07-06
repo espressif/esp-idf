@@ -71,6 +71,11 @@ static void udp_server_task(void *pvParameters)
             setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
         }
 #endif
+        // Set timeout
+        struct timeval timeout;
+        timeout.tv_sec = 10;
+        timeout.tv_usec = 0;
+        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
 
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {

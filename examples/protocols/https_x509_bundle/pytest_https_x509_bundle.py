@@ -4,7 +4,7 @@ import logging
 import os
 
 import pytest
-from common_test_methods import get_env_config
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
@@ -12,7 +12,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_nearby
+@pytest.mark.wifi_ap
 def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
     """
     steps: |
@@ -26,11 +26,11 @@ def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
     logging.info('https_x509_bundle_bin_size : {}KB'.format(bin_size // 1024))
     # Connect to AP
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-        env_config = get_env_config('wifi_nearby')
-        ap_ssid = env_config['ap_ssid']
-        ap_password = env_config['ap_password']
         dut.expect('Please input ssid password:')
-        dut.write(' '.join([ap_ssid, ap_password]))
+        env_name = 'wifi_ap'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
     dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)
     # start test
     num_URLS = int(dut.expect(r'Connecting to (\d+) URLs', timeout=30)[1].decode())
@@ -42,7 +42,7 @@ def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_nearby
+@pytest.mark.wifi_ap
 @pytest.mark.parametrize('config', ['ssldyn',], indirect=True)
 def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
     # test mbedtls dynamic resource
@@ -52,11 +52,11 @@ def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
     logging.info('https_x509_bundle_bin_size : {}KB'.format(bin_size // 1024))
     # Connect to AP
     if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-        env_config = get_env_config('wifi_nearby')
-        ap_ssid = env_config['ap_ssid']
-        ap_password = env_config['ap_password']
         dut.expect('Please input ssid password:')
-        dut.write(' '.join([ap_ssid, ap_password]))
+        env_name = 'wifi_ap'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
     dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)
     # start test
     num_URLS = int(dut.expect(r'Connecting to (\d+) URLs', timeout=30)[1].decode())

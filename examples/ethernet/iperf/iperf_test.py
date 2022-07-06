@@ -16,7 +16,7 @@ import time
 
 import netifaces
 import ttfw_idf
-from common_test_methods import get_env_config, get_my_ip_by_interface
+from common_test_methods import get_env_config_variable, get_host_ip_by_interface
 from idf_iperf_test_util import IperfUtility
 from tiny_test_fw import TinyFW
 
@@ -62,8 +62,8 @@ def test_ethernet_throughput_basic(env, _):  # type: (Any, Any) -> None
       1. test TCP tx rx and UDP tx rx throughput
       2. compare with the pre-defined pass standard
     """
-    pc_nic = get_env_config('wifi_router').get('pc_nic', 'eth1')
-    pc_nic_ip = get_my_ip_by_interface(pc_nic, netifaces.AF_INET)
+    pc_nic = get_env_config_variable('wifi_router', 'pc_nic', default='eth1')
+    pc_nic_ip = get_host_ip_by_interface(pc_nic, netifaces.AF_INET)
     pc_iperf_log_file = os.path.join(env.log_path, 'pc_iperf_log.md')
 
     # 1. get DUT

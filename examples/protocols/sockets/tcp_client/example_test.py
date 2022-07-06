@@ -17,7 +17,7 @@ from threading import Event, Thread
 
 import netifaces
 import ttfw_idf
-from common_test_methods import get_env_config, get_my_interface_by_dest_ip, get_my_ip_by_interface
+from common_test_methods import get_env_config_variable, get_host_ip_by_interface, get_my_interface_by_dest_ip
 
 # -----------  Config  ----------
 PORT = 3333
@@ -97,13 +97,13 @@ def test_examples_protocol_socket_tcpclient(env, extra_data):
     # start test
     dut1.start_app()
     if dut1.app.get_sdkconfig_config_value('CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN'):
-        env_config = get_env_config('wifi_router')
-        ap_ssid = env_config['ap_ssid']
-        ap_password = env_config['ap_password']
         dut1.expect('Please input ssid password:')
-        dut1.write(' '.join([ap_ssid, ap_password]))
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut1.write(f'{ap_ssid} {ap_password}')
 
-    ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
+    ipv4 = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
     print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
@@ -111,13 +111,13 @@ def test_examples_protocol_socket_tcpclient(env, extra_data):
     my_interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
     with TcpServer(PORT, socket.AF_INET):
-        server_ip = get_my_ip_by_interface(my_interface, netifaces.AF_INET)
+        server_ip = get_host_ip_by_interface(my_interface, netifaces.AF_INET)
         print('Connect tcp client to server IP={}'.format(server_ip))
         dut1.write(server_ip)
         dut1.expect(re.compile(r'OK: Message from ESP32'))
     # test IPv6
     with TcpServer(PORT, socket.AF_INET6):
-        server_ip = get_my_ip_by_interface(my_interface, netifaces.AF_INET6)
+        server_ip = get_host_ip_by_interface(my_interface, netifaces.AF_INET6)
         print('Connect tcp client to server IP={}'.format(server_ip))
         dut1.write(server_ip)
         dut1.expect(re.compile(r'OK: Message from ESP32'))

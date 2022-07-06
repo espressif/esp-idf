@@ -4,7 +4,7 @@
 import os
 
 import pytest
-from common_test_methods import get_env_config
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
@@ -12,13 +12,15 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi_nearby
+@pytest.mark.wifi_ap
 def test_protocols_icmp_echo(dut: Dut) -> None:
     # get env config
-    env_config = get_env_config('wifi_nearby')
-    ap_ssid = env_config['ap_ssid']
-    ap_password = env_config['ap_password']
-    ap_channel = env_config.get('ap_channel', 0)
+    sdkconfig_ssid = dut.app.sdkconfig.get('CONFIG_EXAMPLE_WIFI_SSID')
+    sdkconfig_pwd = dut.app.sdkconfig.get('CONFIG_EXAMPLE_WIFI_SSID')
+    env_name = 'wifi_ap'
+    ap_ssid = get_env_config_variable(env_name, 'ap_ssid', default=sdkconfig_ssid)
+    ap_password = get_env_config_variable(env_name, 'ap_password', default=sdkconfig_pwd)
+    ap_channel = get_env_config_variable(env_name, 'ap_channel', default=0)
 
     dut.expect('esp>')
     dut.write(f'wifi_connect {ap_ssid} {ap_password} -n {ap_channel}')

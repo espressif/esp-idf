@@ -7,7 +7,7 @@ import time
 from threading import Thread
 
 import ttfw_idf
-from common_test_methods import get_my_ip4_by_dest_ip
+from common_test_methods import get_host_ip4_by_dest_ip
 from tiny_test_fw import DUT
 
 msgid = -1
@@ -46,7 +46,7 @@ def mqqt_server_sketch(my_ip, port):
     print('server closed')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
+@ttfw_idf.idf_example_test(env_tag='ethernet_router')
 def test_examples_protocol_mqtt_qos1(env, extra_data):
     global msgid
     """
@@ -65,13 +65,13 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
     dut1.start_app()
     # waiting for getting the IP address
     try:
-        ip_address = dut1.expect(re.compile(r'IPv4 address: ([^,]+),'), timeout=30)[0]
+        ip_address = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
         print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
 
     # 2. start mqtt broker sketch
-    host_ip = get_my_ip4_by_dest_ip(ip_address)
+    host_ip = get_host_ip4_by_dest_ip(ip_address)
     thread1 = Thread(target=mqqt_server_sketch, args=(host_ip,1883))
     thread1.start()
 

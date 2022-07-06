@@ -214,7 +214,7 @@ void app_main(void)
 #endif
 
     /* register wifi connect commands */
-    register_wifi_connect_commands();
+    example_register_wifi_connect_commands();
     /* register command `ping` */
     register_ping();
     /* register command `quit` */

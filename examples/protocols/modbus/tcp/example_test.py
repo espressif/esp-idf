@@ -29,8 +29,8 @@ STACK_PAR_OK = 6
 STACK_PAR_FAIL = 7
 STACK_DESTROY = 8
 
-pattern_dict_slave = {STACK_IPV4: (r'.*I \([0-9]+\) example_connect: - IPv4 address: ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*'),
-                      STACK_IPV6: (r'.*I \([0-9]+\) example_connect: - IPv6 address: (([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}).*'),
+pattern_dict_slave = {STACK_IPV4: (r'.*I \([0-9]+\) example_common: - IPv4 address: ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*'),
+                      STACK_IPV6: (r'.*I \([0-9]+\) example_common: - IPv6 address: (([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}).*'),
                       STACK_INIT: (r'.*I \(([0-9]+)\) MB_TCP_SLAVE_PORT: (Protocol stack initialized).'),
                       STACK_CONNECT: (r'.*I\s\(([0-9]+)\) MB_TCP_SLAVE_PORT: Socket \(#[0-9]+\), accept client connection from address: '
                                       r'([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*'),
@@ -40,8 +40,8 @@ pattern_dict_slave = {STACK_IPV4: (r'.*I \([0-9]+\) example_connect: - IPv4 addr
                       STACK_PAR_FAIL: (r'.*E \(([0-9]+)\) SLAVE_TEST: Response time exceeds configured [0-9]+ [ms], ignore packet.*'),
                       STACK_DESTROY: (r'.*I\s\(([0-9]+)\) SLAVE_TEST: (Modbus controller destroyed).')}
 
-pattern_dict_master = {STACK_IPV4: (r'.*I \([0-9]+\) example_connect: - IPv4 address: ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*'),
-                       STACK_IPV6: (r'.*I \([0-9]+\) example_connect: - IPv6 address: (([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}).*'),
+pattern_dict_master = {STACK_IPV4: (r'.*I \([0-9]+\) example_common: - IPv4 address: ([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}).*'),
+                       STACK_IPV6: (r'.*I \([0-9]+\) example_common: - IPv6 address: (([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4}).*'),
                        STACK_INIT: (r'.*I \(([0-9]+)\) MASTER_TEST: (Modbus master stack initialized).*'),
                        STACK_CONNECT: (r'.*.*I\s\(([0-9]+)\) MB_TCP_MASTER_PORT: (Connected [0-9]+ slaves), start polling.*'),
                        STACK_START: (r'.*I \(([0-9]+)\) MASTER_TEST: (Start modbus test).*'),

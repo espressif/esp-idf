@@ -58,7 +58,7 @@ static int cmd_do_wifi_disconnect(int argc, char **argv)
     return 0;
 }
 
-void register_wifi_connect_commands(void)
+void example_register_wifi_connect_commands(void)
 {
     ESP_LOGI(TAG, "Registering WiFi connect commands.");
     example_wifi_start();
