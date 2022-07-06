@@ -13,6 +13,7 @@
 #include "btc_gatt_util.h"
 #include "stack/l2cdefs.h"
 #include "stack/l2c_api.h"
+#include "gatt_int.h"
 
 
 #if (GATTC_INCLUDED == TRUE)
@@ -327,6 +328,12 @@ esp_err_t esp_ble_gattc_read_char (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
@@ -358,6 +365,12 @@ esp_err_t esp_ble_gattc_read_by_type (esp_gatt_if_t gattc_if,
         return ESP_GATT_ILLEGAL_PARAMETER;
     }
 
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
@@ -383,6 +396,12 @@ esp_err_t esp_ble_gattc_read_multiple(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
@@ -415,6 +434,12 @@ esp_err_t esp_ble_gattc_read_char_descr (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
@@ -441,6 +466,12 @@ esp_err_t esp_ble_gattc_write_char(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
@@ -474,6 +505,12 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
@@ -506,6 +543,12 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
         return ESP_FAIL;
@@ -535,6 +578,12 @@ esp_err_t esp_ble_gattc_prepare_write_char_descr(esp_gatt_if_t gattc_if,
     btc_ble_gattc_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
 
     if (L2CA_CheckIsCongest(L2CAP_ATT_CID, conn_id)) {
         LOG_DEBUG("%s, the l2cap chanel is congest.", __func__);
