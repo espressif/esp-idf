@@ -173,11 +173,7 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:12;
-        /** wdt_appcpu_reset_en : R/W; bitpos: [12]; default: 0;
-         *  WDT reset CPU enable.
-         */
-        uint32_t wdt_appcpu_reset_en:1;
+        uint32_t reserved_0:13;
         /** wdt_procpu_reset_en : R/W; bitpos: [13]; default: 0;
          *  WDT reset CPU enable.
          */
@@ -239,7 +235,7 @@ typedef union {
         uint32_t wdt_divcnt_rst:1;
         uint32_t reserved_1:15;
         /** wdt_clk_prescale : R/W; bitpos: [31:16]; default: 1;
-         *  MWDT clock prescaler value. MWDT clock period = 12.5 ns *
+         *  MWDT clock prescaler value. MWDT clock period = 25 ns *
          *  TIMG_WDT_CLK_PRESCALE.
          */
         uint32_t wdt_clk_prescale:16;

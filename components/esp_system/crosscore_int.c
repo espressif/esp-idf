@@ -96,12 +96,14 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
         esp_backtrace_print(100);
     }
 
+#if CONFIG_ESP_TASK_WDT
     if (my_reason_val & REASON_TWDT_ABORT) {
         extern void task_wdt_timeout_abort_xtensa(bool);
         /* Called from a crosscore interrupt, thus, we are not the core that received
          * the TWDT interrupt, call the function with `false` as a parameter. */
         task_wdt_timeout_abort_xtensa(false);
     }
+#endif // CONFIG_ESP_TASK_WDT
 #endif // CONFIG_IDF_TARGET_ARCH_XTENSA
 }
 
@@ -171,7 +173,9 @@ void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
 }
 
+#if CONFIG_ESP_TASK_WDT
 void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id) {
     esp_crosscore_int_send(core_id, REASON_TWDT_ABORT);
 }
+#endif // CONFIG_ESP_TASK_WDT
 #endif

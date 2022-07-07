@@ -121,10 +121,10 @@ _vector_table:
     .option push
     .option norvc
     j _panic_handler			/* exception handler, entry 0 */
-    .rept (ETS_T1_WDT_INUM - 1)
+    .rept (ETS_INT_WDT_INUM - 1)
     j _interrupt_handler		/* 24 identical entries, all pointing to the interrupt handler */
     .endr
-    j _panic_handler			/* Call panic handler for ETS_T1_WDT_INUM interrupt (soc-level panic)*/
+    j _panic_handler			/* Call panic handler for ETS_INT_WDT_INUM interrupt (soc-level panic)*/
     j _panic_handler			/* Call panic handler for ETS_CACHEERR_INUM interrupt (soc-level panic)*/
     #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     j _panic_handler			/* Call panic handler for ETS_MEMPROT_ERR_INUM interrupt (soc-level panic)*/

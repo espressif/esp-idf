@@ -24,10 +24,12 @@
 #include "esp_private/system_internal.h"
 #include "esp_private/crosscore_int.h"
 #include "freertos/task_snapshot.h"
+#include "esp_timer.h"
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
 #endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
+
 
 #if CONFIG_IDF_TARGET_ARCH_RISCV && !CONFIG_ESP_SYSTEM_USE_EH_FRAME
 /* Function used to print all the registers pointed by the given frame .*/
@@ -50,10 +52,15 @@ bool g_twdt_isr = false;
 
 // ----------------------- Macros --------------------------
 
-// HAL related variables and constants
+// Use a hardware timer implementation or a software implementation
+#define TWDT_HARDWARE_IMPL      !CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
+
+#if TWDT_HARDWARE_IMPL
+// HAL related variables and constants only defined in a hardware implementation
 #define TWDT_INSTANCE           WDT_MWDT0
 #define TWDT_TICKS_PER_US       MWDT0_TICKS_PER_US
 #define TWDT_PRESCALER          MWDT0_TICK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
+#endif // TWDT_HARDWARE_IMPL
 
 // ---------------------- Typedefs -------------------------
 
@@ -71,11 +78,16 @@ struct twdt_entry {
 // Structure used to hold run time configuration of the TWDT
 typedef struct twdt_obj twdt_obj_t;
 struct twdt_obj {
+#if TWDT_HARDWARE_IMPL
     wdt_hal_context_t hal;
+    intr_handle_t intr_handle;
+#else // TWDT_HARDWARE_IMPL
+    esp_timer_handle_t sw_timer; // We use esp_timer to simulate a hardware WDT
+    uint32_t period_ms;
+#endif // TWDT_HARDWARE_IMPL
     SLIST_HEAD(entry_list_head, twdt_entry) entries_slist;
     uint32_t idle_core_mask;    // Current core's who's idle tasks are subscribed
     bool panic; // Flag to trigger panic when TWDT times out
-    intr_handle_t intr_handle;
 };
 
 // ----------------------- Objects -------------------------
@@ -95,19 +107,6 @@ static char core_user_names[portNUM_PROCESSORS][CORE_USER_NAME_LEN];
 // ---------------------- Callbacks ------------------------
 
 /**
- * @brief User ISR callback placeholder
- *
- * This function is called by task_wdt_isr function (ISR for when TWDT times out). It can be redefined in user code to
- * handle TWDT events.
- *
- * @note It has the same limitations as the interrupt function. Do not use ESP_LOGI functions inside.
- */
-void __attribute__((weak)) esp_task_wdt_isr_user_handler(void)
-{
-
-}
-
-/**
  * @brief Idle hook callback
  *
  * Idle hook callback called by the idle tasks to feed the TWDT
@@ -118,23 +117,95 @@ static bool idle_hook_cb(void)
 {
 #if CONFIG_FREERTOS_SMP
     esp_task_wdt_reset_user(core_user_handles[xPortGetCoreID()]);
-#else
+#else // CONFIG_FREERTOS_SMP
     esp_task_wdt_reset();
-#endif
+#endif // CONFIG_FREERTOS_SMP
     return true;
 }
 
 // ----------------------- Helpers -------------------------
 
+#if !TWDT_HARDWARE_IMPL
+
 /**
- * @brief Reset hardware timer and reset flags of each entry
+ * Private API provided by esp_timer component to feed a timer without
+ * the need of disabling it, removing it and inserting it manually.
  */
-static void reset_hw_timer(void)
+esp_err_t esp_timer_feed(esp_timer_handle_t timer);
+
+#endif // !TWDT_HARDWARE_IMPL
+
+
+static esp_err_t task_wdt_timer_stop(twdt_obj_t *obj)
 {
+    esp_err_t ret = ESP_OK;
+
+    if (obj == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+#if TWDT_HARDWARE_IMPL
+    // All tasks have reset; Feed the underlying timer.
+    wdt_hal_write_protect_disable(&obj->hal);
+    wdt_hal_disable(&obj->hal);
+    wdt_hal_write_protect_enable(&obj->hal);
+#else // TWDT_HARDWARE_IMPL
+    if (obj->sw_timer == NULL) {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+
+    if (ret == ESP_OK) {
+        esp_timer_stop(obj->sw_timer);
+    }
+#endif // TWDT_HARDWARE_IMPL
+
+    return ret;
+}
+
+
+static esp_err_t task_wdt_timer_restart(twdt_obj_t *obj)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (obj == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+#if TWDT_HARDWARE_IMPL
+    // All tasks have reset; Feed the underlying timer.
+    wdt_hal_write_protect_disable(&obj->hal);
+    wdt_hal_enable(&obj->hal);
+    wdt_hal_feed(&obj->hal);
+    wdt_hal_write_protect_enable(&obj->hal);
+#else // TWDT_HARDWARE_IMPL
+    if (obj->sw_timer == NULL) {
+        ret = ESP_ERR_INVALID_STATE;
+    }
+
+    if (ret == ESP_OK) {
+        esp_timer_start_periodic(obj->sw_timer, obj->period_ms * 1000);
+    }
+#endif // TWDT_HARDWARE_IMPL
+
+    return ret;
+}
+
+/**
+ * @brief Reset the timer and reset flags of each entry
+ * When entering this function, the spinlock has already been taken, no need to take it back.
+ */
+static void task_wdt_timer_feed(void)
+{
+#if TWDT_HARDWARE_IMPL
     // All tasks have reset; time to reset the hardware timer.
     wdt_hal_write_protect_disable(&p_twdt_obj->hal);
     wdt_hal_feed(&p_twdt_obj->hal);
     wdt_hal_write_protect_enable(&p_twdt_obj->hal);
+#else // TWDT_HARDWARE_IMPL
+    /* No matter if feeding succeeded or not, we have to reset each list entry's flags.
+     * Thus, ignore the return value. */
+    esp_timer_feed(p_twdt_obj->sw_timer);
+#endif // TWDT_HARDWARE_IMPL
     //Clear the has_reset flag in each entry
     twdt_entry_t *entry;
     SLIST_FOREACH(entry, &p_twdt_obj->entries_slist, slist_entry) {
@@ -230,7 +301,7 @@ static esp_err_t add_entry(bool is_task, void *entry_data, twdt_entry_t **entry_
     // Add entry to list
     SLIST_INSERT_HEAD(&p_twdt_obj->entries_slist, entry, slist_entry);
     if (all_reset) {   //Reset hardware timer if all other tasks in list have reset in
-        reset_hw_timer();
+        task_wdt_timer_feed();
     }
     portEXIT_CRITICAL(&spinlock);
     *entry_ret = entry;
@@ -271,7 +342,7 @@ static esp_err_t delete_entry(bool is_task, void *entry_data)
     SLIST_REMOVE(&p_twdt_obj->entries_slist, entry, twdt_entry, slist_entry);
     // Reset hardware timer if all remaining tasks have reset
     if (all_reset) {
-        reset_hw_timer();
+        task_wdt_timer_feed();
     }
     portEXIT_CRITICAL(&spinlock);
     free(entry);
@@ -297,12 +368,12 @@ static void unsubscribe_idle(uint32_t core_mask)
             esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
             ESP_ERROR_CHECK(esp_task_wdt_delete_user(core_user_handles[core_num]));
             core_user_handles[core_num] = NULL;
-#else
+#else // CONFIG_FREERTOS_SMP
             TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core_num);
             assert(idle_task_handle);
             esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
             ESP_ERROR_CHECK(esp_task_wdt_delete(idle_task_handle));
-#endif
+#endif // CONFIG_FREERTOS_SMP
         }
         core_mask >>= 1;
         core_num++;
@@ -324,12 +395,12 @@ static void subscribe_idle(uint32_t core_mask)
             snprintf(core_user_names[core_num], CORE_USER_NAME_LEN, "CPU %d", (uint8_t)core_num);
             ESP_ERROR_CHECK(esp_task_wdt_add_user((const char *)core_user_names[core_num], &core_user_handles[core_num]));
             ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
-#else
+#else // CONFIG_FREERTOS_SMP
             TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core_num);
             assert(idle_task_handle);
             ESP_ERROR_CHECK(esp_task_wdt_add(idle_task_handle));
             ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
-#endif
+#endif // CONFIG_FREERTOS_SMP
         }
         core_mask >>= 1;
         core_num++;
@@ -509,10 +580,13 @@ static void task_wdt_timeout_handling(int cores_fail, bool panic)
 static void task_wdt_isr(void *arg)
 {
     portENTER_CRITICAL_ISR(&spinlock);
+#if TWDT_HARDWARE_IMPL
     // Reset hardware timer so that 2nd stage timeout is not reached (will trigger system reset)
     wdt_hal_write_protect_disable(&p_twdt_obj->hal);
     wdt_hal_handle_intr(&p_twdt_obj->hal);  // Feeds WDT and clears acknowledges interrupt
     wdt_hal_write_protect_enable(&p_twdt_obj->hal);
+#endif // TWDT_HARDWARE_IMPL
+
     // If there are no entries, there's nothing to do.
     if (SLIST_EMPTY(&p_twdt_obj->entries_slist)) {
         portEXIT_CRITICAL_ISR(&spinlock);
@@ -578,12 +652,91 @@ static void task_wdt_isr(void *arg)
     }
     portEXIT_CRITICAL_ISR(&spinlock);
 
-    // Run user ISR handler
-    esp_task_wdt_isr_user_handler();
+    /* Run user ISR handler.
+     * This function has been declared as weak, thus, it may be possible that it was not defines.
+     * to check this, we can directly test its address. In any case, the linker will get rid of
+     * this `if` when linking, this means that if the function was not defined, the whole `if`
+     * block will be discarded (zero runtime overhead), else only the function call will be kept.
+     */
+    if (esp_task_wdt_isr_user_handler != NULL) {
+        esp_task_wdt_isr_user_handler();
+    }
 
     // Trigger configured timeout behavior (e.g., panic or print backtrace)
     assert(cpus_fail != 0);
     task_wdt_timeout_handling(cpus_fail, panic);
+}
+
+static esp_err_t task_wdt_timer_allocate(twdt_obj_t *obj, const esp_task_wdt_config_t *config)
+{
+#if TWDT_HARDWARE_IMPL
+    esp_err_t ret = esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &obj->intr_handle);
+
+    if (ret == ESP_OK) {
+        periph_module_enable(PERIPH_TIMG0_MODULE);
+        wdt_hal_init(&obj->hal, TWDT_INSTANCE, TWDT_PRESCALER, true);
+        // Assign the driver object
+        wdt_hal_write_protect_disable(&obj->hal);
+        // Configure 1st stage timeout and behavior
+        wdt_hal_config_stage(&obj->hal, WDT_STAGE0, config->timeout_ms * (1000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_INT);
+        // Configure 2nd stage timeout and behavior
+        wdt_hal_config_stage(&obj->hal, WDT_STAGE1, config->timeout_ms * (2 * 1000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_RESET_SYSTEM);
+        // Enable the WDT
+        wdt_hal_enable(&obj->hal);
+        wdt_hal_write_protect_enable(&obj->hal);
+    }
+
+    return ret;
+#else // TWDT_HARDWARE_IMPL
+
+    const esp_timer_create_args_t timer_args = {
+        .callback = task_wdt_isr,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_ISR,
+        .name = "Task software watchdog",
+        .skip_unhandled_events = true
+    };
+
+    /* Software Task timer. As we don't have a spare hardware watchdog timer, we will use esp_timer to simulate one. */
+    esp_err_t ret = esp_timer_create(&timer_args, &obj->sw_timer);
+    ESP_GOTO_ON_FALSE((ret == ESP_OK), ret, reterr, TAG, "could not start periodic timer");
+
+    /* Configure it as a periodic timer, so that we check the Tasks everytime it is triggered.
+     * Its parameter is in microseconds, but the config's is in milliseconds, convert it. */
+    obj->period_ms = config->timeout_ms;
+    ret = esp_timer_start_periodic(obj->sw_timer, config->timeout_ms * 1000);
+    ESP_GOTO_ON_FALSE((ret == ESP_OK), ret, freeret, TAG, "could not start periodic timer");
+
+    return ret;
+freeret:
+    /* If we reach this point, it means that we were unable to program the timer as a periodic one, so
+     * no need to stop it before deleting it. */
+    esp_timer_delete(obj->sw_timer);
+reterr:
+    return ret;
+#endif // TWDT_HARDWARE_IMPL
+}
+
+static void task_wdt_timer_disable(twdt_obj_t *obj)
+{
+    esp_err_t ret = ESP_OK;
+    ret = task_wdt_timer_stop(obj);
+#if TWDT_HARDWARE_IMPL
+    // Stop hardware timer and the interrupt associated
+    wdt_hal_deinit(&obj->hal);
+    esp_intr_disable(obj->intr_handle);
+#endif // TWDT_HARDWARE_IMPL
+    assert(ret == ESP_OK);
+}
+
+
+static void task_wdt_timer_free(twdt_obj_t *obj)
+{
+#if TWDT_HARDWARE_IMPL
+    ESP_ERROR_CHECK(esp_intr_free(obj->intr_handle));   // Deregister interrupt
+#else // TWDT_HARDWARE_IMPL
+    esp_timer_delete(obj->sw_timer);
+#endif // TWDT_HARDWARE_IMPL
 }
 
 // ----------------------------------------------------- Public --------------------------------------------------------
@@ -592,38 +745,28 @@ esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config)
 {
     ESP_RETURN_ON_FALSE((config != NULL && config->idle_core_mask < (1 << portNUM_PROCESSORS)), ESP_ERR_INVALID_ARG, TAG, "Invalid arguments");
     ESP_RETURN_ON_FALSE(p_twdt_obj == NULL, ESP_ERR_INVALID_STATE, TAG, "TWDT already initialized");
-    esp_err_t ret;
-
+    esp_err_t ret = ESP_OK;
     twdt_obj_t *obj = NULL;
-    if (p_twdt_obj == NULL) {
-        // Allocate and initialize TWDT driver object
-        obj = calloc(1, sizeof(twdt_obj_t));
-        ESP_GOTO_ON_FALSE((obj != NULL), ESP_ERR_NO_MEM, err, TAG, "insufficient memory");
-        SLIST_INIT(&obj->entries_slist);
-        obj->panic = config->trigger_panic;
-        ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &obj->intr_handle));
-        portENTER_CRITICAL(&spinlock);
-        // Configure hardware timer
-        periph_module_enable(PERIPH_TIMG0_MODULE);
-        wdt_hal_init(&obj->hal, TWDT_INSTANCE, TWDT_PRESCALER, true);
-        // Assign the driver object
-        p_twdt_obj = obj;
-        portEXIT_CRITICAL(&spinlock);
+    uint32_t old_core_mask = 0;
+
+    // Allocate and initialize the global object
+    obj = calloc(1, sizeof(twdt_obj_t));
+    ESP_GOTO_ON_FALSE((obj != NULL), ESP_ERR_NO_MEM, err, TAG, "insufficient memory");
+    SLIST_INIT(&obj->entries_slist);
+    obj->panic = config->trigger_panic;
+
+    // Allocate the timer itself
+    ret = task_wdt_timer_allocate(obj, config);
+    if (ret != ESP_OK) {
+        goto err;
     }
 
-    portENTER_CRITICAL(&spinlock);
-    wdt_hal_write_protect_disable(&p_twdt_obj->hal);
-    // Configure 1st stage timeout and behavior
-    wdt_hal_config_stage(&p_twdt_obj->hal, WDT_STAGE0, config->timeout_ms * (1000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_INT);
-    // Configure 2nd stage timeout and behavior
-    wdt_hal_config_stage(&p_twdt_obj->hal, WDT_STAGE1, config->timeout_ms * (2 * 1000 / TWDT_TICKS_PER_US), WDT_STAGE_ACTION_RESET_SYSTEM);
-    // Enable the WDT
-    wdt_hal_enable(&p_twdt_obj->hal);
-    wdt_hal_write_protect_enable(&p_twdt_obj->hal);
+    // No error so far, we can assign it to the driver object
+    p_twdt_obj = obj;
+
     // Update which core's idle tasks are subscribed
-    uint32_t old_core_mask = p_twdt_obj->idle_core_mask;
+    old_core_mask = p_twdt_obj->idle_core_mask;
     p_twdt_obj->idle_core_mask = config->idle_core_mask;
-    portEXIT_CRITICAL(&spinlock);
     if (old_core_mask) {
         // Unsubscribe all previously watched core idle tasks
         unsubscribe_idle(old_core_mask);
@@ -633,40 +776,55 @@ esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config)
         subscribe_idle(config->idle_core_mask);
     }
 
-    ret = ESP_OK;
+    return ESP_OK;
 err:
+    free(obj);
+    return ret;
+}
+
+esp_err_t esp_task_wdt_stop(void)
+{
+    esp_err_t ret = ESP_OK;
+    portENTER_CRITICAL(&spinlock);
+    ret = task_wdt_timer_stop(p_twdt_obj);
+    portEXIT_CRITICAL(&spinlock);
+    return ret;
+}
+
+esp_err_t esp_task_wdt_restart(void)
+{
+    esp_err_t ret = ESP_OK;
+    portENTER_CRITICAL(&spinlock);
+    ret = task_wdt_timer_restart(p_twdt_obj);
+    portEXIT_CRITICAL(&spinlock);
     return ret;
 }
 
 esp_err_t esp_task_wdt_deinit(void)
 {
+    esp_err_t ret;
+
     ESP_RETURN_ON_FALSE(p_twdt_obj != NULL, ESP_ERR_INVALID_STATE, TAG, "TWDT was never initialized");
 
-    esp_err_t ret;
     // Unsubscribe all previously watched core idle tasks
     unsubscribe_idle(p_twdt_obj->idle_core_mask);
 
-    portENTER_CRITICAL(&spinlock);
     // Check TWDT state
     ESP_GOTO_ON_FALSE_ISR(SLIST_EMPTY(&p_twdt_obj->entries_slist), ESP_ERR_INVALID_STATE, err, TAG, "Tasks/users still subscribed");
-    // Disable hardware timer and the interrupt
-    wdt_hal_write_protect_disable(&p_twdt_obj->hal);
-    wdt_hal_disable(&p_twdt_obj->hal);
-    wdt_hal_write_protect_enable(&p_twdt_obj->hal);
-    wdt_hal_deinit(&p_twdt_obj->hal);
-    esp_intr_disable(p_twdt_obj->intr_handle);
-    // Unassign driver object
-    twdt_obj_t *obj = p_twdt_obj;
-    p_twdt_obj = NULL;
-    portEXIT_CRITICAL(&spinlock);
+
+    // Disable the timer
+    task_wdt_timer_disable(p_twdt_obj);
 
     // Free driver resources
-    ESP_ERROR_CHECK(esp_intr_free(obj->intr_handle));   // Deregister interrupt
-    free(obj);  // Free p_twdt_obj
+    task_wdt_timer_free(p_twdt_obj);
+
+    // Free the global object
+    free(p_twdt_obj);
+    p_twdt_obj = NULL;
+
     return ESP_OK;
 
 err:
-    portEXIT_CRITICAL(&spinlock);
     subscribe_idle(p_twdt_obj->idle_core_mask); // Resubscribe idle tasks
     return ret;
 }
@@ -713,7 +871,7 @@ esp_err_t esp_task_wdt_reset(void)
     // Mark entry as reset and issue timer reset if all entries have been reset
     entry->has_reset = true;    // Reset the task if it's on the task list
     if (all_reset) {    // Reset if all other tasks in list have reset in
-        reset_hw_timer();
+        task_wdt_timer_feed();
     }
     ret = ESP_OK;
 err:
@@ -737,7 +895,7 @@ esp_err_t esp_task_wdt_reset_user(esp_task_wdt_user_handle_t user_handle)
     // Mark entry as reset and issue timer reset if all entries have been reset
     entry->has_reset = true;    // Reset the task if it's on the task list
     if (all_reset) {    // Reset if all other tasks in list have reset in
-        reset_hw_timer();
+        task_wdt_timer_feed();
     }
     ret = ESP_OK;
 err:

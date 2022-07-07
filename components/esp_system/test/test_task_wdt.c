@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_TASK_WDT
+
 #include <stdbool.h>
 #include "unity.h"
 #include "esp_rom_sys.h"
@@ -19,8 +23,6 @@ void esp_task_wdt_isr_user_handler(void)
     timeout_flag = true;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5055
 TEST_CASE("Task WDT task timeout", "[task_wdt]")
 {
     timeout_flag = false;
@@ -37,7 +39,6 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("Task WDT task feed", "[task_wdt]")
 {
@@ -58,8 +59,6 @@ TEST_CASE("Task WDT task feed", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5055
 TEST_CASE("Task WDT user timeout", "[task_wdt]")
 {
     const char *user_name = "test_user";
@@ -78,7 +77,6 @@ TEST_CASE("Task WDT user timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete_user(user_handle));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("Task WDT user feed", "[task_wdt]")
 {
@@ -100,3 +98,5 @@ TEST_CASE("Task WDT user feed", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete_user(user_handle));
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
+
+#endif // CONFIG_ESP_TASK_WDT
