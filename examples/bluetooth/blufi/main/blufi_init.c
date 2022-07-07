@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -17,7 +17,6 @@
 #endif
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -110,7 +109,6 @@ void bleprph_host_task(void *param)
 
 esp_err_t esp_blufi_host_init(void)
 {
-   ESP_ERROR_CHECK(esp_nimble_hci_init());
    nimble_port_init();
 /* Initialize the NimBLE host configuration. */
     ble_hs_cfg.reset_cb = blufi_on_reset;
