@@ -143,6 +143,49 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     return ESP_OK;
 }
 
+/**
+ * Function to feed a timer. It is not part of the public header
+ * file on purpose as it shall only be used by the Task WDT component.
+ */
+esp_err_t esp_timer_feed(esp_timer_handle_t timer)
+{
+    esp_err_t ret = ESP_OK;
+
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!is_initialized() || !timer_armed(timer) || timer->period == 0 ) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_timer_dispatch_t dispatch_method = timer->flags & FL_ISR_DISPATCH_METHOD;
+    timer_list_lock(dispatch_method);
+
+    const int64_t now = esp_timer_impl_get_time();
+    const uint64_t period = timer->period;
+    /* Currently we are guaranteed that the remaining delay between now and the timer's
+     * alarm is less than the period, so the following won't cause the alarm to be
+     * triggered earlier than before feeding occurs. */
+    const uint64_t alarm = now + period;
+
+    /* We need to remove the timer to the list of timers and reinsert it at
+     * the right position. In fact, the timers are sorted by their alarm value
+     * (earliest first) */
+    ret = timer_remove(timer);
+
+    if (ret == ESP_OK) {
+        /* Remove function got rid of the alarm and period fields, restore them */
+        timer->alarm = alarm;
+        timer->period = period;
+        ret = timer_insert(timer, false);
+    }
+
+    timer_list_unlock(dispatch_method);
+
+    return ret;
+}
+
 esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
 {
     if (timer == NULL) {

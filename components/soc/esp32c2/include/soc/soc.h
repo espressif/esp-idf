@@ -211,7 +211,7 @@
 
 //CPU0 Interrupt number reserved in riscv/vector.S, not touch this.
 
-#define ETS_T1_WDT_INUM                         24 // Remove TODO: IDF-4246
+#define ETS_T0_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26
 #define ETS_DPORT_INUM                          28
@@ -234,3 +234,6 @@
 
 //Interrupt medium level, used for INT WDT for example
 #define SOC_INTERRUPT_LEVEL_MEDIUM              4
+
+// Interrupt number for the Interrupt watchdog
+#define ETS_INT_WDT_INUM                         (ETS_T0_WDT_INUM)

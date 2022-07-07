@@ -13,6 +13,7 @@
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
 #include "esp_private/cache_err_int.h"
+#include "soc/timer_periph.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #if CONFIG_IDF_TARGET_ESP32C2
@@ -289,7 +290,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->reason = pseudo_reason[PANIC_RSN_CACHEERR];
         info->details = print_cache_err_details;
 
-    } else if (frame->mcause == ETS_T1_WDT_INUM) {
+    } else if (frame->mcause == ETS_INT_WDT_INUM) {
         /* Watchdog interrupt occured, get the core on which it happened
          * and update the reason/message accordingly. */
 

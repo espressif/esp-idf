@@ -21,10 +21,13 @@ else()
             "startup.c"
             "system_time.c"
             "stack_check.c"
-            "task_wdt.c"
             "ubsan.c"
             "xt_wdt.c"
             "debug_stubs.c")
+
+    if(CONFIG_ESP_TASK_WDT)
+        list(APPEND srcs "task_wdt.c")
+    endif()
 
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
         list(APPEND srcs "eh_frame_parser.c")

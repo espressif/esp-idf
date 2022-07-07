@@ -22,8 +22,6 @@
 #include "test_utils.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-4035
 static const char* TAG = "test_event";
 
 #define TEST_CONFIG_ITEMS_TO_REGISTER        5
@@ -2021,4 +2019,3 @@ TEST_CASE("can post events from interrupt handler", "[event]")
 }
 
 #endif // CONFIG_ESP_EVENT_POST_FROM_ISR
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

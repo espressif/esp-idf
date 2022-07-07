@@ -36,7 +36,8 @@ typedef struct esp_task_wdt_user_handle_s * esp_task_wdt_user_handle_t;
  * this function will update the TWDT's current configuration. This funciton will also subscribe the idle tasks if
  * configured to do so. For other tasks, users can subscribe them using esp_task_wdt_add() or esp_task_wdt_add_user().
  *
- * @note esp_task_wdt_init() must only be called after the scheduler is started
+ * @note esp_task_wdt_init() must only be called after the scheduler is started. Moreover, it must not be called by
+ *       multiple tasks simultaneously.
  * @param[in] config Configuration structure
  * @return
  *  - ESP_OK: Initialization was successful
@@ -51,6 +52,7 @@ esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config);
  * are still subscribed to the TWDT, or when the TWDT is already deinitialized, will result in an error code being
  * returned.
  *
+ * @note esp_task_wdt_deinit() must not be called by multiple tasks simultaneously.
  * @return
  *  - ESP_OK: TWDT successfully deinitialized
  *  - Other: Failed to deinitialize TWDT
@@ -149,6 +151,16 @@ esp_err_t esp_task_wdt_delete_user(esp_task_wdt_user_handle_t user_handle);
  *  - ESP_ERR_INVALID_STATE: TWDT was never initialized
  */
 esp_err_t esp_task_wdt_status(TaskHandle_t task_handle);
+
+/**
+ * @brief User ISR callback placeholder
+ *
+ * This function is called by task_wdt_isr function (ISR for when TWDT times out). It can be defined in user code to
+ * handle TWDT events.
+ *
+ * @note It has the same limitations as the interrupt function. Do not use ESP_LOGx functions inside.
+ */
+void __attribute__((weak)) esp_task_wdt_isr_user_handler(void);
 
 #ifdef __cplusplus
 }
