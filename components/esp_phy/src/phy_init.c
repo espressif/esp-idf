@@ -39,6 +39,7 @@
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "soc/syscon_reg.h"
 #endif
+#include "hal/efuse_hal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
@@ -674,7 +675,7 @@ void esp_phy_load_cal_and_init(void)
     ESP_LOGI(TAG, "phy_version %s", phy_version);
 
 #if CONFIG_IDF_TARGET_ESP32S2
-    phy_eco_version_sel(esp_efuse_get_chip_ver());
+    phy_eco_version_sel(efuse_hal_get_major_chip_version());
 #endif
     esp_phy_calibration_data_t* cal_data =
             (esp_phy_calibration_data_t*) calloc(sizeof(esp_phy_calibration_data_t), 1);

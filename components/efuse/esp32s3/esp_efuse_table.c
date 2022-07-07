@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 62fa98bed350ebc4951c5f8191c487de
+// md5_digest_table 8c7a031bb0def28f2123ac5ee2a48d43
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -355,6 +355,14 @@ static const esp_efuse_desc_t DIS_USB_OTG_DOWNLOAD_MODE[] = {
     {EFUSE_BLK0, 159, 1}, 	 // Set this bit to disable download through USB-OTG,
 };
 
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 160, 1}, 	 // Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 161, 1}, 	 // Disables check of blk version major,
+};
+
 static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 40, 8}, 	 // Factory MAC addr [0],
     {EFUSE_BLK1, 32, 8}, 	 // Factory MAC addr [1],
@@ -408,16 +416,21 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
-static const esp_efuse_desc_t WAFER_VERSION[] = {
-    {EFUSE_BLK1, 114, 3}, 	 // WAFER version 0:A,
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 114, 3}, 	 // WAFER_VERSION_MINOR least significant bits,
+    {EFUSE_BLK1, 183, 1}, 	 // WAFER_VERSION_MINOR most significant bit,
 };
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
     {EFUSE_BLK1, 117, 3}, 	 // Package version,
 };
 
-static const esp_efuse_desc_t BLK_VER_MINOR[] = {
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
     {EFUSE_BLK1, 120, 3}, 	 // BLK_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 184, 2}, 	 // WAFER_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN3[] = {
@@ -428,8 +441,8 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
 };
 
-static const esp_efuse_desc_t BLK_VER_MAJOR[] = {
-    {EFUSE_BLK2, 128, 2}, 	 // BLK_VERSION_MAJOR,
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK2, 128, 2}, 	 // BLK_VERSION_MAJOR of BLOCK2 change of this bit means users need to update firmware,
 };
 
 static const esp_efuse_desc_t TEMP_CALIB[] = {
@@ -965,6 +978,16 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_OTG_DOWNLOAD_MODE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// Disables check of blk version major
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[0],    		// Factory MAC addr [0]
     &MAC_FACTORY[1],    		// Factory MAC addr [1]
@@ -1030,8 +1053,9 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
-    &WAFER_VERSION[0],    		// WAFER version 0:A
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// WAFER_VERSION_MINOR least significant bits
+    &WAFER_VERSION_MINOR[1],    		// WAFER_VERSION_MINOR most significant bit
     NULL
 };
 
@@ -1040,8 +1064,13 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLK_VER_MINOR[] = {
-    &BLK_VER_MINOR[0],    		// BLK_VERSION_MINOR
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// BLK_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// WAFER_VERSION_MAJOR
     NULL
 };
 
@@ -1055,8 +1084,8 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLK_VER_MAJOR[] = {
-    &BLK_VER_MAJOR[0],    		// BLK_VERSION_MAJOR
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// BLK_VERSION_MAJOR of BLOCK2 change of this bit means users need to update firmware
     NULL
 };
 

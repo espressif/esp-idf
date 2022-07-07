@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table f552d73ac112985991efa6734a60c8d9
+// md5_digest_table 6256f9b7c6783e0b651bf52b5b162aa8
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -48,6 +48,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_CPU_FREQ_LOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_CPU_FREQ_RATED[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_REV1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_REV2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XPD_SDIO_REG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SDIO_TIEH[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SDIO_FORCE[];

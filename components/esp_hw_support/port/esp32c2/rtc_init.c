@@ -14,6 +14,7 @@
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/system_reg.h"
+#include "hal/efuse_hal.h"
 #include "regi2c_ctrl.h"
 #include "soc/regi2c_dig_reg.h"
 #include "soc/regi2c_lp_bias.h"
@@ -38,7 +39,7 @@ void rtc_init(rtc_config_t cfg)
 
     if (cfg.cali_ocode) {
         uint32_t rtc_calib_version = 0;
-        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 3);
+        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MINOR, &rtc_calib_version, ESP_EFUSE_BLK_VERSION_MINOR[0]->bit_count); // IDF-5366
         if (err != ESP_OK) {
             rtc_calib_version = 0;
             ESP_HW_LOGW(TAG, "efuse read fail, set default rtc_calib_version: %d\n", rtc_calib_version);
@@ -248,7 +249,7 @@ static void set_rtc_dig_dbias()
     3. a reasonable rtc_dbias can be calculated by a certion formula.
     */
     uint32_t rtc_dbias = 31, dig_dbias = 26;
-    uint8_t chip_version = esp_efuse_get_chip_ver();
+    uint8_t chip_version = efuse_hal_get_minor_chip_version();
     if (chip_version >= 3) {
         dig_dbias = get_dig_dbias_by_efuse(chip_version);
         if (dig_dbias != 0) {

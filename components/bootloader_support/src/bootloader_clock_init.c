@@ -32,7 +32,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */
-    if (efuse_hal_get_chip_revision() == 0 &&
+    if (efuse_hal_get_major_chip_version() == 0 &&
             clk_ll_cpu_get_freq_mhz_from_pll() == CLK_LL_PLL_240M_FREQ_MHZ) {
         cpu_freq_mhz = 240;
     }

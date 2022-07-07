@@ -19,6 +19,23 @@ extern "C" {
  */
 void efuse_hal_get_mac(uint8_t *mac);
 
+/**
+ * @brief Returns chip version
+ *
+ * @return Chip version in format: Major * 100 + Minor
+ */
+uint32_t efuse_hal_chip_revision(void);
+
+/**
+ * @brief Returns major chip version
+ */
+uint32_t efuse_hal_get_major_chip_version(void);
+
+/**
+ * @brief Returns minor chip version
+ */
+uint32_t efuse_hal_get_minor_chip_version(void);
+
 #ifdef __cplusplus
 }
 #endif

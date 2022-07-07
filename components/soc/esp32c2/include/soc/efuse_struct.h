@@ -236,10 +236,26 @@ typedef union {
          *  The bit be set to enable secure boot.
          */
         uint32_t secure_boot_en:1;
-        /** rpt4_reserved : RO; bitpos: [31:22]; default: 0;
+        /** secure_version : RO; bitpos: [25:22]; default: 0;
+         *  Secure version for anti-rollback.
+         */
+        uint32_t secure_version:4;
+        /** enable_custom_mac : RO; bitpos: [26]; default: 0;
+         *  True if custom_mac is burned.
+         */
+        uint32_t enable_custom_mac:1;
+        /** disable_wafer_version_major : RO; bitpos: [27]; default: 0;
+         *  Disables check of wafer version major.
+         */
+        uint32_t disable_wafer_version_major:1;
+        /** disable_blk_version_major : RO; bitpos: [28]; default: 0;
+         *  Disables check of blk version major.
+         */
+        uint32_t disable_blk_version_major:1;
+        /** rpt4_reserved : RO; bitpos: [31:29]; default: 0;
          *  Reserved (used for four backups method).
          */
-        uint32_t rpt4_reserved:10;
+        uint32_t rpt4_reserved:3;
     };
     uint32_t val;
 } efuse_rd_repeat_data0_reg_t;
@@ -306,26 +322,30 @@ typedef union {
          *  Store the bit [31:47] of MAC.
          */
         uint32_t mac_id_high:16;
-        /** wafer_version : RO; bitpos: [18:16]; default: 0;
-         *  Store wafer version.
+        /** wafer_version_minor : RO; bitpos: [19:16]; default: 0;
+         *  Store wafer version minor.
          */
-        uint32_t wafer_version:3;
-        /** pkg_version : RO; bitpos: [21:19]; default: 0;
+        uint32_t wafer_version_minor:4;
+        /** wafer_version_major : RO; bitpos: [21:20]; default: 0;
+         *  Store wafer version major.
+         */
+        uint32_t wafer_version_major:2;
+        /** pkg_version : RO; bitpos: [24:22]; default: 0;
          *  Store package version.
          */
         uint32_t pkg_version:3;
-        /** blk2_efuse_version : RO; bitpos: [24:22]; default: 0;
-         *  Store efuse version.
+        /** blk_version_minor : RO; bitpos: [27:25]; default: 0;
+         *  Store blk 2 efuse version minor.
          */
-        uint32_t blk2_efuse_version:3;
-        /** rf_ref_i_bias_config : RO; bitpos: [28:25]; default: 0;
-         *  Store rf configuration parameters.
+        uint32_t blk_version_minor:3;
+        /** blk_version_major : RO; bitpos: [29:28]; default: 0;
+         *  Store blk 2 efuse version major.
          */
-        uint32_t rf_ref_i_bias_config:4;
-        /** ldo_vol_bias_config_low : RO; bitpos: [31:29]; default: 0;
-         *  Store the bit [0:2] of ido configuration parameters.
+        uint32_t blk_version_major:2;
+        /** reserve1 : RO; bitpos: [31:30]; default: 0;
+         *  Store reserve1.
          */
-        uint32_t ldo_vol_bias_config_low:3;
+        uint32_t reserve1:2;
     };
     uint32_t val;
 } efuse_rd_blk2_data1_reg_t;

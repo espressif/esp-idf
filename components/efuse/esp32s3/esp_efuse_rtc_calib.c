@@ -14,7 +14,7 @@
 int esp_efuse_rtc_calib_get_ver(void)
 {
     uint32_t blk_ver_major = 0;
-    ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_BLK_VER_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VER_MAJOR[0]->bit_count));
+    ESP_ERROR_CHECK(esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count)); // IDF-5366
 
     uint32_t cali_version_v1 = (blk_ver_major == 1) ? 1 : 0;
     if (!cali_version_v1) {
