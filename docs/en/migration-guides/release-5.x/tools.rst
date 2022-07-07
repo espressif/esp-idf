@@ -1,5 +1,7 @@
-Migrate Tools to ESP-IDF v5.0
-=============================
+Tools
+=====
+
+:link_to_translation:`zh_CN:[中文]`
 
 IDF Monitor
 -----------
@@ -45,3 +47,8 @@ Esptool
 -------
 
 The CONFIG_ESPTOOLPY_FLASHSIZE_DETECT option has been renamed to :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` and has been disabled by default. New and existing projects migrated to ESP-IDF v5.0 will have to set :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`. If this is not possible due to an unknown flash size at build time, then :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` can be enabled. However, once enabled, to keep the digest valid, a SHA256 digest will no longer be appended to the image when updating the binary header with the flash size during flashing.
+
+Windows Environment
+--------------------
+
+The Msys/Mingw-based Windows environment support got deprecated in ESP-IDF v4.0 and was entirely removed in v5.0. Please use :ref:`get-started-windows-tools-installer` to set up a compatible environment. The options include Windows Command Line, Power Shell and the graphical user interface based on Eclipse IDE. In addition, a VS Code-based environment can be set up with the supported plugin: https://github.com/espressif/vscode-esp-idf-extension.

@@ -1,5 +1,7 @@
-迁移工具至 ESP-IDF v5.0
-============================
+工具
+====
+
+:link_to_translation:`en:[English]`
 
 IDF 监视器
 -----------
@@ -45,3 +47,8 @@ Esptool
 -------
 
 CONFIG_ESPTOOLPY_FLASHSIZE_DETECT 选项已重命名为 :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE`，且默认禁用。迁移到 ESP-IDF v5.0 的新项目和现有项目必须设置 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`。若因编译时 flash 大小未知而无法设置，可启用 :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE`。但需注意的是，启用该项后，为在烧录期间使用 flash 大小更新二进制头时不会导致摘要无效，映像后将不再附加 SHA256 摘要。
+
+Windows 环境
+-------------
+
+基于 MSYS/MinGW 的 Windows 环境支持已在 ESP-IDF v4.0 中弃用，v5.0 则完全移除了该项服务。请使用 :ref:`get-started-windows-tools-installer` 设置 Windows 兼容环境。目前支持 Windows 命令行、Power Shell 和基于 Eclipse IDE 的图形用户界面等选项。此外，还可以使用 `支持的插件 <https://github.com/espressif/vscode-esp-idf-extension>`，设置基于 VSCode 的环境。

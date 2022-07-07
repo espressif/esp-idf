@@ -1,5 +1,5 @@
-Migrate Build System to ESP-IDF 5.0
-===================================
+Build System
+============
 
 Migrating from GNU Make build system
 ------------------------------------

@@ -1,5 +1,5 @@
-Migrate System to ESP-IDF 5.0
-==================================
+System
+======
 
 Inter-Processor Call
 -----------------------
@@ -38,7 +38,7 @@ The header ``trax.h`` has been made private. ESP-IDF developers should include `
 
 ROM
 ---
-Deprecated ROM related header files from `components/esp32/rom/` (old include path: `rom/*.h`) have been deleted. Please update to use the new target-specific path from `components/esp_rom/include/{IDF_TARGET_NAME}/` (new include path: `{IDF_TARGET_NAME}/rom/*.h`).
+Deprecated ROM related header files from ``components/esp32/rom/`` (old include path: ``rom/*.h``) have been deleted. Please update to use the new target-specific path from ``components/esp_rom/include/{IDF_TARGET_NAME}/`` (new include path: ``{IDF_TARGET_NAME}/rom/*.h``).
 
 ESP HW Support
 --------------
@@ -63,7 +63,7 @@ The parameter type of function ``esp_secure_boot_read_key_digests()`` changed fr
 ESP Common
 ----------
 
-- `EXT_RAM_ATTR` is deprecated. Use this new macro `EXT_RAM_BSS_ATTR` to put .bss on PSRAM.
+- ``EXT_RAM_ATTR`` is deprecated. Use this new macro ``EXT_RAM_BSS_ATTR`` to put .bss on PSRAM.
 
 ESP System
 ----------
@@ -76,12 +76,12 @@ SOC dependency
 
 - Public API headers who are listed in the Doxyfiles won't expose unstable and unnecessary soc header files like ``soc/soc.h``, ``soc/rtc.h``. That means, the user has to explicitly include them in their code if these "missing" header files are still wanted.
 - Kconfig option ``LEGACY_INCLUDE_COMMON_HEADERS`` is also removed.
-- The header file ``soc/soc_memory_types.h`` has been deprecated. Users should use the ``esp_memory_utils.h`` instead. Including `soc/soc_memory_types.h` will bring a build warning like `soc_memory_types.h is deprecated, please migrate to esp_memory_utils.h`
+- The header file ``soc/soc_memory_types.h`` has been deprecated. Users should use the ``esp_memory_utils.h`` instead. Including ``soc/soc_memory_types.h`` will bring a build warning like ``soc_memory_types.h is deprecated, please migrate to esp_memory_utils.h``
 
 APP Trace
 ---------
 
-One of the timestamp sources has changed from the legacy timer group driver to the new :doc:`GPTimer <../api-reference/peripherals/gptimer>`. Kconfig choices like ``APPTRACE_SV_TS_SOURCE_TIMER00`` has been changed to ``APPTRACE_SV_TS_SOURCE_GPTIMER``. User doesn't need to choose the group and timer ID any more.
+One of the timestamp sources has changed from the legacy timer group driver to the new :doc:`GPTimer <../../api-reference/peripherals/gptimer>`. Kconfig choices like ``APPTRACE_SV_TS_SOURCE_TIMER00`` has been changed to ``APPTRACE_SV_TS_SOURCE_GPTIMER``. User doesn't need to choose the group and timer ID any more.
 
 ESP Timer
 ---------
@@ -109,3 +109,39 @@ Efuse
 -----
 
 - Added eFuse wafer revisions: major and minor. The `esp_efuse_get_chip_ver()` API is not compatible with these changes this is why it was removed. Please use instead of it the following APIs: `efuse_hal_get_major_chip_version()`, `efuse_hal_get_minor_chip_version()` or `efuse_hal_chip_revision()`.
+
+FreeRTOS
+--------
+
+Legacy API and Data Types
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Previously, the ``configENABLE_BACKWARD_COMPATIBILITY`` option was set by default, thus allowed pre FreeRTOS v8.0.0 function names and data types to be used. The ``configENABLE_BACKWARD_COMPATIBILITY`` is now disabled by default, thus legacy FreeRTOS names/types are no longer supportd by default. Users should either:
+
+- Update their code to remove usage of legacy FreeRTOS names/types
+- Enable the :ref:`CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY` to explicitly allow the usage of legacy names/types
+
+Tasks Snapshot
+^^^^^^^^^^^^^^
+
+The header ``task_snapshot.h`` has been removed from ``freertos/task.h``. ESP-IDF developers should include ``freertos/task_snapshot.h`` in case they need tasks snapshot API.
+
+The function :cpp:func:`vTaskGetSnapshot` now returns ``BaseType_t``. Return value shall be ``pdTRUE`` on success and ``pdFALSE`` otherwise.
+
+FreeRTOS Asserts
+^^^^^^^^^^^^^^^^
+
+Previously FreeRTOS asserts were configured separately from the rest of the system using the ``FREERTOS_ASSERT`` kconfig option. This option has now been removed and the configuration is now done through ``COMPILER_OPTIMIZATION_ASSERTION_LEVEL``.
+
+Port Macro APIs
+^^^^^^^^^^^^^^^
+
+The file ``portmacro_deprecated.h`` which was added to maintain backward compatibility for deprecated APIs is removed. Users are advised to use the alternate functions for the deprecated APIs as listed below:
+
+- ``portENTER_CRITICAL_NESTED()`` is removed. Users should use the ``portSET_INTERRUPT_MASK_FROM_ISR()`` macro instead.
+- ``portEXIT_CRITICAL_NESTED()`` is removed. Users should use the ``portCLEAR_INTERRUPT_MASK_FROM_ISR()`` macro instead.
+- ``vPortCPUInitializeMutex()`` is removed. Users should use the ``spinlock_initialize()`` function instead.
+- ``vPortCPUAcquireMutex()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
+- ``vPortCPUAcquireMutexTimeout()`` is removed. Users should use the ``spinlock_acquire()`` function instead.
+- ``vPortCPUReleaseMutex()`` is removed. Users should use the ``spinlock_release()`` function instead.
+

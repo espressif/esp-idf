@@ -1,5 +1,5 @@
-Migrate Provisioning to ESP-IDF 5.0
-===================================
+Provisioning
+============
 
 Protocomm
 ---------

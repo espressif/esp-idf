@@ -1,5 +1,5 @@
-Migrate Peripherals to ESP-IDF 5.0
-==================================
+Peripherals
+===========
 
 Peripheral Clock Gating
 -----------------------
@@ -12,52 +12,6 @@ RTC Subsystem Control
 ---------------------
 
 RTC control APIs have been moved from ``driver/rtc_cntl.h`` to ``esp_private/rtc_ctrl.h``.
-
-SPI Flash Interface
--------------------
-
-Version before v5.0, spi flash functions in rom can be included by ``esp32**/rom/spi_flash.h``. However, your code written for different chips may be filled with ROM headers of different versions. At the meantime not all the APIs can be used on all chips.
-
-Therefore, the common APIs are extracted to ``esp_rom_spiflash.h``. Although it's not a breaking change, it is strongly recommended to only use the functions with prefix ``esp_rom_spiflash`` included by ``esp_rom_spiflash.h`` for better cross-compatibility.
-
-To make the API clearer, we renamed the function ``esp_rom_spiflash_lock`` to ``esp_rom_spiflash_set_bp``. We renamed ``esp_rom_spiflash_unlock`` to ``esp_rom_spiflash_clear_bp``.
-
-ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can directly parse the real clock frequency value to the flash initialization structure. For example, if you want the flash frequency is 80M, you can write the code like:
-
-.. code:: c
-
-    esp_flash_spi_device_config_t dev_cfg = {
-        // Other members
-        .freq_mhz = 80,
-        // Other members
-    };
-
-Breaking changes in legacy APIs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In order to make spi_flash driver more stable, legacy spi_flash driver is removed on v5.0. Legacy spi_flash driver refers to default spi_flash driver since v3.0 and spi_flash driver with configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` switched on on v4.0 series. The major breaking change is legacy spi_flash driver is not supported on new version anymore. Therefore, the configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is removed. After that, following functions will no longer exist. But meanwhile, you can use our new APIs instead.
-
-+---------------------------------+-------------------------------+
-|         Removed items           |          Replacement          |
-+=================================+===============================+
-| ``spi_flash_erase_sector()``    | ``esp_flash_erase_region``    |
-+---------------------------------+-------------------------------+
-| ``spi_flash_erase_range()``     | ``esp_flash_erase_region``    |
-+---------------------------------+-------------------------------+
-| ``spi_flash_write``             | ``esp_flash_write``           |
-+---------------------------------+-------------------------------+
-| ``spi_flash_read()``            | ``esp_flash_read``            |
-+---------------------------------+-------------------------------+
-| ``spi_flash_write_encrypted()`` | ``esp_flash_write_encrypted`` |
-+---------------------------------+-------------------------------+
-| ``spi_flash_read_encrypted``    | ``esp_flash_read_encrypted``  |
-+---------------------------------+-------------------------------+
-
-.. note::
-
-    New functions with prefix ``esp_flash`` accept an additional ``esp_flash_t*`` parameter.  You can simply set it to NULL means that the function will operate the main flash(``esp_flash_default_chip``)
-
-Header ``esp_spi_flash.h`` has been deprecated, system functions are no longer public. To make use of flash memory mapping APIs, you should include ``spi_flash_mmap.h`` instead.
 
 ADC
 ---
@@ -76,7 +30,7 @@ The previous Kconfig option `RTCIO_SUPPORT_RTC_GPIO_DESC` has been removed, thus
 Timer Group Driver
 ------------------
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. Although it's recommended to use the the new driver APIs, the legacy driver is till available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will bring a build warning like `legacy timer group driver is deprecated, please migrate to driver/gptimer.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+Timer Group driver has been redesigned into :doc:`GPTimer <../../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. Although it's recommended to use the the new driver APIs, the legacy driver is till available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will bring a build warning like `legacy timer group driver is deprecated, please migrate to driver/gptimer.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
 The major breaking changes in concept and usage are listed as follows:
 
@@ -164,7 +118,7 @@ LEDC
     Pulse Counter Driver
     --------------------
 
-    Pulse counter driver has been redesigned (see :doc:`PCNT <../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, by default, including ``driver/pcnt.h`` will bring a build warning like `legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
+    Pulse counter driver has been redesigned (see :doc:`PCNT <../../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, by default, including ``driver/pcnt.h`` will bring a build warning like `legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
 
     The major breaking changes in concept and usage are listed as follows:
 
@@ -201,14 +155,14 @@ LEDC
     - Old API header ``temp_sensor.h`` has been redesigned as ``temperature_sensor.h``, it is recommended to use the new driver and the old driver is not allowed to be used at the same time.
     - Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/temp_sensor.h``. However, by default, including ``driver/temp_sensor.h`` will bring a build warning like "legacy temperature sensor driver is deprecated, please migrate to driver/temperature_sensor.h". The warning can be suppressed by enabling the menuconfig option :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`.
     - Configuration contents has been changed. In old version, user need to configure the ``clk_div`` and ``dac_offset``. While in new version, user only need to choose ``tsens_range``
-    - The process of using temperature sensor has been changed. In old version, user can use ``config->start->read_celsius`` to get value. In the new version, user must install the temperature sensor driver firstly, by ``temperature_sensor_install`` and uninstall it when finished. For more information, you can refer to :doc:`Temperature Sensor <../api-reference/peripherals/temp_sensor>` .
+    - The process of using temperature sensor has been changed. In old version, user can use ``config->start->read_celsius`` to get value. In the new version, user must install the temperature sensor driver firstly, by ``temperature_sensor_install`` and uninstall it when finished. For more information, you can refer to :doc:`Temperature Sensor <../../api-reference/peripherals/temp_sensor>` .
 
 .. only:: SOC_RMT_SUPPORTED
 
     RMT Driver
     ----------
 
-    RMT driver has been redesigned (see :doc:`RMT transceiver <../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, by default, including ``driver/rmt.h`` will bring a build warning like `The legacy RMT driver is deprecated, please use driver/rmt_tx.h and/or driver/rmt_rx.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
+    RMT driver has been redesigned (see :doc:`RMT transceiver <../../api-reference/peripherals/rmt>`), which aims to unify and extend the usage of RMT peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/rmt.h``. However, by default, including ``driver/rmt.h`` will bring a build warning like `The legacy RMT driver is deprecated, please use driver/rmt_tx.h and/or driver/rmt_rx.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_RMT_SUPPRESS_DEPRECATE_WARN`.
 
     The major breaking changes in concept and usage are listed as follows:
 
@@ -298,7 +252,7 @@ LCD
 
     Shortcomings are exposed when supporting all the new features of ESP32-C3 & ESP32-S3 by the old I2S driver, so it is re-designed to make it more compatible and flexible to all the communication modes. New APIs are available by including corresponding mode header files {I2S_DRIVER_HEADERS}. Meanwhile, the old APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if you keep using the old APIs in your project, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`. Here is the general overview of the current I2S files:
 
-    .. figure:: ../../_static/diagrams/i2s/i2s_file_structure.png
+    .. figure:: ../../../_static/diagrams/i2s/i2s_file_structure.png
         :align: center
         :alt: I2S File Structure
 
