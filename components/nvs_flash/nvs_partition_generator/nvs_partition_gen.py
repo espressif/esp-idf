@@ -7,8 +7,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import division, print_function
-
 import argparse
 import array
 import binascii
@@ -21,7 +19,6 @@ import random
 import struct
 import sys
 import zlib
-from builtins import bytes, int, range
 from io import open
 
 try:

@@ -25,7 +25,6 @@ import binascii
 import logging
 import struct
 import sys
-from builtins import bytes
 from collections import namedtuple
 
 # Used for type annotations only. Silence linter warnings.

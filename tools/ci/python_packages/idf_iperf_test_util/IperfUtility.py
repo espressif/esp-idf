@@ -4,7 +4,6 @@ import os
 import re
 import subprocess
 import time
-from builtins import object, range, str
 
 from idf_iperf_test_util import LineChart
 from tiny_test_fw import DUT, Utility

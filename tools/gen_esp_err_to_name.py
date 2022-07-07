@@ -3,22 +3,6 @@
 # SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import print_function, unicode_literals
-
-import sys
-from typing import Any, List, Optional, TextIO
-
-try:
-    from builtins import object, range, str
-except ImportError:
-    # This should not happen because the Python packages are checked before invoking this script. However, here is
-    # some output which should help if we missed something.
-    print('Import has failed probably because of the missing "future" package. Please install all the packages for '
-          'interpreter {} from the requirements.txt file.'.format(sys.executable))
-    # The path to requirements.txt is not provided because this script could be invoked from an IDF project (then the
-    # requirements.txt from the IDF_PATH should be used) or from the documentation project (then the requirements.txt
-    # for the documentation directory should be used).
-    sys.exit(1)
 import argparse
 import collections
 import fnmatch
@@ -27,6 +11,7 @@ import os
 import re
 import textwrap
 from io import open
+from typing import Any, List, Optional, TextIO
 
 # list files here which should not be parsed
 ignore_files: list  = list()

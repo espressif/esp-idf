@@ -8,8 +8,6 @@ import tempfile
 import textwrap
 import unittest
 
-from future.utils import iteritems
-
 
 class ConfgenBaseTestCase(unittest.TestCase):
     @classmethod
@@ -36,7 +34,7 @@ class ConfgenBaseTestCase(unittest.TestCase):
     def invoke_confgen(self, args):
         call_args = [sys.executable, '../../confgen.py']
 
-        for (k, v) in iteritems(args):
+        for (k, v) in args.items():
             if k != 'output':
                 if isinstance(v, type('')):  # easy Python 2/3 compatible str/unicode
                     call_args += ['--{}'.format(k), v]

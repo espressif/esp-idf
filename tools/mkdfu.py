@@ -21,8 +21,6 @@ import zlib
 from collections import namedtuple
 from functools import partial
 
-from future.utils import iteritems
-
 try:
     import typing
 except ImportError:
@@ -312,9 +310,9 @@ def main():  # type: () -> None
 
         with open(args.json) as f:
             files += [(int(addr, 0),
-                       process_json_file(f_name)) for addr, f_name in iteritems(json.load(f)['flash_files'])]
+                       process_json_file(f_name)) for addr, f_name in json.load(f)['flash_files'].items()]
 
-    files = sorted([(addr, f_name.decode('utf-8') if isinstance(f_name, type(b'')) else f_name) for addr, f_name in iteritems(dict(files))],
+    files = sorted([(addr, f_name) for addr, f_name in dict(files).items()],
                    key=lambda x: x[0])  # remove possible duplicates and sort based on the address
 
     cmd_args = {'output_file': args.output_file,

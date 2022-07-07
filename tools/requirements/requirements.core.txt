@@ -3,7 +3,6 @@
 setuptools
 click
 pyserial
-future
 cryptography
 pyparsing
 pyelftools

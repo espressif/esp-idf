@@ -2,9 +2,6 @@
 #
 # SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import logging
 import os
 import random
@@ -13,7 +10,6 @@ import string
 import sys
 import threading
 import time
-from builtins import range
 
 import pytest
 
