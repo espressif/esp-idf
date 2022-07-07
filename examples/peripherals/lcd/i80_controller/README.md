@@ -19,7 +19,7 @@ This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en
 ### Hardware Required
 
 * An ESP development board
-* An Intel 8080 interfaced (so called MCU interface or parallel interface) LCD (this example can use ST7789 or NT35510)
+* An Intel 8080 interfaced (so called MCU interface or parallel interface) LCD (this example can use ST7789, NT35510 or ILI9341)
 * An USB cable for power supply and programming
 
 ### Hardware Connection

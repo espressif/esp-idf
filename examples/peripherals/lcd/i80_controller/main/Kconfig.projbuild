@@ -19,6 +19,9 @@ menu "Example Configuration"
 
         config EXAMPLE_LCD_I80_CONTROLLER_NT35510
             bool "NT35510"
+
+        config EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+            bool "ILI9341"
     endchoice
 
     if EXAMPLE_LCD_I80_CONTROLLER_NT35510
