@@ -16,7 +16,7 @@ API Guides
    error-handling
    :SOC_BT_SUPPORTED: esp-ble-mesh/ble-mesh-index
    freertos-smp
-   esp-wifi-mesh
+   :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    event-handling
    fatal-errors
    ../security/flash-encryption
