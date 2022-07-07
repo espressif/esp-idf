@@ -2329,6 +2329,13 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
             xSemaphoreGive(buff_semaphore);
             break;
         }
+
+        if ((GATT_CH_OPEN != gatt_get_ch_state(p_tcb)) || (p_tcb->payload_size == 0)) {
+            L2CAP_TRACE_ERROR("connection not established\n");
+            xSemaphoreGive(buff_semaphore);
+            break;
+        }
+
         tL2C_LCB * p_lcb = l2cu_find_lcb_by_bd_addr (p_tcb->peer_bda, BT_TRANSPORT_LE);
         if (p_lcb == NULL){
             L2CAP_TRACE_ERROR("%s not found p_lcb", __func__);
