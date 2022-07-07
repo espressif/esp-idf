@@ -50,7 +50,7 @@ ESP-NOW 使用各个供应商的动作帧传输数据，默认比特率为 1 Mbp
 --------
 
 ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参考 IEEE Std. 802.11-2012。Wi-Fi 设备维护一个初始主密钥 (PMK) 和若干本地主密钥 (LMK)，长度均为 16 个字节。
-    * PMK 可使用 AES-128 算法加密 LMK。请调用 ``esp_now_set_pmk()`` 设置 PMK。如果未设置 PMK，将使用默认 PMK。
+    * PMK 可使用 AES-128 算法加密 LMK。请调用 :cpp:func:`esp_now_set_pmk()` 设置 PMK。如果未设置 PMK，将使用默认 PMK。
     * LMK 可通过 CCMP 方法对供应商特定的动作帧进行加密，最多拥有 6 个不同的 LMK。如果未设置配对设备的 LMK，则动作帧不进行加密。
     
 目前，不支持加密组播供应商特定的动作帧。
@@ -58,28 +58,49 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 初始化和反初始化
 ------------------------------------
 
-调用 ``esp_now_init()`` 初始化 ESP-NOW，调用  ``esp_now_deinit()`` 反初始化 ESP-NOW。ESP-NOW 数据必须在 Wi-Fi 启动后传输，因此建议在初始化 ESP-NOW 之前启动 Wi-Fi，并在反初始化 ESP-NOW 之后停止 Wi-Fi。
-当调用 ``esp_now_deinit()`` 时，配对设备的所有信息都将被删除。
+调用 :cpp:func:`esp_now_init()` 初始化 ESP-NOW，调用  :cpp:func:`esp_now_deinit()` 反初始化 ESP-NOW。ESP-NOW 数据必须在 Wi-Fi 启动后传输，因此建议在初始化 ESP-NOW 之前启动 Wi-Fi，并在反初始化 ESP-NOW 之后停止 Wi-Fi。
+当调用 :cpp:func:`esp_now_deinit()` 时，配对设备的所有信息都将被删除。
 
 添加配对设备
 -----------------
 
-在将数据发送到其他设备之前，请先调用  ``esp_now_add_peer()`` 将其添加到配对设备列表中。配对设备的最大数量是 20。如果启用了加密，则必须设置 LMK。ESP-NOW 数据可以从 Station 或 Softap 接口发送。
-确保在发送 ESP-NOW 数据之前已启用该接口。在发送广播数据之前必须添加具有广播 MAC 地址的设备。配对设备的信道范围是从 0 ～14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
+在将数据发送到其他设备之前，请先调用  :cpp:func:`esp_now_add_peer()` 将其添加到配对设备列表中。如果启用了加密，则必须设置 LMK。ESP-NOW 数据可以从 Station 或 Softap 接口发送。确保在发送 ESP-NOW 数据之前已启用该接口。
+
+.. only:: esp32c3
+
+    配对设备的最大数量是 20，其中加密设备的数量不超过 10，默认值是 6。
+
+.. only:: esp32 or esp32s2 or esp32s3
+
+    配对设备的最大数量是 20，其中加密设备的数量不超过 16，默认值是 6。
+
+在发送广播数据之前必须添加具有广播 MAC 地址的设备。配对设备的信道范围是从 0 ～14。如果信道设置为 0，数据将在当前信道上发送。否则，必须使用本地设备所在的通道。
 
 发送 ESP-NOW 数据
 -----------------
 
-调用 ``esp_now_send()`` 发送 ESP-NOW 数据，调用  ``esp_now_register_send_cb`` 注册发送回调函数。如果 MAC 层成功接收到数据，则该函数将返回 `ESP_NOW_SEND_SUCCESS` 事件。否则，它将返回  `ESP_NOW_SEND_FAIL`。ESP-NOW 数据发送失败可能有几种原因，比如目标设备不存在、设备的信道不相同、动作帧在传输过程中丢失等。应用层并不一定可以总能接收到数据。如果需要，应用层可在接收 ESP-NOW 数据时发回一个应答 (ACK) 数据。如果接收 ACK 数据超时，则将重新传输 ESP-NOW 数据。可以为 ESP-NOW 数据设置序列号，从而删除重复的数据。
+调用 :cpp:func:`esp_now_send()` 发送 ESP-NOW 数据，调用  :cpp:func:`esp_now_register_send_cb` 注册发送回调函数。如果 MAC 层成功接收到数据，则该函数将返回 `ESP_NOW_SEND_SUCCESS` 事件。否则，它将返回  `ESP_NOW_SEND_FAIL`。ESP-NOW 数据发送失败可能有几种原因，比如目标设备不存在、设备的信道不相同、动作帧在传输过程中丢失等。应用层并不一定可以总能接收到数据。如果需要，应用层可在接收 ESP-NOW 数据时发回一个应答 (ACK) 数据。如果接收 ACK 数据超时，则将重新传输 ESP-NOW 数据。可以为 ESP-NOW 数据设置序列号，从而删除重复的数据。
 
-如果有大量 ESP-NOW 数据要发送，则调用 ``esp_now_send()`` 一次性发送不大于 250 字节的数据。
+如果有大量 ESP-NOW 数据要发送，则调用 :cpp:func:`esp_now_send()` 一次性发送不大于 250 字节的数据。
 请注意，两个 ESP-NOW 数据包的发送间隔太短可能导致回调函数返回混乱。因此，建议在等到上一次回调函数返回 ACK 后再发送下一个 ESP-NOW 数据。发送回调函数从高优先级的 Wi-Fi 任务中运行。因此，不要在回调函数中执行冗长的操作。相反，将必要的数据发布到队列，并交给优先级较低的任务处理。
 
 接收 ESP-NOW 数据
 ----------------------
 
-调用 ``esp_now_register_recv_cb`` 注册接收回调函数。当接收 ESP-NOW 数据时，需要调用接收回调函数。接收回调函数也在 Wi-Fi 任务任务中运行。因此，不要在回调函数中执行冗长的操作。
+调用 :cpp:func:`esp_now_register_recv_cb()` 注册接收回调函数。当接收 ESP-NOW 数据时，需要调用接收回调函数。接收回调函数也在 Wi-Fi 任务任务中运行。因此，不要在回调函数中执行冗长的操作。
 相反，将必要的数据发布到队列，并交给优先级较低的任务处理。
+
+配置 ESP-NOW 速率
+----------------------
+
+调用 :cpp:func:`esp_wifi_config_espnow_rate()` 配置指定接口的 ESPNOW 速率。确保在配置速率之前使能接口。这个 API 应该在 :cpp:func:`esp_wifi_start()` 之后调用。
+
+应用示例
+----------
+
+* 如何在设备间传输 ESP-NOW 数据：:example:`wifi/espnow`。
+
+* 了解更多 ESP-NOW 的应用示例，请参考 `README.md 文件 <https://github.com/espressif/esp-now>`_。
 
 API 参考
 -------------
