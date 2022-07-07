@@ -21,7 +21,7 @@ deploy_test_result:
   extends:
     - .deploy_job_template
     - .before_script_minimal
-    - .rules:ref:master-schedule-always
+    - .rules:ref:master-always
   image: $CI_DOCKER_REGISTRY/bot-env
   tags:
     - deploy_test
