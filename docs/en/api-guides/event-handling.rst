@@ -127,10 +127,13 @@ Event IDs and Corresponding Data Structures
 | (SYSTEM_EVENT_ETH_LOST_IP)         |                                               |
 +------------------------------------+-----------------------------------------------+
 
-Mesh Events
------------
+.. only:: SOC_WIFI_MESH_SUPPORT
 
-ESP-WIFI-MESH uses a system similar to the :ref:`legacy-event-loop` to deliver events to the application. See :ref:`mesh-events` for details.
+    Mesh Events
+    -----------
+
+    ESP-WIFI-MESH uses a system similar to the :ref:`legacy-event-loop` to deliver events to the application. See :ref:`mesh-events` for details.
+
 
 Bluetooth Events
 ----------------

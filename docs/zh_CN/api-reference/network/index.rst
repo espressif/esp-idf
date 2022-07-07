@@ -10,14 +10,17 @@ Wi-Fi
    :maxdepth: 1
 
    esp_now
-   esp-wifi-mesh
+   :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    esp_smartconfig
    esp_wifi
    esp_dpp
 
 本部分的 Wi-Fi API 示例代码存放在 ESP-IDF 示例项目的 :example:`wifi` 目录下。
 
-ESP-WIFI-MESH 的示例代码存放在 ESP-IDF 示例项目的 :example:`mesh` 目录下。
+.. only:: SOC_WIFI_MESH_SUPPORT
+
+      ESP-WIFI-MESH 的示例代码存放在 ESP-IDF 示例项目的 :example:`mesh` 目录下。
+
 
 
 以太网
