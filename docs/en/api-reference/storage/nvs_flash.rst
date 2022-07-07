@@ -1,4 +1,4 @@
-Non-volatile storage library
+Non-volatile Storage Library
 ============================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -8,7 +8,7 @@ Introduction
 
 Non-volatile storage (NVS) library is designed to store key-value pairs in flash. This section introduces some concepts used by NVS.
 
-Underlying storage
+Underlying Storage
 ^^^^^^^^^^^^^^^^^^
 
 Currently, NVS uses a portion of main flash memory through the :ref:`esp_partition <flash-partition-apis>` API. The library uses all the partitions with ``data`` type and ``nvs`` subtype.  The application can choose to use the partition with the label ``nvs`` through the :cpp:func:`nvs_open` API function or any other partition by specifying its name using the :cpp:func:`nvs_open_from_partition` API function.
@@ -20,7 +20,7 @@ Future versions of this library may have other storage backends to keep data in 
 .. note:: NVS works best for storing many small values, rather than a few large values of the type 'string' and 'blob'. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
 
 
-Keys and values
+Keys and Values
 ^^^^^^^^^^^^^^^
 
 NVS operates on key-value pairs. Keys are ASCII strings; the maximum key length is currently 15 characters. Values can have one of the following types:
@@ -48,7 +48,7 @@ Namespaces
 
 To mitigate potential conflicts in key names between different components, NVS assigns each key-value pair to one of namespaces. Namespace names follow the same rules as key names, i.e., the maximum length is 15 characters. Namespace name is specified in the :cpp:func:`nvs_open` or :cpp:type:`nvs_open_from_partition` call. This call returns an opaque handle, which is used in subsequent calls to the ``nvs_get_*``, ``nvs_set_*``, and :cpp:func:`nvs_commit` functions. This way, a handle is associated with a namespace, and key names will not collide with same names in other namespaces. Please note that the namespaces with the same name in different NVS partitions are considered as separate namespaces.
 
-NVS iterators
+NVS Iterators
 ^^^^^^^^^^^^^
 
 Iterators allow to list key-value pairs stored in NVS, based on specified partition name, namespace, and data type.
@@ -63,7 +63,7 @@ In general, all iterators obtained via :cpp:func:`nvs_entry_find` have to be rel
 :cpp:func:`nvs_entry_find` and :cpp:func:`nvs_entry_next` will set the given iterator to ``NULL`` or a valid iterator in all cases except a parameter error occured (i.e., return ``ESP_ERR_NVS_NOT_FOUND``). In case of a parameter error, the given iterator will not be modified. Hence, it is best practice to initialize the iterator to ``NULL`` before calling :cpp:func:`nvs_entry_find` to avoid complicated error checking before releasing the iterator.
 
 
-Security, tampering, and robustness
+Security, Tampering, and Robustness
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NVS is not directly compatible with the {IDF_TARGET_NAME} flash encryption system. However, data can still be stored in encrypted form if NVS encryption is used together with {IDF_TARGET_NAME} flash encryption. Please refer to :ref:`nvs_encryption` for more details.
@@ -86,7 +86,7 @@ For using NVS encryption, the partition table must contain the :ref:`nvs_key_par
 
 .. _nvs_key_partition:
 
-NVS key partition
+NVS Key Partition
 ^^^^^^^^^^^^^^^^^
 
     An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted` and its size should be the minimum partition size (4KB). Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. Two additional partition tables which contain the :ref:`nvs_key_partition` are provided under the partition table option (menuconfig->Partition Table). They can be directly used for :ref:`nvs_encryption`. The structure of these partitions is depicted below.
@@ -125,7 +125,7 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
 
         parttool.py --port PORT --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
 
-    .. note:: If the device is encrypted in flash encryption development mode and you want to renew the NVS key partition, you need to advice :component_file:`parttool.py<partition_table/parttool.py>` to encrypt the NVS key partition and you also need to give it a pointer to the unencrypted partition table in your build directory (build/partition_table) since the partition table on the device is encrypted, too. You can use the following command:
+    .. note:: If the device is encrypted in flash encryption development mode and you want to renew the NVS key partition, you need to tell :component_file:`parttool.py <partition_table/parttool.py>` to encrypt the NVS key partition and you also need to give it a pointer to the unencrypted partition table in your build directory (build/partition_table) since the partition table on the device is encrypted, too. You can use the following command:
         ::
 
             parttool.py --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
@@ -188,12 +188,12 @@ You can find code examples in the :example:`storage` directory of ESP-IDF exampl
 Internals
 ---------
 
-Log of key-value pairs
+Log of Key-Value Pairs
 ^^^^^^^^^^^^^^^^^^^^^^
 
 NVS stores key-value pairs sequentially, with new key-value pairs being added at the end. When a value of any given key has to be updated, a new key-value pair is added at the end of the log and the old key-value pair is marked as erased.
 
-Pages and entries
+Pages and Entries
 ^^^^^^^^^^^^^^^^^
 
 NVS library uses two main entities in its operation: pages and entries. Page is a logical structure which stores a portion of the overall log. Logical page corresponds to one physical sector of flash memory. Pages which are in use have a *sequence number* associated with them. Sequence numbers impose an ordering on pages. Higher sequence numbers correspond to pages which were created later. Each page can be in one of the following states:
@@ -230,7 +230,7 @@ Mapping from flash sectors to logical pages does not have any particular order. 
     | Sector 3 |  | Sector 0 |  | Sector 2 |  | Sector 1 |    <- physical sectors
     +----------+  +----------+  +----------+  +----------+
 
-Structure of a page
+Structure of a Page
 ^^^^^^^^^^^^^^^^^^^
 
 For now, we assume that flash sector size is 4096 bytes and that {IDF_TARGET_NAME} flash encryption hardware operates on 32-byte blocks. It is possible to introduce some settings configurable at compile-time (e.g., via menuconfig) to accommodate flash chips with different sector sizes (although it is not clear if other components in the system, e.g., SPI flash driver and SPI flash cache can support these other sizes).
@@ -266,7 +266,7 @@ CRC32 value in the header is calculated over the part which does not include a s
 
 The following sections describe the structure of entry state bitmap and entry itself.
 
-Entry and entry state bitmap
+Entry and Entry State Bitmap
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each entry can be in one of the following three states represented with two bits in the entry state bitmap. The final four bits in the bitmap (256 - 2 * 126) are not used.
@@ -283,7 +283,7 @@ Erased (2'b00)
 
 .. _structure_of_entry:
 
-Structure of entry
+Structure of Entry
 ^^^^^^^^^^^^^^^^^^
 
 For values of primitive types (currently integers from 1 to 8 bytes long), entry holds one key-value pair. For string and blob types, entry holds part of the whole key-value pair. For strings, in case when a key-value pair spans multiple entries, all entries are stored in the same page. Blobs are allowed to span over multiple pages by dividing them into smaller chunks. For tracking these chunks, an additional fixed length metadata entry is stored called "blob index". Earlier formats of blobs are still supported (can be read and modified). However, once the blobs are modified, they are stored using the new format.
@@ -370,7 +370,7 @@ As mentioned above, each key-value pair belongs to one of the namespaces. Namesp
     +-------------------------------------------+
 
 
-Item hash list
+Item Hash List
 ^^^^^^^^^^^^^^
 
 To reduce the number of reads from flash memory, each member of the Page class maintains a list of pairs: item index; item hash. This list makes searches much quicker. Instead of iterating over all entries, reading them from flash one at a time, `Page::findItem` first performs a search for the item hash in the hash list. This gives the item index within the page if such an item exists. Due to a hash collision, it is possible that a different item will be found. This is handled by falling back to iteration over items in flash.

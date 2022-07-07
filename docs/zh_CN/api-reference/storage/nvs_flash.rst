@@ -70,7 +70,7 @@ NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。但如果 NVS 加�
 
 如果未启用 NVS 加密，任何对 flash 芯片有物理访问权限的用户都可以修改、擦除或添加键值对。NVS 加密启用后，如果不知道相应的 NVS 加密密钥，则无法修改或添加键值对并将其识别为有效键值对。但是，针对擦除操作没有相应的防篡改功能。
 
-当 flash 处于不一致状态时，NVS 库会尝试恢复。在任何时间点关闭设备电源，然后重新打开电源，不会导致数据丢失；但如果关闭设备电源时正在写入新的键值对，这一键值对可能会丢失。该库还应当能对 flash 中的任意数据进行正确初始化。
+当 flash 处于不一致状态时，NVS 库会尝试恢复。在任何时间点关闭设备电源，然后重新打开电源，不会导致数据丢失；但如果关闭设备电源时正在写入新的键值对，这一键值对可能会丢失。该库还应该能够在 flash 中存在任何随机数据的情况下正常初始化。
 
 
 .. _nvs_encryption:
@@ -80,7 +80,7 @@ NVS 加密
 
 NVS 分区内存储的数据可使用 AES-XTS 进行加密，类似于 IEEE P1619 磁盘加密标准中提到的加密方式。为了实现加密，每个条目被均视为一个扇区，并将条目相对地址（相对于分区开头）传递给加密算法，用作扇区号。可通过 :ref:`CONFIG_NVS_ENCRYPTION` 启用 NVS 加密。NVS 加密所需的密钥存储于其他分区，并且被 :doc:`Flash 加密 <../../security/flash-encryption>` 保护。因此，在使用 NVS 加密前应先启用 :doc:`Flash 加密 <../../security/flash-encryption>`。
 
-启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和密码）。启用平台级加密后，仍需将它们作为默认选项进行加密。
+启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和密码）。如已启用平台级加密，那么同时默认启用 NVS 加密有其必要性。
 
 使用 NVS 加密，分区表必须包含 :ref:`nvs_key_partition`。在分区表选项 (menuconfig->Partition Table) 下，为 NVS 加密提供了两个包含 :ref:`nvs_key_partition` 的分区表，您可以通过工程配置菜单 (``idf.py menuconfig``) 进行选择。请参考 :example:`security/flash_encryption` 中的例子，了解如何配置和使用 NVS 加密功能。
 
@@ -121,9 +121,14 @@ NVS 密钥分区
         idf.py partition-table partition-table-flash
 
     ii) 调用 :component_file:`parttool.py<partition_table/parttool.py>`，将密钥存储在 flash 上的 :ref:`nvs_key_partition` 中。详见 :doc:` 分区表 </api-guides/partition-tables>` 的分区工具部分。
+    ::
 
+        parttool.py --port PORT --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
+    
+    .. note:: 如需在设备处于 flash 加密开发模式时更新 NVS 密钥分区，请调用 :component_file:`parttool.py <partition_table/parttool.py>` 对 NVS 密钥分区进行加密。同时，由于设备上的分区表也已加密，您还需要在构建目录（build/partition_table）中提供一个指向未加密分区表的指针。您可以使用如下命令：
+        ::
 
-        parttool.py --port /dev/ttyUSB0 --partition-table-offset "nvs_key partition offset" write_partition --partition-name="name of nvs_key partition" --input "nvs_key partition"
+            parttool.py --esptool-write-args encrypt --port PORT --partition-table-file=PARTITION_TABLE_FILE --partition-table-offset PARTITION_TABLE_OFFSET write_partition --partition-name="name of nvs_key partition" --input NVS_KEY_PARTITION_FILE
 
 由于分区已标记为 `已加密`，而且启用了 :doc:`Flash 加密 <../../security/flash-encryption>`，引导程序在首次启动时将使用 flash 加密对密钥分区进行加密。
 
