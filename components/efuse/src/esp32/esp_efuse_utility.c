@@ -61,6 +61,7 @@ const uint32_t start_write_addr[] = {
 };
 
 static void apply_repeat_encoding(const uint8_t *in_bytes, uint32_t *out_words, size_t in_bytes_len);
+static void unite_write_mass_blocks_and_wr_regs(void);
 
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
@@ -147,6 +148,9 @@ esp_err_t esp_efuse_utility_burn_efuses(void)
     if (esp_efuse_set_timing() != ESP_OK) {
         ESP_LOGE(TAG, "Efuse fields are not burnt");
     } else {
+        // Support the (old) use case where data is written directly to EFUSE_BLKx_WDATA0_REG without using the eFuse API.
+        unite_write_mass_blocks_and_wr_regs();
+
         // Permanently update values written to the efuse write registers
         // It is necessary to process blocks in the order from MAX-> EFUSE_BLK0, because EFUSE_BLK0 has protection bits for other blocks.
         for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
@@ -262,6 +266,17 @@ esp_err_t esp_efuse_utility_apply_34_encoding(const uint8_t *in_bytes, uint32_t 
 }
 
 #ifndef CONFIG_EFUSE_VIRTUAL
+static void unite_write_mass_blocks_and_wr_regs(void)
+{
+    for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
+        uint32_t wr_reg = start_write_addr[num_block];
+        for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
+            REG_WRITE(addr_wr_block, REG_READ(addr_wr_block) | REG_READ(wr_reg));
+            wr_reg += 4;
+        }
+    }
+    esp_efuse_utility_clear_program_registers();
+}
 
 static void apply_repeat_encoding(const uint8_t *in_bytes, uint32_t *out_words, size_t in_bytes_len)
 {
