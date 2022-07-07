@@ -20,20 +20,6 @@
 #include "esp_compiler.h"
 #include "soc/soc_caps.h"
 
-#if SOC_ESP_NIMBLE_CONTROLLER
-
-/* For Chips not using VHCI, these functions return success */
-esp_err_t esp_nimble_hci_and_controller_init(void)
-{
-    return ESP_OK;
-}
-
-esp_err_t esp_nimble_hci_and_controller_deinit(void)
-{
-    return ESP_OK;
-}
-#else
-
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 #define BLE_HCI_EVENT_HDR_LEN               (2)
 #define BLE_HCI_CMD_HDR_LEN                 (3)
@@ -461,24 +447,6 @@ err:
 
 }
 
-esp_err_t esp_nimble_hci_and_controller_init(void)
-{
-    esp_err_t ret;
-
-    esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
-    if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
-        return ret;
-    }
-
-    if ((ret = esp_bt_controller_enable(ESP_BT_MODE_BLE)) != ESP_OK) {
-        return ret;
-    }
-    return esp_nimble_hci_init();
-}
-
 static esp_err_t ble_hci_transport_deinit(void)
 {
     int ret = 0;
@@ -516,25 +484,3 @@ esp_err_t esp_nimble_hci_deinit(void)
 
     return ESP_OK;
 }
-
-esp_err_t esp_nimble_hci_and_controller_deinit(void)
-{
-    int ret;
-    ret = esp_nimble_hci_deinit();
-    if (ret != ESP_OK) {
-        return ret;
-    }
-
-    ret = esp_bt_controller_disable();
-    if (ret != ESP_OK) {
-        return ret;
-    }
-
-    ret = esp_bt_controller_deinit();
-    if (ret != ESP_OK) {
-        return ret;
-    }
-
-    return ESP_OK;
-}
-#endif // #if SOC_ESP_NIMBLE_CONTROLLER
