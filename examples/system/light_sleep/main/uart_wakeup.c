@@ -10,6 +10,7 @@
 #include "soc/uart_pins.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
+#include "sdkconfig.h"
 
 #define EXAMPLE_UART_NUM        0
 /* Notice that ESP32 has to use the iomux input to configure uart as wakeup source
@@ -96,7 +97,7 @@ static void uart_wakeup_task(void *arg)
 static esp_err_t uart_initialization(void)
 {
     uart_config_t uart_cfg = {
-        .baud_rate  = 115200,
+        .baud_rate  = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
         .data_bits  = UART_DATA_8_BITS,
         .parity     = UART_PARITY_DISABLE,
         .stop_bits  = UART_STOP_BITS_1,
