@@ -1,0 +1,7 @@
+id,dummyU8Key,dummyI8Key,dummyU16Key,dummyU32Key,dummyI32Key,dummyStringKey,dummyHex2BinKey,dummyBase64Key,hexFileKey,base64FileKey,stringFileKey,blobFileAKey,blobFileBKey,binFileKey
+
+1,127,-128,32768,4294967295,-2147483648,0A:0B:0C:0D:0E:0F,010203abcdef,MTIzYWJj,testdata/sample.hex,testdata/sample.base64,testdata/sample.txt,testdata/sample_blob.bin,testdata/sample_blob.bin,testdata/sample_singlepage_blob.bin
+
+
+2,126,-127,32767,4294967294,,A0:B0:C0:D0:E0:F0,102030abcdef,MTIzYWFh,testdata/sample.hex,testdata/sample.base64,testdata/sample.txt,testdata/sample_blob.bin,testdata/sample_blob.bin,testdata/sample_singlepage_blob.bin
+3,125,-126,32766,4294967293,,00:B3:C4:BD:E2:0F,010203efcdab,MTIzYmJi,testdata/sample.hex,testdata/sample.base64,testdata/sample.txt,testdata/sample_blob.bin,testdata/sample_blob.bin,testdata/sample_singlepage_blob.bin
