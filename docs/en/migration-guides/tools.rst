@@ -1,22 +1,27 @@
-Migrate Tools to ESP-IDF 5.0
-============================
+Migrate Tools to ESP-IDF v5.0
+=============================
 
 IDF Monitor
 -----------
 
-IDF Monitor follows the custom console baud-rate (:ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`) by default instead of 115200. Setting a custom baud rate is not supported from menuconfig anymore. A custom baud-rate can be specified from command line with the ``idf.py monitor -b <baud>`` command or through setting environment variables. Please note that the baud-rate argument has been renamed from ``-B`` to ``-b`` in order to be consistent with the global baud-rate ``idf.py -b <baud>``. Run ``idf.py monitor --help`` for more information.
+IDF Monitor makes the following changes regarding baud-rate:
 
-Deprecated commands
+- IDF monitor now uses the custom console baud-rate (:ref:`CONFIG_ESP_CONSOLE_UART_BAUDRATE`) by default instead of 115200.
+- Setting a custom baud from menuconfig is no longer supported.
+- A custom baud-rate can be specified from command line with the ``idf.py monitor -b <baud>`` command or through setting environment variables.
+- Please note that the baud-rate argument has been renamed from ``-B`` to ``-b`` in order to be consistent with the global baud-rate ``idf.py -b <baud>``. Run ``idf.py monitor --help`` for more information.
+
+Deprecated Commands
 -------------------
 
-``idf.py`` sub-commands and ``cmake`` targets are unified to contain ``-`` instead of ``_``. The following changes have been made. Deprecated sub-commands and targets produce a warning. It is advised to migrate to the new ones.
+``idf.py`` sub-commands and ``cmake`` target names have been unified to use hyphens (``-``) instead of underscores (``_``). Using a deprecated sub-command or target name will produce a warning. Users are advised to migrate to using the new sub-commands and target names. The following changes have been made:
 
-.. list-table:: Target and sub-command deprecation
+.. list-table:: Deprecated Sub-command and Target Names
    :widths: 50 50
    :header-rows: 1
 
-   * - Old name
-     - New name
+   * - Old Name
+     - New Name
    * - efuse_common_table
      - efuse-common-table
    * - efuse_custom_table
@@ -39,4 +44,4 @@ Deprecated commands
 Esptool
 -------
 
-The CONFIG_ESPTOOLPY_FLASHSIZE_DETECT option has been renamed to :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` and it is disabled by default. New and existing projects migrated to ESP-IDF v5.0 will have to set :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`. If this is not possible because the flash size is not known at build time then :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` can be enabled but this will have the consequence of not appending a SHA256 digest after the image in order that the binary header could be updated with the flash size during flashing without invalidating the digest.
+The CONFIG_ESPTOOLPY_FLASHSIZE_DETECT option has been renamed to :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` and has been disabled by default. New and existing projects migrated to ESP-IDF v5.0 will have to set :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`. If this is not possible due to an unknown flash size at build time, then :ref:`CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE` can be enabled. However, once enabled, to keep the digest valid, a SHA256 digest will no longer be appended to the image when updating the binary header with the flash size during flashing.
