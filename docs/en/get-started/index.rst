@@ -154,11 +154,8 @@ IDE
 
 .. note:: We highly recommend installing the ESP-IDF through your favorite IDE.
 
-.. toctree::
-    :maxdepth: 1
-
-    Eclipse Plugin <eclipse-setup>
-    VSCode Extension <vscode-setup>
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
 
 Manual Installation
 ~~~~~~~~~~~~~~~~~~~

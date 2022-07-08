@@ -293,7 +293,7 @@
 
 如果一切顺利，烧录完成后，开发板将会复位，应用程序 "hello_world" 开始运行。
 
-如果您希望使用 Eclipse 或是 VS Code IDE，而非 ``idf.py``，请参考 :doc:`Eclipse 指南 <eclipse-setup>`，以及 :doc:`VS Code 指南 <vscode-setup>`。
+如果您希望使用 Eclipse 或是 VS Code IDE，而非 ``idf.py``，请参考 `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README_CN.md>`_，以及 `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_。
 
 监视输出
 ===============

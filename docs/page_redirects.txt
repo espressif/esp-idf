@@ -87,3 +87,5 @@ get-started/windows-setup-scratch               get-started/windows-setup
 get-started/linux-setup-scratch                 get-started/linux-macos-setup
 get-started/macos-setup-scratch                 get-started/linux-macos-setup
 get-started/toolchain-setup-scratch             get-started/index
+get-started/eclipse-setup                       get-started/index
+get-started/vscode-setup                        get-started/index

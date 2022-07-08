@@ -166,8 +166,8 @@ Other installation methods
 Depending on the environment, more user-friendly wrappers for ``idf_tools.py`` are provided:
 
 * :ref:`IDF Tools installer for Windows <get-started-windows-tools-installer>` can download and install the tools. Internally the installer uses ``idf_tools.py``.
-* :doc:`Eclipse plugin for ESP-IDF <../../get-started/eclipse-setup>` includes a menu item to set up the tools. Internally the plugin calls ``idf_tools.py``.
-* Visual Studio Code extension for ESP-IDF includes an onboarding flow. This flow helps setting up the tools. Although the extension does not rely on ``idf_tools.py``, the same installation method is used.
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ includes a menu item to set up the tools. Internally the plugin calls ``idf_tools.py``.
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_ for ESP-IDF includes an onboarding flow. This flow helps setting up the tools. Although the extension does not rely on ``idf_tools.py``, the same installation method is used.
 
 Custom installation
 -------------------

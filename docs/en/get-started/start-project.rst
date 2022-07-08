@@ -293,7 +293,7 @@ When flashing, you will see the output log similar to the following:
 
 If there are no issues by the end of the flash process, the board will reboot and start up the “hello_world” application.
 
-If you'd like to use the Eclipse or VS Code IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`, :doc:`VS Code guide <vscode-setup>`.
+If you'd like to use the Eclipse or VS Code IDE instead of running ``idf.py``, check out `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_, `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_.
 
 Monitor the Output
 ==================
