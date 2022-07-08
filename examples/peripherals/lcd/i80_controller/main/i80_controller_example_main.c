@@ -55,20 +55,16 @@ static const char *TAG = "example";
 #define EXAMPLE_PIN_NUM_BK_LIGHT       1
 
 // The pixel number in horizontal and vertical
-// Bit number used to represent command and parameter
-#if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
 #define EXAMPLE_LCD_H_RES              240
 #define EXAMPLE_LCD_V_RES              280
+// Bit number used to represent command and parameter
+#if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
 #define EXAMPLE_LCD_CMD_BITS           8
 #define EXAMPLE_LCD_PARAM_BITS         8
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
-#define EXAMPLE_LCD_H_RES              240
-#define EXAMPLE_LCD_V_RES              280
 #define EXAMPLE_LCD_CMD_BITS           16
 #define EXAMPLE_LCD_PARAM_BITS         16
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
-#define EXAMPLE_LCD_H_RES              320
-#define EXAMPLE_LCD_V_RES              240
 #define EXAMPLE_LCD_CMD_BITS           8
 #define EXAMPLE_LCD_PARAM_BITS         8
 #endif
