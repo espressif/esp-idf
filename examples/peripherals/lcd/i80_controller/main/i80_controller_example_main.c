@@ -64,6 +64,9 @@ static const char *TAG = "example";
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
 #define EXAMPLE_LCD_CMD_BITS           16
 #define EXAMPLE_LCD_PARAM_BITS         16
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+#define EXAMPLE_LCD_CMD_BITS           8
+#define EXAMPLE_LCD_PARAM_BITS         8
 #endif
 
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
@@ -153,6 +156,9 @@ void app_main(void)
             .dc_dummy_level = 0,
             .dc_data_level = 1,
         },
+        .flags = {
+            .swap_color_bytes = !LV_COLOR_16_SWAP, // Swap can be done in LvGL (default) or DMA
+        },
         .on_color_trans_done = example_notify_lvgl_flush_ready,
         .user_ctx = &disp_drv,
         .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
@@ -177,19 +183,42 @@ void app_main(void)
         .bits_per_pixel = 16,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+    // ILI9341 is NOT a distinct driver, but a special case of ST7789
+    // (essential registers are identical). A few lines further down in this code,
+    // it's shown how to issue additional device-specific commands.
+    ESP_LOGI(TAG, "Install LCD driver of ili9341 (st7789 compatible)");
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+        .color_space = ESP_LCD_COLOR_SPACE_BGR,
+        .bits_per_pixel = 16,
+    };
+    ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
 #endif
 
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
     // Set inversion, x/y coordinate order, x/y mirror according to your LCD module spec
+    // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
 #if CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ST7789
     esp_lcd_panel_invert_color(panel_handle, true);
+    esp_lcd_panel_set_gap(panel_handle, 0, 20);
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
     esp_lcd_panel_swap_xy(panel_handle, true);
     esp_lcd_panel_mirror(panel_handle, true, false);
+#elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
+    esp_lcd_panel_swap_xy(panel_handle, true);
+    esp_lcd_panel_invert_color(panel_handle, false);
+    // ILI9341 is very similar to ST7789 and shares the same driver.
+    // Anything unconventional (such as this custom gamma table) can
+    // be issued here in user code and need not modify the driver.
+    esp_lcd_panel_io_tx_param(io_handle, 0xF2, (uint8_t[]) { 0 }, 1); // 3Gamma function disable
+    esp_lcd_panel_io_tx_param(io_handle, 0x26, (uint8_t[]) { 1 }, 1); // Gamma curve 1 selected
+    esp_lcd_panel_io_tx_param(io_handle, 0xE0, (uint8_t[]) {          // Set positive gamma
+        0x0F, 0x31, 0x2B, 0x0C, 0x0E, 0x08, 0x4E, 0xF1, 0x37, 0x07, 0x10, 0x03, 0x0E, 0x09, 0x00 }, 15);
+    esp_lcd_panel_io_tx_param(io_handle, 0xE1, (uint8_t[]) {          // Set negative gamma
+        0x00, 0x0E, 0x14, 0x03, 0x11, 0x07, 0x31, 0xC1, 0x48, 0x08, 0x0F, 0x0C, 0x31, 0x36, 0x0F }, 15);
 #endif
-    // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
-    esp_lcd_panel_set_gap(panel_handle, 0, 20);
 
     // user can flush pre-defined pattern to the screen before we turn on the screen or backlight
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
