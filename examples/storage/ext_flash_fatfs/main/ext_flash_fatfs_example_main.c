@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "esp_flash.h"
 #include "esp_flash_spi_init.h"
 #include "esp_partition.h"
@@ -165,7 +166,12 @@ static const esp_partition_t* example_add_partition(esp_flash_t* ext_flash, cons
 {
     ESP_LOGI(TAG, "Adding external Flash as a partition, label=\"%s\", size=%d KB", partition_label, ext_flash->size / 1024);
     const esp_partition_t* fat_partition;
-    ESP_ERROR_CHECK(esp_partition_register_external(ext_flash, 0, ext_flash->size, partition_label, ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, &fat_partition));
+    const size_t offset = 0;
+    ESP_ERROR_CHECK(esp_partition_register_external(ext_flash, offset, ext_flash->size, partition_label, ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, &fat_partition));
+
+    // Erase space of partition on the external flash chip
+    ESP_LOGI(TAG, "Erasing partition range, offset=%d size=%d KB", offset, ext_flash->size / 1024);
+    ESP_ERROR_CHECK(esp_partition_erase_range(fat_partition, offset, ext_flash->size));
     return fat_partition;
 }
 

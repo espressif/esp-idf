@@ -1,17 +1,17 @@
-from __future__ import print_function
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
 
 import hashlib
 import os
 
-import ttfw_idf
+import pytest
+from pytest_embedded import Dut
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
-def test_examples_spiffsgen(env, extra_data):
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+def test_spiffsgen_example(dut: Dut) -> None:
     # Test with default build configurations
-    dut = env.get_dut('spiffsgen', 'examples/storage/spiffsgen')
-    dut.start_app()
-
     base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spiffs_image')
 
     # Expect hello.txt is read successfully
@@ -22,7 +22,3 @@ def test_examples_spiffsgen(env, extra_data):
     with open(os.path.join(base_dir, 'sub', 'alice.txt'), 'rb') as alice_txt:
         alice_md5 = hashlib.md5(alice_txt.read()).hexdigest()
         dut.expect('Computed MD5 hash of alice.txt: ' + alice_md5)
-
-
-if __name__ == '__main__':
-    test_examples_spiffsgen()
