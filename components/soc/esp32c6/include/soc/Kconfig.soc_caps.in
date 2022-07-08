@@ -183,10 +183,6 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
     bool
     default y
 
-config SOC_RV32A_SUPPORTED
-    bool
-    default y
-
 config SOC_INT_PLIC_SUPPORTED
     bool
     default y
@@ -494,6 +490,10 @@ config SOC_SDM_CHANNELS_PER_GROUP
 config SOC_SPI_PERIPH_NUM
     int
     default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
 
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int

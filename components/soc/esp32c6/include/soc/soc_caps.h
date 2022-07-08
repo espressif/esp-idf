@@ -112,7 +112,6 @@
 #define SOC_CPU_CORES_NUM               (1U)
 #define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
-#define SOC_RV32A_SUPPORTED             1
 #define SOC_INT_PLIC_SUPPORTED          1       //riscv platform-level interrupt controller
 
 #define SOC_CPU_BREAKPOINTS_NUM         4
@@ -276,6 +275,7 @@
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
+#define SOC_SPI_MAX_CS_NUM          6
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
