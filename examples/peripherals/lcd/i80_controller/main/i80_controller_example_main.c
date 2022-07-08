@@ -210,11 +210,9 @@ void app_main(void)
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_NT35510
     esp_lcd_panel_swap_xy(panel_handle, true);
     esp_lcd_panel_mirror(panel_handle, true, false);
-    esp_lcd_panel_set_gap(panel_handle, 0, 20);
 #elif CONFIG_EXAMPLE_LCD_I80_CONTROLLER_ILI9341
     esp_lcd_panel_swap_xy(panel_handle, true);
     esp_lcd_panel_invert_color(panel_handle, false);
-    esp_lcd_panel_set_gap(panel_handle, 0, 0);
     // ILI9341 is very similar to ST7789 and shares the same driver.
     // Anything unconventional (such as this custom gamma table) can
     // be issued here in user code and need not modify the driver.
