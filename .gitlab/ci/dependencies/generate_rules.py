@@ -82,6 +82,7 @@ class RulesWriter:
     RULE_LABEL_TEMPLATE = '    - <<: *if-label-{0}'
     RULE_PATTERN_TEMPLATE = '    - <<: *if-dev-push\n' \
                             '      changes: *patterns-{0}'
+    SPECIFIC_RULE_TEMPLATE = '    - <<: *{0}'
     RULES_TEMPLATE = inspect.cleandoc(r"""
     .rules:{0}:
       rules:
@@ -156,6 +157,8 @@ class RulesWriter:
                 continue
             if 'included_in' in v:
                 for item in _list(v['included_in']):
+                    if 'specific_rules' in v:
+                        res[item]['specific_rules'].update(_list(v['specific_rules']))
                     if 'labels' in v:
                         res[item]['labels'].update(_list(v['labels']))
                     if 'patterns' in v:
@@ -210,6 +213,12 @@ class RulesWriter:
                 _rules.append(self.RULE_PROTECTED)
             if name.startswith('test:'):
                 _rules.append(self.RULE_BUILD_ONLY)
+
+            for specific_rule in cfg['specific_rules']:
+                if f'.{specific_rule}' in self.rules_cfg:
+                    _rules.append(self.SPECIFIC_RULE_TEMPLATE.format(specific_rule))
+                else:
+                    print('WARNING: specific_rule {} not exists'.format(specific_rule))
             for label in cfg['labels']:
                 _rules.append(self.RULE_LABEL_TEMPLATE.format(label))
             for pattern in cfg['patterns']:
