@@ -162,8 +162,6 @@ SECTIONS
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     *(.jcr)
 
@@ -341,8 +339,6 @@ SECTIONS
     *(.tdata.*)
     *(.tbss)
     *(.tbss.*)
-    *(.srodata)
-    *(.srodata.*)
     _thread_local_end = ABSOLUTE(.);
     _rodata_reserved_end = ABSOLUTE(.);
     . = ALIGN(ALIGNOF(.eh_frame));
