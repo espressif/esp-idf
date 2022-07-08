@@ -949,8 +949,10 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
         case BTA_DM_BLE_5_GAP_EXT_ADV_REPORT_EVT:
             msg.act = ESP_GAP_BLE_EXT_ADV_REPORT_EVT;
             memcpy(&param.ext_adv_report.params, &params->ext_adv_report, sizeof(esp_ble_gap_ext_adv_reprot_t));
-            memcpy(param.ext_adv_report.params.adv_data,
-                   params->ext_adv_report.adv_data, params->ext_adv_report.adv_data_len);
+            if (params->ext_adv_report.adv_data) {
+                memcpy(param.ext_adv_report.params.adv_data,
+                    params->ext_adv_report.adv_data, params->ext_adv_report.adv_data_len);
+            }
             break;
         case BTA_DM_BLE_5_GAP_SCAN_TIMEOUT_EVT:
             msg.act = ESP_GAP_BLE_SCAN_TIMEOUT_EVT;
@@ -980,8 +982,10 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_REPORT_EVT;
             memcpy(&param.period_adv_report, &params->period_adv_report,
                    sizeof(esp_ble_gap_periodic_adv_report_t));
-            memcpy(param.period_adv_report.params.data, params->period_adv_report.data,
-                   params->period_adv_report.data_length);
+            if (params->period_adv_report.data) {
+                memcpy(param.period_adv_report.params.data, params->period_adv_report.data,
+                    params->period_adv_report.data_length);
+            }
             break;
         }
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT: {
