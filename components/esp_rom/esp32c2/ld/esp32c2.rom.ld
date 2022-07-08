@@ -2119,7 +2119,6 @@ ieee80211_amsdu_encap_check = 0x400020e8;
 ieee80211_amsdu_length_check = 0x400020ec;
 ieee80211_encap_amsdu = 0x400020f0;
 ieee80211_output_raw_process = 0x400020f4;
-esp_wifi_80211_tx = 0x400020f8;
 ieee80211_raw_frame_sanity_check = 0x400020fc;
 ieee80211_crypto_aes_128_cmac_encrypt = 0x40002100;
 ieee80211_crypto_aes_128_cmac_decrypt = 0x40002104;
