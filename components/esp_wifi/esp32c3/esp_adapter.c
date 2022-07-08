@@ -393,15 +393,15 @@ static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repea
 
 static void wifi_reset_mac_wrapper(void)
 {
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
-    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
+    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
 }
 
 static void IRAM_ATTR wifi_rtc_enable_iso_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_power_down();
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
 #endif
 }
 
@@ -409,8 +409,8 @@ static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_power_up();
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
-    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
+    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
 #endif
 }
 

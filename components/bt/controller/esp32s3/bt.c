@@ -1085,6 +1085,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
 
     periph_module_enable(PERIPH_BT_MODULE);
+    periph_module_reset(PERIPH_BT_MODULE);
 
     esp_phy_enable();
     s_lp_stat.phy_enabled = 1;

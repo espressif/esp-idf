@@ -1119,7 +1119,6 @@ components/soc/esp32c3/include/soc/spi_mem_struct.h
 components/soc/esp32c3/include/soc/spi_pins.h
 components/soc/esp32c3/include/soc/spi_reg.h
 components/soc/esp32c3/include/soc/spi_struct.h
-components/soc/esp32c3/include/soc/syscon_reg.h
 components/soc/esp32c3/include/soc/syscon_struct.h
 components/soc/esp32c3/include/soc/system_reg.h
 components/soc/esp32c3/include/soc/system_struct.h
@@ -1317,7 +1316,6 @@ components/soc/esp32s3/include/soc/spi_mem_struct.h
 components/soc/esp32s3/include/soc/spi_pins.h
 components/soc/esp32s3/include/soc/spi_reg.h
 components/soc/esp32s3/include/soc/spi_struct.h
-components/soc/esp32s3/include/soc/syscon_reg.h
 components/soc/esp32s3/include/soc/syscon_struct.h
 components/soc/esp32s3/include/soc/system_reg.h
 components/soc/esp32s3/include/soc/system_struct.h
