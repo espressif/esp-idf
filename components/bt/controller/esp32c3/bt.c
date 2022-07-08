@@ -955,6 +955,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
     sdk_config_extend_set_pll_track(false);
 
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_init();
+#endif
+    esp_phy_pd_mem_init();
+
     btdm_controller_mem_init();
 
 #if CONFIG_MAC_BB_PD
@@ -1161,6 +1166,11 @@ error:
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
 
+
+#if CONFIG_MAC_BB_PD
+    esp_mac_bb_pd_mem_deinit();
+#endif
+    esp_phy_pd_mem_deinit();
     if (osi_funcs_p != NULL) {
         free(osi_funcs_p);
         osi_funcs_p = NULL;
