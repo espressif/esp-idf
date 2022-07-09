@@ -175,7 +175,7 @@ The resulting schedule will have Task A running on CPU0 and Task C preempting Ta
 Time Slicing
 ^^^^^^^^^^^^
 
-The Vanilla FreeRTOS scheduler implements time slicing meaning that if current highest ready priority contains multiple ready tasks, the scheduler will switch between those tasks periodically in a round robin fashion. 
+The Vanilla FreeRTOS scheduler implements time slicing meaning that if current highest ready priority contains multiple ready tasks, the scheduler will switch between those tasks periodically in a round robin fashion.
 
 However, in ESP-IDF FreeRTOS, it is not possible to implement perfect Round Robin time slicing due to the fact that a particular task may not be able to run on a particular core due to the following reasons:
 
@@ -267,7 +267,7 @@ Vanilla FreeRTOS requires that a periodic tick interrupt occurs. The tick interr
 - Checking if time slicing is required (i.e., triggering a context switch)
 - Executing the application tick hook
 
-In ESP-IDF FreeRTOS, each core will receive a periodic interrupt and independently run the tick interrupt. The tick interrupts on each core are of the same period but can be out of phase. Furthermore, the tick interrupt responsibilities listed above are not run by all cores:
+In ESP-IDF FreeRTOS, each core will receive a periodic interrupt and independently run the tick interrupt. The tick interrupts on each core are of the same period but can be out of phase. However, the tick responsibilities listed above are not run by all cores:
 
 - CPU0 will execute all of the tick interrupt responsibilities listed above
 - CPU1 will only check for time slicing and execute the application tick hook

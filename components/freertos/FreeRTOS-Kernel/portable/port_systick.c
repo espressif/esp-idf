@@ -151,6 +151,8 @@ IRAM_ATTR void SysTickIsrHandler(void *arg)
 
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
+
+extern void esp_vApplicationTickHook(void);
 /**
  * @brief Handler of SysTick
  *
@@ -165,11 +167,27 @@ BaseType_t xPortSysTickHandler(void)
     portbenchmarkIntLatency();
 #endif //configBENCHMARK
     traceISR_ENTER(SYSTICK_INTR_ID);
-    BaseType_t ret = xTaskIncrementTick();
-    if(ret != pdFALSE) {
+
+    // Call IDF Tick Hook
+    esp_vApplicationTickHook();
+
+    // Call FreeRTOS Increment tick function
+    BaseType_t xSwitchRequired;
+#if CONFIG_FREERTOS_UNICORE
+    xSwitchRequired = xTaskIncrementTick();
+#else
+    if (xPortGetCoreID() == 0) {
+        xSwitchRequired = xTaskIncrementTick();
+    } else {
+        xSwitchRequired = xTaskIncrementTickOtherCores();
+    }
+#endif
+
+    // Check if yield is required
+    if (xSwitchRequired != pdFALSE) {
         portYIELD_FROM_ISR();
     } else {
         traceISR_EXIT();
     }
-    return ret;
+    return xSwitchRequired;
 }

@@ -3314,8 +3314,24 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
  *     or
  *   + Time slicing is in use and there is a task of equal priority to the
  *     currently running task.
+ *
+ * Note: For SMP, this function must only be called by core 0. Other cores should
+ *       call xTaskIncrementTickOtherCores() instead.
  */
 BaseType_t xTaskIncrementTick( void ) PRIVILEGED_FUNCTION;
+
+#ifdef ESP_PLATFORM
+/*
+ * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS ONLY
+ * INTENDED FOR USE WHEN IMPLEMENTING A PORT OF THE SCHEDULER AND IS
+ * AN INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
+ *
+ * Called from all other cores except core 0 when their tick interrupt
+ * occurs. This function will check if the current core requires time slicing,
+ * and also call the application tick hook.
+ */
+BaseType_t xTaskIncrementTickOtherCores( void ) PRIVILEGED_FUNCTION;
+#endif // ESP_PLATFORM
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
