@@ -50,5 +50,6 @@ int eap_peer_config_init(
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_sm_abort(struct eap_sm *sm);
 int eap_peer_register_methods(void);
+bool eap_sm_allowMethod(struct eap_sm *sm, int vendor, EapType method);
 
 #endif /* EAP_H */
