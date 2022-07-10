@@ -643,8 +643,8 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         break;
     case ESP_HIDD_GET_REPORT_EVT: {
         uint8_t *data_ptr = NULL;
-        p_rpt = get_report_by_id_and_type((esp_bt_hidd_dev_t *)s_hidd_param.dev->dev, param->get_report.report_id,
-                                          param->get_report.report_type, &map_index);
+        p_rpt = get_report_by_id_and_type(s_hidd_param.dev, param->get_report.report_id, param->get_report.report_type,
+                                          &map_index);
         if (p_rpt == NULL) {
             ESP_LOGE(TAG, "Can not find report!");
             esp_bt_hid_device_report_error(ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID);
@@ -684,8 +684,8 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         break;
     }
     case ESP_HIDD_SET_REPORT_EVT: {
-        p_rpt = get_report_by_id_and_type((esp_bt_hidd_dev_t *)s_hidd_param.dev->dev, param->set_report.report_id,
-                                          param->set_report.report_type, &map_index);
+        p_rpt = get_report_by_id_and_type(s_hidd_param.dev, param->set_report.report_id, param->set_report.report_type,
+                                          &map_index);
         if (p_rpt == NULL) {
             ESP_LOGE(TAG, "Can not find report!");
             esp_bt_hid_device_report_error(ESP_HID_PAR_HANDSHAKE_RSP_ERR_INVALID_REP_ID);
@@ -743,8 +743,8 @@ void bt_hidd_cb(esp_hidd_cb_event_t event, esp_hidd_cb_param_t *param)
         break;
     }
     case ESP_HIDD_INTR_DATA_EVT: {
-        p_rpt = get_report_by_id_and_type((esp_bt_hidd_dev_t *)s_hidd_param.dev->dev, param->intr_data.report_id,
-                                          ESP_HID_REPORT_TYPE_OUTPUT, &map_index);
+        p_rpt = get_report_by_id_and_type(s_hidd_param.dev, param->intr_data.report_id, ESP_HID_REPORT_TYPE_OUTPUT,
+                                          &map_index);
         if (p_rpt == NULL) {
             ESP_LOGE(TAG, "Can not find report!");
             break;
