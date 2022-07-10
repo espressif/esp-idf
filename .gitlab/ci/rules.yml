@@ -222,11 +222,9 @@
     - <<: *if-ref-master
     - <<: *if-schedule
 
-.rules:ref:master-schedule-always:
+.rules:ref:master-always:
   rules:
     - <<: *if-ref-master
-      when: always
-    - <<: *if-schedule
       when: always
 
 .rules:patterns:clang_tidy:
