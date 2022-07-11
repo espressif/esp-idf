@@ -495,6 +495,8 @@ static inline int spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
+    // set the correct address length here (24-length or 32-length address),
+    dev->cache_fctrl.usr_cmd_4byte = (bitlen == 32) ? 1 : 0 ;
     dev->user1.usr_addr_bitlen = (bitlen - 1);
     dev->user.usr_addr = bitlen ? 1 : 0;
 }
