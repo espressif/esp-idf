@@ -15,6 +15,11 @@ The example enables the following wakeup sources:
 
 The example also prints time spent in light sleep mode to illustrate that timekeeping continues while the chip is in light sleep.
 
+Note: If you find that the bottom current measured by running this example is larger than what is declared on the datasheet, you can try the following methods:
+
+- configure the CPU to be powered down via menuconfig(not all esp series support this feature)
+- configure the SPI Flash to be powered down via menuconfig
+
 ## How to Use Example
 
 ### Hardware Required
