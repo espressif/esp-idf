@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 """
 Command line tool to assign tests to CI test jobs.
 """
