@@ -549,6 +549,7 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 //IDF-5131
+#if !DISABLED_FOR_TARGETS(ESP32)
 TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
@@ -562,9 +563,7 @@ TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ign
 
     // Allow TSENS to be controlled by the ULP
     SET_PERI_REG_BITS(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_CLK_DIV, 10, SENS_TSENS_CLK_DIV_S);
-#if CONFIG_IDF_TARGET_ESP32
-    SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, SENS_FORCE_XPD_SAR_FSM, SENS_FORCE_XPD_SAR_S);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2
     SET_PERI_REG_BITS(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, SENS_FORCE_XPD_SAR_FSM, SENS_FORCE_XPD_SAR_S);
     SET_PERI_REG_MASK(SENS_SAR_TSENS_CTRL2_REG, SENS_TSENS_CLKGATE_EN);
 #elif CONFIG_IDF_TARGET_ESP32S3
@@ -616,6 +615,7 @@ TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ign
     esp_deep_sleep_start();
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
+#endif //#if !DISABLED_FOR_TARGETS(ESP32)
 
 TEST_CASE("ULP FSM can use ADC in deep sleep", "[ulp][ignore]")
 {

@@ -90,7 +90,7 @@ extern "C" {
 #define SUB_OPCODE_END 0        /*!< Stop executing the program and optionally wake up the chip */
 #define SUB_OPCODE_SLEEP 1      /*!< Stop executing the program and run it again after selected interval */
 
-#define OPCODE_TSENS 10         /*!< Instruction: temperature sensor measurement */
+#define OPCODE_TSENS 10         /*!< Instruction: temperature sensor measurement. Poor accuracy, not recommended for most use-cases */
 
 #define OPCODE_HALT 11          /*!< Halt the coprocessor */
 
