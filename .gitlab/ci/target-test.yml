@@ -251,6 +251,14 @@ component_ut_pytest_esp32c2_generic:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, generic ]
 
+component_ut_pytest_esp32c2_xtal_26mhz:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2
+  needs:
+    - build_pytest_components_esp32c2
+  tags: [ esp32c2, xtal_26mhz ]
+
 component_ut_pytest_esp32c3_generic:
   extends:
     - .pytest_components_dir_template
