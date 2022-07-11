@@ -9,7 +9,7 @@ Flash Encryption
 
 :link_to_translation:`zh_CN:[中文]`
 
-This is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Using an application code example, it demonstrates how to test and verify flash encryption operations during development and production.
+This is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Using application code as an example, it demonstrates how to test and verify flash encryption operations during development and production.
 
 
 Introduction
@@ -113,13 +113,13 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - AES key storage. N is between 0 and 5.
          - 256 bit key block
        * - ``KEY_PURPOSE_N``
-         - Controls the purpose of eFuse block ``BLOCK_KEYN``, where N is between 0 and 5. For flash encryption the only valid value is ``4`` for ``XTS_AES_128_KEY``.
+         - Control the purpose of eFuse block ``BLOCK_KEYN``, where N is between 0 and 5. For flash encryption, the only valid value is ``4`` for ``XTS_AES_128_KEY``.
          - 4
        * - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``
-         - If set, disables flash encryption when in download bootmodes.
+         - If set, disable flash encryption when in download bootmodes.
          - 1
        * - ``{IDF_TARGET_CRYPT_CNT}``
-         - Enables encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
+         - Enable encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
          - 3
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
@@ -135,10 +135,10 @@ The flash encryption operation is controlled by various eFuses available on {IDF
          - Controls actual number of eFuse bits used to derive final 256-bit AES key. Possible values: ``0`` use all 256 bits of the eFuse block for the key, ``1`` use the lower 128 bits of the eFuse block for the key (the higher 128 bits are reserved for Secure Boot key). For 128 bits option, the final AES key is derived as SHA256(EFUSE_KEY0_FE_128BIT).
          - 1
        * - ``BLOCK_KEY0``
-         - AES key storage.
+         - AES key storage
          - 256 or 128 key block
        * - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``
-         - If set, disables flash encryption when in download bootmodes.
+         - If set, disable flash encryption when in download bootmodes.
          - 1
        * - ``{IDF_TARGET_CRYPT_CNT}``
          - Enables encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
@@ -153,7 +153,7 @@ Read and write access to eFuse bits is controlled by appropriate fields in the r
 .. only:: esp32c2
 
     .. important::
-       {IDF_TARGET_NAME} has only one eFuse key block for both keys: Secure Boot and Flash Encryption. The eFuse key block can only be burned once. Therefore these keys should be burned together at the same time. Please note that "Secure Boot" and "Flash Encryption" can not be enabled separately as subsequent writes to eFuse key block shall return an error.
+       {IDF_TARGET_NAME} has only one eFuse key block for both keys: Secure Boot and Flash Encryption. As the eFuse key block can only be burned once, these keys should be burned together at the same time. Please note that "Secure Boot" and "Flash Encryption" can not be enabled separately as subsequent writes to eFuse key block shall return an error.
 
 Flash Encryption Process
 ------------------------
@@ -202,7 +202,7 @@ Assuming that the eFuse values are in their default states and the firmware boot
 
   2. Firmware bootloader reads the ``{IDF_TARGET_CRYPT_CNT}`` eFuse value (``0b000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
-  3. Firmware bootloader uses RNG (random) module to generate an 256 bit key and then writes it into `BLOCK_KEYN` eFuse. The software also updates the ``KEY_PURPOSE_N`` for the block where the key were stored. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEYN` eFuse are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption operations happen entirely by hardware, and the key cannot be accessed via software.
+  3. Firmware bootloader uses RNG (random) module to generate an 256 bit key and then writes it into `BLOCK_KEYN` eFuse. The software also updates the ``KEY_PURPOSE_N`` for the block where the key is stored. The key cannot be accessed via software as the write and read protection bits for `BLOCK_KEYN` eFuse are set. ``KEY_PURPOSE_N`` field is write-protected as well. The flash encryption is completely conducted by hardware, and the key cannot be accessed via software.
 
   4. Flash encryption block encrypts the flash contents - the firmware bootloader, applications and partitions marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
 
@@ -271,12 +271,12 @@ To test flash encryption process, take the following steps:
 
   .. list::
 
-    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
-    - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**Development mode** by default)
-    :esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default. Note that for the esp32 target, the choice is only available when :ref:`CONFIG_ESP32_REV_MIN` level is set to 3 (ESP32 V3)).
-    :not esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default.)
-    :esp32s2 or esp32s3 or esp32c2: - Set :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`
-    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
+    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
+    - :ref:`Select encryption mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (**Development mode** by default).
+    :esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default). Note that for the ESP32 target, the choice is only available when :ref:`CONFIG_ESP32_REV_MIN` level is set to 3 (ESP32 V3).
+    :not esp32: - :ref:`Select UART ROM download mode <CONFIG_SECURE_UART_ROM_DL_MODE>` (**enabled** by default).
+    :esp32s2 or esp32s3 or esp32c2: - Set :ref:`Size of generated AES-XTS key <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`.
+    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
 Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
