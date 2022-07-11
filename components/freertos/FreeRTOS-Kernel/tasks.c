@@ -3299,18 +3299,28 @@ BaseType_t xTaskIncrementTick( void )
     {
         TCB_t * pxTCB;
         TaskHookFunction_t xReturn;
+#ifndef ESP_PLATFORM
         UBaseType_t uxSavedInterruptStatus;
+#endif
 
         /* If xTask is NULL then set the calling task's hook. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
+#ifdef ESP_PLATFORM
         portENTER_CRITICAL_ISR(&xTaskQueueMutex);
+#else
+        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
         {
             xReturn = pxTCB->pxTaskTag;
         }
+#ifdef ESP_PLATFORM
         portEXIT_CRITICAL_ISR(&xTaskQueueMutex);
+#else
+        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+#endif
 
         return xReturn;
     }
