@@ -2936,14 +2936,19 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
 
     void vTaskStepTick( const TickType_t xTicksToJump )
     {
+#ifdef ESP_PLATFORM
+        /* For SMP, we require a critical section to access xTickCount */
+        taskENTER_CRITICAL();
+#endif
         /* Correct the tick count value after a period during which the tick
          * was suppressed.  Note this does *not* call the tick hook function for
          * each stepped tick. */
-        taskENTER_CRITICAL();
         configASSERT( ( xTickCount + xTicksToJump ) <= xNextTaskUnblockTime );
         xTickCount += xTicksToJump;
         traceINCREASE_TICK_COUNT( xTicksToJump );
+#ifdef ESP_PLATFORM
         taskEXIT_CRITICAL();
+#endif
     }
 
 #endif /* configUSE_TICKLESS_IDLE */
@@ -2951,32 +2956,31 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
 
 BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 {
-#ifdef ESP_PLATFORM
-    BaseType_t xYieldRequired = pdFALSE;
-#else
     BaseType_t xYieldOccurred;
-#endif // ESP_PLATFORM
 
     /* Must not be called with the scheduler suspended as the implementation
      * relies on xPendedTicks being wound down to 0 in xTaskResumeAll(). */
+#ifdef ESP_PLATFORM
     configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
-
-    /* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occuring when
-     * the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
-#ifdef ESP_PLATFORM // IDF-3755
-    taskENTER_CRITICAL();
 #else
-    vTaskSuspendAll();
+    configASSERT( uxSchedulerSuspended == 0 );
 #endif // ESP_PLATFORM
+
+    /* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occurring when
+     * the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
+    vTaskSuspendAll();
+#ifdef ESP_PLATFORM
+    /* For SMP, we still require a critical section to access xPendedTicks even
+     * if the scheduler is disabled. */
+    taskENTER_CRITICAL();
     xPendedTicks += xTicksToCatchUp;
-#ifdef ESP_PLATFORM // IDF-3755
     taskEXIT_CRITICAL();
-    return xYieldRequired;
-#else
+#else // ESP_PLATFORM
+    xPendedTicks += xTicksToCatchUp;
+#endif // ESP_PLATFORM
     xYieldOccurred = xTaskResumeAll();
 
     return xYieldOccurred;
-#endif // ESP_PLATFORM
 }
 /*----------------------------------------------------------*/
 
