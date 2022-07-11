@@ -64,7 +64,7 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
-    return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK) / SYSTIMER_LL_TICKS_PER_US;
+    return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK) * SYSTIMER_LL_TICKS_PER_US_DIV / SYSTIMER_LL_TICKS_PER_US;
 }
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
@@ -96,7 +96,7 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
 
 void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 {
-#if !SOC_SYSTIMER_FIXED_TICKS_US
+#if !SOC_SYSTIMER_HAS_FIXED_TICKS_PER_US
     systimer_hal_on_apb_freq_update(&systimer_hal, apb_ticks_per_us);
 #endif
 }
@@ -104,7 +104,9 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 void esp_timer_impl_set(uint64_t new_us)
 {
     portENTER_CRITICAL_SAFE(&s_time_update_lock);
-    systimer_counter_value_t new_count = { .val = new_us * SYSTIMER_LL_TICKS_PER_US };
+    systimer_counter_value_t new_count = {
+        .val = new_us * SYSTIMER_LL_TICKS_PER_US / SYSTIMER_LL_TICKS_PER_US_DIV
+    };
     systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_CLOCK, new_count.val);
     systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_CLOCK);
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
@@ -121,7 +123,7 @@ esp_err_t esp_timer_impl_early_init(void)
 {
     systimer_hal_init(&systimer_hal);
 
-#if !SOC_SYSTIMER_FIXED_TICKS_US
+#if !SOC_SYSTIMER_HAS_FIXED_TICKS_PER_US
     assert(esp_clk_xtal_freq() == (40 * 1000000) &&
             "update the step for xtal to support other XTAL:APB frequency ratios");
     systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal

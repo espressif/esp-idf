@@ -47,19 +47,25 @@ uint64_t systimer_hal_get_counter_value(systimer_hal_context_t *hal, uint32_t co
 
 uint64_t systimer_hal_get_time(systimer_hal_context_t *hal, uint32_t counter_id)
 {
-    return systimer_hal_get_counter_value(hal, counter_id) / SYSTIMER_LL_TICKS_PER_US;
+    return systimer_hal_get_counter_value(hal, counter_id) * SYSTIMER_LL_TICKS_PER_US_DIV / SYSTIMER_LL_TICKS_PER_US;
 }
 
 #if SOC_SYSTIMER_ALARM_MISS_COMPENSATE
 void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_id, uint64_t target)
 {
-    systimer_counter_value_t alarm = { .val = target * SYSTIMER_LL_TICKS_PER_US};
+    systimer_counter_value_t alarm = {
+        .val = target * SYSTIMER_LL_TICKS_PER_US / SYSTIMER_LL_TICKS_PER_US_DIV
+    };
     systimer_ll_enable_alarm(hal->dev, alarm_id, false);
     systimer_ll_set_alarm_target(hal->dev, alarm_id, alarm.val);
     systimer_ll_apply_alarm_value(hal->dev, alarm_id);
     systimer_ll_enable_alarm(hal->dev, alarm_id, true);
 }
-#else
+
+#else // SOC_SYSTIMER_ALARM_MISS_COMPENSATE
+
+_Static_assert(SYSTIMER_LL_TICKS_PER_US_DIV == 1, "SYSTIMER_LL_TICKS_PER_US_DIV > 1 && !SOC_SYSTIMER_ALARM_MISS_COMPENSATE hasn't been supported");
+
 void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_id, uint64_t timestamp)
 {
     int64_t offset = SYSTIMER_LL_TICKS_PER_US * 2;
@@ -81,12 +87,12 @@ void systimer_hal_set_alarm_target(systimer_hal_context_t *hal, uint32_t alarm_i
         }
     } while (1);
 }
-#endif
+#endif // SOC_SYSTIMER_ALARM_MISS_COMPENSATE
 
 void systimer_hal_set_alarm_period(systimer_hal_context_t *hal, uint32_t alarm_id, uint32_t period)
 {
     systimer_ll_enable_alarm(hal->dev, alarm_id, false);
-    systimer_ll_set_alarm_period(hal->dev, alarm_id, period * SYSTIMER_LL_TICKS_PER_US);
+    systimer_ll_set_alarm_period(hal->dev, alarm_id, period * SYSTIMER_LL_TICKS_PER_US / SYSTIMER_LL_TICKS_PER_US_DIV);
     systimer_ll_apply_alarm_value(hal->dev, alarm_id);
     systimer_ll_enable_alarm(hal->dev, alarm_id, true);
 }
@@ -103,7 +109,10 @@ void systimer_hal_enable_alarm_int(systimer_hal_context_t *hal, uint32_t alarm_i
 
 void systimer_hal_counter_value_advance(systimer_hal_context_t *hal, uint32_t counter_id, int64_t time_us)
 {
-    systimer_counter_value_t new_count = { .val = systimer_hal_get_counter_value(hal, counter_id) + time_us * SYSTIMER_LL_TICKS_PER_US };
+    systimer_counter_value_t new_count = {
+        .val = systimer_hal_get_counter_value(hal, counter_id)
+                + time_us * SYSTIMER_LL_TICKS_PER_US / SYSTIMER_LL_TICKS_PER_US_DIV
+    };
     systimer_ll_set_counter_value(hal->dev, counter_id, new_count.val);
     systimer_ll_apply_counter_value(hal->dev, counter_id);
 }
@@ -137,7 +146,10 @@ void systimer_hal_counter_can_stall_by_cpu(systimer_hal_context_t *hal, uint32_t
     systimer_ll_counter_can_stall_by_cpu(hal->dev, counter_id, cpu_id, can);
 }
 
-#if !SOC_SYSTIMER_FIXED_TICKS_US
+#if !SOC_SYSTIMER_HAS_FIXED_TICKS_PER_US
+
+_Static_assert(SYSTIMER_LL_TICKS_PER_US_DIV == 1, "SYSTIMER_LL_TICKS_PER_US_DIV > 1 && !SOC_SYSTIMER_HAS_FIXED_TICKS_PER_US hasn't been supported");
+
 void systimer_hal_set_steps_per_tick(systimer_hal_context_t *hal, int clock_source, uint32_t steps)
 {
     /* Configure the counter:
@@ -171,4 +183,4 @@ void systimer_hal_on_apb_freq_update(systimer_hal_context_t *hal, uint32_t apb_t
         systimer_ll_set_step_for_xtal(hal->dev, SYSTIMER_LL_TICKS_PER_US / apb_ticks_per_us);
     }
 }
-#endif
+#endif // !SOC_SYSTIMER_HAS_FIXED_TICKS_PER_US

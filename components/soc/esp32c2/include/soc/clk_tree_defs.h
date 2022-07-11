@@ -19,7 +19,7 @@ extern "C" {
  *
  *    The exact frequency of RC_FAST_CLK can be computed in runtime through calibration on the RC_FAST_D256_CLK.
  *
- * 2) External 40MHz Crystal Clock: XTAL
+ * 2) External 26/40MHz Crystal Clock: XTAL
  *
  * 3) Internal 136kHz RC Oscillator: RC_SLOW (usually referrred as RTC in TRM or reg. description)
  *
@@ -50,7 +50,7 @@ extern "C" {
 typedef enum {
     SOC_ROOT_CLK_INT_RC_FAST,          /*!< Internal 17.5MHz RC oscillator */
     SOC_ROOT_CLK_INT_RC_SLOW,          /*!< Internal 136kHz RC oscillator */
-    SOC_ROOT_CLK_EXT_XTAL,             /*!< External 40MHz crystal */
+    SOC_ROOT_CLK_EXT_XTAL,             /*!< External 26/40MHz crystal */
     SOC_ROOT_CLK_EXT_OSC_SLOW,         /*!< External slow clock signal at pin0 */
 } soc_root_clk_t;
 
@@ -60,7 +60,7 @@ typedef enum {
  */
 typedef enum {
     SOC_CPU_CLK_SRC_XTAL = 0,              /*!< Select XTAL_CLK as CPU_CLK source */
-    SOC_CPU_CLK_SRC_PLL = 1,               /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, 480MHz) */
+    SOC_CPU_CLK_SRC_PLL = 1,               /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 26/40MHz crystal oscillator frequency multiplier, 480MHz) */
     SOC_CPU_CLK_SRC_RC_FAST = 2,           /*!< Select RC_FAST_CLK as CPU_CLK source */
     SOC_CPU_CLK_SRC_INVALID,               /*!< Invalid CPU_CLK source */
 } soc_cpu_clk_src_t;
@@ -108,7 +108,7 @@ typedef enum {
     SOC_MOD_CLK_OSC_SLOW,                      /*!< OSC_SLOW_CLK comes from an external slow clock signal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST_D256,                  /*!< RC_FAST_D256_CLK comes from the internal 20MHz rc oscillator, divided by 256, and passing a clock gating to the peripherals */
-    SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
+    SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 26/40MHz crystal */
 } soc_module_clk_t;
 
 
