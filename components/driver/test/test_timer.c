@@ -843,8 +843,8 @@ TEST_CASE("Timer interrupt register", "[hw_timer]")
 // This case will check under this fix, whether the interrupt status is cleared after timer_group initialization.
 static void timer_group_test_init(void)
 {
-    static const uint32_t time_ms = 100; //Alarm value 100ms.
-    static const uint16_t timer_div = 10; //Timer prescaler
+    static const uint32_t time_ms = 100;  // Alarm value 100ms.
+    static const uint16_t timer_div = TIMER_DIVIDER; // Timer prescaler
     static const uint32_t ste_val = time_ms * (TIMER_BASE_CLK / timer_div / 1000);
     timer_config_t config = {
         .divider = timer_div,
@@ -882,11 +882,45 @@ static void timer_group_test_second_stage(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
     timer_group_test_init();
+    TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
+    // After enable the interrupt, timer alarm should not trigger immediately
+    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
     //After the timer_group is initialized, TIMERG0.int_raw.t0 should be cleared.
     TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
 }
 
 TEST_CASE_MULTIPLE_STAGES("timer_group software reset test",
-        "[intr_status][intr_status = 0]",
-        timer_group_test_first_stage,
-        timer_group_test_second_stage);
+
+                          "[intr_status][intr_status = 0]",
+                          timer_group_test_first_stage,
+                          timer_group_test_second_stage);
+//
+// Timer check reinitialization sequence
+//
+TEST_CASE("Timer check reinitialization sequence", "[hw_timer]")
+{
+    // 1. step - install driver
+    timer_group_test_init();
+    // 2 - register interrupt and start timer
+    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
+    TEST_ESP_OK(timer_start(TIMER_GROUP_0, TIMER_0));
+    // Do some work
+    vTaskDelay(80 / portTICK_PERIOD_MS);
+    // 3 - deinit timer driver
+    TEST_ESP_OK(timer_deinit(TIMER_GROUP_0, TIMER_0));
+    timer_config_t config = {
+        .divider = TIMER_DIVIDER,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_START,
+        .alarm_en = TIMER_ALARM_EN,
+        .intr_type = TIMER_INTR_LEVEL,
+        .auto_reload = TIMER_AUTORELOAD_EN,
+    };
+    // 4 - reinstall driver
+    TEST_ESP_OK(timer_init(TIMER_GROUP_0, TIMER_0, &config));
+    // 5 - enable interrupt
+    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
+    vTaskDelay(30 / portTICK_PERIOD_MS);
+    // The pending timer interrupt should not be triggered
+    TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
+}
