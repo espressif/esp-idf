@@ -2173,12 +2173,6 @@ The maximum number of payload octets that the local device can receive in a sing
 #define BTSNOOP_MEM FALSE
 #endif
 
-#if UC_BT_BLUEDROID_MEM_DEBUG
-#define HEAP_MEMORY_DEBUG   TRUE
-#else
-#define HEAP_MEMORY_DEBUG   FALSE
-#endif
-
 #if UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST
 #define HEAP_ALLOCATION_FROM_SPIRAM_FIRST TRUE
 #else
