@@ -296,13 +296,17 @@ Vanilla FreeRTOS allows the scheduler to be suspended/resumed by calling :cpp:fu
 
 On scheduler resumption, :cpp:func:`xTaskResumeAll` will catch up all of the lost ticks and unblock any timed out tasks.
 
-In ESP-IDF FreeRTOS, suspending the scheduler across multiple cores is not possible. Therefore when :cpp:func:`vTaskSuspendAll` is called:
+In ESP-IDF FreeRTOS, suspending the scheduler across multiple cores is not possible. Therefore when :cpp:func:`vTaskSuspendAll` is called on a particular core (e.g., core A):
 
-- Task switching is disabled only on the current core but interrupts for the current core are left enabled
-- Calling any blocking/yielding function on the current core is forbidden. Time slicing is disabled on the current core.
-- If suspending on CPU0, the tick count is frozen. The tick interrupt will still occur to execute the application tick hook.
+- Task switching is disabled only on core A but interrupts for core A are left enabled
+- Calling any blocking/yielding function on core A is forbidden. Time slicing is disabled on core A.
+- If an interrupt on core A unblocks any tasks, those tasks will go into core A's own pending ready task list
+- If core A is CPU0, the tick count is frozen and a pended tick count is incremented instead. However, the tick interrupt will still occur in order to execute the application tick hook.
 
-When resuming the scheduler on CPU0, :cpp:func:`xTaskResumeAll` will catch up all of the lost ticks and unblock any timed out tasks.
+When :cpp:func:`xTaskResumeAll` is called on a particular core (e.g., core A):
+
+- Any tasks added to core A's pending ready task list will be resumed
+- If core A is CPU0, the pended tick count is unwound to catch up the lost ticks.
 
 .. warning::
   Given that scheduler suspension on ESP-IDF FreeRTOS will only suspend scheduling on a particular core, scheduler suspension is **NOT** a valid method ensuring mutual exclusion between tasks when accessing shared data. Users should use proper locking primitives such as mutexes or spinlocks if they require mutual exclusion.

@@ -2423,10 +2423,28 @@ void vTaskSuspendAll( void )
      * BaseType_t.  Please read Richard Barry's reply in the following link to a
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
+#ifdef ESP_PLATFORM
+    /* For SMP, although each core has their own uxSchedulerSuspended, we still
+     * need to disable interrupts or enter a critical section when accessing. */
     unsigned state;
     state = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
+
+    /* portSOFRWARE_BARRIER() is only implemented for emulated/simulated ports that
+     * do not otherwise exhibit real time behaviour. */
+    portSOFTWARE_BARRIER();
+
+    /* The scheduler is suspended if uxSchedulerSuspended is non-zero.  An increment
+     * is used to allow calls to vTaskSuspendAll() to nest. */
     ++uxSchedulerSuspended[ xPortGetCoreID() ];
-    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+
+    /* Enforces ordering for ports and optimised compilers that may otherwise place
+     * the above increment elsewhere. */
+    portMEMORY_BARRIER();
+
+#ifdef ESP_PLATFORM
+    portCLEAR_INTERRUPT_MASK_FROM_ISR( state );
+#endif
 }
 /*----------------------------------------------------------*/
 
@@ -2494,13 +2512,12 @@ void vTaskSuspendAll( void )
 
 BaseType_t xTaskResumeAll( void )
 {
-    TCB_t *pxTCB = NULL;
+    TCB_t * pxTCB = NULL;
     BaseType_t xAlreadyYielded = pdFALSE;
-    TickType_t xTicksToNextUnblockTime;
 
-    /* If scheduler state is `taskSCHEDULER_RUNNING` then this function does not match a
-     * previous call to taskENTER_CRITICAL(). */
-    configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
+    /* If uxSchedulerSuspended is zero then this function does not match a
+     * previous call to vTaskSuspendAll(). */
+    configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] );
 
     /* It is possible that an ISR caused a task to be removed from an event
      * list while the scheduler was suspended.  If this was the case then the
@@ -2509,26 +2526,32 @@ BaseType_t xTaskResumeAll( void )
      * tasks from this list into their appropriate ready list. */
     taskENTER_CRITICAL();
     {
-        --uxSchedulerSuspended[xPortGetCoreID()];
+#ifdef ESP_PLATFORM
+        /* Minor optimization. Core ID can't change while inside a critical section */
+        BaseType_t xCoreID = xPortGetCoreID();
+#else
+        BaseType_t xCoreID = 0;
+#endif
+        --uxSchedulerSuspended[ xCoreID ];
 
-        if( uxSchedulerSuspended[xPortGetCoreID()] == ( UBaseType_t ) pdFALSE )
+        if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) pdFALSE )
         {
             if( uxCurrentNumberOfTasks > ( UBaseType_t ) 0U )
             {
                 /* Move any readied tasks from the pending list into the
                  * appropriate ready list. */
-                while( listLIST_IS_EMPTY( &xPendingReadyList[xPortGetCoreID()] ) == pdFALSE )
+                while( listLIST_IS_EMPTY( &xPendingReadyList[ xCoreID ] ) == pdFALSE )
                 {
-                    pxTCB = listGET_OWNER_OF_HEAD_ENTRY( ( &xPendingReadyList[xPortGetCoreID()] ) ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+                    pxTCB = listGET_OWNER_OF_HEAD_ENTRY( ( &xPendingReadyList[ xCoreID ] ) ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
                     ( void ) uxListRemove( &( pxTCB->xEventListItem ) );
                     ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
                     prvAddTaskToReadyList( pxTCB );
 
                     /* If the moved task has a priority higher than the current
                      * task then a yield must be performed. */
-                    if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority  )
+                    if( pxTCB->uxPriority >= pxCurrentTCB[ xCoreID ]->uxPriority )
                     {
-                        xYieldPending[xPortGetCoreID()] = pdTRUE;
+                        xYieldPending[ xCoreID ] = pdTRUE;
                     }
                     else
                     {
@@ -2551,54 +2574,39 @@ BaseType_t xTaskResumeAll( void )
                  * they should be processed now.  This ensures the tick count does
                  * not  slip, and that any delayed tasks are resumed at the correct
                  * time. */
-                while( xPendedTicks > ( TickType_t ) 0 )
+#ifdef ESP_PLATFORM
+                /* Core 0 is solely responsible for managing tick count, thus it
+                 * must be the only core to unwind the pended ticks */
+                if ( xCoreID == 0 )
+#endif
                 {
-                    /* Calculate how far into the future the next task will
-                     * leave the Blocked state because its timeout expired.  If
-                     * there are no tasks due to leave the blocked state between
-                     * the time now and the time at which the tick count overflows
-                     * then xNextTaskUnblockTime will the tick overflow time.
-                     * This means xNextTaskUnblockTime can never be less than
-                     * xTickCount, and the following can therefore not
-                     * underflow. */
-                    configASSERT( xNextTaskUnblockTime >= xTickCount );
-                    xTicksToNextUnblockTime = xNextTaskUnblockTime - xTickCount;
+                    TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
 
-                    /* Don't want to move the tick count more than the number
-                    of ticks that are pending, so cap if necessary. */
-                    if( xTicksToNextUnblockTime > xPendedTicks )
+                    if( xPendedCounts > ( TickType_t ) 0U )
                     {
-                        xTicksToNextUnblockTime = xPendedTicks;
-                    }
+                        do
+                        {
+                            if( xTaskIncrementTick() != pdFALSE )
+                            {
+                                xYieldPending[ xCoreID ] = pdTRUE;
+                            }
+                            else
+                            {
+                                mtCOVERAGE_TEST_MARKER();
+                            }
 
-                    if( xTicksToNextUnblockTime == 0 )
-                    {
-                        /* xTicksToNextUnblockTime could be zero if the tick
-                         * count is about to overflow and xTicksToNetUnblockTime
-                         * holds the time at which the tick count will overflow
-                         * (rather than the time at which the next task will
-                         * unblock).  Set to 1 otherwise xPendedTicks won't be
-                         * decremented below. */
-                        xTicksToNextUnblockTime = ( TickType_t ) 1;
-                    }
-                    else if( xTicksToNextUnblockTime > ( TickType_t ) 1)
-                    {
-                        /* Move the tick count one short of the next unblock
-                         * time, then call xTaskIncrementTick() to move the tick
-                         * count up to the next unblock time to unblock the task,
-                         * if any.  This will also swap the blocked task and
-                         * overflow blocked task lists if necessary. */
-                        xTickCount += ( xTicksToNextUnblockTime - ( TickType_t ) 1 );
-                    }
-                    xYieldPending[xPortGetCoreID()] |= xTaskIncrementTick();
+                            --xPendedCounts;
+                        } while( xPendedCounts > ( TickType_t ) 0U );
 
-                    /* Adjust for the number of ticks just added to
-                    xTickCount and go around the loop again if
-                    xTicksToCatchUp is still greater than 0. */
-                    xPendedTicks -= xTicksToNextUnblockTime;
+                        xPendedTicks = 0;
+                    }
+                    else
+                    {
+                        mtCOVERAGE_TEST_MARKER();
+                    }
                 }
 
-                if( xYieldPending[xPortGetCoreID()] != pdFALSE )
+                if( xYieldPending[ xCoreID ] != pdFALSE )
                 {
                     #if ( configUSE_PREEMPTION != 0 )
                         {
