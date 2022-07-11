@@ -2027,6 +2027,11 @@ def action_install_python_env(args):  # type: ignore
 
 
 def action_check_python_dependencies(args):  # type: ignore
+    # In some enviroments python deps are installed system-wide in which case this checks
+    # should be ignored to be able to run idf
+    if os.getenv('IDF_SKIP_PYTHON_CHECK') == '0':
+        return
+
     use_constraints = not args.no_constraints
     req_paths = get_requirements('')  # no new features -> just detect the existing ones
 
