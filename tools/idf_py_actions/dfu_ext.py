@@ -9,7 +9,7 @@ from idf_py_actions.tools import PropertyDict, ensure_build_directory, is_target
 
 def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
-    SUPPORTED_TARGETS = ['esp32s2']
+    SUPPORTED_TARGETS = ['esp32s2', 'esp32s3']
 
     def dfu_target(target_name: str, ctx: Context, args: PropertyDict, part_size: str) -> None:
         ensure_build_directory(args, ctx.info_name)
