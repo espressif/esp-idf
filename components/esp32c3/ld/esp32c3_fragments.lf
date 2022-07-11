@@ -18,6 +18,8 @@ entries:
 [sections:rodata]
 entries:
     .rodata+
+    .sdata2+
+    .srodata+
 
 [sections:rtc_text]
 entries:
