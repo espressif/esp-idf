@@ -437,6 +437,7 @@ int wps_send_eap_identity_rsp(u8 id)
     eap_buf = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_IDENTITY, sm->identity_len,
                             EAP_CODE_RESPONSE, id);
     if (!eap_buf) {
+        wpa_printf(MSG_ERROR, "eap buf allocation failed");
         ret = ESP_FAIL;
         goto _err;
     }
@@ -446,12 +447,14 @@ int wps_send_eap_identity_rsp(u8 id)
 
     buf = wps_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAP_PACKET, wpabuf_head_u8(eap_buf), wpabuf_len(eap_buf), (size_t *)&len, NULL);
     if (!buf) {
+        wpa_printf(MSG_ERROR, "buf allocation failed");
         ret = ESP_ERR_NO_MEM;
         goto _err;
     }
 
     ret = wps_sm_ether_send(sm, ETH_P_EAPOL, buf, len);
     if (ret) {
+        wpa_printf(MSG_ERROR, "wps sm ether send failed ret=%d", ret);
         ret = ESP_FAIL;
         goto _err;
     }
