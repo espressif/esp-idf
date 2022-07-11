@@ -97,6 +97,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_RMT_RST;
     case PERIPH_LEDC_MODULE:
         return SYSTEM_LEDC_RST;
+    case PERIPH_BT_MODULE:
+        return  (SYSTEM_BTBB_RST | SYSTEM_BTBB_REG_RST | SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST | SYSTEM_RW_BTMAC_REG_RST | SYSTEM_RW_BTLP_REG_RST);
     case PERIPH_UART0_MODULE:
         return SYSTEM_UART_RST;
     case PERIPH_UART1_MODULE:

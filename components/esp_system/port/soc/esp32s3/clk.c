@@ -265,7 +265,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                              SYSTEM_CRYPTO_RSA_CLK_EN;
         wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
                            SYSTEM_WIFI_CLK_BT_EN_M |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT5 |
+                           SYSTEM_WIFI_CLK_I2C_CLK_EN |
                            SYSTEM_WIFI_CLK_UNUSED_BIT12 |
                            SYSTEM_WIFI_CLK_SDIO_HOST_EN;
     }
