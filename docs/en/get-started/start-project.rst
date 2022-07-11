@@ -41,41 +41,21 @@ If there are no errors, the build will finish by generating the firmware binary 
 Flash onto the Device
 =====================
 
-Flash the binaries that you just built (bootloader.bin, partition-table.bin and hello_world.bin) onto your {IDF_TARGET_NAME} board by running:
+To flash the binaries that you just built for the {IDF_TARGET_NAME} in the previous step, you need to run the following command:
 
 .. code-block:: bash
 
-    idf.py -p PORT [-b BAUD] flash
+    idf.py -p PORT flash
 
-Replace PORT with your {IDF_TARGET_NAME} board's serial port name.
+Replace ``PORT`` with your {IDF_TARGET_NAME} board's USB port name. If the ``PORT`` is not defined, the :ref:`idf.py` will try to connect automatically using the available USB ports.
 
-You can also change the flasher baud rate by replacing BAUD with the baud rate you need. The default baud rate is ``460800``.
-
-For more information on idf.py arguments, see :ref:`idf.py`.
+For more information on ``idf.py`` arguments, see :ref:`idf.py`.
 
 .. note::
 
     The option ``flash`` automatically builds and flashes the project, so running ``idf.py build`` is not necessary.
 
-Encountered Issues While Flashing?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-{IDF_TARGET_STRAP_GPIO:default="[NEEDS TO BE UPDATED]", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c2="GPIO9", esp32c3="GPIO9"}
-
-If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
-
-``esptool.py`` resets {IDF_TARGET_NAME} automatically by asserting DTR and RTS control lines of the USB to serial converter chip, i.e., FTDI or CP210x (for more information, see :doc:`establish-serial-connection`). The DTR and RTS control lines are in turn connected to ``{IDF_TARGET_STRAP_GPIO}`` and ``CHIP_PU`` (EN) pins of {IDF_TARGET_NAME}, thus changes in the voltage levels of DTR and RTS will boot {IDF_TARGET_NAME} into Firmware Download mode. As an example, check the `schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ for the ESP32 DevKitC development board.
-
-In general, you should have no problems with the `official esp-idf development boards <https://www.espressif.com/en/products/devkits>`_. However, ``esptool.py`` is not able to reset your hardware automatically in the following cases:
-
-- Your hardware does not have the DTR and RTS lines connected to ``{IDF_TARGET_STRAP_GPIO}`` and ``CHIP_PU``
-- The DTR and RTS lines are configured differently
-- There are no such serial control lines at all
-
-Depending on the kind of hardware you have, it may also be possible to manually put your {IDF_TARGET_NAME} board into Firmware Download mode (reset).
-
-- For development boards produced by Espressif, this information can be found in the respective getting started guides or user guides. For example, to manually reset an ESP-IDF development board, hold down the **Boot** button (``{IDF_TARGET_STRAP_GPIO}``) and press the **EN** button (``CHIP_PU``).
-- For other types of hardware, try pulling ``{IDF_TARGET_STRAP_GPIO}`` down.
+Encountered Issues While Flashing? See this :doc:`flashing-troubleshooting` page or :doc:`establish-serial-connection` for more detailed information.
 
 Normal Operation
 ~~~~~~~~~~~~~~~~
@@ -428,3 +408,20 @@ ESP-IDF supports Python 3.7 or newer. It is recommended to upgrade your operatin
             idf.py add-dependency esp-box 
 
     More examples of BSP usage can be found in `BSP examples folder <https://github.com/espressif/esp-bsp/tree/master/examples>`_.
+
+Flash Erase
+~~~~~~~~~~~
+
+Erasing the flash is also possible. To erase the entire flash memory you can run the following command:
+
+.. code-block:: bash
+
+    idf.py -p PORT erase-flash
+
+For erasing the OTA data, if present, you can run this command:
+
+.. code-block:: bash
+
+    idf.py -p PORT erase-otadata
+
+The flash erase command can take a while to be done. Do not disconnect your device while the flash erasing is in progress.
