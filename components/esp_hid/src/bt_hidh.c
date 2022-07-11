@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "bt_hidh.h"
 #if CONFIG_BT_HID_HOST_ENABLED
@@ -803,8 +795,13 @@ static esp_err_t esp_bt_hidh_dev_report_write(esp_hidh_dev_t *dev, size_t map_in
             data = p_data;
             len = len + 1;
         }
+
         ret = esp_bt_hid_host_send_data(dev->bda, data, len);
+        if (p_data) {
+            free(p_data);
+        }
     } while (0);
+
     return ret;
 }
 
@@ -845,11 +842,17 @@ static esp_err_t esp_bt_hidh_dev_set_report(esp_hidh_dev_t *dev, size_t map_inde
             data = p_data;
             len = len + 1;
         }
+
         ret = esp_bt_hid_host_set_report(dev->bda, report_type, data, len);
+        if (p_data) {
+            free(p_data);
+        }
+
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_SET_REPORT);
         }
     } while (0);
+
     return ret;
 }
 

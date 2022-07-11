@@ -446,7 +446,6 @@ components/esp_hid/private/ble_hidh.h
 components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
 components/esp_hid/private/esp_hidd_private.h
-components/esp_hid/src/bt_hidh.c
 components/esp_hid/src/esp_hid_common.c
 components/esp_hid/src/esp_hidd.c
 components/esp_hid/test/hid_descriptor.h
