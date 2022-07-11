@@ -10,7 +10,7 @@
  */
 
 #ifndef IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP
-#define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     300     // TODO: IDF-5178
+#define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     215
 #endif
 #ifndef IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM
 #define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM               300
@@ -26,7 +26,7 @@
    microbenchmark currently runs slower with PSRAM enabled. */
 #if !CONFIG_FREERTOS_SMP // IDF-5224
 #ifndef IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME
-#define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME                           25000   // TODO: IDF-5179
+#define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME                           20000
 #endif
 #ifndef IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME_PSRAM
 #define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME_PSRAM                     25000
@@ -42,13 +42,13 @@
 
 // throughput performance by iperf
 #ifndef IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT
-#define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   40      // TODO: IDF-5221
+#define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   45
 #endif
 #ifndef IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT
 #define IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT                                   40
 #endif
 #ifndef IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT
-#define IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT                                   60      // TODO: IDF-5221
+#define IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT                                   64
 #endif
 #ifndef IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT
 #define IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT                                   50

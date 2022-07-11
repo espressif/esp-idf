@@ -364,7 +364,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @return true Core can yield
  * @return false Core cannot yield
  */
-static inline bool xPortCanYield(void);
+FORCE_INLINE_ATTR bool xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
@@ -403,7 +403,7 @@ void vPortSetStackWatchpoint( void *pxStackStart );
  * @note [refactor-todo] IDF should call a FreeRTOS like macro instead of port function directly
  * @return BaseType_t Core ID
  */
-static inline BaseType_t xPortGetCoreID(void);
+FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void);
 
 /**
  * @brief Wrapper for atomic compare-and-set instruction
@@ -637,7 +637,7 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
     uint32_t ps_reg = 0;
 
@@ -656,7 +656,7 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 
 // ----------------------- System --------------------------
 
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
+FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 {
     return (BaseType_t) cpu_hal_get_core_id();
 }
