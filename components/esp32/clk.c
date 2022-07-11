@@ -263,9 +263,9 @@ void esp_perip_clk_init(void)
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= TGWDT_CPU_RESET && rst_reas[0] <= RTCWDT_CPU_RESET)
+    if ((rst_reas[0] == TGWDT_CPU_RESET || rst_reas[0] == SW_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET)
 #if !CONFIG_FREERTOS_UNICORE
-        || (rst_reas[1] >= TGWDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
+        || (rst_reas[1] == TGWDT_CPU_RESET || rst_reas[1] == SW_CPU_RESET || rst_reas[1] == RTCWDT_CPU_RESET)
 #endif
     ) {
         common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
