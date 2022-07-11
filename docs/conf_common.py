@@ -104,6 +104,8 @@ SIGMADELTA_DOCS = ['api-reference/peripherals/sigmadelta.rst']
 
 I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
+RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
@@ -111,7 +113,6 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
               'hw-reference/esp32/**',
-              'api-guides/RF_calibration.rst',
               'api-guides/esp-wifi-mesh.rst',
               'api-reference/network/esp-wifi-mesh.rst'] + FTDI_JTAG_DOCS
 
@@ -122,20 +123,17 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-guides/RF_calibration.rst',
                 'api-guides/esp-wifi-mesh.rst',
                 'api-reference/network/esp-wifi-mesh.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
-                'api-guides/RF_calibration.rst',
                 'api-guides/esp-wifi-mesh.rst',
                 'api-reference/network/esp-wifi-mesh.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/RF_calibration.rst',
                 'api-guides/esp-wifi-mesh.rst',
                 'api-reference/network/esp-wifi-mesh.rst']
 
@@ -166,6 +164,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
                             'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
+                            'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

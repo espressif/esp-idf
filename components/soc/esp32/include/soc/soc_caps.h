@@ -77,8 +77,9 @@
 #define SOC_EMAC_SUPPORTED          1
 #define SOC_ULP_SUPPORTED           1
 #define SOC_CCOMP_TIMER_SUPPORTED   1
-#define SOC_RTC_FAST_MEM_SUPPORTED        1
-#define SOC_RTC_SLOW_MEM_SUPPORTED        1
+#define SOC_RTC_FAST_MEM_SUPPORTED  1
+#define SOC_RTC_SLOW_MEM_SUPPORTED  1
+#define SOC_RTC_MEM_SUPPORTED       1
 #define SOC_I2S_SUPPORTED           1
 #define SOC_RMT_SUPPORTED           1
 #define SOC_SIGMADELTA_SUPPORTED    1

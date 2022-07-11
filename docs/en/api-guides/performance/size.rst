@@ -361,6 +361,14 @@ Enabling Nano formatting also reduces the stack usage of each function that call
 
 "Nano" formatting doesn't support 64-bit integers, or C99 formatting features. For a full list of restrictions, search for ``--enable-newlib-nano-formatted-io`` in the `Newlib README file`_.
 
+
+.. only:: esp32c2
+
+    .. note::
+
+        :ref:`CONFIG_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}
+
+
 .. _Newlib README file: https://sourceware.org/newlib/README
 
 .. _minimizing_binary_mbedtls:
