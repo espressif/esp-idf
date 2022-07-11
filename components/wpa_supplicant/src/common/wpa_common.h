@@ -352,4 +352,6 @@ int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 
 int rsn_cipher_put_suites(u8 *pos, int ciphers);
 
+unsigned int wpa_mic_len(int akmp);
+
 #endif /* WPA_COMMON_H */
