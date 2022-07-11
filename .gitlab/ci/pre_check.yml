@@ -175,3 +175,10 @@ check_commit_msg:
     - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'
+
+check_test_scripts_build_test_rules:
+  extends:
+    - .pre_check_job_template
+    - .before_script_build_jobs
+  script:
+    - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
