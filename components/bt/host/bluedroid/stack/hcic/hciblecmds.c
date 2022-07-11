@@ -1759,7 +1759,7 @@ UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_
     UINT8 *pp;
     HCI_TRACE_EVENT("%s, rf_tx_path = %d, rf_rx_path = %d", __func__, rf_tx_path, rf_rx_path);
 
-    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION);
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_WRITE_RF_PATH_COMPENSATION);
 
     pp = (UINT8 *)(p + 1);
 
