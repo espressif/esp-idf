@@ -1,4 +1,4 @@
-﻿********************************************
+********************************************
 Standard Toolchain Setup for Linux and macOS
 ********************************************
 
@@ -75,6 +75,25 @@ ESP-IDF will use the version of Python installed by default on macOS.
      xcrun: error: invalid active developer path (/Library/Developer/CommandLineTools), missing xcrun at: /Library/Developer/CommandLineTools/usr/bin/xcrun
 
    Then you will need to install the XCode command line tools to continue. You can install these by running ``xcode-select --install``.
+
+Apple M1 Users
+~~~~~~~~~~~~~~
+
+If you use Apple M1 platform and see an error like this::
+
+      WARNING: directory for tool xtensa-esp32-elf version esp-2021r2-patch3-8.4.0 is present, but tool was not found
+      ERROR: tool xtensa-esp32-elf has no installed versions. Please run 'install.sh' to install it.
+
+or::
+
+      zsh: bad CPU type in executable: ~/.espressif/tools/xtensa-esp32-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
+
+Then you will need to install Apple Rosetta 2 by running
+
+.. code-block:: bash
+
+    /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+
 
 Installing Python 3
 ~~~~~~~~~~~~~~~~~~~
