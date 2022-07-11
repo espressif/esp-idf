@@ -35,10 +35,13 @@ def check_executable_list():
 def check_executables(files):
     ret = 0
     for fn in files:
-        if not is_executable(fn):
-            continue
-        if fn not in known_executables:
+        fn_executable = is_executable(fn)
+        fn_in_list = fn in known_executables
+        if fn_executable and not fn_in_list:
             print('"{}" is not in {}'.format(fn, EXECUTABLE_LIST_FN))
+            ret = 1
+        if not fn_executable and fn_in_list:
+            print('"{}" is not executable but is in {}'.format(fn, EXECUTABLE_LIST_FN))
             ret = 1
     return ret
 
