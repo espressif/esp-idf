@@ -9,10 +9,10 @@
 #include "ulp_common.h"
 #include "esp_private/esp_clk.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/rtc_cntl_periph.h"
 
 #if CONFIG_IDF_TARGET_ESP32
+#include "soc/sens_reg.h"
 #define ULP_FSM_PREPARE_SLEEP_CYCLES 2    /*!< Cycles spent by FSM preparing ULP for sleep */
 #define ULP_FSM_WAKEUP_SLEEP_CYCLES  2    /*!< Cycles spent by FSM waking up ULP from sleep */
 #endif
