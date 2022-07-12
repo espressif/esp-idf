@@ -150,6 +150,19 @@ int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t o
 bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t);
 
 /**
+ * @brief               Returns the HTTP status code of the websocket handshake
+ *
+ * This API should be called after the connection atempt otherwise its result is meaningless
+ *
+ * @param t             websocket transport handle
+ *
+ * @return
+ *      -Response status code
+ *      -1 on failure
+ */
+int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t);
+
+/**
  * @brief               Returns websocket op-code for last received data
  *
  * @param t             websocket transport handle
