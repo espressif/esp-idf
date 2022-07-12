@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  * All the APIs declared here are internal only APIs, it can only be used by
@@ -504,6 +496,16 @@ bool esp_wifi_internal_is_tsf_active(void);
   */
 void esp_wifi_internal_update_light_sleep_wake_ahead_time(uint32_t);
 #endif
+
+/**
+ * @brief Wifi power domain power on
+ */
+void esp_wifi_power_domain_on(void);
+
+/**
+ * @brief Wifi power domain power off
+ */
+void esp_wifi_power_domain_off(void);
 
 #if CONFIG_MAC_BB_PD
 /**
