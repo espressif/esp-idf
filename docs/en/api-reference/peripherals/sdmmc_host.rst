@@ -94,6 +94,9 @@ In the designs where communication at 40 MHz frequency can be achieved, it is po
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
     host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 
+If you need a specific frequency other than standard speeds, you are free to use any value from within appropriate range of the SD interface given (SDMMC or SDSPI). However, the real clock frequency shall be calculated by the underlying driver and the value can be different from the one required.
+For the SDMMC, ``max_freq_khz`` works as the upper limit so the final frequency value shall be always lower or equal. For the SDSPI, the nearest fitting frequency is supplied and thus the value can be greater than / equal to / lower than ``max_freq_khz``.
+
 To configure the bus width, set the ``width`` field of :cpp:class:`sdmmc_slot_config_t`. For example, to set 1-line mode::
 
     sdmmc_slot_config_t slot = SDMMC_SLOT_CONFIG_DEFAULT();

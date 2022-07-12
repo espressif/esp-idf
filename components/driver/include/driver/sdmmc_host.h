@@ -45,6 +45,7 @@ extern "C" {
     .io_int_enable = sdmmc_host_io_int_enable, \
     .io_int_wait = sdmmc_host_io_int_wait, \
     .command_timeout_ms = 0, \
+    .get_real_freq = &sdmmc_host_get_real_freq \
 }
 
 /**
@@ -258,6 +259,23 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
  *      - ESP_ERR_INVALID_STATE if sdmmc_host_init function has not been called
  */
 esp_err_t sdmmc_host_deinit(void);
+
+/**
+ * @brief Provides a real frequency used for an SD card installed on specific slot
+ * of SD/MMC host controller
+ *
+ * This function calculates real working frequency given by current SD/MMC host
+ * controller setup for required slot: it reads associated host and card dividers
+ * from corresponding SDMMC registers, calculates respective frequency and stores
+ * the value into the 'real_freq_khz' parameter
+ *
+ * @param slot slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param[out] real_freq_khz output parameter for the result frequency (in kHz)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG on real_freq_khz == NULL or invalid slot number used
+ */
+esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz);
 
 #ifdef __cplusplus
 }

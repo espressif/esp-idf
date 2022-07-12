@@ -132,6 +132,17 @@ static void probe_sd(int slot, int width, int freq_khz, int ddr)
     free(card);
     sd_test_board_power_off();
 }
+
+extern void sdmmc_host_get_clk_dividers(const int freq_khz, int *host_div, int *card_div);
+
+static void sd_test_check_clk_dividers(const int freq_khz, const int expected_host_div, const int expected_card_div)
+{
+    printf("    %6d      |         %2d        |         %2d\n", freq_khz, expected_host_div, expected_card_div);
+    int host_divider, card_divider;
+    sdmmc_host_get_clk_dividers(freq_khz, &host_divider, &card_divider);
+    TEST_ASSERT_EQUAL(host_divider, expected_host_div);
+    TEST_ASSERT_EQUAL(card_divider, expected_card_div);
+}
 #endif //WITH_SD_TEST || WITH_EMMC_TEST
 
 #if WITH_SD_TEST
@@ -140,6 +151,8 @@ TEST_CASE("probe SD, slot 1, 4-bit", "[sd][test_env=UT_T1_SDMODE]")
     probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_PROBING, 0);
     probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_DEFAULT, 0);
     probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_HIGHSPEED, 0);
+    //custom frequency test
+    probe_sd(SDMMC_HOST_SLOT_1, 4, 10000, 0);
 }
 
 TEST_CASE("probe SD, slot 1, 1-bit", "[sd][test_env=UT_T1_SDMODE]")
@@ -162,6 +175,21 @@ TEST_CASE("probe SD, slot 0, 1-bit", "[sd][ignore]")
     probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_PROBING, 0);
     probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_DEFAULT, 0);
     probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+TEST_CASE("SD clock dividers calculation", "[sd][test_env=UT_T1_SDMODE]")
+{
+    printf("Frequency (kHz) | Expected host.div | Expected card.div\n");
+    sd_test_check_clk_dividers(SDMMC_FREQ_PROBING, 10, 20);
+    sd_test_check_clk_dividers(SDMMC_FREQ_DEFAULT, 8, 0);
+    sd_test_check_clk_dividers(SDMMC_FREQ_HIGHSPEED, 4, 0);
+    sd_test_check_clk_dividers(36000, 5, 0);
+    sd_test_check_clk_dividers(30000, 6, 0);
+    sd_test_check_clk_dividers(16000, 10, 0);
+    sd_test_check_clk_dividers(10000, 2, 4);
+    sd_test_check_clk_dividers(6000, 2, 7);
+    sd_test_check_clk_dividers(1000, 2, 40);
+    sd_test_check_clk_dividers(600, 2, 67);
 }
 #endif //WITH_SD_TEST
 
@@ -218,10 +246,11 @@ static void test_sdspi_deinit_bus(spi_host_device_t host)
     TEST_ESP_OK(err);
 }
 
-static void probe_core(int slot)
+static void probe_core(int slot, int freq_khz)
 {
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = slot;
+    config.max_freq_khz = freq_khz;
 
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -242,7 +271,7 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    probe_core(handle);
+    probe_core(handle, freq_khz);
 
     TEST_ESP_OK(sdspi_host_deinit());
     test_sdspi_deinit_bus(dev_config.host_id);
@@ -253,6 +282,8 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
 TEST_CASE("probe SD in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
+    //custom frequency test
+    probe_spi(10000, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
 }
 
 // No runner for this

@@ -171,12 +171,47 @@ static void sdmmc_host_clock_update_command(int slot)
     }
 }
 
+void sdmmc_host_get_clk_dividers(const uint32_t freq_khz, int *host_div, int *card_div)
+{
+    // Calculate new dividers
+    if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
+        *host_div = 4;       // 160 MHz / 4 = 40 MHz
+        *card_div = 0;
+    } else if (freq_khz == SDMMC_FREQ_DEFAULT) {
+        *host_div = 8;       // 160 MHz / 8 = 20 MHz
+        *card_div = 0;
+    } else if (freq_khz == SDMMC_FREQ_PROBING) {
+        *host_div = 10;      // 160 MHz / 10 / (20 * 2) = 400 kHz
+        *card_div = 20;
+    } else {
+        /*
+         * for custom frequencies use maximum range of host divider (1-16), find the closest <= div. combination
+         * if exceeded, combine with the card divider to keep reasonable precision (applies mainly to low frequencies)
+         * effective frequency range: 400 kHz - 32 MHz (32.1 - 39.9 MHz cannot be covered with given divider scheme)
+         */
+        *host_div = (2 * APB_CLK_FREQ) / (freq_khz * 1000);
+        if (*host_div > 15 ) {
+            *host_div = 2;
+            *card_div = APB_CLK_FREQ / (2 * freq_khz * 1000);
+            if ( (APB_CLK_FREQ % (2 * freq_khz * 1000)) > 0 ) {
+                (*card_div)++;
+            }
+        } else if ( ((2 * APB_CLK_FREQ) % (freq_khz * 1000)) > 0 ) {
+            (*host_div)++;
+        }
+    }
+}
+
+static int sdmmc_host_calc_freq(const int host_div, const int card_div)
+{
+    return 2 * APB_CLK_FREQ / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
+}
+
 esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 {
     if (!(slot == 0 || slot == 1)) {
         return ESP_ERR_INVALID_ARG;
     }
-    const int clk40m = 40000;
 
     // Disable clock first
     SDMMC.clkena.cclk_enable &= ~BIT(slot);
@@ -184,25 +219,10 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
 
     int host_div = 0;   /* clock divider of the host (SDMMC.clock) */
     int card_div = 0;   /* 1/2 of card clock divider (SDMMC.clkdiv) */
+    sdmmc_host_get_clk_dividers(freq_khz, &host_div, &card_div);
 
-    // Calculate new dividers
-    if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
-        host_div = 4;       // 160 MHz / 4 = 40 MHz
-        card_div = 0;
-    } else if (freq_khz == SDMMC_FREQ_DEFAULT) {
-        host_div = 8;       // 160 MHz / 8 = 20 MHz
-        card_div = 0;
-    } else if (freq_khz == SDMMC_FREQ_PROBING) {
-        host_div = 10;      // 160 MHz / 10 / (20 * 2) = 400 kHz
-        card_div = 20;
-    } else {
-        host_div = 2;
-        card_div = (clk40m + freq_khz * 2 - 1) / (freq_khz * 2); // round up
-    }
-
-    ESP_LOGD(TAG, "slot=%d host_div=%d card_div=%d freq=%dkHz",
-            slot, host_div, card_div,
-            2 * APB_CLK_FREQ / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000);
+    int real_freq = sdmmc_host_calc_freq(host_div, card_div);
+    ESP_LOGD(TAG, "slot=%d host_div=%d card_div=%d freq=%dkHz (max %" PRIu32 "kHz)", slot, host_div, card_div, real_freq, freq_khz);
 
     // Program CLKDIV and CLKSRC, send them to the CIU
     switch(slot) {
@@ -233,6 +253,22 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
     SDMMC.tmout.data = data_timeout_cycles;
     // always set response timeout to highest value, it's small enough anyway
     SDMMC.tmout.response = 255;
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_host_get_real_freq(int slot, int* real_freq_khz)
+{
+    if (real_freq_khz == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!(slot == 0 || slot == 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int host_div = SDMMC.clock.div_factor_p + 1;
+    int card_div = slot == 0 ? SDMMC.clkdiv.div0 : SDMMC.clkdiv.div1;
+    *real_freq_khz = sdmmc_host_calc_freq(host_div, card_div);
+
     return ESP_OK;
 }
 

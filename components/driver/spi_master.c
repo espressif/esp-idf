@@ -462,6 +462,19 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     return ESP_OK;
 }
 
+esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int* freq_khz)
+{
+    if ((spi_device_t*)handle == NULL || freq_khz == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int dev_required_freq = ((spi_device_t*)handle)->cfg.clock_speed_hz;
+    int dev_duty_cycle = ((spi_device_t*)handle)->cfg.duty_cycle_pos;
+    *freq_khz = spi_get_actual_clock(esp_clk_apb_freq(), dev_required_freq, dev_duty_cycle);
+
+    return ESP_OK;
+}
+
 int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
 {
     return spi_hal_master_cal_clock(fapb, hz, duty_cycle);
