@@ -119,7 +119,7 @@ def calc_all_sha256(dut: Dut) -> Tuple[str, str]:
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_ota
-@pytest.mark.xfail(run=False)
+@pytest.mark.nightly_run
 def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
     """
     steps: |
@@ -233,9 +233,9 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(dut: Dut) ->
 
 @pytest.mark.esp32c3
 @pytest.mark.flash_encryption_wifi_ota
+@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', ['flash_enc_wifi',], indirect=True)
 @pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
-@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Dut) -> None:
     """
     steps: |

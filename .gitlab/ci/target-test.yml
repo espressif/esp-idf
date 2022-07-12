@@ -83,7 +83,7 @@ example_test_pytest_esp32c3_flash_suspend:
 example_test_pytest_esp32_ethernet_ota:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-ota-related_changes
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet_ota ]
@@ -91,7 +91,7 @@ example_test_pytest_esp32_ethernet_ota:
 example_test_pytest_esp32_wifi_ota:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-ota-related_changes-include_nightly_run
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_ota ]
@@ -99,7 +99,7 @@ example_test_pytest_esp32_wifi_ota:
 example_test_pytest_esp32_flash_encryption_ota:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-ota-related_changes
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, flash_encryption_ota ]
@@ -107,7 +107,7 @@ example_test_pytest_esp32_flash_encryption_ota:
 example_test_pytest_esp32c3_flash_encryption_wifi_ota:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c3
+    - .rules:test:example_test-esp32c3-ota-related_changes-include_nightly_run
   needs:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption_wifi_ota ]
@@ -131,7 +131,7 @@ example_test_pytest_esp32_8mb_flash:
 example_test_pytest_esp32_wifi:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-wifi-related_changes
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi ]
@@ -467,7 +467,9 @@ example_test_004B:
     - Example_TWAI2
 
 example_test_005:
-  extends: .example_test_esp32_template
+  extends:
+    - .example_test_esp32_template
+    - .rules:test:example_test-esp32-bt-related_changes
   tags:
     - ESP32
     - Example_WIFI_BT

@@ -11,7 +11,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.wifi
+@pytest.mark.generic
 def test_otatool_example(dut: Dut) -> None:
     # Verify factory firmware
     dut.expect('OTA Tool Example')

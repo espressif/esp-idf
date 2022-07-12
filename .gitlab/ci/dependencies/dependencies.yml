@@ -156,6 +156,40 @@ build:integration_test:
     - "build:component_ut-{0}"
     - build:target_test
 
+# To reduce the runner usage.
+# Do not create these jobs by default labels on development branches
+# Only triggered by `target_test` or related_changes changes
+"test:example_test-{0}-{1}-related_changes":
+  matrix:
+    - *all_targets
+    - - ota
+      - bt
+      - wifi
+  patterns:
+    - "example_test-related_changes-{1}"
+  labels:
+    - target_test
+  included_in:
+    - "build:example_test-{0}"
+    - "build:example_test"
+    - build:target_test
+
+# Include nightly_run cases for ota
+"test:example_test-{0}-ota-related_changes-include_nightly_run":
+  matrix:
+    - - esp32
+      - esp32c3
+  specific_rules:
+    - "if-include_nightly_run-rule"
+    - "if-example_test-related_changes-ota-rule"
+  labels:
+    - target_test
+  included_in:
+    - "build:example_test-{0}"
+    - "build:example_test"
+    - build:target_test
+
+
 # due to the lack of runners, c2 tests will only be triggered by label
 "test:{0}-esp32c2":
   matrix:
