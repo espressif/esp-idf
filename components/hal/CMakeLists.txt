@@ -85,6 +85,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "emac_hal.c")
     endif()
 
+    if(CONFIG_SOC_ETM_SUPPORTED)
+        list(APPEND srcs "etm_hal.c")
+    endif()
+
     if(CONFIG_SOC_ADC_DMA_SUPPORTED)
         list(APPEND srcs "adc_hal.c")
     endif()

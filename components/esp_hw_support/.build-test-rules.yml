@@ -5,3 +5,7 @@ components/esp_hw_support/test_apps/dma:
     - if: IDF_TARGET in ["esp32"]
       temporary: false
       reason: Neither GDMA nor CPDMA is supported on ESP32
+
+components/esp_hw_support/test_apps/etm:
+  disable:
+    - if: SOC_ETM_SUPPORTED != 1
