@@ -7,11 +7,14 @@
   tags:
     - host_test
   dependencies: []
+  # run host_test jobs immediately, only after upload cache
   needs:
-    - job: upload-pip-cache-shiny
-      optional: true  # run host_test jobs immediately, only after upload cache
-    - job: upload-pip-cache-brew
-      optional: true  # run host_test jobs immediately, only after upload cache
+    - job: upload-pip-cache
+      optional: true
+      artifacts: false
+    - job: upload-submodules-cache
+      optional: true
+      artifacts: false
 
 test_nvs_on_host:
   extends: .host_test_template

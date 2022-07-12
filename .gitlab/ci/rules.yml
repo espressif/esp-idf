@@ -194,6 +194,7 @@
   - "components/tinyusb/tinyusb"
   - "components/unity/unity"
   - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
+  - ".gitmodules"
 
 .patterns-example_test-related_changes-ota: &patterns-example_test-related_changes-ota
   - "examples/system/ota/**/*"
@@ -269,6 +270,11 @@
   rules:
     - <<: *if-dev-push
       changes: *patterns-python-cache
+
+.rules:patterns:submodule:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-submodule
 
 .rules:dev:
   rules:

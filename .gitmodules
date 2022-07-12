@@ -5,7 +5,7 @@
 
 [submodule "components/bt/controller/lib_esp32"]
 	path = components/bt/controller/lib_esp32
-        url = ../../espressif/esp32-bt-lib.git
+	url = ../../espressif/esp32-bt-lib.git
 
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
