@@ -51,6 +51,10 @@ config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
 
+config SOC_RTC_MEM_SUPPORTED
+    bool
+    default y
+
 config SOC_I2S_SUPPORTED
     bool
     default y
