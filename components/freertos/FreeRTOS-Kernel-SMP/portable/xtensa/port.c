@@ -75,6 +75,16 @@ Variables used by IDF critical sections only (SMP tracks critical nesting inside
 BaseType_t port_uxCriticalNestingIDF[portNUM_PROCESSORS] = {0};
 BaseType_t port_uxCriticalOldInterruptStateIDF[portNUM_PROCESSORS] = {0};
 
+/*
+*******************************************************************************
+* Interrupt stack. The size of the interrupt stack is determined by the config
+* parameter "configISR_STACK_SIZE" in FreeRTOSConfig.h
+*******************************************************************************
+*/
+volatile StackType_t DRAM_ATTR __attribute__((aligned(16))) port_IntStack[portNUM_PROCESSORS][configISR_STACK_SIZE];
+/* One flag for each individual CPU. */
+volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
+
 BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout)
 {
     /* Interrupts may already be disabled (if this function is called in nested
