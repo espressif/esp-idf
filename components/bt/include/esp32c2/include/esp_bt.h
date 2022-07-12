@@ -118,7 +118,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
 
-#define CONFIG_VERSION  0x20220105
+#define CONFIG_VERSION  0x20220729
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -173,6 +173,7 @@ typedef struct {
     uint8_t coex_phy_coded_tx_rx_time_limit;
     uint8_t dis_scan_backoff;
     uint8_t esp_scan_filter_en;
+    uint8_t main_xtal_freq;
     uint32_t config_magic;
 } esp_bt_controller_config_t;
 
@@ -223,6 +224,7 @@ typedef struct {
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
     .esp_scan_filter_en         = 0,                                                    \
+    .main_xtal_freq             = CONFIG_ESP32C2_XTAL_FREQ,                             \
     .config_magic = CONFIG_MAGIC,                                                       \
 };
 
