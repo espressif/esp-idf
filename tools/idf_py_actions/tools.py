@@ -172,7 +172,7 @@ class RunTool:
             pass
         # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
         # limit was added for avoiding error in idf.py confserver
-        p = await asyncio.create_subprocess_exec(*cmd, env=env_copy, limit=1024 * 128, cwd=self.cwd, stdout=asyncio.subprocess.PIPE,
+        p = await asyncio.create_subprocess_exec(*cmd, env=env_copy, limit=1024 * 256, cwd=self.cwd, stdout=asyncio.subprocess.PIPE,
                                                  stderr=asyncio.subprocess.PIPE, )
         stderr_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stderr_output_{p.pid}')
         stdout_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stdout_output_{p.pid}')
