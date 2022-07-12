@@ -41,7 +41,7 @@ if(CONFIG_TINYUSB)
         )
 
     list(APPEND srcs
-        "tinyusb/src/portable/espressif/${tusb_family}/dcd_${tusb_family}.c"
+        "additions/src/portable/espressif/${tusb_family}/dcd_${tusb_family}.c"
         "tinyusb/src/class/cdc/cdc_device.c"
         "tinyusb/src/class/hid/hid_device.c"
         "tinyusb/src/class/midi/midi_device.c"
