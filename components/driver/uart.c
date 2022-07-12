@@ -15,6 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
+#include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "hal/clk_tree_ll.h"
@@ -65,12 +66,12 @@ static const char *UART_TAG = "uart";
 #endif
 
 
-#define UART_ENTER_CRITICAL_SAFE(mux)   portENTER_CRITICAL_SAFE(mux)
-#define UART_EXIT_CRITICAL_SAFE(mux)    portEXIT_CRITICAL_SAFE(mux)
-#define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
-#define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
-#define UART_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
-#define UART_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
+#define UART_ENTER_CRITICAL_SAFE(spinlock)   esp_os_enter_critical_safe(spinlock)
+#define UART_EXIT_CRITICAL_SAFE(spinlock)    esp_os_exit_critical_safe(spinlock)
+#define UART_ENTER_CRITICAL_ISR(spinlock)    esp_os_enter_critical_isr(spinlock)
+#define UART_EXIT_CRITICAL_ISR(spinlock)     esp_os_exit_critical_isr(spinlock)
+#define UART_ENTER_CRITICAL(spinlock)        esp_os_enter_critical(spinlock)
+#define UART_EXIT_CRITICAL(spinlock)         esp_os_exit_critical(spinlock)
 
 
 // Check actual UART mode set
@@ -78,7 +79,7 @@ static const char *UART_TAG = "uart";
 
 #define UART_CONTEX_INIT_DEF(uart_num) {\
     .hal.dev = UART_LL_GET_HW(uart_num),\
-    .spinlock = portMUX_INITIALIZER_UNLOCKED,\
+    INIT_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)\
     .hw_enabled = false,\
 }
 
@@ -150,7 +151,7 @@ typedef struct {
 
 typedef struct {
     uart_hal_context_t hal;        /*!< UART hal context*/
-    portMUX_TYPE spinlock;
+    DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)
     bool hw_enabled;
 } uart_context_t;
 
