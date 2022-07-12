@@ -73,6 +73,7 @@ static struct {
     struct arg_int *data_size;
     struct arg_int *count;
     struct arg_int *tos;
+    struct arg_int *ttl;
     struct arg_str *host;
     struct arg_end *end;
 } ping_args;
@@ -105,6 +106,10 @@ static int do_ping_cmd(int argc, char **argv)
 
     if (ping_args.tos->count > 0) {
         config.tos = (uint32_t)(ping_args.tos->ival[0]);
+    }
+
+    if (ping_args.ttl->count > 0) {
+        config.ttl = (uint32_t)(ping_args.ttl->ival[0]);
     }
 
     // parse IP address
@@ -156,6 +161,7 @@ static void register_ping(void)
     ping_args.data_size = arg_int0("s", "size", "<n>", "Specify the number of data bytes to be sent");
     ping_args.count = arg_int0("c", "count", "<n>", "Stop after sending count packets");
     ping_args.tos = arg_int0("Q", "tos", "<n>", "Set Type of Service related bits in IP datagrams");
+    ping_args.ttl = arg_int0("T", "ttl", "<n>", "Set Time to Live related bits in IP datagrams");
     ping_args.host = arg_str1(NULL, NULL, "<host>", "Host address");
     ping_args.end = arg_end(1);
     const esp_console_cmd_t ping_cmd = {

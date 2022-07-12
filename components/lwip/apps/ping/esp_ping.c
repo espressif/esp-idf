@@ -25,6 +25,7 @@ typedef struct _ping_option {
     size_t ping_data_len;
     uint16_t ping_id;
     u8_t ping_tos;
+    u8_t ping_ttl;
     esp_ping_found_fn ping_res_fn;
     esp_ping_found    ping_res;
     void    *ping_reserve;

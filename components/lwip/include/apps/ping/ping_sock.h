@@ -67,7 +67,8 @@ typedef struct {
     uint32_t interval_ms;     /*!< Milliseconds between each ping procedure */
     uint32_t timeout_ms;      /*!< Timeout value (in milliseconds) of each ping procedure */
     uint32_t data_size;       /*!< Size of the data next to ICMP packet header */
-    uint8_t tos;              /*!< Type of Service, a field specified in the IP header */
+    int tos;                  /*!< Type of Service, a field specified in the IP header */
+    int ttl;                  /*!< Time to Live,a field specified in the IP header */
     ip_addr_t target_addr;    /*!< Target IP address, either IPv4 or IPv6 */
     uint32_t task_stack_size; /*!< Stack size of internal ping task */
     uint32_t task_prio;       /*!< Priority of internal ping task */
@@ -85,6 +86,7 @@ typedef struct {
         .timeout_ms = 1000,              \
         .data_size = 64,                 \
         .tos = 0,                        \
+        .ttl = IP_DEFAULT_TTL,           \
         .target_addr = *(IP_ANY_TYPE),   \
         .task_stack_size = 2048,         \
         .task_prio = 2,                  \
@@ -99,6 +101,7 @@ typedef struct {
 */
 typedef enum {
     ESP_PING_PROF_SEQNO,   /*!< Sequence number of a ping procedure */
+    ESP_PING_PROF_TOS,     /*!< Type of service of a ping procedure */
     ESP_PING_PROF_TTL,     /*!< Time to live of a ping procedure */
     ESP_PING_PROF_REQUEST, /*!< Number of request packets sent out */
     ESP_PING_PROF_REPLY,   /*!< Number of reply packets received */

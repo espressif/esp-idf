@@ -12,6 +12,7 @@ In order to create UDP client that communicates with UDP server example, choose 
 There are many host-side tools which can be used to interact with the UDP/TCP server/client. 
 One command line tool is [netcat](http://netcat.sourceforge.net) which can send and receive many kinds of packets. 
 Note: please replace `192.168.0.167 3333` with desired IPV4/IPV6 address (displayed in monitor console) and port number in the following commands.
+If want to use this RECVINFO function, please enable LWIP_NETBUF_RECVINFO in menuconfig,this function can only resolve the destination address of IPV4.
 
 In addition to those tools, simple Python scripts can be found under sockets/scripts directory. Every script is designed to interact with one of the examples.
 
