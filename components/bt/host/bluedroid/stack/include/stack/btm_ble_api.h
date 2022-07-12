@@ -702,6 +702,7 @@ typedef void (tBTM_BLE_PF_PARAM_CBACK) (tBTM_BLE_PF_ACTION action_type,
                                         tBTM_BLE_REF_VALUE ref_value, tBTM_STATUS status);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define MAX_BLE_ADV_INSTANCE 10
+#define MIN_BLE_PERIODIC_ADV_REPORT_LEN 7
 typedef struct {
     UINT8                       inst_id;
     BOOLEAN                     configured;
