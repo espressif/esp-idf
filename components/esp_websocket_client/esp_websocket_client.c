@@ -100,6 +100,7 @@ typedef enum {
 struct esp_websocket_client {
     esp_event_loop_handle_t     event_handle;
     TaskHandle_t                task_handle;
+    esp_websocket_error_codes_t error_handle;
     esp_transport_list_handle_t transport_list;
     esp_transport_handle_t      transport;
     websocket_config_storage_t *config;
@@ -144,6 +145,7 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
     event_data.op_code = client->last_opcode;
     event_data.payload_len = client->payload_len;
     event_data.payload_offset = client->payload_offset;
+    memcpy(&event_data.error_handle, &client->error_handle, sizeof(event_data.error_handle));
 
     if ((err = esp_event_post_to(client->event_handle,
                                  WEBSOCKET_EVENTS, event,
@@ -155,7 +157,7 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
     return esp_event_loop_run(client->event_handle, 0);
 }
 
-static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_handle_t client)
+static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_handle_t client, esp_websocket_error_type_t error_type)
 {
     ESP_WS_CLIENT_STATE_CHECK(TAG, client, return ESP_FAIL);
     esp_transport_close(client->transport);
@@ -165,6 +167,19 @@ static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_hand
         client->reconnect_tick_ms = _tick_get_ms();
         ESP_LOGI(TAG, "Reconnect after %d ms", client->wait_timeout_ms);
     }
+
+    if (error_type == WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT)
+    {
+        client->error_handle.esp_tls_last_esp_err =
+            esp_tls_get_and_clear_last_error(esp_transport_get_error_handle(client->transport),
+                                             &client->error_handle.esp_tls_stack_err,
+                                             &client->error_handle.esp_tls_cert_verify_flags);
+        client->error_handle.esp_transport_sock_errno = esp_transport_get_errno(client->transport);
+    }
+
+    client->error_handle.error_type = error_type;
+    esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_ERROR, NULL, 0);
+
     client->state = WEBSOCKET_STATE_WAIT_TIMEOUT;
     esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_DISCONNECTED, NULL, 0);
     return ESP_OK;
@@ -534,6 +549,19 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
     return ESP_OK;
 }
 
+esp_err_t esp_websocket_client_set_headers(esp_websocket_client_handle_t client, const char *headers)
+{
+    if (client == NULL || headers == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    xSemaphoreTakeRecursive(client->lock, portMAX_DELAY);
+    esp_err_t ret = esp_transport_ws_set_headers(client->transport, headers);
+    xSemaphoreGiveRecursive(client->lock);
+
+    return ret;
+}
+
 static esp_err_t esp_websocket_client_recv(esp_websocket_client_handle_t client)
 {
     int rlen;
@@ -610,12 +638,23 @@ static void esp_websocket_client_task(void *pv)
                     client->run = false;
                     break;
                 }
+
+                esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_BEFORE_CONNECT, NULL, 0);
+
                 if (esp_transport_connect(client->transport,
                                           client->config->host,
                                           client->config->port,
                                           client->config->network_timeout_ms) < 0) {
                     ESP_LOGE(TAG, "Error transport connect");
-                    esp_websocket_client_abort_connection(client);
+
+                    int status = esp_transport_ws_get_http_status_code(client->transport);
+                    if (status > 0) {
+                        client->error_handle.esp_ws_handshake_status_code = status;
+                        esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_HANDSHAKE);
+                    } else {
+                        esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
+                    }
+
                     break;
                 }
                 ESP_LOGD(TAG, "Transport connected to %s://%s:%d", client->config->scheme, client->config->host, client->config->port);
@@ -642,7 +681,7 @@ static void esp_websocket_client_task(void *pv)
                     if ( _tick_get_ms() - client->pingpong_tick_ms > client->config->pingpong_timeout_sec*1000 ) {
                         if (client->wait_for_pong_resp) {
                             ESP_LOGE(TAG, "Error, no PONG received for more than %d seconds after PING", client->config->pingpong_timeout_sec);
-                            esp_websocket_client_abort_connection(client);
+                            esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_PONG_TIMEOUT);
                             break;
                         }
                     }
@@ -656,7 +695,7 @@ static void esp_websocket_client_task(void *pv)
 
                 if (esp_websocket_client_recv(client) == ESP_FAIL) {
                     ESP_LOGE(TAG, "Error receive data");
-                    esp_websocket_client_abort_connection(client);
+                    esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
                     break;
                 }
                 break;
@@ -689,7 +728,7 @@ static void esp_websocket_client_task(void *pv)
             read_select = esp_transport_poll_read(client->transport, 1000); //Poll every 1000ms
             if (read_select < 0) {
                 ESP_LOGE(TAG, "Network error: esp_transport_poll_read() returned %d, errno=%d", read_select, errno);
-                esp_websocket_client_abort_connection(client);
+                esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
             }
         } else if (WEBSOCKET_STATE_WAIT_TIMEOUT == client->state) {
             // waiting for reconnecting...
@@ -879,7 +918,7 @@ static int esp_websocket_client_send_with_opcode(esp_websocket_client_handle_t c
         if (wlen < 0 || (wlen == 0 && need_write != 0)) {
             ret = wlen;
             ESP_LOGE(TAG, "Network error: esp_transport_write() returned %d, errno=%d", ret, errno);
-            esp_websocket_client_abort_connection(client);
+            esp_websocket_client_abort_connection(client, WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT);
             goto unlock_and_return;
         }
         current_opcode = 0;

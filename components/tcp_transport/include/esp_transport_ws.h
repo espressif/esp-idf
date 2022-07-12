@@ -127,6 +127,16 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
 int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms);
 
 /**
+ * @brief               Returns the HTTP status code of the websocket handshake
+ *
+ * @param t             websocket transport handle
+ *
+ * @return
+ *      - HTTP status code
+ */
+int esp_transport_ws_get_http_status_code(esp_transport_handle_t t);
+
+/**
  * @brief               Returns websocket op-code for last received data
  *
  * @param t             websocket transport handle

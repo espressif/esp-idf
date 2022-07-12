@@ -42,8 +42,34 @@ typedef enum {
     WEBSOCKET_EVENT_DISCONNECTED,   /*!< The connection has been disconnected */
     WEBSOCKET_EVENT_DATA,           /*!< When receiving data from the server, possibly multiple portions of the packet */
     WEBSOCKET_EVENT_CLOSED,         /*!< The connection has been closed cleanly */
+    WEBSOCKET_EVENT_BEFORE_CONNECT, /*!< The event occurs before connecting */
     WEBSOCKET_EVENT_MAX
 } esp_websocket_event_id_t;
+
+/**
+ * @brief Websocket connection error codes propagated via ERROR event
+ */
+typedef enum {
+    WEBSOCKET_ERROR_TYPE_NONE = 0,
+    WEBSOCKET_ERROR_TYPE_TCP_TRANSPORT,
+    WEBSOCKET_ERROR_TYPE_PONG_TIMEOUT,
+    WEBSOCKET_ERROR_TYPE_HANDSHAKE
+} esp_websocket_error_type_t;
+
+/**
+ * @brief Websocket error code structure to be passed as a contextual information into ERROR event
+ */
+typedef struct {
+    /* compatible portion of the struct corresponding to struct esp_tls_last_error */
+    esp_err_t esp_tls_last_esp_err;             /*!< last esp_err code reported from esp-tls component */
+    int       esp_tls_stack_err;                /*!< tls specific error code reported from underlying tls stack */
+    int       esp_tls_cert_verify_flags;        /*!< tls flags reported from underlying tls stack during certificate verification */
+    /* esp-websocket specific structure extension */
+    esp_websocket_error_type_t error_type;
+    int esp_ws_handshake_status_code;           /*!< http status code of the websocket upgrade handshake */
+    /* tcp_transport extension */
+    int       esp_transport_sock_errno;         /*!< errno from the underlying socket */
+} esp_websocket_error_codes_t;
 
 /**
  * @brief Websocket event data
@@ -56,6 +82,7 @@ typedef struct {
     void *user_context;                     /*!< user_data context, from esp_websocket_client_config_t user_data */
     int payload_len;                        /*!< Total payload length, payloads exceeding buffer will be posted through multiple events */
     int payload_offset;                     /*!< Actual offset for the data associated with this event */
+    esp_websocket_error_codes_t error_handle; /*!< esp-websocket error handle including esp-tls errors as well as internal websocket errors */
 } esp_websocket_event_data_t;
 
 /**
@@ -128,6 +155,17 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
  * @return     esp_err_t
  */
 esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, const char *uri);
+
+/**
+ * @brief      Set additional websocket headers for client, when performing this behavior, the headers will replace the old ones
+ *             Must stop the WebSocket client before set headers if the client has been connected
+ *
+ * @param[in]  client  The client
+ * @param[in]  uri     The uri
+ *
+ * @return     esp_err_t
+ */
+esp_err_t esp_websocket_client_set_headers(esp_websocket_client_handle_t client, const char *headers);
 
 /**
  * @brief      Open the WebSocket connection
