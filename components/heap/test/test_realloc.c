@@ -51,14 +51,12 @@ TEST_CASE("realloc move data to a new heap type", "[heap]")
     // move data from 'a' to IRAM
     char *b = heap_caps_realloc(a, 64, MALLOC_CAP_EXEC);
     TEST_ASSERT_NOT_NULL(b);
-    TEST_ASSERT_NOT_EQUAL(a, b);
     TEST_ASSERT(heap_caps_check_integrity(MALLOC_CAP_INVALID, true));
     TEST_ASSERT_EQUAL_HEX32_ARRAY(buf, b, 64 / sizeof(uint32_t));
 
     // Move data back to DRAM
     char *c = heap_caps_realloc(b, 48, MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(c);
-    TEST_ASSERT_NOT_EQUAL(b, c);
     TEST_ASSERT(heap_caps_check_integrity(MALLOC_CAP_INVALID, true));
     TEST_ASSERT_EQUAL_HEX8_ARRAY(buf, c, 48);
 
