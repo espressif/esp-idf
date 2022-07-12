@@ -348,7 +348,7 @@ config BTDM_SCAN_DUPL_CACHE_SIZE
     int "Maximum number of devices in scan duplicate filter"
     depends on BTDM_BLE_SCAN_DUPL
     range 10 1000
-    default 200
+    default 100
     help
         Maximum number of devices which can be recorded in scan duplicate filter.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
@@ -364,7 +364,7 @@ config BTDM_MESH_DUPL_SCAN_CACHE_SIZE
     int "Maximum number of Mesh adv packets in scan duplicate filter"
     depends on BTDM_BLE_MESH_SCAN_DUPL_EN
     range 10 1000
-    default 200
+    default 100
     help
         Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
