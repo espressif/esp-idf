@@ -1,0 +1,15 @@
+choice ESP32C6_REV_MIN
+    prompt "Minimum Supported ESP32-C6 Revision"
+    default ESP32C6_REV_MIN_0
+    help
+        Minimum revision that ESP-IDF would support.
+
+        Only supporting higher chip revisions can reduce binary size.
+
+    config ESP32C6_REV_MIN_0
+        bool "Rev 0"
+endchoice
+
+config ESP32C6_REV_MIN
+    int
+    default 0 if ESP32C6_REV_MIN_0

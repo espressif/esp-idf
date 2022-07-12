@@ -27,6 +27,12 @@
 #endif
 #include "sys/queue.h"
 
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+static const char *TAG = "rtc_module";
+#endif
+
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+
 #define NOT_REGISTERED      (-1)
 
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -90,9 +96,14 @@ out:
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return err;
 }
+#endif // !CONFIG_IDF_TARGET_ESP32C6 TODO: IDF-5645
 
 esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t rtc_intr_mask, uint32_t flags)
 {
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+    ESP_LOGW(TAG, "rtc_isr_register() has not been implemented yet");
+    return ESP_OK;
+#else
     esp_err_t err = rtc_isr_ensure_installed();
     if (err != ESP_OK) {
         return err;
@@ -115,10 +126,15 @@ esp_err_t rtc_isr_register(intr_handler_t handler, void* handler_arg, uint32_t r
     SLIST_INSERT_HEAD(&s_rtc_isr_handler_list, item, next);
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return ESP_OK;
+#endif
 }
 
 esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
 {
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
+    ESP_LOGW(TAG, "rtc_isr_deregister() has not been implemented yet");
+    return ESP_OK;
+#else
     rtc_isr_handler_t* it;
     rtc_isr_handler_t* prev = NULL;
     bool found = false;
@@ -141,8 +157,10 @@ esp_err_t rtc_isr_deregister(intr_handler_t handler, void* handler_arg)
     }
     portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
     return found ? ESP_OK : ESP_ERR_INVALID_STATE;
+#endif
 }
 
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
 /**
  * @brief This helper function can be used to avoid the interrupt to be triggered with cache disabled.
  *        There are lots of different signals on RTC module (i.e. sleep_wakeup, wdt, brownout_detect, etc.)
@@ -160,19 +178,25 @@ static void s_rtc_isr_noniram_hook_relieve(uint32_t rtc_intr_mask)
 {
     rtc_intr_cache &= ~rtc_intr_mask;
 }
+#endif
+
 
 IRAM_ATTR void rtc_isr_noniram_disable(uint32_t cpu)
 {
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
     if (rtc_isr_cpu == cpu) {
         rtc_intr_enabled |= RTCCNTL.int_ena.val;
         RTCCNTL.int_ena.val &= rtc_intr_cache;
     }
+#endif
 }
 
 IRAM_ATTR void rtc_isr_noniram_enable(uint32_t cpu)
 {
+#if !CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5645
     if (rtc_isr_cpu == cpu) {
         RTCCNTL.int_ena.val = rtc_intr_enabled;
         rtc_intr_enabled = 0;
     }
+#endif
 }

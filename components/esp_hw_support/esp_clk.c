@@ -35,6 +35,9 @@
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/rtc.h"
 #include "esp32c2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp32c6/rom/rtc.h"
+#include "esp32c6/rtc.h"
 #endif
 
 #define MHZ (1000000)
@@ -76,7 +79,7 @@ int IRAM_ATTR esp_clk_xtal_freq(void)
     return rtc_clk_xtal_freq_get() * MHZ;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESPS3
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
     /* Update scale factors used by esp_rom_delay_us */
