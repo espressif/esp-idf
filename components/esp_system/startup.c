@@ -459,7 +459,11 @@ static void start_cpu0_default(void)
 
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+#if CONFIG_IDF_TARGET_ESP32C6 // TODO: IDF-5653
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+#else
     wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+#endif
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
     wdt_hal_disable(&rtc_wdt_ctx);
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);

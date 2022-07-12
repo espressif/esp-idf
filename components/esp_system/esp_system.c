@@ -11,7 +11,6 @@
 #include "freertos/task.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "esp_private/panic_internal.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
