@@ -193,7 +193,6 @@
   - "components/spiffs/spiffs"
   - "components/tinyusb/tinyusb"
   - "components/unity/unity"
-  - "examples/build_system/cmake/import_lib/main/lib/tinyxml2"
   - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
 
 .patterns-example_test-related_changes-ota: &patterns-example_test-related_changes-ota
