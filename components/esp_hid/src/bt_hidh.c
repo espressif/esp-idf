@@ -803,8 +803,13 @@ static esp_err_t esp_bt_hidh_dev_report_write(esp_hidh_dev_t *dev, size_t map_in
             data = p_data;
             len = len + 1;
         }
+
         ret = esp_bt_hid_host_send_data(dev->bda, data, len);
+        if (p_data) {
+            free(p_data);
+        }
     } while (0);
+
     return ret;
 }
 
@@ -845,11 +850,17 @@ static esp_err_t esp_bt_hidh_dev_set_report(esp_hidh_dev_t *dev, size_t map_inde
             data = p_data;
             len = len + 1;
         }
+
         ret = esp_bt_hid_host_set_report(dev->bda, report_type, data, len);
+        if (p_data) {
+            free(p_data);
+        }
+
         if (ret == ESP_OK) {
             set_trans(dev, ESP_HID_TRANS_SET_REPORT);
         }
     } while (0);
+
     return ret;
 }
 
