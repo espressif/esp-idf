@@ -22,6 +22,7 @@ tools/ci/executable-list.txt
 tools/ci/fix_empty_prototypes.sh
 tools/ci/get-full-sources.sh
 tools/ci/idf_ci_utils.py
+tools/ci/ignore_build_warnings.txt
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/mypy_ignore_list.txt

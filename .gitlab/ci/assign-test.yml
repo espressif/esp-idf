@@ -7,12 +7,12 @@
     SUBMODULES_TO_FETCH: "none"
   artifacts:
     paths:
-      - ${TEST_DIR}/test_configs
-      - ${BUILD_DIR}/artifact_index.json
+      - ${TEST_DIR}/test_configs/
+      - artifact_index.json
     when: always
     expire_in: 1 week
   script:
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py $TEST_TYPE $TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_DIR/test_configs
+    - run_cmd python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py $TEST_TYPE $TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_DIR/test_configs
 
 assign_example_test:
   extends:
@@ -36,8 +36,7 @@ assign_example_test:
       optional: true
   variables:
     TEST_TYPE: example_test
-    TEST_DIR: ${CI_PROJECT_DIR}/examples
-    BUILD_DIR: ${CI_PROJECT_DIR}/build_examples
+    TEST_DIR: examples
 
 assign_custom_test:
   extends:
@@ -61,8 +60,7 @@ assign_custom_test:
       optional: true
   variables:
     TEST_TYPE: custom_test
-    TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
-    BUILD_DIR: ${CI_PROJECT_DIR}/build_test_apps
+    TEST_DIR: tools/test_apps
 
 assign_unit_test:
   extends:
@@ -81,10 +79,7 @@ assign_unit_test:
       optional: true
   variables:
     TEST_TYPE: unit_test
-    TEST_DIR: ${CI_PROJECT_DIR}/components/idf_test/unit_test
-    BUILD_DIR: ${CI_PROJECT_DIR}/tools/unit-test-app/builds
-  script:
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py $TEST_TYPE $TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_DIR/test_configs
+    TEST_DIR: components/idf_test/unit_test
 
 assign_integration_test:
   extends:

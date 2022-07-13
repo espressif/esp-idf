@@ -1,0 +1,17 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/openthread/ot_br:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/openthread/ot_cli:
+  enable:
+    - if: IDF_TARGET == "esp32h2"
+      reason: only test on esp32h2
+
+examples/openthread/ot_rcp:
+  enable:
+    - if: IDF_TARGET == "esp32h2"
+      reason: only test on esp32h2

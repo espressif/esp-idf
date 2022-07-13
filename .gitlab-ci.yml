@@ -56,6 +56,9 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
   PYTHON_VER: 3.7.10
 
+  CLANG_TIDY_RUNNER_PROJ: 2107  # idf/clang-tidy-runner
+  IDF_BUILD_APPS_PROJ: 2818  # fuhanxi/idf-build-apps
+
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
 
@@ -213,9 +216,27 @@ before_script:
     - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
     # TODO: remove this, IDFCI-1207
     - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+    - eval "$($IDF_PATH/tools/idf_tools.py export)"  # use idf venv instead
+
+.before_script_build_jobs:
+  before_script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - source tools/ci/setup_python.sh
+    - add_gitlab_ssh_keys
+    - source tools/ci/configure_ci_environment.sh
+    - *setup_tools_unless_target_test
+    - fetch_submodules
+    - *download_test_python_contraint_file
+    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
+    # TODO: remove this, IDFCI-1207
+    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+    - eval "$($IDF_PATH/tools/idf_tools.py export)"  # use idf venv instead
+    # not only need pytest related packages, but also needs ttfw requirements
+    - internal_pip_install $IDF_BUILD_APPS_PROJ idf_build_apps
+    - pip install -r tools/ci/python_packages/ttfw_idf/requirements.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    - eval "$($IDF_PATH/tools/idf_tools.py export)"  # use idf venv instead
 
 default:
   retry:

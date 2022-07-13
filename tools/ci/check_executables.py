@@ -5,9 +5,14 @@
 
 import argparse
 import os
-from sys import exit
+import sys
 
-from idf_ci_utils import is_executable
+try:
+    from idf_ci_utils import is_executable
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__)))
+
+    from idf_ci_utils import is_executable
 
 
 def _strip_each_item(iterable):
@@ -65,4 +70,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    sys.exit(main())

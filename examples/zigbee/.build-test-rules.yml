@@ -1,0 +1,17 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/zigbee/esp_zigbee_gateway:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/zigbee/esp_zigbee_rcp:
+  enable:
+    - if: IDF_TARGET == "esp32h2"
+      reason: only test on esp32h2
+
+examples/zigbee/light_sample:
+  enable:
+    - if: IDF_TARGET == "esp32h2"
+      reason: only test on esp32h2

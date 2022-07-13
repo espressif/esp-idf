@@ -1,0 +1,41 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/cxx/exceptions:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: lack of runners
+
+examples/cxx/experimental/esp_modem_cxx:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/cxx/experimental/experimental_cpp_component/host_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+      reason: only test on linux
+
+examples/cxx/experimental/simple_i2c_rw_example:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/cxx/experimental/simple_spi_rw_example:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/cxx/pthread:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: lack of runners
+examples/cxx/rtti:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: lack of runners

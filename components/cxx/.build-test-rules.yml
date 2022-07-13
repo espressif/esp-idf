@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/cxx/test_apps:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3"]
+      temporary: true
+      reason: the other targets are not tested yet

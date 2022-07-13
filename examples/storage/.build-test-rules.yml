@@ -1,0 +1,155 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/storage/custom_flash_driver:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/storage/ext_flash_fatfs:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/fatfsgen:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/nvs_rw_blob:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/nvs_rw_value:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/nvs_rw_value_cxx:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/partition_api/partition_find:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/partition_api/partition_mmap:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/partition_api/partition_ops:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/parttool:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/sd_card/sdmmc:
+  disable:
+    - if: SOC_SDMMC_HOST_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+examples/storage/sd_card/sdspi:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+examples/storage/semihost_vfs:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/spiffs:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/spiffsgen:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/storage/wear_levelling:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
