@@ -116,8 +116,6 @@ void app_main(void)
     initialize_filesystem();
 #endif
 
-    printf("!!!ready!!!\n");
-
     initialize_console();
 
     /* Register commands */
@@ -160,7 +158,7 @@ void app_main(void)
         prompt = "esp32> ";
 #endif //CONFIG_LOG_COLORS
     }
-
+    printf("!!!ready!!!\n");
     /* Main loop */
     while (true) {
         /* Get a line using linenoise.
