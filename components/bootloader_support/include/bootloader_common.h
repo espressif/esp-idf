@@ -8,21 +8,6 @@
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
 #include "esp_app_format.h"
-// [refactor-todo]: we shouldn't expose ROM header files in a public API header, remove them in v5.0
-// Tracked in IDF-1968
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/rtc.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -195,14 +180,6 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
  * @return Chip package number
  */
 uint32_t bootloader_common_get_chip_ver_pkg(void);
-
-/**
- * @brief Query reset reason
- *
- * @param cpu_no CPU number
- * @return reset reason enumeration
- */
-RESET_REASON bootloader_common_get_reset_reason(int cpu_no);
 
 /**
  * @brief Check if the image (bootloader and application) has valid chip ID and revision

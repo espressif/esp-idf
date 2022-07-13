@@ -8,6 +8,7 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_sha.h"
 #include "bootloader_utility.h"
+#include "bootloader_signature.h"
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "mbedtls/sha256.h"
@@ -108,7 +109,7 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
 #elif CONFIG_SECURE_BOOT_V2_ENABLED
     ESP_LOGI(TAG, "Take trusted digest key(s) from eFuse block(s)");
     // Read key digests from efuse
-    ets_secure_boot_key_digests_t efuse_trusted;
+    esp_secure_boot_key_digests_t efuse_trusted;
     if (esp_secure_boot_read_key_digests(&efuse_trusted) == ESP_OK) {
         for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
             if (efuse_trusted.key_digests[i] != NULL) {

@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/hmac.h"
 #include "esp_hmac.h"
 #include "esp_crypto_lock.h"

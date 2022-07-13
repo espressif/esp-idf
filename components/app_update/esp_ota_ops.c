@@ -30,6 +30,20 @@
 #include "esp_efuse.h"
 #include "esp_attr.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/secure_boot.h"
+#endif
+
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
 /* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */
@@ -898,7 +912,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
     }
 
     esp_err_t ret;
-    ets_secure_boot_key_digests_t trusted_keys;
+    esp_secure_boot_key_digests_t trusted_keys;
     ret = esp_secure_boot_read_key_digests(&trusted_keys);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not read the secure boot key digests from efuse. Aborting..");

@@ -238,7 +238,7 @@ err_exit:
     return err;
 }
 
-esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys)
+esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *trusted_keys)
 {
     if (trusted_keys == NULL) {
         return ESP_FAIL;

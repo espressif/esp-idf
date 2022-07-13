@@ -15,20 +15,6 @@
 #include "sdkconfig.h"
 #include_next "esp_efuse.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/secure_boot.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,6 +45,17 @@ typedef enum {
     ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH, /**< ROM logging is enabled when specific GPIO level is high during start up */
     ESP_EFUSE_ROM_LOG_ALWAYS_OFF    /**< Disable ROM logging permanently */
 } esp_efuse_rom_log_scheme_t;
+
+#if CONFIG_ESP32_REV_MIN_3 || !CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Pointers to the trusted key digests.
+ *
+ * The number of digests depends on the SOC's capabilities.
+ */
+typedef struct {
+    const void *key_digests[SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS]; /**< Pointers to the key digests */
+} esp_secure_boot_key_digests_t;
+#endif
 
 /**
  * @brief   Reads bits from EFUSE field and writes it into an array.
@@ -749,13 +746,15 @@ esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t key
 /**
  * @brief Read key digests from efuse. Any revoked/missing digests will be marked as NULL
  *
- * @param[out] trusted_keys The number of digest in range 0..2
+ * @param[out] trusted_key_digests Trusted keys digests, stored in this parameter after successfully
+ *                                 completing this function.
+ *                                 The number of digests depends on the SOC's capabilities.
  *
  * @return
  *    - ESP_OK: Successful.
  *    - ESP_FAIL: If trusted_keys is NULL or there is no valid digest.
  */
-esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys);
+esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *trusted_key_digests);
 #endif
 
 /**

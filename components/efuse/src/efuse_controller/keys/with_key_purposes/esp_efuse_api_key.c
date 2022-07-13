@@ -365,7 +365,7 @@ esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest)
     return esp_efuse_write_field_bit(s_revoke_table[num_digest].revoke_wr_dis);
 }
 
-esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys)
+esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *trusted_keys)
 {
     bool found = false;
     esp_efuse_block_t key_block;
@@ -374,7 +374,7 @@ esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *truste
         return ESP_FAIL;
     }
 
-    for (unsigned i = 0; i < MAX_KEY_DIGESTS; i++) {
+    for (unsigned i = 0; i < SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS; i++) {
         trusted_keys->key_digests[i] = NULL;
         if (esp_efuse_get_digest_revoke(i)) {
             continue;
@@ -389,8 +389,6 @@ esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *truste
         trusted_keys->key_digests[i] = (const void *)esp_efuse_utility_get_read_register_address(key_block);
         found = found || (trusted_keys->key_digests[i] != NULL);
     }
-
-    trusted_keys->allow_key_revoke = false;
 
     if (!found) {
         return ESP_FAIL;

@@ -20,6 +20,12 @@ Cache Error Interrupt
 
 The old headers ``{IDF_TARGET_NAME}/cache_err_int.h`` have been removed. Please include ``esp_private/cache_err_int.h`` instead.
 
+Bootloader Support
+------------------
+
+* The function ``bootloader_common_get_reset_reason()`` has been removed. Please use the function ``esp_rom_get_reset_reason()`` in the ROM component.
+* The functions ``esp_secure_boot_verify_sbv2_signature_block()`` and ``esp_secure_boot_verify_rsa_signature_block()`` have been removed without replacement. We don't expect users to use these directly. If they are indeed still neccessary, please open a feature request on github explaining why these functions are necessary to you.
+
 Brownout
 --------
 
@@ -48,6 +54,11 @@ PSRAM
 ^^^^^
 - The target specific header files ``spiram.h`` have been deleted. The header file ``esp_spiram.h`` has been deleted. A new component ``esp_psram`` is created, you should include ``esp_psram.h`` instead. Besides, you might need to add ``esp_psram`` component to the list of component requirements in CMakeLists.txt.
 - ``esp_spiram_get_chip_size`` and ``esp_spiram_get_size`` have been deleted. You should use ``esp_psram_get_size`` instead.
+
+Efuse
+----------
+
+The parameter type of function ``esp_secure_boot_read_key_digests()`` changed from ``ets_secure_boot_key_digests_t*`` to ``esp_secure_boot_key_digests_t*``. ``ets_secure_boot_key_digests_t*``. The new type is the same as the old one, except that the ``allow_key_revoke`` flag has been removed. The latter was always set to ``true`` in current code, hence, it didn't provide additional information.
 
 ESP Common
 ----------

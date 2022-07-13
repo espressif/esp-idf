@@ -28,13 +28,16 @@
 #include "soc/dport_reg.h"
 #include "esp32/rtc.h"
 #include "esp32/rom/cache.h"
+#include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rtc.h"
 #include "esp32s2/rom/cache.h"
+#include "esp32s2/rom/secure_boot.h"
 #include "esp32s2/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rtc.h"
 #include "esp32s3/rom/cache.h"
+#include "esp32s3/rom/secure_boot.h"
 #include "esp_memprot.h"
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
@@ -42,15 +45,18 @@
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
+#include "esp32c3/rom/secure_boot.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
+#include "esp32h2/rom/secure_boot.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
+#include "esp32c2/rom/secure_boot.h"
 #include "esp32c2/memprot.h"
 #endif
 

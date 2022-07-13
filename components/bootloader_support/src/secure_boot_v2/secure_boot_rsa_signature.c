@@ -12,6 +12,8 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 
+#include "secure_boot_signature_priv.h"
+
 static const char *TAG = "secure_boot_v2_rsa";
 
 esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block)
