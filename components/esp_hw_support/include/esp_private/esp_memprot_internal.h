@@ -21,12 +21,12 @@ extern "C" {
 /**
 * @brief Convert Memprot low level errors to esp_err_t
 */
-esp_err_t esp_mprot_ll_err_to_esp_err(const memprot_ll_err_t err);
+esp_err_t esp_mprot_ll_err_to_esp_err(const memprot_hal_err_t err);
 
 /**
  * @brief Convert Memprot low level PMS World IDs to esp_mprot_pms_world_t
  */
-esp_mprot_pms_world_t esp_mprot_ll_world_to_hl_world(const memprot_ll_world_t world);
+esp_mprot_pms_world_t esp_mprot_ll_world_to_hl_world(const memprot_hal_world_t world);
 
 /**
  * @brief Converts operation type to string, no combination of operations allowed

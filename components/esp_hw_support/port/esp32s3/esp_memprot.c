@@ -124,7 +124,7 @@ esp_err_t esp_mprot_set_split_addr(const esp_mprot_mem_t mem_type, const esp_mpr
         if (line_type == MEMPROT_SPLIT_ADDR_MAIN) { /* so far only WORLD_0 is supported */
             esp_err_t err;
             ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_set_rtcfast_split_line(core, line_addr, MEMP_LL_WORLD_0)))
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_set_rtcfast_split_line(core, line_addr, MEMP_HAL_WORLD_0)))
             return ESP_OK;
         } else {
             return ESP_ERR_MEMPROT_SPLIT_ADDR_INVALID;
@@ -171,7 +171,7 @@ esp_err_t esp_mprot_get_split_addr(const esp_mprot_mem_t mem_type, const esp_mpr
         if (line_type == MEMPROT_SPLIT_ADDR_MAIN) { /* so far only WORLD_0 is supported */
             esp_err_t err;
             ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_get_rtcfast_split_line(core, MEMP_LL_WORLD_0, *line_addr)))
+            ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_get_rtcfast_split_line(core, MEMP_HAL_WORLD_0, *line_addr)))
         } else {
             return ESP_ERR_MEMPROT_SPLIT_ADDR_INVALID;
         }
@@ -328,11 +328,11 @@ esp_err_t esp_mprot_set_pms_area(const esp_mprot_pms_area_t area_type, const uin
         break;
     case MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO:
         ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_set_pms_area(core, r, w, x, MEMP_LL_WORLD_0, MEMP_LL_AREA_LOW)))
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_set_pms_area(core, r, w, x, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_LOW)))
         break;
     case MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI:
         ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_set_pms_area(core, r, w, x, MEMP_LL_WORLD_0, MEMP_LL_AREA_HIGH)))
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_set_pms_area(core, r, w, x, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_HIGH)))
         break;
     default:
         return ESP_ERR_NOT_SUPPORTED;
@@ -379,11 +379,11 @@ esp_err_t esp_mprot_get_pms_area(const esp_mprot_pms_area_t area_type, uint32_t 
         break;
     case MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO:
         ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(core, &r, &w, &x, MEMP_LL_WORLD_0, MEMP_LL_AREA_LOW)))
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(core, &r, &w, &x, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_LOW)))
         break;
     case MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI:
         ESP_MEMPROT_ERR_CHECK(err, esp_mprot_cpuid_valid(core))
-        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(core, &r, &w, &x, MEMP_LL_WORLD_0, MEMP_LL_AREA_HIGH)))
+        ESP_MEMPROT_ERR_CHECK(err, esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(core, &r, &w, &x, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_HIGH)))
         break;
     default:
         return ESP_ERR_MEMPROT_MEMORY_TYPE_INVALID;
@@ -1259,7 +1259,7 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
     offset = strlen(*dump_info_string);
 
     void *line_RTC = NULL;
-    esp_err_t err = esp_mprot_ll_err_to_esp_err(memprot_ll_get_rtcfast_split_line(PRO_CPU_NUM, MEMP_LL_WORLD_0, &line_RTC));
+    esp_err_t err = esp_mprot_ll_err_to_esp_err(memprot_ll_get_rtcfast_split_line(PRO_CPU_NUM, MEMP_HAL_WORLD_0, &line_RTC));
     if (err != ESP_OK) {
         sprintf((*dump_info_string + offset), " RTCFAST:\n   line main: N/A (world=0) - %s\n", esp_err_to_name(err));
     } else {
@@ -1301,7 +1301,7 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
     bool arl0rtc, awl0rtc, axl0rtc;
     bool arh0rtc, awh0rtc, axh0rtc;
 
-    err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(PRO_CPU_NUM, &arl0rtc, &awl0rtc, &axl0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_LOW));
+    err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(PRO_CPU_NUM, &arl0rtc, &awl0rtc, &axl0rtc, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_LOW));
     if (err != ESP_OK) {
         sprintf((*dump_info_string + offset), "   area low: N/A - %s\n", esp_err_to_name(err));
     } else {
@@ -1310,7 +1310,7 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
 
     offset = strlen(*dump_info_string);
 
-    err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(PRO_CPU_NUM, &arh0rtc, &awh0rtc, &axh0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_HIGH));
+    err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(PRO_CPU_NUM, &arh0rtc, &awh0rtc, &axh0rtc, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_HIGH));
     if (err != ESP_OK) {
         sprintf((*dump_info_string + offset), "   area high: N/A - %s\n", esp_err_to_name(err));
     } else {
@@ -1328,7 +1328,7 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
 
         offset = strlen(*dump_info_string);
 
-        err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arl0rtc, &awl0rtc, &axl0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_LOW));
+        err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arl0rtc, &awl0rtc, &axl0rtc, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_LOW));
         if (err != ESP_OK) {
             sprintf((*dump_info_string + offset), "   area low: N/A - %s\n", esp_err_to_name(err));
         } else {
@@ -1337,7 +1337,7 @@ esp_err_t esp_mprot_dump_configuration(char **dump_info_string)
 
         offset = strlen(*dump_info_string);
 
-        err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arh0rtc, &awh0rtc, &axh0rtc, MEMP_LL_WORLD_0, MEMP_LL_AREA_HIGH));
+        err = esp_mprot_ll_err_to_esp_err(memprot_ll_rtcfast_get_pms_area(APP_CPU_NUM, &arh0rtc, &awh0rtc, &axh0rtc, MEMP_HAL_WORLD_0, MEMP_HAL_AREA_HIGH));
         if (err != ESP_OK) {
             sprintf((*dump_info_string + offset), "   area high: N/A - %s\n", esp_err_to_name(err));
         } else {

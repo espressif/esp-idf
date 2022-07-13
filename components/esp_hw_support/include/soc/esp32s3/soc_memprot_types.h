@@ -86,8 +86,7 @@ typedef struct {
     .invoke_panic_handler = true, \
     .lock_feature = true, \
     .split_addr = NULL, \
-    /* .mem_type_mask = MEMPROT_TYPE_ALL, \ - unless IDF-5208 gets merged */ \
-    .mem_type_mask = MEMPROT_TYPE_IRAM0_SRAM | MEMPROT_TYPE_DRAM0_SRAM, \
+    .mem_type_mask = MEMPROT_TYPE_ALL, \
     .target_cpu_count = 2, \
     .target_cpu = {PRO_CPU_NUM, APP_CPU_NUM} \
 }
@@ -102,9 +101,8 @@ typedef struct {
 #define ESP_MEMPROT_DEFAULT_CONFIG() { \
     .invoke_panic_handler = true, \
     .lock_feature = true, \
-    .split_addr = NULL,                \
-    /* .mem_type_mask = MEMPROT_TYPE_ALL, \ - unless IDF-5208 gets merged */ \
-    .mem_type_mask = MEMPROT_TYPE_IRAM0_SRAM | MEMPROT_TYPE_DRAM0_SRAM, \
+    .split_addr = NULL, \
+    .mem_type_mask = MEMPROT_TYPE_ALL, \
     .target_cpu_count = 1, \
     .target_cpu = {PRO_CPU_NUM} \
 }

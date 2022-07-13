@@ -160,9 +160,11 @@ static inline void print_cache_err_details(const void *frame)
 static esp_memp_intr_source_t s_memp_intr = {MEMPROT_TYPE_INVALID, -1};
 
 #define PRINT_MEMPROT_ERROR(err) \
-        panic_print_str("N/A (error "); \
-        panic_print_str(esp_err_to_name(err)); \
-        panic_print_str(")")
+        do { \
+            panic_print_str("N/A (error "); \
+            panic_print_str(esp_err_to_name(err)); \
+            panic_print_str(")"); \
+        } while(0)
 
 static inline void print_memprot_err_details(const void *frame __attribute__((unused)))
 {
