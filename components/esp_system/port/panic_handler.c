@@ -64,7 +64,8 @@ static void print_state_for_core(const void *f, int core)
      * Don't print it on abort to reduce clutter.
      * On other architectures, register values need to be known for backtracing.
      */
-#if defined(__XTENSA__) && defined(XCHAL_HAVE_WINDOWED)
+#if (CONFIG_IDF_TARGET_ARCH_XTENSA && defined(XCHAL_HAVE_WINDOWED)) || \
+    (CONFIG_IDF_TARGET_ARCH_RISCV && CONFIG_ESP_SYSTEM_USE_EH_FRAME)
     if (!g_panic_abort) {
 #else
     if (true) {
