@@ -17,6 +17,7 @@ RUN : \
     git-lfs \
     gperf \
     lcov \
+    libbsd-dev \
     libffi-dev \
     libncurses-dev \
     libpython2.7 \
@@ -25,6 +26,7 @@ RUN : \
     ninja-build \
     python3 \
     python3-pip \
+    ruby \
     unzip \
     wget \
     xz-utils \
