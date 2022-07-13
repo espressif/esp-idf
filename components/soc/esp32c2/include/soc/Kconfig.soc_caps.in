@@ -67,6 +67,14 @@ config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
+config SOC_XTAL_SUPPORT_26M
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
 config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y

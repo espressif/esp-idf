@@ -115,6 +115,10 @@ config SOC_MEMPROT_SUPPORTED
     bool
     default y
 
+config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
 config SOC_AES_SUPPORT_DMA
     bool
     default y

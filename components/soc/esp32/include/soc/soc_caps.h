@@ -96,6 +96,11 @@
 #endif // SOC_CAPS_ECO_VER < 2
 #define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
 
+/*-------------------------- XTAL CAPS ---------------------------------------*/
+#define SOC_XTAL_SUPPORT_26M            1
+#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_AUTO_DETECT    1
+
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
