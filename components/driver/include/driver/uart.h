@@ -595,6 +595,18 @@ esp_err_t uart_flush_input(uart_port_t uart_num);
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
 
 /**
+ * @brief   UART get TX ring buffer free space size
+ *
+ * @param   uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param   size Pointer of size_t to accept the free space size
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t uart_get_tx_buffer_free_size(uart_port_t uart_num, size_t *size);
+
+/**
  * @brief   UART disable pattern detect function.
  *          Designed for applications like 'AT commands'.
  *          When the hardware detects a series of one same character, the interrupt will be triggered.
