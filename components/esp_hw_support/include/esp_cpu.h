@@ -511,6 +511,29 @@ FORCE_INLINE_ATTR void esp_cpu_dbgr_break(void)
 #endif
 }
 
+// ---------------------- Instructions -------------------------
+
+/**
+ * @brief Given the return address, calculate the address of the preceding call instruction
+ * This is typically used to answer the question "where was the function called from?"
+ * @param return_address  The value of the return address register.
+ *                        Typically set to the value of __builtin_return_address(0).
+ * @return Address of the call instruction preceding the return address.
+ */
+FORCE_INLINE_ATTR intptr_t esp_cpu_get_call_addr(intptr_t return_address)
+{
+    /* Both Xtensa and RISC-V have 2-byte instructions, so to get this right we
+     * should decode the preceding instruction as if it is 2-byte, check if it is a call,
+     * else treat it as 3 or 4 byte one. However for the cases where this function is
+     * used, being off by one instruction is usually okay, so this is kept simple for now.
+     */
+#ifdef __XTENSA__
+    return return_address - 3;
+#else
+    return return_address - 4;
+#endif
+}
+
 /* ------------------------------------------------------ Misc ---------------------------------------------------------
  *
  * ------------------------------------------------------------------------------------------------------------------ */
