@@ -328,7 +328,7 @@
 
 您可使用快捷键 ``Ctrl+]``，退出 IDF 监视器。
 
-.. only:: esp32
+.. only:: esp32 or esp32c2
 
     如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（如下），很有可能是因为您的开发板采用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
 
@@ -340,9 +340,18 @@
     此时，您可以：
 
     1. 退出监视器。
-    2. 返回 `menuconfig`。
-    3. 进入 ``Component config`` --> ``ESP32-specific`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 设置为 26 MHz。
-    4. 重新 `编译和烧录` 应用程序。
+    2. 返回 ``menuconfig``。
+    3. 进入 ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_XTAL_FREQ_SEL` 设置为 26 MHz。
+    4. 重新 ``编译和烧录`` 应用程序。
+
+    在当前的 ESP-IDF 版本中，{IDF_TARGET_NAME} 支持的主晶振频率如下：
+
+    .. list::
+
+        :SOC_XTAL_SUPPORT_24M: - 24 MHz
+        :SOC_XTAL_SUPPORT_26M: - 26 MHz
+        :SOC_XTAL_SUPPORT_32M: - 32 MHz
+        :SOC_XTAL_SUPPORT_40M: - 40 MHz
 
 .. note::
 

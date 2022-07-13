@@ -328,7 +328,7 @@ After startup and diagnostic logs scroll up, you should see "Hello world!" print
 
 To exit IDF monitor use the shortcut ``Ctrl+]``.
 
-.. only:: esp32
+.. only:: esp32 or esp32c2
 
     If IDF monitor fails shortly after the upload, or, if instead of the messages above, you see random garbage similar to what is given below, your board is likely using a 26 MHz crystal. Most development board designs use 40 MHz, so ESP-IDF uses this frequency as a default value.
 
@@ -340,9 +340,18 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
     If you have such a problem, do the following:
 
     1. Exit the monitor.
-    2. Go back to `menuconfig`.
-    3. Go to Component config --> ESP32-specific --> Main XTAL frequency, then change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26 MHz.
-    4. After that, `build and flash` the application again.
+    2. Go back to ``menuconfig``.
+    3. Go to ``Component config`` --> ``Hardware Settings`` --> ``Main XTAL Config`` --> ``Main XTAL frequency``, then change :ref:`CONFIG_XTAL_FREQ_SEL` to 26 MHz.
+    4. After that, ``build and flash`` the application again.
+
+    In the current version of ESP-IDF, main XTAL frequencies supported by {IDF_TARGET_NAME} are as follows:
+
+    .. list::
+
+        :SOC_XTAL_SUPPORT_24M: - 24 MHz
+        :SOC_XTAL_SUPPORT_26M: - 26 MHz
+        :SOC_XTAL_SUPPORT_32M: - 32 MHz
+        :SOC_XTAL_SUPPORT_40M: - 40 MHz
 
 .. note::
 
