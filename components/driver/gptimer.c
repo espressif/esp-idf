@@ -236,7 +236,7 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, unsigned long long *valu
     ESP_RETURN_ON_FALSE_ISR(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
-    *value = timer_ll_get_counter_value(timer->hal.dev, timer->timer_id);
+    *value = timer_hal_capture_and_get_counter_value(&timer->hal);
     portEXIT_CRITICAL_SAFE(&timer->spinlock);
     return ESP_OK;
 }
@@ -497,7 +497,7 @@ IRAM_ATTR static void gptimer_default_isr(void *args)
     if (intr_status & TIMER_LL_EVENT_ALARM(timer->timer_id)) {
         // Note: when alarm event happens, the alarm will be disabled automatically by hardware
         gptimer_alarm_event_data_t edata = {
-            .count_value = timer_ll_get_counter_value(timer->hal.dev, timer->timer_id),
+            .count_value = timer_hal_capture_and_get_counter_value(&timer->hal),
             .alarm_value = timer->alarm_count,
         };
 
