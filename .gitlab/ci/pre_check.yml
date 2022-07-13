@@ -148,6 +148,15 @@ check_esp_err_to_name:
     - ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
 
+check_esp_system:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  script:
+    - python components/esp_system/check_system_init_priorities.py
+
 scan_tests:
   extends:
     - .pre_check_base_template

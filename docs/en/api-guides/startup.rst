@@ -142,7 +142,7 @@ The primary system initialization stage includes:
    - Initialize SPI flash API support.
    - Call global C++ constructors and any C functions marked with ``__attribute__((constructor))``.
 
-Secondary system initialization allows individual components to be initialized. If a component has an initialization function annotated with the ``ESP_SYSTEM_INIT_FN`` macro, it will be called as part of secondary initialization.
+Secondary system initialization allows individual components to be initialized. If a component has an initialization function annotated with the ``ESP_SYSTEM_INIT_FN`` macro, it will be called as part of secondary initialization. Component initialization functions have priorities assigned to them to ensure the desired initialization order. The priorities are documented in :component_file:`esp_system/system_init_fn.txt` and ``ESP_SYSTEM_INIT_FN`` definition in source code are checked against this file.
 
 .. _app-main-task:
 
