@@ -4,6 +4,7 @@ entries:
     if GPTIMER_CTRL_FUNC_IN_IRAM = y:
         gptimer: gptimer_set_raw_count (noflash)
         gptimer: gptimer_get_raw_count (noflash)
+        gptimer: gptimer_get_captured_count (noflash)
         gptimer: gptimer_set_alarm_action (noflash)
         gptimer: gptimer_start (noflash)
         gptimer: gptimer_stop (noflash)

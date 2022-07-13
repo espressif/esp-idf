@@ -26,6 +26,26 @@ typedef enum {
     GPTIMER_COUNT_UP,   /*!< Increase count value */
 } gptimer_count_direction_t;
 
+/**
+ * @brief GPTimer specific tasks that supported by the ETM module
+ */
+typedef enum {
+    GPTIMER_ETM_TASK_START_COUNT, /*!< Start the counter */
+    GPTIMER_ETM_TASK_STOP_COUNT,  /*!< Stop the counter */
+    GPTIMER_ETM_TASK_EN_ALARM,    /*!< Enable the alarm */
+    GPTIMER_ETM_TASK_RELOAD,      /*!< Reload preset value into counter */
+    GPTIMER_ETM_TASK_CAPTURE,     /*!< Capture current count value into specific register */
+    GPTIMER_ETM_TASK_MAX,         /*!< Maximum number of tasks */
+} gptimer_etm_task_type_t;
+
+/**
+ * @brief GPTimer specific events that supported by the ETM module
+ */
+typedef enum {
+    GPTIMER_ETM_EVENT_ALARM_MATCH, /*!< Count value matches the alarm target value */
+    GPTIMER_ETM_EVENT_MAX,         /*!< Maximum number of events */
+} gptimer_etm_event_type_t;
+
 #ifdef __cplusplus
 }
 #endif
