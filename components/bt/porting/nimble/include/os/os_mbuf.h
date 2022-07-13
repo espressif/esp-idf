@@ -491,7 +491,7 @@ int r_os_mbuf_appendfrom(struct os_mbuf *dst, const struct os_mbuf *src,
  *
  * @return 0 on success, -1 on failure
  */
-int os_mbuf_free(struct os_mbuf *mb);
+int r_os_mbuf_free(struct os_mbuf *mb);
 #define os_mbuf_free r_os_mbuf_free
 
 
