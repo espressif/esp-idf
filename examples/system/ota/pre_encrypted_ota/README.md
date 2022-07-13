@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Encrypted Binary OTA
 
 This example demonstrates OTA updates with pre-encrypted binary using `esp_encrypted_img` component's APIs and tool.

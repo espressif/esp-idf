@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Import Prebuilt Library Example
 
 This example illustrates how to import a prebuilt static library in the ESP-IDF build system.

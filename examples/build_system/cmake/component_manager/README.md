@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Using the component manager for downloading dependencies
 
 This example demonstrates how to use [IDF Component Manager](https://pypi.org/project/idf-component-manager/) for downloading dependencies from [the component registry](https://components.espressif.com). More details and use cases of IDF Component Manager can be found in the programming guide under `API Guides` -> `Tools` -> `IDF Component Manager`.
