@@ -68,6 +68,8 @@ add_custom_target(${ULP_APP_NAME}_ld_script
                   DEPENDS ${ULP_LD_SCRIPT}
                   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
+# To avoid warning "Manually-specified variables were not used by the project"
+set(bypassWarning "${IDF_TARGET}")
 if(ULP_COCPU_IS_RISCV)
     #risc-v ulp uses extra files for building:
     list(APPEND ULP_S_SOURCES
