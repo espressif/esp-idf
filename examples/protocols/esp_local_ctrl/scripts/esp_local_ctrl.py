@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
-
 import argparse
 import asyncio
 import json
@@ -14,15 +12,12 @@ import ssl
 import struct
 import sys
 import textwrap
-from builtins import input
 
 import proto_lc
-from future.utils import tobytes
 
 try:
     import esp_prov
     import security
-
 except ImportError:
     idf_path = os.environ['IDF_PATH']
     sys.path.insert(0, idf_path + '/components/protocomm/python')
@@ -67,7 +62,7 @@ def encode_prop_value(prop, value):
         elif prop['type'] == PROP_TYPE_BOOLEAN:
             return struct.pack('?', value)
         elif prop['type'] == PROP_TYPE_STRING:
-            return tobytes(value)
+            return bytes(value, encoding='latin-1')
         return value
     except struct.error as e:
         print(e)
@@ -306,10 +301,11 @@ async def main():
                         help=argparse.SUPPRESS)
 
     parser.add_argument('-v', '--verbose', dest='verbose', help='increase output verbosity', action='store_true')
+
     args = parser.parse_args()
 
     if args.version != '':
-        print('==== Esp_Ctrl Version: ' + args.version + ' ====')
+        print(f'==== Esp_Ctrl Version: {args.version} ====')
 
     if args.service_name == '':
         args.service_name = 'my_esp_ctrl_device'
@@ -318,20 +314,18 @@ async def main():
 
     obj_transport = await get_transport(args.transport, args.service_name, not args.dont_check_hostname)
     if obj_transport is None:
-        print('---- Invalid transport ----')
-        exit(1)
+        raise RuntimeError('Failed to establish connection')
 
     # If security version not specified check in capabilities
     if args.secver is None:
         # First check if capabilities are supported or not
         if not await has_capability(obj_transport):
-            print('Security capabilities could not be determined. Please specify \'--sec_ver\' explicitly')
-            print('---- Invalid Security Version ----')
-            exit(2)
+            print('Security capabilities could not be determined, please specify "--sec_ver" explicitly')
+            raise ValueError('Invalid Security Version')
 
         # When no_sec is present, use security 0, else security 1
         args.secver = int(not await has_capability(obj_transport, 'no_sec'))
-        print('Security scheme determined to be :', args.secver)
+        print(f'==== Security Scheme: {args.secver} ====')
 
         if (args.secver != 0) and not await has_capability(obj_transport, 'no_pop'):
             if len(args.pop) == 0:
@@ -343,28 +337,24 @@ async def main():
 
     obj_security = get_security(args.secver, args.pop, args.verbose)
     if obj_security is None:
-        print('---- Invalid Security Version ----')
-        exit(2)
+        raise ValueError('Invalid Security Version')
 
     if args.version != '':
         print('\n==== Verifying protocol version ====')
         if not await version_match(obj_transport, args.version, args.verbose):
-            print('---- Error in protocol version matching ----')
-            exit(2)
+            raise RuntimeError('Error in protocol version matching')
         print('==== Verified protocol version successfully ====')
 
     print('\n==== Starting Session ====')
     if not await establish_session(obj_transport, obj_security):
         print('Failed to establish session. Ensure that security scheme and proof of possession are correct')
-        print('---- Error in establishing session ----')
-        exit(3)
+        raise RuntimeError('Error in establishing session')
     print('==== Session Established ====')
 
     while True:
         properties = await get_all_property_values(obj_transport, obj_security)
         if len(properties) == 0:
-            print('---- Error in reading property values ----')
-            exit(4)
+            raise RuntimeError('Error in reading property value')
 
         print('\n==== Available Properties ====')
         print('{0: >4} {1: <16} {2: <10} {3: <16} {4: <16}'.format(
@@ -381,7 +371,7 @@ async def main():
                 inval = input('\nSelect properties to set (0 to re-read, \'q\' to quit) : ')
                 if inval.lower() == 'q':
                     print('Quitting...')
-                    exit(5)
+                    exit(0)
                 invals = inval.split(',')
                 selections = [int(val) for val in invals]
                 if min(selections) < 0 or max(selections) > len(properties):
