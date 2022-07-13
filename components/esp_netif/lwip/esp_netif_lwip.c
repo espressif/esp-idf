@@ -1480,7 +1480,9 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
 
     ip_addr_t *lwip_ip = (ip_addr_t*)&dns->ip;
 #if CONFIG_LWIP_IPV6 && LWIP_IPV4
-    lwip_ip->type = IPADDR_TYPE_V4;
+    if (!IP_IS_V4(lwip_ip) && !IP_IS_V6(lwip_ip)) {
+        lwip_ip->type = IPADDR_TYPE_V4;
+    }
 #endif
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
