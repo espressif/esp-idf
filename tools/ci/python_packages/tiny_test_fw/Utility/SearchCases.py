@@ -28,7 +28,9 @@ class Search:
         print('Try to get cases from: ' + file_name)
         test_functions = []
         try:
-            mod = load_source(file_name)
+            # search case no need to run the functions
+            # mock missing modules would help us get the test case function objects
+            mod = load_source(file_name, mock_missing=True)
             for func in [mod.__getattribute__(x) for x in dir(mod)
                          if isinstance(mod.__getattribute__(x), types.FunctionType)]:
                 try:
@@ -38,7 +40,7 @@ class Search:
                 except AttributeError:
                     continue
         except ImportError as e:
-            warning_str = 'ImortError: \r\n\tFile:' + file_name + '\r\n\tError:' + str(e)
+            warning_str = 'ImportError: \r\n\tFile:' + file_name + '\r\n\tError:' + str(e)
             cls.missing_import_warnings.append(warning_str)
 
         test_functions_out = []
@@ -56,7 +58,7 @@ class Search:
         """ search all test case files recursively of a path """
 
         if not os.path.exists(test_case):
-            raise OSError('test case path not exist')
+            raise OSError(f'test case path "{test_case}" not exist')
         if os.path.isdir(test_case):
             test_case_files = []
             for root, _, file_names in os.walk(test_case):

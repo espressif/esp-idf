@@ -173,6 +173,7 @@ tools/ci/python_packages/tiny_test_fw/Utility/CaseConfig.py
 tools/ci/python_packages/tiny_test_fw/Utility/GitlabCIJob.py
 tools/ci/python_packages/tiny_test_fw/Utility/SearchCases.py
 tools/ci/python_packages/tiny_test_fw/Utility/TestCase.py
+tools/ci/python_packages/tiny_test_fw/Utility/__init__.py
 tools/ci/python_packages/tiny_test_fw/bin/Runner.py
 tools/ci/python_packages/tiny_test_fw/bin/example.py
 tools/ci/python_packages/tiny_test_fw/docs/conf.py

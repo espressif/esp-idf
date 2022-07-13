@@ -1,9 +1,14 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import print_function
 
+import logging
 import os.path
 import sys
 import time
 import traceback
+from unittest.mock import MagicMock
 
 from .. import Env
 
@@ -63,19 +68,20 @@ def console_log(data, color='white', end='\n'):
         pass
 
 
-__LOADED_MODULES = dict()
+__LOADED_MODULES = dict()  # type: ignore
 # we should only load one module once.
 # if we load one module twice,
 # python will regard the same object loaded in the first time and second time as different objects.
 # it will lead to strange errors like `isinstance(object, type_of_this_object)` return False
 
 
-def load_source(path):
+def load_source(path, mock_missing=False):
     """
     Dynamic loading python file. Note that this function SHOULD NOT be used to replace ``import``.
     It should only be used when the package path is only available in runtime.
 
     :param path: The path of python file
+    :param mock_missing: If True, will mock the module if the module is not found.
     :return: Loaded object
     """
     path = os.path.realpath(path)
@@ -84,17 +90,29 @@ def load_source(path):
     try:
         return __LOADED_MODULES[path]
     except KeyError:
+        folder = os.path.dirname(path)
+        sys.path.append(folder)
+        from importlib.machinery import SourceFileLoader
         try:
-            dir = os.path.dirname(path)
-            sys.path.append(dir)
-            from importlib.machinery import SourceFileLoader
             ret = SourceFileLoader(load_name, path).load_module()
-        except ImportError:
-            # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
-            import imp
-            ret = imp.load_source(load_name, path)
+        except ModuleNotFoundError as e:
+            if not mock_missing:
+                raise
+
+            # mock the missing third-party libs. Don't use it when real-testing
+            while True:
+                sys.modules[e.name] = MagicMock()
+                logging.warning('Mocking python module %s', e.name)
+                try:
+                    ret = SourceFileLoader(load_name, path).load_module()
+                    break
+                except ModuleNotFoundError as f:
+                    e = f  # another round
+        except SyntaxError:
+            # well, let's ignore it... non of our business
+            return None
         finally:
-            sys.path.remove(dir)
+            sys.path.remove(folder)
         __LOADED_MODULES[path] = ret
         return ret
 
