@@ -355,7 +355,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 #if (BLE_INCLUDED == TRUE)
     case HCI_BLE_EVENT:
         STREAM_TO_UINT8  (ble_sub_code, p);
-
+        hci_evt_len--;
         HCI_TRACE_DEBUG("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
 
         switch (ble_sub_code) {
@@ -2208,7 +2208,12 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
         STREAM_TO_UINT8(ext_adv_report.dir_addr_type, p);
         STREAM_TO_BDADDR(ext_adv_report.dir_addr, p);
         STREAM_TO_UINT8(ext_adv_report.adv_data_len, p);
-        ext_adv_report.adv_data = p;
+        if (ext_adv_report.adv_data_len) {
+            ext_adv_report.adv_data = p;
+        } else {
+            ext_adv_report.adv_data = NULL;
+        }
+
         btm_ble_ext_adv_report_evt(&ext_adv_report);
         p += ext_adv_report.adv_data_len;
     }
@@ -2247,8 +2252,8 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len)
         return;
     }
 
-    if (evt_len < sizeof(tBTM_PERIOD_ADV_REPORT)) {
-        HCI_TRACE_ERROR("%s, Invalid params, the adv len is to short.", __func__);
+    if (evt_len < MIN_BLE_PERIODIC_ADV_REPORT_LEN) {
+        HCI_TRACE_ERROR("%s, Invalid params, the adv len is too short.", __func__);
         return;
     }
 
@@ -2259,12 +2264,16 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len)
     STREAM_TO_UINT8(adv_report.data_status, p);
     STREAM_TO_UINT8(adv_report.data_length, p);
 
-    if (evt_len <= adv_report.data_length) {
+    if ((evt_len - MIN_BLE_PERIODIC_ADV_REPORT_LEN) != adv_report.data_length) {
         HCI_TRACE_ERROR("%s, Invalid ev_len = %d is less than adv len = %d", __func__, evt_len, adv_report.data_length);
         return;
     }
 
-    adv_report.data = p;
+    if (adv_report.data_length) {
+        adv_report.data = p;
+    } else {
+        adv_report.data = NULL;
+    }
 
     btm_ble_periodic_adv_report_evt(&adv_report);
 
