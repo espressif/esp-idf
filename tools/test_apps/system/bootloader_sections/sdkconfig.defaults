@@ -1,1 +1,7 @@
+# Defaults for generating a new "sdkconfig" file (project settings).
+# https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults
+#
+# NOTE - if this file changes, to get new defaults, you must erase any existing
+# "sdkconfig" file (this will undo manual settings from "idf.py menuconfig").
+
 CONFIG_COMPILER_DUMP_RTL_FILES=y

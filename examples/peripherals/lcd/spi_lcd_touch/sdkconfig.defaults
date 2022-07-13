@@ -1,3 +1,9 @@
+# Defaults for generating a new "sdkconfig" file (project settings).
+# https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html#custom-sdkconfig-defaults
+#
+# NOTE - if this file changes, to get new defaults, you must erase any existing
+# "sdkconfig" file (this will undo manual settings from "idf.py menuconfig").
+
 CONFIG_LV_USE_USER_DATA=y
 CONFIG_LV_COLOR_16_SWAP=y
 CONFIG_LV_COLOR_DEPTH_16=y
