@@ -600,6 +600,27 @@ static inline uint32_t clk_ll_rtc_slow_load_cal(void)
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
 }
 
+/**
+ * @brief Store rtc_fix_us in RTC storage register
+ *
+ * @param rtc_fix_us The value used to correct the time obtained from the rtc timer when the calibration value changes
+ */
+static inline void clk_ll_rtc_slow_store_rtc_fix_us(uint64_t rtc_fix_us)
+{
+    REG_WRITE(RTC_FIX_US_LOW_REG, rtc_fix_us);
+    REG_WRITE(RTC_FIX_US_HIGH_REG, rtc_fix_us >> 32);
+}
+
+/**
+ * @brief Load the rtc_fix_ticks from RTC storage register
+ *
+ * @return The value used to correct the time obtained from the rtc timer when the calibration value changes
+ */
+static inline uint64_t clk_ll_rtc_slow_load_rtc_fix_us(void)
+{
+    return REG_READ(RTC_FIX_US_LOW_REG) | ((uint64_t)REG_READ(RTC_FIX_US_HIGH_REG) << 32);
+}
+
 #ifdef __cplusplus
 }
 #endif

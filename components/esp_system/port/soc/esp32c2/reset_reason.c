@@ -65,16 +65,10 @@ esp_reset_reason_t esp_reset_reason(void)
     return s_reset_reason;
 }
 
-/* Reset reason hint is stored in RTC_RESET_CAUSE_REG, a.k.a. RTC_CNTL_STORE6_REG,
- * a.k.a. RTC_ENTRY_ADDR_REG. It is safe to use this register both for the
- * deep sleep wake stub entry address and for reset reason hint, since wake stub
- * is only used for deep sleep reset, and in this case the reason provided by
- * esp_rom_get_reset_reason is unambiguous.
+/* Reset reason hint is stored in RTC_RESET_CAUSE_REG, a.k.a. RTC_CNTL_STORE6_REG.
  *
  * Same layout is used as for RTC_APB_FREQ_REG (a.k.a. RTC_CNTL_STORE5_REG):
- * the value is replicated in low and high half-words. In addition to that,
- * MSB is set to 1, which doesn't happen when RTC_CNTL_STORE6_REG contains
- * deep sleep wake stub address.
+ * the value is replicated in low and high half-words.
  */
 
 #define RST_REASON_BIT  0x80000000

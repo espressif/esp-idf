@@ -217,6 +217,7 @@ static void touch_wakeup_prepare(void);
 static void gpio_deep_sleep_wakeup_prepare(void);
 #endif
 
+#if SOC_RTC_FAST_MEM_SUPPORTED
 #if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
 
@@ -297,6 +298,7 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void)
 }
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
+#endif // SOC_RTC_FAST_MEM_SUPPORTED
 
 void esp_deep_sleep(uint64_t time_in_us)
 {
@@ -544,8 +546,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #else
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
-#if !CONFIG_IDF_TARGET_ESP32C2
-        // RTC has no rtc memory, IDF-3901
+#if SOC_RTC_FAST_MEM_SUPPORTED
         set_rtc_memory_crc();
 #endif
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu, 0);
@@ -614,10 +615,12 @@ void IRAM_ATTR esp_deep_sleep_start(void)
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
 
+#if SOC_RTC_FAST_MEM_SUPPORTED
     // Configure wake stub
     if (esp_get_deep_sleep_wake_stub() == NULL) {
         esp_set_deep_sleep_wake_stub(esp_wake_deep_sleep);
     }
+#endif // SOC_RTC_FAST_MEM_SUPPORTED
 
     // Decide which power domains can be powered down
     uint32_t pd_flags = get_power_down_flags();
