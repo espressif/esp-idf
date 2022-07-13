@@ -103,7 +103,6 @@ menu "Hardware Settings"
 
                 If you are seeing "flash read err, 1000" message printed to the
                 console after deep sleep reset, try increasing this value.
-
     endmenu
 
     menu "RTC Clock Config"
@@ -168,7 +167,6 @@ menu "Hardware Settings"
             default 0x4000 if MMU_PAGE_SIZE_16KB
             default 0x8000 if MMU_PAGE_SIZE_32KB
             default 0x10000 if MMU_PAGE_SIZE_64KB
-
     endmenu
 
     # Insert chip-specific HW config
@@ -193,4 +191,45 @@ menu "Hardware Settings"
                 (e.g. SPI Flash write).
     endmenu # GDMA Configuration
 
+    menu "Main XTAL Config"
+        choice XTAL_FREQ_SEL
+            prompt "Main XTAL frequency"
+            default XTAL_FREQ_40 if SOC_XTAL_SUPPORT_40M
+            help
+                This option selects the operating frequency of the XTAL (crystal) clock used to drive the ESP target.
+                The selected value MUST reflect the frequency of the given hardware.
+
+                Note: The XTAL_FREQ_AUTO option allows the ESP target to automatically estimating XTAL clock's
+                operating frequency. However, this feature is only supported on the ESP32. The ESP32 uses the
+                internal 8MHZ as a reference when estimating. Due to the internal oscillator's frequency being
+                temperature dependent, usage of the XTAL_FREQ_AUTO is not recommended in applications that operate
+                in high ambient temperatures or use high-temperature qualified chips and modules.
+
+            config XTAL_FREQ_24
+                depends on SOC_XTAL_SUPPORT_24M
+                bool "24 MHz"
+            config XTAL_FREQ_26
+                depends on SOC_XTAL_SUPPORT_26M
+                bool "26 MHz"
+            config XTAL_FREQ_32
+                depends on SOC_XTAL_SUPPORT_32M
+                bool "32 MHz"
+            config XTAL_FREQ_40
+                depends on SOC_XTAL_SUPPORT_40M
+                bool "40 MHz"
+            config XTAL_FREQ_AUTO
+                depends on SOC_XTAL_SUPPORT_AUTO_DETECT
+                bool "Autodetect"
+        endchoice
+
+        # rtc_xtal_freq_t enum in soc/rtc.h lists the XTAL frequencies can be supported
+        # SOC_XTAL_SUPPORT_XXX in soc_caps.h lists the XTAL frequencies already supported
+        config XTAL_FREQ
+            int
+            default 24 if XTAL_FREQ_24
+            default 26 if XTAL_FREQ_26
+            default 32 if XTAL_FREQ_32
+            default 40 if XTAL_FREQ_40
+            default 0  if XTAL_FREQ_AUTO
+    endmenu
 endmenu

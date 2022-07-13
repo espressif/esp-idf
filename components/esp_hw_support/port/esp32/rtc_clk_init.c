@@ -95,7 +95,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
         rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
         if (est_xtal_freq != configured_xtal_freq) {
-            ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
+            ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
                     configured_xtal_freq, est_xtal_freq);
         }
     }

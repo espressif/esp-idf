@@ -42,6 +42,10 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 #define SOC_SYSTIMER_SUPPORTED          1
 
+/*-------------------------- XTAL CAPS ---------------------------------------*/
+#define SOC_XTAL_SUPPORT_26M            1
+#define SOC_XTAL_SUPPORT_40M            1
+
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
