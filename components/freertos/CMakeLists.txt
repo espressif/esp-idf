@@ -18,6 +18,7 @@ if(NOT "${target}" STREQUAL "esp32c3")  # should test arch here not target, TODO
 
     set(include_dirs
         include
+        include/esp_additions
         port/xtensa/include)
 
     set(private_include_dirs
@@ -34,6 +35,7 @@ else()  # RISC-V
 
     set(include_dirs
         include
+        include/esp_additions
         port/riscv/include)
 
     set(private_include_dirs
@@ -56,6 +58,8 @@ list(APPEND srcs
     "stream_buffer.c"
     "FreeRTOS-openocd.c"
     "freertos_v8_compat.c")
+
+list(APPEND private_include_dirs "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
 
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")

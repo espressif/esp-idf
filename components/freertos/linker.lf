@@ -31,6 +31,8 @@ entries:
         tasks: xTaskRemoveFromUnorderedEventList (default)
         tasks: uxTaskPriorityGet (default)
         tasks: vTaskPrioritySet (default)
+        tasks: prvTaskPriorityRaise (default)
+        tasks: prvTaskPriorityRestore (default)
         tasks: vTaskSetThreadLocalStoragePointerAndDelCallback (default)
         tasks: pvTaskGetThreadLocalStoragePointer (default)
         tasks: xTaskGetCurrentTaskHandleForCPU (default)

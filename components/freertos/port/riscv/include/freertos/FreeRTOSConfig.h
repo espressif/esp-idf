@@ -302,4 +302,6 @@ extern int xPortSwitchFlag;
 #endif
 #endif
 
+#define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
+
 #endif // FREERTOS_CONFIG_RISCV_H
