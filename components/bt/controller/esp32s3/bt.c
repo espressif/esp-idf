@@ -196,6 +196,7 @@ extern int API_vhci_host_register_callback(const vhci_host_callback_t *callback)
 extern int ble_txpwr_set(int power_type, int power_level);
 extern int ble_txpwr_get(int power_type);
 
+extern void coex_pti_v2(void);
 extern uint16_t l2c_ble_link_get_tx_buf_num(void);
 
 extern char _bss_start_btdm;
@@ -1019,6 +1020,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         err = ESP_ERR_NO_MEM;
         goto error;
     }
+    coex_pti_v2();
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
