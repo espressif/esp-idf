@@ -284,7 +284,7 @@
         key_1:
             value_1
         key_2:
-            value_b
+            value_a
     else:
         [type:name]
         key_1:

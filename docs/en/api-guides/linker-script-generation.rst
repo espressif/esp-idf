@@ -285,7 +285,7 @@ Condition checking behaves as you would expect an ``if...elseif/elif...else`` bl
         key_1:
             value_1
         key_2:
-            value_b
+            value_a
     else:
         [type:name]
         key_1:
