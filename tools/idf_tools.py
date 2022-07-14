@@ -1879,8 +1879,7 @@ def get_constraints(idf_version):  # type: (str) -> str
     try:
         age = datetime.date.today() - datetime.date.fromtimestamp(os.path.getmtime(constraint_path))
         if age < datetime.timedelta(days=1):
-            info(f'Skipping the download of {constraint_path} because it was downloaded recently. If you believe '
-                 f'that this is causing you trouble then remove it manually and re-run your install script.')
+            info(f'Skipping the download of {constraint_path} because it was downloaded recently.')
             return constraint_path
     except OSError:
         # doesn't exist or inaccessible
@@ -1902,6 +1901,7 @@ def get_constraints(idf_version):  # type: (str) -> str
         return constraint_path
     else:
         fatal('Failed to download, and retry count has expired')
+        info('See the help on how to disable constraints in order to work around this issue.')
         raise DownloadError()
 
 
@@ -2402,6 +2402,8 @@ def main(argv):  # type: (list[str]) -> None
     uninstall.add_argument('--dry-run', help='Print unused tools.', action='store_true')
     uninstall.add_argument('--remove-archives', help='Remove old archive versions and archives from unused tools.', action='store_true')
 
+    no_constraints_default = os.environ.get('IDF_PYTHON_CHECK_CONSTRAINTS', '').lower() in ['0', 'n', 'no']
+
     if IDF_MAINTAINER:
         for subparser in [download, install]:
             subparser.add_argument('--mirror-prefix-map', nargs='*',
@@ -2419,9 +2421,10 @@ def main(argv):  # type: (list[str]) -> None
     install_python_env.add_argument('--no-index', help='Work offline without retrieving wheels index')
     install_python_env.add_argument('--features', default='core', help='A comma separated list of desired features for installing.'
                                                                        ' It defaults to installing just the core funtionality.')
-    install_python_env.add_argument('--no-constraints', action='store_true', default=False,
+    install_python_env.add_argument('--no-constraints', action='store_true', default=no_constraints_default,
                                     help='Disable constraint settings. Use with care and only when you want to manage '
-                                         'package versions by yourself.')
+                                         'package versions by yourself. It can be set with the IDF_PYTHON_CHECK_CONSTRAINTS '
+                                         'environment variable.')
 
     if IDF_MAINTAINER:
         add_version = subparsers.add_parser('add-version', help='Add or update download info for a version')
@@ -2446,9 +2449,10 @@ def main(argv):  # type: (list[str]) -> None
 
     check_python_dependencies = subparsers.add_parser('check-python-dependencies',
                                                       help='Check that all required Python packages are installed.')
-    check_python_dependencies.add_argument('--no-constraints', action='store_true', default=False,
+    check_python_dependencies.add_argument('--no-constraints', action='store_true', default=no_constraints_default,
                                            help='Disable constraint settings. Use with care and only when you want '
-                                                'to manage package versions by yourself.')
+                                                'to manage package versions by yourself. It can be set with the IDF_PYTHON_CHECK_CONSTRAINTS '
+                                                'environment variable.')
 
     args = parser.parse_args(argv)
 
