@@ -1684,9 +1684,9 @@ struct array_mac_ip_t {
 static esp_err_t esp_netif_dhcps_get_clients_by_mac_api(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *netif = msg->esp_netif;
-    struct array_mac_ip_t *params = msg->data;
-    for (int i = 0; i < params->num; i++) {
-        dhcp_search_ip_on_mac(netif->dhcps, params->mac_ip_pair[i].mac, (ip4_addr_t*)&params->mac_ip_pair[i].ip);
+    struct array_mac_ip_t *mac_ip_list = msg->data;
+    for (int i = 0; i < mac_ip_list->num; i++) {
+        dhcp_search_ip_on_mac(netif->dhcps, mac_ip_list->mac_ip_pair[i].mac, (ip4_addr_t*)&mac_ip_list->mac_ip_pair[i].ip);
     }
     return ESP_OK;
 }
@@ -2184,18 +2184,26 @@ esp_err_t esp_netif_get_netif_impl_name(esp_netif_t *esp_netif, char* name)
     return ESP_OK;
 }
 
+#if MIB2_STATS
 static esp_err_t esp_netif_set_link_speed_api(esp_netif_api_msg_t *msg)
 {
     uint32_t speed = *((uint32_t*)msg->data);
     esp_err_t error = ESP_OK;
     ESP_LOGD(TAG, "%s esp_netif:%p", __func__, msg->esp_netif);
-    NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, speed);
+    NETIF_INIT_SNMP(msg->esp_netif->lwip_netif, snmp_ifType_ethernet_csmacd, speed);
     LWIP_UNUSED_ARG(speed);     // Maybe unused if SNMP disabled
     return error;
 }
 
 esp_err_t esp_netif_set_link_speed(esp_netif_t *esp_netif, uint32_t speed)
 _RUN_IN_LWIP_TASK(esp_netif_set_link_speed_api, esp_netif, &speed)
+#else
+esp_err_t esp_netif_set_link_speed(esp_netif_t *esp_netif, uint32_t speed)
+{
+    // link speed is used only to collect interface related statistics (if MIB2_STATS enabled)
+    return ESP_OK;
+}
+#endif /* MIB2_STATS */
 
 #if CONFIG_LWIP_IPV6
 

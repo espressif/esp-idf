@@ -13,19 +13,22 @@
 
 #if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
+typedef err_t (*init_fn_t)(struct netif*);
+typedef void (*input_fn_t)(void *netif, void *buffer, size_t len, void *eb);
+
 struct esp_netif_netstack_lwip_vanilla_config {
-    err_t (*init_fn)(struct netif*);
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
+    init_fn_t init_fn;
+    input_fn_t input_fn;
 };
 
 struct esp_netif_netstack_lwip_ppp_config {
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
+    input_fn_t input_fn;
     esp_netif_ppp_config_t ppp_events;
 };
 
 struct esp_netif_netstack_lwip_slip_config {
-    err_t (*init_fn)(struct netif*);
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
+    init_fn_t init_fn;
+    input_fn_t input_fn;
     esp_netif_slip_config_t slip_config;
 };
 
