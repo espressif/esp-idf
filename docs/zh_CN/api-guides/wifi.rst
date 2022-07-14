@@ -242,6 +242,11 @@ WIFI_EVENT_AP_PROBEREQRECVED
 默认情况下，此事件处于禁用状态，应用程序可以通过调用 API :cpp:func:`esp_wifi_set_event_mask()` 启用。
 启用后，每当 AP 接收到 probe request 时都将引发此事件。
 
+WIFI_EVENT_STA_BEACON_TIMEOUT
+++++++++++++++++++++++++++++++++++++
+
+如果 station 在 inactive 时间内未收到所连接 AP 的 beacon，将发生 beacon 超时，将引发此事件。inactive 时间通过调用函数 :cpp:func:`esp_wifi_set_inactive_time()` 设置。
+
 {IDF_TARGET_NAME} Wi-Fi station 一般情况
 ------------------------------------------------
 下图为 station 模式下的宏观场景，其中包含不同阶段的具体描述：
@@ -975,10 +980,11 @@ Wi-Fi 重新连接
 Wi-Fi beacon 超时
 ---------------------------
 
-{IDF_TARGET_NAME} 使用 beacon 超时机制检测 AP 是否活跃。如果 station 连续丢失了 60 个所连接 AP 的 beacon，将发生 beacon 超时。
+{IDF_TARGET_NAME} 使用 beacon 超时机制检测 AP 是否活跃。如果 station 在 inactive 时间内未收到所连接 AP 的 beacon，将发生 beacon 超时。inactive 时间通过调用函数 :cpp:func:`esp_wifi_set_inactive_time()` 设置。
 
 beacon 超时发生后，station 将向 AP 发送 5 个 probe request，如果仍未从 AP 接收到 probe response 或 beacon，station 将与 AP 断开连接并产生 `WIFI_EVENT_STA_DISCONNECTED`_ 事件。
 
+需要注意的是，扫描过程中会重置 beacon 超时所使用的定时器，即扫描过程会影响 `WIFI_EVENT_STA_BEACON_TIMEOUT`_ 事件的触发。
 
 {IDF_TARGET_NAME} Wi-Fi 配置
 -------------------------------------

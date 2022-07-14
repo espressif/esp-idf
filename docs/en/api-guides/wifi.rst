@@ -241,6 +241,11 @@ WIFI_EVENT_AP_PROBEREQRECVED
 This event is disabled by default. The application can enable it via API :cpp:func:`esp_wifi_set_event_mask()`.
 When this event is enabled, it will be raised each time the AP receives a probe request.
 
+WIFI_EVENT_STA_BEACON_TIMEOUT
+++++++++++++++++++++++++++++++++++++
+
+If the station does not receive the beacon of the connected AP within the inactive time, the beacon timeout happens, the `WIFI_EVENT_STA_BEACON_TIMEOUT`_ will arise. The application can set inactive time via API :cpp:func:`esp_wifi_set_inactive_time()`.
+
 {IDF_TARGET_NAME} Wi-Fi Station General Scenario
 ------------------------------------------------
 Below is a "big scenario" which describes some small scenarios in Station mode:
@@ -1043,9 +1048,11 @@ Another thing we need to consider is the reconnect may not connect the same AP i
 Wi-Fi Beacon Timeout
 ---------------------------
 
-The beacon timeout mechanism is used by {IDF_TARGET_NAME} station to detect whether the AP is alive or not. If the station continuously loses 60 beacons of the connected AP, the beacon timeout happens.
+The beacon timeout mechanism is used by {IDF_TARGET_NAME} station to detect whether the AP is alive or not. If the station does not receive the beacon of the connected AP within the inactive time, the beacon timeout happens. The application can set inactive time via API :cpp:func:`esp_wifi_set_inactive_time()`.
 
 After the beacon timeout happens, the station sends 5 probe requests to AP, it disconnects the AP and raises the event `WIFI_EVENT_STA_DISCONNECTED`_ if still no probe response or beacon is received from AP.
+
+It should be considered that the timer used for beacon timeout will be reset during the scanning process. It means that the scan process will affect the triggering of the event `WIFI_EVENT_STA_BEACON_TIMEOUT`_.
 
 {IDF_TARGET_NAME} Wi-Fi Configuration
 -------------------------------------
