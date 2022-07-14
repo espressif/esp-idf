@@ -164,7 +164,6 @@
 
   - "tools/split_paths_by_spaces.py"
 
-
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
 
@@ -172,7 +171,6 @@
   - "tools/docker/**/*"
 
 .patterns-submodule: &patterns-submodule
-  - "components/asio/asio"
   - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
   - "components/bt/controller/lib_esp32"
   - "components/bt/controller/lib_esp32c2/esp32c2-bt-lib"

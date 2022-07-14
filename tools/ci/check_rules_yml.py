@@ -9,8 +9,10 @@ Check if all rules in rules.yml used or not in CI yaml files.
 
 import argparse
 import os
+import re
 import sys
 from copy import deepcopy
+from typing import List
 
 import yaml
 from idf_ci_utils import IDF_PATH
@@ -36,7 +38,9 @@ class YMLConfig:
             return [str_or_list]
         if isinstance(str_or_list, list):
             return str_or_list
-        raise ValueError('Wrong type: {}. Only supports str or list.'.format(type(str_or_list)))
+        raise ValueError(
+            'Wrong type: {}. Only supports str or list.'.format(type(str_or_list))
+        )
 
     @property
     def config(self):
@@ -45,8 +49,7 @@ class YMLConfig:
 
         all_config = dict()
         for item in self.root_yml['include']:
-            if not item.endswith('rules.yml'):
-                all_config.update(load_yaml(os.path.join(IDF_PATH, item)))
+            all_config.update(load_yaml(os.path.join(IDF_PATH, item)))
         self._config = all_config
         return self._config
 
@@ -70,16 +73,20 @@ class YMLConfig:
         return False
 
 
-def validate(rules_yml):
-    yml_config = YMLConfig(ROOT_YML_FP)
+YML_CONFIG = YMLConfig(ROOT_YML_FP)
+
+
+def validate_needed_rules(rules_yml):
     res = 0
-    needed_rules = deepcopy(yml_config.all_extends)
+    needed_rules = deepcopy(YML_CONFIG.all_extends)
     with open(rules_yml) as fr:
         for index, line in enumerate(fr):
             if line.startswith('.rules:'):
                 key = line.strip().rsplit(':', 1)[0]
-                if not yml_config.exists(key):
-                    print('{}:{}:WARNING:rule "{}" unused'.format(rules_yml, index, key))
+                if not YML_CONFIG.exists(key):
+                    print(
+                        '{}:{}:WARNING:rule "{}" unused'.format(rules_yml, index, key)
+                    )
                 else:
                     needed_rules.remove(key)
 
@@ -93,10 +100,54 @@ def validate(rules_yml):
     return res
 
 
+def parse_submodule_paths(
+    gitsubmodules: str = os.path.join(IDF_PATH, '.gitmodules')
+) -> List[str]:
+    path_regex = re.compile(r'^\s+path = (.+)$', re.MULTILINE)
+    with open(gitsubmodules, 'r') as f:
+        data = f.read()
+
+    res = []
+    for item in path_regex.finditer(data):
+        res.append(item.group(1))
+
+    return res
+
+
+def validate_submodule_patterns():
+    submodule_paths = sorted(['.gitmodules'] + parse_submodule_paths())
+    submodule_paths_in_patterns = sorted(
+        YML_CONFIG.config.get('.patterns-submodule', [])
+    )
+
+    res = 0
+    if submodule_paths != submodule_paths_in_patterns:
+        res = 1
+        print('please update the pattern ".patterns-submodule"')
+        should_remove = set(submodule_paths_in_patterns) - set(submodule_paths)
+        if should_remove:
+            print(f'- should remove: {should_remove}')
+        should_add = set(submodule_paths) - set(submodule_paths_in_patterns)
+        if should_add:
+            print(f'- should add: {should_add}')
+
+    return res
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('rules_yml', nargs='?', default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'rules.yml'),
-                        help='rules.yml file path')
+    parser.add_argument(
+        'rules_yml',
+        nargs='?',
+        default=os.path.join(IDF_PATH, '.gitlab', 'ci', 'rules.yml'),
+        help='rules.yml file path',
+    )
     args = parser.parse_args()
 
-    sys.exit(validate(args.rules_yml))
+    exit_code = 0
+    if validate_needed_rules(args.rules_yml):
+        exit_code = 1
+    if validate_submodule_patterns():
+        exit_code = 1
+
+    sys.exit(exit_code)
