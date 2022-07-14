@@ -451,13 +451,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='idf_size - a tool to print size information from an IDF MAP file')
 
     parser.add_argument(
-        '--json',
-        help='Output results as JSON',
-        action='store_true')
-
-    parser.add_argument(
         'map_file', help='MAP file produced by linker',
         type=argparse.FileType('r'))
+
+    format_group = parser.add_mutually_exclusive_group()
+
+    format_group.add_argument(
+        '--format',
+        help='Specify output format: text, csv or json',
+        choices=['text','csv', 'json'],
+        default='text')
+
+    format_group.add_argument(
+        '--json', help=argparse.SUPPRESS, action='store_true')
 
     parser.add_argument(
         '--archives', help='Print per-archive sizes', action='store_true')
@@ -486,6 +492,9 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    if args.json:
+        print('WARNING: --json argument is deprecated in favour of the --format argument')
+
     detected_target, segments, sections = load_map_data(args.map_file)
     args.map_file.close()
     check_target(detected_target, args.map_file)
@@ -509,32 +518,31 @@ def main() -> None:
 
     output = ''
 
-    if not args.json or not (args.archives or args.files or args.archive_details):
+    if not args.format == 'json' or not (args.archives or args.files or args.archive_details):
         output += get_summary(args.map_file.name, segments, sections, detected_target,
-                              args.json,
-                              args.another_map_file, segments_diff, sections_diff, detected_target_diff, not (args.archives or args.files))
+                              args.format, args.another_map_file, segments_diff,
+                              sections_diff, detected_target_diff, not (args.archives or args.files))
 
     if args.archives:
-        output += get_detailed_sizes(sections, 'archive', 'Archive File', args.json, sections_diff)
+        output += get_detailed_sizes(sections, 'archive', 'Archive File', args.format, sections_diff)
     if args.files:
-        output += get_detailed_sizes(sections, 'file', 'Object File', args.json, sections_diff)
-
+        output += get_detailed_sizes(sections, 'file', 'Object File', args.format, sections_diff)
     if args.archive_details:
-        output += get_archive_symbols(sections, args.archive_details, args.json, sections_diff)
+        output += get_archive_symbols(sections, args.archive_details, args.format, sections_diff)
 
     args.output_file.write(output)
     args.output_file.close()
 
 
 class StructureForSummary(object):
-    used_dram_data, used_dram_bss, used_dram_rodata, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 7
+    dram_data, dram_bss, dram_rodata, dram_other, used_dram, dram_total, dram_remain = (0, ) * 7
 
     used_dram_ratio = 0.
-    used_iram_vectors, used_iram_text, used_iram_other, used_iram, iram_total, iram_remain = (0, ) * 6
+    iram_vectors, iram_text, iram_other, used_iram, iram_total, iram_remain = (0, ) * 6
     used_iram_ratio = 0.
-    used_diram_data, used_diram_bss, used_diram_text, used_diram_vectors, used_diram_rodata, used_diram_other, diram_total, used_diram, diram_remain = (0, ) * 9
+    diram_data, diram_bss, diram_text, diram_vectors, diram_rodata, diram_other, diram_total, used_diram, diram_remain = (0, ) * 9
     used_diram_ratio = 0.
-    used_flash_text, used_flash_rodata, used_flash_other, used_flash, total_size = (0, ) * 5
+    flash_code, flash_rodata, flash_other, used_flash_non_ram, total_size = (0, ) * 5
 
     def __sub__(self, rhs: 'StructureForSummary') -> 'StructureForSummary':
         assert isinstance(rhs, StructureForSummary)
@@ -611,84 +619,84 @@ class StructureForSummary(object):
         flash_rodata_list = filter_in_section(flash_sections, 'rodata')
         flash_other_list = [x for x in flash_sections if x not in flash_text_list + flash_rodata_list]
 
-        r.used_dram_data = get_size(dram_data_list)
-        r.used_dram_bss = get_size(dram_bss_list)
-        r.used_dram_rodata = get_size(dram_rodata_list)
-        r.used_dram_other = get_size(dram_other_list)
-        r.used_dram = r.used_dram_data + r.used_dram_bss + r.used_dram_other + r.used_dram_rodata
+        r.dram_data = get_size(dram_data_list)
+        r.dram_bss = get_size(dram_bss_list)
+        r.dram_rodata = get_size(dram_rodata_list)
+        r.dram_other = get_size(dram_other_list)
+        r.used_dram = r.dram_data + r.dram_bss + r.dram_other + r.dram_rodata
         try:
             r.used_dram_ratio = r.used_dram / r.dram_total
         except ZeroDivisionError:
             r.used_dram_ratio = float('nan') if r.used_dram != 0 else 0
         r.dram_remain = r.dram_total - r.used_dram
 
-        r.used_iram_vectors = get_size((iram_vectors_list))
-        r.used_iram_text = get_size((iram_text_list))
-        r.used_iram_other = get_size((iram_other_list))
-        r.used_iram = r.used_iram_vectors + r.used_iram_text + r.used_iram_other
+        r.iram_vectors = get_size((iram_vectors_list))
+        r.iram_text = get_size((iram_text_list))
+        r.iram_other = get_size((iram_other_list))
+        r.used_iram = r.iram_vectors + r.iram_text + r.iram_other
         try:
             r.used_iram_ratio = r.used_iram / r.iram_total
         except ZeroDivisionError:
             r.used_iram_ratio = float('nan') if r.used_iram != 0 else 0
         r.iram_remain = r.iram_total - r.used_iram
 
-        r.used_diram_data = get_size(diram_data_list)
-        r.used_diram_bss = get_size(diram_bss_list)
-        r.used_diram_text = get_size(diram_text_list)
-        r.used_diram_vectors = get_size(diram_vectors_list)
-        r.used_diram_rodata = get_size(diram_rodata_list)
-        r.used_diram_other = get_size(diram_other_list)
-        r.used_diram = r.used_diram_data + r.used_diram_bss + r.used_diram_text + r.used_diram_vectors + r.used_diram_other + r.used_diram_rodata
+        r.diram_data = get_size(diram_data_list)
+        r.diram_bss = get_size(diram_bss_list)
+        r.diram_text = get_size(diram_text_list)
+        r.diram_vectors = get_size(diram_vectors_list)
+        r.diram_rodata = get_size(diram_rodata_list)
+        r.diram_other = get_size(diram_other_list)
+        r.used_diram = r.diram_data + r.diram_bss + r.diram_text + r.diram_vectors + r.diram_other + r.diram_rodata
         try:
             r.used_diram_ratio = r.used_diram / r.diram_total
         except ZeroDivisionError:
             r.used_diram_ratio = float('nan') if r.used_diram != 0 else 0
         r.diram_remain = r.diram_total - r.used_diram
 
-        r.used_flash_text = get_size(flash_text_list)
-        r.used_flash_rodata = get_size(flash_rodata_list)
+        r.flash_code = get_size(flash_text_list)
+        r.flash_rodata = get_size(flash_rodata_list)
 
-        r.used_flash_other = get_size(flash_other_list)
-        r.used_flash = r.used_flash_text + r.used_flash_rodata + r.used_flash_other
+        r.flash_other = get_size(flash_other_list)
+        r.used_flash_non_ram = r.flash_code + r.flash_rodata + r.flash_other
 
         # The used DRAM BSS is counted into the "Used static DRAM" but not into the "Total image size"
-        r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.used_flash
+        r.total_size = r.used_dram - r.dram_bss + r.used_iram + r.used_diram - r.diram_bss + r.used_flash_non_ram
         return r
 
-    def get_json_dic(self) -> collections.OrderedDict:
+    def get_dict(self) -> collections.OrderedDict:
         ret = collections.OrderedDict([
-            ('dram_data', self.used_dram_data),
-            ('dram_bss', self.used_dram_bss),
-            ('dram_rodata', self.used_dram_rodata),
-            ('dram_other', self.used_dram_other),
+            ('dram_data', self.dram_data),
+            ('dram_bss', self.dram_bss),
+            ('dram_rodata', self.dram_rodata),
+            ('dram_other', self.dram_other),
             ('used_dram', self.used_dram),
             ('dram_total', self.dram_total),
             ('used_dram_ratio', self.used_dram_ratio if self.used_dram_ratio is not float('nan') else 0),
             ('dram_remain', self.dram_remain),
 
-            ('iram_vectors', self.used_iram_vectors),
-            ('iram_text', self.used_iram_text),
-            ('iram_other', self.used_iram_other),
+            ('iram_vectors', self.iram_vectors),
+            ('iram_text', self.iram_text),
+            ('iram_other', self.iram_other),
             ('used_iram', self.used_iram),
             ('iram_total', self.iram_total),
             ('used_iram_ratio', self.used_iram_ratio),
             ('iram_remain', self.iram_remain),
 
-            ('diram_data', self.used_diram_data),
-            ('diram_bss', self.used_diram_bss),
-            ('diram_text', self.used_diram_text),
-            ('diram_vectors', self.used_diram_vectors),
-            ('diram_rodata', self.used_diram_rodata),
-            ('diram_other', self.used_diram_other),
+            ('diram_data', self.diram_data),
+            ('diram_bss', self.diram_bss),
+            ('diram_text', self.diram_text),
+            ('diram_vectors', self.diram_vectors),
+            ('diram_rodata', self.diram_rodata),
+            ('diram_other', self.diram_other),
             ('diram_total', self.diram_total),
             ('used_diram', self.used_diram),
             ('used_diram_ratio', self.used_diram_ratio),
             ('diram_remain', self.diram_remain),
 
-            ('flash_code', self.used_flash_text),
-            ('flash_rodata', self.used_flash_rodata),
-            ('flash_other', self.used_flash_other),
-            ('used_flash_non_ram', self.used_flash),    # text/data in D/I RAM not included
+            ('flash_code', self.flash_code),
+            ('flash_rodata', self.flash_rodata),
+            ('flash_other', self.flash_other),
+            ('used_flash_non_ram', self.used_flash_non_ram),    # text/data in D/I RAM not included
 
             ('total_size', self.total_size)             # bss not included
         ])
@@ -707,8 +715,7 @@ def get_structure_for_target(segments: Dict, sections: Dict, target: str) -> Str
     return current
 
 
-def get_summary(path: str, segments: Dict, sections: Dict, target: str,
-                as_json: bool=False,
+def get_summary(path: str, segments: Dict, sections: Dict, target: str, output_format: str='',
                 path_diff: str='', segments_diff: Optional[Dict]=None, sections_diff: Optional[Dict]=None,
                 target_diff: str='', print_suggestions: bool=True) -> str:
     segments_diff = segments_diff or {}
@@ -726,10 +733,10 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
         diff_en = False
         reference = StructureForSummary()
 
-    if as_json:
-        current_json_dic = current.get_json_dic()
+    if output_format == 'json':
+        current_json_dic = current.get_dict()
         if diff_en:
-            reference_json_dic = reference.get_json_dic()
+            reference_json_dic = reference.get_dict()
             diff_json_dic = collections.OrderedDict([
                 (k, v - reference_json_dic[k]) for k, v in current_json_dic.items()])
             output = format_json(collections.OrderedDict([('current', current_json_dic),
@@ -740,24 +747,24 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
             output = format_json(current_json_dic)
     else:
         class LineDef(object):
-            title = ''
-            name = ''
 
             def __init__(self, title: str, name: str) -> None:
                 self.title = title
                 self.name = name
 
             def format_line(self) -> Tuple[str, str, str, str]:
-                return (self.title + ': {%s:>7} bytes' % self.name,
+                return ('%16s: {%s:>7} bytes' % (self.title, self.name),
                         '{%s:>7}' % self.name,
                         '{%s:+}' % self.name,
                         '')
 
+            def format_line_csv(self) -> Tuple[str, str, str, str]:
+                return ('%s,{%s} bytes' % (self.title, self.name),
+                        '{%s}' % self.name,
+                        '{%s:+}' % self.name,
+                        '')
+
         class HeadLineDef(LineDef):
-            remain = ''
-            ratio = ''
-            total = ''
-            warning_message = ''
 
             def __init__(self, title: str, name: str, remain: str, ratio: str, total: str, warning_message: str) -> None:
                 super(HeadLineDef, self).__init__(title, name)
@@ -767,16 +774,28 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
                 self.warning_message = warning_message
 
             def format_line(self) -> Tuple[str, str, str, str]:
-                return ('%s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)%s' % (self.title, self.name, self.remain, self.ratio, self.warning_message),
+                return ('%-1s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)%s' % (self.title, self.name, self.remain, self.ratio, self.warning_message),
                         '{%s:>7}' % self.name,
                         '{%s:+}' % self.name,
                         '({%s:>+7} remain, {%s:>+7} total)' % (self.remain, self.total))
 
+            def format_line_csv(self) -> Tuple[str, str, str, str]:
+                return ('%s,{%s} bytes ({%s} remain {%s:.1%%} used)%s' % (self.title, self.name, self.remain, self.ratio, self.warning_message),
+                        '{%s}' % self.name,
+                        '{%s:+}' % self.name,
+                        '{%s} remain,{%s} total' % (self.remain, self.total))
+
         class TotalLineDef(LineDef):
 
             def format_line(self) -> Tuple[str, str, str, str]:
-                return (self.title + ': {%s:>7} bytes (.bin may be padded larger)' % self.name,
+                return ('%16s: {%s:>7} bytes (.bin may be padded larger)' % (self.title, self.name),
                         '{%s:>7}' % self.name,
+                        '{%s:+}' % self.name,
+                        '')
+
+            def format_line_csv(self) -> Tuple[str, str, str, str]:
+                return ('%s,{%s} bytes (.bin may be padded larger)' % (self.title, self.name),
+                        '{%s}' % self.name,
                         '{%s:+}' % self.name,
                         '')
 
@@ -785,69 +804,78 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
         format_list = [
             HeadLineDef('Used static DRAM', 'used_dram', remain='dram_remain', ratio='used_dram_ratio', total='dram_total',
                         warning_message=warning_message if current.get_dram_overflowed() else ''),
-            LineDef('      .data size', 'used_dram_data'),
-            LineDef('      .bss  size', 'used_dram_bss'),
-            LineDef('   .rodata  size', 'used_dram_rodata'),
-            LineDef(' DRAM other size', 'used_dram_other'),
+            LineDef('.data size', 'dram_data'),
+            LineDef('.bss  size', 'dram_bss'),
+            LineDef('.rodata  size', 'dram_rodata'),
+            LineDef('DRAM other size', 'dram_other'),
 
             HeadLineDef('Used static IRAM', 'used_iram', remain='iram_remain', ratio='used_iram_ratio', total='iram_total',
                         warning_message=warning_message if current.get_iram_overflowed() else ''),
-            LineDef('      .text size', 'used_iram_text'),
-            LineDef('   .vectors size', 'used_iram_vectors'),
+            LineDef('.text size', 'iram_text'),
+            LineDef('.vectors size', 'iram_vectors'),
 
             HeadLineDef('Used stat D/IRAM', 'used_diram', remain='diram_remain', ratio='used_diram_ratio', total='diram_total',
                         warning_message=warning_message if current.get_diram_overflowed() else ''),
-            LineDef('      .data size', 'used_diram_data'),
-            LineDef('      .bss  size', 'used_diram_bss'),
-            LineDef('      .text size', 'used_diram_text'),
-            LineDef('   .vectors size', 'used_diram_vectors'),
-            LineDef('    .rodata size', 'used_diram_rodata'),
-            LineDef('      other     ', 'used_diram_other'),
+            LineDef('.data size', 'diram_data'),
+            LineDef('.bss  size', 'diram_bss'),
+            LineDef('.text size', 'diram_text'),
+            LineDef('.vectors size', 'diram_vectors'),
+            LineDef('.rodata size', 'diram_rodata'),
+            LineDef('other', 'diram_other'),
 
-            LineDef('Used Flash size ', 'used_flash'),
-            LineDef('      .text     ', 'used_flash_text'),
-            LineDef('      .rodata   ', 'used_flash_rodata'),
+            LineDef('Used Flash size ', 'used_flash_non_ram'),
+            LineDef('.text', 'flash_code'),
+            LineDef('.rodata', 'flash_rodata'),
 
             TotalLineDef('Total image size', 'total_size')
         ]
 
-        def convert_to_fmt_dict(summary: StructureForSummary, suffix: str='') -> Dict:
-            required_items = StructureForSummary.get_required_items()
-            return dict([(key + suffix, getattr(summary, key)) for key in required_items])
-
-        f_dic1 = convert_to_fmt_dict(current)
+        current_dict = current.get_dict()
         if diff_en:
-            f_dic2 = convert_to_fmt_dict(reference)
-            f_dic_diff = convert_to_fmt_dict(current - reference)
+            reference_dict = reference.get_dict()
+            diff_dict = (current - reference).get_dict()
 
-        lf = '{:60}{:>15}{:>15} {}'  # Width for a, b, c, d columns
+        if output_format == 'csv':
+            line_format = '{},{},{},{}'
+        else:
+            line_format = '{:60}{:>15}{:>15} {}'  # Width for a, b, c, d columns
 
         def print_in_columns(a: str, b: Optional[str]='', c: Optional[str]='', d: Optional[str]='') -> str:
-            return lf.format(a, b, c, d).rstrip() + os.linesep
+            return line_format.format(a, b, c, d).rstrip() + os.linesep
 
         output = ''
         if diff_en:
-            output += print_in_columns('<CURRENT> MAP file: ' + path)
-            output += print_in_columns('<REFERENCE> MAP file: ' + path_diff)
-            output += print_in_columns('Difference is counted as <CURRENT> - <REFERENCE>, ',
-                                       'i.e. a positive number means that <CURRENT> is larger.')
-            output += print_in_columns('Total sizes of <CURRENT>:', '<REFERENCE>', 'Difference', '')
+            if output_format == 'csv':
+                output += print_in_columns('','<CURRENT>:', '<REFERENCE>', 'Difference')
+                output += print_in_columns('File', path, path_diff, '<CURRENT> - <REFERENCE>')
+            else:
+                output += print_in_columns('<CURRENT> MAP file: ' + path)
+                output += print_in_columns('<REFERENCE> MAP file: ' + path_diff)
+                output += print_in_columns('Difference is counted as <CURRENT> - <REFERENCE>, ',
+                                           'i.e. a positive number means that <CURRENT> is larger.')
+                output += print_in_columns('Total sizes of <CURRENT>:', '<REFERENCE>', 'Difference')
 
             for line in format_list:
                 if getattr(current, line.name) > 0 or getattr(reference, line.name) > 0 or line.name == 'total_size':
-                    main_string_format, reference_format, sign_format, main_diff_format = line.format_line()
+                    if output_format == 'csv':
+                        main_string_format, reference_format, sign_format, main_diff_format = line.format_line_csv()
+                    else:
+                        main_string_format, reference_format, sign_format, main_diff_format = line.format_line()
                     output += print_in_columns(
-                        main_string_format.format(**f_dic1),
-                        reference_format.format(**f_dic2),
-                        sign_format.format(**f_dic_diff) if not sign_format.format(**f_dic_diff).startswith('+0') else '',
-                        main_diff_format.format(**f_dic_diff))
+                        main_string_format.format(**current_dict),
+                        reference_format.format(**reference_dict),
+                        sign_format.format(**diff_dict) if not sign_format.format(**diff_dict).startswith('+0') else '',
+                        main_diff_format.format(**diff_dict))
         else:
             output += print_in_columns('Total sizes:')
 
             for line in format_list:
                 if getattr(current, line.name) > 0 or line.name == 'total_size':
-                    main_string_format, reference_format, sign_format, main_diff_format = line.format_line()
-                    output += print_in_columns(main_string_format.format(**f_dic1))
+                    if output_format == 'csv':
+                        main_string_format, _, _, _ = line.format_line_csv()
+                    else:
+                        main_string_format, _, _, _ = line.format_line()
+                    output += print_in_columns(main_string_format.format(**current_dict))
 
     return output
 
@@ -924,7 +952,7 @@ class StructureForDetailedSizes(object):
         return collections.OrderedDict(s)
 
 
-def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=False, sections_diff: Dict=None) -> str:
+def get_detailed_sizes(sections: Dict, key: str, header: str, output_format: str, sections_diff: Dict=None) -> str:
 
     key_name_set = set()
     current = StructureForDetailedSizes.get(sections, key)
@@ -941,7 +969,8 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
 
     key_name_list = list(key_name_set)
     ordered_key_list, display_name_list = LinkingSections.get_display_name_order(key_name_list)
-    if as_json:
+
+    if output_format == 'json':
         if diff_en:
             diff_json_dic = collections.OrderedDict()
             for name in sorted(list(frozenset(current.keys()) | frozenset(reference.keys()))):
@@ -958,13 +987,16 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
         else:
             output = format_json(current)
     else:
-        def _get_header_format(disp_list: List=display_name_list) -> str:
+        def _get_header_format(disp_list: List=display_name_list, output_format: str='') -> str:
+            if output_format == 'csv':
+                return '{},' * (len(disp_list) - 1) + '{}' + os.linesep
             len_list = [len(x) for x in disp_list]
             len_list.insert(0, 24)
             return ' '.join(['{:>%d}' % x for x in len_list]) + os.linesep
 
-        def _get_output(data: Dict[str, Dict[str, int]], selection: Collection, key_list: List=ordered_key_list, disp_list: List=display_name_list) -> str:
-            header_format = _get_header_format(disp_list)
+        def _get_output(data: Dict[str, Dict[str, int]], selection: Collection, output_format: str,
+                        key_list: List=ordered_key_list, disp_list: List=display_name_list) -> str:
+            header_format = _get_header_format(disp_list, output_format)
             output = header_format.format(header, *disp_list)
 
             for key, data_info in data.items():
@@ -985,28 +1017,30 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
                 output += header_format.format(key[:24], *(section_size_list))
             return output
 
-        def _get_header_format_diff(disp_list: List=display_name_list, columns: bool=False) -> str:
+        def _get_header_format_diff(disp_list: List=display_name_list, columns: bool=False, output_format: str='') -> str:
+            if output_format == 'csv':
+                return '{},' * len(disp_list) + '{}' + os.linesep
             if columns:
                 len_list = (24, ) + (7, ) * 3 * len(disp_list)
                 return '|'.join(['{:>%d}' % x for x in len_list]) + os.linesep
-
             len_list = (24, ) + (23, ) * len(disp_list)
             return ' '.join(['{:>%d}' % x for x in len_list]) + os.linesep
 
-        def _get_output_diff(curr: Dict, ref: Dict, key_list: List=ordered_key_list, disp_list: List=display_name_list) -> str:
+        def _get_output_diff(curr: Dict, ref: Dict, output_format: str, key_list: List=ordered_key_list, disp_list: List=display_name_list) -> str:
             # First header without Current/Ref/Diff columns
-            header_format = _get_header_format_diff(columns=False)
+            header_format = _get_header_format_diff(columns=False, output_format=output_format)
             output = header_format.format(header, *disp_list)
 
             f_print = ('-' * 23, '') * len(key_list)
             f_print = f_print[0:len(key_list)]
             header_line = header_format.format('', *f_print)
 
-            header_format = _get_header_format_diff(columns=True)
+            header_format = _get_header_format_diff(columns=True, output_format=output_format)
             f_print = ('<C>', '<R>', '<C>-<R>') * len(key_list)
 
             output += header_format.format('', *f_print)
-            output += header_line
+            if output_format != 'csv':
+                output += header_line
 
             for key, data_info in curr.items():
                 try:
@@ -1039,7 +1073,7 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
         output = 'Per-{} contributions to ELF file:{}'.format(key, os.linesep)
 
         if diff_en:
-            output += _get_output_diff(current, reference)
+            output += _get_output_diff(current, reference, output_format)
 
             in_current = frozenset(current.keys())
             in_reference = frozenset(reference.keys())
@@ -1048,13 +1082,13 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
 
             if len(only_in_current) > 0:
                 output += 'The following entries are present in <CURRENT> only:{}'.format(os.linesep)
-                output += _get_output(current, only_in_current)
+                output += _get_output(current, only_in_current, output_format)
 
             if len(only_in_reference) > 0:
                 output += 'The following entries are present in <REFERENCE> only:{}'.format(os.linesep)
-                output += _get_output(reference, only_in_reference)
+                output += _get_output(reference, only_in_reference, output_format)
         else:
-            output += _get_output(current, current)
+            output += _get_output(current, current, output_format)
 
     return output
 
@@ -1086,12 +1120,12 @@ class StructureForArchiveSymbols(object):
         return section_symbols
 
 
-def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, sections_diff: Dict=None) -> str:
+def get_archive_symbols(sections: Dict, archive: str, output_format: str, sections_diff: Dict=None) -> str:
     diff_en = bool(sections_diff)
     current = StructureForArchiveSymbols.get(archive, sections)
     reference = StructureForArchiveSymbols.get(archive, sections_diff) if sections_diff else {}
 
-    if as_json:
+    if output_format == 'json':
         if diff_en:
             diff_json_dic = collections.OrderedDict()
             for name in sorted(list(frozenset(current.keys()) | frozenset(reference.keys()))):
@@ -1123,12 +1157,18 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
 
         def _get_output(section_symbols: Dict) -> str:
             output = ''
+
             names_max_len, numbers_max_len  = _get_max_len(section_symbols)
+            if output_format == 'csv':
+                line_format = '{},{}' + os.linesep
+            else:
+                line_format = '    {:<%d} : {:>%d}' % (names_max_len,numbers_max_len) + os.linesep
+
             for t, s in section_symbols.items():
                 output += '{}Symbols from section: {}{}'.format(os.linesep, t, os.linesep)
                 item_pairs = _get_item_pairs(t, s)
                 for key, val in item_pairs.items():
-                    output += ' '.join([('\t{:<%d} : {:>%d}\n' % (names_max_len,numbers_max_len)).format(key, val)])
+                    output += line_format.format(key, val)
                 section_total = sum([val for _, val in item_pairs.items()])
                 output += 'Section total: {}{}'.format(section_total, os.linesep)
             return output
@@ -1136,14 +1176,18 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
         output = '{}Symbols within the archive: {} (Not all symbols may be reported){}'.format(os.linesep, archive, os.linesep)
         if diff_en:
 
-            def _generate_line_tuple(curr: collections.OrderedDict, ref: collections.OrderedDict, name: str) -> Tuple[str, int, int, str]:
+            def _generate_line_tuple(curr: collections.OrderedDict, ref: collections.OrderedDict, name: str, indent: str) -> Tuple[str, int, int, str]:
                 cur_val = curr.get(name, 0)
                 ref_val = ref.get(name, 0)
                 diff_val = cur_val - ref_val
                 # string slicing is used just to make sure it will fit into the first column of line_format
-                return ((' ' * 4 + name)[:40], cur_val, ref_val, '' if diff_val == 0 else '{:+}'.format(diff_val))
+                return ((indent + name)[:40], cur_val, ref_val, '' if diff_val == 0 else '{:+}'.format(diff_val))
 
-            line_format = '{:40} {:>12} {:>12} {:>25}'
+            if output_format == 'csv':
+                line_format = '{},{},{},{}'
+            else:
+                line_format = '{:40} {:>12} {:>12} {:>25}'
+
             all_section_names = sorted(list(frozenset(current.keys()) | frozenset(reference.keys())))
             for section_name in all_section_names:
                 current_item_pairs = _get_item_pairs(section_name, current.get(section_name, {}))
@@ -1157,10 +1201,12 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
                 diff_section_total = current_section_total - reference_section_total
                 all_item_names = sorted(list(frozenset(current_item_pairs.keys()) |
                                              frozenset(reference_item_pairs.keys())))
-                output += os.linesep.join([line_format.format(*_generate_line_tuple(current_item_pairs,
-                                                                                    reference_item_pairs,
-                                                                                    n)
-                                                              ).rstrip() for n in all_item_names])
+                indent = 4 * ' ' if output_format != 'csv' else ''
+                output += os.linesep.join(line_format.format(*_generate_line_tuple(current_item_pairs,
+                                                                                   reference_item_pairs,
+                                                                                   n,
+                                                                                   indent)
+                                                             ).rstrip() for n in all_item_names)
                 output += os.linesep if current_section_total > 0 or reference_section_total > 0 else ''
                 output += line_format.format('Section total:',
                                              current_section_total,
