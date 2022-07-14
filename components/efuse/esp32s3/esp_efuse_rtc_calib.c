@@ -96,3 +96,19 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
 
     return ESP_OK;
 }
+
+float esp_efuse_rtc_calib_get_cal_temp(int version)
+{
+    assert(version == 1);
+    const esp_efuse_desc_t** cal_temp_efuse;
+    cal_temp_efuse = ESP_EFUSE_TEMP_CALIB;
+    int cal_temp_size = esp_efuse_get_field_size(cal_temp_efuse);
+    assert(cal_temp_size == 9);
+
+    uint32_t cal_temp = 0;
+    esp_err_t err = esp_efuse_read_field_blob(cal_temp_efuse, &cal_temp, cal_temp_size);
+    assert(err == ESP_OK);
+    (void)err;
+    // BIT(8) stands for sign: 1: negtive, 0: positive
+    return ((cal_temp & BIT(8)) != 0)? -(uint8_t)cal_temp: (uint8_t)cal_temp;
+}

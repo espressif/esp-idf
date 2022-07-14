@@ -67,6 +67,7 @@ if(${target} STREQUAL "esp32s3")
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                      "esp32s3/touch_sensor.c"
+                     "esp32s3/rtc_tempsensor.c"
                     )
 endif()
 
