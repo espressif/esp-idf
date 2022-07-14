@@ -406,6 +406,9 @@ if __name__ == '__main__':
 
     arg = parser.parse_args()
 
+    # Since this script is executed from the pre-commit hook environment, make sure IDF_PATH is set
+    os.environ['IDF_PATH'] = os.path.realpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
     if arg.action == 'sort-yaml':
         sort_yaml(arg.files)
     else:
