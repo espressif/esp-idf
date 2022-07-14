@@ -219,6 +219,14 @@ component_ut_pytest_esp32_lan8720:
     - build_pytest_components_esp32
   tags: [ esp32, lan8720 ]
 
+component_ut_pytest_esp32_flash_encryption:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, flash_encryption ]
+
 component_ut_pytest_esp32s2_generic:
   extends:
     - .pytest_components_dir_template
@@ -243,6 +251,22 @@ component_ut_pytest_esp32s3_octal_psram:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, octal_psram ]
 
+component_ut_pytest_esp32s3_flash_encryption_f4r8:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, flash_encryption_f4r8 ]
+
+component_ut_pytest_esp32s3_flash_encryption_f8r8:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, flash_encryption_f8r8 ]
+
 component_ut_pytest_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
@@ -258,6 +282,14 @@ component_ut_pytest_esp32c3_generic:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, generic ]
+
+component_ut_pytest_esp32c3_flash_encryption:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, flash_encryption ]
 
 .pytest_test_apps_dir_template:
   extends: .pytest_template
@@ -769,13 +801,6 @@ UT_020:
     - Example_SPI_Multi_device
     - psram
 
-UT_021:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - psram
-    - UT_T1_FlashEncryption
-
 UT_022:
   extends: .unit_test_esp32_template
   tags:
@@ -789,12 +814,6 @@ UT_028:
     - ESP32_IDF
     - UT_T2_1
     - psram
-
-UT_031:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_FlashEncryption
 
 UT_033:
   extends: .unit_test_esp32_template
@@ -909,12 +928,6 @@ UT_C3_SPI_DUAL:
   tags:
     - ESP32C3_IDF
     - Example_SPI_Multi_device
-
-UT_C3_FLASH_ENC:
-  extends: .unit_test_esp32c3_template
-  tags:
-    - ESP32C3_IDF
-    - UT_T1_FlashEncryption
 
 UT_C3_I2C:
   extends: .unit_test_esp32c3_template

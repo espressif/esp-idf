@@ -1,15 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
-
-#include <unity.h>
-#include <test_utils.h>
+#include <stdlib.h>
+#include "esp_log.h"
+#include "unity.h"
+#include "esp_flash.h"
 #include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
 #include <string.h>
 #include "esp_log.h"
+#include "esp_partition.h"
+#include "esp_heap_caps.h"
 
 /*-------------------- For running this test, some configurations are necessary -------------------*/
 /*     ESP32    |           CONFIG_SECURE_FLASH_ENC_ENABLED         |             SET              */
@@ -26,6 +31,15 @@ static void test_encrypted_write(size_t offset, const uint8_t *data, size_t leng
 static void verify_erased_flash(size_t offset, size_t length);
 
 static size_t start;
+
+const esp_partition_t *get_test_data_partition(void)
+{
+    /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
+    const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+            ESP_PARTITION_SUBTYPE_ANY, "flash_test");
+    TEST_ASSERT_NOT_NULL(result); /* means partition table set wrong */
+    return result;
+}
 
 static void setup_tests(void)
 {
@@ -46,7 +60,7 @@ static void verify_erased_flash(size_t offset, size_t length)
     free(readback);
 }
 
-TEST_CASE("test 16 byte encrypted writes", "[flash_encryption][test_env=UT_T1_FlashEncryption]")
+TEST_CASE("test 16 byte encrypted writes", "[flash_encryption]")
 {
     setup_tests();
 
@@ -107,7 +121,7 @@ static void test_encrypted_write(size_t offset, const uint8_t *data, size_t leng
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data, readback, length);
 }
 
-TEST_CASE("test read & write random encrypted data", "[flash_encryption][test_env=UT_T1_FlashEncryption]")
+TEST_CASE("test read & write random encrypted data", "[flash_encryption]")
 {
     const int MAX_LEN = 192;
     //buffer to hold the read data
@@ -190,7 +204,7 @@ static void test_encrypted_write_new_impl(size_t offset, const uint8_t *data, si
     free(readback);
 }
 
-TEST_CASE("test 16 byte encrypted writes (esp_flash)", "[esp_flash_enc][flash_encryption][test_env=UT_T1_FlashEncryption]")
+TEST_CASE("test 16 byte encrypted writes (esp_flash)", "[flash_encryption]")
 {
     setup_tests();
 
@@ -238,7 +252,7 @@ TEST_CASE("test 16 byte encrypted writes (esp_flash)", "[esp_flash_enc][flash_en
     verify_erased_flash(start + 0x120, 0x10);
 }
 
-TEST_CASE("test read & write encrypted data(32 bytes alianed address)", "[esp_flash_enc][flash_encryption][test_env=UT_T1_FlashEncryption]")
+TEST_CASE("test read & write encrypted data(32 bytes alianed address)", "[flash_encryption]")
 {
     setup_tests();
 
@@ -264,7 +278,7 @@ TEST_CASE("test read & write encrypted data(32 bytes alianed address)", "[esp_fl
     free(cmp_encrypt_buf);
 }
 
-TEST_CASE("test read & write encrypted data(16 bytes alianed but 32 bytes unaligned)", "[esp_flash_enc][flash_encryption][test_env=UT_T1_FlashEncryption]")
+TEST_CASE("test read & write encrypted data(16 bytes alianed but 32 bytes unaligned)", "[flash_encryption]")
 {
     setup_tests();
     TEST_ESP_OK(esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE));
@@ -310,7 +324,7 @@ static const uint8_t large_const_buffer[16432] = {
     202, // last byte
 };
 
-TEST_CASE("test read & write encrypted data with large buffer(n*64+32+16)", "[esp_flash_enc][flash_encryption][test_env=UT_T1_FlashEncryption]")
+TEST_CASE("test read & write encrypted data with large buffer(n*64+32+16)", "[flash_encryption]")
 {
     // The tested buffer should be n*64(or n*32)+16 bytes.
     setup_tests();
