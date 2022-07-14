@@ -14,6 +14,7 @@
 #include "soc/i2c_struct.h"
 #include "hal/i2c_types.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/clk_tree_defs.h"
 #include "esp_rom_sys.h"
 
 #ifdef __cplusplus
@@ -82,8 +83,6 @@ typedef struct {
 #define I2C_LL_MASTER_TX_INT          (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 // I2C master RX interrupt bitmap
 #define I2C_LL_MASTER_RX_INT          (I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-// I2C source clock
-#define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_RTC) ? 20*1000*1000 : 40*1000*1000); // Another clock is XTAL clock
 // delay time after rtc_clk swiching on
 #define DELAY_RTC_CLK_SWITCH          (5)
 // I2C max timeout value
@@ -726,15 +725,10 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  *
  * @return None
  */
-static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
+static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
-    // rtc_clk needs to switch on.
-    if (src_clk == I2C_SCLK_RTC) {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-        esp_rom_delay_us(DELAY_RTC_CLK_SWITCH); // TODO: IDF-4535
-    }
     // src_clk : (1) for RTC_CLK, (0) for XTAL
-    hw->clk_conf.sclk_sel = (src_clk == I2C_SCLK_RTC) ? 1 : 0;
+    hw->clk_conf.sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
 
 /**

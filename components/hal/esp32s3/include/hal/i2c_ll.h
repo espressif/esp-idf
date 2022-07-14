@@ -12,6 +12,7 @@
 #include "soc/i2c_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/i2c_types.h"
 
 #ifdef __cplusplus
@@ -83,8 +84,6 @@ typedef struct {
 #define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_WM_INT_ENA_M)
 // I2C slave RX interrupt bitmap
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
-// I2C source clock
-#define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_RTC) ? 8*1000*1000 : 40*1000*1000); // Another clock is XTAL clock
 // I2C max timeout value
 #define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_VALUE_V
 
@@ -846,9 +845,9 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  *
  * @return None
  */
-static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
+static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
-    hw->clk_conf.sclk_sel = (src_clk == I2C_SCLK_RTC) ? 1 : 0;
+    hw->clk_conf.sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
 
 /**
