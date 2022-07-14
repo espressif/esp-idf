@@ -8,6 +8,9 @@
 #include <stdbool.h>
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
+#if CONFIG_ETH_USE_SPI_ETHERNET
+#include "driver/spi_master.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -473,18 +476,20 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
  *
  */
 typedef struct {
-    void *spi_hdl;     /*!< Handle of SPI device driver */
-    int int_gpio_num;  /*!< Interrupt GPIO number */
+    spi_host_device_t spi_host_id;              /*!< SPI peripheral */
+    spi_device_interface_config_t *spi_devcfg;  /*!< SPI device configuration */
+    int int_gpio_num;                           /*!< Interrupt GPIO number */
 } eth_dm9051_config_t;
 
 /**
  * @brief Default DM9051 specific configuration
  *
  */
-#define ETH_DM9051_DEFAULT_CONFIG(spi_device) \
-    {                                         \
-        .spi_hdl = spi_device,                \
-        .int_gpio_num = 4,                    \
+#define ETH_DM9051_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
+    {                                           \
+        .spi_host_id = spi_host,                \
+        .spi_devcfg = spi_devcfg_p,             \
+        .int_gpio_num = 4,                      \
     }
 
 /**
@@ -506,18 +511,20 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
  *
  */
 typedef struct {
-    void *spi_hdl;     /*!< Handle of SPI device driver */
-    int int_gpio_num;  /*!< Interrupt GPIO number */
+    spi_host_device_t spi_host_id;              /*!< SPI peripheral */
+    spi_device_interface_config_t *spi_devcfg;  /*!< SPI device configuration */
+    int int_gpio_num;                           /*!< Interrupt GPIO number */
 } eth_w5500_config_t;
 
 /**
  * @brief Default W5500 specific configuration
  *
  */
-#define ETH_W5500_DEFAULT_CONFIG(spi_device) \
-    {                                        \
-        .spi_hdl = spi_device,               \
-        .int_gpio_num = 4,                   \
+#define ETH_W5500_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
+    {                                          \
+        .spi_host_id = spi_host,               \
+        .spi_devcfg = spi_devcfg_p,            \
+        .int_gpio_num = 4,                     \
     }
 
 /**
@@ -539,18 +546,20 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
  *
  */
 typedef struct {
-    void *spi_hdl;     /*!< Handle of SPI device driver */
-    int int_gpio_num;  /*!< Interrupt GPIO number */
+    spi_host_device_t spi_host_id;              /*!< SPI peripheral */
+    spi_device_interface_config_t *spi_devcfg;  /*!< SPI device configuration */
+    int int_gpio_num;                           /*!< Interrupt GPIO number */
 } eth_ksz8851snl_config_t;
 
 /**
  * @brief Default KSZ8851SNL specific configuration
  *
  */
-#define ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_device) \
-    {                                        \
-        .spi_hdl = spi_device,               \
-        .int_gpio_num = 14,                   \
+#define ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_host, spi_devcfg_p) \
+    {                                               \
+        .spi_host_id = spi_host,                    \
+        .spi_devcfg = spi_devcfg_p,                 \
+        .int_gpio_num = 14,                         \
     }
 
 /**

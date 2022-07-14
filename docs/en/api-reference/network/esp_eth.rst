@@ -253,18 +253,15 @@ SPI-Ethernet Module
         .quadhd_io_num = -1,
     };
     ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
-    // Allocate SPI device from the bus
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 1,
-        .address_bits = 7,
+    // Configure SPI device
+    spi_device_interface_config_t spi_devcfg = {
         .mode = 0,
         .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
         .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
         .queue_size = 20
     };
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
     /* dm9051 ethernet driver is based on spi driver */
-    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     dm9051_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
@@ -272,8 +269,7 @@ SPI-Ethernet Module
 
 .. note::
     * When creating MAC and PHY instance for SPI-Ethernet modules (e.g. DM9051), the constructor function must have the same suffix (e.g. `esp_eth_mac_new_dm9051` and `esp_eth_phy_new_dm9051`). This is because we don't have other choices but the integrated PHY.
-    * We have to create an SPI device handle firstly and then pass it to the MAC constructor function. More instructions on creating SPI device handle, please refer to :doc:`SPI Master <../peripherals/spi_master>`.
-    * The SPI device configuration (i.e. `spi_device_interface_config_t`) can be different for other Ethernet modules. Please check out your module's spec and the examples in esp-idf.
+    * The SPI device configuration (i.e. `spi_device_interface_config_t`) may slightly differ for other Ethernet modules or to meet SPI timing on specific PCB. Please check out your module's spec and the examples in esp-idf.
 
 
 Install Driver

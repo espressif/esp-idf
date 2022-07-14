@@ -47,6 +47,12 @@ ESP NETIF Glue Event Handlers
 -----------------------------
 ``esp_eth_set_default_handlers()`` and ``esp_eth_clear_default_handlers()`` functions were removed. Registration of the default IP layer handlers for Ethernet is now handled automatically. If users have already followed the recommendation to fully initialize the Ethernet driver and network interface prior to registering their Ethernet/IP event handlers, then no action is required (except for deleting the affected functions). Otherwise, users should ensure that they register the user event handlers as the last thing prior to starting the Ethernet driver.
 
+
 PHY Address Auto-detect
 -----------------------
 Ethernet PHY address auto-detect function ``esp_eth_detect_phy_addr`` was renamed to :cpp:func:`esp_eth_phy_802_3_detect_phy_addr` and its header declaration was moved to :component_file:`esp_eth/include/esp_eth_phy_802_3.h`.
+
+
+SPI-Ethernet Modules Initialization
+-----------------------------------
+SPI-Ethernet Modules Initialization was simplified. It is not needed to create an SPI device handle by calling :cpp:func:`spi_bus_add_device` prior SPI-Ethernet MAC instance creation since it is done internally now. The configuration structures :cpp:class:`eth_dm9051_config_t`, :cpp:class:`eth_w5500_config_t` and :cpp:class:`eth_ksz8851snl_config_t` members were updated to include SPI device configuration (to be able to fine tune SPI timig which may be dependend on PCB design, for instance). See :doc:`Ethernet <../api-reference/network/esp_eth>` to find SPI-Ethernet Module initialization example.

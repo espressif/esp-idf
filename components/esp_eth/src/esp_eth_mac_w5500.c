@@ -619,6 +619,7 @@ static esp_err_t emac_w5500_del(esp_eth_mac_t *mac)
 {
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     vTaskDelete(emac->rx_task_hdl);
+    spi_bus_remove_device(emac->spi_hdl);
     vSemaphoreDelete(emac->spi_lock);
     free(emac);
     return ESP_OK;
@@ -633,10 +634,22 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
     ESP_GOTO_ON_FALSE(emac, NULL, err, TAG, "no mem for MAC instance");
     /* w5500 driver is interrupt driven */
     ESP_GOTO_ON_FALSE(w5500_config->int_gpio_num >= 0, NULL, err, TAG, "invalid interrupt gpio number");
+    /* SPI device init */
+    spi_device_interface_config_t spi_devcfg;
+    memcpy(&spi_devcfg, w5500_config->spi_devcfg, sizeof(spi_device_interface_config_t));
+    if (w5500_config->spi_devcfg->command_bits == 0 && w5500_config->spi_devcfg->address_bits == 0) {
+        /* configure default SPI frame format */
+        spi_devcfg.command_bits = 16; // Actually it's the address phase in W5500 SPI frame
+        spi_devcfg.address_bits = 8;  // Actually it's the control phase in W5500 SPI frame
+    } else {
+        ESP_GOTO_ON_FALSE(w5500_config->spi_devcfg->command_bits == 16 || w5500_config->spi_devcfg->address_bits == 8,
+                            NULL, err, TAG, "incorrect SPI frame format (command_bits/address_bits)");
+    }
+    ESP_GOTO_ON_FALSE(spi_bus_add_device(w5500_config->spi_host_id, &spi_devcfg, &emac->spi_hdl) == ESP_OK,
+                                            NULL, err, TAG, "adding device to SPI host #%d failed", w5500_config->spi_host_id + 1);
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num = w5500_config->int_gpio_num;
-    emac->spi_hdl = w5500_config->spi_hdl;
     emac->parent.set_mediator = emac_w5500_set_mediator;
     emac->parent.init = emac_w5500_init;
     emac->parent.deinit = emac_w5500_deinit;

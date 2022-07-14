@@ -237,7 +237,6 @@ void register_ethernet(void)
 #endif
 #elif CONFIG_ETH_USE_SPI_ETHERNET
     gpio_install_isr_service(0);
-    spi_device_handle_t spi_handle = NULL;
     spi_bus_config_t buscfg = {
         .miso_io_num = CONFIG_EXAMPLE_ETH_SPI_MISO_GPIO,
         .mosi_io_num = CONFIG_EXAMPLE_ETH_SPI_MOSI_GPIO,
@@ -247,67 +246,32 @@ void register_ethernet(void)
     };
     ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
-#if CONFIG_EXAMPLE_USE_KSZ8851SNL
-    spi_device_interface_config_t devcfg = {
+    spi_device_interface_config_t spi_devcfg = {
         .mode = 0,
         .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
         .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
         .queue_size = 20
     };
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    /* KSZ8851SNL ethernet driver is based on spi driver */
-    eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_handle);
+#if CONFIG_EXAMPLE_USE_KSZ8851SNL
+    eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     ksz8851snl_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_ksz8851snl(&phy_config);
 #elif CONFIG_EXAMPLE_USE_DM9051
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 1,
-        .address_bits = 7,
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
-        .queue_size = 20
-    };
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    /* dm9051 ethernet driver is based on spi driver */
-    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     dm9051_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
 #elif CONFIG_EXAMPLE_USE_W5500
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 16, // Actually it's the address phase in W5500 SPI frame
-        .address_bits = 8,  // Actually it's the control phase in W5500 SPI frame
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
-        .queue_size = 20
-    };
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    /* w5500 ethernet driver is based on spi driver */
-    eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(spi_handle);
+    eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     w5500_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_w5500(&w5500_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_w5500(&phy_config);
 #elif CONFIG_EXAMPLE_USE_ENC28J60
-    /* ENC28J60 ethernet driver is based on spi driver */
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 3,
-        .address_bits = 5,
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
-        .queue_size = 20,
-        .cs_ena_posttrans = enc28j60_cal_spi_cs_hold_time(CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ)
-    };
-    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-
-    eth_enc28j60_config_t enc28j60_config = ETH_ENC28J60_DEFAULT_CONFIG(spi_handle);
+    spi_devcfg.cs_ena_posttrans = enc28j60_cal_spi_cs_hold_time(CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ);
+    eth_enc28j60_config_t enc28j60_config = ETH_ENC28J60_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
     enc28j60_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
-
     esp_eth_mac_t *mac = esp_eth_mac_new_enc28j60(&enc28j60_config, &mac_config);
-
     phy_config.autonego_timeout_ms = 0; // ENC28J60 doesn't support auto-negotiation
     phy_config.reset_gpio_num = -1; // ENC28J60 doesn't have a pin to reset internal PHY
     esp_eth_phy_t *phy = esp_eth_phy_new_enc28j60(&phy_config);
@@ -323,14 +287,14 @@ void register_ethernet(void)
         0x02, 0x00, 0x00, 0x12, 0x34, 0x56
     }));
 #endif
+#if CONFIG_EXAMPLE_USE_ENC28J60 && CONFIG_EXAMPLE_ENC28J60_DUPLEX_FULL
+    eth_duplex_t duplex = ETH_DUPLEX_FULL;
+    ESP_ERROR_CHECK(esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+#endif
     ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)));
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_eth_start(eth_handle));
-
-#if CONFIG_EXAMPLE_USE_ENC28J60 && CONFIG_EXAMPLE_ENC28J60_DUPLEX_FULL
-    enc28j60_set_phy_duplex(phy, ETH_DUPLEX_FULL);
-#endif
 
     eth_control_args.control = arg_str1(NULL, NULL, "<info>", "Get info of Ethernet");
     eth_control_args.end = arg_end(1);
