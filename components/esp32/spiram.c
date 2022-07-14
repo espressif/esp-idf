@@ -189,10 +189,11 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
 #endif
 }
 
-
-static uint8_t *dma_heap;
-
 esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
+    if (size == 0) {
+        return ESP_OK;
+    }
+
     ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size/1024);
     /* Pool may be allocated in multiple non-contiguous chunks, depending on available RAM */
     while (size > 0) {
@@ -200,7 +201,8 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
         next_size = MIN(next_size, size);
 
         ESP_EARLY_LOGD(TAG, "Allocating block of size %d bytes", next_size);
-        dma_heap = heap_caps_malloc(next_size, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
+
+        uint8_t *dma_heap = heap_caps_malloc(next_size, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
         if (!dma_heap || next_size == 0) {
             return ESP_ERR_NO_MEM;
         }
