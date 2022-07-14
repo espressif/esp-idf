@@ -365,7 +365,7 @@ static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     rgb_panel->x_gap = x_gap;
-    rgb_panel->x_gap = y_gap;
+    rgb_panel->y_gap = y_gap;
     return ESP_OK;
 }
 
