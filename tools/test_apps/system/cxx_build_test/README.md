@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # C++ build test
 
 This build-only app can be used to check if certain headers, macros or features can be successfully compiled in a C++ source file.

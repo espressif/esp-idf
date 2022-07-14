@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # ESP Local Control using HTTPS server
 
 This example creates a `esp_local_ctrl` service over HTTPS transport, for securely controlling the device over local network. In this case the device name is resolved through `mDNS`, which in this example is `my_esp_ctrl_device.local`.

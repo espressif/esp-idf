@@ -6,9 +6,6 @@
 #     the fast build will be built.
 #
 # Needs to be called under IDF root folder
-#
-# This script will call find_apps.py with the following arguments:
-# - CMake build arguments: --work-dir {BUILD_PATH}/cmake --build-dir ${BUILD_DIR} --build-log ${BUILD_LOG_CMAKE}
 
 set -euo pipefail
 
@@ -50,55 +47,36 @@ get_config_str() {
     echo ${CONFIG_STR}
 }
 
-search_cmake() {
-    TARGET=$1
-    shift
-    CONFIG_STR=$*
-    tools/find_apps.py -vv --format json --work-dir ${BUILD_PATH}/cmake --build-dir ${BUILD_DIR} --build-log ${BUILD_LOG_CMAKE} -p esp-idf-template --build-system cmake ${CONFIG_STR} --target ${TARGET} --output scan_temp.json
-    cat scan_temp.json >> scan.json
-    rm scan_temp.json
-}
-
-build() {
-    tools/build_apps.py -vv --format json --keep-going --parallel-count 1 --parallel-index 1 --size-info ${SIZE_INFO_LOCATION} scan.json
-    rm scan.json
-}
-
 build_stage2() {
     CONFIG_STR=$(get_config_str sdkconfig.ci.*=)
-    search_cmake esp32 ${CONFIG_STR}
-    search_cmake esp32s2 ${CONFIG_STR}
-    search_cmake esp32s3 ${CONFIG_STR}
-    search_cmake esp32c3 ${CONFIG_STR}
-    search_cmake esp32h2 ${CONFIG_STR}
-    search_cmake esp32c2 ${CONFIG_STR}
-
-    build build_list_1.json
-
-    CONFIG_STR=$(get_config_str sdkconfig.ci3.*=)
-    search_cmake esp32 ${CONFIG_STR}
-    search_cmake esp32s2 ${CONFIG_STR}
-    search_cmake esp32s3 ${CONFIG_STR}
-    search_cmake esp32c3 ${CONFIG_STR}
-    search_cmake esp32h2 ${CONFIG_STR}
-    search_cmake esp32c2 ${CONFIG_STR}
 
     # Override EXTRA_CFLAGS and EXTRA_CXXFLAGS in the environment
     export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
     export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
-    build
+    python -m idf_build_apps build -vv \
+        -p esp-idf-template \
+        -t all \
+        ${CONFIG_STR} \
+        --work-dir ${BUILD_PATH}/cmake \
+        --build-dir ${BUILD_DIR} \
+        --build-log ${BUILD_LOG_CMAKE} \
+        --size-file size.json \
+        --collect-size-info size_info.txt \
+        --default-build-targets esp32,esp32s2,esp32s3,esp32c2,esp32c3 # add esp32h2 back after IDF-5541
 }
 
 build_stage1() {
     CONFIG_STR=$(get_config_str sdkconfig.ci2.*=)
-    search_cmake esp32 ${CONFIG_STR}
-    search_cmake esp32s2 ${CONFIG_STR}
-    search_cmake esp32s3 ${CONFIG_STR}
-    search_cmake esp32c3 ${CONFIG_STR}
-    search_cmake esp32h2 ${CONFIG_STR}
-    search_cmake esp32c2 ${CONFIG_STR}
-
-    build
+    python -m idf_build_apps build -vv \
+        -p esp-idf-template \
+        -t all \
+        ${CONFIG_STR} \
+        --work-dir ${BUILD_PATH}/cmake \
+        --build-dir ${BUILD_DIR} \
+        --build-log ${BUILD_LOG_CMAKE} \
+        --size-file size.json \
+        --collect-size-info size_info.txt \
+        --default-build-targets esp32,esp32s2,esp32s3,esp32c2,esp32c3,esp32h2
 }
 
 # Default arguments

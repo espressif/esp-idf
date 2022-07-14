@@ -390,11 +390,11 @@ Build Job Names
 Build Job Command
 ^^^^^^^^^^^^^^^^^
 
-The command used by CI to build all the relevant tests is: ``python $IDF_PATH/tools/ci/build_pytest_apps.py <parent_dir> --target <target> -vv``
+The command used by CI to build all the relevant tests is: ``python $IDF_PATH/tools/ci/ci_build_apps.py <parent_dir> --target <target> -vv --pytest-apps``
 
 All apps which supported the specified target would be built with all supported sdkconfig files under ``build_<target>_<config>``.
 
-For example, If you run ``python $IDF_PATH/tools/ci/build_pytest_apps.py $IDF_PATH/examples/system/console/basic --target esp32``, the folder structure would be like this:
+For example, If you run ``python $IDF_PATH/tools/ci/ci_build_apps.py $IDF_PATH/examples/system/console/basic --target esp32 --pytest-apps``, the folder structure would be like this:
 
 .. code:: text
 
@@ -442,7 +442,7 @@ For example, if you want to run all the esp32 tests under the ``$IDF_PATH/exampl
    $ cd $IDF_PATH
    $ . ./export.sh
    $ cd examples/system/console/basic
-   $ python $IDF_PATH/tools/ci/build_pytest_apps.py . --target esp32 -vv
+   $ python $IDF_PATH/tools/ci/ci_build_apps.py . --target esp32 -vv --pytest-apps
    $ pytest --target esp32
 
 Tips and Tricks

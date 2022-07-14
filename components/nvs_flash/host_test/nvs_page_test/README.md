@@ -1,3 +1,6 @@
+| Supported Targets | Linux |
+| ----------------- | ----- |
+
 # NVS Page Unit Test
 
 This unit test for the `nvs::Page` C++ class uses CMock to abstract its dependency to the `spi_flash` component. Its `CMakeLists.txt` builds mocks instead of the actual `spi_flash` component by setting the component property `USE_MOCK` for `spi_flash`. It also needs some stubs for CRC32 since the ROM component can not be mocked yet. These are retrieved from the `mock` directory inside `nvs_flash`.

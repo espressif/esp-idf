@@ -4,7 +4,7 @@
 # SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
+import contextlib
 import io
 import logging
 import os
@@ -12,7 +12,14 @@ import subprocess
 import sys
 from contextlib import redirect_stdout
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Optional, Set
+from typing import TYPE_CHECKING, Any, List, Optional, Set, Union
+
+try:
+    from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+    from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
 
 if TYPE_CHECKING:
     from _pytest.python import Function
@@ -125,6 +132,9 @@ def to_list(s: Any) -> List[Any]:
     return [s]
 
 
+####################
+# Pytest Utilities #
+####################
 @dataclass
 class PytestApp:
     path: str
@@ -195,37 +205,110 @@ class PytestCollectPlugin:
 
 
 def get_pytest_cases(
-    folder: str, target: str, marker_expr: Optional[str] = None
+    paths: Union[str, List[str]], target: str = 'all', marker_expr: Optional[str] = None
 ) -> List[PytestCase]:
     import pytest
     from _pytest.config import ExitCode
 
-    collector = PytestCollectPlugin(target)
-    if marker_expr:
-        marker_expr = f'{target} and ({marker_expr})'
+    if target == 'all':
+        targets = SUPPORTED_TARGETS + PREVIEW_TARGETS
     else:
-        marker_expr = target  # target is also a marker
+        targets = [target]
 
-    with io.StringIO() as buf:
-        with redirect_stdout(buf):
-            res = pytest.main(
-                ['--collect-only', folder, '-q', '-m', marker_expr], plugins=[collector]
-            )
-        if res.value != ExitCode.OK:
-            if res.value == ExitCode.NO_TESTS_COLLECTED:
-                print(
-                    f'WARNING: no pytest app found for target {target} under folder {folder}'
-                )
-            else:
-                print(buf.getvalue())
-                raise RuntimeError('pytest collection failed')
+    cases = []
+    for t in targets:
+        collector = PytestCollectPlugin(t)
+        if marker_expr:
+            _marker_expr = f'{t} and ({marker_expr})'
+        else:
+            _marker_expr = t  # target is also a marker
 
-    return collector.cases
+        for path in to_list(paths):
+            with io.StringIO() as buf:
+                with redirect_stdout(buf):
+                    cmd = ['--collect-only', path, '-q', '-m', _marker_expr]
+                    res = pytest.main(cmd, plugins=[collector])
+                if res.value != ExitCode.OK:
+                    if res.value == ExitCode.NO_TESTS_COLLECTED:
+                        print(
+                            f'WARNING: no pytest app found for target {t} under path {path}'
+                        )
+                    else:
+                        print(buf.getvalue())
+                        raise RuntimeError(
+                            f'pytest collection failed at {path} with command \"{" ".join(cmd)}\"'
+                        )
+
+        cases.extend(collector.cases)
+
+    return cases
 
 
 def get_pytest_app_paths(
-    folder: str, target: str, marker_expr: Optional[str] = None
+    paths: Union[str, List[str]], target: str, marker_expr: Optional[str] = None
 ) -> Set[str]:
-    cases = get_pytest_cases(folder, target, marker_expr)
+    cases = get_pytest_cases(paths, target, marker_expr)
 
     return set({app.path for case in cases for app in case.apps})
+
+
+##################
+# TTFW Utilities #
+##################
+def get_ttfw_cases(paths: Union[str, List[str]]) -> List[Any]:
+    """
+    Get the test cases from ttfw_idf under the given paths
+
+    :param paths: list of paths to search
+    """
+    try:
+        from ttfw_idf.IDFAssignTest import IDFAssignTest
+    except ImportError:
+        sys.path.append(os.path.join(IDF_PATH, 'tools', 'ci', 'python_packages'))
+
+        from ttfw_idf.IDFAssignTest import IDFAssignTest
+
+    # mock CI_JOB_ID if not exists
+    if not os.environ.get('CI_JOB_ID'):
+        os.environ['CI_JOB_ID'] = '1'
+
+    cases = []
+    for path in to_list(paths):
+        assign = IDFAssignTest(
+            path, os.path.join(IDF_PATH, '.gitlab', 'ci', 'target-test.yml')
+        )
+        with contextlib.redirect_stdout(None):  # swallow stdout
+            try:
+                cases += assign.search_cases()
+            except ImportError as e:
+                logging.error(str(e))
+
+    return cases
+
+
+def get_ttfw_app_paths(
+    paths: Union[str, List[str]], target: Optional[str] = None
+) -> Set[str]:
+    """
+    Get the app paths from ttfw_idf under the given paths
+    """
+    from idf_build_apps import CMakeApp
+
+    cases = get_ttfw_cases(paths)
+    res: Set[str] = set()
+    for case in cases:
+        if not target or target == case.case_info['target'].lower():
+            # ttfw has no good way to detect the app path for master-slave tests
+            # the apps real location may be the sub folder of the test script path
+            # check if the current folder is an app, if it's not, add all its subfolders if they are apps
+            # only one level down
+            _app_dir = case.case_info['app_dir']
+            if CMakeApp.is_app(_app_dir):
+                res.add(_app_dir)
+            else:
+                for child in os.listdir(_app_dir):
+                    sub_path = os.path.join(_app_dir, child)
+                    if os.path.isdir(sub_path) and CMakeApp.is_app(sub_path):
+                        res.add(sub_path)
+
+    return res

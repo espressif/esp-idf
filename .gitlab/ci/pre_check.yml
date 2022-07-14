@@ -51,8 +51,6 @@ check_python_style:
   extends:
     - .pre_check_base_template
     - .rules:patterns:python-files
-  variables:
-    PYTHON_VER: 3.7.10
   artifacts:
     when: on_failure
     paths:
@@ -63,8 +61,6 @@ check_python_style:
 
 test_check_kconfigs:
   extends: .pre_check_job_template
-  variables:
-    PYTHON_VER: 3.7.10
   artifacts:
     when: on_failure
     paths:
@@ -157,38 +153,6 @@ check_esp_system:
   script:
     - python components/esp_system/check_system_init_priorities.py
 
-scan_tests:
-  extends:
-    - .pre_check_base_template
-    - .before_script_pytest
-    - .rules:build:target_test
-  image: $TARGET_TEST_ENV_IMAGE
-  tags:
-    - scan_test  # since this job is used for uploading the cache, the runner tags should be unique
-  artifacts:
-    paths:
-      - $EXAMPLE_TEST_OUTPUT_DIR
-      - $TEST_APPS_OUTPUT_DIR
-      - $COMPONENT_UT_OUTPUT_DIR
-    expire_in: 1 week
-  variables:
-    EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
-    EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
-    TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
-    TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
-    COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
-    CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
-    EXTRA_TEST_DIRS: >-
-      examples/bluetooth/esp_ble_mesh/ble_mesh_console
-      examples/bluetooth/hci/controller_hci_uart_esp32
-      examples/wifi/iperf
-    EXTRA_EVALUATE_ARGS: '--evaluate-parallel-count --config "sdkconfig.ci=default" --config "sdkconfig.ci.*=" --config "=default"'
-  script:
-    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR --extra_test_dirs $EXTRA_TEST_DIRS $EXTRA_EVALUATE_ARGS
-    - run_cmd python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR $EXTRA_EVALUATE_ARGS
-    - set_component_ut_vars
-    - run_cmd python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR --combine-all-targets --except-targets linux $EXTRA_EVALUATE_ARGS
-
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'
 check_version_tag:
@@ -211,3 +175,10 @@ check_commit_msg:
     - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'
+
+check_test_scripts_build_test_rules:
+  extends:
+    - .pre_check_job_template
+    - .before_script_build_jobs
+  script:
+    - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components

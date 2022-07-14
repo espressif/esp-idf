@@ -10,7 +10,6 @@ clang_tidy_check:
     when: always
     expire_in: 1 day
   variables:
-    CLANG_TIDY_RUNNER_PROJ: 2107  # idf/clang-tidy-runner
     CLANG_TIDY_DIRS_TXT: ${CI_PROJECT_DIR}/tools/ci/clang_tidy_dirs.txt
     RULES_FILE: ${CI_PROJECT_DIR}/tools/ci/static-analysis-rules.yml
     OUTPUT_DIR: ${CI_PROJECT_DIR}/clang_tidy_reports

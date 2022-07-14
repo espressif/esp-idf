@@ -47,4 +47,4 @@ else
 fi
 
 # add esp-idf local package path to PYTHONPATH so it can be imported directly
-export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/components/partition_table:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"

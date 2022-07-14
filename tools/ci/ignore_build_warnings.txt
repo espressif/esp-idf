@@ -1,0 +1,16 @@
+library/error\.o
+/.*error\S*\.o
+.*error.*\.c\.obj
+.*error.*\.c
+.*error.*\.cpp\.obj
+.*error.*\.cxx\.obj
+.*error.*\.cc\.obj
+-Werror
+error\.d
+/.*error\S*.d
+reassigning to symbol
+changes choice state
+crosstool_version_check\.cmake
+CryptographyDeprecationWarning
+Warning: \d+/\d+ app partitions are too small for binary
+CMake Deprecation Warning at main/lib/tinyxml2/CMakeLists\.txt:11 \(cmake_policy\)

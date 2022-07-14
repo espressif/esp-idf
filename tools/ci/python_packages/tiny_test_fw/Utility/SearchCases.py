@@ -5,7 +5,6 @@
 import copy
 import fnmatch
 import os
-import sys
 import types
 from typing import List
 
@@ -29,7 +28,9 @@ class Search:
         print('Try to get cases from: ' + file_name)
         test_functions = []
         try:
-            mod = load_source(file_name)
+            # search case no need to run the functions
+            # mock missing modules would help us get the test case function objects
+            mod = load_source(file_name, mock_missing=True)
             for func in [mod.__getattribute__(x) for x in dir(mod)
                          if isinstance(mod.__getattribute__(x), types.FunctionType)]:
                 try:
@@ -39,7 +40,7 @@ class Search:
                 except AttributeError:
                     continue
         except ImportError as e:
-            warning_str = 'ImortError: \r\n\tFile:' + file_name + '\r\n\tError:' + str(e)
+            warning_str = 'ImportError: \r\n\tFile:' + file_name + '\r\n\tError:' + str(e)
             cls.missing_import_warnings.append(warning_str)
 
         test_functions_out = []
@@ -49,6 +50,7 @@ class Search:
         for i, test_function in enumerate(test_functions_out):
             print('\t{}. {} <{}>'.format(i + 1, test_function.case_info['name'], test_function.case_info['target']))
             test_function.case_info['app_dir'] = os.path.dirname(file_name)
+            test_function.case_info['script_path'] = file_name
         return test_functions_out
 
     @classmethod
@@ -56,7 +58,7 @@ class Search:
         """ search all test case files recursively of a path """
 
         if not os.path.exists(test_case):
-            raise OSError('test case path not exist')
+            raise OSError(f'test case path "{test_case}" not exist')
         if os.path.isdir(test_case):
             test_case_files = []
             for root, _, file_names in os.walk(test_case):
@@ -137,7 +139,6 @@ class Search:
             test_cases += cls._search_cases_from_file(test_case_file)
 
         if cls.missing_import_warnings:
-            print('\n\n'.join(cls.missing_import_warnings))
-            sys.exit(1)
+            raise ImportError('\n\n'.join(cls.missing_import_warnings))
 
         return test_cases
