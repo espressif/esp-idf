@@ -31,7 +31,7 @@ def test_examples_protocol_https_x509_bundle(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)
+    dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)
     # start test
     num_URLS = int(dut.expect(r'Connecting to (\d+) URLs', timeout=30)[1].decode())
     dut.expect(r'Connection established to ([\s\S]*)', timeout=30)
@@ -57,7 +57,7 @@ def test_examples_protocol_https_x509_bundle_dynamic_buffer(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)
+    dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)
     # start test
     num_URLS = int(dut.expect(r'Connecting to (\d+) URLs', timeout=30)[1].decode())
     dut.expect(r'Connection established to ([\s\S]*)', timeout=30)

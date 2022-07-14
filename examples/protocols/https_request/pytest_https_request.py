@@ -80,7 +80,7 @@ def test_examples_protocol_https_request_cli_session_tickets(dut: Dut) -> None:
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -132,7 +132,7 @@ def test_examples_protocol_https_request_dynamic_buffers(dut: Dut) -> None:
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[1].decode()
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -170,7 +170,7 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
 
     dut.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=60)[1].decode()
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')

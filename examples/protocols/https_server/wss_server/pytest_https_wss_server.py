@@ -129,7 +129,7 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
         dut.write(f'{ap_ssid} {ap_password}')
     # Parse IP address of STA
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
 
     logging.info('Got IP   : {}'.format(got_ip))
     logging.info('Got Port : {}'.format(got_port))

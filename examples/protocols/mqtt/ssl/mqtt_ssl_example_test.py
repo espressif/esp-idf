@@ -110,7 +110,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
             raise ValueError('ENV_TEST_FAILURE: Test script cannot connect to broker: {}'.format(broker_url))
         dut1.start_app()
         try:
-            ip_address = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
+            ip_address = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
             print('Connected to AP with IP: {}'.format(ip_address))
         except DUT.ExpectTimeout:
             print('ENV_TEST_FAILURE: Cannot connect to AP')

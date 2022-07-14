@@ -135,7 +135,7 @@ def test_examples_protocol_simple_ota_example(dut: Dut) -> None:
             ap_password = get_env_config_variable(env_name, 'ap_password')
             dut.write(f'{ap_ssid} {ap_password}')
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -173,7 +173,7 @@ def test_examples_protocol_simple_ota_example_ethernet_with_spiram_config(dut: D
         # start test
         dut.expect('Loaded app from partition at offset 0x10000', timeout=30)
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -222,7 +222,7 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(dut: Du
             ap_password = get_env_config_variable(env_name, 'ap_password')
             dut.write(f'{ap_ssid} {ap_password}')
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -264,7 +264,7 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
         check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
         check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -307,7 +307,7 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
         check_sha256(sha256_bootloader, str(dut.expect(r'SHA-256 for bootloader:\s+([a-f0-9]){64}')[0]))
         check_sha256(sha256_app, str(dut.expect(r'SHA-256 for current firmware:\s+([a-f0-9]){64}')[0]))
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')

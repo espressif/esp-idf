@@ -52,7 +52,7 @@ def test_examples_esp_local_ctrl(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)')[1].decode()
+    dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]')[1].decode()
     dut.expect('esp_https_server: Starting server')
     dut.expect('esp_https_server: Server listening on port 443')
     dut.expect('control: esp_local_ctrl service started with name : my_esp_ctrl_device')

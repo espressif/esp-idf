@@ -336,7 +336,7 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
         raise
 
     dut1.start_app()
-    esp_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
+    esp_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
     print('Got IP={}'.format(esp_ip))
 
     if not os.getenv('MQTT_SKIP_CONNECT_TEST'):

@@ -70,7 +70,7 @@ def test_examples_protocol_socket_tcpserver(env, extra_data):
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut1.write(f'{ap_ssid} {ap_password}')
 
-    ipv4 = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
+    ipv4 = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
     print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))

@@ -117,7 +117,7 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
     # Parse IP address and port of the server
     dut.expect(r'Starting server')
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
 
     # Expected logs
 
@@ -158,8 +158,8 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
 
     logging.info('Checking user callback: Obtaining client certificate...')
 
-    serial_number = dut.expect(r'serial number(.*)', timeout=5)[0]
-    issuer_name = dut.expect(r'issuer name(.*)', timeout=5)[0]
+    serial_number = dut.expect(r'serial number\s*:([^\n]*)', timeout=5)[0]
+    issuer_name = dut.expect(r'issuer name\s*:([^\n]*)', timeout=5)[0]
     expiry = dut.expect(r'expires on ((.*)\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*)', timeout=5)[1].decode()
 
     logging.info('Serial No. {}'.format(serial_number))
@@ -190,7 +190,7 @@ def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None
     # Parse IP address and port of the server
     dut.expect(r'Starting server')
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
 
     # Expected logs
 

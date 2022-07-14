@@ -54,7 +54,7 @@ def test_examples_protocol_http_server_advanced(dut: Dut) -> None:
         ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
         ap_password = get_env_config_variable(env_name, 'ap_password')
         dut.write(f'{ap_ssid} {ap_password}')
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
 
     got_port = dut.expect(r"(?:[\s\S]*)Started HTTP server on port: '(\d+)'", timeout=30)[1].decode()
 

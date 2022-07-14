@@ -146,7 +146,7 @@ def test_examples_protocol_native_ota_example(dut: Dut) -> None:
         for _ in range(iterations):
             dut.expect('Loaded app from partition at offset', timeout=30)
             try:
-                ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+                ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
                 print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
             except pexpect.exceptions.TIMEOUT:
                 raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -195,7 +195,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -244,7 +244,7 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -293,7 +293,7 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
@@ -327,7 +327,7 @@ def test_examples_protocol_native_ota_example_chunked(dut: Dut) -> None:
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
