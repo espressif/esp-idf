@@ -1,17 +1,22 @@
+# pull only for most of the use cases for cache
+# only set "push" policy for the jobs under this file.
+# The cache would be updated when files matched specified patterns changes.
+
 .upload_cache_template:
   stage: upload_cache
   image: $ESP_ENV_IMAGE
 
-.upload_pip_cache_template:
+upload-pip-cache:
   extends:
     - .upload_cache_template
     - .rules:patterns:python-cache
+  tags:
+    - $GEO
+    - build
   cache:
     key: pip-cache
     paths:
       - .cache/pip
-    # pull only for most of the use cases since it's cache dir.
-    # Only set "push" policy for "upload_cache" stage jobs since it would install all pypi packages
     policy: push
   before_script: []
   script:
@@ -22,15 +27,29 @@
     - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
     # TODO: remove this, IDFCI-1207
     - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  parallel:
+    matrix:
+      - GEO: [ 'shiny',  'brew' ]
 
-upload-pip-cache-shiny:
-  extends: .upload_pip_cache_template
+upload-submodules-cache:
+  extends:
+    - .upload_cache_template
+    - .rules:patterns:submodule
   tags:
-    - shiny
+    - $GEO
     - build
-
-upload-pip-cache-brew:
-  extends: .upload_pip_cache_template
-  tags:
-    - brew
-    - build
+  cache:
+    key: submodule-cache
+    paths:
+      - .cache/submodule_archives
+    policy: push
+  before_script: []
+  script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - source tools/ci/setup_python.sh
+    - rm -rf .cache/submodule_archives  # clear old submodule archives
+    - fetch_submodules
+  parallel:
+    matrix:
+      - GEO: [ 'shiny',  'brew' ]

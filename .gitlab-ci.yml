@@ -101,12 +101,16 @@ variables:
   CI_PYTHON_TOOL_BRANCH: ""
 
 cache:
-  key: pip-cache
-  paths:
-    - .cache/pip
   # pull only for most of the use cases since it's cache dir.
-  # Only set "push" policy for "upload_cache" stage jobs since it would install all pypi packages
-  policy: pull
+  # Only set "push" policy for "upload_cache" stage jobs
+  - key: pip-cache
+    paths:
+      - .cache/pip
+    policy: pull
+  - key: submodule-cache
+    paths:
+      - .cache/submodule_archives
+    policy: pull
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then

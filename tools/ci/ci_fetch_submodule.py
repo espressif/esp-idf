@@ -19,6 +19,8 @@ PATH_PATTERN = re.compile(r'path\s+=\s+(\S+)')
 URL_PATTERN = re.compile(r'url\s+=\s+(\S+)')
 
 SUBMODULE_ARCHIVE_TEMP_FOLDER = 'submodule_archive'
+# need to match the one defined in CI yaml files for caching purpose
+SUBMODULE_ARCHIVE_CACHE_DIR = '.cache/submodule_archives'
 
 
 class SubModule(object):
@@ -28,6 +30,7 @@ class SubModule(object):
 
     def __init__(self, gitlab_inst, path, url):
         self.path = path
+        self.url = url
         self.gitlab_inst = gitlab_inst
         self.project_id = self._get_project_id(url)
         self.commit_id = self._get_commit_id(path)
@@ -48,7 +51,7 @@ class SubModule(object):
     def download_archive(self):
         print('Update submodule: {}: {}'.format(self.path, self.commit_id))
         path_name = self.gitlab_inst.download_archive(self.commit_id, SUBMODULE_ARCHIVE_TEMP_FOLDER,
-                                                      self.project_id)
+                                                      self.project_id, SUBMODULE_ARCHIVE_CACHE_DIR)
         renamed_path = os.path.join(os.path.dirname(path_name), os.path.basename(self.path))
         os.rename(path_name, renamed_path)
         shutil.rmtree(self.path, ignore_errors=True)

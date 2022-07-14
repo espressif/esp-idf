@@ -21,6 +21,9 @@ GPATH
 # MacOS directory files
 .DS_Store
 
+# cache dir
+.cache/
+
 # Components Unit Test Apps files
 components/**/build/
 components/**/build_*_*/

@@ -142,7 +142,6 @@
 
   - "tools/split_paths_by_spaces.py"
 
-
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
 
@@ -150,7 +149,6 @@
   - "tools/docker/**/*"
 
 .patterns-submodule: &patterns-submodule
-  - "components/asio/asio"
   - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
   - "components/bt/controller/lib_esp32"
   - "components/bt/controller/lib_esp32c2/esp32c2-bt-lib"
@@ -172,6 +170,7 @@
   - "components/tinyusb/tinyusb"
   - "components/unity/unity"
   - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
+  - ".gitmodules"
 
 .patterns-example_test-related_changes-ota: &patterns-example_test-related_changes-ota
   - "examples/system/ota/**/*"
@@ -247,6 +246,11 @@
   rules:
     - <<: *if-dev-push
       changes: *patterns-python-cache
+
+.rules:patterns:submodule:
+  rules:
+    - <<: *if-dev-push
+      changes: *patterns-submodule
 
 .rules:dev:
   rules:
