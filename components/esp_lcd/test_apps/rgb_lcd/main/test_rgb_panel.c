@@ -11,6 +11,7 @@
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_random.h"
+#include "esp_timer.h"
 #include "esp_attr.h"
 #include "spi_flash_mmap.h"
 #include "test_rgb_board.h"
@@ -204,6 +205,36 @@ TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
     const uint32_t test_pclk_freq[] = {10000000, 12000000, 8000000};
     for (size_t i = 0; i < sizeof(test_pclk_freq) / sizeof(test_pclk_freq[0]); i++) {
         esp_lcd_rgb_panel_set_pclk(panel_handle, test_pclk_freq[i]);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
+TEST_CASE("lcd_rgb_panel_rotate", "[lcd]")
+{
+    const int w = 200;
+    const int h = 100;
+    uint64_t t = 0;
+    uint8_t *img = malloc(w * h * sizeof(uint16_t));
+    TEST_ASSERT_NOT_NULL(img);
+    uint8_t color_byte = esp_random() & 0xFF;
+    memset(img, color_byte, w * h * sizeof(uint16_t));
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 0, false, NULL, NULL);
+
+    printf("Update the rotation of panel\r\n");
+    for (size_t i = 0; i < 8; i++) {
+        esp_lcd_panel_swap_xy(panel_handle, i & 4);
+        esp_lcd_panel_mirror(panel_handle, i & 2, i & 1);
+        printf("Panel Rotation=%d\r\n", i);
+        t = esp_timer_get_time();
+        esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, w, h, img);
+        t = esp_timer_get_time() - t;
+        printf("@resolution %dx%d time per frame=%.2fMS\r\n", w, h, (float)t / 1000.0f);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
