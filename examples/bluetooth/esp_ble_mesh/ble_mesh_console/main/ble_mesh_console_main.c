@@ -67,7 +67,6 @@ void app_main(void)
 #endif
 
     repl_config.prompt = "esp32>";
-    printf("!!!ready!!!\n");
 
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
@@ -85,6 +84,7 @@ void app_main(void)
     ble_mesh_register_configuration_client_model();
 #endif
 
+    printf("!!!ready!!!\n");
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(repl));
 }
