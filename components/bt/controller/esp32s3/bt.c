@@ -132,6 +132,11 @@ typedef struct {
     intptr_t end;
 } btdm_dram_available_region_t;
 
+typedef struct {
+    void *handle;
+    void *storage;
+} btdm_queue_item_t;
+
 typedef void (* osi_intr_handler)(void);
 
 /* OSI function */
@@ -482,36 +487,64 @@ static void IRAM_ATTR task_yield_from_isr(void)
 
 static void *semphr_create_wrapper(uint32_t max, uint32_t init)
 {
-    return (void *)xSemaphoreCreateCounting(max, init);
+    btdm_queue_item_t *semphr = heap_caps_calloc(1, sizeof(btdm_queue_item_t), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    assert(semphr);
+
+#if !CONFIG_SPIRAM_USE_MALLOC
+    semphr->handle = (void *)xSemaphoreCreateCounting(max, init);
+#else
+
+    semphr->storage = heap_caps_malloc(sizeof(StaticQueue_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    assert(semphr->storage);
+
+    semphr->handle = (void *)xSemaphoreCreateCountingStatic(max, init, semphr->storage);
+#endif
+    assert(semphr->handle);
+    return semphr;
 }
 
 static void semphr_delete_wrapper(void *semphr)
 {
-    vSemaphoreDelete(semphr);
+    if (semphr == NULL) {
+        return;
+    }
+
+    btdm_queue_item_t *semphr_item = (btdm_queue_item_t *)semphr;
+
+    if (semphr_item->handle) {
+        vSemaphoreDelete(semphr_item->handle);
+    }
+#ifdef CONFIG_SPIRAM_USE_MALLOC
+    if (semphr_item->storage) {
+        free(semphr_item->storage);
+    }
+#endif
+
+    free(semphr);
 }
 
 static int IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
 {
-    return (int)xSemaphoreTakeFromISR(semphr, hptw);
+    return (int)xSemaphoreTakeFromISR(((btdm_queue_item_t *)semphr)->handle, hptw);
 }
 
 static int IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
 {
-    return (int)xSemaphoreGiveFromISR(semphr, hptw);
+    return (int)xSemaphoreGiveFromISR(((btdm_queue_item_t *)semphr)->handle, hptw);
 }
 
 static int semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
-        return (int)xSemaphoreTake(semphr, portMAX_DELAY);
+        return (int)xSemaphoreTake(((btdm_queue_item_t *)semphr)->handle, portMAX_DELAY);
     } else {
-        return (int)xSemaphoreTake(semphr, block_time_ms / portTICK_PERIOD_MS);
+        return (int)xSemaphoreTake(((btdm_queue_item_t *)semphr)->handle, block_time_ms / portTICK_PERIOD_MS);
     }
 }
 
 static int semphr_give_wrapper(void *semphr)
 {
-    return (int)xSemaphoreGive(semphr);
+    return (int)xSemaphoreGive(((btdm_queue_item_t *)semphr)->handle);
 }
 
 static void *mutex_create_wrapper(void)
@@ -536,40 +569,71 @@ static int mutex_unlock_wrapper(void *mutex)
 
 static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
 {
-    return (void *)xQueueCreate(queue_len, item_size);
+    btdm_queue_item_t *queue = NULL;
+
+    queue = (btdm_queue_item_t*)heap_caps_malloc(sizeof(btdm_queue_item_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    assert(queue);
+
+#if CONFIG_SPIRAM_USE_MALLOC
+
+    queue->storage = heap_caps_calloc(1, sizeof(StaticQueue_t) + (queue_len*item_size), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    assert(queue->storage);
+
+    queue->handle = xQueueCreateStatic( queue_len, item_size, ((uint8_t*)(queue->storage)) + sizeof(StaticQueue_t), (StaticQueue_t*)(queue->storage));
+    assert(queue->handle);
+
+#else
+    queue->handle = xQueueCreate( queue_len, item_size);
+    assert(queue->handle);
+#endif
+
+    return queue;
 }
 
 static void queue_delete_wrapper(void *queue)
 {
-    vQueueDelete(queue);
+    btdm_queue_item_t *queue_item = (btdm_queue_item_t *)queue;
+    if (queue_item) {
+        if(queue_item->handle){
+            vQueueDelete(queue_item->handle);
+        }
+
+#if CONFIG_SPIRAM_USE_MALLOC
+        if (queue_item->storage) {
+            free(queue_item->storage);
+        }
+#endif
+
+        free(queue_item);
+    }
 }
 
 static int queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
-        return (int)xQueueSend(queue, item, portMAX_DELAY);
+        return (int)xQueueSend(((btdm_queue_item_t*)queue)->handle, item, portMAX_DELAY);
     } else {
-        return (int)xQueueSend(queue, item, block_time_ms / portTICK_PERIOD_MS);
+        return (int)xQueueSend(((btdm_queue_item_t*)queue)->handle, item, block_time_ms / portTICK_PERIOD_MS);
     }
 }
 
 static int IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw)
 {
-    return (int)xQueueSendFromISR(queue, item, hptw);
+    return (int)xQueueSendFromISR(((btdm_queue_item_t*)queue)->handle, item, hptw);
 }
 
 static int queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
-        return (int)xQueueReceive(queue, item, portMAX_DELAY);
+        return (int)xQueueReceive(((btdm_queue_item_t*)queue)->handle, item, portMAX_DELAY);
     } else {
-        return (int)xQueueReceive(queue, item, block_time_ms / portTICK_PERIOD_MS);
+        return (int)xQueueReceive(((btdm_queue_item_t*)queue)->handle, item, block_time_ms / portTICK_PERIOD_MS);
     }
 }
 
 static int IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw)
 {
-    return (int)xQueueReceiveFromISR(queue, item, hptw);
+    return (int)xQueueReceiveFromISR(((btdm_queue_item_t*)queue)->handle, item, hptw);
 }
 
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
