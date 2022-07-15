@@ -15,6 +15,7 @@ from threading import Event, Lock, Thread
 
 import paho.mqtt.client as mqtt
 import ttfw_idf
+from common_test_methods import get_host_ip4_by_dest_ip
 
 DEFAULT_MSG_SIZE = 16
 
@@ -31,19 +32,6 @@ def set_server_cert_cn(ip):
     for args in arg_list:
         if subprocess.check_call(args) != 0:
             raise('openssl command {} failed'.format(args))
-
-
-def get_my_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except Exception:
-        IP = '127.0.0.1'
-    finally:
-        s.close()
-    return IP
 
 
 # Publisher class creating a python client to send/receive published data from esp-mqtt client
@@ -247,8 +235,8 @@ class TlsServer:
             self.shutdown.set()
 
 
-def connection_tests(dut, cases):
-    ip = get_my_ip()
+def connection_tests(dut, cases, dut_ip):
+    ip = get_host_ip4_by_dest_ip(dut_ip)
     set_server_cert_cn(ip)
     server_port = 2222
 
@@ -314,7 +302,7 @@ def connection_tests(dut, cases):
     teardown_connection_suite()
 
 
-@ttfw_idf.idf_custom_test(env_tag='Example_EthKitV1', group='test-apps')
+@ttfw_idf.idf_custom_test(env_tag='ethernet_router', group='test-apps')
 def test_app_protocol_mqtt_publish_connect(env, extra_data):
     """
     steps:
@@ -348,11 +336,11 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
         raise
 
     dut1.start_app()
-    esp_ip = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)
-    print('Got IP={}'.format(esp_ip[0]))
+    esp_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
+    print('Got IP={}'.format(esp_ip))
 
     if not os.getenv('MQTT_SKIP_CONNECT_TEST'):
-        connection_tests(dut1,cases)
+        connection_tests(dut1,cases,esp_ip)
 
     #
     # start publish tests only if enabled in the environment (for weekend tests only)

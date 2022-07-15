@@ -199,8 +199,6 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    /* wait for active network connection */
-    ESP_ERROR_CHECK(example_connect());
 
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     // install console REPL environment
@@ -215,6 +213,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_console_new_repl_usb_serial_jtag(&usbjtag_config, &repl_config, &repl));
 #endif
 
+    /* register wifi connect commands */
+    example_register_wifi_connect_commands();
     /* register command `ping` */
     register_ping();
     /* register command `quit` */

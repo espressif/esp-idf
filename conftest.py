@@ -33,6 +33,13 @@ from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
 
+try:
+    import common_test_methods  # noqa: F401
+except ImportError:
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci', 'python_packages'))
+    import common_test_methods  # noqa: F401
+
+
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
 PREVIEW_TARGETS = ['linux', 'esp32h2']
 DEFAULT_SDKCONFIG = 'default'

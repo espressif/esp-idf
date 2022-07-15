@@ -9,6 +9,7 @@ import sys
 
 import pexpect
 import pytest
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 
@@ -39,13 +40,19 @@ class CustomProcess(object):
 
 
 @pytest.mark.supported_targets
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_esp_local_ctrl(dut: Dut) -> None:
 
     rel_project_path = os.path.join('examples', 'protocols', 'esp_local_ctrl')
     idf_path = get_sdk_path()
 
-    dut_ip = dut.expect(r'esp_netif_handlers: sta ip: (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')[1].decode()
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    dut_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]')[1].decode()
     dut.expect('esp_https_server: Starting server')
     dut.expect('esp_https_server: Server listening on port 443')
     dut.expect('control: esp_local_ctrl service started with name : my_esp_ctrl_device')

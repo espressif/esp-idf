@@ -1744,7 +1744,6 @@ examples/build_system/cmake/multi_config/main/multi_config_example_main.c
 examples/common_components/iperf/include/iperf.h
 examples/common_components/iperf/iperf.c
 examples/common_components/protocol_examples_common/addr_from_stdin.c
-examples/common_components/protocol_examples_common/connect.c
 examples/common_components/protocol_examples_common/include/addr_from_stdin.h
 examples/common_components/protocol_examples_common/include/protocol_examples_common.h
 examples/common_components/protocol_examples_common/stdin_out.c

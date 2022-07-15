@@ -39,7 +39,7 @@ def on_message(client, userdata, msg):
     message_log += 'Received data:' + msg.topic + ' ' + payload + '\n'
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
+@ttfw_idf.idf_example_test(env_tag='ethernet_router')
 def test_examples_protocol_mqtt_ws(env, extra_data):
     broker_url = ''
     broker_port = 0
@@ -83,7 +83,7 @@ def test_examples_protocol_mqtt_ws(env, extra_data):
             raise ValueError('ENV_TEST_FAILURE: Test script cannot connect to broker: {}'.format(broker_url))
         dut1.start_app()
         try:
-            ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
+            ip_address = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
             print('Connected to AP with IP: {}'.format(ip_address))
         except DUT.ExpectTimeout:
             print('ENV_TEST_FAILURE: Cannot connect to AP')

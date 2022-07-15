@@ -17,16 +17,12 @@ from threading import Event, Thread
 
 import netifaces
 import ttfw_idf
+from common_test_methods import get_env_config_variable, get_host_ip_by_interface, get_my_interface_by_dest_ip
+from tiny_test_fw.DUT import ExpectTimeout
 
 # -----------  Config  ----------
 PORT = 3333
-INTERFACE = 'eth0'
 # -------------------------------
-
-
-def get_my_ip(type):
-    for i in netifaces.ifaddresses(INTERFACE)[type]:
-        return i['addr'].replace('%{}'.format(INTERFACE), '')
 
 
 class UdpServer:
@@ -65,6 +61,7 @@ class UdpServer:
         while not self.shutdown.is_set():
             try:
                 data, addr = self.socket.recvfrom(1024)
+                print(addr)
                 if not data:
                     return
                 data = data.decode()
@@ -78,7 +75,7 @@ class UdpServer:
                 break
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='wifi_router')
 def test_examples_protocol_socket_udpclient(env, extra_data):
     """
     steps:
@@ -94,24 +91,45 @@ def test_examples_protocol_socket_udpclient(env, extra_data):
 
     # start test
     dut1.start_app()
+    if dut1.app.get_sdkconfig_config_value('CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN'):
+        dut1.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut1.write(f'{ap_ssid} {ap_password}')
 
-    ipv4 = dut1.expect(re.compile(r' IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)'), timeout=30)[0]
+    ipv4 = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]'), timeout=30)[0]
     ipv6_r = r':'.join((r'[0-9a-fA-F]{4}',) * 8)    # expect all 8 octets from IPv6 (assumes it's printed in the long form)
     ipv6 = dut1.expect(re.compile(r' IPv6 address: ({})'.format(ipv6_r)), timeout=30)[0]
     print('Connected with IPv4={} and IPv6={}'.format(ipv4, ipv6))
 
+    my_interface = get_my_interface_by_dest_ip(ipv4)
     # test IPv4
     with UdpServer(PORT, socket.AF_INET):
-        server_ip = get_my_ip(netifaces.AF_INET)
+        server_ip = get_host_ip_by_interface(my_interface, netifaces.AF_INET)
         print('Connect udp client to server IP={}'.format(server_ip))
-        dut1.write(server_ip)
-        dut1.expect(re.compile(r'OK: Message from ESP32'))
+        for _ in range(3):
+            try:
+                dut1.write(server_ip)
+                dut1.expect(re.compile(r'OK: Message from ESP32'))
+                break
+            except ExpectTimeout:
+                pass
+        else:
+            raise ValueError('Failed to send/recv udp packets.')
     # test IPv6
     with UdpServer(PORT, socket.AF_INET6):
-        server_ip = get_my_ip(netifaces.AF_INET6)
+        server_ip = get_host_ip_by_interface(my_interface, netifaces.AF_INET6)
         print('Connect udp client to server IP={}'.format(server_ip))
-        dut1.write(server_ip)
-        dut1.expect(re.compile(r'OK: Message from ESP32'))
+        for _ in range(3):
+            try:
+                dut1.write(server_ip)
+                dut1.expect(re.compile(r'OK: Message from ESP32'))
+                break
+            except ExpectTimeout:
+                pass
+        else:
+            raise ValueError('Failed to send/recv udp packets.')
 
 
 if __name__ == '__main__':
