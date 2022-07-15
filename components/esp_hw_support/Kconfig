@@ -26,9 +26,11 @@ menu "Hardware Settings"
             help
                 If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
                 more time when chip wakes up. Can only be enabled if there is no SPIRAM configured.
-                This option will in fact consider VDD_SDIO auto power value (ESP_PD_OPTION_AUTO) as OFF. Also, it is
-                possible to force a power domain to stay ON during light sleep by using esp_sleep_pd_config()
-                function.
+
+                This option will power down flash under a strict but relatively safe condition. Also, it is possible to
+                power down flash under a relaxed condition by using esp_sleep_pd_config() to set ESP_PD_DOMAIN_VDDSDIO
+                to ESP_PD_OPTION_OFF. It should be noted that there is a risk in powering down flash, you can refer
+                `ESP-IDF Programming Guide/API Reference/System API/Sleep Modes/Power-down of Flash` for more details.
 
         config ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
             bool
