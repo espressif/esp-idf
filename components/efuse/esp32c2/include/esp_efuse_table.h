@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table af57e8a6a405ebf239cc552f713c91d0
+// md5_digest_table ef050bc1e4bf0d8384aa3e4c0256d7d3
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -44,14 +44,17 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_CUSTOM_MAC[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RF_REF_I_BIAS_CONFIG[];
-extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VOL_BIAS_CONFIG_LOW[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VOL_BIAS_CONFIG_HIGH[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_LOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_HIGH[];

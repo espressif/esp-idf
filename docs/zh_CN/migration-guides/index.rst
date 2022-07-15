@@ -7,6 +7,7 @@ ESP-IDF 5.0 迁移指南
 
     build-system
     windows-env
+    :SOC_BT_SUPPORTED: bluetooth
     ethernet
     freertos
     peripherals

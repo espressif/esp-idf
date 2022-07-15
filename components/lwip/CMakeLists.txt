@@ -56,6 +56,9 @@ set(srcs
     "lwip/src/core/ipv6/mld6.c"
     "lwip/src/core/ipv6/nd6.c"
     "lwip/src/netif/ethernet.c"
+    "lwip/src/netif/bridgeif.c"
+    "lwip/src/netif/bridgeif_fdb.c"
+    "lwip/src/netif/slipif.c"
     "lwip/src/netif/slipif.c"
     "lwip/src/netif/ppp/auth.c"
     "lwip/src/netif/ppp/ccp.c"
@@ -173,6 +176,13 @@ set_source_files_properties(
     lwip/src/core/tcp.c
     PROPERTIES COMPILE_FLAGS
     -Wno-type-limits
+)
+
+# ignore some declaration mismatches
+set_source_files_properties(
+    lwip/src/netif/ppp/chap_ms.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-array-parameter
 )
 
 if(CONFIG_OPENTHREAD_ENABLED)

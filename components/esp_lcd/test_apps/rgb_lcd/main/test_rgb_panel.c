@@ -12,8 +12,9 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_random.h"
 #include "esp_attr.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "test_rgb_board.h"
+#include "esp_private/spi_flash_os.h"
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define TEST_LCD_CALLBACK_ATTR IRAM_ATTR

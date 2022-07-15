@@ -31,10 +31,10 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-        0x02, 0x01, 0x06,
-	0x03, 0x03, 0xab, 0xcd,
-	0x03, 0x03, 0x18, 0x11,
-	0x11, 0X09, 'e', 's', 'p', '3', '2', 'h', '2', '-', 'B', 'L', 'E', '5', '0', '-', 'S', '\0',
+    0x02, 0x01, 0x06,
+    0x03, 0x03, 0xab, 0xcd,
+    0x03, 0x03, 0x18, 0x11,
+    0x11, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
 
@@ -231,7 +231,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-	    ext_bleprph_advertise();
+            ext_bleprph_advertise();
 #else
             bleprph_advertise();
 #endif
@@ -245,7 +245,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Connection terminated; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-	ext_bleprph_advertise();
+        ext_bleprph_advertise();
 #else
         bleprph_advertise();
 #endif

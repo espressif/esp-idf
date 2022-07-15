@@ -48,11 +48,14 @@ struct wpa_sm {
     void *network_ctx;
 
     int rsn_enabled; /* Whether RSN is enabled in configuration */
+    int sae_pwe; /* SAE PWE generation options */
 
     int countermeasures; /*TKIP countermeasures state flag, 1:in countermeasures state*/
 
     u8 *assoc_wpa_ie; /* Own WPA/RSN IE from (Re)AssocReq */
     size_t assoc_wpa_ie_len;
+    u8 *assoc_rsnxe; /* Own RSNXE from (Re)AssocReq */
+    size_t assoc_rsnxe_len;
 
     u8 eapol_version;
 
@@ -64,8 +67,8 @@ struct wpa_sm {
     unsigned int proto;
     enum wpa_states wpa_state;
 
-    u8 *ap_wpa_ie, *ap_rsn_ie;
-    size_t ap_wpa_ie_len, ap_rsn_ie_len;
+    u8 *ap_wpa_ie, *ap_rsn_ie, *ap_rsnxe;
+    size_t ap_wpa_ie_len, ap_rsn_ie_len, ap_rsnxe_len;
 
     bool key_install;
 

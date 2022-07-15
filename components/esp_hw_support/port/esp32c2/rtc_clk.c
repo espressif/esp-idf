@@ -139,6 +139,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     clk_ll_cpu_set_freq_mhz_from_pll(cpu_freq_mhz);
     clk_ll_cpu_set_divider(1);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
+
     rtc_clk_apb_freq_update(40 * MHZ);
     ets_update_cpu_frequency(cpu_freq_mhz);
 }

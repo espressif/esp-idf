@@ -35,8 +35,8 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
-
-#define SOC_SHA_SUPPORTED               0 // This will be enabled with IDF-3830
+#define SOC_TEMP_SENSOR_SUPPORTED       1
+#define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
@@ -158,18 +158,9 @@
 
 /*--------------------------- SHA CAPS ---------------------------------------*/
 
-/* Max amount of bytes in a single DMA operation is 4095,
-   for SHA this means that the biggest safe amount of bytes is
-   31 blocks of 128 bytes = 3968
-*/
-#define SOC_SHA_DMA_MAX_BUFFER_SIZE     (3968)
-#define SOC_SHA_SUPPORT_DMA             (1)
-
 /* The SHA engine is able to resume hashing from a user */
 #define SOC_SHA_SUPPORT_RESUME          (1)
 
-/* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_SHA_GDMA             (1)
 
 /* Supported HW algorithms */
 #define SOC_SHA_SUPPORT_SHA1            (1)
@@ -280,5 +271,8 @@
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (1)    /*!< FTM Support */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (0)    /*!< WAPI is not supported */
+#define SOC_WIFI_CSI_SUPPORT            (0)    /*!< CSI is not supported */
+#define SOC_WIFI_MESH_SUPPORT           (0)    /*!< WIFI MESH is not supported */

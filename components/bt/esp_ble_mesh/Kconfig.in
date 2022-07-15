@@ -1094,6 +1094,13 @@ if BLE_MESH
             lets the state to be changed at any time.
             If IV Update test mode is going to be used, this option should be enabled.
 
+    config BLE_MESH_DISCARD_OLD_SEQ_AUTH
+        bool
+        default y
+        help
+            This option is used to decide whether discarding the old SeqAuth when
+            receiving a segmented message.
+
     menu "BLE Mesh specific test option"
 
         config BLE_MESH_SELF_TEST

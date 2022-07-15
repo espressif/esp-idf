@@ -126,6 +126,13 @@ struct esp_netif_obj {
     char * if_key;
     char * if_desc;
     int route_prio;
+
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+    // bridge configuration
+    uint16_t max_fdb_dyn_entries;
+    uint16_t max_fdb_sta_entries;
+    uint8_t max_ports;
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
 };
 
 #endif /* CONFIG_ESP_NETIF_TCPIP_LWIP */

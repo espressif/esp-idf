@@ -67,9 +67,10 @@ If a previously created PCNT unit is no longer needed, it's recommended to recyc
 Install PCNT Channel
 ~~~~~~~~~~~~~~~~~~~~
 
-To install a PCNT channel, there's a configuration structure that needs to be given in advance: :cpp:type:`pcnt_chan_config_t` as well:
+To install a PCNT channel, users must initialize a :cpp:type:`pcnt_chan_config_t` structure in advance, and then call :cpp:func:`pcnt_new_channel`. The configuration fields of the :cpp:type:`pcnt_chan_config_t` structure are described below:
 
--  :cpp:member:`pcnt_chan_config_t::edge_gpio_num` and :cpp:member:`pcnt_chan_config_t::level_gpio_num` specify the GPIO numbers used by **edge** type signal and **level** type signal. :cpp:member:`pcnt_chan_config_t::level_gpio_num` is optional and can be assigned with `-1` if it's not used whereas the :cpp:member:`pcnt_chan_config_t::edge_gpio_num` is mandatory.
+-  :cpp:member:`pcnt_chan_config_t::edge_gpio_num` and :cpp:member:`pcnt_chan_config_t::level_gpio_num` specify the GPIO numbers used by **edge** type signal and **level** type signal. Please note, either of them can be assigned to `-1` if it's not actually used, and thus it will become a **virtual IO**. For some simple pulse counting applications where one of the level/edge signals signals is fixed (i.e., never changes), users can reclaim a GPIO by setting the signal as a virtual IO on channel allocation. Setting the level/edge signal as a virtual IO will cause that signal to be internally routed to a fixed High/Low logic level, thus allowing users to save a GPIO for other purposes.
+-  :cpp:member:`pcnt_chan_config_t::virt_edge_io_level` and :cpp:member:`pcnt_chan_config_t::virt_level_io_level` specify the virtual IO level for **edge** and **level** input signal, to ensure a deterministic state for such control signal. Please note, they are only valid when either :cpp:member:`pcnt_chan_config_t::edge_gpio_num` or :cpp:member:`pcnt_chan_config_t::level_gpio_num` is assigned to `-1`.
 -  :cpp:member:`pcnt_chan_config_t::invert_edge_input` and :cpp:member:`pcnt_chan_config_t::invert_level_input` are used to decide whether to invert the input signals before they going into PCNT hardware. The invert is done by GPIO matrix instead of PCNT hardware.
 -  :cpp:member:`pcnt_chan_config_t::io_loop_back` is for debug only, which enables both the GPIO's input and output paths. This can help to simulate the pulse signals by function :cpp:func:`gpio_set_level` on the same GPIO.
 

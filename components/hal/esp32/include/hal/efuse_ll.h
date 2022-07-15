@@ -98,14 +98,27 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
     return (pkg_version_4bit << 3) | pkg_version;
 }
 
+// use efuse_hal_get_major_chip_version() to get full major chip version
 __attribute__((always_inline)) static inline bool efuse_ll_get_chip_ver_rev1(void)
 {
     return REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_REV1);
 }
 
+// use efuse_hal_get_major_chip_version() to get full major chip version
 __attribute__((always_inline)) static inline bool efuse_ll_get_chip_ver_rev2(void)
 {
     return REG_GET_BIT(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_CHIP_VER_REV2);
+}
+
+// use efuse_hal_get_minor_chip_version() to get minor chip version
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_wafer_version_minor(void)
+{
+    return REG_GET_FIELD(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_WAFER_VERSION_MINOR);
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_version_major(void)
+{
+    return false;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_coding_scheme(void)

@@ -84,15 +84,16 @@ class Monitor:
         websocket_client=None,  # type: Optional[WebSocketClient]
         enable_address_decoding=True,  # type: bool
         timestamps=False,  # type: bool
-        timestamp_format=''  # type: str
+        timestamp_format='',  # type: str
+        force_color=False  # type: bool
     ):
         self.event_queue = queue.Queue()  # type: queue.Queue
         self.cmd_queue = queue.Queue()  # type: queue.Queue
         self.console = miniterm.Console()
-
-        sys.stderr = get_converter(sys.stderr, decode_output=True)
-        self.console.output = get_converter(self.console.output)
-        self.console.byte_output = get_converter(self.console.byte_output)
+        # if the variable is set ANSI will be printed even if we do not print to terminal
+        sys.stderr = get_converter(sys.stderr, decode_output=True, force_color=force_color)
+        self.console.output = get_converter(self.console.output, force_color=force_color)
+        self.console.byte_output = get_converter(self.console.byte_output, force_color=force_color)
 
         self.elf_file = elf_file or ''
         self.elf_exists = os.path.exists(self.elf_file)
@@ -353,7 +354,8 @@ def main() -> None:
                       ws,
                       not args.disable_address_decoding,
                       args.timestamps,
-                      args.timestamp_format)
+                      args.timestamp_format,
+                      args.force_color)
 
         yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
             key_description(monitor.console_parser.exit_key),

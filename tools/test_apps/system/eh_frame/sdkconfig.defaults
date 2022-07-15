@@ -1,0 +1,2 @@
+# Enable eh_frame sections generation
+CONFIG_ESP_SYSTEM_USE_EH_FRAME=y

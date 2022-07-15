@@ -83,7 +83,8 @@ freertos_component:
 
 ethernet_component:
   include:
-    - 'components/esp_eth/**'
+    - 'components/esp_eth/include/**'
+    - 'components/esp_eth/src/**'
   allowed_licenses:
     - Apache-2.0
     - MIT           # To allow contributed drivers
@@ -118,6 +119,19 @@ argtable3:
     - BSD-3-Clause
     - Apache-2.0
 
+xtensa:
+  include:
+    - 'components/xtensa/**'
+  allowed_licenses:
+    - Apache-2.0    #Files added to the xtensa component by us
+    - MIT           #Cadence sources
+tinyusb:
+  include:
+    - 'examples/peripherals/usb/device/tusb_midi/'
+  allowed_licenses:
+    - Apache-2.0
+    - MIT
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
@@ -125,6 +139,8 @@ ignore:
   include:
     - components/bt/host/nimble/nimble/
     - components/bt/common/osi/
+    - components/bt/porting/ext/
+    - components/bt/porting/nimble/
     - components/http_parser/
     - components/wpa_supplicant/src/
     - '!components/wpa_supplicant/esp_supplicant/'

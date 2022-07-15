@@ -124,6 +124,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_CSI_ENABLED
         bool "WiFi CSI(Channel State Information)"
+        depends on SOC_WIFI_CSI_SUPPORT
         default n
         help
             Select this option to enable CSI(Channel State Information) feature. CSI takes about

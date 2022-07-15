@@ -101,8 +101,6 @@ check_fuzzer_compilation:
      - make MODE=dhcp_server
      - make MODE=dhcp_client
      - make MODE=dns
-     - cd ${IDF_PATH}/components/mdns/test_afl_fuzz_host
-     - make
 
 check_public_headers:
   extends:
@@ -111,7 +109,11 @@ check_public_headers:
   tags:
     - build
   script:
-    - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
+    - IDF_TARGET=esp32 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
+    - IDF_TARGET=esp32s2 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s2-elf-
+    - IDF_TARGET=esp32s3 python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32s3-elf-
+    - IDF_TARGET=esp32c3 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
+    - IDF_TARGET=esp32c2 python tools/ci/check_public_headers.py --jobs 4 --prefix riscv32-esp-elf-
 
 check_chip_support_components:
   extends:

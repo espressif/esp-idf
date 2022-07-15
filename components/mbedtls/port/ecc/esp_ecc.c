@@ -7,9 +7,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "soc/ecc_mult_reg.h"
-#include "soc/system_reg.h"
-
 #include "esp_private/periph_ctrl.h"
 #include "ecc_impl.h"
 #include "hal/ecc_hal.h"

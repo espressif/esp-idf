@@ -133,7 +133,9 @@ def actual_test(dut: Dut) -> None:
             recv_resp_poke(rx_i)
     finally:
         pipe_send.send(0)
-        tx_proc.join()
+        tx_proc.join(5)
+        if tx_proc.exitcode is None:
+            tx_proc.terminate()
     dut.expect_unity_test_output()
 
 

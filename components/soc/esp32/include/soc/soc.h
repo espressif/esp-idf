@@ -37,10 +37,10 @@
 #endif
 
 //write value to register
-#define REG_WRITE(_r, _v) ({                                                                                           \
+#define REG_WRITE(_r, _v)  do {                                                                                        \
             ASSERT_IF_DPORT_REG((_r), REG_WRITE);                                                                      \
             (*(volatile uint32_t *)(_r)) = (_v);                                                                       \
-        })
+        } while(0)
 
 //read value from register
 #define REG_READ(_r) ({                                                                                                \
@@ -55,22 +55,22 @@
         })
 
 //set bit or set bits to register
-#define REG_SET_BIT(_r, _b)  ({                                                                                        \
+#define REG_SET_BIT(_r, _b)  do {                                                                                      \
             ASSERT_IF_DPORT_REG((_r), REG_SET_BIT);                                                                    \
-            (*(volatile uint32_t*)(_r) |= (_b));                                                                       \
-        })
+            *(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r)) | (_b);                                            \
+        } while(0)
 
 //clear bit or clear bits of register
-#define REG_CLR_BIT(_r, _b)  ({                                                                                        \
+#define REG_CLR_BIT(_r, _b)  do {                                                                                      \
             ASSERT_IF_DPORT_REG((_r), REG_CLR_BIT);                                                                    \
-            (*(volatile uint32_t*)(_r) &= ~(_b));                                                                      \
-        })
+            *(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r)) & (~(_b));                                         \
+        } while(0)
 
 //set bits of register controlled by mask
-#define REG_SET_BITS(_r, _b, _m) ({                                                                                    \
+#define REG_SET_BITS(_r, _b, _m) do {                                                                                  \
             ASSERT_IF_DPORT_REG((_r), REG_SET_BITS);                                                                   \
-            (*(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r) & ~(_m)) | ((_b) & (_m)));                         \
-        })
+            *(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r) & ~(_m)) | ((_b) & (_m));                           \
+        } while(0)
 
 //get field from register, uses field _S & _V to determine mask
 #define REG_GET_FIELD(_r, _f) ({                                                                                       \
@@ -79,10 +79,10 @@
         })
 
 //set field of a register from variable, uses field _S & _V to determine mask
-#define REG_SET_FIELD(_r, _f, _v) ({                                                                                   \
+#define REG_SET_FIELD(_r, _f, _v) do {                                                                                 \
             ASSERT_IF_DPORT_REG((_r), REG_SET_FIELD);                                                                  \
-            (REG_WRITE((_r),((REG_READ(_r) & ~((_f##_V) << (_f##_S)))|(((_v) & (_f##_V))<<(_f##_S)))));                \
-        })
+            REG_WRITE((_r),((REG_READ(_r) & ~((_f##_V) << (_f##_S)))|(((_v) & (_f##_V))<<(_f##_S))));                  \
+        } while(0)
 
 //get field value from a variable, used when _f is not left shifted by _f##_S
 #define VALUE_GET_FIELD(_r, _f) (((_r) >> (_f##_S)) & (_f))
@@ -109,22 +109,22 @@
         })
 
 //write value to register
-#define WRITE_PERI_REG(addr, val) ({                                                                                   \
+#define WRITE_PERI_REG(addr, val) do {                                                                                 \
             ASSERT_IF_DPORT_REG((addr), WRITE_PERI_REG);                                                               \
             (*((volatile uint32_t *)ETS_UNCACHED_ADDR(addr))) = (uint32_t)(val);                                       \
-        })
+        } while(0)
 
 //clear bits of register controlled by mask
-#define CLEAR_PERI_REG_MASK(reg, mask) ({                                                                              \
+#define CLEAR_PERI_REG_MASK(reg, mask)  do {                                                                           \
             ASSERT_IF_DPORT_REG((reg), CLEAR_PERI_REG_MASK);                                                           \
             WRITE_PERI_REG((reg), (READ_PERI_REG(reg)&(~(mask))));                                                     \
-        })
+        } while(0)
 
 //set bits of register controlled by mask
-#define SET_PERI_REG_MASK(reg, mask) ({                                                                                \
+#define SET_PERI_REG_MASK(reg, mask) do {                                                                              \
             ASSERT_IF_DPORT_REG((reg), SET_PERI_REG_MASK);                                                             \
             WRITE_PERI_REG((reg), (READ_PERI_REG(reg)|(mask)));                                                        \
-        })
+        } while(0)
 
 //get bits of register controlled by mask
 #define GET_PERI_REG_MASK(reg, mask) ({                                                                                \
@@ -139,10 +139,10 @@
         })
 
 //set bits of register controlled by mask and shift
-#define SET_PERI_REG_BITS(reg,bit_map,value,shift) ({                                                                  \
+#define SET_PERI_REG_BITS(reg,bit_map,value,shift) do {                                                                \
             ASSERT_IF_DPORT_REG((reg), SET_PERI_REG_BITS);                                                             \
-            (WRITE_PERI_REG((reg),(READ_PERI_REG(reg)&(~((bit_map)<<(shift))))|(((value) & bit_map)<<(shift)) ));      \
-        })
+            WRITE_PERI_REG((reg),(READ_PERI_REG(reg)&(~((bit_map)<<(shift))))|(((value) & (bit_map))<<(shift)) );      \
+        } while(0)
 
 //get field of register
 #define GET_PERI_REG_BITS2(reg, mask,shift) ({                                                                         \

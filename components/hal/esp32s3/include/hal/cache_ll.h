@@ -56,10 +56,10 @@ static inline cache_bus_mask_t cache_ll_l1_get_bus(uint32_t cache_id, uint32_t v
     HAL_ASSERT(cache_id == 0 || cache_id == 1);
 
     cache_bus_mask_t mask = 0;
-    uint32_t vaddr_end = vaddr_start + len;
-    if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW && vaddr_end <= IRAM0_CACHE_ADDRESS_HIGH) {
+    uint32_t vaddr_end = vaddr_start + len - 1;
+    if (vaddr_start >= IRAM0_CACHE_ADDRESS_LOW && vaddr_end < IRAM0_CACHE_ADDRESS_HIGH) {
         mask |= CACHE_BUS_IBUS0;    //Both cores have their own IBUS0
-    } else if (vaddr_start >= DRAM0_CACHE_ADDRESS_LOW && vaddr_end <= DRAM0_CACHE_ADDRESS_HIGH) {
+    } else if (vaddr_start >= DRAM0_CACHE_ADDRESS_LOW && vaddr_end < DRAM0_CACHE_ADDRESS_HIGH) {
         mask |= CACHE_BUS_DBUS0;    //Both cores have their own DBUS0
     } else {
         HAL_ASSERT(0);      //Out of region

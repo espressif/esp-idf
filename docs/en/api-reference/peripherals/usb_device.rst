@@ -4,12 +4,16 @@ USB Device Driver
 
 {IDF_TARGET_USB_DP_GPIO_NUM:default="20"}
 {IDF_TARGET_USB_DM_GPIO_NUM:default="19"}
+{IDF_TARGET_USB_EP_NUM:default="6"}
+{IDF_TARGET_USB_EP_NUM_INOUT:default="5"}
+{IDF_TARGET_USB_EP_NUM_IN:default="1"}
 
 Overview
 --------
 
-The driver allows users to use {IDF_TARGET_NAME} chips to develop USB devices on top the TinyUSB stack. TinyUSB is integrating with ESP-IDF to provide USB features of the framework. Using this driver the chip works as a composite device supporting to represent several USB devices simultaneously. Currently, only the communications device class (CDC) type of the device with the ACM (Abstract Control Model) subclass is supported.
+The driver allows users to use {IDF_TARGET_NAME} chips to develop USB devices on a top of the TinyUSB stack. TinyUSB is integrated with ESP-IDF to provide USB features of the framework. Using this driver the chip works as a composite device supporting several USB devices simultaneously. Currently, only the Communications Device Class (CDC) type of the device with the Abstract Control Model (ACM) subclass and the Musical Instrument Digital Interface (MIDI) are supported.
 
+Our USB-OTG implementation is limited to {IDF_TARGET_USB_EP_NUM} number of USB endpoints ({IDF_TARGET_USB_EP_NUM_INOUT} IN/OUT endpoints and {IDF_TARGET_USB_EP_NUM_IN} IN endpoint) - find more information in `technical reference manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
 Features
 --------
@@ -17,6 +21,7 @@ Features
 - Configuration of device and string USB descriptors
 - USB Serial Device (CDC-ACM)
 - Input and output through USB Serial Device
+- USB MIDI Device
 
 
 Hardware USB Connection
@@ -134,6 +139,8 @@ The table below describes the code examples available in the directory :example:
      - How to set up {IDF_TARGET_NAME} chip to work as a Generic USB Device with a user-defined descriptor
    * - :example:`peripherals/usb/device/tusb_serial_device`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Serial Device
+   * - :example:`peripherals/usb/device/tusb_midi`
+     - How to set up {IDF_TARGET_NAME} chip to work as a USB MIDI Device
 
 
 API Reference

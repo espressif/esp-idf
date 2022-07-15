@@ -1034,7 +1034,7 @@ For example, in the ``foo/CMakeLists.txt`` file::
   add_library(foo bar.c fizz.cpp buzz.cpp)
 
   if(ESP_PLATFORM)
-    # On ESP-IDF, bar.c needs to include esp_spi_flash.h from the spi_flash component
+    # On ESP-IDF, bar.c needs to include esp_flash.h from the spi_flash component
     target_link_libraries(foo PRIVATE idf::spi_flash)
   endif()
 

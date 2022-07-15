@@ -243,9 +243,9 @@ typedef enum {
     ESP_HF_CME_INCORRECT_PASSWORD = 16,           /*!< incorrect password */
     ESP_HF_CME_SIM_PIN2_REQUIRED = 17,            /*!< SIM PIN2 required */
     ESP_HF_CME_SIM_PUK2_REQUIRED = 18,            /*!< SIM PUK2 required */
-    ESP_HF_CME_MEMEORY_FULL = 20,                 /*!< memory full */
+    ESP_HF_CME_MEMORY_FULL = 20,                  /*!< memory full */
     ESP_HF_CME_INVALID_INDEX = 21,                /*!< invalid index */
-    ESP_HF_CME_MEMEORY_FAILURE = 23,              /*!< memory failure */
+    ESP_HF_CME_MEMORY_FAILURE = 23,              /*!< memory failure */
     ESP_HF_CME_TEXT_STRING_TOO_LONG = 24,         /*!< test string too long */
     ESP_HF_CME_INVALID_CHARACTERS_IN_TEXT_STRING = 25,  /*!< invalid characters in text string */
     ESP_HF_CME_DIAL_STRING_TOO_LONG = 26,         /*!< dial string too long*/

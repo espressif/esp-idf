@@ -44,8 +44,8 @@ typedef uint32_t esp_bt_l2cap_cntl_flags_t;
  * @brief L2CAP callback function events
  */
 typedef enum {
-    ESP_BT_L2CAP_INIT_EVT                 = 0,      /*!< When L2CAP is inited, the event comes */
-    ESP_BT_L2CAP_UNINIT_EVT               = 1,      /*!< When L2CAP is uninited, the event comes */
+    ESP_BT_L2CAP_INIT_EVT                 = 0,      /*!< When L2CAP is initialized, the event comes */
+    ESP_BT_L2CAP_UNINIT_EVT               = 1,      /*!< When L2CAP is deinitialized, the event comes */
     ESP_BT_L2CAP_OPEN_EVT                 = 16,     /*!< When L2CAP Client connection open, the event comes */
     ESP_BT_L2CAP_CLOSE_EVT                = 17,     /*!< When L2CAP connection closed, the event comes */
     ESP_BT_L2CAP_START_EVT                = 18,     /*!< When L2CAP server started, the event comes */
@@ -166,7 +166,7 @@ esp_err_t esp_bt_l2cap_deinit(void);
  * @brief       This function makes an L2CAP connection to a remote BD Address.
  *              When the connection is initiated or failed to initiate, the callback is called with ESP_BT_L2CAP_CL_INIT_EVT.
  *              When the connection is established or failed, the callback is called with ESP_BT_L2CAP_OPEN_EVT.
- *              This funciton must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+ *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @param[in]   cntl_flag:    Lower 16-bit security settings mask.
  * @param[in]   remote_psm:   Remote device bluetooth Profile PSM.
@@ -183,7 +183,7 @@ esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t rem
  *              L2CAP connection request from a remote Bluetooth device.
  *              When the server is started successfully, the callback is called with ESP_BT_L2CAP_START_EVT.
  *              When the connection is established, the callback is called with ESP_BT_L2CAP_OPEN_EVT.
- *              This funciton must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+ *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @param[in]   cntl_flag:    Lower 16-bit security settings mask.
  * @param[in]   local_psm:    Dynamic PSM.
@@ -199,7 +199,7 @@ esp_err_t esp_bt_l2cap_start_srv(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t l
  *              The operation will close all active L2CAP connection first, then the callback function will be called
  *              with ESP_BT_L2CAP_CLOSE_EVT, and the number of ESP_BT_L2CAP_CLOSE_EVT is equal to the number of connection.
  *              When the operation is completed, the callback is called with ESP_BT_L2CAP_SRV_STOP_EVT.
- *              This funciton must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+ *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
  *              - ESP_OK: success
@@ -213,7 +213,7 @@ esp_err_t esp_bt_l2cap_stop_all_srv(void);
  *              The operation will close all active L2CAP connection first on the specific L2CAP server, then the callback function will
  *              be called with ESP_BT_L2CAP_CLOSE_EVT, and the number of ESP_BT_L2CAP_CLOSE_EVT is equal to the number of connection.
  *              When the operation is completed, the callback is called with ESP_BT_L2CAP_SRV_STOP_EVT.
- *              This funciton must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+ *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @param[in]   local_psm:    Dynamic PSM.
  *
@@ -226,7 +226,7 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm);
 /**
  * @brief       This function is used to register VFS.
  *              Only supports write, read and close.
- *              This funciton must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+ *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
  *              - ESP_OK: success
@@ -236,7 +236,7 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
 
 /**
  * @brief       This function is used to unregister VFS.
- *              This funciton must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
+ *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
  * @return
  *              - ESP_OK: success

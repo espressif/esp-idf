@@ -124,13 +124,46 @@ static void touch_pad_filter_cb(void *arg)
     }
 }
 
-esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_cycle)
+esp_err_t touch_pad_set_measurement_interval(uint16_t interval_cycle)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_set_meas_time(meas_cycle);
-    touch_hal_set_sleep_time(sleep_cycle);
+    touch_hal_set_sleep_time(interval_cycle);
+    TOUCH_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_get_measurement_interval(uint16_t *interval_cycle)
+{
+    TOUCH_NULL_POINTER_CHECK(interval_cycle, "interval_cycle");
+    TOUCH_ENTER_CRITICAL();
+    touch_hal_get_sleep_time(interval_cycle);
+    TOUCH_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_set_measurement_clock_cycles(uint16_t clock_cycle)
+{
+    TOUCH_ENTER_CRITICAL();
+    touch_hal_set_meas_time(clock_cycle);
     TOUCH_EXIT_CRITICAL();
 
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_get_measurement_clock_cycles(uint16_t *clock_cycle)
+{
+    TOUCH_NULL_POINTER_CHECK(clock_cycle, "clock_cycle");
+    TOUCH_ENTER_CRITICAL();
+    touch_hal_get_meas_time(clock_cycle);
+    TOUCH_EXIT_CRITICAL();
+
+    return ESP_OK;
+}
+
+esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_cycle)
+{
+    touch_pad_set_measurement_clock_cycles(meas_cycle);
+    touch_pad_set_measurement_interval(sleep_cycle);
     return ESP_OK;
 }
 
@@ -138,11 +171,8 @@ esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_cycle)
 {
     TOUCH_NULL_POINTER_CHECK(sleep_cycle, "sleep_cycle");
     TOUCH_NULL_POINTER_CHECK(meas_cycle, "meas_cycle");
-    TOUCH_ENTER_CRITICAL();
-    touch_hal_get_meas_time(meas_cycle);
-    touch_hal_get_sleep_time(sleep_cycle);
-    TOUCH_EXIT_CRITICAL();
-
+    touch_pad_get_measurement_interval(sleep_cycle);
+    touch_pad_get_measurement_clock_cycles(meas_cycle);
     return ESP_OK;
 }
 
@@ -268,7 +298,9 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
         uint32_t wait_tick = 0;
         uint32_t rtc_clk_freq = rtc_clk_slow_freq_get_hz();
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
-        touch_pad_get_meas_time(&sleep_time, &meas_cycle);
+        touch_pad_get_measurement_interval(&sleep_time);
+        touch_pad_get_measurement_clock_cycles(&meas_cycle);
+
         //If the FSM mode is 'TOUCH_FSM_MODE_TIMER', The data will be ready after one measurement cycle
         //after this function is executed, otherwise, the "touch_value" by "touch_pad_read" is 0.
         wait_time_ms = sleep_time / (rtc_clk_freq / 1000) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);

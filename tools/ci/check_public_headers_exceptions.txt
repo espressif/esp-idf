@@ -3,6 +3,9 @@
 components/xtensa/include/xtensa/
 components/xtensa/include/
 components/xtensa/esp32/include/xtensa/config/
+components/xtensa/esp32s2/include/xtensa/config/
+components/xtensa/esp32s3/include/xtensa/config/
+
 
 components/newlib/platform_include/
 
@@ -34,7 +37,12 @@ components/lwip/lwip/src/include/lwip/priv/memp_std.h
 components/lwip/include/lwip/sockets.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
 
+## Header produced non-zero object:
 components/esp_phy/esp32/include/phy_init_data.h
+components/esp_phy/esp32s2/include/phy_init_data.h
+components/esp_phy/esp32s3/include/phy_init_data.h
+components/esp_phy/esp32c3/include/phy_init_data.h
+components/esp_phy/esp32c2/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
@@ -60,8 +68,6 @@ components/mbedtls/test/
 components/esp-tls/private_include/
 
 components/protobuf-c/
-
-components/mdns/include/mdns_console.h
 
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
@@ -146,3 +152,84 @@ components/ulp/include/ulp_common.h
 components/ulp/include/esp32s2/ulp_riscv.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
+
+### To be fixed: files which don't compile for esp32s2 target:
+
+components/driver/deprecated/driver/adc_deprecated.h
+components/driver/include/driver/can.h
+components/driver/include/driver/mcpwm.h
+components/efuse/esp32s2/include/esp_efuse_table.h
+components/esp_psram/include/esp32/himem.h
+components/esp_rom/include/esp32/rom/ets_sys.h
+components/esp_rom/include/esp32/rom/rtc.h
+components/esp_rom/include/esp32/rom/uart.h
+components/soc/esp32s2/include/soc/apb_ctrl_struct.h
+components/soc/esp32s2/include/soc/apb_saradc_struct.h
+components/soc/esp32s2/include/soc/efuse_struct.h
+components/soc/esp32s2/include/soc/gpio_sd_struct.h
+components/soc/esp32s2/include/soc/gpio_struct.h
+components/soc/esp32s2/include/soc/i2c_struct.h
+components/soc/esp32s2/include/soc/i2s_struct.h
+components/soc/esp32s2/include/soc/ledc_struct.h
+components/soc/esp32s2/include/soc/rtc_i2c_struct.h
+components/soc/esp32s2/include/soc/rtc_io_struct.h
+components/soc/esp32s2/include/soc/sens_struct.h
+components/soc/esp32s2/include/soc/spi_mem_struct.h
+components/soc/esp32s2/include/soc/spi_struct.h
+components/soc/esp32s2/include/soc/syscon_struct.h
+components/soc/esp32s2/include/soc/uart_struct.h
+components/soc/esp32s2/include/soc/uhci_struct.h
+components/usb/include/esp_private/usb_phy.h
+components/usb/include/usb/usb_types_stack.h
+
+### To be fixed: files which don't compile for esp32s3 target:
+
+components/driver/include/driver/dac_common.h
+components/efuse/esp32s3/include/esp_efuse_table.h
+components/soc/esp32s3/include/soc/world_controller_struct.h
+components/soc/esp32s3/usb_periph.h
+
+### To be fixed: files which don't compile for esp32c3 target:
+
+components/driver/include/driver/touch_pad.h
+components/efuse/esp32c3/include/esp_efuse_table.h
+components/esp_system/port/include/private/esp_private/trax.h
+components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
+components/riscv/include/esp_private/panic_reason.h
+components/riscv/include/riscv/interrupt.h
+components/riscv/include/riscv/rvruntime-frames.h
+components/soc/esp32c3/include/soc/apb_ctrl_struct.h
+components/soc/esp32c3/include/soc/apb_saradc_struct.h
+components/soc/esp32c3/include/soc/efuse_struct.h
+components/soc/esp32c3/include/soc/gpio_sd_struct.h
+components/soc/esp32c3/include/soc/i2s_struct.h
+components/soc/esp32c3/include/soc/ledc_struct.h
+components/soc/esp32c3/include/soc/rtc_cntl_struct.h
+components/soc/esp32c3/include/soc/rtc_i2c_struct.h
+components/soc/esp32c3/include/soc/spi_mem_struct.h
+components/soc/esp32c3/include/soc/spi_struct.h
+components/soc/esp32c3/include/soc/syscon_struct.h
+components/soc/esp32c3/include/soc/uart_struct.h
+components/soc/esp32c3/include/soc/uhci_struct.h
+
+### To be fixed: files which don't compile for esp32c2 target:
+
+components/driver/deprecated/driver/i2s_types_legacy.h
+components/driver/deprecated/driver/i2s.h
+components/driver/deprecated/driver/rmt_types_legacy.h
+components/driver/deprecated/driver/rmt.h
+components/driver/include/driver/i2s_common.h
+components/driver/include/driver/i2s_pdm.h
+components/driver/include/driver/i2s_std.h
+components/driver/include/driver/i2s_tdm.h
+components/driver/include/driver/rmt_common.h
+components/driver/include/driver/rmt_encoder.h
+components/driver/include/driver/rmt_rx.h
+components/driver/include/driver/rmt_tx.h
+components/driver/include/driver/rmt_types.h
+components/driver/include/driver/sigmadelta.h
+components/efuse/esp32c2/include/esp_efuse_table.h
+components/soc/esp32c2/include/soc/rtc_cntl_struct.h
+components/soc/esp32c2/include/soc/spi_mem_struct.h
+components/soc/esp32c2/include/soc/syscon_struct.h
+components/soc/esp32c2/include/soc/uart_struct.h

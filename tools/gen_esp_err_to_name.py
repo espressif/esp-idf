@@ -29,7 +29,7 @@ import textwrap
 from io import open
 
 # list files here which should not be parsed
-ignore_files = [os.path.join('components', 'mdns', 'test_afl_fuzz_host', 'esp32_mock.h')]
+ignore_files: list  = list()
 
 # add directories here which should not be parsed, this is a tuple since it will be used with *.startswith()
 ignore_dirs = (os.path.join('examples'),

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,7 +115,7 @@ static void __attribute__((unused)) test_mprot_dump_status_register(esp_mprot_me
     esp_rom_printf("FAULT [");
 
     void *addr;
-    esp_err_t err = esp_mprot_get_violate_addr(mem_type, &addr, NULL);
+    esp_err_t err = esp_mprot_get_violate_addr(mem_type, &addr, DEFAULT_CPU_NUM);
     if (err == ESP_OK) {
         esp_rom_printf("fault addr: 0x%08X,", (uint32_t)addr);
     } else {
@@ -123,7 +123,7 @@ static void __attribute__((unused)) test_mprot_dump_status_register(esp_mprot_me
     }
 
     esp_mprot_pms_world_t world;
-    err = esp_mprot_get_violate_world(mem_type, &world, NULL);
+    err = esp_mprot_get_violate_world(mem_type, &world, DEFAULT_CPU_NUM);
     if (err == ESP_OK) {
         esp_rom_printf(" world: %s,", esp_mprot_pms_world_to_str(world));
     } else {
@@ -131,7 +131,7 @@ static void __attribute__((unused)) test_mprot_dump_status_register(esp_mprot_me
     }
 
     uint32_t oper;
-    err = esp_mprot_get_violate_operation(mem_type, &oper, NULL);
+    err = esp_mprot_get_violate_operation(mem_type, &oper, DEFAULT_CPU_NUM);
     if (err == ESP_OK) {
         esp_rom_printf(" operation: %s", esp_mprot_oper_type_to_str(oper));
     } else {
@@ -141,7 +141,7 @@ static void __attribute__((unused)) test_mprot_dump_status_register(esp_mprot_me
     // DRAM/DMA fault: check byte-enables
     if (mem_type == MEMPROT_TYPE_DRAM0_SRAM) {
         uint32_t byteen;
-        err = esp_mprot_get_violate_byte_enables(mem_type, &byteen, NULL);
+        err = esp_mprot_get_violate_byte_enables(mem_type, &byteen, DEFAULT_CPU_NUM);
         if (err == ESP_OK) {
             esp_rom_printf(", byte en: 0x%08X", byteen);
         } else {
@@ -173,15 +173,15 @@ static void test_mprot_check_test_result(esp_mprot_mem_t mem_type, bool expected
 
 static void test_mprot_clear_all_interrupts(void)
 {
-    esp_err_t err = esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, NULL);
+    esp_err_t err = esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM) failed (%s) - test_mprot_clear_all_interrupts\n", esp_err_to_name(err));
     }
-    err = esp_mprot_monitor_clear_intr(MEMPROT_TYPE_DRAM0_SRAM, NULL);
+    err = esp_mprot_monitor_clear_intr(MEMPROT_TYPE_DRAM0_SRAM, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr(MEMPROT_TYPE_DRAM0_SRAM) failed (%s) - test_mprot_clear_all_interrupts\n", esp_err_to_name(err));
     }
-    err = esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_RTCFAST, NULL);
+    err = esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_RTCFAST, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_RTCFAST) failed (%s) - test_mprot_clear_all_interrupts\n", esp_err_to_name(err));
     }
@@ -206,7 +206,7 @@ static void test_mprot_get_permissions(bool low, esp_mprot_mem_t mem_type, bool 
     }
 
     uint32_t flags;
-    esp_err_t err = esp_mprot_get_pms_area(area, &flags);
+    esp_err_t err = esp_mprot_get_pms_area(area, &flags, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_get_pms_area() failed (%s) - test_mprot_get_permissions\n", esp_err_to_name(err));
         return;
@@ -240,17 +240,17 @@ static void test_mprot_set_permissions(bool low, esp_mprot_mem_t mem_type, bool 
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM: {
         if (low) {
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_0, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_0, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_1, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_1, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_2, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_2, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
         } else {
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_3, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_3, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
         }
@@ -258,17 +258,17 @@ static void test_mprot_set_permissions(bool low, esp_mprot_mem_t mem_type, bool 
     break;
     case MEMPROT_TYPE_DRAM0_SRAM: {
         if (low) {
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_0, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_0, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
         } else {
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_1, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_1, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_2, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_2, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_3, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_3, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
         }
@@ -276,11 +276,11 @@ static void test_mprot_set_permissions(bool low, esp_mprot_mem_t mem_type, bool 
     break;
     case MEMPROT_TYPE_IRAM0_RTCFAST: {
         if (low) {
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
         } else {
-            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI, flags)) != ESP_OK) {
+            if ((err = esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI, flags, DEFAULT_CPU_NUM)) != ESP_OK) {
                 break;
             }
         }
@@ -311,7 +311,7 @@ static void test_mprot_read(esp_mprot_mem_t mem_type)
     const uint32_t test_val = 100;
 
     //temporarily allow WRITE for setting the test values
-    esp_err_t err = esp_mprot_set_monitor_en(mem_type, false);
+    esp_err_t err = esp_mprot_set_monitor_en(mem_type, false, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_read\n", esp_err_to_name(err));
         return;
@@ -329,7 +329,7 @@ static void test_mprot_read(esp_mprot_mem_t mem_type)
     test_mprot_set_permissions(false, mem_type, read_perm_high, write_perm_high, is_exec_mem ? &exec_perm_high : NULL);
 
     //reenable monitoring
-    err = esp_mprot_set_monitor_en(mem_type, true);
+    err = esp_mprot_set_monitor_en(mem_type, true, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_read\n", esp_err_to_name(err));
         return;
@@ -337,7 +337,7 @@ static void test_mprot_read(esp_mprot_mem_t mem_type)
 
     //perform READ test in low region
     esp_rom_printf("%s read low: ", esp_mprot_mem_type_to_str(mem_type));
-    err = esp_mprot_monitor_clear_intr(mem_type, NULL);
+    err = esp_mprot_monitor_clear_intr(mem_type, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr() failed (%s) - test_mprot_read\n", esp_err_to_name(err));
         return;
@@ -354,7 +354,7 @@ static void test_mprot_read(esp_mprot_mem_t mem_type)
 
     //perform READ in high region
     esp_rom_printf("%s read high: ", esp_mprot_mem_type_to_str(mem_type));
-    err = esp_mprot_monitor_clear_intr(mem_type, NULL);
+    err = esp_mprot_monitor_clear_intr(mem_type, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr() failed (%s) - test_mprot_read\n", esp_err_to_name(err));
         return;
@@ -381,7 +381,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type)
     test_mprot_get_permissions(false, mem_type, &read_perm_high, &write_perm_high, is_exec_mem ? &exec_perm_high : NULL);
 
     //ensure READ enabled
-    esp_err_t err = esp_mprot_set_monitor_en(mem_type, false);
+    esp_err_t err = esp_mprot_set_monitor_en(mem_type, false, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_write\n", esp_err_to_name(err));
         return;
@@ -390,7 +390,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type)
     test_mprot_set_permissions(true, mem_type, true, write_perm_low, is_exec_mem ? &exec_perm_low : NULL);
     test_mprot_set_permissions(false, mem_type, true, write_perm_high, is_exec_mem ? &exec_perm_high : NULL);
 
-    err = esp_mprot_set_monitor_en(mem_type, true);
+    err = esp_mprot_set_monitor_en(mem_type, true, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_write\n", esp_err_to_name(err));
         return;
@@ -402,7 +402,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type)
 
     //perform WRITE in low region
     esp_rom_printf("%s write low: ", esp_mprot_mem_type_to_str(mem_type));
-    err = esp_mprot_monitor_clear_intr(mem_type, NULL);
+    err = esp_mprot_monitor_clear_intr(mem_type, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr() failed (%s) - test_mprot_write\n", esp_err_to_name(err));
         return;
@@ -421,7 +421,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type)
 
     //perform WRITE in high region
     esp_rom_printf("%s write high: ", esp_mprot_mem_type_to_str(mem_type));
-    err = esp_mprot_monitor_clear_intr(mem_type, NULL);
+    err = esp_mprot_monitor_clear_intr(mem_type, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr() failed (%s) - test_mprot_write\n", esp_err_to_name(err));
         return;
@@ -439,7 +439,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type)
     }
 
     //restore original permissions
-    err = esp_mprot_set_monitor_en(mem_type, false);
+    err = esp_mprot_set_monitor_en(mem_type, false, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_write\n", esp_err_to_name(err));
         return;
@@ -448,7 +448,7 @@ static void test_mprot_write(esp_mprot_mem_t mem_type)
     test_mprot_set_permissions(true, mem_type, read_perm_low, write_perm_low, is_exec_mem ? &exec_perm_low : NULL);
     test_mprot_set_permissions(false, mem_type, read_perm_high, write_perm_high, is_exec_mem ? &exec_perm_high : NULL);
 
-    err = esp_mprot_set_monitor_en(mem_type, true);
+    err = esp_mprot_set_monitor_en(mem_type, true, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_write\n", esp_err_to_name(err));
         return;
@@ -469,14 +469,14 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type)
     //temporarily enable READ/WRITE
     test_mprot_get_permissions(true, mem_type, &read_perm_low, &write_perm_low, &exec_perm_low);
     test_mprot_get_permissions(false, mem_type, &read_perm_high, &write_perm_high, &exec_perm_high);
-    esp_err_t err = esp_mprot_set_monitor_en(mem_type, false);
+    esp_err_t err = esp_mprot_set_monitor_en(mem_type, false, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_exec\n", esp_err_to_name(err));
         return;
     }
     test_mprot_set_permissions(true, mem_type, true, true, &exec_perm_low);
     test_mprot_set_permissions(false, mem_type, true, true, &exec_perm_high);
-    err = esp_mprot_set_monitor_en(mem_type, true);
+    err = esp_mprot_set_monitor_en(mem_type, true, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_exec\n", esp_err_to_name(err));
         return;
@@ -496,7 +496,7 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type)
 
     //LOW REGION: clear the intr flag & try to execute the code injected
     esp_rom_printf("%s exec low: ", esp_mprot_mem_type_to_str(mem_type));
-    err = esp_mprot_monitor_clear_intr(mem_type, NULL);
+    err = esp_mprot_monitor_clear_intr(mem_type, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr() failed (%s) - test_mprot_exec\n", esp_err_to_name(err));
         return;
@@ -522,7 +522,7 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type)
 
     //HIGH REGION: clear the intr-on flag & try to execute the code injected
     esp_rom_printf("%s exec high: ", esp_mprot_mem_type_to_str(mem_type));
-    err = esp_mprot_monitor_clear_intr(mem_type, NULL);
+    err = esp_mprot_monitor_clear_intr(mem_type, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_monitor_clear_intr() failed (%s) - test_mprot_exec\n", esp_err_to_name(err));
         return;
@@ -546,14 +546,14 @@ static void test_mprot_exec(esp_mprot_mem_t mem_type)
     }
 
     //restore original permissions
-    err = esp_mprot_set_monitor_en(mem_type, false);
+    err = esp_mprot_set_monitor_en(mem_type, false, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_exec\n", esp_err_to_name(err));
         return;
     }
     test_mprot_set_permissions(true, mem_type, read_perm_low, write_perm_low, &exec_perm_low);
     test_mprot_set_permissions(false, mem_type, read_perm_high, write_perm_high, &exec_perm_high);
-    err = esp_mprot_set_monitor_en(mem_type, true);
+    err = esp_mprot_set_monitor_en(mem_type, true, DEFAULT_CPU_NUM);
     if (err != ESP_OK) {
         esp_rom_printf("Error: esp_mprot_set_monitor_en() failed (%s) - test_mprot_exec\n", esp_err_to_name(err));
         return;

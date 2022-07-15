@@ -7,8 +7,8 @@ end
 
 function __main
     if not set -q IDF_PATH
-        echo "IDF_PATH must be set before sourcing this script"
-        return 1
+        set -gx IDF_PATH (cd (dirname (status -f)); and pwd)
+        echo "Setting IDF_PATH to '$IDF_PATH'"
     end
 
     set script_dir (cd (dirname (status -f)); and pwd)
@@ -36,8 +36,8 @@ function __main
 
     echo "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
-    set -x IDF_TOOLS_EXPORT_CMD "$IDF_PATH"/export.fish
-    set -x IDF_TOOLS_INSTALL_CMD "$IDF_PATH"/install.fish
+    set -gx IDF_TOOLS_EXPORT_CMD "$IDF_PATH"/export.fish
+    set -gx IDF_TOOLS_INSTALL_CMD "$IDF_PATH"/install.fish
     # Allow calling some IDF python tools without specifying the full path
     # "$IDF_PATH"/tools is already added by 'idf_tools.py export'
     set IDF_ADD_PATHS_EXTRAS "$IDF_PATH"/components/esptool_py/esptool

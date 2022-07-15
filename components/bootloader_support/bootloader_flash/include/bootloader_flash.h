@@ -7,7 +7,8 @@
 
 #include <stdint.h>
 #include <esp_err.h>
-#include <esp_spi_flash.h> /* including in bootloader for error values */
+#include "spi_flash_mmap.h" /* including in bootloader for error values */
+#include "esp_private/spi_flash_os.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "bootloader_flash_override.h"

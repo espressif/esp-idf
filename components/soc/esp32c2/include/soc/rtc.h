@@ -127,6 +127,8 @@ storing in efuse (based on ATE 5k ECO3 chips)
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
+    RTC_XTAL_FREQ_26M = 26,     //!< 26 MHz XTAL
+    RTC_XTAL_FREQ_32M = 32,     //!< 32 MHz XTAL
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 

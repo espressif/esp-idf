@@ -37,12 +37,17 @@ list(APPEND srcs
     "vfs_l2tap/esp_vfs_l2tap.c")
 endif()
 
+if(CONFIG_ESP_NETIF_BRIDGE_EN)
+list(APPEND srcs
+    "lwip/esp_netif_br_glue.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                     REQUIRES lwip)
 
 
-if(CONFIG_ESP_NETIF_L2_TAP)
-idf_component_optional_requires(PRIVATE esp_eth)
+if(CONFIG_ESP_NETIF_L2_TAP OR CONFIG_ESP_NETIF_BRIDGE_EN)
+    idf_component_optional_requires(PRIVATE esp_eth)
 endif()

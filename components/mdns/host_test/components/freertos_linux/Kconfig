@@ -1,7 +1,0 @@
-menu "FreeRTOS"
-
-    config FREERTOS_NO_AFFINITY
-        hex
-        default 0x7FFFFFFF
-
-endmenu

@@ -45,6 +45,7 @@ PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
 
 PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
 PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable );
+PROVIDE ( esp_rom_spiflash_erase_area = SPIEraseArea );
 
 PROVIDE ( esp_rom_regi2c_read = rom_i2c_readReg );
 PROVIDE ( esp_rom_regi2c_read_mask = rom_i2c_readReg_Mask );

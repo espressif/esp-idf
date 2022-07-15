@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -22,6 +22,7 @@ extern "C" {
 #define ESP_ERR_MEMPROT_UNIMGMT_BLOCK_INVALID   (ESP_ERR_MEMPROT_BASE + 5)   /**< Required unified-management block is not valid */
 #define ESP_ERR_MEMPROT_WORLD_INVALID           (ESP_ERR_MEMPROT_BASE + 6)   /**< Required World identifier is not valid */
 #define ESP_ERR_MEMPROT_AREA_INVALID            (ESP_ERR_MEMPROT_BASE + 7)   /**< Required Area identifier is not valid */
+#define ESP_ERR_MEMPROT_CPUID_INVALID           (ESP_ERR_MEMPROT_BASE + 8)   /**< Required CPU/Core identifier is not valid */
 
 #ifdef __cplusplus
 }

@@ -7,7 +7,7 @@
 #include "esp_attr.h"
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_flash_encrypt.h"
 #include "sdkconfig.h"
 #include "core_dump_checksum.h"

@@ -38,11 +38,9 @@ api-guides/lwip
 api-guides/flash_psram_config
 api-guides/usb-serial-jtag-console
 api-guides/linker-script-generation
-api-guides/wifi
 api-guides/usb-otg-console
 api-guides/wireshark-user-guide
 api-guides/bootloader
-api-guides/esp-wifi-mesh
 api-guides/ulp-legacy
 api-guides/build-system
 api-guides/freertos-smp
@@ -86,7 +84,6 @@ api-reference/storage/index
 api-reference/peripherals/adc
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/lcd
-api-reference/peripherals/temp_sensor
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth
@@ -94,9 +91,7 @@ api-reference/network/esp_netif_driver
 api-reference/network/tcpip_adapter_migration
 api-reference/network/esp_dpp
 api-reference/network/esp_now
-api-reference/network/esp-wifi-mesh
 api-reference/network/esp_smartconfig
-api-reference/network/esp_wifi
 api-reference/network/index
 api-reference/network/esp_netif
 api-reference/system/sleep_modes
@@ -166,7 +161,6 @@ api-reference/protocols/esp_https_server
 api-reference/protocols/openssl_apis
 api-reference/protocols/esp_spi_slave_protocol
 api-reference/protocols/esp_tls
-api-reference/protocols/mdns
 api-reference/protocols/index
 api-reference/protocols/asio
 get-started/establish-serial-connection

@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stddef.h> /* For NULL declaration */
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal/misc.h"

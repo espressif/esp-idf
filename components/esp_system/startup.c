@@ -23,7 +23,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_heap_caps_init.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
 #include "esp_newlib.h"
 #include "esp_timer.h"
@@ -289,9 +289,9 @@ static void do_core_init(void)
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
 
-    spi_flash_init();
-    /* init default OS-aware flash access critical section */
-    spi_flash_guard_set(&g_flash_guard_default_ops);
+#if CONFIG_SPI_FLASH_ROM_IMPL
+    spi_flash_rom_impl_init();
+#endif
 
     esp_flash_app_init();
     esp_err_t flash_ret = esp_flash_init_default_chip();

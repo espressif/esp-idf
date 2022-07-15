@@ -26,13 +26,16 @@
 #include "lwip/priv/tcpip_priv.h"
 #include "lwip/netif.h"
 #include "lwip/etharp.h"
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+#include "netif/bridgeif.h"
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
 #if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
 #include "lwip/dns.h"
-#endif
+#endif // LWIP_DNS
 
 #if CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
 #include "lwip_default_hooks.h"
-#endif
+#endif // CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
 
 #include "esp_netif_lwip_ppp.h"
 #include "esp_netif_lwip_slip.h"
@@ -340,6 +343,39 @@ esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif)
     return esp_netif_update_default_netif(esp_netif, ESP_NETIF_SET_DEFAULT);
 }
 
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+esp_err_t esp_netif_bridge_add_port(esp_netif_t *esp_netif_br, esp_netif_t *esp_netif_port)
+{
+    if (ERR_OK != bridgeif_add_port(esp_netif_br->lwip_netif, esp_netif_port->lwip_netif)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_bridge_fdb_add(esp_netif_t *esp_netif_br, uint8_t *addr, uint64_t ports_mask)
+{
+    bridgeif_portmask_t ports;
+    if (ports_mask == ESP_NETIF_BR_FDW_CPU) {
+        ports = 1 << BRIDGEIF_MAX_PORTS;
+    } else {
+        ports = (bridgeif_portmask_t)ports_mask;
+    }
+
+    if (ERR_OK != bridgeif_fdb_add(esp_netif_br->lwip_netif, (const struct eth_addr *)addr, ports)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_bridge_fdb_remove(esp_netif_t *esp_netif_br, uint8_t *addr)
+{
+    if (ERR_OK != bridgeif_fdb_remove(esp_netif_br->lwip_netif, (const struct eth_addr *)addr)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
+
 void esp_netif_set_ip4_addr(esp_ip4_addr_t *addr, uint8_t a, uint8_t b, uint8_t c, uint8_t d)
 {
     ip4_addr_t *address = (ip4_addr_t*)addr;
@@ -383,7 +419,23 @@ esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev)
 {
     // ppp_pcb ptr would never get to app code, so this function only works with vanilla lwip impl
     struct netif *lwip_netif = dev;
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+    // bridge lwip netif uses "state" member for something different => need to traverse all esp_netifs
+    if (lwip_netif->name[0] == 'b' && lwip_netif->name[1] == 'r') {
+        esp_netif_t* esp_netif = esp_netif_next(NULL);
+        do
+        {
+            if(esp_netif->lwip_netif == lwip_netif) {
+                return esp_netif;
+            }
+        } while ((esp_netif = esp_netif_next(esp_netif)) != NULL);
+    } else {
+        return lwip_netif->state;
+    }
+    return NULL;
+#else
     return lwip_netif->state;
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
 }
 
 void* esp_netif_get_netif_impl(esp_netif_t *esp_netif)
@@ -484,6 +536,19 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
     if (cfg->base->route_prio) {
         esp_netif->route_prio = cfg->base->route_prio;
     }
+
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+    // Setup bridge configuration if the interface is to be bridge
+    if (cfg->base->flags & ESP_NETIF_FLAG_IS_BRIDGE) {
+        if (cfg->base->bridge_info != NULL) {
+            esp_netif->max_fdb_dyn_entries = cfg->base->bridge_info->max_fdb_dyn_entries;
+            esp_netif->max_fdb_sta_entries = cfg->base->bridge_info->max_fdb_sta_entries;
+            esp_netif->max_ports = cfg->base->bridge_info->max_ports;
+        } else {
+            return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+        }
+    }
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
 
     // Install network stack functions -- connects netif and L3 stack
     const esp_netif_netstack_config_t *esp_netif_stack_config = cfg->stack;
@@ -668,12 +733,31 @@ static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
 #endif
     }
 
-    if (NULL == netif_add(esp_netif->lwip_netif, (struct ip4_addr*)&esp_netif->ip_info->ip,
-                         (struct ip4_addr*)&esp_netif->ip_info->netmask, (struct ip4_addr*)&esp_netif->ip_info->gw,
-                         esp_netif, esp_netif->lwip_init_fn, tcpip_input)) {
-        esp_netif_lwip_remove(esp_netif);
-        return ESP_ERR_ESP_NETIF_IF_NOT_READY;
+#if CONFIG_ESP_NETIF_BRIDGE_EN
+    if (esp_netif->flags & ESP_NETIF_FLAG_IS_BRIDGE) {
+        bridgeif_initdata_t bridge_initdata = {
+            .max_fdb_dynamic_entries = esp_netif->max_fdb_dyn_entries,
+            .max_fdb_static_entries = esp_netif->max_fdb_sta_entries,
+            .max_ports = esp_netif->max_ports
+        };
+        memcpy(&bridge_initdata.ethaddr, esp_netif->mac, ETH_HWADDR_LEN);
+        if (NULL == netif_add(esp_netif->lwip_netif, (struct ip4_addr*)&esp_netif->ip_info->ip,
+                        (struct ip4_addr*)&esp_netif->ip_info->netmask, (struct ip4_addr*)&esp_netif->ip_info->gw,
+                        &bridge_initdata, esp_netif->lwip_init_fn, tcpip_input)) {
+            esp_netif_lwip_remove(esp_netif);
+            return ESP_ERR_ESP_NETIF_IF_NOT_READY;
+        }
+    } else {
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
+        if (NULL == netif_add(esp_netif->lwip_netif, (struct ip4_addr*)&esp_netif->ip_info->ip,
+                            (struct ip4_addr*)&esp_netif->ip_info->netmask, (struct ip4_addr*)&esp_netif->ip_info->gw,
+                            esp_netif, esp_netif->lwip_init_fn, tcpip_input)) {
+            esp_netif_lwip_remove(esp_netif);
+            return ESP_ERR_ESP_NETIF_IF_NOT_READY;
+        }
+#if CONFIG_ESP_NETIF_BRIDGE_EN
     }
+#endif // CONFIG_ESP_NETIF_BRIDGE_EN
     return ESP_OK;
 }
 
@@ -803,9 +887,8 @@ static esp_err_t esp_netif_config_sanity_check(const esp_netif_t * esp_netif)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (esp_netif->driver_transmit == NULL ||
-        esp_netif->driver_handle == NULL ||
-        esp_netif->lwip_input_fn == NULL ||
+    if ((!(esp_netif->flags & ESP_NETIF_FLAG_IS_BRIDGE) && (esp_netif->driver_transmit == NULL ||
+        esp_netif->driver_handle == NULL || esp_netif->lwip_input_fn == NULL)) ||
         esp_netif->lwip_init_fn == NULL) {
         ESP_LOGE(TAG,  "Cannot start esp_netif: Missing mandatory configuration:\n"
                        "esp_netif->driver_transmit: %p, esp_netif->driver_handle:%p, "
@@ -847,6 +930,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
     if (esp_netif->flags&ESP_NETIF_FLAG_AUTOUP) {
         ESP_LOGD(TAG, "%s Setting the lwip netif%p UP", __func__, p_netif);
         netif_set_up(p_netif);
+        netif_set_link_up(p_netif);
     }
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
@@ -1394,6 +1478,7 @@ static esp_err_t esp_netif_up_api(esp_netif_api_msg_t *msg)
     /* use last obtained ip, or static ip */
     netif_set_addr(lwip_netif, (ip4_addr_t*)&esp_netif->ip_info->ip, (ip4_addr_t*)&esp_netif->ip_info->netmask, (ip4_addr_t*)&esp_netif->ip_info->gw);
     netif_set_up(lwip_netif);
+    netif_set_link_up(lwip_netif);
 
     esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
 
@@ -1431,6 +1516,7 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 #endif
     netif_set_addr(lwip_netif, IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
     netif_set_down(lwip_netif);
+    netif_set_link_down(lwip_netif);
 
     if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         esp_netif_start_ip_lost_timer(esp_netif);

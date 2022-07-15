@@ -699,7 +699,7 @@ esp_err_t esp_ble_gattc_write_char( esp_gatt_if_t gattc_if,
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID
- * @param[in]       handle : descriptor hadle to write.
+ * @param[in]       handle : descriptor handle to write.
  * @param[in]       value_len: length of the value to be written.
  * @param[in]       value : the value to be written.
  * @param[in]       write_type : the type of attribute write operation.

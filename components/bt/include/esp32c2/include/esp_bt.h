@@ -14,15 +14,14 @@
 #include "esp_task.h"
 
 #include "nimble/nimble_npl.h"
-#include "syscfg/syscfg.h"
-#include "esp_nimble_cfg.h"
+#include "esp_bt_cfg.h"
+
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+#include "driver/uart.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if (SOC_ESP_NIMBLE_CONTROLLER)
-#define NIMBLE_LL_STACK_SIZE CONFIG_BT_LE_CONTROLLER_TASK_STACK_SIZE
 #endif
 
 /**
@@ -128,7 +127,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *        some options or parameters of some functions enabled by config mask.
  */
 
-struct esp_bt_controller_config_t{
+typedef struct {
     uint32_t config_version;
     uint16_t ble_ll_resolv_list_size;
     uint16_t ble_hci_evt_hi_buf_count;
@@ -175,141 +174,8 @@ struct esp_bt_controller_config_t{
     uint8_t dis_scan_backoff;
     uint8_t esp_scan_filter_en;
     uint32_t config_magic;
-};
+} esp_bt_controller_config_t;
 
-typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
-
-#define RUN_BQB_TEST                0
-#define RUN_QA_TEST                 0
-#define NIMBLE_DISABLE_SCAN_BACKOFF 0
-
-#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-#define HCI_UART_EN CONFIG_BT_LE_HCI_INTERFACE_USE_UART
-#else
-#define HCI_UART_EN 0 // hci ram mode
-#endif
-
-#if CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY
-#define BLE_LL_SCAN_PHY_NUMBER_N (2)
-#else
-#define BLE_LL_SCAN_PHY_NUMBER_N (1)
-#endif
-
-#ifdef CONFIG_BT_LE_SLEEP_ENABLE
-#define NIMBLE_SLEEP_ENABLE CONFIG_BT_LE_SLEEP_ENABLE
-#else
-#define NIMBLE_SLEEP_ENABLE  0
-#endif
-
-
-#if CONFIG_BT_NIMBLE_ENABLED
-
-#define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST MYNEWT_VAL(BLE_MAX_PERIODIC_ADVERTISER_LIST)
-#define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS MYNEWT_VAL(BLE_MAX_PERIODIC_SYNCS)
-#define DEFAULT_BT_LE_MAX_CONNECTIONS MYNEWT_VAL(BLE_MAX_CONNECTIONS)
-#define DEFAULT_BT_LE_ACL_BUF_SIZE MYNEWT_VAL(BLE_ACL_BUF_SIZE)
-#define DEFAULT_BT_LE_ACL_BUF_COUNT MYNEWT_VAL(BLE_ACL_BUF_COUNT)
-#define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE)
-#define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE MYNEWT_VAL(BLE_EXT_ADV_MAX_SIZE)
-#define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES MYNEWT_VAL(BLE_MULTI_ADV_INSTANCES)
-#define DEFAULT_BT_NIMBLE_WHITELIST_SIZE MYNEWT_VAL(BLE_LL_WHITELIST_SIZE)
-#define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT MYNEWT_VAL(BLE_HCI_EVT_HI_BUF_COUNT)
-#define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT MYNEWT_VAL(BLE_HCI_EVT_LO_BUF_COUNT)
-#define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF
-
-#else
-# if defined(CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
-    #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (CONFIG_BT_LE_MAX_PERIODIC_ADVERTISER_LIST)
-#else
-    #define DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST (0)
-#endif
-
-#if defined(CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
-    #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (CONFIG_BT_LE_MAX_PERIODIC_SYNCS)
-#else
-    #define DEFAULT_BT_LE_MAX_PERIODIC_SYNCS (0)
-#endif
-
-#if defined(CONFIG_BT_LE_MAX_CONNECTIONS)
-    #define DEFAULT_BT_LE_MAX_CONNECTIONS (CONFIG_BT_LE_MAX_CONNECTIONS)
-#else
-    #define DEFAULT_BT_LE_MAX_CONNECTIONS (0)
-#endif
-
-#if defined(CONFIG_BT_LE_ACL_BUF_SIZE)
-    #define DEFAULT_BT_LE_ACL_BUF_SIZE (CONFIG_BT_LE_ACL_BUF_SIZE)
-#else
-    #define DEFAULT_BT_LE_ACL_BUF_SIZE (0)
-#endif
-
-#if defined(CONFIG_BT_LE_ACL_BUF_COUNT)
-    #define DEFAULT_BT_LE_ACL_BUF_COUNT (CONFIG_BT_LE_ACL_BUF_COUNT)
-#else
-    #define DEFAULT_BT_LE_ACL_BUF_COUNT (0)
-#endif
-
-#if defined(CONFIG_BT_LE_HCI_EVT_BUF_SIZE)
-    #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (CONFIG_BT_LE_HCI_EVT_BUF_SIZE)
-#else
-    #define DEFAULT_BT_LE_HCI_EVT_BUF_SIZE (0)
-#endif
-
-#if defined(CONFIG_BT_LE_EXT_ADV_MAX_SIZE)
-    #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (CONFIG_BT_LE_EXT_ADV_MAX_SIZE)
-#else
-    #define DEFAULT_BT_LE_EXT_ADV_MAX_SIZE (0)
-#endif
-
-#if defined(CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES)
-    #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (CONFIG_BT_LE_MAX_EXT_ADV_INSTANCES)
-#else
-    #define DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES (0)
-#endif
-
-#if defined(CONFIG_BT_LE_WHITELIST_SIZE)
-    #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (CONFIG_BT_LE_WHITELIST_SIZE)
-#else
-    #define DEFAULT_BT_NIMBLE_WHITELIST_SIZE (0)
-#endif
-
-#if defined(CONFIG_BT_LE_HCI_EVT_HI_BUF_COUNT)
-    #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (CONFIG_BT_LE_HCI_EVT_HI_BUF_COUNT)
-#else
-    #define DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT (0)
-#endif
-
-#if defined(CONFIG_BT_LE_HCI_EVT_LO_BUF_COUNT)
-    #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (CONFIG_BT_LE_HCI_EVT_LO_BUF_COUNT)
-#else
-    #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (0)
-#endif
-
-#define DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF CONFIG_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
-
-#endif
-
-
-#ifdef BT_LE_HCI_INTERFACE_USE_UART
-    #define DEFAULT_BT_LE_HCI_UART_TX_PIN (CONFIG_BT_LE_HCI_UART_TX_PIN)
-    #define DEFAULT_BT_LE_HCI_UART_RX_PIN (CONFIG_BT_LE_HCI_UART_RX_PIN)
-    #define DEFAULT_BT_LE_HCI_UART_PORT (CONFIG_BT_LE_HCI_UART_PORT)
-    #define DEFAULT_BT_LE_HCI_UART_BAUD (CONFIG_BT_LE_HCI_UART_BAUD)
-    #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (CONFIG_BT_LE_HCI_UART_DATA_BITS)
-    #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (CONFIG_BT_LE_HCI_UART_STOP_BITS)
-    #define DEFAULT_BT_LE_HCI_UART_PARITY (CONFIG_BT_LE_HCI_UART_BAUD)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (CONFIG_BT_LE_HCI_UART_TASK_STACK_SIZE)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (CONFIG_BT_LE_HCI_UART_FLOW_CTRL)
-#else
-    #define DEFAULT_BT_LE_HCI_UART_TX_PIN (0)
-    #define DEFAULT_BT_LE_HCI_UART_RX_PIN (0)
-    #define DEFAULT_BT_LE_HCI_UART_PORT (0)
-    #define DEFAULT_BT_LE_HCI_UART_BAUD (0)
-    #define DEFAULT_BT_LE_HCI_UART_DATA_BITS (8)
-    #define DEFAULT_BT_LE_HCI_UART_STOP_BITS (1)
-    #define DEFAULT_BT_LE_HCI_UART_PARITY (0)
-    #define DEFAULT_BT_LE_HCI_UART_TASK_STACK_SIZE (0)
-    #define DEFAULT_BT_LE_HCI_UART_FLOW_CTRL (0)
-#endif
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                           \
     .config_version = CONFIG_VERSION,                                                   \
@@ -329,7 +195,7 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
     .ble_ll_sched_max_adv_pdu_usecs = BLE_LL_SCHED_MAX_ADV_PDU_USECS_N,                 \
     .ble_ll_sched_direct_adv_max_usecs = BLE_LL_SCHED_DIRECT_ADV_MAX_USECS_N,           \
     .ble_ll_sched_adv_max_usecs = BLE_LL_SCHED_ADV_MAX_USECS_N,                         \
-    .ble_scan_rsp_data_max_len = BLE_SCAN_RSP_DATA_MAX_LEN_N,                           \
+    .ble_scan_rsp_data_max_len = DEFAULT_BT_LE_SCAN_RSP_DATA_MAX_LEN_N,                 \
     .ble_ll_cfg_num_hci_cmd_pkts = BLE_LL_CFG_NUM_HCI_CMD_PKTS_N,                       \
     .ble_ll_ctrl_proc_timeout_ms = BLE_LL_CTRL_PROC_TIMEOUT_MS_N,                       \
     .nimble_max_connections = DEFAULT_BT_LE_MAX_CONNECTIONS,                            \
@@ -351,8 +217,8 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
     .ble_hci_uart_stop_bits     = DEFAULT_BT_LE_HCI_UART_STOP_BITS,                     \
     .ble_hci_uart_flow_ctrl     = DEFAULT_BT_LE_HCI_UART_FLOW_CTRL,                     \
     .ble_hci_uart_uart_parity   = DEFAULT_BT_LE_HCI_UART_PARITY,                        \
-    .enable_tx_cca              = MYNEWT_VAL(BLE_TX_CCA_ENABLED),                       \
-    .cca_rssi_thresh            = 256 - MYNEWT_VAL(BLE_CCA_RSSI_THRESH),                \
+    .enable_tx_cca              = DEFAULT_BT_LE_TX_CCA_ENABLED,                         \
+    .cca_rssi_thresh            = 256 - DEFAULT_BT_LE_CCA_RSSI_THRESH,                  \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
@@ -360,7 +226,7 @@ typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
     .config_magic = CONFIG_MAGIC,                                                       \
 };
 
-esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg);
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 
 /**
  * @brief  Get BT controller is initialised/de-initialised/enabled/disabled

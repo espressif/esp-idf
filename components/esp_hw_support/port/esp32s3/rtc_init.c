@@ -15,9 +15,9 @@
 #include "soc/extmem_reg.h"
 #include "soc/syscon_reg.h"
 #include "regi2c_ctrl.h"
-#include "regi2c_lp_bias.h"
-#include "regi2c_ulp.h"
-#include "regi2c_dig_reg.h"
+#include "soc/regi2c_lp_bias.h"
+#include "soc/regi2c_ulp.h"
+#include "soc/regi2c_dig_reg.h"
 #include "esp_hw_log.h"
 #include "esp_err.h"
 #include "esp_attr.h"
@@ -74,7 +74,7 @@ void rtc_init(rtc_config_t cfg)
 
     if (cfg.cali_ocode) {
         uint32_t blk_ver_major = 0;
-        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VER_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VER_MAJOR[0]->bit_count);
+        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VERSION_MAJOR[0]->bit_count); // IDF-5366
         if (err != ESP_OK) {
             blk_ver_major = 0;
             ESP_HW_LOGW(TAG, "efuse read fail, set default blk_ver_major: %d\n", blk_ver_major);

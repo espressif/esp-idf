@@ -36,7 +36,7 @@ static void *esp_memprot_rtcfast_get_min_split_addr(void)
     return &_rtc_text_end;
 }
 
-esp_err_t esp_mprot_set_split_addr(const esp_mprot_mem_t mem_type, const esp_mprot_split_addr_t line_type, const void *line_addr)
+esp_err_t esp_mprot_set_split_addr(const esp_mprot_mem_t mem_type, const esp_mprot_split_addr_t line_type, const void *line_addr, const int core __attribute__((unused)))
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
@@ -72,7 +72,7 @@ esp_err_t esp_mprot_set_split_addr(const esp_mprot_mem_t mem_type, const esp_mpr
     }
 }
 
-esp_err_t esp_mprot_get_split_addr(const esp_mprot_mem_t mem_type, const esp_mprot_split_addr_t line_type, void **line_addr)
+esp_err_t esp_mprot_get_split_addr(const esp_mprot_mem_t mem_type, const esp_mprot_split_addr_t line_type, void **line_addr, const int core __attribute__((unused)))
 {
     if (line_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -142,7 +142,7 @@ esp_err_t esp_mprot_get_default_main_split_addr(const esp_mprot_mem_t mem_type, 
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_set_split_addr_lock(const esp_mprot_mem_t mem_type)
+esp_err_t esp_mprot_set_split_addr_lock(const esp_mprot_mem_t mem_type, const int core __attribute__((unused)))
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
@@ -160,7 +160,7 @@ esp_err_t esp_mprot_set_split_addr_lock(const esp_mprot_mem_t mem_type)
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_get_split_addr_lock(const esp_mprot_mem_t mem_type, bool *locked)
+esp_err_t esp_mprot_get_split_addr_lock(const esp_mprot_mem_t mem_type, bool *locked, const int core __attribute__((unused)))
 {
     if (locked == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -181,7 +181,7 @@ esp_err_t esp_mprot_get_split_addr_lock(const esp_mprot_mem_t mem_type, bool *lo
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_set_pms_lock(const esp_mprot_mem_t mem_type)
+esp_err_t esp_mprot_set_pms_lock(const esp_mprot_mem_t mem_type, const int core __attribute__((unused)))
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
@@ -201,7 +201,7 @@ esp_err_t esp_mprot_set_pms_lock(const esp_mprot_mem_t mem_type)
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_get_pms_lock(const esp_mprot_mem_t mem_type, bool *locked)
+esp_err_t esp_mprot_get_pms_lock(const esp_mprot_mem_t mem_type, bool *locked, const int core __attribute__((unused)))
 {
     if (locked == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -224,7 +224,7 @@ esp_err_t esp_mprot_get_pms_lock(const esp_mprot_mem_t mem_type, bool *locked)
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_set_pms_area(const esp_mprot_pms_area_t area_type, const uint32_t flags)
+esp_err_t esp_mprot_set_pms_area(const esp_mprot_pms_area_t area_type, const uint32_t flags, const int core __attribute__((unused)))
 {
     bool r = flags & MEMPROT_OP_READ;
     bool w = flags & MEMPROT_OP_WRITE;
@@ -268,7 +268,7 @@ esp_err_t esp_mprot_set_pms_area(const esp_mprot_pms_area_t area_type, const uin
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_get_pms_area(const esp_mprot_pms_area_t area_type, uint32_t *flags)
+esp_err_t esp_mprot_get_pms_area(const esp_mprot_pms_area_t area_type, uint32_t *flags, const int core __attribute__((unused)))
 {
     if (flags == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -327,7 +327,7 @@ esp_err_t esp_mprot_get_pms_area(const esp_mprot_pms_area_t area_type, uint32_t 
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_set_monitor_lock(const esp_mprot_mem_t mem_type)
+esp_err_t esp_mprot_set_monitor_lock(const esp_mprot_mem_t mem_type, const int core __attribute__((unused)))
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
@@ -346,7 +346,7 @@ esp_err_t esp_mprot_set_monitor_lock(const esp_mprot_mem_t mem_type)
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_get_monitor_lock(const esp_mprot_mem_t mem_type, bool *locked)
+esp_err_t esp_mprot_get_monitor_lock(const esp_mprot_mem_t mem_type, bool *locked, const int core __attribute__((unused)))
 {
     if (locked == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -369,7 +369,7 @@ esp_err_t esp_mprot_get_monitor_lock(const esp_mprot_mem_t mem_type, bool *locke
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_set_monitor_en(const esp_mprot_mem_t mem_type, const bool enable)
+esp_err_t esp_mprot_set_monitor_en(const esp_mprot_mem_t mem_type, const bool enable, const int core __attribute__((unused)))
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
@@ -388,7 +388,7 @@ esp_err_t esp_mprot_set_monitor_en(const esp_mprot_mem_t mem_type, const bool en
     return ESP_OK;
 }
 
-esp_err_t esp_mprot_get_monitor_en(const esp_mprot_mem_t mem_type, bool *enabled)
+esp_err_t esp_mprot_get_monitor_en(const esp_mprot_mem_t mem_type, bool *enabled, const int core __attribute__((unused)))
 {
     if (enabled == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -411,7 +411,7 @@ esp_err_t esp_mprot_get_monitor_en(const esp_mprot_mem_t mem_type, bool *enabled
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_monitor_clear_intr(const esp_mprot_mem_t mem_type, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_monitor_clear_intr(const esp_mprot_mem_t mem_type, const int core __attribute__((unused)))
 {
     switch (mem_type) {
     case MEMPROT_TYPE_IRAM0_SRAM:
@@ -463,19 +463,19 @@ esp_err_t IRAM_ATTR esp_mprot_is_conf_locked_any(bool *locked)
     bool lock_on = false;
     esp_err_t res;
 
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
     *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
     *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_pms_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
     *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_pms_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_pms_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
     *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM))
     *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on));
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, &lock_on, DEFAULT_CPU_NUM));
     *locked |= lock_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on));
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, &lock_on, DEFAULT_CPU_NUM));
     *locked |= lock_on;
 
     return ESP_OK;
@@ -490,17 +490,17 @@ esp_err_t IRAM_ATTR esp_mprot_is_intr_ena_any(bool *enabled)
     bool ena_on = false;
     esp_err_t res;
 
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &ena_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, &ena_on, DEFAULT_CPU_NUM))
     *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &ena_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, &ena_on, DEFAULT_CPU_NUM))
     *enabled |= ena_on;
-    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, &ena_on))
+    ESP_MEMPROT_ERR_CHECK(res, esp_mprot_get_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, &ena_on, DEFAULT_CPU_NUM))
     *enabled |= ena_on;
 
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **fault_addr, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **fault_addr, const int core __attribute__((unused)))
 {
     if (fault_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -523,7 +523,7 @@ esp_err_t IRAM_ATTR esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, v
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_pms_world_t *world, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_pms_world_t *world, const int core __attribute__((unused)))
 {
     if (world == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -553,7 +553,7 @@ esp_err_t IRAM_ATTR esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, 
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_operation(const esp_mprot_mem_t mem_type, uint32_t *oper, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_operation(const esp_mprot_mem_t mem_type, uint32_t *oper, const int core __attribute__((unused)))
 {
     if (oper == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -592,7 +592,7 @@ bool IRAM_ATTR esp_mprot_has_byte_enables(const esp_mprot_mem_t mem_type)
     return mem_type == MEMPROT_TYPE_DRAM0_SRAM;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uint32_t *byte_en, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uint32_t *byte_en, const int core __attribute__((unused)))
 {
     if (byte_en == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -661,13 +661,13 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
 
     //disable protection (must be unlocked)
     if (use_iram0) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, false))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, false, DEFAULT_CPU_NUM))
     }
     if (use_dram0) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, false))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, false, DEFAULT_CPU_NUM))
     }
     if (use_rtcfast) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, false))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, false, DEFAULT_CPU_NUM))
     }
 
     //panic handling
@@ -689,64 +689,64 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
         ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_default_main_split_addr(MEMPROT_TYPE_IRAM0_SRAM, &line_addr))
     }
 
-    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_LINE_1, line_addr))
-    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_LINE_0, line_addr))
-    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_DRAM0, line_addr))
-    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_DRAM0_SRAM, MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_0, (void *)(MAP_IRAM_TO_DRAM((uint32_t)line_addr))))
-    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_DRAM0_SRAM, MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_1, (void *)(MAP_IRAM_TO_DRAM((uint32_t)line_addr))))
+    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_LINE_1, line_addr, DEFAULT_CPU_NUM))
+    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_LINE_0, line_addr, DEFAULT_CPU_NUM))
+    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_SRAM, MEMPROT_SPLIT_ADDR_IRAM0_DRAM0, line_addr, DEFAULT_CPU_NUM))
+    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_DRAM0_SRAM, MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_0, (void *)(MAP_IRAM_TO_DRAM((uint32_t)line_addr)), DEFAULT_CPU_NUM))
+    ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_DRAM0_SRAM, MEMPROT_SPLIT_ADDR_DRAM0_DMA_LINE_1, (void *)(MAP_IRAM_TO_DRAM((uint32_t)line_addr)), DEFAULT_CPU_NUM))
 
     //set permissions
     if (use_iram0) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_0, MEMPROT_OP_READ | MEMPROT_OP_EXEC))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_1, MEMPROT_OP_READ | MEMPROT_OP_EXEC))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_2, MEMPROT_OP_READ | MEMPROT_OP_EXEC))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_3, MEMPROT_OP_NONE))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_0, MEMPROT_OP_READ | MEMPROT_OP_EXEC, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_1, MEMPROT_OP_READ | MEMPROT_OP_EXEC, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_2, MEMPROT_OP_READ | MEMPROT_OP_EXEC, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_3, MEMPROT_OP_NONE, DEFAULT_CPU_NUM))
     }
     if (use_dram0) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_0, MEMPROT_OP_NONE ))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_1, MEMPROT_OP_READ | MEMPROT_OP_WRITE))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_2, MEMPROT_OP_READ | MEMPROT_OP_WRITE))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_3, MEMPROT_OP_READ | MEMPROT_OP_WRITE))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_0, MEMPROT_OP_NONE, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_1, MEMPROT_OP_READ | MEMPROT_OP_WRITE, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_2, MEMPROT_OP_READ | MEMPROT_OP_WRITE, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_DRAM0_3, MEMPROT_OP_READ | MEMPROT_OP_WRITE, DEFAULT_CPU_NUM))
     }
     if (use_rtcfast) {
         //RTCFAST split-line cannot be set manually - always use default
         void *rtc_fast_line;
         ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_get_default_main_split_addr(MEMPROT_TYPE_IRAM0_RTCFAST, &rtc_fast_line));
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_RTCFAST, MEMPROT_SPLIT_ADDR_MAIN, rtc_fast_line))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO, MEMPROT_OP_READ | MEMPROT_OP_EXEC))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI, MEMPROT_OP_READ | MEMPROT_OP_WRITE))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr(MEMPROT_TYPE_IRAM0_RTCFAST, MEMPROT_SPLIT_ADDR_MAIN, rtc_fast_line, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_LO, MEMPROT_OP_READ | MEMPROT_OP_EXEC, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_area(MEMPROT_PMS_AREA_IRAM0_RTCFAST_HI, MEMPROT_OP_READ | MEMPROT_OP_WRITE, DEFAULT_CPU_NUM))
     }
 
     //reenable the protection
     if (use_iram0) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, NULL))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, true))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_SRAM, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_SRAM, true, DEFAULT_CPU_NUM))
     }
     if (use_dram0) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_DRAM0_SRAM, NULL))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, true))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_DRAM0_SRAM, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_DRAM0_SRAM, true, DEFAULT_CPU_NUM))
     }
     if (use_rtcfast) {
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_RTCFAST, NULL))
-        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, true))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_monitor_clear_intr(MEMPROT_TYPE_IRAM0_RTCFAST, DEFAULT_CPU_NUM))
+        ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_en(MEMPROT_TYPE_IRAM0_RTCFAST, true, DEFAULT_CPU_NUM))
     }
 
     //lock if required
     if (memp_config->lock_feature) {
         if (use_iram0) {
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM))
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_lock(MEMPROT_TYPE_IRAM0_SRAM))
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr_lock(MEMPROT_TYPE_IRAM0_SRAM, DEFAULT_CPU_NUM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_lock(MEMPROT_TYPE_IRAM0_SRAM, DEFAULT_CPU_NUM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_IRAM0_SRAM, DEFAULT_CPU_NUM))
         }
         if (use_dram0) {
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM))
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_lock(MEMPROT_TYPE_DRAM0_SRAM))
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr_lock(MEMPROT_TYPE_DRAM0_SRAM, DEFAULT_CPU_NUM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_lock(MEMPROT_TYPE_DRAM0_SRAM, DEFAULT_CPU_NUM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_DRAM0_SRAM, DEFAULT_CPU_NUM))
         }
         if (use_rtcfast) {
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr_lock(MEMPROT_TYPE_IRAM0_RTCFAST))
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_lock(MEMPROT_TYPE_IRAM0_RTCFAST))
-            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_split_addr_lock(MEMPROT_TYPE_IRAM0_RTCFAST, DEFAULT_CPU_NUM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_pms_lock(MEMPROT_TYPE_IRAM0_RTCFAST, DEFAULT_CPU_NUM))
+            ESP_MEMPROT_ERR_CHECK(ret, esp_mprot_set_monitor_lock(MEMPROT_TYPE_IRAM0_RTCFAST, DEFAULT_CPU_NUM))
         }
     }
 

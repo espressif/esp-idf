@@ -9,7 +9,7 @@ set(priv_requires driver log esp_timer)
 
 # If Ethernet disabled in Kconfig, this is a config-only component
 if(CONFIG_ETH_ENABLED)
-    set(srcs "src/esp_eth.c" "src/esp_eth_phy.c")
+    set(srcs "src/esp_eth.c" "src/esp_eth_phy_802_3.c")
     set(include "include")
 
     if(NOT CMAKE_BUILD_EARLY_EXPANSION)
@@ -53,6 +53,3 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include}
                        REQUIRES "esp_event" # For using "ESP_EVENT_DECLARE_BASE" in header file
                        PRIV_REQUIRES ${priv_requires})
-
-# uses C11 atomic feature
-set_source_files_properties(src/esp_eth.c PROPERTIES COMPILE_FLAGS -std=gnu11)

@@ -12,7 +12,7 @@
 #include <type_traits>
 #include <cstring>
 #include <algorithm>
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "compressed_enum_table.hpp"
 #include "intrusive_list.h"
 #include "nvs_item_hash_list.hpp"

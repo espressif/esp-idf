@@ -8,7 +8,7 @@
 #include "freertos/semphr.h"
 #include <stdatomic.h>
 #include "sdkconfig.h"
-#include "spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "stdatomic.h"

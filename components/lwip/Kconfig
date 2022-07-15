@@ -250,6 +250,13 @@ menu "LWIP"
             options and values. If your code meets LWIP_ASSERT due to option value is too long.
             Please increase the LWIP_DHCP_OPTIONS_LEN value.
 
+    config LWIP_NUM_NETIF_CLIENT_DATA
+        int "Number of clients store data in netif"
+        default 0
+        range 0 256
+        help
+            Number of clients that may store data in client_data member array of struct netif.
+
     menu "DHCP server"
 
         config LWIP_DHCPS
@@ -870,6 +877,13 @@ menu "LWIP"
 
     endmenu # SNTP
 
+    config LWIP_BRIDGEIF_MAX_PORTS
+        int "Maximum number of bridge ports"
+        default 7
+        range 1 63
+        help
+            Set maximum number of ports a bridge can consists of.
+
     config LWIP_ESP_LWIP_ASSERT
         bool "Enable LWIP ASSERT checks"
         default y
@@ -1072,6 +1086,21 @@ menu "LWIP"
 
     config LWIP_DNS_DEBUG
         bool "Enable DNS debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_BRIDGEIF_DEBUG
+        bool "Enable bridge generic debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_BRIDGEIF_FDB_DEBUG
+        bool "Enable bridge FDB debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_BRIDGEIF_FW_DEBUG
+        bool "Enable bridge forwarding debug messages"
         depends on LWIP_DEBUG
         default n
 

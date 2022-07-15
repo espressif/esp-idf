@@ -7,7 +7,7 @@
 #include "unity.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include <stdlib.h>
 #include <sys/param.h>
 #include <string.h>

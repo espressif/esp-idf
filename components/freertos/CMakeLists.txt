@@ -7,6 +7,7 @@ endif()
 idf_build_get_property(target IDF_TARGET)
 
 if(CONFIG_FREERTOS_SMP)
+    set(ldfragments linker_smp.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         set(srcs
             "FreeRTOS-Kernel-SMP/portable/xtensa/port.c"
@@ -68,6 +69,7 @@ if(CONFIG_FREERTOS_SMP)
     endif()
 
 else()
+    set(ldfragments linker.lf)
     if(CONFIG_IDF_TARGET_ARCH_XTENSA)
         set(srcs
             "FreeRTOS-Kernel/portable/xtensa/port.c"
@@ -134,7 +136,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
                     PRIV_INCLUDE_DIRS  ${private_include_dirs}
-                    LDFRAGMENTS linker.lf
+                    LDFRAGMENTS "${ldfragments}"
                     PRIV_REQUIRES soc esp_pm)
 
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)

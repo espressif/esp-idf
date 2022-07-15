@@ -7,8 +7,8 @@
 #pragma once
 
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "soc/sensitive_reg.h"
-#include "esp32c3/rom/cache.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,19 +35,11 @@ typedef union {
 
 #define DRAM_SRAM_START             0x3FC7C000
 
-#ifndef MAP_DRAM_TO_IRAM
-#define MAP_DRAM_TO_IRAM(addr)       (addr - DRAM_SRAM_START + SOC_IRAM_LOW)
-#endif
-
-#ifndef MAP_IRAM_TO_DRAM
-#define MAP_IRAM_TO_DRAM(addr)       (addr - SOC_IRAM_LOW + DRAM_SRAM_START)
-#endif
-
 //IRAM0
 
 //16kB (ICACHE)
 #define IRAM0_SRAM_LEVEL_0_LOW      SOC_IRAM_LOW //0x40370000
-#define IRAM0_SRAM_LEVEL_0_HIGH     (IRAM0_SRAM_LEVEL_0_LOW + CACHE_MEMORY_IBANK_SIZE - 0x1) //0x4037FFFF
+#define IRAM0_SRAM_LEVEL_0_HIGH     (IRAM0_SRAM_LEVEL_0_LOW + SOC_CACHE_MEMORY_IBANK_SIZE - 0x1) //0x4037FFFF
 
 //128kB (LEVEL 1)
 #define IRAM0_SRAM_LEVEL_1_LOW      (IRAM0_SRAM_LEVEL_0_HIGH + 0x1) //0x40380000

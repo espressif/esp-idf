@@ -13,7 +13,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
-#include "regi2c_ulp.h"
+#include "soc/regi2c_ulp.h"
 #include "regi2c_ctrl.h"
 #include "esp_hw_log.h"
 #include "esp_efuse.h"
@@ -152,7 +152,7 @@ void rtc_init(rtc_config_t cfg)
 #if !CONFIG_IDF_ENV_FPGA
     if (cfg.cali_ocode) {
         uint32_t rtc_calib_version = 0;
-        esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &rtc_calib_version, 32);
+        esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MINOR, &rtc_calib_version, ESP_EFUSE_BLK_VERSION_MINOR[0]->bit_count); // IDF-5366
         if (rtc_calib_version == 2) {
             set_ocode_by_efuse(rtc_calib_version);
         } else {

@@ -174,9 +174,6 @@ typedef struct {
 } destr_test_state_t;
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5142
-
 static void s_test_repeat_destructor(void *vp_state);
 static void *s_test_repeat_destructor_thread(void *vp_state);
 
@@ -253,4 +250,3 @@ static void *s_test_repeat_destructor_thread(void *vp_state)
     }
     pthread_exit(NULL);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

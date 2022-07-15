@@ -54,6 +54,10 @@ int wpa_sm_set_key(struct install_key *sm, enum wpa_alg alg,
         u8 *key, size_t key_len,
         enum key_flag key_flag);
 
+int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len);
+
+int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
+
 #ifdef CONFIG_IEEE80211R
 
 int wpa_sm_set_ft_params(struct wpa_sm *sm, const u8 *ies, size_t ies_len);

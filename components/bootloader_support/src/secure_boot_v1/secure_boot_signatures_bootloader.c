@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_fault.h"
 #include "esp32/rom/sha.h"
 #include "uECC_verify_antifault.h"

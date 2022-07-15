@@ -26,9 +26,9 @@
 #include "test/test_common_spi.h"
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
-#include "../cache_utils.h"
+#include "esp_private/cache_utils.h"
 #include "soc/soc_memory_layout.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
 #include "test_utils.h"
 

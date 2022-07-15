@@ -9,7 +9,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #ifndef BOOTLOADER_BUILD
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #endif
 #include "hal/efuse_ll.h"
 #include "sdkconfig.h"

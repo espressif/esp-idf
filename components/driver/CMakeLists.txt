@@ -33,10 +33,6 @@ if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "mcpwm.c")
 endif()
 
-if(CONFIG_SOC_GDMA_SUPPORTED)
-    list(APPEND srcs "gdma.c")
-endif()
-
 if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
     list(APPEND srcs "gpio/dedic_gpio.c")
 endif()
@@ -127,6 +123,3 @@ else()
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                         LDFRAGMENTS linker.lf)
 endif()
-
-# uses C11 atomic feature
-set_source_files_properties(spi_master.c PROPERTIES COMPILE_FLAGS -std=gnu11)

@@ -91,12 +91,12 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t mmu_val;     //This is the physical address in the format that MMU supported
 
     *out_len = mmu_hal_pages_to_bytes(mmu_id, page_num);
-    entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
     mmu_val = mmu_ll_format_paddr(mmu_id, paddr);
 
     while (page_num) {
+        entry_id = mmu_ll_get_entry_id(mmu_id, vaddr);
         mmu_ll_write_entry(mmu_id, entry_id, mmu_val, mem_type);
-        entry_id++;
+        vaddr += page_size_in_bytes;
         mmu_val++;
         page_num--;
     }

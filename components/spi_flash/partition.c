@@ -355,9 +355,6 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
     if (out_partition != NULL) {
         *out_partition = NULL;
     }
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-    return ESP_ERR_NOT_SUPPORTED;
-#endif
 
     if (offset + size > flash_chip->size) {
         return ESP_ERR_INVALID_SIZE;

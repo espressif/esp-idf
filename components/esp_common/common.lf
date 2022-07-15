@@ -32,3 +32,5 @@ entries:
 [sections:rodata]
 entries:
     .rodata+
+    .sdata2+
+    .srodata+

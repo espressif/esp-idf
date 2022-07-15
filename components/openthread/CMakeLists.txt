@@ -165,7 +165,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         file(WRITE ${CMAKE_BINARY_DIR}/rcp_version ${OT_FULL_VERSION_STRING})
     endif()
 
-    if(CONFIG_OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC)
+    if($ENV{OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC})
         idf_component_get_property(openthread_port_lib openthread_port COMPONENT_LIB)
         idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
         idf_component_get_property(esp_netif_lib esp_netif COMPONENT_LIB)

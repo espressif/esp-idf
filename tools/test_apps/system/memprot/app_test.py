@@ -16,11 +16,31 @@ MEM_TEST_S2 = [
 MEM_TEST_C3 = [
     ['IRAM0_SRAM', 'WRX'],
     ['DRAM0_SRAM', 'WR'],
-    ['IRAM0_RTCFAST', 'WRX'],
+    ['IRAM0_RTCFAST', 'WRX']
+]
+
+MEM_TEST_S3_MULTI = [
+    # instruction execute test temporarily disabled
+    # ['IRAM0_SRAM (core 0)', 'WRX'],
+    ['IRAM0_SRAM (core 0)', 'WR'],
+    ['DRAM0_SRAM (core 0)', 'WR'],
+    # instruction execute test temporarily disabled
+    # ['IRAM0_SRAM (core 1)', 'WRX'],
+    ['IRAM0_SRAM (core 1)', 'WR'],
+    ['DRAM0_SRAM (core 1)', 'WR']
+    # temporarily disabled unless IDF-5208 gets merged
+    # ['IRAM0_RTCFAST', 'WR'],
+]
+
+MEM_TEST_S3_UNI = [
+    ['IRAM0_SRAM (core 0)', 'WRX'],
+    ['DRAM0_SRAM (core 0)', 'WR']
+    # temporarily disabled unless IDF-5208 gets merged
+    # ['IRAM0_RTCFAST', 'WR'],
 ]
 
 
-@ttfw_idf.idf_custom_test(env_tag='Example_GENERIC', target=['esp32c3', 'esp32s2'], group='test-apps')
+@ttfw_idf.idf_custom_test(env_tag='Example_GENERIC', target=['esp32c3', 'esp32s2', 'esp32s3'], group='test-apps')
 def test_memprot(env, extra_data):
 
     dut = env.get_dut('memprot', 'tools/test_apps/system/memprot')
@@ -29,10 +49,17 @@ def test_memprot(env, extra_data):
     mem_test_cfg = []
     current_target = dut.app.get_sdkconfig()['CONFIG_IDF_TARGET'].replace('"','').lower()
 
+    try:
+        unicore = dut.app.get_sdkconfig()['CONFIG_FREERTOS_UNICORE']
+    except KeyError:
+        unicore = 'n'
+
     if current_target == 'esp32c3':
         mem_test_cfg = MEM_TEST_C3
     elif current_target == 'esp32s2':
         mem_test_cfg = MEM_TEST_S2
+    elif current_target == 'esp32s3':
+        mem_test_cfg = MEM_TEST_S3_UNI if unicore == 'y' else MEM_TEST_S3_MULTI
 
     Utility.console_log('Test cfg: ' + current_target)
 

@@ -88,10 +88,12 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy_802_3.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
@@ -176,7 +178,6 @@ INPUT = \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
-    $(PROJECT_PATH)/components/mdns/include/mdns.h \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
@@ -204,7 +205,7 @@ INPUT = \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_partition.h \
-    $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash.h \
+    $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb_types.h \

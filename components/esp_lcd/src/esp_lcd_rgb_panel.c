@@ -38,6 +38,7 @@
 #include "soc/lcd_periph.h"
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
+#include <rom/cache.h>
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
 #define LCD_RGB_INTR_ALLOC_FLAGS     (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
@@ -49,8 +50,6 @@ static const char *TAG = "lcd_panel.rgb";
 
 typedef struct esp_rgb_panel_t esp_rgb_panel_t;
 
-// This function is located in ROM (also see esp_rom/${target}/ld/${target}.rom.ld)
-extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel);
 static esp_err_t rgb_panel_reset(esp_lcd_panel_t *panel);
@@ -85,7 +84,13 @@ struct esp_rgb_panel_t {
     esp_lcd_rgb_timing_t timings;   // RGB timing parameters (e.g. pclk, sync pulse, porch width)
     gdma_channel_handle_t dma_chan; // DMA channel handle
     esp_lcd_rgb_panel_frame_trans_done_cb_t on_frame_trans_done; // Callback, invoked after frame trans done
+    int bounce_buffer_size_bytes;   //If not-zero, the driver uses a bounce buffer in internal memory to DMA from. It's in bytes here.
+    uint8_t *bounce_buffer[2];      //Pointer to the bounce buffers
+    int bounce_buf_frame_start;     //If frame restarts, which bb has the initial frame data?
+    esp_lcd_rgb_panel_bounce_buf_fill_cb_t on_bounce_empty; // If we use a bounce buffer, this function gets called to fill it rather than copying from the framebuffer
+    void *bounce_buffer_cb_user_ctx;   //Callback data pointer
     void *user_ctx;                // Reserved user's data of callback functions
+    int bounce_pos_px;                 // Position in whatever source material is used for the bounce buffer, in pixels
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     portMUX_TYPE spinlock;          // to protect panel specific resource from concurrent access (e.g. between task and ISR)
@@ -94,9 +99,29 @@ struct esp_rgb_panel_t {
         unsigned int stream_mode: 1;   // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
         unsigned int fb_in_psram: 1;   // Whether the frame buffer is in PSRAM
         unsigned int need_update_pclk: 1; // Whether to update the PCLK before start a new transaction
+        unsigned int bb_do_cache_invalidate: 1; //If we do cache invalidate in bb psram fb mode
     } flags;
+    dma_descriptor_t dma_restart_node; //DMA descriptor used to restart the transfer
     dma_descriptor_t dma_nodes[]; // DMA descriptor pool of size `num_dma_nodes`
 };
+
+/*
+A note about DMA desync:
+
+It should never happen in a well-designed embedded application, but it can in theory be possible
+ that GDMA cannot deliver data as fast as the LCD consumes it. In the ESP32-S3 hardware, this
+leads to the LCD simply outputting dummy bytes while GDMA waits for data. If we were to run
+DMA in a simple circular fashion, this would mean a de-sync between the LCD address the GDMA
+reads the data for and the LCD address the LCD peripheral thinks it outputs data for,
+leading to a permanently shifted image.
+
+In order to stop this from happening, we restart GDMA in the VBlank interrupt; this way we always
+know where it starts. However, the LCD peripheral also has a FIFO, and at the time of the VBlank,
+it already has read some data in there. We cannot reset this FIFO entirely, there's always one
+pixel that remains. So instead, when we restart DMA, we take into account it does not need to
+output the data that already is in the FIFO and we restart it using a descriptor that starts
+at the position after the last pixel in the LCD fifo.
+*/
 
 esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_config, esp_lcd_panel_handle_t *ret_panel)
 {
@@ -108,6 +133,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ESP_GOTO_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid parameter");
     ESP_GOTO_ON_FALSE(rgb_panel_config->data_width == 16, ESP_ERR_NOT_SUPPORTED, err, TAG,
                       "unsupported data width %d", rgb_panel_config->data_width);
+    ESP_GOTO_ON_FALSE(!(rgb_panel_config->bounce_buffer_size_px == 0 && rgb_panel_config->on_bounce_empty != NULL),
+                      ESP_ERR_INVALID_ARG, err, TAG, "cannot have bounce empty callback without having a bounce buffer");
+    ESP_GOTO_ON_FALSE(!(rgb_panel_config->bounce_buffer_size_px != 0 && rgb_panel_config->on_bounce_empty == NULL &&
+                      !rgb_panel_config->flags.fb_in_psram), ESP_ERR_INVALID_ARG, err, TAG,
+                      "bounce buffer without callback and main fb not in psram does not make sense");
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
     if (rgb_panel_config->on_frame_trans_done) {
@@ -120,9 +150,35 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
 
     // calculate the number of DMA descriptors
     size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * rgb_panel_config->data_width / 8;
-    size_t num_dma_nodes = fb_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
-    if (fb_size > num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) {
-        num_dma_nodes++;
+    size_t num_dma_nodes;
+    int bounce_bytes = 0;
+    if (rgb_panel_config->bounce_buffer_size_px == 0) {
+        // No bounce buffers. DMA descriptors need to fit entire framebuffer
+        num_dma_nodes = (fb_size + DMA_DESCRIPTOR_BUFFER_MAX_SIZE - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
+    } else {
+        //The FB needs to be an integer multiple of the size of a bounce buffer (so
+        //we end on the end of the second bounce buffer). Adjust the size of the
+        //bounce buffers if it is not.
+        int pixel_data_bytes = rgb_panel_config->data_width / 8; //size of one pixel, in bytes
+        int no_pixels = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res;
+        bounce_bytes = rgb_panel_config->bounce_buffer_size_px * pixel_data_bytes;
+        if (no_pixels % (rgb_panel_config->bounce_buffer_size_px * pixel_data_bytes)) {
+            //Search for some value that does work. Yes, this is a stupidly simple algo, but it only
+            //needs to run on startup.
+            for (int a=rgb_panel_config->bounce_buffer_size_px; a>0; a--) {
+                if ((no_pixels % (a * pixel_data_bytes))==0) {
+                    bounce_bytes = a * pixel_data_bytes;
+                    ESP_LOGW(TAG, "Frame buffer is not an integer multiple of bounce buffers.");
+                    ESP_LOGW(TAG, "Adjusted bounce buffer size from %d to %d pixels to fix this.",
+                                rgb_panel_config->bounce_buffer_size_px, bounce_bytes/pixel_data_bytes);
+                    break;
+                }
+            }
+        }
+
+        // DMA descriptors need to fit both bounce buffers
+        num_dma_nodes = (bounce_bytes + DMA_DESCRIPTOR_BUFFER_MAX_SIZE - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
+        num_dma_nodes = num_dma_nodes * 2; //as we have two bounce buffers
     }
     // DMA descriptors must be placed in internal SRAM (requested by DMA)
     rgb_panel = heap_caps_calloc(1, sizeof(esp_rgb_panel_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
@@ -133,6 +189,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     int panel_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel);
     ESP_GOTO_ON_FALSE(panel_id >= 0, ESP_ERR_NOT_FOUND, err, TAG, "no free rgb panel slot");
     rgb_panel->panel_id = panel_id;
+    rgb_panel->bounce_buffer_size_bytes = bounce_bytes;
     // enable APB to access LCD registers
     periph_module_enable(lcd_periph_signals.panels[panel_id].module);
     periph_module_reset(lcd_periph_signals.panels[panel_id].module);
@@ -148,17 +205,31 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     }
     size_t psram_trans_align = rgb_panel_config->psram_trans_align ? rgb_panel_config->psram_trans_align : 64;
     size_t sram_trans_align = rgb_panel_config->sram_trans_align ? rgb_panel_config->sram_trans_align : 4;
-    if (alloc_from_psram) {
-        // the low level malloc function will help check the validation of alignment
-        rgb_panel->fb = heap_caps_aligned_calloc(psram_trans_align, 1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    } else {
-        rgb_panel->fb = heap_caps_aligned_calloc(sram_trans_align, 1, fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-    }
-    ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, err, TAG, "no mem for frame buffer");
-    rgb_panel->psram_trans_align = psram_trans_align;
-    rgb_panel->sram_trans_align = sram_trans_align;
     rgb_panel->fb_size = fb_size;
-    rgb_panel->flags.fb_in_psram = alloc_from_psram;
+    if (!rgb_panel_config->on_bounce_empty) {
+        //We need to allocate a framebuffer.
+        if (alloc_from_psram) {
+            // the low level malloc function will help check the validation of alignment
+            rgb_panel->fb = heap_caps_aligned_calloc(psram_trans_align, 1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        } else {
+            rgb_panel->fb = heap_caps_aligned_calloc(sram_trans_align, 1, fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+        }
+        ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, err, TAG, "no mem for frame buffer");
+        rgb_panel->psram_trans_align = psram_trans_align;
+        rgb_panel->sram_trans_align = sram_trans_align;
+        rgb_panel->flags.fb_in_psram = alloc_from_psram;
+    }
+    if (rgb_panel->bounce_buffer_size_bytes) {
+        //We need to allocate bounce buffers.
+        rgb_panel->bounce_buffer[0] = heap_caps_aligned_calloc(sram_trans_align, 1,
+                        rgb_panel->bounce_buffer_size_bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+        rgb_panel->bounce_buffer[1] = heap_caps_aligned_calloc(sram_trans_align, 1,
+                        rgb_panel->bounce_buffer_size_bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    }
+    if (rgb_panel_config->on_bounce_empty) {
+        rgb_panel->on_bounce_empty = rgb_panel_config->on_bounce_empty;
+        rgb_panel->bounce_buffer_cb_user_ctx = rgb_panel_config->bounce_buffer_cb_user_ctx;
+    }
     // initialize HAL layer, so we can call LL APIs later
     lcd_hal_init(&rgb_panel->hal, panel_id);
     // enable clock gating
@@ -187,6 +258,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->data_width = rgb_panel_config->data_width;
     rgb_panel->disp_gpio_num = rgb_panel_config->disp_gpio_num;
     rgb_panel->flags.disp_en_level = !rgb_panel_config->flags.disp_active_low;
+    rgb_panel->flags.bb_do_cache_invalidate = rgb_panel_config->flags.bb_do_cache_invalidate;
     rgb_panel->on_frame_trans_done = rgb_panel_config->on_frame_trans_done;
     rgb_panel->user_ctx = rgb_panel_config->user_ctx;
     rgb_panel->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
@@ -252,6 +324,8 @@ static esp_err_t rgb_panel_del(esp_lcd_panel_t *panel)
     lcd_ll_enable_clock(rgb_panel->hal.dev, false);
     periph_module_disable(lcd_periph_signals.panels[panel_id].module);
     lcd_com_remove_device(LCD_COM_DEVICE_TYPE_RGB, rgb_panel->panel_id);
+    free(rgb_panel->bounce_buffer[0]);
+    free(rgb_panel->bounce_buffer[1]);
     free(rgb_panel->fb);
     if (rgb_panel->pm_lock) {
         esp_pm_lock_release(rgb_panel->pm_lock);
@@ -317,6 +391,11 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
 static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int y_start, int x_end, int y_end, const void *color_data)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
+    if (rgb_panel->fb == NULL) {
+        //Can't draw a bitmap to a non-existing framebuffer.
+        //This happens when e.g. we use an external callback to refill the bounce buffers.
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     assert((x_start < x_end) && (y_start < y_end) && "start position must be smaller than end position");
     // adjust the flush window by adding extra gap
     x_start += rgb_panel->x_gap;
@@ -342,9 +421,9 @@ static esp_err_t rgb_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
         to += bytes_per_line;
         from += copy_bytes_per_line;
     }
-
-    if (rgb_panel->flags.fb_in_psram) {
+    if (rgb_panel->flags.fb_in_psram && !rgb_panel->bounce_buffer_size_bytes) {
         // CPU writes data to PSRAM through DCache, data in PSRAM might not get updated, so write back
+        // Note that if we use a bounce buffer, the data gets read by the CPU as well so no need to write back.
         uint32_t bytes_to_flush = (y_end - y_start) * bytes_per_line;
         Cache_WriteBack_Addr((uint32_t)(rgb_panel->fb + y_start * bytes_per_line), bytes_to_flush);
     }
@@ -480,18 +559,97 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
     return ret;
 }
 
+static IRAM_ATTR bool lcd_rgb_panel_fill_bounce_buffer(esp_rgb_panel_t *panel, uint8_t *buffer)
+{
+    bool need_yield = false;
+    int bytes_per_pixel = panel->data_width / 8;
+    if (panel->on_bounce_empty) {
+        //We don't have a framebuffer here; we need to call a callback to refill the bounce buffer
+        //for us.
+        need_yield=panel->on_bounce_empty((void*)buffer, panel->bounce_pos_px,
+                    panel->bounce_buffer_size_bytes, panel->bounce_buffer_cb_user_ctx);
+    } else {
+        //We do have a framebuffer; copy from there.
+        memcpy(buffer, &panel->fb[panel->bounce_pos_px * bytes_per_pixel], panel->bounce_buffer_size_bytes);
+        if (panel->flags.bb_do_cache_invalidate) {
+            //We don't need the bytes we copied from psram anymore.
+            //Make sure that if anything happened to have changed (because the line already was in cache) we write
+            //the data back.
+            Cache_WriteBack_Addr((uint32_t)&panel->fb[panel->bounce_pos_px * bytes_per_pixel], panel->bounce_buffer_size_bytes);
+            //Invalidate the data. Note: possible race: perhaps something on the other core can squeeze a write
+            //between this and the writeback, in which case that data gets discarded.
+            Cache_Invalidate_Addr((uint32_t)&panel->fb[panel->bounce_pos_px * bytes_per_pixel], panel->bounce_buffer_size_bytes);
+        }
+    }
+    panel->bounce_pos_px+=panel->bounce_buffer_size_bytes / bytes_per_pixel;
+    //If the bounce pos is larger than the framebuffer size, wrap around so the next isr starts pre-loading
+    //the next frame.
+    if (panel->bounce_pos_px >= panel->fb_size / bytes_per_pixel) {
+        panel->bounce_pos_px=0;
+    }
+    if (!panel->on_bounce_empty) {
+        //Preload the next bit of buffer into psram.
+        Cache_Start_DCache_Preload((uint32_t)&panel->fb[panel->bounce_pos_px * bytes_per_pixel],
+                    panel->bounce_buffer_size_bytes, 0);
+    }
+    return need_yield;
+}
+
+//This is called in bounce buffer mode, when one bounce buffer has been fully sent to the LCD peripheral.
+static IRAM_ATTR bool lcd_rgb_panel_eof_handler(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+{
+    esp_rgb_panel_t *panel = (esp_rgb_panel_t*)user_data;
+    dma_descriptor_t *desc = (dma_descriptor_t*)event_data->tx_eof_desc_addr;
+    //Figure out which bounce buffer to write to.
+    //Note: what we receive is the *last* descriptor of this bounce buffer.
+    int bb=(desc==&panel->dma_nodes[panel->num_dma_nodes - 1])?1:0;
+    return lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[bb]);
+}
+
+//If we restart GDMA, this many pixels will already have been transfered to the
+//LCD peripheral. Looks like that has 16 pixels of FIFO plus one holding register.
+#define LCD_FIFO_SIZE_PX 17
+
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
 {
     esp_err_t ret = ESP_OK;
-    // chain DMA descriptors
-    for (int i = 0; i < panel->num_dma_nodes; i++) {
-        panel->dma_nodes[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
-        panel->dma_nodes[i].next = &panel->dma_nodes[i + 1];
+    if (panel->bounce_buffer_size_bytes == 0) {
+        // Create DMA descriptors for main framebuffer:
+        // chain DMA descriptors
+        for (int i = 0; i < panel->num_dma_nodes; i++) {
+            panel->dma_nodes[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
+            panel->dma_nodes[i].next = &panel->dma_nodes[i + 1];
+        }
+        // loop end back to start (note: this is needed as we restart the DMA transaction in the VBlank,
+        // but it should already have LCD_FIFO_PIX bytes from the start of the buffer at that time)
+        panel->dma_nodes[panel->num_dma_nodes - 1].next = &panel->dma_nodes[0];
+        // mount the frame buffer to the DMA descriptors
+        lcd_com_mount_dma_data(panel->dma_nodes, panel->fb, panel->fb_size);
+    } else {
+        //Create DMA descriptors for bounce buffers:
+        // chain DMA descriptors
+        for (int i = 0; i < panel->num_dma_nodes; i++) {
+            panel->dma_nodes[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_CPU;
+            panel->dma_nodes[i].next = &panel->dma_nodes[i + 1];
+        }
+        // loop end back to start
+        panel->dma_nodes[panel->num_dma_nodes - 1].next = &panel->dma_nodes[0];
+        // set eof on end of 1st and 2nd bounce buffer so we get an interrupt when they're fully sent
+        panel->dma_nodes[(panel->num_dma_nodes/2) - 1].dw0.suc_eof=1;
+        panel->dma_nodes[panel->num_dma_nodes - 1].dw0.suc_eof=1;
+        // mount the bounce buffers to the DMA descriptors
+        lcd_com_mount_dma_data(&panel->dma_nodes[0], panel->bounce_buffer[0], panel->bounce_buffer_size_bytes);
+        lcd_com_mount_dma_data(&panel->dma_nodes[(panel->num_dma_nodes/2)], panel->bounce_buffer[1], panel->bounce_buffer_size_bytes);
     }
-    // one-off DMA chain
-    panel->dma_nodes[panel->num_dma_nodes - 1].next = NULL;
-    // mount the frame buffer to the DMA descriptors
-    lcd_com_mount_dma_data(panel->dma_nodes, panel->fb, panel->fb_size);
+    //On restart, the data sent to the LCD peripheral needs to start 17 pixels after the FB start (the length of the
+    //lcd fifo) so we use a special DMA node to restart the DMA transaction.
+    memcpy(&panel->dma_restart_node, &panel->dma_nodes[0], sizeof(panel->dma_restart_node));
+    int restart_skip_bytes=LCD_FIFO_SIZE_PX*sizeof(uint16_t);
+    uint8_t *p=(uint8_t*)panel->dma_restart_node.buffer;
+    panel->dma_restart_node.buffer=&p[restart_skip_bytes];
+    panel->dma_restart_node.dw0.length-=restart_skip_bytes;
+    panel->dma_restart_node.dw0.size-=restart_skip_bytes;
+
     // alloc DMA channel and connect to LCD peripheral
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
@@ -504,11 +662,39 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
         .sram_trans_align = panel->sram_trans_align,
     };
     gdma_set_transfer_ability(panel->dma_chan, &ability);
+    if (panel->bounce_buffer_size_bytes != 0) {
+        // register callback to re-fill bounce buffers once they're fully sent
+        gdma_tx_event_callbacks_t cbs={0};
+        cbs.on_trans_eof = lcd_rgb_panel_eof_handler;
+        gdma_register_tx_event_callbacks(panel->dma_chan, &cbs, panel);
+    }
     // the start of DMA should be prior to the start of LCD engine
     gdma_start(panel->dma_chan, (intptr_t)panel->dma_nodes);
 
 err:
     return ret;
+}
+
+static IRAM_ATTR void lcd_rgb_panel_restart_transmission(esp_rgb_panel_t *panel)
+{
+    if (panel->bounce_buffer_size_bytes != 0) {
+        //Catch de-synced framebuffer and reset if needed.
+        if (panel->bounce_pos_px > panel->bounce_buffer_size_bytes) panel->bounce_pos_px=0;
+        //Pre-fill bounce buffer 0, if the EOF ISR didn't do that already
+        if (panel->bounce_pos_px < panel->bounce_buffer_size_bytes/2) {
+            lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[0]);
+        }
+    }
+
+    gdma_reset(panel->dma_chan);
+    gdma_start(panel->dma_chan, (intptr_t)&panel->dma_restart_node);
+
+    if (panel->bounce_buffer_size_bytes != 0) {
+        //Fill 2nd bounce buffer while 1st is being sent out, if needed.
+        if (panel->bounce_pos_px < panel->bounce_buffer_size_bytes) {
+            lcd_rgb_panel_fill_bounce_buffer(panel, panel->bounce_buffer[0]);
+        }
+    }
 }
 
 static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
@@ -526,11 +712,20 @@ static void lcd_rgb_panel_start_transmission(esp_rgb_panel_t *rgb_panel)
     portEXIT_CRITICAL_SAFE(&rgb_panel->spinlock);
 
     lcd_ll_fifo_reset(rgb_panel->hal.dev);
+
+    //pre-fill bounce buffers if needed
+    if (rgb_panel->bounce_buffer_size_bytes != 0) {
+        rgb_panel->bounce_pos_px = 0;
+        lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[0]);
+        lcd_rgb_panel_fill_bounce_buffer(rgb_panel, rgb_panel->bounce_buffer[1]);
+    }
+
     gdma_start(rgb_panel->dma_chan, (intptr_t)rgb_panel->dma_nodes);
     // delay 1us is sufficient for DMA to pass data to LCD FIFO
     // in fact, this is only needed when LCD pixel clock is set too high
     esp_rom_delay_us(1);
     // start LCD engine
+    lcd_ll_enable_auto_next_frame(rgb_panel->hal.dev, rgb_panel->flags.stream_mode);
     lcd_ll_start(rgb_panel->hal.dev);
 }
 
@@ -548,11 +743,19 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
                 need_yield = true;
             }
         }
-        // to restart the transmission
         if (rgb_panel->flags.stream_mode) {
-            lcd_rgb_panel_start_transmission(rgb_panel);
+            // As described above, we reset the GDMA channel every VBlank to stop permanent
+            // desyncs from happening.
+            // Note that this fix can lead to single-frame desyncs itself, as in: if this interrupt
+            // is late enough, the display will shift as the LCD controller already read out the
+            // first data bytes, and resetting DMA will re-send those. However, the single-frame
+            // desync this leads to is preferable to the permanent desync that could otherwise
+            // happen. It's also not super-likely as this interrupt has the entirety of the VBlank
+            // time to reset DMA.
+            lcd_rgb_panel_restart_transmission(rgb_panel);
         }
     }
+
     if (need_yield) {
         portYIELD_FROM_ISR();
     }

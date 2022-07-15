@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table af57e8a6a405ebf239cc552f713c91d0
+// md5_digest_table ef050bc1e4bf0d8384aa3e4c0256d7d3
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -127,6 +127,18 @@ static const esp_efuse_desc_t SECURE_VERSION[] = {
     {EFUSE_BLK0, 54, 4}, 	 // Secure version for anti-rollback,
 };
 
+static const esp_efuse_desc_t ENABLE_CUSTOM_MAC[] = {
+    {EFUSE_BLK0, 58, 1}, 	 // True if MAC_CUSTOM is burned,
+};
+
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 59, 1}, 	 // Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 60, 1}, 	 // Disables check of blk version major,
+};
+
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK1, 0, 88}, 	 // User data block,
 };
@@ -144,24 +156,24 @@ static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK2, 0, 8}, 	 // Factory MAC addr [5],
 };
 
-static const esp_efuse_desc_t WAFER_VERSION[] = {
-    {EFUSE_BLK2, 48, 3}, 	 // EFUSE_WAFER_VERSION,
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK2, 48, 4}, 	 // WAFER_VERSION_MINOR,
+};
+
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK2, 52, 2}, 	 // WAFER_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK2, 51, 3}, 	 // EFUSE_PKG_VERSION,
+    {EFUSE_BLK2, 54, 3}, 	 // EFUSE_PKG_VERSION,
 };
 
-static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 54, 3}, 	 // EFUSE_BLOCK2_VERSION,
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK2, 57, 3}, 	 // BLK_VERSION_MINOR,
 };
 
-static const esp_efuse_desc_t RF_REF_I_BIAS_CONFIG[] = {
-    {EFUSE_BLK2, 57, 4}, 	 // EFUSE_RF_REF_I_BIAS_CONFIG,
-};
-
-static const esp_efuse_desc_t LDO_VOL_BIAS_CONFIG_LOW[] = {
-    {EFUSE_BLK2, 61, 3}, 	 // EFUSE_LDO_VOL_BIAS_CONFIG_LOW,
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK2, 60, 2}, 	 // BLK_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t LDO_VOL_BIAS_CONFIG_HIGH[] = {
@@ -348,6 +360,21 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_ENABLE_CUSTOM_MAC[] = {
+    &ENABLE_CUSTOM_MAC[0],    		// True if MAC_CUSTOM is burned
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// Disables check of blk version major
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
     &USER_DATA[0],    		// User data block
     NULL
@@ -368,8 +395,13 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
-    &WAFER_VERSION[0],    		// EFUSE_WAFER_VERSION
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// WAFER_VERSION_MINOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// WAFER_VERSION_MAJOR
     NULL
 };
 
@@ -378,18 +410,13 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// EFUSE_BLOCK2_VERSION
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// BLK_VERSION_MINOR
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_RF_REF_I_BIAS_CONFIG[] = {
-    &RF_REF_I_BIAS_CONFIG[0],    		// EFUSE_RF_REF_I_BIAS_CONFIG
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_LDO_VOL_BIAS_CONFIG_LOW[] = {
-    &LDO_VOL_BIAS_CONFIG_LOW[0],    		// EFUSE_LDO_VOL_BIAS_CONFIG_LOW
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// BLK_VERSION_MAJOR
     NULL
 };
 

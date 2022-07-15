@@ -224,13 +224,17 @@ esp_err_t esp_vfs_fat_info(const char* base_path,
     }
     uint64_t total_sectors = ((uint64_t)(fs->n_fatent - 2)) * fs->csize;
     uint64_t free_sectors = ((uint64_t)free_clusters) * fs->csize;
+    WORD sector_size = FF_MIN_SS; // 512
+#if FF_MAX_SS != FF_MIN_SS
+    sector_size = fs->ssize;
+#endif
 
     // Assuming the total size is < 4GiB, should be true for SPI Flash
     if (out_total_bytes != NULL) {
-        *out_total_bytes = total_sectors * fs->ssize;
+        *out_total_bytes = total_sectors * sector_size;
     }
     if (out_free_bytes != NULL) {
-        *out_free_bytes = free_sectors * fs->ssize;
+        *out_free_bytes = free_sectors * sector_size;
     }
     return ESP_OK;
 }

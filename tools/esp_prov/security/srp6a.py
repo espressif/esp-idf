@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+#
 
 # N     A large safe prime (N = 2q+1, where q is prime) [All arithmetic is done modulo N]
 # g     A generator modulo N
@@ -18,6 +19,8 @@
 import hashlib
 import os
 from typing import Any, Callable, Optional, Tuple
+
+from utils import bytes_to_long, long_to_bytes
 
 SHA1 = 0
 SHA224 = 1
@@ -143,21 +146,11 @@ def get_ng(ng_type: int) -> Tuple[int, int]:
     return int(n_hex, 16), int(g_hex, 16)
 
 
-def bytes_to_long(s: bytes) -> int:
-    return int.from_bytes(s, 'big')
-
-
-def long_to_bytes(n: int) -> bytes:
-    if n == 0:
-        return b'\x00'
-    return n.to_bytes((n.bit_length() + 7) // 8, 'big')
-
-
-def get_random(nbytes: int) -> int:
+def get_random(nbytes: int) -> Any:
     return bytes_to_long(os.urandom(nbytes))
 
 
-def get_random_of_length(nbytes: int) -> int:
+def get_random_of_length(nbytes: int) -> Any:
     offset = (nbytes * 8) - 1
     return get_random(nbytes) | (1 << offset)
 
@@ -255,7 +248,7 @@ class Srp6a (object):
     def get_username(self) -> str:
         return self.Iu
 
-    def get_ephemeral_secret(self) -> bytes:
+    def get_ephemeral_secret(self) -> Any:
         return long_to_bytes(self.a)
 
     def get_session_key(self) -> Any:

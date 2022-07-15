@@ -5,11 +5,7 @@ import pytest
 from pytest_embedded import Dut
 
 
-# IDF-5046
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_base_mac_address(dut: Dut) -> None:
     dut.expect_exact('BASE_MAC: Base MAC Address read from EFUSE BLK0')

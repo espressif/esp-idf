@@ -14,8 +14,8 @@
 
 #include <unity.h>
 #include <test_utils.h>
-#include <esp_spi_flash.h>
-#include "../cache_utils.h"
+#include <spi_flash_mmap.h>
+#include "esp_private/cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
@@ -69,7 +69,6 @@ static int cmp_or_dump(const void *a, const void *b, size_t len)
     return r;
 }
 
-
 static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
 {
     uint32_t src_buf[16];
@@ -78,7 +77,7 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
     fprintf(stderr, "src=%d dst=%d len=%d\n", src_off, dst_off, len);
     memset(src_buf, 0xAA, sizeof(src_buf));
     fill(((char *) src_buf) + src_off, src_off, len);
-    ESP_ERROR_CHECK(spi_flash_erase_sector((start + src_off) / SPI_FLASH_SEC_SIZE));
+    ESP_ERROR_CHECK(esp_flash_erase_region(NULL, (start + src_off) & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
     spi_flash_disable_interrupts_caches_and_other_cpu();
     esp_rom_spiflash_result_t rc = esp_rom_spiflash_write(start, src_buf, sizeof(src_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
@@ -86,7 +85,7 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
     memset(dst_buf, 0x55, sizeof(dst_buf));
     memset(dst_gold, 0x55, sizeof(dst_gold));
     fill(dst_gold + dst_off, src_off, len);
-    ESP_ERROR_CHECK(spi_flash_read(start + src_off, dst_buf + dst_off, len));
+    ESP_ERROR_CHECK(esp_flash_read(NULL, dst_buf + dst_off, start + src_off, len));
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
@@ -209,7 +208,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     memset(src_buf, 0x55, sizeof(src_buf));
     fill(src_buf + src_off, src_off, len);
     // Fills with 0xff
-    ESP_ERROR_CHECK(spi_flash_erase_sector((start + dst_off) / SPI_FLASH_SEC_SIZE));
+    ESP_ERROR_CHECK(esp_flash_erase_region(NULL, (start + src_off) & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
     memset(dst_gold, 0xff, sizeof(dst_gold));
     if (len > 0) {
         int pad_left_off = (dst_off & ~3U);
@@ -220,7 +219,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
         }
         fill(dst_gold + dst_off, src_off, len);
     }
-    ESP_ERROR_CHECK(spi_flash_write(start + dst_off, src_buf + src_off, len));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, src_buf + src_off, start + dst_off, len));
 
     fix_rom_func();
 
@@ -232,7 +231,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
+TEST_CASE("Test esp_flash_write", "[spi_flash][esp_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
@@ -288,19 +287,19 @@ TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
 #define TEST_SOC_IRAM_ADDR              (SOC_IRAM_LOW + 0x8000)
 #define TEST_SOC_RTC_IRAM_ADDR          (SOC_RTC_IRAM_LOW)
 #define TEST_SOC_RTC_DRAM_ADDR          (SOC_RTC_DRAM_LOW)
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_IROM_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_IRAM_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK0_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK1_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK2_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK3_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_RTC_IRAM_ADDR, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_RTC_DRAM_ADDR, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_IROM_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_IRAM_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK0_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK1_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK2_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_CACHE_RAM_BANK3_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_IRAM_ADDR, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) TEST_SOC_RTC_DRAM_ADDR, start, 16));
 #else
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40000000, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40070000, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40078000, 16));
-    ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40000000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40070000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40078000, start, 16));
+    ESP_ERROR_CHECK(esp_flash_write(NULL, (char *) 0x40080000, start, 16));
 #endif
 }
 
@@ -314,15 +313,15 @@ TEST_CASE("spi_flash_read can read into buffer in external RAM", "[spi_flash]")
     uint8_t* buf_int = (uint8_t*) heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(buf_int);
 
-    TEST_ESP_OK(spi_flash_read(0x1000, buf_int, SPI_FLASH_SEC_SIZE));
-    TEST_ESP_OK(spi_flash_read(0x1000, buf_ext, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_int, 0x1000, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_ext, 0x1000, SPI_FLASH_SEC_SIZE));
 
     TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, SPI_FLASH_SEC_SIZE));
     free(buf_ext);
     free(buf_int);
 }
 
-TEST_CASE("spi_flash_write can write from external RAM buffer", "[spi_flash]")
+TEST_CASE("esp_flash_write can write from external RAM buffer", "[spi_flash]")
 {
     uint32_t* buf_ext = (uint32_t*) heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(buf_ext);
@@ -339,11 +338,11 @@ TEST_CASE("spi_flash_write can write from external RAM buffer", "[spi_flash]")
 
     /* Write to flash from buf_ext */
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ESP_OK(spi_flash_erase_range(part->address, SPI_FLASH_SEC_SIZE));
-    TEST_ESP_OK(spi_flash_write(part->address, buf_ext, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_write(NULL, buf_ext, part->address, SPI_FLASH_SEC_SIZE));
 
     /* Read back to buf_int and compare */
-    TEST_ESP_OK(spi_flash_read(part->address, buf_int, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_int, part->address, SPI_FLASH_SEC_SIZE));
     TEST_ASSERT_EQUAL(0, memcmp(buf_ext, buf_int, SPI_FLASH_SEC_SIZE));
 
     free(buf_ext);
@@ -364,10 +363,10 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
     }
 
     const esp_partition_t *part = get_test_data_partition();
-    TEST_ESP_OK(spi_flash_erase_range(part->address, SPI_FLASH_SEC_SIZE));
-    TEST_ESP_OK(spi_flash_write(part->address, data_8, MIN_BLOCK_SIZE));
-    TEST_ESP_OK(spi_flash_read(part->address, buf_ext_8, MIN_BLOCK_SIZE));
-    TEST_ESP_OK(spi_flash_read(part->address, buf_int_8, MIN_BLOCK_SIZE));
+    TEST_ESP_OK(esp_flash_erase_region(NULL, part->address & ~(0x10000 - 1), SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(esp_flash_write(NULL, data_8, part->address, MIN_BLOCK_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_ext_8, part->address, MIN_BLOCK_SIZE));
+    TEST_ESP_OK(esp_flash_read(NULL, buf_int_8, part->address, MIN_BLOCK_SIZE));
 
     TEST_ASSERT_EQUAL(0, memcmp(buf_ext_8, data_8, MIN_BLOCK_SIZE));
     TEST_ASSERT_EQUAL(0, memcmp(buf_int_8, data_8, MIN_BLOCK_SIZE));

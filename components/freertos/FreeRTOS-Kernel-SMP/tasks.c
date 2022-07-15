@@ -369,7 +369,15 @@ PRIVILEGED_DATA static List_t xPendingReadyList;                         /*< Tas
 PRIVILEGED_DATA static volatile UBaseType_t uxCurrentNumberOfTasks = ( UBaseType_t ) 0U;
 PRIVILEGED_DATA static volatile TickType_t xTickCount = ( TickType_t ) configINITIAL_TICK_COUNT;
 PRIVILEGED_DATA static volatile UBaseType_t uxTopReadyPriority = tskIDLE_PRIORITY;
+#if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+/*
+Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+*/
+PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunningPerCore[ configNUM_CORES ] = { pdFALSE };
+#define xSchedulerRunning xSchedulerRunningPerCore[ portGET_CORE_ID() ]
+#else // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 )
 PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunning = pdFALSE;
+#endif // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 )
 PRIVILEGED_DATA static volatile TickType_t xPendedTicks = ( TickType_t ) 0U;
 PRIVILEGED_DATA static volatile BaseType_t xYieldPendings[ configNUM_CORES ] = { pdFALSE };
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = ( BaseType_t ) 0;
@@ -709,17 +717,13 @@ static void prvYieldCore( BaseType_t xCoreID )
         {
             xYieldPendings[ xCoreID ] = pdTRUE;
         }
-
-#ifdef ESP_PLATFORM
-// TODO: IDF-5256
         #if ( configNUM_CORES > 1 )
             else
             {
                 portYIELD_CORE( xCoreID );
                 pxCurrentTCBs[ xCoreID ]->xTaskRunState = taskTASK_YIELDING;
             }
-        #endif /* ( configNUM_CORES > 1 ) */
-#endif /* ESP_PLATFORM */
+        #endif
     }
 }
 
@@ -6447,3 +6451,14 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
+
+#if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+/*
+Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+*/
+void vTaskStartSchedulerOtherCores( void )
+{
+    /* This function is always called with interrupts disabled*/
+    xSchedulerRunning = pdTRUE;
+}
+#endif // ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1

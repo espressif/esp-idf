@@ -455,16 +455,21 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
                                    StackType_t **ppxIdleTaskStackBuffer,
                                    uint32_t *pulIdleTaskStackSize )
 {
-    StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+    StaticTask_t *pxTCBBufferTemp;
+    /* Stack always grows downwards (from high address to low address) on all
+     * ESP RISC-V targets. Given that the heap allocator likely allocates memory
+     * from low to high address, we allocate the stack first and then the TCB so
+     * that the stack does not grow downwards into the TCB.
+     *
+     * Allocate TCB and stack buffer in internal memory. */
     pxStackBufferTemp = pvPortMalloc(CONFIG_FREERTOS_IDLE_TASK_STACKSIZE);
-    assert(pxTCBBufferTemp != NULL);
+    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
     assert(pxStackBufferTemp != NULL);
-    //Write back pointers
-    *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
+    assert(pxTCBBufferTemp != NULL);
+    // Write back pointers
     *ppxIdleTaskStackBuffer = pxStackBufferTemp;
+    *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
     *pulIdleTaskStackSize = CONFIG_FREERTOS_IDLE_TASK_STACKSIZE;
 }
 
@@ -472,16 +477,21 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
                                     StackType_t **ppxTimerTaskStackBuffer,
                                     uint32_t *pulTimerTaskStackSize )
 {
-    StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+    StaticTask_t *pxTCBBufferTemp;
+    /* Stack always grows downwards (from high address to low address) on all
+     * ESP RISC-V targets. Given that the heap allocator likely allocates memory
+     * from low to high address, we allocate the stack first and then the TCB so
+     * that the stack does not grow downwards into the TCB.
+     *
+     * Allocate TCB and stack buffer in internal memory. */
     pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
-    assert(pxTCBBufferTemp != NULL);
+    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
     assert(pxStackBufferTemp != NULL);
-    //Write back pointers
-    *ppxTimerTaskTCBBuffer = pxTCBBufferTemp;
+    assert(pxTCBBufferTemp != NULL);
+    // Write back pointers
     *ppxTimerTaskStackBuffer = pxStackBufferTemp;
+    *ppxTimerTaskTCBBuffer = pxTCBBufferTemp;
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 #endif //( configSUPPORT_STATIC_ALLOCATION == 1 )

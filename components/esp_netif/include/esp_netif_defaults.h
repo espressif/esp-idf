@@ -26,7 +26,8 @@ extern "C" {
         .lost_ip_event = IP_EVENT_STA_LOST_IP, \
         .if_key = "WIFI_STA_DEF", \
         .if_desc = "sta", \
-        .route_prio = 100 \
+        .route_prio = 100, \
+        .bridge_info = NULL \
      }  \
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
@@ -39,7 +40,8 @@ extern "C" {
         .lost_ip_event = 0, \
         .if_key = "WIFI_AP_DEF", \
         .if_desc = "ap", \
-        .route_prio = 10 \
+        .route_prio = 10, \
+        .bridge_info = NULL \
     };
 #endif
 
@@ -52,7 +54,8 @@ extern "C" {
         .lost_ip_event = IP_EVENT_ETH_LOST_IP, \
         .if_key = "ETH_DEF", \
         .if_desc = "eth", \
-        .route_prio = 50 \
+        .route_prio = 50, \
+        .bridge_info = NULL \
     };
 
 #define ESP_NETIF_INHERENT_DEFAULT_PPP() \
@@ -64,7 +67,8 @@ extern "C" {
         .lost_ip_event = IP_EVENT_PPP_LOST_IP,  \
         .if_key = "PPP_DEF",    \
         .if_desc = "ppp",   \
-        .route_prio = 20   \
+        .route_prio = 20,  \
+        .bridge_info = NULL \
 };
 
 #define ESP_NETIF_INHERENT_DEFAULT_OPENTHREAD() \
@@ -76,7 +80,8 @@ extern "C" {
         .lost_ip_event = 0,   \
         .if_key = "OT_DEF",  \
         .if_desc = "openthread",    \
-        .route_prio = 15      \
+        .route_prio = 15,     \
+        .bridge_info = NULL \
 };
 
 #define ESP_NETIF_INHERENT_DEFAULT_SLIP() \
@@ -88,9 +93,22 @@ extern "C" {
         .lost_ip_event = 0,   \
         .if_key = "SLP_DEF",  \
         .if_desc = "slip",    \
-        .route_prio = 16      \
+        .route_prio = 16,     \
+        .bridge_info = NULL \
 };
 
+#define ESP_NETIF_INHERENT_DEFAULT_BR() \
+    {   \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED | ESP_NETIF_FLAG_IS_BRIDGE), \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = IP_EVENT_ETH_GOT_IP, \
+        .lost_ip_event = IP_EVENT_ETH_LOST_IP, \
+        .if_key = "BR", \
+        .if_desc = "br", \
+        .route_prio = 70, \
+        .bridge_info = NULL \
+    };
 
 /**
  * @brief  Default configuration reference of ethernet interface
@@ -174,6 +192,7 @@ extern "C" {
 
 
 #define ESP_NETIF_NETSTACK_DEFAULT_ETH          _g_esp_netif_netstack_default_eth
+#define ESP_NETIF_NETSTACK_DEFAULT_BR           _g_esp_netif_netstack_default_br
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA     _g_esp_netif_netstack_default_wifi_sta
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
@@ -189,6 +208,7 @@ extern "C" {
 //  - Here referenced only as opaque pointers
 //
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_eth;
+extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_br;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta;
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;

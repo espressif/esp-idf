@@ -97,8 +97,6 @@ TEST_CASE("pthread C++", "[pthread]")
     global_sp_recur_mtx.reset();
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5142
 static void task_test_sandbox()
 {
     std::stringstream ss;
@@ -138,6 +136,4 @@ TEST_CASE("pthread mix C/C++", "[pthread]")
         t1.join();
     }
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-
 #endif

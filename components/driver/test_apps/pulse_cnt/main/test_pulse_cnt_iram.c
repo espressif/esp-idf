@@ -12,9 +12,10 @@
 #include "unity.h"
 #include "driver/pulse_cnt.h"
 #include "driver/gpio.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
+#include "esp_private/spi_flash_os.h"
 #include "test_pulse_cnt_board.h"
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE

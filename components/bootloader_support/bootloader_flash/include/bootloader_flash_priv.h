@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <esp_err.h>
-#include <esp_spi_flash.h> /* including in bootloader for error values */
+#include <spi_flash_mmap.h> /* including in bootloader for error values */
 #include "sdkconfig.h"
 #include "bootloader_flash.h"
 

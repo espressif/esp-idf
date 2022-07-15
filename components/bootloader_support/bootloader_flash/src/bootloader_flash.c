@@ -23,6 +23,9 @@
 #   define SPIFLASH SPIMEM1
 #endif
 
+// This dependency will be removed in the future.  IDF-5025
+#include "esp_flash.h"
+
 #include "esp_rom_spiflash.h"
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
@@ -43,7 +46,7 @@
 #define ESP_BOOTLOADER_SPIFLASH_QE_SR1_2BYTE     BIT9   // QE position when you write 16 bits at one time.
 
 #ifndef BOOTLOADER_BUILD
-/* Normal app version maps to esp_spi_flash.h operations...
+/* Normal app version maps to spi_flash_mmap.h operations...
  */
 static const char *TAG = "bootloader_mmap";
 
@@ -82,33 +85,31 @@ void bootloader_munmap(const void *mapping)
 esp_err_t bootloader_flash_read(size_t src, void *dest, size_t size, bool allow_decrypt)
 {
     if (allow_decrypt && esp_flash_encryption_enabled()) {
-        return spi_flash_read_encrypted(src, dest, size);
+        return esp_flash_read_encrypted(NULL, src, dest, size);
     } else {
-        return spi_flash_read(src, dest, size);
+        return esp_flash_read(NULL, dest, src, size);
     }
 }
 
 esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted)
 {
     if (write_encrypted && !ENCRYPTION_IS_VIRTUAL) {
-#if CONFIG_IDF_TARGET_ESP32
-        return spi_flash_write_encrypted(dest_addr, src, size);
-#else
-        return esp_rom_spiflash_write_encrypted(dest_addr, src, size);
-#endif
+        return esp_flash_write_encrypted(NULL, dest_addr, src, size);
     } else {
-        return spi_flash_write(dest_addr, src, size);
+        return esp_flash_write(NULL, src, dest_addr, size);
     }
 }
 
 esp_err_t bootloader_flash_erase_sector(size_t sector)
 {
-    return spi_flash_erase_sector(sector);
+    // Will de-dependency IDF-5025
+    return esp_flash_erase_region(NULL, sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
 }
 
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
-    return spi_flash_erase_range(start_addr, size);
+    // Will de-dependency IDF-5025
+    return esp_flash_erase_region(NULL, start_addr, size);
 }
 
 #else //BOOTLOADER_BUILD

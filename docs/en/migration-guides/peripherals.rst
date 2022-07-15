@@ -32,6 +32,33 @@ ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can direct
         // Other members
     };
 
+Breaking changes in legacy APIs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In order to make spi_flash driver more stable, legacy spi_flash driver is removed on v5.0. Legacy spi_flash driver refers to default spi_flash driver since v3.0 and spi_flash driver with configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` switched on on v4.0 series. The major breaking change is legacy spi_flash driver is not supported on new version anymore. Therefore, the configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is removed. After that, following functions will no longer exist. But meanwhile, you can use our new APIs instead.
+
++---------------------------------+-------------------------------+
+|         Removed items           |          Replacement          |
++=================================+===============================+
+| ``spi_flash_erase_sector()``    | ``esp_flash_erase_region``    |
++---------------------------------+-------------------------------+
+| ``spi_flash_erase_range()``     | ``esp_flash_erase_region``    |
++---------------------------------+-------------------------------+
+| ``spi_flash_write``             | ``esp_flash_write``           |
++---------------------------------+-------------------------------+
+| ``spi_flash_read()``            | ``esp_flash_read``            |
++---------------------------------+-------------------------------+
+| ``spi_flash_write_encrypted()`` | ``esp_flash_write_encrypted`` |
++---------------------------------+-------------------------------+
+| ``spi_flash_read_encrypted``    | ``esp_flash_read_encrypted``  |
++---------------------------------+-------------------------------+
+
+.. note::
+
+    New functions with prefix ``esp_flash`` accept an additional ``esp_flash_t*`` parameter.  You can simply set it to NULL means that the function will operate the main flash(``esp_flash_default_chip``)
+
+Header ``esp_spi_flash.h`` has been deprecated, system functions are no longer public. To make use of flash memory mapping APIs, you should include ``spi_flash_mmap.h`` instead.
+
 ADC
 ---
 
@@ -108,6 +135,8 @@ SPI
 +==========================+==================================+=================================+
 | ``spi_cal_clock()``      | :cpp:func:`spi_get_actual_clock` | Get SPI real working frequency. |
 +--------------------------+----------------------------------+---------------------------------+
+
+- The internal header file ``spi_common_internal.h`` has been moved to ``esp_private/spi_common_internal.h``.
 
 .. only:: SOC_SDMMC_HOST_SUPPORTED
 
@@ -237,6 +266,7 @@ LCD
 
 - The LCD panel initialization flow is slightly changed. Now the :cpp:func:`esp_lcd_panel_init` won't turn on the display automatically. User needs to call :cpp:func:`esp_lcd_panel_disp_on_off` to manually turn on the display. Note, this is different from turning on backlight. With this breaking change, user can flush a predefined pattern to the screen before turning on the screen. This can help avoid random noise on the screen after a power on reset.
 - :cpp:func:`esp_lcd_panel_disp_off` is deprecated, please use :cpp:func:`esp_lcd_panel_disp_on_off` instead.
+- ``dc_as_cmd_phase`` is removed. The SPI LCD driver currently doesn't support a 9bit SPI LCD. Please always use a dedicated GPIO to control the LCD D/C line.
 
 .. only:: SOC_MCPWM_SUPPORTED
 
@@ -319,3 +349,22 @@ LCD
     7. Calling :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.
 
     8. Calling :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.
+
+Register access macros
+----------------------
+
+Previously, all register access macros could be used as expressions, so the following was allowed::
+
+    uint32_t val = REG_SET_BITS(reg, mask);
+
+In IDF v5.0, register access macros which write or read-modify-write the register can no longer be used as expressions, and can only be used as statements. This applies to the following macros: ``REG_WRITE``, ``REG_SET_BIT``, ``REG_CLR_BIT``, ``REG_SET_BITS``, ``REG_SET_FIELD``, ``WRITE_PERI_REG``, ``CLEAR_PERI_REG_MASK``, ``SET_PERI_REG_MASK``, ``SET_PERI_REG_BITS``.
+
+To store the value which would have been written into the register, split the operation as follows::
+
+    uint32_t new_val = REG_READ(reg) | mask;
+    REG_WRITE(reg, new_val);
+
+To get the value of the register after modification (which may be different from the value written), add an explicit read::
+
+    REG_SET_BITS(reg, mask);
+    uint32_t new_val = REG_READ(reg);

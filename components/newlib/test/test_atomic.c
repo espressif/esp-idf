@@ -1,9 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include "unity.h"
 #include <stdatomic.h>
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "hal/cpu_hal.h"
-#include "../cache_utils.h"
+#include "esp_private/cache_utils.h"
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = cpu_hal_get_cycle_count();}while(0)

@@ -22,12 +22,6 @@ const static char *TAG = "efuse";
 
 // Contains functions that provide access to efuse fields which are often used in IDF.
 
-// Returns chip version from efuse
-uint8_t esp_efuse_get_chip_ver(void)
-{
-    return efuse_hal_get_chip_revision();
-}
-
 // Returns chip package from efuse
 uint32_t esp_efuse_get_pkg_ver(void)
 {
@@ -49,7 +43,7 @@ esp_err_t esp_efuse_disable_rom_download_mode(void)
 {
 #ifndef CONFIG_ESP32_REV_MIN_3
     /* Check if we support this revision at all */
-    if(esp_efuse_get_chip_ver() < 3) {
+    if (efuse_hal_get_major_chip_version() < 3) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 #endif
