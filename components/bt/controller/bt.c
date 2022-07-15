@@ -589,6 +589,7 @@ static void queue_delete_wrapper(void *queue)
 #endif
 
         free(queue_item);
+    }
 }
 
 static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms)
