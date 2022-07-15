@@ -14,12 +14,12 @@
 #include "esp_log.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
-#include "driver/adc.h"
+#include "esp_adc/adc_oneshot.h"
 #include "driver/dac.h"
 #include "soc/adc_channel.h"
 #include "soc/dac_channel.h"
 
-#define ADC1_TEST_CHANNEL (ADC1_CHANNEL_6)
+#define ADC1_TEST_CHANNEL (ADC_CHANNEL_6)
 
 #define TEST_SAMPLING_PERIOD 20
 
@@ -73,12 +73,14 @@ static void enable_cosine_generator(void)
  * Print out sampling result using standard ESP_LOGI() function.
  * Return the number of samples collected.
  */
-static int adc1_sample_and_show(int sampling_period)
+static int adc1_sample_and_show(adc_oneshot_unit_handle_t adc1_handle, int sampling_period)
 {
     int i = 0;
     uint32_t sampling_start = esp_log_timestamp();
     do {
-        ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
+        int adc_raw = 0;
+        ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHANNEL, &adc_raw));
+        ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc_raw);
     } while (esp_log_timestamp() - sampling_start < sampling_period);
     return i;
 }
@@ -91,12 +93,20 @@ static int adc1_sample_and_show(int sampling_period)
 void app_main(void)
 {
     ESP_LOGI(TAG, "Enabling ADC1 on channel 6 / GPIO%d.", ADC1_CHANNEL_6_GPIO_NUM);
-#if CONFIG_IDF_TARGET_ESP32
-    adc1_config_width(ADC_WIDTH_BIT_12);
-#elif CONFIG_IDF_TARGET_ESP32S2
-    adc1_config_width(ADC_WIDTH_BIT_13);
-#endif
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_11);
+
+    //-------------ADC1 Init---------------//
+    adc_oneshot_unit_handle_t adc1_handle;
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = ADC_UNIT_1,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+    //-------------ADC1 Channel Config---------------//
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = ADC_ATTEN_DB_11,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC1_TEST_CHANNEL, &config));
 
     ESP_LOGI(TAG, "Enabling CW generator on DAC channel 1 / GPIO%d.", DAC_CHANNEL_1_GPIO_NUM);
     enable_cosine_generator();
@@ -108,7 +118,7 @@ void app_main(void)
         ESP_LOGI(TAG, "Sampling ADC and sending data to the host...");
         // Route LOGx() to the host
         esp_log_set_vprintf(esp_apptrace_vprintf);
-        int samples_collected = adc1_sample_and_show(TEST_SAMPLING_PERIOD);
+        int samples_collected = adc1_sample_and_show(adc1_handle, TEST_SAMPLING_PERIOD);
         // Route LOGx() back to UART
         esp_log_set_vprintf(vprintf);
         // Flush collected data to the host
@@ -119,9 +129,10 @@ void app_main(void)
          * Logging to UART
          */
         ESP_LOGI(TAG, "Sampling ADC and sending data to the UART...");
-        samples_collected = adc1_sample_and_show(TEST_SAMPLING_PERIOD);
+        samples_collected = adc1_sample_and_show(adc1_handle, TEST_SAMPLING_PERIOD);
         ESP_LOGI(TAG, "Collected %d samples in %d ms.\n", samples_collected, TEST_SAMPLING_PERIOD);
 
         vTaskDelay(2000 / portTICK_PERIOD_MS);
     }
+    ESP_ERROR_CHECK(adc_oneshot_del_unit(adc1_handle));
 }

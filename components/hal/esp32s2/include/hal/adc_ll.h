@@ -28,6 +28,8 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
 #define ADC_LL_CLKM_DIV_B_DEFAULT         1
 #define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
@@ -161,19 +163,12 @@ static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 /**
  * Enable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ *
+ * @param enable  true: enable; false: disable
  */
-static inline void adc_ll_digi_convert_limit_enable(void)
+static inline void adc_ll_digi_convert_limit_enable(bool enable)
 {
-    APB_SARADC.ctrl2.meas_num_limit = 1;
-}
-
-/**
- * Disable max conversion number detection for digital controller.
- * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
- */
-static inline void adc_ll_digi_convert_limit_disable(void)
-{
-    APB_SARADC.ctrl2.meas_num_limit = 0;
+    APB_SARADC.ctrl2.meas_num_limit = enable;
 }
 
 /**
@@ -596,7 +591,7 @@ static inline void adc_ll_set_sar_clk_div(adc_unit_t adc_n, uint32_t div)
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
     //ESP32S2 only supports 13bit, leave here for compatibility
-    HAL_ASSERT(bits == ADC_BITWIDTH_13);
+    HAL_ASSERT(bits == ADC_BITWIDTH_13 || bits == ADC_BITWIDTH_DEFAULT);
 }
 
 /**

@@ -44,7 +44,7 @@ if(NOT BOOTLOADER_BUILD)
         "spi_flash_encrypt_hal_iram.c"
         "sha_hal.c"
         "adc_hal_common.c"
-        "adc_hal.c")
+        "adc_oneshot_hal.c")
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
@@ -82,6 +82,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "emac_hal.c")
     endif()
 
+    if(CONFIG_SOC_ADC_DMA_SUPPORTED)
+        list(APPEND srcs "adc_hal.c")
+    endif()
+
     if(CONFIG_SOC_LCDCAM_SUPPORTED)
         list(APPEND srcs "lcd_hal.c")
     endif()
@@ -96,7 +100,6 @@ if(NOT BOOTLOADER_BUILD)
             "sdio_slave_hal.c"
             "touch_sensor_hal.c"
             "aes_hal.c"
-            "esp32/adc_hal.c"
             "esp32/brownout_hal.c"
             "esp32/touch_sensor_hal.c"
             "esp32/gpio_hal_workaround.c")
@@ -143,7 +146,6 @@ if(NOT BOOTLOADER_BUILD)
               "spi_slave_hd_hal.c"
               "xt_wdt_hal.c"
               "aes_hal.c"
-              "esp32c3/adc_hal.c"
               "esp32c3/brownout_hal.c"
               "esp32c3/hmac_hal.c"
               "esp32c3/rtc_cntl_hal.c")

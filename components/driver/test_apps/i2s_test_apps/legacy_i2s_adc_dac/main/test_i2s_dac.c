@@ -13,7 +13,6 @@
 #if CONFIG_IDF_TARGET_ESP32
 
 #include "esp_system.h"
-#include "driver/adc.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"

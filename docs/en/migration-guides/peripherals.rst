@@ -62,11 +62,17 @@ Header ``esp_spi_flash.h`` has been deprecated, system functions are no longer p
 ADC
 ---
 
+- ADC oneshot mode driver has been redesigned. New driver is in ``esp_adc`` component and the include path is ``esp_adc/adc_oneshot.h``. Legacy driver is still available in the previous include path ``driver/adc.h``. However, by default, including ``driver/adc.h`` will bring a build warning like `legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN`.
+- ADC continuous mode driver has been moved from ``driver`` component to ``esp_adc`` component. Include path has been changed from ``driver/adc.h`` to ``esp_adc/adc_continuous.h``. Legacy driver is still available in the previous include path ``driver/adc.h``. Similarly, including it will bring a build warning, and it can be suppressed by the Kconfig option :ref:`CONFIG_ADC_SUPPRESS_DEPRECATE_WARN`.
+- ADC calibration driver has been redesigned. New driver is in ``esp_adc`` component and the include path is ``esp_adc/adc_cali.h`` and ``esp_adc/adc_cali_scheme.h``. Legacy driver is still available by including ``esp_adc_cal.h``. However, by default, including ``esp_adc_cal.h`` will bring a build warning like `legacy adc calibration driver is deprecated, please migrate to use esp_adc/adc_cali.h and esp_adc/adc_cali_scheme.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_ADC_CALI_SUPPRESS_DEPRECATE_WARN`.
+- API ``adc_power_acquire`` and ``adc_power_release`` have been deprecated. These two are used by other drivers to maintain ADC power due to hardware limitation. After this change, ADC power will still be handled by the drivers. However, for users who are interested in this, the include path has been changed from ``driver/adc.h`` to ``esp_private/adc_private.h``.
 - Previous ``driver/adc2_wifi_private.h`` has been moved to ``esp_private/adc2_wifi.h``.
-- Enums ``ADC_UNIT_BOTH``, ``ADC_UNIT_ALTER`` and ``ADC_UNIT_MAX`` in ``adc_unit_t`` are removed.
-- Enum ``ADC_CHANNEL_MAX`` in ``adc_channel_t`` are removed. Some channels are not supported on some chips, driver will give a dynamic error if an unsupported channels are used.
-- Enum ``ADC_ATTEN_MAX`` is removed. Some attenuations are not supported on some chips, driver will give a dynamic error if an unsupported attenuation is used.
-- Enum ``ADC_CONV_UNIT_MAX`` is removed. Some convert mode are not supported on some chips, driver will give a dynamic error if an unsupported convert mode is used.
+- Enums ``ADC_UNIT_BOTH``, ``ADC_UNIT_ALTER`` and ``ADC_UNIT_MAX`` in ``adc_unit_t`` have been removed.
+- Enum ``ADC_CHANNEL_MAX`` in ``adc_channel_t`` has been removed. Some channels are not supported on some chips, driver will give a dynamic error if an unsupported channels are used.
+- Enum ``ADC_ATTEN_MAX``  has been removed. Some attenuations are not supported on some chips, driver will give a dynamic error if an unsupported attenuation is used.
+- Enum ``ADC_CONV_UNIT_MAX``  has been removed. Some convert mode are not supported on some chips, driver will give a dynamic error if an unsupported convert mode is used.
+- API ``hall_sensor_read`` on ESP32 has been removed. Hall sensor is no more supported on ESP32.
+- API ``adc_set_i2s_data_source`` and ``adc_i2s_mode_init`` have been deprecated. Related enum ``adc_i2s_source_t`` has been deprecated. Please migrate to use ``esp_adc/adc_continuous.h``.
 
 GPIO
 ----

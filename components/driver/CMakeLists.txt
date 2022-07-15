@@ -24,9 +24,11 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
 endif()
 
 if(CONFIG_SOC_ADC_SUPPORTED)
-    list(APPEND srcs
-         "adc_single.c"
-         "adc.c")
+    list(APPEND srcs "deprecated/adc_legacy.c")
+endif()
+
+if(CONFIG_SOC_ADC_DMA_SUPPORTED)
+    list(APPEND srcs "deprecated/adc_dma_legacy.c")
 endif()
 
 if(CONFIG_SOC_MCPWM_SUPPORTED)
@@ -87,8 +89,7 @@ if(${target} STREQUAL "esp32")
                      "sdio_slave.c"
                      "touch_sensor_common.c"
                      "esp32/touch_sensor.c"
-                     "esp32/adc.c"
-                     "adc_deprecated.c"
+                     "deprecated/adc_i2s_deprecated.c"
                      "esp32/dac.c")
 endif()
 
@@ -96,9 +97,6 @@ if(${target} STREQUAL "esp32s2")
     list(APPEND srcs "dac_common.c"
                      "touch_sensor_common.c"
                      "esp32s2/touch_sensor.c"
-                     "esp32s2/adc.c"
-                     "adc_deprecated.c"
-                     "esp32s2/adc2_init_cal.c"
                      "esp32s2/dac.c")
 endif()
 
@@ -107,19 +105,18 @@ if(${target} STREQUAL "esp32s3")
                      "esp32s3/touch_sensor.c")
 endif()
 
-if(${target} STREQUAL "esp32c3")
-    list(APPEND srcs "esp32c3/adc2_init_cal.c")
-endif()
 
 if(BOOTLOADER_BUILD)
     # Bootloader shall NOT depend on the drivers
     idf_component_register()
 else()
     # (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
+    # (Legacy drivers requires `esp_adc`, due to ADC HW resource mutex logics are there.
+    # Can be removed together with legacy drivers)
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS ${includes}
                         PRIV_INCLUDE_DIRS "include/driver"
-                        PRIV_REQUIRES efuse esp_timer
+                        PRIV_REQUIRES efuse esp_timer esp_adc
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                         LDFRAGMENTS linker.lf)
 endif()

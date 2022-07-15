@@ -19,7 +19,7 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
     if (unit == ADC_UNIT_1) {
         switch (work_mode) {
 #if SOC_ULP_SUPPORTED
-            case ADC_HAL_ULP_MODE:
+            case ADC_HAL_ULP_FSM_MODE:
                 return ADC_LL_CTRL_ULP;
 #endif
             case ADC_HAL_SINGLE_READ_MODE:
@@ -36,10 +36,14 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
     } else {
         switch (work_mode) {
 #if SOC_ULP_SUPPORTED
-            case ADC_HAL_ULP_MODE:
+            case ADC_HAL_ULP_FSM_MODE:
                 return ADC_LL_CTRL_ULP;
 #endif
 #if !SOC_ADC_ARBITER_SUPPORTED                  //No ADC2 arbiter on ESP32
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
+            default:
+                return ADC_LL_CTRL_DIG;
+#else
             case ADC_HAL_SINGLE_READ_MODE:
                 return ADC_LL_CTRL_RTC;
             case ADC_HAL_CONTINUOUS_READ_MODE:
@@ -48,6 +52,7 @@ static adc_ll_controller_t get_controller(adc_unit_t unit, adc_hal_work_mode_t w
                 return ADC_LL_CTRL_PWDET;
             default:
                 abort();
+#endif  //#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 #else
             default:
                 return ADC_LL_CTRL_ARB;

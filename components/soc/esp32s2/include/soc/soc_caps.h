@@ -81,6 +81,7 @@
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
@@ -89,7 +90,10 @@
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
 #define SOC_ADC_PATT_LEN_MAX                    (32) /*!< Two pattern table, each contains 16 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+#define SOC_ADC_DIGI_RESULT_BYTES               (2)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (2)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611

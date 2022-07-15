@@ -15,12 +15,13 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 #include "driver/gpio.h"
-#include "driver/adc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#define CONFIG_ADC_SUPPRESS_DEPRECATE_WARN 1
+#include "driver/adc.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32C2)
 
 static const char* TAG = "test_adc2";
 
@@ -149,7 +150,7 @@ TEST_CASE("adc2 work with wifi","[adc]")
     bool test_list[TEST_NUM] ={1, 1, 0, 0, 1, 0, 1, 0};
 
     adc2_pad_get_io_num(ADC2_CHAN1, &test_adc_io);
-    TEST_ESP_OK(adc2_config_channel_atten(ADC2_CHAN1, ADC_ATTEN_0db));
+    TEST_ESP_OK(adc2_config_channel_atten(ADC2_CHAN1, ADC_ATTEN_DB_0));
     printf("test_adc_io is %d\n", test_adc_io);
 
     //---------------------------------GPIO init-----------------------------------//

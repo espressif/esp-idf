@@ -61,7 +61,6 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/include/driver/adc.h \
     $(PROJECT_PATH)/components/driver/include/driver/dac_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
@@ -83,7 +82,10 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/uart.h \
     $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
-    $(PROJECT_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali_scheme.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_continuous.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_oneshot.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \

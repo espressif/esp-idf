@@ -1,13 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include "unity.h"
-#include "driver/adc.h"
 #include <time.h>
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"

@@ -96,17 +96,10 @@
 #define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-/**
- * TO BE REMOVED
- * Check if adc support digital controller (DMA) mode.
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 0)
-
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
@@ -117,9 +110,10 @@
 #define SOC_ADC_PATT_LEN_MAX                    (16) //Two pattern table, each contains 16 items. Each item takes 1 byte. But only support ADC1 using DMA mode
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (9)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_DIGI_RESULT_BYTES               (2)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
-#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (2000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (20*1000)
 
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (9)

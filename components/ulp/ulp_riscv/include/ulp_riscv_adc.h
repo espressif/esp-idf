@@ -17,7 +17,7 @@ typedef struct {
     adc_unit_t adc_n;       // ADC Unit
     adc_channel_t channel;  // ADC channel
     adc_atten_t atten;      // ADC channel attenuation
-    adc_bits_width_t width; // ADC bit width, only used for ADC unit 1
+    adc_bitwidth_t width;   // ADC bit width, only used for ADC unit 1
 } ulp_riscv_adc_cfg_t;      // ULP Riscv ADC configuration parameters
 
 /**

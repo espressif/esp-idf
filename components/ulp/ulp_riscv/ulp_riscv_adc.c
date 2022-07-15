@@ -8,14 +8,10 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_log.h"
-#include "driver/adc.h"
+#include "esp_private/adc_private.h"
+#include "esp_adc/adc_oneshot.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/esp_sleep_internal.h"
-
-
-/* Will be refactored when ADC NG is merged, TODO IDF-5513 */
-extern esp_err_t adc1_rtc_mode_acquire(void);
-extern uint32_t get_calibration_offset(adc_unit_t adc_n, adc_channel_t chan);
 
 static const char *TAG = "ulp_riscv_adc";
 
@@ -26,15 +22,23 @@ esp_err_t ulp_riscv_adc_init(const ulp_riscv_adc_cfg_t *cfg)
     ESP_GOTO_ON_FALSE(cfg, ESP_ERR_INVALID_ARG, err, TAG, "cfg == NULL");
     ESP_GOTO_ON_FALSE(cfg->adc_n == ADC_UNIT_1, ESP_ERR_INVALID_ARG, err, TAG, "Only ADC_UNIT_1 is supported for now");
 
-    adc1_config_channel_atten(cfg->channel, cfg->atten);
-    adc1_config_width(cfg->width);
+    //-------------ADC1 Init---------------//
+    adc_oneshot_unit_handle_t adc1_handle;
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = cfg->adc_n,
+        .ulp_mode = ADC_ULP_MODE_RISCV,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+    //-------------ADC1 Config---------------//
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = cfg->width,
+        .atten = cfg->atten,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, cfg->channel, &config));
 
     //Calibrate the ADC
-    uint32_t cal_val = get_calibration_offset(cfg->adc_n, cfg->channel);
-    adc_hal_set_calibration_param(cfg->adc_n, cal_val);
-
-    adc1_rtc_mode_acquire();
-
+    adc_set_hw_calibration_code(cfg->adc_n, cfg->atten);
     esp_sleep_enable_adc_tsens_monitor(true);
 
 err:

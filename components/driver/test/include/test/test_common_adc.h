@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "driver/adc.h"
+#include "hal/adc_types.h"
 
 /**@{*/
 /**

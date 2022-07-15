@@ -16,10 +16,10 @@
 #include "soc/sens_reg.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
-#include "driver/adc.h"
 #include "driver/dac.h"
 #include "esp32/ulp.h"
 #include "ulp_main.h"
+#include "esp_adc/adc_oneshot.h"
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
 extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
@@ -60,16 +60,21 @@ static void init_ulp_program(void)
             (ulp_main_bin_end - ulp_main_bin_start) / sizeof(uint32_t));
     ESP_ERROR_CHECK(err);
 
-    /* Configure ADC channel */
-    /* Note: when changing channel here, also change 'adc_channel' constant
-       in adc.S */
-    adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
-#if CONFIG_IDF_TARGET_ESP32
-    adc1_config_width(ADC_WIDTH_BIT_12);
-#elif CONFIG_IDF_TARGET_ESP32S2
-    adc1_config_width(ADC_WIDTH_BIT_13);
-#endif
-    adc1_ulp_enable();
+    //-------------ADC1 Init---------------//
+    adc_oneshot_unit_handle_t adc1_handle;
+    adc_oneshot_unit_init_cfg_t init_config1 = {
+        .unit_id = ADC_UNIT_1,
+        .ulp_mode = ADC_ULP_MODE_FSM,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
+
+    //-------------ADC1 Channel Config---------------//
+    // Note: when changing channel here, also change 'adc_channel' constant in adc.S
+    adc_oneshot_chan_cfg_t config = {
+        .bitwidth = ADC_BITWIDTH_DEFAULT,
+        .atten = ADC_ATTEN_DB_11,
+    };
+    ESP_ERROR_CHECK(adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_6, &config));
 
     /* Set low and high thresholds, approx. 1.35V - 1.75V*/
     ulp_low_thr = 1500;

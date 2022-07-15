@@ -25,16 +25,6 @@
 #include "soc/spi_struct.h"
 #endif
 
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-/*---------------------------------------------------------------
-                    Single Read
----------------------------------------------------------------*/
-/**
- * For chips without RTC controller, Digital controller is used to trigger an ADC single read.
- */
-#include "esp_rom_sys.h"
-#endif  //SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-
 /*---------------------------------------------------------------
             Define all ADC DMA required operations here
 ---------------------------------------------------------------*/
@@ -190,9 +180,12 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, uint32_t fre
     adc_ll_digi_clk_sel(0);   //use APB
 #else
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_SRC_DEFAULT);    /*!< Clock from PLL_D2_CLK(160M)*/
-    uint32_t bck = I2S_BASE_CLK / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_B_DEFAULT / ADC_LL_CLKM_DIV_A_DEFAULT) / 2 / freq;
-    i2s_ll_set_raw_mclk_div(hal->dev, ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT);
-    i2s_ll_rx_set_bck_div_num(hal->dev, bck);
+    uint32_t bclk_div = 16;
+    uint32_t bclk = freq * 2;
+    uint32_t mclk = bclk * bclk_div;
+    uint32_t mclk_div = I2S_BASE_CLK / mclk;
+    i2s_ll_rx_set_mclk(hal->dev, I2S_BASE_CLK, mclk, mclk_div);
+    i2s_ll_rx_set_bck_div_num(hal->dev, bclk_div);
 #endif
 }
 
@@ -231,13 +224,8 @@ void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_c
 
 #endif
 
-    if (cfg->conv_limit_en) {
-        adc_ll_digi_set_convert_limit_num(cfg->conv_limit_num);
-        adc_ll_digi_convert_limit_enable();
-    } else {
-        adc_ll_digi_convert_limit_disable();
-    }
-
+    adc_ll_digi_convert_limit_enable(ADC_LL_DEFAULT_CONV_LIMIT_EN);
+    adc_ll_digi_set_convert_limit_num(ADC_LL_DEFAULT_CONV_LIMIT_NUM);
     adc_ll_digi_set_convert_mode(get_convert_mode(cfg->conv_mode));
 
     //clock and sample frequency
@@ -277,7 +265,7 @@ void adc_hal_digi_start(adc_hal_dma_ctx_t *hal, uint8_t *data_buf)
 
     //reset the current descriptor address
     hal->cur_desc_ptr = &hal->desc_dummy_head;
-    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * ADC_HAL_DATA_LEN_PER_CONV, hal->desc_max_num);
+    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * SOC_ADC_DIGI_DATA_BYTES_PER_CONV, hal->desc_max_num);
 
     //start DMA
     adc_dma_ll_rx_start(hal->dev, hal->dma_chan, (lldesc_t *)hal->rx_desc);
@@ -333,68 +321,4 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal)
     adc_dma_ll_rx_stop(hal->dev, hal->dma_chan);
     //disconnect DMA and peripheral
     adc_ll_digi_dma_disable();
-}
-
-
-/*---------------------------------------------------------------
-                    Single Read
----------------------------------------------------------------*/
-/**
- * For chips without RTC controller, Digital controller is used to trigger an ADC single read.
- */
-
-//--------------------Single Read-------------------------------//
-static void adc_hal_onetime_start(adc_unit_t adc_n)
-{
-#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
-    (void)adc_n;
-    /**
-     * There is a hardware limitation. If the APB clock frequency is high, the step of this reg signal: ``onetime_start`` may not be captured by the
-     * ADC digital controller (when its clock frequency is too slow). A rough estimate for this step should be at least 3 ADC digital controller
-     * clock cycle.
-     *
-     * This limitation will be removed in hardware future versions.
-     *
-     */
-    uint32_t digi_clk = APB_CLK_FREQ / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_A_DEFAULT / ADC_LL_CLKM_DIV_B_DEFAULT + 1);
-    //Convert frequency to time (us). Since decimals are removed by this division operation. Add 1 here in case of the fact that delay is not enough.
-    uint32_t delay = (1000 * 1000) / digi_clk + 1;
-    //3 ADC digital controller clock cycle
-    delay = delay * 3;
-    //This coefficient (8) is got from test. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
-    if (digi_clk >= APB_CLK_FREQ/8) {
-        delay = 0;
-    }
-
-    adc_oneshot_ll_start(false);
-    esp_rom_delay_us(delay);
-    adc_oneshot_ll_start(true);
-
-    //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
-#else
-    adc_oneshot_ll_start(adc_n);
-#endif
-}
-
-esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw)
-{
-    uint32_t event = (adc_n == ADC_UNIT_1) ? ADC_LL_EVENT_ADC1_ONESHOT_DONE : ADC_LL_EVENT_ADC2_ONESHOT_DONE;
-    adc_oneshot_ll_clear_event(event);
-    adc_oneshot_ll_disable_all_unit();
-    adc_oneshot_ll_enable(adc_n);
-    adc_oneshot_ll_set_channel(adc_n, channel);
-
-    adc_hal_onetime_start(adc_n);
-    while (adc_oneshot_ll_get_event(event) != true) {
-        ;
-    }
-    *out_raw = adc_oneshot_ll_get_raw_result(adc_n);
-    if (adc_oneshot_ll_raw_check_valid(adc_n, *out_raw) == false) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    //HW workaround: when enabling periph clock, this should be false
-    adc_oneshot_ll_disable_all_unit();
-
-    return ESP_OK;
 }

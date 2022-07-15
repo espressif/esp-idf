@@ -1,28 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/peripherals/adc/dma_read:
+examples/peripherals/adc/continuous_read:
   disable:
     - if: IDF_TARGET == "esp32c2"
       temporary: true
-      reason: target esp32c2 is not supported yet
-
-examples/peripherals/adc/single_read/adc:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: the other targets are not tested yet
-
-examples/peripherals/adc/single_read/adc2:
-  enable:
-    - if: IDF_TARGET == "esp32"
-      temporary: true
-      reason: the other targets are not tested yet
-
-examples/peripherals/adc/single_read/single_read:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+      reason: adc dma mode isn't supported on these targets
 
 examples/peripherals/gpio/generic_gpio:
   disable_test:

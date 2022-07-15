@@ -25,9 +25,11 @@
 extern "C" {
 #endif
 
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT 15
-#define ADC_LL_CLKM_DIV_B_DEFAULT   1
-#define ADC_LL_CLKM_DIV_A_DEFAULT   0
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
+#define ADC_LL_CLKM_DIV_B_DEFAULT         1
+#define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
+#define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
@@ -146,19 +148,12 @@ static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 /**
  * Enable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
+ *
+ * @param enable  true: enable; false: disable
  */
-static inline void adc_ll_digi_convert_limit_enable(void)
+static inline void adc_ll_digi_convert_limit_enable(bool enable)
 {
-    APB_SARADC.ctrl2.meas_num_limit = 1;
-}
-
-/**
- * Disable max conversion number detection for digital controller.
- * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
- */
-static inline void adc_ll_digi_convert_limit_disable(void)
-{
-    APB_SARADC.ctrl2.meas_num_limit = 0;
+    APB_SARADC.ctrl2.meas_num_limit = enable;
 }
 
 /**
