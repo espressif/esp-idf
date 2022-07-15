@@ -6,6 +6,10 @@
 #ifndef _ESP_PLATFORM_NET_IF_H_
 #define _ESP_PLATFORM_NET_IF_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "lwip/sockets.h"
 #include "lwip/if_api.h"
 
@@ -28,5 +32,9 @@ typedef u32_t socklen_t;
 unsigned int if_nametoindex(const char *ifname);
 
 char *if_indextoname(unsigned int ifindex, char *ifname);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ESP_PLATFORM_NET_IF_H_

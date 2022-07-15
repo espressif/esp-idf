@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#pragma once
 
-#ifndef _ESP_TIME_H
-#define _ESP_TIME_H
+#include <sys/types.h>
+
+#include_next <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include_next <time.h>
 
 #define _POSIX_TIMERS 1
 #ifndef CLOCK_MONOTONIC
@@ -28,4 +29,3 @@ int clock_getres(clockid_t clock_id, struct timespec *res);
 #ifdef __cplusplus
 }
 #endif
-#endif /* _ESP_TIME_H */
