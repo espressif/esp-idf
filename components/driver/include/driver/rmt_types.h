@@ -40,7 +40,8 @@ typedef struct {
 /**
  * @brief Prototype of RMT event callback
  * @param[in] tx_chan RMT channel handle, created from `rmt_new_tx_channel()`
- * @param[in] edata RMT event data
+ * @param[in] edata Point to RMT event data. The lifecycle of this pointer memory is inside this function,
+ *                  user should copy it into static memory if used outside this funcion.
  * @param[in] user_ctx User registered context, passed from `rmt_tx_register_event_callbacks()`
  *
  * @return Whether a high priority task has been waken up by this callback function
@@ -59,9 +60,9 @@ typedef struct {
  * @brief Prototype of RMT event callback
  *
  * @param[in] rx_chan RMT channel handle, created from `rmt_new_rx_channel()`
- * @param[in] edata Point to RMT event data
+ * @param[in] edata Point to RMT event data. The lifecycle of this pointer memory is inside this function,
+ *                  user should copy it into static memory if used outside this funcion.
  * @param[in] user_ctx User registered context, passed from `rmt_rx_register_event_callbacks()`
- *
  * @return Whether a high priority task has been waken up by this function
  */
 typedef bool (*rmt_rx_done_callback_t)(rmt_channel_handle_t rx_chan, rmt_rx_done_event_data_t *edata, void *user_ctx);
