@@ -126,7 +126,6 @@ typedef struct {
  *
  */
 typedef struct {
-    int if_index;                    /*!< Interface index for which the event is received (left for legacy compilation) */
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
     esp_netif_ip_info_t ip_info;     /*!< IP address, netmask, gatway IP address */
     bool ip_changed;                 /*!< Whether the assigned IP has changed or not */
@@ -134,7 +133,6 @@ typedef struct {
 
 /** Event structure for IP_EVENT_GOT_IP6 event */
 typedef struct {
-    int if_index;                    /*!< Interface index for which the event is received (left for legacy compilation) */
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
     esp_netif_ip6_info_t ip6_info;   /*!< IPv6 address of the interface */
     int ip_index;                    /*!< IPv6 address index */
