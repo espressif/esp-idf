@@ -468,3 +468,8 @@ int get_btc_work_queue_size(void)
 {
     return osi_thread_queue_wait_size(btc_thread, 0);
 }
+
+osi_thread_t *btc_get_current_thread(void)
+{
+    return btc_thread;
+}
