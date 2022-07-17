@@ -145,11 +145,12 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 static void ftm_process_report(void)
 {
     int i;
-    char *log = malloc(200);
+    char *log = NULL;
 
     if (!g_report_lvl)
         return;
 
+    log = malloc(200);
     if (!log) {
         ESP_LOGE(TAG_STA, "Failed to alloc buffer for FTM report");
         return;
