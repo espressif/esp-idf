@@ -156,39 +156,40 @@ build:integration_test:
     - "build:component_ut-{0}"
     - build:target_test
 
-# To reduce the runner usage.
-# Do not create these jobs by default labels on development branches
-# Only triggered by `target_test` or related_changes changes
-"test:example_test-{0}-{1}-related_changes":
+# To reduce the specific runners' usage.
+# Do not create these jobs by default patterns on development branches
+# Can be triggered by labels or related changes
+"test:example_test-{0}-{1}":
   matrix:
     - *all_targets
-    - - ota
-      - bt
-      - wifi
+    - - bt        # example_test_005
+      - wifi      # example_test_002, example_test*wifi*
+      - ethernet  # example_test*ethernet*
   patterns:
-    - "example_test-related_changes-{1}"
+    - "example_test-{0}-{1}"
+    - "example_test-{1}"
   labels:
+    - "example_test_{0}"
+    - example_test
     - target_test
   included_in:
     - "build:example_test-{0}"
     - "build:example_test"
     - build:target_test
 
-# Include nightly_run cases for ota
-"test:example_test-{0}-ota-related_changes-include_nightly_run":
+# For example_test*flash_encryption_wifi_high_traffic jobs
+# set `INCLUDE_NIGHTLY_RUN` variable when triggered on development branches
+"test:example_test-{0}-include_nightly_run-rule":
   matrix:
     - - esp32
       - esp32c3
   specific_rules:
     - "if-include_nightly_run-rule"
-    - "if-example_test-related_changes-ota-rule"
-  labels:
-    - target_test
+    - "if-example_test-ota-include_nightly_run-rule"
   included_in:
     - "build:example_test-{0}"
     - "build:example_test"
     - build:target_test
-
 
 # due to the lack of runners, c2 tests will only be triggered by label
 "test:{0}-esp32c2":

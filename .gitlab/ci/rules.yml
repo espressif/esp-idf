@@ -175,20 +175,43 @@
   - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
   - ".gitmodules"
 
-.patterns-example_test-related_changes-ota: &patterns-example_test-related_changes-ota
+.patterns-example_test-ota-nightly_run: &patterns-example_test-ota-nightly_run
   - "examples/system/ota/**/*"
   - "examples/common_components/protocol_examples_common/**/*"
   - "components/app_update/**/*"
+  - "components/esp_https_ota/**/*"
 
-.patterns-example_test-related_changes-bt: &patterns-example_test-related_changes-bt
+.patterns-example_test-bt: &patterns-example_test-bt
   - "components/bt/host/nimble/nimble"
   - "examples/bluetooth/nimble/**/*"
 
-.patterns-example_test-related_changes-wifi: &patterns-example_test-related_changes-wifi
-  - "components/esp_wifi/lib"
-  - "components/lwip/**/*"
+# patterns for example test jobs with runner label `ethernet*`
+.patterns-example_test-ethernet: &patterns-example_test-ethernet
+  - "tools/ci/python_packages/common_test_methods.py"
+  - "examples/common_components/**/*"
+  - "examples/protocols/**/*"
+  - "examples/system/ota/**/*"
+
+  - "components/esp_eth/**/*"
+
+# patterns for example test jobs with runner label `wifi*`
+.patterns-example_test-wifi: &patterns-example_test-wifi
+  - "tools/ci/python_packages/common_test_methods.py"
+  - "examples/common_components/protocol_examples_common/**/*"
   - "examples/protocols/**/*"
   - "examples/wifi/**/*"
+  - "examples/network/simple_sniffer/**/*"
+
+  - "components/esp_phy/**/*"
+  - "components/esp_wifi/**/*"
+  - "components/esp_netif/**/*"
+  - "components/lwip/**/*"
+
+  # for cases with wifi_high_traffic marker
+  - "examples/system/ota/**/*"
+  - "components/app_update/**/*"
+  - "components/esp_https_ota/**/*"
+
 
 ##############
 # if anchors #
@@ -224,14 +247,15 @@
 # Specific if rules #
 #####################
 
+# Inlcude nightly run cases by labels `include_nightly_run` or `target_test`
 .if-include_nightly_run-rule: &if-include_nightly_run-rule
   if: '$INCLUDE_NIGHTLY_RUN || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*include_nightly_run(?:,[^,\n\r]+)*$/i || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*target_test(?:,[^,\n\r]+)*$/i'
   variables:
     INCLUDE_NIGHTLY_RUN: "1"
 
-.if-example_test-related_changes-ota-rule: &if-example_test-related_changes-ota-rule
+.if-example_test-ota-include_nightly_run-rule: &if-example_test-ota-include_nightly_run-rule
   <<: *if-dev-push
-  changes: *patterns-example_test-related_changes-ota
+  changes: *patterns-example_test-ota-nightly_run
   variables:
     INCLUDE_NIGHTLY_RUN: "1"
 
@@ -712,7 +736,7 @@
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
-    - <<: *if-example_test-related_changes-ota-rule
+    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -733,18 +757,18 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:example_test-esp32:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
-    - <<: *if-example_test-related_changes-ota-rule
+    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -760,11 +784,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:example_test-esp32c2:
   rules:
@@ -772,6 +796,7 @@
       when: never
     - <<: *if-protected
     - <<: *if-label-build
+    - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32c2
     - <<: *if-label-target_test
     - <<: *if-dev-push
@@ -779,18 +804,18 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:example_test-esp32c3:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
-    - <<: *if-example_test-related_changes-ota-rule
+    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -805,11 +830,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:example_test-esp32h2:
   rules:
@@ -829,11 +854,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:example_test-esp32s2:
   rules:
@@ -853,11 +878,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:example_test-esp32s3:
   rules:
@@ -877,11 +902,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:build:integration_test:
   rules:
@@ -914,7 +939,7 @@
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
-    - <<: *if-example_test-related_changes-ota-rule
+    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-component_ut
@@ -963,11 +988,11 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-integration_test
     - <<: *if-dev-push
@@ -1297,49 +1322,54 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
-.rules:test:example_test-esp32-bt-related_changes:
+.rules:test:example_test-esp32-bt:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
 
-.rules:test:example_test-esp32-ota-related_changes:
+.rules:test:example_test-esp32-ethernet:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32-ota-related_changes-include_nightly_run:
+.rules:test:example_test-esp32-include_nightly_run-rule:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
-    - <<: *if-example_test-related_changes-ota-rule
+    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-include_nightly_run-rule
-    - <<: *if-label-target_test
 
-.rules:test:example_test-esp32-wifi-related_changes:
+.rules:test:example_test-esp32-wifi:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:test:example_test-esp32c2:
   rules:
@@ -1350,38 +1380,44 @@
       when: never
     - <<: *if-label-example_test_esp32c2
 
-.rules:test:example_test-esp32c2-bt-related_changes:
+.rules:test:example_test-esp32c2-bt:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
 
-.rules:test:example_test-esp32c2-ota-related_changes:
+.rules:test:example_test-esp32c2-ethernet:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32c2-wifi-related_changes:
+.rules:test:example_test-esp32c2-wifi:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:test:example_test-esp32c3:
   rules:
@@ -1398,49 +1434,54 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
-.rules:test:example_test-esp32c3-bt-related_changes:
+.rules:test:example_test-esp32c3-bt:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
 
-.rules:test:example_test-esp32c3-ota-related_changes:
+.rules:test:example_test-esp32c3-ethernet:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32c3-ota-related_changes-include_nightly_run:
+.rules:test:example_test-esp32c3-include_nightly_run-rule:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
-    - <<: *if-example_test-related_changes-ota-rule
+    - <<: *if-example_test-ota-include_nightly_run-rule
     - <<: *if-include_nightly_run-rule
-    - <<: *if-label-target_test
 
-.rules:test:example_test-esp32c3-wifi-related_changes:
+.rules:test:example_test-esp32c3-wifi:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:test:example_test-esp32h2:
   rules:
@@ -1457,38 +1498,44 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
-.rules:test:example_test-esp32h2-bt-related_changes:
+.rules:test:example_test-esp32h2-bt:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
 
-.rules:test:example_test-esp32h2-ota-related_changes:
+.rules:test:example_test-esp32h2-ethernet:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32h2-wifi-related_changes:
+.rules:test:example_test-esp32h2-wifi:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:test:example_test-esp32s2:
   rules:
@@ -1505,38 +1552,44 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
-.rules:test:example_test-esp32s2-bt-related_changes:
+.rules:test:example_test-esp32s2-bt:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
 
-.rules:test:example_test-esp32s2-ota-related_changes:
+.rules:test:example_test-esp32s2-ethernet:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32s2-wifi-related_changes:
+.rules:test:example_test-esp32s2-wifi:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s2
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:test:example_test-esp32s3:
   rules:
@@ -1547,38 +1600,44 @@
       when: never
     - <<: *if-label-example_test_esp32s3
 
-.rules:test:example_test-esp32s3-bt-related_changes:
+.rules:test:example_test-esp32s3-bt:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s3
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-bt
+      changes: *patterns-example_test-bt
 
-.rules:test:example_test-esp32s3-ota-related_changes:
+.rules:test:example_test-esp32s3-ethernet:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s3
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-ota
+      changes: *patterns-example_test-ethernet
 
-.rules:test:example_test-esp32s3-wifi-related_changes:
+.rules:test:example_test-esp32s3-wifi:
   rules:
     - <<: *if-revert-branch
       when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32s3
     - <<: *if-label-target_test
     - <<: *if-dev-push
-      changes: *patterns-example_test-related_changes-wifi
+      changes: *patterns-example_test-wifi
 
 .rules:test:host_test:
   rules:

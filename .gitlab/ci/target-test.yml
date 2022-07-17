@@ -89,7 +89,7 @@ example_test_pytest_esp32c3_flash_suspend:
 example_test_pytest_esp32_ethernet_ota:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-ota-related_changes
+    - .rules:test:example_test-esp32-ethernet
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet_ota ]
@@ -97,7 +97,7 @@ example_test_pytest_esp32_ethernet_ota:
 example_test_pytest_esp32_wifi_high_traffic:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-wifi
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_high_traffic ]
@@ -105,7 +105,7 @@ example_test_pytest_esp32_wifi_high_traffic:
 example_test_pytest_esp32_flash_encryption_wifi_high_traffic:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-ota-related_changes-include_nightly_run
+    - .rules:test:example_test-esp32-include_nightly_run-rule
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, flash_encryption_wifi_high_traffic ]
@@ -113,7 +113,7 @@ example_test_pytest_esp32_flash_encryption_wifi_high_traffic:
 example_test_pytest_esp32c3_flash_encryption_wifi_high_traffic:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32c3-ota-related_changes-include_nightly_run
+    - .rules:test:example_test-esp32c3-include_nightly_run-rule
   needs:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption_wifi_high_traffic ]
@@ -121,7 +121,7 @@ example_test_pytest_esp32c3_flash_encryption_wifi_high_traffic:
 example_test_pytest_esp32_ethernet:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-ethernet
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, ethernet]
@@ -137,7 +137,7 @@ example_test_pytest_esp32_8mb_flash:
 example_test_pytest_esp32_wifi_ap:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-wifi
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_ap ]
@@ -145,7 +145,7 @@ example_test_pytest_esp32_wifi_ap:
 example_test_pytest_esp32_wifi_router:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32
+    - .rules:test:example_test-esp32-wifi
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_router ]
@@ -153,7 +153,7 @@ example_test_pytest_esp32_wifi_router:
 example_test_pytest_esp32_wifi_wlan:
   extends:
     - .pytest_examples_dir_template
-    - .rules:test:example_test-esp32-wifi-related_changes
+    - .rules:test:example_test-esp32-wifi
   needs:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_wlan ]
@@ -440,7 +440,9 @@ example_test_001C:
     - Example_GENERIC
 
 example_test_protocols:
-  extends: .example_test_esp32_template
+  extends:
+    - .example_test_esp32_template
+    - .rules:test:example_test-esp32-wifi
   tags:
     - ESP32
     - wifi_router
@@ -448,13 +450,15 @@ example_test_protocols:
 example_test_002:
   extends:
     - .example_test_esp32_template
-    - .rules:test:example_test-esp32-wifi-related_changes
+    - .rules:test:example_test-esp32-wifi
   tags:
     - ESP32
     - Example_ShieldBox_Basic
 
 example_test_ethernet_router:
-  extends: .example_test_esp32_template
+  extends:
+    - .example_test_esp32_template
+    - .rules:test:example_test-esp32-ethernet
   tags:
     - ESP32
     - ethernet_router
@@ -480,7 +484,7 @@ example_test_004B:
 example_test_005:
   extends:
     - .example_test_esp32_template
-    - .rules:test:example_test-esp32-bt-related_changes
+    - .rules:test:example_test-esp32-bt
   tags:
     - ESP32
     - Example_WIFI_BT
