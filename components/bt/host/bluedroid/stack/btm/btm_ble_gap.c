@@ -82,6 +82,7 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
         tBLE_ADDR_TYPE *p_own_addr_type);
 static void btm_ble_stop_observe(void);
 static void btm_ble_stop_discover(void);
+static void btm_adv_pkt_handler(void *arg);
 uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb);
 
 #define BTM_BLE_INQ_RESULT          0x01
@@ -3455,6 +3456,41 @@ void btm_send_sel_conn_callback(BD_ADDR remote_bda, UINT8 evt_type, UINT8 *p_dat
     }
 }
 
+static void btm_adv_pkt_handler(void *arg)
+{
+    UINT8   hci_evt_code, hci_evt_len;
+    UINT8   ble_sub_code;
+
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    size_t pkts_to_process = pkt_queue_length(p_cb->adv_rpt_queue);
+
+    for (size_t i = 0; i < pkts_to_process; i++) {
+        pkt_linked_item_t *linked_pkt = pkt_queue_dequeue(p_cb->adv_rpt_queue);
+        assert(linked_pkt != NULL);
+        BT_HDR *packet = (BT_HDR *)linked_pkt->data;
+        uint8_t *p = packet->data + packet->offset;
+        STREAM_TO_UINT8  (hci_evt_code, p);
+        STREAM_TO_UINT8  (hci_evt_len, p);
+        STREAM_TO_UINT8  (ble_sub_code, p);
+        if (ble_sub_code == HCI_BLE_ADV_PKT_RPT_EVT) {
+            btm_ble_process_adv_pkt(p);
+        } else if (ble_sub_code == HCI_BLE_ADV_DISCARD_REPORT_EVT) {
+            btm_ble_process_adv_discard_evt(p);
+        } else {
+            assert (0);
+        }
+
+        osi_free(linked_pkt);
+    }
+
+    if (pkt_queue_length(p_cb->adv_rpt_queue) != 0) {
+        btu_task_post(SIG_BTU_HCI_ADV_RPT_MSG, NULL, OSI_THREAD_MAX_TIMEOUT);
+    }
+
+    UNUSED(hci_evt_code);
+    UNUSED(hci_evt_len);
+}
+
 /*******************************************************************************
 **
 ** Function         btm_ble_process_adv_pkt
@@ -4414,6 +4450,13 @@ void btm_ble_init (void)
 
     p_cb->inq_var.evt_type = BTM_BLE_NON_CONNECT_EVT;
 
+    p_cb->adv_rpt_queue = pkt_queue_create();
+    assert(p_cb->adv_rpt_queue != NULL);
+
+    p_cb->adv_rpt_ready = osi_event_create(btm_adv_pkt_handler, NULL);
+    assert(p_cb->adv_rpt_ready != NULL);
+    osi_event_bind(p_cb->adv_rpt_ready, btu_get_current_thread(), 0);
+
 #if BLE_VND_INCLUDED == FALSE
     btm_ble_adv_filter_init();
 #endif
@@ -4435,6 +4478,12 @@ void btm_ble_free (void)
     BTM_TRACE_DEBUG("%s", __func__);
 
     fixed_queue_free(p_cb->conn_pending_q, osi_free_func);
+
+    pkt_queue_destroy(p_cb->adv_rpt_queue, NULL);
+    p_cb->adv_rpt_queue = NULL;
+
+    osi_event_delete(p_cb->adv_rpt_ready);
+    p_cb->adv_rpt_ready = NULL;
 
 #if BTM_DYNAMIC_MEMORY == TRUE
     osi_free(cmn_ble_gap_vsc_cb_ptr);
@@ -4530,4 +4579,22 @@ BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize)
     return FALSE;
 }
 
+bool btm_ble_adv_pkt_ready(void)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    osi_thread_post_event(p_cb->adv_rpt_ready, OSI_THREAD_MAX_TIMEOUT);
+
+    return true;
+}
+
+bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
+{
+    if (pkt == NULL) {
+        return false;
+    }
+
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    pkt_queue_enqueue(p_cb->adv_rpt_queue, pkt);
+    return true;
+}
 #endif  /* BLE_INCLUDED */
