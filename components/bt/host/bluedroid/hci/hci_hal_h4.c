@@ -37,6 +37,8 @@
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
+#define HCI_UPSTREAM_DATA_QUEUE_IDX   (1)
+
 extern bool BTU_check_queue_is_congest(void);
 
 
@@ -58,61 +60,66 @@ typedef struct {
     size_t buffer_size;
     fixed_queue_t *rx_q;
     uint16_t adv_free_num;
+    hci_hal_callbacks_t *callbacks;
+    osi_thread_t *hci_h4_thread;
+    struct osi_event *upstream_data_ready;
 } hci_hal_env_t;
 
 
 static hci_hal_env_t hci_hal_env;
 static const hci_hal_t interface;
-static const hci_hal_callbacks_t *callbacks;
 static const esp_vhci_host_callback_t vhci_host_cb;
-static osi_thread_t *hci_h4_thread;
 
 static void host_send_pkt_available_cb(void);
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len);
+static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet);
+static void hci_upstream_data_handler(void *arg);
+static bool hci_upstream_data_post(uint32_t timeout);
 
-static void hci_hal_h4_rx_handler(void *arg);
-static void event_uart_has_bytes(fixed_queue_t *queue);
-
-
-static void hci_hal_env_init(
-    size_t buffer_size,
-    size_t max_buffer_count)
+static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thread_t *task_thread)
 {
-    assert(buffer_size > 0);
-    assert(max_buffer_count > 0);
+    assert(upper_callbacks != NULL);
+    assert(task_thread != NULL);
 
-    hci_hal_env.buffer_size = buffer_size;
+    size_t max_buffer_count;
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    max_buffer_count = BLE_ADV_REPORT_FLOW_CONTROL_NUM + L2CAP_HOST_FC_ACL_BUFS + QUEUE_SIZE_MAX; // adv flow control num + ACL flow control num + hci cmd numeber
+#else
+    max_buffer_count = QUEUE_SIZE_MAX; // adv flow control num + ACL flow control num + hci cmd numeber
+#endif
+
+    hci_hal_env.hci_h4_thread = task_thread;
+    hci_hal_env.callbacks = (hci_hal_callbacks_t *)upper_callbacks;
+    hci_hal_env.buffer_size = HCI_HAL_SERIAL_BUFFER_SIZE;
     hci_hal_env.adv_free_num = 0;
 
     hci_hal_env.rx_q = fixed_queue_new(max_buffer_count);
-    if (hci_hal_env.rx_q) {
-        fixed_queue_register_dequeue(hci_hal_env.rx_q, event_uart_has_bytes);
-    } else {
-        HCI_TRACE_ERROR("%s unable to create rx queue.\n", __func__);
-    }
+    assert(hci_hal_env.rx_q != NULL);
 
-    return;
+    struct osi_event *event = osi_event_create(hci_upstream_data_handler, NULL);
+    assert(event != NULL);
+    hci_hal_env.upstream_data_ready = event;
+    osi_event_bind(hci_hal_env.upstream_data_ready, hci_hal_env.hci_h4_thread, HCI_UPSTREAM_DATA_QUEUE_IDX);
+
+    return true;
 }
 
 static void hci_hal_env_deinit(void)
 {
     fixed_queue_free(hci_hal_env.rx_q, osi_free_func);
     hci_hal_env.rx_q = NULL;
+
+    osi_event_delete(hci_hal_env.upstream_data_ready);
+    hci_hal_env.upstream_data_ready = NULL;
+
+    hci_hal_env.hci_h4_thread = NULL;
+
+    memset(&hci_hal_env, 0, sizeof(hci_hal_env_t));
 }
 
 static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thread)
 {
-    assert(upper_callbacks != NULL);
-    assert(task_thread != NULL);
-
-    callbacks = upper_callbacks;
-#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, BLE_ADV_REPORT_FLOW_CONTROL_NUM + L2CAP_HOST_FC_ACL_BUFS + QUEUE_SIZE_MAX); // adv flow control num + ACL flow control num + hci cmd numeber
-#else
-    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, QUEUE_SIZE_MAX);
-#endif
-
-    hci_h4_thread = (osi_thread_t *)task_thread;
+    hci_hal_env_init(upper_callbacks, (osi_thread_t *)task_thread);
 
     //register vhci host cb
     if (esp_vhci_host_register_callback(&vhci_host_cb) != ESP_OK) {
@@ -125,8 +132,6 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thre
 static void hal_close(void)
 {
     hci_hal_env_deinit();
-
-    hci_h4_thread = NULL;
 }
 
 /**
@@ -166,14 +171,27 @@ static uint16_t transmit_data(serial_data_type_t type,
 }
 
 // Internal functions
-static void hci_hal_h4_rx_handler(void *arg)
+static void hci_upstream_data_handler(void *arg)
 {
-    fixed_queue_process(hci_hal_env.rx_q);
+    fixed_queue_t *queue = hci_hal_env.rx_q;
+    BT_HDR *packet;
+
+    size_t pkts_to_process = fixed_queue_length(queue);
+    for (size_t i = 0; i < pkts_to_process; i++) {
+        packet = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
+        if (packet != NULL) {
+            hci_hal_h4_hdl_rx_packet(packet);
+        }
+    }
+
+    if (!fixed_queue_is_empty(queue)) {
+        hci_upstream_data_post(OSI_THREAD_MAX_TIMEOUT);
+    }
 }
 
-bool hci_hal_h4_task_post(uint32_t timeout)
+static bool hci_upstream_data_post(uint32_t timeout)
 {
-    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 1, timeout);
+    return osi_thread_post_event(hci_hal_env.upstream_data_ready, timeout);
 }
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
@@ -295,16 +313,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     }
 #endif
     packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
-    callbacks->packet_ready(packet);
-}
-
-static void event_uart_has_bytes(fixed_queue_t *queue)
-{
-    BT_HDR *packet;
-    while (!fixed_queue_is_empty(queue)) {
-        packet = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
-        hci_hal_h4_hdl_rx_packet(packet);
-    }
+    hci_hal_env.callbacks->packet_ready(packet);
 }
 
 static void host_send_pkt_available_cb(void)
@@ -336,8 +345,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
     fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
-    hci_hal_h4_task_post(0);
-
+    hci_upstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 
