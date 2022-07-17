@@ -23,6 +23,7 @@
 #include "freertos/queue.h"
 #include "osi/semaphore.h"
 #include "osi/thread.h"
+#include "osi/mutex.h"
 
 struct work_item {
     osi_thread_func_t func;
@@ -48,6 +49,14 @@ struct osi_thread_start_arg {
   osi_thread_t *thread;
   osi_sem_t start_sem;
   int error;
+};
+
+struct osi_event {
+    struct work_item item;
+    osi_mutex_t lock;
+    uint16_t is_queued;
+    uint16_t queue_idx;
+    osi_thread_t *thread;
 };
 
 static const size_t DEFAULT_WORK_QUEUE_CAPACITY = 100;
@@ -363,4 +372,82 @@ int osi_thread_queue_wait_size(osi_thread_t *thread, int wq_idx)
     }
 
     return (int)(osi_thead_work_queue_len(thread->work_queues[wq_idx]));
+}
+
+
+struct osi_event *osi_event_create(osi_thread_func_t func, void *context)
+{
+    struct osi_event *event = osi_calloc(sizeof(struct osi_event));
+    if (event != NULL) {
+        if (osi_mutex_new(&event->lock) == 0) {
+            event->item.func = func;
+            event->item.context = context;
+            return event;
+        }
+        osi_free(event);
+    }
+
+    return NULL;
+}
+
+void osi_event_delete(struct osi_event* event)
+{
+    if (event != NULL) {
+        osi_mutex_free(&event->lock);
+        memset(event, 0, sizeof(struct osi_event));
+        osi_free(event);
+    }
+}
+
+bool osi_event_bind(struct osi_event* event, osi_thread_t *thread, int queue_idx)
+{
+    if (event == NULL || event->thread != NULL) {
+        return false;
+    }
+
+    if (thread == NULL || queue_idx >= thread->work_queue_num) {
+        return false;
+    }
+
+    event->thread = thread;
+    event->queue_idx = queue_idx;
+
+    return true;
+}
+
+static void osi_thread_generic_event_handler(void *context)
+{
+    struct osi_event *event = (struct osi_event *)context;
+    if (event != NULL && event->item.func != NULL) {
+        osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
+        event->is_queued = 0;
+        osi_mutex_unlock(&event->lock);
+        event->item.func(event->item.context);
+    }
+}
+
+bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
+{
+    assert(event != NULL && event->thread != NULL);
+    assert(event->queue_idx >= 0 && event->queue_idx < event->thread->work_queue_num);
+    bool ret = false;
+    if (event->is_queued == 0) {
+        uint16_t acquire_cnt = 0;
+        osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
+        event->is_queued += 1;
+        acquire_cnt = event->is_queued;
+        osi_mutex_unlock(&event->lock);
+
+        if (acquire_cnt == 1) {
+            ret = osi_thread_post(event->thread, osi_thread_generic_event_handler, event, event->queue_idx, timeout);
+            if (!ret) {
+                // clear "is_queued" when post failure, to allow for following event posts
+                osi_mutex_lock(&event->lock, OSI_MUTEX_MAX_TIMEOUT);
+                event->is_queued = 0;
+                osi_mutex_unlock(&event->lock);
+            }
+        }
+    }
+
+    return ret;
 }
