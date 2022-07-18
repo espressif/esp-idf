@@ -8,7 +8,7 @@ import sys
 from asyncio.subprocess import Process
 from io import open
 from types import FunctionType
-from typing import Any, Dict, List, Optional, TextIO, Tuple
+from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
 
 import click
 import yaml
@@ -143,7 +143,12 @@ class RunTool:
         env_copy = dict(os.environ)
         env_copy.update(self.env or {})
 
-        process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
+        process: Union[Process, subprocess.CompletedProcess[bytes]]
+        if self.hints:
+            process, stderr_output_file, stdout_output_file = asyncio.run(self.run_command(self.args, env_copy))
+        else:
+            process = subprocess.run(self.args, env=env_copy, cwd=self.cwd)
+            stderr_output_file, stdout_output_file = None, None
         if process.returncode == 0:
             return
 
@@ -161,10 +166,6 @@ class RunTool:
     async def run_command(self, cmd: List, env_copy: Dict) -> Tuple[Process, Optional[str], Optional[str]]:
         """ Run the `cmd` command with capturing stderr and stdout from that function and return returncode
         and of the command, the id of the process, paths to captured output """
-        if not self.hints:
-            p = await asyncio.create_subprocess_exec(*cmd, env=env_copy, cwd=self.cwd)
-            await p.wait()  # added for avoiding None returncode
-            return p, None, None
         log_dir_name = 'log'
         try:
             os.mkdir(os.path.join(self.build_dir, log_dir_name))
@@ -172,8 +173,12 @@ class RunTool:
             pass
         # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
         # limit was added for avoiding error in idf.py confserver
-        p = await asyncio.create_subprocess_exec(*cmd, env=env_copy, limit=1024 * 256, cwd=self.cwd, stdout=asyncio.subprocess.PIPE,
-                                                 stderr=asyncio.subprocess.PIPE, )
+        try:
+            p = await asyncio.create_subprocess_exec(*cmd, env=env_copy, limit=1024 * 256, cwd=self.cwd, stdout=asyncio.subprocess.PIPE,
+                                                     stderr=asyncio.subprocess.PIPE)
+        except NotImplementedError:
+            sys.exit(f'ERROR: {sys.executable} doesn\'t support asyncio. The issue can be worked around by re-running idf.py with the "--no-hints" argument.')
+
         stderr_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stderr_output_{p.pid}')
         stdout_output_file = os.path.join(self.build_dir, log_dir_name, f'idf_py_stdout_output_{p.pid}')
         if p.stderr and p.stdout:  # it only to avoid None type in p.std
