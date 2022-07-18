@@ -157,6 +157,8 @@ TEST_CASE("lcd_rgb_panel_refresh_on_demand", "[lcd]")
     free(img);
 }
 
+#if !CONFIG_LCD_RGB_ISR_IRAM_SAFE
+// bounce buffer mode is not IRAM safe, so we don't test it
 TEST_CASE("lcd_rgb_panel_bounce_buffer", "[lcd]")
 {
     uint8_t *img = malloc(TEST_IMG_SIZE);
@@ -180,6 +182,7 @@ TEST_CASE("lcd_rgb_panel_bounce_buffer", "[lcd]")
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     free(img);
 }
+#endif
 
 TEST_CASE("lcd_rgb_panel_update_pclk", "[lcd]")
 {
