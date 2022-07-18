@@ -439,15 +439,11 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
 {
     esp_err_t ret = ESP_OK;
     switch (clk_src) {
+    case LCD_CLK_SRC_PLL240M:
+        panel->src_clk_hz = 240000000;
+        break;
     case LCD_CLK_SRC_PLL160M:
         panel->src_clk_hz = 160000000;
-#if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        // hold the lock during the whole lifecycle of RGB panel
-        esp_pm_lock_acquire(panel->pm_lock);
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
-#endif
         break;
     case LCD_CLK_SRC_XTAL:
         panel->src_clk_hz = rtc_clk_xtal_freq_get() * 1000000;
@@ -457,6 +453,16 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
         break;
     }
     lcd_ll_select_clk_src(panel->hal.dev, clk_src);
+
+    if (clk_src == LCD_CLK_SRC_PLL240M || clk_src == LCD_CLK_SRC_PLL160M) {
+#if CONFIG_PM_ENABLE
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
+        // hold the lock during the whole lifecycle of RGB panel
+        esp_pm_lock_acquire(panel->pm_lock);
+        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
+#endif
+    }
     return ret;
 }
 
