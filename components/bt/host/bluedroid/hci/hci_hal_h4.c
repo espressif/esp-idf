@@ -24,6 +24,9 @@
 #include "hci/hci_layer.h"
 #include "osi/thread.h"
 #include "osi/pkt_queue.h"
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+#include "osi/mutex.h"
+#endif
 #include "esp_bt.h"
 #include "stack/hcimsgs.h"
 
@@ -40,7 +43,11 @@
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
 #define HCI_UPSTREAM_DATA_QUEUE_IDX   (1)
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+#define HCI_BLE_ADV_MIN_CREDITS_TO_RELEASE     (10)
+#else
 #define HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX      (200)
+#endif
 
 extern bool BTU_check_queue_is_congest(void);
 
@@ -62,7 +69,11 @@ static const uint16_t outbound_event_types[] = {
 typedef struct {
     fixed_queue_t *rx_q;
     struct pkt_queue *adv_rpt_q;
-    uint16_t adv_free_num;
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_mutex_t adv_flow_lock;
+    int adv_credits;
+    int adv_credits_to_release;
+#endif
     hci_hal_callbacks_t *callbacks;
     osi_thread_t *hci_h4_thread;
     struct osi_event *upstream_data_ready;
@@ -87,7 +98,14 @@ static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thr
 
     hci_hal_env.hci_h4_thread = task_thread;
     hci_hal_env.callbacks = (hci_hal_callbacks_t *)upper_callbacks;
-    hci_hal_env.adv_free_num = 0;
+
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_mutex_new(&hci_hal_env.adv_flow_lock);
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    hci_hal_env.adv_credits = BLE_ADV_REPORT_FLOW_CONTROL_NUM;
+    hci_hal_env.adv_credits_to_release = 0;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+#endif
 
     hci_hal_env.rx_q = fixed_queue_new(QUEUE_SIZE_MAX);
     assert(hci_hal_env.rx_q != NULL);
@@ -113,6 +131,10 @@ static void hci_hal_env_deinit(void)
 
     osi_event_delete(hci_hal_env.upstream_data_ready);
     hci_hal_env.upstream_data_ready = NULL;
+
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_mutex_free(&hci_hal_env.adv_flow_lock);
+#endif
 
     hci_hal_env.hci_h4_thread = NULL;
 
@@ -241,22 +263,66 @@ bool host_recv_adv_packet(uint8_t *packet)
 }
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-static void hci_update_adv_report_flow_control(BT_HDR *packet)
+static void hci_adv_credits_consumed(uint16_t num)
 {
-    // this is adv packet
-    uint8_t *data = packet->data + packet->offset;
-    if(host_recv_adv_packet(data)) {
-        // update adv free number
-        hci_hal_env.adv_free_num ++;
-        if (esp_vhci_host_check_send_available()){
-            // send hci cmd
-            btsnd_hcic_ble_update_adv_report_flow_control(hci_hal_env.adv_free_num);
-            hci_hal_env.adv_free_num = 0;
-        } else {
-            //do nothing
-        }
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    assert(hci_hal_env.adv_credits >= num);
+    hci_hal_env.adv_credits -= num;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+}
+
+int hci_adv_credits_prep_to_release(uint16_t num)
+{
+    if (num == 0) {
+        return hci_hal_env.adv_credits_to_release;
     }
 
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    int credits_to_release = hci_hal_env.adv_credits_to_release + num;
+    assert(hci_hal_env.adv_credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    hci_hal_env.adv_credits_to_release = credits_to_release;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+
+    return credits_to_release;
+}
+
+static int hci_adv_credits_release(void)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    int credits_released = hci_hal_env.adv_credits_to_release;
+    hci_hal_env.adv_credits += credits_released;
+    hci_hal_env.adv_credits_to_release -= credits_released;
+    assert(hci_hal_env.adv_credits <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    assert(hci_hal_env.adv_credits_to_release >= 0);
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+
+    return credits_released;
+}
+
+int hci_adv_credits_try_release(uint16_t num)
+{
+    int credits_released = 0;
+    if (hci_adv_credits_prep_to_release(num) >= HCI_BLE_ADV_MIN_CREDITS_TO_RELEASE) {
+        credits_released = hci_adv_credits_release();
+        assert(credits_released >= 0);
+        if (credits_released > 0) {
+            // TODO: handle the exception that the command is discarded due to heap exhaustion
+            btsnd_hcic_ble_update_adv_report_flow_control(credits_released);
+        }
+    }
+    return credits_released;
+}
+
+int hci_adv_credits_force_release(uint16_t num)
+{
+    hci_adv_credits_prep_to_release(num);
+    int credits_released = hci_adv_credits_release();
+    if (credits_released > 0) {
+        // TODO: handle the exception that the command is discarded due to heap exhaustion
+        btsnd_hcic_ble_update_adv_report_flow_control(credits_released);
+    }
+
+    return credits_released;
 }
 #endif
 
@@ -345,8 +411,7 @@ static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt)
     if (packet->len < hdr_size) {
         HCI_TRACE_ERROR("Wrong packet length type=%d pkt_len=%d hdr_len=%d",
                   type, packet->len, hdr_size);
-        osi_free(linked_pkt);
-        return;
+        goto _discard_packet;
     }
 
     stream += hdr_size - 1;
@@ -354,24 +419,26 @@ static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt)
     if ((length + hdr_size) != packet->len) {
         HCI_TRACE_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
                   "pkt_len=%d", type, hdr_size, length, packet->len);
-        osi_free(linked_pkt);
-        return;
+        goto _discard_packet;
     }
-
-#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
-    hci_update_adv_report_flow_control(packet);
-#endif
 
 #if SCAN_QUEUE_CONGEST_CHECK
     if(BTU_check_queue_is_congest()) {
         HCI_TRACE_DEBUG("BtuQueue is congested");
-        osi_free(linked_pkt);
-        return;
+        goto _discard_packet;
     }
 #endif
 
     packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
     hci_hal_env.callbacks->adv_rpt_ready(linked_pkt);
+
+    return;
+
+_discard_packet:
+    osi_free(linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_adv_credits_prep_to_release(1);
+#endif
 }
 
 static void host_send_pkt_available_cb(void)
@@ -417,7 +484,10 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         pkt_size = BT_PKT_LINKED_HDR_SIZE + BT_HDR_SIZE + len;
         linked_pkt = (pkt_linked_item_t *) osi_calloc(pkt_size);
         if (!linked_pkt) {
-            // TODO: handle the adv report flow control exception
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+            hci_adv_credits_consumed(1);
+            hci_adv_credits_prep_to_release(1);
+#endif
             return 0;
         }
         pkt = (BT_HDR *)linked_pkt->data;
@@ -426,6 +496,9 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         pkt->layer_specific = 0;
         memcpy(pkt->data, data, len);
         pkt_queue_enqueue(hci_hal_env.adv_rpt_q, linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+        hci_adv_credits_consumed(1);
+#endif
     }
 
     hci_upstream_data_post(OSI_THREAD_MAX_TIMEOUT);
