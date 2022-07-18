@@ -19,6 +19,7 @@
 #ifndef _HCI_LAYER_H_
 #define _HCI_LAYER_H_
 
+#include "common/bt_target.h"
 #include "stack/bt_types.h"
 #include "osi/allocator.h"
 #include "osi/osi.h"
@@ -98,5 +99,11 @@ int hci_start_up(void);
 void hci_shut_down(void);
 
 bool hci_host_task_post(uint32_t timeout);
+
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+int hci_adv_credits_prep_to_release(uint16_t num);
+int hci_adv_credits_try_release(uint16_t num);
+int hci_adv_credits_force_release(uint16_t num);
+#endif
 
 #endif /* _HCI_LAYER_H_ */
