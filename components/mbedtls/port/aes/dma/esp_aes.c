@@ -35,7 +35,9 @@
 #include "soc/lldesc.h"
 #include "esp_heap_caps.h"
 #include "sys/param.h"
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
+#endif
 #include "esp_crypto_lock.h"
 #include "hal/aes_hal.h"
 #include "aes/esp_aes_internal.h"
