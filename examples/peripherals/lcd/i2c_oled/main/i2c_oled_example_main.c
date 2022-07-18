@@ -117,7 +117,6 @@ void app_main(void)
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
         .bits_per_pixel = 1,
-        .color_space = ESP_LCD_COLOR_SPACE_MONOCHROME,
         .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
