@@ -530,6 +530,9 @@ static void dispatch_adv_report(pkt_linked_item_t *linked_pkt)
     //Tell Up-layer received packet.
     if (btu_task_post(SIG_BTU_HCI_ADV_RPT_MSG, linked_pkt, OSI_THREAD_MAX_TIMEOUT) == false) {
         osi_free(linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+        hci_adv_credits_try_release(1);
+#endif
     }
 }
 // Misc internal functions

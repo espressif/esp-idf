@@ -34,7 +34,7 @@
 #include "device/controller.h"
 #include "stack/hcimsgs.h"
 #include "stack/gap_api.h"
-
+#include "hci/hci_layer.h"
 #if BLE_INCLUDED == TRUE
 #include "l2c_int.h"
 
@@ -3486,6 +3486,9 @@ static void btm_adv_pkt_handler(void *arg)
         }
 
         osi_free(linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+        hci_adv_credits_try_release(1);
+#endif
     }
 
     if (pkt_queue_length(p_cb->adv_rpt_queue) != 0) {
