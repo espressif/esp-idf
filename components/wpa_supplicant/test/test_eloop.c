@@ -16,12 +16,14 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "memory_checks.h"
+#include <time.h>
 
 uint32_t timeouts_usec[6] = { 10000, 1000, 10000, 5000, 15000, 1000 };
 uint32_t timeouts_sec[6] = { 10, 1, 10, 5, 15, 1 };
 int executed_order[6];
 int t;
 struct os_reltime ts;
+
 
 /* there is only single instance of esp_timer so no need of protection */
 void callback(void *a, void *b)
@@ -32,15 +34,19 @@ void callback(void *a, void *b)
 	os_get_reltime(&now);
 	os_time_sub(&now, &ts, &age);
 
-	/* let's give 5 ms offset for this small block */
-	if ((age.sec - timeouts_sec[*i]) || age.usec - timeouts_usec[*i] > 5000) {
+	int32_t ms_diff = (age.sec - timeouts_sec[*i]) * 1000 +
+		(age.usec - timeouts_usec[*i]) / 1000;
+
+	/* let's give 50 ms offset for this small block */
+	if (ms_diff > 50) {
 		executed_order[t] = -1;
 	} else {
 		executed_order[t] = *i;
 	}
 	t++;
 
-	ESP_LOGI("Eloop Test", "timer ran after %lu sec and %lu usec of scheduled time", age.sec - timeouts_sec[*i], age.usec - timeouts_usec[*i]);
+	ESP_LOGI("Eloop Test", "timer[%d] ran after %d msec of scheduled time",
+				*i, ms_diff);
 
 }
 

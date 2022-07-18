@@ -176,9 +176,19 @@ void eloop_unregister_event(void *event, size_t event_size);
  * Register a timeout that will cause the handler function to be called after
  * given time.
  */
+
+#ifdef ELOOP_DEBUG
+int eloop_register_timeout_debug(unsigned int secs, unsigned int usecs,
+				 eloop_timeout_handler handler, void *eloop_data,
+				 void *user_data, const char *func, int line);
+
+#define eloop_register_timeout(secs, usecs, handler, eloop_data, user_data) \
+	eloop_register_timeout_debug(secs, usecs, handler, eloop_data, user_data, __func__, __LINE__)
+#else
 int eloop_register_timeout(unsigned int secs, unsigned int usecs,
 			   eloop_timeout_handler handler,
 			   void *eloop_data, void *user_data);
+#endif
 
 /**
  * eloop_cancel_timeout - Cancel timeouts
@@ -191,8 +201,15 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
  * eloop_register_timeout(). ELOOP_ALL_CTX can be used as a wildcard for
  * cancelling all timeouts regardless of eloop_data/user_data.
  */
+#ifdef ELOOP_DEBUG
+int eloop_cancel_timeout_debug(eloop_timeout_handler handler, void *eloop_data,
+			       void *user_data, const char *func, int line);
+#define eloop_cancel_timeout(handler, eloop_data, user_data) \
+	eloop_cancel_timeout_debug(handler, eloop_data, user_data, __func__, __LINE__)
+#else
 int eloop_cancel_timeout(eloop_timeout_handler handler,
 			 void *eloop_data, void *user_data);
+#endif
 
 /**
  * eloop_cancel_timeout_one - Cancel a single timeout
