@@ -118,7 +118,7 @@ def ci_target_check(func):
     return wrapper
 
 
-def test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs):
+def test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run, **kwargs):
     target = upper_list_or_str(target)
     test_target = local_test_check(target)
     if 'additional_duts' in kwargs:
@@ -130,7 +130,7 @@ def test_func_generator(func, app, target, ci_target, module, execution_time, le
     original_method = TinyFW.test_method(
         app=app, dut=dut, target=target, ci_target=upper_list_or_str(ci_target),
         module=module, execution_time=execution_time, level=level, erase_nvs=erase_nvs,
-        dut_dict=dut_classes, **kwargs
+        dut_dict=dut_classes, nightly_run=nightly_run, **kwargs
     )
     test_func = original_method(func)
     return test_func
@@ -138,7 +138,7 @@ def test_func_generator(func, app, target, ci_target, module, execution_time, le
 
 @ci_target_check
 def idf_example_test(app=Example, target='ESP32', ci_target=None, module='examples', execution_time=1,
-                     level='example', erase_nvs=True, config_name=None, **kwargs):
+                     level='example', erase_nvs=True, config_name=None, nightly_run=False, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
@@ -154,13 +154,14 @@ def idf_example_test(app=Example, target='ESP32', ci_target=None, module='exampl
     :return: test method
     """
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
     return test
 
 
 @ci_target_check
 def idf_unit_test(app=UT, target='ESP32', ci_target=None, module='unit-test', execution_time=1,
-                  level='unit', erase_nvs=True, **kwargs):
+                  level='unit', erase_nvs=True, nightly_run=False, **kwargs):
     """
     decorator for testing idf unit tests (with default values for some keyword args).
 
@@ -174,14 +175,16 @@ def idf_unit_test(app=UT, target='ESP32', ci_target=None, module='unit-test', ex
     :param kwargs: other keyword args
     :return: test method
     """
+
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
     return test
 
 
 @ci_target_check
 def idf_custom_test(app=TestApp, target='ESP32', ci_target=None, module='misc', execution_time=1,
-                    level='integration', erase_nvs=True, config_name=None, **kwargs):
+                    level='integration', erase_nvs=True, config_name=None, nightly_run=False, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -196,14 +199,16 @@ def idf_custom_test(app=TestApp, target='ESP32', ci_target=None, module='misc', 
     :param kwargs: other keyword args
     :return: test method
     """
+
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
     return test
 
 
 @ci_target_check
 def idf_component_unit_test(app=ComponentUTApp, target='ESP32', ci_target=None, module='misc', execution_time=1,
-                            level='integration', erase_nvs=True, config_name=None, **kwargs):
+                            level='integration', erase_nvs=True, config_name=None, nightly_run=False, **kwargs):
     """
     decorator for idf custom tests (with default values for some keyword args).
 
@@ -220,7 +225,8 @@ def idf_component_unit_test(app=ComponentUTApp, target='ESP32', ci_target=None, 
     """
 
     def test(func):
-        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, **kwargs)
+        return test_func_generator(func, app, target, ci_target, module, execution_time, level, erase_nvs, nightly_run,
+                                   **kwargs)
 
     return test
 
