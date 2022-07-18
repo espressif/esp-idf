@@ -51,6 +51,8 @@ static uint16_t btc_adv_list_count = 0;
 #endif
 
 #define BTC_GAP_BLE_ADV_RPT_QUEUE_IDX            (1)
+#define BTC_GAP_BLE_ADV_RPT_BATCH_SIZE           (10)
+#define BTC_GAP_BLE_ADV_RPT_QUEUE_LEN_MAX        (200)
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 typedef struct {
@@ -565,6 +567,9 @@ static void btc_gap_ble_adv_pkt_handler(void *arg)
 {
     btc_gap_ble_env_t *p_env = &btc_gap_ble_env;
     size_t pkts_to_process = pkt_queue_length(p_env->adv_rpt_queue);
+    if (pkts_to_process > BTC_GAP_BLE_ADV_RPT_BATCH_SIZE) {
+        pkts_to_process = BTC_GAP_BLE_ADV_RPT_BATCH_SIZE;
+    }
 
     for (size_t i = 0; i < pkts_to_process; i++) {
         pkt_linked_item_t *linked_pkt = pkt_queue_dequeue(p_env->adv_rpt_queue);
@@ -596,6 +601,12 @@ static void btc_process_adv_rpt_pkt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_
     btc_adv_list_count ++;
 #endif
 
+    // drop ADV packets if data queue length goes above threshold
+    btc_gap_ble_env_t *p_env = &btc_gap_ble_env;
+    if (pkt_queue_length(p_env->adv_rpt_queue) >= BTC_GAP_BLE_ADV_RPT_QUEUE_LEN_MAX) {
+        return;
+    }
+
     pkt_linked_item_t *linked_pkt = osi_calloc(BT_PKT_LINKED_HDR_SIZE + sizeof(esp_ble_gap_cb_param_t));
     if (linked_pkt == NULL) {
         return;
@@ -617,7 +628,6 @@ static void btc_process_adv_rpt_pkt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_
         memcpy(scan_rst->ble_adv, p_data->inq_res.p_eir, sizeof(scan_rst->ble_adv));
     } while (0);
 
-    btc_gap_ble_env_t *p_env = &btc_gap_ble_env;
     pkt_queue_enqueue(p_env->adv_rpt_queue, linked_pkt);
     osi_thread_post_event(p_env->adv_rpt_ready, OSI_THREAD_MAX_TIMEOUT);
 }

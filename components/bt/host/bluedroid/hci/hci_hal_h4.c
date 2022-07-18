@@ -40,6 +40,7 @@
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
 #define HCI_UPSTREAM_DATA_QUEUE_IDX   (1)
+#define HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX      (200)
 
 extern bool BTU_check_queue_is_congest(void);
 
@@ -407,6 +408,12 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         memcpy(pkt->data, data, len);
         fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
     } else {
+#if !BLE_ADV_REPORT_FLOW_CONTROL
+        // drop the packets if pkt_queue length goes beyond upper limit
+        if (pkt_queue_length(hci_hal_env.adv_rpt_q) > HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX) {
+            return 0;
+        }
+#endif
         pkt_size = BT_PKT_LINKED_HDR_SIZE + BT_HDR_SIZE + len;
         linked_pkt = (pkt_linked_item_t *) osi_calloc(pkt_size);
         if (!linked_pkt) {
