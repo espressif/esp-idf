@@ -21,6 +21,10 @@ void owe_deinit(void)
     struct wpa_sm *sm;
     sm = get_wpa_sm();
     if (sm->key_mgmt == WPA_KEY_MGMT_OWE) {
+        if (sm->owe_ie) {
+            wpabuf_free(sm->owe_ie);
+            sm->owe_ie = NULL;
+        }
         crypto_ecdh_deinit(sm->owe_ecdh);
         sm->owe_ecdh = NULL;
     }

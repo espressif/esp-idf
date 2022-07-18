@@ -2703,7 +2703,7 @@ int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
 #ifdef CONFIG_OWE_STA
 struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group)
 {
-    struct wpabuf *owe_ie = NULL, *pub = NULL;
+    struct wpabuf *pub = NULL;
     size_t prime_len;
 
     if (group == OWE_DH_GRP19) {
@@ -2731,24 +2731,28 @@ struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group)
     }
 
     wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
-    owe_ie = wpabuf_alloc(5 + wpabuf_len(pub));
 
-    if (!owe_ie) {
+    if (sm->owe_ie) {
+        wpabuf_free(sm->owe_ie);
+    }
+    sm->owe_ie = wpabuf_alloc(5 + wpabuf_len(pub));
+
+    if (!sm->owe_ie) {
         wpa_printf(MSG_ERROR, "OWE IE allocation failed");
         goto fail;
     }
 
     /* Constructing the DH IE */
-    wpabuf_put_u8(owe_ie, WLAN_EID_EXTENSION);
-    wpabuf_put_u8(owe_ie, 1 + 2 + wpabuf_len(pub));
-    wpabuf_put_u8(owe_ie, WLAN_EID_EXT_OWE_DH_PARAM);
-    wpabuf_put_le16(owe_ie, group);
-    wpabuf_put_buf(owe_ie, pub);
+    wpabuf_put_u8(sm->owe_ie, WLAN_EID_EXTENSION);
+    wpabuf_put_u8(sm->owe_ie, 1 + 2 + wpabuf_len(pub));
+    wpabuf_put_u8(sm->owe_ie, WLAN_EID_EXT_OWE_DH_PARAM);
+    wpabuf_put_le16(sm->owe_ie, group);
+    wpabuf_put_buf(sm->owe_ie, pub);
     wpabuf_free(pub);
 
-    wpa_hexdump_buf(MSG_DEBUG, "OWE: Diffie-Hellman Parameter element", owe_ie);
+    wpa_hexdump_buf(MSG_DEBUG, "OWE: Diffie-Hellman Parameter element", sm->owe_ie);
 
-    return (struct wpabuf *)wpabuf_head(owe_ie);
+    return (struct wpabuf *)wpabuf_head(sm->owe_ie);
 
 fail:
     wpabuf_free(pub);
@@ -2771,6 +2775,10 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
     sm = get_wpa_sm();
 
     (void)res;
+
+    wpabuf_free(sm->owe_ie); //free the dh ie constructed in owe_build_assoc_req
+    sm->owe_ie = NULL;
+
     struct wpa_ie_data *parsed_rsn_data;
     parsed_rsn_data = os_zalloc(sizeof(struct wpa_ie_data));
     if (!parsed_rsn_data) {

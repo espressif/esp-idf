@@ -1047,12 +1047,14 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
 	mbedtls_ecdh_context *ctx;
 
 	ctx = os_zalloc(sizeof(*ctx));
-
 	if (!ctx) {
 		wpa_printf(MSG_ERROR, "Memory allocation failed for ecdh context");
 		goto fail;
 	}
 	mbedtls_ecdh_init(ctx);
+#ifndef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
+	ctx->var = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;
+#endif
 
 	if ((mbedtls_ecp_group_load(ACCESS_ECDH(&ctx, grp), crypto_mbedtls_get_grp_id(group))) != 0) {
                 wpa_printf(MSG_ERROR, "Failed to set up ECDH context with group info");
@@ -1074,8 +1076,18 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
                 wpa_printf(MSG_ERROR, "ECDH keypair on curve failed");
                 goto fail;
 	}
+
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
 	return (struct crypto_ecdh *)ctx;
 fail:
+	if (ctx) {
+		mbedtls_ecdh_free(ctx);
+		os_free(ctx);
+		ctx = NULL;
+	}
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
 	return NULL;
 }
 
@@ -1199,6 +1211,8 @@ cleanup:
 	crypto_ec_free_key(pkey);
 	crypto_bignum_deinit(bn_x, 1);
 	crypto_ec_point_deinit(ec_pt, 1);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
 	return sh_secret;
 }
 
