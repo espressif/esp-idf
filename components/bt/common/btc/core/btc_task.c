@@ -56,6 +56,10 @@
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 
+#if (BLE_INCLUDED == TRUE)
+#include "btc_gap_ble.h"
+#endif
+
 #if CONFIG_BLE_MESH
 #include "btc_ble_mesh_ble.h"
 #include "btc_ble_mesh_prov.h"
@@ -416,6 +420,7 @@ bt_status_t btc_init(void)
 
 #if (BLE_INCLUDED == TRUE)
     btc_gap_callback_init();
+    btc_gap_ble_init();
 #endif  ///BLE_INCLUDED == TRUE
 
 #if SCAN_QUEUE_CONGEST_CHECK
@@ -433,7 +438,9 @@ void btc_deinit(void)
 
     osi_thread_free(btc_thread);
     btc_thread = NULL;
-
+#if (BLE_INCLUDED == TRUE)
+    btc_gap_ble_deinit();
+#endif  ///BLE_INCLUDED == TRUE
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_deinit();
 #endif
