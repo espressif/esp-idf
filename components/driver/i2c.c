@@ -1417,7 +1417,7 @@ static bool is_cmd_link_buffer_internal(const i2c_cmd_link_t *link)
 }
 #endif
 
-static uint8_t clear_bus_cnt[2] = { 0, 0 };
+static uint8_t clear_bus_cnt[I2C_NUM_MAX] = { 0 };
 
 esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, TickType_t ticks_to_wait)
 {
@@ -1502,6 +1502,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
                     clear_bus_cnt[i2c_num]++;
                     if (clear_bus_cnt[i2c_num] >= I2C_ACKERR_CNT_MAX) {
                         clear_bus_cnt[i2c_num] = 0;
+                        i2c_hw_fsm_reset(i2c_num);
                     }
                     ret = ESP_FAIL;
                 } else {
