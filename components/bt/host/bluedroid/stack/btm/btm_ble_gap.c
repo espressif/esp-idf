@@ -57,6 +57,8 @@
 #define MIN_ADV_LENGTH                       2
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE 9
 
+#define BTM_BLE_GAP_ADV_RPT_BATCH_SIZE           (10)
+
 #if BTM_DYNAMIC_MEMORY == FALSE
 static tBTM_BLE_VSC_CB cmn_ble_gap_vsc_cb;
 #else
@@ -3463,6 +3465,9 @@ static void btm_adv_pkt_handler(void *arg)
 
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
     size_t pkts_to_process = pkt_queue_length(p_cb->adv_rpt_queue);
+    if (pkts_to_process > BTM_BLE_GAP_ADV_RPT_BATCH_SIZE) {
+        pkts_to_process = BTM_BLE_GAP_ADV_RPT_BATCH_SIZE;
+    }
 
     for (size_t i = 0; i < pkts_to_process; i++) {
         pkt_linked_item_t *linked_pkt = pkt_queue_dequeue(p_cb->adv_rpt_queue);
