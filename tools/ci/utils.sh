@@ -75,7 +75,7 @@ function run_cmd() {
   if [[ $ret -eq 0 ]]; then
     info "==> '\$ ${cmd}' succeeded in ${runtime} seconds."
     return 0
-  echo
+  else
     error "==> '\$ ${cmd}' failed (${ret}) in ${runtime} seconds."
     return $ret
   fi

@@ -21,7 +21,7 @@ from fnmatch import fnmatch
 from typing import Callable, List, Optional, Tuple
 
 import pytest
-from _pytest.config import Config
+from _pytest.config import Config, ExitCode
 from _pytest.fixtures import FixtureRequest
 from _pytest.main import Session
 from _pytest.nodes import Item
@@ -399,8 +399,11 @@ class IdfPytestEmbedded:
             xml.write(junit)
 
     def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
-        if exitstatus != 0 and self.known_failure_cases and not self.failed_cases:
-            session.exitstatus = 0
+        if exitstatus != 0:
+            if exitstatus == ExitCode.NO_TESTS_COLLECTED:
+                session.exitstatus = 0
+            elif self.known_failure_cases and not self.failed_cases:
+                session.exitstatus = 0
 
     def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
         if self.known_failure_cases:

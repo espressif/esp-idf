@@ -26,11 +26,19 @@ def get_pytest_apps(
     pytest_cases = get_pytest_cases(paths, target, marker_expr)
 
     _paths: Set[str] = set()
-    app_configs = defaultdict(set)
+    test_related_app_configs = defaultdict(set)
     for case in pytest_cases:
         for app in case.apps:
             _paths.add(app.path)
-            app_configs[app.path].add(app.config)
+
+            if os.getenv('INCLUDE_NIGHTLY_RUN') == '1':
+                test_related_app_configs[app.path].add(app.config)
+            elif os.getenv('NIGHTLY_RUN') == '1':
+                if case.nightly_run:
+                    test_related_app_configs[app.path].add(app.config)
+            else:
+                if not case.nightly_run:
+                    test_related_app_configs[app.path].add(app.config)
 
     app_dirs = list(_paths)
     if not app_dirs:
@@ -53,7 +61,7 @@ def get_pytest_apps(
     )
 
     for app in apps:
-        is_test_related = app.config_name in app_configs[app.app_dir]
+        is_test_related = app.config_name in test_related_app_configs[app.app_dir]
         if not preserve_all and not is_test_related:
             app.preserve = False
 

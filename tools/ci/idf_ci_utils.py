@@ -102,7 +102,7 @@ def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> List[str]:
         # this is a workaround when using under worktree
         # if you're using worktree, when running git commit a new environment variable GIT_DIR would be declared,
         # the value should be <origin_repo_path>/.git/worktrees/<worktree name>
-        # This would effect the return value of `git ls-files`, unset this would use the `cwd`value or its parent
+        # This would affect the return value of `git ls-files`, unset this would use the `cwd`value or its parent
         # folder if no `.git` folder found in `cwd`.
         workaround_env = os.environ.copy()
         workaround_env.pop('GIT_DIR', None)
@@ -150,9 +150,10 @@ class PytestCase:
     path: str
     name: str
     apps: Set[PytestApp]
+    nightly_run: bool
 
     def __hash__(self) -> int:
-        return hash((self.path, self.name, self.apps))
+        return hash((self.path, self.name, self.apps, self.nightly_run))
 
 
 class PytestCollectPlugin:
@@ -201,7 +202,14 @@ class PytestCollectPlugin:
             for i in range(count):
                 case_apps.add(PytestApp(app_paths[i], targets[i], configs[i]))
 
-            self.cases.append(PytestCase(case_path, case_name, case_apps))
+            self.cases.append(
+                PytestCase(
+                    case_path,
+                    case_name,
+                    case_apps,
+                    'nightly_run' in [marker.name for marker in item.iter_markers()],
+                )
+            )
 
 
 def get_pytest_cases(
@@ -214,6 +222,21 @@ def get_pytest_cases(
         targets = SUPPORTED_TARGETS + PREVIEW_TARGETS
     else:
         targets = [target]
+
+    paths = to_list(paths)
+
+    origin_include_nightly_run_env = os.getenv('INCLUDE_NIGHTLY_RUN')
+    origin_nightly_run_env = os.getenv('NIGHTLY_RUN')
+
+    # disable the env vars to get all test cases
+    if 'INCLUDE_NIGHTLY_RUN' in os.environ:
+        os.environ.pop('INCLUDE_NIGHTLY_RUN')
+
+    if 'NIGHTLY_RUN' in os.environ:
+        os.environ.pop('NIGHTLY_RUN')
+
+    # collect all cases
+    os.environ['INCLUDE_NIGHTLY_RUN'] = '1'
 
     cases = []
     for t in targets:
@@ -240,6 +263,13 @@ def get_pytest_cases(
                         )
 
         cases.extend(collector.cases)
+
+    # revert back the env vars
+    if origin_include_nightly_run_env is not None:
+        os.environ['INCLUDE_NIGHTLY_RUN'] = origin_include_nightly_run_env
+
+    if origin_nightly_run_env is not None:
+        os.environ['NIGHTLY_RUN'] = origin_nightly_run_env
 
     return cases
 
