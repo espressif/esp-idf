@@ -115,7 +115,16 @@ esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size)
         return ESP_ERR_FLASH_UNSUPPORTED_CHIP;
     }
 
-    *size = 1 << (id & 0xFF);
+    // Winbond W25Q512JV*Q/M and W25Q01JV*Q chips don't follow the same convention for including the size in the final
+    // byte of the ID
+    if ((id & 0xFFFF) == 0x4020 || (id & 0xFFFF) == 0x7020) {
+        *size = 0x4000000;
+    } else if ((id & 0xFFFF) == 0x4021) {
+        *size = 0x8000000;
+    } else {
+        *size = 1 << (id & 0xFF);
+    }
+
     return ESP_OK;
 }
 
