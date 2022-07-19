@@ -212,7 +212,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
  *
  * In some cases, you need to start a SPI transaction after some external triggering (for example after a GPIO interrupt)
  * in an interrupt context.
- * You can not use spi_device_queue_trans in that case, since it's using a queue to send the transaction to perform, so
+ * You can not use spi_device_queue_trans in that case, since it's using a queue to send the transaction to be performed, so
  * you can start a task and notify the task from the interrupt context to have that task woken up and queueing the transaction.
  * This incurs a lot of overhead, and is not optimal in terms of latency. Instead, you can use this function that's posting
  * to the internal transaction queue from an ISR context, so you don't need any additional task and scheduling overhead here.
