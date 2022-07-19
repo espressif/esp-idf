@@ -3563,6 +3563,18 @@ UBaseType_t i, uxTargetCPU;
 }
 /*-----------------------------------------------------------*/
 
+void vTaskTakeEventListLock( void )
+{
+	/* We call the tasks.c critical section macro to take xTaskQueueMutex */
+	taskENTER_CRITICAL(&xTaskQueueMutex);
+}
+
+void vTaskReleaseEventListLock( void )
+{
+	/* We call the tasks.c critical section macro to release xTaskQueueMutex */
+	taskEXIT_CRITICAL(&xTaskQueueMutex);
+}
+
 BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, const TickType_t xItemValue )
 {
 TCB_t *pxUnblockedTCB;

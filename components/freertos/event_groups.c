@@ -535,6 +535,10 @@ BaseType_t xMatchFound = pdFALSE;
 	pxListEnd = listGET_END_MARKER( pxList ); /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
 
 	taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
+	/* The critical section above only takes the event groups spinlock. However, we are about to traverse a task list.
+	Thus we need call the function below to take the task list spinlock located in tasks.c. Not doing so will risk
+	the task list's being changed while be are traversing it. */
+	vTaskTakeEventListLock();
 	{
 		traceEVENT_GROUP_SET_BITS( xEventGroup, uxBitsToSet );
 
@@ -606,6 +610,8 @@ BaseType_t xMatchFound = pdFALSE;
 		bit was set in the control word. */
 		pxEventBits->uxEventBits &= ~uxBitsToClear;
 	}
+	/* Release the previously held task list spinlock, then release the event group spinlock. */
+	vTaskReleaseEventListLock();
 	taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
 	return pxEventBits->uxEventBits;
@@ -620,6 +626,10 @@ const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 	traceEVENT_GROUP_DELETE( xEventGroup );
 
 	taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
+	/* The critical section above only takes the event groups spinlock. However, we are about to traverse a task list.
+	Thus we need call the function below to take the task list spinlock located in tasks.c. Not doing so will risk
+	the task list's being changed while be are traversing it. */
+	vTaskTakeEventListLock();
 	{
 		while( listCURRENT_LIST_LENGTH( pxTasksWaitingForBits ) > ( UBaseType_t ) 0 )
 		{
@@ -629,6 +639,8 @@ const List_t *pxTasksWaitingForBits = &( pxEventBits->xTasksWaitingForBits );
 			xTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
 		}
 	}
+	/* Release the previously held task list spinlock. */
+	vTaskReleaseEventListLock();
 	taskEXIT_CRITICAL( &pxEventBits->eventGroupMux );
 
 	#if( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) )
