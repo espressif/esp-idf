@@ -71,7 +71,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     choice IDF_TARGET_ESP32H2_BETA_VERSION
         prompt "ESP32-H2 beta version"
         depends on IDF_TARGET_ESP32H2
-        default IDF_TARGET_ESP32H2_BETA_VERSION_1
+        default IDF_TARGET_ESP32H2_BETA_VERSION_2
         help
             Currently ESP32-H2 has several beta versions for internal use only.
             Select the one that matches your chip model.
