@@ -565,6 +565,10 @@ BaseType_t xMatchFound = pdFALSE;
 
 	vTaskSuspendAll();
 	taskENTER_CRITICAL(&pxEventBits->eventGroupMux);
+	/* The critical section above only takes the event groups spinlock. However, we are about to traverse a task list.
+	Thus we need call the function below to take the task list spinlock located in tasks.c. Not doing so will risk
+	the task list's being changed while be are traversing it. */
+	vTaskTakeEventListLock();
 	{
 		traceEVENT_GROUP_SET_BITS( xEventGroup, uxBitsToSet );
 
@@ -636,6 +640,8 @@ BaseType_t xMatchFound = pdFALSE;
 		bit was set in the control word. */
 		pxEventBits->uxEventBits &= ~uxBitsToClear;
 	}
+	/* Release the previously held task list spinlock, then release the event group spinlock. */
+	vTaskReleaseEventListLock();
 	taskEXIT_CRITICAL(&pxEventBits->eventGroupMux);
 	( void ) xTaskResumeAll();
 
@@ -650,6 +656,10 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 
 	vTaskSuspendAll();
 	taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
+	/* The critical section above only takes the event groups spinlock. However, we are about to traverse a task list.
+	Thus we need call the function below to take the task list spinlock located in tasks.c. Not doing so will risk
+	the task list's being changed while be are traversing it. */
+	vTaskTakeEventListLock();
 	{
 		traceEVENT_GROUP_DELETE( xEventGroup );
 
@@ -660,6 +670,9 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 			configASSERT( pxTasksWaitingForBits->xListEnd.pxNext != ( ListItem_t * ) &( pxTasksWaitingForBits->xListEnd ) );
 			( void ) xTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
 		}
+
+		/* Release the previously held task list spinlock. */
+		vTaskReleaseEventListLock();
 
 		#if( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) )
 		{

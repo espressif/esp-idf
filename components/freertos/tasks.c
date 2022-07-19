@@ -2865,11 +2865,11 @@ void vTaskSwitchContext( void )
 			--uxDynamicTopReady;
 		}
 
-#else 
+#else
 		//For Unicore targets we can keep the current FreeRTOS O(1)
-		//Scheduler. I hope to optimize better the scheduler for 
+		//Scheduler. I hope to optimize better the scheduler for
 		//Multicore settings -- This will involve to create a per
-		//affinity ready task list which will impact hugely on 
+		//affinity ready task list which will impact hugely on
 		//tasks module
 		taskSELECT_HIGHEST_PRIORITY_TASK();
 #endif
@@ -3167,6 +3167,18 @@ UBaseType_t i, uxTargetCPU;
 	return xReturn;
 }
 /*-----------------------------------------------------------*/
+
+void vTaskTakeEventListLock( void )
+{
+	/* We call the tasks.c critical section macro to take xTaskQueueMutex */
+	taskENTER_CRITICAL(&xTaskQueueMutex);
+}
+
+void vTaskReleaseEventListLock( void )
+{
+	/* We call the tasks.c critical section macro to release xTaskQueueMutex */
+	taskEXIT_CRITICAL(&xTaskQueueMutex);
+}
 
 BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, const TickType_t xItemValue )
 {
