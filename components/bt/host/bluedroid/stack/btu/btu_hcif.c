@@ -43,6 +43,7 @@
 #include "common/bt_trace.h"
 
 #include "osi/thread.h"
+#include "osi/pkt_queue.h"
 //#include "osi/mutex.h"
 // TODO(zachoverflow): remove this horrible hack
 #include "stack/btu.h"
@@ -451,15 +452,21 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
 
     STREAM_TO_UINT16(opcode, stream);
 
-    // Eww...horrible hackery here
-    /* If command was a VSC, then extract command_complete callback */
-    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC
+    assert (p_buf->layer_specific == HCI_CMD_BUF_TYPE_METADATA);
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p_buf);
+    metadata->command_complete_cb = btu_hcif_command_complete_evt;
+    metadata->command_status_cb = btu_hcif_command_status_evt;
+    metadata->opcode = opcode;
+
+    vsc_callback = metadata->context;
+    /* If command is not a VSC, then the context field should be empty */
+    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) != HCI_GRP_VENDOR_SPECIFIC
 #if BLE_INCLUDED == TRUE
-            || (opcode == HCI_BLE_RAND)
-            || (opcode == HCI_BLE_ENCRYPT)
+            && (opcode != HCI_BLE_RAND)
+            && (opcode != HCI_BLE_ENCRYPT)
 #endif
-       ) {
-        vsc_callback = *((void **)(p_buf + 1));
+        ) {
+        assert (vsc_callback == NULL);
     }
 
     hci_layer_get_interface()->transmit_command(
@@ -472,6 +479,7 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
     btu_check_bt_sleep ();
 #endif
 }
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 {
@@ -492,15 +500,22 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 
     sync_info->opcode = opcode;
 
-    // Eww...horrible hackery here
-    /* If command was a VSC, then extract command_complete callback */
-    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC
+    assert (p_buf->layer_specific == HCI_CMD_BUF_TYPE_METADATA);
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p_buf);
+    metadata->command_complete_cb = btu_hcif_command_complete_evt;
+    metadata->command_status_cb = btu_hcif_command_status_evt;
+    metadata->command_free_cb = NULL;
+    metadata->opcode = opcode;
+
+    vsc_callback = metadata->context;
+    /* If command is not a VSC, then the context field should be empty */
+    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) != HCI_GRP_VENDOR_SPECIFIC
 #if BLE_INCLUDED == TRUE
-            || (opcode == HCI_BLE_RAND)
-            || (opcode == HCI_BLE_ENCRYPT)
+            && (opcode != HCI_BLE_RAND)
+            && (opcode != HCI_BLE_ENCRYPT)
 #endif
-       ) {
-        vsc_callback = *((void **)(p_buf + 1));
+        ) {
+        assert (vsc_callback == NULL);
     }
 
     hci_layer_get_interface()->transmit_command(
@@ -1434,7 +1449,11 @@ static void btu_hcif_command_status_evt_on_task(BT_HDR *event)
         stream,
         hack->context);
 
-    osi_free(hack->command);
+    // check the HCI command integrity: opcode
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(hack->command);
+    assert(metadata->opcode == opcode);
+
+    HCI_FREE_CMD_BUF(hack->command);
     osi_free(event);
 }
 

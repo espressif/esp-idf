@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCIC_PREAMBLE_SIZE + sizeof(BT_HDR) + paramlen))
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 static BlE_SYNC ble_sync_info;
 
@@ -557,19 +556,17 @@ BOOLEAN btsnd_hcic_ble_encrypt (UINT8 *key, UINT8 key_len,
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF(sizeof (void *) +
-                             HCIC_PARAM_SIZE_BLE_ENCRYPT)) == NULL) {
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_ENCRYPT)) == NULL) {
         return (FALSE);
     }
 
     pp = (UINT8 *)(p + 1);
 
     p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_ENCRYPT;
-    p->offset = sizeof(void *);
+    p->offset = 0;
 
-    *((void **)pp) = p_cmd_cplt_cback;  /* Store command complete callback in buffer */
-    pp += sizeof(void *);               /* Skip over callback pointer */
-
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->context = p_cmd_cplt_cback;
 
     UINT16_TO_STREAM (pp, HCI_BLE_ENCRYPT);
     UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_BLE_ENCRYPT);
@@ -596,18 +593,17 @@ BOOLEAN btsnd_hcic_ble_rand (void *p_cmd_cplt_cback)
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF(sizeof (void *) +
-                             HCIC_PARAM_SIZE_BLE_RAND)) == NULL) {
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_RAND)) == NULL) {
         return (FALSE);
     }
 
     pp = (UINT8 *)(p + 1);
 
     p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_RAND;
-    p->offset = sizeof(void *);
+    p->offset = 0;
 
-    *((void **)pp) = p_cmd_cplt_cback;  /* Store command complete callback in buffer */
-    pp += sizeof(void *);               /* Skip over callback pointer */
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->context = p_cmd_cplt_cback;
 
     UINT16_TO_STREAM (pp, HCI_BLE_RAND);
     UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_BLE_RAND);
@@ -1045,6 +1041,9 @@ BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num)
 
     p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL;
     p->offset = 0;
+
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->flags_src |= HCI_CMD_MSG_F_SRC_NOACK;
 
     UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_ADV_REPORT_FLOW_CONTROL);
     UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL);
