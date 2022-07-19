@@ -112,19 +112,6 @@ repos:
           )$
         language: python
         types: [python]
-      - id: check-copyright
-        name: Check copyright notices
-        entry: tools/ci/check_copyright.py --verbose --replace
-        additional_dependencies:
-          - 'comment_parser == 1.2.3'
-          - 'thefuzz == 0.19.0'
-          - 'thefuzz[speedup] == 0.19.0; sys_platform != "win32"'
-          # don't depend on python-Levenshtein on Windows, as it requires Microsoft C++ Build Tools to install
-          - 'pyyaml == 5.4.1'
-          - 'pathspec == 0.9.0'
-        language: python
-        files: \.(py|c|h|cpp|hpp|ld|s|S)$
-        require_serial: true
       - id: check-requirement-files
         name: Check requirement files
         entry: tools/ci/check_requirement_files.py
@@ -168,3 +155,8 @@ repos:
     hooks:
       - id: file-contents-sorter
         files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
+  - repo: https://github.com/espressif/check-copyright/
+    rev: v1.0.0
+    hooks:
+      - id: check-copyright
+        args: ['--ignore', 'tools/ci/check_copyright_ignore.txt', '--config', 'tools/ci/check_copyright_config.yaml']
