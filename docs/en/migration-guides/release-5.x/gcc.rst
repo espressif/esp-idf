@@ -1,6 +1,5 @@
-==========================
-Migrate IDF Code to GCC 11
-==========================
+GCC 
+***
 
 Previous GCC version was 8.4.0
 

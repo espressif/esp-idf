@@ -1,5 +1,5 @@
-Migration of Protocol Components to ESP-IDF 5.0
-===============================================
+Protocols
+=========
 
 .. _migration_guide_mbedtls:
 
