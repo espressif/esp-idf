@@ -44,6 +44,9 @@ ESP HW Support
 --------------
 
 - The header files ``soc/cpu.h`` have been deleted and deprecated CPU util functions have been removed. ESP-IDF developers should include ``esp_cpu.h`` instead for equivalent functions.
+- The header files ``hal/cpu_ll.h``, ``hal/cpu_hal.h``, ``hal/soc_ll.h``, ``hal/soc_hal.h`` and ``interrupt_controller_hal.h`` CPU API functions have been deprecated. ESP-IDF developers should include ``esp_cpu.h`` instead for equivalent functions.
+- The header file ``compare_set.h`` have been deleted. ESP-IDF developers should use ``esp_cpu_compare_and_set()`` function provided in ``esp_cpu.h`` instead.
+- ``esp_cpu_get_ccount()``, ``esp_cpu_set_ccount()`` and ``esp_cpu_in_ocd_debug_mode()`` were removed from ``esp_cpu.h``. ESP-IDF developers should use respectively ``esp_cpu_get_cycle_count()``, ``esp_cpu_set_cycle_count()`` and ``esp_cpu_dbgr_is_attached()`` instead.
 - The header file ``esp_intr.h`` has been deleted. Please include ``esp_intr_alloc.h`` to allocate and manipulate interrupts.
 - The header file ``esp_panic.h`` has been deleted. ESP-IDF developers should include ``esp_private/panic_reason.h`` to get supported panic reasons. And should include ``esp_debug_helpers.h`` to use any debug related helper functions, e.g. print backtrace.
 - The header file ``soc_log.h`` is now renamed to ``esp_hw_log.h`` and all logging macros have been updated from ``SOC_LOGx`` to ``ESP_HW_LOGx``. ESP-IDF users must use the later form.
