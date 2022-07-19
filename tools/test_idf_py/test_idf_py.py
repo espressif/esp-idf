@@ -3,10 +3,13 @@
 # SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
+import json
 import os
 import subprocess
 import sys
 from unittest import TestCase, main, mock
+
+import jsonschema
 
 try:
     from StringIO import StringIO
@@ -225,6 +228,22 @@ class TestDeprecations(TestWithoutExtensions):
         self.assertIn('Warning: Option "test_3" is deprecated and will be removed in future versions.', output)
         self.assertNotIn('"test-0" is deprecated', output)
         self.assertNotIn('"test_0" is deprecated', output)
+
+
+class TestHelpOutput(TestWithoutExtensions):
+    def test_output(self):
+        def action_test(commands, schema):
+            output_file = 'idf_py_help_output.json'
+            with open(output_file, 'w') as outfile:
+                subprocess.run(commands, env=os.environ, stdout=outfile)
+            with open(output_file, 'r') as outfile:
+                help_obj = json.load(outfile)
+            self.assertIsNone(jsonschema.validate(help_obj, schema))
+
+        with open(os.path.join(current_dir, 'idf_py_help_schema.json'), 'r') as schema_file:
+            schema_json = json.load(schema_file)
+        action_test(['idf.py', 'help', '--json'], schema_json)
+        action_test(['idf.py', 'help', '--json', '--add-options'], schema_json)
 
 
 if __name__ == '__main__':
