@@ -26,6 +26,7 @@
 #include "osi/pkt_queue.h"
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 #include "osi/mutex.h"
+#include "osi/alarm.h"
 #endif
 #include "esp_bt.h"
 #include "stack/hcimsgs.h"
@@ -45,6 +46,7 @@
 #define HCI_UPSTREAM_DATA_QUEUE_IDX   (1)
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 #define HCI_BLE_ADV_MIN_CREDITS_TO_RELEASE     (10)
+#define HCI_ADV_FLOW_MONITOR_PERIOD_MS         (500)
 #else
 #define HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX      (200)
 #endif
@@ -71,6 +73,7 @@ typedef struct {
     struct pkt_queue *adv_rpt_q;
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     osi_mutex_t adv_flow_lock;
+    osi_alarm_t *adv_flow_monitor;
     int adv_credits;
     int adv_credits_to_release;
 #endif
@@ -91,6 +94,10 @@ static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt);
 static void hci_upstream_data_handler(void *arg);
 static bool hci_upstream_data_post(uint32_t timeout);
 
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+static void hci_adv_flow_monitor(void *context);
+#endif
+
 static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thread_t *task_thread)
 {
     assert(upper_callbacks != NULL);
@@ -105,6 +112,8 @@ static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thr
     hci_hal_env.adv_credits = BLE_ADV_REPORT_FLOW_CONTROL_NUM;
     hci_hal_env.adv_credits_to_release = 0;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+    hci_hal_env.adv_flow_monitor = osi_alarm_new("adv_fc_mon", hci_adv_flow_monitor, NULL, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
+    assert (hci_hal_env.adv_flow_monitor != NULL);
 #endif
 
     hci_hal_env.rx_q = fixed_queue_new(QUEUE_SIZE_MAX);
@@ -133,6 +142,9 @@ static void hci_hal_env_deinit(void)
     hci_hal_env.upstream_data_ready = NULL;
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
+    osi_alarm_free(hci_hal_env.adv_flow_monitor);
+    hci_hal_env.adv_flow_monitor = NULL;
     osi_mutex_free(&hci_hal_env.adv_flow_lock);
 #endif
 
@@ -263,6 +275,11 @@ bool host_recv_adv_packet(uint8_t *packet)
 }
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+static void hci_adv_flow_monitor(void *context)
+{
+    hci_adv_credits_force_release(0);
+}
+
 static void hci_adv_credits_consumed(uint16_t num)
 {
     osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
@@ -283,6 +300,10 @@ int hci_adv_credits_prep_to_release(uint16_t num)
     hci_hal_env.adv_credits_to_release = credits_to_release;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
+    if (credits_to_release == num) {
+        osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
+        osi_alarm_set(hci_hal_env.adv_flow_monitor, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
+    }
     return credits_to_release;
 }
 
@@ -296,6 +317,9 @@ static int hci_adv_credits_release(void)
     assert(hci_hal_env.adv_credits_to_release >= 0);
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
+    if (hci_hal_env.adv_credits_to_release == 0) {
+        osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
+    }
     return credits_released;
 }
 
