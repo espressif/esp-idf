@@ -18,6 +18,8 @@ def test_light_sleep(dut: Dut) -> None:
 
     ENTERING_SLEEP_STR = 'Entering light sleep'
     EXIT_SLEEP_REGEX = r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms'
+    EXIT_SLEEP_PIN_REGEX = r'Returned from light sleep, reason: (pin), t=(\d+) ms, slept for (\d+) ms'
+    EXIT_SLEEP_UART_REGEX = r'Returned from light sleep, reason: (uart), t=(\d+) ms, slept for (\d+) ms'
     WAITING_FOR_GPIO_STR = r'Waiting for GPIO\d to go high...'
 
     WAKEUP_INTERVAL_MS = 2000
@@ -44,9 +46,9 @@ def test_light_sleep(dut: Dut) -> None:
     logging.info('Pulling GPIO0 low using DTR')
     dut.serial.proc.setDTR(True)
     time.sleep(1)
-    match = dut.expect(EXIT_SLEEP_REGEX)
+    match = dut.expect(EXIT_SLEEP_PIN_REGEX)
     logging.info('Got third sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
-    assert(match.group(1).decode('utf8') == 'pin' and int(match.group(3)) < WAKEUP_INTERVAL_MS)
+    assert(int(match.group(3)) < WAKEUP_INTERVAL_MS)
 
     dut.expect(WAITING_FOR_GPIO_STR)
     logging.info('Is waiting for GPIO...')
@@ -58,9 +60,9 @@ def test_light_sleep(dut: Dut) -> None:
     # Write 'U' to uart, 'U' in ascii is 0x55 which contains 8 edges in total
     dut.write('U')
     time.sleep(1)
-    match = dut.expect(EXIT_SLEEP_REGEX)
+    match = dut.expect(EXIT_SLEEP_UART_REGEX)
     logging.info('Got third sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
-    assert(match.group(1).decode('utf8') == 'uart' and int(match.group(3)) < WAKEUP_INTERVAL_MS)
+    assert(int(match.group(3)) < WAKEUP_INTERVAL_MS)
     logging.info('Went to sleep again')
 
     match = dut.expect(EXIT_SLEEP_REGEX)
