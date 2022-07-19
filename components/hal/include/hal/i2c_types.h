@@ -13,6 +13,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 
 /**
  * @brief I2C port number, can be I2C_NUM_0 ~ (I2C_NUM_MAX-1).
@@ -52,29 +53,10 @@ typedef enum {
 } i2c_ack_type_t;
 
 /**
- * @brief I2C clock source, sorting from smallest to largest,
- *        place them in order.
- *        This can be expanded in the future use.
+ * @brief I2C group clock source
  */
-typedef enum {
-    I2C_SCLK_DEFAULT = 0,    /*!< I2C source clock not selected*/
-#if SOC_I2C_SUPPORT_APB
-    I2C_SCLK_APB,            /*!< I2C source clock from APB, 80M*/
-#endif
-#if SOC_I2C_SUPPORT_XTAL
-    I2C_SCLK_XTAL,           /*!< I2C source clock from XTAL, 40M */
-#endif
-#if SOC_I2C_SUPPORT_RTC
-    I2C_SCLK_RTC,            /*!< I2C source clock from 8M RTC, 8M */
-#endif
-#if SOC_I2C_SUPPORT_REF_TICK
-    I2C_SCLK_REF_TICK,       /*!< I2C source clock from REF_TICK, 1M */
-#endif
-    I2C_SCLK_MAX,
-} i2c_sclk_t;
+typedef soc_periph_i2c_clk_src_t i2c_clock_source_t;
 
-/// Use the highest speed that is available for the clock source picked by clk_flags
-#define I2C_CLK_FREQ_MAX                  (-1)
 
 #ifdef __cplusplus
 }

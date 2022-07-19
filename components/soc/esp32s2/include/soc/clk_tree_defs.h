@@ -235,6 +235,22 @@ typedef enum {
     I2S_CLK_SRC_APLL = SOC_MOD_CLK_APLL,                            /*!< Select APLL as the source clock */
 } soc_periph_i2s_clk_src_t;
 
+/////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of I2C
+ */
+#define SOC_I2C_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_REF_TICK}
+
+/**
+ * @brief Type of I2C clock source.
+ */
+typedef enum {
+    I2C_CLK_SRC_APB = SOC_MOD_CLK_APB,
+    I2C_CLK_SRC_REF_TICK = SOC_MOD_CLK_REF_TICK,
+    I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,
+} soc_periph_i2c_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

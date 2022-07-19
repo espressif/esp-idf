@@ -174,6 +174,22 @@ typedef enum {
     UART_SCLK_DEFAULT = SOC_MOD_CLK_PLL_F40M,  /*!< UART source clock default choice is PLL_F40M */
 } soc_periph_uart_clk_src_legacy_t;
 
+/////////////////////////////////////////////////I2C////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of I2C
+ */
+#define SOC_I2C_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief Type of I2C clock source.
+ */
+typedef enum {
+    I2C_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
+    I2C_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,
+    I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+} soc_periph_i2c_clk_src_t;
+
 #ifdef __cplusplus
 }
 #endif

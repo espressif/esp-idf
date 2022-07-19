@@ -9,6 +9,7 @@
 #pragma once
 #include "soc/i2c_periph.h"
 #include "soc/i2c_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/i2c_types.h"
 
 #ifdef __cplusplus
@@ -80,8 +81,6 @@ typedef struct {
 #define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_WM_INT_ENA_M)
 // I2C slave RX interrupt bitmap
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
-// I2C source clock
-#define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_REF_TICK) ? 1000*1000 : 80*1000*1000); // Another clock is APB clock
 // I2C max timeout value
 #define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_REG_V
 /**
@@ -781,10 +780,10 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  *
  * @return None
  */
-static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
+static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
     // src_clk : (1) for APB_CLK, (0) for REF_CLK
-    hw->ctr.ref_always_on = (src_clk == I2C_SCLK_REF_TICK) ? 0 : 1;
+    hw->ctr.ref_always_on = (src_clk == I2C_CLK_SRC_REF_TICK) ? 0 : 1;
 }
 
 /**
