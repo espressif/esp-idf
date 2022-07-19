@@ -7,6 +7,7 @@
 #include "freertos/event_groups.h"
 #include "driver/timer.h"
 #include "unity.h"
+#include "test_utils.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #define int_clr_timers int_clr
@@ -40,13 +41,16 @@ static void task_event_group_call_response(void *param)
 
     printf("Task %d done\n", task_num);
     xSemaphoreGive(done_sem);
-    vTaskDelete(NULL);
+    // Wait to be deleted
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("FreeRTOS Event Groups", "[freertos]")
 {
     eg = xEventGroupCreate();
     done_sem = xSemaphoreCreateCounting(NUM_TASKS, 0);
+
+    TaskHandle_t task_handles[NUM_TASKS];
 
     /* Note: task_event_group_call_response all have higher priority than this task, so on this core
        they will always preempt this task.
@@ -55,7 +59,7 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
        or they get out of sync.
      */
     for (int c = 0; c < NUM_TASKS; c++) {
-        xTaskCreatePinnedToCore(task_event_group_call_response, "tsk_call_resp", 4096, (void *)c, configMAX_PRIORITIES - 1, NULL, c % portNUM_PROCESSORS);
+        xTaskCreatePinnedToCore(task_event_group_call_response, "tsk_call_resp", 4096, (void *)c, configMAX_PRIORITIES - 1, &task_handles[c], c % portNUM_PROCESSORS);
     }
 
     /* Tasks all start instantly, but this task will resume running at the same time as the higher priority tasks on the
@@ -66,13 +70,17 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
         /* signal all tasks with "CALL" bit... */
         xEventGroupSetBits(eg, BIT_CALL);
 
-        /* Only wait for 1 tick, the wakeup should be immediate... */
-        TEST_ASSERT_EQUAL_HEX16(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, 1));
+        /* Wait until all tasks have set their respective response bits */
+        TEST_ASSERT_EQUAL_HEX16(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, portMAX_DELAY));
     }
 
-    /* Ensure all tasks cleaned up correctly */
+    /* Ensure all tasks have suspend themselves */
     for (int c = 0; c < NUM_TASKS; c++) {
         TEST_ASSERT( xSemaphoreTake(done_sem, 100/portTICK_PERIOD_MS) );
+    }
+
+    for (int c = 0; c < NUM_TASKS; c++) {
+        test_utils_task_delete(task_handles[c]);
     }
 
     vSemaphoreDelete(done_sem);
