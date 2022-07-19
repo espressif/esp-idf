@@ -54,7 +54,7 @@ void app_main(void)
     tinyusb_config_t tusb_cfg = {}; // the configuration using default values
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = {
+    tinyusb_config_cdcacm_t acm_cfg = {
         .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
         .rx_unread_buf_sz = 64,
@@ -64,7 +64,7 @@ void app_main(void)
         .callback_line_coding_changed = NULL
     };
 
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
     /* the second way to register a callback */
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
                         TINYUSB_CDC_ACM_0,
