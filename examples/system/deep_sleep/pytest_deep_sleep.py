@@ -10,7 +10,15 @@ from pytest_embedded import Dut
 touch_wake_up_support = ['esp32', 'esp32s2']
 
 
-def deep_sleep_test(dut: Dut) -> None:
+CONFIGS = [
+    pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
+    pytest.param('basic', marks=[pytest.mark.esp32, pytest.mark.esp32s2, pytest.mark.esp32s3, pytest.mark.esp32c3]),
+]
+
+
+@pytest.mark.parametrize('config', CONFIGS, indirect=True)
+@pytest.mark.generic
+def test_deep_sleep(dut: Dut) -> None:
 
     def expect_enable_deep_sleep_touch() -> None:
         # different targets configure different wake pin(s)
@@ -57,26 +65,3 @@ def deep_sleep_test(dut: Dut) -> None:
     # Check that it measured 2xxxxms in deep sleep, i.e at least 20 seconds:
     dut.expect(r'Wake up from timer. Time spent in deep sleep: 2\d{4}ms', timeout=2)
     expect_enable_deep_sleep()
-
-
-CONFIGS = [
-    pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
-    pytest.param('basic', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
-]
-
-
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
-@pytest.mark.generic
-def test_deep_sleep(dut: Dut) -> None:
-    deep_sleep_test(dut)
-
-
-CONFIGS_S2_S3 = [
-    pytest.param('basic', marks=[pytest.mark.esp32s2, pytest.mark.esp32s3]),  # S2/S3 runner on isolated runners for now, IDF-5213
-]
-
-
-@pytest.mark.parametrize('config', CONFIGS_S2_S3, indirect=True)
-@pytest.mark.deepsleep_temp_tag
-def test_deep_sleep_s2_s3(dut: Dut) -> None:
-    deep_sleep_test(dut)

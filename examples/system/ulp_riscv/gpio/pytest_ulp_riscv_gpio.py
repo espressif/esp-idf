@@ -10,7 +10,7 @@ from pytest_embedded import Dut
 
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.deepsleep_temp_tag
+@pytest.mark.generic
 def test_ulp_riscv_gpio(dut: Dut) -> None:
 
     dut.expect_exact('Not a ULP-RISC-V wakeup, initializing it!')

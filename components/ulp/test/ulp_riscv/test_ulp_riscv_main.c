@@ -175,7 +175,7 @@ TEST_CASE("ULP-RISC-V can be stopped and resumed from main CPU", "[ulp]")
 
 TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]")
 {
-    volatile riscv_test_commands_t *command_resp = &ulp_command_resp;
+    volatile riscv_test_commands_t *command_resp = (riscv_test_commands_t*)&ulp_command_resp;
 
     /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
     load_and_start_ulp_firmware();
