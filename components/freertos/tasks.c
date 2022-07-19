@@ -3733,6 +3733,20 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 }
 /*-----------------------------------------------------------*/
 
+#ifdef ESP_PLATFORM
+void vTaskTakeEventListLock( void )
+{
+    /* We call the tasks.c critical section macro to take xTaskQueueMutex */
+    taskENTER_CRITICAL();
+}
+
+void vTaskReleaseEventListLock( void )
+{
+    /* We call the tasks.c critical section macro to release xTaskQueueMutex */
+    taskEXIT_CRITICAL();
+}
+#endif // ESP_PLATFORM
+
 void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
                                         const TickType_t xItemValue )
 {
