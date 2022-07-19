@@ -573,7 +573,6 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(dut: Dut) 
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_high_traffic
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', ['nimble',], indirect=True)
 def test_examples_protocol_advanced_https_ota_example_nimble_gatts(dut: Dut) -> None:
     """
@@ -626,7 +625,6 @@ def test_examples_protocol_advanced_https_ota_example_nimble_gatts(dut: Dut) -> 
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_high_traffic
-@pytest.mark.nightly_run
 @pytest.mark.parametrize('config', ['bluedroid',], indirect=True)
 def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(dut: Dut) -> None:
     """
