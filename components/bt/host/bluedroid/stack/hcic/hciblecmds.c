@@ -1028,22 +1028,30 @@ BOOLEAN btsnd_hcic_ble_set_data_length(UINT16 conn_handle, UINT16 tx_octets, UIN
     return TRUE;
 }
 
-BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num)
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num, BT_HDR *static_buf)
 {
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL)) == NULL) {
-        return (FALSE);
+    if (static_buf != NULL) {
+        p = static_buf;
+    } else {
+        if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL)) == NULL) {
+            return (FALSE);
+        }
     }
+
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
+    metadata->flags_src = HCI_CMD_MSG_F_SRC_NOACK;
+    if (static_buf == p) {
+        assert(metadata->command_free_cb != NULL);
+    }
+    p->layer_specific = HCI_CMD_BUF_TYPE_METADATA;
 
     pp = (UINT8 *)(p + 1);
 
     p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL;
     p->offset = 0;
-
-    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p);
-    metadata->flags_src |= HCI_CMD_MSG_F_SRC_NOACK;
 
     UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_ADV_REPORT_FLOW_CONTROL);
     UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL);
