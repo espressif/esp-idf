@@ -117,7 +117,7 @@ typedef struct {
  * @param  gpio_num GPIO number. If you want to enable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  core_id Interrupt enabled CPU to corresponding ID
  */
-void gpio_hal_intr_enable_on_core(gpio_hal_context_t *hal, gpio_num_t gpio_num, uint32_t core_id);
+void gpio_hal_intr_enable_on_core(gpio_hal_context_t *hal, uint32_t gpio_num, uint32_t core_id);
 
 /**
  * @brief  Disable GPIO module interrupt signal
@@ -125,7 +125,7 @@ void gpio_hal_intr_enable_on_core(gpio_hal_context_t *hal, gpio_num_t gpio_num, 
  * @param  hal Context of the HAL layer
  * @param  gpio_num GPIO number. If you want to disable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  */
-void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
+void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 
 /**
   * @brief Disable input mode on GPIO.
@@ -409,7 +409,7 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, gpio_num_t gpio_num);
  * @param  hal Context of the HAL layer
  * @param  gpio_num GPIO number.
  */
-void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, gpio_num_t gpio_num);
+void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, uint32_t gpio_num);
 
 /**
  * @brief  Restore fun_pu/fun_pd configuration when system wakeup.
@@ -417,7 +417,7 @@ void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, gpio_num_t gpio_n
  * @param  hal Context of the HAL layer
  * @param  gpio_num GPIO number.
  */
-void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, gpio_num_t gpio_num);
+void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_num);
 #endif // CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
 #endif //SOC_GPIO_SUPPORT_SLP_SWITCH
 

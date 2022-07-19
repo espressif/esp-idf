@@ -6,7 +6,7 @@
 
 #include "soc/gpio_periph.h"
 
-const uint32_t GPIO_PIN_MUX_REG[SOC_GPIO_PIN_COUNT] = {
+const uint32_t GPIO_PIN_MUX_REG[] = {
     IO_MUX_GPIO0_REG,
     IO_MUX_GPIO1_REG,
     IO_MUX_GPIO2_REG,
@@ -56,7 +56,9 @@ const uint32_t GPIO_PIN_MUX_REG[SOC_GPIO_PIN_COUNT] = {
     IO_MUX_GPIO46_REG,
 };
 
-const uint32_t GPIO_HOLD_MASK[SOC_GPIO_PIN_COUNT] = {
+_Static_assert(sizeof(GPIO_PIN_MUX_REG) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_PIN_MUX_REG");
+
+const uint32_t GPIO_HOLD_MASK[] = {
     0,
     0,
     0,
@@ -105,3 +107,5 @@ const uint32_t GPIO_HOLD_MASK[SOC_GPIO_PIN_COUNT] = {
     BIT(24),
     BIT(25),
 };
+
+_Static_assert(sizeof(GPIO_HOLD_MASK) == SOC_GPIO_PIN_COUNT * sizeof(uint32_t), "Invalid size of GPIO_HOLD_MASK");

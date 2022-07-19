@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for GPIO (common part)
 //
@@ -27,8 +19,8 @@ typedef struct gpio_slp_mode_cfg {
 
 static void gpio_hal_sleep_mode_setup_wrapper(
         gpio_hal_context_t *hal,
-        gpio_num_t gpio_num,
-        void (*opt)(gpio_hal_context_t *, gpio_num_t, void *)
+        uint32_t gpio_num,
+        void (*opt)(gpio_hal_context_t *, uint32_t, void *)
     )
 {
     static DRAM_ATTR gpio_slp_mode_cfg_t gpio_cfg;
@@ -43,7 +35,7 @@ static void gpio_hal_sleep_mode_setup_wrapper(
  * @param  gpio_num gpio num
  * @param args pointer for bitmap to backup GPIO pu/pd information
  */
-static void gpio_hal_fun_pupd_backup(gpio_hal_context_t *hal, gpio_num_t gpio_num, void *args)
+static void gpio_hal_fun_pupd_backup(gpio_hal_context_t *hal, uint32_t gpio_num, void *args)
 {
     /* On ESP32, setting SLP_PU, SLP_PD couldn`t change GPIO status
      * from FUN_PU, FUN_PD to SLP_PU, SLP_PD at sleep.
@@ -84,7 +76,7 @@ static void gpio_hal_fun_pupd_backup(gpio_hal_context_t *hal, gpio_num_t gpio_nu
  * @param  gpio_num gpio num
  * @param args pointer for bitmap to restore GPIO pu/pd information
  */
-static void gpio_hal_fun_pupd_restore(gpio_hal_context_t *hal, gpio_num_t gpio_num, void *args)
+static void gpio_hal_fun_pupd_restore(gpio_hal_context_t *hal, uint32_t gpio_num, void *args)
 {
     /* On ESP32, setting SLP_PU, SLP_PD couldn`t change GPIO status
      * from SLP_PU, SLP_PD to FUN_PU, FUN_PD when it wakes up.
@@ -107,12 +99,12 @@ static void gpio_hal_fun_pupd_restore(gpio_hal_context_t *hal, gpio_num_t gpio_n
     }
 }
 
-void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, gpio_num_t gpio_num)
+void gpio_hal_sleep_pupd_config_apply(gpio_hal_context_t *hal, uint32_t gpio_num)
 {
     gpio_hal_sleep_mode_setup_wrapper(hal, gpio_num, gpio_hal_fun_pupd_backup);
 }
 
-void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, gpio_num_t gpio_num)
+void gpio_hal_sleep_pupd_config_unapply(gpio_hal_context_t *hal, uint32_t gpio_num)
 {
     gpio_hal_sleep_mode_setup_wrapper(hal, gpio_num, gpio_hal_fun_pupd_restore);
 }
