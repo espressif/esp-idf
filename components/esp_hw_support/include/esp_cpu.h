@@ -549,38 +549,6 @@ FORCE_INLINE_ATTR intptr_t esp_cpu_get_call_addr(intptr_t return_address)
  */
 bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, uint32_t new_value);
 
-/* ---------------------------------------------------- Deprecate ------------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
-typedef esp_cpu_cycle_count_t           esp_cpu_ccount_t;
-
-FORCE_INLINE_ATTR __attribute__((deprecated)) esp_cpu_cycle_count_t esp_cpu_get_ccount(void)
-{
-    return esp_cpu_get_cycle_count();
-}
-
-FORCE_INLINE_ATTR __attribute__((deprecated)) void esp_cpu_set_ccount(esp_cpu_cycle_count_t ccount)
-{
-    return esp_cpu_set_cycle_count(ccount);
-}
-
-/**
- * @brief Returns true if a JTAG debugger is attached to CPU OCD (on chip debug) port.
- *
- * [refactor-todo]  See if this can be replaced with esp_cpu_dbgr_is_attached directly
- *
- * @note Always returns false if CONFIG_ESP_DEBUG_OCDAWARE is not enabled
- */
-FORCE_INLINE_ATTR bool esp_cpu_in_ocd_debug_mode(void)
-{
-#if CONFIG_ESP_DEBUG_OCDAWARE
-    return esp_cpu_dbgr_is_attached();
-#else  // CONFIG_ESP_DEBUG_OCDAWARE
-    return false; // Always return false if "OCD aware" is disabled
-#endif // CONFIG_ESP_DEBUG_OCDAWARE
-}
-
 #ifdef __cplusplus
 }
 #endif

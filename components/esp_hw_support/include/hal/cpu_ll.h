@@ -32,7 +32,7 @@ FORCE_INLINE_ATTR __attribute__((deprecated)) uint32_t cpu_ll_get_cycle_count(vo
 
 FORCE_INLINE_ATTR __attribute__((deprecated)) void cpu_ll_set_cycle_count(uint32_t val)
 {
-    esp_cpu_set_cycle_count((esp_cpu_ccount_t)val);
+    esp_cpu_set_cycle_count((esp_cpu_cycle_count_t)val);
 }
 
 FORCE_INLINE_ATTR __attribute__((deprecated)) void *cpu_ll_get_sp(void)

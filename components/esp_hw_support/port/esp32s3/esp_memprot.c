@@ -875,8 +875,8 @@ esp_err_t esp_mprot_set_prot(const esp_memp_config_t *memp_config)
     // 1.check the signal repeatedly to avoid possible glitching attempt
     // 2.leave the Memprot unset to allow debug operations
 
-    if (esp_cpu_in_ocd_debug_mode()) {
-        ESP_FAULT_ASSERT(esp_cpu_in_ocd_debug_mode());
+    if (esp_cpu_dbgr_is_attached()) {
+        ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
         return ESP_OK;
     }
 

@@ -276,7 +276,7 @@ void esp_panic_handler(panic_info_t *info)
     // If on-chip-debugger is attached, and system is configured to be aware of this,
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
-    if (esp_cpu_in_ocd_debug_mode()) {
+    if (esp_cpu_dbgr_is_attached()) {
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");

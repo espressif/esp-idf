@@ -10,6 +10,7 @@
 #include "test_utils.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_cpu.h"
 #include "soc/adc_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -202,8 +203,8 @@ TEST_CASE("ADC1 oneshot raw average / std_deviation", "[adc_oneshot][ignore][man
 #endif
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
-#define RECORD_TIME_START()             do {__t1 = esp_cpu_get_ccount();}while(0)
-#define RECORD_TIME_END(p_time)         do{__t2 = esp_cpu_get_ccount(); *p_time = (__t2-__t1);}while(0)
+#define RECORD_TIME_START()             do {__t1 = esp_cpu_get_cycle_count();}while(0)
+#define RECORD_TIME_END(p_time)         do{__t2 = esp_cpu_get_cycle_count(); *p_time = (__t2-__t1);}while(0)
 #define GET_US_BY_CCOUNT(t)             ((double)t/CPU_FREQ_MHZ)
 
 

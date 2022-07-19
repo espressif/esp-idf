@@ -95,7 +95,7 @@ esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
    e.g. OpenOCD flasher stub use own implementation of it. */
 __attribute__((weak)) int esp_apptrace_advertise_ctrl_block(void *ctrl_block_addr)
 {
-    if (!esp_cpu_in_ocd_debug_mode()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         return 0;
     }
     return (int) semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_APPTRACE_INIT, (long*)ctrl_block_addr);

@@ -163,7 +163,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
 
     esp_ipc_isr_stall_abort();
 
-    if (esp_cpu_in_ocd_debug_mode()) {
+    if (esp_cpu_dbgr_is_attached()) {
 #if __XTENSA__
         if (!(esp_ptr_executable(esp_cpu_pc_to_addr(panic_get_address(frame))) && (panic_get_address(frame) & 0xC0000000U))) {
             /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
