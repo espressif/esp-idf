@@ -106,6 +106,10 @@ I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
 RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
 
+ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
+            'api-reference/peripherals/adc_calibration.rst']
+ADC_DMA_DOCS = ['api-reference/peripherals/adc_continuous.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
@@ -165,6 +169,8 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
                             'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
                             'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
+                            'SOC_ADC_SUPPORTED':ADC_DOCS,
+                            'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

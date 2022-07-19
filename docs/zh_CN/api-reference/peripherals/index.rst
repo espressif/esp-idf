@@ -6,7 +6,9 @@
 .. toctree::
     :maxdepth: 1
 
-    adc
+    adc_oneshot
+    :SOC_ADC_DMA_SUPPORTED: adc_continuous
+    adc_calibration
     clk_tree
     :SOC_DAC_SUPPORTED: dac
     gpio

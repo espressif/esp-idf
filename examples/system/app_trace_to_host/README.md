@@ -179,7 +179,9 @@ int sampling_period = 20;
 int i = 0;
 uint32_t sampling_start =  esp_log_timestamp();  //this clock counts milliseconds
 do {
-    ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
+    int adc_raw = 0;
+    ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHANNEL, &adc_raw));
+    ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc_raw);
 } while (esp_log_timestamp() - sampling_start < sampling_period);
 ```
 

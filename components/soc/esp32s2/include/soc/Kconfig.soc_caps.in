@@ -155,6 +155,10 @@ config SOC_ADC_MONITOR_SUPPORTED
     bool
     default y
 
+config SOC_ADC_DMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
     int
     default 2
@@ -175,9 +179,21 @@ config SOC_ADC_PATT_LEN_MAX
     int
     default 32
 
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
 config SOC_ADC_DIGI_MAX_BITWIDTH
     int
     default 12
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 2
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 2
 
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int

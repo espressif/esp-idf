@@ -5,8 +5,9 @@
  */
 
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "driver/adc.h"
+#include "esp_private/adc_private.h"
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.

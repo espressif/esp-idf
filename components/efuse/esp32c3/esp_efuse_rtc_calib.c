@@ -39,8 +39,9 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
     return init_code + 1000;    // version 1 logic
 }
 
-esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, int atten, uint32_t* out_digi, uint32_t* out_vol_mv)
+esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t* out_digi, uint32_t* out_vol_mv)
 {
+    (void)adc_unit;    //On esp32c3,  V1 we don't have calibration data for ADC2, using the efuse data of ADC1
     const esp_efuse_desc_t** cal_vol_efuse;
     uint32_t calib_vol_expected_mv;
     if (version != 1) {

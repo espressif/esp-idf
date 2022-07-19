@@ -17,10 +17,10 @@
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "driver/i2s.h"
-#include "driver/adc.h"
 #include "audio_example_file.h"
-#include "esp_adc_cal.h"
 #include "esp_rom_sys.h"
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 static const char* TAG = "ad/da";
@@ -280,8 +280,8 @@ void example_i2s_adc_dac(void*arg)
 
 void adc_read_task(void* arg)
 {
-    adc1_config_width(ADC_WIDTH_12Bit);
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_11);
     esp_adc_cal_characteristics_t characteristics;
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, &characteristics);
     while(1) {

@@ -27,6 +27,7 @@
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "hal/adc_ll.h"
+#include "driver/adc_i2s_legacy.h"
 #endif
 #if SOC_I2S_SUPPORTS_APLL
 #include "clk_ctrl_os.h"

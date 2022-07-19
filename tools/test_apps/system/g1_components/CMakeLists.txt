@@ -40,6 +40,11 @@ set(extra_components_which_shouldnt_be_included
     #   Figure out if these components can exist without a dependency on efuse.
     #   If not, see if esp_hw_support can provide minimal efuse component replacement in G1 build.
     efuse
+    # [refactor-todo]: esp_adc is a dependency of driver, esp_phy and esp_wii.
+    #   Driver dependency only exists in legacy drivers. After removing deprecated drivers, this dependency can be fixed
+    #   esp_phy requires esp_adc to maintain the ADC power for PWDET usage
+    #   esp_wifi requires esp_adc to do the initial calibration for PWDET usage
+    esp_adc
     # esp_pm is pulled in by freertos, can be made a weak dependency
     #   conditional on related Kconfig option. It is also used by esp_wifi, driver, mbedtls,
     #   all of which should be removed from G1-only build.

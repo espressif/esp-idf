@@ -1,6 +1,6 @@
 idf_component_register(SRCS "ulp_riscv_adc_example_main.c"
                     INCLUDE_DIRS ""
-                    REQUIRES soc ulp esp_adc_cal)
+                    REQUIRES soc ulp esp_adc)
 
 
 #

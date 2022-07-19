@@ -1,0 +1,5 @@
+[mapping:esp_adc]
+archive: libesp_adc.a
+entries:
+    if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
+        adc_oneshot: adc_oneshot_read_isr (noflash)

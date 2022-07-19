@@ -1,16 +1,9 @@
 menu "Driver Configurations"
 
-    menu "ADC Configuration"
-
-        config ADC_FORCE_XPD_FSM
-            bool "Use the FSM to control ADC power"
-            default n
-            help
-                ADC power can be controlled by the FSM instead of software. This allows the ADC to
-                be shut off when it is not working leading to lower power consumption. However
-                using the FSM control ADC power will increase the noise of ADC.
+    menu "Legacy ADC Configuration"
 
         config ADC_DISABLE_DAC
+            depends on SOC_DAC_SUPPORTED
             bool "Disable DAC when ADC2 is used on GPIO 25 and 26"
             default y
             help
@@ -18,6 +11,54 @@ menu "Driver Configurations"
                 channel. This is the default value.
 
                 For testing, disable this option so that we can measure the output of DAC by internal ADC.
+
+        config ADC_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy adc driver (driver/adc.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        menu "Legacy ADC Calibration Configuration"
+
+            config ADC_CAL_EFUSE_TP_ENABLE
+                depends on IDF_TARGET_ESP32
+                bool "Use Two Point Values"
+                default "y"
+                help
+                    Some ESP32s have Two Point calibration values burned into eFuse BLOCK3.
+                    This option will allow the ADC calibration component to characterize the
+                    ADC-Voltage curve using Two Point values if they are available.
+
+            config ADC_CAL_EFUSE_VREF_ENABLE
+                depends on IDF_TARGET_ESP32
+                bool "Use eFuse Vref"
+                default "y"
+                help
+                    Some ESP32s have Vref burned into eFuse BLOCK0. This option will allow
+                    the ADC calibration component to characterize the ADC-Voltage curve using
+                    eFuse Vref if it is available.
+
+            config ADC_CAL_LUT_ENABLE
+                depends on IDF_TARGET_ESP32
+                bool "Use Lookup Tables"
+                default "y"
+                help
+                    This option will allow the ADC calibration component to use Lookup Tables
+                    to correct for non-linear behavior in 11db attenuation. Other attenuations
+                    do not exhibit non-linear behavior hence will not be affected by this option.
+
+            config ADC_CALI_SUPPRESS_DEPRECATE_WARN
+                bool "Suppress legacy driver deprecated warning"
+                default n
+                help
+                    Wether to suppress the deprecation warnings when using legacy adc calibration
+                    driver (esp_adc_cal.h).
+                    If you want to continue using the legacy driver, and don't want to see related
+                    deprecation warnings, you can enable this option.
+
+        endmenu
 
     endmenu  # ADC Configuration
 
