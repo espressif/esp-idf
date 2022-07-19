@@ -765,7 +765,7 @@ IRAM_ATTR npl_freertos_callout_deinit(struct ble_npl_callout *co)
     esp_err_t err = esp_timer_stop(callout->handle);
     if(err != ESP_OK) {
         if (err != ESP_ERR_INVALID_STATE) { // ESP_ERR_INVALID_STATE is expected when timer is already stopped
-            ESP_LOGW(TAG, "Timer not stopped");
+            ESP_LOGD(TAG, "Timer not stopped");
         }
     }
     err = esp_timer_delete(callout->handle);
