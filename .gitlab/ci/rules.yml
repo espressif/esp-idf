@@ -254,13 +254,6 @@
 #####################
 # Specific if rules #
 #####################
-
-# Inlcude nightly run cases by labels `include_nightly_run` or `target_test`
-.if-include_nightly_run-rule: &if-include_nightly_run-rule
-  if: '$INCLUDE_NIGHTLY_RUN || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*include_nightly_run(?:,[^,\n\r]+)*$/i || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*target_test(?:,[^,\n\r]+)*$/i'
-  variables:
-    INCLUDE_NIGHTLY_RUN: "1"
-
 .if-example_test-ota-include_nightly_run-rule: &if-example_test-ota-include_nightly_run-rule
   <<: *if-dev-push
   changes: *patterns-example_test-ota-nightly_run
@@ -749,7 +742,6 @@
       when: never
     - <<: *if-protected
     - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
@@ -781,7 +773,6 @@
       when: never
     - <<: *if-protected
     - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
@@ -828,7 +819,6 @@
       when: never
     - <<: *if-protected
     - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32c3
@@ -952,7 +942,6 @@
       when: never
     - <<: *if-protected
     - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-include_nightly_run-rule
     - <<: *if-label-build
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
@@ -1914,7 +1903,6 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-include_nightly_run-rule
 
 .rules:test:example_test-esp32-sdio:
   rules:
@@ -2048,7 +2036,6 @@
     - <<: *if-label-build-only
       when: never
     - <<: *if-example_test-ota-include_nightly_run-rule
-    - <<: *if-include_nightly_run-rule
 
 .rules:test:example_test-esp32c3-sdio:
   rules:

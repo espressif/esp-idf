@@ -187,7 +187,6 @@ build:integration_test:
     - - esp32
       - esp32c3
   specific_rules:
-    - "if-include_nightly_run-rule"
     - "if-example_test-ota-include_nightly_run-rule"
   included_in:
     - "build:example_test-{0}"
