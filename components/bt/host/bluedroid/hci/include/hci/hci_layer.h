@@ -49,6 +49,8 @@
 #define LOCAL_BR_EDR_CONTROLLER_ID      0
 
 #define HCI_CMD_MSG_F_VND_FUTURE      (0x01)
+#define HCI_CMD_MSG_F_VND_QUEUED      (0x02)
+#define HCI_CMD_MSG_F_VND_SENT        (0x04)
 ///// END LEGACY DEFINITIONS /////
 
 typedef struct hci_hal_t hci_hal_t;

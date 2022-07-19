@@ -76,6 +76,8 @@ typedef struct {
     osi_alarm_t *adv_flow_monitor;
     int adv_credits;
     int adv_credits_to_release;
+    pkt_linked_item_t *adv_fc_cmd_buf;
+    bool cmd_buf_in_use;
 #endif
     hci_hal_callbacks_t *callbacks;
     osi_thread_t *hci_h4_thread;
@@ -96,6 +98,7 @@ static bool hci_upstream_data_post(uint32_t timeout);
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 static void hci_adv_flow_monitor(void *context);
+static void hci_adv_flow_cmd_free_cb(pkt_linked_item_t *linked_pkt);
 #endif
 
 static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thread_t *task_thread)
@@ -107,10 +110,13 @@ static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thr
     hci_hal_env.callbacks = (hci_hal_callbacks_t *)upper_callbacks;
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_hal_env.adv_fc_cmd_buf = osi_calloc(HCI_CMD_LINKED_BUF_SIZE(HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL));
+    assert(hci_hal_env.adv_fc_cmd_buf != NULL);
     osi_mutex_new(&hci_hal_env.adv_flow_lock);
     osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
     hci_hal_env.adv_credits = BLE_ADV_REPORT_FLOW_CONTROL_NUM;
     hci_hal_env.adv_credits_to_release = 0;
+    hci_hal_env.cmd_buf_in_use = false;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
     hci_hal_env.adv_flow_monitor = osi_alarm_new("adv_fc_mon", hci_adv_flow_monitor, NULL, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
     assert (hci_hal_env.adv_flow_monitor != NULL);
@@ -142,10 +148,13 @@ static void hci_hal_env_deinit(void)
     hci_hal_env.upstream_data_ready = NULL;
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_hal_env.cmd_buf_in_use = true;
     osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
     osi_alarm_free(hci_hal_env.adv_flow_monitor);
     hci_hal_env.adv_flow_monitor = NULL;
     osi_mutex_free(&hci_hal_env.adv_flow_lock);
+    osi_free(hci_hal_env.adv_fc_cmd_buf);
+    hci_hal_env.adv_fc_cmd_buf = NULL;
 #endif
 
     hci_hal_env.hci_h4_thread = NULL;
@@ -300,7 +309,7 @@ int hci_adv_credits_prep_to_release(uint16_t num)
     hci_hal_env.adv_credits_to_release = credits_to_release;
     osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
 
-    if (credits_to_release == num) {
+    if (credits_to_release == num && num != 0) {
         osi_alarm_cancel(hci_hal_env.adv_flow_monitor);
         osi_alarm_set(hci_hal_env.adv_flow_monitor, HCI_ADV_FLOW_MONITOR_PERIOD_MS);
     }
@@ -323,15 +332,64 @@ static int hci_adv_credits_release(void)
     return credits_released;
 }
 
+static int hci_adv_credits_release_rollback(uint16_t num)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    hci_hal_env.adv_credits -= num;
+    hci_hal_env.adv_credits_to_release += num;
+    assert(hci_hal_env.adv_credits >=0);
+    assert(hci_hal_env.adv_credits_to_release <= BLE_ADV_REPORT_FLOW_CONTROL_NUM);
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+
+    return num;
+}
+
+static void hci_adv_flow_cmd_free_cb(pkt_linked_item_t *linked_pkt)
+{
+    osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+    hci_hal_env.cmd_buf_in_use = false;
+    osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+    hci_adv_credits_try_release(0);
+}
+
+bool hci_adv_flow_try_send_command(uint16_t credits_released)
+{
+    bool sent = false;
+    bool use_static_buffer = false;
+
+    /* first try using static buffer, then dynamic buffer */
+    if (!hci_hal_env.cmd_buf_in_use) {
+        osi_mutex_lock(&hci_hal_env.adv_flow_lock, OSI_MUTEX_MAX_TIMEOUT);
+        if (!hci_hal_env.cmd_buf_in_use) {
+            hci_hal_env.cmd_buf_in_use = true;
+            use_static_buffer = true;
+        }
+        osi_mutex_unlock(&hci_hal_env.adv_flow_lock);
+    }
+
+    if (use_static_buffer) {
+        hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(hci_hal_env.adv_fc_cmd_buf->data);
+        BT_HDR *static_buffer = &metadata->command;
+        metadata->command_free_cb = hci_adv_flow_cmd_free_cb;
+        sent = btsnd_hcic_ble_update_adv_report_flow_control(credits_released, static_buffer);
+    } else {
+        sent = btsnd_hcic_ble_update_adv_report_flow_control(credits_released, NULL);
+    }
+
+    return sent;
+}
+
 int hci_adv_credits_try_release(uint16_t num)
 {
     int credits_released = 0;
     if (hci_adv_credits_prep_to_release(num) >= HCI_BLE_ADV_MIN_CREDITS_TO_RELEASE) {
         credits_released = hci_adv_credits_release();
-        assert(credits_released >= 0);
         if (credits_released > 0) {
-            // TODO: handle the exception that the command is discarded due to heap exhaustion
-            btsnd_hcic_ble_update_adv_report_flow_control(credits_released);
+            if (!hci_adv_flow_try_send_command(credits_released)) {
+                hci_adv_credits_release_rollback(credits_released);
+            }
+        } else {
+            assert (credits_released == 0);
         }
     }
     return credits_released;
@@ -342,8 +400,9 @@ int hci_adv_credits_force_release(uint16_t num)
     hci_adv_credits_prep_to_release(num);
     int credits_released = hci_adv_credits_release();
     if (credits_released > 0) {
-        // TODO: handle the exception that the command is discarded due to heap exhaustion
-        btsnd_hcic_ble_update_adv_report_flow_control(credits_released);
+        if (!hci_adv_flow_try_send_command(credits_released)) {
+            hci_adv_credits_release_rollback(credits_released);
+        }
     }
 
     return credits_released;

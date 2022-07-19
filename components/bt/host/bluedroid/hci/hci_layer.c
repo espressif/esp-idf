@@ -242,9 +242,12 @@ static void transmit_command(
     pkt_linked_item_t *linked_pkt = HCI_GET_CMD_LINKED_STRUCT(metadata);
 
     assert(command->layer_specific == HCI_CMD_BUF_TYPE_METADATA);
+    metadata->flags_vnd |= HCI_CMD_MSG_F_VND_QUEUED;
+
     // Store the command message type in the event field
     // in case the upper layer didn't already
     command->event = MSG_STACK_TO_HC_HCI_CMD;
+
     HCI_TRACE_DEBUG("HCI Enqueue Comamnd opcode=0x%x\n", metadata->opcode);
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
@@ -259,7 +262,7 @@ static future_t *transmit_command_futured(BT_HDR *command)
     pkt_linked_item_t *linked_pkt = HCI_GET_CMD_LINKED_STRUCT(metadata);
 
     assert(command->layer_specific == HCI_CMD_BUF_TYPE_METADATA);
-    metadata->flags_vnd |= HCI_CMD_MSG_F_VND_FUTURE;
+    metadata->flags_vnd |= (HCI_CMD_MSG_F_VND_QUEUED | HCI_CMD_MSG_F_VND_FUTURE);
 
     future_t *future = future_new();
 
@@ -294,8 +297,10 @@ static void event_command_ready(fixed_pkt_queue_t *queue)
     command_waiting_response_t *cmd_wait_q = &hci_host_env.cmd_waiting_q;
 
     wait_entry = fixed_pkt_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
-
     hci_cmd_metadata_t *metadata = (hci_cmd_metadata_t *)(wait_entry->data);
+    metadata->flags_vnd |= HCI_CMD_MSG_F_VND_SENT;
+    metadata->flags_vnd &= ~HCI_CMD_MSG_F_VND_QUEUED;
+
     if (metadata->flags_src & HCI_CMD_MSG_F_SRC_NOACK) {
         packet_fragmenter->fragment_and_dispatch(&metadata->command);
         hci_cmd_free_cb free_func = metadata->command_free_cb ? metadata->command_free_cb : (hci_cmd_free_cb) osi_free_func;

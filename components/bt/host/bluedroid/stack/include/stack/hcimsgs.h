@@ -939,7 +939,7 @@ BOOLEAN btsnd_hcic_read_authenticated_payload_tout(UINT16 handle);
 BOOLEAN btsnd_hcic_write_authenticated_payload_tout(UINT16 handle,
         UINT16 timeout);
 
-BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num);
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num, BT_HDR *static_buf);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 BOOLEAN btsnd_hcic_ble_read_phy(UINT16 conn_handle);
 
