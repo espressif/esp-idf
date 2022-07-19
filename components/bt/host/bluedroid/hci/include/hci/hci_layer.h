@@ -25,6 +25,7 @@
 #include "osi/osi.h"
 #include "osi/future.h"
 #include "osi/thread.h"
+#include "osi/pkt_queue.h"
 
 ///// LEGACY DEFINITIONS /////
 
@@ -47,6 +48,7 @@
 /* Local Bluetooth Controller ID for BR/EDR */
 #define LOCAL_BR_EDR_CONTROLLER_ID      0
 
+#define HCI_CMD_MSG_F_VND_FUTURE      (0x01)
 ///// END LEGACY DEFINITIONS /////
 
 typedef struct hci_hal_t hci_hal_t;
