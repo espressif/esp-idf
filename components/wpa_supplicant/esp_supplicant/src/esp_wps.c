@@ -1877,6 +1877,7 @@ int wifi_wps_disable_internal(void)
 int esp_wifi_wps_disable(void)
 {
     int ret = 0;
+    int wps_status;
 
     if (ESP_OK != wps_check_wifi_mode()) {
         return ESP_ERR_WIFI_MODE;
@@ -1890,7 +1891,8 @@ int esp_wifi_wps_disable(void)
         return ESP_OK;
     }
 
-    wpa_printf(MSG_INFO, "wifi_wps_disable\n");
+    wps_status = wps_get_status();
+    wpa_printf(MSG_INFO, "wifi_wps_disable");
     wps_set_type(WPS_TYPE_DISABLE); /* Notify WiFi task */
 
     /* Call wps_delete_timer to delete all WPS timer, no timer will call wps_post()
@@ -1908,7 +1910,10 @@ int esp_wifi_wps_disable(void)
         wpa_printf(MSG_ERROR, "wps disable: failed to disable wps, ret=%d", ret);
     }
 
-    esp_wifi_disconnect();
+    /* Only disconnect in case of WPS pending */
+    if (wps_status == WPS_STATUS_PENDING) {
+        esp_wifi_disconnect();
+    }
     esp_wifi_set_wps_start_flag_internal(false);
     wps_task_deinit();
     s_wps_enabled = false;
