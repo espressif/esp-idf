@@ -39,8 +39,8 @@ if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
     list(APPEND srcs "gpio/dedic_gpio.c")
 endif()
 
-if(CONFIG_SOC_SIGMADELTA_SUPPORTED)
-    list(APPEND srcs "gpio/sigmadelta_gpio.c")
+if(CONFIG_SOC_SDM_SUPPORTED)
+    list(APPEND srcs "sdm.c" "deprecated/sigma_delta_legacy.c")
 endif()
 
 if(CONFIG_SOC_RMT_SUPPORTED)

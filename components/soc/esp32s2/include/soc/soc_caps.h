@@ -62,7 +62,7 @@
 #define SOC_XT_WDT_SUPPORTED            1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-#define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_SDM_SUPPORTED               1
 #define SOC_SUPPORT_COEXISTENCE         0
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
@@ -235,9 +235,9 @@
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM            1U
-#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_GROUPS             1U
+#define SOC_SDM_CHANNELS_PER_GROUP 8
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED     1   //Support enabling MOSI and MISO phases together under Halfduplex mode

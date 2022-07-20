@@ -218,7 +218,7 @@ typedef struct {
 } test_pcnt_quadrature_context_t;
 
 TEST_PCNT_CALLBACK_ATTR
-static bool test_pcnt_quadrature_reach_watch_point(pcnt_unit_handle_t handle, pcnt_watch_event_data_t *event_data, void *user_data)
+static bool test_pcnt_quadrature_reach_watch_point(pcnt_unit_handle_t handle, const pcnt_watch_event_data_t *event_data, void *user_data)
 {
     test_pcnt_quadrature_context_t *user_ctx = (test_pcnt_quadrature_context_t *)user_data;
     user_ctx->triggered_watch_values[user_ctx->index++] = event_data->watch_point_value;
@@ -338,7 +338,7 @@ typedef struct {
 } test_pcnt_zero_cross_context_t;
 
 TEST_PCNT_CALLBACK_ATTR
-static bool test_pcnt_on_zero_cross(pcnt_unit_handle_t handle, pcnt_watch_event_data_t *event_data, void *user_data)
+static bool test_pcnt_on_zero_cross(pcnt_unit_handle_t handle, const pcnt_watch_event_data_t *event_data, void *user_data)
 {
     test_pcnt_zero_cross_context_t *user_ctx = (test_pcnt_zero_cross_context_t *)user_data;
     user_ctx->mode = event_data->zero_cross_mode;

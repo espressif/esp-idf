@@ -111,6 +111,7 @@ typedef enum {
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC32K by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
     SOC_MOD_CLK_AHB,                           /*< AHB_CLK sources from CPU with a configurable divider */
+    SOC_MOD_CLK_APB,                           /*< APB_CLK source is derived from AHB clock */
     SOC_MOD_CLK_XTAL32K,                       /*< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*< XTAL_CLK comes from the external 32MHz crystal */
@@ -163,7 +164,6 @@ typedef enum {
  * @brief Type of RMT clock source
  */
 typedef enum {
-    RMT_CLK_SRC_NONE = 0,                      /*!< No clock source is selected */
     RMT_CLK_SRC_AHB = SOC_MOD_CLK_AHB,         /*!< Select AHB clock as the source clock */
     RMT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
     RMT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
@@ -218,7 +218,7 @@ typedef enum {
  * @brief I2S clock source enum
  */
 typedef enum {
-    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL,          /*!< Select SOC_MOD_CLK_PLL as the default source clock  */
+    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL,        /*!< Select SOC_MOD_CLK_PLL as the default source clock  */
     I2S_CLK_SRC_PLL_96M = SOC_MOD_CLK_PLL,        /*!< Select PLL as the source clock */
 } soc_periph_i2s_clk_src_t;
 
@@ -237,6 +237,21 @@ typedef enum {
     I2C_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,
     I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
 } soc_periph_i2c_clk_src_t;
+
+//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SDM
+ */
+#define SOC_SDM_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Sigma Delta Modulator clock source
+ */
+typedef enum {
+    SDM_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
+} soc_periph_sdm_clk_src_t;
 
 #ifdef __cplusplus
 }

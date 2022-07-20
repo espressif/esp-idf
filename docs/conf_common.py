@@ -100,7 +100,7 @@ RISCV_DOCS = []  # type: list[str]
 
 TWAI_DOCS = ['api-reference/peripherals/twai.rst']
 
-SIGMADELTA_DOCS = ['api-reference/peripherals/sigmadelta.rst']
+SDM_DOCS = ['api-reference/peripherals/sdm.rst']
 
 I2S_DOCS = ['api-reference/peripherals/i2s.rst']
 
@@ -167,10 +167,10 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
-                            'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
                             'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
                             'SOC_ADC_SUPPORTED':ADC_DOCS,
                             'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
+                            'SOC_SDM_SUPPORTED':SDM_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

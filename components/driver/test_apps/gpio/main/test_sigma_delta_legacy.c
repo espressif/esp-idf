@@ -17,12 +17,12 @@ TEST_CASE("SigmaDelta_config_test", "[sigma_delta]")
         .sigmadelta_duty = 45,
         .sigmadelta_gpio = 4,
     };
-    for (int i = 0; i < SOC_SIGMADELTA_CHANNEL_NUM; i++) {
+    for (int i = 0; i < SIGMADELTA_CHANNEL_MAX; i++) {
         sigmadelta_cfg.channel = i;
         TEST_ESP_OK(sigmadelta_config(&sigmadelta_cfg));
     }
 
-    sigmadelta_cfg.channel = SOC_SIGMADELTA_CHANNEL_NUM;
+    sigmadelta_cfg.channel = SIGMADELTA_CHANNEL_MAX;
     TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_ARG, sigmadelta_config(&sigmadelta_cfg), "wrong channel number should be inspected");
 }
 

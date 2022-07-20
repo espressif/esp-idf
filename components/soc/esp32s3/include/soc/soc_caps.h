@@ -51,7 +51,7 @@
 #define SOC_XT_WDT_SUPPORTED            1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-#define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_SDM_SUPPORTED               1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_AES_SUPPORTED               1
@@ -250,9 +250,9 @@
 #define SOC_RTCIO_HOLD_SUPPORTED 1
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
-#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_GROUPS             1
+#define SOC_SDM_CHANNELS_PER_GROUP 8
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM                  3

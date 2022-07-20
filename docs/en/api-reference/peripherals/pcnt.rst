@@ -20,19 +20,19 @@ Functional Overview
 
 Description of the PCNT functionality is divided into the following sections:
 
-- :ref:`allocating-resource` - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
-- :ref:`set-up-channel-actions` - covers how to configure the PCNT channel to behave on different signal edges and levels.
-- :ref:`watch-points` - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
-- :ref:`callbacks-register-event` - describes how to hook your specific code to the watch point event callback function.
-- :ref:`set-glitch-filter` - describes how to enable and set the timing parameters for the internal glitch filter.
-- :ref:`enable-and-disable-unit` - describes how to enable and disable the PCNT unit.
-- :ref:`unit-io-control` - describes IO control functions of PCNT unit, like enable glitch filter, start and stop unit, get and clear count value.
-- :ref:`managing-power` - describes what functionality will prevent the chip from going into low power mode.
-- :ref:`iram-safety` - describes tips on how to make the PCNT interrupt and IO control functions work better along with a disabled cache.
-- :ref:`thread-safe` - lists which APIs are guaranteed to be thread safe by the driver.
-- :ref:`kconfig-option` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
+- :ref:`pcnt-resource-allocation` - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
+- :ref:`pcnt-setup-channel-actions` - covers how to configure the PCNT channel to behave on different signal edges and levels.
+- :ref:`pcnt-watch-points` - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
+- :ref:`pcnt-register-event-callbacks` - describes how to hook your specific code to the watch point event callback function.
+- :ref:`pcnt-set-glitch-filter` - describes how to enable and set the timing parameters for the internal glitch filter.
+- :ref:`pcnt-enable-disable-unit` - describes how to enable and disable the PCNT unit.
+- :ref:`pcnt-unit-io-control` - describes IO control functions of PCNT unit, like enable glitch filter, start and stop unit, get and clear count value.
+- :ref:`pcnt-power-management` - describes what functionality will prevent the chip from going into low power mode.
+- :ref:`pcnt-iram-safe` - describes tips on how to make the PCNT interrupt and IO control functions work better along with a disabled cache.
+- :ref:`pcnt-thread-safe` - lists which APIs are guaranteed to be thread safe by the driver.
+- :ref:`pcnt-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
 
-.. _allocating-resource:
+.. _pcnt-resource-allocation:
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -91,7 +91,7 @@ If a previously created PCNT channel is no longer needed, it's recommended to re
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
 
-.. _set-up-channel-actions:
+.. _pcnt-setup-channel-actions:
 
 Set Up Channel Actions
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -108,12 +108,12 @@ The PCNT will increase/decrease/hold its internal count value when the input pul
     // keep the counting mode when the control signal is high level, and reverse the counting mode when the control signal is low level
     ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
 
-.. _watch-points:
+.. _pcnt-watch-points:
 
 Watch Points
 ^^^^^^^^^^^^
 
-Each PCNT unit can be configured to watch several different values that you're interested in. The value to be watched is also called **Watch Point**. The watch point itself can't exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`. When the counter reaches either watch point, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`callbacks-register-event` for how to register event callbacks.
+Each PCNT unit can be configured to watch several different values that you're interested in. The value to be watched is also called **Watch Point**. The watch point itself can't exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`. When the counter reaches either watch point, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
 
 The watch point can be added and removed by :cpp:func:`pcnt_unit_add_watch_point` and :cpp:func:`pcnt_unit_remove_watch_point`. The commonly used watch points are: **zero cross**, **maximum / minimum count** and other threshold values. The number of available watch point is limited, :cpp:func:`pcnt_unit_add_watch_point` will return error :c:macro:`ESP_ERR_NOT_FOUND` if it can't find any free hardware resource to save the watch point. You can't add the same watch point for multiple times, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`.
 
@@ -126,7 +126,7 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
     // add high limit watch point
     ESP_ERROR_CHECK(pcnt_unit_add_watch_point(pcnt_unit, EXAMPLE_PCNT_HIGH_LIMIT));
 
-.. _callbacks-register-event:
+.. _pcnt-register-event-callbacks:
 
 Register Event Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -146,7 +146,7 @@ Registering callback function will result in lazy installation of interrupt serv
 
 .. code:: c
 
-    static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
+    static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
     {
         BaseType_t high_task_wakeup;
         QueueHandle_t queue = (QueueHandle_t)user_ctx;
@@ -162,7 +162,7 @@ Registering callback function will result in lazy installation of interrupt serv
     QueueHandle_t queue = xQueueCreate(10, sizeof(int));
     ESP_ERROR_CHECK(pcnt_unit_register_event_callbacks(pcnt_unit, &cbs, queue));
 
-.. _set-glitch-filter:
+.. _pcnt-set-glitch-filter:
 
 Set Glitch Filter
 ^^^^^^^^^^^^^^^^^
@@ -177,7 +177,7 @@ This function should be called when the the unit is in the init state. Otherwise
 
 .. note::
 
-    The glitch filter is clocked from APB. For the counter not to miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (usually 12.5 ns if APB equals 80MHz). As the APB frequency would be changed after DFS (Dynamic Frequency Scaling) enabled, which means the filter won't work as expect in that case. So the driver will install a PM lock for PCNT unit during the first time you enable the glitch filter. For more information related to power management strategy used in PCNT driver, please see :ref:`managing-power`.
+    The glitch filter is clocked from APB. For the counter not to miss any pulses, the maximum glitch width should be longer than one APB_CLK cycle (usually 12.5 ns if APB equals 80MHz). As the APB frequency would be changed after DFS (Dynamic Frequency Scaling) enabled, which means the filter won't work as expect in that case. So the driver will install a PM lock for PCNT unit during the first time you enable the glitch filter. For more information related to power management strategy used in PCNT driver, please see :ref:`pcnt-power-management`.
 
 .. code:: c
 
@@ -186,7 +186,7 @@ This function should be called when the the unit is in the init state. Otherwise
     };
     ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
 
-.. _enable-and-disable-unit:
+.. _pcnt-enable-disable-unit:
 
 Enable and Disable Unit
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -195,7 +195,7 @@ Before doing IO control to the PCNT unit, you need to enable it first, by callin
 
 * switch the PCNT driver state from **init** to **enable**.
 * enable the interrupt service if it has been lazy installed in :cpp:func:`pcnt_unit_register_event_callbacks`.
-* acquire a proper power management lock if it has been lazy installed in :cpp:func:`pcnt_unit_set_glitch_filter`. See also :ref:`managing-power` for more information.
+* acquire a proper power management lock if it has been lazy installed in :cpp:func:`pcnt_unit_set_glitch_filter`. See also :ref:`pcnt-power-management` for more information.
 
 On the contrary, calling :cpp:func:`pcnt_unit_disable` will do the opposite, that is, put the PCNT driver back to the **init** state, disable the interrupts service and release the power management lock.
 
@@ -203,7 +203,7 @@ On the contrary, calling :cpp:func:`pcnt_unit_disable` will do the opposite, tha
 
     ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
 
-.. _unit-io-control:
+.. _pcnt-unit-io-control:
 
 Unit IO Control
 ^^^^^^^^^^^^^^^
@@ -234,7 +234,7 @@ You can check current count value at any time by calling :cpp:func:`pcnt_unit_ge
     int pulse_count = 0;
     ESP_ERROR_CHECK(pcnt_unit_get_count(pcnt_unit, &pulse_count));
 
-.. _managing-power:
+.. _pcnt-power-management:
 
 Power Management
 ^^^^^^^^^^^^^^^^
@@ -243,7 +243,7 @@ When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the syste
 
 However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever you enable the glitch filter by :cpp:func:`pcnt_unit_set_glitch_filter`, the driver will guarantee that the power management lock is acquired after the PCNT unit is enabled by :cpp:func:`pcnt_unit_enable`. Likewise, the driver releases the lock after :cpp:func:`pcnt_unit_disable` is called.
 
-.. _iram-safety:
+.. _pcnt-iram-safe:
 
 IRAM Safe
 ^^^^^^^^^
@@ -265,7 +265,7 @@ There's another Kconfig option :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` that can put
 - :cpp:func:`pcnt_unit_clear_count`
 - :cpp:func:`pcnt_unit_get_count`
 
-.. _thread-safe:
+.. _pcnt-thread-safe:
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -280,13 +280,13 @@ The following functions are allowed to run under ISR context, the driver uses a 
 
 Other functions that take the :cpp:type:`pcnt_unit_handle_t` and :cpp:type:`pcnt_channel_handle_t` as the first positional parameter, are not treated as thread safe. This means you should avoid calling them from multiple tasks.
 
-.. _kconfig-option:
+.. _pcnt-kconfig-options:
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` controls where to place the PCNT control functions (IRAM or Flash), see :ref:`iram-safety` for more information.
-- :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see :ref:`iram-safety` for more information.
+- :ref:`CONFIG_PCNT_CTRL_FUNC_IN_IRAM` controls where to place the PCNT control functions (IRAM or Flash), see :ref:`pcnt-iram-safe` for more information.
+- :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see :ref:`pcnt-iram-safe` for more information.
 - :ref:`CONFIG_PCNT_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size.
 
 Application Examples

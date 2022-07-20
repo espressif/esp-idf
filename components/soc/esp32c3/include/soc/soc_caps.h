@@ -42,7 +42,7 @@
 #define SOC_RTC_MEM_SUPPORTED           1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-#define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_SDM_SUPPORTED               1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
@@ -247,9 +247,9 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1U) // 1 sigma-delta peripheral
-#define SOC_SIGMADELTA_CHANNEL_NUM (4)  // 4 channels
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_GROUPS             1U
+#define SOC_SDM_CHANNELS_PER_GROUP 4
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2

@@ -20,7 +20,7 @@
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE
 
-static bool IRAM_ATTR test_pcnt_iram_safe_callback(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *event_data, void *user_data)
+static bool IRAM_ATTR test_pcnt_iram_safe_callback(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *event_data, void *user_data)
 {
     uint32_t *data = (uint32_t *)user_data;
     (*data)++;

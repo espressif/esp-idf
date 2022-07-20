@@ -177,7 +177,6 @@ typedef enum {
  * @brief Type of RMT clock source
  */
 typedef enum {
-    RMT_CLK_SRC_NONE = 0,                        /*!< No clock source is selected */
     RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,           /*!< Select APB as the source clock */
     RMT_CLK_SRC_REF_TICK = SOC_MOD_CLK_REF_TICK, /*!< Select REF_TICK as the source clock */
     RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
@@ -191,16 +190,6 @@ typedef enum {
     RMT_BASECLK_REF = SOC_MOD_CLK_REF_TICK, /*!< RMT source clock is REF_TICK */
     RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB,  /*!< RMT source clock default choice is APB */
 } soc_periph_rmt_clk_src_legacy_t;
-
-//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
-
-/**
- * @brief Type of Temp Sensor clock source
- * @note ESP32 does not support temperature sensor
- */
-typedef enum {
-    TEMPERATURE_SENSOR_SRC_NA,
-} soc_periph_temperature_sensor_clk_src_t;
 
 ///////////////////////////////////////////////////UART/////////////////////////////////////////////////////////////////
 
@@ -243,7 +232,7 @@ typedef enum {
 
 ///////////////////////////////////////////////////I2S//////////////////////////////////////////////////////////////////
 /**
- * @brief Array initializer for all supported clock sources of
+ * @brief Array initializer for all supported clock sources of I2S
  */
 #define SOC_I2S_CLKS {SOC_MOD_CLK_PLL_D2, SOC_MOD_CLK_APLL}
 
@@ -271,6 +260,21 @@ typedef enum {
     I2C_CLK_SRC_APB = SOC_MOD_CLK_APB,
     I2C_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,
 } soc_periph_i2c_clk_src_t;
+
+//////////////////////////////////////////////////SDM//////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of SDM
+ */
+#define SOC_SDM_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Sigma Delta Modulator clock source
+ */
+typedef enum {
+    SDM_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    SDM_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
+} soc_periph_sdm_clk_src_t;
 
 #ifdef __cplusplus
 }

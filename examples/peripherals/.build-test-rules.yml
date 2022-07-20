@@ -76,21 +76,17 @@ examples/peripherals/rmt/ir_nec_transceiver:
   disable:
     - if: SOC_RMT_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+    - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/peripherals/rmt/musical_buzzer:
   enable:
-    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
-      temporary: true
-      reason: the other targets are not tested yet
+    - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT == 1
 
 examples/peripherals/rmt/stepper_motor:
   enable:
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: the other targets are not tested yet
+    - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP == 1
 
 examples/peripherals/sdio:
   disable:
@@ -102,11 +98,9 @@ examples/peripherals/secure_element/atecc608_ecdsa:
       temporary: true
       reason: the other targets are not tested yet
 
-examples/peripherals/sigmadelta:
+examples/peripherals/sigma_delta:
   disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+    - if: SOC_SDM_SUPPORTED != 1
 
 examples/peripherals/spi_master/hd_eeprom:
   disable:

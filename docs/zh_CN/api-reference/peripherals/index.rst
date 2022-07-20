@@ -27,7 +27,7 @@
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
     sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
-    :SOC_SIGMADELTA_SUPPORTED: sigmadelta
+    :SOC_SDM_SUPPORTED: sdm
     spi_master
     spi_slave
     :esp32: secure_element
