@@ -84,6 +84,10 @@ examples/peripherals/rmt/musical_buzzer:
   enable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT == 1
 
+examples/peripherals/rmt/onewire_ds18b20:
+  disable:
+    - if: SOC_RMT_SUPPORTED != 1
+
 examples/peripherals/rmt/stepper_motor:
   enable:
     - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP == 1
