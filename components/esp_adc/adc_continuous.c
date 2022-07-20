@@ -346,7 +346,7 @@ static IRAM_ATTR bool s_adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
             //ringbuffer overflow
             if (adc_digi_ctx->cbs.on_pool_ovf) {
                 adc_continuous_evt_data_t edata = {};
-                if (adc_digi_ctx->cbs.on_conv_done(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
+                if (adc_digi_ctx->cbs.on_pool_ovf(adc_digi_ctx, &edata, adc_digi_ctx->user_data)) {
                     need_yield |= true;
                 }
             }
