@@ -661,7 +661,7 @@ static const ptest_func_t slave_test_func = {
 
 #define TEST_SPI_MASTER_SLAVE(name, param_group, extra_tag) \
     PARAM_GROUP_DECLARE(name, param_group) \
-    TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]"#extra_tag, &master_test_func, &slave_test_func)
+    TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]"extra_tag, &master_test_func, &slave_test_func)
 
 /************ Master Code ***********************************************/
 static void test_master_init(void** arg)
