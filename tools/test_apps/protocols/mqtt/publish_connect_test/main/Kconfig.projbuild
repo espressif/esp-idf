@@ -30,7 +30,7 @@ menu "Example Configuration"
         help
             topic to which esp32 client publishes
 
-    config EXAMPLE_SUBSCIBE_TOPIC
+    config EXAMPLE_SUBSCRIBE_TOPIC
         string "subscribe topic"
         default "/topic/subscribe/py2esp"
         help

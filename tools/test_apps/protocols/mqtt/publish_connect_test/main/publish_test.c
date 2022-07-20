@@ -52,8 +52,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(mqtt_event_group, CONNECTED_BIT);
-        msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCIBE_TOPIC, qos_test);
-        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", CONFIG_EXAMPLE_SUBSCIBE_TOPIC, msg_id);
+        msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCRIBE_TOPIC, qos_test);
+        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", CONFIG_EXAMPLE_SUBSCRIBE_TOPIC, msg_id);
 
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -164,24 +164,24 @@ static void configure_client(char *transport)
             break;
         case TCP:
             ESP_LOGI(TAG, "[TCP transport] Startup..");
-            config.uri = CONFIG_EXAMPLE_BROKER_TCP_URI;
+            config.broker.address.uri = CONFIG_EXAMPLE_BROKER_TCP_URI;
             break;
         case SSL:
             ESP_LOGI(TAG, "[SSL transport] Startup..");
-            config.uri = CONFIG_EXAMPLE_BROKER_SSL_URI;
+            config.broker.address.uri = CONFIG_EXAMPLE_BROKER_SSL_URI;
             break;
         case WS:
             ESP_LOGI(TAG, "[WS transport] Startup..");
-            config.uri = CONFIG_EXAMPLE_BROKER_WS_URI;
+            config.broker.address.uri = CONFIG_EXAMPLE_BROKER_WS_URI;
             break;
         case WSS:
             ESP_LOGI(TAG, "[WSS transport] Startup..");
-            config.uri = CONFIG_EXAMPLE_BROKER_WSS_URI;
+            config.broker.address.uri = CONFIG_EXAMPLE_BROKER_WSS_URI;
             break;
         }
         if (selected_transport == SSL || selected_transport == WSS) {
             ESP_LOGI(TAG, "Set certificate");
-            config.cert_pem = (const char *)mqtt_eclipseprojects_io_pem_start;
+            config.broker.verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start;
         }
         esp_mqtt_set_config(mqtt_client, &config);
 
