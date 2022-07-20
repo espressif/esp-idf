@@ -36,9 +36,6 @@
 #define ADC_HAL_DMA_INTR_MASK                           BIT(9)
 #endif
 
-//For ADC module, each conversion contains 4 bytes
-#define ADC_HAL_DATA_LEN_PER_CONV 4
-
 typedef enum adc_hal_work_mode_t {
     ADC_HAL_ULP_MODE,
     ADC_HAL_SINGLE_READ_MODE,
