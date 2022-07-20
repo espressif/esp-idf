@@ -126,6 +126,16 @@ void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num);
 void i2s_hal_set_clock_src(i2s_hal_context_t *hal, i2s_clock_src_t sel);
 
 /**
+ * @brief Calculate the closest sample rate clock configuration.
+ *        clock relationship:
+ *        Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a)
+ *
+ * @param clk_cfg I2S clock configuration(input)
+ * @param cal Point to `i2s_ll_mclk_div_t` structure(output).
+ */
+void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mclk_div_t *cal);
+
+/**
  * @brief Set Tx channel style
  *
  * @param hal Context of the HAL layer

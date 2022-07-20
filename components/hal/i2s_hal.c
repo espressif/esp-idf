@@ -19,7 +19,7 @@
  * @param clk_cfg I2S clock configuration(input)
  * @param cal Point to `i2s_ll_mclk_div_t` structure(output).
  */
-static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mclk_div_t *cal)
+void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mclk_div_t *cal)
 {
     int ma = 0;
     int mb = 0;
