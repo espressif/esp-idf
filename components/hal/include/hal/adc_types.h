@@ -161,7 +161,8 @@ typedef struct {
 typedef struct {
     union {
         struct {
-            uint32_t data:          13; /*!<ADC real output data info. Resolution: 13 bit. */
+            uint32_t data:          12; /*!<ADC real output data info. Resolution: 12 bit. */
+            uint32_t reserved12:    1;  /*!<Reserved12. */
             uint32_t channel:       4;  /*!<ADC channel index info.
                                             If (channel < ADC_CHANNEL_MAX), The data is valid.
                                             If (channel > ADC_CHANNEL_MAX), The data is invalid. */
