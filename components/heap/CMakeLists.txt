@@ -3,8 +3,16 @@ set(srcs
     "heap_caps_init.c"
     "multi_heap.c")
 
+set(includes "include")
+
 if(NOT CONFIG_HEAP_TLSF_USE_ROM_IMPL)
-    list(APPEND srcs "heap_tlsf.c")
+    set(priv_includes "tlsf")
+    list(APPEND srcs "tlsf/tlsf.c")
+    if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+        set_source_files_properties(tlsf/tlsf.c
+                                    PROPERTIES COMPILE_FLAGS
+                                    "-include ../tlsf_platform.h")
+    endif()
 endif()
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
@@ -31,7 +39,8 @@ endif()
 
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS include
+                    INCLUDE_DIRS ${includes}
+                    PRIV_INCLUDE_DIRS ${priv_includes}
                     LDFRAGMENTS linker.lf
                     PRIV_REQUIRES soc)
 

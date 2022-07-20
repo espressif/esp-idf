@@ -21,7 +21,7 @@
 /* Defines compile-time configuration macros */
 #include "multi_heap_config.h"
 
-#include "heap_tlsf.h"
+#include "tlsf.h"
 
 #ifdef MULTI_HEAP_POISONING
 
@@ -176,6 +176,22 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
         }
     }
     return valid;
+}
+
+/*!
+ * @brief Definition of the weak function declared in TLSF repository.
+ * The call of this function assures that the header of an absorbed
+ * block is filled with the correct pattern in case of comprehensive
+ * heap poisoning.
+ *
+ * @param start: pointer to the start of the memory region to fill
+ * @param size: size of the memory region to fill
+ * @param is_free: Indicate if the pattern to use the fill the region should be
+ * an after free or after allocation pattern.
+ */
+void block_absorb_post_hook(void *start, size_t size, bool is_free)
+{
+    multi_heap_internal_poison_fill_region(start, size, is_free);
 }
 #endif
 

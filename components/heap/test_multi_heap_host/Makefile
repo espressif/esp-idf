@@ -6,14 +6,14 @@ ifneq ($(filter clean,$(MAKECMDGOALS)),)
 endif
 
 SOURCE_FILES = $(abspath \
-    ../multi_heap.c \
-    ../heap_tlsf.c \
-	../multi_heap_poisoning.c \
 	test_multi_heap.cpp \
+	../multi_heap_poisoning.c \
+	../multi_heap.c \
+	../tlsf/tlsf.c \
 	main.cpp \
-    )
+	)
 
-INCLUDE_FLAGS = -I../include -I../../../tools/catch
+INCLUDE_FLAGS = -I../include -I../../../tools/catch -I../tlsf
 
 GCOV ?= gcov
 
