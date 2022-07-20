@@ -614,7 +614,7 @@ if(CONFIG_BT_ENABLED)
             )
         endif()
 
-        if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3)
+        if(CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE)
             list(APPEND srcs
                 "host/nimble/esp-hci/src/esp_nimble_hci.c"
             )

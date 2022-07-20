@@ -628,3 +628,10 @@ config BT_NIMBLE_USE_ESP_TIMER
     default y
     help
         Set this option to use Esp Timer which has higher priority timer instead of FreeRTOS timer
+
+config BT_NIMBLE_LEGACY_VHCI_ENABLE
+    bool
+    default y if (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    default n
+    help
+        This option is used to distinguish whether a previous version of VHCI is being used
