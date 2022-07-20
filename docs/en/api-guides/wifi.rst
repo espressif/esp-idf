@@ -1177,7 +1177,7 @@ Call :cpp:func:`esp_wifi_set_mode()` to set the Wi-Fi mode.
 Station Basic Configuration
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() can be used to configure the station. The table below describes the fields in detail.
+API :cpp:func:`esp_wifi_set_config()` can be used to configure the station. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
 .. list-table::
    :header-rows: 1
@@ -1214,7 +1214,7 @@ API esp_wifi_set_config() can be used to configure the station. The table below 
 AP Basic Configuration
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() can be used to configure the AP. The table below describes the fields in detail.
+API :cpp:func:`esp_wifi_set_config()` can be used to configure the AP. And the configuration will be stored in NVS. The table below describes the fields in detail.
 
 .. list-table::
    :header-rows: 1

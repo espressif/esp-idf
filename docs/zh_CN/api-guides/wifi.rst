@@ -1177,7 +1177,7 @@ Wi-Fi 模式
 Station 基本配置
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() 可用于配置 station。下表详细介绍了各个字段。
+API :cpp:func:`esp_wifi_set_config()` 可用于配置 station。配置的参数信息会保存到 NVS 中。下表详细介绍了各个字段。
 
 .. list-table::
    :header-rows: 1
@@ -1214,7 +1214,7 @@ API esp_wifi_set_config() 可用于配置 station。下表详细介绍了各个�
 AP 基本配置
 +++++++++++++++++++++++++++++++++++++
 
-API esp_wifi_set_config() 可用于配置 AP。下表详细介绍了各个字段。
+API :cpp:func:`esp_wifi_set_config()` 可用于配置 AP。配置的参数信息会保存到 NVS 中。下表详细介绍了各个字段。
 
 .. list-table::
    :header-rows: 1
