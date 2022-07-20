@@ -59,6 +59,8 @@ static DRAM_ATTR struct {
 /* Indicate PHY is calibrated or not */
 static bool s_is_phy_calibrated = false;
 
+static bool s_is_phy_reg_stored = false;
+
 /* Reference count of enabling PHY */
 static uint8_t s_phy_access_ref = 0;
 
@@ -213,12 +215,13 @@ static inline void phy_digital_regs_store(void)
 {
     if (s_phy_digital_regs_mem != NULL) {
         phy_dig_reg_backup(true, s_phy_digital_regs_mem);
+        s_is_phy_reg_stored = true;
     }
 }
 
 static inline void phy_digital_regs_load(void)
 {
-    if (s_phy_digital_regs_mem != NULL) {
+    if (s_is_phy_reg_stored && s_phy_digital_regs_mem != NULL) {
         phy_dig_reg_backup(false, s_phy_digital_regs_mem);
     }
 }
@@ -325,7 +328,7 @@ void esp_phy_pd_mem_deinit(void)
 
     s_phy_backup_mem_ref--;
     if (s_phy_backup_mem_ref == 0) {
-        s_is_phy_calibrated = false;
+        s_is_phy_reg_stored = false;
         free(s_phy_digital_regs_mem);
         s_phy_digital_regs_mem = NULL;
     }
