@@ -51,7 +51,7 @@ void run_usb_dual_cdc_device(void)
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = {
+    tinyusb_config_cdcacm_t acm_cfg = {
         .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
         .rx_unread_buf_sz = 64,
@@ -61,10 +61,10 @@ void run_usb_dual_cdc_device(void)
         .callback_line_coding_changed = NULL
     };
 
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 #if (CONFIG_TINYUSB_CDC_COUNT > 1)
-    amc_cfg.cdc_port = TINYUSB_CDC_ACM_1;
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    acm_cfg.cdc_port = TINYUSB_CDC_ACM_1;
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 #endif
 
     printf("USB initialization DONE\n");
