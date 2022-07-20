@@ -822,6 +822,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
 
     periph_module_enable(PERIPH_SARADC_MODULE);
     adc_power_acquire();
+    adc_ll_digi_clk_sel(0);
 
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     adc_hal_arbiter_config(&config);
