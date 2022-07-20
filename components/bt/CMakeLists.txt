@@ -54,6 +54,7 @@ if(CONFIG_BT_ENABLED)
          "common/osi/config.c"
          "common/osi/fixed_queue.c"
          "common/osi/pkt_queue.c"
+         "common/osi/fixed_pkt_queue.c"
          "common/osi/future.c"
          "common/osi/hash_functions.c"
          "common/osi/hash_map.c"
