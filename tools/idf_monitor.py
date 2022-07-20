@@ -234,7 +234,8 @@ class SerialMonitor(Monitor):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
         """ Use 'with self' to temporarily disable monitoring behaviour """
         self.console_reader.start()
-        self.serial_reader.gdb_exit = self.gdb_helper.gdb_exit  # write gdb_exit flag
+        if self.elf_exists:
+            self.serial_reader.gdb_exit = self.gdb_helper.gdb_exit  # write gdb_exit flag
         self.serial_reader.start()
 
     def _pre_start(self) -> None:
