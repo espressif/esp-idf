@@ -24,4 +24,4 @@ idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS ${priv_includes}
                     LDFRAGMENTS linker.lf
-                    PRIV_REQUIRES spi_flash app_update mbedtls esp_rom soc)
+                    PRIV_REQUIRES spi_flash app_update mbedtls esp_rom soc driver)

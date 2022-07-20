@@ -254,8 +254,10 @@ if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 endif()
 
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
-set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver)
-set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver)
+
+if(CONFIG_PM_ENABLE)
+    target_link_libraries(mbedcrypto PRIVATE idf::esp_pm)
+endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 

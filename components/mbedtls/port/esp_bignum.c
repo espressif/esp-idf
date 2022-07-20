@@ -20,7 +20,9 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
+#endif
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"

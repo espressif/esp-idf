@@ -7,7 +7,6 @@
 #include <sys/param.h>
 #include <esp_log.h>
 #include <string.h>
-#include "nvs_flash.h"
 
 #include <protocomm.h>
 #include <protocomm_ble.h>
