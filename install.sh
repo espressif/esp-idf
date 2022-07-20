@@ -4,7 +4,7 @@ set -e
 set -u
 
 basedir=$(dirname "$0")
-IDF_PATH=$(cd "${basedir}"; pwd)
+IDF_PATH=$(cd "${basedir}"; pwd -P)
 export IDF_PATH
 
 echo "Detecting the Python interpreter"
