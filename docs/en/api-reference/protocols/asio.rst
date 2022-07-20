@@ -5,7 +5,7 @@ Asio is a cross-platform C++ library, see https://think-async.com/Asio/. It prov
 
 The ESP-IDF component `ASIO` has been moved from ESP-IDF since version v5.0 to a separate repository:
 
-* `ASIO component on GitHub <https://github.com/espressif/esp-protocols/components/asio>`__
+* `ASIO component on GitHub <https://github.com/espressif/esp-protocols/tree/master/components/asio>`__
 
 Hosted Documentation
 --------------------
