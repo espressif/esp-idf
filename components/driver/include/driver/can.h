@@ -43,10 +43,11 @@ extern "C" {
 #define CAN_STATE_BUS_OFF               TWAI_STATE_BUS_OFF
 #define CAN_STATE_RECOVERING            TWAI_STATE_RECOVERING
 
+#if SOC_TWAI_SUPPORTED
 typedef twai_state_t                    can_state_t;
 typedef twai_general_config_t           can_general_config_t;
 typedef twai_status_info_t              can_status_info_t;
-
+#endif // SOC_TWAI_SUPPORTED
 
 #define can_driver_install(g_config, t_config, f_config)        twai_driver_install(g_config, t_config, f_config)
 #define can_driver_uninstall()                                  twai_driver_uninstall()

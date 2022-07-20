@@ -828,7 +828,6 @@ components/heap/heap_tlsf.h
 components/heap/heap_tlsf_block_functions.h
 components/heap/heap_tlsf_config.h
 components/heap/heap_trace_standalone.c
-components/heap/include/esp_heap_task_info.h
 components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
 components/heap/multi_heap_config.h
@@ -1061,7 +1060,6 @@ components/soc/esp32c3/i2c_periph.c
 components/soc/esp32c3/include/soc/apb_ctrl_reg.h
 components/soc/esp32c3/include/soc/apb_ctrl_struct.h
 components/soc/esp32c3/include/soc/apb_saradc_reg.h
-components/soc/esp32c3/include/soc/apb_saradc_struct.h
 components/soc/esp32c3/include/soc/assist_debug_reg.h
 components/soc/esp32c3/include/soc/bb_reg.h
 components/soc/esp32c3/include/soc/boot_mode.h
@@ -1153,7 +1151,6 @@ components/soc/esp32s2/i2c_periph.c
 components/soc/esp32s2/include/soc/apb_ctrl_reg.h
 components/soc/esp32s2/include/soc/apb_ctrl_struct.h
 components/soc/esp32s2/include/soc/apb_saradc_reg.h
-components/soc/esp32s2/include/soc/apb_saradc_struct.h
 components/soc/esp32s2/include/soc/assist_debug_reg.h
 components/soc/esp32s2/include/soc/bb_reg.h
 components/soc/esp32s2/include/soc/boot_mode.h
@@ -1170,7 +1167,6 @@ components/soc/esp32s2/include/soc/gpio_sig_map.h
 components/soc/esp32s2/include/soc/gpio_struct.h
 components/soc/esp32s2/include/soc/hwcrypto_reg.h
 components/soc/esp32s2/include/soc/i2c_reg.h
-components/soc/esp32s2/include/soc/i2c_struct.h
 components/soc/esp32s2/include/soc/interrupt_reg.h
 components/soc/esp32s2/include/soc/ledc_reg.h
 components/soc/esp32s2/include/soc/ledc_struct.h
@@ -1191,10 +1187,8 @@ components/soc/esp32s2/include/soc/sensitive_reg.h
 components/soc/esp32s2/include/soc/soc_pins.h
 components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/spi_mem_reg.h
-components/soc/esp32s2/include/soc/spi_mem_struct.h
 components/soc/esp32s2/include/soc/spi_pins.h
 components/soc/esp32s2/include/soc/spi_reg.h
-components/soc/esp32s2/include/soc/spi_struct.h
 components/soc/esp32s2/include/soc/syscon_reg.h
 components/soc/esp32s2/include/soc/syscon_struct.h
 components/soc/esp32s2/include/soc/systimer_reg.h

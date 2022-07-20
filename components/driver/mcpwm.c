@@ -25,6 +25,8 @@
 
 static const char *TAG = "mcpwm";
 
+_Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
+
 #define MCPWM_DRIVER_INIT_ERROR "MCPWM DRIVER NOT INITIALIZED"
 #define MCPWM_GROUP_NUM_ERROR   "MCPWM GROUP NUM ERROR"
 #define MCPWM_PRESCALE_ERROR    "MCPWM PRESCALE ERROR"

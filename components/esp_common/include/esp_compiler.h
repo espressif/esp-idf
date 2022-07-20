@@ -3,8 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __ESP_COMPILER_H
-#define __ESP_COMPILER_H
+
+#pragma once
+
+#include "sdkconfig.h"
 
 /*
  * The likely and unlikely macro pairs:
@@ -49,6 +51,4 @@
 #else
 #define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(member, value)  .member = value,
 #define ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(member)
-#endif
-
 #endif
