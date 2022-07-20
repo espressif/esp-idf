@@ -11,7 +11,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/cdefs.h>
-#include "heap_tlsf.h"
+#include "tlsf.h"
+#include "tlsf_block_functions.h"
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
 
