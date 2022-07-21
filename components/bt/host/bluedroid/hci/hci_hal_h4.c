@@ -272,7 +272,7 @@ bool host_recv_adv_packet(uint8_t *packet)
 {
     assert(packet);
     if(packet[0] == DATA_TYPE_EVENT && packet[1] == HCI_BLE_EVENT) {
-        if(packet[3] ==  HCI_BLE_ADV_PKT_RPT_EVT
+        if(packet[3] ==  HCI_BLE_ADV_PKT_RPT_EVT || packet[3] == HCI_BLE_DIRECT_ADV_EVT
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
         || packet[3] ==  HCI_BLE_ADV_DISCARD_REPORT_EVT
 #endif

@@ -3481,6 +3481,8 @@ static void btm_adv_pkt_handler(void *arg)
             btm_ble_process_adv_pkt(p);
         } else if (ble_sub_code == HCI_BLE_ADV_DISCARD_REPORT_EVT) {
             btm_ble_process_adv_discard_evt(p);
+        } else if (ble_sub_code == HCI_BLE_DIRECT_ADV_EVT) {
+            btm_ble_process_direct_adv_pkt(p);
         } else {
             assert (0);
         }
@@ -3794,6 +3796,12 @@ void btm_ble_process_adv_discard_evt(UINT8 *p)
     }
 #endif
 }
+
+void btm_ble_process_direct_adv_pkt(UINT8 *p)
+{
+    // TODO
+}
+
 /*******************************************************************************
 **
 ** Function         btm_ble_start_scan
