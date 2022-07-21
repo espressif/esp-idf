@@ -18,7 +18,6 @@
 #include "driver/rtc_io.h"
 #include "sys/lock.h"
 #include "driver/gpio.h"
-#include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "adc1_private.h"
 #include "hal/adc_types.h"

@@ -19,7 +19,6 @@
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
