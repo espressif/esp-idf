@@ -25,7 +25,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid)
     u8 own_addr[ETH_ALEN];
     const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
     struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
-    uint8_t use_pt = esp_wifi_get_use_h2e_internal();
+    uint8_t use_pt = esp_wifi_sta_get_use_h2e_internal();
 
     if (use_pt && !g_sae_pt) {
         g_sae_pt = sae_derive_pt(g_allowed_groups, ssid->ssid, ssid->len, pw, strlen((const char *)pw), NULL);

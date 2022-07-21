@@ -2674,7 +2674,7 @@ int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
         sm->ap_rsnxe_len = len;
     }
 
-    sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal();
+    sm->sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
     return 0;
 }
 

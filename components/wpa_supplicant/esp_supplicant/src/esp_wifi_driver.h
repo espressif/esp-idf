@@ -279,7 +279,7 @@ esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 void esp_wifi_get_pmf_config_internal(wifi_pmf_config_t *pmf_cfg, uint8_t ifx);
 bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);
-uint8_t esp_wifi_get_config_sae_pwe_h2e_internal(void);
-uint8_t esp_wifi_get_use_h2e_internal(void);
+uint8_t esp_wifi_sta_get_config_sae_pwe_h2e_internal(void);
+uint8_t esp_wifi_sta_get_use_h2e_internal(void);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
