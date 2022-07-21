@@ -1,5 +1,5 @@
 *******************************
-{IDF_TARGET_NAME} H/W 硬件参考
+H/W 硬件参考
 *******************************
 :link_to_translation:`en:[English]`
 

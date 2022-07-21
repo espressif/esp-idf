@@ -1,5 +1,5 @@
 ************************************
-{IDF_TARGET_NAME} Hardware Reference
+Hardware Reference
 ************************************
 :link_to_translation:`zh_CN:[中文]`
 

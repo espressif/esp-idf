@@ -303,7 +303,7 @@ How To Enable Secure Boot V2
 
 8. When you're ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by the build system) and then wait for flashing to complete.
 
-9. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 4.
+9. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 6.
 
 .. note:: ``idf.py flash`` doesn't flash the bootloader if Secure Boot is enabled.
 
