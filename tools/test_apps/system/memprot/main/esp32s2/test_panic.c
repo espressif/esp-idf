@@ -27,7 +27,7 @@ void __real_esp_cpu_stall(int core_id);
 void __wrap_esp_panic_handler(panic_info_t *info)
 {
     XtExcFrame *frm = (XtExcFrame *)info->frame;
-    if ( frm->exccause == EXCCAUSE_ILLEGAL && g_override_illegal_instruction == true ) {
+    if (frm->exccause == EXCCAUSE_ILLEGAL && g_override_illegal_instruction == true) {
         frm->pc = frm->a0;
         return;
     } else {
@@ -37,7 +37,7 @@ void __wrap_esp_panic_handler(panic_info_t *info)
 
 void __wrap_esp_cpu_stall(int core_id)
 {
-    if ( g_override_illegal_instruction == true ) {
+    if (g_override_illegal_instruction == true) {
         return;
     } else {
         __real_esp_cpu_stall(core_id);
