@@ -528,7 +528,7 @@ static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
-    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
+    hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
