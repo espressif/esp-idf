@@ -44,7 +44,13 @@ void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
 void app_main(void)
 {
     ESP_LOGI(TAG, "USB initialization");
-    const tinyusb_config_t tusb_cfg = {}; // the configuration using default values
+    const tinyusb_config_t tusb_cfg = {
+        .device_descriptor = NULL,
+        .string_descriptor = NULL,
+        .external_phy = false,
+        .configuration_descriptor = NULL,
+    };
+
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_config_cdcacm_t acm_cfg = {

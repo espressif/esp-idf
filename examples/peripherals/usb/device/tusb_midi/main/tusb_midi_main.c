@@ -80,7 +80,8 @@ void app_main(void)
     tinyusb_config_t const tusb_cfg = {
         .device_descriptor = NULL, // If device_descriptor is NULL, tinyusb_driver_install() will use Kconfig
         .string_descriptor = NULL,
-        .external_phy = false // In the most cases you need to use a `false` value
+        .external_phy = false,
+        .configuration_descriptor = NULL,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 

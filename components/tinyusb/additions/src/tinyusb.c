@@ -33,12 +33,12 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
         .otg_mode = USB_OTG_MODE_DEVICE,
     };
     usb_phy_gpio_conf_t gpio_conf = {
-    .vp_io_num = USBPHY_VP_NUM,
-    .vm_io_num = USBPHY_VM_NUM,
-    .rcv_io_num = USBPHY_RCV_NUM,
-    .oen_io_num = USBPHY_OEN_NUM,
-    .vpo_io_num = USBPHY_VPO_NUM,
-    .vmo_io_num = USBPHY_VMO_NUM,
+        .vp_io_num = USBPHY_VP_NUM,
+        .vm_io_num = USBPHY_VM_NUM,
+        .rcv_io_num = USBPHY_RCV_NUM,
+        .oen_io_num = USBPHY_OEN_NUM,
+        .vpo_io_num = USBPHY_VPO_NUM,
+        .vmo_io_num = USBPHY_VMO_NUM,
     };
     if (config->external_phy) {
         phy_conf.target = USB_PHY_TARGET_EXT;
@@ -48,6 +48,10 @@ esp_err_t tinyusb_driver_install(const tinyusb_config_t *config)
     }
     ESP_RETURN_ON_ERROR(usb_new_phy(&phy_conf, &phy_hdl), TAG, "Install USB PHY failed");
 
+#if (CONFIG_TINYUSB_HID_COUNT > 0)
+    // For HID device, configuration descriptor must be provided
+    ESP_RETURN_ON_FALSE(config->configuration_descriptor, ESP_ERR_INVALID_ARG, TAG, "Configuration descriptor must be provided for HID device");
+#endif
     dev_descriptor = config->device_descriptor ? config->device_descriptor : &descriptor_dev_kconfig;
     string_descriptor = config->string_descriptor ? config->string_descriptor : descriptor_str_kconfig;
     cfg_descriptor = config->configuration_descriptor ? config->configuration_descriptor : descriptor_cfg_kconfig;

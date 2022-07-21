@@ -47,18 +47,20 @@ void app_main(void)
         "012-345",            // 3: Serials, should use chip ID
     };
 
-    tinyusb_config_t tusb_cfg = {
+    const tinyusb_config_t tusb_cfg = {
         .descriptor = &my_descriptor,
         .string_descriptor = my_string_descriptor,
-        .external_phy = false // In the most cases you need to use a `false` value
+        .external_phy = false,
+        .configuration_descriptor = NULL,
     };
 
 #else
 
-    tinyusb_config_t tusb_cfg = {
-        .descriptor = NULL,
+    const tinyusb_config_t tusb_cfg = {
+        .device_descriptor = NULL,
         .string_descriptor = NULL,
-        .external_phy = false // In the most cases you need to use a `false` value
+        .external_phy = false,
+        .configuration_descriptor = NULL,
     };
 
 #endif
