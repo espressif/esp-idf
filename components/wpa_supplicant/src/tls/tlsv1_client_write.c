@@ -126,16 +126,26 @@ u8 * tls_send_client_hello(struct tlsv1_client *conn, size_t *out_len)
 		WPA_PUT_BE16(pos, TLS_EXT_SIGNATURE_ALGORITHMS);
 		pos += 2;
 		/* opaque extension_data<0..2^16-1> length */
+#ifdef CONFIG_CRYPTO_MBEDTLS
 		WPA_PUT_BE16(pos, 8);
+#else
+		WPA_PUT_BE16(pos, 4);
+#endif
 		pos += 2;
 		/* supported_signature_algorithms<2..2^16-2> length */
+#ifdef CONFIG_CRYPTO_MBEDTLS
 		WPA_PUT_BE16(pos, 6);
+#else
+		WPA_PUT_BE16(pos, 2);
+#endif
 		pos += 2;
 		/* supported_signature_algorithms */
+#ifdef CONFIG_CRYPTO_MBEDTLS
 		*pos++ = TLS_HASH_ALG_SHA512;
 		*pos++ = TLS_SIGN_ALG_RSA;
 		*pos++ = TLS_HASH_ALG_SHA384;
 		*pos++ = TLS_SIGN_ALG_RSA;
+#endif
 		*pos++ = TLS_HASH_ALG_SHA256;
 		*pos++ = TLS_SIGN_ALG_RSA;
 	}
