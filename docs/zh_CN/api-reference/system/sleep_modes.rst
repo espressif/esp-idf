@@ -171,7 +171,7 @@ RTC 外设和内存断电
 Flash 断电
 ----------
 
-默认情况下，调用函数 :cpp:func:`esp_deep_sleep_start` 和 :cpp:func:`esp_light_sleep_start` 后， **不会** 断电 flash。在 sleep 过程中断电 flash 存在风险。因为 flash 断电需要时间，但是在此期间，系统有可能被唤醒。此时 flash 重新被上电，断电尚未完成又重新上电的硬件行为有概率导致 flash 不能正常工作。如果用户为 flash 供电电路添加了滤波电容，断电所需时间可能会更长。此外，即使可以预知 flash 彻底断电所需的时间，有时也不能通过设置足够长的睡眠时间来确保 flash 断电的安全（比如，突发的异步唤醒源会使得实际的睡眠时间不可控）。
+默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后， **不会** 断电 flash。在 sleep 过程中断电 flash 存在风险。因为 flash 断电需要时间，但是在此期间，系统有可能被唤醒。此时 flash 重新被上电，断电尚未完成又重新上电的硬件行为有概率导致 flash 不能正常工作。如果用户为 flash 供电电路添加了滤波电容，断电所需时间可能会更长。此外，即使可以预知 flash 彻底断电所需的时间，有时也不能通过设置足够长的睡眠时间来确保 flash 断电的安全（比如，突发的异步唤醒源会使得实际的睡眠时间不可控）。
 
 .. warning::
     如果在 flash 的供电电路上添加了滤波电容，那么应当尽一切可能避免 flash 断电。
@@ -190,7 +190,11 @@ Flash 断电
         - 调用函数 ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)`` 将使 ESP-IDF 以一个宽松的条件来断电 flash。宽松的条件具体指的是 RTC timer 唤醒源未被使能 **或** 睡眠时间比 flash 彻底断电所需时间更长。
 
 .. note::
-    ESP-IDF 并未提供保证 flash 一定会被断电的机制。
+
+    .. list::
+
+        - Light sleep 时，ESP-IDF 并未提供保证 flash 一定会被断电的机制。
+        - 不管用户的配置如何，函数 :cpp:func:`esp_deep_sleep_start` 都会强制断电 flash。
 
 进入 Light-sleep 模式
 -------------------------

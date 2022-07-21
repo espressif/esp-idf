@@ -24,13 +24,15 @@ menu "Hardware Settings"
         config ESP_SLEEP_POWER_DOWN_FLASH
             bool "Power down flash in light sleep when there is no SPIRAM"
             depends on !SPIRAM
-            default y
+            default n
             help
                 If enabled, chip will try to power down flash as part of esp_light_sleep_start(), which costs
                 more time when chip wakes up. Can only be enabled if there is no SPIRAM configured.
-                This option will in fact consider VDD_SDIO auto power value (ESP_PD_OPTION_AUTO) as OFF. Also, it is
-                possible to force a power domain to stay ON during light sleep by using esp_sleep_pd_config()
-                function.
+
+                This option will power down flash under a strict but relatively safe condition. Also, it is possible to
+                power down flash under a relaxed condition by using esp_sleep_pd_config() to set ESP_PD_DOMAIN_VDDSDIO
+                to ESP_PD_OPTION_OFF. It should be noted that there is a risk in powering down flash, you can refer
+                `ESP-IDF Programming Guide/API Reference/System API/Sleep Modes/Power-down of Flash` for more details.
 
         config ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
             bool
@@ -58,6 +60,7 @@ menu "Hardware Settings"
         config ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND
             bool "PSRAM leakage current workaround in light sleep"
             depends on SPIRAM
+            default y
             help
                 When the CS pin of SPIRAM is not pulled up, the sleep current will
                 increase during light sleep. If the CS pin of SPIRAM has an external
@@ -66,11 +69,21 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             bool "Flash leakage current workaround in light sleep"
+            default y
             help
                 When the CS pin of Flash is not pulled up, the sleep current will
                 increase during light sleep. If the CS pin of Flash has an external
                 pull-up, you do not need to select this option, otherwise, you
                 should enable this option.
+
+        config ESP_SLEEP_MSPI_NEED_ALL_IO_PU
+            bool "All pins of mspi need pull up"
+            depends on ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND || ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3
+            help
+                To reduce leakage current, some types of SPI Flash/RAM only need to pull up the CS pin
+                during light sleep. But there are also some kinds of SPI Flash/RAM that need to pull up
+                all pins. It depends on the SPI Flash/RAM chip used.
 
         config ESP_SLEEP_DEEP_SLEEP_WAKEUP_DELAY
             int "Extra delay in deep sleep wake stub (in us)"

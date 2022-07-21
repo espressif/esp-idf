@@ -1,16 +1,8 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -20,6 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/soc_caps.h"
 
 #define ESP_ROM_EFUSE_FLASH_DEFAULT_SPI  (0)
 #define ESP_ROM_EFUSE_FLASH_DEFAULT_HSPI (1)
@@ -55,6 +48,18 @@ uint32_t esp_rom_efuse_get_flash_gpio_info(void);
  *      - 0~46: valid GPIO number
  */
 uint32_t esp_rom_efuse_get_flash_wp_gpio(void);
+
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+/**
+ * @brief Read opi flash pads configuration from Efuse
+ *
+ * @return
+ * - 0 for default SPI pins.
+ * - Other values define a custom pin configuration mask. From the LSB, every 6 bits represent a GPIO number which stand for:
+ *   DQS, D4, D5, D6, D7 accordingly.
+ */
+uint32_t esp_rom_efuse_get_opiconfig(void);
+#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
 
 /**
  * @brief Read eFuse to check whether secure boot has been enabled or not

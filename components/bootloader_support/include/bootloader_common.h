@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-/// Type of hold a GPIO in low state
+// Type of hold a GPIO in low state
 typedef enum {
     GPIO_LONG_HOLD  = 1,    /*!< The long hold GPIO */
     GPIO_SHORT_HOLD = -1,   /*!< The short hold GPIO */
@@ -105,15 +105,6 @@ bool bootloader_common_label_search(const char *list, char *label);
  * @param drv GPIO drive level (determined by clock frequency)
  */
 void bootloader_configure_spi_pins(int drv);
-
-/**
- * @brief Get flash CS IO
- *
- * Can be determined by eFuse values, or the default value
- *
- * @return Flash CS IO
- */
-uint8_t bootloader_flash_get_cs_io(void);
 
 /**
  * @brief Calculates a sha-256 for a given partition or returns a appended digest.
