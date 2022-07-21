@@ -33,15 +33,7 @@ static SSL_CTX* init_ctx(const char *test_case)
     const unsigned int cacert_pem_bytes = cacert_pem_end - cacert_pem_start;
     const SSL_METHOD *method = NULL;
     SSL_CTX *ctx = NULL;
-    if (strcmp(test_case, "CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_NONE") == 0) {
-        method = TLSv1_1_client_method();
-        ctx = SSL_CTX_new(method);   /* Create new context */
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
-    } else if (strcmp(test_case, "CONFIG_TLSV1_1_CONNECT_WRONG_CERT_VERIFY_PEER") == 0) {
-        method = TLSv1_1_client_method();
-        ctx = SSL_CTX_new(method);   /* Create new context */
-        SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
-    } else if (strcmp(test_case, "CONFIG_TLSV1_2_CONNECT_WRONG_CERT_VERIFY_NONE") == 0) {
+    if (strcmp(test_case, "CONFIG_TLSV1_2_CONNECT_WRONG_CERT_VERIFY_NONE") == 0) {
         method = TLSv1_2_client_method();
         ctx = SSL_CTX_new(method);   /* Create new context */
         SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
