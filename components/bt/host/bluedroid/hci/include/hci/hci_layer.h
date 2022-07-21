@@ -102,7 +102,7 @@ const hci_t *hci_layer_get_interface(void);
 int hci_start_up(void);
 void hci_shut_down(void);
 
-bool hci_host_task_post(uint32_t timeout);
+bool hci_downstream_data_post(uint32_t timeout);
 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
 int hci_adv_credits_prep_to_release(uint16_t num);

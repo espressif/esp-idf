@@ -42,8 +42,10 @@
 #define HCI_HOST_TASK_PRIO              (BT_TASK_MAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciT"
 #define HCI_HOST_TASK_WORKQUEUE_NUM     (2)
-#define HCI_HOST_TASK_WORKQUEUE0_LEN    (0)
-#define HCI_HOST_TASK_WORKQUEUE1_LEN    (5)
+#define HCI_HOST_TASK_WORKQUEUE0_LEN    (1) // for downstream datapath
+#define HCI_HOST_TASK_WORKQUEUE1_LEN    (1) // for upstream datapath
+
+#define HCI_DOWNSTREAM_DATA_QUEUE_IDX   (0)
 
 typedef struct {
     bool timer_is_set;
@@ -56,7 +58,7 @@ typedef struct {
     int command_credits;
     fixed_pkt_queue_t *command_queue;
     fixed_queue_t *packet_queue;
-
+    struct osi_event *downstream_data_ready;
     command_waiting_response_t cmd_waiting_q;
 
     /*
@@ -84,7 +86,7 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks;
 
 static int hci_layer_init_env(void);
 static void hci_layer_deinit_env(void);
-static void hci_host_thread_handler(void *arg);
+static void hci_downstream_data_handler(void *arg);
 static void event_command_ready(fixed_pkt_queue_t *queue);
 static void event_packet_ready(fixed_queue_t *queue);
 static void restart_command_waiting_response_timer(command_waiting_response_t *cmd_wait_q);
@@ -110,6 +112,8 @@ int hci_start_up(void)
         return -2;
     }
 
+    osi_event_bind(hci_host_env.downstream_data_ready, hci_host_thread, HCI_DOWNSTREAM_DATA_QUEUE_IDX);
+
     packet_fragmenter->init(&packet_fragmenter_callbacks);
     hal->open(&hal_callbacks, hci_host_thread);
 
@@ -134,10 +138,9 @@ void hci_shut_down(void)
     hci_host_thread = NULL;
 }
 
-
-bool hci_host_task_post(uint32_t timeout)
+bool hci_downstream_data_post(uint32_t timeout)
 {
-    return osi_thread_post(hci_host_thread, hci_host_thread_handler, NULL, 0, timeout);
+    return osi_thread_post_event(hci_host_env.downstream_data_ready, timeout);
 }
 
 static int hci_layer_init_env(void)
@@ -155,6 +158,10 @@ static int hci_layer_init_env(void)
         HCI_TRACE_ERROR("%s unable to create pending command queue.", __func__);
         return -1;
     }
+
+    struct osi_event *event = osi_event_create(hci_downstream_data_handler, NULL);
+    assert(event != NULL);
+    hci_host_env.downstream_data_ready = event;
 
     hci_host_env.packet_queue = fixed_queue_new(QUEUE_SIZE_MAX);
     if (hci_host_env.packet_queue) {
@@ -189,6 +196,9 @@ static void hci_layer_deinit_env(void)
 {
     command_waiting_response_t *cmd_wait_q;
 
+    osi_event_delete(hci_host_env.downstream_data_ready);
+    hci_host_env.downstream_data_ready = NULL;
+
     if (hci_host_env.command_queue) {
         fixed_pkt_queue_free(hci_host_env.command_queue, (fixed_pkt_queue_free_cb)osi_free_func);
     }
@@ -206,7 +216,7 @@ static void hci_layer_deinit_env(void)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 }
 
-static void hci_host_thread_handler(void *arg)
+static void hci_downstream_data_handler(void *arg)
 {
     /*
      * Previous task handles RX queue and two TX Queues, Since there is
@@ -216,18 +226,19 @@ static void hci_host_thread_handler(void *arg)
      * All packets will be directly copied to single queue in driver layer with
      * H4 type header added (1 byte).
      */
-    if (esp_vhci_host_check_send_available()) {
+    while (esp_vhci_host_check_send_available()) {
         /*Now Target only allowed one packet per TX*/
         BT_HDR *pkt = packet_fragmenter->fragment_current_packet();
         if (pkt != NULL) {
             packet_fragmenter->fragment_and_dispatch(pkt);
-        } else {
-            if (!fixed_pkt_queue_is_empty(hci_host_env.command_queue) &&
+        } else if (!fixed_pkt_queue_is_empty(hci_host_env.command_queue) &&
                     hci_host_env.command_credits > 0) {
-                fixed_pkt_queue_process(hci_host_env.command_queue);
-            } else if (!fixed_queue_is_empty(hci_host_env.packet_queue)) {
-                fixed_queue_process(hci_host_env.packet_queue);
-            }
+            fixed_pkt_queue_process(hci_host_env.command_queue);
+        } else if (!fixed_queue_is_empty(hci_host_env.packet_queue)) {
+            fixed_queue_process(hci_host_env.packet_queue);
+        } else {
+            // No downstream packet to send, stop processing
+            break;
         }
     }
 }
@@ -252,7 +263,7 @@ static void transmit_command(
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
     fixed_pkt_queue_enqueue(hci_host_env.command_queue, linked_pkt, FIXED_PKT_QUEUE_MAX_TIMEOUT);
-    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
+    hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 
 }
 
@@ -273,7 +284,7 @@ static future_t *transmit_command_futured(BT_HDR *command)
     command->event = MSG_STACK_TO_HC_HCI_CMD;
 
     fixed_pkt_queue_enqueue(hci_host_env.command_queue, linked_pkt, FIXED_PKT_QUEUE_MAX_TIMEOUT);
-    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
+    hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
     return future;
 }
 
@@ -286,7 +297,7 @@ static void transmit_downward(uint16_t type, void *data)
         fixed_queue_enqueue(hci_host_env.packet_queue, data, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
-    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
+    hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
 
@@ -479,7 +490,7 @@ intercepted:
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_pkt_queue_is_empty(hci_host_env.command_queue)) {
-        hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
+        hci_downstream_data_post(OSI_THREAD_MAX_TIMEOUT);
     }
 
     if (wait_entry) {
