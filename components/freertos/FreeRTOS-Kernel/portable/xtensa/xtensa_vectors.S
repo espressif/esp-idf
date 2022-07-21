@@ -216,7 +216,7 @@
 
     /* Get mask of pending, enabled interrupts at this level into a2. */
 
-.L_xt_user_int_&level&:
+.L_xt_user_int_\level :
     rsr     a2, INTENABLE
     rsr     a3, INTERRUPT
     movi    a4, \mask
@@ -325,14 +325,14 @@
     #ifdef XT_USE_SWPRI
     j       8f
     #else
-    j       .L_xt_user_int_&level&          /* check for more interrupts */
+    j       .L_xt_user_int_\level           /* check for more interrupts */
     #endif
 
     #ifdef XT_RTOS_TIMER_INT
 7:
 
     .ifeq XT_TIMER_INTPRI - \level
-.L_xt_user_int_timer_&level&:
+.L_xt_user_int_timer_\level :
     /*
     Interrupt handler for the RTOS tick timer if at this level.
     We'll be reading the interrupt state again after this call
@@ -353,7 +353,7 @@
     #ifdef XT_USE_SWPRI
     j       8f
     #else
-    j       .L_xt_user_int_&level&          /* check for more interrupts */
+    j       .L_xt_user_int_\level           /* check for more interrupts */
     #endif
 
     #ifdef XT_USE_SWPRI
@@ -592,8 +592,9 @@ _xt_user_exc:
 
     /* If level 1 interrupt then jump to the dispatcher */
     rsr     a0, EXCCAUSE
-    beqi    a0, EXCCAUSE_LEVEL1INTERRUPT, _xt_lowint1
-
+    bnei    a0, EXCCAUSE_LEVEL1INTERRUPT, _xt_handle_exc
+    j       _xt_lowint1
+_xt_handle_exc:
     /* Handle any coprocessor exceptions. Rely on the fact that exception
        numbers above EXCCAUSE_CP0_DISABLED all relate to the coprocessors.
     */
@@ -961,7 +962,9 @@ locking.
      * to force cp restore to next thread
      */
     #ifndef CONFIG_FREERTOS_FPU_IN_ISR
-    beq     a15, a2, .L_goto_done           /* new owner == old, we're done */
+    bne     a15, a2, .L_switch_context
+    j    .L_goto_done                       /* new owner == old, we're done */
+.L_switch_context:
     #endif
 
     /* If no old owner then nothing to save. */
@@ -1678,7 +1681,7 @@ _Level6Vector:
     .global     xt_nmi
     .align      4
 _NMIExceptionVector:
-    wsr     a0, EXCSAVE + XCHAL_NMILEVEL  _ /* preserve a0 */
+    wsr     a0, EXCSAVE + XCHAL_NMILEVEL   /* preserve a0 */
     call0   xt_nmi                         /* load interrupt handler */
     /* never returns here - call0 is used as a jump (see note at top) */
 
@@ -1799,9 +1802,9 @@ _xt_alloca_exc:
     wsr     a2, PS          /* update PS.OWB to new window base */
     rsync
 
-    _bbci.l a4, 31, _WindowUnderflow4
+    bbci.l a4, 31, _WindowUnderflow4
     rotw    -1              /* original a0 goes to a8 */
-    _bbci.l a8, 30, _WindowUnderflow8
+    bbci.l a8, 30, _WindowUnderflow8
     rotw    -1
     j               _WindowUnderflow12
 
