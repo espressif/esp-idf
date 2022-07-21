@@ -304,21 +304,21 @@ The receiver will be stopped by the driver when it finishes working (i.e. receiv
 
 .. code:: c
 
-    static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+    static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
     {
         BaseType_t high_task_wakeup = pdFALSE;
-        TaskHandle_t task_to_notify = (TaskHandle_t)user_data;
+        QueueHandle_t receive_queue = (QueueHandle_t)user_data;
         // send the received RMT symbols to the parser task
-        xTaskNotifyFromISR(task_to_notify, (uint32_t)edata, eSetValueWithOverwrite, &high_task_wakeup);
+        xQueueSendFromISR(receive_queue, edata, &high_task_wakeup);
         // return whether any task is woken up
         return high_task_wakeup == pdTRUE;
     }
 
-    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    QueueHandle_t receive_queue = xQueueCreate(1, sizeof(rmt_rx_done_event_data_t));
     rmt_rx_event_callbacks_t cbs = {
         .on_recv_done = example_rmt_rx_done_callback,
     };
-    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_channel, &cbs, cur_task));
+    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_channel, &cbs, receive_queue));
 
     // the following timing requirement is based on NEC protocol
     rmt_receive_config_t receive_config = {
@@ -330,10 +330,10 @@ The receiver will be stopped by the driver when it finishes working (i.e. receiv
     // ready to receive
     ESP_ERROR_CHECK(rmt_receive(rx_channel, raw_symbols, sizeof(raw_symbols), &receive_config));
     // wait for RX done signal
-    rmt_rx_done_event_data_t *rx_data = NULL;
-    xTaskNotifyWait(0x00, ULONG_MAX, (uint32_t *)&rx_data, portMAX_DELAY);
+    rmt_rx_done_event_data_t rx_data;
+    xQueueReceive(receive_queue, &rx_data, portMAX_DELAY);
     // parse the receive symbols
-    example_parse_nec_frame(rx_data->received_symbols, rx_data->num_symbols);
+    example_parse_nec_frame(rx_data.received_symbols, rx_data.num_symbols);
 
 RMT Encoder
 ^^^^^^^^^^^
