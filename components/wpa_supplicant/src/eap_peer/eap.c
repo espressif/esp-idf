@@ -311,6 +311,11 @@ int eap_peer_register_methods(void)
 		ret = eap_peer_ttls_register();
 #endif
 
+#ifdef EAP_NOOB
+    if (ret == 0)
+        ret = eap_peer_noob_register();
+#endif
+
 	return ret;
 }
 
@@ -612,6 +617,9 @@ int eap_peer_config_init(
 			//set EAP-TTLS
 			config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
 			config_methods[allowed_method_count++].method = EAP_TYPE_TTLS;
+            //set EAP-NOOB
+            config_methods[allowed_method_count].vendor = EAP_VENDOR_IETF;
+            config_methods[allowed_method_count++].method = EAP_TYPE_NOOB;
 		}
 		if (g_wpa_private_key) {
 			//set EAP-TLS
