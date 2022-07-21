@@ -14,7 +14,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include"
-                       PRIV_REQUIRES esp_netif driver)
+                       PRIV_REQUIRES esp_netif driver esp_wifi vfs)
 
 if(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
     idf_component_optional_requires(PRIVATE console)

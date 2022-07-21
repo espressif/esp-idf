@@ -461,8 +461,6 @@ components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
-components/esp_netif/loopback/esp_netif_loopback.c
-components/esp_netif/lwip/esp_netif_lwip_slip.c
 components/esp_netif/lwip/esp_netif_lwip_slip.h
 components/esp_netif/private_include/esp_netif_private.h
 components/esp_netif/test/test_esp_netif.c
@@ -681,7 +679,6 @@ components/esp_wifi/include/esp_mesh_internal.h
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h
-components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
@@ -873,7 +870,6 @@ components/lwip/port/esp32/include/netinet/in.h
 components/lwip/port/esp32/include/netinet/tcp.h
 components/lwip/port/esp32/include/sntp/sntp_get_set_time.h
 components/lwip/port/esp32/include/sys/socket.h
-components/lwip/port/esp32/netif/ethernetif.c
 components/lwip/port/esp32/no_vfs_syscalls.c
 components/lwip/test_afl_host/dhcp_di.h
 components/lwip/test_afl_host/dhcpserver_di.h
@@ -957,7 +953,6 @@ components/nvs_flash/test_nvs_host/test_nvs_partition.cpp
 components/nvs_flash/test_nvs_host/test_nvs_storage.cpp
 components/openthread/include/esp_openthread.h
 components/openthread/include/esp_openthread_lock.h
-components/openthread/include/esp_openthread_netif_glue.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/protocomm/proto-c/constants.pb-c.c

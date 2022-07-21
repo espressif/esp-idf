@@ -89,9 +89,7 @@ set(srcs
     "port/esp32/hooks/lwip_default_hooks.c"
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
-    "port/esp32/sockets_ext.c"
-    "port/esp32/netif/wlanif.c"
-    "port/esp32/netif/esp_pbuf_ref.c")
+    "port/esp32/sockets_ext.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
     list(APPEND srcs
@@ -127,18 +125,10 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/sha1.c")
 endif()
 
-if(CONFIG_ETH_ENABLED)
-    list(APPEND srcs "port/esp32/netif/ethernetif.c")
-endif()
-
 if(CONFIG_VFS_SUPPORT_IO)
     list(APPEND srcs "port/esp32/vfs_lwip.c")
 else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
-endif()
-
-if(CONFIG_OPENTHREAD_ENABLED)
-    list(APPEND srcs "port/esp32/netif/openthreadif.c")
 endif()
 
 if(CONFIG_LWIP_ICMP)
@@ -159,8 +149,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
-                    REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES esp_netif)
+                    PRIV_REQUIRES vfs)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)

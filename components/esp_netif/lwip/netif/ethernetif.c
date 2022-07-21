@@ -1,58 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: 2001-2004 Swedish Institute of Computer Science
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * SPDX-FileContributor: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ */
 /**
  * @file
  * Ethernet Interface Skeleton
  *
  */
 
-/*
- * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice,
- *    this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
- * OF SUCH DAMAGE.
- *
- * This file is part of the lwIP TCP/IP stack.
- *
- * Author: Adam Dunkels <adam@sics.se>
- *
- */
-
-#include "lwip/opt.h"
-
-#include "lwip/def.h"
-#include "lwip/mem.h"
-#include "lwip/pbuf.h"
-#include "lwip/stats.h"
-#include "lwip/snmp.h"
-#include "lwip/ethip6.h"
-#include "netif/etharp.h"
 #include <stdio.h>
 #include <string.h>
+#include "lwip/opt.h"
+#include "lwip/pbuf.h"
+#include "lwip/ethip6.h"
+#include "netif/etharp.h"
 
-#include "esp_eth_driver.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
 #include "esp_compiler.h"
-#include "netif/esp_pbuf_ref.h"
+#include "lwip/esp_pbuf_ref.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
@@ -127,7 +96,8 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
     /* Check error */
     if (likely(ret == ESP_OK)) {
         return ERR_OK;
-    } else if (ret == ESP_ERR_NO_MEM) {
+    }
+    if (ret == ESP_ERR_NO_MEM) {
         return ERR_MEM;
     }
     return ERR_IF;
@@ -186,7 +156,7 @@ err_t ethernetif_init(struct netif *netif)
     LWIP_ASSERT("netif != NULL", (netif != NULL));
     /* Have to get the esp-netif handle from netif first and then driver==ethernet handle from there */
     esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
-    esp_eth_handle_t eth_handle = esp_netif_get_io_driver(esp_netif);
+
     /* Initialize interface hostname */
 #if LWIP_NETIF_HOSTNAME
 #if ESP_LWIP
@@ -198,16 +168,6 @@ err_t ethernetif_init(struct netif *netif)
 #endif
 
 #endif /* LWIP_NETIF_HOSTNAME */
-
-    /* Initialize the snmp variables and counters inside the struct netif. */
-    eth_speed_t speed;
-
-    esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &speed);
-    if (speed == ETH_SPEED_100M) {
-        NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 100000000);
-    } else {
-        NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 10000000);
-    }
 
     netif->name[0] = IFNAME0;
     netif->name[1] = IFNAME1;

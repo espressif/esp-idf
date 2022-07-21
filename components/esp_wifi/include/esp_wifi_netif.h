@@ -1,19 +1,10 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifndef _ESP_WIFI_NETIF_H
-#define _ESP_WIFI_NETIF_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,8 +58,8 @@ esp_err_t esp_wifi_get_if_mac(wifi_netif_driver_t ifx, uint8_t mac[6]);
  * @param[in] ifx pointer to wifi interface handle
  *
  * @return
- *      - true if ready after intertace started (typically Access Point type)
- *      - false if ready once intertace connected (typically for Station type)
+ *      - true if ready after interface started (typically Access Point type)
+ *      - false if ready once interface connected (typically for Station type)
  */
 bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx);
 
@@ -76,7 +67,7 @@ bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx);
  * @brief Register interface receive callback function with argument
  *
  * @param[in] ifx pointer to wifi interface handle
- * @param[in] fn  funtion to be registered (typically esp_netif_receive)
+ * @param[in] fn  function to be registered (typically esp_netif_receive)
  * @param[in] arg argument to be supplied to registered function (typically esp_netif ptr)
  *
  * @return ESP_OK on success
@@ -87,5 +78,3 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
 #ifdef __cplusplus
 }
 #endif
-
-#endif //_ESP_WIFI_NETIF_H

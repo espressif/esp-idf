@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -22,6 +14,31 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+* @brief  Default configuration reference of OT esp-netif
+*/
+#define ESP_NETIF_INHERENT_DEFAULT_OPENTHREAD() \
+    {   \
+        .flags = 0, \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = 0,    \
+        .lost_ip_event = 0,   \
+        .if_key = "OT_DEF",  \
+        .if_desc = "openthread",    \
+        .route_prio = 15      \
+};
+
+#define ESP_NETIF_DEFAULT_OPENTHREAD()                     \
+    {                                                      \
+        .base = &g_esp_netif_inherent_openthread_config,   \
+        .driver = NULL,                                    \
+        .stack = &g_esp_netif_netstack_default_openthread, \
+    }
+
+extern const esp_netif_netstack_config_t g_esp_netif_netstack_default_openthread;
+extern const esp_netif_inherent_config_t g_esp_netif_inherent_openthread_config;
 
 /**
  * @brief This function initializes the OpenThread network interface glue.

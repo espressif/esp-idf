@@ -14,30 +14,6 @@
 
 #if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
-struct esp_netif_netstack_lwip_vanilla_config {
-    err_t (*init_fn)(struct netif*);
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
-};
-
-struct esp_netif_netstack_lwip_ppp_config {
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
-    esp_netif_ppp_config_t ppp_events;
-};
-
-struct esp_netif_netstack_lwip_slip_config {
-    err_t (*init_fn)(struct netif*);
-    void (*input_fn)(void *netif, void *buffer, size_t len, void *eb);
-    esp_netif_slip_config_t slip_config;
-};
-
-// LWIP netif specific network stack configuration
-struct esp_netif_netstack_config {
-    union {
-        struct esp_netif_netstack_lwip_vanilla_config lwip;
-        struct esp_netif_netstack_lwip_ppp_config lwip_ppp;
-    };
-};
-
 struct esp_netif_api_msg_s;
 
 typedef int (*esp_netif_api_fn)(struct esp_netif_api_msg_s *msg);

@@ -12,7 +12,9 @@ set(srcs
     "esp_netif_defaults.c"
     "lwip/esp_netif_lwip.c"
     "lwip/esp_netif_lwip_defaults.c"
-    "lwip/esp_netif_sta_list.c")
+    "lwip/netif/wlanif.c"
+    "lwip/netif/ethernetif.c"
+    "lwip/netif/esp_pbuf_ref.c"    )
 
 set(include_dirs "include")
 set(priv_include_dirs "lwip" "private_include")
@@ -45,9 +47,10 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                    REQUIRES lwip)
-
+                    REQUIRES esp_event
+                    PRIV_REQUIRES lwip
+                    LDFRAGMENTS linker.lf)
 
 if(CONFIG_ESP_NETIF_L2_TAP OR CONFIG_ESP_NETIF_BRIDGE_EN)
-    idf_component_optional_requires(PRIVATE esp_eth)
+    idf_component_optional_requires(PRIVATE esp_eth vfs)
 endif()
