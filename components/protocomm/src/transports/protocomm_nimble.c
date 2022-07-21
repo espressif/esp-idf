@@ -13,7 +13,6 @@
 #include "protocomm_priv.h"
 
 /* NimBLE */
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -480,7 +479,6 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     int rc;
     ESP_LOGD(TAG, "Free memory at start of simple_ble_init %d", esp_get_free_heap_size());
 
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
     nimble_port_init();
 
     /* Initialize the NimBLE host configuration. */
@@ -953,10 +951,6 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
         ret = nimble_port_stop();
         if (ret == 0) {
             nimble_port_deinit();
-            ret = esp_nimble_hci_and_controller_deinit();
-            if (ret != ESP_OK) {
-                ESP_LOGE(TAG, "esp_nimble_hci_and_controller_deinit() failed with error: %d", ret);
-            }
         }
 
         free_gatt_ble_misc_memory(ble_cfg_p);
