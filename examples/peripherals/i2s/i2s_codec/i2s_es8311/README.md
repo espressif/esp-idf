@@ -34,27 +34,27 @@ For more details, see [ES8311 datasheet](http://www.everest-semi.com/pdf/ES8311%
 ┌─────────────────┐           ┌──────────────────────────┐
 │       ESP       │           │          ES8311          │
 │                 │           │                          │
-│     MCLK-GPIO 0 ├──────────►│PIN2-MCLK                 │
+│       I2S_MCK_IO├──────────►│PIN2-MCLK                 │
 │                 │           │                          │           ┌─────────┐
-│     BCLK-GPIO 4 ├──────────►│PIN6-BCLK       PIN12-OUTP├───────────┤         │
+│       I2S_BCK_IO├──────────►│PIN6-BCLK       PIN12-OUTP├───────────┤         │
 │                 │           │                          │           │ EARPHONE│
-│       WS-GPIO 5 ├──────────►│PIN8-LRCK       PIN13-OUTN├───────────┤         │
+│        I2S_WS_IO├──────────►│PIN8-LRCK       PIN13-OUTN├───────────┤         │
 │                 │           │                          │           └─────────┘
-│    SDOUT-GPIO 18├──────────►│PIN9-SDIN                 │
+│        I2S_DO_IO├──────────►│PIN9-SDIN                 │
 │                 │           │                          │
-│     SDIN-GPIO 19│◄──────────┤PIN7-SDOUT                │
+│        I2S_DI_IO│◄──────────┤PIN7-SDOUT                │
 │                 │           │                          │           ┌─────────┐
 │                 │           │               PIN18-MIC1P├───────────┤         │
-│      SCL-GPIO 16├──────────►│PIN1 -CCLK                │           │  MIC    │
-│         (GPIO 7)│           │               PIN17-MIC1N├───────────┤         │
-│      SDA-GPIO 17│◄─────────►│PIN19-CDATA               │           └─────────┘
-│         (GPIO 8)│           │                          │
+│       I2C_SCL_IO├──────────►│PIN1 -CCLK                │           │  MIC    │
+│                 │           │               PIN17-MIC1N├───────────┤         │
+│       I2C_SDA_IO│◄─────────►│PIN19-CDATA               │           └─────────┘
+│                 │           │                          │
 │          VCC 3.3├───────────┤VCC                       │
 │                 │           │                          │
 │              GND├───────────┤GND                       │
 └─────────────────┘           └──────────────────────────┘
 ```
-Note: Since ESP32-C3 board does not have GPIO 16/17, you can use other available GPIOs instead. In this example, we set GPIO 7/8 as I2C pins for ESP32-C3 and GPIO 16/17 for other chips.
+Note: Since ESP32-C3 & ESP32-H2 board does not have GPIO 16/17, you can use other available GPIOs instead. In this example, we set GPIO 6/7 as I2C pins for ESP32-C3 & ESP32-H2 and GPIO 16/17 for other chips, same as GPIO 18/19, we use GPIO 2/3 instead.
 
 ### Dependency
 
@@ -123,8 +123,8 @@ If you have a logic analyzer, you can use a logic analyzer to grab GPIO signal d
 | MCLK  |module clock   | GPIO_NUM_0|
 | BCLK  |bit clock      | GPIO_NUM_4 |
 | WS    |word select    | GPIO_NUM_5 |
-| SDOUT |serial data out| GPIO_NUM_18 |
-| SDIN  |serial data in | GPIO_NUM_19 |
+| SDOUT |serial data out| GPIO_NUM_18/2 |
+| SDIN  |serial data in | GPIO_NUM_19/3 |
 
 ### Customize your own music
 

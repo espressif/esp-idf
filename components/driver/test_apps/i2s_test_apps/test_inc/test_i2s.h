@@ -44,6 +44,14 @@ extern "C" {
 #define SLAVE_WS_IO 15
 #define DATA_IN_IO 19
 #define DATA_OUT_IO 18
+#elif CONFIG_IDF_TARGET_ESP32H2
+#define MASTER_MCK_IO 0
+#define MASTER_BCK_IO 4
+#define MASTER_WS_IO 5
+#define SLAVE_BCK_IO 2
+#define SLAVE_WS_IO 3
+#define DATA_IN_IO 6
+#define DATA_OUT_IO 7
 #endif
 
 #ifdef __cplusplus

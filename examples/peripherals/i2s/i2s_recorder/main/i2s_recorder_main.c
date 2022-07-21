@@ -145,10 +145,14 @@ void record_wav(uint32_t rec_time)
     // Start recording
     while (flash_wr_size < flash_rec_time) {
         // Read the RAW samples from the microphone
-        i2s_channel_read(rx_handle, (char *)i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, 1000);
-        // Write the samples to the WAV file
-        fwrite(i2s_readraw_buff, 1, bytes_read, f);
-        flash_wr_size += bytes_read;
+        if (i2s_channel_read(rx_handle, (char *)i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, 1000) == ESP_OK) {
+            printf("[0] %d [1] %d [2] %d [3]%d ...\n", i2s_readraw_buff[0], i2s_readraw_buff[1], i2s_readraw_buff[2], i2s_readraw_buff[3]);
+            // Write the samples to the WAV file
+            fwrite(i2s_readraw_buff, 1, bytes_read, f);
+            flash_wr_size += bytes_read;
+        } else {
+            printf("Read Failed!\n");
+        }
     }
 
     ESP_LOGI(TAG, "Recording done!");
@@ -169,6 +173,7 @@ void init_microphone(void)
 
     i2s_pdm_rx_config_t pdm_rx_cfg = {
         .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(CONFIG_EXAMPLE_SAMPLE_RATE),
+        /* The default mono slot is the left slot (whose 'select pin' of the PDM microphone is pulled down) */
         .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
             .clk = CONFIG_EXAMPLE_I2S_CLK_GPIO,

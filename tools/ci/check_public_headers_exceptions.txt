@@ -168,7 +168,6 @@ components/soc/esp32s2/include/soc/efuse_struct.h
 components/soc/esp32s2/include/soc/gpio_sd_struct.h
 components/soc/esp32s2/include/soc/gpio_struct.h
 components/soc/esp32s2/include/soc/i2c_struct.h
-components/soc/esp32s2/include/soc/i2s_struct.h
 components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_struct.h
 components/soc/esp32s2/include/soc/rtc_io_struct.h
@@ -201,7 +200,6 @@ components/soc/esp32c3/include/soc/apb_ctrl_struct.h
 components/soc/esp32c3/include/soc/apb_saradc_struct.h
 components/soc/esp32c3/include/soc/efuse_struct.h
 components/soc/esp32c3/include/soc/gpio_sd_struct.h
-components/soc/esp32c3/include/soc/i2s_struct.h
 components/soc/esp32c3/include/soc/ledc_struct.h
 components/soc/esp32c3/include/soc/rtc_cntl_struct.h
 components/soc/esp32c3/include/soc/rtc_i2c_struct.h
@@ -213,12 +211,6 @@ components/soc/esp32c3/include/soc/uhci_struct.h
 
 ### To be fixed: files which don't compile for esp32c2 target:
 
-components/driver/deprecated/driver/i2s_types_legacy.h
-components/driver/deprecated/driver/i2s.h
-components/driver/include/driver/i2s_common.h
-components/driver/include/driver/i2s_pdm.h
-components/driver/include/driver/i2s_std.h
-components/driver/include/driver/i2s_tdm.h
 components/efuse/esp32c2/include/esp_efuse_table.h
 components/soc/esp32c2/include/soc/rtc_cntl_struct.h
 components/soc/esp32c2/include/soc/spi_mem_struct.h

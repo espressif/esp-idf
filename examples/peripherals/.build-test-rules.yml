@@ -34,23 +34,29 @@ examples/peripherals/i2c/i2c_tools:
       temporary: true
       reason: lack of runners
 
-examples/peripherals/i2s:
-  disable:
-    - if: SOC_I2S_SUPPORTED != 1
-
 examples/peripherals/i2s/i2s_adc_dac:
   disable:
     - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
 
-examples/peripherals/i2s/i2s_audio_recorder_sdcard:
-  enable:
-    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: the other targets are not tested yet
+examples/peripherals/i2s/i2s_basic/i2s_pdm:
+  disable:
+    - if: SOC_I2S_SUPPORTS_PDM != 1
 
-examples/peripherals/i2s/i2s_basic:
+examples/peripherals/i2s/i2s_basic/i2s_std:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
+
+examples/peripherals/i2s/i2s_basic/i2s_tdm:
+  disable:
+    - if: SOC_I2S_SUPPORTS_TDM != 1
+
+examples/peripherals/i2s/i2s_codec/i2s_es8311:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+
+examples/peripherals/i2s/i2s_recorder:
+  disable:
+    - if: SOC_I2S_SUPPORTS_PDM_RX != 1
 
 examples/peripherals/lcd/i80_controller:
   disable:

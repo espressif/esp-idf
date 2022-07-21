@@ -1057,15 +1057,15 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     slot_cfg->slot_mode = ((ch & 0xFFFF) == I2S_CHANNEL_MONO) ? I2S_SLOT_MODE_MONO : I2S_SLOT_MODE_STEREO;
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_STD) {
         if (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) {
-            if (slot_cfg->std.slot_mask == I2S_STD_SLOT_LEFT_RIGHT) {
-                slot_cfg->std.slot_mask = I2S_STD_SLOT_ONLY_LEFT;
+            if (slot_cfg->std.slot_mask == I2S_STD_SLOT_BOTH) {
+                slot_cfg->std.slot_mask = I2S_STD_SLOT_LEFT;
 #if SOC_I2S_HW_VERSION_1
                 // Enable right first to get correct data sequence
                 slot_cfg->std.ws_pol = !slot_cfg->std.ws_pol;
 #endif
             }
         } else {
-            slot_cfg->std.slot_mask = I2S_STD_SLOT_LEFT_RIGHT;
+            slot_cfg->std.slot_mask = I2S_STD_SLOT_BOTH;
         }
     }
 #if SOC_I2S_SUPPORTS_TDM
@@ -1279,12 +1279,12 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         SLOT_CFG(std).ws_width = i2s_config->bits_per_sample;
         SLOT_CFG(std).ws_pol = false;
         if (i2s_config->channel_format == I2S_CHANNEL_FMT_RIGHT_LEFT) {
-            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_LEFT_RIGHT;
+            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_BOTH;
         } else if (i2s_config->channel_format == I2S_CHANNEL_FMT_ALL_LEFT ||
                    i2s_config->channel_format == I2S_CHANNEL_FMT_ONLY_LEFT) {
-            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_ONLY_LEFT;
+            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_LEFT;
         } else {
-            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_ONLY_RIGHT;
+            SLOT_CFG(std).slot_mask = I2S_STD_SLOT_RIGHT;
         }
         if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_I2S) {
             SLOT_CFG(std).bit_shift = true;
@@ -1315,11 +1315,11 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         SLOT_CFG(pdm_tx).lp_scale = I2S_PDM_SIG_SCALING_MUL_1;
         SLOT_CFG(pdm_tx).sinc_scale = I2S_PDM_SIG_SCALING_MUL_1;
 #if SOC_I2S_HW_VERSION_2
-        SLOT_CFG(pdm_tx).sd_en = true;
+        SLOT_CFG(pdm_tx).line_mode = I2S_PDM_TX_ONE_LINE_CODEC;
         SLOT_CFG(pdm_tx).hp_en = true;
         SLOT_CFG(pdm_tx).hp_cut_off_freq_hz = 49;
         SLOT_CFG(pdm_tx).sd_dither = 0;
-        SLOT_CFG(pdm_tx).sd_dither2 = 0;
+        SLOT_CFG(pdm_tx).sd_dither2 = 1;
 #endif // SOC_I2S_HW_VERSION_2
 
         /* Generate PDM TX clock configuration */

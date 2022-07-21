@@ -32,6 +32,8 @@ extern "C" {
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
+                 I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
 }
 
 /**
@@ -53,6 +55,8 @@ typedef struct {
     i2s_data_bit_width_t    data_bit_width;     /*!< I2S sample data bit width (valid data bits per sample), only support 16 bits for PDM mode */
     i2s_slot_bit_width_t    slot_bit_width;     /*!< I2S slot bit width (total bits per slot) , only support 16 bits for PDM mode */
     i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
+    /* Particular fields */
+    i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
 } i2s_pdm_rx_slot_config_t;
 
 /**
@@ -168,16 +172,16 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .slot_mode = mono_or_stereo, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
-    .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
+    .hp_scale = I2S_PDM_SIG_SCALING_DIV_2, \
     .lp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .sinc_scale = I2S_PDM_SIG_SCALING_MUL_1, \
-    .sd_en = true, \
+    .line_mode = I2S_PDM_TX_ONE_LINE_CODEC, \
     .hp_en = true, \
-    .hp_cut_off_freq_hz = 49, \
+    .hp_cut_off_freq_hz = 35.5, \
     .sd_dither = 0, \
-    .sd_dither2 = 0, \
+    .sd_dither2 = 1, \
 }
-#else
+#else // SOC_I2S_HW_VERSION_2
 /**
  * @brief PDM style in 2 slots(TX)
  * @param bits_per_sample i2s data bit width, only support 16 bits for PDM mode
@@ -187,6 +191,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = I2S_PDM_SLOT_BOTH, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
@@ -209,7 +214,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .up_sample_fp = 960, \
-    .up_sample_fs = ((rate) / 100), \
+    .up_sample_fs = 480, \
 }
 
 /*
@@ -234,15 +239,21 @@ typedef struct {
     /* General fields */
     i2s_data_bit_width_t    data_bit_width;     /*!< I2S sample data bit width (valid data bits per sample), only support 16 bits for PDM mode */
     i2s_slot_bit_width_t    slot_bit_width;     /*!< I2S slot bit width (total bits per slot), only support 16 bits for PDM mode */
-    i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
+    i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+                                                 *   For PDM TX mode, mono means the data buffer only contains one slot data,
+                                                 *   Stereo means the data buffer contains two slots data
+                                                 */
     /* Particular fields */
+#if SOC_I2S_HW_VERSION_1
+    i2s_pdm_slot_mask_t     slot_mask;          /*!< Slot mask to choose left or right slot */
+#endif
     uint32_t                sd_prescale;        /*!< Sigma-delta filter prescale */
     i2s_pdm_sig_scale_t     sd_scale;           /*!< Sigma-delta filter scaling value */
     i2s_pdm_sig_scale_t     hp_scale;           /*!< High pass filter scaling value */
     i2s_pdm_sig_scale_t     lp_scale;           /*!< Low pass filter scaling value */
     i2s_pdm_sig_scale_t     sinc_scale;         /*!< Sinc filter scaling value */
 #if SOC_I2S_HW_VERSION_2
-    bool                    sd_en;              /*!< Sigma-delta filter enable */
+    i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, on-line codec, one-line dac, two-line dac mode can be selected */
     bool                    hp_en;              /*!< High pass filter enable */
     float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
     uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
@@ -269,6 +280,11 @@ typedef struct {
 typedef struct {
     gpio_num_t clk;                /*!< PDM clk pin, output */
     gpio_num_t dout;               /*!< DATA pin, output */
+#if SOC_I2S_HW_VERSION_2
+    gpio_num_t dout2;              /*!< The second data pin for the DAC dual-line mode,
+                                    *   only take effect when the line mode is `I2S_PDM_TX_TWO_LINE_DAC`
+                                    */
+#endif
     struct {
         uint32_t   clk_inv: 1;     /*!< Set 1 to invert the clk output */
     } invert_flags;                /*!< GPIO pin invert flags */

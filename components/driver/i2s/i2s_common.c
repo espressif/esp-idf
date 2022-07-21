@@ -47,6 +47,8 @@
 
 #include "esp_rom_gpio.h"
 
+/* The actual max size of DMA buffer is 4095
+ * Set 4092 here to align with 4-byte, so that the position of the slot data in the buffer will be relatively fixed */
 #define I2S_DMA_BUFFER_MAX_SIZE     (4092)
 
 // If ISR handler is allowed to run whilst cache is disabled,
@@ -204,7 +206,6 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
         portENTER_CRITICAL(&g_i2s.spinlock);
         if (g_i2s.controller[id]) {
             i2s_obj = g_i2s.controller[id];
-        } else {
         }
         portEXIT_CRITICAL(&g_i2s.spinlock);
         if (i2s_obj == NULL) {
@@ -407,6 +408,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     handle->dma.desc_num = num;
     handle->dma.buf_size = bufsize;
 
+    /* Descriptors must be in the internal RAM */
     handle->dma.desc = (lldesc_t **)heap_caps_calloc(num, sizeof(lldesc_t *), I2S_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(handle->dma.desc, ESP_ERR_NO_MEM, err, TAG, "create I2S DMA decriptor array failed");
     handle->dma.bufs = (uint8_t **)heap_caps_calloc(num, sizeof(uint8_t *), I2S_MEM_ALLOC_CAPS);
@@ -423,6 +425,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
         handle->dma.bufs[i] = (uint8_t *) heap_caps_calloc(1, bufsize * sizeof(uint8_t), I2S_DMA_ALLOC_CAPS);
         handle->dma.desc[i]->buf = handle->dma.bufs[i];
         ESP_GOTO_ON_FALSE(handle->dma.desc[i]->buf, ESP_ERR_NO_MEM, err, TAG,  "allocate DMA buffer failed");
+        ESP_LOGV(TAG, "desc addr: %8p\tbuffer addr:%8p", handle->dma.desc[i], handle->dma.bufs[i]);
     }
     /* Connect DMA descriptor as a circle */
     for (int i = 0; i < num; i++) {
@@ -432,7 +435,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     if (handle->dir == I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(handle->controller->hal.dev, bufsize);
     }
-    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %d, dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %d, ", num, bufsize);
+    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %d, dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %d", num, bufsize);
     return ESP_OK;
 err:
     i2s_free_dma_desc(handle);
@@ -450,6 +453,10 @@ uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
         * So the div here should be at least 2 */
     mclk_div = mclk_div < 2 ? 2 : mclk_div;
     uint32_t expt_freq = mclk_freq_hz * mclk_div;
+    if (expt_freq > SOC_APLL_MAX_HZ) {
+        ESP_LOGE(TAG, "The required APLL frequecy exceed its maximum value");
+        return 0;
+    }
     uint32_t real_freq = 0;
     esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
     if (ret == ESP_ERR_INVALID_ARG) {
@@ -1112,7 +1119,7 @@ esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name)
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
     if (occupied_comp != NULL) {
-        ESP_LOGE(TAG, "i2s controller %d has been occupied by %s", id, occupied_comp);
+        ESP_LOGW(TAG, "i2s controller %d has been occupied by %s", id, occupied_comp);
     }
     return ret;
 }

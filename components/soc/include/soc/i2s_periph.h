@@ -32,6 +32,7 @@ typedef struct {
     const uint8_t s_rx_ws_sig;
 
     const uint8_t data_out_sig;
+    const uint8_t data_out1_sig; // Only valid in version 2
     const uint8_t data_in_sig;
 
     const uint8_t irq;

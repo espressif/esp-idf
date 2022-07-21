@@ -67,19 +67,28 @@ typedef struct {
 #if SOC_I2S_SUPPORTS_PDM_TX
         /* PDM TX configurations */
         struct {
+#if SOC_I2S_HW_VERSION_1
+            i2s_pdm_slot_mask_t     slot_mask;          /*!< Slot mask to choose left or right slot */
+#endif
             uint32_t                sd_prescale;        /*!< Sigma-delta filter prescale */
             i2s_pdm_sig_scale_t     sd_scale;           /*!< Sigma-delta filter scaling value */
             i2s_pdm_sig_scale_t     hp_scale;           /*!< High pass filter scaling value */
             i2s_pdm_sig_scale_t     lp_scale;           /*!< Low pass filter scaling value */
             i2s_pdm_sig_scale_t     sinc_scale;         /*!< Sinc filter scaling value */
 #if SOC_I2S_HW_VERSION_2
-            bool                    sd_en;              /*!< Sigma-delta filter enable */
+            i2s_pdm_tx_line_mode_t  line_mode;          /*!< PDM TX line mode, on-line codec, one-line dac, two-line dac mode can be selected */
             bool                    hp_en;              /*!< High pass filter enable */
             float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
             uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
             uint32_t                sd_dither2;         /*!< Sigma-delta filter dither2 */
 #endif // SOC_I2S_HW_VERSION_2
         } pdm_tx;                                       /*!< Specific configurations for PDM TX mode */
+#endif
+#if SOC_I2S_SUPPORTS_PDM_RX
+        /* PDM TX configurations */
+        struct {
+            i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
+        } pdm_rx;                                       /*!< Specific configurations for PDM TX mode */
 #endif
     };
 

@@ -3,11 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_I2S_STRUCT_H_
-#define _SOC_I2S_STRUCT_H_
-
+#pragma once
 
 #include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -336,7 +335,3 @@ extern i2s_dev_t I2S1;
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_I2S_STRUCT_H_ */

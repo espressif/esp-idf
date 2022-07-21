@@ -67,6 +67,11 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
     i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+#if SOC_I2S_HW_VERSION_2
+    /* Work aroud for PDM TX clock, overwrite the raw division directly to reduce the noise
+     * This set of coefficients is a special division to reduce the background noise in PDM TX mode */
+    i2s_ll_tx_set_raw_clk_div(handle->controller->hal.dev, 1, 1, 0, 0);
+#endif
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: clock configuration */
@@ -114,8 +119,14 @@ static esp_err_t i2s_pdm_tx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_
                         ESP_ERR_INVALID_ARG, TAG, "clk gpio is invalid");
     ESP_RETURN_ON_FALSE((gpio_cfg->dout == -1 || GPIO_IS_VALID_GPIO(gpio_cfg->dout)),
                         ESP_ERR_INVALID_ARG, TAG, "dout gpio is invalid");
+    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
     /* Set data output GPIO */
     i2s_gpio_check_and_set(gpio_cfg->dout, i2s_periph_signal[id].data_out_sig, false, false);
+#if SOC_I2S_HW_VERSION_2
+    if (pdm_tx_cfg->slot_cfg.line_mode == I2S_PDM_TX_TWO_LINE_DAC) {
+        i2s_gpio_check_and_set(gpio_cfg->dout2, i2s_periph_signal[id].data_out1_sig, false, false);
+    }
+#endif
 
     if (handle->role == I2S_ROLE_SLAVE) {
         /* For "tx + slave" mode, select TX signal index for ws and bck */
@@ -132,7 +143,6 @@ static esp_err_t i2s_pdm_tx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_
     i2s_ll_mclk_bind_to_tx_clk(handle->controller->hal.dev);
 #endif
     /* Update the mode info: gpio configuration */
-    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
     memcpy(&(pdm_tx_cfg->gpio_cfg), gpio_cfg, sizeof(i2s_pdm_tx_gpio_config_t));
 
     return ESP_OK;
@@ -158,9 +168,10 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     }
     handle->mode_info = calloc(1, sizeof(i2s_pdm_tx_config_t));
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
-    ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, &pdm_tx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
-    /* i2s_set_pdm_tx_slot should be called before i2s_set_pdm_tx_clock while initializing, because clock is relay on the slot */
+    /* i2s_set_pdm_tx_slot should be called before i2s_set_pdm_tx_clock and i2s_pdm_tx_set_gpio
+     * while initializing, because clock and gpio is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_slot(handle, &pdm_tx_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
+    ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, &pdm_tx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
 #if SOC_I2S_SUPPORTS_APLL
     /* Enable APLL and acquire its lock when the clock source is APLL */
     if (pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
@@ -189,6 +200,7 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     /* Initialization finished, mark state as ready */
     handle->state = I2S_CHAN_STATE_READY;
     xSemaphoreGive(handle->mutex);
+    ESP_LOGD(TAG, "The tx channel on I2S0 has been initialized to PDM TX mode successfully");
     return ret;
 
 err:
@@ -460,6 +472,7 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
     /* Initialization finished, mark state as ready */
     handle->state = I2S_CHAN_STATE_READY;
     xSemaphoreGive(handle->mutex);
+    ESP_LOGD(TAG, "The rx channel on I2S0 has been initialized to PDM RX mode successfully");
     return ret;
 
 err:

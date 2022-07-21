@@ -47,6 +47,7 @@ typedef enum {
     I2S_MCLK_MULTIPLE_128       = 128,     /*!< mclk = sample_rate * 128 */
     I2S_MCLK_MULTIPLE_256       = 256,     /*!< mclk = sample_rate * 256 */
     I2S_MCLK_MULTIPLE_384       = 384,     /*!< mclk = sample_rate * 384 */
+    I2S_MCLK_MULTIPLE_512       = 512,     /*!< mclk = sample_rate * 512 */
 } i2s_mclk_multiple_t;
 
 /**

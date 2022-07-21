@@ -15,12 +15,12 @@
 
 /* I2C port and GPIOs */
 #define I2C_NUM         (0)
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-#define I2C_SDA_IO      (GPIO_NUM_17)
-#define I2C_SCL_IO      (GPIO_NUM_16)
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#define I2C_SCL_IO      (GPIO_NUM_6)
+#define I2C_SDA_IO      (GPIO_NUM_7)
 #else
-#define I2C_SDA_IO      (GPIO_NUM_15)
-#define I2C_SCL_IO      (GPIO_NUM_14)
+#define I2C_SCL_IO      (GPIO_NUM_16)
+#define I2C_SDA_IO      (GPIO_NUM_17)
 #endif
 
 /* I2S port and GPIOs */
@@ -28,13 +28,18 @@
 #define I2S_MCK_IO      (GPIO_NUM_0)
 #define I2S_BCK_IO      (GPIO_NUM_4)
 #define I2S_WS_IO       (GPIO_NUM_5)
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#define I2S_DO_IO       (GPIO_NUM_2)
+#define I2S_DI_IO       (GPIO_NUM_3)
+#else
 #define I2S_DO_IO       (GPIO_NUM_18)
 #define I2S_DI_IO       (GPIO_NUM_19)
-
+#endif
 /* Example configurations */
-#define EXAMPLE_RECV_BUF_SIZE   (2048)
+#define EXAMPLE_RECV_BUF_SIZE   (2400)
 #define EXAMPLE_SAMPLE_RATE     (16000)
-#define EXAMPLE_MCLK_MULTIPLE   (256)
+#define EXAMPLE_MCLK_MULTIPLE   (384) // If not using 24-bit data width, 256 should be enough
+#define EXAMPLE_MCLK_FREQ_HZ    (EXAMPLE_SAMPLE_RATE * EXAMPLE_MCLK_MULTIPLE)
 #define EXAMPLE_VOICE_VOLUME    CONFIG_EXAMPLE_VOICE_VOLUME
 #if CONFIG_EXAMPLE_MODE_ECHO
 #define EXAMPLE_MIC_GAIN        CONFIG_EXAMPLE_MIC_GAIN
@@ -71,7 +76,10 @@ static esp_err_t es8311_codec_init(void)
     es8311_handle_t es_handle = es8311_create(I2C_NUM, ES8311_ADDRRES_0);
     ESP_RETURN_ON_FALSE(es_handle, ESP_FAIL, TAG, "es8311 create failed");
     es8311_clock_config_t es_clk = {
+        .mclk_inverted = false,
+        .sclk_inverted = false,
         .mclk_from_mclk_pin = true,
+        .mclk_frequency = EXAMPLE_MCLK_FREQ_HZ,
         .sample_frequency = EXAMPLE_SAMPLE_RATE
     };
 
@@ -88,16 +96,17 @@ static esp_err_t es8311_codec_init(void)
 static esp_err_t i2s_driver_init(void)
 {
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
+    chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
     i2s_std_config_t std_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
         .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = {
-            .mclk = GPIO_NUM_0,
-            .bclk = GPIO_NUM_4,
-            .ws = GPIO_NUM_5,
-            .dout = GPIO_NUM_18,
-            .din = GPIO_NUM_19,
+            .mclk = I2S_MCK_IO,
+            .bclk = I2S_BCK_IO,
+            .ws = I2S_WS_IO,
+            .dout = I2S_DO_IO,
+            .din = I2S_DI_IO,
             .invert_flags = {
                 .mclk_inv = false,
                 .bclk_inv = false,
@@ -105,6 +114,7 @@ static esp_err_t i2s_driver_init(void)
             },
         },
     };
+    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
 
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
