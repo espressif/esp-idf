@@ -18,7 +18,23 @@ Eclipse
 
     It is recommended to first check if debugger works using :ref:`jtag-debugging-with-idf-py` or from :ref:`jtag-debugging-using-debugger-command-line` and then move to using Eclipse.
 
-Debugging functionality is provided out of box in standard Eclipse installation. Another option is to use pluggins like "GDB Hardware Debugging" plugin. We have found this plugin quite convenient and decided to use throughout this guide.
+Eclipse provides two ways to debug the esp-idf applications.
+
+1. GDB Hardware Debugging
+2. `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
+
+By default, Eclipse supports OpenOCD via the GDB Hardware Debugging plug-in, which requires to start the OpenOCD server from the command line and configure the GDB client from eclipse to start with the debugging.
+
+However, the `IDF Eclipse plugin <https://github.com/espressif/idf-eclipse-plugin>`_
+has a customized ESP-IDF GDB OpenOCD Debugging functionality which supports configuring the OpenOCD server and GDB client both from the eclipse. All the required configuration parameters will be pre-filled by the plugin, as a user it would be a click of a button you should be able to get into a debugging mode.
+
+Hence it is always recommended to use the ESP-IDF GDB OpenOCD Debugging via the IDF Eclipse plugin. Click `here <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_
+to get started.
+
+**GDB Hardware Debugging**
+
+.. note::
+    This approach is recommended only if you are unable to debug using `ESP-IDF GDB OpenOCD Debugging <https://github.com/espressif/idf-eclipse-plugin/blob/master/docs/OpenOCD%20Debugging.md#esp-idf-gdb-openocd-debugging>`_ for some or other reason.
 
 To begin with, install "GDB Hardware Debugging" plugin by opening Eclipse and going to `Help` > `Install` New Software.
 
