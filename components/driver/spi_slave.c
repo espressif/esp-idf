@@ -283,6 +283,33 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     return ESP_OK;
 }
 
+/**
+ * @note
+ * This API is used to reset SPI Slave transaction queue. After calling this function:
+ * - The SPI Slave transaction queue will be reset.
+ *
+ * Therefore, this API shouldn't be called when the corresponding SPI Master is doing an SPI transaction.
+ *
+ * @note
+ * We don't actually need to enter a critical section here.
+ * SPI Slave ISR will only get triggered when its corresponding SPI Master's transaction is done.
+ * As we don't expect this function to be called when its corresponding SPI Master is doing an SPI transaction,
+ * so concurrent call to these registers won't happen
+ *
+ */
+esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
+{
+    SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
+
+    esp_intr_disable(spihost[host]->intr);
+    spi_ll_set_int_stat(spihost[host]->hal.hw);
+
+    spihost[host]->cur_trans = NULL;
+    xQueueReset(spihost[host]->trans_queue);
+
+    return ESP_OK;
+}
 
 esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transaction_t *trans_desc, TickType_t ticks_to_wait)
 {
