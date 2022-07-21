@@ -245,6 +245,7 @@ static int usb_serial_jtag_fcntl(int fd, int cmd, int arg)
 {
     int result = 0;
     if (cmd == F_GETFL) {
+        result |= O_RDWR;
         if (s_ctx.non_blocking) {
             result |= O_NONBLOCK;
         }

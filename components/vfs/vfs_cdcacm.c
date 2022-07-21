@@ -271,7 +271,7 @@ static int cdcacm_fcntl(int fd, int cmd, int arg)
     assert(fd == 0);
     int result;
     if (cmd == F_GETFL) {
-        result = 0;
+        result = O_RDWR;
         if (!s_blocking) {
             result |= O_NONBLOCK;
         }
