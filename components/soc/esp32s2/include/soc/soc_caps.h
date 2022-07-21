@@ -63,6 +63,7 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SDM_SUPPORTED               1
+#define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         0
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
@@ -273,13 +274,12 @@
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
-#define SOC_SYSTIMER_COUNTER_NUM  (1)  // Number of counter units
-#define SOC_SYSTIMER_ALARM_NUM    (3)  // Number of alarm units
-#define SOC_SYSTIMER_BIT_WIDTH_LO (32) // Bit width of systimer low part
-#define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
+#define SOC_SYSTIMER_COUNTER_NUM  1  // Number of counter units
+#define SOC_SYSTIMER_ALARM_NUM    3  // Number of alarm units
+#define SOC_SYSTIMER_BIT_WIDTH_LO 32 // Bit width of systimer low part
+#define SOC_SYSTIMER_BIT_WIDTH_HI 32 // Bit width of systimer high part
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_SYSTIMER_SUPPORTED             1
 #define SOC_TIMER_GROUPS                  (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)

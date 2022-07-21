@@ -18,6 +18,8 @@
 #include "xtensa/config/core-isa.h"
 #include "xtensa/xtruntime.h"
 #include "esp_private/esp_int_wdt.h"
+#include "esp_private/systimer.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_task.h"
@@ -215,7 +217,13 @@ void vPortSetupTimer(void)
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
 
     if (cpuid == 0) {
+        periph_module_enable(PERIPH_SYSTIMER_MODULE);
         systimer_hal_init(&systimer_hal);
+        systimer_hal_tick_rate_ops_t ops = {
+            .ticks_to_us = systimer_ticks_to_us,
+            .us_to_ticks = systimer_us_to_ticks,
+        };
+        systimer_hal_set_tick_rate_ops(&systimer_hal, &ops);
         systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK, 0);
         systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK);
 
@@ -292,7 +300,7 @@ static const char *TAG = "cpu_start";
 
 extern void app_main(void);
 
-static void main_task(void* args)
+static void main_task(void *args)
 {
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
@@ -487,7 +495,7 @@ void *pvPortMalloc( size_t xSize )
     return heap_caps_malloc(xSize, FREERTOS_SMP_MALLOC_CAPS);
 }
 
-void vPortFree( void * pv )
+void vPortFree( void *pv )
 {
     heap_caps_free(pv);
 }
@@ -701,9 +709,9 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 
 void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
 
-void vPortCleanUpCoprocArea( void * pxTCB )
+void vPortCleanUpCoprocArea( void *pxTCB )
 {
-    StackType_t * coproc_area;
+    StackType_t *coproc_area;
     BaseType_t xCoreID;
 
     /* Calculate the coproc save area in the stack from the TCB base */
@@ -724,7 +732,7 @@ void vPortCleanUpCoprocArea( void * pxTCB )
 // ------- Thread Local Storage Pointers Deletion Callbacks -------
 
 #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
-void vPortTLSPointersDelCb( void * pxTCB )
+void vPortTLSPointersDelCb( void *pxTCB )
 {
     /* Typecast pxTCB to StaticTask_t type to access TCB struct members.
      * pvDummy15 corresponds to pvThreadLocalStoragePointers member of the TCB.
@@ -737,10 +745,8 @@ void vPortTLSPointersDelCb( void * pxTCB )
     /* We need to iterate over half the depth of the pvThreadLocalStoragePointers area
      * to access all TLS pointers and their respective TLS deletion callbacks.
      */
-    for( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ )
-    {
-        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL )    //If del cb is set
-        {
+    for ( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ ) {
+        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL ) {  //If del cb is set
             /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
             if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
                 // We call EARLY log here as currently portCLEAN_UP_TCB() is called in a critical section
