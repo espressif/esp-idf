@@ -14,6 +14,7 @@ INCLUDE_DIRS := \
 	app_update/include \
 	bsd/include \
 	driver/include \
+	esp_app_format/include \
 	esp_timer/include \
 	freertos/include \
 	log/include \
@@ -26,7 +27,7 @@ INCLUDE_DIRS := \
 	esp_hw_support/include/soc \
 	esp_system/include \
 	soc/esp32/include \
-        heap/include \
+	heap/include \
 	soc/include \
 	xtensa/include \
 	xtensa/esp32/include \
