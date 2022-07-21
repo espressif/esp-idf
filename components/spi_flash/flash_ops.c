@@ -15,6 +15,7 @@
 #include <freertos/semphr.h>
 #include <soc/soc.h>
 #include <soc/soc_memory_layout.h>
+#include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "spi_flash_mmap.h"
@@ -45,7 +46,12 @@
 #include "esp_flash.h"
 #include "esp_attr.h"
 #include "bootloader_flash.h"
+#include "bootloader_flash_config.h"
 #include "esp_compiler.h"
+#include "esp_rom_efuse.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_io.h"
+#endif
 
 /* bytes erased by SPIEraseBlock() ROM function */
 #define BLOCK_ERASE_SIZE 65536
@@ -223,3 +229,88 @@ void IRAM_ATTR spi_flash_set_vendor_required_regs(void)
 #endif // CONFIG_ESPTOOLPY_OCT_FLASH
 }
 #endif
+
+static const uint8_t s_mspi_io_num_default[] = {
+    SPI_CLK_GPIO_NUM,
+    SPI_Q_GPIO_NUM,
+    SPI_D_GPIO_NUM,
+    SPI_CS0_GPIO_NUM,
+    SPI_HD_GPIO_NUM,
+    SPI_WP_GPIO_NUM,
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    SPI_DQS_GPIO_NUM,
+    SPI_D4_GPIO_NUM,
+    SPI_D5_GPIO_NUM,
+    SPI_D6_GPIO_NUM,
+    SPI_D7_GPIO_NUM
+#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+};
+
+uint8_t esp_mspi_get_io(esp_mspi_io_t io)
+{
+#if CONFIG_SPIRAM
+    if (io == ESP_MSPI_IO_CS1) {
+        return esp_psram_io_get_cs_io();
+    }
+#endif
+
+    assert(io >= ESP_MSPI_IO_CLK);
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    assert(io <= ESP_MSPI_IO_D7);
+#else
+    assert(io <= ESP_MSPI_IO_WP);
+#endif
+
+#if SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+    uint8_t mspi_io = 0;
+    uint32_t spiconfig = 0;
+
+    if (io == ESP_MSPI_IO_WP) {
+        /**
+         * wp pad is a bit special:
+         * 1. since 32's efuse does not have enough bits for wp pad, so wp pad config put in flash bin header
+         * 2. rom code take 0x3f as invalid wp pad num, but take 0 as other invalid mspi pads num
+         */
+#if CONFIG_IDF_TARGET_ESP32
+        return bootloader_flash_get_wp_pin();
+#else
+        spiconfig = esp_rom_efuse_get_flash_wp_gpio();
+        return (spiconfig == 0x3f) ? s_mspi_io_num_default[io] : spiconfig & 0x3f;
+#endif
+    }
+
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    spiconfig = (io < ESP_MSPI_IO_WP) ? esp_rom_efuse_get_flash_gpio_info() : esp_rom_efuse_get_opiconfig();
+#else
+    spiconfig = esp_rom_efuse_get_flash_gpio_info();
+#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+
+    if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
+        mspi_io = s_mspi_io_num_default[io];
+    } else if (io < ESP_MSPI_IO_WP) {
+        /**
+         * [0 : 5] -- CLK
+         * [6 :11] -- Q(D1)
+         * [12:17] -- D(D0)
+         * [18:23] -- CS
+         * [24:29] -- HD(D3)
+         */
+        mspi_io = (spiconfig >> io * 6) & 0x3f;
+    }
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    else {
+        /**
+         * [0 : 5] -- DQS
+         * [6 :11] -- D4
+         * [12:17] -- D5
+         * [18:23] -- D6
+         * [24:29] -- D7
+         */
+        mspi_io = (spiconfig >> (io - ESP_MSPI_IO_DQS) * 6) & 0x3f;
+    }
+#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+    return mspi_io;
+#else  // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+    return s_mspi_io_num_default[io];
+#endif // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+}
