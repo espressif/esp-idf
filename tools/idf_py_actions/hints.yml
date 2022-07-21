@@ -13,6 +13,10 @@
     match_to_output: True
 
 -
+    re: "fatal error: \\w+\\.h: No such file or directory"
+    hint: "Please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'."
+
+-
     re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
     hint: "Try to reinstall the toolchain for the chip that you trying to use. \nFor more information run 'idf.py docs -sp get-started/#installation' and follow the instructions for your system"
 
@@ -27,3 +31,11 @@
 -
     re: "ImportError: bad magic number in 'kconfiglib':"
     hint: "Run 'idf.py python-clean', and try again"
+
+-
+    re: "ccache error: Failed to create temporary file"
+    hint: "On Windows, you should enable long path support in the installer, or disable ccache temporarily. See 'idf.py --help' or the documentation how to achieve this."
+
+-
+    re: "The keyword signature for target_link_libraries has already been used"
+    hint: "Projects using target_link_libraries with project_elf explicitly and custom CMake projects must specify PRIVATE, PUBLIC or INTERFACE arguments."
