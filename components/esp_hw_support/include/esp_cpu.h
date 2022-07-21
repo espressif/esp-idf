@@ -17,6 +17,7 @@
 #elif __riscv
 #include "riscv/rv_utils.h"
 #endif
+#include "esp_intr_alloc.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
