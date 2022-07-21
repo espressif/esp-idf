@@ -166,7 +166,7 @@ examples/peripherals/temp_sensor:
 
 examples/peripherals/touch_sensor:
   disable:
-    - if: SOC_TOUCH_SENSOR_NUM == 0
+    - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
 
 examples/peripherals/touch_sensor/touch_element:
   enable:

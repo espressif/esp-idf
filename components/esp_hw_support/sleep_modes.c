@@ -32,7 +32,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/rtc_hal.h"
 #include "hal/uart_hal.h"
-#if SOC_TOUCH_SENSOR_NUM > 0
+#if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
 #include "driver/touch_sensor.h"
 #include "driver/touch_sensor_common.h"
@@ -899,7 +899,7 @@ static void touch_wakeup_prepare(void)
 }
 #endif
 
-#if SOC_TOUCH_SENSOR_NUM > 0
+#if SOC_TOUCH_SENSOR_SUPPORTED
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
@@ -926,7 +926,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
     return (ret == ESP_OK) ? pad_num : TOUCH_PAD_MAX;
 }
 
-#endif // SOC_TOUCH_SENSOR_NUM > 0
+#endif // SOC_TOUCH_SENSOR_SUPPORTED
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {

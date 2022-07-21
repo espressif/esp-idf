@@ -84,27 +84,21 @@ if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
     list(APPEND srcs "spi_slave_hd.c")
 endif()
 
+if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+    list(APPEND srcs "touch_sensor_common.c" "${target}/touch_sensor.c")
+endif()
+
 if(${target} STREQUAL "esp32")
     list(APPEND srcs "dac_common.c"
                      "sdio_slave.c"
-                     "touch_sensor_common.c"
-                     "esp32/touch_sensor.c"
                      "deprecated/adc_i2s_deprecated.c"
                      "esp32/dac.c")
 endif()
 
 if(${target} STREQUAL "esp32s2")
     list(APPEND srcs "dac_common.c"
-                     "touch_sensor_common.c"
-                     "esp32s2/touch_sensor.c"
                      "esp32s2/dac.c")
 endif()
-
-if(${target} STREQUAL "esp32s3")
-    list(APPEND srcs "touch_sensor_common.c"
-                     "esp32s3/touch_sensor.c")
-endif()
-
 
 if(BOOTLOADER_BUILD)
     # Bootloader shall NOT depend on the drivers

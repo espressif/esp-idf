@@ -181,7 +181,7 @@ So, in theory, it's ok if you only wake up the system after the flash is complet
 Therefore, it's recommended not to power down flash when using ESP-IDF. For power-sensitive applications, it's recommended to use Kconfig option :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` to reduce the power consumption of the flash during light sleep, instead of powering down the flash.
 
 .. only:: SOC_SPIRAM_SUPPORTED
-    
+
     It is worth mentioning that PSRAM has a similar Kconfig option :ref:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`.
 
 However, for those who have fully understood the risk and are still willing to power down the flash to further reduce the power consumption, please check the following mechanisms:
@@ -243,7 +243,7 @@ Checking Sleep Wakeup Cause
 
 :cpp:func:`esp_sleep_get_wakeup_cause` function can be used to check which wakeup source has triggered wakeup from sleep mode.
 
-.. only:: SOC_TOUCH_SENSOR_NUM
+.. only:: SOC_TOUCH_SENSOR_SUPPORTED
 
     For touchpad, it is possible to identify which touch pin has caused wakeup using :cpp:func:`esp_sleep_get_touchpad_wakeup_status` functions.
 

@@ -1055,7 +1055,6 @@ components/soc/esp32/ledc_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/spi_periph.c
-components/soc/esp32/touch_sensor_periph.c
 components/soc/esp32/uart_periph.c
 components/soc/esp32c3/i2c_bbpll.h
 components/soc/esp32c3/i2c_periph.c
@@ -1218,7 +1217,6 @@ components/soc/esp32s2/include/soc/wdev_reg.h
 components/soc/esp32s2/interrupts.c
 components/soc/esp32s2/ledc_periph.c
 components/soc/esp32s2/spi_periph.c
-components/soc/esp32s2/touch_sensor_periph.c
 components/soc/esp32s2/uart_periph.c
 components/soc/esp32s2/usb_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
@@ -1326,7 +1324,6 @@ components/soc/include/soc/sdmmc_periph.h
 components/soc/include/soc/sens_periph.h
 components/soc/include/soc/spi_periph.h
 components/soc/include/soc/syscon_periph.h
-components/soc/include/soc/touch_sensor_periph.h
 components/soc/include/soc/twai_periph.h
 components/soc/include/soc/uart_periph.h
 components/soc/include/soc/uhci_periph.h

@@ -33,7 +33,7 @@ Peripherals API
     :esp32: secure_element
     :esp32s2: spi_slave_hd
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
-    :SOC_TOUCH_SENSOR_NUM: touch_pad
+    :SOC_TOUCH_SENSOR_SUPPORTED: touch_pad
     :esp32s2: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart

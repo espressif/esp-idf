@@ -305,9 +305,6 @@
 #define SOC_TIMER_GROUP_SUPPORT_APB       (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 
-/*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */
-
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
 #define SOC_TWAI_BRP_MAX                16384
