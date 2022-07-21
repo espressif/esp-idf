@@ -21,6 +21,7 @@
 #include "test_fatfs_common.h"
 #include "wear_levelling.h"
 #include "esp_partition.h"
+#include "esp_memory_utils.h"
 
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

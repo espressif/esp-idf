@@ -16,6 +16,7 @@
 #endif
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_memory_utils.h"
 #include "esp_rom_gpio.h"
 #include "soc/rmt_periph.h"
 #include "soc/rtc.h"

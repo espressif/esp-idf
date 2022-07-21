@@ -76,11 +76,12 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
+#include "esp_memory_utils.h"
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
-#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 #include "portbenchmark.h"
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
@@ -405,38 +406,6 @@ void vPortSetStackWatchpoint( void *pxStackStart );
  */
 FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void);
 
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * This subroutine will atomically compare *addr to 'compare'. If *addr == compare, *addr is set to *set. *set is
- * updated with the previous value of *addr (either 'compare' or some other value.)
- *
- * @warning From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the "bitwise inverse" of
- *          the old mem if the mem wasn't written. This doesn't seem to happen on the ESP32 (portMUX assertions would
- *          fail).
- *
- * @note [refactor-todo] Check if this can be deprecated
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * Atomic compare-and-set but the target address is placed in external RAM
- *
- * @note [refactor-todo] Check if this can be deprecated
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
 
 
 /* ------------------------------------------- FreeRTOS Porting Interface ----------------------------------------------
@@ -659,18 +628,6 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 {
     return (BaseType_t) cpu_hal_get_core_id();
-}
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#ifdef CONFIG_SPIRAM
-    compare_and_set_extram(addr, compare, set);
-#endif
 }
 
 

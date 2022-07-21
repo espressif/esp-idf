@@ -13,6 +13,7 @@
 #include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_sys.h"
+#include "soc/soc.h"
 
 #define TEST_TIMER_RESOLUTION_HZ 1000000 // 1MHz resolution
 #define TIMER_DELTA              0.001

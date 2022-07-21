@@ -32,6 +32,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "esp_cpu.h"
 
 #include "hal/sha_hal.h"
 #include "hal/sha_types.h"
@@ -106,7 +107,6 @@ static SemaphoreHandle_t sha_get_engine_state(esp_sha_type sha_type)
     unsigned idx = sha_engine_index(sha_type);
     volatile SemaphoreHandle_t *engine = &engine_states[idx];
     SemaphoreHandle_t result = *engine;
-    uint32_t set_engine = 0;
 
     if (result == NULL) {
         // Create a new semaphore for 'in use' flag
@@ -115,10 +115,8 @@ static SemaphoreHandle_t sha_get_engine_state(esp_sha_type sha_type)
         xSemaphoreGive(new_engine); // start available
 
         // try to atomically set the previously NULL *engine to new_engine
-        set_engine = (uint32_t)new_engine;
-        uxPortCompareSet((volatile uint32_t *)engine, 0, &set_engine);
-
-        if (set_engine != 0) { // we lost a race setting *engine
+        if (!esp_cpu_compare_and_set((volatile uint32_t *)engine, 0, (uint32_t)new_engine)) {
+            // we lost a race setting *engine
             vSemaphoreDelete(new_engine);
         }
         result = *engine;

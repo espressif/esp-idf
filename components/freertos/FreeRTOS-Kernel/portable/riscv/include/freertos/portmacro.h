@@ -50,7 +50,6 @@
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 #include "esp_newlib.h"
-#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
@@ -181,32 +180,6 @@ typedef struct {
     (mux)->owner = portMUX_FREE_VAL; \
     (mux)->count = 0; \
 })
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
 
 // ------------------ Critical Sections --------------------
 
@@ -433,22 +406,6 @@ FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
  * ------------------------------------------------------------------------------------------------------------------ */
 
 // --------------------- Interrupts ------------------------
-
-
-
-// ---------------------- Spinlocks ------------------------
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#if defined(CONFIG_SPIRAM)
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
 
 // ---------------------- Yielding -------------------------
 

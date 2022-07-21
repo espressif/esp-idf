@@ -22,6 +22,7 @@
 #include "test_apb_dport_access.h"
 #include "soc/soc_caps.h"
 #include "test_utils.h"
+#include "esp_memory_utils.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {

@@ -28,6 +28,7 @@
 #include "esp_heap_caps_init.h"
 #include "esp_freertos_hooks.h"
 #include "esp_intr_alloc.h"
+#include "esp_memory_utils.h"
 #if CONFIG_SPIRAM
 /* Required by esp_psram_extram_reserve_dma_pool() */
 #include "esp_psram.h"

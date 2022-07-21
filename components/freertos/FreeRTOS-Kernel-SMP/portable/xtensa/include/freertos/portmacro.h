@@ -17,8 +17,8 @@
 #include "portbenchmark.h"
 #include "esp_macros.h"
 #include "hal/cpu_hal.h"
-#include "compare_set.h"            /* For compare_and_set_native(). [refactor-todo] Use esp_cpu.h instead */
 #include "esp_private/crosscore_int.h"
+#include "esp_memory_utils.h"
 
 /*
 Note: We should not include any FreeRTOS headers (directly or indirectly) here as this will create a reverse dependency
@@ -284,18 +284,6 @@ static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
 }
 
 // ---------------------- Spinlocks ------------------------
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#if defined(CONFIG_SPIRAM)
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
 
 static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout)
 {

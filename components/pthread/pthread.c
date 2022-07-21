@@ -10,6 +10,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -493,18 +494,8 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
         return EINVAL;
     }
 
-    uint32_t res = 1;
-#if defined(CONFIG_SPIRAM)
-    if (esp_ptr_external_ram(once_control)) {
-        uxPortCompareSetExtram((uint32_t *) &once_control->init_executed, 0, &res);
-    } else {
-#endif
-        uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
-#if defined(CONFIG_SPIRAM)
-    }
-#endif
     // Check if compare and set was successful
-    if (res == 0) {
+    if (esp_cpu_compare_and_set((volatile uint32_t *)&once_control->init_executed, 0, 1)) {
         ESP_LOGV(TAG, "%s: call init_routine %p", __FUNCTION__, once_control);
         init_routine();
     }

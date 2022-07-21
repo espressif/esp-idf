@@ -26,7 +26,7 @@
 #include "FreeRTOS.h"       /* This pulls in portmacro.h */
 #include "task.h"
 #include "portmacro.h"
-
+#include "esp_memory_utils.h"
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"

@@ -46,6 +46,7 @@
 #include "esp_attr.h"
 
 #include "esp_rom_gpio.h"
+#include "esp_memory_utils.h"
 
 /* The actual max size of DMA buffer is 4095
  * Set 4092 here to align with 4-byte, so that the position of the slot data in the buffer will be relatively fixed */

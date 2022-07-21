@@ -10,6 +10,7 @@
 #include <sys/param.h>
 
 #include "esp_attr.h"
+#include "esp_memory_utils.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/system_internal.h"

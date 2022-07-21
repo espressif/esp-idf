@@ -13,6 +13,7 @@
 #include "esp_macros.h"
 #include "hal/cpu_hal.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_memory_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -240,42 +241,6 @@ static inline BaseType_t xPortInIsrContext(void)
 
 // Added for backward compatibility with IDF
 #define xPortInterruptedFromISRContext()    xPortInIsrContext()
-
-// ---------------------- Spinlocks ------------------------
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#if defined(CONFIG_SPIRAM)
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
 
 // ------------------ Critical Sections --------------------
 
