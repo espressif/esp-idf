@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,8 @@ extern volatile bool g_override_illegal_instruction;
 
 void __real_esp_panic_handler(panic_info_t *info);
 void __real_esp_panic_handler_reconfigure_wdts(void);
-void __real_soc_hal_stall_core(int core);
+void __real_esp_cpu_stall(int core_id);
+
 
 static void disable_all_wdts(void)
 {
@@ -68,11 +69,11 @@ void __wrap_esp_panic_handler_reconfigure_wdts(void)
     }
 }
 
-void __wrap_soc_hal_stall_core(int core)
+void __wrap_esp_cpu_stall(int core_id)
 {
     if ( g_override_illegal_instruction == true ) {
         return;
     } else {
-        __real_soc_hal_stall_core(core);
+        __real_esp_cpu_stall(core_id);
     }
 }

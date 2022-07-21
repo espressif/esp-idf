@@ -8,7 +8,6 @@
 
 /*
 Note: This is a compatibility header. Call the interfaces in esp_cpu.h instead
-[refactor-todo]: Mark all API in this header as deprecated
 */
 
 #include "soc/soc_caps.h"

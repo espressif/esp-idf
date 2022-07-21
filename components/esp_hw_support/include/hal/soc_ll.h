@@ -8,7 +8,6 @@
 
 /*
 Note: This is a compatibility header. Call the interfaces in esp_cpu.h instead
-[refactor-todo]: Mark all API in this header as deprecated
 */
 
 #include "esp_attr.h"
@@ -18,17 +17,17 @@ Note: This is a compatibility header. Call the interfaces in esp_cpu.h instead
 extern "C" {
 #endif
 
-FORCE_INLINE_ATTR void soc_ll_stall_core(int core)
+FORCE_INLINE_ATTR __attribute__((deprecated)) void soc_ll_stall_core(int core)
 {
     esp_cpu_stall(core);
 }
 
-FORCE_INLINE_ATTR void soc_ll_unstall_core(int core)
+FORCE_INLINE_ATTR __attribute__((deprecated)) void soc_ll_unstall_core(int core)
 {
     esp_cpu_unstall(core);
 }
 
-FORCE_INLINE_ATTR void soc_ll_reset_core(int core)
+FORCE_INLINE_ATTR __attribute__((deprecated)) void soc_ll_reset_core(int core)
 {
     esp_cpu_reset(core);
 }
