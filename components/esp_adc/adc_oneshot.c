@@ -16,7 +16,7 @@
 #include "driver/rtc_io.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_private/adc_private.h"
-#include "esp_private/adc_lock.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "hal/adc_types.h"
 #include "hal/adc_oneshot_hal.h"
 #include "hal/adc_ll.h"

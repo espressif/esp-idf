@@ -12,6 +12,9 @@ if(NOT BOOTLOADER_BUILD)
                      "esp_crypto_lock.c"
                      "esp_ds.c")
 
+    # init constructor for wifi
+    list(APPEND srcs "adc2_init_cal.c")
+
     if(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
         list(APPEND srcs "esp_memprot.c" "../esp_memprot_conv.c")
     endif()

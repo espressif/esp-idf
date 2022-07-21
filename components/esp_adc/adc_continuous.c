@@ -20,7 +20,7 @@
 #include "freertos/ringbuf.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_private.h"
-#include "esp_private/adc_lock.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_adc/adc_continuous.h"
 #include "hal/adc_types.h"

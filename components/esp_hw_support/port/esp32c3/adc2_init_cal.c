@@ -11,8 +11,7 @@ Don't put any other code into this file. */
 #include "freertos/FreeRTOS.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal_common.h"
-#include "esp_private/adc2_wifi.h"
-#include "esp_private/adc_private.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 
 extern portMUX_TYPE rtc_spinlock;
 
