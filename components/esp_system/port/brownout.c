@@ -14,11 +14,11 @@
 #include "esp_private/spi_flash_os.h"
 
 #include "esp_rom_sys.h"
+#include "esp_cpu.h"
 
 #include "soc/soc.h"
-#include "esp_cpu.h"
+
 #include "soc/rtc_periph.h"
-#include "hal/cpu_hal.h"
 #include "esp_attr.h"
 #include "bootloader_flash.h"
 #include "esp_intr_alloc.h"
@@ -42,7 +42,7 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
      */
     brownout_hal_intr_clear();
     // Stop the other core.
-    esp_cpu_stall(!cpu_hal_get_core_id());
+    esp_cpu_stall(!esp_cpu_get_core_id());
     esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET
     if (spi_flash_brownout_need_reset()) {

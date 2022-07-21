@@ -46,6 +46,7 @@
 #include "soc/interrupt_core0_reg.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_rom_sys.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
@@ -290,7 +291,7 @@ void vPortSetStackWatchpoint(void *pxStackStart);
  */
 FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 {
-    return (BaseType_t) cpu_hal_get_core_id();
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 

@@ -17,10 +17,10 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
-#include "hal/cpu_hal.h"
 #include "esp_rom_sys.h"
 #include "hal/cache_ll.h"
 
@@ -28,7 +28,7 @@ static const char *TAG = "CACHE_ERR";
 
 void esp_cache_err_int_init(void)
 {
-    uint32_t core_id = cpu_hal_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
     ESP_INTR_DISABLE(ETS_CACHEERR_INUM);
 
     // We do not register a handler for the interrupt because it is interrupt

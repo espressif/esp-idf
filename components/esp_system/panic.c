@@ -15,7 +15,6 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
-#include "hal/cpu_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
 
@@ -291,7 +290,7 @@ void esp_panic_handler(panic_info_t *info)
 #endif
 #endif
 
-        cpu_hal_set_breakpoint(0, info->addr); // use breakpoint 0
+        esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
 

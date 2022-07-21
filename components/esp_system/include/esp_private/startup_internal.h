@@ -9,9 +9,9 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_bit_defs.h"
+#include "esp_cpu.h"
 
 #include "soc/soc_caps.h"
-#include "hal/cpu_hal.h"
 
 #include "sdkconfig.h"
 
@@ -32,7 +32,7 @@ extern sys_startup_fn_t const g_startup_fn[1];
 #endif
 
 // Utility to execute `sys_startup_fn_t` for the current core.
-#define SYS_STARTUP_FN()  ((*g_startup_fn[(cpu_hal_get_core_id())])())
+#define SYS_STARTUP_FN()  ((*g_startup_fn[(esp_cpu_get_core_id())])())
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void);

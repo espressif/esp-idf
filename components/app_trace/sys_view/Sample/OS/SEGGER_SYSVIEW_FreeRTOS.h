@@ -342,12 +342,12 @@ define away all of the tracing macros.
   #define traceTASK_SWITCHED_IN()                   if(prvGetTCBFromHandle(NULL) == xTaskGetIdleTaskHandle()) {           \
                                                       SEGGER_SYSVIEW_OnIdle();                                          \
                                                     } else {                                                            \
-                                                      SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[cpu_hal_get_core_id()]); \
+                                                      SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[esp_cpu_get_core_id()]); \
                                                     }
 #else
   #define traceTASK_SWITCHED_IN()                   {                                                                   \
-                                                      if (memcmp(pxCurrentTCB[cpu_hal_get_core_id()]->pcTaskName, "IDLE", 5) != 0) { \
-                                                        SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[cpu_hal_get_core_id()]);    \
+                                                      if (memcmp(pxCurrentTCB[esp_cpu_get_core_id()]->pcTaskName, "IDLE", 5) != 0) { \
+                                                        SEGGER_SYSVIEW_OnTaskStartExec((U32)pxCurrentTCB[esp_cpu_get_core_id()]);    \
                                                       } else {                                                          \
                                                         SEGGER_SYSVIEW_OnIdle();                                        \
                                                       }                                                                 \
@@ -357,8 +357,8 @@ define away all of the tracing macros.
 #define traceMOVED_TASK_TO_READY_STATE(pxTCB)       SEGGER_SYSVIEW_OnTaskStartReady((U32)pxTCB)
 #define traceREADDED_TASK_TO_READY_STATE(pxTCB)
 
-#define traceMOVED_TASK_TO_DELAYED_LIST()           SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[cpu_hal_get_core_id()],  (1u << 2))
-#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()  SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[cpu_hal_get_core_id()],  (1u << 2))
+#define traceMOVED_TASK_TO_DELAYED_LIST()           SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[esp_cpu_get_core_id()],  (1u << 2))
+#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()  SEGGER_SYSVIEW_OnTaskStopReady((U32)pxCurrentTCB[esp_cpu_get_core_id()],  (1u << 2))
 #define traceMOVED_TASK_TO_SUSPENDED_LIST(pxTCB)    SEGGER_SYSVIEW_OnTaskStopReady((U32)pxTCB,         ((3u << 3) | 3))
 
 #define traceISR_EXIT_TO_SCHEDULER()                SEGGER_SYSVIEW_RecordExitISRToScheduler()

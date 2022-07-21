@@ -13,11 +13,11 @@
 #include "esp_err.h"
 #include "esp_pm.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 
 #include "esp_private/crosscore_int.h"
 
 #include "soc/rtc.h"
-#include "hal/cpu_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
 
@@ -532,7 +532,7 @@ static void IRAM_ATTR update_ccompare(void)
     /* disable level 4 and below */
     uint32_t irq_status = XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
 #endif
-    uint32_t ccount = cpu_hal_get_cycle_count();
+    uint32_t ccount = esp_cpu_get_cycle_count();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
     if ((ccompare - CCOMPARE_MIN_CYCLES_IN_FUTURE) - ccount < UINT32_MAX / 2) {
         uint32_t diff = ccompare - ccount;
@@ -658,7 +658,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                  * work for timer interrupt, and changing CCOMPARE would clear
                  * the interrupt flag.
                  */
-                cpu_hal_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
+                esp_cpu_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
@@ -845,7 +845,7 @@ void esp_pm_impl_waiti(void)
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     int core_id = xPortGetCoreID();
     if (s_skipped_light_sleep[core_id]) {
-        cpu_hal_waiti();
+        esp_cpu_wait_for_intr();
         /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
          * is now taken. However since we are back to idle task, we can release
          * the lock so that vApplicationSleep can attempt to enter light sleep.
@@ -854,7 +854,7 @@ void esp_pm_impl_waiti(void)
     }
     s_skipped_light_sleep[core_id] = true;
 #else
-    cpu_hal_waiti();
+    esp_cpu_wait_for_intr();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 

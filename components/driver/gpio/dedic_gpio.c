@@ -15,10 +15,10 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_cpu.h"
 #include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
-#include "hal/cpu_hal.h"
 #include "hal/dedic_gpio_cpu_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/periph_ctrl.h"
@@ -196,7 +196,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     dedic_gpio_bundle_t *bundle = NULL;
     uint32_t out_mask = 0;
     uint32_t in_mask = 0;
-    uint32_t core_id = cpu_hal_get_core_id(); // dedicated GPIO will be binded to the CPU who invokes this API
+    uint32_t core_id = esp_cpu_get_core_id(); // dedicated GPIO will be binded to the CPU who invokes this API
 
     ESP_GOTO_ON_FALSE(config && ret_bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(config->gpio_array && config->array_size > 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid GPIO array or size");
@@ -306,7 +306,7 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle)
     bool recycle_all = false;
     ESP_GOTO_ON_FALSE(bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
-    uint32_t core_id = cpu_hal_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
     ESP_GOTO_ON_FALSE(core_id == bundle->core_id, ESP_FAIL, err, TAG, "del bundle on wrong CPU");
 
     portENTER_CRITICAL(&s_platform[core_id]->spinlock);
@@ -377,7 +377,7 @@ esp_err_t dedic_gpio_bundle_set_interrupt_and_callback(dedic_gpio_bundle_handle_
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    uint32_t core_id = cpu_hal_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
     // lazy alloc interrupt
     ESP_GOTO_ON_ERROR(dedic_gpio_install_interrupt(core_id), err, TAG, "allocate interrupt on core %d failed", core_id);
 

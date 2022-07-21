@@ -9,6 +9,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_cpu.h"
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "driver/spi_master.h"
@@ -702,7 +703,7 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
 
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
-        core_num = cpu_hal_get_core_id();
+        core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_ksz8851snl_task, "ksz8851snl_tsk", mac_config->rx_task_stack_size,
                            emac, mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);

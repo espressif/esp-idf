@@ -16,7 +16,7 @@
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
 #include "esp_macros.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_memory_utils.h"
 
@@ -253,7 +253,7 @@ static inline void __attribute__((always_inline)) vPortYieldFromISR( void )
 
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void )
 {
-    return (BaseType_t) cpu_hal_get_core_id();
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------

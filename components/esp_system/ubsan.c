@@ -32,7 +32,7 @@
 #include <string.h>
 #include "esp_system.h"
 #include "esp_rom_sys.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 
 
 struct source_location {
@@ -138,8 +138,8 @@ void __ubsan_handle_invalid_builtin(void *data_);
 
 static void __ubsan_maybe_debugbreak(void)
 {
-    if (cpu_hal_is_debugger_attached()) {
-        cpu_hal_break();
+    if (esp_cpu_dbgr_is_attached()) {
+        esp_cpu_dbgr_break();
     }
 }
 

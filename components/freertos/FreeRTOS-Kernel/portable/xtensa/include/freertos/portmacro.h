@@ -72,7 +72,6 @@
 #include <xtensa/xtruntime.h>       /* required for XTOS_SET_INTLEVEL. [refactor-todo] add common intr functions to esp_hw_support */
 #include "xt_instr_macros.h"
 #include "spinlock.h"
-#include "hal/cpu_hal.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
@@ -627,7 +626,7 @@ FORCE_INLINE_ATTR bool xPortCanYield(void)
 
 FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 {
-    return (BaseType_t) cpu_hal_get_core_id();
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 

@@ -19,11 +19,11 @@
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_cpu.h"
 #include "esp_eth_driver.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "hal/cpu_hal.h"
 #include "openeth.h"
 #include "esp_mac.h"
 
@@ -395,7 +395,7 @@ esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config)
     // Create the RX task
     BaseType_t core_num = tskNO_AFFINITY;
     if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
-        core_num = cpu_hal_get_core_id();
+        core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_opencores_rx_task, "emac_rx", config->rx_task_stack_size, emac,
                            config->rx_task_prio, &emac->rx_task_hdl, core_num);

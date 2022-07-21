@@ -21,7 +21,6 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
-#include "hal/cpu_hal.h"
 #include "freertos/xtensa_api.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_private/cache_err_int.h"
@@ -53,7 +52,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = cpu_hal_get_core_id();
+    const uint32_t core_id = esp_cpu_get_core_id();
     const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
     esp_cpu_reset(other_core_id);
     esp_cpu_stall(other_core_id);

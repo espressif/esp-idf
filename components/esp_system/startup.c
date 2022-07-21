@@ -31,6 +31,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "esp_xt_wdt.h"
+#include "esp_cpu.h"
 
 #if __has_include("esp_ota_ops.h")
 #include "esp_ota_ops.h"
@@ -200,7 +201,7 @@ static void do_system_init_fn(void)
 
     esp_system_init_fn_t *p;
 
-    int core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
     for (p = &_esp_system_init_fn_array_start; p < &_esp_system_init_fn_array_end; ++p) {
         if (p->cores & BIT(core_id)) {
             ESP_LOGD(TAG, "calling init function: %p on core: %d", p->fn, core_id);

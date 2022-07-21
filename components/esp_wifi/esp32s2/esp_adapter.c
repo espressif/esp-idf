@@ -28,13 +28,13 @@
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "esp_cpu.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
-#include "hal/interrupt_controller_hal.h"
 #include "phy_init_data.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -674,8 +674,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._set_intr = set_intr_wrapper,
     ._clear_intr = clear_intr_wrapper,
     ._set_isr = set_isr_wrapper,
-    ._ints_on = interrupt_controller_hal_enable_interrupts,
-    ._ints_off = interrupt_controller_hal_disable_interrupts,
+    ._ints_on = esp_cpu_intr_enable,
+    ._ints_off = esp_cpu_intr_disable,
     ._is_from_isr = is_from_isr_wrapper,
     ._spin_lock_create = spin_lock_create_wrapper,
     ._spin_lock_delete = free,

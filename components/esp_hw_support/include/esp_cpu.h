@@ -35,7 +35,7 @@ typedef uint32_t esp_cpu_cycle_count_t;
  * @brief CPU interrupt type
  */
 typedef enum {
-    ESP_CPU_INTR_TYPE_LEVEL,
+    ESP_CPU_INTR_TYPE_LEVEL = 0,
     ESP_CPU_INTR_TYPE_EDGE,
     ESP_CPU_INTR_TYPE_NA,
 } esp_cpu_intr_type_t;
@@ -553,12 +553,17 @@ bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, ui
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-/*
-[refactor-todo] Make these deprecated inline
-*/
 typedef esp_cpu_cycle_count_t           esp_cpu_ccount_t;
-#define esp_cpu_get_ccount()            esp_cpu_get_cycle_count()
-#define esp_cpu_set_ccount(ccount)      esp_cpu_set_cycle_count(ccount)
+
+FORCE_INLINE_ATTR __attribute__((deprecated)) esp_cpu_cycle_count_t esp_cpu_get_ccount(void)
+{
+    return esp_cpu_get_cycle_count();
+}
+
+FORCE_INLINE_ATTR __attribute__((deprecated)) void esp_cpu_set_ccount(esp_cpu_cycle_count_t ccount)
+{
+    return esp_cpu_set_cycle_count(ccount);
+}
 
 /**
  * @brief Returns true if a JTAG debugger is attached to CPU OCD (on chip debug) port.

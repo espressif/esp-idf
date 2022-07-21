@@ -16,7 +16,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 
 #include "test_utils.h"
 
@@ -25,11 +25,11 @@
 static uint32_t start, end;
 
 #define BENCHMARK_START() do {                  \
-        start = cpu_hal_get_cycle_count();                     \
+        start = esp_cpu_get_cycle_count();                     \
     } while(0)
 
 #define BENCHMARK_END(OPERATION) do {                       \
-        end = cpu_hal_get_cycle_count();                                          \
+        end = esp_cpu_get_cycle_count();                                          \
         printf("%s took %d cycles/op (%d cycles for %d ops)\n",     \
                OPERATION, (end - start)/REPEAT_OPS,                 \
                (end - start), REPEAT_OPS);                          \

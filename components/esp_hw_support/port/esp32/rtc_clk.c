@@ -15,7 +15,6 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "soc/gpio_struct.h"
-#include "hal/cpu_hal.h"
 #include "hal/gpio_ll.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"

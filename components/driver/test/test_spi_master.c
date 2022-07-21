@@ -1316,8 +1316,8 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
 //IDF-5146
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
-#define RECORD_TIME_START()   do {__t1 = esp_cpu_get_ccount();}while(0)
-#define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_ccount(); *p_time = (__t2-__t1);}while(0)
+#define RECORD_TIME_START()   do {__t1 = esp_cpu_get_cycle_count();}while(0)
+#define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_cycle_count(); *p_time = (__t2-__t1);}while(0)
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 
 static void speed_setup(spi_device_handle_t *spi, bool use_dma)

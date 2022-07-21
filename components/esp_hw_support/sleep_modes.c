@@ -535,7 +535,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
 
     if (!deep_sleep) {
-        s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+        s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
         misc_modules_wake_prepare();
     }
 
@@ -656,7 +656,7 @@ static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_durati
 
 esp_err_t esp_light_sleep_start(void)
 {
-    s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+    s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
     /* We will be calling esp_timer_private_set inside DPORT access critical
@@ -666,7 +666,7 @@ esp_err_t esp_light_sleep_start(void)
     esp_timer_private_lock();
 
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
-    uint32_t ccount_at_sleep_start = cpu_ll_get_cycle_count();
+    uint32_t ccount_at_sleep_start = esp_cpu_get_cycle_count();
     uint64_t high_res_time_at_start = esp_timer_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
@@ -788,7 +788,7 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
     portEXIT_CRITICAL(&light_sleep_lock);
-    s_config.sleep_time_overhead_out = (cpu_ll_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+    s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
     return err;
 }
 

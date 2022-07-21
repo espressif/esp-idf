@@ -11,13 +11,13 @@
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_system.h"
+#include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "hal/cpu_hal.h"
 #include "esp_eth_enc28j60.h"
 #include "enc28j60.h"
 #include "sdkconfig.h"
@@ -1102,7 +1102,7 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     /* create enc28j60 task */
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
-        core_num = cpu_hal_get_core_id();
+        core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
                            mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);
