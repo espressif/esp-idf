@@ -17,6 +17,8 @@
 #include "soc/rtc_io_struct.h"
 #include "hal/rtc_io_types.h"
 #include "hal/gpio_types.h"
+#include "soc/io_mux_reg.h"
+#include "soc/usb_serial_jtag_reg.h"
 
 #define RTCIO_LL_PIN_FUNC     0
 
@@ -181,6 +183,14 @@ static inline void rtcio_ll_pullup_enable(int rtcio_num)
  */
 static inline void rtcio_ll_pullup_disable(int rtcio_num)
 {
+    // The pull-up value of the USB pins are controlled by the pins’ pull-up value together with USB pull-up value
+    // USB DP pin is default to PU enabled
+    // Note that from esp32s3 ECO1, USB_EXCHG_PINS feature has been supported. If this efuse is burnt, the gpio pin
+    // which should be checked is USB_DM_GPIO_NUM instead.
+    if (rtcio_num == USB_DP_GPIO_NUM) {
+        SET_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_PAD_PULL_OVERRIDE);
+        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_DP_PULLUP);
+    }
     if (rtc_io_desc[rtcio_num].pullup) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pullup);
     }

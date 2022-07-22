@@ -138,6 +138,9 @@
 #define SD_DATA2_GPIO_NUM 9
 #define SD_DATA3_GPIO_NUM 10
 
+#define USB_DM_GPIO_NUM   18
+#define USB_DP_GPIO_NUM   19
+
 #define MAX_RTC_GPIO_NUM 5
 #define MAX_PAD_GPIO_NUM 21
 #define MAX_GPIO_NUM    25
