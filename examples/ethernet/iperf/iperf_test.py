@@ -26,7 +26,7 @@ except ImportError:
     # Only used for type annotations
     pass
 
-NO_BANDWIDTH_LIMIT = -1  # iperf send bandwith is not limited
+NO_BANDWIDTH_LIMIT = -1  # iperf send bandwidth is not limited
 
 
 class IperfTestUtilityEth(IperfUtility.IperfTestUtility):

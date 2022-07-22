@@ -1,16 +1,17 @@
-| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # Ethernet Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 ## Overview
 
-This example demonstrates basic usage of `Ethernet driver` together with `esp_netif`. The work flow of the example could be as follows:
+This example demonstrates basic usage of `Ethernet driver` together with `esp_netif`. Initialization of the `Ethernet driver` is wrapped in separate [sub-component](./components/ethernet_init/ethernet_init.c) of this project to clearly distinguish between the driver's and `esp_netif` initializations. The work flow of the example could be as follows:
 
 1. Install Ethernet driver
-2. Send DHCP requests and wait for a DHCP lease
-3. If get IP address successfully, then you will be able to ping the device
+2. Attach the driver to `esp_netif`
+3. Send DHCP requests and wait for a DHCP lease
+4. If get IP address successfully, then you will be able to ping the device
 
 If you have a new Ethernet application to go (for example, connect to IoT cloud via Ethernet), try this as a basic template, then add your own code.
 

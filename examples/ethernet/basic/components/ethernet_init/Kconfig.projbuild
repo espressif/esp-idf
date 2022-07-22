@@ -1,10 +1,11 @@
-menu "Example Configuration"
+menu "Example Ethernet Configuration"
 
     orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
 
     config EXAMPLE_USE_INTERNAL_ETHERNET
-        depends on IDF_TARGET_ESP32
+        depends on SOC_EMAC_SUPPORTED
         select ETH_USE_ESP32_EMAC
+        default y
         bool "Internal EMAC"
         help
             Use internal Ethernet MAC controller.
@@ -89,7 +90,7 @@ menu "Example Configuration"
 
     config EXAMPLE_USE_SPI_ETHERNET
         bool "SPI Ethernet"
-        default y
+        default n
         select ETH_USE_SPI_ETHERNET
         help
             Use external SPI-Ethernet module(s).
@@ -192,7 +193,7 @@ menu "Example Configuration"
         config EXAMPLE_ETH_SPI_INT0_GPIO
             int "Interrupt GPIO number SPI Ethernet module #1"
             range ENV_GPIO_RANGE_MIN ENV_GPIO_IN_RANGE_MAX
-            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             default 4 if IDF_TARGET_ESP32C2
             help
                 Set the GPIO number used by the first SPI Ethernet module interrupt line.
