@@ -603,6 +603,12 @@ uint32_t IRAM_ATTR bootloader_read_flash_id(void)
     return id;
 }
 
+void bootloader_spi_flash_reset(void)
+{
+    bootloader_execute_flash_command(CMD_RESETEN, 0, 0, 0);
+    bootloader_execute_flash_command(CMD_RESET, 0, 0, 0);
+}
+
 #if SOC_CACHE_SUPPORT_WRAP
 esp_err_t bootloader_flash_wrap_set(spi_flash_wrap_mode_t mode)
 {

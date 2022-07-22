@@ -13,6 +13,7 @@
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
 #include "spi_timing_config.h"
+#include "esp_private/spi_flash_os.h"
 
 #define OPI_PSRAM_SYNC_READ           0x0000
 #define OPI_PSRAM_SYNC_WRITE          0x8080
@@ -164,21 +165,24 @@ void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dumm
     if (ctrl_reg & MULTI_LINE_MASK_OCT_FLASH) {
         abort();
     }
+    // Only Quad Flash will run into this branch.
+    // So simply get the hpm dummy here by calling `spi_flash_hpm_get_dummy()`
+    const spi_flash_hpm_dummy_conf_t *dummy_cycle = spi_flash_hpm_get_dummy();
     switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
         case SPI_FLASH_QIO_MODE:
-            dummy = SPI1_R_QIO_DUMMY_CYCLELEN;
+            dummy = dummy_cycle->qio_dummy - 1;
             break;
         case SPI_FLASH_QUAD_MODE:
-            dummy = SPI1_R_FAST_DUMMY_CYCLELEN;
+            dummy = dummy_cycle->qout_dummy - 1;
             break;
         case SPI_FLASH_DIO_MODE:
-            dummy = SPI1_R_DIO_DUMMY_CYCLELEN;
+            dummy = dummy_cycle->dio_dummy - 1;
             break;
         case SPI_FLASH_DUAL_MODE:
-            dummy = SPI1_R_FAST_DUMMY_CYCLELEN;
+            dummy = dummy_cycle->dout_dummy - 1;
             break;
         case SPI_FLASH_FAST_MODE:
-            dummy = SPI1_R_FAST_DUMMY_CYCLELEN;
+            dummy = dummy_cycle->fastrd_dummy - 1;
             break;
         case SPI_FLASH_SLOW_MODE:
             dummy = 0;
