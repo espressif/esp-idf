@@ -873,13 +873,17 @@ UT_043:
     - psram
 
 UT_044:
-  extends: .unit_test_esp32_template
+  extends:
+    - .unit_test_esp32_template
+    - .rules:test:unit_test-esp32-sdio
   tags:
     - ESP32_IDF
     - UT_SDIO
 
 UT_045:
-  extends: .unit_test_esp32_template
+  extends:
+    - .unit_test_esp32_template
+    - .rules:test:unit_test-esp32-sdio
   tags:
     - ESP32_IDF
     - UT_SDIO
