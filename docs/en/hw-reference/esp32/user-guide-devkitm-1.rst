@@ -123,7 +123,7 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 
 .. attention::
 
-    ESP32-DevKitM-1 is a board with a single core module, please enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in :ref:`menuconfig <get-started-configure>` before flashing your applications.
+    ESP32-DevKitM-1 boards manufactured before December 2, 2021 have a single core module installed. To verify what module you have, please check module marking information in `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ . If your board has a single core module installed, please enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in :ref:`menuconfig <get-started-configure>` before flashing your applications.
 
 Hardware Reference
 ======================

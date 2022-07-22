@@ -123,7 +123,7 @@ ESP32-DevKitM-1 上电前，请首先确认开发板完好无损。
 
 .. attention::
 
-  ESP32-DevKitM-1 搭载的模组为单核 MCU 模组，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+  对于2021年12月2日之前生产的ESP32-DevKitM-1， 其搭载的模组为单核 MCU 模组。请查看 `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ 以确定开发板上搭载的模组是否为单核模组。对于搭载单核模组的开发板，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
 
 硬件参考
 ===========
