@@ -7,20 +7,18 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <string.h>
+#include <sys/socket.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_event.h"
 #include "esp_netif.h"
-#include "esp_netif_slip.h"
-
-#include "lwip/sockets.h"
 
 #include "slip_modem.h"
 
-static const char *TAG = "SLIP_EXAMPLE";
+static const char *TAG = "slip-example";
 
 #define STACK_SIZE (10 * 1024)
 #define PRIORITY   10
@@ -118,13 +116,10 @@ esp_err_t udp_rx_tx_init(void)
 }
 
 // Write a prefix to the contiki slip device
-static void slip_set_prefix(esp_netif_t *slip_netif)
+static void slip_set_prefix(slip_modem_t *slip)
 {
     uint8_t buff[10] = {0};
-
-    // Fetch the slip interface IP
-    const esp_ip6_addr_t *addr = esp_slip_get_ip6(slip_netif);
-
+    const esp_ip6_addr_t *addr = slip_modem_get_ipv6_address(slip);
     ESP_LOGI(TAG, "%s: prefix set (%08x:%08x)", __func__,
              lwip_ntohl(addr->addr[0]), lwip_ntohl(addr->addr[1]));
 
@@ -138,21 +133,18 @@ static void slip_set_prefix(esp_netif_t *slip_netif)
     }
 
     // Write raw data out the slip interface
-    esp_netif_lwip_slip_raw_output(slip_netif, buff, 2 + 8);
+    slip_modem_raw_output(slip, buff, 2 + 8);
 }
 
 // slip_rx_filter filters incoming commands from the slip interface
 // this implementation is designed for use with contiki slip devices
-bool slip_rx_filter(void *ctx, uint8_t *data, uint32_t len)
+static bool slip_rx_filter(slip_modem_t *slip, uint8_t *data, uint32_t len)
 {
-
-    esp_netif_t *slip_netif = (esp_netif_t *)ctx;
-
     if (data[1] == '?') {
         switch (data[2]) {
         case 'P':
             ESP_LOGI(TAG, "Prefix request");
-            slip_set_prefix(slip_netif);
+            slip_set_prefix(slip);
 
             return true;
 
@@ -191,24 +183,21 @@ esp_netif_t *slip_if_init(void)
 #endif
     esp_netif_config_t cfg = {          .base = &base_cfg,
                                         .driver = NULL,
-                                        .stack = ESP_NETIF_NETSTACK_DEFAULT_SLIP };
+                                        .stack = netstack_default_slip };
 
     esp_netif_t *slip_netif = esp_netif_new(&cfg);
 
-    esp_netif_slip_config_t slip_config;
-
-    IP6_ADDR(&slip_config.ip6_addr,
+    esp_ip6_addr_t local_addr;        /* Local IP6 address */
+    IP6_ADDR(&local_addr,
              lwip_htonl(0xfd0000),
              lwip_htonl(0x00000000),
              lwip_htonl(0x00000000),
              lwip_htonl(0x00000001)
             );
 
-    esp_netif_slip_set_params(slip_netif, &slip_config);
-
     ESP_LOGI(TAG, "Initialising SLIP modem");
 
-    esp_slip_modem_config_t modem_cfg = {
+    slip_modem_config_t modem_cfg = {
         .uart_dev = UART_NUM_1,
 
         .uart_tx_pin = CONFIG_EXAMPLE_UART_TX_PIN,
@@ -216,12 +205,12 @@ esp_netif_t *slip_if_init(void)
         .uart_baud = CONFIG_EXAMPLE_UART_BAUD,
 
         .rx_buffer_len = 1024,
-
         .rx_filter = slip_rx_filter,
-        .rx_filter_ctx = slip_netif,
+        .ipv6_addr = &local_addr
     };
 
-    void *slip_modem = esp_slip_modem_create(slip_netif, &modem_cfg);
+    void *slip_modem = slip_modem_create(slip_netif, &modem_cfg);
+    assert(slip_modem);
     ESP_ERROR_CHECK(esp_netif_attach(slip_netif, slip_modem));
 
     ESP_LOGI(TAG, "SLIP init complete");

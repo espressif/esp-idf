@@ -3,14 +3,14 @@ menu "Example Configuration"
     menu "UART Configuration"
         config EXAMPLE_UART_TX_PIN
             int "TXD Pin Number"
-            default 4
+            default 25
             range 0 36
             help
                 Pin number of UART TX.
 
         config EXAMPLE_UART_RX_PIN
             int "RXD Pin Number"
-            default 36
+            default 26
             range 0 36
             help
                 Pin number of UART RX.
