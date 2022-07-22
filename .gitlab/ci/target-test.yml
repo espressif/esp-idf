@@ -396,6 +396,14 @@ component_ut_pytest_esp32c3_flash_encryption:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
+component_ut_pytest_esp32s3_usb_host:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3-usb
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, usb_host_flash_disk ]
+
 .pytest_test_apps_dir_template:
   extends: .pytest_template
   variables:

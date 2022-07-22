@@ -128,6 +128,7 @@ build:integration_test:
       - wifi      # example_test_002, example_test*wifi*
       - ethernet  # example_test*ethernet*
       - sdio      # UT_044, UT_045
+      - usb       # USB Device & Host tests
       - adc       # component_ut_pytest_esp32x_adc
   patterns:
     - "{0}-{1}-{2}"

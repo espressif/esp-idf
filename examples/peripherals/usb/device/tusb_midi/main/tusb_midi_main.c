@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2022-2023 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <stdlib.h>
@@ -57,6 +57,7 @@ static void periodic_midi_write_example_cb(void *arg)
     }
 
     // Send Note On for current position at full velocity (127) on channel 1.
+    ESP_LOGI(TAG, "Writing MIDI data %d", note_sequence[note_pos]);
     uint8_t note_on[3] = {0x90 | channel, note_sequence[note_pos], 127};
     tud_midi_stream_write(cable_num, note_on, 3);
 
