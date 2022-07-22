@@ -6,7 +6,9 @@
 
 #pragma once
 
-#include <stddef.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,11 +24,11 @@ extern "C" {
  * @return true iff [start1; end1) overlaps [start2; end2)
  */
 static inline bool bootloader_util_regions_overlap(
-        const intptr_t start1, const intptr_t end1,
-        const intptr_t start2, const intptr_t end2)
+    const intptr_t start1, const intptr_t end1,
+    const intptr_t start2, const intptr_t end2)
 {
-    assert(end1>start1);
-    assert(end2>start2);
+    assert(end1 > start1);
+    assert(end2 > start2);
     return (end1 > start2 && end2 > start1);
 }
 

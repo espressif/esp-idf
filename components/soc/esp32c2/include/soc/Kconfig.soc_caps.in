@@ -447,10 +447,6 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 1
 
-config SOC_TOUCH_SENSOR_NUM
-    int
-    default 0
-
 config SOC_SECURE_BOOT_V2_ECC
     bool
     default y

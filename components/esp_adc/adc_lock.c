@@ -21,27 +21,27 @@ static const char *TAG = "adc_lock";
 static _lock_t adc1_lock;
 static _lock_t adc2_lock;
 
-esp_err_t adc_lock_acquire(adc_unit_t unit_mask)
+esp_err_t adc_lock_acquire(adc_unit_t adc_unit)
 {
-    if (unit_mask & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         _lock_acquire(&adc1_lock);
     }
 
-    if (unit_mask & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         _lock_acquire(&adc2_lock);
     }
 
     return ESP_OK;
 }
 
-esp_err_t adc_lock_release(adc_unit_t unit_mask)
+esp_err_t adc_lock_release(adc_unit_t adc_unit)
 {
-    if (unit_mask & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         ESP_RETURN_ON_FALSE(((uint32_t *)adc2_lock != NULL), ESP_ERR_INVALID_STATE, TAG, "adc2 lock release without acquiring");
         _lock_release(&adc2_lock);
     }
 
-    if (unit_mask & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         ESP_RETURN_ON_FALSE(((uint32_t *)adc1_lock != NULL), ESP_ERR_INVALID_STATE, TAG, "adc1 lock release without acquiring");
         _lock_release(&adc1_lock);
     }
@@ -49,15 +49,15 @@ esp_err_t adc_lock_release(adc_unit_t unit_mask)
     return ESP_OK;
 }
 
-esp_err_t adc_lock_try_acquire(adc_unit_t unit_mask)
+esp_err_t adc_lock_try_acquire(adc_unit_t adc_unit)
 {
-    if (unit_mask & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         if (_lock_try_acquire(&adc1_lock) == -1) {
             return ESP_ERR_TIMEOUT;
         }
     }
 
-    if (unit_mask & ADC_UNIT_2) {
+    if (adc_unit == ADC_UNIT_2) {
         if (_lock_try_acquire(&adc2_lock) == -1) {
             return ESP_ERR_TIMEOUT;
         }

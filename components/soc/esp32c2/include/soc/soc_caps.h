@@ -220,9 +220,6 @@
 #define SOC_TIMER_GROUP_SUPPORT_PLL_F40M  (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
 
-/*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_NUM            (0U)    /*! No touch sensors on ESP32-C2 */
-
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   (1U)

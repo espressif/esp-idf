@@ -74,8 +74,6 @@ typedef enum {
     MCPWM_UNIT_MAX, /*!<Max number of MCPWM units*/
 } mcpwm_unit_t;
 
-_Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal to chip capabilities");
-
 /**
  * @brief Select MCPWM timer
  */

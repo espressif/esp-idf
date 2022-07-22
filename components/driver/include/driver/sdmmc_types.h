@@ -21,13 +21,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _SDMMC_TYPES_H_
-#define _SDMMC_TYPES_H_
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Decoded values from SD card Card Specific Data register
@@ -232,4 +235,6 @@ typedef enum {
     SDMMC_DISCARD_ARG = 1,    /*!< Discard operation for SD/MMC */
 } sdmmc_erase_arg_t;
 
-#endif // _SDMMC_TYPES_H_
+#ifdef __cplusplus
+}
+#endif

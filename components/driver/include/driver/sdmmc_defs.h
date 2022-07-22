@@ -21,11 +21,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _SDMMC_DEFS_H_
-#define _SDMMC_DEFS_H_
+#pragma once
 
 #include <stdint.h>
 #include <limits.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* MMC commands */                              /* response type */
 #define MMC_GO_IDLE_STATE               0       /* R0 */
@@ -531,4 +534,6 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 #define SDMMC_TIMING_HIGHSPEED 1
 #define SDMMC_TIMING_MMC_DDR52 2
 
-#endif //_SDMMC_DEFS_H_
+#ifdef __cplusplus
+}
+#endif

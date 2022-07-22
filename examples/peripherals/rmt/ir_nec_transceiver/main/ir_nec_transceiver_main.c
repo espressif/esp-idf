@@ -142,7 +142,7 @@ static void example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t s
     }
 }
 
-static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t high_task_wakeup = pdFALSE;
     QueueHandle_t receive_queue = (QueueHandle_t)user_data;

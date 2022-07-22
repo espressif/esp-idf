@@ -46,7 +46,7 @@ typedef struct {
  *
  * @return Whether a high priority task has been waken up by this callback function
  */
-typedef bool (*rmt_tx_done_callback_t)(rmt_channel_handle_t tx_chan, rmt_tx_done_event_data_t *edata, void *user_ctx);
+typedef bool (*rmt_tx_done_callback_t)(rmt_channel_handle_t tx_chan, const rmt_tx_done_event_data_t *edata, void *user_ctx);
 
 /**
  * @brief Type of RMT RX done event data
@@ -65,7 +65,7 @@ typedef struct {
  * @param[in] user_ctx User registered context, passed from `rmt_rx_register_event_callbacks()`
  * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*rmt_rx_done_callback_t)(rmt_channel_handle_t rx_chan, rmt_rx_done_event_data_t *edata, void *user_ctx);
+typedef bool (*rmt_rx_done_callback_t)(rmt_channel_handle_t rx_chan, const rmt_rx_done_event_data_t *edata, void *user_ctx);
 
 #ifdef __cplusplus
 }

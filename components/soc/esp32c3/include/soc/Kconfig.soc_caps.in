@@ -659,10 +659,6 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
 
-config SOC_TOUCH_SENSOR_NUM
-    bool
-    default n
-
 config SOC_TWAI_BRP_MIN
     int
     default 2

@@ -26,7 +26,7 @@ typedef struct {
 } test_nec_rx_user_data_t;
 
 TEST_RMT_CALLBACK_ATTR
-static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t high_task_wakeup = pdFALSE;
     test_nec_rx_user_data_t *test_user_data = (test_nec_rx_user_data_t *)user_data;

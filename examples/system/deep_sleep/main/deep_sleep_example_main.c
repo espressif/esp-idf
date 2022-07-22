@@ -21,7 +21,7 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc.h"
 
-#if SOC_TOUCH_SENSOR_NUM > 0
+#if SOC_TOUCH_SENSOR_SUPPORTED
 #include "soc/sens_periph.h"
 #include "driver/touch_pad.h"
 #endif

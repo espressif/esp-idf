@@ -27,9 +27,6 @@ components/esp_common/include/esp_private/
 components/esp32/include/esp32/brownout.h
 components/esp32/include/esp32/cache_err_int.h
 
-components/driver/include/driver/sdmmc_defs.h
-components/driver/include/driver/sdmmc_types.h
-
 # LWIP: sockets.h uses #include_next<>, which doesn't work correctly with the checker
 # memp_std.h is supposed to be included multiple times with different settings
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
@@ -103,14 +100,9 @@ components/esp_hw_support/include/esp_private/esp_memprot_internal.h
 
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
-components/heap/include/esp_heap_task_info.h
 components/esp_wifi/include/esp_private/wifi_os_adapter.h
-components/asio/port/include/esp_exception.h
-components/esp_common/include/esp_compiler.h
-
 ### To be fixed: headers that rely on implicit inclusion
 #
-components/soc/src/esp32/rtc_clk_common.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h
@@ -127,7 +119,6 @@ components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h
-components/driver/esp32/include/touch_sensor.h
 components/esp_ringbuf/include/freertos/ringbuf.h
 components/efuse/esp32/include/esp_efuse_table.h
 components/esp_wifi/include/esp_wifi_crypto_types.h
@@ -141,7 +132,6 @@ components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
-components/bootloader_support/include/bootloader_util.h
 components/console/linenoise/linenoise.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
@@ -151,45 +141,34 @@ components/ulp/include/ulp_common.h
 components/ulp/include/esp32s2/ulp_riscv.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
+components/usb/include/esp_private/usb_phy.h
+components/usb/include/usb/usb_types_stack.h
 
 ### To be fixed: files which don't compile for esp32s2 target:
 
-components/driver/deprecated/driver/adc_deprecated.h
-components/driver/include/driver/can.h
-components/driver/include/driver/mcpwm.h
 components/efuse/esp32s2/include/esp_efuse_table.h
 components/esp_psram/include/esp32/himem.h
 components/esp_rom/include/esp32/rom/ets_sys.h
 components/esp_rom/include/esp32/rom/rtc.h
 components/esp_rom/include/esp32/rom/uart.h
 components/soc/esp32s2/include/soc/apb_ctrl_struct.h
-components/soc/esp32s2/include/soc/apb_saradc_struct.h
 components/soc/esp32s2/include/soc/efuse_struct.h
-components/soc/esp32s2/include/soc/gpio_sd_struct.h
 components/soc/esp32s2/include/soc/gpio_struct.h
-components/soc/esp32s2/include/soc/i2c_struct.h
 components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_struct.h
 components/soc/esp32s2/include/soc/rtc_io_struct.h
 components/soc/esp32s2/include/soc/sens_struct.h
-components/soc/esp32s2/include/soc/spi_mem_struct.h
-components/soc/esp32s2/include/soc/spi_struct.h
 components/soc/esp32s2/include/soc/syscon_struct.h
 components/soc/esp32s2/include/soc/uart_struct.h
 components/soc/esp32s2/include/soc/uhci_struct.h
-components/usb/include/esp_private/usb_phy.h
-components/usb/include/usb/usb_types_stack.h
 
 ### To be fixed: files which don't compile for esp32s3 target:
 
-components/driver/include/driver/dac_common.h
 components/efuse/esp32s3/include/esp_efuse_table.h
 components/soc/esp32s3/include/soc/world_controller_struct.h
-components/soc/esp32s3/usb_periph.h
 
 ### To be fixed: files which don't compile for esp32c3 target:
 
-components/driver/include/driver/touch_pad.h
 components/efuse/esp32c3/include/esp_efuse_table.h
 components/esp_system/port/include/private/esp_private/trax.h
 components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
@@ -197,9 +176,7 @@ components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/interrupt.h
 components/riscv/include/riscv/rvruntime-frames.h
 components/soc/esp32c3/include/soc/apb_ctrl_struct.h
-components/soc/esp32c3/include/soc/apb_saradc_struct.h
 components/soc/esp32c3/include/soc/efuse_struct.h
-components/soc/esp32c3/include/soc/gpio_sd_struct.h
 components/soc/esp32c3/include/soc/ledc_struct.h
 components/soc/esp32c3/include/soc/rtc_cntl_struct.h
 components/soc/esp32c3/include/soc/rtc_i2c_struct.h
@@ -215,4 +192,3 @@ components/efuse/esp32c2/include/esp_efuse_table.h
 components/soc/esp32c2/include/soc/rtc_cntl_struct.h
 components/soc/esp32c2/include/soc/spi_mem_struct.h
 components/soc/esp32c2/include/soc/syscon_struct.h
-components/soc/esp32c2/include/soc/uart_struct.h

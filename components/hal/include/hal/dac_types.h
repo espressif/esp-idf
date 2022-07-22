@@ -40,7 +40,7 @@ typedef struct {
                                  Note: Unreasonable settings can cause waveform to be oversaturated. Range: -128 ~ 127. */
 } dac_cw_config_t;
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
 
 /**
  * @brief DAC digital controller (DMA mode) work mode.

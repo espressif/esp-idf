@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc/clk_tree_defs.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,12 +16,20 @@ extern "C" {
 /**
  * @brief MCPWM timer clock source
  */
+#if SOC_MCPWM_SUPPORTED
 typedef soc_periph_mcpwm_timer_clk_src_t mcpwm_timer_clock_source_t;
+#else
+typedef int mcpwm_timer_clock_source_t;
+#endif // SOC_MCPWM_SUPPORTED
 
 /**
  * @brief MCPWM capture clock source
  */
+#if SOC_MCPWM_SUPPORTED
 typedef soc_periph_mcpwm_capture_clk_src_t mcpwm_capture_clock_source_t;
+#else
+typedef int mcpwm_capture_clock_source_t;
+#endif // SOC_MCPWM_SUPPORTED
 
 /**
  * @brief MCPWM timer count direction

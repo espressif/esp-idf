@@ -144,7 +144,7 @@ const static rmt_receive_config_t onewire_rmt_rx_config = {
     .signal_range_max_ns = (ONEWIRE_RESET_PULSE_DURATION + ONEWIRE_RESET_WAIT_DURATION) * 1000
 };
 
-static bool onewire_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+static bool onewire_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t task_woken = pdFALSE;
     struct onewire_bus_t *handle = (struct onewire_bus_t *)user_data;
@@ -190,12 +190,12 @@ static bool onewire_rmt_check_presence_pulse(rmt_symbol_word_t *rmt_symbols, siz
     if (symbol_num >= 2) { // there should be at lease 2 symbols(3 or 4 edges)
         if (rmt_symbols[0].level1 == 1) { // bus is high before reset pulse
             if (rmt_symbols[0].duration1 > ONEWIRE_RESET_PRESENSE_WAIT_DURATION_MIN &&
-                rmt_symbols[1].duration0 > ONEWIRE_RESET_PRESENSE_DURATION_MIN) {
+                    rmt_symbols[1].duration0 > ONEWIRE_RESET_PRESENSE_DURATION_MIN) {
                 return true;
             }
         } else { // bus is low before reset pulse(first pulse after rmt channel init)
             if (rmt_symbols[0].duration0 > ONEWIRE_RESET_PRESENSE_WAIT_DURATION_MIN &&
-                rmt_symbols[1].duration1 > ONEWIRE_RESET_PRESENSE_DURATION_MIN) {
+                    rmt_symbols[1].duration1 > ONEWIRE_RESET_PRESENSE_DURATION_MIN) {
                 return true;
             }
         }
@@ -324,7 +324,7 @@ esp_err_t onewire_del_bus(onewire_bus_handle_t handle)
         rmt_disable(handle->tx_channel);
         rmt_del_channel(handle->tx_channel);
     }
-    if(handle->receive_queue) {
+    if (handle->receive_queue) {
         vQueueDelete(handle->receive_queue);
     }
     if (handle->rx_symbols) {
@@ -340,7 +340,7 @@ esp_err_t onewire_bus_reset(onewire_bus_handle_t handle)
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid 1-wire handle");
 
     // send reset pulse while receive presence pulse
-    ESP_RETURN_ON_ERROR(rmt_receive(handle->rx_channel, handle->rx_symbols, sizeof(rmt_symbol_word_t)*2, &onewire_rmt_rx_config),
+    ESP_RETURN_ON_ERROR(rmt_receive(handle->rx_channel, handle->rx_symbols, sizeof(rmt_symbol_word_t) * 2, &onewire_rmt_rx_config),
                         TAG, "1-wire reset pulse receive failed");
     ESP_RETURN_ON_ERROR(rmt_transmit(handle->tx_channel, handle->tx_copy_encoder, &onewire_reset_pulse_symbol, sizeof(onewire_reset_pulse_symbol), &onewire_rmt_tx_config),
                         TAG, "1-wire reset pulse transmit failed");
