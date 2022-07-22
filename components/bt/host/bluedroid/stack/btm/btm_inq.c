@@ -2304,7 +2304,7 @@ void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hc
         else {
             rem_name.status = BTM_BAD_VALUE_RET;
             rem_name.length = 0;
-            rem_name.remote_bd_name[0] = 0;
+            rem_name.remote_bd_name[0] = '\0';
         }
         memcpy(rem_name.bd_addr, p_inq->remname_bda, BD_ADDR_LEN);
         /* Reset the remote BAD to zero and call callback if possible */
