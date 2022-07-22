@@ -45,7 +45,7 @@ static intr_handler_t s_alarm_handler = NULL;
 static systimer_hal_context_t systimer_hal;
 
 /* Spinlock used to protect access to the hardware registers. */
-portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
 
 void esp_timer_impl_lock(void)
 {
