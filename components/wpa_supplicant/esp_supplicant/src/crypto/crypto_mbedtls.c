@@ -119,14 +119,10 @@ int md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 }
 #endif
 
-struct crypto_hash {
-	mbedtls_md_context_t ctx;
-};
-
 struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 				      size_t key_len)
 {
-	struct crypto_hash *ctx;
+	mbedtls_md_context_t *ctx = NULL;
 	mbedtls_md_type_t md_type;
 	const mbedtls_md_info_t *md_info;
 	int ret;
@@ -169,53 +165,53 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
 		return NULL;
 	}
 
-	mbedtls_md_init(&ctx->ctx);
+	mbedtls_md_init(ctx);
 	md_info = mbedtls_md_info_from_type(md_type);
 	if (!md_info) {
 		goto cleanup;
 	}
-	if (mbedtls_md_setup(&ctx->ctx, md_info, 1) != 0) {
-		goto cleanup;
-	}
-	if (mbedtls_md_hmac_starts(&ctx->ctx, key, key_len) != 0) {
+	if (mbedtls_md_setup(ctx, md_info, is_hmac) != 0) {
 		goto cleanup;
 	}
 	if (is_hmac) {
-		ret = mbedtls_md_hmac_starts(&ctx->ctx, key, key_len);
+		ret = mbedtls_md_hmac_starts(ctx, key, key_len);
 	} else {
-		ret = mbedtls_md_starts(&ctx->ctx);
+		ret = mbedtls_md_starts(ctx);
 	}
 	if (ret < 0) {
 		goto cleanup;
 	}
 
-	return ctx;
+	return (struct crypto_hash *)ctx;
 cleanup:
+	mbedtls_md_free(ctx);
 	os_free(ctx);
 	return NULL;
 }
 
-void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len)
+void crypto_hash_update(struct crypto_hash *crypto_ctx, const u8 *data, size_t len)
 {
 	int ret;
+	mbedtls_md_context_t *ctx = (mbedtls_md_context_t *)crypto_ctx;
 
 	if (ctx == NULL) {
 		return;
 	}
-	if (ctx->ctx.MBEDTLS_PRIVATE(hmac_ctx)) {
-		ret = mbedtls_md_hmac_update(&ctx->ctx, data, len);
+	if (ctx->MBEDTLS_PRIVATE(hmac_ctx)) {
+		ret = mbedtls_md_hmac_update(ctx, data, len);
 	} else {
-		ret = mbedtls_md_update(&ctx->ctx, data, len);
+		ret = mbedtls_md_update(ctx, data, len);
 	}
 	if (ret != 0) {
 		wpa_printf(MSG_ERROR, "%s: mbedtls_md_hmac_update failed", __func__);
 	}
 }
 
-int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
+int crypto_hash_finish(struct crypto_hash *crypto_ctx, u8 *mac, size_t *len)
 {
 	int ret = 0;
 	mbedtls_md_type_t md_type;
+	mbedtls_md_context_t *ctx = (mbedtls_md_context_t *)crypto_ctx;
 
 	if (ctx == NULL) {
 		return -2;
@@ -224,7 +220,7 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 	if (mac == NULL || len == NULL) {
 		goto err;
 	}
-	md_type = mbedtls_md_get_type(ctx->ctx.MBEDTLS_PRIVATE(md_info));
+	md_type = mbedtls_md_get_type(ctx->MBEDTLS_PRIVATE(md_info));
 	switch(md_type) {
 	case MBEDTLS_MD_MD5:
 		if (*len < MD5_MAC_LEN) {
@@ -271,14 +267,14 @@ int crypto_hash_finish(struct crypto_hash *ctx, u8 *mac, size_t *len)
 		ret = -1;
 		goto err;
 	}
-	if (ctx->ctx.MBEDTLS_PRIVATE(hmac_ctx)) {
-		ret = mbedtls_md_hmac_finish(&ctx->ctx, mac);
+	if (ctx->MBEDTLS_PRIVATE(hmac_ctx)) {
+		ret = mbedtls_md_hmac_finish(ctx, mac);
 	} else {
-		ret = mbedtls_md_finish(&ctx->ctx, mac);
+		ret = mbedtls_md_finish(ctx, mac);
 	}
 
 err:
-	mbedtls_md_free(&ctx->ctx);
+	mbedtls_md_free(ctx);
 	bin_clear_free(ctx, sizeof(*ctx));
 
 	return ret;
