@@ -4,17 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include "slip_modem.h"
 
 #include "esp_netif.h"
-#include "esp_netif_slip.h"
+#include "slip_modem_netif.h"
 #include "esp_event.h"
 #include "esp_log.h"
 
 #define SLIP_RX_TASK_PRIORITY   10
 #define SLIP_RX_TASK_STACK_SIZE (4 * 1024)
 
-static const char *TAG = "esp-slip_modem";
+static const char *TAG = "slip-modem";
 
 
 // UART container object
@@ -40,7 +41,7 @@ typedef struct {
 
 
 // Modem object, implements glue logic for slip_driver and esp_netif
-struct esp_slip_modem {
+struct slip_modem {
     // ESP base netif driver
     esp_netif_driver_base_t base;
 
@@ -53,50 +54,54 @@ struct esp_slip_modem {
 
     // Filter callbacks for application-specific slip message handling
     slip_rx_filter_cb_t *rx_filter;
-    void *rx_filter_ctx;
 
     // Running flag
     bool running;
+
+    // esp_netif related: SLIP interface IP6 address
+    esp_ip6_addr_t addr;
+
 };
 
 
 // Forward function declaration
-static void esp_slip_modem_uart_rx_task(void *arg);
-static esp_err_t esp_slip_modem_post_attach(esp_netif_t *esp_netif, void *args);
+static void slip_modem_uart_rx_task(void *arg);
+static esp_err_t slip_modem_post_attach(esp_netif_t *esp_netif, void *args);
 
-// Create a new slip netif
-void *esp_slip_modem_create(esp_netif_t *slip_netif, esp_slip_modem_config_t *modem_config)
+// Create a new slip modem
+slip_modem_t *slip_modem_create(esp_netif_t *slip_netif, slip_modem_config_t *modem_config)
 {
     ESP_LOGI(TAG, "%s: Creating slip modem (netif: %p)", __func__, slip_netif);
 
     ESP_LOGD(TAG, "%s (netif: %p)", __func__, slip_netif);
 
-    esp_slip_modem_t *slip_modem = calloc(1, sizeof(esp_slip_modem_t));
+    slip_modem_t *slip_modem = calloc(1, sizeof(slip_modem_t));
     if (!slip_modem) {
         ESP_LOGE(TAG, "create netif glue failed");
         return NULL;
     }
 
     // Attach driver and post_attach callbacks
-    slip_modem->base.post_attach = esp_slip_modem_post_attach;
+    slip_modem->base.post_attach = slip_modem_post_attach;
+    slip_modem->base.netif = slip_netif;
 
     // Attach config
     slip_modem->buffer_len = modem_config->rx_buffer_len;
 
     slip_modem->rx_filter = modem_config->rx_filter;
-    slip_modem->rx_filter_ctx = modem_config->rx_filter_ctx;
 
     slip_modem->uart.uart_dev = modem_config->uart_dev;
     slip_modem->uart.uart_baud = modem_config->uart_baud;
     slip_modem->uart.uart_rx_pin = modem_config->uart_rx_pin;
     slip_modem->uart.uart_tx_pin = modem_config->uart_tx_pin;
+    memcpy(&slip_modem->addr, modem_config->ipv6_addr, sizeof(esp_ip6_addr_t));
 
-    // Return new modem, with a cast to the first item
-    return &slip_modem->base;
+    // Return the new modem
+    return slip_modem;
 }
 
 // Internal handler called on driver start
-static esp_err_t esp_slip_driver_start(esp_slip_modem_t *slip_modem)
+static esp_err_t esp_slip_driver_start(slip_modem_t *slip_modem)
 {
     ESP_LOGD(TAG, "%s: Starting SLIP modem (modem %p)", __func__, slip_modem);
 
@@ -129,38 +134,39 @@ static esp_err_t esp_slip_driver_start(esp_slip_modem_t *slip_modem)
 
     // Start slip RX task
     slip_modem->running = true;
-    xTaskCreate(esp_slip_modem_uart_rx_task, "slip_modem_uart_rx_task", SLIP_RX_TASK_STACK_SIZE, slip_modem, SLIP_RX_TASK_PRIORITY, &slip_modem->uart.uart_rx_task);
+    xTaskCreate(slip_modem_uart_rx_task, "slip_modem_uart_rx_task", SLIP_RX_TASK_STACK_SIZE, slip_modem, SLIP_RX_TASK_PRIORITY, &slip_modem->uart.uart_rx_task);
 
     // Finally, initialise slip network interface
     esp_netif_action_start(slip_modem->base.netif, 0, 0, 0);
-
+    ESP_ERROR_CHECK(slip_modem_netif_start(slip_modem->base.netif, &slip_modem->addr));
     return ESP_OK;
 }
 
 
-esp_err_t esp_slip_modem_destroy(esp_slip_modem_t *slip_modem)
+esp_err_t slip_modem_destroy(slip_modem_t *slip)
 {
     // Stop slip driver
-    esp_netif_action_stop(slip_modem->base.netif, 0, 0, 0);
+    esp_netif_action_stop(slip->base.netif, 0, 0, 0);
+    ESP_ERROR_CHECK(slip_modem_netif_stop(slip->base.netif));
 
     // Stop uart rx task
-    vTaskDelete(slip_modem->uart.uart_rx_task);
+    vTaskDelete(slip->uart.uart_rx_task);
 
     // Delete driver
-    uart_driver_delete(slip_modem->uart.uart_dev);
+    uart_driver_delete(slip->uart.uart_dev);
 
     // Free slip interface
-    free(slip_modem);
+    free(slip);
 
     return ESP_OK;
 }
 
 // Modem transmit for glue logic
-static esp_err_t esp_slip_modem_transmit(void *slip_driver, void *buffer, size_t len)
+static esp_err_t slip_modem_transmit(void *slip_driver, void *buffer, size_t len)
 {
     ESP_LOGD(TAG, "%s", __func__);
     ESP_LOG_BUFFER_HEXDUMP(TAG, buffer, len, ESP_LOG_DEBUG);
-    esp_slip_modem_t *slip_modem = (esp_slip_modem_t *) slip_driver;
+    slip_modem_t *slip_modem = (slip_modem_t *) slip_driver;
 
     int32_t res = uart_write_bytes(slip_modem->uart.uart_dev, (char *)buffer, len);
     if (res < 0) {
@@ -172,15 +178,15 @@ static esp_err_t esp_slip_modem_transmit(void *slip_driver, void *buffer, size_t
 }
 
 // Post-attach handler for netif
-static esp_err_t esp_slip_modem_post_attach(esp_netif_t *esp_netif, void *args)
+static esp_err_t slip_modem_post_attach(esp_netif_t *esp_netif, void *args)
 {
-    esp_slip_modem_t *slip_modem = (esp_slip_modem_t *) args;
+    slip_modem_t *slip_modem = (slip_modem_t *) args;
 
     ESP_LOGD(TAG, "%s (netif: %p args: %p)", __func__, esp_netif, args);
 
     const esp_netif_driver_ifconfig_t driver_ifconfig = {
         .driver_free_rx_buffer = NULL,
-        .transmit = esp_slip_modem_transmit,
+        .transmit = slip_modem_transmit,
         .handle = slip_modem,
     };
 
@@ -192,9 +198,9 @@ static esp_err_t esp_slip_modem_post_attach(esp_netif_t *esp_netif, void *args)
     return ESP_OK;
 }
 
-static void esp_slip_modem_uart_rx_task(void *arg)
+static void slip_modem_uart_rx_task(void *arg)
 {
-    esp_slip_modem_t *slip_modem = (esp_slip_modem_t *) arg;
+    slip_modem_t *slip_modem = (slip_modem_t *) arg;
 
     ESP_LOGD(TAG, "Start SLIP modem RX task (slip_modem %p  filter: %p)", slip_modem, slip_modem->rx_filter);
     ESP_LOGD(TAG, "Uart: %d, buffer: %p (%d bytes)", slip_modem->uart.uart_dev, slip_modem->buffer, slip_modem->buffer_len);
@@ -213,15 +219,29 @@ static void esp_slip_modem_uart_rx_task(void *arg)
             slip_modem->buffer[len] = '\0';
 
             // Filter if provided
-            if ((slip_modem->rx_filter != NULL) && slip_modem->rx_filter(slip_modem->rx_filter_ctx, slip_modem->buffer, len)) {
+            if ((slip_modem->rx_filter != NULL) && slip_modem->rx_filter(slip_modem, slip_modem->buffer, len)) {
                 continue;
             }
 
             // Pass received bytes in to slip interface
+            ESP_LOGI(TAG, "esp_netif %p", slip_modem->base.netif);
             esp_netif_receive(slip_modem->base.netif, slip_modem->buffer, len, NULL);
         }
 
         // Yeild to allow other tasks to progress
         vTaskDelay(1 * portTICK_PERIOD_MS);
     }
+}
+
+/**
+ * @brief Gets the internally configured ipv6 address
+ */
+const esp_ip6_addr_t *slip_modem_get_ipv6_address(slip_modem_t *slip)
+{
+    return &slip->addr;
+}
+
+void slip_modem_raw_output(slip_modem_t *slip, void *buffer, size_t len)
+{
+    slip_modem_netif_raw_output(slip->base.netif, buffer, len);
 }

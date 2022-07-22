@@ -9,7 +9,6 @@
 #include "esp_netif.h"
 #include "lwip/netif.h"
 #include "esp_netif_ppp.h"
-#include "esp_netif_slip.h"
 
 #if defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
@@ -24,12 +23,6 @@ struct esp_netif_netstack_lwip_vanilla_config {
 struct esp_netif_netstack_lwip_ppp_config {
     input_fn_t input_fn;
     esp_netif_ppp_config_t ppp_events;
-};
-
-struct esp_netif_netstack_lwip_slip_config {
-    init_fn_t init_fn;
-    input_fn_t input_fn;
-    esp_netif_slip_config_t slip_config;
 };
 
 // LWIP netif specific network stack configuration

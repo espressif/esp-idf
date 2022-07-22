@@ -32,5 +32,3 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = ESP_NETIF_IN
 const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = ESP_NETIF_INHERENT_DEFAULT_ETH();
 
 const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = ESP_NETIF_INHERENT_DEFAULT_PPP();
-
-const esp_netif_inherent_config_t _g_esp_netif_inherent_slip_config = ESP_NETIF_INHERENT_DEFAULT_SLIP();

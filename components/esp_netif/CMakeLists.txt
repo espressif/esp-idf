@@ -19,11 +19,6 @@ set(srcs
 set(include_dirs "include")
 set(priv_include_dirs "lwip" "private_include")
 
-if(CONFIG_LWIP_SLIP_SUPPORT)
-list(APPEND srcs
-    "lwip/esp_netif_lwip_slip.c")
-endif()
-
 if(CONFIG_PPP_SUPPORT)
 list(APPEND srcs
     "lwip/esp_netif_lwip_ppp.c")

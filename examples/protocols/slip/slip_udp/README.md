@@ -9,6 +9,8 @@
 
 This provides SLIP support for connection to Contiki gateway devices, allowing the ESP platform board to be used to bridge between low-power networks and IP (Wifi / Ethernet).
 
+This example also demonstrates creating custom network interfaces, including UART drivers and lwIP netif layers, and attaching them to the standard `esp_netif` component, so the generic system interfaces can still use the common approach of listing all interfaces, updating states, posting events and handling routing priorities. Please refer to the implementation of [slip_modem](components/slip_modem) component for more details.
+
 ## How to use example
 
 ### Hardware Required
@@ -49,8 +51,8 @@ nc -u 10.0.0.2 5678
 
 | ESP32  | Gateway |
 | ------ | -------------- |
-| GPIO4  | RX             |
-| GPIO36 | TX             |
+| GPIO25 | RX             |
+| GPIO26 | TX             |
 | GND    | GND            |
 | 3v3    | VCC            |
 
