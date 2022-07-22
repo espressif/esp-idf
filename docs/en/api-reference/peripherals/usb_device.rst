@@ -11,7 +11,7 @@ USB Device Driver
 Overview
 --------
 
-The driver allows users to use {IDF_TARGET_NAME} chips to develop USB devices on a top of the TinyUSB stack. TinyUSB is integrated with ESP-IDF to provide USB features of the framework. Using this driver the chip works as a composite device supporting several USB devices simultaneously. Currently, only the Communications Device Class (CDC) type of the device with the Abstract Control Model (ACM) subclass and the Musical Instrument Digital Interface (MIDI) are supported.
+The driver allows you to use {IDF_TARGET_NAME} chips to develop USB devices on a top of TinyUSB stack. TinyUSB is integrated with ESP-IDF to provide USB features of the framework. Using this driver the chip works as simple or composite device supporting several USB devices simultaneously.
 
 Our USB-OTG implementation is limited to {IDF_TARGET_USB_EP_NUM} number of USB endpoints ({IDF_TARGET_USB_EP_NUM_INOUT} IN/OUT endpoints and {IDF_TARGET_USB_EP_NUM_IN} IN endpoint) - find more information in `technical reference manual <{IDF_TARGET_TRM_EN_URL}>`_.
 
@@ -20,8 +20,8 @@ Features
 
 - Configuration of device and string USB descriptors
 - USB Serial Device (CDC-ACM)
-- Input and output through USB Serial Device
-- USB MIDI Device
+- Input and output streams through USB Serial Device
+- Other USB classes (MIDI, MSC, HID...) support directly via TinyUSB
 
 
 Hardware USB Connection
@@ -67,9 +67,9 @@ Via Menuconfig options you can specify:
 Descriptors Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The driver's descriptors are provided by the :cpp:type:`tinyusb_config_t` structure's :cpp:member:`descriptor` and :cpp:member:`string_descriptor` members. Therefore, users should initialize :cpp:type:`tinyusb_config_t` to their desired descriptor before calling :cpp:func:`tinyusb_driver_install` to install driver.
+The driver's descriptors are provided by :cpp:type:`tinyusb_config_t` structure's :cpp:member:`device_descriptor`, :cpp:member:`configuration_descriptor` and :cpp:member:`string_descriptor` members. Therefore, you should initialize :cpp:type:`tinyusb_config_t` with your desired descriptors before calling :cpp:func:`tinyusb_driver_install` to install the driver.
 
-However, the driver also provides a default descriptor. The driver can be installed with the default descriptor by setting the :cpp:member:`descriptor` and :cpp:member:`string_descriptor` members of :cpp:type:`tinyusb_config_t` to `NULL` before calling :cpp:func:`tinyusb_driver_install`. The driver's default descriptor is specified using Menuconfig, where the following fields should be configured:
+However, the driver also provides default descriptors. You can install the driver with default device and string descriptors by setting the :cpp:member:`device_descriptor` and :cpp:member:`string_descriptor` members of :cpp:type:`tinyusb_config_t` to `NULL` before calling :cpp:func:`tinyusb_driver_install`. To lower your development effort we also provide default configuration descriptor for CDC and MSC class, as these classes rarely require custom configuration. The driver's default device descriptor is specified using Menuconfig, where the following fields should be configured:
 
 - PID
 - VID
@@ -79,31 +79,32 @@ However, the driver also provides a default descriptor. The driver can be instal
 - Name of CDC device if it is On
 - Serial number
 
-If you want to use own descriptors with extended modification, you can define them during the driver installation process
+If you want to use your own descriptors with extended modification, you can define them during the driver installation process.
 
 
 Install Driver
 --------------
 To initialize the driver, users should call :cpp:func:`tinyusb_driver_install`. The driver's configuration is specified in a :cpp:type:`tinyusb_config_t` structure that is passed as an argument to :cpp:func:`tinyusb_driver_install`.
 
- Note that the :cpp:type:`tinyusb_config_t` structure can be zero initialized (e.g. ``tinyusb_config_t tusb_cfg = { 0 }``) or partially (as shown below). For any member that is initialized to `0` or `NULL`, the driver will use its default configuration values for that member (see example below)
+ Note that the :cpp:type:`tinyusb_config_t` structure can be zero initialized (e.g. ``const tinyusb_config_t tusb_cfg = { 0 };``) or partially (as shown below). For any member that is initialized to `0` or `NULL`, the driver will use its default configuration values for that member (see example below)
 
 .. code-block:: c
 
-    tinyusb_config_t partial_init = {
-        .descriptor = NULL;         //Uses default descriptor specified in Menuconfig
-        .string_descriptor = NULL;  //Uses default string specified in Menuconfig
-        .external_phy = false;
-    }
+    const tinyusb_config_t partial_init = {
+        .device_descriptor = NULL,  // Use default device descriptor specified in Menuconfig
+        .string_descriptor = NULL,  // Use default string descriptors specified in Menuconfig
+        .external_phy = false,      // Use internal USB PHY
+        .configuration_descriptor = NULL, // Use default configuration descriptor according to settings in Menuconfig
+    };
 
 USB Serial Device (CDC-ACM)
 ---------------------------
 
-If the CDC option is enabled in Menuconfig, the USB Serial Device could be initialized with :cpp:func:`tusb_cdc_acm_init` according to the settings from :cpp:type:`tinyusb_config_cdcacm_t` (see example below).
+If the CDC option is enabled in Menuconfig, the USB Serial Device can be initialized with :cpp:func:`tusb_cdc_acm_init` according to the settings from :cpp:type:`tinyusb_config_cdcacm_t` (see example below).
 
 .. code-block:: c
 
-    tinyusb_config_cdcacm_t acm_cfg = {
+    const tinyusb_config_cdcacm_t acm_cfg = {
         .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
         .rx_unread_buf_sz = 64,
@@ -119,7 +120,7 @@ To specify callbacks you can either set the pointer to your :cpp:type:`tusb_cdca
 USB Serial Console
 ^^^^^^^^^^^^^^^^^^
 
-The driver allows to redirect all standard application strings (stdin/out/err) to the USB Serial Device and return them to UART using :cpp:func:`esp_tusb_init_console`/:cpp:func:`esp_tusb_deinit_console` functions.
+The driver allows to redirect all standard application streams (stdinm stdout, stderr) to the USB Serial Device and return them to UART using :cpp:func:`esp_tusb_init_console`/:cpp:func:`esp_tusb_deinit_console` functions.
 
 
 Application Examples
@@ -135,12 +136,12 @@ The table below describes the code examples available in the directory :example:
      - Description
    * - :example:`peripherals/usb/device/tusb_console`
      - How to set up {IDF_TARGET_NAME} chip to get log output via Serial Device connection
-   * - :example:`peripherals/usb/device/tusb_sample_descriptor`
-     - How to set up {IDF_TARGET_NAME} chip to work as a Generic USB Device with a user-defined descriptor
    * - :example:`peripherals/usb/device/tusb_serial_device`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Serial Device
    * - :example:`peripherals/usb/device/tusb_midi`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB MIDI Device
+   * - :example:`peripherals/usb/device/tusb_hid`
+     - How to set up {IDF_TARGET_NAME} chip to work as a USB Human Interface Device
 
 
 API Reference
