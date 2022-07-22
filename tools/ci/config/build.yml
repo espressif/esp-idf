@@ -191,7 +191,9 @@ build_examples_make:
 
 # same as above, but for CMake
 .build_examples_cmake:
-  extends: .build_examples_template
+  extends:
+    - .build_examples_template
+    - .before_script_build_cmake
   artifacts:
     paths:
       - build_${TEST_PREFIX}/list.json

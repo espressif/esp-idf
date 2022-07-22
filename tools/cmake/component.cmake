@@ -225,7 +225,7 @@ function(__component_get_requirements)
     endif()
 
     idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
-    if(idf_component_manager AND idf_component_manager EQUAL "1")
+    if(idf_component_manager EQUAL 1)
         # Call for component manager once again to inject dependencies
         idf_build_get_property(python PYTHON)
         execute_process(COMMAND ${python}

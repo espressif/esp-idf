@@ -121,6 +121,20 @@ before_script:
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
     - fetch_submodules
 
+# this is a workaround since CI on 4.3 is using python 3.4 and the real support version is 3.6
+# Can't find package versions that match both of them at the same time.
+# install the idf-component-manager here instead of in the dockerfile with a fixed version
+.before_script_build_cmake:
+  before_script:
+    - source tools/ci/utils.sh
+    - source tools/ci/setup_python.sh
+    - apply_bot_filter
+    - add_gitlab_ssh_keys
+    - source tools/ci/configure_ci_environment.sh
+    - *setup_tools_unless_target_test
+    - fetch_submodules
+    - pip install "idf-component-manager~=1.1"
+
 default:
   retry:
     max: 2
