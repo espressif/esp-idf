@@ -369,7 +369,7 @@ int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
              struct wpa_ie_data *data)
 {
 	uint8_t rsnxe_capa = 0;
-	uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal();
+	uint8_t sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
 	memset(data, 0, sizeof(*data));
 
 	if (rsnxe_ie_len < 1) {
