@@ -6,6 +6,7 @@
 
 #include "soc/soc.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 #include "esp_app_trace_port.h"
 
 #include "driver/uart.h"
@@ -105,7 +106,7 @@ static esp_err_t esp_apptrace_uart_unlock(esp_apptrace_uart_data_t *hw_data)
 
 static inline void esp_apptrace_uart_hw_init(void)
 {
-    ESP_APPTRACE_LOGI("Initialized UART on CPU%d", cpu_hal_get_core_id());
+    ESP_APPTRACE_LOGI("Initialized UART on CPU%d", esp_cpu_get_core_id());
 }
 
 
@@ -199,7 +200,7 @@ static const int APP_TRACE_UART_RX_BUF_SIZE = 4024;
 
 static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
 {
-    int core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
     if (core_id == 0) {
         hw_data->tx_data_buff = (uint8_t *)heap_caps_malloc(APP_TRACE_MAX_TX_BUFF_UART, MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
         if (hw_data->tx_data_buff == NULL){

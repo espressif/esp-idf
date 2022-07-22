@@ -24,6 +24,7 @@
 #include "driver/gpio.h"
 #include "driver/rmt_tx.h"
 #include "rmt_private.h"
+#include "esp_memory_utils.h"
 
 static const char *TAG = "rmt";
 

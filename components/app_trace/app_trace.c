@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_app_trace.h"
 #include "esp_app_trace_port.h"
@@ -45,7 +46,7 @@ esp_err_t esp_apptrace_init(void)
     void *hw_data = NULL;
 
     // 'esp_apptrace_init()' is called on every core, so ensure to do main initialization only once
-    if (cpu_hal_get_core_id() == 0) {
+    if (esp_cpu_get_core_id() == 0) {
         memset(&s_trace_channels, 0, sizeof(s_trace_channels));
         hw = esp_apptrace_jtag_hw_get(&hw_data);
         ESP_APPTRACE_LOGD("HW interface %p", hw);

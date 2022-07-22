@@ -75,6 +75,7 @@
 #include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
 #include "port_systick.h"
 #include "esp_cpu.h"
+#include "esp_memory_utils.h"
 
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 

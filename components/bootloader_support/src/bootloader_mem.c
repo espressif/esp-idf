@@ -6,7 +6,6 @@
 
 #include <stdbool.h>
 
-#include "hal/cpu_hal.h"
 #include "hal/mpu_hal.h"
 #include "hal/mpu_types.h"
 #include "soc/soc_caps.h"

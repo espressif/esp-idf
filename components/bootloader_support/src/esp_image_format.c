@@ -157,7 +157,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     bootloader_sha256_handle_t *p_sha_handle = &sha_handle;
     CHECK_ERR(process_image_header(data, part->offset, (verify_sha) ? p_sha_handle : NULL, do_verify, silent));
     CHECK_ERR(process_segments(data, silent, do_load, sha_handle, checksum));
-    bool skip_check_checksum = !do_verify || esp_cpu_in_ocd_debug_mode();
+    bool skip_check_checksum = !do_verify || esp_cpu_dbgr_is_attached();
     CHECK_ERR(process_checksum(sha_handle, checksum_word, data, silent, skip_check_checksum));
     CHECK_ERR(process_appended_hash(data, part->size, do_verify, silent));
     if (verify_sha) {
@@ -167,7 +167,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         // If secure boot is not enabled in hardware, then
         // skip the signature check in bootloader when the debugger is attached.
         // This is done to allow for breakpoints in Flash.
-        bool do_verify_sig = !esp_cpu_in_ocd_debug_mode();
+        bool do_verify_sig = !esp_cpu_dbgr_is_attached();
 #else // CONFIG_SECURE_BOOT
         bool do_verify_sig = true;
 #endif // end checking for JTAG
@@ -177,7 +177,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         }
 #else // SECURE_BOOT_CHECK_SIGNATURE
         // No secure boot, but SHA-256 can be appended for basic corruption detection
-        if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
+        if (sha_handle != NULL && !esp_cpu_dbgr_is_attached()) {
             err = verify_simple_hash(sha_handle, data);
             sha_handle = NULL; // calling verify_simple_hash finishes sha_handle
         }

@@ -43,6 +43,7 @@
 #include "esp_ipc.h"
 #endif
 #include "esp_attr.h"
+#include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
 #include "spi_flash_mmap.h"
 #include "esp_log.h"

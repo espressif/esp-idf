@@ -145,10 +145,10 @@ void esp_core_dump_to_uart(panic_info_t *info)
 
     ESP_COREDUMP_LOGI("Press Enter to print core dump to UART...");
     const int cpu_ticks_per_ms = esp_clk_cpu_freq() / 1000;
-    tm_end = esp_cpu_get_ccount() / cpu_ticks_per_ms + CONFIG_ESP_COREDUMP_UART_DELAY;
+    tm_end = esp_cpu_get_cycle_count() / cpu_ticks_per_ms + CONFIG_ESP_COREDUMP_UART_DELAY;
     ch = esp_core_dump_uart_get_char();
     while (!(ch == '\n' || ch == '\r')) {
-        tm_cur = esp_cpu_get_ccount() / cpu_ticks_per_ms;
+        tm_cur = esp_cpu_get_cycle_count() / cpu_ticks_per_ms;
         if (tm_cur >= tm_end){
             break;
         }

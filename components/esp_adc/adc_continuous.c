@@ -26,6 +26,7 @@
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
+#include "esp_memory_utils.h"
 //For DMA
 #if SOC_GDMA_SUPPORTED
 #include "esp_private/gdma.h"

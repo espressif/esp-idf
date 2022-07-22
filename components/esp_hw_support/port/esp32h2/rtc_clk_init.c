@@ -17,8 +17,8 @@
 #include "soc/rtc_periph.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/efuse_periph.h"
-#include "hal/cpu_hal.h"
 #include "esp_hw_log.h"
+#include "esp_cpu.h"
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "soc/system_reg.h"
@@ -72,7 +72,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Re-calculate the ccount to make time calculation correct. */
-    cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
+    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
     if (cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {

@@ -18,6 +18,7 @@
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "spi_flash_mmap.h"
 #include "esp_log.h"
 #include "esp_private/system_internal.h"
@@ -72,11 +73,11 @@ static const char *TAG __attribute__((unused)) = "spi_flash";
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 static spi_flash_counters_t s_flash_stats;
 
-#define COUNTER_START()     uint32_t ts_begin = cpu_hal_get_cycle_count()
+#define COUNTER_START()     uint32_t ts_begin = esp_cpu_get_cycle_count()
 #define COUNTER_STOP(counter)  \
     do{ \
         s_flash_stats.counter.count++; \
-        s_flash_stats.counter.time += (cpu_hal_get_cycle_count() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
+        s_flash_stats.counter.time += (esp_cpu_get_cycle_count() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
     } while(0)
 
 #define COUNTER_ADD_BYTES(counter, size) \

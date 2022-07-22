@@ -8,7 +8,6 @@
 
 /*
 Note: This is a compatibility header. Call the interfaces in esp_cpu.h instead
-[refactor-todo]: Mark all API in this header as deprecated
 */
 
 #include <stdint.h>
@@ -88,7 +87,7 @@ typedef enum {
  * @param id breakpoint to set [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  * @param addr address to set a breakpoint on
  */
-static inline void cpu_hal_set_breakpoint(int id, const void *addr)
+static inline __attribute__((deprecated)) void cpu_hal_set_breakpoint(int id, const void *addr)
 {
     esp_cpu_set_breakpoint(id, addr);
 }
@@ -97,7 +96,7 @@ static inline void cpu_hal_set_breakpoint(int id, const void *addr)
  *
  * @param id breakpoint to clear [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  */
-static inline void cpu_hal_clear_breakpoint(int id)
+static inline __attribute__((deprecated)) void cpu_hal_clear_breakpoint(int id)
 {
     esp_cpu_clear_breakpoint(id);
 }
@@ -114,7 +113,8 @@ static inline void cpu_hal_clear_breakpoint(int id)
  * @param size number of bytes from starting address to watch
  * @param trigger operation on specified memory range that triggers the watchpoint (read, write, read/write)
  */
-static inline void cpu_hal_set_watchpoint(int id, const void *addr, size_t size, watchpoint_trigger_t trigger)
+static inline __attribute__((deprecated))
+void cpu_hal_set_watchpoint(int id, const void *addr, size_t size, watchpoint_trigger_t trigger)
 {
     esp_cpu_set_watchpoint(id, addr, size, (esp_cpu_watchpoint_trigger_t)trigger);
 }
@@ -124,7 +124,7 @@ static inline void cpu_hal_set_watchpoint(int id, const void *addr, size_t size,
  *
  * @param id watchpoint to clear [0..SOC_CPU_WATCHPOINTS_NUM - 1]
  */
-static inline void cpu_hal_clear_watchpoint(int id)
+static inline __attribute__((deprecated)) void cpu_hal_clear_watchpoint(int id)
 {
     esp_cpu_clear_watchpoint(id);
 }
@@ -136,7 +136,8 @@ static inline void cpu_hal_clear_watchpoint(int id)
  *
  * @param base address to move the exception vector table to
  */
-static inline __attribute__((always_inline)) void cpu_hal_set_vecbase(const void *base)
+static inline __attribute__((deprecated)) __attribute__((always_inline))
+void cpu_hal_set_vecbase(const void *base)
 {
     esp_cpu_intr_set_ivt_addr(base);
 }

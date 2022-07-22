@@ -7,12 +7,12 @@
 #include <stdatomic.h>
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "esp_private/cache_utils.h"
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
-#define RECORD_TIME_START()   do {__t1 = cpu_hal_get_cycle_count();}while(0)
-#define RECORD_TIME_END(p_time) do{__t2 = cpu_hal_get_cycle_count(); *p_time = (__t2-__t1);}while(0)
+#define RECORD_TIME_START()   do {__t1 = esp_cpu_get_cycle_count();}while(0)
+#define RECORD_TIME_END(p_time) do{__t2 = esp_cpu_get_cycle_count(); *p_time = (__t2-__t1);}while(0)
 
 
 #define TEST_TIMES  11

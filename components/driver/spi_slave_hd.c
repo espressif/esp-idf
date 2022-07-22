@@ -5,6 +5,7 @@
  */
 
 #include "esp_log.h"
+#include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"

@@ -452,9 +452,9 @@ void esp_cpu_configure_region_protection(void)
      *  are silently ignored by the CPU
      */
 
-    if (esp_cpu_in_ocd_debug_mode()) {
+    if (esp_cpu_dbgr_is_attached()) {
         // Anti-FI check that cpu is really in ocd mode
-        ESP_FAULT_ASSERT(esp_cpu_in_ocd_debug_mode());
+        ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
 
         // 1. IRAM
         PMP_ENTRY_SET(0, SOC_DIRAM_IRAM_LOW, NONE);
@@ -620,7 +620,7 @@ esp_err_t esp_cpu_clear_watchpoint(int wp_num)
  *
  * ------------------------------------------------------------------------------------------------------------------ */
 
-#if __XTENSA__ && XCHAL_HAVE_S32C1I && SOC_SPIRAM_SUPPORTED
+#if __XTENSA__ && XCHAL_HAVE_S32C1I && CONFIG_SPIRAM
 static DRAM_ATTR uint32_t external_ram_cas_lock = 0;
 #endif
 
@@ -628,35 +628,39 @@ bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, ui
 {
 #if __XTENSA__
     bool ret;
-#if XCHAL_HAVE_S32C1I && SOC_SPIRAM_SUPPORTED
-    if (esp_ptr_external_ram((const void *)addr)) {
+#if XCHAL_HAVE_S32C1I && CONFIG_SPIRAM
+    // Check if the target address is in external RAM
+    if ((uint32_t)addr >= SOC_EXTRAM_DATA_LOW && (uint32_t)addr < SOC_EXTRAM_DATA_HIGH) {
+        /* The target address is in external RAM, thus the native CAS instruction cannot be used. Instead, we achieve
+        atomicity by disabling interrupts and then acquiring an external RAM CAS lock. */
         uint32_t intr_level;
-        // Atomicity is achieved by disabling interrupts then acquiring a an external RAM CAS lock
         __asm__ __volatile__ ("rsil %0, " XTSTR(XCHAL_EXCM_LEVEL) "\n"
                               : "=r"(intr_level));
-        while (!xt_utils_compare_and_set(&external_ram_cas_lock, 0, 1)) {
-            ;
+        if (!xt_utils_compare_and_set(&external_ram_cas_lock, 0, 1)) {
+            // External RAM CAS lock already taken. Exit
+            ret = false;
+            goto exit;
         }
         // Now we compare and set the target address
-        uint32_t old_value;
-        old_value = *addr;
-        if (old_value == compare_value) {
+        ret = (*addr == compare_value);
+        if (ret) {
             *addr = new_value;
         }
-        // Release the external RAM CAS lock and reenable interrupts
+        // Release the external RAM CAS lock
         external_ram_cas_lock = 0;
+exit:
+        // Reenable interrupts
         __asm__ __volatile__ ("memw \n"
                               "wsr %0, ps\n"
                               :: "r"(intr_level));
-
-        ret = (old_value == compare_value);
     } else
-#endif  //XCHAL_HAVE_S32C1I && SOC_SPIRAM_SUPPORTED
+#endif  // XCHAL_HAVE_S32C1I && CONFIG_SPIRAM
     {
+        // The target address is in internal RAM. Use the CPU's native CAS instruction
         ret = xt_utils_compare_and_set(addr, compare_value, new_value);
     }
     return ret;
-#else
+#else // __XTENSA__
     // Single core targets don't have atomic CAS instruction. So access method is the same for internal and external RAM
     return rv_utils_compare_and_set(addr, compare_value, new_value);
 #endif

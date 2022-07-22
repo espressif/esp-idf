@@ -22,10 +22,8 @@
 #include "soc/syscon_reg.h"
 #include "soc/rtc_periph.h"
 #include "hal/wdt_hal.h"
-#include "hal/cpu_hal.h"
 #include "freertos/xtensa_api.h"
 #include "soc/soc_memory_layout.h"
-#include "hal/cpu_hal.h"
 
 #include "esp32s2/rom/rtc.h"
 
@@ -57,7 +55,7 @@ void IRAM_ATTR esp_restart_noos(void)
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
-    const uint32_t core_id = cpu_hal_get_core_id();
+    const uint32_t core_id = esp_cpu_get_core_id();
 
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs

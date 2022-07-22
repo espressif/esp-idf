@@ -155,6 +155,7 @@
 #endif
 #include "eri.h"
 #include "esp_private/trax.h"
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"
@@ -173,7 +174,7 @@
 #define ESP_APPTRACE_TRAX_HOST_DATA             (1 << 22)
 #define ESP_APPTRACE_TRAX_HOST_CONNECT          (1 << 23)
 
-#define ESP_APPTRACE_TRAX_INITED(_hw_)          ((_hw_)->inited & (1 << cpu_hal_get_core_id()))
+#define ESP_APPTRACE_TRAX_INITED(_hw_)          ((_hw_)->inited & (1 << esp_cpu_get_core_id()))
 
 #define ESP_APPTRACE_TRAX_BLOCK_SIZE            (0x4000UL)
 
@@ -271,7 +272,7 @@ static inline void esp_apptrace_trax_hw_init(void)
     // must be read by host before any transfer using TRAX
     eri_write(ESP_APPTRACE_TRAX_STAT_REG, 0);
 
-    ESP_APPTRACE_LOGI("Initialized TRAX on CPU%d", cpu_hal_get_core_id());
+    ESP_APPTRACE_LOGI("Initialized TRAX on CPU%d", esp_cpu_get_core_id());
 }
 
 static inline void esp_apptrace_trax_select_memory_block(int block_num)
@@ -310,7 +311,7 @@ static inline void esp_apptrace_trax_memory_enable(void)
 
 static esp_err_t esp_apptrace_trax_init(esp_apptrace_trax_data_t *hw_data)
 {
-    int core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
 
     // 'esp_apptrace_trax_init()' is called on every core, so ensure to do main initialization only once
     if (core_id == 0) {
@@ -497,7 +498,7 @@ static esp_err_t esp_apptrace_trax_buffer_swap_start(uint32_t curr_block_id)
         uint32_t acked_block = ESP_APPTRACE_TRAX_BLOCK_ID_GET(ctrl_reg);
         uint32_t host_to_read = ESP_APPTRACE_TRAX_BLOCK_LEN_GET(ctrl_reg);
         if (host_to_read != 0 || acked_block != (curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK)) {
-            ESP_APPTRACE_LOGD("HC[%d]: Can not switch %x %d %x %x/%lx", cpu_hal_get_core_id(), ctrl_reg, host_to_read, acked_block,
+            ESP_APPTRACE_LOGD("HC[%d]: Can not switch %x %d %x %x/%lx", esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
                 curr_block_id & ESP_APPTRACE_TRAX_BLOCK_ID_MSK, curr_block_id);
             res = ESP_ERR_NO_MEM;
             goto _on_err;

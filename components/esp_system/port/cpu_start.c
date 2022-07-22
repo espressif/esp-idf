@@ -137,7 +137,7 @@ static volatile bool s_resume_cores;
 
 static void core_intr_matrix_clear(void)
 {
-    uint32_t core_id = cpu_hal_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
 
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
@@ -152,7 +152,7 @@ void startup_resume_other_cores(void)
 
 void IRAM_ATTR call_start_cpu1(void)
 {
-    cpu_hal_set_vecbase(&_vector_table);
+    esp_cpu_intr_set_ivt_addr(&_vector_table);
 
     ets_set_appcpu_boot_addr(0);
 
@@ -266,7 +266,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 #ifdef __riscv
-    if (cpu_hal_is_debugger_attached()) {
+    if (esp_cpu_dbgr_is_attached()) {
         /* Let debugger some time to detect that target started, halt it, enable ebreaks and resume.
            500ms should be enough. */
         for (uint32_t ms_num = 0; ms_num < 2; ms_num++) {
@@ -285,7 +285,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     // Move exception vectors to IRAM
-    cpu_hal_set_vecbase(&_vector_table);
+    esp_cpu_intr_set_ivt_addr(&_vector_table);
 
     rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE

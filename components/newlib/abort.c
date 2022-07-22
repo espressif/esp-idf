@@ -7,9 +7,9 @@
 #include <string.h>
 
 #include "esp_system.h"
+#include "esp_cpu.h"
 
 #include "soc/soc_caps.h"
-#include "hal/cpu_hal.h"
 
 void __attribute__((noreturn)) abort(void)
 {
@@ -25,7 +25,7 @@ void __attribute__((noreturn)) abort(void)
     char buf[sizeof(ERR_STR1) + sizeof(addr_buf) + sizeof(core_buf) + sizeof(ERR_STR2) + 1 /* null char */] = { 0 };
 
     itoa((uint32_t)(__builtin_return_address(0) - 3), addr_buf, 16);
-    itoa(cpu_ll_get_core_id(), core_buf, 10);
+    itoa(esp_cpu_get_core_id(), core_buf, 10);
 
     const char *str[] = { ERR_STR1, addr_buf, ERR_STR2, core_buf };
 

@@ -34,6 +34,7 @@
 #include "esp_attr.h"
 #include "soc/lldesc.h"
 #include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "sys/param.h"
 #if CONFIG_PM_ENABLE
 #include "esp_pm.h"

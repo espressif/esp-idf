@@ -30,6 +30,7 @@
 #include <sys/lock.h>
 
 #include "esp_log.h"
+#include "esp_memory_utils.h"
 #include "esp_crypto_lock.h"
 #include "esp_attr.h"
 #include "soc/lldesc.h"

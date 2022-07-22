@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"
@@ -36,7 +37,7 @@ typedef struct {
 #define ESP_APPTRACE_RISCV_HOST_DATA             (1 << 22)
 #define ESP_APPTRACE_RISCV_HOST_CONNECT          (1 << 23)
 
-#define ESP_APPTRACE_RISCV_INITED(_hw_)          ((_hw_)->inited & (1 << 0/*cpu_hal_get_core_id()*/))
+#define ESP_APPTRACE_RISCV_INITED(_hw_)          ((_hw_)->inited & (1 << 0/*esp_cpu_get_core_id()*/))
 
 static esp_err_t esp_apptrace_riscv_init(esp_apptrace_riscv_data_t *hw_data);
 static esp_err_t esp_apptrace_riscv_flush(esp_apptrace_riscv_data_t *hw_data, esp_apptrace_tmo_t *tmo);
@@ -94,7 +95,7 @@ esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
    e.g. OpenOCD flasher stub use own implementation of it. */
 __attribute__((weak)) int esp_apptrace_advertise_ctrl_block(void *ctrl_block_addr)
 {
-    if (!esp_cpu_in_ocd_debug_mode()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         return 0;
     }
     return (int) semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_APPTRACE_INIT, (long*)ctrl_block_addr);
@@ -139,7 +140,7 @@ static esp_err_t esp_apptrace_riscv_unlock(esp_apptrace_riscv_data_t *hw_data)
 
 static esp_err_t esp_apptrace_riscv_init(esp_apptrace_riscv_data_t *hw_data)
 {
-    int core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
 
     if (hw_data->inited == 0) {
         esp_apptrace_mem_block_t mem_blocks_cfg[2];
@@ -253,7 +254,7 @@ static bool esp_apptrace_riscv_host_is_connected(esp_apptrace_riscv_data_t *hw_d
     if (!ESP_APPTRACE_RISCV_INITED(hw_data)) {
         return false;
     }
-    return s_tracing_ctrl[cpu_hal_get_core_id()].ctrl & ESP_APPTRACE_RISCV_HOST_CONNECT ? true : false;
+    return s_tracing_ctrl[esp_cpu_get_core_id()].ctrl & ESP_APPTRACE_RISCV_HOST_CONNECT ? true : false;
 }
 
 static esp_err_t esp_apptrace_riscv_flush_nolock(esp_apptrace_riscv_data_t *hw_data, uint32_t min_sz, esp_apptrace_tmo_t *tmo)
@@ -297,13 +298,13 @@ static inline void esp_apptrace_riscv_buffer_swap_lock(void)
     // HACK: in this case host will set breakpoint just after ESP_APPTRACE_RISCV_CTRL_REG update,
     // here we set address to set bp at
     // enter ERI update critical section
-    s_tracing_ctrl[cpu_hal_get_core_id()].stat = (uint32_t)&__esp_apptrace_riscv_updated;
+    s_tracing_ctrl[esp_cpu_get_core_id()].stat = (uint32_t)&__esp_apptrace_riscv_updated;
 }
 
 static __attribute__((noinline)) void esp_apptrace_riscv_buffer_swap_unlock(void)
 {
     // exit ERI update critical section
-    s_tracing_ctrl[cpu_hal_get_core_id()].stat = 0;
+    s_tracing_ctrl[esp_cpu_get_core_id()].stat = 0;
     // TODO: currently host sets breakpoint, use break instruction to stop;
     // it will allow to use ESP_APPTRACE_RISCV_STAT_REG for other purposes
     asm volatile (
@@ -317,13 +318,13 @@ static esp_err_t esp_apptrace_riscv_buffer_swap_start(uint32_t curr_block_id)
 
     esp_apptrace_riscv_buffer_swap_lock();
 
-    uint32_t ctrl_reg = s_tracing_ctrl[cpu_hal_get_core_id()].ctrl;
+    uint32_t ctrl_reg = s_tracing_ctrl[esp_cpu_get_core_id()].ctrl;
     uint32_t host_connected = ESP_APPTRACE_RISCV_HOST_CONNECT & ctrl_reg;
     if (host_connected) {
         uint32_t acked_block = ESP_APPTRACE_RISCV_BLOCK_ID_GET(ctrl_reg);
         uint32_t host_to_read = ESP_APPTRACE_RISCV_BLOCK_LEN_GET(ctrl_reg);
         if (host_to_read != 0 || acked_block != (curr_block_id & ESP_APPTRACE_RISCV_BLOCK_ID_MSK)) {
-            ESP_APPTRACE_LOGD("[%d]: Can not switch %x %d %x %x/%lx", cpu_hal_get_core_id(), ctrl_reg, host_to_read, acked_block,
+            ESP_APPTRACE_LOGD("[%d]: Can not switch %x %d %x %x/%lx", esp_cpu_get_core_id(), ctrl_reg, host_to_read, acked_block,
                 curr_block_id & ESP_APPTRACE_RISCV_BLOCK_ID_MSK, curr_block_id);
             res = ESP_ERR_NO_MEM;
             goto _on_err;
@@ -337,9 +338,9 @@ _on_err:
 
 static esp_err_t esp_apptrace_riscv_buffer_swap_end(uint32_t new_block_id, uint32_t prev_block_len)
 {
-    uint32_t ctrl_reg = s_tracing_ctrl[cpu_hal_get_core_id()].ctrl;
+    uint32_t ctrl_reg = s_tracing_ctrl[esp_cpu_get_core_id()].ctrl;
     uint32_t host_connected = ESP_APPTRACE_RISCV_HOST_CONNECT & ctrl_reg;
-    s_tracing_ctrl[cpu_hal_get_core_id()].ctrl = ESP_APPTRACE_RISCV_BLOCK_ID(new_block_id) |
+    s_tracing_ctrl[esp_cpu_get_core_id()].ctrl = ESP_APPTRACE_RISCV_BLOCK_ID(new_block_id) |
               host_connected | ESP_APPTRACE_RISCV_BLOCK_LEN(prev_block_len);
     esp_apptrace_riscv_buffer_swap_unlock();
     return ESP_OK;
@@ -353,7 +354,7 @@ static esp_err_t esp_apptrace_riscv_buffer_swap(uint32_t new_block_id)
 
 static bool esp_apptrace_riscv_host_data_pending(void)
 {
-    uint32_t ctrl_reg = s_tracing_ctrl[cpu_hal_get_core_id()].ctrl;
+    uint32_t ctrl_reg = s_tracing_ctrl[esp_cpu_get_core_id()].ctrl;
     // ESP_APPTRACE_LOGV("%s() 0x%x", __func__, ctrl_reg);
     return (ctrl_reg & ESP_APPTRACE_RISCV_HOST_DATA) ? true : false;
 }

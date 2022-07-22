@@ -16,10 +16,10 @@
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
+#include "esp_cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "hal/cpu_hal.h"
 #include "w5500.h"
 #include "sdkconfig.h"
 
@@ -674,7 +674,7 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
     /* create w5500 task */
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
-        core_num = cpu_hal_get_core_id();
+        core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_w5500_task, "w5500_tsk", mac_config->rx_task_stack_size, emac,
                            mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);

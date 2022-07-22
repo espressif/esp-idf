@@ -7,6 +7,6 @@ if((IDF_TARGET STREQUAL "esp32s2") OR (IDF_TARGET STREQUAL "esp32c3") OR (IDF_TA
     target_link_libraries(${project_elf} PRIVATE
             "-Wl,--wrap=esp_panic_handler"
             "-Wl,--wrap=esp_panic_handler_reconfigure_wdts"
-            "-Wl,--wrap=soc_hal_stall_core")
+            "-Wl,--wrap=esp_cpu_stall")
 
 endif()

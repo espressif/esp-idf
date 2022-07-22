@@ -30,6 +30,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/pulse_cnt.h"
+#include "esp_memory_utils.h"
 
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM

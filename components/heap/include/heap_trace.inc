@@ -15,11 +15,12 @@
 #include <sdkconfig.h>
 #include "soc/soc_memory_layout.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 
 /* Encode the CPU ID in the LSB of the ccount value */
 inline static uint32_t get_ccount(void)
 {
-    uint32_t ccount = cpu_hal_get_cycle_count() & ~3;
+    uint32_t ccount = esp_cpu_get_cycle_count() & ~3;
 #ifndef CONFIG_FREERTOS_UNICORE
     ccount |= xPortGetCoreID();
 #endif

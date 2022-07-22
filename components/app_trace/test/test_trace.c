@@ -12,6 +12,7 @@
 #include "driver/gptimer.h"
 #include "esp_intr_alloc.h"
 #include "esp_rom_sys.h"
+#include "esp_cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -179,7 +180,7 @@ static void esp_apptrace_dummy_task(void *p)
 
     int i = 0;
     while (!arg->stop) {
-        ESP_APPTRACE_TEST_LOGD("%x: dummy task work %d.%d", xTaskGetCurrentTaskHandle(), cpu_hal_get_core_id(), i++);
+        ESP_APPTRACE_TEST_LOGD("%x: dummy task work %d.%d", xTaskGetCurrentTaskHandle(), esp_cpu_get_core_id(), i++);
         if (tmo_ticks) {
             vTaskDelay(tmo_ticks);
         }
@@ -210,7 +211,7 @@ static void esp_apptrace_test_task(void *p)
             .resolution_hz = 1000000,
         };
         TEST_ESP_OK(gptimer_new_timer(&timer_config, &arg->timers[i].gptimer));
-        *(uint32_t *)arg->timers[i].data.buf = ((uint32_t)arg->timers[i].gptimer) | (1 << 31) | (cpu_hal_get_core_id() ? 0x1 : 0);
+        *(uint32_t *)arg->timers[i].data.buf = ((uint32_t)arg->timers[i].gptimer) | (1 << 31) | (esp_cpu_get_core_id() ? 0x1 : 0);
         ESP_APPTRACE_TEST_LOGI("%x: start timer %x period %u us", xTaskGetCurrentTaskHandle(), arg->timers[i].gptimer, arg->timers[i].data.period);
         gptimer_alarm_config_t alarm_config = {
             .reload_count = 0,
@@ -226,7 +227,7 @@ static void esp_apptrace_test_task(void *p)
         TEST_ESP_OK(gptimer_start(arg->timers[i].gptimer));
     }
 
-    *(uint32_t *)arg->data.buf = (uint32_t)xTaskGetCurrentTaskHandle() | (cpu_hal_get_core_id() ? 0x1 : 0);
+    *(uint32_t *)arg->data.buf = (uint32_t)xTaskGetCurrentTaskHandle() | (esp_cpu_get_core_id() ? 0x1 : 0);
     arg->data.wr_cnt = 0;
     arg->data.wr_err = 0;
     while (!arg->stop) {
@@ -652,7 +653,7 @@ static void esp_logtrace_task(void *p)
         ESP_LOGI(TAG, "%p: sample print 4 %c", xTaskGetCurrentTaskHandle(), ((i & 0xFF) % 95) + 32);
         ESP_LOGI(TAG, "%p: sample print 5 %f", xTaskGetCurrentTaskHandle(), 1.0);
         ESP_LOGI(TAG, "%p: sample print 6 %f", xTaskGetCurrentTaskHandle(), 3.45);
-        ESP_LOGI(TAG, "%p: logtrace task work %d.%d", xTaskGetCurrentTaskHandle(), cpu_hal_get_core_id(), i);
+        ESP_LOGI(TAG, "%p: logtrace task work %d.%d", xTaskGetCurrentTaskHandle(), esp_cpu_get_core_id(), i);
         if (++i == 10000) {
             break;
         }

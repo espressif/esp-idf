@@ -75,6 +75,7 @@
 #include "lwip/sys.h"
 #include <string.h>
 #include "esp_rom_md5.h"
+#include "esp_memory_utils.h"
 
 #ifdef CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
 

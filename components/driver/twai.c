@@ -20,6 +20,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
+#include "soc/soc.h"
 #include "soc/twai_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"

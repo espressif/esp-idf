@@ -6,11 +6,12 @@
 #include <stdint.h>
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
 #include "soc/periph_defs.h"
 
-#include "hal/cpu_hal.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 
@@ -51,7 +52,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 
     //Clear the interrupt first.
 #if CONFIG_IDF_TARGET_ESP32
-    if (cpu_hal_get_core_id()==0) {
+    if (esp_cpu_get_core_id()==0) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
     } else {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
@@ -59,7 +60,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 #elif CONFIG_IDF_TARGET_ESP32S2
     DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
 #elif CONFIG_IDF_TARGET_ESP32S3
-    if (cpu_hal_get_core_id()==0) {
+    if (esp_cpu_get_core_id()==0) {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
     } else {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
@@ -100,11 +101,11 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 //on each active core.
 void esp_crosscore_int_init(void) {
     portENTER_CRITICAL(&reason_spinlock);
-    reason[cpu_hal_get_core_id()]=0;
+    reason[esp_cpu_get_core_id()]=0;
     portEXIT_CRITICAL(&reason_spinlock);
     esp_err_t err __attribute__((unused)) = ESP_OK;
 #if portNUM_PROCESSORS > 1
-    if (cpu_hal_get_core_id()==0) {
+    if (esp_cpu_get_core_id()==0) {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);

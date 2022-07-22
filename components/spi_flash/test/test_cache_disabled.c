@@ -15,6 +15,7 @@
 #include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
+#include "esp_memory_utils.h"
 
 #include "esp_private/cache_utils.h"
 
