@@ -123,6 +123,9 @@ The arguments of the function are as follows:
 
 3. flag ``FLASH_IN_PROJECT`` - optionally, users can have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash -p <PORT>`` by specifying ``FLASH_IN_PROJECT``.
 
+4. flag ``PRESERVE_TIME`` - optionally, users can force preserving the timestamps from the source folder to the target image. Without preserving the time, every timestamp will be set to the FATFS default initial time (1st January 1980).
+
+
 For example::
 
     fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
