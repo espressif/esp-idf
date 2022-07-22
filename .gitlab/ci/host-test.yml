@@ -336,6 +336,24 @@ test_mqtt_on_host:
     - idf.py build
     - LSAN_OPTIONS=verbosity=1:log_threads=1 build/host_mqtt_client_test.elf
 
+test_sockets_on_host:
+  extends: .host_test_template
+  script:
+    # test the tcp-client example with system sockets
+    - cd ${IDF_PATH}/examples/protocols/sockets/tcp_client
+    - echo 'CONFIG_EXAMPLE_IPV4_ADDR="127.0.0.1"' >> sdkconfig.defaults
+    - idf.py --preview set-target linux
+    - idf.py build
+    - timeout 5 ./build/tcp_client.elf >test.log || true
+    - grep "Socket unable to connect" test.log
+    # test the udp-client example with lwip sockets
+    - cd ${IDF_PATH}/examples/protocols/sockets/udp_client
+    - echo 'CONFIG_EXAMPLE_IPV4_ADDR="127.0.0.1"' >> sdkconfig.defaults
+    - idf.py --preview set-target linux
+    - idf.py build
+    - timeout 5 ./build/udp_client.elf >test.log || true
+    - grep "Message sent" test.log
+
 test_eh_frame_parser:
   extends: .host_test_template
   script:

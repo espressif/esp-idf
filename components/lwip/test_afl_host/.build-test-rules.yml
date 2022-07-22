@@ -1,0 +1,5 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/lwip/test_afl_host:
+  enable:
+    - if: IDF_TARGET == "linux"

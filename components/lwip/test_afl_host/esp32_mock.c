@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include "lwip/timeouts.h"
 #include "lwip/udp.h"
 #include "lwip/timeouts.h"
-#include "esp32_mock.h"
 #include "no_warn_host.h"
 
 #define ESP_OK          0

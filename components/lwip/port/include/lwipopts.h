@@ -17,12 +17,8 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/poll.h>
-#ifdef __linux__
-#include "esp32_mock.h"
-#else
 #include "esp_task.h"
 #include "esp_random.h"
-#endif // __linux__
 #include "sdkconfig.h"
 #include "sntp/sntp_get_set_time.h"
 #include "sockets_ext.h"

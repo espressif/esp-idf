@@ -1,4 +1,7 @@
 LWIP_COMPONENT_DIR=../
+FREERTOS_COMPONENT_DIR=$(LWIP_COMPONENT_DIR)/../freertos
+COMPONENT_DIR=$(LWIP_COMPONENT_DIR)/../
+MOCKS_DIR=$(LWIP_COMPONENT_DIR)/../../tools/mocks
 
 CFLAGS=-D IDF_VER=\"v3.1\" \
 		-DESP_PLATFORM \
@@ -37,8 +40,14 @@ INC_DIRS=-I . \
 		-I $(LWIP_COMPONENT_DIR)/lwip/src/include \
 		-I $(LWIP_COMPONENT_DIR)/lwip/src/include/netif \
 		-I $(LWIP_COMPONENT_DIR)/lwip/src/include/posix \
-		-I $(LWIP_COMPONENT_DIR)/lwip/src/include/posix \
-		-I $(LWIP_COMPONENT_DIR)/port/esp32/include
+		-I $(LWIP_COMPONENT_DIR)/port/include \
+		-I $(LWIP_COMPONENT_DIR)/port/linux/include \
+		-I $(LWIP_COMPONENT_DIR)/port/freertos/include \
+		-I $(FREERTOS_COMPONENT_DIR)/FreeRTOS-Kernel/include \
+		-I $(FREERTOS_COMPONENT_DIR)/esp_additions/include/freertos \
+		-I $(FREERTOS_COMPONENT_DIR)/FreeRTOS-Kernel/portable/linux/include \
+		-I $(COMPONENT_DIR)/esp_hw_support/include \
+		-I $(COMPONENT_DIR)/linux/include
 
 TEST_NAME=test
 FUZZ=afl-fuzz
@@ -95,7 +104,8 @@ dhcpserver.o: ../apps/dhcpserver/dhcpserver.c $(GEN_CFG)
 
 .PHONY: $(GEN_CFG)
 $(GEN_CFG):
-	$(IDF_PATH)/tools/idf.py reconfigure
+# Run reconfiguration without potential AFL in PATHs
+	PATH=$(subst $(AFL_PATH):,/:,$(PATH)) idf.py reconfigure
 
 $(TEST_NAME): $(OBJECTS)
 	@echo "[LD] $@"

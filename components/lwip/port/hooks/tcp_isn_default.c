@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * @file
  *
@@ -75,7 +80,6 @@
 #include "lwip/sys.h"
 #include <string.h>
 #include "esp_rom_md5.h"
-#include "esp_memory_utils.h"
 
 #ifdef CONFIG_LWIP_HOOK_TCP_ISN_DEFAULT
 
