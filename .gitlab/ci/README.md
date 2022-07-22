@@ -240,7 +240,7 @@ To run these commands in shell script locally, place `source tools/ci/utils.sh` 
 
 #### Operands
 
-- variables starts with `SOC_`. The value would be parsed from components/soc/[TARGET]/include/soc/soc_caps.h
+- Variables start with `SOC_`. The value would be parsed from components/soc/[TARGET]/include/soc/*_caps.h
 - `IDF_TARGET`
 - `INCLUDE_DEFAULT` (The default value of officially supported targets is 1, otherwise is 0)
 - String, must be double-quoted. e.g. `"esp32"`, `"12345"`
@@ -262,7 +262,7 @@ To run these commands in shell script locally, place `source tools/ci/utils.sh` 
 
 ### How does it work?
 
-By default, we enable build and test jobs for supported targets.
+By default, we enable build and test jobs for supported targets. In other words, if an app supports all supported targets, it does not need to be added in a manifest file. The manifest files are files that set the violation rules for apps.
 
 three rules (disable rules are calculated after the `enable` rule):
 - enable: run CI build/test jobs for targets that match any of the specified conditions only
@@ -302,12 +302,6 @@ examples/bluetooth:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: lack of ci runners  # required when `temporary: true`
-
-examples/foo:
-  enable:
-    - if IDF_TARGET in ["esp32", 1, 2, 3]
-    - if IDF_TARGET not in ["4", "5", 6]
-  # should be run under all targets!
 
 examples/bluetooth/test_foo:
   # each folder's settings are standalone
