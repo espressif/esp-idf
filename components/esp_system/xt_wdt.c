@@ -31,7 +31,7 @@ static xt_wdt_hal_context_t s_hal_ctx;
 static esp_xt_callback_t s_callback_func;
 static void *s_callback_arg;
 
-portMUX_TYPE s_xt_wdt_lock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE s_xt_wdt_lock = portMUX_INITIALIZER_UNLOCKED;
 
 static IRAM_ATTR void rtc_xt_wdt_default_isr_handler(void *arg)
 {
