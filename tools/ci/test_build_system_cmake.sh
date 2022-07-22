@@ -537,12 +537,9 @@ function run_tests()
     print_status "Test for external libraries in custom CMake projects with ESP-IDF components linked"
     mkdir build
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
-    echo "CONFIG_SPIRAM=y" > $IDF_AS_LIB/sdkconfig
-    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> $IDF_AS_LIB/sdkconfig
     # note: we just need to run cmake
     (cd build && cmake $IDF_AS_LIB -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
-    (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
 
     for strat in MEMW NOPS DUPLDST; do
         print_status "Test for external libraries in custom CMake projects with PSRAM strategy $strat"
