@@ -95,6 +95,7 @@ struct esp_rgb_panel_t {
     int x_gap;                      // Extra gap in x coordinate, it's used when calculate the flush window
     int y_gap;                      // Extra gap in y coordinate, it's used when calculate the flush window
     portMUX_TYPE spinlock;          // to protect panel specific resource from concurrent access (e.g. between task and ISR)
+    int lcd_clk_flags;              // LCD clock calculation flags
     struct {
         uint32_t disp_en_level: 1;       // The level which can turn on the screen by `disp_gpio_num`
         uint32_t stream_mode: 1;         // If set, the LCD transfers data continuously, otherwise, it stops refreshing the LCD when transaction done
@@ -259,6 +260,11 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     // set clock source
     ret = lcd_rgb_panel_select_clock_src(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "set source clock failed");
+    // set minimal PCLK divider
+    // A limitation in the hardware, if the LCD_PCLK == LCD_CLK, then the PCLK polarity can't be adjustable
+    if (!(rgb_panel_config->timings.flags.pclk_active_neg || rgb_panel_config->timings.flags.pclk_idle_high)) {
+        rgb_panel->lcd_clk_flags |= LCD_HAL_PCLK_FLAG_ALLOW_EQUAL_SYSCLK;
+    }
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
     int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
@@ -391,7 +397,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     esp_err_t ret = ESP_OK;
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     // set pixel clock frequency
-    rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz);
+    rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, rgb_panel->lcd_clk_flags);
     // pixel clock phase and polarity
     lcd_ll_set_clock_idle_level(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_idle_high);
     lcd_ll_set_pixel_clock_edge(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_active_neg);
@@ -595,15 +601,11 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
 {
     esp_err_t ret = ESP_OK;
     switch (clk_src) {
+    case LCD_CLK_SRC_PLL240M:
+        panel->src_clk_hz = 240000000;
+        break;
     case LCD_CLK_SRC_PLL160M:
         panel->src_clk_hz = 160000000;
-#if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
-        // hold the lock during the whole lifecycle of RGB panel
-        esp_pm_lock_acquire(panel->pm_lock);
-        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
-#endif
         break;
     case LCD_CLK_SRC_XTAL:
         panel->src_clk_hz = esp_clk_xtal_freq();
@@ -613,6 +615,16 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *panel, lcd_cloc
         break;
     }
     lcd_ll_select_clk_src(panel->hal.dev, clk_src);
+
+    if (clk_src == LCD_CLK_SRC_PLL240M || clk_src == LCD_CLK_SRC_PLL160M) {
+#if CONFIG_PM_ENABLE
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "rgb_panel", &panel->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
+        // hold the lock during the whole lifecycle of RGB panel
+        esp_pm_lock_acquire(panel->pm_lock);
+        ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock and hold the lock during the whole panel lifecycle");
+#endif
+    }
     return ret;
 }
 
@@ -789,7 +801,7 @@ IRAM_ATTR static void lcd_rgb_panel_try_update_pclk(esp_rgb_panel_t *rgb_panel)
     portENTER_CRITICAL_ISR(&rgb_panel->spinlock);
     if (unlikely(rgb_panel->flags.need_update_pclk)) {
         rgb_panel->flags.need_update_pclk = false;
-        rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz);
+        rgb_panel->timings.pclk_hz = lcd_hal_cal_pclk_freq(&rgb_panel->hal, rgb_panel->src_clk_hz, rgb_panel->timings.pclk_hz, rgb_panel->lcd_clk_flags);
     }
     portEXIT_CRITICAL_ISR(&rgb_panel->spinlock);
 }
