@@ -299,6 +299,7 @@ static int uart_fcntl(int fd, int cmd, int arg)
     assert(fd >=0 && fd < 3);
     int result = 0;
     if (cmd == F_GETFL) {
+        result |= O_RDWR;
         if (s_ctx[fd]->non_blocking) {
             result |= O_NONBLOCK;
         }
