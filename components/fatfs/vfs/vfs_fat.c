@@ -576,7 +576,11 @@ static off_t vfs_fat_lseek(void* ctx, int fd, off_t offset, int mode)
         return -1;
     }
 
+#if FF_FS_EXFAT
+    ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%lld", __func__, new_pos, f_size(file));
+#else
     ESP_LOGD(TAG, "%s: offset=%ld, filesize:=%d", __func__, new_pos, f_size(file));
+#endif
     FRESULT res = f_lseek(file, new_pos);
     if (res != FR_OK) {
         ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
