@@ -110,3 +110,6 @@
 [submodule "components/ieee802154/lib"]
 	path = components/ieee802154/lib
 	url = ../../espressif/esp-ieee802154-lib.git
+[submodule "components/spi_nand_flash/dhara"]
+	path = components/spi_nand_flash/dhara
+	url = https://github.com/dlbeer/dhara.git

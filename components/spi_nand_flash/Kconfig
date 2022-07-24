@@ -1,0 +1,9 @@
+menu "SPI Nand Flash driver"
+
+    config SPI_FLASH_NAND_ENABLED
+        bool "Enable the Nand Flash driver"
+        default y
+        help
+            If this option is enabled, the NAND driver is included
+
+endmenu
