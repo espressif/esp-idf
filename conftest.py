@@ -86,17 +86,15 @@ def get_target_marker(markexpr: str) -> str:
 ############
 # Fixtures #
 ############
-_TEST_SESSION_TMPDIR = os.path.join(
-    os.path.dirname(__file__),
-    'pytest_embedded_log',
-    datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-)
-os.makedirs(_TEST_SESSION_TMPDIR, exist_ok=True)
-
-
 @pytest.fixture(scope='session', autouse=True)
 def session_tempdir() -> str:
-    return _TEST_SESSION_TMPDIR
+    _tmpdir = os.path.join(
+        os.path.dirname(__file__),
+        'pytest_embedded_log',
+        datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+    )
+    os.makedirs(_tmpdir, exist_ok=True)
+    return _tmpdir
 
 
 @pytest.fixture()
