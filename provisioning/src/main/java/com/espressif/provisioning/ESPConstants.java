@@ -56,4 +56,6 @@ public class ESPConstants {
     public static final short WIFI_WPA2_PSK = 3;
     public static final short WIFI_WPA_WPA2_PSK = 4;
     public static final short WIFI_WPA2_ENTERPRISE = 5;
+    public static final short WIFI_WPA3_PSK = 6;
+    public static final short WIFI_WPA2_WPA3_PSK = 7;
 }

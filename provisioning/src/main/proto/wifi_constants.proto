@@ -20,7 +20,10 @@ enum WifiAuthMode {
     WPA2_PSK = 3;
     WPA_WPA2_PSK = 4;
     WPA2_ENTERPRISE = 5;
+    WPA3_PSK = 6;
+    WPA2_WPA3_PSK = 7;
 }
+
 message WifiConnectedState {
     string ip4_addr = 1;
     WifiAuthMode auth_mode = 2;
@@ -28,4 +31,3 @@ message WifiConnectedState {
     bytes bssid = 4;
     int32 channel = 5;
 }
-
