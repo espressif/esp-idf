@@ -35,15 +35,6 @@ void ulp_riscv_halt(void)
     while(1);
 }
 
-void ulp_riscv_delay_cycles(uint32_t cycles)
-{
-    uint32_t start = ULP_RISCV_GET_CCOUNT();
-
-    while ((ULP_RISCV_GET_CCOUNT() - start) < cycles) {
-        /* Wait */
-    }
-}
-
 void ulp_riscv_timer_stop(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
