@@ -8,11 +8,10 @@ import sys
 from asyncio.subprocess import Process
 from io import open
 from types import FunctionType
-from typing import Any, Dict, List, Optional, TextIO, Tuple, Union
+from typing import Any, Dict, List, Match, Optional, TextIO, Tuple, Union
 
 import click
 import yaml
-from idf_monitor_base.output_helpers import yellow_print
 
 from .constants import GENERATORS
 from .errors import FatalError
@@ -79,6 +78,23 @@ def idf_version() -> Optional[str]:
     return version
 
 
+def color_print(message: str, color: str, newline: Optional[str]='\n') -> None:
+    """ Print a message to stderr with colored highlighting """
+    ansi_normal = '\033[0m'
+    sys.stderr.write('%s%s%s%s' % (color, message, ansi_normal, newline))
+    sys.stderr.flush()
+
+
+def yellow_print(message: str, newline: Optional[str]='\n') -> None:
+    ansi_yellow = '\033[0;33m'
+    color_print(message, ansi_yellow, newline)
+
+
+def red_print(message: str, newline: Optional[str]='\n') -> None:
+    ansi_red = '\033[1;31m'
+    color_print(message, ansi_red, newline)
+
+
 def print_hints(*filenames: str) -> None:
     """Getting output files and printing hints on how to resolve errors based on the output."""
     with open(os.path.join(os.path.dirname(__file__), 'hints.yml'), 'r') as file:
@@ -87,18 +103,39 @@ def print_hints(*filenames: str) -> None:
         with open(file_name, 'r') as file:
             output = ' '.join(line.strip() for line in file if line.strip())
         for hint in hints:
+            variables_list = hint.get('variables')
+            hint_list, hint_vars, re_vars = [], [], []
+            match: Optional[Match[str]] = None
             try:
-                match = re.compile(hint['re']).findall(output)
-            except KeyError:
-                raise KeyError("Argument 're' missing in {}. Check hints.yml file.".format(hint))
+                if variables_list:
+                    for variables in variables_list:
+                        hint_vars = variables['re_variables']
+                        re_vars = variables['hint_variables']
+                        regex = hint['re'].format(*re_vars)
+                        if re.compile(regex).search(output):
+                            try:
+                                hint_list.append(hint['hint'].format(*hint_vars))
+                            except KeyError as e:
+                                red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
+                                sys.exit(1)
+                else:
+                    match = re.compile(hint['re']).search(output)
+            except KeyError as e:
+                red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
+                sys.exit(1)
             except re.error as e:
-                raise re.error('{} from hints.yml have {} problem. Check hints.yml file.'.format(hint['re'], e))
-            if match:
-                extra_info = ', '.join(match) if hint.get('match_to_output', '') else ''
+                red_print('{} from hints.yml have {} problem. Check hints.yml file.'.format(hint['re'], e))
+                sys.exit(1)
+            if hint_list:
+                for message in hint_list:
+                    yellow_print('HINT:', message)
+            elif match:
+                extra_info = ', '.join(match.groups()) if hint.get('match_to_output', '') else ''
                 try:
                     yellow_print(' '.join(['HINT:', hint['hint'].format(extra_info)]))
-                except KeyError:
-                    raise KeyError("Argument 'hint' missing in {}. Check hints.yml file.".format(hint))
+                except KeyError as e:
+                    red_print('Argument {} missing in {}. Check hints.yml file.'.format(e, hint))
+                    sys.exit(1)
 
 
 def fit_text_in_terminal(out: str) -> str:
