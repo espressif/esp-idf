@@ -243,8 +243,8 @@ Flash Encryption Configuration
 
 The following flash encryption modes are available:
 
-- :ref:`flash-enc-development-mode` - recommended for use ONLY DURING DEVELOPMENT, as it does not prevent modification and readout of encrypted flash contents.
-- :ref:`flash-enc-release-mode` - recommended for manufacturing and production to prevent physical readout of encrypted flash contents.
+- :ref:`flash-enc-development-mode` - recommended for use only during development. In this mode, it is still possible to flash new plaintext firmware to the device, and the bootloader will transparently encrypt this firmware using the key stored in hardware. This allows, indirectly, to read out the plaintext of the firmware in flash.
+- :ref:`flash-enc-release-mode` - recommended for manufacturing and production. In this mode, flashing plaintext firmware to the device without knowing the encryption key is no longer possible.
 
 This section provides information on the mentioned flash encryption modes and step by step instructions on how to use them.
 

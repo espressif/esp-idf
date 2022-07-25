@@ -243,8 +243,8 @@ Flash 加密设置
 
 提供以下 flash 加密模式：
 
-- :ref:`flash-enc-development-mode` - 建议仅在开发过程中使用，因为它不会阻止修改和读取加密的 flash 内容。
-- :ref:`flash-enc-release-mode` - 建议用于制造和生产，以防止物理读取加密的 flash 内容。
+- :ref:`flash-enc-development-mode` - 建议仅在开发过程中使用。因为在这种模式下，仍然可以将新的明文固件烧录到设备，并且引导加载程序将使用存储在硬件中的密钥对该固件进行透明加密。此操作间接允许从 flash 中读出固件明文。
+- :ref:`flash-enc-release-mode` - 推荐用于制造和生产。因为在这种模式下，如果不知道加密密钥，则不可能将明文固件烧录到设备。
 
 本节将详细介绍上述 flash 加密模式，并且逐步说明如何使用它们。
 
