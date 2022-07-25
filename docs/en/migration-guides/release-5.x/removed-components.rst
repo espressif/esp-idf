@@ -18,6 +18,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
 * `expat <https://components.espressif.com/component/espressif/expat>`_
 * `coap <https://components.espressif.com/component/espressif/coap>`_
+* `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_
 
 .. note::
     Please note that http parser functionality which was previously part of ``nghttp`` component is now part of :component:`http_parser <http_parser>` component.
