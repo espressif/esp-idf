@@ -159,22 +159,25 @@ build:integration_test:
 # To reduce the specific runners' usage.
 # Do not create these jobs by default patterns on development branches
 # Can be triggered by labels or related changes
-"test:example_test-{0}-{1}":
+"test:{0}-{1}-{2}":
   matrix:
+    - *target_test
     - *all_targets
     - - bt        # example_test_005
       - wifi      # example_test_002, example_test*wifi*
       - ethernet  # example_test*ethernet*
+      - sdio      # UT_044, UT_045
   patterns:
-    - "example_test-{0}-{1}"
-    - "example_test-{1}"
+    - "{0}-{1}-{2}"
+    - "{0}-{2}"
+    - "target_test-{2}"
   labels:
-    - "example_test_{0}"
-    - example_test
+    - "{0}_{1}"
+    - "{0}"
     - target_test
   included_in:
-    - "build:example_test-{0}"
-    - "build:example_test"
+    - "build:{0}-{1}"
+    - "build:{0}"
     - build:target_test
 
 # For example_test*flash_encryption_wifi_high_traffic jobs
