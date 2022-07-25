@@ -99,6 +99,10 @@ config SOC_SDM_SUPPORTED
     bool
     default y
 
+config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORT_COEXISTENCE
     bool
     default n
@@ -618,10 +622,6 @@ config SOC_SYSTIMER_BIT_WIDTH_LO
 config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 32
-
-config SOC_SYSTIMER_SUPPORTED
-    bool
-    default y
 
 config SOC_TIMER_GROUPS
     int

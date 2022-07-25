@@ -3,3 +3,5 @@ archive: libesp_rom.a
 entries:
     esp_rom_spiflash (noflash)
     esp_rom_regi2c (noflash)
+    if SOC_SYSTIMER_SUPPORTED = y:
+        esp_rom_systimer (noflash)

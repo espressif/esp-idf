@@ -40,6 +40,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "esp_async_memcpy.c")
     endif()
 
+    if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+        list(APPEND srcs "port/${target}/systimer.c")
+    endif()
+
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

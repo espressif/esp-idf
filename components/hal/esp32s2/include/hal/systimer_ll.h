@@ -10,11 +10,8 @@
 #include "soc/systimer_struct.h"
 #include "hal/assert.h"
 
-#define SYSTIMER_LL_COUNTER_CLOCK (0) // Counter used for "wallclock" time
-#define SYSTIMER_LL_ALARM_CLOCK   (2) // Alarm used for "wallclock" time
-
-#define SYSTIMER_LL_TICKS_PER_US  (80) // 80 systimer ticks == 1us
-#define SYSTIMER_LL_TICKS_PER_US_DIV    (1)
+#define SYSTIMER_LL_COUNTER_CLOCK 0 // Counter used by esptimer, to generate the system level wall clock
+#define SYSTIMER_LL_ALARM_CLOCK   2 // Alarm used by esptimer
 
 #ifdef __cplusplus
 extern "C" {
