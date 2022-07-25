@@ -55,8 +55,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
 
-* `cryptoauthlib`_ Microchip CryptoAuthentication Library - Copyright (c) 2015 - 2018 Microchip Technology Inc, is licensed under common Microchip software License as described in :example_file:`LICENSE file <peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/LICENSE>`
-
 * `TLSF allocator <https://github.com/espressif/tlsf>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD 3-clause license.
 
 * `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
@@ -167,7 +165,6 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
-.. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
 .. _qrcode: https://github.com/nayuki/QR-Code-generator
 .. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
 .. _SEGGER SystemView: https://www.segger.com/downloads/systemview/
