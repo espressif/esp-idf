@@ -442,9 +442,17 @@ test_pytest_qemu:
     - .host_test_template
     - .before_script_build_jobs
   image: $QEMU_IMAGE
+  artifacts:
+    when: always
+    paths:
+      - XUNIT_RESULT.xml
+      - pytest_embedded_log/
+    reports:
+      junit: XUNIT_RESULT.xml
+    expire_in: 1 week
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -vv
       --target esp32
       --pytest-apps
       -m qemu
-    - pytest --target esp32 -m qemu --embedded-services idf,qemu
+    - pytest --target esp32 -m qemu --embedded-services idf,qemu --junitxml=XUNIT_RESULT.xml
