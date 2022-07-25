@@ -34,10 +34,31 @@
 #endif
 #include "esp_flash.h"
 #include "hal/spi_flash_hal.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// Type of MSPI IO
+typedef enum {
+    ESP_MSPI_IO_CLK = 0,
+    ESP_MSPI_IO_Q,
+    ESP_MSPI_IO_D,
+    ESP_MSPI_IO_CS0, /* cs for spi flash */
+    ESP_MSPI_IO_HD,
+    ESP_MSPI_IO_WP,
+#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+    ESP_MSPI_IO_DQS,
+    ESP_MSPI_IO_D4,
+    ESP_MSPI_IO_D5,
+    ESP_MSPI_IO_D6,
+    ESP_MSPI_IO_D7,
+#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if CONFIG_SPIRAM
+    ESP_MSPI_IO_CS1 /* cs for spi ram */
+#endif
+} esp_mspi_io_t;
 
 /**
  * @brief To setup Flash chip
@@ -79,6 +100,15 @@ void spi_timing_psram_tuning(void);
  * @brief To initislize the MSPI pins
  */
 void esp_mspi_pin_init(void);
+
+/**
+ * @brief Get the number of the GPIO corresponding to the given MSPI io
+ *
+ * @param[in] io  MSPI io
+ *
+ * @return MSPI IO number
+ */
+uint8_t esp_mspi_get_io(esp_mspi_io_t io);
 
 /**
  * @brief Set SPI1 registers to make ROM functions work

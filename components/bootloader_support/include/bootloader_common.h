@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-/// Type of hold a GPIO in low state
+// Type of hold a GPIO in low state
 typedef enum {
     GPIO_LONG_HOLD  = 1,    /*!< The long hold GPIO */
     GPIO_SHORT_HOLD = -1,   /*!< The short hold GPIO */
