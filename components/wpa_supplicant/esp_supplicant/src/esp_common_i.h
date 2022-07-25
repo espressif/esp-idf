@@ -11,7 +11,7 @@
 
 struct wpa_funcs;
 
-#ifdef ROAMING_SUPPORT
+#ifdef CONFIG_WPA_11KV_SUPPORT
 struct ieee_mgmt_frame {
 	u8 sender[ETH_ALEN];
 	u8 channel;
@@ -41,7 +41,6 @@ void esp_get_tx_power(uint8_t *tx_power);
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
 void esp_set_scan_ie(void);
-void esp_set_assoc_ie(void);
 #else
 
 #include "esp_rrm.h"
@@ -49,24 +48,7 @@ void esp_set_assoc_ie(void);
 #include "esp_mbo.h"
 
 static inline void esp_set_scan_ie(void) { }
-static inline void esp_set_assoc_ie(void) { }
 
-int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
-				      void *cb_ctx)
-{
-	return -1;
-}
-
-int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
-					   const char *btm_candidates,
-					   int cand_list)
-{
-	return -1;
-}
-
-int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
-{
-	return -1;
-}
 #endif
+void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool add_mdie);
 #endif

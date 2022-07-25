@@ -105,6 +105,7 @@ typedef struct {
     size_t num_pmkid;
     const u8 *pmkid;
     int mgmt_group_cipher;
+    uint8_t rsnxe_capa;
 } wifi_wpa_ie_t;
 
 struct wpa_funcs {
@@ -130,6 +131,7 @@ struct wpa_funcs {
     int (*wpa_sta_rx_mgmt)(u8 type, u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel, u64 current_tsf);
     void (*wpa_config_done)(void);
     bool (*wpa_sta_profile_match)(u8 *bssid);
+    int (*wpa_sta_set_ap_rsnxe)(const u8 *rsnxe, size_t rsnxe_ie_len);
 };
 
 struct wpa2_funcs {
@@ -268,5 +270,8 @@ esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
 esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
                                      uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
+uint8_t esp_wifi_sta_get_config_sae_pwe_h2e_internal(void);
+uint8_t esp_wifi_sta_get_use_h2e_internal(void);
+void esp_wifi_sta_disable_wpa2_authmode_internal(void);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

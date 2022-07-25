@@ -107,6 +107,11 @@ size_t crypto_ec_prime_len(struct crypto_ec *e)
 	return mbedtls_mpi_size(&e->group.P);
 }
 
+size_t crypto_ec_order_len(struct crypto_ec *e)
+{
+	return mbedtls_mpi_size(&e->group.N);
+}
+
 
 size_t crypto_ec_prime_len_bits(struct crypto_ec *e)
 {
@@ -141,6 +146,12 @@ const struct crypto_bignum *crypto_ec_get_prime(struct crypto_ec *e)
 const struct crypto_bignum *crypto_ec_get_order(struct crypto_ec *e)
 {
 	return (const struct crypto_bignum *) &e->group.N;
+}
+
+
+const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e)
+{
+	return (const struct crypto_bignum *) &e->group.B;
 }
 
 

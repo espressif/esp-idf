@@ -29,6 +29,7 @@
 #include "crypto/aes_wrap.h"
 #include "crypto/ccmp.h"
 #include "esp_rom_sys.h"
+#include "esp_common_i.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -614,6 +615,8 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     struct wpa_eapol_ie_parse ie;
     struct wpa_ptk *ptk;
     int res;
+    u8 *kde, *kde_buf = NULL;
+    size_t kde_len;
 
     wpa_sm_set_state(WPA_FIRST_HALF_4WAY_HANDSHAKE);
 
@@ -669,16 +672,30 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     sm->tptk_set = 1;
     sm->ptk_set = 0;
     sm->key_install = true;
+    kde = sm->assoc_wpa_ie;
+    kde_len = sm->assoc_wpa_ie_len;
+    kde_buf = os_malloc(kde_len +
+                sm->assoc_rsnxe_len);
+    if (!kde_buf)
+        goto failed;
+    os_memcpy(kde_buf, kde, kde_len);
+    kde = kde_buf;
+
+    if (sm->assoc_rsnxe && sm->assoc_rsnxe_len) {
+        os_memcpy(kde + kde_len, sm->assoc_rsnxe, sm->assoc_rsnxe_len);
+        kde_len += sm->assoc_rsnxe_len;
+    }
 
     if (wpa_supplicant_send_2_of_4(sm, sm->bssid, key, ver, sm->snonce,
-                       sm->assoc_wpa_ie, sm->assoc_wpa_ie_len,
-                       ptk))
+                       kde, kde_len, ptk))
         goto failed;
 
+    os_free(kde_buf);
     memcpy(sm->anonce, key->key_nonce, WPA_NONCE_LEN);
     return;
 
 failed:
+    os_free(kde_buf);
     wpa_sm_deauthenticate(sm, WLAN_REASON_UNSPECIFIED);
 }
 
@@ -1062,6 +1079,22 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
         return -1;
     }
 
+    if (sm->proto == WPA_PROTO_RSN &&
+        ((sm->ap_rsnxe && !ie->rsnxe) ||
+         (!sm->ap_rsnxe && ie->rsnxe) ||
+         (sm->ap_rsnxe && ie->rsnxe &&
+          (sm->ap_rsnxe_len != ie->rsnxe_len ||
+           os_memcmp(sm->ap_rsnxe, ie->rsnxe, sm->ap_rsnxe_len) != 0)))) {
+        wpa_printf(MSG_INFO,
+            "WPA: RSNXE mismatch between Beacon/ProbeResp and EAPOL-Key msg 3/4");
+        wpa_hexdump(MSG_INFO, "RSNXE in Beacon/ProbeResp",
+                sm->ap_rsnxe, sm->ap_rsnxe_len);
+        wpa_hexdump(MSG_INFO, "RSNXE in EAPOL-Key msg 3/4",
+                ie->rsnxe, ie->rsnxe_len);
+        wpa_sm_deauthenticate(sm, WLAN_REASON_IE_IN_4WAY_DIFFERS);
+        return -1;
+    }
+
     return 0;
 }
 
@@ -1228,6 +1261,9 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
         #endif
         goto failed;
     }
+
+    if (ie.transition_disable)
+        esp_wifi_sta_disable_wpa2_authmode_internal();
 
     if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL) {
         wpa_supplicant_install_ptk(sm, KEY_FLAG_RX);
@@ -2135,6 +2171,8 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
     sm->wpa_deauthenticate = wpa_deauth;
     sm->wpa_neg_complete = wpa_neg_complete;
     sm->key_install = false;
+    sm->ap_rsnxe = NULL;
+    sm->assoc_rsnxe = NULL;
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
     sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
@@ -2158,6 +2196,10 @@ void wpa_sm_deinit(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
+    os_free(sm->ap_rsnxe);
+    sm->ap_rsnxe = NULL;
+    os_free(sm->assoc_rsnxe);
+    sm->assoc_rsnxe = NULL;
 }
 
 
@@ -2208,6 +2250,8 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
     bool use_pmk_cache = true;
+    u8 assoc_rsnxe[20];
+    size_t assoc_rsnxe_len = sizeof(assoc_rsnxe);
 
     /* Incase AP has changed it's SSID, don't try with PMK caching for SAE connection */
     /* Ideally we should use network_ctx for this purpose however currently network profile block
@@ -2277,6 +2321,14 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     if (res < 0)
         return -1;
     sm->assoc_wpa_ie_len = res;
+    res = wpa_gen_rsnxe(sm ,assoc_rsnxe, assoc_rsnxe_len);
+    if (res < 0)
+        return -1;
+    assoc_rsnxe_len = res;
+    res = wpa_sm_set_assoc_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
+    if (res < 0)
+        return -1;
+    esp_set_assoc_ie((uint8_t *)bssid, assoc_rsnxe, assoc_rsnxe_len, true);
     os_memset(sm->ssid, 0, sizeof(sm->ssid));
     os_memcpy(sm->ssid, ssid, ssid_len);
     sm->ssid_len = ssid_len;
@@ -2519,6 +2571,57 @@ void wpa_sta_clear_curr_pmksa(void) {
     if (sm->pmksa)
         pmksa_cache_flush(sm->pmksa, NULL, sm->pmk, sm->pmk_len);
     pmksa_cache_clear_current(sm);
+}
+
+struct wpa_sm * get_wpa_sm(void)
+{
+    return &gWpaSm;
+}
+
+int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    if (!sm)
+        return -1;
+
+    os_free(sm->ap_rsnxe);
+    if (!ie || len == 0) {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+        sm->ap_rsnxe = NULL;
+        sm->ap_rsnxe_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "WPA: set AP RSNXE", ie, len);
+        sm->ap_rsnxe = os_memdup(ie, len);
+        if (!sm->ap_rsnxe)
+            return -1;
+
+        sm->ap_rsnxe_len = len;
+    }
+
+    sm->sae_pwe = esp_wifi_sta_get_config_sae_pwe_h2e_internal();
+    return 0;
+}
+
+
+int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+    if (!sm)
+        return -1;
+
+    os_free(sm->assoc_rsnxe);
+    if (!ie || len == 0) {
+        sm->assoc_rsnxe = NULL;
+        sm->assoc_rsnxe_len = 0;
+    } else {
+        wpa_hexdump(MSG_DEBUG, "RSN: set own RSNXE", ie, len);
+        sm->assoc_rsnxe = os_memdup(ie, len);
+        if (!sm->assoc_rsnxe)
+            return -1;
+
+        sm->assoc_rsnxe_len = len;
+    }
+
+    return 0;
 }
 
 #endif // ESP_SUPPLICANT

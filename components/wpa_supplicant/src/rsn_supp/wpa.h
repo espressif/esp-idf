@@ -136,4 +136,12 @@ unsigned cipher_type_map_public_to_supp(wifi_cipher_type_t cipher);
 
 void wpa_sta_clear_curr_pmksa(void);
 
+int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len);
+
+int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
+
+struct wpa_sm * get_wpa_sm(void);
+
+void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
+
 #endif /* WPA_H */
