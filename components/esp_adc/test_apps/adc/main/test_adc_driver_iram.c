@@ -219,7 +219,7 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_oneshot]")
     //This may need to be bigger, when the sampling freq is low
     uint32_t overhead_us = 150;
 #else
-    uint32_t overhead_us = 0;
+    uint32_t overhead_us = 50;
 #endif
     uint32_t wait_time_us = (1000 * 1000 / ADC_TEST_FREQ_HZ * ADC_TEST_PKG_SIZE / SOC_ADC_DIGI_RESULT_BYTES) + overhead_us;
     printf("period is %d us\n", wait_time_us);
