@@ -568,7 +568,7 @@ void controller_sleep_deinit(void)
 }
 
 #if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
-void periph_module_etm_active()
+void periph_module_etm_active(void)
 {
     /*This part for esp32h2 beta2*/
     REG_SET_BIT(SYSTEM_MODCLK_CONF_REG, SYSTEM_ETM_CLK_SEL | SYSTEM_ETM_CLK_ACTIVE ); //Active ETM clock
