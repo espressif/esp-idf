@@ -129,7 +129,12 @@ def main(args: argparse.Namespace) -> None:
             if app.preserve:
                 continue
             for extra_preserve_dir in args.extra_preserve_dirs:
-                if Path(extra_preserve_dir).resolve() in Path(app.app_dir).resolve().parents:
+                abs_extra_preserve_dir = Path(extra_preserve_dir).resolve()
+                abs_app_dir = Path(app.app_dir).resolve()
+                if (
+                    abs_extra_preserve_dir == abs_app_dir
+                    or abs_extra_preserve_dir in abs_app_dir.parents
+                ):
                     app.preserve = True
 
     ret_code = build_apps(
@@ -225,8 +230,9 @@ if __name__ == '__main__':
         help='Copy the sdkconfig file to the build directory.',
     )
     parser.add_argument(
-        '--extra-preserve-dirs', nargs='+',
-        help='also preserve binaries of the apps under the specified dirs'
+        '--extra-preserve-dirs',
+        nargs='+',
+        help='also preserve binaries of the apps under the specified dirs',
     )
 
     parser.add_argument(
