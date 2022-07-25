@@ -28,3 +28,5 @@ entries:
         gdma: gdma_stop (noflash)
         gdma: gdma_append (noflash)
         gdma: gdma_reset (noflash)
+    if SOC_SYSTIMER_SUPPORTED = y:
+        systimer (noflash)
