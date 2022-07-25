@@ -23,10 +23,6 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
-config SOC_ESP_NIMBLE_CONTROLLER
-    bool
-    default y
-
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -736,5 +732,13 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     default y
 
 config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y
