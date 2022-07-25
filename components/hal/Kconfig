@@ -67,7 +67,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
 
     config HAL_SYSTIMER_USE_ROM_IMPL
         bool "Use ROM implementation of SysTimer HAL driver"
-        depends on ESP_ROM_HAS_HAL_SYSTIMER && !ESP32C2_XTAL_FREQ_26
+        depends on ESP_ROM_HAS_HAL_SYSTIMER
         default y
         help
             Enable this flag to use HAL functions from ROM instead of ESP-IDF.

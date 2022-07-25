@@ -28,6 +28,10 @@ if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND sources "patches/esp_rom_longjmp.S")
 endif()
 
+if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+    list(APPEND sources "patches/esp_rom_systimer.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
