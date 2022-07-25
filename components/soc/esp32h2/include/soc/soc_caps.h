@@ -38,7 +38,6 @@
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
-#define SOC_ESP_NIMBLE_CONTROLLER       1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -358,3 +357,7 @@
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */

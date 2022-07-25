@@ -29,7 +29,6 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
-#define SOC_ESP_NIMBLE_CONTROLLER       1
 #define SOC_WIFI_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -277,3 +276,7 @@
 #define SOC_WIFI_WAPI_SUPPORT           (0)    /*!< WAPI is not supported */
 #define SOC_WIFI_CSI_SUPPORT            (0)    /*!< CSI is not supported */
 #define SOC_WIFI_MESH_SUPPORT           (0)    /*!< WIFI MESH is not supported */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_ESP_NIMBLE_CONTROLLER       (1)    /*!< Support BLE EMBEDDED controller V1 */

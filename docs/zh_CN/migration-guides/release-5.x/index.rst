@@ -6,7 +6,8 @@
 .. toctree::
     :maxdepth: 1
 
-    :SOC_CLASSIC_BT_SUPPORTED: bluetooth-classic
+    :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
+    bluetooth-low-energy
     build-system
     gcc
     networking
