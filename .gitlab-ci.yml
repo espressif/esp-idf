@@ -142,9 +142,16 @@ cache:
     rm -rf ${CI_PYTHON_TOOL_REPO}
   fi
 
+.set_include_nightly_run: &set_include_nightly_run |
+  # in bash regex, (?:..) -> (..)
+  if [[ "$CI_MERGE_REQUEST_LABELS" =~ ^([^,\n\r]+,)*include_nightly_run(,[^,\n\r]+)*$ ]]; then
+    export INCLUDE_NIGHTLY_RUN="1"
+  fi
+
 before_script:
   - source tools/ci/utils.sh
   - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+  - *set_include_nightly_run
   - source tools/ci/setup_python.sh
   - add_gitlab_ssh_keys
   - source tools/ci/configure_ci_environment.sh
@@ -162,6 +169,7 @@ before_script:
     - echo "Not setting up GitLab key, not fetching submodules"
     - source tools/ci/utils.sh
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - *set_include_nightly_run
     - source tools/ci/setup_python.sh
     - source tools/ci/configure_ci_environment.sh
     - *download_test_python_contraint_file
@@ -172,12 +180,14 @@ before_script:
     - echo "Only load utils.sh"
     - source tools/ci/utils.sh
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - *set_include_nightly_run
 
 .before_script_integration_test:
   before_script:
     # need to install esptool, needn't install idf python env
   - source tools/ci/utils.sh
   - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+  - *set_include_nightly_run
   - source tools/ci/setup_python.sh
   - add_gitlab_ssh_keys
   - fetch_submodules
@@ -193,6 +203,7 @@ before_script:
   before_script:
     - source tools/ci/utils.sh
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - *set_include_nightly_run
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     - *download_test_python_contraint_file
     - $IDF_PATH/tools/idf_tools.py install-python-env
@@ -211,6 +222,7 @@ before_script:
   before_script:
     - source tools/ci/utils.sh
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - *set_include_nightly_run
     - source tools/ci/setup_python.sh
     - add_gitlab_ssh_keys
     - source tools/ci/configure_ci_environment.sh
@@ -226,6 +238,7 @@ before_script:
   before_script:
     - source tools/ci/utils.sh
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - *set_include_nightly_run
     - source tools/ci/setup_python.sh
     - add_gitlab_ssh_keys
     - source tools/ci/configure_ci_environment.sh
