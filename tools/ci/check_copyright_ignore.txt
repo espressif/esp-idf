@@ -957,7 +957,6 @@ components/pthread/test/test_pthread_local_storage.c
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
 components/riscv/include/riscv/instruction_decode.h
-components/riscv/include/riscv/riscv_interrupts.h
 components/riscv/include/riscv/rvruntime-frames.h
 components/riscv/instruction_decode.c
 components/sdmmc/sdmmc_common.c

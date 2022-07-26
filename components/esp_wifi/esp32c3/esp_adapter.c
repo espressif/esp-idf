@@ -18,7 +18,6 @@
 #include "freertos/event_groups.h"
 #include "freertos/portmacro.h"
 #include "riscv/interrupt.h"
-#include "riscv/riscv_interrupts.h"
 #include "esp_types.h"
 #include "esp_random.h"
 #include "esp_mac.h"
