@@ -163,6 +163,12 @@ or with Fish shell
     cd ~/esp/esp-idf
     ./install.fish all
 
+.. note::
+   For macOS users, if an error like this is shown during any step::
+
+     <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:xxx)
+
+   You may run ``Install Certificates.command`` in the Python folder of your computer to install certificates. For details, see `Download Error While Installing ESP-IDF Tools <https://github.com/espressif/esp-idf/issues/4775>`_.
 
 Alternative File Downloads
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
