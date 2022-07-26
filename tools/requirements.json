@@ -18,6 +18,12 @@
             "description": "Packages for CI with pytest",
             "optional": true,
             "requirement_path": "tools/requirements/requirements.pytest.txt"
+        },
+        {
+            "name": "docs",
+            "description": "Packages for building ESP-IDF documentation",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.docs.txt"
         }
     ]
 }
