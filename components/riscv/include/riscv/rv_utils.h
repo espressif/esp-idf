@@ -83,7 +83,7 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
 
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
-    //Disable all interrupts to make updating of the interrupt mask atomic.
+    // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_intc_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
@@ -91,7 +91,7 @@ FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 
 FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
-    //Disable all interrupts to make updating of the interrupt mask atomic.
+    // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_intc_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
@@ -105,6 +105,16 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(int intr_num)
 {
     REG_SET_BIT(INTERRUPT_CORE0_CPU_INT_CLEAR_REG, intr_num);
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
+{
+    RV_SET_CSR(mstatus, MSTATUS_MIE);
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
+{
+    RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 }
 
 /* -------------------------------------------------- Memory Ports -----------------------------------------------------

@@ -12,7 +12,7 @@
 #include "hal/systimer_hal.h"
 #include "hal/systimer_ll.h"
 #include "riscv/rvruntime-frames.h"
-#include "riscv/riscv_interrupts.h"
+#include "riscv/rv_utils.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_private/esp_int_wdt.h"
@@ -417,7 +417,7 @@ BaseType_t xPortStartScheduler(void)
     vPortSetupTimer();
 
     esprv_intc_int_set_threshold(1); /* set global INTC masking level */
-    riscv_global_interrupts_enable();
+    rv_utils_intr_global_enable();
 
     vPortYield();
 
