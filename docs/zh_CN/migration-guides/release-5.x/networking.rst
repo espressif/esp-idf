@@ -56,6 +56,7 @@ PHY Address Auto-detect
 -----------------------
 Ethernet PHY address auto-detect function ``esp_eth_detect_phy_addr`` was renamed to :cpp:func:`esp_eth_phy_802_3_detect_phy_addr` and its header declaration was moved to :component_file:`esp_eth/include/esp_eth_phy_802_3.h`.
 
+.. _tcpip-adapter:
 
 TCP/IP 适配器
 *************

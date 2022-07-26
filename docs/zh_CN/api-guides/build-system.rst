@@ -303,7 +303,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 - ``SRCS`` 是源文件列表（``*.c``、``*.cpp``、``*.cc``、``*.S``），里面所有的源文件都将会编译进组件库中。
 - ``INCLUDE_DIRS`` 是目录列表，里面的路径会被添加到所有需要该组件的组件（包括 main 组件）全局 include 搜索路径中。
-- ``REQUIRES`` 实际上并不是必需的，但通常需要它来声明该组件需要使用哪些其它组件，请参考 :ref:`component requirements`。
+- ``REQUIRES`` 实际上并不是必需的，但通常需要它来声明该组件需要使用哪些其它组件，请参考 :ref:`组件依赖 <component-requirements>`。
 
 上述命令会构建生成与组件同名的库，并最终被链接到应用程序中。
 
@@ -395,7 +395,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 - ``ESP_PLATFORM``：可以用来检测在 ESP-IDF 内发生了构建行为。
 - ``IDF_VER``：定义 git 版本字符串，例如：``v2.0`` 用于标记已发布的版本，``v1.0-275-g0efaa4f`` 则用于标记任意某次的提交记录。
 
-.. _component requirements:
+.. _component-requirements:
 
 组件依赖
 ========
