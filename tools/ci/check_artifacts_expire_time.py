@@ -17,14 +17,14 @@ if not IDF_PATH:
 GITLAB_CONFIG_FILE = os.path.join(IDF_PATH, '.gitlab-ci.yml')
 
 
-def check_artifacts_expire_time():
+def check_artifacts_expire_time() -> None:
     with open(GITLAB_CONFIG_FILE, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
     # load files listed in `include`
     if 'include' in config:
         for _file in config['include']:
-            with open(os.path.join(IDF_PATH, _file)) as f:
+            with open(os.path.join(IDF_PATH or '', _file)) as f:
                 config.update(yaml.load(f, Loader=yaml.FullLoader))
 
     print('expire time for jobs:')

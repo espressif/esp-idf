@@ -12,7 +12,7 @@ import os
 import re
 import sys
 from copy import deepcopy
-from typing import List
+from typing import Any, Dict, List, Optional, Set, Union
 
 import yaml
 from idf_ci_utils import IDF_PATH
@@ -20,20 +20,20 @@ from idf_ci_utils import IDF_PATH
 ROOT_YML_FP = os.path.join(IDF_PATH, '.gitlab-ci.yml')
 
 
-def load_yaml(file_path):
+def load_yaml(file_path: str) -> Any:
     return yaml.load(open(file_path), Loader=yaml.FullLoader)
 
 
 class YMLConfig:
-    def __init__(self, root_yml_file_path):
-        self._config = None
-        self._all_extends = None
+    def __init__(self, root_yml_file_path: str) -> None:
+        self._config: Optional[Dict] = None
+        self._all_extends: Optional[Set] = None
 
         self.root_yml = load_yaml(root_yml_file_path)
         assert self.root_yml
 
     @staticmethod
-    def _list(str_or_list):
+    def _list(str_or_list: Union[str, List]) -> List:
         if isinstance(str_or_list, str):
             return [str_or_list]
         if isinstance(str_or_list, list):
@@ -43,7 +43,7 @@ class YMLConfig:
         )
 
     @property
-    def config(self):
+    def config(self) -> Dict:
         if self._config:
             return self._config
 
@@ -54,7 +54,7 @@ class YMLConfig:
         return self._config
 
     @property
-    def all_extends(self):
+    def all_extends(self) -> Set:
         if self._all_extends:
             return self._all_extends
 
@@ -67,7 +67,7 @@ class YMLConfig:
         self._all_extends = res
         return self._all_extends
 
-    def exists(self, key):
+    def exists(self, key: str) -> bool:
         if key in self.all_extends:
             return True
         return False
@@ -76,7 +76,7 @@ class YMLConfig:
 YML_CONFIG = YMLConfig(ROOT_YML_FP)
 
 
-def validate_needed_rules(rules_yml):
+def validate_needed_rules(rules_yml: os.PathLike[str]) -> int:
     res = 0
     needed_rules = deepcopy(YML_CONFIG.all_extends)
     with open(rules_yml) as fr:
@@ -114,7 +114,7 @@ def parse_submodule_paths(
     return res
 
 
-def validate_submodule_patterns():
+def validate_submodule_patterns() -> int:
     submodule_paths = sorted(['.gitmodules'] + parse_submodule_paths())
     submodule_paths_in_patterns = sorted(
         YML_CONFIG.config.get('.patterns-submodule', [])

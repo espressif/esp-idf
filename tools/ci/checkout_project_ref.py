@@ -10,27 +10,28 @@ import json
 import os
 import re
 import subprocess
+from typing import List
 
 IDF_GIT_DESCRIBE_PATTERN = re.compile(r'^v(\d)\.(\d)')
 RETRY_COUNT = 3
 
 
-def get_customized_project_revision(proj_name):
+def get_customized_project_revision(proj_name: str) -> str:
     """
     get customized project revision defined in bot message
     """
     revision = ''
-    customized_project_revisions = os.getenv('BOT_CUSTOMIZED_REVISION')
-    if customized_project_revisions:
-        customized_project_revisions = json.loads(customized_project_revisions)
-    try:
-        revision = customized_project_revisions[proj_name.lower()]
-    except (KeyError, TypeError):
-        pass
+    customized_project_revisions_file = os.getenv('BOT_CUSTOMIZED_REVISION')
+    if customized_project_revisions_file:
+        customized_project_revisions = json.loads(customized_project_revisions_file)
+        try:
+            revision = customized_project_revisions[proj_name.lower()]
+        except (KeyError, TypeError):
+            pass
     return revision
 
 
-def target_branch_candidates(proj_name):
+def target_branch_candidates(proj_name: str) -> List:
     """
     :return: a list of target branch candidates, from highest priority to lowest priority.
     """

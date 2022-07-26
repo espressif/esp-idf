@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import time
+from typing import Any, List
 
 import gitlab_api
 
@@ -28,27 +29,26 @@ class SubModule(object):
 
     GIT_LS_TREE_OUTPUT_PATTERN = re.compile(r'\d+\s+commit\s+([0-9a-f]+)\s+')
 
-    def __init__(self, gitlab_inst, path, url):
+    def __init__(self, gitlab_inst: gitlab_api.Gitlab, path: str, url: str) -> None:
         self.path = path
         self.url = url
         self.gitlab_inst = gitlab_inst
         self.project_id = self._get_project_id(url)
         self.commit_id = self._get_commit_id(path)
 
-    def _get_commit_id(self, path):
-        output = subprocess.check_output(['git', 'ls-tree', 'HEAD', path])
-        output = output.decode()
+    def _get_commit_id(self, path: str) -> str:
+        output = subprocess.check_output(['git', 'ls-tree', 'HEAD', path]).decode()
         # example output: 160000 commit d88a262fbdf35e5abb372280eb08008749c3faa0	components/esp_wifi/lib
         match = self.GIT_LS_TREE_OUTPUT_PATTERN.search(output)
-        return match.group(1)
+        return match.group(1) if match is not None else ''
 
-    def _get_project_id(self, url):
+    def _get_project_id(self, url: str) -> Any:
         base_name = os.path.basename(url)
         project_id = self.gitlab_inst.get_project_id(os.path.splitext(base_name)[0],  # remove .git
                                                      namespace='espressif')
         return project_id
 
-    def download_archive(self):
+    def download_archive(self) -> None:
         print('Update submodule: {}: {}'.format(self.path, self.commit_id))
         path_name = self.gitlab_inst.download_archive(self.commit_id, SUBMODULE_ARCHIVE_TEMP_FOLDER,
                                                       self.project_id, SUBMODULE_ARCHIVE_CACHE_DIR)
@@ -58,33 +58,34 @@ class SubModule(object):
         shutil.move(renamed_path, os.path.dirname(self.path))
 
 
-def update_submodule(git_module_file, submodules_to_update):
+def update_submodule(git_module_file: str, submodules_to_update: List) -> None:
     gitlab_inst = gitlab_api.Gitlab()
     submodules = []
     with open(git_module_file, 'r') as f:
         data = f.read()
     match = SUBMODULE_PATTERN.search(data)
-    while True:
-        next_match = SUBMODULE_PATTERN.search(data, pos=match.end())
-        if next_match:
-            end_pos = next_match.start()
-        else:
-            end_pos = len(data)
-        path_match = PATH_PATTERN.search(data, pos=match.end(), endpos=end_pos)
-        url_match = URL_PATTERN.search(data, pos=match.end(), endpos=end_pos)
-        path = path_match.group(1)
-        url = url_match.group(1)
+    if match is not None:
+        while True:
+            next_match = SUBMODULE_PATTERN.search(data, pos=match.end())
+            if next_match:
+                end_pos = next_match.start()
+            else:
+                end_pos = len(data)
+            path_match = PATH_PATTERN.search(data, pos=match.end(), endpos=end_pos)
+            url_match = URL_PATTERN.search(data, pos=match.end(), endpos=end_pos)
+            path = path_match.group(1) if path_match is not None else ''
+            url = url_match.group(1) if url_match is not None else ''
 
-        filter_result = True
-        if submodules_to_update:
-            if path not in submodules_to_update:
-                filter_result = False
-        if filter_result:
-            submodules.append(SubModule(gitlab_inst, path, url))
+            filter_result = True
+            if submodules_to_update:
+                if path not in submodules_to_update:
+                    filter_result = False
+            if filter_result:
+                submodules.append(SubModule(gitlab_inst, path, url))
 
-        match = next_match
-        if not match:
-            break
+            match = next_match
+            if not match:
+                break
 
     shutil.rmtree(SUBMODULE_ARCHIVE_TEMP_FOLDER, ignore_errors=True)
 
