@@ -166,7 +166,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 .. note::
     对于 macOS 用户，如您在上述任何步骤中遇到以下错误::
 
-     <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1076)
+     <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:xxx)
 
     可运行您电脑 Python 文件夹中的 ``Install Certificates.command`` 安装证书。了解更多信息，请参考 `安装 ESP-IDF 工具时出现的下载错误 <https://github.com/espressif/esp-idf/issues/4775>`_。
 
