@@ -28,7 +28,7 @@ static const char *TAG = "rtc_clk";
 // Current PLL frequency, in 480MHZ. Zero if PLL is not enabled.
 static int s_cur_pll_freq;
 
-static void rtc_clk_cpu_freq_to_xtal(int freq, int div);
+void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 static void rtc_clk_cpu_freq_to_8m(void);
 
 void rtc_clk_32k_enable_external(void)
@@ -279,7 +279,7 @@ void rtc_clk_cpu_freq_set_xtal(void)
 /**
  * Switch to XTAL frequency. Does not disable the PLL.
  */
-static void rtc_clk_cpu_freq_to_xtal(int freq, int div)
+void rtc_clk_cpu_freq_to_xtal(int freq, int div)
 {
     ets_update_cpu_frequency(freq);
     /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
