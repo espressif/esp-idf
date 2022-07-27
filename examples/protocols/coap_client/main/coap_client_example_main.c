@@ -33,6 +33,11 @@
 
 #include "coap3/coap.h"
 
+
+#ifndef CONFIG_COAP_CLIENT_SUPPORT
+#error COAP_CLIENT_SUPPORT needs to be enabled
+#endif /* COAP_CLIENT_SUPPORT */
+
 #define COAP_DEFAULT_TIME_SEC 60
 
 /* The examples use simple Pre-Shared-Key configuration that you can set via
@@ -224,11 +229,15 @@ coap_build_optlist(coap_uri_t *uri)
     optlist = NULL;
 
     if (uri->scheme == COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) {
-        ESP_LOGE(TAG, "MbedTLS (D)TLS Client Mode not configured");
+        ESP_LOGE(TAG, "MbedTLS DTLS Client Mode not configured");
         return 0;
     }
     if (uri->scheme == COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported()) {
-        ESP_LOGE(TAG, "CoAP server uri->+tcp:// scheme is not supported");
+        ESP_LOGE(TAG, "MbedTLS TLS Client Mode not configured");
+        return 0;
+    }
+    if (uri->scheme == COAP_URI_SCHEME_COAP_TCP && !coap_tcp_is_supported()) {
+        ESP_LOGE(TAG, "TCP Client Mode not configured");
         return 0;
     }
 
@@ -389,10 +398,6 @@ static void coap_example_client(void *p)
     /*
      * Note that if the URI starts with just coap:// (not coaps://) the
      * session will still be plain text.
-     *
-     * coaps+tcp:// is NOT yet supported by the libcoap->mbedtls interface
-     * so COAP_URI_SCHEME_COAPS_TCP will have failed in a test above,
-     * but the code is left in for completeness.
      */
     if (uri.scheme == COAP_URI_SCHEME_COAPS || uri.scheme == COAP_URI_SCHEME_COAPS_TCP) {
 #ifndef CONFIG_MBEDTLS_TLS_CLIENT
