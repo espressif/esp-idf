@@ -156,7 +156,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
         hints = not args.no_hints
 
-        RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints)()
+        RunTool('idf_monitor', monitor_args, args.project_dir, build_dir=args.build_dir, hints=hints, interactive=True)()
 
     def flash(action: str, ctx: click.core.Context, args: PropertyDict) -> None:
         """

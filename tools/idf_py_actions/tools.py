@@ -117,7 +117,7 @@ def fit_text_in_terminal(out: str) -> str:
 
 class RunTool:
     def __init__(self, tool_name: str, args: List, cwd: str, env: Dict=None, custom_error_handler: FunctionType=None, build_dir: str=None,
-                 hints: bool=False, force_progression: bool=False) -> None:
+                 hints: bool=False, force_progression: bool=False, interactive: bool=False) -> None:
         self.tool_name = tool_name
         self.args = args
         self.cwd = cwd
@@ -127,6 +127,7 @@ class RunTool:
         self.build_dir = build_dir or cwd
         self.hints = hints
         self.force_progression = force_progression
+        self.interactive = interactive
 
     def __call__(self) -> None:
         def quote_arg(arg: str) -> str:
@@ -212,7 +213,10 @@ class RunTool:
         try:
             with open(output_filename, 'w') as output_file:
                 while True:
-                    out = await input_stream.readline()
+                    if self.interactive:
+                        out = await input_stream.read(1)
+                    else:
+                        out = await input_stream.readline()
                     if not out:
                         break
                     output = prepare_for_print(out)
@@ -222,7 +226,8 @@ class RunTool:
                     if self.force_progression and output[0] == '[' and '-v' not in self.args and output_stream.isatty():
                         print_progression(output)
                     else:
-                        print(output, end='', file=output_stream)
+                        output_stream.write(output)
+                        output_stream.flush()
         except (RuntimeError, EnvironmentError) as e:
             yellow_print('WARNING: The exception {} was raised and we can\'t capture all your {} and '
                          'hints on how to resolve errors can be not accurate.'.format(e, output_stream.name.strip('<>')))
@@ -234,7 +239,7 @@ def run_tool(*args: Any, **kwargs: Any) -> None:
 
 
 def run_target(target_name: str, args: 'PropertyDict', env: Optional[Dict]=None,
-               custom_error_handler: FunctionType=None, force_progression: bool=False, hints: bool=False) -> None:
+               custom_error_handler: FunctionType=None, force_progression: bool=False, hints: bool=False, interactive: bool=False) -> None:
     """Run target in build directory."""
     if env is None:
         env = {}
@@ -246,7 +251,7 @@ def run_target(target_name: str, args: 'PropertyDict', env: Optional[Dict]=None,
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
 
     RunTool(generator_cmd[0], generator_cmd + [target_name], args.build_dir, env, custom_error_handler, hints=hints,
-            force_progression=force_progression)()
+            force_progression=force_progression, interactive=interactive)()
 
 
 def _strip_quotes(value: str, regexp: re.Pattern=re.compile(r"^\"(.*)\"$|^'(.*)'$|^(.*)$")) -> Optional[str]:
