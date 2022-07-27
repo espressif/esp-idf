@@ -70,6 +70,22 @@ examples/peripherals/mcpwm:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
 
+examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32s3"
+      temporary: true
+      reason: lack of runners
+
 examples/peripherals/pcnt:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1

@@ -8,6 +8,10 @@ components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
   disable:
     - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
 
+components/driver/test_apps/legacy_mcpwm_driver:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+
 components/driver/test_apps/legacy_pcnt_driver:
   disable:
     - if: SOC_PCNT_SUPPORTED != 1
@@ -19,6 +23,10 @@ components/driver/test_apps/legacy_rmt_driver:
 components/driver/test_apps/legacy_rtc_temp_driver:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+
+components/driver/test_apps/mcpwm:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
 
 components/driver/test_apps/pulse_cnt:
   disable:

@@ -213,6 +213,7 @@ LEDC
 
     Breaking Changes in Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~
+
     - Channel installation has been separated for TX and RX channels into :cpp:func:`rmt_new_tx_channel` and :cpp:func:`rmt_new_rx_channel`.
     - ``rmt_set_clk_div`` and ``rmt_get_clk_div`` are removed. Channel clock configuration can only be done during channel installation.
     - ``rmt_set_rx_idle_thresh`` and ``rmt_get_rx_idle_thresh`` are removed. In the new driver, the RX channel IDLE threshold is redesigned into a new concept :cpp:member:`rmt_receive_config_t::signal_range_max_ns`.
@@ -259,11 +260,63 @@ LCD
     MCPWM
     -----
 
-    - ``mcpwm_capture_enable`` is removed. To enable capture channel, please use :cpp:func:`mcpwm_capture_enable_channel`.
-    - ``mcpwm_capture_disable`` is remove. To disable capture channel, please use :cpp:func:`mcpwm_capture_capture_disable_channel`.
-    - ``mcpwm_sync_enable`` is removed. To configure synchronization, please use :cpp:func:`mcpwm_sync_configure`.
-    - ``mcpwm_isr_register`` is removed. You can register event callbacks, for capture channels. e.g. :cpp:member:`mcpwm_capture_config_t::capture_cb`.
-    - ``mcpwm_carrier_oneshot_mode_disable`` is removed. Disable the first pulse (a.k.a the one-shot pulse) in the carrier is not supported by hardware.
+    MCPWM driver was redesigned (see :doc:`MCPWM <../../api-reference/peripherals/mcpwm>`), meanwhile, the legacy driver is deprecated. The new driver's aim is to make each MCPWM submodule independent to each other, and give the freedom of resource connection back to users. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/mcpwm.h``. However, by default, using legacy driver will bring compile warnings like ``legacy MCPWM driver is deprecated, please migrate to the new driver (include driver/mcpwm_prelude.h)``. This warning can be suppressed by the Kconfig option :ref:`CONFIG_MCPWM_SUPPRESS_DEPRECATE_WARN`.
+
+    The major breaking changes in concept and usage are listed as follows:
+
+    Breaking Changes in Concepts
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    The new MCPWM driver is object-oriented, where most of the MCPWM submodule has a driver object associated with it. The driver object is created by factory function like :cpp:func:`mcpwm_new_timer`. IO control function always needs an object handle, in the first place.
+
+    The legacy driver has an inappropriate assumption, that is the MCPWM operator should be connected to different MCPWM timer. In fact, the hardware doesn't have such limitation. In the new driver, a MCPWM timer can be connected to multiple operators, so that the operators can achieve the best synchronization performance.
+
+    The legacy driver preset the way to generate a PWM waveform into a so called ``mcpwm_duty_type_t``, however, the duty cycle modes listed there are far from sufficient. Likewise, legacy driver has several preset ``mcpwm_deadtime_type_t``, which also doesn't cover all the use cases. What's more, user usually gets confused by the name of the duty cycle mode and dead-time mode. In the new driver, there're no such limitation, but user has to construct the generator behavior from scratch.
+
+    In the legacy driver, the ways to synchronize the MCPWM timer by GPIO, software and other timer module are not unified. It increased learning costs for users. In the new driver, the synchronization APIs are unified.
+
+    The legacy driver has mixed the concepts of "Fault detector" and "Fault handler". Which make the APIs very confusing to users. In the new driver, the fault object just represents a failure source, and we introduced a new concept -- **brake** to express the concept of "Fault handler". What's more, the new driver supports software fault.
+
+    The legacy drive only provides callback functions for the capture submodule. The new driver provides more useful callbacks for various MCPWM submodules, like timer stop, compare match, fault enter, brake, etc.
+
+    - ``mcpwm_io_signals_t`` and ``mcpwm_pin_config_t`` are not used. GPIO configuration has been moved into submodule's configuration structure.
+    - ``mcpwm_timer_t``, ``mcpwm_generator_t`` are not used. Timer and generator are represented by :cpp:type:`mcpwm_timer_handle_t` and :cpp:type:`mcpwm_gen_handle_t`.
+    - ``mcpwm_fault_signal_t`` and ``mcpwm_sync_signal_t`` are not used. Fault and sync source are represented by :cpp:type:`mcpwm_fault_handle_t` and :cpp:type:`mcpwm_sync_handle_t`.
+    - ``mcpwm_capture_signal_t`` is not used. A capture channel is represented by :cpp:type:`mcpwm_cap_channel_handle_t`.
+
+    Breaking Changes in Usage
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - ``mcpwm_gpio_init`` and ``mcpwm_set_pin``: GPIO configurations are moved to submodule's own configuration. e.g. set the PWM GPIO in :cpp:member:`mcpwm_generator_config_t::gen_gpio_num`.
+    - ``mcpwm_init``: To get an expected PWM waveform, you need to allocated at least one MCPWM timer and MCPWM operator, then connect them by calling :cpp:func:`mcpwm_operator_connect_timer`. After that, you should set the generator's actions on various events by calling e.g. :cpp:func:`mcpwm_generator_set_actions_on_timer_event`, :cpp:func:`mcpwm_generator_set_actions_on_compare_event`.
+    - ``mcpwm_group_set_resolution``: in the new driver, the group resolution is fixed to the maximum, usually it's 80MHz.
+    - ``mcpwm_timer_set_resolution``: MCPWM Timer resolution is set in :cpp:member:`mcpwm_timer_config_t::resolution_hz`.
+    - ``mcpwm_set_frequency``: PWM frequency is determined by :cpp:member:`mcpwm_timer_config_t::resolution_hz`, :cpp:member:`mcpwm_timer_config_t::count_mode` and :cpp:member:`mcpwm_timer_config_t::period_ticks`.
+    - ``mcpwm_set_duty``: To set the PWM duty cycle, you should call :cpp:func:`mcpwm_comparator_set_compare_value` to change comparator's threshold.
+    - ``mcpwm_set_duty_type``: There won't be any preset duty types, the duty type is configured by setting different generator actions. e.g. :cpp:func:`mcpwm_generator_set_actions_on_timer_event`.
+    - ``mcpwm_set_signal_high`` and ``mcpwm_set_signal_low`` are replaced by :cpp:func:`mcpwm_generator_set_force_level`. In the new driver, it's implemented by setting force action for the generator, instead of changing the duty cycle to 0% or 100% at the background.
+    - ``mcpwm_start`` and ``mcpwm_stop`` are replaced by :cpp:func:`mcpwm_timer_start_stop`. You have more modes to start and stop the MCPWM timer, see :cpp:type:`mcpwm_timer_start_stop_cmd_t`.
+    - ``mcpwm_carrier_init``: It's replaced by :cpp:func:`mcpwm_operator_apply_carrier`.
+    - ``mcpwm_carrier_enable`` and ``mcpwm_carrier_disable``: Enabling and disabling carrier submodule is done automatically by checking whether the carrier configuration structure :cpp:type:`mcpwm_carrier_config_t` is NULL.
+    - ``mcpwm_carrier_set_period`` is replaced by :cpp:member:`mcpwm_carrier_config_t::frequency_hz`.
+    - ``mcpwm_carrier_set_duty_cycle`` is replaced by :cpp:member:`mcpwm_carrier_config_t::duty_cycle`.
+    - ``mcpwm_carrier_oneshot_mode_enable`` is replaced by :cpp:member:`mcpwm_carrier_config_t::first_pulse_duration_us`.
+    - ``mcpwm_carrier_oneshot_mode_disable`` is removed. Disabling the first pulse (a.k.a the one-shot pulse) in the carrier is never supported by the hardware.
+    - ``mcpwm_carrier_output_invert`` is replaced by :cpp:member:`mcpwm_carrier_config_t::invert_before_modulate` and :cpp:member:`mcpwm_carrier_config_t::invert_after_modulate`.
+    - ``mcpwm_deadtime_enable`` and ``mcpwm_deadtime_disable`` are replaced by :cpp:func:`mcpwm_generator_set_dead_time`.
+    - ``mcpwm_fault_init`` is replaced by :cpp:func:`mcpwm_new_gpio_fault`.
+    - ``mcpwm_fault_set_oneshot_mode``, ``mcpwm_fault_set_cyc_mode`` are replaced by :cpp:func:`mcpwm_operator_set_brake_on_fault` and :cpp:func:`mcpwm_generator_set_actions_on_brake_event`.
+    - ``mcpwm_capture_enable`` is removed. It's duplicated to :cpp:func:`mcpwm_capture_enable_channel`.
+    - ``mcpwm_capture_disable`` is removed. It's duplicated to :cpp:func:`mcpwm_capture_capture_disable_channel`.
+    - ``mcpwm_capture_enable_channel`` and ``mcpwm_capture_disable_channel`` are replaced by :cpp:func:`mcpwm_new_capture_channel` and :cpp:func:`mcpwm_del_capture_channel`.
+    - ``mcpwm_capture_signal_get_value`` and ``mcpwm_capture_signal_get_edge``: Capture timer count value and capture edge are provided in the capture event callback, via :cpp:type:`mcpwm_capture_event_data_t`. Capture data are only valuable when capture event happens. Providing single API to fetch capture data is meaningless.
+    - ``mcpwm_sync_enable`` is removed. It's duplicated to :cpp:func:`mcpwm_sync_configure`.
+    - ``mcpwm_sync_configure`` is replaced by :cpp:func:`mcpwm_timer_set_phase_on_sync`.
+    - ``mcpwm_sync_disable`` is equivalent to setting :cpp:member:`mcpwm_timer_sync_phase_config_t::sync_src` to ``NULL``.
+    - ``mcpwm_set_timer_sync_output`` is replaced by :cpp:func:`mcpwm_new_timer_sync_src`.
+    - ``mcpwm_timer_trigger_soft_sync`` is replaced by :cpp:func:`mcpwm_soft_sync_activate`.
+    - ``mcpwm_sync_invert_gpio_synchro`` is equivalent to setting :cpp:member:`mcpwm_gpio_sync_src_config_t::active_neg`.
+    - ``mcpwm_isr_register`` is removed. You can register various event callbacks instead. For example, to register capture event callback, you can use :cpp:func:`mcpwm_capture_channel_register_event_callbacks`.
 
 .. only:: SOC_DEDICATED_GPIO_SUPPORTED
 

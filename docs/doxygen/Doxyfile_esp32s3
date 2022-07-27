@@ -5,7 +5,14 @@ INPUT += \
          $(PROJECT_PATH)/components/driver/include/driver/i2s_std.h \
          $(PROJECT_PATH)/components/driver/include/driver/i2s_tdm.h \
          $(PROJECT_PATH)/components/driver/include/driver/i2s_types.h \
-         $(PROJECT_PATH)/components/driver/include/driver/mcpwm.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_cap.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_cmpr.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_fault.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_gen.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_oper.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_sync.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_timer.h \
+         $(PROJECT_PATH)/components/driver/include/driver/mcpwm_types.h \
          $(PROJECT_PATH)/components/driver/include/driver/pulse_cnt.h \
          $(PROJECT_PATH)/components/driver/include/driver/rmt_common.h \
          $(PROJECT_PATH)/components/driver/include/driver/rmt_encoder.h \
