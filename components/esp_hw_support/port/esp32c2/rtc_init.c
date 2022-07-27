@@ -24,7 +24,7 @@
 
 static const char *TAG = "rtc_init";
 
-static void set_ocode_by_efuse(int calib_version);
+static void set_ocode_by_efuse(int ocode_scheme_ver);
 static void calibrate_ocode(void);
 static void set_rtc_dig_dbias(void);
 
@@ -38,14 +38,21 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_MIN_SLP_VAL, RTC_CNTL_MIN_SLP_VAL_MIN);
 
     if (cfg.cali_ocode) {
-        uint32_t rtc_calib_version = 0;
-        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VERSION_MINOR, &rtc_calib_version, ESP_EFUSE_BLK_VERSION_MINOR[0]->bit_count); // IDF-5366
-        if (err != ESP_OK) {
-            rtc_calib_version = 0;
-            ESP_HW_LOGW(TAG, "efuse read fail, set default rtc_calib_version: %d\n", rtc_calib_version);
+        uint8_t blk_version_minor = efuse_ll_get_blk_version_minor();
+        uint8_t blk_version_major = efuse_ll_get_blk_version_major();
+        bool ignore_major = efuse_ll_get_disable_blk_version_major();
+
+        uint8_t ocode_scheme_ver = 0;
+        if(blk_version_major > 0 && !ignore_major) {
+            ESP_HW_LOGE(TAG, "Invalid blk_version_major.\n");
+            abort();
         }
-        if (rtc_calib_version == 1) {
-            set_ocode_by_efuse(rtc_calib_version);
+        if((blk_version_major > 0) || (blk_version_major == 0 && blk_version_minor >= 1)) {
+            ocode_scheme_ver = 1;
+        }
+
+        if (ocode_scheme_ver == 1) {
+            set_ocode_by_efuse(ocode_scheme_ver);
         } else {
             calibrate_ocode();
         }
@@ -126,10 +133,22 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
 {
 }
 
-static void set_ocode_by_efuse(int calib_version)
+static void set_ocode_by_efuse(int ocode_scheme_ver)
 {
-    // ESP32C2-TODO: IDF-4940
-    ESP_HW_LOGW(TAG, "set_ocode_by_efuse not supported yet");
+    assert(ocode_scheme_ver == 1);
+    // use efuse ocode.
+    signed int ocode = 0;
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_OCODE, &ocode, ESP_EFUSE_OCODE[0]->bit_count);
+    assert(err == ESP_OK);
+    (void) err;
+
+    //recover efuse data
+    ocode = ((ocode & BIT(6)) != 0)? -(ocode & 0x3f): ocode;
+    ocode = ocode + 100;
+
+    //set ext_ocode
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
 }
 
 static void calibrate_ocode(void)
@@ -181,91 +200,113 @@ static void calibrate_ocode(void)
     rtc_clk_cpu_freq_set_config(&old_config);
 }
 
-static uint32_t get_dig_dbias_by_efuse(uint8_t chip_version)
+static uint32_t get_dig_dbias_by_efuse(uint8_t dbias_scheme_ver)
 {
-#if CONFIG_IDF_TARGET_ESP32C2  //TODO: Need check for esp32c2
-    return 0;
-#else
-    assert(chip_version >= 3);
-    uint32_t dig_dbias = 28;
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_DIG_DBIAS_HVT, &dig_dbias, 5);
+    assert(dbias_scheme_ver == 1);
+    uint32_t dig_dbias = 26;
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_DIG_DBIAS_HVT, &dig_dbias, ESP_EFUSE_DIG_DBIAS_HVT[0]->bit_count);
     if (err != ESP_OK) {
-        dig_dbias = 28;
+        dig_dbias = 26;
         ESP_HW_LOGW(TAG, "efuse read fail, set default dig_dbias value: %d\n", dig_dbias);
     }
     return dig_dbias;
-#endif
 }
 
-uint32_t get_rtc_dbias_by_efuse(uint8_t chip_version, uint32_t dig_dbias)
+uint32_t get_rtc_dbias_by_efuse(uint8_t dbias_scheme_ver, uint32_t dig_dbias)
 {
-#if CONFIG_IDF_TARGET_ESP32C2  //TODO: Need check for esp32c2
-    return 0;
-#else
-    assert(chip_version >= 3);
-    uint32_t rtc_dbias = 0;
-    signed int k_rtc_ldo = 0, k_dig_ldo = 0, v_rtc_bias20 = 0, v_dig_bias20 = 0;
-    esp_err_t err0 = esp_efuse_read_field_blob(ESP_EFUSE_K_RTC_LDO, &k_rtc_ldo, 7);
-    esp_err_t err1 = esp_efuse_read_field_blob(ESP_EFUSE_K_DIG_LDO, &k_dig_ldo, 7);
-    esp_err_t err2 = esp_efuse_read_field_blob(ESP_EFUSE_V_RTC_DBIAS20, &v_rtc_bias20, 8);
-    esp_err_t err3 = esp_efuse_read_field_blob(ESP_EFUSE_V_DIG_DBIAS20, &v_dig_bias20, 8);
-    if ((err0 != ESP_OK) | (err1 != ESP_OK) | (err2 != ESP_OK) | (err3 != ESP_OK)) {
-        k_rtc_ldo = 0;
-        k_dig_ldo = 0;
-        v_rtc_bias20 = 0;
-        v_dig_bias20 = 0;
-        ESP_HW_LOGW(TAG, "efuse read fail, k_rtc_ldo: %d, k_dig_ldo: %d, v_rtc_bias20: %d,  v_dig_bias20: %d\n", k_rtc_ldo, k_dig_ldo, v_rtc_bias20, v_dig_bias20);
+    assert(dbias_scheme_ver == 1);
+    uint32_t rtc_dbias = 31;
+
+    //read efuse data
+    signed int dig_slp_dbias2 = 0, dig_slp_dbias26 = 0, dig_act_dbias26 = 0, dig_act_step = 0, rtc_slp_dbias29 = 0, rtc_slp_dbias31 = 0, rtc_act_dbias31 = 0, rtc_act_dbias13 = 0;
+    esp_err_t err0 = esp_efuse_read_field_blob(ESP_EFUSE_DIG_LDO_SLP_DBIAS2, &dig_slp_dbias2, ESP_EFUSE_DIG_LDO_SLP_DBIAS2[0]->bit_count);
+    esp_err_t err1 = esp_efuse_read_field_blob(ESP_EFUSE_DIG_LDO_SLP_DBIAS26, &dig_slp_dbias26, ESP_EFUSE_DIG_LDO_SLP_DBIAS26[0]->bit_count);
+    esp_err_t err2 = esp_efuse_read_field_blob(ESP_EFUSE_DIG_LDO_ACT_DBIAS26, &dig_act_dbias26, ESP_EFUSE_DIG_LDO_ACT_DBIAS26[0]->bit_count);
+    esp_err_t err3 = esp_efuse_read_field_blob(ESP_EFUSE_DIG_LDO_ACT_STEPD10, &dig_act_step, ESP_EFUSE_DIG_LDO_ACT_STEPD10[0]->bit_count);
+    esp_err_t err4 = esp_efuse_read_field_blob(ESP_EFUSE_RTC_LDO_SLP_DBIAS29, &rtc_slp_dbias29, ESP_EFUSE_RTC_LDO_SLP_DBIAS29[0]->bit_count);
+    esp_err_t err5 = esp_efuse_read_field_blob(ESP_EFUSE_RTC_LDO_SLP_DBIAS31, &rtc_slp_dbias31, ESP_EFUSE_RTC_LDO_SLP_DBIAS31[0]->bit_count);
+    esp_err_t err6 = esp_efuse_read_field_blob(ESP_EFUSE_RTC_LDO_ACT_DBIAS31, &rtc_act_dbias31, ESP_EFUSE_RTC_LDO_ACT_DBIAS31[0]->bit_count);
+    esp_err_t err7 = esp_efuse_read_field_blob(ESP_EFUSE_RTC_LDO_ACT_DBIAS13, &rtc_act_dbias13, ESP_EFUSE_RTC_LDO_ACT_DBIAS13[0]->bit_count);
+
+    if ((err0 != ESP_OK) | (err1 != ESP_OK) | (err2 != ESP_OK) | (err3 != ESP_OK) | (err4 != ESP_OK) | (err5 != ESP_OK) | (err6 != ESP_OK) | (err7 != ESP_OK)) {
+        ESP_HW_LOGW(TAG, "efuse read fail, set default rtc_dbias value: %d\n", rtc_dbias);
+        return rtc_dbias;
     }
 
-    k_rtc_ldo =  ((k_rtc_ldo & BIT(6)) != 0)? -(k_rtc_ldo & 0x3f): k_rtc_ldo;
-    k_dig_ldo =  ((k_dig_ldo & BIT(6)) != 0)? -(k_dig_ldo & 0x3f): (uint8_t)k_dig_ldo;
-    v_rtc_bias20 =  ((v_rtc_bias20 & BIT(7)) != 0)? -(v_rtc_bias20 & 0x7f): (uint8_t)v_rtc_bias20;
-    v_dig_bias20 =  ((v_dig_bias20 & BIT(7)) != 0)? -(v_dig_bias20 & 0x7f): (uint8_t)v_dig_bias20;
+    //recover dig&rtc parameter
+    dig_slp_dbias2 = ((dig_slp_dbias2 & BIT(6)) != 0)? -(dig_slp_dbias2 & 0x3f): dig_slp_dbias2;
+    dig_slp_dbias26 = ((dig_slp_dbias26 & BIT(7)) != 0)? -(dig_slp_dbias26 & 0x7f): dig_slp_dbias26;
+    dig_act_dbias26 = ((dig_act_dbias26 & BIT(5)) != 0)? -(dig_act_dbias26 & 0x1f): dig_act_dbias26;
+    dig_act_step = ((dig_act_step & BIT(3)) != 0)? -(dig_act_step & 0x7): dig_act_step;
+    rtc_slp_dbias29 = ((rtc_slp_dbias29 & BIT(8)) != 0)? -(rtc_slp_dbias29 & 0xff): rtc_slp_dbias29;
+    rtc_slp_dbias31 = ((rtc_slp_dbias31 & BIT(5)) != 0)? -(rtc_slp_dbias31 & 0x1f): rtc_slp_dbias31;
+    rtc_act_dbias31 = ((rtc_act_dbias31 & BIT(5)) != 0)? -(rtc_act_dbias31 & 0x1f): rtc_act_dbias31;
+    rtc_act_dbias13 = ((rtc_act_dbias13 & BIT(7)) != 0)? -(rtc_act_dbias13 & 0x7f): rtc_act_dbias13;
 
-    uint32_t v_rtc_dbias20_real_mul10000 = V_RTC_MID_MUL10000 + v_rtc_bias20 * 10000 / 500;
-    uint32_t v_dig_dbias20_real_mul10000 = V_DIG_MID_MUL10000 + v_dig_bias20 * 10000 / 500;
-    signed int k_rtc_ldo_real_mul10000 = K_RTC_MID_MUL10000 + k_rtc_ldo;
-    signed int k_dig_ldo_real_mul10000 = K_DIG_MID_MUL10000 + k_dig_ldo;
-    uint32_t v_dig_nearest_1v15_mul10000 = v_dig_dbias20_real_mul10000 + k_dig_ldo_real_mul10000 * (dig_dbias - 20);
-    uint32_t v_rtc_nearest_1v15_mul10000 = 0;
+    dig_slp_dbias2 = dig_slp_dbias2 + 705;
+    dig_slp_dbias26 = dig_slp_dbias26 + dig_slp_dbias2 + 502;
+    dig_act_dbias26 = dig_act_dbias26 + dig_slp_dbias26 + 10;
+    signed int dig_slp_dbias9 = dig_slp_dbias26 - (dig_slp_dbias26 - dig_slp_dbias2) * 17 / 24;
+    signed int dig_act_dbias9 = dig_slp_dbias9 + (dig_act_dbias26 - dig_slp_dbias26) - dig_act_step * 17 / 10;
+
+    rtc_slp_dbias29 = rtc_slp_dbias29 + 1160;
+    rtc_slp_dbias31 = rtc_slp_dbias31 + rtc_slp_dbias29 + 37;
+    rtc_act_dbias31 = rtc_act_dbias31 + rtc_slp_dbias31 + 8;
+    rtc_act_dbias13 = rtc_act_dbias13 + 860;
+
+    //calculate digital LDO volt
+    signed int dig_k_act = (dig_act_dbias26 - dig_act_dbias9) / 17;
+    signed int dig_b_act = dig_act_dbias26 - dig_k_act * 26;
+    uint32_t v_dig_cal = dig_k_act * dig_dbias + dig_b_act;
+
+    //calculate rtc_dbias with dig_volt
+    signed int rtc_k_act = (rtc_act_dbias31 - rtc_act_dbias13) / 18;
+    signed int rtc_b_act = rtc_act_dbias31 - rtc_k_act * 31;
+
+    uint32_t v_rtc_cal = 0;
     for (rtc_dbias = 15; rtc_dbias < 32; rtc_dbias++) {
-        v_rtc_nearest_1v15_mul10000 = v_rtc_dbias20_real_mul10000 + k_rtc_ldo_real_mul10000 * (rtc_dbias - 20);
-        if (v_rtc_nearest_1v15_mul10000 >= v_dig_nearest_1v15_mul10000 - 250)
-            break;
+        v_rtc_cal = rtc_k_act * rtc_dbias + rtc_b_act;
+        if (v_rtc_cal >= v_dig_cal) {
+            return rtc_dbias;
+        }
     }
+
+    //can't find correct rtc-volt, rtc_dbias can use default value.
+    rtc_dbias = 31;
     return rtc_dbias;
-#endif
 }
 
 static void set_rtc_dig_dbias()
 {
     /*
     1. a reasonable dig_dbias which by scaning pvt to make 120 CPU run successful stored in efuse;
-    2. also we store some value in efuse, include:
-        k_rtc_ldo (slope of rtc voltage & rtc_dbias);
-        k_dig_ldo (slope of digital voltage & digital_dbias);
-        v_rtc_bias20 (rtc voltage when rtc dbais is 20);
-        v_dig_bias20 (digital voltage when digital dbais is 20).
-    3. a reasonable rtc_dbias can be calculated by a certion formula.
+    2. a reasonable rtc_dbias can be calculated by a certion formula.
     */
     uint32_t rtc_dbias = 31, dig_dbias = 26;
-    uint8_t chip_version = efuse_hal_get_minor_chip_version();
-    if (chip_version >= 3) {
-        dig_dbias = get_dig_dbias_by_efuse(chip_version);
+    uint8_t blk_version_minor = efuse_ll_get_blk_version_minor();
+    uint8_t blk_version_major = efuse_ll_get_blk_version_major();
+    bool ignore_major = efuse_ll_get_disable_blk_version_major();
+
+    uint8_t dbias_scheme_ver = 0;
+    if(blk_version_major > 0 && !ignore_major) {
+        ESP_HW_LOGE(TAG, "Invalid blk_version_major.\n");
+        abort();
+    }
+    if((blk_version_major > 0) || (blk_version_major == 0 && blk_version_minor >= 1)) {
+        dbias_scheme_ver = 1;
+    }
+
+    if (dbias_scheme_ver == 1) {
+        dig_dbias = get_dig_dbias_by_efuse(dbias_scheme_ver);
         if (dig_dbias != 0) {
-            if (dig_dbias + 4 > 28) {
-                dig_dbias = 28;
-            } else {
-                dig_dbias += 4;
-            }
-            rtc_dbias = get_rtc_dbias_by_efuse(chip_version, dig_dbias); // already burn dig_dbias in efuse
+            rtc_dbias = get_rtc_dbias_by_efuse(dbias_scheme_ver, dig_dbias); // already burn dig_dbias in efuse
         } else {
-            dig_dbias = 28;
-            ESP_HW_LOGD(TAG, "not burn core voltage in efuse or burn wrong voltage value in chip version: 0%d\n", chip_version);
+            dig_dbias = 26;
+            ESP_HW_LOGD(TAG, "not burn core voltage in efuse or burn wrong voltage value. blk_ver: %d.%d\n", blk_version_major, blk_version_minor);
         }
     }
     else {
-        ESP_HW_LOGD(TAG, "chip_version is less than 3, not burn core voltage in efuse\n");
+        ESP_HW_LOGD(TAG, "core voltage not burnt in efuse. blk_ver: %d.%d\n", blk_version_major, blk_version_minor);
     }
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, rtc_dbias);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, dig_dbias);
