@@ -397,7 +397,6 @@ void vPortYieldFromISR( void )
 
 // ----------------- Scheduler Start/End -------------------
 
-extern void esprv_intc_int_set_threshold(int); // FIXME, this function is in ROM only
 BaseType_t xPortStartScheduler(void)
 {
     uxInterruptNesting = 0;
