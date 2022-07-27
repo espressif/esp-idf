@@ -23,6 +23,7 @@ static simple_ble_cfg_t *g_ble_cfg_p;
 static uint16_t *g_gatt_table_map;
 
 static uint8_t adv_config_done;
+static esp_bd_addr_t s_cached_remote_bda = {0x0,};
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
@@ -133,6 +134,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         g_ble_cfg_p->connect_fn(event, gatts_if, param);
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
+	memcpy(s_cached_remote_bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
         /* For the iOS system, please refer the official Apple documents about BLE connection parameters restrictions. */
         conn_params.latency = 0;
         conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
@@ -143,6 +145,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     case ESP_GATTS_DISCONNECT_EVT:
         ESP_LOGD(TAG, "ESP_GATTS_DISCONNECT_EVT, reason = %d", param->disconnect.reason);
         g_ble_cfg_p->disconnect_fn(event, gatts_if, param);
+        memset(s_cached_remote_bda, 0, sizeof(esp_bd_addr_t));
         esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
         break;
     case ESP_GATTS_CREAT_ATTR_TAB_EVT: {
@@ -320,3 +323,10 @@ esp_err_t simple_ble_stop(void)
     ESP_LOGD(TAG, "Free mem at end of simple_ble_stop %d", esp_get_free_heap_size());
     return ESP_OK;
 }
+
+#ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
+esp_err_t simple_ble_disconnect(void)
+{
+    return esp_ble_gap_disconnect(s_cached_remote_bda);
+}
+#endif
