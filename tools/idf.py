@@ -472,7 +472,7 @@ def init_cli(verbose_output: List=None) -> Any:
                 with open(os.path.join(args.build_dir, 'flasher_args.json')) as file:
                     flasher_args: Dict[str, Any] = json.load(file)
 
-                def flasher_path(f: Union[str, os.PathLike[str]]) -> str:
+                def flasher_path(f: Union[str, 'os.PathLike[str]']) -> str:
                     if type(args.build_dir) is bytes:
                         args.build_dir = args.build_dir.decode()
                     return _safe_relpath(os.path.join(args.build_dir, f))

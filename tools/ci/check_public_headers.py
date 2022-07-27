@@ -56,12 +56,12 @@ def exec_cmd_to_temp_file(what: List, suffix: str='') -> Tuple[int, str, str, st
     return rc, out, err, out_file.name, cmd
 
 
-def exec_cmd(what: List, out_file: Union[tempfile._TemporaryFileWrapper[bytes], int]=subprocess.PIPE) -> Tuple[int, str, str, str]:
+def exec_cmd(what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]', int]=subprocess.PIPE) -> Tuple[int, str, str, str]:
     p = subprocess.Popen(what, stdin=subprocess.PIPE, stdout=out_file, stderr=subprocess.PIPE)
     output_b, err_b = p.communicate()
     rc = p.returncode
-    output: str = output_b.decode('utf-8') if output is not None else ''
-    err: str = err_b.decode('utf-8') if err is not None else ''
+    output: str = output_b.decode('utf-8') if output_b is not None else ''
+    err: str = err_b.decode('utf-8') if err_b is not None else ''
     return rc, output, err, ' '.join(what)
 
 

@@ -76,7 +76,7 @@ class YMLConfig:
 YML_CONFIG = YMLConfig(ROOT_YML_FP)
 
 
-def validate_needed_rules(rules_yml: os.PathLike[str]) -> int:
+def validate_needed_rules(rules_yml: 'os.PathLike[str]') -> int:
     res = 0
     needed_rules = deepcopy(YML_CONFIG.all_extends)
     with open(rules_yml) as fr:
