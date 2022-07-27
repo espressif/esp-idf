@@ -60,8 +60,8 @@ def exec_cmd(what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]'
     p = subprocess.Popen(what, stdin=subprocess.PIPE, stdout=out_file, stderr=subprocess.PIPE)
     output_b, err_b = p.communicate()
     rc = p.returncode
-    output: str = output_b.decode('utf-8') if output is not None else ''
-    err: str = err_b.decode('utf-8') if err is not None else ''
+    output: str = output_b.decode('utf-8') if output_b is not None else ''
+    err: str = err_b.decode('utf-8') if err_b is not None else ''
     return rc, output, err, ' '.join(what)
 
 
