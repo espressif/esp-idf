@@ -196,7 +196,7 @@ static int set_ca_cert(tls_context_t *tls, const unsigned char *cacert, size_t c
 }
 
 #ifdef CONFIG_SUITEB192
-static int tls_sig_hashes_for_suiteb[] = {
+static uint16_t tls_sig_algs_for_suiteb[] = {
 #if defined(MBEDTLS_SHA512_C)
 	MBEDTLS_MD_SHA512,
 	MBEDTLS_MD_SHA384,
@@ -220,11 +220,11 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 {
 	const mbedtls_x509_crt_profile *crt_profile = &suiteb_mbedtls_x509_crt_profile;
 	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_suiteb);
+	mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_suiteb);
 }
 #endif
 
-static int tls_sig_hashes_for_eap[] = {
+static uint16_t tls_sig_algs_for_eap[] = {
 #if defined(MBEDTLS_SHA512_C)
 	MBEDTLS_MD_SHA512,
 	MBEDTLS_MD_SHA384,
@@ -262,7 +262,7 @@ static void tls_enable_sha1_config(tls_context_t *tls)
 {
 	const mbedtls_x509_crt_profile *crt_profile = &eap_mbedtls_x509_crt_profile;
 	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
-	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_eap);
+	mbedtls_ssl_conf_sig_algs(&tls->conf, tls_sig_algs_for_eap);
 }
 
 static const int eap_ciphersuite_preference[] =
