@@ -24,7 +24,7 @@ IGNORE_DIRS: Tuple = (
 )
 
 
-def _parse_path(path: os.PathLike[str], sep: str=None) -> Set:
+def _parse_path(path: 'os.PathLike[str]', sep: str=None) -> Set:
     ret = set()
     with open(path, 'r', encoding='utf-8') as f:
         for line in f:
@@ -34,7 +34,7 @@ def _parse_path(path: os.PathLike[str], sep: str=None) -> Set:
     return ret
 
 
-def _valid_directory(path: os.PathLike[str]) -> os.PathLike[str]:
+def _valid_directory(path: 'os.PathLike[str]') -> 'os.PathLike[str]':
     if not os.path.isdir(path):
         raise argparse.ArgumentTypeError('{} is not a valid directory!'.format(path))
     return path
