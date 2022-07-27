@@ -164,6 +164,8 @@ build_examples_make:
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
   script:
+    # install idf-component-manager inside CI pipeline to avoid breaking python packages dependencies
+    - pip install "idf-component-manager~=1.1"
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
     - mkdir -p ${BUILD_PATH}
