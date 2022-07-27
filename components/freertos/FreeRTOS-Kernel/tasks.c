@@ -3941,9 +3941,30 @@ void vTaskSetTimeOutState( TimeOut_t * const pxTimeOut )
 
 void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut )
 {
-    /* For internal use only as it does not use a critical section. */
-    pxTimeOut->xOverflowCount = xNumOfOverflows;
-    pxTimeOut->xTimeOnEntering = xTickCount;
+    /**
+     * In case of we are building for SMP, we need to protect the following instructions in order to make them
+     * atomic.
+     * Indeed, without this, it would be possible to get preempted by the tick hook right after storing the number
+     * of overflows with `pxTimeOut->xOverflowCount = xNumOfOverflows`. Then, the tick hook increments the timer,
+     * which overflows, and thus resets the xTickCount to 0.
+     * Resuming our task would result in an invalid state of the timer where the number of overflow corresponds
+     * to the previous value and not the current one.
+     *
+     * On a single core configuration, this problem doesn't appear as this function is meant to be called from
+     * a critical section, disabling the (tick) interrupts.
+     */
+    #if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+        configASSERT( pxTimeOut );
+        taskENTER_CRITICAL();
+    #endif // ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+
+        /* For internal use only as it does not use a critical section. */
+        pxTimeOut->xOverflowCount = xNumOfOverflows;
+        pxTimeOut->xTimeOnEntering = xTickCount;
+
+    #if ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
+        taskEXIT_CRITICAL();
+    #endif // ( ( ESP_PLATFORM == 1 ) && ( configNUM_CORES > 1 ) )
 }
 /*-----------------------------------------------------------*/
 
@@ -4378,7 +4399,7 @@ static void prvCheckTasksWaitingTermination( void )
             {
                 TCB_t *pxTCB = NULL;
 
-	            taskENTER_CRITICAL();
+                taskENTER_CRITICAL();
                 {
                     xListIsEmpty = listLIST_IS_EMPTY( &xTasksWaitingTermination );
                     if( xListIsEmpty == pdFALSE )
