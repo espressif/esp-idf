@@ -76,6 +76,25 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
     则必须安装 XCode 命令行工具，可运行 ``xcode-select --install`` 命令进行安装。
 
+Apple M1 用户
+~~~~~~~~~~~~~~~~~~
+
+如果您使用的是 Apple M1 系列且看到如下错误提示::
+
+      WARNING: directory for tool xtensa-esp32-elf version esp-2021r2-patch3-8.4.0 is present, but tool was not found
+      ERROR: tool xtensa-esp32-elf has no installed versions. Please run 'install.sh' to install it.
+
+或者::
+
+      zsh: bad CPU type in executable: ~/.espressif/tools/xtensa-esp32-elf/esp-2021r2-patch3-8.4.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcc
+
+您需要运行如下命令来安装 Apple Rosetta 2：
+
+.. code-block:: bash
+
+    /usr/sbin/softwareupdate --install-rosetta --agree-to-license
+
+
 安装 Python 3
 ---------------------------------------------
 
