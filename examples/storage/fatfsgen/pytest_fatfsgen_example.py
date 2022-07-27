@@ -1,12 +1,54 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 
+import os
 import re
+import shutil
+import sys
 from datetime import datetime
+from subprocess import STDOUT, run
 from typing import List
 
 import pytest
 from pytest_embedded import Dut
+
+idf_path = os.environ['IDF_PATH']  # get value of IDF_PATH from environment
+parttool_dir = os.path.join(idf_path, 'components', 'partition_table')
+
+
+sys.path.append(parttool_dir)
+from parttool import PartitionName, ParttoolTarget  # noqa E402  # pylint: disable=C0413
+
+
+def file_(x: str, content_: str = 'hey this is a test') -> dict:
+    return {
+        'type': 'file',
+        'name': x,
+        'content': content_
+    }
+
+
+def generate_local_folder_structure(structure_: dict, path_: str) -> None:
+    if structure_['type'] == 'folder':
+        new_path_ = os.path.join(path_, structure_['name'])
+        os.makedirs(new_path_)
+        for item_ in structure_['content']:
+            generate_local_folder_structure(item_, new_path_)
+    else:
+        new_path_ = os.path.join(path_, structure_['name'])
+        with open(new_path_, 'w') as f_:
+            f_.write(structure_['content'])
+
+
+def compare_folders(fp1: str, fp2: str) -> bool:
+    if os.path.isdir(fp1) != os.path.isdir(fp2):
+        return False
+    if os.path.isdir(fp1):
+        if set(os.listdir(fp1)) != set(os.listdir(fp2)):
+            return False
+        return all([compare_folders(os.path.join(fp1, path_), os.path.join(fp2, path_)) for path_ in os.listdir(fp1)])
+    with open(fp1, 'rb') as f1_, open(fp2, 'rb') as f2_:
+        return f1_.read() == f2_.read()
 
 
 # Example_GENERIC
@@ -51,6 +93,7 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
     filename_sn = 'sub/test.txt'
     date_modified = datetime.today()
     date_default = datetime(1980, 1, 1)
+    fatfs_parser_path = os.path.join(idf_path, 'components', 'fatfs', 'fatfsparse.py')
 
     if config in ['test_read_write_partition_gen', 'test_read_write_partition_gen_default_dt']:
         filename = filename_sn
@@ -68,6 +111,32 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
                     'example: Unmounting FAT filesystem',
                     'example: Done'], timeout)
 
+        target = ParttoolTarget(dut.port)
+        target.read_partition(PartitionName('storage'), 'temp.img')
+        run(['python', fatfs_parser_path, '--wear-leveling', 'temp.img'], stderr=STDOUT)
+        folder_ = {
+            'type': 'folder',
+            'name': 'SUB',
+            'content': [
+                file_('TEST.TXT', content_='this is test\n'),
+            ]
+        }
+        struct_: dict = {
+            'type': 'folder',
+            'name': 'testf',
+            'content': [
+                file_('HELLO.TXT', content_='This is generated on the host\n'),
+                file_('INNER.TXT', content_='This is written by the device'),
+                folder_
+            ]
+        }
+        generate_local_folder_structure(struct_, path_='.')
+        try:
+            assert compare_folders('testf', 'Espressif')
+        finally:
+            shutil.rmtree('Espressif', ignore_errors=True)
+            shutil.rmtree('testf', ignore_errors=True)
+
     elif config in ['test_read_only_partition_gen', 'test_read_only_partition_gen_default_dt']:
         filename = filename_sn
         filename_expected = f'/spiflash/{filename}'
@@ -79,6 +148,30 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
         expect_all(['example: Read from file: \'this is test\'',
                     'example: Unmounting FAT filesystem',
                     'example: Done'], timeout)
+        target = ParttoolTarget(dut.port)
+        target.read_partition(PartitionName('storage'), 'temp.img')
+        run(['python', fatfs_parser_path, '--long-name-support', 'temp.img'], stderr=STDOUT)
+        folder_ = {
+            'type': 'folder',
+            'name': 'sublongnames',
+            'content': [
+                file_('testlongfilenames.txt', content_='this is test; long name it has\n'),
+            ]
+        }
+        struct_ = {
+            'type': 'folder',
+            'name': 'testf',
+            'content': [
+                file_('hellolongname.txt', content_='This is generated on the host; long name it has\n'),
+                folder_
+            ]
+        }
+        generate_local_folder_structure(struct_, path_='.')
+        try:
+            assert compare_folders('testf', 'Espressif')
+        finally:
+            shutil.rmtree('Espressif', ignore_errors=True)
+            shutil.rmtree('testf', ignore_errors=True)
 
     elif config in ['test_read_write_partition_gen_ln', 'test_read_write_partition_gen_ln_default_dt']:
         filename = filename_ln
@@ -107,3 +200,27 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
         expect_all(['example: Read from file: \'this is test; long name it has\'',
                     'example: Unmounting FAT filesystem',
                     'example: Done'], timeout)
+        target = ParttoolTarget(dut.port)
+        target.read_partition(PartitionName('storage'), 'temp.img')
+        run(['python', fatfs_parser_path, 'temp.img'], stderr=STDOUT)
+        folder_ = {
+            'type': 'folder',
+            'name': 'SUB',
+            'content': [
+                file_('TEST.TXT', content_='this is test\n'),
+            ]
+        }
+        struct_ = {
+            'type': 'folder',
+            'name': 'testf',
+            'content': [
+                file_('HELLO.TXT', content_='This is generated on the host\n'),
+                folder_
+            ]
+        }
+        generate_local_folder_structure(struct_, path_='.')
+        try:
+            assert compare_folders('testf', 'Espressif')
+        finally:
+            shutil.rmtree('Espressif', ignore_errors=True)
+            shutil.rmtree('testf', ignore_errors=True)

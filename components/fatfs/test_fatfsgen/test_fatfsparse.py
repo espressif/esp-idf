@@ -23,6 +23,7 @@ class FatFSGen(unittest.TestCase):
         shutil.rmtree('output_data', ignore_errors=True)
         shutil.rmtree('Espressif', ignore_errors=True)
         shutil.rmtree('testf', ignore_errors=True)
+        shutil.rmtree('testf_wl', ignore_errors=True)
 
         if os.path.exists('fatfs_image.img'):
             os.remove('fatfs_image.img')
@@ -138,6 +139,15 @@ class FatFSGen(unittest.TestCase):
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
+        shutil.rmtree('Espressif', ignore_errors=True)
+
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "wl_fatfsgen.py")}',
+            'testf'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', '--wear-leveling', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
 
     def test_e2e_deeper(self) -> None:
         folder_ = {
@@ -159,6 +169,7 @@ class FatFSGen(unittest.TestCase):
                 folder_
             ]
         }
+
         generate_local_folder_structure(struct_, path_='.')
         run([
             'python',
@@ -166,6 +177,15 @@ class FatFSGen(unittest.TestCase):
             'testf'
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
+        shutil.rmtree('Espressif', ignore_errors=True)
+
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "wl_fatfsgen.py")}',
+            'testf'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', '--wear-leveling', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
 
     def test_e2e_deeper_large(self) -> None:
@@ -213,6 +233,15 @@ class FatFSGen(unittest.TestCase):
             'testf'
         ], stderr=STDOUT)
         run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
+        assert compare_folders('testf', 'Espressif')
+        shutil.rmtree('Espressif', ignore_errors=True)
+
+        run([
+            'python',
+            f'{os.path.join(os.path.dirname(__file__), "..", "wl_fatfsgen.py")}',
+            'testf'
+        ], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', '--wear-leveling', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
 
     def test_e2e_very_deep(self) -> None:

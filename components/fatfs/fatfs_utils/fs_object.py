@@ -260,6 +260,7 @@ class Directory:
                                       entity_extension=extension,
                                       date=fatfs_date_,
                                       time=fatfs_time_,
+                                      fits_short=True,
                                       entity_type=entity_type)
             return free_cluster, free_entry, target_dir
         return self.allocate_long_name_object(free_entry=free_entry,

@@ -105,9 +105,6 @@ class WLFatFSGen(unittest.TestCase):
         fatfs.wl_create_directory('TESTFOLD')
         self.assertRaises(WLNotInitialized, fatfs.wl_write_filesystem, CFG['output_file'])
 
-    def test_wrong_sector_size(self) -> None:
-        self.assertRaises(NotImplementedError, wl_fatfsgen.WLFATFS, sector_size=1024)
-
     def test_e2e_deep_folder_into_image_ext(self) -> None:
         fatfs = wl_fatfsgen.WLFATFS()
         fatfs.wl_generate(CFG['test_dir2'])

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
@@ -9,6 +10,7 @@ from fatfs_utils.entry import Entry
 from fatfs_utils.fat import FAT
 from fatfs_utils.fatfs_state import BootSectorState
 from fatfs_utils.utils import FULL_BYTE, LONG_NAMES_ENCODING, PAD_CHAR, FATDefaults, lfn_checksum, read_filesystem
+from wl_fatfsgen import remove_wl
 
 
 def build_file_name(name1: bytes, name2: bytes, name3: bytes) -> str:
@@ -42,7 +44,7 @@ def traverse_folder_tree(directory_bytes_: bytes,
                          name: str,
                          state_: BootSectorState,
                          fat_: FAT,
-                         binary_array_: bytearray) -> None:
+                         binary_array_: bytes) -> None:
     os.makedirs(name)
 
     assert len(directory_bytes_) % FATDefaults.ENTRY_SIZE == 0
@@ -89,9 +91,26 @@ if __name__ == '__main__':
     argument_parser.add_argument('--long-name-support',
                                  action='store_true',
                                  help='Set flag to enable long names support.')
+
+    argument_parser.add_argument('--wear-leveling',
+                                 action='store_true',
+                                 help='Set flag to parse an image encoded using wear levelling.')
+
     args = argument_parser.parse_args()
 
     fs = read_filesystem(args.input_image)
+
+    # An algorithm for removing wear levelling:
+    # 1. find an remove dummy sector:
+    #    a) dummy sector is at the position defined by the number of records in the state sector
+    #    b) dummy may not be placed in state nor cfg sectors
+    #    c) first (boot) sector position (boot_s_pos) is calculated using value of move count
+    #    boot_s_pos = - mc
+    # 2. remove state sectors (trivial)
+    # 3. remove cfg sector (trivial)
+    # 4. valid fs is then old_fs[-mc:] + old_fs[:-mc]
+    if args.wear_leveling:
+        fs = remove_wl(fs)
     boot_sector_ = BootSector()
     boot_sector_.parse_boot_sector(fs)
     fat = FAT(boot_sector_.boot_sector_state, init_=False)
