@@ -172,7 +172,9 @@ typedef struct {
     uint8_t sleep_en;
     uint8_t coex_phy_coded_tx_rx_time_limit;
     uint8_t dis_scan_backoff;
-    uint8_t esp_scan_filter_en;
+    uint8_t ble_scan_classify_filter_enable;
+    uint8_t cca_drop_mode;
+    int8_t cca_low_tx_pwr;
     uint8_t main_xtal_freq;
     uint32_t config_magic;
 } esp_bt_controller_config_t;
@@ -223,7 +225,7 @@ typedef struct {
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
-    .esp_scan_filter_en         = 0,                                                    \
+    .ble_scan_classify_filter_enable         = 0,                                       \
     .main_xtal_freq             = CONFIG_ESP32C2_XTAL_FREQ,                             \
     .config_magic = CONFIG_MAGIC,                                                       \
 };
