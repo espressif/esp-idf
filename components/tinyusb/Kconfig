@@ -107,7 +107,7 @@ menu "TinyUSB Stack"
                     Name of the MSC device.
 
             config TINYUSB_DESC_HID_STRING
-                depends on TINYUSB_HID_ENABLED
+                depends on TINYUSB_HID_COUNT > 0
                 string "HID Device String"
                 default "Espressif HID Device"
                 help
@@ -175,6 +175,14 @@ menu "TinyUSB Stack"
                 help
                     Enable TinyUSB MIDI feature.
         endmenu # "MIDI"
-    endif # TINYUSB
 
+        menu "Human Interface Device Class (HID)"
+            config TINYUSB_HID_COUNT
+                int "TinyUSB HID interfaces count"
+                default 0
+                range 0 4
+                help
+                    Setting value greater than 0 will enable TinyUSB HID feature.
+        endmenu # "HID Device Class (HID)"
+    endif # TINYUSB
 endmenu # "TinyUSB Stack"
