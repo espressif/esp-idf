@@ -133,7 +133,7 @@ esp_err_t essl_sdio_init(void *arg, uint32_t wait_ms)
 {
     essl_sdio_context_t* ctx = arg;
     esp_err_t err;
-    uint8_t ioe;
+    uint8_t ioe = 0;
     sdmmc_card_t* card = ctx->card;
 
     err = sdmmc_io_read_byte(card, 0, SD_IO_CCCR_FN_ENABLE, &ioe);
@@ -159,7 +159,7 @@ esp_err_t essl_sdio_init(void *arg, uint32_t wait_ms)
     }
 
     // get interrupt status
-    uint8_t ie;
+    uint8_t ie = 0;
     err = sdmmc_io_read_byte(card, 0, SD_IO_CCCR_INT_ENABLE, &ie);
     if (err != ESP_OK) return err;
     ESP_LOGD(TAG,"IE: 0x%02x", ie);
@@ -171,7 +171,7 @@ esp_err_t essl_sdio_init(void *arg, uint32_t wait_ms)
     ESP_LOGD(TAG, "IE: 0x%02x", ie);
 
     // get bus width register
-    uint8_t bus_width;
+    uint8_t bus_width = 0;
     err = sdmmc_io_read_byte(card, 0, SD_IO_CCCR_BUS_WIDTH, &bus_width);
     if (err != ESP_OK) return err;
     ESP_LOGD(TAG,"BUS_WIDTH: 0x%02x", bus_width);

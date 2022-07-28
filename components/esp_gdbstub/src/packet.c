@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include "esp_gdbstub_common.h"
 
 // GDB command input buffer
@@ -45,6 +46,8 @@ void esp_gdbstub_send_str(const char *c)
 // 'bits'/4 dictates the number of hex chars sent.
 void esp_gdbstub_send_hex(int val, int bits)
 {
+    // sanity check, in case the following (i - 4) is a negative value
+    assert(bits >= 4);
     const char *hex_chars = "0123456789abcdef";
     for (int i = bits; i > 0; i -= 4) {
         esp_gdbstub_send_char(hex_chars[(val >> (i - 4)) & 0xf]);

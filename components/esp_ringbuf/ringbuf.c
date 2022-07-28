@@ -782,7 +782,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
         portENTER_CRITICAL(&pxRingbuffer->mux);
         if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
             //Item is available for retrieval
-            BaseType_t xIsSplit;
+            BaseType_t xIsSplit = pdFALSE;
             if (pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) {
                 //Second argument (pxIsSplit) is unused for byte buffers
                 *pvItem1 = pxRingbuffer->pvGetItem(pxRingbuffer, NULL, xMaxSize, xItemSize1);
@@ -836,7 +836,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
 
     portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if(prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
-        BaseType_t xIsSplit;
+        BaseType_t xIsSplit = pdFALSE;
         if (pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) {
             //Second argument (pxIsSplit) is unused for byte buffers
             *pvItem1 = pxRingbuffer->pvGetItem(pxRingbuffer, NULL, xMaxSize, xItemSize1);
