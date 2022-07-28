@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -93,7 +94,7 @@ static void tp_example_read_task(void *pvParameter)
                 touch_pad_read_filtered(i, &value);
                 if (value < s_pad_init_val[i] * TOUCH_THRESH_PERCENT / 100) {
                     ESP_LOGI(TAG, "T%d activated!", i);
-                    ESP_LOGI(TAG, "value: %d; init val: %d", value, s_pad_init_val[i]);
+                    ESP_LOGI(TAG, "value: %"PRIu16"; init val: %"PRIu32, value, s_pad_init_val[i]);
                     vTaskDelay(200 / portTICK_PERIOD_MS);
                     // Reset the counter to stop changing mode.
                     change_mode = 1;

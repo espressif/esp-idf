@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/touch_pad.h"
@@ -33,10 +34,10 @@ static void tp_example_read_task(void *pvParameter)
             // If open the filter mode, please use this API to get the touch pad count.
             touch_pad_read_raw_data(i, &touch_value);
             touch_pad_read_filtered(i, &touch_filter_value);
-            printf("T%d:[%4d,%4d] ", i, touch_value, touch_filter_value);
+            printf("T%d:[%4"PRIu16",%4"PRIu16"] ", i, touch_value, touch_filter_value);
 #else
             touch_pad_read(i, &touch_value);
-            printf("T%d:[%4d] ", i, touch_value);
+            printf("T%d:[%4"PRIu16"] ", i, touch_value);
 #endif
         }
         printf("\n");
