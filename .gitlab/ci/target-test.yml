@@ -15,7 +15,6 @@
 .pytest_template:
   extends:
     - .target_test_template
-    - .before_script_pytest
   artifacts:
     when: always
     paths:
@@ -1032,8 +1031,7 @@ UT_S3_FLASH:
   extends:
     - .target_test_job_template
     - .rules:test:integration_test
-    # needn't install idf python env
-    - .before_script_integration_test
+    - .before_script_minimal
   image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   cache: []
   needs: # the assign already needs all the build jobs
@@ -1054,6 +1052,7 @@ UT_S3_FLASH:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
+    - add_gitlab_ssh_keys
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench
@@ -1089,6 +1088,7 @@ nvs_compatible_test:
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
+    - add_gitlab_ssh_keys
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     # clone test bench

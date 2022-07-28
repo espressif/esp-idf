@@ -85,6 +85,7 @@ assign_integration_test:
   extends:
     - .assign_test_template
     - .rules:test:integration_test
+    - .before_script_minimal
   image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   needs:
     - build_ssc_esp32
@@ -100,6 +101,7 @@ assign_integration_test:
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
   script:
+    - add_gitlab_ssh_keys
     # clone test script to assign tests
     # can not retry if downing git lfs files failed, so using empty_branch first.
     - retry_failed git clone ${CI_AUTO_TEST_SCRIPT_REPO_URL} -b empty_branch
