@@ -41,7 +41,7 @@ To get the list of your image segments, please run the following command:
 	Checksum: e8 (valid)Validation Hash: 407089ca0eae2bbf83b4120979d3354b1c938a49cb7a0c997f240474ef2ec76b (valid)
 
 You can also see the information on segments in the ESP-IDF logs while your application is booting:
-	
+
 .. code-block::
 
 	I (443) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x13ce0 ( 81120) map
@@ -62,7 +62,7 @@ You can also see the information on segments in the ESP-IDF logs while your appl
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
-.. only:: esp32s2 or esp32s3 or esp32c3
+.. only:: not esp32
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
