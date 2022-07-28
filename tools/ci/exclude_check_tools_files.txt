@@ -29,7 +29,6 @@ tools/ci/mypy_ignore_list.txt
 tools/ci/normalize_clangtidy_path.py
 tools/ci/push_to_github.sh
 tools/ci/python_packages/wifi_tools.py
-tools/ci/setup_python.sh
 tools/ci/utils.sh
 tools/eclipse-code-style.xml
 tools/format-minimal.sh
