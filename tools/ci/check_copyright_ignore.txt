@@ -2096,4 +2096,3 @@ tools/unit-test-app/idf_ext.py
 tools/unit-test-app/main/app_main.c
 tools/unit-test-app/tools/CreateSectionTable.py
 tools/unit-test-app/tools/UnitTestParser.py
-tools/unit-test-app/unit_test.py

@@ -273,7 +273,7 @@ component_ut_pytest_esp32c2_generic:
     - .rules:test:component_ut-esp32c2
   needs:
     - build_pytest_components_esp32c2
-  tags: [ esp32c2, generic ]
+  tags: [ esp32c2, generic, xtal_40mhz ]
 
 component_ut_pytest_esp32c2_xtal_26mhz:
   extends:
@@ -338,7 +338,7 @@ test_app_test_pytest_esp32c2_generic:
     - .rules:test:custom_test-esp32c2
   needs:
     - build_pytest_test_apps_esp32c2
-  tags: [ esp32c2, generic ]
+  tags: [ esp32c2, generic, xtal_40mhz ]
 
 test_app_test_pytest_esp32c3_generic:
   extends:
@@ -652,6 +652,7 @@ test_app_test_esp32c2_generic:
   tags:
     - ESP32C2
     - Example_GENERIC
+    - xtal_40mhz
 
 test_app_test_005:
   extends: .test_app_esp32c3_template
@@ -920,6 +921,7 @@ UT_C2:
   tags:
     - ESP32C2_IDF
     - UT_T1_1
+    - xtal_40mhz
 
 UT_C3:
   extends: .unit_test_esp32c3_template
