@@ -82,6 +82,19 @@ int esp_clk_xtal_freq(void);
  */
 uint64_t esp_clk_rtc_time(void);
 
+/**
+ * @brief obtain internal critical section used esp_clk implementation.
+ *
+ * This is used by the esp_light_sleep_start() to avoid deadlocking when it
+ * calls esp_clk related API after stalling the other CPU.
+ */
+void esp_clk_private_lock(void);
+
+/**
+ * @brief counterpart of esp_clk_private_lock
+ */
+void esp_clk_private_unlock(void);
+
 #ifdef __cplusplus
 }
 #endif

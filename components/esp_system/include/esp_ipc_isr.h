@@ -62,6 +62,7 @@ void esp_ipc_isr_asm_call_blocking(esp_ipc_isr_func_t func, void* arg);
  * - If the stall feature is paused using esp_ipc_isr_stall_pause(), this function will have no effect
  *
  * @note This function is not available in single-core mode.
+ * @note It is the caller's responsibility to avoid deadlocking on spinlocks
  */
 void esp_ipc_isr_stall_other_cpu(void);
 
