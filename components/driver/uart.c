@@ -17,6 +17,7 @@
 #include "freertos/ringbuf.h"
 #include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/uart_periph.h"
 #include "soc/rtc_cntl_reg.h"
 #include "driver/uart.h"
@@ -199,6 +200,47 @@ static void uart_module_disable(uart_port_t uart_num)
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
 }
 
+esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz)
+{
+    uint32_t freq;
+    switch (sclk) {
+#if SOC_UART_SUPPORT_APB_CLK
+    case UART_SCLK_APB:
+        freq = esp_clk_apb_freq();
+        break;
+#endif
+#if SOC_UART_SUPPORT_AHB_CLK
+    case UART_SCLK_AHB:
+        freq = APB_CLK_FREQ;    //This only exist on H2. Fix this when H2 MP is supported.
+        break;
+#endif
+#if SOC_UART_SUPPORT_PLL_F40M_CLK
+    case UART_SCLK_PLL_F40M:
+        freq = 40 * MHZ;
+        break;
+#endif
+#if SOC_UART_SUPPORT_REF_TICK
+    case UART_SCLK_REF_TICK:
+        freq = REF_CLK_FREQ;
+        break;
+#endif
+#if SOC_UART_SUPPORT_RTC_CLK
+    case UART_SCLK_RTC:
+        freq = RTC_CLK_FREQ;
+        break;
+#endif
+#if SOC_UART_SUPPORT_XTAL_CLK
+    case UART_SCLK_XTAL:
+        freq = esp_clk_xtal_freq();
+        break;
+#endif
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+    *out_freq_hz = freq;
+    return ESP_OK;
+}
+
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
@@ -256,8 +298,16 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t *parity_mode)
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+
+    uart_sclk_t src_clk;
+    uint32_t sclk_freq;
+
+    uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
+    esp_err_t err = uart_get_sclk_freq(src_clk, &sclk_freq);
+    assert(err == ESP_OK);
+
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate);
+    uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, sclk_freq);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -265,8 +315,16 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
 esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t *baudrate)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
+
+    uart_sclk_t src_clk;
+    uint32_t sclk_freq;
+
+    uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
+    esp_err_t err = uart_get_sclk_freq(src_clk, &sclk_freq);
+    assert(err == ESP_OK);
+
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_get_baudrate(&(uart_context[uart_num].hal), baudrate);
+    uart_hal_get_baudrate(&(uart_context[uart_num].hal), baudrate, sclk_freq);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -688,10 +746,14 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         periph_rtc_dig_clk8m_enable();
     }
 #endif
+    uint32_t sclk_freq;
+    esp_err_t err = uart_get_sclk_freq(uart_config->source_clk, &sclk_freq);
+    assert(err == ESP_OK);
+
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_config->source_clk);
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate);
+    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);

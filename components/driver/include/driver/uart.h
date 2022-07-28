@@ -196,6 +196,18 @@ esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode);
 esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 
 /**
+ * @brief Get the frequency of a clock source for the UART
+ *
+ * @param sclk Clock source
+ * @param[out] out_freq_hz Output of frequency, in Hz
+ *
+ * @return
+ *  - ESP_ERR_INVALID_ARG: if the clock source is not supported
+ *  - otherwise ESP_OK
+ */
+esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz);
+
+/**
  * @brief Set UART baud rate.
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).

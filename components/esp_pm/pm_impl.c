@@ -20,6 +20,7 @@
 #include "soc/rtc.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
+#include "driver/uart.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -732,7 +733,11 @@ void esp_pm_impl_init(void)
     while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
     uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
-    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+
+    uint32_t sclk_freq;
+    esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);
+    assert(err == ESP_OK);
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_PM_TRACE
