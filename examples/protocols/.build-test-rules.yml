@@ -194,6 +194,16 @@ examples/protocols/mqtt/wss:
       temporary: true
       reason: lack of runners
 
+examples/protocols/mqtt5:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
 examples/protocols/slip/slip_udp:
   disable:
     - if: IDF_TARGET == "esp32c2"
