@@ -16,6 +16,7 @@
 #include "common.h"
 #include "list.h"
 #include "eloop.h"
+#include "esp_wifi_driver.h"
 
 struct eloop_timeout {
 	struct dl_list list;
@@ -42,12 +43,29 @@ static void *eloop_data_lock = NULL;
 
 static struct eloop_data eloop;
 
+static int eloop_run_wrapper(void *data)
+{
+	eloop_run();
+	return 0;
+}
+
+static void eloop_run_timer(void)
+{
+	/* Execute timers in pptask context to make it thread safe */
+	wifi_ipc_config_t cfg;
+
+	cfg.fn = eloop_run_wrapper;
+	cfg.arg = NULL;
+	cfg.arg_size = 0;
+	esp_wifi_ipc_internal(&cfg, false);
+}
+
 int eloop_init(void)
 {
 	os_memset(&eloop, 0, sizeof(eloop));
 	dl_list_init(&eloop.timeout);
 	os_timer_disarm(&eloop.eloop_timer);
-	os_timer_setfn(&eloop.eloop_timer, (ETSTimerFunc *)eloop_run, NULL);
+	os_timer_setfn(&eloop.eloop_timer, (ETSTimerFunc *)eloop_run_timer, NULL);
 
 	eloop_data_lock = os_recursive_mutex_create();
 
