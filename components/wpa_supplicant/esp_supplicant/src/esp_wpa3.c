@@ -36,9 +36,18 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
     struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
     uint8_t use_pt = esp_wifi_sta_get_use_h2e_internal();
+    char sae_pwd_id[SAE_H2E_IDENTIFIER_LEN+1] = {0};
+    bool valid_pwd_id = false;
+
+    if (use_pt != 0) {
+        memcpy(sae_pwd_id, esp_wifi_sta_get_sae_identifier_internal(), SAE_H2E_IDENTIFIER_LEN);
+        if (os_strlen(sae_pwd_id) > 0) {
+            valid_pwd_id = true;
+        }
+    }
 
     if (use_pt && !g_sae_pt) {
-        g_sae_pt = sae_derive_pt(g_allowed_groups, ssid->ssid, ssid->len, pw, strlen((const char *)pw), NULL);
+        g_sae_pt = sae_derive_pt(g_allowed_groups, ssid->ssid, ssid->len, pw, strlen((const char *)pw), valid_pwd_id ? sae_pwd_id : NULL);
     }
 
     if (wpa_sta_cur_pmksa_matches_akm()) {
@@ -134,7 +143,7 @@ reuse_data:
         return ESP_FAIL;
     }
 
-    if (sae_write_commit(&g_sae_data, g_sae_commit, g_sae_token, NULL) != ESP_OK) {
+    if (sae_write_commit(&g_sae_data, g_sae_commit, g_sae_token, valid_pwd_id ? sae_pwd_id : NULL) != ESP_OK) {
         wpa_printf(MSG_ERROR, "wpa3: failed to write SAE commit msg");
         wpabuf_free(g_sae_commit);
         g_sae_commit = NULL;

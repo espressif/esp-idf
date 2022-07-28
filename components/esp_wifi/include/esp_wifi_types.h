@@ -290,6 +290,7 @@ typedef struct {
     wifi_sae_pwe_method_t sae_pwe_h2e;  /**< Configuration for SAE PWE derivation method */
 } wifi_ap_config_t;
 
+#define SAE_H2E_IDENTIFIER_LEN 32
 /** @brief STA configuration settings for the device */
 typedef struct {
     uint8_t ssid[32];                         /**< SSID of target AP. */
@@ -322,6 +323,7 @@ typedef struct {
     uint32_t he_trig_mu_bmforming_partial_feedback_disabled:1;    /**< Whether to disable support the transmission of partial-bandwidth MU feedback in an HE TB sounding sequence. */
     uint32_t he_trig_cqi_feedback_disabled:1;                     /**< Whether to disable support the transmission of CQI feedback in an HE TB sounding sequence. */
     uint32_t he_reserved:22;                                      /**< Reserved for future feature set */
+    uint8_t sae_h2e_identifier[SAE_H2E_IDENTIFIER_LEN];/**< Password identifier for H2E. this needs to be null terminated string */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for device's AP or STA.
