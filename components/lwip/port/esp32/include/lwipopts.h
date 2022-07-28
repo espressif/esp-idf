@@ -665,9 +665,21 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * LWIP_NUM_NETIF_CLIENT_DATA: Number of clients that may store
  * data in client_data member array of struct netif (max. 256).
  */
-#ifdef CONFIG_LWIP_NUM_NETIF_CLIENT_DATA
-#define LWIP_NUM_NETIF_CLIENT_DATA      CONFIG_LWIP_NUM_NETIF_CLIENT_DATA
+#ifndef CONFIG_LWIP_NUM_NETIF_CLIENT_DATA
+#define CONFIG_LWIP_NUM_NETIF_CLIENT_DATA 0
 #endif
+#if defined(CONFIG_ESP_NETIF_BRIDGE_EN) || defined(CONFIG_LWIP_PPP_SUPPORT)
+/*
+ * If special lwip interfaces (like bridge, ppp) enabled
+ * `netif->state` is used internally and we must store esp-netif ptr
+ * in `netif->client_data`
+ */
+#define LWIP_ESP_NETIF_DATA             (1)
+#else
+#define LWIP_ESP_NETIF_DATA             (0)
+#endif
+
+#define LWIP_NUM_NETIF_CLIENT_DATA      (LWIP_ESP_NETIF_DATA + CONFIG_LWIP_NUM_NETIF_CLIENT_DATA)
 
 /**
  * BRIDGEIF_MAX_PORTS: this is used to create a typedef used for forwarding
