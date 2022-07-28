@@ -787,6 +787,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
+config SOC_UART_SUPPORT_APB_CLK
+    bool
+    default y
+
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default y

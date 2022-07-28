@@ -334,8 +334,9 @@
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 
-#define SOC_UART_SUPPORT_RTC_CLK    (1)
-#define SOC_UART_SUPPORT_XTAL_CLK   (1)
+#define SOC_UART_SUPPORT_APB_CLK    (1)     /*!< Support APB as the clock source */
+#define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
+#define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_REQUIRE_CORE_RESET (1)
 

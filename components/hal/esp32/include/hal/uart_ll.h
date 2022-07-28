@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for UART register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -90,30 +82,18 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t* source_clk)
 }
 
 /**
- * @brief  Get the UART source clock frequency.
- *
- * @param  hw Beginning address of the peripheral registers.
- *
- * @return Current source clock frequency
- */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
-{
-    return (hw->conf0.tick_ref_always_on) ? APB_CLK_FREQ : REF_CLK_FREQ;
-}
-
-/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud-rate to be set. When the source clock is APB, the max baud-rate is `UART_LL_BITRATE_MAX`
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
 
  * @return None
  */
-FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
+FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
-    uint32_t sclk_freq, clk_div;
+    uint32_t clk_div;
 
-    sclk_freq = uart_ll_get_sclk_freq(hw);
     clk_div = ((sclk_freq) << 4) / baud;
     // The baud-rate configuration register is divided into
     // an integer part and a fractional part.
@@ -125,12 +105,12 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
  * @brief  Get the current baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
  * @return The current baudrate
  */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
+FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     typeof(hw->clk_div) div_reg = hw->clk_div;
     return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
 }
