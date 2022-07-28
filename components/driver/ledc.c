@@ -449,6 +449,8 @@ static ledc_slow_clk_sel_t ledc_clk_cfg_to_global_clk(const ledc_clk_cfg_t clk_c
     return glb_clk;
 }
 
+extern void esp_sleep_periph_use_8m(bool use_or_not);
+
 /**
  * @brief Function setting the LEDC timer divisor with the given source clock,
  * frequency and resolution. If the clock configuration passed is
@@ -528,6 +530,10 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     if (timer_clk_src == LEDC_SCLK) {
 #endif
         ESP_LOGD(LEDC_TAG, "In slow speed mode, using clock %d", glb_clk);
+
+        /* keep ESP_PD_DOMAIN_RTC8M on during light sleep */
+        esp_sleep_periph_use_8m(glb_clk == LEDC_SLOW_CLK_RTC8M);
+
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
         portEXIT_CRITICAL(&ledc_spinlock);
