@@ -144,3 +144,13 @@ uint64_t esp_clk_rtc_time(void)
     return 0;
 #endif
 }
+
+void esp_clk_private_lock(void)
+{
+    portENTER_CRITICAL(&s_esp_rtc_time_lock);
+}
+
+void esp_clk_private_unlock(void)
+{
+    portEXIT_CRITICAL(&s_esp_rtc_time_lock);
+}
