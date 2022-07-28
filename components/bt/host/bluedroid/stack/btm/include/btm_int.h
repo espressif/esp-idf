@@ -834,6 +834,8 @@ typedef struct {
     UINT16      btm_def_link_policy;
     UINT16      btm_def_link_super_tout;
 
+    tBTM_ACL_LINK_STAT_CB *p_acl_link_stat_cb; /* Callback for when ACL link related events came */
+
     tBTM_BL_EVENT_MASK     bl_evt_mask;
     tBTM_BL_CHANGE_CB     *p_bl_changed_cb;    /* Callback for when Busy Level changed */
 
@@ -1028,6 +1030,7 @@ void         btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_B
 void         btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport);
 void         btm_acl_device_down (void);
 void         btm_acl_update_busy_level (tBTM_BLI_EVENT event);
+void         btm_acl_link_stat_report(tBTM_ACL_LINK_STAT_EVENT_DATA *p_data);
 
 void         btm_cont_rswitch (tACL_CONN *p,
                                tBTM_SEC_DEV_REC *p_dev_rec,
