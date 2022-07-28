@@ -68,7 +68,7 @@ __attribute__((always_inline))
 static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t vaddr_start, uint32_t len)
 {
     (void)mmu_id;
-    uint32_t vaddr_end = vaddr_start + len;
+    uint32_t vaddr_end = vaddr_start + len - 1;
     return (ADDRESS_IN_IRAM0_CACHE(vaddr_start, MMU_LL_PAGE_SIZE) && ADDRESS_IN_IRAM0_CACHE(vaddr_end, MMU_LL_PAGE_SIZE)) || (ADDRESS_IN_DRAM0_CACHE(vaddr_start, MMU_LL_PAGE_SIZE) && ADDRESS_IN_DRAM0_CACHE(vaddr_end, MMU_LL_PAGE_SIZE));
 }
 

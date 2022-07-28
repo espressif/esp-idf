@@ -159,8 +159,8 @@ esp_err_t esp_psram_init(void)
     //----------------------------------Map the PSRAM physical range to MMU-----------------------------//
     intptr_t vaddr_start = mmu_get_psram_vaddr_start();
     if (vaddr_start + psram_available_size > mmu_get_psram_vaddr_end()) {
-        ESP_EARLY_LOGV(TAG, "Virtual address not enough for PSRAM!");
         psram_available_size = mmu_get_psram_vaddr_end() - vaddr_start;
+        ESP_EARLY_LOGV(TAG, "Virtual address not enough for PSRAM, map as much as we can. %dMB is mapped", psram_available_size / 1024 / 1024);
     }
 
 #if CONFIG_IDF_TARGET_ESP32

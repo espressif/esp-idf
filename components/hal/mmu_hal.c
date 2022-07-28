@@ -83,7 +83,7 @@ void mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, 
     uint32_t page_size_in_bytes = mmu_hal_pages_to_bytes(mmu_id, 1);
     HAL_ASSERT(vaddr % page_size_in_bytes == 0);
     HAL_ASSERT(paddr % page_size_in_bytes == 0);
-    HAL_ASSERT((paddr + len) <= mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_PADDR_PAGE_NUM));
+    HAL_ASSERT((paddr + len - 1) < mmu_hal_pages_to_bytes(mmu_id, MMU_MAX_PADDR_PAGE_NUM));
     HAL_ASSERT(mmu_ll_check_valid_ext_vaddr_region(mmu_id, vaddr, len));
 
     uint32_t page_num = (len + page_size_in_bytes - 1) / page_size_in_bytes;
