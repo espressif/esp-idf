@@ -186,16 +186,16 @@ examples/peripherals/touch_sensor:
 
 examples/peripherals/touch_sensor/touch_element:
   enable:
-    - if: IDF_TARGET == "esp32s2"
-      reason: only test on esp32s2
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      reason: only supports esp32s2 and esp32s3
 
 examples/peripherals/touch_sensor/touch_sensor_v1:
   disable:
-    - if: SOC_TOUCH_SENSOR_NUM != 10
+    - if: SOC_TOUCH_VERSION_1 != 1
 
 examples/peripherals/touch_sensor/touch_sensor_v2:
   disable:
-    - if: SOC_TOUCH_SENSOR_NUM != 15
+    - if: SOC_TOUCH_VERSION_2 != 1
 
 examples/peripherals/twai:
   disable:
