@@ -22,6 +22,7 @@ class FAT:
         self.clusters[Cluster.ROOT_BLOCK_ID].allocate_cluster()
 
     def __init__(self, boot_sector_state: BootSectorState, init_: bool) -> None:
+        self._first_free_cluster_id = 0
         self.boot_sector_state = boot_sector_state
         self.clusters: List[Cluster] = [Cluster(cluster_id=i,
                                                 boot_sector_state=self.boot_sector_state,
@@ -57,9 +58,11 @@ class FAT:
 
     def find_free_cluster(self) -> Cluster:
         # finds first empty cluster and allocates it
-        for cluster in self.clusters:
+        for cluster_id, cluster in enumerate(self.clusters[self._first_free_cluster_id:],
+                                             start=self._first_free_cluster_id):
             if cluster.is_empty:
                 cluster.allocate_cluster()
+                self._first_free_cluster_id = cluster_id
                 return cluster
         raise NoFreeClusterException('No free cluster available!')
 
