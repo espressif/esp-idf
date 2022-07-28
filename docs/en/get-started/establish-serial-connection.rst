@@ -243,12 +243,20 @@ Verify serial connection
 
 Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after resetting {IDF_TARGET_NAME}.
 
+.. only:: esp32c2
+
+    The default console baudrate on ESP32-C2 is 115200 when using a 40MHz XTAL, or 74880 when using a 26MHz XTAL.
+
+.. only:: not esp32c2
+
+    The default console baudrate on {IDF_TARGET_NAME} is 115200.
+
 Windows and Linux
 ^^^^^^^^^^^^^^^^^
 
 In this example we will use `PuTTY SSH Client <https://www.putty.org/>`_ that is available for both Windows and Linux. You can use other serial programs and set communication parameters like below.
 
-Run terminal, set identified serial port, baud rate = 115200, data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
+Run terminal, set identified serial port, baud rate = 115200 (change this to the default baudrate your chip is using), data bits = 8, stop bits = 1, and parity = N. Below are example screen shots of setting the port and such transmission parameters (in short described as  115200-8-1-N) on Windows and Linux. Remember to select exactly the same serial port you have identified in steps above.
 
 .. figure:: ../../_static/putty-settings-windows.png
     :align: center
@@ -283,7 +291,7 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 
     /dev/cu.Bluetooth-Incoming-Port /dev/cu.SLAB_USBtoUART      /dev/cu.SLAB_USBtoUART7
 
-- The output will vary depending on the type and the number of boards connected to your PC. Then pick the device name of your board and run::
+- The output will vary depending on the type and the number of boards connected to your PC. Then pick the device name of your board and run (change 115200 to the default baudrate your chip is using)::
 
     screen /dev/cu.device_name 115200
 
