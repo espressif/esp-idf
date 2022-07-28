@@ -54,14 +54,20 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 /* Check if eloop runs its timers correctly & in correct order */
 TEST_CASE("Test eloop timers run", "[eloop]")
 {
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	cfg.nvs_enable = false;
+	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+	TEST_ESP_OK(esp_wifi_stop());
+	TEST_ESP_OK(esp_wifi_deinit());
+	/* Reset memory stats since some is leaked during the first initialization */
+	test_utils_record_free_mem();
+
 	int execution_order[6] = {1, 5, 3, 0, 2, 4};
 	int index[6] = {0,1,2,3,4,5};
+	t = 0;
 
-	wifi_funcs = WIFI_OSI_FUNCS_INITIALIZER();
-	if (!wifi_funcs) {
-		TEST_ASSERT(1);
-	}
-	eloop_init();
+	/* We need pptask to run eloop, wifi init will do that */
+	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 	os_get_reltime(&ts);
 	for (int i = 0; i < 6; i++) {
 		eloop_register_timeout(timeouts_sec[i], timeouts_usec[i],
@@ -70,8 +76,9 @@ TEST_CASE("Test eloop timers run", "[eloop]")
 
 	/* wait for all timers to run */
 	os_sleep(20, 0);
-	t = 0;
 	/* check the execution order, this will also check whether they were fired at correct time */
 	TEST_ASSERT(memcmp(execution_order, executed_order, 6*sizeof(int)) == 0);
-	eloop_destroy();
+	TEST_ESP_OK(esp_wifi_stop());
+	TEST_ESP_OK(esp_wifi_deinit());
+	os_sleep(3, 0);
 }
