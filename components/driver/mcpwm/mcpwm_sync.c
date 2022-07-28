@@ -252,9 +252,8 @@ esp_err_t mcpwm_new_soft_sync_src(const mcpwm_soft_sync_config_t *config, mcpwm_
     return ESP_OK;
 
 err:
-    if (soft_sync) {
-        free(soft_sync);
-    }
+    // soft_sync must be NULL in the error handling path, and it's a determined behaviour to free a NULL pointer in esp-idf
+    free(soft_sync);
     return ret;
 }
 
