@@ -188,6 +188,12 @@ static RTC_FAST_ATTR bool s_adc_tsen_enabled = false;
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 static bool s_ultra_low_enabled = false;
 
+static bool s_periph_use_8m_flag = false;
+
+void esp_sleep_periph_use_8m(bool use_or_not)
+{
+    s_periph_use_8m_flag = use_or_not;
+}
 
 static uint32_t get_power_down_flags(void);
 #if SOC_PM_SUPPORT_EXT_WAKEUP
@@ -392,10 +398,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     bool rtc_using_8md256 = false;
 #endif
     //Keep the RTC8M_CLK on if the ledc low-speed channel is clocked by RTC8M_CLK in lightsleep mode
-    bool dig_8m_enabled = !deep_sleep && rtc_dig_8m_enabled();
+    bool periph_using_8m = !deep_sleep && s_periph_use_8m_flag;
 
     //Override user-configured power modes.
-    if (rtc_using_8md256 || dig_8m_enabled) {
+    if (rtc_using_8md256 || periph_using_8m) {
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
@@ -472,7 +478,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (!s_ultra_low_enabled) {
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
     }
-    if (rtc_dig_8m_enabled()) {
+    if (periph_using_8m) {
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
