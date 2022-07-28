@@ -268,8 +268,8 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     rmt_ll_tx_set_limit(hal->regs, channel_id, tx_channel->ping_pong_symbols);
     // disable carrier modulation by default, can reenable by `rmt_apply_carrier()`
     rmt_ll_tx_enable_carrier_modulation(hal->regs, channel_id, false);
-    // idle level is determind by eof encoder, not set to a fixed value
-    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, false);
+    // idle level is determined by register value
+    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, true);
     // always enable tx wrap, both DMA mode and ping-pong mode rely this feature
     rmt_ll_tx_enable_wrap(hal->regs, channel_id, true);
 
@@ -662,6 +662,7 @@ static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_tr
 #endif
     // turn on the TX machine
     portENTER_CRITICAL_ISR(&channel->spinlock);
+    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, t->flags.eot_level, true);
     rmt_ll_tx_start(hal->regs, channel_id);
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 }
@@ -720,9 +721,6 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
     int channel_id = channel->channel_id;
 
     portENTER_CRITICAL(&channel->spinlock);
-    // when this function called, the transaction might be middle-way, the output level when we stop the transmitter is nondeterministic,
-    // so we fix the idle level temporarily
-    rmt_ll_tx_fix_idle_level(hal->regs, channel->channel_id, tx_chan->cur_trans ? tx_chan->cur_trans->flags.eot_level : 0, true);
     rmt_ll_tx_enable_loop(hal->regs, channel->channel_id, false);
 #if SOC_RMT_SUPPORT_TX_ASYNC_STOP
     rmt_ll_tx_stop(hal->regs, channel->channel_id);
@@ -739,11 +737,6 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
 #endif
     rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_MASK(channel_id));
     portEXIT_CRITICAL(&group->spinlock);
-
-    portENTER_CRITICAL(&channel->spinlock);
-    // restore the idle level selection, to be determind by eof symbol
-    rmt_ll_tx_fix_idle_level(hal->regs, channel_id, 0, false);
-    portEXIT_CRITICAL(&channel->spinlock);
 
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
