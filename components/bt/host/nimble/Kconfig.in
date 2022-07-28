@@ -312,6 +312,13 @@ menu "Memory Settings"
 
 endmenu
 
+config BT_NIMBLE_GATT_MAX_PROCS
+    int "Maximum number of GATT client procedures"
+    depends on BT_NIMBLE_ENABLED
+    default 4
+    help
+        Maximum number of GATT client procedures that can be executed.
+
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
     depends on BT_NIMBLE_ENABLED
