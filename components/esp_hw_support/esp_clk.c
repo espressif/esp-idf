@@ -8,6 +8,7 @@
 #include <sys/param.h>
 #include <sys/lock.h>
 
+#include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
@@ -46,7 +47,7 @@ extern uint32_t g_ticks_per_us_app;
 #endif
 #endif
 
-static _lock_t s_esp_rtc_time_lock;
+static portMUX_TYPE s_esp_rtc_time_lock = portMUX_INITIALIZER_UNLOCKED;
 
 // TODO: IDF-4239
 static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
@@ -94,7 +95,7 @@ uint64_t esp_rtc_get_time_us(void)
     //IDF-3901
     return 0;
 #endif
-    _lock_acquire(&s_esp_rtc_time_lock);
+    portENTER_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
     const uint64_t rtc_this_ticks = rtc_time_get();
     const uint64_t ticks = rtc_this_ticks - s_rtc_last_ticks;
@@ -115,7 +116,7 @@ uint64_t esp_rtc_get_time_us(void)
                                    ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
     s_esp_rtc_time_us += delta_time_us;
     s_rtc_last_ticks = rtc_this_ticks;
-    _lock_release(&s_esp_rtc_time_lock);
+    portEXIT_CRITICAL_SAFE(&s_esp_rtc_time_lock);
     return s_esp_rtc_time_us;
 }
 
