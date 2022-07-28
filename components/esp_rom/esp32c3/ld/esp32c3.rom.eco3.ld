@@ -10,7 +10,7 @@ ppMapTxQueue = 0x400016d8;
 rcGetSched = 0x40001764;
 wDevCheckBlockError = 0x400017b4;
 ppProcTxDone = 0x40001804;
-sta_input = rom_sta_input;
+/*sta_input = rom_sta_input;*/
 
 /***************************************
  Group rom_phy
