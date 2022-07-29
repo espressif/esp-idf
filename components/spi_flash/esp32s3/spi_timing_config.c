@@ -137,6 +137,56 @@ void spi_timing_config_flash_set_din_mode_num(uint8_t spi_num, uint8_t din_mode,
     REG_WRITE(SPI_MEM_DIN_NUM_REG(spi_num), reg_val);
 }
 
+#ifndef CONFIG_ESPTOOLPY_OCT_FLASH
+static uint32_t spi_timing_config_get_dummy(void)
+{
+    uint32_t ctrl_reg = READ_PERI_REG(SPI_MEM_CTRL_REG(0));
+    if (ctrl_reg & MULTI_LINE_MASK_OCT_FLASH) {
+        abort();
+    }
+
+#if CONFIG_SPI_FLASH_HPM_ENABLE
+    if (spi_flash_hpm_dummy_adjust()) { // HPM is enabled
+        const spi_flash_hpm_dummy_conf_t *hpm_dummy = spi_flash_hpm_get_dummy();
+        switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
+            case SPI_FLASH_QIO_MODE:
+                return hpm_dummy->qio_dummy - 1;
+            case SPI_FLASH_QUAD_MODE:
+                return hpm_dummy->qout_dummy - 1;
+            case SPI_FLASH_DIO_MODE:
+                return hpm_dummy->dio_dummy - 1;
+            case SPI_FLASH_DUAL_MODE:
+                return hpm_dummy->dout_dummy - 1;
+            case SPI_FLASH_FAST_MODE:
+                return hpm_dummy->fastrd_dummy - 1;
+            case SPI_FLASH_SLOW_MODE:
+                return 0;
+            default:
+                abort();
+        }
+    } else
+#endif
+    { // HPM is not enabled
+        switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
+            case SPI_FLASH_QIO_MODE:
+                return SPI1_R_QIO_DUMMY_CYCLELEN;
+            case SPI_FLASH_QUAD_MODE:
+                return SPI1_R_FAST_DUMMY_CYCLELEN;
+            case SPI_FLASH_DIO_MODE:
+                return SPI1_R_DIO_DUMMY_CYCLELEN;
+            case SPI_FLASH_DUAL_MODE:
+                return SPI1_R_FAST_DUMMY_CYCLELEN;
+            case SPI_FLASH_FAST_MODE:
+                return SPI1_R_FAST_DUMMY_CYCLELEN;
+            case SPI_FLASH_SLOW_MODE:
+                return 0;
+            default:
+                abort();
+        }
+    }
+}
+#endif
+
 void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
 {
 #if CONFIG_ESPTOOLPY_OCT_FLASH
@@ -160,36 +210,8 @@ void spi_timing_config_flash_set_extra_dummy(uint8_t spi_num, uint8_t extra_dumm
     }
     g_rom_spiflash_dummy_len_plus[spi_num] = s_rom_flash_extra_dummy[spi_num] + extra_dummy;
 
-    uint32_t dummy;
-    uint32_t ctrl_reg = READ_PERI_REG(SPI_MEM_CTRL_REG(0));
-    if (ctrl_reg & MULTI_LINE_MASK_OCT_FLASH) {
-        abort();
-    }
     // Only Quad Flash will run into this branch.
-    // So simply get the hpm dummy here by calling `spi_flash_hpm_get_dummy()`
-    const spi_flash_hpm_dummy_conf_t *dummy_cycle = spi_flash_hpm_get_dummy();
-    switch (ctrl_reg & MULTI_LINE_MASK_QUAD_FLASH) {
-        case SPI_FLASH_QIO_MODE:
-            dummy = dummy_cycle->qio_dummy - 1;
-            break;
-        case SPI_FLASH_QUAD_MODE:
-            dummy = dummy_cycle->qout_dummy - 1;
-            break;
-        case SPI_FLASH_DIO_MODE:
-            dummy = dummy_cycle->dio_dummy - 1;
-            break;
-        case SPI_FLASH_DUAL_MODE:
-            dummy = dummy_cycle->dout_dummy - 1;
-            break;
-        case SPI_FLASH_FAST_MODE:
-            dummy = dummy_cycle->fastrd_dummy - 1;
-            break;
-        case SPI_FLASH_SLOW_MODE:
-            dummy = 0;
-            break;
-        default:
-            abort();
-    }
+    uint32_t dummy = spi_timing_config_get_dummy();
     SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, dummy + g_rom_spiflash_dummy_len_plus[spi_num], SPI_MEM_USR_DUMMY_CYCLELEN_S);
 #endif
 }
