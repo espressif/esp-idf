@@ -249,6 +249,15 @@ extern void esp_vApplicationIdleHook(void);
     tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
 /*-----------------------------------------------------------*/
 
+#if ( configNUM_CORES > 1 )
+    #define prvCheckForYield( pxTCB, xCurCoreID, xYieldEqualPriority )                                      ( prvCheckForYieldUsingPrioritySMP( ( pxTCB )->uxPriority, ( pxTCB )->xCoreID, xCurCoreID, xYieldEqualPriority ) == pdTRUE )
+    #define prvCheckForYieldUsingPriority( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )   ( prvCheckForYieldUsingPrioritySMP( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority ) == pdTRUE )
+#else
+    #define prvCheckForYield( pxTargetTCB, xCurCoreID, xYieldEqualPriority )                                ( ( ( pxTargetTCB )->uxPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) > pxCurrentTCB[ 0 ]->uxPriority )
+    #define prvCheckForYieldUsingPriority( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )   ( ( uxTaskPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) >= pxCurrentTCB[ 0 ]->uxPriority )
+#endif /* configNUM_CORES > 1 */
+/*-----------------------------------------------------------*/
+
 #define tskCAN_RUN_HERE( cpuid ) ( cpuid==xPortGetCoreID() || cpuid==tskNO_AFFINITY )
 
 /*
@@ -624,6 +633,49 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                                       TaskFunction_t pxTaskCode,
                                       BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
+
+
+#if ( configNUM_CORES > 1 )
+
+/*
+ * Check whether a yield (on either core) is required after unblocking (or
+ * changing the priority of) a particular task.
+ *
+ * - This function is the SMP replacement for checking if an unblocked task has
+ *   a higher (or equal) priority than the current task.
+ * - It should be called before calling taskYIELD_IF_USING_PREEMPTION() or
+ *   before setting xYieldRequired
+ * - If it is the other core that requires a yield, this function will
+ *   internally trigger the other core to yield
+ *
+ * Note: In some special instances, a yield is triggered if the unblocked task
+ *       has an equal priority (such as in xTaskResumeAll). Thus the
+ *       xYieldEqualPriority parameter specifies whether to yield if the current
+ *       task has equal priority.
+ *
+ * Scheduling Algorithm:
+ * This function will bias towards yielding the current core.
+ * - If the unblocked task has a higher (or equal) priority than then current
+ *   core, the current core is yielded regardless of the current priority of the
+ *   other core.
+ * - A core (current or other) will only yield if their schedulers are not
+ *   suspended.
+ *
+ * Todo: This can be optimized (IDF-5772)
+ *
+ * Entry:
+ * - This function must be called in a critical section
+ * - A task must just have been unblocked, or its priority raised
+ * Exit:
+ * - Returns pdTRUE if the current core requires yielding
+ * - The other core will be triggered to yield if required
+ */
+static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
+                                                    BaseType_t xTaskCoreID,
+                                                    BaseType_t xCurCoreID,
+                                                    BaseType_t xYieldEqualPriority ) PRIVILEGED_FUNCTION;
+
+#endif /* configNUM_CORES > 1 */
 
 /*
  * freertos_tasks_c_additions_init() should only be called if the user definable
@@ -1324,6 +1376,48 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         mtCOVERAGE_TEST_MARKER();
     }
 }
+/*-----------------------------------------------------------*/
+
+#if ( configNUM_CORES > 1 )
+
+    static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
+                                                        BaseType_t xTaskCoreID,
+                                                        BaseType_t xCurCoreID,
+                                                        BaseType_t xYieldEqualPriority )
+    {
+        if( xYieldEqualPriority == pdTRUE )
+        {
+            /* Increment the task priority to achieve the same affect as if( uxTaskPriority >= pxCurrentTCB->uxPriority ) */
+            uxTaskPriority++;
+        }
+
+        /* Indicate whether the current core needs to yield */
+        BaseType_t xYieldRequiredCurrentCore;
+
+        /* If the target task can run on the current core, and has a higher priority than the current core, then yield the current core */
+        if( ( ( xTaskCoreID == xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) ) && ( uxTaskPriority > pxCurrentTCB[ xCurCoreID ]->uxPriority ) )
+        {
+            /* Return true for the caller to yield the current core */
+            xYieldRequiredCurrentCore = pdTRUE;
+        }
+        /* If the target task can run on the other core, and has a higher priority then the other core, and the other core has not suspended scheduling, the yield the other core */
+        else if(    ( ( xTaskCoreID == !xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) )
+                 && ( uxTaskPriority > pxCurrentTCB[ !xCurCoreID ]->uxPriority )
+                 && ( uxSchedulerSuspended[ !xCurCoreID ] == ( UBaseType_t ) pdFALSE ) )
+        {
+            /* Signal the other core to yield */
+            vPortYieldOtherCore( !xCurCoreID );
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+        else
+        {
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+
+        return xYieldRequiredCurrentCore;
+    }
+
+#endif /* configNUM_CORES > 1 */
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskDelete == 1 )
