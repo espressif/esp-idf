@@ -395,12 +395,20 @@ void start_cpu0_default(void)
     abort(); /* Only get to here if not enough free heap to start scheduler */
 }
 
-#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+/**
+ * This function overwrites a the same function of libsupc++ (part of libstdc++).
+ * Consequently, libsupc++ will then follow our configured exception emergency pool size.
+ *
+ * It will be called even with -fno-exception for user code since the stdlib still uses exceptions.
+ */
 size_t __cxx_eh_arena_size_get(void)
 {
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
     return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
-}
+#else
+    return 0;
 #endif
+}
 
 static void do_global_ctors(void)
 {
