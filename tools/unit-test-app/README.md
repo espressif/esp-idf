@@ -39,7 +39,7 @@ Unit test uses 3 stages in CI: `build`, `assign_test`, `unit_test`.
 
 ### Build Stage:
 
-`build_esp_idf_tests` job will build all UT configs and run script `UnitTestParser.py` to parse test cases form built elf files. Built binary (`tools/unit-test-app/output`) and parsed cases (`components/idf_test/unit_test/TestCaseAll.yml`) will be saved as artifacts.
+`build_esp_idf_tests` job will build all UT configs and run script `UnitTestParser.py` to parse test cases form built elf files. Built binary (`tools/unit-test-app/build_<target>_<config>`) and parsed cases (`components/idf_test/unit_test/TestCaseAll.yml`) will be saved as artifacts.
 
 When we add new test case, it will construct a structure to save case data during build. We'll parse the test case from this structure. The description (defined in test case: `TEST_CASE("name", "description")`) is used to extend test case definition. The format of test description is a list of tags:
 
@@ -63,7 +63,7 @@ We will build unit-test-app with different sdkconfigs. Some config items require
 
 ### Assign Test Stage:
 
-`assign_test` job will try to assign all cases to test jobs defined in `.gitlab-ci.yml`, according to test environment and tags. For each job, one config file with same name of test job will be generated in `components/idf_test/unit_test/CIConfigs/`(this folder will be passed to test jobs as artifacts). These config files will tell test jobs which cases it need to run, and pass some extra configs (like if the case will reset) of test case to runner.
+`assign_unit_test` job will try to assign all cases to test jobs defined in `.gitlab-ci.yml`, according to test environment and tags. For each job, one config file with same name of test job will be generated in `components/idf_test/unit_test/CIConfigs/`(this folder will be passed to test jobs as artifacts). These config files will tell test jobs which cases it need to run, and pass some extra configs (like if the case will reset) of test case to runner.
 
 Please check related document in tiny-test-fw for details.
 
@@ -110,7 +110,7 @@ First you can check the logs. It's saved as unit test job artifacts. You can dow
 
 If you want to reproduce locally, you need to:
 
-1. Download artifacts of `build_esp_idf_tests`. The built binary is in `tools/unit-test-app/output` folder.
+1. Download artifacts of `build_esp_idf_tests`. The built binary is in `tools/unit-test-app/build_<target>_<config>` folder.
     * Built binary in CI could be slightly different from locally built binary with the same revision, some cases might only fails with CI built binary.
 2. Check the following print in CI job to get the config name: `Running unit test for config: config_name`. Then flash the binary of this config to your board.
 3. Run the failed case on your board (refer to Running Unit Tests section).
@@ -124,8 +124,9 @@ If you want to reproduce locally, you need to:
 First, install Python dependencies and export the Python path where the IDF CI Python modules are found:
 
 ```bash
-pip install -r $IDF_PATH/tools/ci/python_packages/tiny_test_fw/requirements.txt
-export PYTHONPATH=$IDF_PATH/tools/ci/python_packages
+bash install.sh --enable-ttfw
+source export.sh
+export PYTHONPATH=$IDF_PATH/tools/ci/python_packages:$PYTHONPATH
 ```
 
 Change to the unit test app directory, configure the app as needed and build it in the default "build" directory. For example:
@@ -137,6 +138,20 @@ idf.py build -T vfs
 ```
 
 (Instead of these steps, you can do whatever is needed to configure & build a unit test app with the tests and config that you need.)
+
+If you want to build exactly the same binary files under the same location as they are in CI pipelines, you may run:
+
+```bash
+cd $IDF_PATH
+python tools/ci/ci_build_apps.py tools/unit-test-app -v -t $IDF_TARGET --config "configs/*=" --copy-sdkconfig --preserve-all
+```
+
+This would build all configs. if you want to build only one config (let's take `psram` as an example), you may use:
+
+```bash
+cd $IDF_PATH
+python tools/ci/ci_build_apps.py tools/unit-test-app -v -t $IDF_TARGET --config "configs/psram=" --copy-sdkconfig --preserve-all
+```
 
 ### run a single test case by name
 
