@@ -2218,6 +2218,8 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
     sm->wpa_deauthenticate = wpa_deauth;
     sm->wpa_neg_complete = wpa_neg_complete;
     sm->key_install = false;
+    sm->ap_rsnxe = NULL;
+    sm->assoc_rsnxe = NULL;
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
     sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
@@ -2242,7 +2244,9 @@ void wpa_sm_deinit(void)
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
     os_free(sm->ap_rsnxe);
+    sm->ap_rsnxe = NULL;
     os_free(sm->assoc_rsnxe);
+    sm->assoc_rsnxe = NULL;
 }
 
 
