@@ -6,8 +6,9 @@
 
 #include "lvgl.h"
 
-void example_lvgl_demo_ui(lv_obj_t *scr)
+void example_lvgl_demo_ui(lv_disp_t *disp)
 {
+    lv_obj_t *scr = lv_disp_get_scr_act(disp);
     lv_obj_t *label = lv_label_create(scr);
     lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL_CIRCULAR); /* Circular scroll */
     lv_label_set_text(label, "Hello Espressif, Hello LVGL.");

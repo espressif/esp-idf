@@ -60,7 +60,7 @@ SemaphoreHandle_t sem_vsync_end;
 SemaphoreHandle_t sem_gui_ready;
 #endif
 
-extern void example_lvgl_demo_ui(lv_obj_t *scr);
+extern void example_lvgl_demo_ui(lv_disp_t *disp);
 
 static bool example_on_vsync_event(esp_lcd_panel_handle_t panel, const esp_lcd_rgb_panel_event_data_t *event_data, void *user_data)
 {
@@ -226,8 +226,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
 
     ESP_LOGI(TAG, "Display LVGL Scatter Chart");
-    lv_obj_t *scr = lv_disp_get_scr_act(disp);
-    example_lvgl_demo_ui(scr);
+    example_lvgl_demo_ui(disp);
 
     while (1) {
         // raise the task priority of LVGL and/or reduce the handler period can improve the performance

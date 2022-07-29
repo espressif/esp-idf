@@ -27,8 +27,9 @@ static void btn_cb(lv_event_t * e)
     lv_disp_set_rotation(disp, rotation);
 }
 
-void example_lvgl_demo_ui(lv_disp_t *disp, lv_obj_t *scr)
+void example_lvgl_demo_ui(lv_disp_t *disp)
 {
+    lv_obj_t *scr = lv_disp_get_scr_act(disp);
     meter = lv_meter_create(scr);
     lv_obj_center(meter);
     lv_obj_set_size(meter, 200, 200);

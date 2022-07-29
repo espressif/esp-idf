@@ -74,8 +74,10 @@ static void anim_timer_cb(lv_timer_t *timer)
     }
 }
 
-void example_lvgl_demo_ui(lv_obj_t *scr)
+void example_lvgl_demo_ui(lv_disp_t *disp)
 {
+    lv_obj_t *scr = lv_disp_get_scr_act(disp);
+
     // Create image
     img_logo = lv_img_create(scr);
     lv_img_set_src(img_logo, &esp_logo);

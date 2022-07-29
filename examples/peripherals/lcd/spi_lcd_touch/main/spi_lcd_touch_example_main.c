@@ -66,7 +66,7 @@ static const char *TAG = "example";
 esp_lcd_touch_handle_t tp = NULL;
 #endif
 
-extern void example_lvgl_demo_ui(lv_disp_t *disp, lv_obj_t *scr);
+extern void example_lvgl_demo_ui(lv_disp_t *disp);
 
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
@@ -300,8 +300,7 @@ void app_main(void)
 #endif
 
     ESP_LOGI(TAG, "Display LVGL Meter Widget");
-    lv_obj_t *scr = lv_disp_get_scr_act(disp);
-    example_lvgl_demo_ui(disp, scr);
+    example_lvgl_demo_ui(disp);
 
     while (1) {
         // raise the task priority of LVGL and/or reduce the handler period can improve the performance
