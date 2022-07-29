@@ -11,10 +11,13 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/cdefs.h>
-#include "tlsf.h"
-#include "tlsf_block_functions.h"
 #include "multi_heap.h"
 #include "multi_heap_internal.h"
+
+#if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
+#include "tlsf.h"
+#include "tlsf_block_functions.h"
+#endif
 
 /* Note: Keep platform-specific parts in this header, this source
    file should depend on libc only */
@@ -75,7 +78,7 @@ typedef struct multi_heap_info {
     size_t free_bytes;
     size_t minimum_free_bytes;
     size_t pool_size;
-    tlsf_t heap_data;
+    void* heap_data;
 } heap_t;
 
 #ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL

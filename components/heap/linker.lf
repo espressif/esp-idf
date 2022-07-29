@@ -2,7 +2,7 @@
 archive: libheap.a
 entries:
     if HEAP_TLSF_USE_ROM_IMPL = n:
-        heap_tlsf (noflash)
+        tlsf (noflash)
     multi_heap (noflash)
     if HEAP_POISONING_DISABLED = n:
         multi_heap_poisoning (noflash)

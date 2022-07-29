@@ -21,7 +21,15 @@
 /* Defines compile-time configuration macros */
 #include "multi_heap_config.h"
 
+#if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
 #include "tlsf.h"
+#else
+/* Declaration of the tlsf_poison_fill_pfunc_set defined in RAM
+ * used to call IDF function multi_heap_internal_poison_fill_region()
+ * in this source file
+ */
+extern void tlsf_poison_fill_pfunc_set(void *pfunc);
+#endif
 
 #ifdef MULTI_HEAP_POISONING
 
