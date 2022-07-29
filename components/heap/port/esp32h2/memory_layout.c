@@ -61,13 +61,12 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  * Register the shared buffer area of the last memory block into the heap during heap initialization
  */
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
-#define DRAM0_TO_IRAM0(dram_addr)     (dram_addr + 0x700000)
 
 const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FC80000,           0x20000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x40380000}, //D/IRAM level1, can be used as trace memory
     { 0x3FCA0000,           0x20000,                                   SOC_MEMORY_TYPE_DEFAULT,     0x403A0000}, //D/IRAM level2, can be used as trace memory
     { 0x3FCC0000,           (APP_USABLE_DRAM_END-0x3FCC0000),          SOC_MEMORY_TYPE_DEFAULT,     0x403C0000}, //D/IRAM level3, can be used as trace memory
-    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DRAM,  DRAM0_TO_IRAM0(APP_USABLE_DRAM_END)}, //D/IRAM level3, can be used as trace memory (ROM reserved area)
+    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DRAM,  MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END)}, //D/IRAM level3, can be used as trace memory (ROM reserved area)
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x50000000, 0x2000,  SOC_MEMORY_TYPE_RTCRAM,      0},          //Fast RTC memory
 #endif

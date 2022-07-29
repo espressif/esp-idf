@@ -52,13 +52,12 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  * Register the shared buffer area of the last memory block into the heap during heap initialization
  */
 #define APP_USABLE_DRAM_END           (SOC_ROM_STACK_START - SOC_ROM_STACK_SIZE)
-#define DRAM0_TO_IRAM0(dram_addr)     (dram_addr + 0x6E0000)
 
 const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCA0000,           0x10000,                                   SOC_MEMORY_TYPE_DEFAULT,    0x40380000},                         //D/IRAM level1
     { 0x3FCB0000,           0x10000,                                   SOC_MEMORY_TYPE_DEFAULT,    0x40390000},                         //D/IRAM level2
     { 0x3FCC0000,           (APP_USABLE_DRAM_END-0x3FCC0000),          SOC_MEMORY_TYPE_DEFAULT,    0x403A0000},                         //D/IRAM level3
-    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DRAM, DRAM0_TO_IRAM0(APP_USABLE_DRAM_END)} //D/IRAM level3 (ROM reserved area)
+    { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END), SOC_MEMORY_TYPE_STACK_DRAM, MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END)} //D/IRAM level3 (ROM reserved area)
 };
 
 
