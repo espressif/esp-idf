@@ -25,16 +25,20 @@
  * - Most other malloc caps only fit in one region anyway.
  *
  */
-const soc_memory_type_desc_t soc_memory_types[] = {
-    // Type 0: DRAM used for startup stacks
-    { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, MALLOC_CAP_RETENTION }, false, true},
-    // Type 1: DRAM which has an alias on the I-port
-    { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
-};
 
 /* Index of memory in `soc_memory_types[]` */
-#define SOC_MEMORY_TYPE_STACK_DRAM  0
-#define SOC_MEMORY_TYPE_DIRAM       1
+enum {
+    SOC_MEMORY_TYPE_STACK_DRAM  = 0,
+    SOC_MEMORY_TYPE_DIRAM       = 1,
+    SOC_MEMORY_TYPE_NUM,
+};
+
+const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
+    // Type 0: DRAM used for startup stacks
+    [SOC_MEMORY_TYPE_STACK_DRAM] = { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, MALLOC_CAP_RETENTION }, false, true},
+    // Type 1: DRAM which has an alias on the I-port
+    [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
+};
 
 #define SOC_MEMORY_TYPE_DEFAULT     SOC_MEMORY_TYPE_DIRAM
 

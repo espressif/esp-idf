@@ -8,7 +8,7 @@
  *
  *  ESP32-C2 ROM static data usage is as follows:
  *  - 0x3fccb264 - 0x3fcdcb70: Shared buffers, used in UART/USB/SPI download mode only
- *  - 0x3fcdcb70 - 0x3fcdeb70: APP CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x3fcdcb70 - 0x3fcdeb70: PRO CPU stack, can be reclaimed as heap after RTOS startup
  *  - 0x3fcdeb70 - 0x3fce0000: ROM .bss and .data (not easily reclaimable)
  *
  *  The 2nd stage bootloader can take space up to the end of ROM shared

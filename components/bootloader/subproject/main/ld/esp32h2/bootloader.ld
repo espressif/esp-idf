@@ -8,7 +8,7 @@
  *
  *  ESP32-H2 ROM static data usage is as follows:
  *  - 0x3fccb900 - 0x3fcdd210: Shared buffers, used in UART/USB/SPI download mode only
- *  - 0x3fcdd210 - 0x3fcdf210: APP CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x3fcdd210 - 0x3fcdf210: PRO CPU stack, can be reclaimed as heap after RTOS startup
  *  - 0x3fcdf210 - 0x3fce0000: ROM .bss and .data (not easily reclaimable)
  *
  *  The 2nd stage bootloader can take space up to the end of ROM shared
