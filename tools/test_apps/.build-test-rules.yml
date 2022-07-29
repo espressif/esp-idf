@@ -44,6 +44,12 @@ tools/test_apps/protocols/mqtt/publish_connect_test:
       temporary: true
       reason: lack of runners
 
+tools/test_apps/protocols/netif_components:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: true
+      reason: one target is enough to verify netif component dependencies
+
 tools/test_apps/security/secure_boot:
 #  disable:
 #    - if: SOC_SECURE_BOOT_SUPPORTED != 1
