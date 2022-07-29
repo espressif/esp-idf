@@ -7,7 +7,6 @@
 #pragma once
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
-#include "esp_app_format.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,20 +149,6 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata);
  *        - -1: If it does not have active otadata.
  */
 int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, bool *valid_two_otadata, bool max);
-
-/**
- * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
- *
- * Returns a description for the requested app partition.
- * @param[in] partition      App partition description.
- * @param[out] app_desc      Structure of info about app.
- * @return
- *  - ESP_OK:                Successful.
- *  - ESP_ERR_INVALID_ARG:   The arguments passed are not valid.
- *  - ESP_ERR_NOT_FOUND:     app_desc structure is not found. Magic word is incorrect.
- *  - ESP_FAIL:              mapping is fail.
- */
-esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
 
 /**
  * @brief Get chip package
