@@ -20,8 +20,6 @@
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 
-#include "esp_system.h"
-#include "esp_log.h"
 #include "esp_heap_caps_init.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
@@ -33,15 +31,17 @@
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
 
-#if __has_include("esp_ota_ops.h")
-#include "esp_ota_ops.h"
-#define HAS_ESP_OTA 1
-#endif
+#include "esp_partition.h"
 
 /***********************************************/
 // Headers for other components init functions
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 #include "esp_coexist_internal.h"
+#endif
+
+#if __has_include("esp_app_desc.h")
+#define WITH_APP_IMAGE_INFO
+#include "esp_app_desc.h"
 #endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
@@ -408,10 +408,10 @@ static void start_cpu0_default(void)
     int cpu_freq = esp_clk_cpu_freq();
     ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
-#if HAS_ESP_OTA // [refactor-todo] find a better way to handle this.
+#ifdef WITH_APP_IMAGE_INFO
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
-        const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+        const esp_app_desc_t *app_desc = esp_app_get_description();
         ESP_EARLY_LOGI(TAG, "Application information:");
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
         ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
@@ -426,11 +426,11 @@ static void start_cpu0_default(void)
         ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
 #endif
         char buf[17];
-        esp_ota_get_app_elf_sha256(buf, sizeof(buf));
+        esp_app_get_elf_sha256(buf, sizeof(buf));
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
     }
-#endif //HAS_ESP_OTA
+#endif
 
     // Initialize core components and services.
     do_core_init();
