@@ -20,7 +20,7 @@
     transport_esp_tls_t *ssl = ssl_get_context_data(t);  \
     if (!ssl) { return; }
 
-static const char *TAG = "TRANSPORT_BASE";
+static const char *TAG = "transport_base";
 
 typedef enum {
     TRANS_SSL_INIT = 0,
