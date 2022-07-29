@@ -68,7 +68,7 @@ example_test_pytest_esp32c2_generic:
     - .rules:test:example_test-esp32c2
   needs:
     - build_pytest_examples_esp32c2
-  tags: [ esp32c2, generic ]
+  tags: [ esp32c2, generic, xtal_40mhz ]
 
 example_test_pytest_esp32c3_generic:
   extends:
