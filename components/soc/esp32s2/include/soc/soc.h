@@ -277,6 +277,10 @@
 #define SOC_DIRAM_DRAM_LOW    0x3FFB0000
 #define SOC_DIRAM_DRAM_HIGH   0x40000000
 
+#define SOC_I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
+#define MAP_DRAM_TO_IRAM(addr) (addr + SOC_I_D_OFFSET)
+#define MAP_IRAM_TO_DRAM(addr) (addr - SOC_I_D_OFFSET)
+
 // Region of memory accessible via DMA in internal memory. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FFB0000
 #define SOC_DMA_HIGH 0x40000000
