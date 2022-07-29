@@ -382,6 +382,18 @@ IP layer features
 
 - IPV4 mapped IPV6 addresses are supported.
 
+Customized lwIP hooks
++++++++++++++++++++++
+
+The original lwIP supports implementing custom compile-time modifications via ``LWIP_HOOK_FILENAME``. This file is already used by the IDF port layer, but IDF users could still include and implement any custom additions via a header file defined by the macro ``ESP_IDF_LWIP_HOOK_FILENAME``. Here is an exmaple of adding a custom hook file to the build process (the hook is called ``my_hook.h`` and located in the project's ``main`` folder):
+
+.. code-block:: cmake
+
+   idf_component_get_property(lwip lwip COMPONENT_LIB)
+   target_compile_options(${lwip} PRIVATE "-I${PROJECT_DIR}/main")
+   target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"my_hook.h\"")
+
+
 Limitations
 ^^^^^^^^^^^
 Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This is a limitation of buffer sizes in the lower layer network interface drivers. If all driver transmit buffers are full then UDP transmission will fail. Applications sending a high volume of UDP datagrams who don't wish for any to be dropped by the sender should check for this error code and re-send the datagram after a short delay.
