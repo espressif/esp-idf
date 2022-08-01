@@ -136,6 +136,7 @@ function(__build_init idf_path)
 
     idf_build_set_property(__PREFIX idf)
     idf_build_set_property(__CHECK_PYTHON 1)
+    idf_build_set_property(IDF_COMPONENT_MANAGER 0)
 
     __build_set_default_build_specifications()
 
