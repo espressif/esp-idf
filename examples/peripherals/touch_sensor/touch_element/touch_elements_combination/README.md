@@ -1,19 +1,29 @@
-| Supported Targets | ESP32-S2 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # Touch button example
+
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates how to use the Touch Element library of capacitive touch sensor and set up more than one type of touch elements and handle all the event messages in one task.
 
 ## How to use example
 
+### Hardware Required
+
+* A development board with ESP32-S2 or ESP32-S3 chip
+* A touch extension board like [esp32-s2-touch-devkit-1](https://docs.espressif.com/projects/espressif-esp-dev-kits/en/latest/esp32s2/esp32-s2-touch-devkit-1/user_guide.html)
+
 ### Configure the project
 
-* Set the target of the build (where `{IDF_TARGET}` stands for the target chip such as `esp32s2`).
+* Set the target of the build by following command, where TARGET can be `esp32s2` or `esp32s3`.
+```
+idf.py set-target TARGET
+```
 
 ### Build and Flash
 
-Build the project and flash it to the target board, then run monitor tool to view serial output:
+Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
 idf.py -p PORT flash monitor
@@ -135,4 +145,6 @@ I (4341) Touch Elements Combination Example: Slider Calculate, position: 101
 I (4351) Touch Elements Combination Example: Slider Release, position: 101
 ```
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

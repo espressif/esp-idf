@@ -280,6 +280,8 @@ static esp_err_t slider_object_set_threshold(void)
     return ret;
 }
 
+// workaround for compilation error on xtensa-esp32s3-elf-gcc (crosstool-NG esp-2022r1-RC1) 11.2.0 (IDF-5725)
+__attribute__((optimize("-Os")))
 static void slider_object_process_state(void)
 {
     te_slider_handle_list_t *item;
