@@ -297,6 +297,7 @@ def run_unit_test_cases(env, extra_data):
     for ut_config in case_config:
         Utility.console_log('Running unit test for config: ' + ut_config, 'O')
 
+        # Get the console baudrate from the sdkconfig
         _app = ttfw_idf.UT(app_path=UT_APP_PATH, config_name=ut_config, target=env.default_dut_cls.TARGET)
         baud = _app.get_sdkconfig_config_value('CONFIG_ESP_CONSOLE_UART_BAUDRATE')
         if baud is None:
@@ -306,6 +307,7 @@ def run_unit_test_cases(env, extra_data):
             baud = int(baud, 10) if isinstance(baud, str) else baud
             Utility.console_log('Console baudrate is {}'.format(baud))
 
+        # Get the DUT with specified baudrate
         dut = env.get_dut('unit-test-app', app_path=UT_APP_PATH, app_config_name=ut_config,
                           allow_dut_exception=True, baudrate=baud)
         if len(case_config[ut_config]) > 0:
