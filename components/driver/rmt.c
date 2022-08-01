@@ -1025,10 +1025,10 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     }
 
 #if CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
-            if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
-                ESP_LOGE(TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
-                return ESP_ERR_INVALID_ARG;
-            }
+    if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+        ESP_LOGE(TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
+        return ESP_ERR_INVALID_ARG;
+    }
 #endif
 
 #if !CONFIG_SPIRAM_USE_MALLOC
@@ -1217,9 +1217,9 @@ esp_err_t rmt_translator_init(rmt_channel_t channel, sample_to_rmt_t fn)
         p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)malloc(block_size);
 #else
         if (p_rmt_obj[channel]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) {
-            p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)malloc(block_size);
-        } else {
             p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)heap_caps_calloc(1, block_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        } else {
+            p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)malloc(block_size);
         }
 #endif
         if (p_rmt_obj[channel]->tx_buf == NULL) {
