@@ -194,14 +194,14 @@ static void osi_thread_stop(osi_thread_t *thread)
 }
 
 //in linux, the stack_size, priority and core may not be set here, the code will be ignore the arguments
-osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num)
+osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[])
 {
     int ret;
     struct osi_thread_start_arg start_arg = {0};
 
     if (stack_size <= 0 ||
             core < OSI_THREAD_CORE_0 || core > OSI_THREAD_CORE_AFFINITY ||
-            work_queue_num <= 0) {
+            work_queue_num <= 0 || work_queue_len == NULL) {
         return NULL;
     }
 
@@ -218,7 +218,8 @@ osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priorit
     }
 
     for (int i = 0; i < thread->work_queue_num; i++) {
-        thread->work_queues[i] = osi_work_queue_create(DEFAULT_WORK_QUEUE_CAPACITY);
+        size_t queue_len = work_queue_len[i] ? work_queue_len[i] : DEFAULT_WORK_QUEUE_CAPACITY;
+        thread->work_queues[i] = osi_work_queue_create(queue_len);
         if (thread->work_queues[i] == NULL) {
             goto _err;
         }

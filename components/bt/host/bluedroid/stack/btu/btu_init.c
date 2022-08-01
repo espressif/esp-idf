@@ -48,6 +48,8 @@
 #define BTU_TASK_STACK_SIZE             (BT_BTU_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)
 #define BTU_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "BTU_TASK"
+#define BTU_TASK_WORKQUEUE_NUM          (2)
+#define BTU_TASK_WORKQUEUE0_LEN         (0)
 
 hash_map_t *btu_general_alarm_hash_map;
 osi_mutex_t btu_general_alarm_lock;
@@ -181,7 +183,9 @@ void BTU_StartUp(void)
 
     osi_mutex_new(&btu_l2cap_alarm_lock);
 
-    btu_thread = osi_thread_create(BTU_TASK_NAME, BTU_TASK_STACK_SIZE, BTU_TASK_PRIO, BTU_TASK_PINNED_TO_CORE, 1);
+    const size_t workqueue_len[] = {BTU_TASK_WORKQUEUE0_LEN};
+    btu_thread = osi_thread_create(BTU_TASK_NAME, BTU_TASK_STACK_SIZE, BTU_TASK_PRIO, BTU_TASK_PINNED_TO_CORE,
+                                   BTU_TASK_WORKQUEUE_NUM, workqueue_len);
     if (btu_thread == NULL) {
         goto error_exit;
     }
