@@ -360,7 +360,7 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
  */
 esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db,
                                             esp_gatt_if_t gatts_if,
-                                            uint8_t max_nb_attr,
+                                            uint16_t max_nb_attr,
                                             uint8_t srvc_inst_id);
 /**
  * @brief           This function is called to add an included service. This function have to be called between

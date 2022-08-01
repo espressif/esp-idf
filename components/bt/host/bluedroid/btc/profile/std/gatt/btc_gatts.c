@@ -127,7 +127,7 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     }
     case BTC_GATTS_ACT_CREATE_ATTR_TAB: {
-        uint8_t num_attr = src->create_attr_tab.max_nb_attr;
+        uint16_t num_attr = src->create_attr_tab.max_nb_attr;
         if (src->create_attr_tab.gatts_attr_db && (num_attr > 0)) {
             dst->create_attr_tab.gatts_attr_db = (esp_gatts_attr_db_t *) osi_malloc(sizeof(esp_gatts_attr_db_t) * num_attr);
             if (dst->create_attr_tab.gatts_attr_db) {
@@ -217,7 +217,7 @@ void btc_gatts_arg_deep_free(btc_msg_t *msg)
 
 static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
                                                         esp_gatt_if_t gatts_if,
-                                                        uint8_t max_nb_attr,
+                                                        uint16_t max_nb_attr,
                                                         uint8_t srvc_inst_id)
 {
     uint16_t uuid = 0;
@@ -568,24 +568,24 @@ static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 //save the service handle to the btc module after used
                 //the attribute table method to creat a service
                 bta_to_btc_uuid(&btc_creat_tab_env.svc_uuid, &p_data->create.uuid);
-                uint8_t index = btc_creat_tab_env.handle_idx;
+                uint16_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.svc_start_hdl = p_data->create.service_id;
                 btc_creat_tab_env.handles[index] = p_data->create.service_id;
                 break;
             }
             case BTA_GATTS_ADD_INCL_SRVC_EVT: {
-                uint8_t index = btc_creat_tab_env.handle_idx;
+                uint16_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id;
                 break;
             }
             case BTA_GATTS_ADD_CHAR_EVT: {
-                uint8_t index = btc_creat_tab_env.handle_idx;
+                uint16_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id - 1;
                 btc_creat_tab_env.handles[index+1] = p_data->add_result.attr_id;
                 break;
             }
             case BTA_GATTS_ADD_CHAR_DESCR_EVT: {
-                uint8_t index = btc_creat_tab_env.handle_idx;
+                uint16_t index = btc_creat_tab_env.handle_idx;
                 btc_creat_tab_env.handles[index] = p_data->add_result.attr_id;
                 break;
             }
