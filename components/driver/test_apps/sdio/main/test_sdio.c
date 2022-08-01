@@ -16,7 +16,6 @@
 #include "driver/sdspi_host.h"
 #include "soc/soc_caps.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 #if SOC_SDMMC_HOST_SUPPORTED && SOC_SDIO_SLAVE_SUPPORTED
 #include "soc/sdio_slave_pins.h"
@@ -810,5 +809,3 @@ ptest_func_t tohost_slave = {
 TEST_MASTER_SLAVE(SDIO_TOHOST, test_cfg_array, "[sdio][timeout=180][test_env=sdio_master_slave]", &tohost_master, &tohost_slave);
 
 #endif //SOC_SDMMC_HOST_SUPPORTED && SOC_SDIO_SLAVE_SUPPORTED
-
-#endif
