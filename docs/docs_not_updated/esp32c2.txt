@@ -42,4 +42,3 @@ api-reference/bluetooth/esp_gatt_defs
 api-reference/bluetooth/esp-ble-mesh
 api-reference/bluetooth/index
 api-reference/bluetooth/esp_gap_ble
-api-reference/bluetooth/classic_bt
