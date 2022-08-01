@@ -80,7 +80,7 @@ typedef struct {
     void (* _dport_access_stall_other_cpu_end_wrap)(void);
     void (* _phy_disable)(void);
     void (* _phy_enable)(void);
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
 #endif
