@@ -263,7 +263,7 @@ define away all of the tracing macros.
 
 #define traceTASK_NOTIFY_TAKE( uxIndexToWait )                        SEGGER_SYSVIEW_RecordU32x2(apiFastID_OFFSET + apiID_ULTASKNOTIFYTAKE, xClearCountOnExit, xTicksToWait)
 #define traceTASK_DELAY()                                             SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKDELAY, xTicksToDelay)
-#define traceTASK_DELAY_UNTIL()                                       SEGGER_SYSVIEW_RecordVoid(apiFastID_OFFSET + apiID_VTASKDELAYUNTIL)
+#define traceTASK_DELAY_UNTIL( xTimeToWake )                          SEGGER_SYSVIEW_RecordVoid(apiFastID_OFFSET + apiID_VTASKDELAYUNTIL)
 #define traceTASK_DELETE( pxTCB )                                     if (pxTCB != NULL) {                                              \
 						                                                SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKDELETE,  \
 						                                                                      SEGGER_SYSVIEW_ShrinkId((U32)pxTCB)); 	\

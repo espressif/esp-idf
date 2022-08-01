@@ -1589,7 +1589,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
             if( xShouldDelay != pdFALSE )
             {
-                traceTASK_DELAY_UNTIL();
+                traceTASK_DELAY_UNTIL( xTimeToWake );
 
                 /* prvAddCurrentTaskToDelayedList() needs the block time, not
                  * the time to wake, so subtract the current tick count. */
@@ -3731,6 +3731,8 @@ void vTaskPlaceOnEventList( List_t * const pxEventList,
                             const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
+
+    /* Take the kernel lock as we are about to access the task lists. */
     taskENTER_CRITICAL( &xKernelLock );
 
     /* THIS FUNCTION MUST BE CALLED WITH EITHER INTERRUPTS DISABLED OR THE
@@ -3740,9 +3742,10 @@ void vTaskPlaceOnEventList( List_t * const pxEventList,
      * This is placed in the list in priority order so the highest priority task
      * is the first to be woken by the event.  The queue that contains the event
      * list is locked, preventing simultaneous access from interrupts. */
-    vListInsert( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
+    vListInsert( pxEventList, &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
     prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait);
+
     taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
@@ -3752,21 +3755,29 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
                                      const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
+
+    /* Take the kernel lock as we are about to access the task lists. */
     taskENTER_CRITICAL( &xKernelLock );
+
+    /* THIS FUNCTION MUST BE CALLED WITH THE SCHEDULER SUSPENDED.  It is used by
+     * the event groups implementation. */
+    /* Note. We currently don't always suspend the scheduler. Todo: IDF-3755
+     * configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] != 0 ); */
 
     /* Store the item value in the event list item.  It is safe to access the
      * event list item here as interrupts won't access the event list item of a
      * task that is not in the Blocked state. */
-    listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ), xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
+    listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ), xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
 
     /* Place the event list item of the TCB at the end of the appropriate event
      * list.  It is safe to access the event list here because it is part of an
      * event group implementation - and interrupts don't access event groups
      * directly (instead they access them indirectly by pending function calls to
      * the task level). */
-    vListInsertEnd( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
+    vListInsertEnd( pxEventList, &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
     prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
+
     taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
@@ -3775,8 +3786,10 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 
     void vTaskPlaceOnEventListRestricted( List_t * const pxEventList, TickType_t xTicksToWait, const BaseType_t xWaitIndefinitely )
     {
-        taskENTER_CRITICAL( &xKernelLock );
         configASSERT( pxEventList );
+
+        /* Take the kernel lock as we are about to access the task lists. */
+        taskENTER_CRITICAL( &xKernelLock );
 
         /* This function should not be called by application code hence the
          * 'Restricted' in its name.  It is not part of the public API.  It is
@@ -3788,7 +3801,7 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
          * In this case it is assume that this is the only task that is going to
          * be waiting on this event list, so the faster vListInsertEnd() function
          * can be used in place of vListInsert. */
-        vListInsertEnd( pxEventList, &( pxCurrentTCB[xPortGetCoreID()]->xEventListItem ) );
+        vListInsertEnd( pxEventList, &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
 
         /* If the task should block indefinitely then set the block time to a
          * value that will be recognised as an indefinite delay inside the
@@ -3798,8 +3811,9 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
             xTicksToWait = portMAX_DELAY;
         }
 
-        traceTASK_DELAY_UNTIL( );
+        traceTASK_DELAY_UNTIL( ( xTickCount + xTicksToWait ) );
         prvAddCurrentTaskToDelayedList( xPortGetCoreID(), xTicksToWait );
+
         taskEXIT_CRITICAL( &xKernelLock );
     }
 
