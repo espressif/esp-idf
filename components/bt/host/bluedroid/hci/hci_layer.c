@@ -40,6 +40,9 @@
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
 #define HCI_HOST_TASK_PRIO              (BT_TASK_MAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciT"
+#define HCI_HOST_TASK_WORKQUEUE_NUM     (2)
+#define HCI_HOST_TASK_WORKQUEUE0_LEN    (0)
+#define HCI_HOST_TASK_WORKQUEUE1_LEN    (5)
 
 typedef struct {
     uint16_t opcode;
@@ -107,7 +110,9 @@ int hci_start_up(void)
         goto error;
     }
 
-    hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE, 2);
+    const size_t workqueue_len[] = {HCI_HOST_TASK_WORKQUEUE0_LEN, HCI_HOST_TASK_WORKQUEUE1_LEN};
+    hci_host_thread = osi_thread_create(HCI_HOST_TASK_NAME, HCI_HOST_TASK_STACK_SIZE, HCI_HOST_TASK_PRIO, HCI_HOST_TASK_PINNED_TO_CORE,
+                                        HCI_HOST_TASK_WORKQUEUE_NUM, workqueue_len);
     if (hci_host_thread == NULL) {
         return -2;
     }
