@@ -43,3 +43,11 @@ components/driver/test_apps/sdm:
 components/driver/test_apps/temperature_sensor:
   disable:
     - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+
+components/driver/test_apps/touch_sensor_v1:
+  disable:
+    - if: SOC_TOUCH_VERSION_1 != 1
+
+components/driver/test_apps/touch_sensor_v2:
+  disable:
+    - if: SOC_TOUCH_VERSION_2 != 1

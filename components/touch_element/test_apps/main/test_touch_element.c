@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* ---------------------------------------------------------- README ------------------------------------------------
  *  This doc is aimed at explain some important code block and do some records for the test result, if developer or
  *  test-owner has some question in reading this code implementation, please read it first.
@@ -312,22 +317,22 @@ static void test_integrat_btn_sld_mat(void)
     for (int i = 0; i < 30; i++) {
         printf("Integration test... (%d/30)\n", i + 1);
         touch_elem_message_t valid_message;
+        touch_button_message_t button_message;
+        touch_slider_message_t slider_message;
+        touch_matrix_message_t matrix_message;
+
         valid_message.element_type = (random() % (TOUCH_ELEM_TYPE_MATRIX + 1));
         if (valid_message.element_type == TOUCH_ELEM_TYPE_BUTTON) {
             uint32_t button_index = random() % BUTTON_CHANNEL_NUM;
             valid_message.handle = button_handle[button_index];
-            touch_button_message_t button_message = {
-                .event = TOUCH_BUTTON_EVT_ON_PRESS
-            };
+            button_message.event = TOUCH_BUTTON_EVT_ON_PRESS;
             memcpy(valid_message.child_msg, &button_message, sizeof(button_message));  //Construct child message
             xQueueSend(monitor.valid_msg_handle, &valid_message, portMAX_DELAY);
             test_button_event_simulator(valid_message.handle, button_message.event);
         } else if (valid_message.element_type == TOUCH_ELEM_TYPE_SLIDER) {
             valid_message.handle = slider_handle;
-            touch_slider_message_t slider_message = {
-                .event = TOUCH_SLIDER_EVT_ON_PRESS,
-                .position = 0  //No check
-            };
+            slider_message.event = TOUCH_SLIDER_EVT_ON_PRESS;
+            slider_message.position = 0; //No check
             memcpy(valid_message.child_msg, &slider_message, sizeof(slider_message));  //Construct child message
             xQueueSend(monitor.valid_msg_handle, &valid_message, portMAX_DELAY);
             test_slider_event_simulator(valid_message.handle, slider_message.event, 1);
@@ -335,33 +340,30 @@ static void test_integrat_btn_sld_mat(void)
             uint32_t matrix_x_axis_index = random() % MATRIX_CHANNEL_NUM_X;
             uint32_t matrix_y_axis_index = random() % MATRIX_CHANNEL_NUM_Y;
             valid_message.handle = matrix_handle;
-            touch_matrix_message_t matrix_message = {
-                .event = TOUCH_MATRIX_EVT_ON_PRESS,
-                .position.x_axis = matrix_x_axis_index,
-                .position.y_axis = matrix_y_axis_index,
-                .position.index = matrix_x_axis_index * MATRIX_CHANNEL_NUM_Y + matrix_y_axis_index
-            };
+            matrix_message.event = TOUCH_MATRIX_EVT_ON_PRESS;
+            matrix_message.position.x_axis = matrix_x_axis_index;
+            matrix_message.position.y_axis = matrix_y_axis_index;
+            matrix_message.position.index = matrix_x_axis_index * MATRIX_CHANNEL_NUM_Y + matrix_y_axis_index;
             memcpy(valid_message.child_msg, &matrix_message, sizeof(matrix_message));  //Construct child message
             xQueueSend(monitor.valid_msg_handle, &valid_message, portMAX_DELAY);
             test_matrix_event_simulator(valid_message.handle, matrix_message.event, matrix_message.position.index);
+        } else {
+            TEST_ABORT();
         }
         os_ret = xSemaphoreTake(monitor.response_sig_handle, pdMS_TO_TICKS(500));
         TEST_ASSERT_MESSAGE(os_ret == pdPASS, "response queue timeout (500ms)");
 
         if (valid_message.element_type == TOUCH_ELEM_TYPE_BUTTON) {
-            touch_button_message_t button_message;
             button_message.event = TOUCH_BUTTON_EVT_ON_RELEASE;
             memcpy(valid_message.child_msg, &button_message, sizeof(button_message));
             xQueueSend(monitor.valid_msg_handle, &valid_message, portMAX_DELAY);
             test_button_event_simulator(valid_message.handle, button_message.event);
         } else if (valid_message.element_type == TOUCH_ELEM_TYPE_SLIDER) {
-            touch_slider_message_t slider_message;
             slider_message.event = TOUCH_SLIDER_EVT_ON_RELEASE;
             memcpy(valid_message.child_msg, &slider_message, sizeof(slider_message));
             xQueueSend(monitor.valid_msg_handle, &valid_message, portMAX_DELAY);
             test_slider_event_simulator(valid_message.handle, slider_message.event, 1);
         } else if (valid_message.element_type == TOUCH_ELEM_TYPE_MATRIX) {
-            touch_matrix_message_t matrix_message;
             matrix_message.event = TOUCH_MATRIX_EVT_ON_RELEASE;
             memcpy(valid_message.child_msg, &matrix_message, sizeof(matrix_message));
             xQueueSend(monitor.valid_msg_handle, &valid_message, portMAX_DELAY);
