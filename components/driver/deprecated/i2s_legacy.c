@@ -27,7 +27,7 @@
 #include "hal/i2s_hal.h"
 #if SOC_I2S_SUPPORTS_DAC
 #include "driver/dac.h"
-#include "esp_private/adc_private.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "adc1_private.h"
 #include "driver/adc_i2s_legacy.h"
 #include "driver/adc_types_legacy.h"

@@ -15,7 +15,8 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_modes.c"
                      "sleep_gpio.c"
                      "sleep_mac_bb.c"
-                     "regi2c_ctrl.c")
+                     "regi2c_ctrl.c"
+                     "adc_share_hw_ctrl.c")
 
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")

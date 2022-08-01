@@ -34,20 +34,6 @@ void adc_apb_periph_claim(void);
 void adc_apb_periph_free(void);
 
 
-/*------------------------------------------------------------------------------
-* ADC Power
-*----------------------------------------------------------------------------*/
-/**
- * @brief Acquire the ADC Power
- */
-void adc_power_acquire(void);
-
-/**
- * @brief Release the ADC Power
- */
-void adc_power_release(void);
-
-
 /*---------------------------------------------------------------
             ADC IOs
 ---------------------------------------------------------------*/
@@ -78,27 +64,6 @@ esp_err_t adc_io_to_channel(int io_num, adc_unit_t *unit_id, adc_channel_t *chan
  */
 esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int *io_num);
 
-
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-/*---------------------------------------------------------------
-            ADC Hardware Calibration
----------------------------------------------------------------*/
-/**
- * @brief Calculate the ADC HW calibration code. (Based on the pre-stored efuse or actual calibration)
- *
- * @param adc_n ADC unit to calibrate
- * @param atten Attenuation to use
- */
-void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten);
-
-/**
- * @brief Set the ADC HW calibration code.
- *
- * @param adc_n ADC unit to calibrate
- * @param atten Attenuation to use
- */
-void adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten);
-#endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
 /*---------------------------------------------------------------
             ADC Oneshot Read API ISR Version

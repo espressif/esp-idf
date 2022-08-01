@@ -20,7 +20,6 @@
 #ifdef CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
-#include "esp_private/adc_private.h"
 #include "freertos/FreeRTOS.h"
 
 #include "driver/adc_i2s_legacy.h"

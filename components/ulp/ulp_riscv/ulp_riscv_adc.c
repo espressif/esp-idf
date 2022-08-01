@@ -8,10 +8,10 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_log.h"
-#include "esp_private/adc_private.h"
 #include "esp_adc/adc_oneshot.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/esp_sleep_internal.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 
 static const char *TAG = "ulp_riscv_adc";
 
