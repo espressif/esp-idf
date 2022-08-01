@@ -93,6 +93,13 @@ ESP32, ESP32-S and ESP32-C Series SoCs mask ROM hardware includes binaries compi
 
     * `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited and licensed under Apache 2.0 License.
 
+* Parts of Zephyr RTOS USB stack:
+    * `DesignWare USB device driver`_ Copyright (c) 2016 Intel Corporation and licensed under Apache 2.0 license.
+    * `Generic USB device driver`_ Copyright (c) 2006 Bertrik Sikken (bertrik@sikken.nl), 2016 Intel Corporation and licensed under BSD 3-clause license.
+    * `USB descriptors functionality`_ Copyright (c) 2017 PHYTEC Messtechnik GmbH, 2017-2018 Intel Corporation and licensed under Apache 2.0 license.
+    * `USB DFU class driver`_ Copyright(c) 2015-2016 Intel Corporation, 2017 PHYTEC Messtechnik GmbH and licensed under BSD 3-clause license.
+    * `USB CDC ACM class driver`_ Copyright(c) 2015-2016 Intel Corporation and licensed under Apache 2.0 license
+
 Xtensa libhal MIT License
 =========================
 
@@ -168,3 +175,8 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _SEGGER SystemView: https://www.segger.com/downloads/systemview/
+.. _DesignWare USB device driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/drivers/usb/device/usb_dc_dw.c
+.. _Generic USB device driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/usb_device.c
+.. _USB descriptors functionality: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/usb_descriptor.c
+.. _USB DFU class driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/class/usb_dfu.c
+.. _USB CDC ACM class driver: https://github.com/zephyrproject-rtos/zephyr/blob/v1.12-branch/subsys/usb/class/cdc_acm.c
