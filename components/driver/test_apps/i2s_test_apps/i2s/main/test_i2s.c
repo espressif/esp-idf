@@ -367,7 +367,7 @@ TEST_CASE("I2S_thread_concurrent_safety_test", "[i2s]")
 static uint32_t get_start_index(uint16_t *buf, uint32_t len, uint32_t start_val)
 {
     uint32_t i = 0;
-    for (i = 0; i < len; i++) {
+    for (i = 100; i < len; i++) {
         if (buf[i] == start_val) {
             printf("%d %d %d %d %d %d %d %d\n",
                 buf[i], buf[i+1], buf[i+2], buf[i+3],
@@ -393,6 +393,8 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
 
     i2s_chan_handle_t tx_handle;
     i2s_chan_handle_t rx_handle;
+
+    bool is_failed = false;
 
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.dma_desc_num = 8;
@@ -454,7 +456,11 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     printf("Data start index: %d\n", index);
     TEST_ASSERT(index < READ_BUF_LEN / 2 - 50);
     for (int16_t j = 1; j < 100; j += 2) {
-        TEST_ASSERT_EQUAL_INT16(r_buf[index++], j);
+        if (r_buf[index++] != j) {
+            printf("rx right mono test failed\n");
+            is_failed = true;
+            goto err;
+        }
     }
     printf("rx right mono test passed\n");
 
@@ -483,7 +489,11 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     printf("Data start index: %d\n", index);
     TEST_ASSERT(index < READ_BUF_LEN / 2 - 50);
     for (int16_t j = 2; j < 100; j += 2) {
-        TEST_ASSERT_EQUAL_INT16(r_buf[index++], j);
+        if (r_buf[index++] != j) {
+            printf("rx left mono test failed\n");
+            is_failed = true;
+            goto err;
+        }
     }
     printf("rx left mono test passed\n");
 
@@ -506,7 +516,11 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     printf("Data start index: %d\n", index);
     TEST_ASSERT(index < READ_BUF_LEN / 2 - 100);
     for (int16_t j = 1; j < 100; j ++) {
-        TEST_ASSERT_EQUAL_INT16(r_buf[index++], j); // receive all number
+        if (r_buf[index++] != j) {
+            printf("tx/rx stereo test failed\n");
+            is_failed = true;
+            goto err;
+        }
     }
     printf("tx/rx stereo test passed\n");
 
@@ -528,19 +542,30 @@ TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s]")
     }
     printf("Data start index: %d\n", index);
     TEST_ASSERT(index < READ_BUF_LEN / 2 - 200);
-    for (int16_t j = 1; j < 100; j ++) {
-        TEST_ASSERT_EQUAL_INT16(r_buf[index], j);
-        index += 2;
+    for (int16_t j = 1; j < 100; j ++, index += 2) {
+        if (r_buf[index] != j) {
+            printf("tx mono rx stereo test failed\n");
+            is_failed = true;
+            goto err;
+        }
     }
     printf("tx mono rx stereo test passed\n");
 #endif
 
+err:
+    if (is_failed) {
+        for (int i = 0; i < READ_BUF_LEN / 2; i++) {
+            printf("%x ", r_buf[i]);
+        }
+        printf("\n");
+    }
     free(w_buf);
     free(r_buf);
     TEST_ESP_OK(i2s_channel_disable(tx_handle));
     TEST_ESP_OK(i2s_channel_disable(rx_handle));
     TEST_ESP_OK(i2s_del_channel(tx_handle));
     TEST_ESP_OK(i2s_del_channel(rx_handle));
+    TEST_ASSERT_FALSE(is_failed);
 }
 
 TEST_CASE("I2S_memory_leak_test", "[i2s]")

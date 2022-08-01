@@ -29,6 +29,9 @@
 #include "driver/pulse_cnt.h"
 #include "soc/pcnt_periph.h"
 #endif
+#ifdef CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#endif
 
 #include "../../test_inc/test_i2s.h"
 
@@ -854,6 +857,14 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
                             32000, 44100, 48000, 64000, 88200, 96000,
                             128000, 144000, 196000};
     int real_pulse = 0;
+
+    // Acquire the PM lock incase Dynamic Frequency Scaling(DFS) lower the frequency
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+    esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
+    TEST_ESP_OK(esp_pm_lock_create(pm_type, 0, "legacy_i2s_test", &pm_lock));
+    esp_pm_lock_acquire(pm_lock);
+#endif
     for (int i = 0; i < 15; i++) {
         int expt_pulse = (int16_t)((float)test_freq[i] * (TEST_I2S_PERIOD_MS / 1000.0));
         TEST_ESP_OK(i2s_set_clk(id, test_freq[i], SAMPLE_BITS, I2S_CHANNEL_STEREO));
@@ -868,6 +879,10 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
         // Check if the error between real pulse number and expected pulse number is within 1%
         TEST_ASSERT_INT_WITHIN(expt_pulse * 0.01, expt_pulse, real_pulse);
     }
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(pm_lock);
+    esp_pm_lock_delete(pm_lock);
+#endif
     TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
     TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
     TEST_ESP_OK(pcnt_unit_disable(pcnt_unit));
