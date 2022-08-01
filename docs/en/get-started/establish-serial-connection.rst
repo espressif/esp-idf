@@ -52,12 +52,12 @@ Some development boards have the USB-to-UART bridge installed. If a board does n
 
         }
 
-    Some development boards also includes the USB-to-UART bridge, besides the USB peripheral.
+    Apart from the USB peripheral, some development boards also include the USB-to-UART bridge.
 
 USB-to-UART Bridge on Development Board
 ---------------------------------------
 
-For boards with an installed USB-to-UART bridge the connection between the personal computer and the bridge is USB and between the bridge and {IDF_TARGET_NAME} is UART.
+For boards with an installed USB-to-UART bridge, the connection between the personal computer and the bridge is USB and between the bridge and {IDF_TARGET_NAME} is UART.
 
 .. blockdiag::
     :caption: Development Board with USB-to-UART Bridge
@@ -150,7 +150,7 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
 
         .. note:: The {IDF_TARGET_NAME} supports only *USB CDC and JTAG*.
 
-        If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the **BOOT** button and then press the **RESET** button once. After that release the **BOOT** button.
+        If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
 
     .. only:: esp32s2
 
@@ -164,7 +164,7 @@ This section provides guidance on how to establish a serial connection between {
 Connect {IDF_TARGET_NAME} to PC
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connect the {IDF_TARGET_NAME} board to the PC using the USB cable. If device driver does not install automatically, identify USB to serial converter chip on your {IDF_TARGET_NAME} board (or external converter dongle), search for drivers in internet and install them.
+Connect the {IDF_TARGET_NAME} board to the PC using the USB cable. If device driver does not install automatically, identify USB-to-UART bridge on your {IDF_TARGET_NAME} board (or external converter dongle), search for drivers in internet and install them.
 
 Below is the list of USB to serial converter chips installed on most of the {IDF_TARGET_NAME} boards produced by Espressif together with links to the drivers:
 
@@ -172,7 +172,6 @@ Below is the list of USB to serial converter chips installed on most of the {IDF
 * FTDI: `FTDI Virtual COM Port Drivers <https://ftdichip.com/drivers/vcp-drivers/>`_
 
 Please check the board user guide for specific USB-to-UART bridge chip used. The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with an operating system and automatically installed upon connecting the board to the PC.
-
 
 For devices downloaded using a USB-to-UART bridge, you can run the following command including the optional argument to define the baud rate.
 
@@ -184,8 +183,7 @@ You can change the flasher baud rate by replacing ``BAUD`` with the baud rate yo
 
 .. note::
     
-    If the device does not support the auto download mode, you need to get into the download mode manually.
-    To do so, press and hold the BOOT button and then press the RESET button once. After that release the BOOT button.
+    If the device does not support the auto download mode, you need to get into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
 
 Check port on Windows
 ---------------------

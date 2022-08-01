@@ -84,9 +84,9 @@ You are using this menu to set up project specific variables, e.g., Wi-Fi networ
 
     If you are using the USB for flashing the {IDF_TARGET_NAME}, you need to change the channel for the console output from UART (default) to USB.
 
-    1. Navigate to the option ``Channel for console output``
+    1. Navigate to the option ``Channel for console output``.
 
-        ``Component config  --->  ESP System Settings  ---> Channel for console output``
+        ``Component config`` > ``ESP System Settings`` > ``Channel for console output``
 
     2. Change to the option (the default will be always UART):
 
