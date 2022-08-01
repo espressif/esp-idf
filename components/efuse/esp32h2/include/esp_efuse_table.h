@@ -8,6 +8,7 @@
 extern "C" {
 #endif
 
+#include "esp_efuse.h"
 
 // md5_digest_table 4ff665f7ab2f32b83f2b5b232bcdeac8
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
