@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-S2 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-S2 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 # USB_OTG CDC Console Example
 
@@ -14,7 +14,11 @@ The interactive shell implemented in this example contains a wide variety of com
 
 ### Hardware Required
 
-This example can run on an ESP32-S2 development board, with a USB cable connected to GPIO19 and GPIO20.
+This example can run on an ESP32-S2 or ESP32-S3 development board with USB port attached to the built-in USB_OTG controller.
+
+For more details about connecting and configuring USB_OTG (including pin numbers), see the IDF Programming Guide:
+* [ESP32-S2 USB_OTG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-guides/usb-otg-console.html)
+* [ESP32-S3 USB_OTG](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/usb-otg-console.html)
 
 ### Build and Flash
 
@@ -36,7 +40,7 @@ idf.py -p PORT flash
 
 #### Flashing the project for the first time using USB
 
-We can also use the ESP32-S2 built-in USB bootloader to flash the program for the first time.
+We can also use the built-in USB bootloader in the ESP chip to flash the program for the first time.
 
 1. Connect the development board using a USB breakout cable to the computer.
 2. Put the chip into bootloader (download) mode, by holding "Boot" button (connected to GPIO0) and pressing "Reset" button.
