@@ -41,8 +41,14 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
      * cleared manually.
      */
     brownout_hal_intr_clear();
+
     // Stop the other core.
-    esp_cpu_stall(!esp_cpu_get_core_id());
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    const uint32_t core_id = esp_cpu_get_core_id();
+    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
+    esp_cpu_stall(other_core_id);
+#endif
+
     esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET
     if (spi_flash_brownout_need_reset()) {
