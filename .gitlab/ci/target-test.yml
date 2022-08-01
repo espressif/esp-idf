@@ -1,8 +1,21 @@
-.pytest_template:
+.target_test_template:
   image: $TARGET_TEST_ENV_IMAGE
   stage: target_test
   timeout: 1 hour
-  extends: .before_script_pytest
+  variables:
+    GIT_DEPTH: 1
+    SUBMODULES_TO_FETCH: "none"
+  cache:
+    # Usually do not need submodule-cache in target_test
+    - key: pip-cache
+      paths:
+        - .cache/pip
+      policy: pull
+
+.pytest_template:
+  extends:
+    - .target_test_template
+    - .before_script_pytest
   artifacts:
     when: always
     paths:
@@ -11,9 +24,6 @@
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
-  variables:
-    GIT_DEPTH: 1
-    SUBMODULES_TO_FETCH: "none"
   script:
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     # get runner env config file
@@ -380,9 +390,8 @@ test_app_test_pytest_esp32s2_usb_host:
   CONFIG_FILE="${CONFIG_FILE_PATH}/${JOB_FULL_NAME}.yml"
 
 .target_test_job_template:
-  stage: target_test
-  timeout: 1 hour
-  image: $TARGET_TEST_ENV_IMAGE
+  extends:
+    - .target_test_template
   artifacts:
     when: always
     paths:
@@ -394,11 +403,9 @@ test_app_test_pytest_esp32s2_usb_host:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
     expire_in: 1 week
   variables:
-    GIT_DEPTH: 1
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
-    SUBMODULES_TO_FETCH: "none"
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
@@ -420,13 +427,6 @@ test_app_test_pytest_esp32s2_usb_host:
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
-
-.example_debug_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32
-  variables:
-    SUBMODULES_TO_FETCH: "all"
 
 test_weekend_mqtt:
   extends:
@@ -559,12 +559,10 @@ example_test_010:
     - Example_ExtFlash
 
 example_test_011:
-  extends: .example_debug_template
+  extends: .example_test_esp32_template
   tags:
     - ESP32
     - Example_T2_RS485
-  variables:
-    SETUP_TOOLS: "1"
 
 example_test_013:
   extends: .example_test_esp32_template
