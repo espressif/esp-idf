@@ -40,7 +40,7 @@ typedef enum {
  * param work_queue_num: speicify queue number, the queue[0] has highest priority, and the priority is decrease by index
  * return : if create successfully, return thread handler; otherwise return NULL.
  */
-osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num);
+osi_thread_t *osi_thread_create(const char *name, size_t stack_size, int priority, osi_thread_core_t core, uint8_t work_queue_num, const size_t work_queue_len[]);
 
 /*
  * brief: Destroy a thread or task
