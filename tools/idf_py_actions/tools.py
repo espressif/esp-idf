@@ -304,10 +304,16 @@ def run_target(target_name: str, args: 'PropertyDict', env: Optional[Dict]=None,
         env = {}
 
     generator_cmd = GENERATORS[args.generator]['command']
-    env.update(GENERATORS[args.generator]['envvar'])
 
     if args.verbose:
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
+
+    # By default, GNU Make and Ninja strip away color escape sequences when they see that their stdout is redirected.
+    # If idf.py's stdout is not redirected, the final output is a TTY, so we can tell Make/Ninja to disable stripping
+    # of color escape sequences. (Requires Ninja v1.9.0 or later.)
+    if sys.stdout.isatty():
+        if 'CLICOLOR_FORCE' not in env:
+            env['CLICOLOR_FORCE'] = '1'
 
     RunTool(generator_cmd[0], generator_cmd + [target_name], args.build_dir, env, custom_error_handler, hints=not args.no_hints,
             force_progression=force_progression, interactive=interactive)()
