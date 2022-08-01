@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_RTC_CNTL_STRUCT_H_
-#define _SOC_RTC_CNTL_STRUCT_H_
+#pragma once
 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -706,7 +706,3 @@ extern rtc_cntl_dev_t RTCCNTL;
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_RTC_CNTL_STRUCT_H_ */
