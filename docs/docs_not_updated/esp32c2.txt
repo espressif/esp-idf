@@ -1,5 +1,4 @@
 api-guides/blufi
-api-guides/lwip
 api-guides/esp-ble-mesh/ble-mesh-index
 api-guides/esp-ble-mesh/ble-mesh-feature-list
 api-guides/esp-ble-mesh/ble-mesh-terminology
@@ -44,18 +43,3 @@ api-reference/bluetooth/esp-ble-mesh
 api-reference/bluetooth/index
 api-reference/bluetooth/esp_gap_ble
 api-reference/bluetooth/classic_bt
-api-reference/protocols/icmp_echo
-api-reference/protocols/esp_serial_slave_link
-api-reference/protocols/mqtt
-api-reference/protocols/esp_http_server
-api-reference/protocols/esp_sdio_slave_protocol
-api-reference/protocols/esp_local_ctrl
-api-reference/protocols/esp_crt_bundle
-api-reference/protocols/esp_websocket_client
-api-reference/protocols/esp_http_client
-api-reference/protocols/esp_https_server
-api-reference/protocols/openssl_apis
-api-reference/protocols/esp_spi_slave_protocol
-api-reference/protocols/esp_tls
-api-reference/protocols/index
-api-reference/protocols/asio
