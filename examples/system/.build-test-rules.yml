@@ -18,10 +18,8 @@ examples/system/console/advanced:
       reason: Sufficient to run this app on one chip with each architecture
 
 examples/system/console/advanced_usb_cdc:
-  enable:
-    - if: IDF_TARGET == "esp32s2"
-      temporary: true
-      reason: the other targets are not tested yet
+  disable:
+    - if: SOC_USB_PERIPH_NUM == 0
 
 examples/system/console/basic:
   disable_test:
