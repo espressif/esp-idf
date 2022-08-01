@@ -233,12 +233,6 @@ class RunTool:
             ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
             return ansi_escape.sub('', text)
 
-        def prepare_for_print(out: str) -> str:
-            if not output_stream.isatty():
-                # delete escape sequence if we printing in environments where ANSI coloring is disabled
-                return delete_ansi_escape(out)
-            return out
-
         def print_progression(output: str) -> None:
             # Print a new line on top of the previous line
             sys.stdout.write('\x1b[K')
@@ -275,8 +269,15 @@ class RunTool:
                         output = await read_stream()
                     if not output:
                         break
-                    output = prepare_for_print(output)
-                    output_file.write(output)
+                    output_noescape = delete_ansi_escape(output)
+                    # Always remove escape sequences when writing the build log.
+                    output_file.write(output_noescape)
+                    # If idf.py output is redirected and the output stream is not a TTY,
+                    # strip the escape sequences as well.
+                    # (There shouldn't be any, but just in case.)
+                    if not output_stream.isatty():
+                        output = output_noescape
+
                     if self.force_progression and output[0] == '[' and '-v' not in self.args and output_stream.isatty():
                         # print output in progression way but only the progression related (that started with '[') and if verbose flag is not set
                         print_progression(output)
