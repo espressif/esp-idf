@@ -249,8 +249,6 @@ extern void esp_vApplicationIdleHook(void);
 #endif /* configNUM_CORES > 1 */
 /*-----------------------------------------------------------*/
 
-#define tskCAN_RUN_HERE( cpuid ) ( cpuid==xPortGetCoreID() || cpuid==tskNO_AFFINITY )
-
 /*
  * Check if a particular task (using its xCoreID) can run on a designated core.
  * On single core, this macro always evaluates to true.
@@ -687,35 +685,6 @@ static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
     static void freertos_tasks_c_additions_init( void ) PRIVILEGED_FUNCTION;
 
 #endif
-
-/*
- * This routine tries to send an interrupt to another core if needed to make it execute a task
- * of higher priority. We try to figure out if needed first by inspecting the pxTCB of the
- * other CPU first. Specifically for Xtensa, we can do this because pxTCB is an atomic pointer. It
- * is possible that it is inaccurate because the other CPU just did a task switch, but in that case
- * at most a superfluous interrupt is generated.
-*/
-void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
-{
-    BaseType_t i;
-
-    if (xCoreID != tskNO_AFFINITY) {
-        if ( pxCurrentTCB[ xCoreID ]->uxPriority < uxPriority ) {   // NOLINT(clang-analyzer-core.NullDereference) IDF-685
-            vPortYieldOtherCore( xCoreID );
-        }
-    }
-    else
-    {
-        /* The task has no affinity. See if we can find a CPU to put it on.*/
-        for (i=0; i<configNUM_CORES; i++) {
-            if (i != xPortGetCoreID() && pxCurrentTCB[ i ]->uxPriority < uxPriority)
-            {
-                vPortYieldOtherCore( i );
-                break;
-            }
-        }
-    }
-}
 
 /*-----------------------------------------------------------*/
 
@@ -3824,102 +3793,110 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 {
     TCB_t * pxUnblockedTCB;
     BaseType_t xReturn;
-    BaseType_t xTaskCanBeReady;
-    UBaseType_t i, uxTargetCPU;
 
-    taskENTER_CRITICAL_ISR( &xKernelLock );
     /* THIS FUNCTION MUST BE CALLED FROM A CRITICAL SECTION.  It can also be
-     * called from a critical section within an ISR. */
-
-    /* The event list is sorted in priority order, so the first in the list can
-     * be removed as it is known to be the highest priority.  Remove the TCB from
-     * the delayed list, and add it to the ready list.
+     * called from a critical section within an ISR.
      *
-     * If an event is for a queue that is locked then this function will never
-     * get called - the lock count on the queue will get modified instead.  This
-     * means exclusive access to the event list is guaranteed here.
-     *
-     * This function assumes that a check has already been made to ensure that
-     * pxEventList is not empty. */
-    if ( ( listLIST_IS_EMPTY( pxEventList ) ) == pdFALSE )
+     * However, we still need to take the kernel lock as we are about to access
+     * kernel data structures. Note that we use the ISR version of the macro as
+     * this function could be called from an ISR critical section. */
+    taskENTER_CRITICAL_ISR( &xKernelLock );
     {
-        pxUnblockedTCB = listGET_OWNER_OF_HEAD_ENTRY( pxEventList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
-        configASSERT( pxUnblockedTCB );
-        ( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
-    }
-    else
-    {
-        taskEXIT_CRITICAL_ISR( &xKernelLock );
-        return pdFALSE;
-    }
-
-    xTaskCanBeReady = pdFALSE;
-    if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY )
-    {
-        uxTargetCPU = xPortGetCoreID();
-        for (i = 0; i < configNUM_CORES; i++)
+        /* Before taking the kernel lock, another task/ISR could have already
+         * emptied the pxEventList. So we insert a check here to see if
+         * pxEventList is empty before attempting to remove an item from it. */
+        if( listLIST_IS_EMPTY( pxEventList ) == pdFALSE )
         {
-            if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE )
+            BaseType_t xCurCoreID = xPortGetCoreID();
+
+            /* The event list is sorted in priority order, so the first in the list can
+             * be removed as it is known to be the highest priority.  Remove the TCB from
+             * the delayed list, and add it to the ready list.
+             *
+             * If an event is for a queue that is locked then this function will never
+             * get called - the lock count on the queue will get modified instead.  This
+             * means exclusive access to the event list is guaranteed here.
+             *
+             * This function assumes that a check has already been made to ensure that
+             * pxEventList is not empty. */
+            pxUnblockedTCB = listGET_OWNER_OF_HEAD_ENTRY( pxEventList ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
+            configASSERT( pxUnblockedTCB );
+            ( void ) uxListRemove( &( pxUnblockedTCB->xEventListItem ) );
+
+            /* Add the task to the ready list if a core with compatible affinity
+             * has NOT suspended its scheduler. This occurs when:
+             * - The task is pinned, and the pinned core's scheduler is running
+             * - The task is unpinned, and at least one of the core's scheduler is running */
+            #if ( configNUM_CORES > 1 )
+                if(    ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE ) && ( taskCAN_RUN_ON_CORE( 0, pxUnblockedTCB->xCoreID) == pdTRUE ) )
+                    || ( ( uxSchedulerSuspended[ 1 ] == ( UBaseType_t ) pdFALSE ) && ( taskCAN_RUN_ON_CORE( 1, pxUnblockedTCB->xCoreID) == pdTRUE ) ) )
+            #else
+                if( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) pdFALSE )
+            #endif /* configNUM_CORES > 1 */
             {
-                xTaskCanBeReady = pdTRUE;
-                break;
+                ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
+                prvAddTaskToReadyList( pxUnblockedTCB );
+
+                #if ( configUSE_TICKLESS_IDLE != 0 )
+                    {
+                        /* If a task is blocked on a kernel object then xNextTaskUnblockTime
+                         * might be set to the blocked task's time out time.  If the task is
+                         * unblocked for a reason other than a timeout xNextTaskUnblockTime is
+                         * normally left unchanged, because it is automatically reset to a new
+                         * value when the tick count equals xNextTaskUnblockTime.  However if
+                         * tickless idling is used it might be more important to enter sleep mode
+                         * at the earliest possible time - so reset xNextTaskUnblockTime here to
+                         * ensure it is updated at the earliest possible time. */
+                        prvResetNextTaskUnblockTime();
+                    }
+                #endif
+            }
+            else
+            {
+                /* We arrive here due to one of the following possibilities:
+                 * - The task is pinned to core X and core X has suspended its scheduler
+                 * - The task is unpinned and both cores have suspend their schedulers
+                 * Therefore, we add the task to one of the pending lists:
+                 * - If the task is pinned to core X, add it to core X's pending list
+                 * - If the task is unpinned, add it to the current core's pending list */
+                BaseType_t xPendingListCore;
+                #if ( configNUM_CORES > 1 )
+                    xPendingListCore = ( ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY ) ? xCurCoreID : pxUnblockedTCB->xCoreID );
+                #else
+                    xPendingListCore = 0;
+                #endif /* configNUM_CORES > 1 */
+                configASSERT( uxSchedulerSuspended[ xPendingListCore ] == pdTRUE );
+
+                /* The delayed and ready lists cannot be accessed, so hold this task
+                 * pending until the scheduler is resumed. */
+                vListInsertEnd( &( xPendingReadyList[ xPendingListCore ] ), &( pxUnblockedTCB->xEventListItem ) );
+            }
+
+            if( prvCheckForYield( pxUnblockedTCB, xCurCoreID, pdFALSE ) )
+            {
+                /* Return true if the task removed from the event list has a higher
+                 * priority than the calling task.  This allows the calling task to know if
+                 * it should force a context switch now. */
+                xReturn = pdTRUE;
+
+                /* Mark that a yield is pending in case the user is not using the
+                 * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
+                xYieldPending[ xCurCoreID ] = pdTRUE;
+            }
+            else
+            {
+                xReturn = pdFALSE;
             }
         }
+        else
+        {
+            /* The pxEventList was emptied before we entered the critical section,
+             * Nothing to do except return pdFALSE. */
+            xReturn = pdFALSE;
+        }
     }
-    else
-    {
-        uxTargetCPU = pxUnblockedTCB->xCoreID;
-        xTaskCanBeReady = uxSchedulerSuspended[ uxTargetCPU ] == ( UBaseType_t ) pdFALSE;
-    }
-
-    if( xTaskCanBeReady )
-    {
-        ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
-        prvAddTaskToReadyList( pxUnblockedTCB );
-    }
-    else
-    {
-        /* The delayed and ready lists cannot be accessed, so hold this task
-         * pending until the scheduler is resumed on this CPU. */
-        vListInsertEnd( &( xPendingReadyList[ uxTargetCPU ] ), &( pxUnblockedTCB->xEventListItem ) );
-    }
-
-    if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
-    {
-        /* Return true if the task removed from the event list has a higher
-         * priority than the calling task.  This allows the calling task to know if
-         * it should force a context switch now. */
-        xReturn = pdTRUE;
-
-        /* Mark that a yield is pending in case the user is not using the
-         * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
-        xYieldPending[ xPortGetCoreID() ] = pdTRUE;
-    }
-    else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
-    {
-        taskYIELD_OTHER_CORE( pxUnblockedTCB->xCoreID, pxUnblockedTCB->uxPriority );
-        xReturn = pdFALSE;
-    }
-    else
-    {
-        xReturn = pdFALSE;
-    }
-
-    #if( configUSE_TICKLESS_IDLE != 0 )
-    {
-        /* If a task is blocked on a kernel object then xNextTaskUnblockTime
-        might be set to the blocked task's time out time.  If the task is
-        unblocked for a reason other than a timeout xNextTaskUnblockTime is
-        normally left unchanged, because it is automatically reset to a new
-        value when the tick count equals xNextTaskUnblockTime.  However if
-        tickless idling is used it might be more important to enter sleep mode
-        at the earliest possible time - so reset xNextTaskUnblockTime here to
-        ensure it is updated at the earliest possible time. */
-        prvResetNextTaskUnblockTime();
-    }
-    #endif
-
     taskEXIT_CRITICAL_ISR( &xKernelLock );
+
     return xReturn;
 }
 /*-----------------------------------------------------------*/
@@ -3942,17 +3919,38 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
                                         const TickType_t xItemValue )
 {
     TCB_t * pxUnblockedTCB;
+    BaseType_t xCurCoreID = xPortGetCoreID();
 
-    taskENTER_CRITICAL( &xKernelLock );
+    /* THIS FUNCTION MUST BE CALLED WITH THE KERNEL LOCK ALREADY TAKEN.
+     * It is used by the event flags implementation, thus those functions
+     * should call vTaskTakeKernelLock() before calling this function. */
+    /*
+    Todo: IDF-5785
+    configASSERT( uxSchedulerSuspended[ xCurCoreID ] != pdFALSE );
+    */
 
     /* Store the new item value in the event list. */
     listSET_LIST_ITEM_VALUE( pxEventListItem, xItemValue | taskEVENT_LIST_ITEM_VALUE_IN_USE );
 
     /* Remove the event list form the event flag.  Interrupts do not access
      * event flags. */
-    pxUnblockedTCB = ( TCB_t * ) listGET_LIST_ITEM_OWNER( pxEventListItem );
+    pxUnblockedTCB = listGET_LIST_ITEM_OWNER( pxEventListItem ); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
     configASSERT( pxUnblockedTCB );
     ( void ) uxListRemove( pxEventListItem );
+
+    #if ( configUSE_TICKLESS_IDLE != 0 )
+        {
+            /* If a task is blocked on a kernel object then xNextTaskUnblockTime
+             * might be set to the blocked task's time out time.  If the task is
+             * unblocked for a reason other than a timeout xNextTaskUnblockTime is
+             * normally left unchanged, because it is automatically reset to a new
+             * value when the tick count equals xNextTaskUnblockTime.  However if
+             * tickless idling is used it might be more important to enter sleep mode
+             * at the earliest possible time - so reset xNextTaskUnblockTime here to
+             * ensure it is updated at the earliest possible time. */
+            prvResetNextTaskUnblockTime();
+        }
+    #endif
 
     /* Remove the task from the delayed list and add it to the ready list.  The
      * scheduler is suspended so interrupts will not be accessing the ready
@@ -3960,18 +3958,14 @@ void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
     ( void ) uxListRemove( &( pxUnblockedTCB->xStateListItem ) );
     prvAddTaskToReadyList( pxUnblockedTCB );
 
-    if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+    if( prvCheckForYield( pxUnblockedTCB, xCurCoreID, pdFALSE ) )
     {
-        /* Mark that a yield is pending in case the user is not using the
-         * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
-        xYieldPending[ xPortGetCoreID() ] = pdTRUE;
+        /* The unblocked task has a priority above that of the calling task, so
+         * a context switch is required.  This function is called with the
+         * scheduler suspended so xYieldPending is set so the context switch
+         * occurs immediately that the scheduler is resumed (unsuspended). */
+        xYieldPending[ xCurCoreID ] = pdTRUE;
     }
-    else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
-    {
-        taskYIELD_OTHER_CORE( pxUnblockedTCB->xCoreID, pxUnblockedTCB->uxPriority );
-    }
-
-    taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
