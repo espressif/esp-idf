@@ -642,7 +642,6 @@ components/esp_system/include/esp_int_wdt.h
 components/esp_system/include/esp_private/dbg_stubs.h
 components/esp_system/include/esp_private/panic_internal.h
 components/esp_system/include/esp_private/system_internal.h
-components/esp_system/include/esp_private/usb_console.h
 components/esp_system/include/esp_task.h
 components/esp_system/port/arch/riscv/expression_with_stack.c
 components/esp_system/port/arch/xtensa/expression_with_stack.c

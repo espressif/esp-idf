@@ -22,6 +22,7 @@ entries:
         usb_console:esp_usb_console_cdc_acm_cb (noflash)
         usb_console:esp_usb_console_dfu_detach_cb (noflash)
         usb_console:esp_usb_console_before_restart (noflash)
+        usb_console:esp_usb_console_on_restart_timeout (noflash)
 
 [mapping:vfs_cdcacm]
 archive: libvfs.a
