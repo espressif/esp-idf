@@ -252,6 +252,16 @@ extern void esp_vApplicationIdleHook(void);
 #define tskCAN_RUN_HERE( cpuid ) ( cpuid==xPortGetCoreID() || cpuid==tskNO_AFFINITY )
 
 /*
+ * Check if a particular task (using its xCoreID) can run on a designated core.
+ * On single core, this macro always evaluates to true.
+ */
+#if ( configNUM_CORES > 1 )
+    #define taskCAN_RUN_ON_CORE( xCore, xCoreID )   ( ( ( ( xCoreID ) == xCore ) || ( ( xCoreID ) == tskNO_AFFINITY ) ) ? pdTRUE : pdFALSE )
+#else
+    #define taskCAN_RUN_ON_CORE( xCore, xCoreID )   ( pdTRUE )
+#endif /* configNUM_CORES > 1 */
+
+/*
  * Several functions take a TaskHandle_t parameter that can optionally be NULL,
  * where NULL is used to indicate that the handle of the currently executing
  * task should be used in place of the parameter.  This macro simply checks to
@@ -623,10 +633,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
  * Called after a new task has been created and initialised to place the task
  * under the control of the scheduler.
  */
-static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
-                                      TaskFunction_t pxTaskCode,
-                                      BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
-
+static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
 
 #if ( configNUM_CORES > 1 )
 
@@ -758,7 +765,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
             prvInitialiseNewTask( pvTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
-            prvAddNewTaskToReadyList( pxNewTCB, pvTaskCode, xCoreID );
+            prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
         {
@@ -809,7 +816,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
                                   pxTaskDefinition->xRegions,
                                   tskNO_AFFINITY );
 
-            prvAddNewTaskToReadyList( pxNewTCB, pxTaskDefinition->pvTaskCode, tskNO_AFFINITY);
+            prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
 
@@ -859,7 +866,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
                                       pxTaskDefinition->xRegions,
                                       tskNO_AFFINITY );
 
-                prvAddNewTaskToReadyList( pxNewTCB, pxTaskDefinition->pvTaskCode, tskNO_AFFINITY);
+                prvAddNewTaskToReadyList( pxNewTCB );
                 xReturn = pdPASS;
             }
         }
@@ -950,7 +957,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
             prvInitialiseNewTask( pvTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pvCreatedTask, pxNewTCB, NULL, xCoreID );
-            prvAddNewTaskToReadyList( pxNewTCB, pvTaskCode, xCoreID);
+            prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
         else
@@ -1233,76 +1240,42 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 }
 /*-----------------------------------------------------------*/
 
-static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
-                                      TaskFunction_t pxTaskCode,
-                                      BaseType_t xCoreID )
+static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 {
-    TCB_t *tcb0, *tcb1;
-
-    #if (configNUM_CORES < 2)
-    xCoreID = 0;
-    #endif
-
     /* Ensure interrupts don't access the task lists while the lists are being
      * updated. */
     taskENTER_CRITICAL( &xKernelLock );
     {
         uxCurrentNumberOfTasks++;
 
-        if ( xCoreID == tskNO_AFFINITY )
+        if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
         {
-            if ( configNUM_CORES == 1 )
-            {
-                xCoreID = 0;
-            }
-            else
-            {
-                // if the task has no affinity, put it on either core if nothing is currently scheduled there. Failing that,
-                // put it on the core where it will preempt the lowest priority running task. If neither of these are true,
-                // queue it on the currently running core.
-                tcb0 = pxCurrentTCB[0];
-                tcb1 = pxCurrentTCB[1];
-                if ( tcb0 == NULL )
-                {
-                    xCoreID = 0;
-                }
-                else if ( tcb1 == NULL )
-                {
-                    xCoreID = 1;
-                }
-                else if ( tcb0->uxPriority < pxNewTCB->uxPriority && tcb0->uxPriority < tcb1->uxPriority )
-                {
-                    xCoreID = 0;
-                }
-                else if ( tcb1->uxPriority < pxNewTCB->uxPriority )
-                {
-                    xCoreID = 1;
-                }
-                else
-                {
-                    xCoreID = xPortGetCoreID(); // Both CPU have higher priority tasks running on them, so this won't run yet
-                }
-            }
+            /* This is the first task to be created so do the preliminary
+             * initialisation required.  We will not recover if this call
+             * fails, but we will report the failure. */
+            prvInitialiseTaskLists();
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
         }
 
-        if( pxCurrentTCB[xCoreID] == NULL )
+        if( ( pxCurrentTCB[ 0 ] == NULL ) && ( taskCAN_RUN_ON_CORE( 0, pxNewTCB->xCoreID ) == pdTRUE ) )
         {
-            /* There are no other tasks, or all the other tasks are in
-             * the suspended state - make this the current task. */
-            pxCurrentTCB[xCoreID] = pxNewTCB;
-
-            if( uxCurrentNumberOfTasks == ( UBaseType_t ) 1 )
-            {
-                /* This is the first task to be created so do the preliminary
-                 * initialisation required.  We will not recover if this call
-                 * fails, but we will report the failure. */
-                prvInitialiseTaskLists();
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
+            /* On core 0, there are no other tasks, or all the other tasks
+             * are in the suspended state - make this the current task. */
+            pxCurrentTCB[ 0 ] = pxNewTCB;
         }
+
+        #if ( configNUM_CORES > 1 )
+            else if( ( pxCurrentTCB[ 1 ] == NULL ) && ( taskCAN_RUN_ON_CORE( 1, pxNewTCB->xCoreID ) == pdTRUE ) )
+            {
+                /* On core 1, there are no other tasks, or all the other tasks
+                 * are in the suspended state - make this the current task. */
+                pxCurrentTCB[ 1 ] = pxNewTCB;
+            }
+        #endif /* configNUM_CORES > 1 */
+
         else
         {
             /* If the scheduler is not already running, make this task the
@@ -1310,10 +1283,22 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
              * so far. */
             if( xSchedulerRunning == pdFALSE )
             {
-                if( pxCurrentTCB[xCoreID] == NULL || pxCurrentTCB[xCoreID]->uxPriority <= pxNewTCB->uxPriority )
+                if(    ( pxCurrentTCB[ 0 ] != NULL )
+                    && ( taskCAN_RUN_ON_CORE( 0, pxNewTCB->xCoreID ) == pdTRUE )
+                    && ( pxCurrentTCB[ 0 ]->uxPriority <= pxNewTCB->uxPriority ) )
                 {
-                    pxCurrentTCB[xCoreID] = pxNewTCB;
+                    pxCurrentTCB[ 0 ] = pxNewTCB;
                 }
+
+                #if ( configNUM_CORES > 1 )
+                    else if(    ( pxCurrentTCB[ 1 ] != NULL )
+                             && ( taskCAN_RUN_ON_CORE( 1, pxNewTCB->xCoreID ) == pdTRUE )
+                             && ( pxCurrentTCB[ 1 ]->uxPriority <= pxNewTCB->uxPriority ) )
+                    {
+                        pxCurrentTCB[ 1 ] = pxNewTCB;
+                    }
+                #endif /* configNUM_CORES > 1 */
+
                 else
                 {
                     mtCOVERAGE_TEST_MARKER();
@@ -1338,32 +1323,27 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         prvAddTaskToReadyList( pxNewTCB );
 
         portSETUP_TCB( pxNewTCB );
-    }
-    taskEXIT_CRITICAL( &xKernelLock );
 
-    if( xSchedulerRunning != pdFALSE )
-    {
-        /* If the created task is of a higher priority than the current task
-         * then it should run now. */
-        taskENTER_CRITICAL( &xKernelLock );
-
-        /* If the created task is of a higher priority than the current task
-         * then it should run now. */
-        if( pxCurrentTCB[ xPortGetCoreID() ] == NULL || prvCheckForYield( pxNewTCB, xPortGetCoreID(), pdTRUE ) )
+        if( xSchedulerRunning != pdFALSE )
         {
-            taskYIELD_IF_USING_PREEMPTION();
+            /* If the created task is of a higher priority than the current task
+             * then it should run now. */
+            if( prvCheckForYield( pxNewTCB, xPortGetCoreID(), pdTRUE ) )
+            {
+                taskYIELD_IF_USING_PREEMPTION();
+            }
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
         }
         else
         {
             mtCOVERAGE_TEST_MARKER();
         }
 
-        taskEXIT_CRITICAL( &xKernelLock );
     }
-    else
-    {
-        mtCOVERAGE_TEST_MARKER();
-    }
+    taskEXIT_CRITICAL( &xKernelLock );
 }
 /*-----------------------------------------------------------*/
 
@@ -4411,13 +4391,10 @@ static void prvInitialiseTaskLists( void )
     vListInitialise( &xDelayedTaskList1 );
     vListInitialise( &xDelayedTaskList2 );
 
-    #if ( configNUM_CORES > 1 )
-    for(BaseType_t i = 0; i < configNUM_CORES; i++) {
-        vListInitialise( &xPendingReadyList[ i ] );
+    for( BaseType_t x = 0; x < configNUM_CORES; x++ )
+    {
+        vListInitialise( &xPendingReadyList[ x ] );
     }
-    #else
-    vListInitialise( &xPendingReadyList[xPortGetCoreID()] );
-    #endif
 
     #if ( INCLUDE_vTaskDelete == 1 )
         {
