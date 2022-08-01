@@ -138,8 +138,6 @@ choice BT_CTRL_DFT_TX_POWER_LEVEL
     help
         Specify default Tx power level
 
-    config BT_CTRL_DFT_TX_POWER_LEVEL_N27
-        bool "-27dBm"
     config BT_CTRL_DFT_TX_POWER_LEVEL_N24
         bool "-24dBm"
     config BT_CTRL_DFT_TX_POWER_LEVEL_N21
@@ -170,26 +168,28 @@ choice BT_CTRL_DFT_TX_POWER_LEVEL
         bool "+15dBm"
     config BT_CTRL_DFT_TX_POWER_LEVEL_P18
         bool "+18dBm"
+    config BT_CTRL_DFT_TX_POWER_LEVEL_P21
+        bool "+21dBm"
 endchoice
 
 config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
     int
-    default 0 if BT_CTRL_DFT_TX_POWER_LEVEL_N27
-    default 1 if BT_CTRL_DFT_TX_POWER_LEVEL_N24
-    default 2 if BT_CTRL_DFT_TX_POWER_LEVEL_N21
-    default 3 if BT_CTRL_DFT_TX_POWER_LEVEL_N18
-    default 4 if BT_CTRL_DFT_TX_POWER_LEVEL_N15
-    default 5 if BT_CTRL_DFT_TX_POWER_LEVEL_N12
-    default 6 if BT_CTRL_DFT_TX_POWER_LEVEL_N9
-    default 7 if BT_CTRL_DFT_TX_POWER_LEVEL_N6
-    default 8 if BT_CTRL_DFT_TX_POWER_LEVEL_N3
-    default 9 if BT_CTRL_DFT_TX_POWER_LEVEL_N0
-    default 10 if BT_CTRL_DFT_TX_POWER_LEVEL_P3
-    default 11 if BT_CTRL_DFT_TX_POWER_LEVEL_P6
-    default 12 if BT_CTRL_DFT_TX_POWER_LEVEL_P9
-    default 13 if BT_CTRL_DFT_TX_POWER_LEVEL_P12
-    default 14 if BT_CTRL_DFT_TX_POWER_LEVEL_P15
-    default 15 if BT_CTRL_DFT_TX_POWER_LEVEL_P18
+    default 0 if BT_CTRL_DFT_TX_POWER_LEVEL_N24
+    default 1 if BT_CTRL_DFT_TX_POWER_LEVEL_N21
+    default 2 if BT_CTRL_DFT_TX_POWER_LEVEL_N18
+    default 3 if BT_CTRL_DFT_TX_POWER_LEVEL_N15
+    default 4 if BT_CTRL_DFT_TX_POWER_LEVEL_N12
+    default 5 if BT_CTRL_DFT_TX_POWER_LEVEL_N9
+    default 6 if BT_CTRL_DFT_TX_POWER_LEVEL_N6
+    default 7 if BT_CTRL_DFT_TX_POWER_LEVEL_N3
+    default 8 if BT_CTRL_DFT_TX_POWER_LEVEL_N0
+    default 9 if BT_CTRL_DFT_TX_POWER_LEVEL_P3
+    default 10 if BT_CTRL_DFT_TX_POWER_LEVEL_P6
+    default 11 if BT_CTRL_DFT_TX_POWER_LEVEL_P9
+    default 12 if BT_CTRL_DFT_TX_POWER_LEVEL_P12
+    default 13 if BT_CTRL_DFT_TX_POWER_LEVEL_P15
+    default 14 if BT_CTRL_DFT_TX_POWER_LEVEL_P18
+    default 15 if BT_CTRL_DFT_TX_POWER_LEVEL_P21
     default 0
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
