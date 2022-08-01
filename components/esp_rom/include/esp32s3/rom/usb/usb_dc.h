@@ -1,7 +1,5 @@
-/* usb_dc.h - USB device controller driver interface */
-
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * SPDX-FileCopyrightText: 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
