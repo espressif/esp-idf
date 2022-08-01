@@ -174,8 +174,8 @@ void BTA_DmSetDeviceName(const char *p_name)
     if ((p_msg = (tBTA_DM_API_SET_NAME *) osi_malloc(sizeof(tBTA_DM_API_SET_NAME))) != NULL) {
         p_msg->hdr.event = BTA_DM_API_SET_NAME_EVT;
         /* truncate the name if needed */
-        BCM_STRNCPY_S((char *)p_msg->name, p_name, BD_NAME_LEN - 1);
-        p_msg->name[BD_NAME_LEN - 1] = 0;
+        BCM_STRNCPY_S((char *)p_msg->name, p_name, BD_NAME_LEN);
+        p_msg->name[BD_NAME_LEN] = '\0';
 
         bta_sys_sendmsg(p_msg);
     }
