@@ -53,40 +53,25 @@ static int esp_mbedtls_ecp_point_multiply(const mbedtls_ecp_group *grp, mbedtls_
     return ret;
 }
 
-/*
- * Restartable multiplication R = m * P
- */
-int mbedtls_ecp_mul_restartable( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
+int ecp_mul_restartable_internal( mbedtls_ecp_group *grp, mbedtls_ecp_point *R,
              const mbedtls_mpi *m, const mbedtls_ecp_point *P,
              int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
              mbedtls_ecp_restart_ctx *rs_ctx )
 {
     int ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-
     if (grp->id != MBEDTLS_ECP_DP_SECP192R1 && grp->id != MBEDTLS_ECP_DP_SECP256R1) {
 #if defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK)
-        return mbedtls_ecp_mul_restartable_soft(grp, R, m, P, f_rng, p_rng, rs_ctx);
+        return ecp_mul_restartable_internal_soft(grp, R, m, P, f_rng, p_rng, rs_ctx);
 #else
         return ret;
 #endif
     }
-    ECP_VALIDATE_RET( grp != NULL );
-    ECP_VALIDATE_RET( R   != NULL );
-    ECP_VALIDATE_RET( m   != NULL );
-    ECP_VALIDATE_RET( P   != NULL );
 
-    /* Common sanity checks */
-    MBEDTLS_MPI_CHK( mbedtls_ecp_check_privkey( grp, m ) );
-    MBEDTLS_MPI_CHK( mbedtls_ecp_check_pubkey( grp, P ) );
-
-    ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
-    /* MBEDTLS_MPI_CHK macro assigns the return value of the function to
-     * `ret` variable
-     */
     MBEDTLS_MPI_CHK( esp_mbedtls_ecp_point_multiply(grp, R, m, P) );
 cleanup:
     return( ret );
 }
+
 #endif /* defined(MBEDTLS_ECP_MUL_ALT) || defined(MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK) */
 
 #if defined(MBEDTLS_ECP_VERIFY_ALT) || defined(MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK)
