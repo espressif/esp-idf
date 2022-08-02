@@ -85,7 +85,6 @@ class WLFATFS:
                  reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
                  fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
                  sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
-                 sectors_per_fat: int = FATDefaults.SECTORS_PER_FAT,
                  explicit_fat_type: int = None,
                  hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
                  long_names_enabled: bool = False,
@@ -117,7 +116,6 @@ class WLFATFS:
         wl_sectors = (WLFATFS.WL_DUMMY_SECTORS_COUNT + WLFATFS.WL_CFG_SECTORS_COUNT +
                       self.wl_state_sectors * WLFATFS.WL_STATE_COPY_COUNT)
         self.plain_fat_sectors = self.total_sectors - wl_sectors
-
         self.plain_fatfs = FATFS(
             explicit_fat_type=explicit_fat_type,
             size=self.plain_fat_sectors * FATDefaults.WL_SECTOR_SIZE,
@@ -125,7 +123,6 @@ class WLFATFS:
             fat_tables_cnt=fat_tables_cnt,
             sectors_per_cluster=sectors_per_cluster,
             sector_size=FATDefaults.WL_SECTOR_SIZE,
-            sectors_per_fat=sectors_per_fat,
             root_entry_count=root_entry_count,
             hidden_sectors=hidden_sectors,
             long_names_enabled=long_names_enabled,
