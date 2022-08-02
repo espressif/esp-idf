@@ -38,7 +38,7 @@ static const char *TAG = "example";
 
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
 
-extern void example_lvgl_demo_ui(lv_obj_t *scr);
+extern void example_lvgl_demo_ui(lv_disp_t *disp);
 
 static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
@@ -159,8 +159,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
 
     ESP_LOGI(TAG, "Display LVGL Scroll Text");
-    lv_obj_t *scr = lv_disp_get_scr_act(disp);
-    example_lvgl_demo_ui(scr);
+    example_lvgl_demo_ui(disp);
 
     while (1) {
         // raise the task priority of LVGL and/or reduce the handler period can improve the performance
