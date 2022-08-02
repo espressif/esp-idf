@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
  Tests for the touch sensor device driver for ESP32-S2 & ESP32-S3
 */
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 
 #include <string.h>
 #include <inttypes.h>
@@ -21,7 +20,6 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
-#include "test_utils.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/sens_reg.h"
@@ -60,7 +58,7 @@ void test_pxp_deinit_io(void)
 #endif
 
 #define TOUCH_READ_INVALID_VAL          (SOC_TOUCH_PAD_THRESHOLD_MAX)
-#define TOUCH_READ_ERROR                (100)
+#define TOUCH_READ_ERROR_THRESH         (0.1) // 10% error
 #define TOUCH_INTR_THRESHOLD            (0.1)
 #define TOUCH_EXCEED_TIME_MS            (1000)
 
@@ -235,7 +233,7 @@ esp_err_t test_touch_sw_read(void)
         /* Check the stable of reading. */
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp[i]) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             }
             touch_temp[i] = touch_value[i];
         }
@@ -304,7 +302,7 @@ esp_err_t test_touch_timer_read(void)
         printf("\n");
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp[i]) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             }
             touch_temp[i] = touch_value[i];
         }
@@ -369,10 +367,10 @@ esp_err_t test_touch_filtered_read(void)
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value[i]);
         TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_temp[i]) );
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]) );
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_temp[i]);
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
     }
     printf("touch filter init value:\n");
     printf_touch_hw_read("raw  ");
@@ -386,13 +384,13 @@ esp_err_t test_touch_filtered_read(void)
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_read_raw_data(touch_list[i], &touch_value[i]) );
             TEST_ESP_OK( touch_pad_read_benchmark(touch_list[i], &touch_temp[i]) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             TEST_ESP_OK( touch_pad_filter_read_smooth(touch_list[i], &touch_temp[i]) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
         }
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp[i]) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp[i], touch_value[i]);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp[i]*TOUCH_READ_ERROR_THRESH), touch_temp[i], touch_value[i]);
             }
             touch_temp[i] = touch_value[i];
         }
@@ -461,15 +459,15 @@ int test_touch_base_parameter(touch_pad_t pad_num, int meas_time, int slp_time,
         /* Correctness of reading. Ideal: benchmark == raw data == smooth data. */
         TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
         TEST_ESP_OK( touch_pad_read_benchmark(pad_num, &touch_filter) );
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_filter, touch_value);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter*TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
         TEST_ESP_OK( touch_pad_filter_read_smooth(pad_num, &touch_filter) );
-        TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_filter, touch_value);
+        TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_filter*TOUCH_READ_ERROR_THRESH), touch_filter, touch_value);
 
         /* Stable of reading */
         TEST_ESP_OK( touch_pad_read_raw_data(pad_num, &touch_value) );
         TEST_ASSERT_NOT_EQUAL(TOUCH_READ_INVALID_VAL, touch_value);
         if (touch_temp) {
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
         }
         touch_temp = touch_value;
 
@@ -764,7 +762,6 @@ static void test_touch_intr_cb(void *arg)
     evt.pad_num = touch_pad_get_current_meas_channel();
 
     if (!evt.intr_mask) {
-        esp_rom_printf(".");
         return;
     }
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
@@ -778,7 +775,6 @@ static void test_touch_intr_cb(void *arg)
     }
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
         s_touch_timeout_mask |= (BIT(evt.pad_num));
-        esp_rom_printf("-%dtout-", SENS.sar_touch_status0.touch_scan_curr);
     }
 
     xQueueSendFromISR(que_touch, &evt, &task_awoken);
@@ -1668,13 +1664,13 @@ esp_err_t test_touch_sleep_reading_stable(touch_pad_t sleep_pad)
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             TEST_ESP_OK( touch_pad_sleep_channel_read_data(sleep_pad, &touch_value) );
             TEST_ESP_OK( touch_pad_sleep_channel_read_benchmark(sleep_pad, &touch_temp) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             TEST_ESP_OK( touch_pad_sleep_channel_read_smooth(sleep_pad, &touch_temp) );
-            TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+            TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
         }
         for (int i = 0; i < TEST_TOUCH_CHANNEL; i++) {
             if (touch_temp) {
-                TEST_ASSERT_UINT32_WITHIN(TOUCH_READ_ERROR, touch_temp, touch_value);
+                TEST_ASSERT_UINT32_WITHIN((uint32_t)((float)touch_temp*TOUCH_READ_ERROR_THRESH), touch_temp, touch_value);
             }
             touch_temp = touch_value;
         }
@@ -1929,6 +1925,8 @@ esp_err_t test_touch_sleep_pad_interrupt_wakeup_deep_sleep(touch_pad_t sleep_pad
     return ESP_OK;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3) //TODO: IDF-5218
+
 #include <sys/time.h>
 #include "esp_sleep.h"
 
@@ -1979,10 +1977,6 @@ static void test_deep_sleep_init(void)
 
 TEST_CASE("Touch Sensor sleep pad wakeup deep sleep test", "[touch][ignore]")
 {
-//TODO: IDF-5218
-#if TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
-    abort();
-#endif //TEMPORARY_DISABLED_FOR_TARGETS(..)
     test_deep_sleep_init();
 
     /* Change the work duty of touch sensor to reduce current. */
@@ -1997,6 +1991,7 @@ TEST_CASE("Touch Sensor sleep pad wakeup deep sleep test", "[touch][ignore]")
 
     esp_deep_sleep_start();
 }
+#endif //TEMPORARY_DISABLED_FOR_TARGETS(..)
 
 #include "touch_scope.h"
 /*
@@ -2140,5 +2135,3 @@ void test_touch_slope_debug(int pad_num)
 #endif
     TEST_ESP_OK( touch_pad_deinit() );
 }
-
-#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
