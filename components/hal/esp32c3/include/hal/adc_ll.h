@@ -491,6 +491,7 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
     }
 }
 
+__attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
     //Not used on ESP32C3
@@ -506,6 +507,7 @@ static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t c
  *
  * @param mode Refer to `adc_arbiter_mode_t`.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
 {
     if (mode == ADC_ARB_MODE_FIX) {
@@ -532,6 +534,7 @@ static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
  * @param pri_dig Digital controller priority. Range: 0 ~ 2.
  * @param pri_pwdet Wi-Fi controller priority. Range: 0 ~ 2.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig, uint8_t pri_pwdet)
 {
     if (pri_rtc != pri_dig && pri_rtc != pri_pwdet && pri_dig != pri_pwdet) {
@@ -567,6 +570,7 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
 /**
  * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
  */
+__attribute__((always_inline))
 static inline void adc_ll_calibration_init(adc_unit_t adc_n)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -624,6 +628,7 @@ static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
  *
  * @param adc_n ADC index number.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
     uint8_t msb = param >> 8;
@@ -875,6 +880,7 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
  * @param channel ADCn channel number.
  * @return atten The attenuation option.
  */
+__attribute__((always_inline))
 static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
     (void)adc_n;
