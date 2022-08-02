@@ -1370,8 +1370,9 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     ESP_LOGD(TAG, "set dns if=%p type=%d dns=%x", esp_netif, type, dns->ip.u_addr.ip4.addr);
 
     ip_addr_t *lwip_ip = (ip_addr_t*)&dns->ip;
-    lwip_ip->type = IPADDR_TYPE_V4;
-
+    if (!IP_IS_V4(lwip_ip) && !IP_IS_V6(lwip_ip)) {
+        lwip_ip->type = IPADDR_TYPE_V4;
+    }
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         // if DHCP server configured to set DNS in dhcps API
         if (type != ESP_NETIF_DNS_MAIN) {
