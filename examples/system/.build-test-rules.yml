@@ -215,3 +215,7 @@ examples/system/ulp_riscv/gpio_interrupt:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
+
+examples/system/ulp_riscv/uart_print:
+  enable:
+    - if: SOC_RISCV_COPROC_SUPPORTED == 1

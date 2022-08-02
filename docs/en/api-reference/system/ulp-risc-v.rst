@@ -53,6 +53,8 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
    7. **Add the generated binary to the list of binary files** to be embedded into the application.
 
+.. _ulp-riscv-access-variables:
+
 Accessing the ULP RISC-V Program Variables
 ------------------------------------------
 
@@ -136,10 +138,25 @@ The program runs until the field ``RTC_CNTL_COCPU_DONE`` in register ``RTC_CNTL_
 
 To disable the timer (effectively preventing the ULP program from running again), please clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_ULP_CP_TIMER_REG`` register. This can be done both from the ULP code and from the main program.
 
+
+Debugging Your ULP RISC-V Program
+----------------------------------
+
+When programming the ULP RISC-V it can sometimes be challenging to figure out why the program is not behaving as expected. Due to the simplicity of the core many of the standard methods of debugging, e.g. JTAG or ``printf``, are simply not available.
+
+Keeping this in mind, here are some ways that may help you debug you ULP RISC-V program:
+
+ * Share program state through shared variables: as described in :ref:`ulp-riscv-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
+ * Printing using the bit-banged UART driver: the ULP RISC-V component comes with a low-speed bit-banged UART TX driver that can be used for printing information independently of the main CPU state. See :example:`system/ulp_riscv/uart_print` for an example of how to use this driver.
+ * Trap signal: the ULP RISC-V has a hardware trap that will trigger under certain conditions, e.g. illegal instruction. This will cause the main CPU to be woken up with the wake-up cause :cpp:enumerator:`ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG`.
+
+
+
 Application Examples
 --------------------
 
 * ULP RISC-V Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp_riscv/gpio`.
+* ULP RISC-V Coprocessor uses bit-banged UART tx to print: :example:`system/ulp_riscv/uart_print`.
 * ULP RISC-V Coprocessor reads external temperature sensor while main CPU is in deep sleep: :example:`system/ulp_riscv/ds18b20_onewire`.
 
 API Reference

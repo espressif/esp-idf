@@ -75,6 +75,8 @@ if(ULP_COCPU_IS_RISCV)
     list(APPEND ULP_S_SOURCES
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/start.S"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_uart.c"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c")
 
     #dummy loop to force pre-processed linker file generation:
