@@ -1,14 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <assert.h>
 #include <sys/param.h>
-#include "esp_ota_ops.h"
+#include "esp_app_desc.h"
 #include "esp_attr.h"
 #include "sdkconfig.h"
+
 
 // Application version info
 const __attribute__((section(".rodata_desc"))) esp_app_desc_t esp_app_desc = {
@@ -50,7 +51,7 @@ _Static_assert(sizeof(IDF_VER) <= sizeof(esp_app_desc.idf_ver), "IDF_VER is long
 _Static_assert(sizeof(PROJECT_NAME) <= sizeof(esp_app_desc.project_name), "PROJECT_NAME is longer than project_name field in structure");
 #endif
 
-const esp_app_desc_t *esp_ota_get_app_description(void)
+const esp_app_desc_t *esp_app_get_description(void)
 {
     return &esp_app_desc;
 }
@@ -64,18 +65,18 @@ static inline char IRAM_ATTR to_hex_digit(unsigned val)
     return (val < 10) ? ('0' + val) : ('a' + val - 10);
 }
 
-__attribute__((constructor)) void esp_ota_init_app_elf_sha256(void)
+__attribute__((constructor)) void esp_init_app_elf_sha256(void)
 {
-    esp_ota_get_app_elf_sha256(NULL, 0);
+    esp_app_get_elf_sha256(NULL, 0);
 }
 
 /* The esp_app_desc.app_elf_sha256 should be possible to print in panic handler during cache is disabled.
  * But because the cache is disabled the reading esp_app_desc.app_elf_sha256 is not right and
  * can lead to a complete lock-up of the CPU.
- * For this reason we do a reading of esp_app_desc.app_elf_sha256 while start up in esp_ota_init_app_elf_sha256()
+ * For this reason we do a reading of esp_app_desc.app_elf_sha256 while start up in esp_init_app_elf_sha256()
  * and keep it in the static s_app_elf_sha256 value.
  */
-int IRAM_ATTR esp_ota_get_app_elf_sha256(char* dst, size_t size)
+int IRAM_ATTR esp_app_get_elf_sha256(char* dst, size_t size)
 {
     static char s_app_elf_sha256[CONFIG_APP_RETRIEVE_LEN_ELF_SHA / 2];
     static bool first_call = true;
