@@ -89,6 +89,7 @@ static inline void pcnt_ll_set_level_action(pcnt_dev_t *hw, uint32_t unit, uint3
  * @param unit  Pulse Counter unit number
  * @return PCNT count value (a signed integer)
  */
+__attribute__((always_inline))
 static inline int pcnt_ll_get_count(pcnt_dev_t *hw, uint32_t unit)
 {
     typeof(hw->cnt_unit[unit]) cnt_reg = hw->cnt_unit[unit];
@@ -102,6 +103,7 @@ static inline int pcnt_ll_get_count(pcnt_dev_t *hw, uint32_t unit)
  * @param hw Peripheral PCNT hardware instance address.
  * @param unit PCNT unit number
  */
+__attribute__((always_inline))
 static inline void pcnt_ll_stop_count(pcnt_dev_t *hw, uint32_t unit)
 {
     hw->ctrl.val |= 1 << (2 * unit + 1);
@@ -113,6 +115,7 @@ static inline void pcnt_ll_stop_count(pcnt_dev_t *hw, uint32_t unit)
  * @param hw Peripheral PCNT hardware instance address.
  * @param unit PCNT unit number, select from uint32_t
  */
+__attribute__((always_inline))
 static inline void pcnt_ll_start_count(pcnt_dev_t *hw, uint32_t unit)
 {
     hw->ctrl.val &= ~(1 << (2 * unit + 1));
@@ -124,6 +127,7 @@ static inline void pcnt_ll_start_count(pcnt_dev_t *hw, uint32_t unit)
  * @param hw Peripheral PCNT hardware instance address.
  * @param  unit PCNT unit number, select from uint32_t
  */
+__attribute__((always_inline))
 static inline void pcnt_ll_clear_count(pcnt_dev_t *hw, uint32_t unit)
 {
     hw->ctrl.val |= 1 << (2 * unit);
