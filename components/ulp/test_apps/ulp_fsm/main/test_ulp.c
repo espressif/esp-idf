@@ -205,8 +205,6 @@ TEST_CASE("ULP FSM light-sleep wakeup test", "[ulp]")
     TEST_ASSERT(esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5131
 TEST_CASE("ULP FSM deep-sleep wakeup test", "[ulp][reset=SW_CPU_RESET][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
@@ -250,7 +248,6 @@ TEST_CASE("ULP FSM deep-sleep wakeup test", "[ulp][reset=SW_CPU_RESET][ignore]")
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("ULP FSM can write and read peripheral registers", "[ulp]")
 {
@@ -265,6 +262,8 @@ TEST_CASE("ULP FSM can write and read peripheral registers", "[ulp]")
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
 #pragma GCC diagnostic pop
+    uint32_t rtc_store0 = REG_READ(RTC_CNTL_STORE0_REG);
+    uint32_t rtc_store1 = REG_READ(RTC_CNTL_STORE1_REG);
 
     /* ULP co-processor program to read from and write to peripheral registers */
     const ulp_insn_t program[] = {
@@ -306,6 +305,10 @@ TEST_CASE("ULP FSM can write and read peripheral registers", "[ulp]")
     TEST_ASSERT_EQUAL_HEX16(0x89ab, RTC_SLOW_MEM[66] & 0xffff);
     TEST_ASSERT_EQUAL_HEX16(0x9a, RTC_SLOW_MEM[67] & 0xffff);
     TEST_ASSERT_EQUAL_HEX16(1, RTC_SLOW_MEM[68] & 0xffff);
+
+    /* Restore initial calibration values */
+    REG_WRITE(RTC_CNTL_STORE0_REG, rtc_store0);
+    REG_WRITE(RTC_CNTL_STORE1_REG, rtc_store1);
 }
 
 TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
@@ -344,6 +347,8 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
                 mask, not_mask);
 
         /* Set all bits in RTC_CNTL_STORE0_REG and reset all bits in RTC_CNTL_STORE1_REG */
+        uint32_t rtc_store0 = REG_READ(RTC_CNTL_STORE0_REG);
+        uint32_t rtc_store1 = REG_READ(RTC_CNTL_STORE1_REG);
         REG_WRITE(RTC_CNTL_STORE0_REG, 0xffffffff);
         REG_WRITE(RTC_CNTL_STORE1_REG, 0x00000000);
 
@@ -373,13 +378,17 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
         uint32_t clear = REG_READ(RTC_CNTL_STORE0_REG);
         uint32_t set = REG_READ(RTC_CNTL_STORE1_REG);
         printf("clear: %08x set: %08x\n", clear, set);
+
+        /* Restore initial calibration values */
+        REG_WRITE(RTC_CNTL_STORE0_REG, rtc_store0);
+        REG_WRITE(RTC_CNTL_STORE1_REG, rtc_store1);
+
         TEST_ASSERT_EQUAL_HEX32(not_mask, clear);
         TEST_ASSERT_EQUAL_HEX32(mask, set);
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5131
+
 TEST_CASE("ULP FSM controls RTC_IO", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
@@ -480,8 +489,6 @@ TEST_CASE("ULP FSM power consumption in deep sleep", "[ulp][ignore]")
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
 
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-
 TEST_CASE("ULP FSM timer setting", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 32 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
@@ -547,8 +554,6 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5131
 #if !DISABLED_FOR_TARGETS(ESP32)
 TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ignore]")
 {
@@ -719,5 +724,3 @@ TEST_CASE("ULP FSM can use ADC in deep sleep", "[ulp][ignore]")
     esp_deep_sleep_start();
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }
-
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
