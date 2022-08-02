@@ -1,3 +1,0 @@
-future
-dbus-python
-pygobject

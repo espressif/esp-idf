@@ -90,16 +90,17 @@ For Android, a provisioning tool along with source code is available [here](http
 
 ## Dependencies
 
-This requires the following python libraries to run (included in requirements.txt):
+This requires the following python libraries to run:
 * `bleak`
 * `future`
 * `protobuf`
 * `cryptography`
 
-Run `pip install -r $IDF_PATH/tools/esp_prov/requirements.txt`
+To install the dependency packages needed, please run the following command:
 
-Note :
-* The packages listed in requirements.txt are limited only to the ones needed AFTER fully satisfying the requirements of ESP-IDF
+```shell
+bash install.sh --enable-ttfw
+```
 
 # EXAMPLE USAGE
 

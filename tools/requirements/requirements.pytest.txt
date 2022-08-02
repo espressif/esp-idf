@@ -1,7 +1,15 @@
+# Python package requirements for pytest in ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-pytest"
+
 pytest-embedded-serial-esp
 pytest-embedded-idf
 pytest-embedded-qemu
 pytest-rerunfailures
+
+# build
+idf-build-apps
+
+# dependencies in pytest test scripts
 scapy
 websocket-client
 netifaces

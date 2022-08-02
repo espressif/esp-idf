@@ -1,0 +1,4 @@
+# Python package requirements for building the documentation of ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-docs"
+
+esp-docs

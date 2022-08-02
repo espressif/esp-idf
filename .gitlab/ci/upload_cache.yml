@@ -24,9 +24,7 @@ upload-pip-cache:
     - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - source tools/ci/setup_python.sh
     - rm -rf .cache/pip  # clear old packages
-    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
-    # TODO: remove this, IDFCI-1207
-    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest,ci
   parallel:
     matrix:
       - GEO: [ 'shiny',  'brew' ]
