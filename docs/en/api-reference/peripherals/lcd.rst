@@ -225,9 +225,9 @@ Application Example
 
 LCD examples are located under: :example:`peripherals/lcd`:
 
+* Universal SPI LCD example with SPI touch - :example:`peripherals/lcd/spi_lcd_touch`
 * Jpeg decoding and LCD display - :example:`peripherals/lcd/tjpgd`
 * i80 controller based LCD and LVGL animation UI - :example:`peripherals/lcd/i80_controller`
-* GC9A01 user customized driver and dash board UI - :example:`peripherals/lcd/gc9a01`
 * RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
 * I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
 
