@@ -1996,7 +1996,6 @@ tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
 tools/kconfig_new/confserver.py
-tools/kconfig_new/gen_kconfig_doc.py
 tools/kconfig_new/test/confgen/test_confgen.py
 tools/kconfig_new/test/confserver/test_confserver.py
 tools/kconfig_new/test/gen_kconfig_doc/test_kconfig_out.py
