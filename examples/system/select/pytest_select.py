@@ -1,39 +1,36 @@
-from __future__ import unicode_literals
-
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: CC0-1.0
+import logging
 import os
+from typing import List
 
-import ttfw_idf
-from tiny_test_fw import Utility
+import pytest
+from pytest_embedded import Dut
 
 
-def get_socket_msgs(i):
+def get_socket_msgs(i: int) -> List[str]:
     msg = 'Socket message S{}'.format(i)
     return ['uart_select_example: {} bytes were written to socket: {}'.format(len(msg), msg),
             'uart_select_example: {} bytes were received through socket: {}'.format(len(msg), msg)]
 
 
-def get_uart_msgs(i):
+def get_uart_msgs(i: int) -> List[str]:
     msg = 'UART message U{}'.format(i)
     return ['uart_select_example: {} bytes were sent to UART1: {}'.format(len(msg), msg),
             'uart_select_example: {} bytes were received through UART1: {}'.format(len(msg), msg)]
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
-def test_examples_select(env, extra_data):
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.generic
+def test_examples_select(dut: Dut) -> None:
 
-    dut = env.get_dut('select', 'examples/system/select')
-    dut.start_app()
-
-    dut.expect('cpu_start: Starting scheduler', timeout=30)
+    dut.expect_exact('cpu_start: Starting scheduler', timeout=30)
 
     exp_list = []
     for i in range(1, 10):
         exp_list += get_socket_msgs(i)
         exp_list += get_uart_msgs(i)
 
-    Utility.console_log('Expecting:{}{}'.format(os.linesep, os.linesep.join(exp_list)))
-    dut.expect_all(*exp_list, timeout=60)
-
-
-if __name__ == '__main__':
-    test_examples_select()
+    logging.info('Expecting:{}{}'.format(os.linesep, os.linesep.join(exp_list)))
+    dut.expect(exp_list, timeout=60, expect_all=True)

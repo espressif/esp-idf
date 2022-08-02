@@ -52,16 +52,6 @@ examples/system/efuse:
       temporary: true
       reason: lack of runners
 
-examples/system/esp_event/default_event_loop:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
-  disable_test:
-    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
-      temporary: true
-      reason: lack of runners
-
 examples/system/esp_timer:
   disable_test:
     - if: IDF_TARGET == "esp32c2"
