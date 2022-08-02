@@ -751,6 +751,8 @@ extern tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB *p_db, BOOLEAN is_lo
 extern void gatts_update_srv_list_elem(UINT8 i_sreg, UINT16 handle, BOOLEAN is_primary);
 extern tBT_UUID *gatts_get_service_uuid (tGATT_SVC_DB *p_db);
 
+extern BOOLEAN gatt_check_connection_state_by_tcb(tGATT_TCB *p_tcb);
+
 extern void gatt_reset_bgdev_list(void);
 extern uint16_t gatt_get_local_mtu(void);
 extern void gatt_set_local_mtu(uint16_t mtu);
