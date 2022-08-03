@@ -463,7 +463,7 @@ menu "FreeRTOS"
             default y
             help
                 When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll, are
-                compiled and linked. Task snapshots are primarily used by GDB Stub and Core dump.
+                compiled and linked. Task snapshots are used by Task Watchdog (TWDT), GDB Stub and Core dump.
 
     endmenu # Port
 

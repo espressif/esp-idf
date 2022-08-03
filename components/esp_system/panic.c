@@ -348,6 +348,10 @@ void esp_panic_handler(panic_info_t *info)
     } else {
         disable_all_wdts();
         s_dumping_core = true;
+        /* No matter if we come here from abort or an exception, this variable must be reset.
+         * Else, any exception/error occuring during the current panic handler would considered
+         * an abort. */
+        g_panic_abort = false;
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
         esp_core_dump_to_flash(info);
 #endif

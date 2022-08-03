@@ -248,7 +248,7 @@ static void check_reset_reason_task_wdt(void)
 }
 
 TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_TASK_WDT after task watchdog",
-        "[reset_reason][reset=abort,"RESET"]",
+        "[reset_reason][reset="RESET"]",
         do_task_wdt,
         check_reset_reason_task_wdt);
 

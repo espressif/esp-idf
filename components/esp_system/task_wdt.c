@@ -23,6 +23,28 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/crosscore_int.h"
+#include "freertos/task_snapshot.h"
+
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+#include "esp_private/eh_frame_parser.h"
+#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV && !CONFIG_ESP_SYSTEM_USE_EH_FRAME
+/* Function used to print all the registers pointed by the given frame .*/
+extern void panic_print_registers(const void *frame, int core);
+#endif // CONFIG_IDF_TARGET_ARCH_RISCV && !CONFIG_ESP_SYSTEM_USE_EH_FRAME
+
+/* We will use this function in order to simulate an `abort()` occurring in
+ * a different context than the one it's called from. */
+extern void xt_unhandled_exception(void *frame);
+
+/* Global flag set to make the `panic` mechanism think a real `abort()` was
+ * called. This is used in the ISR handler, in case we have to panic when
+ * a task doesn't feed its timer. */
+extern bool g_panic_abort;
+
+/* Global flag marking whether the current ISR is a Task Watchdog ISR. */
+bool g_twdt_isr = false;
 
 // --------------------------------------------------- Definitions -----------------------------------------------------
 
@@ -271,15 +293,15 @@ static void unsubscribe_idle(uint32_t core_mask)
     while (core_mask != 0) {
         if (core_mask & 0x1) {
 #if CONFIG_FREERTOS_SMP
-        assert(core_user_handles[core_num]);
-        esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
-        ESP_ERROR_CHECK(esp_task_wdt_delete_user(core_user_handles[core_num]));
-        core_user_handles[core_num] = NULL;
+            assert(core_user_handles[core_num]);
+            esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
+            ESP_ERROR_CHECK(esp_task_wdt_delete_user(core_user_handles[core_num]));
+            core_user_handles[core_num] = NULL;
 #else
-        TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core_num);
-        assert(idle_task_handle);
-        esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
-        ESP_ERROR_CHECK(esp_task_wdt_delete(idle_task_handle));
+            TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core_num);
+            assert(idle_task_handle);
+            esp_deregister_freertos_idle_hook_for_cpu(idle_hook_cb, core_num);
+            ESP_ERROR_CHECK(esp_task_wdt_delete(idle_task_handle));
 #endif
         }
         core_mask >>= 1;
@@ -299,20 +321,182 @@ static void subscribe_idle(uint32_t core_mask)
     while (core_mask != 0) {
         if (core_mask & 0x1) {
 #if CONFIG_FREERTOS_SMP
-        snprintf(core_user_names[core_num], CORE_USER_NAME_LEN, "CPU %d", (uint8_t)core_num);
-        ESP_ERROR_CHECK(esp_task_wdt_add_user((const char *)core_user_names[core_num], &core_user_handles[core_num]));
-        ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
+            snprintf(core_user_names[core_num], CORE_USER_NAME_LEN, "CPU %d", (uint8_t)core_num);
+            ESP_ERROR_CHECK(esp_task_wdt_add_user((const char *)core_user_names[core_num], &core_user_handles[core_num]));
+            ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
 #else
-        TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core_num);
-        assert(idle_task_handle);
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_task_handle));
-        ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
+            TaskHandle_t idle_task_handle = xTaskGetIdleTaskHandleForCPU(core_num);
+            assert(idle_task_handle);
+            ESP_ERROR_CHECK(esp_task_wdt_add(idle_task_handle));
+            ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, core_num));
 #endif
         }
         core_mask >>= 1;
         core_num++;
     }
 }
+
+
+/**
+ * The behavior of the Task Watchdog depends on the configuration from the `menuconfig`.
+ * It can be summarized as follow, regardless of the target:
+ * +------------------------+--------------------------------+--------------------------+
+ * | \  Panic configuration |                                |                          |
+ * |  +------------------+  | Panic Enabled                  | Panic Disabled           |
+ * | TWDT triggered on    \ |                                |                          |
+ * +------------------------+--------------------------------+--------------------------+
+ * |                        | - Current core backtrace       | - Current core backtrace |
+ * | Both Cores             | - Crosscore TWDT abort         | - Crosscore backtrace    |
+ * |                        | - Wait for other core to abort |                          |
+ * +------------------------+--------------------------------+--------------------------+
+ * | Other Core             | - Crosscore TWDT abort         | - Crosscore backtrace    |
+ * +------------------------+--------------------------------+--------------------------+
+ * | Current Core           | - Abort from current CPU       | - Current core backtrace |
+ * +------------------------+--------------------------------+--------------------------+
+ *
+ */
+
+#if CONFIG_IDF_TARGET_ARCH_RISCV
+
+static void task_wdt_timeout_handling(int cores_fail, bool panic)
+{
+    /* For RISC-V, make sure the cores that fail is only composed of core 0. */
+    assert(cores_fail == BIT(0));
+
+    const int current_core = 0;
+    TaskSnapshot_t snapshot = { 0 };
+    BaseType_t ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandle(), &snapshot);
+
+    if (p_twdt_obj->panic) {
+        assert(ret == pdTRUE);
+        ESP_EARLY_LOGE(TAG, "Aborting.");
+        esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
+        /**
+         * We cannot simply use `abort` here because the `panic` handler would
+         * interpret it as if the task watchdog ISR aborted and so, print this
+         * current ISR backtrace/context. We want to trick the `panic` handler
+         * to think the task itself is aborting.
+         * To do so, we need to get the interruptee's top of the stack. It contains
+         * its own context, saved when the interrupt occurred.
+         * We must also set the global flag that states that an abort occurred
+         * (and not a panic)
+         **/
+        g_panic_abort = true;
+        g_twdt_isr = true;
+        void *frame = (void *) snapshot.pxTopOfStack;
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
+        xt_unhandled_exception(frame);
+    } else {
+        /* Targets based on a RISC-V CPU cannot perform backtracing that easily.
+         * We have two options here:
+         *     - Perform backtracing at runtime.
+         *     - Let IDF monitor do the backtracing for us. Used during panic already.
+         * This could be configurable, choosing one or the other depending on
+         * CONFIG_ESP_SYSTEM_USE_EH_FRAME configuration option.
+         *
+         * In both cases, this takes time, and we are in an ISR, we must
+         * exit this handler as fast as possible, then we will simply print
+         * the interruptee's registers.
+         */
+        if (ret == pdTRUE) {
+            void *frame = (void *) snapshot.pxTopOfStack;
+#if CONFIG_ESP_SYSTEM_USE_EH_FRAME
+            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+            esp_eh_frame_print_backtrace(frame);
+#else // CONFIG_ESP_SYSTEM_USE_EH_FRAME
+            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) registers", current_core);
+            panic_print_registers(frame, current_core);
+            esp_rom_printf("\r\n");
+#endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
+        }
+    }
+}
+
+#else // CONFIG_IDF_TARGET_ARCH_RISCV
+
+/**
+ * Function simulating an abort coming from the interrupted task of the current
+ * core.
+ * It is called either by the function right below or by a crosscore interrupt,
+ * in the case where the other core (than the main one) has to abort because one
+ * of his tasks didn't reset the TWDT on time.
+ */
+void task_wdt_timeout_abort_xtensa(bool current_core)
+{
+    TaskSnapshot_t snapshot = { 0 };
+    BaseType_t ret = pdTRUE;
+
+    ESP_EARLY_LOGE(TAG, "Aborting.");
+    esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
+    ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandle(), &snapshot);
+    assert(ret == pdTRUE);
+    g_panic_abort = true;
+    /* For Xtensa, we should set this flag as late as possible, as this function may
+     * be called after a crosscore interrupt. Indeed, a higher interrupt may occur
+     * after calling the crosscore interrupt, if its handler fails, this flag
+     * shall not be set.
+     * This flag will tell the coredump component (if activated) that yes, we are in
+     * an ISR context, but it is intended, it is not because an ISR encountered an
+     * exception. If we don't set such flag, later tested by coredump, the later would
+     * switch the execution frame/context we are giving it to the interrupt stack.
+     * For details about this behavior in the TODO task: IDF-5694
+     */
+    g_twdt_isr = true;
+    void *frame = (void *) snapshot.pxTopOfStack;
+    if (current_core) {
+        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", xPortGetCoreID());
+    } else {
+        ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", xPortGetCoreID());
+    }
+    xt_unhandled_exception(frame);
+}
+
+static void task_wdt_timeout_handling(int cores_fail, bool panic)
+{
+    const int current_core = xPortGetCoreID();
+
+    if (panic) {
+#if !CONFIG_FREERTOS_UNICORE
+        const int other_core = !current_core;
+
+        if ((cores_fail & BIT(0)) && (cores_fail & BIT(1))) {
+            /* In the case where both CPUs have failing tasks, print the current CPU backtrace and then let the
+             * other core fail. */
+            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+            esp_backtrace_print(100);
+            /* TODO: the interrupt we send should have the highest priority */
+            esp_crosscore_int_send_twdt_abort(other_core);
+            /* We are going to abort, on the other core, we have nothing to
+             * do anymore here, just wait until we crash */
+            while (1) {}
+        } else if (cores_fail & BIT(other_core)) {
+            /* If only the other core is failing, we can tell it to abort. */
+            esp_crosscore_int_send_twdt_abort(other_core);
+            while (1) {}
+        }
+#endif // !CONFIG_FREERTOS_UNICORE
+        /* Current core is failing, abort right now */
+        task_wdt_timeout_abort_xtensa(true);
+    } else {
+        /* Print backtrace of the core that failed to reset the watchdog */
+        if (cores_fail & BIT(current_core)) {
+            ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
+            esp_backtrace_print(100);
+        }
+#if !CONFIG_FREERTOS_UNICORE
+        const int other_core = !current_core;
+        if (cores_fail & BIT(other_core)) {
+            ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", other_core);
+            esp_crosscore_int_send_print_backtrace(other_core);
+        }
+#endif // !CONFIG_FREERTOS_UNICORE
+    }
+}
+
+#endif // CONFIG_IDF_TARGET_ARCH_RISCV
+
 
 /**
  * @brief TWDT timeout ISR function
@@ -342,30 +526,48 @@ static void task_wdt_isr(void *arg)
     */
     ESP_EARLY_LOGE(TAG, "Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:");
     twdt_entry_t *entry;
+    /* Keep a bitmap of CPU cores having tasks that have not reset TWDT.
+     * Bit 0 represents core 0, bit 1 represents core 1, and so on. */
+    int cpus_fail = 0;
+    bool panic = p_twdt_obj->panic;
+
     SLIST_FOREACH(entry, &p_twdt_obj->entries_slist, slist_entry) {
         if (!entry->has_reset) {
             if (entry->task_handle) {
 #if CONFIG_FREERTOS_SMP
 #if configNUM_CORES > 1
                 // Log the task's name and its affinity
-                ESP_EARLY_LOGE(TAG, " - %s (0x%x)", pcTaskGetName(entry->task_handle), vTaskCoreAffinityGet(entry->task_handle));
+                const UBaseType_t affinity = vTaskCoreAffinityGet(entry->task_handle);
+                ESP_EARLY_LOGE(TAG, " - %s (0x%x)", pcTaskGetName(entry->task_handle), affinity);
+                cpus_fail |= affinity;
 #else // configNUM_CORES > 1
                 // Log the task's name
                 ESP_EARLY_LOGE(TAG, " - %s", pcTaskGetName(entry->task_handle));
+                cpus_fail |= BIT(0);
 #endif // configNUM_CORES > 1
 #else // CONFIG_FREERTOS_SMP
                 BaseType_t task_affinity = xTaskGetAffinity(entry->task_handle);
                 const char *cpu;
                 if (task_affinity == 0) {
                     cpu = DRAM_STR("CPU 0");
+                    cpus_fail |= BIT(0);
                 } else if (task_affinity == 1) {
                     cpu = DRAM_STR("CPU 1");
+                    cpus_fail |= BIT(1);
                 } else {
                     cpu = DRAM_STR("CPU 0/1");
+                    cpus_fail |= BIT(1) | BIT(0);
                 }
                 ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetName(entry->task_handle), cpu);
 #endif // CONFIG_FREERTOS_SMP
             } else {
+                /* User entry, we cannot predict on which core it is scheduled to run,
+                 * so let's mark all cores as failing */
+#if configNUM_CORES > 1
+                cpus_fail = BIT(1) | BIT(0);
+#else // configNUM_CORES > 1
+                cpus_fail = BIT(0);
+#endif // configNUM_CORES > 1
                 ESP_EARLY_LOGE(TAG, " - %s", entry->user_name);
             }
         }
@@ -378,24 +580,10 @@ static void task_wdt_isr(void *arg)
 
     // Run user ISR handler
     esp_task_wdt_isr_user_handler();
+
     // Trigger configured timeout behavior (e.g., panic or print backtrace)
-    if (p_twdt_obj->panic) {
-        ESP_EARLY_LOGE(TAG, "Aborting.");
-        esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
-        abort();
-    } else {    // Print
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2 // TODO: ESP32-C3 IDF-2986
-        int current_core = xPortGetCoreID();
-        // Print backtrace of current core
-        ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);
-        esp_backtrace_print(100);
-#if !CONFIG_FREERTOS_UNICORE
-        // Print backtrace of other core
-        ESP_EARLY_LOGE(TAG, "Print CPU %d backtrace", !current_core);
-        esp_crosscore_int_send_print_backtrace(!current_core);
-#endif
-#endif
-    }
+    assert(cpus_fail != 0);
+    task_wdt_timeout_handling(cpus_fail, panic);
 }
 
 // ----------------------------------------------------- Public --------------------------------------------------------

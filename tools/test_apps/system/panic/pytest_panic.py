@@ -18,6 +18,16 @@ CONFIGS = [
     pytest.param('panic', marks=[pytest.mark.esp32, pytest.mark.esp32s2]),
 ]
 
+# An ESP32-only config, used for tests requiring two cores
+CONFIGS_ESP32 = [
+    pytest.param('coredump_flash_bin_crc', marks=[pytest.mark.esp32]),
+    pytest.param('coredump_flash_elf_sha', marks=[pytest.mark.esp32]),
+    pytest.param('coredump_uart_bin_crc', marks=[pytest.mark.esp32]),
+    pytest.param('coredump_uart_elf_crc', marks=[pytest.mark.esp32]),
+    pytest.param('gdbstub', marks=[pytest.mark.esp32]),
+    pytest.param('panic', marks=[pytest.mark.esp32]),
+]
+
 
 def get_default_backtrace(config: str) -> List[str]:
     return [config, 'app_main', 'main_task', 'vPortTaskWrapper']
@@ -28,11 +38,16 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
         dut.expect_exact('Entering gdb stub now.')
         dut.start_gdb()
         frames = dut.gdb_backtrace()
-        if not dut.match_backtrace(frames, expected_backtrace):
-            raise AssertionError(
-                'Unexpected backtrace in test {}:\n{}'.format(config, pformat(frames))
-            )
-        dut.revert_log_level()
+        # Make sure frames and the expected_backtrace have the same size, else, an exception will occur
+        if expected_backtrace is not None:
+            size = min(len(frames), len(expected_backtrace))
+            frames = frames[0:size]
+            expected_backtrace = expected_backtrace[0:size]
+            if not dut.match_backtrace(frames, expected_backtrace):
+                raise AssertionError(
+                    'Unexpected backtrace in test {}:\n{}'.format(config, pformat(frames))
+                )
+            dut.revert_log_level()
         return
 
     if 'uart' in config:
@@ -47,14 +62,14 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
 
 @pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_task_wdt(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.expect_test_func_name(test_func_name)
     dut.expect_exact(
         'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
     )
     dut.expect_exact('CPU 0: main')
-    dut.expect(r'abort\(\) was called at PC [0-9xa-f]+ on core 0')
     dut.expect_none('register dump:')
+    dut.expect_exact('Print CPU 0 (current core) backtrace')
     dut.expect_backtrace()
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
@@ -64,9 +79,63 @@ def test_task_wdt(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             dut,
             config,
             expected_backtrace=[
-                # Backtrace interrupted when abort is called, IDF-842
-                'panic_abort',
-                'esp_system_abort',
+                'test_task_wdt_cpu0',
+                'app_main'
+            ],
+        )
+    else:
+        common_test(dut, config)
+
+
+@pytest.mark.parametrize('config', CONFIGS_ESP32, indirect=True)
+@pytest.mark.generic
+def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+    dut.expect_exact(
+        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
+    )
+    dut.expect_exact('CPU 1: Infinite loop')
+    dut.expect_none('register dump:')
+    dut.expect_exact('Print CPU 1 backtrace')
+    dut.expect_backtrace()
+    dut.expect_elf_sha256()
+    dut.expect_none('Guru Meditation')
+
+    if config == 'gdbstub':
+        common_test(
+            dut,
+            config,
+            expected_backtrace=[
+                'infinite_loop'
+            ],
+        )
+    else:
+        common_test(dut, config)
+
+
+@pytest.mark.parametrize('config', CONFIGS_ESP32, indirect=True)
+@pytest.mark.generic
+def test_task_wdt_both_cpus(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+    dut.expect_exact(
+        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
+    )
+    dut.expect_exact('CPU 0: Infinite loop')
+    dut.expect_exact('CPU 1: Infinite loop')
+    dut.expect_none('register dump:')
+    dut.expect_exact('Print CPU 0 (current core) backtrace')
+    dut.expect_backtrace()
+    dut.expect_exact('Print CPU 1 backtrace')
+    dut.expect_backtrace()
+    dut.expect_elf_sha256()
+    dut.expect_none('Guru Meditation')
+
+    if config == 'gdbstub':
+        common_test(
+            dut,
+            config,
+            expected_backtrace=[
+                'infinite_loop'
             ],
         )
     else:
