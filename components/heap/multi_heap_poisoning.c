@@ -24,11 +24,12 @@
 #if !CONFIG_HEAP_TLSF_USE_ROM_IMPL
 #include "tlsf.h"
 #else
-/* Declaration of the tlsf_poison_fill_pfunc_set defined in RAM
- * used to call IDF function multi_heap_internal_poison_fill_region()
- * in this source file
+/* Header containing the declaration of tlsf_poison_fill_pfunc_set()
+ * used to register multi_heap_internal_poison_fill_region() as a
+ * callback to fill memory region with given patterns in the heap
+ * components.
  */
-extern void tlsf_poison_fill_pfunc_set(void *pfunc);
+#include "rom/tlsf.h"
 #endif
 
 #ifdef MULTI_HEAP_POISONING
