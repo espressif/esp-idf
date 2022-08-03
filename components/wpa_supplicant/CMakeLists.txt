@@ -265,3 +265,5 @@ if(CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA)
         target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_OWE_STA)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

@@ -717,6 +717,8 @@ if(CONFIG_BT_ENABLED)
         "host/bluedroid/btc/profile/std/gatt/btc_gatt_util.c"
         "host/bluedroid/btc/profile/std/gatt/btc_gatts.c"
         PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
+
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()
 
 if(CONFIG_BT_NIMBLE_MESH)

@@ -77,3 +77,5 @@ set(EFUSE_TEST_TABLE_CSV_PATH "${COMPONENT_DIR}/test/esp_efuse_test_table.csv")
 add_custom_target(efuse_test_table COMMAND "${python}"
                   "${CMAKE_CURRENT_SOURCE_DIR}/efuse_table_gen.py"
                   ${EFUSE_TEST_TABLE_CSV_PATH} ${GEN_EFUSE_TABLE_ARG})
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

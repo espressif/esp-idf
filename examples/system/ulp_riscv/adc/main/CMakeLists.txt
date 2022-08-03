@@ -1,7 +1,7 @@
 idf_component_register(SRCS "ulp_riscv_adc_example_main.c"
                     INCLUDE_DIRS ""
                     REQUIRES soc ulp esp_adc)
-
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 #
 # ULP support additions to component CMakeLists.txt.

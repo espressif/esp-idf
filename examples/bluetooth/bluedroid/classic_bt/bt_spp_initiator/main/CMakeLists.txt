@@ -3,3 +3,4 @@ idf_component_register(SRCS "main.c"
                     SRCS "app_spp_msg_set.c"
                     SRCS "console_uart.c"
                     INCLUDE_DIRS ".")
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

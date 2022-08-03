@@ -10,3 +10,4 @@ idf_component_register(
                     PRIV_INCLUDE_DIRS "../private_include" "common" "hcd" "usb_host"
                     PRIV_REQUIRES cmock usb test_utils
                     )
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

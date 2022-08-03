@@ -84,4 +84,5 @@ if(NOT BOOTLOADER_BUILD)
         # will be replaced with MMU requirements
         idf_component_optional_requires(PRIVATE esp_psram)
     endif()
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

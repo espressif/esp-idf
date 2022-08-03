@@ -6,3 +6,5 @@ set(srcs "pretty_effect.c"
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS "."
                     EMBED_FILES image.jpg)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

@@ -33,3 +33,5 @@ if(CONFIG_NVS_ENCRYPTION)
     target_sources(${COMPONENT_LIB} PRIVATE "src/nvs_encrypted_partition.cpp")
     target_link_libraries(${COMPONENT_LIB} PRIVATE idf::mbedtls)
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

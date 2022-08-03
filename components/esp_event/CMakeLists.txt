@@ -20,3 +20,5 @@ idf_component_register(SRCS ${srcs}
                     REQUIRES ${requires}
                     PRIV_REQUIRES ${priv_requires}
                     LDFRAGMENTS linker.lf)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

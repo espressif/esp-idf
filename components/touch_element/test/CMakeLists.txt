@@ -6,4 +6,5 @@ if(IDF_TARGET IN_LIST TOUCH_ELEMENT_COMPATIBLE_TARGETS)
                                 "test_touch_slider.c"
                                 "test_touch_matrix.c"
             PRIV_REQUIRES unity touch_element)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

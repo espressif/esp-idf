@@ -9,3 +9,5 @@ idf_component_register(SRCS "${srcs}"
 set_source_files_properties(
     "ble_mesh_fast_prov_server_model.c"
     PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

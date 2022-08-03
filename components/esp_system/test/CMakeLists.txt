@@ -19,3 +19,4 @@ idf_component_register(SRC_DIRS .
                     EXCLUDE_SRCS "${excludes}"
                     PRIV_INCLUDE_DIRS .
                     PRIV_REQUIRES "${requires}")
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
