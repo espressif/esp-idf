@@ -227,6 +227,18 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
         case SIG_BTU_HCI_MSG:
             status = osi_thread_post(btu_thread, btu_hci_msg_process, param, 0, timeout);
             break;
+        case SIG_BTU_HCI_ADV_RPT_MSG:
+#if BLE_INCLUDED == TRUE
+            if (param != NULL) {
+                btm_ble_adv_pkt_post(param);
+            }
+            btm_ble_adv_pkt_ready();
+            status = true;
+#else
+            osi_free(param);
+            status = false;
+#endif
+            break;
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
         case SIG_BTU_BTA_MSG:
             status = osi_thread_post(btu_thread, bta_sys_event, param, 0, timeout);
