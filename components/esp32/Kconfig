@@ -7,7 +7,8 @@ menu "ESP32-specific"
     config ESP32_ECO3_CACHE_LOCK_FIX
         bool
         default y
-        depends on !FREERTOS_UNICORE && ESP32_SPIRAM_SUPPORT
+        # ESP32_ECO3_CACHE_LOCK_FIX should be settable even without ESP32_SPI_RAM_SUPPORT
+        ###depends on !FREERTOS_UNICORE && ESP32_SPIRAM_SUPPORT
 
     choice ESP32_REV_MIN
         prompt "Minimum Supported ESP32 Revision"
