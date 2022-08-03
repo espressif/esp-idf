@@ -98,4 +98,11 @@ menu "OpenThread"
         default 65
         range 50 100
 
+    config OPENTHREAD_DNS64_CLIENT
+        bool "Use dns64 client"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to acquire NAT64 address from dns servers.
+
 endmenu

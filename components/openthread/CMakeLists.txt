@@ -33,6 +33,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_FTD OR CONFIG_OPENTHREAD_MTD)
         list(APPEND src_dirs
+            "src"
             "openthread/examples/apps/cli"
             "openthread/src/core/backbone_router"
             "openthread/src/core/coap"
@@ -141,7 +142,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES mbedtls ieee802154 console lwip)
+                       REQUIRES esp_event mbedtls ieee802154 console lwip)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)
