@@ -1032,7 +1032,6 @@ components/soc/esp32/include/soc/uart_struct.h
 components/soc/esp32/include/soc/uhci_reg.h
 components/soc/esp32/include/soc/uhci_struct.h
 components/soc/esp32/include/soc/wdev_reg.h
-components/soc/esp32/interrupts.c
 components/soc/esp32/ledc_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
@@ -1174,7 +1173,6 @@ components/soc/esp32s2/include/soc/usb_wrap_reg.h
 components/soc/esp32s2/include/soc/usb_wrap_struct.h
 components/soc/esp32s2/include/soc/usbh_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
-components/soc/esp32s2/interrupts.c
 components/soc/esp32s2/ledc_periph.c
 components/soc/esp32s2/spi_periph.c
 components/soc/esp32s2/uart_periph.c
