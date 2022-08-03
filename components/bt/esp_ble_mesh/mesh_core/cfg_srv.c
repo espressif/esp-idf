@@ -197,6 +197,21 @@ static bool app_key_is_valid(uint16_t app_idx)
     return false;
 }
 
+static bool mod_pub_app_key_bound(struct bt_mesh_model *model,
+                                  uint16_t app_idx)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
+        if (model->keys[i] == app_idx) {
+            return true;
+        }
+    }
+
+    BT_ERR("Appkey(0x%02x) not bound to this model.", app_idx);
+    return false;
+}
+
 static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
                             uint16_t app_idx, uint8_t cred_flag, uint8_t ttl, uint8_t period,
                             uint8_t retransmit, bool store)
@@ -237,7 +252,11 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
         return STATUS_SUCCESS;
     }
 
-    if (!bt_mesh_app_key_find(app_idx)) {
+    /* For case MESH/NODE/CFG/MP/BI-03-C, need to check if appkey 
+     * is bound to model identified by the ModelIdentifier.
+     */
+    if (!bt_mesh_app_key_find(app_idx) ||
+        !mod_pub_app_key_bound(model, app_idx)) {
         return STATUS_INVALID_APPKEY;
     }
 
