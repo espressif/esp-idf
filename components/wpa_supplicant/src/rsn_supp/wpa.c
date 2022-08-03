@@ -282,10 +282,12 @@ void   wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
     reply->type = sm->proto == WPA_PROTO_RSN ?
         EAPOL_KEY_TYPE_RSN : EAPOL_KEY_TYPE_WPA;
     key_info = WPA_KEY_INFO_REQUEST | ver;
-    if (sm->ptk_set)
+    if (sm->ptk_set) {
+        key_info |= WPA_KEY_INFO_SECURE;
         key_info |= WPA_KEY_INFO_MIC;
+    }
     if (error)
-        key_info |= WPA_KEY_INFO_ERROR|WPA_KEY_INFO_SECURE;
+        key_info |= WPA_KEY_INFO_ERROR;
     if (pairwise)
         key_info |= WPA_KEY_INFO_KEY_TYPE;
     WPA_PUT_BE16(reply->key_info, key_info);
@@ -2264,9 +2266,9 @@ wpa_sm_set_key(struct install_key *key_sm, enum wpa_alg alg,
     struct wpa_sm *sm = &gWpaSm;
 
     /*gtk or ptk both need check countermeasures*/
-    if (alg == WPA_ALG_TKIP && key_len == 32) {
+    if (alg == WPA_ALG_TKIP && key_idx == 0 && key_len == 32) {
         /* Clear the MIC error counter when setting a new PTK. */
-        key_sm->mic_errors_seen = 0;
+        sm->mic_errors_seen = 0;
     }
 
     key_sm->keys_cleared = 0;
@@ -2289,9 +2291,8 @@ wpa_sm_get_key(uint8_t *ifx, int *alg, u8 *addr, int *key_idx, u8 *key, size_t k
 
 void wpa_supplicant_clr_countermeasures(u16 *pisunicast)
 {
-       struct wpa_sm *sm = &gWpaSm;
-       (sm->install_ptk).mic_errors_seen=0;
-    (sm->install_gtk).mic_errors_seen=0;
+    struct wpa_sm *sm = &gWpaSm;
+    sm->mic_errors_seen = 0;
     ets_timer_done(&(sm->cm_timer));
     wpa_printf(MSG_DEBUG, "WPA: TKIP countermeasures clean\n");
 }
@@ -2301,9 +2302,9 @@ void wpa_supplicant_clr_countermeasures(u16 *pisunicast)
 */
 void wpa_supplicant_stop_countermeasures(u16 *pisunicast)
 {
-       struct wpa_sm *sm = &gWpaSm;
+    struct wpa_sm *sm = &gWpaSm;
 
-       ets_timer_done(&(sm->cm_timer));
+    ets_timer_done(&(sm->cm_timer));
     if (sm->countermeasures) {
         sm->countermeasures = 0;
               wpa_supplicant_clr_countermeasures(NULL);
@@ -2316,22 +2317,20 @@ void wpa_supplicant_stop_countermeasures(u16 *pisunicast)
 
 int wpa_michael_mic_failure(u16 isunicast)
 {
-       struct wpa_sm *sm = &gWpaSm;
-       int32_t *pmic_errors_seen=(isunicast)? &((sm->install_ptk).mic_errors_seen) : &((sm->install_gtk).mic_errors_seen);
+    struct wpa_sm *sm = &gWpaSm;
     
     wpa_printf(MSG_DEBUG, "\nTKIP MIC failure occur\n");
     
-       /*both unicast and multicast mic_errors_seen need statistics*/
-    if ((sm->install_ptk).mic_errors_seen + (sm->install_gtk).mic_errors_seen) {
+    if (sm->mic_errors_seen) {
         /* Send the new MIC error report immediately since we are going
          * to start countermeasures and AP better do the same.
          */
         wpa_sm_set_state(WPA_TKIP_COUNTERMEASURES);
-        wpa_sm_key_request(sm, 1, 0);
+        wpa_sm_key_request(sm, 1, isunicast);
 
         /* initialize countermeasures */
         sm->countermeasures = 1;
-        wpa_printf(MSG_DEBUG, "TKIP countermeasures started\n");
+        wpa_printf(MSG_DEBUG, "TKIP countermeasures started");
 
         /*
          * Need to wait for completion of request frame. We do not get
@@ -2350,9 +2349,9 @@ int wpa_michael_mic_failure(u16 isunicast)
         /* TODO: mark the AP rejected for 60 second. STA is
          * allowed to associate with another AP.. */
     } else {
-        *pmic_errors_seen=(*pmic_errors_seen)+1;
+        sm->mic_errors_seen++;
         wpa_sm_set_state(WPA_MIC_FAILURE);
-        wpa_sm_key_request(sm, 1, 0);
+        wpa_sm_key_request(sm, 1, isunicast);
         /*start 60sec counter to monitor whether next mic_failure occur in this period, or clear mic_errors_seen*/
         ets_timer_disarm(&(sm->cm_timer));
         ets_timer_done(&(sm->cm_timer));
