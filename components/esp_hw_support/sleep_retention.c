@@ -37,8 +37,6 @@ static DRAM_ATTR sleep_retention_t s_retention;
 
 #if SOC_PM_SUPPORT_TAGMEM_PD
 
-#define TAGMEM_PD_MEM_TYPE_CAPS     (MALLOC_CAP_DMA | MALLOC_CAP_DEFAULT)
-
 #if CONFIG_PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
 static int cache_tagmem_retention_setup(uint32_t code_seg_vaddr, uint32_t code_seg_size, uint32_t data_seg_vaddr, uint32_t data_seg_size)
 {
@@ -123,7 +121,7 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(bool enable)
             int tagmem_sz = cache_tagmem_retention_setup(code_start, code_size, data_start, data_size);
             void *buf = heap_caps_aligned_alloc(SOC_RTC_CNTL_TAGMEM_PD_DMA_ADDR_ALIGN,
                                                 tagmem_sz + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                                TAGMEM_PD_MEM_TYPE_CAPS);
+                                                MALLOC_CAP_RETENTION);
             if (buf) {
                 memset(buf, 0, tagmem_sz + RTC_HAL_DMA_LINK_NODE_SIZE);
                 s_retention.retent.tagmem.link_addr = rtc_cntl_hal_dma_link_init(buf,
@@ -157,19 +155,13 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(bool enable)
 
 #if SOC_PM_SUPPORT_CPU_PD
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
-#define CPU_PD_MEM_TYPE_CAPS        (MALLOC_CAP_RETENTION | MALLOC_CAP_DEFAULT)
-#else
-#define CPU_PD_MEM_TYPE_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_DEFAULT)
-#endif
-
 esp_err_t esp_sleep_cpu_pd_low_init(bool enable)
 {
     if (enable) {
         if (s_retention.retent.cpu_pd_mem == NULL) {
             void *buf = heap_caps_aligned_alloc(SOC_RTC_CNTL_CPU_PD_DMA_ADDR_ALIGN,
                                                 SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE,
-                                                CPU_PD_MEM_TYPE_CAPS);
+                                                MALLOC_CAP_RETENTION);
             if (buf) {
                 memset(buf, 0, SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE + RTC_HAL_DMA_LINK_NODE_SIZE);
                 s_retention.retent.cpu_pd_mem = rtc_cntl_hal_dma_link_init(buf,
