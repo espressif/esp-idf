@@ -107,6 +107,7 @@ void ref_clock_init(void)
     };
     rmt_transmit_config_t trans_config = {
         .loop_count = 0, // no loop
+        .flags.eot_level = 1,
     };
     TEST_ESP_OK(rmt_transmit(s_rmt_chan, s_rmt_encoder, &data, sizeof(data), &trans_config));
 

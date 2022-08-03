@@ -78,7 +78,7 @@ static uint32_t get_addr_reg(rtc_wdt_stage_t stage)
     } else if (stage == RTC_WDT_STAGE2) {
         reg = RTC_CNTL_WDTCONFIG3_REG;
     } else {
-    	reg = RTC_CNTL_WDTCONFIG4_REG;
+        reg = RTC_CNTL_WDTCONFIG4_REG;
     }
     return reg;
 }
@@ -98,14 +98,18 @@ esp_err_t rtc_wdt_set_time(rtc_wdt_stage_t stage, unsigned int timeout_ms)
     return ESP_OK;
 }
 
-esp_err_t rtc_wdt_get_timeout(rtc_wdt_stage_t stage, unsigned int* timeout_ms)
+esp_err_t rtc_wdt_get_timeout(rtc_wdt_stage_t stage, unsigned int *timeout_ms)
 {
     if (stage > 3) {
         return ESP_ERR_INVALID_ARG;
     }
     uint32_t time_tick;
+    uint32_t rtc_slow_freq = rtc_clk_slow_freq_get_hz();
+    if (rtc_slow_freq == 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
     time_tick = READ_PERI_REG(get_addr_reg(stage));
-    *timeout_ms = time_tick * 1000 / rtc_clk_slow_freq_get_hz();
+    *timeout_ms = time_tick * 1000 / rtc_slow_freq;
 
     return ESP_OK;
 }
