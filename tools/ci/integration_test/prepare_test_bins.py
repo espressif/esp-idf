@@ -7,7 +7,14 @@ import argparse
 import os
 
 import gitlab
-import gitlab_api
+
+try:
+    import gitlab_api
+except ImportError:
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'python_packages'))
+    import gitlab_api
+
 from AutoTestScript.RunnerConfigs.Config import Config
 
 SSC_BUILD_JOB_MAP = {
