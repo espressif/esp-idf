@@ -69,7 +69,7 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 Name field
 ~~~~~~~~~~
 
-Name field can be any meaningful name. It is not significant to the {IDF_TARGET_NAME}. Names longer than 16 characters will be truncated.
+Name field can be any meaningful name. It is not significant to the {IDF_TARGET_NAME}. The maximum length of names is 16 bytes, including one null terminator. Names longer than the maximum length will be truncated.
 
 Type field
 ~~~~~~~~~~
@@ -90,11 +90,11 @@ SubType
 ~~~~~~~
 {IDF_TARGET_ESP_PHY_REF:default = ":ref:`CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION`", esp32c2 = "(not updated yet)"}
 
-The 8-bit subtype field is specific to a given partition type. ESP-IDF currently only specifies the meaning of the subtype field for ``app`` and ``data`` partition types.
+The 8-bit SubType field is specific to a given partition type. ESP-IDF currently only specifies the meaning of the subtype field for ``app`` and ``data`` partition types.
 
 See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defined by ESP-IDF, including the following:
 
-* When type is ``app``, the subtype field can be specified as ``factory`` (0x00), ``ota_0`` (0x10) ... ``ota_15`` (0x1F) or ``test`` (0x20).
+* When type is ``app``, the SubType field can be specified as ``factory`` (0x00), ``ota_0`` (0x10) ... ``ota_15`` (0x1F) or ``test`` (0x20).
 
   - ``factory`` (0x00) is the default app partition. The bootloader will execute the factory app unless there it sees a partition of type data/ota, in which case it reads this partition to determine which OTA image to boot.
 
