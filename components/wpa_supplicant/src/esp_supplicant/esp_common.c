@@ -312,23 +312,83 @@ void esp_supplicant_common_deinit(void)
 	}
 }
 
+bool esp_rrm_is_rrm_supported_connection(void)
+{
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+
+	if (!wpa_s->current_bss) {
+		wpa_printf(MSG_DEBUG, "STA not associated, return");
+		return false;
+	}
+
+	if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
+		wpa_printf(MSG_DEBUG,
+			"RRM: No network support for Neighbor Report.");
+		return false;
+	}
+
+	return true;
+}
+
 int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 				      void *cb_ctx)
 {
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 	struct wpa_ssid_value wpa_ssid = {0};
-	struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
+	struct wifi_ssid *ssid;
+
+	if (!wpa_s->current_bss) {
+		wpa_printf(MSG_ERROR, "STA not associated, return");
+		return -2;
+	}
+
+	if (!(wpa_s->rrm_ie[0] & WLAN_RRM_CAPS_NEIGHBOR_REPORT)) {
+		wpa_printf(MSG_ERROR,
+			"RRM: No network support for Neighbor Report.");
+		return -1;
+	}
+
+	ssid = esp_wifi_sta_get_prof_ssid_internal();
 
 	os_memcpy(wpa_ssid.ssid, ssid->ssid, ssid->len);
 	wpa_ssid.ssid_len = ssid->len;
 
-	return wpas_rrm_send_neighbor_rep_request(&g_wpa_supp, &wpa_ssid, 0, 0, cb, cb_ctx);
+	return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, cb, cb_ctx);
+}
+
+bool esp_wnm_is_btm_supported_connection(void)
+{
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+
+	if (!wpa_s->current_bss) {
+		wpa_printf(MSG_DEBUG, "STA not associated, return");
+		return false;
+	}
+
+	if (!wpa_bss_ext_capab(wpa_s->current_bss, WLAN_EXT_CAPAB_BSS_TRANSITION)) {
+		wpa_printf(MSG_DEBUG, "AP doesn't support BTM, return");
+		return false;
+	}
+
+	return true;
 }
 
 int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 					   const char *btm_candidates,
 					   int cand_list)
 {
-	return wnm_send_bss_transition_mgmt_query(&g_wpa_supp, query_reason, btm_candidates, cand_list);
+	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+
+	if (!wpa_s->current_bss) {
+		wpa_printf(MSG_ERROR, "STA not associated, return");
+		return -2;
+	}
+
+	if (!wpa_bss_ext_capab(wpa_s->current_bss, WLAN_EXT_CAPAB_BSS_TRANSITION)) {
+		wpa_printf(MSG_ERROR, "AP doesn't support BTM, return");
+		return -1;
+	}
+	return wnm_send_bss_transition_mgmt_query(wpa_s, query_reason, btm_candidates, cand_list);
 }
 
 void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,

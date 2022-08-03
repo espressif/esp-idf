@@ -52,6 +52,16 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 			esp_wifi_set_rssi_threshold(EXAMPLE_WIFI_RSSI_THRESHOLD);
 		}
 #endif
+		if (esp_rrm_is_rrm_supported_connection()) {
+			ESP_LOGI(TAG,"RRM supported");
+		} else {
+			ESP_LOGI(TAG,"RRM not supported");
+		}
+		if (esp_wnm_is_btm_supported_connection()) {
+			ESP_LOGI(TAG,"BTM supported");
+		} else {
+			ESP_LOGI(TAG,"BTM not supported");
+		}
 	}
 }
 
