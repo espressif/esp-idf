@@ -552,6 +552,7 @@ static int eap_fast_write_pac(struct eap_sm *sm, const char *pac_file,
 			return -1;
 		}
 		eap_set_config_blob(sm, blob);
+		os_free(blob);
 	} else {
 		FILE *f;
 		f = fopen(pac_file, "wb");
