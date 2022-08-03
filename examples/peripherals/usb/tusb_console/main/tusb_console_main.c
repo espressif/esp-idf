@@ -34,8 +34,8 @@ void app_main(void)
     tinyusb_config_t tusb_cfg = { 0 }; // the configuration uses default values
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
-    tinyusb_config_cdcacm_t amc_cfg = { 0 }; // the configuration uses default values
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    tinyusb_config_cdcacm_t acm_cfg = { 0 }; // the configuration uses default values
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
 
     ESP_LOGI(TAG, "USB initialization DONE");
     while (1) {

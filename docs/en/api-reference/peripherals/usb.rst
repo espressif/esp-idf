@@ -93,7 +93,7 @@ If the CDC option is enabled in Menuconfig, the USB Serial Device could be initi
 
 .. code-block:: c
 
-    tinyusb_config_cdcacm_t amc_cfg = {
+    tinyusb_config_cdcacm_t acm_cfg = {
         .usb_dev = TINYUSB_USBDEV_0,
         .cdc_port = TINYUSB_CDC_ACM_0,
         .rx_unread_buf_sz = 64,
@@ -102,7 +102,7 @@ If the CDC option is enabled in Menuconfig, the USB Serial Device could be initi
         .callback_line_state_changed = NULL,
         .callback_line_coding_changed = NULL
     };
-    tusb_cdc_acm_init(&amc_cfg);
+    tusb_cdc_acm_init(&acm_cfg);
 
 To specify callbacks you can either set the pointer to your :cpp:type:`tusb_cdcacm_callback_t` function in the configuration structure or call :cpp:func:`tinyusb_cdcacm_register_callback` after initialization.
 
