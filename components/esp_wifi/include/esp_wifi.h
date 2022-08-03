@@ -107,6 +107,7 @@ typedef struct {
     int                    mgmt_sbuf_num;          /**< WiFi management short buffer number, the minimum value is 6, the maximum value is 32 */
     uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
     bool                   sta_disconnected_pm;    /**< WiFi Power Management for station at disconnected status */
+    int                    espnow_max_encrypt_num; /**< Maximum encrypt number of peers supported by espnow */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -225,6 +226,7 @@ extern uint64_t g_wifi_feature_caps;
     .mgmt_sbuf_num = WIFI_MGMT_SBUF_NUM, \
     .feature_caps = g_wifi_feature_caps, \
     .sta_disconnected_pm = WIFI_STA_DISCONNECTED_PM_ENABLED,  \
+    .espnow_max_encrypt_num = CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 }
 

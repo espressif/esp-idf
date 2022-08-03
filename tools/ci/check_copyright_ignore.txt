@@ -601,7 +601,6 @@ components/esp_system/test_eh_frame_parser/eh_frame_parser_impl.h
 components/esp_system/test_eh_frame_parser/esp_private/panic_internal.h
 components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/ubsan.c
-components/esp_wifi/include/esp_mesh_internal.h
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h

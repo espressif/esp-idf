@@ -385,4 +385,19 @@ menu "Wi-Fi"
             Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
             be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
 
+    config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
+        int "Maximum espnow encrypt peers number"
+        range 0 4 if IDF_TARGET_ESP32C2
+        range 0 16 if (!IDF_TARGET_ESP32C2)
+        default 2 if IDF_TARGET_ESP32C2
+        default 6 if !IDF_TARGET_ESP32C2
+        help
+            Maximum number of encrypted peers supported by espnow.
+            The number of hardware keys for encryption is fixed. And the espnow and SoftAP share the same
+            hardware keys. So this configuration will affect the maximum connection number of SoftAP.
+            Maximum espnow encrypted peers number + maximum number of connections of SoftAP = Max hardware keys number.
+
+            When using ESP mesh, this value should be set to a maximum of 6.
+
+
 endmenu  # Wi-Fi
