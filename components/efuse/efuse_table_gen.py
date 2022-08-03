@@ -248,6 +248,7 @@ class FuseTable(list):
                  'extern "C" {',
                  '#endif',
                  '',
+                 '#include "esp_efuse.h"',
                  '',
                  '// md5_digest_table ' + self.md5_digest_table,
                  '// This file was generated from the file ' + file_name + '.csv. DO NOT CHANGE THIS FILE MANUALLY.',

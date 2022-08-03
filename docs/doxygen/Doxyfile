@@ -80,7 +80,7 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/include/driver/uart.h \
-    $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse.h \
+    $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse_chip.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali_scheme.h \
     $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali.h \

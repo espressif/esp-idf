@@ -1908,8 +1908,6 @@ examples/system/deep_sleep/example_test.py
 examples/system/deep_sleep/main/deep_sleep_example_main.c
 examples/system/efuse/example_test.py
 examples/system/efuse/main/efuse_main.c
-examples/system/efuse/main/esp_efuse_custom_table.c
-examples/system/efuse/main/include/esp_efuse_custom_table.h
 examples/system/esp_event/default_event_loop/example_test.py
 examples/system/esp_event/default_event_loop/main/event_source.h
 examples/system/esp_event/default_event_loop/main/main.c
