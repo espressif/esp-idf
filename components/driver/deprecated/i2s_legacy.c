@@ -804,6 +804,8 @@ static esp_err_t i2s_calculate_clock(i2s_port_t i2s_num, i2s_hal_clock_info_t *c
 
     /* Calculate clock for common mode */
     ESP_RETURN_ON_ERROR(i2s_calculate_common_clock(i2s_num, clk_info), TAG, "Common clock calculate failed");
+    ESP_LOGD(TAG, "[sclk] %d [mclk] %d [mclk_div] %d [bclk] %d [bclk_div] %d",
+             clk_info->sclk, clk_info->mclk, clk_info->mclk_div, clk_info->bclk, clk_info->bclk_div);
     return ESP_OK;
 }
 
