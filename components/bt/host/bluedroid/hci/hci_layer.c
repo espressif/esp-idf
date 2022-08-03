@@ -102,6 +102,7 @@ static bool filter_incoming_event(BT_HDR *packet);
 static serial_data_type_t event_to_data_type(uint16_t event);
 static waiting_command_t *get_waiting_command(command_opcode_t opcode);
 static void dispatch_reassembled(BT_HDR *packet);
+static void dispatch_adv_report(pkt_linked_item_t *linked_pkt);
 
 // Module lifecycle functions
 int hci_start_up(void)
@@ -421,6 +422,11 @@ static void hal_says_packet_ready(BT_HDR *packet)
     }
 }
 
+static void hal_says_adv_rpt_ready(pkt_linked_item_t *linked_pkt)
+{
+    dispatch_adv_report(linked_pkt);
+}
+
 // Returns true if the event was intercepted and should not proceed to
 // higher layers. Also inspects an incoming event for interesting
 // information, like how many commands are now able to be sent.
@@ -518,6 +524,14 @@ static void dispatch_reassembled(BT_HDR *packet)
     }
 }
 
+static void dispatch_adv_report(pkt_linked_item_t *linked_pkt)
+{
+    // Events should already have been dispatched before this point
+    //Tell Up-layer received packet.
+    if (btu_task_post(SIG_BTU_HCI_ADV_RPT_MSG, linked_pkt, OSI_THREAD_MAX_TIMEOUT) == false) {
+        osi_free(linked_pkt);
+    }
+}
 // Misc internal functions
 
 // TODO(zachoverflow): we seem to do this a couple places, like the HCI inject module. #centralize
@@ -570,7 +584,8 @@ static void init_layer_interface(void)
 }
 
 static const hci_hal_callbacks_t hal_callbacks = {
-    hal_says_packet_ready
+    hal_says_packet_ready,
+    hal_says_adv_rpt_ready,
 };
 
 static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {

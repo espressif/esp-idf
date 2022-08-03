@@ -269,3 +269,8 @@ int get_btu_work_queue_size(void)
 {
     return osi_thread_queue_wait_size(btu_thread, 0);
 }
+
+osi_thread_t *btu_get_current_thread(void)
+{
+    return btu_thread;
+}

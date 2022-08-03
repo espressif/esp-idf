@@ -21,7 +21,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+#include "osi/pkt_queue.h"
 #include "stack/bt_types.h"
 
 typedef enum {
@@ -32,12 +32,14 @@ typedef enum {
 } serial_data_type_t;
 
 typedef void (*packet_ready_cb)(BT_HDR *packet);
+typedef void (*adv_rpt_ready_cb)(pkt_linked_item_t *linked_pkt);
 
 typedef struct {
     // Called when the HAL detects inbound data.
     // Data |type| may be ACL, SCO, or EVENT.
     // Executes in the context of the thread supplied to |init|.
     packet_ready_cb packet_ready;
+    adv_rpt_ready_cb adv_rpt_ready;
 
     /*
     // Called when the HAL detects inbound astronauts named Dave.
