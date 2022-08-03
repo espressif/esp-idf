@@ -43,9 +43,9 @@ const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     // Type 0: DRAM
     [SOC_MEMORY_TYPE_DRAM] = { "DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, false},
     // Type 1: DRAM used for startup stacks
-    [SOC_MEMORY_TYPE_STACK_DRAM] = { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, true},
+    [SOC_MEMORY_TYPE_STACK_DRAM] = { "STACK/DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT | MALLOC_CAP_RETENTION, MALLOC_CAP_EXEC | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, true},
     // Type 2: DRAM which has an alias on the I-port
-    [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
+    [SOC_MEMORY_TYPE_DIRAM] = { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC | MALLOC_CAP_RETENTION}, true, false},
     // Type 3: IRAM
     [SOC_MEMORY_TYPE_IRAM] = { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
     // Type 4: SPI SRAM data
@@ -87,10 +87,10 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCE0000,           (APP_USABLE_DRAM_END-0x3FCE0000),           SOC_MEMORY_TYPE_DIRAM,      0x403D0000}, //Level 8, IDRAM, can be used as trace memroy,
     { APP_USABLE_DRAM_END,  (SOC_DIRAM_DRAM_HIGH-APP_USABLE_DRAM_END),  SOC_MEMORY_TYPE_STACK_DRAM, MAP_DRAM_TO_IRAM(APP_USABLE_DRAM_END)}, //Level 8, IDRAM, can be used as trace memroy, ROM reserved area, recycled by heap allocator in app_main task
 #if CONFIG_ESP32S3_DATA_CACHE_16KB || CONFIG_ESP32S3_DATA_CACHE_32KB
-    { 0x3FCF0000,           0x8000,                                     SOC_MEMORY_TYPE_DRAM,       0},          //Level 9, DRAM
+    { 0x3FCF0000,           0x8000,                                     SOC_MEMORY_TYPE_DRAM,       0}, //Level 9, DRAM, DMA is accessible but retention DMA is inaccessible
 #endif
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
-    { 0x3C000000,           0x4000,                                     SOC_MEMORY_TYPE_NODMARAM,   0},
+    { 0x3C000000,           0x4000,                                     SOC_MEMORY_TYPE_DRAM,       0}, //Level 10, DRAM, DMA is accessible but retention DMA is inaccessible
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x600fe000,           0x2000,                                     SOC_MEMORY_TYPE_RTCRAM,     0}, //Fast RTC memory
