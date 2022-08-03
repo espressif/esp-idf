@@ -2911,6 +2911,87 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
 
 }
 
+TEST_CASE("check and read data from partition generated via manufacturing utility with blank lines in csv files and multipage blob support disabled", "[mfg_gen]")
+{
+    int childpid = fork();
+    int status;
+
+    if (childpid == 0) {
+        exit(execlp("bash", "bash",
+                    "-c",
+                    "rm -rf ../../../tools/mass_mfg/host_test && \
+                    cp -rf ../../../tools/mass_mfg/testdata mfg_testdata && \
+                    cp -rf ../nvs_partition_generator/testdata . && \
+                    mkdir -p ../../../tools/mass_mfg/host_test", NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+        childpid = fork();
+        if (childpid == 0) {
+            exit(execlp("python", "python",
+                        "../../../tools/mass_mfg/mfg_gen.py",
+                        "generate",
+                        "../../../tools/mass_mfg/samples/sample_config_blank_lines.csv",
+                        "../../../tools/mass_mfg/samples/sample_values_singlepage_blob_blank_lines.csv",
+                        "Test",
+                        "0x3000",
+                        "--outdir",
+                        "../../../tools/mass_mfg/host_test",
+                        "--version",
+                        "1",NULL));
+
+        } else {
+            CHECK(childpid > 0);
+            waitpid(childpid, &status, 0);
+            CHECK(WEXITSTATUS(status) == 0);
+
+            childpid = fork();
+            if (childpid == 0) {
+                exit(execlp("python", "python",
+                            "../nvs_partition_generator/nvs_partition_gen.py",
+                            "generate",
+                            "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
+                            "../nvs_partition_generator/Test-1-partition.bin",
+                            "0x3000",
+                            "--version",
+                            "1",NULL));
+
+            } else {
+                CHECK(childpid > 0);
+                waitpid(childpid, &status, 0);
+                CHECK(WEXITSTATUS(status) == 0);
+
+            }
+
+        }
+
+    }
+
+    SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
+    check_nvs_part_gen_args_mfg(&emu1, "test", 3, "mfg_testdata/sample_singlepage_blob.bin", false, NULL);
+
+    SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition.bin");
+    check_nvs_part_gen_args_mfg(&emu2, "test", 3, "testdata/sample_singlepage_blob.bin", false, NULL);
+
+
+    childpid = fork();
+    if (childpid == 0) {
+        exit(execlp("bash", " bash",
+                    "-c",
+                    "rm -rf ../../../tools/mass_mfg/host_test | \
+                    rm -rf mfg_testdata | \
+                    rm -rf testdata",NULL));
+    } else {
+        CHECK(childpid > 0);
+        waitpid(childpid, &status, 0);
+        CHECK(WEXITSTATUS(status) == 0);
+
+    }
+
+}
+
 TEST_CASE("check and read data from partition generated via manufacturing utility with multipage blob support enabled", "[mfg_gen]")
 {
     int childpid = fork();
