@@ -85,6 +85,7 @@ assign_integration_test:
   extends:
     - .assign_test_template
     - .rules:test:integration_test
+  image: ${CI_INTEGRATION_TEST_ENV_IMAGE}
   needs:
     - build_ssc_esp32
     - build_ssc_esp32c3
@@ -98,7 +99,6 @@ assign_integration_test:
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
-    PYTHON_VER: 3.7.7
   script:
     # clone test script to assign tests
     # can not retry if downing git lfs files failed, so using empty_branch first.
