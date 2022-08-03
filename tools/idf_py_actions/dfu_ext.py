@@ -4,7 +4,7 @@ from idf_py_actions.tools import ensure_build_directory, is_target_supported, ru
 
 def action_extensions(base_actions, project_path):
 
-    SUPPORTED_TARGETS = ['esp32s2']
+    SUPPORTED_TARGETS = ['esp32s2', 'esp32s3']
 
     def dfu_target(target_name, ctx, args, part_size):
         ensure_build_directory(args, ctx.info_name)
