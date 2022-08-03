@@ -65,7 +65,6 @@ int sae_set_group(struct sae_data *sae, int group)
 		tmp->prime_len = tmp->dh->prime_len;
 		if (tmp->prime_len > SAE_MAX_PRIME_LEN) {
 			sae_clear_data(sae);
-			os_free(tmp);
 			return ESP_FAIL;
 		}
 
@@ -73,7 +72,6 @@ int sae_set_group(struct sae_data *sae, int group)
 							tmp->prime_len);
 		if (tmp->prime_buf == NULL) {
 			sae_clear_data(sae);
-			os_free(tmp);
 			return ESP_FAIL;
 		}
 		tmp->prime = tmp->prime_buf;
@@ -82,7 +80,6 @@ int sae_set_group(struct sae_data *sae, int group)
 							tmp->dh->order_len);
 		if (tmp->order_buf == NULL) {
 			sae_clear_data(sae);
-			os_free(tmp);
 			return ESP_FAIL;
 		}
 		tmp->order = tmp->order_buf;
@@ -862,7 +859,7 @@ fail:
 
 int sae_process_commit(struct sae_data *sae)
 {
-	u8 k[SAE_MAX_PRIME_LEN];
+	u8 k[SAE_MAX_PRIME_LEN] = {0};
 	if (sae->tmp == NULL ||
 	    (sae->tmp->ec && sae_derive_k_ecc(sae, k) < 0) ||
 	    (sae->tmp->dh && sae_derive_k_ffc(sae, k) < 0) ||

@@ -182,17 +182,6 @@ int wpa_auth_for_each_auth(struct wpa_authenticator *wpa_auth,
 			   int (*cb)(struct wpa_authenticator *a, void *ctx),
 			   void *cb_ctx);
 
-#ifdef CONFIG_PEERKEY
-int wpa_stsl_remove(struct wpa_authenticator *wpa_auth,
-		    struct wpa_stsl_negotiation *neg);
-void wpa_smk_error(struct wpa_authenticator *wpa_auth,
-		   struct wpa_state_machine *sm, struct wpa_eapol_key *key);
-void wpa_smk_m1(struct wpa_authenticator *wpa_auth,
-		struct wpa_state_machine *sm, struct wpa_eapol_key *key);
-void wpa_smk_m3(struct wpa_authenticator *wpa_auth,
-		struct wpa_state_machine *sm, struct wpa_eapol_key *key);
-#endif /* CONFIG_PEERKEY */
-
 #ifdef CONFIG_IEEE80211R
 int wpa_write_mdie(struct wpa_auth_config *conf, u8 *buf, size_t len);
 int wpa_write_ftie(struct wpa_auth_config *conf, const u8 *r0kh_id,

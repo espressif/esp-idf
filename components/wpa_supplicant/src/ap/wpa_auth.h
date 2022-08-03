@@ -136,7 +136,6 @@ struct wpa_auth_config {
 	int rsn_pairwise;
 	int rsn_preauth;
 	int eapol_version;
-	int peerkey;
 	int wmm_enabled;
 	int wmm_uapsd;
 	int disable_pmksa_caching;
