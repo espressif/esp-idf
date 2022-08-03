@@ -16,7 +16,6 @@
 #define WPA_I_H
 
 struct install_key {
-    int mic_errors_seen; /* Michael MIC errors with the current PTK */
     int keys_cleared;
     enum wpa_alg alg;
     u8 addr[ETH_ALEN];
@@ -77,6 +76,7 @@ struct wpa_sm {
 
     struct install_key install_ptk;
     struct install_key install_gtk;
+    int mic_errors_seen; /* Michael MIC errors with the current PTK */
     int  key_entry_valid;   //present current avaliable entry for bssid, for pairkey:0,5,10,15,20, gtk: pairkey_no+i (i:1~4)
 
     void (* sendto) (void *buffer, uint16_t len);
