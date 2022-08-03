@@ -177,9 +177,8 @@ esp_err_t mcpwm_new_soft_fault(const mcpwm_soft_fault_config_t *config, mcpwm_fa
     return ESP_OK;
 
 err:
-    if (soft_fault) {
-        free(soft_fault);
-    }
+    // soft_fault must be NULL in the error handling path, and it's a determined behaviour to free a NULL pointer in esp-idf
+    free(soft_fault);
     return ret;
 }
 

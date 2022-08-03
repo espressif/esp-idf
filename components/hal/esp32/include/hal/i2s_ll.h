@@ -446,6 +446,7 @@ static inline volatile void *i2s_ll_get_intr_status_reg(i2s_dev_t *hw)
  * @return
  *        - module interrupt status
  */
+__attribute__((always_inline))
 static inline uint32_t i2s_ll_get_intr_status(i2s_dev_t *hw)
 {
     return hw->int_st.val;
@@ -465,6 +466,7 @@ static inline volatile void *i2s_ll_get_interrupt_status_reg(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param clr_mask Interrupt mask to clear interrupt status
  */
+__attribute__((always_inline))
 static inline void i2s_ll_clear_intr_status(i2s_dev_t *hw, uint32_t clr_mask)
 {
     hw->int_clr.val = clr_mask;
@@ -603,6 +605,7 @@ static inline void i2s_ll_rx_stop_link(i2s_dev_t *hw)
  * @param hw Peripheral I2S hardware instance address.
  * @param eof_addr Pointer to accept out eof des address
  */
+__attribute__((always_inline))
 static inline void i2s_ll_tx_get_eof_des_addr(i2s_dev_t *hw, uint32_t *eof_addr)
 {
     *eof_addr = hw->out_eof_des_addr;
@@ -614,6 +617,7 @@ static inline void i2s_ll_tx_get_eof_des_addr(i2s_dev_t *hw, uint32_t *eof_addr)
  * @param hw Peripheral I2S hardware instance address.
  * @param eof_addr Pointer to accept in eof des address
  */
+__attribute__((always_inline))
 static inline void i2s_ll_rx_get_eof_des_addr(i2s_dev_t *hw, uint32_t *eof_addr)
 {
     *eof_addr = hw->in_eof_des_addr;

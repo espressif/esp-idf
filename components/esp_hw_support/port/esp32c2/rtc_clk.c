@@ -33,8 +33,9 @@ static void rtc_clk_cpu_freq_to_8m(void);
 
 void rtc_clk_32k_enable_external(void)
 {
-    gpio_ll_input_enable(&GPIO, EXT_OSC_SLOW_GPIO_NUM);
-    gpio_ll_hold_en(&GPIO, EXT_OSC_SLOW_GPIO_NUM);
+    // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
+    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
+    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)

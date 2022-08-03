@@ -18,28 +18,33 @@
 extern "C" {
 #endif
 
+__attribute__((always_inline))
 static inline void dedic_gpio_cpu_ll_enable_output(uint32_t mask)
 {
     RV_WRITE_CSR(CSR_GPIO_OEN_USER, mask);
 }
 
+__attribute__((always_inline))
 static inline void dedic_gpio_cpu_ll_write_all(uint32_t value)
 {
     RV_WRITE_CSR(CSR_GPIO_OUT_USER, value);
 }
 
+__attribute__((always_inline))
 static inline uint32_t dedic_gpio_cpu_ll_read_in(void)
 {
     uint32_t value = RV_READ_CSR(CSR_GPIO_IN_USER);
     return value;
 }
 
+__attribute__((always_inline))
 static inline uint32_t dedic_gpio_cpu_ll_read_out(void)
 {
     uint32_t value = RV_READ_CSR(CSR_GPIO_OUT_USER);
     return value;
 }
 
+__attribute__((always_inline))
 static inline void dedic_gpio_cpu_ll_write_mask(uint32_t mask, uint32_t value)
 {
     RV_SET_CSR(CSR_GPIO_OUT_USER, mask & value);

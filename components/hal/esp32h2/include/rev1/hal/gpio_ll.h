@@ -95,6 +95,7 @@ static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, uint32_t gpio_num, gpio
   * @param core_id interrupt core id
   * @param status interrupt status
   */
+__attribute__((always_inline))
 static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
     *status = hw->pcpu_int.procpu_int;
@@ -107,6 +108,7 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   * @param core_id interrupt core id
   * @param status interrupt status high
   */
+__attribute__((always_inline))
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
     *status = hw->pcpu_int1.procpu_int1;
@@ -118,6 +120,7 @@ static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id
   * @param hw Peripheral GPIO hardware instance address.
   * @param mask interrupt status clear mask
   */
+__attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
 {
     hw->status_w1tc.status_w1tc = mask;
@@ -129,6 +132,7 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
   * @param hw Peripheral GPIO hardware instance address.
   * @param mask interrupt status high clear mask
   */
+__attribute__((always_inline))
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
     hw->status1_w1tc.status1_w1tc = mask;
@@ -141,6 +145,7 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
  * @param  core_id Interrupt enabled CPU to corresponding ID
  * @param  gpio_num GPIO number. If you want to enable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  */
+__attribute__((always_inline))
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, uint32_t gpio_num)
 {
     HAL_ASSERT(core_id == 0 && "target SoC only has a single core");
@@ -153,6 +158,7 @@ static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id,
  * @param  hw Peripheral GPIO hardware instance address.
  * @param  gpio_num GPIO number. If you want to disable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  */
+__attribute__((always_inline))
 static inline void gpio_ll_intr_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     hw->pin[gpio_num].pin_int_ena = 0;                             //disable GPIO intr
@@ -242,6 +248,7 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
  * @param  gpio_num GPIO number. If you want to set the output level of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  level Output level. 0: low ; 1: high
  */
+__attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
     if (level) {

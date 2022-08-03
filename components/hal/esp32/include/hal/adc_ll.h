@@ -519,6 +519,7 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
  * @param channel ADCn channel number.
  * @return atten The attenuation option.
  */
+__attribute__((always_inline))
 static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
     if (adc_n == ADC_UNIT_1) {
@@ -578,6 +579,7 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
  * @param adc_n ADC unit.
  * @param ctrl ADC controller.
  */
+__attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
     if (adc_n == ADC_UNIT_1) {
