@@ -2,6 +2,7 @@ set(app_sources "test_app_main.c" "test_ulp_riscv.c")
 set(ulp_sources "ulp/test_main.c")
 
 idf_component_register(SRCS ${app_sources}
+                       INCLUDE_DIRS "ulp"
                        REQUIRES ulp unity
                        WHOLE_ARCHIVE)
 

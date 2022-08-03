@@ -9,22 +9,9 @@
 #include <stdbool.h>
 #include "ulp_riscv_utils.h"
 #include "ulp_riscv_gpio.h"
+#include "ulp_riscv_lock_ulp_core.h"
+#include "ulp_test_shared.h"
 
-typedef enum{
-    RISCV_READ_WRITE_TEST = 1,
-    RISCV_DEEP_SLEEP_WAKEUP_TEST,
-    RISCV_LIGHT_SLEEP_WAKEUP_TEST,
-    RISCV_STOP_TEST,
-    RISCV_NO_COMMAND,
-} riscv_test_commands_t;
-
-typedef enum {
-    RISCV_COMMAND_OK = 1,
-    RISCV_COMMAND_NOK,
-    RISCV_COMMAND_INVALID,
-} riscv_test_command_reply_t;
-
-#define XOR_MASK 0xDEADBEEF
 
 volatile riscv_test_commands_t main_cpu_command = RISCV_NO_COMMAND;
 volatile riscv_test_command_reply_t main_cpu_reply = RISCV_COMMAND_INVALID;
@@ -32,6 +19,9 @@ volatile riscv_test_commands_t command_resp = RISCV_NO_COMMAND;
 volatile uint32_t riscv_test_data_in = 0;
 volatile uint32_t riscv_test_data_out = 0;
 volatile uint32_t riscv_counter = 0;
+
+volatile uint32_t riscv_incrementer = 0;
+ulp_riscv_lock_t lock;
 
 void handle_commands(riscv_test_commands_t cmd)
 {
@@ -87,6 +77,21 @@ void handle_commands(riscv_test_commands_t cmd)
 
             break;
 
+        case RISCV_MUTEX_TEST:
+            /* Echo the command ID back to the main CPU */
+            command_resp = RISCV_MUTEX_TEST;
+
+            for (int i = 0; i < MUTEX_TEST_ITERATIONS; i++) {
+                ulp_riscv_lock_acquire(&lock);
+                riscv_incrementer++;
+                ulp_riscv_lock_release(&lock);
+            }
+            /* Set the command reply status */
+            main_cpu_reply = RISCV_COMMAND_OK;
+            main_cpu_command = RISCV_NO_COMMAND;
+
+            break;
+
         case RISCV_NO_COMMAND:
             main_cpu_reply = RISCV_COMMAND_OK;
             break;
@@ -99,6 +104,7 @@ void handle_commands(riscv_test_commands_t cmd)
 
 int main (void)
 {
+
     while (1) {
         handle_commands(main_cpu_command);
         break;
