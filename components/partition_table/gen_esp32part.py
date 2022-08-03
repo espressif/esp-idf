@@ -92,6 +92,26 @@ def get_alignment_for_type(ptype):
     return ALIGNMENT.get(ptype, ALIGNMENT[DATA_TYPE])
 
 
+def get_partition_type(ptype):
+    if ptype == 'app':
+        return APP_TYPE
+    if ptype == 'data':
+        return DATA_TYPE
+    raise InputError('Invalid partition type')
+
+
+def add_extra_subtypes(csv):
+    for line_no in csv:
+        try:
+            fields = [line.strip() for line in line_no.split(',')]
+            for subtype, subtype_values in SUBTYPES.items():
+                if (int(fields[2], 16) in subtype_values.values() and subtype == get_partition_type(fields[0])):
+                    raise ValueError('Found duplicate value in partition subtype')
+            SUBTYPES[TYPES[fields[0]]][fields[1]] = int(fields[2], 16)
+        except InputError as err:
+            raise InputError('Error parsing custom subtypes: %s' % err)
+
+
 quiet = False
 md5sum = True
 secure = False
@@ -145,7 +165,7 @@ class PartitionTable(list):
             try:
                 res.append(PartitionDefinition.from_csv(line, line_no + 1))
             except InputError as err:
-                raise InputError('Error at line %d: %s' % (line_no + 1, err))
+                raise InputError('Error at line %d: %s\nPlease check extra_partition_subtypes.inc file in build/config directory' % (line_no + 1, err))
             except Exception:
                 critical('Unexpected error parsing CSV line %d: %s' % (line_no + 1, line))
                 raise
@@ -506,6 +526,7 @@ def main():
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
     parser.add_argument('--secure', help='Require app partitions to be suitable for secure boot', action='store_true')
+    parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
     parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
     parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted.',
                         nargs='?', default='-')
@@ -516,6 +537,9 @@ def main():
     md5sum = not args.disable_md5sum
     secure = args.secure
     offset_part_table = int(args.offset, 0)
+    if args.extra_partition_subtypes:
+        add_extra_subtypes(args.extra_partition_subtypes)
+
     table, input_is_binary = PartitionTable.from_file(args.input)
 
     if not args.no_verify:

@@ -1,5 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+tools/test_apps/build_system/custom_partition_subtypes:
+  enable:
+    - if: IDF_TARGET in ["esp32", "linux"]
+      reason: the test should be run on ESP32 and linux
+
 tools/test_apps/build_system/ldgen_test:
   disable:
     - if: IDF_TARGET == "esp32c2"
