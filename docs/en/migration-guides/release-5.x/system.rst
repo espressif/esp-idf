@@ -54,7 +54,7 @@ esp_hw_support
 - ``esp_cpu_get_ccount()``, ``esp_cpu_set_ccount()`` and ``esp_cpu_in_ocd_debug_mode()`` were removed from ``esp_cpu.h``. ESP-IDF developers should use respectively ``esp_cpu_get_cycle_count()``, ``esp_cpu_set_cycle_count()`` and ``esp_cpu_dbgr_is_attached()`` instead.
 - The header file ``esp_intr.h`` has been deleted. Please include ``esp_intr_alloc.h`` to allocate and manipulate interrupts.
 - The Panic API (functions/types/macros prefixed with ``esp_panic``) has been made into a private API. Thus, the previous include path ``#include "esp_panic.h"`` has been removed. If users still require usage of the Trax API (though this is not recommended), it can be included via  ``#include "esp_private/panic_reason.h"``. Besides, developers should include ``esp_debug_helpers.h`` instead to use any debug-related helper functions, e.g., print backtrace.
-- The header file ``soc_log.h`` is now renamed to ``esp_hw_log.h`` and all logging macros have been updated from ``SOC_LOGx`` to ``ESP_HW_LOGx``. ESP-IDF users should use the updated macro names.
+- The header file ``soc_log.h`` is now renamed to ``esp_hw_log.h`` and has been made private. Users are encouraged to use logging APIs provided under ``esp_log.h`` instead.
 - The header files ``spinlock.h``, ``clk_ctrl_os.h``, and ``rtc_wdt.h`` must now be included without the ``soc`` prefix. For example, ``#include "spinlock.h"``.
 - ``esp_chip_info()`` returns the chip version in the format  = 100 * ``major eFuse version`` + ``minor eFuse version``. Thus, the ``revision`` in the ``esp_chip_info_t`` structure is expanded to uint16_t to fit the new format.
 
