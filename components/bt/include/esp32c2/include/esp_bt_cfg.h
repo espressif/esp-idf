@@ -192,7 +192,11 @@ extern "C" {
 
 #define BLE_LL_CONN_DEF_AUTH_PYLD_TMO_N     (3000)
 
-#define RTC_FREQ_N                          (32000) /* in Hz */
+#ifdef CONFIG_ESP32C2_XTAL_FREQ_26
+    #define RTC_FREQ_N                      (40000) /* in Hz */
+#else
+    #define RTC_FREQ_N                      (32000) /* in Hz */
+#endif // CONFIG_ESP32C2_XTAL_FREQ_26
 
 #define BLE_LL_TX_PWR_DBM_N                 (0)
 
