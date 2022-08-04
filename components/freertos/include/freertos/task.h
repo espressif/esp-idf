@@ -3367,6 +3367,25 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
                                       TickType_t xTicksToWait,
                                       const BaseType_t xWaitIndefinitely ) PRIVILEGED_FUNCTION;
 
+#ifdef ESP_PLATFORM
+/*
+ * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
+ * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
+ *
+ * This function is a wrapper to take the "xTaskQueueMutex" spinlock of tasks.c.
+ * This lock is taken whenver any of the task lists or event lists are
+ * accessed/modified, such as when adding/removing tasks to/from the delayed
+ * task list or various event lists.
+ *
+ * This functions is meant to be called by xEventGroupSetBits() and
+ * vEventGroupDelete() as both those functions will access event lists (instead
+ * of delegating the entire responsibility to one of vTask...EventList()
+ * functions).
+ */
+void vTaskTakeEventListLock( void );
+void vTaskReleaseEventListLock( void );
+#endif //  ESP_PLATFORM
+
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
  * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.

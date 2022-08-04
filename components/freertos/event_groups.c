@@ -600,6 +600,10 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
     pxListEnd = listGET_END_MARKER( pxList ); /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
 #ifdef ESP_PLATFORM // IDF-3755
     taskENTER_CRITICAL();
+    /* The critical section above only takes the event groups spinlock. However, we are about to traverse a task list.
+     * Thus we need call the function below to take the task list spinlock located in tasks.c. Not doing so will risk
+     * the task list's being changed while be are traversing it. */
+    vTaskTakeEventListLock();
 #else
     vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -675,6 +679,8 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
         pxEventBits->uxEventBits &= ~uxBitsToClear;
     }
 #ifdef ESP_PLATFORM // IDF-3755
+    /* Release the previously held task list spinlock, then release the event group spinlock. */
+    vTaskReleaseEventListLock();
     taskEXIT_CRITICAL();
 #else
     ( void ) xTaskResumeAll();
@@ -693,6 +699,12 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
 
     // IDF-3755
     taskENTER_CRITICAL();
+#ifdef ESP_PLATFORM
+    /* The critical section above only takes the event groups spinlock. However, we are about to traverse a task list.
+     * Thus we need call the function below to take the task list spinlock located in tasks.c. Not doing so will risk
+     * the task list's being changed while be are traversing it. */
+    vTaskTakeEventListLock();
+#endif
     {
         while( listCURRENT_LIST_LENGTH( pxTasksWaitingForBits ) > ( UBaseType_t ) 0 )
         {
@@ -702,6 +714,10 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
             vTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
         }
     }
+#ifdef ESP_PLATFORM
+    /* Release the previously held task list spinlock. */
+    vTaskReleaseEventListLock();
+#endif
     taskEXIT_CRITICAL();
 
         #if ( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) )
