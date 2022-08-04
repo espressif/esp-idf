@@ -78,7 +78,7 @@ static void twai_receive_task(void *arg)
             for (int i = 0; i < rx_msg.data_length_code; i++) {
                 data |= (rx_msg.data[i] << (i * 8));
             }
-            ESP_LOGI(EXAMPLE_TAG, "Received data value %d", data);
+            ESP_LOGI(EXAMPLE_TAG, "Received data value %"PRIu32, data);
         } else if (rx_msg.identifier == ID_MASTER_STOP_CMD) {
             ESP_LOGI(EXAMPLE_TAG, "Received master stop command");
         } else if (rx_msg.identifier == ID_SLAVE_STOP_RESP) {

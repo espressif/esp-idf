@@ -203,7 +203,7 @@ esp_err_t mcpwm_operator_apply_carrier(mcpwm_oper_handle_t oper, const mcpwm_car
     mcpwm_ll_carrier_enable(hal->dev, oper_id, real_frequency > 0);
 
     if (real_frequency > 0) {
-        ESP_LOGD(TAG, "enable carrier modulation for operator(%d,%d), freq=%uHz, duty=%.2f, FPD=%dus",
+        ESP_LOGD(TAG, "enable carrier modulation for operator(%d,%d), freq=%"PRIu32"Hz, duty=%.2f, FPD=%"PRIu32"us",
                  group->group_id, oper_id, real_frequency, real_duty, real_fpd);
     } else {
         ESP_LOGD(TAG, "disable carrier for operator (%d,%d)", group->group_id, oper_id);

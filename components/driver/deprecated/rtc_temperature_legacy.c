@@ -145,7 +145,7 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
     uint32_t tsens_out = 0;
     temp_sensor_get_config(&tsens);
     temp_sensor_read_raw(&tsens_out);
-    ESP_LOGV(TAG, "tsens_out %d", tsens_out);
+    ESP_LOGV(TAG, "tsens_out %"PRIu32, tsens_out);
     const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
     *celsius = parse_temp_sensor_raw_value(tsens_out, dac->offset);
     if (*celsius < dac->range_min || *celsius > dac->range_max) {

@@ -247,7 +247,7 @@ esp_err_t sdm_new_channel(const sdm_config_t *config, sdm_channel_handle_t *ret_
     chan->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     chan->fsm = SDM_FSM_INIT; // put the channel into init state
 
-    ESP_LOGD(TAG, "new sdm channel (%d,%d) at %p, gpio=%d, sample rate=%uHz", group_id, chan_id, chan, chan->gpio_num, chan->sample_rate_hz);
+    ESP_LOGD(TAG, "new sdm channel (%d,%d) at %p, gpio=%d, sample rate=%"PRIu32"Hz", group_id, chan_id, chan, chan->gpio_num, chan->sample_rate_hz);
     *ret_chan = chan;
     return ESP_OK;
 err:

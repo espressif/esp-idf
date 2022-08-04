@@ -152,7 +152,7 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
 
     // Extract response bytes and store them into cmdinfo structure
     if (ret == ESP_OK) {
-        ESP_LOGV(TAG, "r1 = 0x%02x hw_cmd.r[0]=0x%08x", hw_cmd.r1, hw_cmd.response[0]);
+        ESP_LOGV(TAG, "r1 = 0x%02x hw_cmd.r[0]=0x%08"PRIx32, hw_cmd.r1, hw_cmd.response[0]);
         // Some errors should be reported using return code
         if (flags & (SDSPI_CMD_FLAG_RSP_R1 | SDSPI_CMD_FLAG_RSP_R1B)) {
             cmdinfo->response[0] = hw_cmd.r1;

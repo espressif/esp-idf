@@ -5,6 +5,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -281,7 +282,7 @@ TEST_CASE("lcd_rgb_panel_iram_safe", "[lcd]")
     printf("disable the cache for a while\r\n");
     test_disable_flash_cache();
     printf("the RGB ISR handle should keep working while the flash cache is disabled\r\n");
-    printf("callback calls: %d\r\n", callback_calls);
+    printf("callback calls: %"PRIu32"\r\n", callback_calls);
     TEST_ASSERT(callback_calls > 2);
 
     printf("delete RGB panel\r\n");

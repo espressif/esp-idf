@@ -81,7 +81,7 @@ typedef enum {
 struct pcnt_unit_t {
     pcnt_group_t *group;                                  // which group the pcnt unit belongs to
     portMUX_TYPE spinlock;                                // Spinlock, stop one unit from accessing different parts of a same register concurrently
-    uint32_t unit_id;                                     // allocated unit numerical ID
+    int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels

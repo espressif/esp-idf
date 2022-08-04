@@ -213,7 +213,7 @@ static void disp_buf(uint8_t *buf, int len)
 static void i2c_test_task(void *arg)
 {
     int ret;
-    uint32_t task_idx = (uint32_t)arg;
+    int task_idx = (int)arg;
 #if SOC_I2C_NUM > 1
     int i = 0;
     uint8_t *data = (uint8_t *)malloc(DATA_LENGTH);
