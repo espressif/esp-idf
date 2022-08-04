@@ -1358,7 +1358,8 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHan
     xReturn = xQueueAddToSet(rbGET_RX_SEM_HANDLE(pxRingbuffer), xQueueSet);
     if (xHoldSemaphore == pdTRUE) {
         //Return semaphore if temporarily held
-        configASSERT(xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer)) == pdTRUE);
+        xHoldSemaphore = xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
+        configASSERT(xHoldSemaphore == pdTRUE);
     }
     portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xReturn;
@@ -1384,7 +1385,8 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
     xReturn = xQueueRemoveFromSet(rbGET_RX_SEM_HANDLE(pxRingbuffer), xQueueSet);
     if (xHoldSemaphore == pdTRUE) {
         //Return semaphore if temporarily held
-        configASSERT(xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer)) == pdTRUE);
+        xHoldSemaphore = xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
+        configASSERT(xHoldSemaphore == pdTRUE);
     }
     portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xReturn;
