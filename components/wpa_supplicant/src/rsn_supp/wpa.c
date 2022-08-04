@@ -654,7 +654,7 @@ failed:
 }
 
 
-int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
+int   wpa_supplicant_install_ptk(struct wpa_sm *sm, int set_tx)
 {
     int keylen;
     enum wpa_alg alg;
@@ -689,7 +689,7 @@ int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
     //now only use keyentry 0 for pairwise key
     sm->key_entry_valid = 5;
 
-    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
+    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, set_tx, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
                (u8 *) sm->ptk.tk1, keylen,sm->key_entry_valid) < 0) {
         #ifdef DEBUG_PRINT           
         wpa_printf(MSG_DEBUG, "WPA: Failed to set PTK to the "
@@ -1271,6 +1271,10 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
         goto failed;
     }
 
+    if (sm->key_install && sm->key_info & WPA_KEY_INFO_INSTALL) {
+        wpa_supplicant_install_ptk(sm, 0);
+    }
+
     /*after txover, callback will continue run remain task*/
     if (wpa_supplicant_send_4_of_4(sm, sm->bssid, key, ver, key_info,
                        NULL, 0, &sm->ptk)) {
@@ -1289,7 +1293,7 @@ failed:
        u16 key_info=sm->key_info;
 
     if (sm->key_install && key_info & WPA_KEY_INFO_INSTALL) {
-        if (wpa_supplicant_install_ptk(sm))
+        if (wpa_supplicant_install_ptk(sm, 2))
             goto failed;
     }
     else if (sm->key_install == false) {
