@@ -127,6 +127,7 @@ If a function is not explicitly placed into :ref:`iram` or RTC memory, it is pla
 
 During :doc:`startup`, the bootloader (which runs from IRAM) configures the MMU flash cache to map the app's instruction code region to the instruction space. Flash accessed via the MMU is cached using some internal SRAM and accessing cached flash data is as fast as accessing other types of internal memory.
 
+
 .. _drom:
 
 DROM (data stored in flash)

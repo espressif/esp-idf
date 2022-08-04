@@ -279,6 +279,27 @@ GDB Stub
 
 在 GDB 会话中，我们可以检查 CPU 寄存器，本地和静态变量以及内存中任意位置的值。但是不支持设置断点，改变 PC 值或者恢复程序的运行。若要复位程序，请退出 GDB 会话，在 IDF 监视器 中连续输入 Ctrl-T Ctrl-R，或者按下开发板上的复位按键也可以重新运行程序。
 
+.. _RTC-Watchdog-Timeout:
+
+RTC 看门狗超时
+----------------
+
+RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，ROM 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
+
+.. only:: esp32
+
+    ::
+
+        rst:0x10 (RTCWDT_RTC_RESET)
+
+.. only:: not esp32
+
+    ::
+
+        rst:0x10 (RTCWDT_RTC_RST)
+
+RTC 看门狗涵盖了从一级引导程序（ROM 引导程序）到应用程序启动的执行时间，最初在 ROM 引导程序中设置，而后在引导程序中使用 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
+
 .. _Guru-Meditation-Errors:
 
 Guru Meditation 错误
