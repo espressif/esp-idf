@@ -351,9 +351,9 @@ menu "MODEM SLEEP Options"
             bool "Main crystal"
             help
                 Main crystal can be used as low power clock for bluetooth modem sleep. If this option is
-                selected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but
-                cannot work when light sleep is enabled. Main crystal has a relatively better performance than
-                other bluetooth low power clock sources.
+                selected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, and
+                bluetooth can work under light sleep enabled. Main crystal has a relatively better performance
+                than other bluetooth low power clock sources.
         config BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
             bool "External 32kHz crystal"
             depends on RTC_CLK_SRC_EXT_CRYS
@@ -368,9 +368,18 @@ menu "MODEM SLEEP Options"
             help
                 Internal 150kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
                 in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.
-
-
     endchoice
+
+    config BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
+        bool "power up main XTAL during light sleep"
+        depends on (BT_CTRL_LPCLK_SEL_MAIN_XTAL || BT_CTRL_LPCLK_SEL_EXT_32K_XTAL) && FREERTOS_USE_TICKLESS_IDLE
+        default n
+        help
+            If this option is selected, the main crystal will power up during light sleep when the low power clock
+            selects an external 32kHz crystal but the external 32kHz crystal does not exist or the low power clock
+            selects the main crystal.
+
+
 endmenu
 
 config BT_CTRL_SLEEP_MODE_EFF

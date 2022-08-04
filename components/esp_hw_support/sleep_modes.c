@@ -687,8 +687,15 @@ esp_err_t esp_light_sleep_start(void)
 
     // Re-calibrate the RTC Timer clock
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-    uint64_t time_per_us = 1000000ULL;
-    s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        uint64_t time_per_us = 1000000ULL;
+        s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
+    } else {
+        // If the external 32 kHz XTAL does not exist, use the internal 150 kHz RC oscillator
+        // as the RTC slow clock source.
+        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+    }
 #elif CONFIG_RTC_CLK_SRC_INT_RC && CONFIG_IDF_TARGET_ESP32S2
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
