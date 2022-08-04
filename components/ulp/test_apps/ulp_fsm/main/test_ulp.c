@@ -342,7 +342,7 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
     for (size_t i = 0; i < test_items_count; ++i) {
         const uint32_t mask = (uint32_t) (((1ULL << test_items[i].width) - 1) << test_items[i].low);
         const uint32_t not_mask = ~mask;
-        printf("#%2d: low: %2d width: %2d mask: %08x expected: %08x ", i,
+        printf("#%2d: low: %2d width: %2d mask: %08" PRIx32 " expected: %08" PRIx32 " ", i,
                 test_items[i].low, test_items[i].width,
                 mask, not_mask);
 
@@ -377,7 +377,7 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
         /* Verify the test results */
         uint32_t clear = REG_READ(RTC_CNTL_STORE0_REG);
         uint32_t set = REG_READ(RTC_CNTL_STORE1_REG);
-        printf("clear: %08x set: %08x\n", clear, set);
+        printf("clear: %08" PRIx32 " set: %08" PRIx32 "\n", clear, set);
 
         /* Restore initial calibration values */
         REG_WRITE(RTC_CNTL_STORE0_REG, rtc_store0);
@@ -548,7 +548,7 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
         uint32_t expected_counter = 1000000 / cycles_to_test[i];
         uint32_t tolerance = (expected_counter * 15 / 100);
         tolerance = tolerance ? tolerance : 1;  // Keep a tolerance of at least 1 count
-        printf("expected: %u\t tolerance: +/- %u\t actual: %u\n", expected_counter, tolerance, counter);
+        printf("expected: %" PRIu32 "\t tolerance: +/- %" PRIu32 "\t actual: %" PRIu32 "\n", expected_counter, tolerance, counter);
         // Should be within 15%
         TEST_ASSERT_INT_WITHIN(tolerance, expected_counter, counter);
     }
