@@ -2923,7 +2923,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
             bytes_to_copy = (p_result->length < (BD_NAME_LEN - 1))
                             ? p_result->length : (BD_NAME_LEN - 1);
             memcpy(sec_event.cfm_req.bd_name, p_result->remote_bd_name, bytes_to_copy);
-            sec_event.pin_req.bd_name[BD_NAME_LEN - 1] = 0;
+            sec_event.cfm_req.bd_name[BD_NAME_LEN - 1] = 0;
         } else { /* No name found */
             sec_event.cfm_req.bd_name[0] = 0;
         }
