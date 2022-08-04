@@ -82,7 +82,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         config IDF_TARGET_ESP32H2_BETA_VERSION_2
             bool
             prompt "ESP32-H2 beta2"
-            select ESPTOOLPY_NO_STUB    # TODO: IDF-4288
     endchoice
 
     config IDF_TARGET_ESP32C2
