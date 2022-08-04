@@ -48,3 +48,8 @@ void spi_flash_enable_interrupts_caches_no_os(void)
 {
     return;
 }
+
+int bootloader_flash_get_wp_pin(void)
+{
+    return 0;
+}
