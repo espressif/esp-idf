@@ -72,7 +72,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FCF0000, 0x8000,  0, 0},          //Level 9, DRAM
 #endif
 #if CONFIG_ESP32S3_DATA_CACHE_16KB
-    { 0x3C000000, 0x4000,  5, 0}
+    { 0x3C000000, 0x4000,  5, 0},
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     { 0x600fe000, 0x2000,  6, 0}, //Fast RTC memory
