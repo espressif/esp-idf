@@ -101,7 +101,7 @@ void example_erase_flash(void)
     data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
             ESP_PARTITION_SUBTYPE_DATA_FAT, PARTITION_NAME);
     if (data_partition != NULL) {
-        printf("partiton addr: 0x%08x; size: %d; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
+        printf("partiton addr: 0x%08"PRIx32"; size: %"PRIu32"; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
     }
     printf("Erase size: %d Bytes\n", FLASH_ERASE_SIZE);
     ESP_ERROR_CHECK(esp_partition_erase_range(data_partition, 0, FLASH_ERASE_SIZE));
@@ -209,7 +209,7 @@ void example_i2s_adc_dac(void*arg)
     data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
             ESP_PARTITION_SUBTYPE_DATA_FAT, PARTITION_NAME);
     if (data_partition != NULL) {
-        printf("partiton addr: 0x%08x; size: %d; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
+        printf("partiton addr: 0x%08"PRIx32"; size: %"PRIu32"; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
     } else {
         ESP_LOGE(TAG, "Partition error: can't find partition name: %s\n", PARTITION_NAME);
         vTaskDelete(NULL);
@@ -288,7 +288,7 @@ void adc_read_task(void* arg)
         uint32_t voltage;
         vTaskDelay(200 / portTICK_PERIOD_MS);
         esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
-        ESP_LOGI(TAG, "%d mV", voltage);
+        ESP_LOGI(TAG, "%"PRIu32" mV", voltage);
     }
 }
 

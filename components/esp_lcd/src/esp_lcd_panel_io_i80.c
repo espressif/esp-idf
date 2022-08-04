@@ -249,7 +249,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     // check if pixel clock setting is valid
     uint32_t pclk_prescale = bus->resolution_hz / io_config->pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= LCD_LL_PCLK_DIV_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
-                      "prescaler can't satisfy PCLK clock %u", io_config->pclk_hz);
+                      "prescaler can't satisfy PCLK clock %"PRIu32"Hz", io_config->pclk_hz);
     i80_device = heap_caps_calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i80_device, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 panel io");
     // create two queues for i80 device

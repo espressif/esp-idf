@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -110,7 +111,7 @@ TEST_CASE("mcpwm_capture_ext_gpio", "[mcpwm]")
     vTaskDelay(pdMS_TO_TICKS(100));
     gpio_set_level(cap_gpio, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
-    printf("capture value: Pos=%u, Neg=%u\r\n", cap_value[0], cap_value[1]);
+    printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
     // Capture timer is clocked from APB by default
     uint32_t clk_src_res = esp_clk_apb_freq();
     TEST_ASSERT_UINT_WITHIN(100000, clk_src_res / 10, cap_value[1] - cap_value[0]);
@@ -225,12 +226,12 @@ TEST_CASE("mcpwm_capture_timer_sync_phase_lock", "[mcpwm]")
 
     TEST_ESP_OK(mcpwm_capture_channel_trigger_soft_catch(cap_channel));
     vTaskDelay(pdMS_TO_TICKS(10));
-    printf("capture data before sync: %u\r\n", cap_data);
+    printf("capture data before sync: %"PRIu32"\r\n", cap_data);
 
     TEST_ESP_OK(mcpwm_soft_sync_activate(soft_sync));
     TEST_ESP_OK(mcpwm_capture_channel_trigger_soft_catch(cap_channel));
     vTaskDelay(pdMS_TO_TICKS(10));
-    printf("capture data after sync: %u\r\n", cap_data);
+    printf("capture data after sync: %"PRIu32"\r\n", cap_data);
     TEST_ASSERT_EQUAL(1000, cap_data);
     TEST_ESP_OK(mcpwm_del_capture_channel(cap_channel));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));

@@ -185,7 +185,7 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
     ESP_RETURN_ON_FALSE(tsens->fsm == TEMP_SENSOR_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "tsens not enabled yet");
 
     uint32_t tsens_out = temperature_sensor_ll_get_raw_value();
-    ESP_LOGV(TAG, "tsens_out %d", tsens_out);
+    ESP_LOGV(TAG, "tsens_out %"PRIu32, tsens_out);
 
     *out_celsius = parse_temp_sensor_raw_value(tsens_out, tsens->tsens_attribute->offset);
     if (*out_celsius < tsens->tsens_attribute->range_min || *out_celsius > tsens->tsens_attribute->range_max) {

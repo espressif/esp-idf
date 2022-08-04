@@ -24,9 +24,6 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
 components/esp_common/include/esp_private/
 
-components/esp32/include/esp32/brownout.h
-components/esp32/include/esp32/cache_err_int.h
-
 # LWIP: sockets.h uses #include_next<>, which doesn't work correctly with the checker
 # memp_std.h is supposed to be included multiple times with different settings
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
@@ -115,9 +112,6 @@ components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp_rom/include/esp32c2/rom/rtc.h
-components/esp32/include/esp32/dport_access.h
-components/esp32/include/rom/sha.h
-components/esp32/include/rom/secure_boot.h
 components/esp_ringbuf/include/freertos/ringbuf.h
 components/esp_wifi/include/esp_wifi_crypto_types.h
 components/esp_wifi/include/esp_coexist_internal.h
@@ -130,7 +124,6 @@ components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
-components/console/linenoise/linenoise.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
@@ -162,8 +155,3 @@ components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
 components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/interrupt.h
 components/riscv/include/riscv/rvruntime-frames.h
-
-
-### To be fixed: files which don't compile for esp32c2 target:
-
-components/efuse/esp32c2/include/esp_efuse_table.h

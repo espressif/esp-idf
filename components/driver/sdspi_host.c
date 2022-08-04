@@ -289,7 +289,7 @@ esp_err_t sdspi_host_set_card_clk(sdspi_dev_handle_t handle, uint32_t freq_khz)
     if (slot == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_LOGD(TAG, "Setting card clock to %d kHz", freq_khz);
+    ESP_LOGD(TAG, "Setting card clock to %"PRIu32" kHz", freq_khz);
     return configure_spi_dev(slot, freq_khz * 1000);
 }
 
@@ -434,7 +434,7 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
     uint32_t cmd_arg;
     memcpy(&cmd_arg, cmd->arguments, sizeof(cmd_arg));
     cmd_arg = __builtin_bswap32(cmd_arg);
-    ESP_LOGV(TAG, "%s: slot=%i, CMD%d, arg=0x%08x flags=0x%x, data=%p, data_size=%i crc=0x%02x",
+    ESP_LOGV(TAG, "%s: slot=%i, CMD%d, arg=0x%08"PRIx32" flags=0x%x, data=%p, data_size=%"PRIu32" crc=0x%02x",
              __func__, handle, cmd_index, cmd_arg, flags, data, data_size, cmd->crc7);
 
     spi_device_acquire_bus(slot->spi_handle, portMAX_DELAY);

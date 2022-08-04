@@ -380,7 +380,7 @@ static int do_i2cdump_cmd(int argc, char **argv)
             } else if ((block[k] & 0xff) < 32 || (block[k] & 0xff) >= 127) {
                 printf("?");
             } else {
-                printf("%c", block[k] & 0xff);
+                printf("%c", (char)(block[k] & 0xff));
             }
         }
         printf("\r\n");

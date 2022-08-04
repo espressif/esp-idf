@@ -444,7 +444,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     if (rgb_panel->flags.stream_mode) {
         lcd_rgb_panel_start_transmission(rgb_panel);
     }
-    ESP_LOGD(TAG, "rgb panel(%d) start, pclk=%uHz", rgb_panel->panel_id, rgb_panel->timings.pclk_hz);
+    ESP_LOGD(TAG, "rgb panel(%d) start, pclk=%"PRIu32"Hz", rgb_panel->panel_id, rgb_panel->timings.pclk_hz);
     return ret;
 }
 

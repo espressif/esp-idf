@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -444,7 +445,7 @@ TEST_CASE("I2S_TDM_loopback_test_with_master_tx_and_rx", "[i2s_legacy]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_LOOPBACK);
-    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
+    printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
     uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
@@ -519,7 +520,7 @@ TEST_CASE("I2S_write_and_read_test_with_master_tx_and_slave_rx", "[i2s_legacy]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_MASTER_TO_SLAVE);
-    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
+    printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
     i2s_config_t slave_i2s_config = {
         .mode = I2S_MODE_SLAVE | I2S_MODE_RX,
@@ -551,7 +552,7 @@ TEST_CASE("I2S_write_and_read_test_with_master_tx_and_slave_rx", "[i2s_legacy]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_1, &slave_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_1, &slave_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_MASTER_TO_SLAVE);
-    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
+    printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
     uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
@@ -623,7 +624,7 @@ TEST_CASE("I2S_write_and_read_test_master_rx_and_slave_tx", "[i2s_legacy]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_SLAVE_TO_MASTER);
-    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
+    printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
     i2s_config_t slave_i2s_config = {
         .mode = I2S_MODE_SLAVE | I2S_MODE_TX,                                  // Only RX
@@ -655,7 +656,7 @@ TEST_CASE("I2S_write_and_read_test_master_rx_and_slave_tx", "[i2s_legacy]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_1, &slave_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_1, &slave_pin_config));
     i2s_test_io_config(I2S_TEST_MODE_SLAVE_TO_MASTER);
-    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
+    printf("\r\nheap size: %"PRIu32"\n", esp_get_free_heap_size());
 
     uint8_t *data_wr = (uint8_t *)malloc(sizeof(uint8_t) * 400);
     size_t i2s_bytes_write = 0;
@@ -896,7 +897,7 @@ static void i2s_test_common_sample_rate(i2s_port_t id)
         vTaskDelay(pdMS_TO_TICKS(TEST_I2S_PERIOD_MS));
         TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
         TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &real_pulse));
-        printf("[%d Hz] %d pulses, expected %d, err %d\n", test_freq[i], real_pulse, expt_pulse, real_pulse - expt_pulse);
+        printf("[%"PRIu32" Hz] %d pulses, expected %d, err %d\n", test_freq[i], real_pulse, expt_pulse, real_pulse - expt_pulse);
         // Check if the error between real pulse number and expected pulse number is within 1%
         TEST_ASSERT_INT_WITHIN(expt_pulse * 0.01, expt_pulse, real_pulse);
     }
