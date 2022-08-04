@@ -16,39 +16,8 @@ README.rst:line: WARNING: Duplicate C++ declaration, also defined at api-guides/
 Declaration is '.. cpp:function:: esp_err_t ulp_run (uint32_t entry_point)'.
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: uint16_t model_id'.
-esp_bt_defs.inc:line: WARNING: Duplicate C declaration, also defined at api-reference/bluetooth/esp_blufi:line.
-Declaration is '.. c:macro:: ESP_BD_ADDR_LEN'.
-esp_bt_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp_blufi:line.
-Declaration is '.. cpp:type:: uint8_t esp_bd_addr_t [6]'.
-esp_spp_api.inc:line: WARNING: Error in type declaration.
-If typedef-like declaration:
-  Type must be either just a name or a typedef-like declaration.
-  If just a name:
-    Error in declarator or parameters-and-qualifiers
-    Invalid C++ declaration: Expected identifier in nested name, got keyword: void [error at 4]
-      void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
-      ----^
-  If typedef-like declaration:
-    Error in declarator
-    If declarator-id with parameters-and-qualifiers:
-      Invalid C++ declaration: Expected identifier in nested name. [error at 4]
-        void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
-        ----^
-    If parenthesis in noptr-declarator:
-      Error in declarator or parameters-and-qualifiers
-      If pointer to member declarator:
-        Invalid C++ declaration: Expected identifier in nested name. [error at 5]
-          void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
-          -----^
-      If declarator-id:
-        Invalid C++ declaration: Expected identifier in nested name. [error at 5]
-          void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
-          -----^
-If type alias or template alias:
-  Invalid C++ declaration: Expected identifier in nested name, got keyword: void [error at 4]
-    void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
-    ----^
-
+rmt_encoder.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/rmt:line.
+Declaration is '.. cpp:type:: struct rmt_encoder_t rmt_encoder_t'.
 spi_master.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_master:line.
 Declaration is '.. cpp:type:: struct spi_transaction_t spi_transaction_t'.
 spi_slave.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_slave:line.

@@ -114,9 +114,9 @@ typedef struct {
 } esp_blufi_ap_record_t;
 
 /// Bluetooth address length
-#define ESP_BD_ADDR_LEN     6
+#define ESP_BLUFI_BD_ADDR_LEN     6
 /// Bluetooth device address
-typedef uint8_t esp_bd_addr_t[ESP_BD_ADDR_LEN];
+typedef uint8_t esp_blufi_bd_addr_t[ESP_BLUFI_BD_ADDR_LEN];
 
 /**
  * @brief BLUFI callback parameters union
@@ -147,7 +147,7 @@ typedef union {
      * @brief ESP_BLUFI_EVENT_CONNECT
 	 */
     struct blufi_connect_evt_param {
-        esp_bd_addr_t remote_bda;                   /*!< Blufi Remote bluetooth device address */
+        esp_blufi_bd_addr_t remote_bda;                   /*!< Blufi Remote bluetooth device address */
         uint8_t    server_if;                       /*!< server interface */
         uint16_t   conn_id;                         /*!< Connection id */
     } connect;									    /*!< Blufi callback param of ESP_BLUFI_EVENT_CONNECT */
@@ -156,7 +156,7 @@ typedef union {
      * @brief ESP_BLUFI_EVENT_DISCONNECT
 	 */
     struct blufi_disconnect_evt_param {
-        esp_bd_addr_t remote_bda;                   /*!< Blufi Remote bluetooth device address */
+        esp_blufi_bd_addr_t remote_bda;                   /*!< Blufi Remote bluetooth device address */
     } disconnect;									/*!< Blufi callback param of ESP_BLUFI_EVENT_DISCONNECT */
 
     /* ESP_BLUFI_EVENT_REQ_WIFI_CONNECT */          /* No callback param */

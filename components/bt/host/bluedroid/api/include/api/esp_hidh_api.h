@@ -287,7 +287,7 @@ typedef union {
  * @param       event:      Event type
  * @param       param:      Point to callback parameter, currently is union type
  */
-typedef void (esp_hh_cb_t)(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param);
+typedef void (*esp_hh_cb_t)(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param);
 
 /**
  * @brief       This function is called to init callbacks with HID host module.
