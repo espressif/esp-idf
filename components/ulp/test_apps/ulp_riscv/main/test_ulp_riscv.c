@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "esp_sleep.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
@@ -79,7 +80,7 @@ TEST_CASE("ULP-RISC-V and main CPU are able to exchange data", "[ulp]")
     /* Verify test data */
     TEST_ASSERT(ulp_command_resp == RISCV_READ_WRITE_TEST);
     TEST_ASSERT(ulp_main_cpu_reply == RISCV_COMMAND_OK);
-    printf("data out: 0x%X, expected: 0x%X \n", ulp_riscv_test_data_out, test_data);
+    printf("data out: 0x%" PRIx32 ", expected: 0x%" PRIx32 " \n", ulp_riscv_test_data_out, test_data);
     TEST_ASSERT(test_data == ulp_riscv_test_data_out);
 
     /* Clear test data */
@@ -139,7 +140,7 @@ static bool ulp_riscv_is_running(void)
     vTaskDelay((5 * ULP_WAKEUP_PERIOD / 1000) / portTICK_PERIOD_MS);
 
     uint32_t end_cnt = ulp_riscv_counter;
-    printf("start run count: %d, end run count %d\n", start_cnt, end_cnt);
+    printf("start run count: %" PRIu32 ", end run count %" PRIu32 "\n", start_cnt, end_cnt);
 
     /* If the ulp is running the counter should have been incremented */
     return (start_cnt != end_cnt);
