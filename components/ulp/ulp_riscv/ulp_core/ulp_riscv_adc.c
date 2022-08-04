@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "ulp_riscv_adc.h"
+#include "ulp_riscv_adc_ulp_core.h"
 #include "hal/adc_ll.h"
 
 int32_t ulp_riscv_adc_read_channel(adc_unit_t adc_n, int channel)
