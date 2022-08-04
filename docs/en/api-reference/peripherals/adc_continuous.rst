@@ -18,6 +18,7 @@ Driver Concepts
 ^^^^^^^^^^^^^^^
 
 ADC continuous mode conversion is made up with multiple Conversion Frames.
+
 - Conversion Frame: One Conversion Frame contains multiple Conversion Results. Conversion Frame size is configured in :cpp:func:`adc_continuous_new_handle`, in bytes.
 - Conversion Result: One Conversion Result contains multiple bytes (see :c:macro:`SOC_ADC_DIGI_RESULT_BYTES`). Its structure is :cpp:type:`adc_digi_output_data_t`, including ADC unit, ADC channel and raw data.
 
