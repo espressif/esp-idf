@@ -662,14 +662,13 @@ tBTM_DEV_STATUS_CB *BTM_RegisterForDeviceStatusNotif (tBTM_DEV_STATUS_CB *p_cb)
 tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
                                       UINT8 *p_param_buf, tBTM_VSC_CMPL_CB *p_cb)
 {
-    void *p_buf;
+    BT_HDR *p_buf;
 
     BTM_TRACE_EVENT ("BTM: BTM_VendorSpecificCommand: Opcode: 0x%04X, ParamLen: %i.",
                      opcode, param_len);
 
     /* Allocate a buffer to hold HCI command plus the callback function */
-    if ((p_buf = osi_malloc((UINT16)(sizeof(BT_HDR) + sizeof (tBTM_CMPL_CB *) +
-                                     param_len + HCIC_PREAMBLE_SIZE))) != NULL) {
+    if ((p_buf = HCI_GET_CMD_BUF(param_len)) != NULL) {
         /* Send the HCI command (opcode will be OR'd with HCI_GRP_VENDOR_SPECIFIC) */
         btsnd_hcic_vendor_spec_cmd (p_buf, opcode, param_len, p_param_buf, (void *)p_cb);
 

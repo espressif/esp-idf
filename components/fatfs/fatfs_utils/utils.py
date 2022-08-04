@@ -70,6 +70,17 @@ def get_fatfs_type(clusters_count: int) -> int:
     return FAT32
 
 
+def get_fat_sectors_count(clusters_count: int, sector_size: int) -> int:
+    fatfs_type_ = get_fatfs_type(clusters_count)
+    if fatfs_type_ == FAT32:
+        raise NotImplementedError('FAT32 is not supported!')
+    # number of byte halves
+    cluster_s: int = fatfs_type_ // 4
+    fat_size_bytes: int = (
+        clusters_count * 2 + cluster_s) if fatfs_type_ == FAT16 else (clusters_count * 3 + 1) // 2 + cluster_s
+    return (fat_size_bytes + sector_size - 1) // sector_size
+
+
 def required_clusters_count(cluster_size: int, content: bytes) -> int:
     # compute number of required clusters for file text
     return (len(content) + cluster_size - 1) // cluster_size
@@ -253,7 +264,6 @@ class FATDefaults:
     FAT_TABLES_COUNT: int = 1
     SECTORS_PER_CLUSTER: int = 1
     SECTOR_SIZE: int = 0x1000
-    SECTORS_PER_FAT: int = 1
     HIDDEN_SECTORS: int = 0
     ENTRY_SIZE: int = 32
     NUM_HEADS: int = 0xff

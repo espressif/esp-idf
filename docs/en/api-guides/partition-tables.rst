@@ -131,6 +131,11 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
   Note that when writing in C++, an application-defined subtype value requires casting to type :cpp:type:`esp_partition_subtype_t` in order to use it with the :ref:`partition API<api-reference-partition-table>`.
 
+Extra Partition SubTypes
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A component can define a new partition subtype by setting the ``EXTRA_PARTITION_SUBTYPES`` property. This property is a CMake list, each entry of which is a comma separated string with ``<type>, <subtype>, <value>`` format. The build system uses this property to add extra subtypes and creates fields named ``ESP_PARTITION_SUBTYPE_<type>_<subtype>`` in :cpp:type:`esp_partition_type_t`. The project can use this subtype to define partitions in the partitions table CSV file and use the new fields in :cpp:type:`esp_partition_type_t`.
+
 Offset & Size
 ~~~~~~~~~~~~~
 

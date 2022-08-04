@@ -81,6 +81,19 @@
     #error "System has been configured to run on multiple cores, but target SoC only has a single core."
 #endif
 
+// Set efuse ROM_LOG_MODE on first boot
+//
+// For CONFIG_BOOT_ROM_LOG_ALWAYS_ON (default) or undefined (ESP32), leave
+// ROM_LOG_MODE undefined (no need to call this function during startup)
+#if CONFIG_BOOT_ROM_LOG_ALWAYS_OFF
+#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ALWAYS_OFF
+#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_LOW
+#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_LOW
+#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_HIGH
+#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
+#endif
+
+
 uint64_t g_startup_time = 0;
 
 #if SOC_APB_BACKUP_DMA
@@ -345,6 +358,10 @@ static void do_core_init(void)
 #if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
     // Note: in some configs this may read flash, so placed after flash init
     esp_secure_boot_init_checks();
+#endif
+
+#ifdef ROM_LOG_MODE
+    esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
 #endif
 
 #if CONFIG_ESP_XT_WDT

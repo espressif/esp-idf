@@ -3,19 +3,8 @@
 # parttool is used to perform partition level operations - reading,
 # writing, erasing and getting info about the partition.
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
 
 import argparse
@@ -281,6 +270,7 @@ def main():
     print_partition_info_subparser.add_argument('--info', help='type of partition information to get',
                                                 choices=['name', 'type', 'subtype', 'offset', 'size', 'encrypted'], default=['offset', 'size'], nargs='+')
     print_partition_info_subparser.add_argument('--part_list', help='Get a list of partitions suitable for a given type', action='store_true')
+    print_partition_info_subparser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
 
     args = parser.parse_args()
     quiet = args.quiet
@@ -330,6 +320,9 @@ def main():
 
     if args.esptool_erase_args:
         target_args['esptool_erase_args'] = args.esptool_erase_args
+
+    if args.extra_partition_subtypes:
+        gen.add_extra_subtypes(args.extra_partition_subtypes)
 
     target = ParttoolTarget(**target_args)
 

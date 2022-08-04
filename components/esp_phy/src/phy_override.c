@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "esp_private/adc_private.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.

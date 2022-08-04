@@ -1,8 +1,21 @@
-.pytest_template:
+.target_test_template:
   image: $TARGET_TEST_ENV_IMAGE
   stage: target_test
   timeout: 1 hour
-  extends: .before_script_pytest
+  variables:
+    GIT_DEPTH: 1
+    SUBMODULES_TO_FETCH: "none"
+  cache:
+    # Usually do not need submodule-cache in target_test
+    - key: pip-cache
+      paths:
+        - .cache/pip
+      policy: pull
+
+.pytest_template:
+  extends:
+    - .target_test_template
+    - .before_script_pytest
   artifacts:
     when: always
     paths:
@@ -11,9 +24,6 @@
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
-  variables:
-    GIT_DEPTH: 1
-    SUBMODULES_TO_FETCH: "none"
   script:
     - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
     # get runner env config file
@@ -69,6 +79,14 @@ example_test_pytest_esp32c2_generic:
   needs:
     - build_pytest_examples_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
+
+example_test_pytest_esp32c2_26mhz:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, xtal_26mhz ]
 
 example_test_pytest_esp32c3_generic:
   extends:
@@ -340,6 +358,14 @@ test_app_test_pytest_esp32c2_generic:
     - build_pytest_test_apps_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
 
+test_app_test_pytest_esp32c2_26mhz:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2
+  needs:
+    - build_pytest_test_apps_esp32c2
+  tags: [ esp32c2, xtal_26mhz ]
+
 test_app_test_pytest_esp32c3_generic:
   extends:
     - .pytest_test_apps_dir_template
@@ -356,6 +382,30 @@ test_app_test_pytest_esp32s2_usb_host:
     - build_pytest_test_apps_esp32s2
   tags: [ esp32s2, usb_host ]
 
+test_app_test_pytest_esp32s3_mspi_f8r8:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3
+  needs:
+    - build_pytest_test_apps_esp32s3
+  tags: [ esp32s3, MSPI_F8R8 ]
+
+test_app_test_pytest_esp32s3_mspi_f4r8:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3
+  needs:
+    - build_pytest_test_apps_esp32s3
+  tags: [ esp32s3, MSPI_F4R8 ]
+
+test_app_test_pytest_esp32s3_mspi_f4r4:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3
+  needs:
+    - build_pytest_test_apps_esp32s3
+  tags: [ esp32s3, MSPI_F4R4 ]
+
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
@@ -364,9 +414,8 @@ test_app_test_pytest_esp32s2_usb_host:
   CONFIG_FILE="${CONFIG_FILE_PATH}/${JOB_FULL_NAME}.yml"
 
 .target_test_job_template:
-  stage: target_test
-  timeout: 1 hour
-  image: $TARGET_TEST_ENV_IMAGE
+  extends:
+    - .target_test_template
   artifacts:
     when: always
     paths:
@@ -378,11 +427,9 @@ test_app_test_pytest_esp32s2_usb_host:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
     expire_in: 1 week
   variables:
-    GIT_DEPTH: 1
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
-    SUBMODULES_TO_FETCH: "none"
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
@@ -404,13 +451,6 @@ test_app_test_pytest_esp32s2_usb_host:
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
-
-.example_debug_template:
-  extends:
-    - .example_test_template
-    - .rules:test:example_test-esp32
-  variables:
-    SUBMODULES_TO_FETCH: "all"
 
 test_weekend_mqtt:
   extends:
@@ -543,12 +583,10 @@ example_test_010:
     - Example_ExtFlash
 
 example_test_011:
-  extends: .example_debug_template
+  extends: .example_test_esp32_template
   tags:
     - ESP32
     - Example_T2_RS485
-  variables:
-    SETUP_TOOLS: "1"
 
 example_test_013:
   extends: .example_test_esp32_template
@@ -654,6 +692,12 @@ test_app_test_esp32c2_generic:
     - Example_GENERIC
     - xtal_40mhz
 
+test_app_test_esp32c2_26mhz:
+  extends: .test_app_esp32c2_template
+  tags:
+    - ESP32C2
+    - xtal_26mhz
+
 test_app_test_005:
   extends: .test_app_esp32c3_template
   tags:
@@ -671,24 +715,6 @@ test_app_test_esp32_generic:
   tags:
     - ESP32
     - Example_GENERIC
-
-test_app_test_flash_psram_f4r4:
-  extends: .test_app_esp32s3_template
-  tags:
-    - ESP32S3
-    - MSPI_F4R4
-
-test_app_test_flash_psram_f4r8:
-  extends: .test_app_esp32s3_template
-  tags:
-    - ESP32S3
-    - MSPI_F4R8
-
-test_app_test_flash_psram_f8r8:
-  extends: .test_app_esp32s3_template
-  tags:
-    - ESP32S3
-    - MSPI_F8R8
 
 .unit_test_template:
   extends: .target_test_job_template
@@ -922,6 +948,13 @@ UT_C2:
     - ESP32C2_IDF
     - UT_T1_1
     - xtal_40mhz
+
+UT_C2_26M:
+  extends: .unit_test_esp32c2_template
+  tags:
+    - ESP32C2_IDF
+    - UT_T1_1
+    - xtal_26mhz
 
 UT_C3:
   extends: .unit_test_esp32c3_template

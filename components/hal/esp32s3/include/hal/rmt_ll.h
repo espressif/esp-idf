@@ -148,6 +148,7 @@ static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t chan
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_reset_pointer(rmt_dev_t *dev, uint32_t channel)
 {
     dev->chnconf0[channel].mem_rd_rst_chn = 1;
@@ -175,6 +176,7 @@ static inline void rmt_ll_tx_enable_dma(rmt_dev_t *dev, uint32_t channel, bool e
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
 {
     // update other configuration registers before start transmitting
@@ -188,6 +190,7 @@ static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_stop(rmt_dev_t *dev, uint32_t channel)
 {
     dev->chnconf0[channel].tx_stop_chn = 1;
@@ -226,6 +229,7 @@ static inline void rmt_ll_tx_enable_wrap(rmt_dev_t *dev, uint32_t channel, bool 
  * @param channel RMT TX channel number
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_enable_loop(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->chnconf0[channel].tx_conti_mode_chn = enable;
@@ -238,6 +242,7 @@ static inline void rmt_ll_tx_enable_loop(rmt_dev_t *dev, uint32_t channel, bool 
  * @param channel RMT TX channel number
  * @param count TX loop count
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_set_loop_count(rmt_dev_t *dev, uint32_t channel, uint32_t count)
 {
     HAL_ASSERT(count <= RMT_LL_MAX_LOOP_COUNT_PER_BATCH && "loop count out of range");
@@ -250,6 +255,7 @@ static inline void rmt_ll_tx_set_loop_count(rmt_dev_t *dev, uint32_t channel, ui
  * @param dev Peripheral instance address
  * @param channel RMT TX channel number
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_reset_loop_count(rmt_dev_t *dev, uint32_t channel)
 {
     dev->chn_tx_lim[channel].loop_count_reset_chn = 1;
@@ -263,6 +269,7 @@ static inline void rmt_ll_tx_reset_loop_count(rmt_dev_t *dev, uint32_t channel)
  * @param channel RMT TX channel number
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_enable_loop_count(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->chn_tx_lim[channel].tx_loop_cnt_en_chn = enable;
@@ -275,6 +282,7 @@ static inline void rmt_ll_tx_enable_loop_count(rmt_dev_t *dev, uint32_t channel,
  * @param channel RMT TX channel number
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_enable_loop_autostop(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->chn_tx_lim[channel].loop_stop_en_chn = enable;
@@ -331,6 +339,7 @@ static inline void rmt_ll_tx_sync_group_remove_channels(rmt_dev_t *dev, uint32_t
  * @param level IDLE level (1 => high, 0 => low)
  * @param enable True to fix the IDLE level, otherwise the IDLE level is determined by EOF encoder
  */
+__attribute__((always_inline))
 static inline void rmt_ll_tx_fix_idle_level(rmt_dev_t *dev, uint32_t channel, uint8_t level, bool enable)
 {
     dev->chnconf0[channel].idle_out_en_chn = enable;
@@ -471,6 +480,7 @@ static inline void rmt_ll_rx_enable_dma(rmt_dev_t *dev, uint32_t channel, bool e
  * @param channel RMT RX channel number
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_enable(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->chmconf[channel].conf1.rx_en_chm = enable;
@@ -509,6 +519,7 @@ static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, ui
  * @param channel RMT RX channel number
  * @param owner Memory owner
  */
+__attribute__((always_inline))
 static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, rmt_ll_mem_owner_t owner)
 {
     dev->chmconf[channel].conf1.mem_owner_chm = owner;
@@ -545,6 +556,7 @@ static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, 
  * @param channel RMT RX channel number
  * @return writer offset
  */
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_memory_writer_offset(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chmstatus[channel].mem_waddr_ex_chm - (channel + 4) * 48;
@@ -622,6 +634,7 @@ static inline void rmt_ll_rx_enable_wrap(rmt_dev_t *dev, uint32_t channel, bool 
  * @param mask Event mask
  * @param enable True to enable, False to disable
  */
+__attribute__((always_inline))
 static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool enable)
 {
     if (enable) {
@@ -637,6 +650,7 @@ static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool e
  * @param dev Peripheral instance address
  * @param mask Interupt status mask
  */
+__attribute__((always_inline))
 static inline void rmt_ll_clear_interrupt_status(rmt_dev_t *dev, uint32_t mask)
 {
     dev->int_clr.val = mask;
@@ -660,6 +674,7 @@ static inline volatile void *rmt_ll_get_interrupt_status_reg(rmt_dev_t *dev)
  * @param channel RMT TX channel number
  * @return Interrupt status
  */
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_tx_get_interrupt_status(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->int_st.val & RMT_LL_EVENT_TX_MASK(channel);
@@ -696,6 +711,7 @@ static inline uint32_t rmt_ll_rx_get_interrupt_status_raw(rmt_dev_t *dev, uint32
  * @param channel RMT RX channel number
  * @return Interrupt status
  */
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_interrupt_status(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->int_st.val & RMT_LL_EVENT_RX_MASK(channel);

@@ -13,7 +13,7 @@
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-#include_next "esp_efuse.h"
+#include "esp_efuse_chip.h"
 
 #ifdef __cplusplus
 extern "C" {

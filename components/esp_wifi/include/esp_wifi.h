@@ -337,7 +337,7 @@ esp_err_t esp_wifi_restore(void);
   *
   * @attention 1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
   * @attention 2. If the ESP32 is connected to an AP, call esp_wifi_disconnect to disconnect.
-  * @attention 3. The scanning triggered by esp_wifi_start_scan() will not be effective until connection between ESP32 and the AP is established.
+  * @attention 3. The scanning triggered by esp_wifi_scan_start() will not be effective until connection between ESP32 and the AP is established.
   *               If ESP32 is scanning and connecting at the same time, ESP32 will abort scanning and return a warning message and error
   *               number ESP_ERR_WIFI_STATE.
   *               If you want to do reconnection after ESP32 received disconnect event, remember to add the maximum retry time, otherwise the called

@@ -300,11 +300,11 @@ build_ssc_esp32s3:
       -t $IDF_TARGET
       --config "configs/*="
       --copy-sdkconfig
+      --preserve-all
       --collect-size-info $SIZE_INFO_LOCATION
       --collect-app-info list_job_${CI_NODE_INDEX:-1}.json
       --parallel-count ${CI_NODE_TOTAL:-1}
       --parallel-index ${CI_NODE_INDEX:-1}
-      --preserve-all
     - run_cmd python tools/unit-test-app/tools/UnitTestParser.py tools/unit-test-app ${CI_NODE_INDEX:-1}
 
 build_esp_idf_tests_cmake_esp32:

@@ -31,7 +31,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include"
                     REQUIRES esp_event esp_phy esp_netif
-                    PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash esp_adc
+                    PRIV_REQUIRES driver esptool_py esp_pm esp_timer nvs_flash
                                   wpa_supplicant hal lwip ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 

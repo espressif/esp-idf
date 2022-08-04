@@ -20,6 +20,7 @@ components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 components/partition_table/check_sizes.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
+components/partition_table/gen_extra_subtypes_inc.py
 components/partition_table/parttool.py
 components/partition_table/test_gen_esp32part_host/check_sizes_test.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py

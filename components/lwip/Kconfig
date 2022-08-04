@@ -965,7 +965,8 @@ menu "LWIP"
 
         choice LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE
             prompt "Netconn external resolve Hook"
-            default LWIP_HOOK_NETCONN_EXT_RESOLVE_NONE
+            default LWIP_HOOK_NETCONN_EXT_RESOLVE_DEFAULT if OPENTHREAD_DNS64_CLIENT
+            default LWIP_HOOK_NETCONN_EXT_RESOLVE_NONE if !OPENTHREAD_DNS64_CLIENT
             help
                 Enables custom DNS resolve hook.
                 Setting this to "default" provides weak implementation

@@ -50,9 +50,6 @@ typedef enum {
 } memprot_hal_area_t;
 
 //auxiliary macros & defines
-#define SOC_I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
-#define MAP_DRAM_TO_IRAM(addr) (addr + SOC_I_D_OFFSET)
-#define MAP_IRAM_TO_DRAM(addr) (addr - SOC_I_D_OFFSET)
 
 #define MEMP_HAL_CHECK_IRAM_ADDR_IN_RANGE(x) if (x < SOC_DIRAM_IRAM_LOW || x >= SOC_DIRAM_IRAM_HIGH) { return MEMP_HAL_ERR_SPLIT_ADDR_OUT_OF_RANGE; }
 #define MEMP_HAL_CHECK_DRAM_ADDR_IN_RANGE(x) if (x < SOC_DIRAM_DRAM_LOW || x >= SOC_DIRAM_DRAM_HIGH) { return MEMP_HAL_ERR_SPLIT_ADDR_OUT_OF_RANGE; }

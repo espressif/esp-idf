@@ -31,7 +31,7 @@ endif()
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES nvs_flash driver efuse esp_timer esp_adc esp_wifi
+                    PRIV_REQUIRES nvs_flash driver efuse esp_timer esp_wifi
                     LDFRAGMENTS "${ldfragments}"
                     EMBED_FILES  ${embed_files}
                     )

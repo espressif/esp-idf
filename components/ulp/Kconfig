@@ -35,4 +35,18 @@ menu "Ultra Low Power (ULP) Co-processor"
             Bytes of memory to reserve for ULP Co-processor firmware & data.
             Data is reserved at the beginning of RTC slow memory.
 
+
+    menu "ULP RISC-V Settings"
+        depends on ULP_COPROC_TYPE_RISCV
+
+        config ULP_RISCV_UART_BAUDRATE
+            int
+            prompt "Baudrate used by the bitbanged ULP RISC-V UART driver"
+            default 9600
+            help
+                The accuracy of the bitbanged UART driver is limited, it is not
+                recommend to increase the value above 19200.
+    endmenu
+
+
 endmenu  # Ultra Low Power (ULP) Co-processor

@@ -85,7 +85,6 @@ components/unity/include/unity_test_runner.h
 components/cmock/CMock/src/cmock.h
 components/cmock/CMock/src/cmock_internals.h
 
-components/efuse/include/esp_efuse.h
 
 components/openthread/openthread/
 
@@ -120,7 +119,6 @@ components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h
 components/esp_ringbuf/include/freertos/ringbuf.h
-components/efuse/esp32/include/esp_efuse_table.h
 components/esp_wifi/include/esp_wifi_crypto_types.h
 components/esp_wifi/include/esp_coexist_internal.h
 components/esp_wifi/include/esp_wifi_netif.h
@@ -146,49 +144,26 @@ components/usb/include/usb/usb_types_stack.h
 
 ### To be fixed: files which don't compile for esp32s2 target:
 
-components/efuse/esp32s2/include/esp_efuse_table.h
 components/esp_psram/include/esp32/himem.h
 components/esp_rom/include/esp32/rom/ets_sys.h
 components/esp_rom/include/esp32/rom/rtc.h
 components/esp_rom/include/esp32/rom/uart.h
-components/soc/esp32s2/include/soc/apb_ctrl_struct.h
-components/soc/esp32s2/include/soc/efuse_struct.h
-components/soc/esp32s2/include/soc/gpio_struct.h
-components/soc/esp32s2/include/soc/ledc_struct.h
-components/soc/esp32s2/include/soc/rtc_i2c_struct.h
-components/soc/esp32s2/include/soc/rtc_io_struct.h
-components/soc/esp32s2/include/soc/sens_struct.h
-components/soc/esp32s2/include/soc/syscon_struct.h
-components/soc/esp32s2/include/soc/uart_struct.h
-components/soc/esp32s2/include/soc/uhci_struct.h
+
 
 ### To be fixed: files which don't compile for esp32s3 target:
 
-components/efuse/esp32s3/include/esp_efuse_table.h
 components/soc/esp32s3/include/soc/world_controller_struct.h
+
 
 ### To be fixed: files which don't compile for esp32c3 target:
 
-components/efuse/esp32c3/include/esp_efuse_table.h
 components/esp_system/port/include/private/esp_private/trax.h
 components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
 components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/interrupt.h
 components/riscv/include/riscv/rvruntime-frames.h
-components/soc/esp32c3/include/soc/apb_ctrl_struct.h
-components/soc/esp32c3/include/soc/efuse_struct.h
-components/soc/esp32c3/include/soc/ledc_struct.h
-components/soc/esp32c3/include/soc/rtc_cntl_struct.h
-components/soc/esp32c3/include/soc/rtc_i2c_struct.h
-components/soc/esp32c3/include/soc/spi_mem_struct.h
-components/soc/esp32c3/include/soc/spi_struct.h
-components/soc/esp32c3/include/soc/syscon_struct.h
-components/soc/esp32c3/include/soc/uart_struct.h
-components/soc/esp32c3/include/soc/uhci_struct.h
+
 
 ### To be fixed: files which don't compile for esp32c2 target:
 
 components/efuse/esp32c2/include/esp_efuse_table.h
-components/soc/esp32c2/include/soc/rtc_cntl_struct.h
-components/soc/esp32c2/include/soc/spi_mem_struct.h
-components/soc/esp32c2/include/soc/syscon_struct.h

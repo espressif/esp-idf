@@ -141,4 +141,4 @@ FatFs 分区分析器
 
 您可以使用::
 
-    ./fatfsparse.py [-h] [--long-name-support] fatfs_image.img
+    ./fatfsparse.py [-h] [--long-name-support] [--wear-leveling] fatfs_image.img

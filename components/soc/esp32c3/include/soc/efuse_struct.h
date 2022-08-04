@@ -3,8 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_EFUSE_STRUCT_H_
-#define _SOC_EFUSE_STRUCT_H_
+#pragma once
+
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -515,5 +517,3 @@ extern efuse_dev_t EFUSE;
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /* _SOC_EFUSE_STRUCT_H_ */

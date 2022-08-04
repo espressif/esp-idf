@@ -60,6 +60,10 @@
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 
+#if (BLE_INCLUDED == TRUE)
+#include "btc_gap_ble.h"
+#endif
+
 #if CONFIG_BLE_MESH
 #include "btc_ble_mesh_ble.h"
 #include "btc_ble_mesh_prov.h"
@@ -75,6 +79,9 @@
 #define BTC_TASK_STACK_SIZE             (BT_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
 #define BTC_TASK_NAME                   "BTC_TASK"
 #define BTC_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 6)
+#define BTC_TASK_WORKQUEUE_NUM          (2)
+#define BTC_TASK_WORKQUEUE0_LEN         (0)
+#define BTC_TASK_WORKQUEUE1_LEN         (5)
 
 osi_thread_t *btc_thread;
 
@@ -414,7 +421,9 @@ error_exit:;
 
 bt_status_t btc_init(void)
 {
-    btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE, 2);
+    const size_t workqueue_len[] = {BTC_TASK_WORKQUEUE0_LEN, BTC_TASK_WORKQUEUE1_LEN};
+    btc_thread = osi_thread_create(BTC_TASK_NAME, BTC_TASK_STACK_SIZE, BTC_TASK_PRIO, BTC_TASK_PINNED_TO_CORE,
+                                   BTC_TASK_WORKQUEUE_NUM, workqueue_len);
     if (btc_thread == NULL) {
         return BT_STATUS_NOMEM;
     }
@@ -427,6 +436,7 @@ bt_status_t btc_init(void)
 
 #if (BLE_INCLUDED == TRUE)
     btc_gap_callback_init();
+    btc_gap_ble_init();
 #endif  ///BLE_INCLUDED == TRUE
 
 #if SCAN_QUEUE_CONGEST_CHECK
@@ -444,7 +454,9 @@ void btc_deinit(void)
 
     osi_thread_free(btc_thread);
     btc_thread = NULL;
-
+#if (BLE_INCLUDED == TRUE)
+    btc_gap_ble_deinit();
+#endif  ///BLE_INCLUDED == TRUE
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_deinit();
 #endif
@@ -462,4 +474,9 @@ bool btc_check_queue_is_congest(void)
 int get_btc_work_queue_size(void)
 {
     return osi_thread_queue_wait_size(btc_thread, 0);
+}
+
+osi_thread_t *btc_get_current_thread(void)
+{
+    return btc_thread;
 }

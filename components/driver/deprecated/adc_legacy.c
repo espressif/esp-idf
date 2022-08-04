@@ -18,13 +18,13 @@
 #include "driver/rtc_io.h"
 #include "sys/lock.h"
 #include "driver/gpio.h"
-#include "esp_private/adc_private.h"
+#include "esp_private/adc_share_hw_ctrl.h"
 #include "adc1_private.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
+#include "hal/adc_hal_common.h"
 #include "hal/adc_hal_conf.h"
 #include "esp_private/periph_ctrl.h"
-#include "esp_private/adc_lock.h"
 #include "driver/adc_types_legacy.h"
 
 #if SOC_DAC_SUPPORTED
@@ -904,8 +904,6 @@ static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw)
     return ESP_OK;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32
-//wrapper should be removed after I2S deprecation
 /**
  * @brief This function will be called during start up, to check that adc_oneshot driver is not running along with the legacy adc oneshot driver
  */
@@ -921,4 +919,23 @@ static void check_adc_oneshot_driver_conflict(void)
     }
     ESP_EARLY_LOGW(ADC_TAG, "legacy driver is deprecated, please migrate to `esp_adc/adc_oneshot.h`");
 }
-#endif
+
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+/*---------------------------------------------------------------
+            ADC Hardware Calibration
+---------------------------------------------------------------*/
+static __attribute__((constructor)) void adc_hw_calibration(void)
+{
+    //Calculate all ICode
+    for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
+        adc_hal_calibration_init(i);
+        for (int j = 0; j < SOC_ADC_ATTEN_NUM; j++) {
+            /**
+             * This may get wrong when attenuations are NOT consecutive on some chips,
+             * update this when bringing up the calibration on that chip
+             */
+            adc_calc_hw_calibration_code(i, j);
+        }
+    }
+}
+#endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED

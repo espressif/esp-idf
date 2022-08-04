@@ -27,3 +27,7 @@ typedef struct {
  * @return esp_err_t    ESP_OK for successful.
  */
 esp_err_t ulp_riscv_adc_init(const ulp_riscv_adc_cfg_t *cfg);
+
+#ifdef __cplusplus
+}
+#endif

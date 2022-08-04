@@ -36,12 +36,22 @@ else()
     set(partition_secure_opt "")
 endif()
 
+idf_build_get_property(extra_subtypes EXTRA_PARTITION_SUBTYPES)
+if(extra_subtypes)
+    # Remove all white spaces from the string
+    string(REPLACE " " "" extra_subtypes "${extra_subtypes}")
+    set(extra_partition_subtypes --extra-partition-subtypes ${extra_subtypes})
+else()
+    set(extra_partition_subtypes "")
+endif()
+
 idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(python PYTHON)
+idf_build_get_property(extra_subtypes EXTRA_PARTITION_SUBTYPES)
 
 set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" "-q"
                         "--offset" "${PARTITION_TABLE_OFFSET}" "${md5_opt}" "${flashsize_opt}"
-                        "${partition_secure_opt}")
+                        "${partition_secure_opt}" ${extra_partition_subtypes} "--")
 
 set(partition_table_display
     COMMAND ${CMAKE_COMMAND} -E echo "Partition table binary generated. Contents:"
@@ -56,8 +66,20 @@ add_custom_command(OUTPUT "${build_dir}/partition_table/${unsigned_partition_bin
     DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
     VERBATIM)
 
+if(extra_subtypes)
+    set(extra_subtypes_h "${build_dir}/config/extra_partition_subtypes.inc")
+
+    add_custom_command(OUTPUT ${extra_subtypes_h}
+        COMMAND ${python} ${CMAKE_CURRENT_SOURCE_DIR}/gen_extra_subtypes_inc.py ${extra_subtypes_h} ${extra_subtypes}
+        COMMENT "Generating extra partition subtype header file"
+    )
+    add_custom_target(extra_subtype_hdr DEPENDS ${extra_subtypes_h})
+    add_dependencies(${COMPONENT_LIB} extra_subtype_hdr)
+endif()
+
 add_custom_target(partition_table_bin DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
-                                              "${build_dir}/partition_table/${final_partition_bin}")
+                                              "${build_dir}/partition_table/${final_partition_bin}"
+                                              )
 
 if(EXISTS ${partition_csv})
     add_custom_target(partition-table

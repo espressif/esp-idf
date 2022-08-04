@@ -39,12 +39,22 @@ endif()
 function(partition_table_get_partition_info result get_part_info_args part_info)
     idf_build_get_property(python PYTHON)
     idf_build_get_property(idf_path IDF_PATH)
+
+    idf_build_get_property(extra_subtypes EXTRA_PARTITION_SUBTYPES)
+    if(extra_subtypes)
+        # Remove all white spaces from the string
+        string(REPLACE " " "" extra_subtypes "${extra_subtypes}")
+        set(extra_partition_subtypes --extra-partition-subtypes ${extra_subtypes})
+    else()
+        set(extra_partition_subtypes "")
+    endif()
     separate_arguments(get_part_info_args)
     execute_process(COMMAND ${python}
         ${idf_path}/components/partition_table/parttool.py -q
         --partition-table-offset ${PARTITION_TABLE_OFFSET}
         --partition-table-file ${PARTITION_CSV_PATH}
         get_partition_info ${get_part_info_args} --info ${part_info}
+        ${extra_partition_subtypes}
         OUTPUT_VARIABLE info
         RESULT_VARIABLE exit_code
         OUTPUT_STRIP_TRAILING_WHITESPACE)

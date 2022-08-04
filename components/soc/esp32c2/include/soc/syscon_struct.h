@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_SYSCON_STRUCT_H_
-#define _SOC_SYSCON_STRUCT_H_
+#pragma once
 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -474,7 +474,3 @@ extern syscon_dev_t SYSCON;
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_SYSCON_STRUCT_H_ */

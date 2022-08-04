@@ -17,6 +17,9 @@ if(NOT BOOTLOADER_BUILD)
                      "esp_crypto_lock.c"
                      "esp_ds.c")
 
+    # init constructor for wifi
+    list(APPEND srcs "adc2_init_cal.c")
+
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

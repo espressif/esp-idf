@@ -211,7 +211,7 @@ before_script:
     # This adds tools (compilers) and the version-specific Python environment to PATH
     - *setup_tools_unless_target_test
     # Install packages required by CI scripts into IDF Python environment
-    - pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt
+    - pip install -r $IDF_PATH/tools/requirements/requirements.ci.txt
     - source tools/ci/configure_ci_environment.sh
     # Part of tools/ci/setup_python.sh; we don't use pyenv on macOS, so can't run the rest of the script.
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
@@ -228,9 +228,8 @@ before_script:
     - *setup_tools_unless_target_test
     - fetch_submodules
     - *download_test_python_contraint_file
-    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
-    # TODO: remove this, IDFCI-1207
-    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+    # only need ci and pytest related packages, ttfw requirements would be mocked if not installed
+    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest,ci
     - eval "$($IDF_PATH/tools/idf_tools.py export)"  # use idf venv instead
 
 .before_script_build_jobs:
@@ -244,13 +243,9 @@ before_script:
     - *setup_tools_unless_target_test
     - fetch_submodules
     - *download_test_python_contraint_file
-    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest
-    # TODO: remove this, IDFCI-1207
-    - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+    # only need ci and pytest related packages, ttfw requirements would be mocked if not installed
+    - $IDF_PATH/tools/idf_tools.py install-python-env --features pytest,ci
     - eval "$($IDF_PATH/tools/idf_tools.py export)"  # use idf venv instead
-    # not only need pytest related packages, but also needs ttfw requirements
-    - internal_pip_install $IDF_BUILD_APPS_PROJ idf_build_apps
-    - pip install -r tools/ci/python_packages/ttfw_idf/requirements.txt -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 

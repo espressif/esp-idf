@@ -63,12 +63,14 @@ All the following instructions are general. Part of them may be complemented by 
 
 ### Requirements
 
-The following requirements need to be satisfied in the IDF python virtual environment.
+Install Python dependencies and export the Python path where the IDF CI Python modules are found with the following commands:
 
-- ttfw needs to be in the `PYTHONPATH`. Add it like this: `export PYTHONPATH=$PYTHONPATH:$IDF_PATH/tools/ci/python_packages`
-- Install all requirements from `tools/ci/python_packages/ttfw_idf/requirements.txt`: `pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt`
-
-You should also set the port via the environment variable ESPPORT to prevent the tools from looking and iterating over all serial ports. The latter causes much trouble, currently:
+```bash
+bash install.sh --enable-ttfw
+source export.sh
+export PYTHONPATH=$IDF_PATH/tools/ci/python_packages:$PYTHONPATH
+```
+You should also set the port via the environment variable `ESPPORT` to prevent the tools from looking and iterating over all serial ports. The latter causes much trouble, currently:
 
 ```
 export ESPPORT=/dev/ttyUSB<X>

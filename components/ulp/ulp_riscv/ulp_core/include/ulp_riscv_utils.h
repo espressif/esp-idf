@@ -94,7 +94,16 @@ void ulp_riscv_timer_resume(void);
  *
  * @param cycles Number of cycles to busy wait
  */
-void ulp_riscv_delay_cycles(uint32_t cycles);
+void static inline ulp_riscv_delay_cycles(uint32_t cycles)
+{
+    uint32_t start = ULP_RISCV_GET_CCOUNT();
+	/* Off with an estimate of cycles in this function to improve accuracy */
+    uint32_t end = start + cycles - 20;
+
+    while (ULP_RISCV_GET_CCOUNT()  < end) {
+        /* Wait */
+    }
+}
 
 /**
  * @brief Clears the GPIO wakeup interrupt bit

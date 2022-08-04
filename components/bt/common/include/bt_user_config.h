@@ -85,4 +85,11 @@
 #define UC_BT_BLUFI_ENABLE                  FALSE
 #endif
 
+//MEMORY DEBUG
+#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#define UC_BT_BLUEDROID_MEM_DEBUG TRUE
+#else
+#define UC_BT_BLUEDROID_MEM_DEBUG FALSE
+#endif
+
 #endif /* __BT_USER_CONFIG_H__ */

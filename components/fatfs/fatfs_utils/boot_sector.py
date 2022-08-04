@@ -107,14 +107,11 @@ class BootSector:
             # uncomment for FAT32 implementation
             # sectors_count_ = self._parsed_header['BPB_TotSec32']
             # possible_fat_types = [FAT32]
-            assert self._parsed_header['BPB_FATSz16'] == 0
+            assert self._parsed_header['BPB_TotSec16'] == 0
             raise NotImplementedError('FAT32 not implemented!')
         else:
             raise InconsistentFATAttributes('The number of FS sectors cannot be zero!')
 
-        # in the current code assigning self._parsed_header['BPB_TotSec32'] is not reachable
-        # the option to assign it is kept for possibility to implement FAT32
-        sectors_per_fat_cnt_ = self._parsed_header['BPB_FATSz16'] or self._parsed_header['BPB_TotSec32']
         if self._parsed_header['BPB_BytsPerSec'] not in ALLOWED_SECTOR_SIZES:
             raise InconsistentFATAttributes(f'The number of bytes '
                                             f"per sector is {self._parsed_header['BPB_BytsPerSec']}! "
@@ -134,7 +131,6 @@ class BootSector:
                                                  root_dir_sectors_cnt=root_dir_sectors_cnt_,
                                                  sectors_count=sectors_count_,
                                                  media_type=self._parsed_header['BPB_Media'],
-                                                 sectors_per_fat_cnt=sectors_per_fat_cnt_,
                                                  sec_per_track=self._parsed_header['BPB_SecPerTrk'],
                                                  num_heads=self._parsed_header['BPB_NumHeads'],
                                                  hidden_sectors=self._parsed_header['BPB_HiddSec'],
