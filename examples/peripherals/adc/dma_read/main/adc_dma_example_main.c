@@ -69,7 +69,7 @@ static void continuous_adc_init(uint16_t adc1_chan_mask, uint16_t adc2_chan_mask
     adc_digi_configuration_t dig_cfg = {
         .conv_limit_en = ADC_CONV_LIMIT_EN,
         .conv_limit_num = 250,
-        .sample_freq_hz = 10 * 1000,
+        .sample_freq_hz = 20 * 1000,
         .conv_mode = ADC_CONV_MODE,
         .format = ADC_OUTPUT_TYPE,
     };

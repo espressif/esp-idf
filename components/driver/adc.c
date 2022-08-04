@@ -280,7 +280,7 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
 #endif
         .desc_max_num = INTERNAL_BUF_NUM,
         .dma_chan = dma_chan,
-        .eof_num = init_config->conv_num_each_intr / ADC_HAL_DATA_LEN_PER_CONV
+        .eof_num = init_config->conv_num_each_intr / SOC_ADC_DIGI_DATA_BYTES_PER_CONV
     };
     adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
 
