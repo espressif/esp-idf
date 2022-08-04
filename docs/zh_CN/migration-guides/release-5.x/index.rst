@@ -7,7 +7,7 @@
     :maxdepth: 1
 
     :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
-    bluetooth-low-energy
+    :SOC_BLE_SUPPORTED: bluetooth-low-energy
     build-system
     gcc
     networking
