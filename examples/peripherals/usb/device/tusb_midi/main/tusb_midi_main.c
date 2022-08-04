@@ -15,6 +15,55 @@
 
 static const char *TAG = "example";
 
+/** Helper defines **/
+
+// Interface counter
+enum interface_count {
+#if CFG_TUD_MIDI
+    ITF_NUM_MIDI = 0,
+    ITF_NUM_MIDI_STREAMING,
+#endif
+    ITF_COUNT
+};
+
+// USB Endpoint numbers
+enum usb_endpoints {
+    // Available USB Endpoints: 5 IN/OUT EPs and 1 IN EP
+    EP_EMPTY = 0,
+#if CFG_TUD_MIDI
+    EPNUM_MIDI,
+#endif
+};
+
+/** TinyUSB descriptors **/
+
+#define TUSB_DESCRIPTOR_TOTAL_LEN (TUD_CONFIG_DESC_LEN + CFG_TUD_MIDI * TUD_MIDI_DESC_LEN)
+
+/**
+ * @brief String descriptor
+ */
+static const char* s_str_desc[5] = {
+    // array of pointer to string descriptors
+    (char[]){0x09, 0x04},  // 0: is supported language is English (0x0409)
+    "TinyUSB",             // 1: Manufacturer
+    "TinyUSB Device",      // 2: Product
+    "123456",              // 3: Serials, should use chip ID
+    "Example MIDI device", // 4: MIDI
+};
+
+/**
+ * @brief Configuration descriptor
+ *
+ * This is a simple configuration descriptor that defines 1 configuration and a MIDI interface
+ */
+static const uint8_t s_midi_cfg_desc[] = {
+    // Configuration number, interface count, string index, total length, attribute, power in mA
+    TUD_CONFIG_DESCRIPTOR(1, ITF_COUNT, 0, TUSB_DESCRIPTOR_TOTAL_LEN, 0, 100),
+
+    // Interface number, string index, EP Out & EP In address, EP size
+    TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 4, EPNUM_MIDI, (0x80 | EPNUM_MIDI), 64),
+};
+
 static void midi_task_read_example(void *arg)
 {
     // The MIDI interface always creates input and output port/jack descriptors
@@ -33,6 +82,10 @@ static void midi_task_read_example(void *arg)
         }
     }
 }
+
+// Basic MIDI Messages
+#define NOTE_OFF 0x80
+#define NOTE_ON  0x90
 
 static void periodic_midi_write_example_cb(void *arg)
 {
@@ -58,12 +111,15 @@ static void periodic_midi_write_example_cb(void *arg)
 
     // Send Note On for current position at full velocity (127) on channel 1.
     ESP_LOGI(TAG, "Writing MIDI data %d", note_sequence[note_pos]);
-    uint8_t note_on[3] = {0x90 | channel, note_sequence[note_pos], 127};
-    tud_midi_stream_write(cable_num, note_on, 3);
 
-    // Send Note Off for previous note.
-    uint8_t note_off[3] = {0x80 | channel, note_sequence[previous], 0};
-    tud_midi_stream_write(cable_num, note_off, 3);
+    if (tud_midi_mounted()) {
+        uint8_t note_on[3] = {NOTE_ON | channel, note_sequence[note_pos], 127};
+        tud_midi_stream_write(cable_num, note_on, 3);
+
+        // Send Note Off for previous note.
+        uint8_t note_off[3] = {NOTE_OFF | channel, note_sequence[previous], 0};
+        tud_midi_stream_write(cable_num, note_off, 3);
+    }
 
     // Increment position
     note_pos++;
@@ -80,9 +136,9 @@ void app_main(void)
 
     tinyusb_config_t const tusb_cfg = {
         .device_descriptor = NULL, // If device_descriptor is NULL, tinyusb_driver_install() will use Kconfig
-        .string_descriptor = NULL,
+        .string_descriptor = s_str_desc,
         .external_phy = false,
-        .configuration_descriptor = NULL,
+        .configuration_descriptor = s_midi_cfg_desc,
     };
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 

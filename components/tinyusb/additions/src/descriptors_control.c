@@ -59,6 +59,12 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t langid)
         // Convert ASCII string into UTF-16
 
         if ( index >= sizeof(s_str_descriptor) / sizeof(s_str_descriptor[0]) ) {
+            ESP_LOGE(TAG, "String index (%u) is out of bounds, check your string descriptor", index);
+            return NULL;
+        }
+
+        if (s_str_descriptor[index] == NULL) {
+            ESP_LOGE(TAG, "String index (%u) points to NULL, check your string descriptor", index);
             return NULL;
         }
 
