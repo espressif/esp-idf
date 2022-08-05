@@ -159,6 +159,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         OPENOCD_TAGET_CONFIG = {
             'esp32': '-f board/esp32-wrover-kit-3.3v.cfg',
             'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
+            'esp32c3': '-f board/esp32c3-builtin.cfg',
+            'esp32s3': '-f board/esp32s3-builtin.cfg',
         }
         if os.getenv('OPENOCD_SCRIPTS') is None:
             raise FatalError('OPENOCD_SCRIPTS not found in the environment: Please run export.sh/export.bat', ctx)
