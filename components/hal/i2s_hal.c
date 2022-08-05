@@ -134,7 +134,7 @@ void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rat
     i2s_ll_tx_enable_pdm_sd_codec(hal->dev, true);
     /* set pdm tx sigma-delta codec dither */
     i2s_ll_tx_set_pdm_sd_dither(hal->dev, 0);
-    i2s_ll_tx_set_pdm_sd_dither2(hal->dev, 0);
+    i2s_ll_tx_set_pdm_sd_dither2(hal->dev, 1);
 
 #endif // SOC_I2S_SUPPORTS_PDM_CODEC
 }
@@ -275,6 +275,9 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     chan_num = hal_cfg->total_chan;
     i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask >> 16);
     i2s_ll_rx_set_chan_num(hal->dev, chan_num);
+#if SOC_I2S_SUPPORTS_PDM_RX
+    is_mono = (hal_cfg->mode & I2S_MODE_PDM) ? false : true;
+#endif
 #else
     i2s_ll_rx_set_chan_mod(hal->dev, hal_cfg->chan_fmt < I2S_CHANNEL_FMT_ONLY_RIGHT ? hal_cfg->chan_fmt : (hal_cfg->chan_fmt >> 1)); // 0-two channel;1-right;2-left;3-righ;4-left
 #endif

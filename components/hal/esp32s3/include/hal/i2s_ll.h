@@ -221,6 +221,23 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
+ * @brief Set I2S tx raw clock division
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param x  div x
+ * @param y  div y
+ * @param z  div z
+ * @param yn1 yn1
+ */
+static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
+{
+    hw->tx_clkm_div_conf.tx_clkm_div_x = x;
+    hw->tx_clkm_div_conf.tx_clkm_div_y = y;
+    hw->tx_clkm_div_conf.tx_clkm_div_z = z;
+    hw->tx_clkm_div_conf.tx_clkm_div_yn1 = yn1;
+}
+
+/**
  * @brief Configure I2S TX clock devider
  *
  * @param hw Peripheral I2S hardware instance address.

@@ -1092,6 +1092,8 @@ static esp_err_t i2s_calculate_pdm_rx_clock(int i2s_num, i2s_hal_clock_cfg_t *cl
 
     /* Check if the configuration is correct */
     ESP_RETURN_ON_FALSE(clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_LOGD(TAG, "[sclk] %d [mclk] %d [mclk_div] %d [bclk] %d [bclk_div] %d",
+             clk_cfg->sclk, clk_cfg->mclk, clk_cfg->mclk_div, clk_cfg->bclk, clk_cfg->bclk_div);
 
     return ESP_OK;
 }
@@ -1620,7 +1622,11 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
                     cfg->chan_mask = I2S_TDM_ACTIVE_CH0; // right slot mono
                     cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_RIGHT;
                 }
+#if SOC_I2S_SUPPORTS_PDM_RX
+                cfg->total_chan = (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_PDM) ? 1 : 2;
+#else
                 cfg->total_chan = 2;
+#endif
             }
         } else {
             if (ch >> 16) {
@@ -1673,6 +1679,13 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->tx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for transmit finish */
         i2s_tx_set_clk_and_channel(i2s_num, &clk_cfg);
+        /* Workaround for ESP32-S3/C3, overwrite with speicial coefficients to lower down the noise */
+#if SOC_I2S_SUPPORTS_PDM_CODEC
+        if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_PDM) {
+            i2s_ll_tx_set_raw_clk_div(p_i2s[i2s_num]->hal.dev, 1, 1, 0, 0);
+        }
+#endif // SOC_I2S_SUPPORTS_PDM_TX
+
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
             p_i2s[i2s_num]->tx->buf_size = buf_size;
