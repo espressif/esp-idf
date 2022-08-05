@@ -2,7 +2,7 @@
 
 This demo demonstrates the fast provisioning of ESP BLE Mesh network and how to use the EspBleMesh app to control an individual provisioned node or all the provisioned nodes.
  
-A video of this example can be seen from [here](http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.4_Demo_Fast_Provision/ESP32_BLE_Mesh_Fast_Provision.mp4).
+A video of this example can be seen from [here](https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4).
 
 # What You Need 
 
