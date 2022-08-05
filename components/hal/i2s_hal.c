@@ -10,6 +10,7 @@
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_hal.h"
+#include "sdkconfig.h"
 
 /**
  * @brief Calculate the closest sample rate clock configuration.
@@ -181,7 +182,11 @@ void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
     i2s_ll_tx_set_skip_mask(hal->dev, hal_cfg->skip_msk);
 #else
+#if CONFIG_IDF_TARGET_ESP32
+    i2s_ll_tx_enable_msb_right(hal->dev, hal_cfg->sample_bits <= I2S_BITS_PER_SAMPLE_16BIT);
+#else
     i2s_ll_tx_enable_msb_right(hal->dev, false);
+#endif
     i2s_ll_tx_enable_right_first(hal->dev, false);
     i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
 #endif
@@ -205,7 +210,11 @@ void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_rx_enable_big_endian(hal->dev, hal_cfg->big_edin);
     i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
 #else
+#if CONFIG_IDF_TARGET_ESP32
+    i2s_ll_rx_enable_msb_right(hal->dev, hal_cfg->sample_bits <= I2S_BITS_PER_SAMPLE_16BIT);
+#else
     i2s_ll_rx_enable_msb_right(hal->dev, false);
+#endif
     i2s_ll_rx_enable_right_first(hal->dev, false);
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
 #endif
