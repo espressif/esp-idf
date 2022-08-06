@@ -17,7 +17,7 @@ if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
     list(APPEND srcs "unity_runner.c")
     # Note the following files are not compatible with the Linux target.
     # On Linux, these are masked because we also don't use the IDF test runner there
-    list(APPEND srcs "unity_utils_freertos.c")
+    list(APPEND srcs "unity_utils_freertos.c" "unity_utils_cache.c")
     list(APPEND requires "freertos")
 endif()
 
@@ -38,6 +38,10 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     REQUIRES ${requires})
+
+if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
+    idf_component_optional_requires(PRIVATE spi_flash)
+endif()
 
 if(NOT "${target}" STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC

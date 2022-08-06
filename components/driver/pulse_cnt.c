@@ -98,7 +98,7 @@ struct pcnt_unit_t {
 
 struct pcnt_chan_t {
     pcnt_unit_t *unit;   // pointer to the PCNT unit where it derives from
-    uint32_t channel_id; // channel ID, index from 0
+    int channel_id;      // channel ID, index from 0
     int edge_gpio_num;
     int level_gpio_num;
 };
