@@ -591,6 +591,10 @@ config SOC_LCD_RGB_DATA_WIDTH
     int
     default 16
 
+config SOC_LCD_SUPPORT_RGB_YUV_CONV
+    bool
+    default y
+
 config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
     int
     default 128
