@@ -28,6 +28,10 @@ extern "C" {
 #define LCD_LL_CLK_FRAC_DIV_AB_MAX 64  // LCD_CLK = LCD_CLK_S / (N + b/a), the a/b register is 6 bit-width
 #define LCD_LL_PCLK_DIV_MAX        64  // LCD_PCLK = LCD_CLK / MO, the MO register is 6 bit-width
 
+#define LCD_LL_COLOR_RANGE_TO_REG(range) (uint8_t[]){0,1}[(range)]
+#define LCD_LL_CONV_STD_TO_REG(std)      (uint8_t[]){0,1}[(std)]
+#define LCD_LL_YUV_SAMPLE_TO_REG(sample) (uint8_t[]){0,1,2}[(sample)]
+
 /**
  * @brief Enable clock gating
  *
@@ -142,6 +146,92 @@ static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t 
 static inline void lcd_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
 {
     dev->lcd_rgb_yuv.lcd_conv_bypass = en;
+}
+
+/**
+ * @brief Set convert data line width
+ *
+ * @param dev LCD register base address
+ * @param width data line width (8 or 16)
+ */
+static inline void lcd_ll_set_convert_data_width(lcd_cam_dev_t *dev, uint32_t width)
+{
+    HAL_ASSERT(width == 8 || width == 16);
+    dev->lcd_rgb_yuv.lcd_conv_mode_8bits_on = (width == 8) ? 1 : 0;
+}
+
+/**
+ * @brief Set the color range of input data
+ *
+ * @param dev LCD register base address
+ * @param range Color range
+ */
+static inline void lcd_ll_set_input_color_range(lcd_cam_dev_t *dev, lcd_color_range_t range)
+{
+    dev->lcd_rgb_yuv.lcd_conv_data_in_mode = LCD_LL_COLOR_RANGE_TO_REG(range);
+}
+
+/**
+ * @brief Set the color range of output data
+ *
+ * @param dev LCD register base address
+ * @param range Color range
+ */
+static inline void lcd_ll_set_output_color_range(lcd_cam_dev_t *dev, lcd_color_range_t range)
+{
+    dev->lcd_rgb_yuv.lcd_conv_data_out_mode = LCD_LL_COLOR_RANGE_TO_REG(range);
+}
+
+/**
+ * @brief Set YUV conversion standard
+ *
+ * @param dev LCD register base address
+ * @param std YUV conversion standard
+ */
+static inline void lcd_ll_set_yuv_convert_std(lcd_cam_dev_t *dev, lcd_yuv_conv_std_t std)
+{
+    dev->lcd_rgb_yuv.lcd_conv_protocol_mode = LCD_LL_CONV_STD_TO_REG(std);
+}
+
+/**
+ * @brief Set the converter mode: RGB565 to YUV
+ *
+ * @param dev LCD register base address
+ * @param yuv_sample YUV sample mode
+ */
+static inline void lcd_ll_set_convert_mode_rgb_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
+{
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
+    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(yuv_sample);
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+}
+
+/**
+ * @brief Set the converter mode: YUV to RGB565
+ *
+ * @param dev LCD register base address
+ * @param yuv_sample YUV sample mode
+ */
+static inline void lcd_ll_set_convert_mode_yuv_to_rgb(lcd_cam_dev_t *dev, lcd_yuv_sample_t yuv_sample)
+{
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 0;
+    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(yuv_sample);
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = 3;
+}
+
+/**
+ * @brief Set the converter mode: YUV to YUV
+ *
+ * @param dev LCD register base address
+ * @param src_sample Source YUV sample mode
+ * @param dst_sample Destination YUV sample mode
+ */
+static inline void lcd_ll_set_convert_mode_yuv_to_yuv(lcd_cam_dev_t *dev, lcd_yuv_sample_t src_sample, lcd_yuv_sample_t dst_sample)
+{
+    HAL_ASSERT(src_sample != dst_sample);
+    dev->lcd_rgb_yuv.lcd_conv_trans_mode = 1;
+    dev->lcd_rgb_yuv.lcd_conv_yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(src_sample);
+    dev->lcd_rgb_yuv.lcd_conv_yuv2yuv_mode = LCD_LL_YUV_SAMPLE_TO_REG(dst_sample);
 }
 
 /**

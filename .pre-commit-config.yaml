@@ -21,7 +21,8 @@ repos:
             .+test_idf_monitor\/tests\/.+|
             .*_pb2.py|
             .*.pb-c.h|
-            .*.pb-c.c
+            .*.pb-c.c|
+            .*.yuv
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
