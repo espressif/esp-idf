@@ -34,6 +34,39 @@ typedef enum {
     LCD_CLK_SRC_XTAL,    /*!< Select XTAL as the source clock */
 } lcd_clock_source_t;
 
+/**
+ * @brief LCD color space
+ */
+typedef enum {
+    LCD_COLOR_SPACE_RGB, /*!< Color space: RGB */
+    LCD_COLOR_SPACE_YUV, /*!< Color space: YUV */
+} lcd_color_space_t;
+
+/**
+ * @brief LCD color range
+ */
+typedef enum {
+    LCD_COLOR_RANGE_LIMIT, /*!< Limited color range */
+    LCD_COLOR_RANGE_FULL,  /*!< Full color range */
+} lcd_color_range_t;
+
+/**
+ * @brief YUV sampling method
+ */
+typedef enum {
+    LCD_YUV_SAMPLE_422, /*!< YUV 4:2:2 sampling */
+    LCD_YUV_SAMPLE_420, /*!< YUV 4:2:0 sampling */
+    LCD_YUV_SAMPLE_411, /*!< YUV 4:1:1 sampling */
+} lcd_yuv_sample_t;
+
+/**
+ * @brief The standard used for conversion between RGB and YUV
+ */
+typedef enum {
+    LCD_YUV_CONV_STD_BT601, /*!< YUV<->RGB conversion standard: BT.601 */
+    LCD_YUV_CONV_STD_BT709, /*!< YUV<->RGB conversion standard: BT.709 */
+} lcd_yuv_conv_std_t;
+
 #ifdef __cplusplus
 }
 #endif
