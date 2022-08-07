@@ -43,7 +43,7 @@
 typedef struct {
     spi_host_device_t   host_id; //!< SPI host id.
     spi_device_handle_t spi_handle; //!< SPI device handle, used for transactions
-    uint8_t gpio_cs;            //!< CS GPIO
+    uint8_t gpio_cs;            //!< CS GPIO, or GPIO_UNUSED
     uint8_t gpio_cd;            //!< Card detect GPIO, or GPIO_UNUSED
     uint8_t gpio_wp;            //!< Write protect GPIO, or GPIO_UNUSED
     uint8_t gpio_int;            //!< Write protect GPIO, or GPIO_UNUSED
@@ -120,13 +120,17 @@ static slot_info_t* remove_slot_info(sdspi_dev_handle_t handle)
 /// Set CS high for given slot
 static void cs_high(slot_info_t *slot)
 {
-    gpio_set_level(slot->gpio_cs, 1);
+    if (slot->gpio_cs != GPIO_UNUSED) {
+        gpio_set_level(slot->gpio_cs, 1);
+    }
 }
 
 /// Set CS low for given slot
 static void cs_low(slot_info_t *slot)
 {
-    gpio_set_level(slot->gpio_cs, 0);
+    if (slot->gpio_cs != GPIO_UNUSED) {
+        gpio_set_level(slot->gpio_cs, 0);
+    }
 }
 
 /// Return true if WP pin is configured and is low
@@ -248,7 +252,9 @@ static esp_err_t deinit_slot(slot_info_t *slot)
         .mode = GPIO_MODE_INPUT,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    gpio_config(&config);
+    if (pin_bit_mask != 0) {
+        gpio_config(&config);
+    }
 
     if (slot->semphr_int) {
         vSemaphoreDelete(slot->semphr_int);
@@ -332,13 +338,20 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << slot_config->gpio_cs,
     };
-
-    ret = gpio_config(&io_conf);
-    if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "gpio_config (CS) failed with rc=0x%x", ret);
-        goto cleanup;
+    if (slot_config->gpio_cs != SDSPI_SLOT_NO_CS) {
+        slot->gpio_cs = slot_config->gpio_cs;
+    } else {
+        slot->gpio_cs = GPIO_UNUSED;
     }
-    cs_high(slot);
+
+    if (slot->gpio_cs != GPIO_UNUSED) {
+        ret = gpio_config(&io_conf);
+        if (ret != ESP_OK) {
+            ESP_LOGD(TAG, "gpio_config (CS) failed with rc=0x%x", ret);
+            goto cleanup;
+        }
+        cs_high(slot);
+    }
 
     // Configure CD and WP pins
     io_conf = (gpio_config_t) {
