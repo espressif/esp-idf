@@ -1267,6 +1267,7 @@ but the connected AP has country info::
         .schan = 1,
         .nchan = 13,
     };
+
 then country info of connected AP's is used.
 
 Following table depicts which country info is used in different Wi-Fi Mode and different country policy, also describe the impact to active scan.
