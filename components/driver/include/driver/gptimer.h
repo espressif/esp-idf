@@ -138,7 +138,8 @@ esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, uint64_t *value);
  * @brief Set callbacks for GPTimer
  *
  * @note User registered callbacks are expected to be runnable within ISR context
- * @note This function should be called when the timer is in the init state (i.e. before calling `gptimer_enable()`)
+ * @note The first call to this function needs to be before the call to `gptimer_enable`
+ * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
  * @param[in] cbs Group of callback functions
