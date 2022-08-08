@@ -179,6 +179,14 @@ typedef struct {
 esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handle_t cap_channel, const mcpwm_capture_event_callbacks_t *cbs, void *user_data);
 
 /**
+ * @brief Unregister the MCPWM capture channel from user callbacks
+ *
+ * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`
+ * @return always ESP_OK
+ */
+esp_err_t mcpwm_capture_channel_unregister_event_callbacks(mcpwm_cap_channel_handle_t cap_channel);
+
+/**
  * @brief Trigger a catch by software
  *
  * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`

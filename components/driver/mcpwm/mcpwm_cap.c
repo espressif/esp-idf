@@ -334,6 +334,21 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
     return ESP_OK;
 }
 
+
+esp_err_t mcpwm_capture_channel_unregister_event_callbacks(mcpwm_cap_channel_handle_t cap_channel) {
+    mcpwm_group_t *group = cap_channel->cap_timer->group;
+    mcpwm_hal_context_t *hal = &group->hal;
+    int cap_chan_id = cap_channel->cap_chan_id;
+    portENTER_CRITICAL(&group->spinlock);
+    mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_chan_id), false);
+    mcpwm_ll_intr_clear_status(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_chan_id));
+    portEXIT_CRITICAL(&group->spinlock);
+    cap_channel->on_cap = NULL;
+    cap_channel->user_data = NULL;
+    return ESP_OK;
+}
+
+
 esp_err_t mcpwm_capture_channel_trigger_soft_catch(mcpwm_cap_channel_handle_t cap_channel)
 {
     ESP_RETURN_ON_FALSE(cap_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
