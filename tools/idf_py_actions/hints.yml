@@ -13,7 +13,7 @@
     match_to_output: True
 
 -
-    re: "fatal error: \\w+\\.h: No such file or directory"
+    re: "fatal error: [\\w/]+\\.h: No such file or directory"
     hint: "Please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'."
 
 -
