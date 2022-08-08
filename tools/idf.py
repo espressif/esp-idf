@@ -39,6 +39,8 @@ try:
     from idf_py_actions.errors import FatalError  # noqa: E402
     from idf_py_actions.tools import (PropertyDict, executable_exists, get_target, idf_version,  # noqa: E402
                                       merge_action_lists, realpath)
+    if os.getenv('IDF_COMPONENT_MANAGER') != '0':
+        from idf_component_manager import idf_extensions
 except ImportError:
     # For example, importing click could cause this.
     print('Please use idf.py only in an ESP-IDF shell environment.', file=sys.stderr)
@@ -672,7 +674,6 @@ def init_cli(verbose_output: List=None) -> Any:
 
     # Load component manager idf.py extensions if not explicitly disabled
     if os.getenv('IDF_COMPONENT_MANAGER') != '0':
-        from idf_component_manager import idf_extensions
         extensions.append(('component_manager_ext', idf_extensions))
 
     # Optional load `pyclang` for additional clang-tidy related functionalities
