@@ -127,6 +127,18 @@ config SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL
     int
     default 5
 
+config SOC_XTAL_SUPPORT_26M
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_AUTO_DETECT
+    bool
+    default y
+
 config SOC_ADC_RTC_CTRL_SUPPORTED
     bool
     default y

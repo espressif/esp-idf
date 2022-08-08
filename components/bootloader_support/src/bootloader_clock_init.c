@@ -42,13 +42,6 @@ __attribute__((weak)) void bootloader_clock_configure(void)
 
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW || rtc_clk_apb_freq_get() < APB_CLK_FREQ) {
         rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
-#if CONFIG_IDF_TARGET_ESP32
-        clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
-#endif
-#if CONFIG_IDF_TARGET_ESP32C2
-        clk_cfg.xtal_freq = CONFIG_ESP32C2_XTAL_FREQ;
-#endif
-        /* For other chips, there is no XTAL_FREQ choice */
         clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
         clk_cfg.slow_clk_src = rtc_clk_slow_src_get();
         if (clk_cfg.slow_clk_src == SOC_RTC_SLOW_CLK_SRC_INVALID) {

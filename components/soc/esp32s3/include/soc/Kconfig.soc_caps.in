@@ -199,6 +199,10 @@ config SOC_TOUCH_SENSOR_SUPPORTED
     bool
     default y
 
+config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
 config SOC_APPCPU_HAS_CLOCK_GATING_BUG
     bool
     default y

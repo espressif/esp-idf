@@ -226,7 +226,7 @@ typedef struct {
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .dis_scan_backoff           = NIMBLE_DISABLE_SCAN_BACKOFF,                          \
     .ble_scan_classify_filter_enable         = 0,                                       \
-    .main_xtal_freq             = CONFIG_ESP32C2_XTAL_FREQ,                             \
+    .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .config_magic = CONFIG_MAGIC,                                                       \
 };
 
