@@ -153,7 +153,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock %d failed", bus_config->clk_src);
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
-    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);

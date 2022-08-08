@@ -764,7 +764,7 @@ static esp_err_t gdma_install_rx_interrupt(gdma_rx_channel_t *rx_chan)
     // pre-alloc a interrupt handle, with handler disabled
     int isr_flags = GDMA_INTR_ALLOC_FLAGS;
 #if SOC_GDMA_TX_RX_SHARE_INTERRUPT
-    isr_flags |= ESP_INTR_FLAG_SHARED;
+    isr_flags |= ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
 #endif
     intr_handle_t intr = NULL;
     ret = esp_intr_alloc_intrstatus(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].rx_irq_id, isr_flags,
@@ -791,7 +791,7 @@ static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan)
     // pre-alloc a interrupt handle, with handler disabled
     int isr_flags = GDMA_INTR_ALLOC_FLAGS;
 #if SOC_GDMA_TX_RX_SHARE_INTERRUPT
-    isr_flags |= ESP_INTR_FLAG_SHARED;
+    isr_flags |= ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
 #endif
     intr_handle_t intr = NULL;
     ret = esp_intr_alloc_intrstatus(gdma_periph_signals.groups[group->group_id].pairs[pair->pair_id].tx_irq_id, isr_flags,
