@@ -8,7 +8,7 @@ if(NOT BOOTLOADER_BUILD)
 endif()
 
 set(mbedtls_srcs "")
-set(mbedtls_include_dirs "port/include" "mbedtls/include" "./mbedtls/library")
+set(mbedtls_include_dirs "port/include" "mbedtls/include" "mbedtls/library")
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     list(APPEND mbedtls_srcs "esp_crt_bundle/esp_crt_bundle.c")
@@ -238,6 +238,7 @@ endforeach()
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     set(WRAP_FUNCTIONS
+        mbedtls_ssl_write_client_hello
         mbedtls_ssl_handshake_client_step
         mbedtls_ssl_handshake_server_step
         mbedtls_ssl_read
