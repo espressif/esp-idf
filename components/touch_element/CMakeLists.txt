@@ -8,5 +8,4 @@ if(IDF_TARGET IN_LIST TOUCH_ELEMENT_COMPATIBLE_TARGETS)
             INCLUDE_DIRS include
             REQUIRES driver
             PRIV_REQUIRES esp_timer)
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <sys/queue.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
