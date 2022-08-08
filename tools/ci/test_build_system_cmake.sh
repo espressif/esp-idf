@@ -843,6 +843,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     mv CMakeLists.bak CMakeLists.txt # revert previous modifications
     rm -rf extra_dir components
 
+    print_status "Components in EXCLUDE_COMPONENTS not passed to idf_component_manager"
+    clean_build_dir
+    idf.py create-component -C components/ to_be_excluded || failure "Failed to create a component"
+    echo "invalid syntax..." > components/to_be_excluded/idf_component.yml
+    ! idf.py reconfigure || failure "Build should have failed due to invalid syntax in idf_component.yml"
+    idf.py -DEXCLUDE_COMPONENTS=to_be_excluded reconfigure || failure "Build should have succeeded when the component is excluded"
+    rm -rf components/to_be_excluded
+
     print_status "Create project using idf.py and build it"
     echo "Trying to create project."
     (idf.py -C projects create-project temp_test_project) || failure "Failed to create the project."
