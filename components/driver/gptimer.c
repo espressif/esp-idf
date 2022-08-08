@@ -245,7 +245,6 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 {
     gptimer_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(timer && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
@@ -261,6 +260,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 
     // lazy install interrupt service
     if (!timer->intr) {
+        ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
         // if user wants to control the interrupt allocation more precisely, we can expose more flags in `gptimer_config_t`
         int isr_flags = timer->flags.intr_shared ? ESP_INTR_FLAG_SHARED | GPTIMER_INTR_ALLOC_FLAGS : GPTIMER_INTR_ALLOC_FLAGS;
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,

@@ -107,6 +107,9 @@ esp_err_t mcpwm_timer_start_stop(mcpwm_timer_handle_t timer, mcpwm_timer_start_s
 /**
  * @brief Set event callbacks for MCPWM timer
  *
+ * @note The first call to this function needs to be before the call to `mcpwm_timer_enable`
+ * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
+ *
  * @param[in] timer MCPWM timer handle, allocated by `mcpwm_new_timer()`
  * @param[in] cbs Group of callback functions
  * @param[in] user_data User data, which will be passed to callback functions directly

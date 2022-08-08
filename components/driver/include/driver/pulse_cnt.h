@@ -233,7 +233,8 @@ esp_err_t pcnt_unit_get_count(pcnt_unit_handle_t unit, int *value);
  * @brief Set event callbacks for PCNT unit
  *
  * @note User registered callbacks are expected to be runnable within ISR context
- * @note This function is only allowed to be called when the unit is in the init state (i.e. before calling `pcnt_unit_enable()`)
+ * @note The first call to this function needs to be before the call to `pcnt_unit_enable`
+ * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
  * @param[in] cbs Group of callback functions

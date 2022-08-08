@@ -119,6 +119,8 @@ typedef struct {
 /**
  * @brief Set event callbacks for MCPWM operator
  *
+ * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
+ *
  * @param[in] oper MCPWM operator handle, allocated by `mcpwm_new_operator()`
  * @param[in] cbs Group of callback functions
  * @param[in] user_data User data, which will be passed to callback functions directly
