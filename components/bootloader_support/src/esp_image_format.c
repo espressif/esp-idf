@@ -36,6 +36,8 @@
 #include "esp32c2/rom/secure_boot.h"
 #endif
 
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 /* Checking signatures as part of verifying images is necessary:
    - Always if secure boot is enabled
    - Differently in bootloader and/or app, depending on kconfig
@@ -107,7 +109,7 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     while(0)
 
 static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_offset, bootloader_sha256_handle_t *sha_handle, bool do_verify, bool silent);
-static esp_err_t process_appended_hash(esp_image_metadata_t *data, uint32_t part_len, bool do_verify, bool silent);
+static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint32_t part_offset, uint32_t part_len, bool do_verify, bool silent);
 static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data, bool silent, bool skip_check_checksum);
 
 static esp_err_t __attribute__((unused)) verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest);
@@ -159,7 +161,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     CHECK_ERR(process_segments(data, silent, do_load, sha_handle, checksum));
     bool skip_check_checksum = !do_verify || esp_cpu_dbgr_is_attached();
     CHECK_ERR(process_checksum(sha_handle, checksum_word, data, silent, skip_check_checksum));
-    CHECK_ERR(process_appended_hash(data, part->size, do_verify, silent));
+    CHECK_ERR(process_appended_hash_and_sig(data, part->offset, part->size, do_verify, silent));
     if (verify_sha) {
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1)
         // secure boot images have a signature appended
@@ -299,7 +301,7 @@ esp_err_t esp_image_get_metadata(const esp_partition_pos_t *part, esp_image_meta
     CHECK_ERR(process_segments(metadata, silent, do_load, NULL, NULL));
     bool skip_check_checksum = true;
     CHECK_ERR(process_checksum(NULL, 0, metadata, silent, skip_check_checksum));
-    CHECK_ERR(process_appended_hash(metadata, part->size, true, silent));
+    CHECK_ERR(process_appended_hash_and_sig(metadata, part->offset, part->size, true, silent));
     return ESP_OK;
 err:
     return err;
@@ -762,7 +764,7 @@ esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data)
                             data);
 }
 
-static esp_err_t process_appended_hash(esp_image_metadata_t *data, uint32_t part_len, bool do_verify, bool silent)
+static esp_err_t process_appended_hash_and_sig(esp_image_metadata_t *data, uint32_t part_offset, uint32_t part_len, bool do_verify, bool silent)
 {
     esp_err_t err = ESP_OK;
     if (data->image.hash_appended) {
@@ -773,8 +775,34 @@ static esp_err_t process_appended_hash(esp_image_metadata_t *data, uint32_t part
         data->image_len += HASH_LEN;
     }
 
-    if (data->image_len > part_len) {
-        FAIL_LOAD("Image length %d doesn't fit in partition length %d", data->image_len, part_len);
+    uint32_t sig_block_len = 0;
+    const uint32_t end = data->image_len;
+#if CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+
+    // Case I: Bootloader part
+    if (part_offset == ESP_BOOTLOADER_OFFSET) {
+        // For bootloader with secure boot v1, signature stays in an independant flash
+        // sector (offset 0x0)  and does not get appended to the image.
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+        // Sanity check - secure boot v2 signature block starts on 4K boundary
+        sig_block_len = ALIGN_UP(end, FLASH_SECTOR_SIZE) - end;
+        sig_block_len += sizeof(ets_secure_boot_signature_t);
+#endif
+    } else {
+    // Case II: Application part
+#if CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+        sig_block_len = sizeof(esp_secure_boot_sig_block_t);
+#else
+        // Sanity check - secure boot v2 signature block starts on 4K boundary
+        sig_block_len = ALIGN_UP(end, FLASH_SECTOR_SIZE) - end;
+        sig_block_len += sizeof(ets_secure_boot_signature_t);
+#endif
+    }
+#endif // CONFIG_SECURE_BOOT || CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT
+
+    const uint32_t full_image_len = end + sig_block_len;
+    if (full_image_len > part_len) {
+        FAIL_LOAD("Image length %d doesn't fit in partition length %d", full_image_len, part_len);
     }
     return err;
 err:
@@ -835,7 +863,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
 #if CONFIG_SECURE_BOOT_V2_ENABLED
     // End of the image needs to be padded all the way to a 4KB boundary, after the simple hash
     // (for apps they are usually already padded due to --secure-pad-v2, only a problem if this option was not used.)
-    uint32_t padded_end = (end + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE-1);
+    uint32_t padded_end = ALIGN_UP(end, FLASH_SECTOR_SIZE);
     if (padded_end > end) {
         const void *padding = bootloader_mmap(end, padded_end - end);
         bootloader_sha256_data(sha_handle, padding, padded_end - end);
