@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table ef050bc1e4bf0d8384aa3e4c0256d7d3
+// md5_digest_table 5bc3d3149d5d4c75461337fa415d6533
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -176,28 +176,8 @@ static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
     {EFUSE_BLK2, 60, 2}, 	 // BLK_VERSION_MAJOR,
 };
 
-static const esp_efuse_desc_t LDO_VOL_BIAS_CONFIG_HIGH[] = {
-    {EFUSE_BLK2, 64, 27}, 	 // EFUSE_LDO_VOL_BIAS_CONFIG_HIGH,
-};
-
 static const esp_efuse_desc_t PVT_LOW[] = {
     {EFUSE_BLK2, 91, 5}, 	 // EFUSE_PVT_LOW,
-};
-
-static const esp_efuse_desc_t PVT_HIGH[] = {
-    {EFUSE_BLK2, 96, 10}, 	 // EFUSE_PVT_HIGH,
-};
-
-static const esp_efuse_desc_t ADC_CALIBRATION_0[] = {
-    {EFUSE_BLK2, 106, 22}, 	 // EFUSE_ADC_CALIBRATION_0,
-};
-
-static const esp_efuse_desc_t ADC_CALIBRATION_1[] = {
-    {EFUSE_BLK2, 128, 32}, 	 // EFUSE_ADC_CALIBRATION_1,
-};
-
-static const esp_efuse_desc_t ADC_CALIBRATION_2[] = {
-    {EFUSE_BLK2, 160, 32}, 	 // EFUSE_ADC_CALIBRATION_2,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -214,6 +194,50 @@ static const esp_efuse_desc_t KEY0_FE_128BIT[] = {
 
 static const esp_efuse_desc_t KEY0_SB_128BIT[] = {
     {EFUSE_BLK3, 128, 128}, 	 // [128bit SB key],
+};
+
+static const esp_efuse_desc_t OCODE[] = {
+    {EFUSE_BLK2, 62, 7}, 	 // OCode,
+};
+
+static const esp_efuse_desc_t DIG_DBIAS_HVT[] = {
+    {EFUSE_BLK2, 105, 5}, 	 // BLOCK2 digital dbias when hvt,
+};
+
+static const esp_efuse_desc_t DIG_LDO_SLP_DBIAS2[] = {
+    {EFUSE_BLK2, 110, 7}, 	 // BLOCK2 DIG_LDO_DBG0_DBIAS2,
+};
+
+static const esp_efuse_desc_t DIG_LDO_SLP_DBIAS26[] = {
+    {EFUSE_BLK2, 117, 8}, 	 // BLOCK2 DIG_LDO_DBG0_DBIAS26,
+};
+
+static const esp_efuse_desc_t DIG_LDO_ACT_DBIAS26[] = {
+    {EFUSE_BLK2, 125, 6}, 	 // BLOCK2 DIG_LDO_ACT_DBIAS26,
+};
+
+static const esp_efuse_desc_t DIG_LDO_ACT_STEPD10[] = {
+    {EFUSE_BLK2, 131, 4}, 	 // BLOCK2 DIG_LDO_ACT_STEPD10,
+};
+
+static const esp_efuse_desc_t RTC_LDO_SLP_DBIAS13[] = {
+    {EFUSE_BLK2, 135, 7}, 	 // BLOCK2 DIG_LDO_SLP_DBIAS13,
+};
+
+static const esp_efuse_desc_t RTC_LDO_SLP_DBIAS29[] = {
+    {EFUSE_BLK2, 142, 9}, 	 // BLOCK2 DIG_LDO_SLP_DBIAS29,
+};
+
+static const esp_efuse_desc_t RTC_LDO_SLP_DBIAS31[] = {
+    {EFUSE_BLK2, 151, 6}, 	 // BLOCK2 DIG_LDO_SLP_DBIAS31,
+};
+
+static const esp_efuse_desc_t RTC_LDO_ACT_DBIAS31[] = {
+    {EFUSE_BLK2, 157, 6}, 	 // BLOCK2 DIG_LDO_ACT_DBIAS31,
+};
+
+static const esp_efuse_desc_t RTC_LDO_ACT_DBIAS13[] = {
+    {EFUSE_BLK2, 163, 8}, 	 // BLOCK2 DIG_LDO_ACT_DBIAS13,
 };
 
 
@@ -420,33 +444,8 @@ const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_LDO_VOL_BIAS_CONFIG_HIGH[] = {
-    &LDO_VOL_BIAS_CONFIG_HIGH[0],    		// EFUSE_LDO_VOL_BIAS_CONFIG_HIGH
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_PVT_LOW[] = {
     &PVT_LOW[0],    		// EFUSE_PVT_LOW
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_PVT_HIGH[] = {
-    &PVT_HIGH[0],    		// EFUSE_PVT_HIGH
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_0[] = {
-    &ADC_CALIBRATION_0[0],    		// EFUSE_ADC_CALIBRATION_0
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_1[] = {
-    &ADC_CALIBRATION_1[0],    		// EFUSE_ADC_CALIBRATION_1
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_2[] = {
-    &ADC_CALIBRATION_2[0],    		// EFUSE_ADC_CALIBRATION_2
     NULL
 };
 
@@ -467,5 +466,60 @@ const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_128BIT[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_KEY0_SB_128BIT[] = {
     &KEY0_SB_128BIT[0],    		// [128bit SB key]
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
+    &OCODE[0],    		// OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIG_DBIAS_HVT[] = {
+    &DIG_DBIAS_HVT[0],    		// BLOCK2 digital dbias when hvt
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_SLP_DBIAS2[] = {
+    &DIG_LDO_SLP_DBIAS2[0],    		// BLOCK2 DIG_LDO_DBG0_DBIAS2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_SLP_DBIAS26[] = {
+    &DIG_LDO_SLP_DBIAS26[0],    		// BLOCK2 DIG_LDO_DBG0_DBIAS26
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_ACT_DBIAS26[] = {
+    &DIG_LDO_ACT_DBIAS26[0],    		// BLOCK2 DIG_LDO_ACT_DBIAS26
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_ACT_STEPD10[] = {
+    &DIG_LDO_ACT_STEPD10[0],    		// BLOCK2 DIG_LDO_ACT_STEPD10
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS13[] = {
+    &RTC_LDO_SLP_DBIAS13[0],    		// BLOCK2 DIG_LDO_SLP_DBIAS13
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS29[] = {
+    &RTC_LDO_SLP_DBIAS29[0],    		// BLOCK2 DIG_LDO_SLP_DBIAS29
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS31[] = {
+    &RTC_LDO_SLP_DBIAS31[0],    		// BLOCK2 DIG_LDO_SLP_DBIAS31
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS31[] = {
+    &RTC_LDO_ACT_DBIAS31[0],    		// BLOCK2 DIG_LDO_ACT_DBIAS31
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS13[] = {
+    &RTC_LDO_ACT_DBIAS13[0],    		// BLOCK2 DIG_LDO_ACT_DBIAS13
     NULL
 };
