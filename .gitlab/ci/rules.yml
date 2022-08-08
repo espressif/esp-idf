@@ -172,6 +172,7 @@
   - "components/spiffs/spiffs"
   - "components/tinyusb/tinyusb"
   - "components/unity/unity"
+  - "components/heap/tlsf"
   - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
   - ".gitmodules"
 

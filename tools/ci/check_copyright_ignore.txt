@@ -813,16 +813,8 @@ components/hal/twai_hal.c
 components/hal/twai_hal_iram.c
 components/hal/uart_hal_iram.c
 components/hal/usb_hal.c
-components/heap/heap_private.h
-components/heap/heap_task_info.c
-components/heap/heap_tlsf.c
-components/heap/heap_tlsf.h
-components/heap/heap_tlsf_block_functions.h
-components/heap/heap_tlsf_config.h
-components/heap/heap_trace_standalone.c
 components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
-components/heap/multi_heap_config.h
 components/heap/test/test_aligned_alloc_caps.c
 components/heap/test/test_allocator_timings.c
 components/heap/test/test_diram.c
