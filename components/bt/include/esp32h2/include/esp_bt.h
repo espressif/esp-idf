@@ -96,6 +96,15 @@ typedef enum {
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
+typedef enum {
+    ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0,
+    ESP_BLE_ENHANCED_PWR_TYPE_ADV,
+    ESP_BLE_ENHANCED_PWR_TYPE_SCAN,
+    ESP_BLE_ENHANCED_PWR_TYPE_INIT,
+    ESP_BLE_ENHANCED_PWR_TYPE_CONN,
+    ESP_BLE_ENHANCED_PWR_TYPE_MAX,
+} esp_ble_enhanced_power_type_t;
+
 typedef struct {
     uint8_t type;
     uint8_t val[6];
@@ -118,7 +127,27 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
-#define CONFIG_VERSION  0x20220409
+
+/**
+ * @brief  ENHANCED API for Setting BLE TX power
+ *         Connection Tx power should only be set after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle, esp_power_level_t power_level);
+
+/**
+ * @brief  ENHANCED API of Getting BLE TX power
+ *         Connection Tx power should only be get after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @return             >= 0 - Power level, < 0 - Invalid
+ */
+esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
+
+#define CONFIG_VERSION  0x20220824
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -169,12 +198,13 @@ typedef struct {
     uint8_t ble_hci_uart_uart_parity;
     uint8_t enable_tx_cca;
     uint8_t cca_rssi_thresh;
-    uint8_t cca_drop_mode;
-    int8_t  cca_low_tx_pwr;
     uint8_t sleep_en;
     uint8_t coex_phy_coded_tx_rx_time_limit;
     uint8_t dis_scan_backoff;
-    uint8_t scan_classify_filter_enable;
+    uint8_t ble_scan_classify_filter_enable;
+    uint8_t cca_drop_mode;
+    int8_t cca_low_tx_pwr;
+    uint8_t main_xtal_freq;
     uint32_t config_magic;
 } esp_bt_controller_config_t;
 
@@ -225,7 +255,8 @@ typedef struct {
     .cca_low_tx_pwr             = 0,                                                    \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
-    .scan_classify_filter_enable = false,                                               \
+    .ble_scan_classify_filter_enable         = 0,                                       \
+    .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
