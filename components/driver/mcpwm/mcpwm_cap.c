@@ -336,6 +336,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
 
 
 esp_err_t mcpwm_capture_channel_unregister_event_callbacks(mcpwm_cap_channel_handle_t cap_channel) {
+    ESP_RETURN_ON_FALSE(cap_channel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     mcpwm_group_t *group = cap_channel->cap_timer->group;
     mcpwm_hal_context_t *hal = &group->hal;
     int cap_chan_id = cap_channel->cap_chan_id;

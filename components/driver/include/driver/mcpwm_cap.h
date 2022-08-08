@@ -182,7 +182,9 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
  * @brief Unregister the MCPWM capture channel from user callbacks
  *
  * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`
- * @return always ESP_OK
+ * @return
+ *      - ESP_OK: Unregisted event callbacks successfully
+ *      - ESP_ERR_INVALID_ARG: Unregister event callbacks failed because of invalid argument
  */
 esp_err_t mcpwm_capture_channel_unregister_event_callbacks(mcpwm_cap_channel_handle_t cap_channel);
 
