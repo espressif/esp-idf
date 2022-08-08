@@ -76,24 +76,33 @@ typedef enum {
  * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
  */
 typedef enum {
-    ESP_PWR_LVL_N27 = 0,              /*!< Corresponding to -27dbm */
-    ESP_PWR_LVL_N24 = 1,              /*!< Corresponding to -24dbm */
-    ESP_PWR_LVL_N21 = 2,              /*!< Corresponding to -21dbm */
-    ESP_PWR_LVL_N18 = 3,              /*!< Corresponding to -18dbm */
-    ESP_PWR_LVL_N15 = 4,              /*!< Corresponding to -15dbm */
-    ESP_PWR_LVL_N12 = 5,              /*!< Corresponding to -12dbm */
-    ESP_PWR_LVL_N9  = 6,              /*!< Corresponding to  -9dbm */
-    ESP_PWR_LVL_N6  = 7,              /*!< Corresponding to  -6dbm */
-    ESP_PWR_LVL_N3  = 8,              /*!< Corresponding to  -3dbm */
-    ESP_PWR_LVL_N0  = 9,              /*!< Corresponding to   0dbm */
-    ESP_PWR_LVL_P3  = 10,             /*!< Corresponding to  +3dbm */
-    ESP_PWR_LVL_P6  = 11,             /*!< Corresponding to  +6dbm */
-    ESP_PWR_LVL_P9  = 12,             /*!< Corresponding to  +9dbm */
-    ESP_PWR_LVL_P12 = 13,             /*!< Corresponding to  +12dbm */
-    ESP_PWR_LVL_P15 = 14,             /*!< Corresponding to  +15dbm */
-    ESP_PWR_LVL_P18 = 15,             /*!< Corresponding to  +18dbm */
+    ESP_PWR_LVL_N24 = 0,              /*!< Corresponding to -24dbm */
+    ESP_PWR_LVL_N21 = 1,              /*!< Corresponding to -21dbm */
+    ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18dbm */
+    ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15dbm */
+    ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12dbm */
+    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9dbm */
+    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to  -6dbm */
+    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to  -3dbm */
+    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to   0dbm */
+    ESP_PWR_LVL_P3  = 9,             /*!< Corresponding to  +3dbm */
+    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to  +6dbm */
+    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to  +9dbm */
+    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
+    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
+    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
+    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +21dbm */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
+
+typedef enum {
+    ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT = 0,
+    ESP_BLE_ENHANCED_PWR_TYPE_ADV,
+    ESP_BLE_ENHANCED_PWR_TYPE_SCAN,
+    ESP_BLE_ENHANCED_PWR_TYPE_INIT,
+    ESP_BLE_ENHANCED_PWR_TYPE_CONN,
+    ESP_BLE_ENHANCED_PWR_TYPE_MAX,
+} esp_ble_enhanced_power_type_t;
 
 typedef struct {
     uint8_t type;
@@ -117,6 +126,24 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
+/**
+ * @brief  ENHANCED API for Setting BLE TX power
+ *         Connection Tx power should only be set after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @return              ESP_OK - success, other - failed
+ */
+esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle, esp_power_level_t power_level);
+
+/**
+ * @brief  ENHANCED API of Getting BLE TX power
+ *         Connection Tx power should only be get after connection created.
+ * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
+ * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
+ * @return             >= 0 - Power level, < 0 - Invalid
+ */
+esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
 #define CONFIG_VERSION  0x20220729
 #define CONFIG_MAGIC    0x5A5AA5A5
