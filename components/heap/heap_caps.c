@@ -259,7 +259,7 @@ IRAM_ATTR void *heap_caps_malloc_prefer( size_t size, size_t num, ... )
     while (num--) {
         caps = va_arg( argp, uint32_t );
         r = heap_caps_malloc_base( size, caps );
-        if (r != NULL) {
+        if (r != NULL || size == 0) {
             break;
         }
     }
