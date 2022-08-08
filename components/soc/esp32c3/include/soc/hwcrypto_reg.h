@@ -1,16 +1,9 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #ifndef __HWCRYPTO_REG_H__
 #define __HWCRYPTO_REG_H__
 
@@ -112,11 +105,6 @@
 #define AES_H_BASE              ((DR_REG_AES_BASE) + 0x60)
 #define AES_J_BASE              ((DR_REG_AES_BASE) + 0x70)
 #define AES_T_BASE              ((DR_REG_AES_BASE) + 0x80)
-
-#define AES_INT_CLR_REG         ((DR_REG_AES_BASE) + 0xAC)
-#define AES_INT_ENA_REG         ((DR_REG_AES_BASE) + 0xB0)
-#define AES_DATE_REG            ((DR_REG_AES_BASE) + 0xB4)
-#define AES_DMA_EXIT_REG        ((DR_REG_AES_BASE) + 0xB8)
 
 /* AES_STATE_REG values */
 #define AES_STATE_IDLE 0

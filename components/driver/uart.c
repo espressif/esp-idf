@@ -19,7 +19,6 @@
 #include "hal/gpio_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "soc/uart_periph.h"
-#include "soc/rtc_cntl_reg.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"

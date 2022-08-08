@@ -10,7 +10,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/interrupt_core0_reg.h"
+#include "soc/interrupt_reg.h"
 #include "esp_attr.h"
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
