@@ -32,7 +32,7 @@ def test_examples_system_light_sleep(env, extra_data):
     groups = dut.expect(EXIT_SLEEP_REGEX)
     print('Got second sleep period, wakeup from {}, slept for {}'.format(groups[0], groups[2]))
     # sleep time error should be less than 1ms
-    assert(groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS)
+    assert groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS
 
     # this time we'll test gpio wakeup
     dut.expect(ENTERING_SLEEP_STR)
@@ -41,7 +41,7 @@ def test_examples_system_light_sleep(env, extra_data):
     time.sleep(1)
     groups = dut.expect(EXIT_SLEEP_REGEX)
     print('Got third sleep period, wakeup from {}, slept for {}'.format(groups[0], groups[2]))
-    assert(groups[0] == 'pin' and int(groups[2]) < WAKEUP_INTERVAL_MS)
+    assert groups[0] == 'pin' and int(groups[2]) < WAKEUP_INTERVAL_MS
 
     dut.expect(WAITING_FOR_GPIO_STR)
     print('Is waiting for GPIO...')
@@ -50,7 +50,7 @@ def test_examples_system_light_sleep(env, extra_data):
     dut.expect(ENTERING_SLEEP_STR)
     print('Went to sleep again')
     groups = dut.expect(EXIT_SLEEP_REGEX)
-    assert(groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS)
+    assert groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS
     print('Woke up from timer again')
 
 

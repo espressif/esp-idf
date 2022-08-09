@@ -179,7 +179,7 @@ def get_link_anchor(node):
     try:
         return 'CONFIG_%s' % node.item.name
     except AttributeError:
-        assert(node_is_menu(node))  # only menus should have no item.name
+        assert node_is_menu(node)  # only menus should have no item.name
 
     # for menus, build a link anchor out of the parents
     result = []

@@ -36,22 +36,22 @@ def test_examples_system_esp_timer(env, extra_data):
     print('Start time: {} us'.format(start_time))
 
     groups = dut.expect(TIMER_DUMP_LINE_REGEX, timeout=2)
-    assert(groups[0] == 'periodic' and int(groups[1]) == INITIAL_TIMER_PERIOD)
+    assert groups[0] == 'periodic' and int(groups[1]) == INITIAL_TIMER_PERIOD
     groups = dut.expect(TIMER_DUMP_LINE_REGEX, timeout=2)
-    assert(groups[0] == 'one-shot' and int(groups[1]) == 0)
+    assert groups[0] == 'one-shot' and int(groups[1]) == 0
 
     for i in range(0, 5):
         groups = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)
         cur_time = int(groups[0])
         diff = start_time + (i + 1) * INITIAL_TIMER_PERIOD - cur_time
         print('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
-        assert(abs(diff) < 100)
+        assert abs(diff) < 100
 
     groups = dut.expect(ONE_SHOT_REGEX, timeout=3)
     one_shot_timer_time = int(groups[0])
     diff = start_time + ONE_SHOT_TIMER_PERIOD - one_shot_timer_time
     print('One-shot timer, time: {} us, diff: {}'.format(one_shot_timer_time, diff))
-    assert(abs(diff) < 220)
+    assert abs(diff) < 220
 
     groups = dut.expect(RESTART_REGEX, timeout=3)
     start_time = int(groups[0])
@@ -62,7 +62,7 @@ def test_examples_system_esp_timer(env, extra_data):
         cur_time = int(groups[0])
         diff = start_time + (i + 1) * FINAL_TIMER_PERIOD - cur_time
         print('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
-        assert(abs(diff) < 100)
+        assert abs(diff) < 100
 
     groups = dut.expect(LIGHT_SLEEP_ENTER_REGEX, timeout=2)
     sleep_enter_time = int(groups[0])
@@ -73,14 +73,14 @@ def test_examples_system_esp_timer(env, extra_data):
     print('Enter sleep: {}, exit sleep: {}, slept: {}'.format(
         sleep_enter_time, sleep_exit_time, sleep_time))
 
-    assert(abs(sleep_time - LIGHT_SLEEP_TIME) < 1000)
+    assert abs(sleep_time - LIGHT_SLEEP_TIME) < 1000
 
     for i in range(5, 7):
         groups = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)
         cur_time = int(groups[0])
         diff = abs(start_time + (i + 1) * FINAL_TIMER_PERIOD - cur_time)
         print('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
-        assert(diff < 100)
+        assert diff < 100
 
     dut.expect(STOP_REGEX, timeout=2)
 

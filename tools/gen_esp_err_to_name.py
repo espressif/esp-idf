@@ -96,9 +96,9 @@ class ErrItem(object):
         base = '_BASE'
 
         if self.file == other.file:
-            if self.name.endswith(base) and not(other.name.endswith(base)):
+            if self.name.endswith(base) and not other.name.endswith(base):
                 return 1
-            elif not(self.name.endswith(base)) and other.name.endswith(base):
+            elif not self.name.endswith(base) and other.name.endswith(base):
                 return -1
 
         self_key = self.file + self.name
