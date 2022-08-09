@@ -153,7 +153,7 @@ Refer to the :doc:`Flash Encryption documentation </security/flash-encryption>` 
 Memory Mapping API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB"}
+{IDF_TARGET_CACHE_SIZE:default="64 KB",esp32c2=16~64 KB}
 
 {IDF_TARGET_NAME} features memory hardware which allows regions of flash memory to be mapped into instruction and data address spaces. This mapping works only for read operations. It is not possible to modify contents of flash memory by writing to a mapped memory region.
 
