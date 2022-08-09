@@ -5,6 +5,8 @@
 
 {IDF_TARGET_NAME} Wi-Fi 功能列表
 ------------------------------------
+{IDF_TARGET_NAME} 支持以下 Wi-Fi 功能：
+
 .. only:: esp32 or esp32s2 or esp32c3 or esp32s3
 
     - 支持 4 个虚拟接口，即STA、AP、Sniffer 和 reserved。
@@ -1165,7 +1167,6 @@ API esp_wifi_set_config() 可用于配置 AP。下表详细介绍了各个字段
         - 目前，ESP Wi-Fi 支持 4 个 Wi-Fi 连接。如果 max_connection 大于 4，AP 默认该值为 4。
       * - beacon_interval
         - beacon 间隔。值为 100 ~ 60000 ms，默认值为 100 ms。如果该值不在上述范围，AP 默认取 100 ms。
-
 
 
 Wi-Fi 协议模式

@@ -2479,7 +2479,6 @@ The parameters not mentioned in the following table should be set to the default
           - 31.5
           - 27.7
 
-
 .. only:: esp32s3
 
      .. list-table::
@@ -2577,13 +2576,11 @@ The parameters not mentioned in the following table should be set to the default
         The test was performed with a single stream in a shielded box using an ASUS RT-N66U router.
         {IDF_TARGET_NAME}'s CPU is single core with 160 MHz. {IDF_TARGET_NAME}'s flash is in QIO mode with 80 MHz.
 
-
 .. only:: esp32c2
 
     .. note::
         The test was performed with a single stream in a shielded box using an Redmi RM2100 router.
         {IDF_TARGET_NAME}'s CPU is single core with 120 MHz. {IDF_TARGET_NAME}'s flash is in QIO mode with 60 MHz.
-
 
 .. only:: esp32
 
