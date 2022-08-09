@@ -76,3 +76,17 @@ You are using this menu to set up project specific variables, e.g., Wi-Fi networ
 .. only:: esp32 or esp32s2 or esp32s3
 
     If you are using one of the supported development boards, you can speed up your development by using Board Support Package. See `Additional Tips <#additional-tips>`__ for more information.
+
+.. only:: esp32s2
+
+    To use the USB for flashing the {IDF_TARGET_NAME}, you need to change the channel for the console output to USB. For the {IDF_TARGET_NAME}, the default console output channel is the UART.
+
+    1. Navigate to the option ``Channel for console output``.
+
+        ``Component config  --->  ESP System Settings  ---> Channel for console output``
+
+    2. Change to the option (the default will be always UART):
+
+        ``USB CDC``
+
+    3. Save the new configuration and exit the ``menuconfig`` screen.

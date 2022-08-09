@@ -284,6 +284,7 @@ Related Documents
     :maxdepth: 1
 
     establish-serial-connection
+    flashing-troubleshooting
     ../api-guides/tools/idf-monitor
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

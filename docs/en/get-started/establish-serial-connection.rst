@@ -3,20 +3,187 @@ Establish Serial Connection with {IDF_TARGET_NAME}
 
 :link_to_translation:`zh_CN:[中文]`
 
-This section provides guidance how to establish serial connection between {IDF_TARGET_NAME} and PC.
+.. only:: not SOC_USB_OTG_SUPPORTED and not SOC_USB_SERIAL_JTAG_SUPPORTED
 
+    Establishing a serial connection with the {IDF_TARGET_NAME} target device could be done using a USB-to-UART bridge. 
+
+.. only:: SOC_USB_OTG_SUPPORTED or SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Establishing a serial connection with the {IDF_TARGET_NAME} target device could be done using USB-to-UART bridge or USB peripheral supported in {IDF_TARGET_NAME}.
+
+Some development boards have the USB-to-UART bridge installed. If a board does not have a bridge then an external bridge may be used.
+
+.. only:: SOC_USB_OTG_SUPPORTED or SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Supported USB Peripheral
+    ------------------------
+
+    The {IDF_TARGET_NAME} supports the USB peripheral. In this case, the USB-to-UART bridge is not needed and the device can be flashed directly.
+
+    .. blockdiag::
+        :scale: 70%
+        :caption: SoC with Supported USB
+        :align: center
+
+        blockdiag usb_capable_esp {
+
+            node_height = 80;
+            span_width = 160;
+            span_height = 140;
+            default_fontsize = 16
+
+            # labels of diagram nodes
+            PC [label="Personal\n Computer"];  
+            CHIP [label="{IDF_TARGET_NAME}", width=120];
+            DUMMY [shape=none, width=1]
+
+
+                # node connections
+                PC  <- DUMMY [label = "USB", fontsize=14];
+                DUMMY -> CHIP [fontsize=14];
+
+                group {
+                    shape = line;
+                    style = dotted;
+                    color = "#FF0000";
+                    label = "Development Board\n\n\n";
+                    CHIP; DUMMY;
+                }
+
+        }
+
+    Apart from the USB peripheral, some development boards also include the USB-to-UART bridge.
+
+USB-to-UART Bridge on Development Board
+---------------------------------------
+
+For boards with an installed USB-to-UART bridge, the connection between the personal computer and the bridge is USB and between the bridge and {IDF_TARGET_NAME} is UART.
+
+.. blockdiag::
+    :caption: Development Board with USB-to-UART Bridge
+    :align: center
+
+    blockdiag esp_dev_board_with_usb_to_uart_bridge {
+
+        node_height = 80;
+        span_width = 160;
+        span_height = 140;
+        default_fontsize = 16
+
+        # labels of diagram nodes
+        PC [label="Personal\nComputer"];  
+        BRIDGE [label="USB-to-UART\n Bridge"];  
+        CHIP [label="{IDF_TARGET_NAME}", width=120];
+
+            # node connections
+            PC <-> BRIDGE [label = "USB", fontsize=14];
+            BRIDGE <-> CHIP [label = "UART", fontsize=14];
+
+            group {
+                shape = line;
+                style = dotted;
+                color = "#FF0000";
+                label = "Developmment Board\n\n\n";
+                BRIDGE; CHIP;
+            }
+    }
+
+
+External USB-to-UART Bridge
+---------------------------
+
+Sometimes the USB-to-UART bridge is external. This is often used in small development boards or finished products when space and costs are crucial.
+
+.. blockdiag::
+    :caption: External USB-to-UART Bridge
+    :align: center
+
+    blockdiag external_usb_to_uart_bridge_to_esp {
+
+        node_height = 80;
+        span_width = 160;
+        span_height = 140;
+        default_fontsize = 16
+
+        # labels of diagram nodes
+        PC [label="Personal\n Computer"];  
+        BRIDGE [label="USB-to-UART\n Bridge", width=180];  
+        CHIP [label="{IDF_TARGET_NAME}", width=120];
+        DUMMY [shape=none, width=1]
+
+
+            # node connections
+            PC <-> BRIDGE [label = "USB", fontsize=14];
+            BRIDGE <- DUMMY [label = "UART", fontsize=14];
+            DUMMY -> CHIP [fontsize=14];
+
+            group {
+                shape = line;
+                style = dotted;
+                color = "#FF0000";
+                label = "Programmmer Board\n\n\n";
+                BRIDGE
+            }
+            group {
+                shape = line;
+                style = dotted;
+                color = "#FF0000";
+                label = "Development Board\n\n\n";
+                CHIP; DUMMY;
+            }
+    }
+    
+
+.. only:: SOC_USB_OTG_SUPPORTED or SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Flash using USB
+    ---------------
+    
+    For the {IDF_TARGET_NAME}, the USB peripheral is available, allowing you to flash the binaries without the need for an external USB-to-UART bridge.
+
+    {IDF_TARGET_USB_PIN_DM:default="Not Updated!", esp32c3="GPIO18", esp32s3="GPIO19", esp32s2="GPIO19"}
+    {IDF_TARGET_USB_PIN_DP:default="Not Updated!", esp32c3="GPIO19", esp32s3="GPIO20", esp32s2="GPIO20"}
+    
+    The USB on the {IDF_TARGET_NAME} uses the **{IDF_TARGET_USB_PIN_DP}** for **D+** and **{IDF_TARGET_USB_PIN_DM}** for **D-**.
+
+    .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+        .. note:: The {IDF_TARGET_NAME} supports only *USB CDC and JTAG*.
+
+        If you are flashing for the first time, you need to get the {IDF_TARGET_NAME} into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
+
+    .. only:: esp32s2
+
+        After flashing the binaries, a manual reset is needed.
+
+Flash using UART
+----------------
+
+This section provides guidance on how to establish a serial connection between {IDF_TARGET_NAME} and PC using USB-to-UART Bridge, either installed on the development board or external.
 
 Connect {IDF_TARGET_NAME} to PC
-----------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Connect the {IDF_TARGET_NAME} board to the PC using the USB cable. If device driver does not install automatically, identify USB to serial converter chip on your {IDF_TARGET_NAME} board (or external converter dongle), search for drivers in internet and install them.
+Connect the {IDF_TARGET_NAME} board to the PC using the USB cable. If device driver does not install automatically, identify USB-to-UART bridge on your {IDF_TARGET_NAME} board (or external converter dongle), search for drivers in internet and install them.
 
 Below is the list of USB to serial converter chips installed on most of the {IDF_TARGET_NAME} boards produced by Espressif together with links to the drivers:
 
 * CP210x: `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers>`_
 * FTDI: `FTDI Virtual COM Port Drivers <https://ftdichip.com/drivers/vcp-drivers/>`_
 
-Please check the board user guide for specific USB to serial converter chip used. The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with an operating system and automatically installed upon connecting the board to the PC.
+Please check the board user guide for specific USB-to-UART bridge chip used. The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with an operating system and automatically installed upon connecting the board to the PC.
+
+For devices downloaded using a USB-to-UART bridge, you can run the following command including the optional argument to define the baud rate.
+
+.. code-block:: bash
+
+    idf.py -p PORT [-b BAUD] flash
+
+You can change the flasher baud rate by replacing ``BAUD`` with the baud rate you need. The default baud rate is ``460800``.
+
+.. note::
+    
+    If the device does not support the auto download mode, you need to get into the download mode manually. To do so, press and hold the ``BOOT`` button and then press the ``RESET`` button once. After that release the ``BOOT`` button.
 
 Check port on Windows
 ---------------------
@@ -39,7 +206,6 @@ Figures below show serial port for ESP32 DevKitC and ESP32 WROVER KIT
 
     Two USB Serial Ports of ESP-WROVER-KIT in Windows Device Manager
 
-
 Check port on Linux and macOS
 -----------------------------
 
@@ -57,7 +223,6 @@ macOS ::
 
     macOS users: if you don't see the serial port then check you have the USB/serial drivers installed. See Section `Connect {IDF_TARGET_NAME} to PC`_ for links to drivers. For macOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
 
-
 .. _linux-dialout-group:
 
 Adding user to ``dialout`` on Linux
@@ -72,7 +237,6 @@ on Arch Linux this is done by adding the user to ``uucp`` group with the followi
     sudo usermod -a -G uucp $USER
 
 Make sure you re-login to enable read and write permissions for the serial port.
-
 
 Verify serial connection
 ------------------------
@@ -100,7 +264,6 @@ Run terminal, set identified serial port, baud rate = 115200, data bits = 8, sto
 
     Setting Serial Communication in PuTTY on Linux
 
-
 Then open serial port in terminal and check, if you see any log printed out by {IDF_TARGET_NAME}. The log contents will depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_.
 
 .. note::
@@ -108,7 +271,7 @@ Then open serial port in terminal and check, if you see any log printed out by {
    Close the serial terminal after verification that communication is working. If you keep the terminal session open, the serial port will be inaccessible for uploading firmware later.
 
 macOS
-^^^^^^^^
+^^^^^
 
 To spare you the trouble of installing a serial terminal program, macOS offers the **screen** command.
 
@@ -131,7 +294,6 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 .. note::
 
    Do not forget to **exit the screen session** after verifying that the communication is working. If you fail to do it and just close the terminal window, the serial port will be inaccessible for uploading firmware later.
-
 
 Example Output
 ^^^^^^^^^^^^^^
@@ -158,7 +320,6 @@ An example log is shown below. Reset the board if you do not see anything.
     entry 0x40080034
     I (44) boot: ESP-IDF v2.0-rc1-401-gf9fba35 2nd stage bootloader
     I (45) boot: compile time 18:48:10
-
     ...
 
 If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload of application to {IDF_TARGET_NAME}.

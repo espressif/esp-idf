@@ -76,4 +76,17 @@ Windows
 .. only:: esp32 or esp32s2 or esp32s3
 
     如果您使用的是支持的开发板，可以通过板级支持包 (BSP) 来协助您的开发。更多信息，请见 `其他提示 <#additional-tips>`__。
-    
+
+.. only:: esp32s2
+
+    如需使用 USB 烧录 {IDF_TARGET_NAME}，请将控制台的输出通道改为 USB。对于 {IDF_TARGET_NAME}，默认的控制台输出通道为 UART。
+
+    1. 前往选项 ``Channel for console output``。
+
+        ``Component config  --->  ESP System Settings  ---> Channel for console output``
+
+    2. 将默认选项 UART 改为：
+
+        ``USB CDC``
+
+    3. 保存设置，退出 ``menuconfig`` 界面。
