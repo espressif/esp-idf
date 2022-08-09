@@ -366,5 +366,6 @@ void eloop_destroy(void)
 		eloop_data_lock = NULL;
 	}
 	os_timer_disarm(&eloop.eloop_timer);
+	os_timer_done(&eloop.eloop_timer);
 	os_memset(&eloop, 0, sizeof(eloop));
 }
