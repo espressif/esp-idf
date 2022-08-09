@@ -1030,11 +1030,16 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
 static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
 {
     bool result = true;
-
+    uint8_t item[4];
+    size_t item_size;
     RingbufHandle_t handle = xRingbufferCreate(CONT_DATA_TEST_BUFF_LEN, RINGBUF_TYPE_NOSPLIT);
     result = result && (handle != NULL);
     spi_flash_guard_get()->start(); // Disables flash cache
+
     xRingbufferGetMaxItemSize(handle);
+    xRingbufferSendFromISR(handle, (void *)item, sizeof(item), NULL);
+    xRingbufferReceiveFromISR(handle, &item_size);
+
     spi_flash_guard_get()->end(); // Re-enables flash cache
     vRingbufferDelete(handle);
 
