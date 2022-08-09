@@ -203,6 +203,7 @@ test_idf_py:
   script:
     - cd ${IDF_PATH}/tools/test_idf_py
     - ./test_idf_py.py
+    - ./test_hints.py
 
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
