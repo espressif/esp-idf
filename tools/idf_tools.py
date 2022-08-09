@@ -44,6 +44,7 @@ import ssl
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 from collections import OrderedDict, namedtuple
 from json import JSONEncoder
@@ -1013,6 +1014,16 @@ class IDFRecord:
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, IDFRecord):
+            return False
+        return all(getattr(self, x) == getattr(other, x) for x in ('version', 'path', 'features', 'targets'))
+
+    def __ne__(self, other: object) -> bool:
+        if not isinstance(other, IDFRecord):
+            return False
+        return not self.__eq__(other)
+
     @property
     def features(self) -> List[str]:
         return self._features
@@ -1060,74 +1071,24 @@ class IDFRecord:
         idf_record_obj.update_features(record_dict.get('features', []))
         idf_record_obj.extend_targets(record_dict.get('targets', []))
 
-        unset = record_dict.get('unset')
-        # Records with unset are type SelectedIDFRecord
-        if unset:
-            return SelectedIDFRecord(idf_record_obj, unset)
-
-        return idf_record_obj
-
-
-class SelectedIDFRecord(IDFRecord):
-    """
-    SelectedIDFRecord extends IDFRecord by unset attribute
-    * unset - global variables that need to be removed from env when the active esp-idf environment is beiing deactivated
-    """
-
-    # No constructor from parent IDFRecord class is called because that conctructor create instance with default values,
-    # meanwhile SelectedIDFRecord constructor is called only to expand existing IDFRecord instance.
-    def __init__(self, idf_record_obj: IDFRecord, unset: Dict[str, Any]):
-        self.version = idf_record_obj.version
-        self.path = idf_record_obj.path
-        self._targets = idf_record_obj.targets
-        self._features = idf_record_obj.features
-        self.unset = unset
-
-    def __iter__(self):  # type: ignore
-        yield from {
-            'version': self.version,
-            'path': self.path,
-            'features': self._features,
-            'targets': self._targets,
-            'unset': self.unset
-        }.items()
-
-    def __str__(self) -> str:
-        return json.dumps(dict(self), ensure_ascii=False, indent=4)  # type: ignore
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    # When there is no need to store unset attr with IDF record, cast it back SelectedIDFRecord -> IDFRecord
-    def cast_to_idf_record(self) -> IDFRecord:
-        idf_record_obj = IDFRecord()
-        idf_record_obj.version = self.version
-        idf_record_obj.path = self.path
-        idf_record_obj._targets = self._targets
-        idf_record_obj._features = self._features
         return idf_record_obj
 
 
 class IDFEnv:
     """
-    IDFEnv represents ESP-IDF Environments installed on system. All information are saved and loaded from IDF_ENV_FILE
+    IDFEnv represents ESP-IDF Environments installed on system and is responsible for loading and saving structured data
+    All information is saved and loaded from IDF_ENV_FILE
     Contains:
-        * idf_selected_id - ID of selected ESP-IDF from idf_installed. ID is combination of ESP-IDF absolute path and version
         * idf_installed - all installed environments of ESP-IDF on system
-        * idf_previous_id - ID of ESP-IDF which was active before switching to idf_selected_id
     """
 
     def __init__(self) -> None:
         active_idf_id = active_repo_id()
-        self.idf_selected_id = active_idf_id  # type: str
         self.idf_installed = {active_idf_id: IDFRecord.get_active_idf_record()}  # type: Dict[str, IDFRecord]
-        self.idf_previous_id = ''  # type: str
 
     def __iter__(self):  # type: ignore
         yield from {
-            'idfSelectedId': self.idf_selected_id,
             'idfInstalled': self.idf_installed,
-            'idfPreviousId': self.idf_previous_id
         }.items()
 
     def __str__(self) -> str:
@@ -1137,29 +1098,26 @@ class IDFEnv:
         return self.__str__()
 
     def save(self) -> None:
-        try:
-            if global_idf_tools_path:  # mypy fix for Optional[str] in the next call
-                # the directory doesn't exist if this is run on a clean system the first time
-                mkdir_p(global_idf_tools_path)
-            with open(os.path.join(global_idf_tools_path or '', IDF_ENV_FILE), 'w') as w:
-                json.dump(dict(self), w, cls=IDFEnvEncoder, ensure_ascii=False, indent=4)  # type: ignore
-        except (IOError, OSError):
-            fatal('File {} is not accessible to write. '.format(os.path.join(global_idf_tools_path or '', IDF_ENV_FILE)))
-            raise SystemExit(1)
+        """
+        Diff current class instance with instance loaded from IDF_ENV_FILE and save only if are different
+        """
+        # It is enough to compare just active records because others can't be touched by the running script
+        if self.get_active_idf_record() != self.get_idf_env().get_active_idf_record():
+            idf_env_file_path = os.path.join(global_idf_tools_path or '', IDF_ENV_FILE)
+            try:
+                if global_idf_tools_path:  # mypy fix for Optional[str] in the next call
+                    # the directory doesn't exist if this is run on a clean system the first time
+                    mkdir_p(global_idf_tools_path)
+                with open(idf_env_file_path, 'w') as w:
+                    info('Updating {}'.format(idf_env_file_path))
+                    json.dump(dict(self), w, cls=IDFEnvEncoder, ensure_ascii=False, indent=4)  # type: ignore
+            except (IOError, OSError):
+                if not os.access(global_idf_tools_path or '', os.W_OK):
+                    raise OSError('IDF_TOOLS_PATH {} is not accessible to write. Required changes have not been saved'.format(global_idf_tools_path or ''))
+                raise OSError('File {} is not accessible to write or corrupted. Required changes have not been saved'.format(idf_env_file_path))
 
     def get_active_idf_record(self) -> IDFRecord:
         return self.idf_installed[active_repo_id()]
-
-    def get_selected_idf_record(self) -> IDFRecord:
-        return self.idf_installed[self.idf_selected_id]
-
-    def get_previous_idf_record(self) -> Union[IDFRecord, str]:
-        if self.idf_previous_id != '':
-            return self.idf_installed[self.idf_previous_id]
-        return ''
-
-    def idf_installed_update(self, idf_name: str, idf_value: IDFRecord) -> None:
-        self.idf_installed[idf_name] = idf_value
 
     @classmethod
     def get_idf_env(cls):  # type: () -> IDFEnv
@@ -1188,17 +1146,55 @@ class IDFEnv:
                     # If the active record is already in idf_installed, it is not overwritten
                     idf_env_obj.idf_installed = dict(idf_env_obj.idf_installed, **idf_installed_verified)
 
-                for file_var_name, class_var_name in [('idfSelectedId', 'idf_selected_id'), ('idfPreviousId', 'idf_previous_id')]:
-                    idf_env_value = idf_env_json.get(file_var_name)
-                    # Update the variable only if it meets the given conditions, otherwise keep default value from constructor
-                    if idf_env_value in idf_env_obj.idf_installed and idf_env_value != 'sha':
-                        idf_env_obj.__setattr__(class_var_name, idf_env_value)
-
         except (IOError, OSError, ValueError):
             # If no, empty or not-accessible to read IDF_ENV_FILE found, use default values from constructor
             pass
 
         return idf_env_obj
+
+
+class ENVState:
+    """
+    ENVState is used to handle IDF global variables that are set in environment and need to be removed when switching between ESP-IDF versions in opened shell
+    Every opened shell/terminal has it's own temporary file to store these variables
+    The temporary file's name is generated automatically with suffix 'idf_ + opened shell ID'. Path to this tmp file is stored as env global variable (env_key)
+    The shell ID is crucial, since in one terminal can be opened more shells
+    * env_key - global variable name/key
+    * deactivate_file_path - global variable value (generated tmp file name)
+    * idf_variables - loaded IDF variables from file
+    """
+    env_key = 'IDF_DEACTIVATE_FILE_PATH'
+    deactivate_file_path = os.environ.get(env_key, '')
+
+    def __init__(self) -> None:
+        self.idf_variables = {}  # type: Dict[str, Any]
+
+    @classmethod
+    def get_env_state(cls):  # type: () -> ENVState
+        env_state_obj = cls()
+
+        if cls.deactivate_file_path:
+            try:
+                with open(cls.deactivate_file_path, 'r') as fp:
+                    env_state_obj.idf_variables = json.load(fp)
+            except (IOError, OSError, ValueError):
+                pass
+        return env_state_obj
+
+    def save(self) -> str:
+        try:
+            if self.deactivate_file_path and os.path.basename(self.deactivate_file_path).endswith('idf_' + str(os.getppid())):
+                # If exported file path/name exists and belongs to actual opened shell
+                with open(self.deactivate_file_path, 'w') as w:
+                    json.dump(self.idf_variables, w, ensure_ascii=False, indent=4)  # type: ignore
+            else:
+                with tempfile.NamedTemporaryFile(delete=False, suffix='idf_' + str(os.getppid())) as fp:
+                    self.deactivate_file_path = fp.name
+                    fp.write(json.dumps(self.idf_variables, ensure_ascii=False, indent=4).encode('utf-8'))
+        except (IOError, OSError):
+            warn('File storing IDF env variables {} is not accessible to write. '
+                 'Potentional switching ESP-IDF versions may cause problems'.format(self.deactivate_file_path))
+        return self.deactivate_file_path
 
 
 def load_tools_info():  # type: () -> dict[str, IDFTool]
@@ -1373,58 +1369,45 @@ def filter_tools_info(idf_env_obj, tools_info):  # type: (IDFEnv, OrderedDict[st
         return OrderedDict(filtered_tools_spec)
 
 
-def add_unset(idf_env_obj, new_unset_vars, args):  # type: (IDFEnv, dict[str, Any], list[str]) -> None
+def add_variables_to_deactivate_file(args, new_idf_vars):  # type: (list[str], dict[str, Any]) -> str
     """
-    Add global variables that need to be removed when the active esp-idf environment is deactivated.
+    Add IDF global variables that need to be removed when the active esp-idf environment is deactivated.
     """
-    if 'PATH' in new_unset_vars:
-        new_unset_vars['PATH'] = new_unset_vars['PATH'].split(':')[:-1]  # PATH is stored as list of sub-paths without '$PATH'
+    if 'PATH' in new_idf_vars:
+        new_idf_vars['PATH'] = new_idf_vars['PATH'].split(':')[:-1]  # PATH is stored as list of sub-paths without '$PATH'
 
-    new_unset_vars['PATH'] = new_unset_vars.get('PATH', [])
+    new_idf_vars['PATH'] = new_idf_vars.get('PATH', [])
     args_add_paths_extras = vars(args).get('add_paths_extras')  # remove mypy error with args
-    new_unset_vars['PATH'] = new_unset_vars['PATH'] + args_add_paths_extras.split(':') if args_add_paths_extras else new_unset_vars['PATH']
+    new_idf_vars['PATH'] = new_idf_vars['PATH'] + args_add_paths_extras.split(':') if args_add_paths_extras else new_idf_vars['PATH']
 
-    selected_idf = idf_env_obj.get_selected_idf_record()
-    # Detection if new variables are being added to the active ESP-IDF environment, or new terminal without active ESP-IDF environment is exporting.
-    if 'IDF_PYTHON_ENV_PATH' in os.environ:
-        # Adding new variables to SelectedIDFRecord (ESP-IDF env already activated)
+    env_state_obj = ENVState.get_env_state()
 
-        if not isinstance(selected_idf, SelectedIDFRecord):
-            # Versions without feature Switching between ESP-IDF versions (version <= 4.4) don't have SelectedIDFRecord -> set new one
-            idf_env_obj.idf_installed_update(idf_env_obj.idf_selected_id, SelectedIDFRecord(selected_idf, new_unset_vars))
-        else:
-            # SelectedIDFRecord detected -> update
-            exported_unset_vars = selected_idf.unset
-            new_unset_vars['PATH'] = list(set(new_unset_vars['PATH'] + exported_unset_vars.get('PATH', [])))  # remove duplicates
-            selected_idf.unset = dict(exported_unset_vars, **new_unset_vars)  # merge two dicts
-            idf_env_obj.idf_installed_update(idf_env_obj.idf_selected_id, selected_idf)
+    if env_state_obj.idf_variables:
+        exported_idf_vars = env_state_obj.idf_variables
+        new_idf_vars['PATH'] = list(set(new_idf_vars['PATH'] + exported_idf_vars.get('PATH', [])))  # remove duplicates
+        env_state_obj.idf_variables = dict(exported_idf_vars, **new_idf_vars)  # merge two dicts
     else:
-        # Resetting new SelectedIDFRecord (new ESP-IDF env is being activated)
-        idf_env_obj.idf_installed_update(idf_env_obj.idf_selected_id, SelectedIDFRecord(selected_idf, new_unset_vars))
+        env_state_obj.idf_variables = new_idf_vars
+    deactivate_file_path = env_state_obj.save()
 
-    previous_idf = idf_env_obj.get_previous_idf_record()
-    # If new ESP-IDF environment was activated, the previous one can't be SelectedIDFRecord anymore
-    if isinstance(previous_idf, SelectedIDFRecord):
-        idf_env_obj.idf_installed_update(idf_env_obj.idf_previous_id, previous_idf.cast_to_idf_record())
-
-    return
+    return deactivate_file_path
 
 
-def deactivate_statement(idf_env_obj, args):  # type: (IDFEnv, list[str]) -> None
+def deactivate_statement(args):  # type: (list[str]) -> None
     """
-    Deactivate statement is sequence of commands, that remove some global variables from enviroment,
+    Deactivate statement is sequence of commands, that remove IDF global variables from enviroment,
         so the environment gets to the state it was before calling export.{sh/fish} script.
     """
-    selected_idf = idf_env_obj.get_selected_idf_record()
-    if not isinstance(selected_idf, SelectedIDFRecord):
-        warn('No IDF variables to unset found. Deactivation of previous esp-idf version was unsuccessful.')
+    env_state_obj = ENVState.get_env_state()
+    if not env_state_obj.idf_variables:
+        warn('No IDF variables to remove from environment found. Deactivation of previous esp-idf version was not successful.')
         return
-    unset = selected_idf.unset
+    unset_vars = env_state_obj.idf_variables
     env_path = os.getenv('PATH')  # type: Optional[str]
     if env_path:
-        cleared_env_path = ':'.join([k for k in env_path.split(':') if k not in unset['PATH']])
+        cleared_env_path = ':'.join([k for k in env_path.split(':') if k not in unset_vars['PATH']])
 
-    unset_list = [k for k in unset.keys() if k != 'PATH']
+    unset_list = [k for k in unset_vars.keys() if k != 'PATH']
     unset_format, sep = get_unset_format_and_separator(args)
     unset_statement = sep.join([unset_format.format(k) for k in unset_list])
 
@@ -1434,6 +1417,9 @@ def deactivate_statement(idf_env_obj, args):  # type: (IDFEnv, list[str]) -> Non
     deactivate_statement_str = sep.join([unset_statement, export_statement])
 
     print(deactivate_statement_str)
+    # After deactivation clear old variables
+    env_state_obj.idf_variables.clear()
+    env_state_obj.save()
     return
 
 
@@ -1519,15 +1505,12 @@ def action_check(args):  # type: ignore
 
 
 def action_export(args):  # type: ignore
-    idf_env_obj = IDFEnv.get_idf_env()
-    if args.unset:
-        if different_idf_detected():
-            deactivate_statement(idf_env_obj, args)
-        idf_env_obj.save()
+    if args.deactivate and different_idf_detected():
+        deactivate_statement(args)
         return
 
     tools_info = load_tools_info()
-    tools_info = filter_tools_info(idf_env_obj, tools_info)
+    tools_info = filter_tools_info(IDFEnv.get_idf_env(), tools_info)
     all_tools_found = True
     export_vars = {}
     paths_to_export = []
@@ -1630,18 +1613,12 @@ def action_export(args):  # type: ignore
     if paths_to_export:
         export_vars['PATH'] = path_sep.join(to_shell_specific_paths(paths_to_export) + [old_path])
 
-    export_statements = export_sep.join([export_format.format(k, v) for k, v in export_vars.items()])
-
-    active_idf_id = active_repo_id()
-    if idf_env_obj.idf_selected_id != active_idf_id:
-        idf_env_obj.idf_previous_id = idf_env_obj.idf_selected_id
-        idf_env_obj.idf_selected_id = active_idf_id
-
-    if export_statements:
+    if export_vars:
+        # if not copy of export_vars is given to function, it brekas the formatting string for 'export_statements'
+        deactivate_file_path = add_variables_to_deactivate_file(args, export_vars.copy())
+        export_vars[ENVState.env_key] = deactivate_file_path
+        export_statements = export_sep.join([export_format.format(k, v) for k, v in export_vars.items()])
         print(export_statements)
-        add_unset(idf_env_obj, export_vars, args)
-
-    idf_env_obj.save()
 
     if not all_tools_found:
         raise SystemExit(1)
@@ -1751,7 +1728,12 @@ def action_download(args):  # type: ignore
     if 'required' in tools_spec:
         idf_env_obj = IDFEnv.get_idf_env()
         targets = add_and_check_targets(idf_env_obj, args.targets)
-        idf_env_obj.save()
+        try:
+            idf_env_obj.save()
+        except OSError as err:
+            if args.targets in targets:
+                targets.remove(args.targets)
+            warn('Downloading tools for targets was not successful with error: {}'.format(err))
 
     tools_spec, tools_info_for_platform = get_tools_spec_and_platform_info(args.platform, targets, args.tools)
 
@@ -1790,7 +1772,12 @@ def action_install(args):  # type: ignore
     if 'required' in tools_spec or 'all' in tools_spec:
         idf_env_obj = IDFEnv.get_idf_env()
         targets = add_and_check_targets(idf_env_obj, args.targets)
-        idf_env_obj.save()
+        try:
+            idf_env_obj.save()
+        except OSError as err:
+            if args.targets in targets:
+                targets.remove(args.targets)
+            warn('Installing targets was not successful with error: {}'.format(err))
         info('Selected targets are: {}'.format(', '.join(targets)))
 
         # Installing tools for defined ESP_targets
@@ -1859,7 +1846,12 @@ def get_wheels_dir():  # type: () -> Optional[str]
 def get_requirements(new_features):  # type: (str) -> list[str]
     idf_env_obj = IDFEnv.get_idf_env()
     features = process_and_check_features(idf_env_obj, new_features)
-    idf_env_obj.save()
+    try:
+        idf_env_obj.save()
+    except OSError as err:
+        if new_features in features:
+            features.remove(new_features)
+        warn('Updating features was not successful with error: {}'.format(err))
     return [feature_to_requirements_path(feature) for feature in features]
 
 
@@ -2381,8 +2373,9 @@ def main(argv):  # type: (list[str]) -> None
                                                 'but has an unsupported version, a version from the tools directory ' +
                                                 'will be used instead. If this flag is given, the version in PATH ' +
                                                 'will be used.', action='store_true')
-    export.add_argument('--unset', help='Output command for unsetting tool paths, previously set with export', action='store_true')
-    export.add_argument('--add_paths_extras', help='Add idf-related path extras for unset option')
+    export.add_argument('--deactivate', help='Output command for deactivate different ESP-IDF version, previously set with export', action='store_true')
+    export.add_argument('--unset', help=argparse.SUPPRESS, action='store_true')
+    export.add_argument('--add_paths_extras', help='Add idf-related path extras for deactivate option')
     install = subparsers.add_parser('install', help='Download and install tools into the tools directory')
     install.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
                          help='Tools to install. ' +
@@ -2471,6 +2464,9 @@ def main(argv):  # type: (list[str]) -> None
     if args.non_interactive:
         global global_non_interactive
         global_non_interactive = True
+
+    if 'unset' in args and args.unset:
+        args.deactivate = True
 
     global global_idf_path
     global_idf_path = os.environ.get('IDF_PATH')

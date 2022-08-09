@@ -1,6 +1,6 @@
 # This script should be sourced, not executed.
 
-# `idf_tools.py export --unset` create statement, with keyword unset, but fish shell support only `set --erase variable`
+# `idf_tools.py export --deactivate` create statement, with keyword unset, but fish shell support only `set --erase variable`
 function unset
     set --erase $argv
 end
@@ -28,8 +28,8 @@ function __main
     "$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
 
     echo "Checking other ESP-IDF version."
-    set idf_unset ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export --unset) || return 1
-    eval "$idf_unset"
+    set idf_deactivate ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export --deactivate) || return 1
+    eval "$idf_deactivate"
 
     echo "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
@@ -85,7 +85,7 @@ function __main
     set -e ESP_PYTHON
     set -e uninstall
     set -e script_dir
-    set -e idf_unset
+    set -e idf_deactivate
 
 
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
