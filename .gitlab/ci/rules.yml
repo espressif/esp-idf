@@ -736,6 +736,8 @@
     - <<: *if-label-docker
     - <<: *if-dev-push
       changes: *patterns-docker
+    - <<: *if-dev-push
+      changes: *patterns-submodule
 
 .rules:build:example_test:
   rules:
