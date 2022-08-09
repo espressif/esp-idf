@@ -98,7 +98,7 @@ void i2s_hal_init(i2s_hal_context_t *hal, int i2s_num)
 }
 
 #if SOC_I2S_SUPPORTS_PDM_TX
-void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate)
+void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate, bool is_mono)
 {
     /* enable pdm tx mode */
     i2s_ll_tx_enable_pdm(hal->dev, true);
@@ -130,8 +130,8 @@ void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rat
     /* set pdm tx high pass filter parameters */
     i2s_ll_tx_set_pdm_hp_filter_param0(hal->dev, 6);
     i2s_ll_tx_set_pdm_hp_filter_param5(hal->dev, 7);
-    /* enable pdm sigma-delta codec */
-    i2s_ll_tx_enable_pdm_sd_codec(hal->dev, true);
+    /* enable pdm sigma-delta dac */
+    i2s_ll_tx_enable_pdm_sd_codec(hal->dev, is_mono);
     /* set pdm tx sigma-delta codec dither */
     i2s_ll_tx_set_pdm_sd_dither(hal->dev, 0);
     i2s_ll_tx_set_pdm_sd_dither2(hal->dev, 1);
@@ -250,6 +250,13 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
 #else
     i2s_ll_tx_set_chan_mod(hal->dev, hal_cfg->chan_fmt < I2S_CHANNEL_FMT_ONLY_RIGHT ? hal_cfg->chan_fmt : (hal_cfg->chan_fmt >> 1)); // 0-two channel;1-right;2-left;3-righ;4-left
 #endif
+#if SOC_I2S_SUPPORTS_PDM_CODEC
+    if (hal_cfg->mode & I2S_MODE_PDM) {
+        // Fixed to 16 while using mono mode and 32 while using stereo mode
+        data_bits = hal_cfg->chan_fmt == I2S_CHANNEL_FMT_RIGHT_LEFT ? 32 : 16;
+        chan_bits = data_bits;
+    }
+#endif
     i2s_ll_tx_set_sample_bit(hal->dev, chan_bits, data_bits);
     i2s_ll_tx_enable_mono_mode(hal->dev, is_mono);
 
@@ -259,7 +266,13 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     i2s_ll_tx_enable_msb_shift(hal->dev, shift_en);
     i2s_ll_tx_set_ws_width(hal->dev, ws_width);
 #if SOC_I2S_SUPPORTS_TDM
-    i2s_ll_tx_set_half_sample_bit(hal->dev, chan_num * chan_bits / 2);
+    uint32_t half_sample_bits = chan_num * chan_bits / 2;
+#if SOC_I2S_SUPPORTS_PDM_CODEC
+    if (hal_cfg->mode & I2S_MODE_PDM) {
+        half_sample_bits = 16; // Fixed to 16 in PDM mode
+    }
+#endif
+    i2s_ll_tx_set_half_sample_bit(hal->dev, half_sample_bits);
 #endif
 }
 
@@ -322,7 +335,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
 #if SOC_I2S_SUPPORTS_PDM_TX
         if (hal_cfg->mode & I2S_MODE_PDM) {
             /* Set tx pdm mode */
-            i2s_hal_tx_set_pdm_mode_default(hal, hal_cfg->sample_rate);
+            i2s_hal_tx_set_pdm_mode_default(hal, hal_cfg->sample_rate, hal_cfg->chan_fmt != I2S_CHANNEL_FMT_RIGHT_LEFT);
         } else
 #endif
         {

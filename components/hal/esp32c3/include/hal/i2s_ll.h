@@ -625,11 +625,11 @@ static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
  * @brief Enable I2S TX PDM sigma-delta codec
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param dither I2S TX PDM sigmadelta dither value
+ * @param enable whether enable sd dac one line mode
  */
 static inline void i2s_ll_tx_enable_pdm_sd_codec(i2s_dev_t *hw, bool enable)
 {
-    hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = enable;
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = !enable;
     hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = enable;
 }
 
