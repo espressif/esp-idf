@@ -30,7 +30,9 @@ extern void abort(void);
 #endif
 #endif
 
-#if CONFIG_HAL_DEFAULT_ASSERTION_LEVEL == 1 // silent
+#if IS_ULP_COCPU
+#define HAL_ASSERT(__e) ((void)(__e))
+#elif CONFIG_HAL_DEFAULT_ASSERTION_LEVEL == 1 // silent
 #define HAL_ASSERT(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : abort())
 #elif CONFIG_HAL_DEFAULT_ASSERTION_LEVEL == 2 // full assertion
 #define HAL_ASSERT(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, #__e))
