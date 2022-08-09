@@ -39,7 +39,7 @@ esp_err_t esp_sdp_init(void)
     msg.act = BTC_SDP_ACT_INIT;
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -55,7 +55,7 @@ esp_err_t esp_sdp_deinit(void)
     msg.act = BTC_SDP_ACT_DEINIT;
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -77,7 +77,7 @@ esp_err_t esp_sdp_search_record(esp_bd_addr_t bd_addr, esp_bt_uuid_t uuid)
     memcpy(&arg.search.sdp_uuid.uu, &uuid.uuid, sizeof(uuid.uuid));
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_sdp_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_sdp_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -103,7 +103,8 @@ esp_err_t esp_sdp_create_record(esp_bluetooth_sdp_record_t *record)
     arg.creat_record.record = (bluetooth_sdp_record *)record;
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_sdp_args_t), btc_sdp_arg_deep_copy);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_sdp_args_t),
+                                    btc_sdp_arg_deep_copy, btc_sdp_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -122,7 +123,7 @@ esp_err_t esp_sdp_remove_record(int record_handle)
     arg.remove_record.record_handle = record_handle;
 
     /* Switch to BTC context */
-    stat = btc_transfer_context(&msg, &arg, sizeof(btc_sdp_args_t), NULL);
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_sdp_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
