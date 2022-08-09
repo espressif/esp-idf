@@ -1,17 +1,12 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <sys/queue.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
@@ -575,7 +570,7 @@ static void matrix_proc_state(te_matrix_handle_t matrix_handle)
     if (matrix_handle->current_state == TE_STATE_PRESS) {
         if (matrix_handle->last_state == TE_STATE_IDLE) { //IDLE ---> Press = On_Press
             matrix_update_position(matrix_handle, press_pos);
-            ESP_LOGD(TE_DEBUG_TAG, "matrix press  (%d, %d)", matrix_handle->position.x_axis, matrix_handle->position.y_axis);
+            ESP_LOGD(TE_DEBUG_TAG, "matrix press  (%"PRIu8", %"PRIu8")", matrix_handle->position.x_axis, matrix_handle->position.y_axis);
             if (event_mask & TOUCH_ELEM_EVENT_ON_PRESS) {
                 matrix_handle->event = TOUCH_MATRIX_EVT_ON_PRESS;
                 matrix_dispatch(matrix_handle, dispatch_method);
@@ -583,7 +578,7 @@ static void matrix_proc_state(te_matrix_handle_t matrix_handle)
         } else if (matrix_handle->last_state == TE_STATE_PRESS) { //Press ---> Press = On_LongPress
             if (event_mask & TOUCH_ELEM_EVENT_ON_LONGPRESS) {
                 if (++matrix_handle->trigger_cnt >= matrix_handle->trigger_thr) {
-                    ESP_LOGD(TE_DEBUG_TAG, "matrix longpress (%d, %d)", matrix_handle->position.x_axis, matrix_handle->position.y_axis);
+                    ESP_LOGD(TE_DEBUG_TAG, "matrix longpress (%"PRIu8", %"PRIu8")", matrix_handle->position.x_axis, matrix_handle->position.y_axis);
                     matrix_handle->event = TOUCH_MATRIX_EVT_ON_LONGPRESS;
                     matrix_dispatch(matrix_handle, dispatch_method);
                     matrix_handle->trigger_cnt = 0;
@@ -592,7 +587,7 @@ static void matrix_proc_state(te_matrix_handle_t matrix_handle)
         }
     } else if (matrix_handle->current_state == TE_STATE_RELEASE) {
         if (matrix_handle->last_state == TE_STATE_PRESS) {  //Press ---> Release = On_Release
-            ESP_LOGD(TE_DEBUG_TAG, "matrix release (%d, %d)", matrix_handle->position.x_axis, matrix_handle->position.y_axis);
+            ESP_LOGD(TE_DEBUG_TAG, "matrix release (%"PRIu8", %"PRIu8")", matrix_handle->position.x_axis, matrix_handle->position.y_axis);
             if (event_mask & TOUCH_ELEM_EVENT_ON_RELEASE) {
                 matrix_handle->event = TOUCH_MATRIX_EVT_ON_RELEASE;
                 matrix_dispatch(matrix_handle, dispatch_method);
