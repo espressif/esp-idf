@@ -318,7 +318,7 @@ esp_err_t gptimer_enable(gptimer_handle_t timer)
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire pm_lock failed");
     }
-    // enable interrupt interupt service
+    // enable interrupt service
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(timer->intr), TAG, "enable interrupt service failed");
     }

@@ -76,7 +76,7 @@ TEST_CASE("mcpwm_comparator_event_callback", "[mcpwm]")
         .group_id = 0,
     };
     mcpwm_comparator_config_t comparator_config = {};
-    printf("install timer, operator and comparator");
+    printf("install timer, operator and comparator\r\n");
     TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
     TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
     TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparator));

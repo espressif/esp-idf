@@ -283,7 +283,7 @@ esp_err_t pcnt_unit_enable(pcnt_unit_handle_t unit)
     if (unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(unit->pm_lock), TAG, "acquire pm_lock failed");
     }
-    // enable interupt service
+    // enable interrupt service
     if (unit->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(unit->intr), TAG, "enable interrupt service failed");
     }

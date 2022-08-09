@@ -134,6 +134,8 @@ typedef struct {
 /**
  * @brief Create MCPWM capture channel
  *
+ * @note The created capture channel won't be enabled until calling `mcpwm_capture_channel_enable`
+ *
  * @param[in] cap_timer MCPWM capture timer, allocated by `mcpwm_new_capture_timer()`, will be connected to the new capture channel
  * @param[in] config MCPWM capture channel configuration
  * @param[out] ret_cap_channel Returned MCPWM capture channel
@@ -158,6 +160,33 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
 esp_err_t mcpwm_del_capture_channel(mcpwm_cap_channel_handle_t cap_channel);
 
 /**
+ * @brief Enable MCPWM capture channel
+ *
+ * @note This function will transit the channel state from init to enable.
+ * @note This function will enable the interrupt service, if it's lazy installed in `mcpwm_capture_channel_register_event_callbacks()`.
+ *
+ * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`
+ * @return
+ *      - ESP_OK: Enable MCPWM capture channel successfully
+ *      - ESP_ERR_INVALID_ARG: Enable MCPWM capture channel failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Enable MCPWM capture channel failed because the channel is already enabled
+ *      - ESP_FAIL: Enable MCPWM capture channel failed because of other error
+ */
+esp_err_t mcpwm_capture_channel_enable(mcpwm_cap_channel_handle_t cap_channel);
+
+/**
+ * @brief Disable MCPWM capture channel
+ *
+ * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`
+ * @return
+ *      - ESP_OK: Disable MCPWM capture channel successfully
+ *      - ESP_ERR_INVALID_ARG: Disable MCPWM capture channel failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Disable MCPWM capture channel failed because the channel is not enabled yet
+ *      - ESP_FAIL: Disable MCPWM capture channel failed because of other error
+ */
+esp_err_t mcpwm_capture_channel_disable(mcpwm_cap_channel_handle_t cap_channel);
+
+/**
  * @brief Group of supported MCPWM capture event callbacks
  * @note The callbacks are all running under ISR environment
  */
@@ -168,6 +197,7 @@ typedef struct {
 /**
  * @brief Set event callbacks for MCPWM capture channel
  *
+ * @note The first call to this function needs to be before the call to `mcpwm_capture_channel_enable`
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
  *
  * @param[in] cap_channel MCPWM capture channel handle, allocated by `mcpwm_new_capture_channel()`
@@ -176,6 +206,7 @@ typedef struct {
  * @return
  *      - ESP_OK: Set event callbacks successfully
  *      - ESP_ERR_INVALID_ARG: Set event callbacks failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Set event callbacks failed because the channel is not in init state
  *      - ESP_FAIL: Set event callbacks failed because of other error
  */
 esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handle_t cap_channel, const mcpwm_capture_event_callbacks_t *cbs, void *user_data);
@@ -187,6 +218,7 @@ esp_err_t mcpwm_capture_channel_register_event_callbacks(mcpwm_cap_channel_handl
  * @return
  *      - ESP_OK: Trigger software catch successfully
  *      - ESP_ERR_INVALID_ARG: Trigger software catch failed because of invalid argument
+ *      - ESP_ERR_INVALID_STATE: Trigger software catch failed because the channel is not enabled yet
  *      - ESP_FAIL: Trigger software catch failed because of other error
  */
 esp_err_t mcpwm_capture_channel_trigger_soft_catch(mcpwm_cap_channel_handle_t cap_channel);
