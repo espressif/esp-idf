@@ -69,6 +69,9 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     uint32_t cap_value[2] = {0};
     TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(pps_channel, &cbs, cap_value));
 
+    printf("enable capture channel\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_enable(pps_channel));
+
     printf("enable and start capture timer\r\n");
     TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
     TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
@@ -82,6 +85,7 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     TEST_ASSERT_UINT_WITHIN(2000, clk_src_res / 1000, cap_value[1] - cap_value[0]);
 
     printf("uninstall capture channel and timer\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_disable(pps_channel));
     TEST_ESP_OK(mcpwm_del_capture_channel(pps_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));

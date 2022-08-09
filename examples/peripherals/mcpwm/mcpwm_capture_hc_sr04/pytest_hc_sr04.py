@@ -12,5 +12,6 @@ def test_hc_sr04_example(dut: Dut) -> None:
     dut.expect_exact('example: Install capture timer')
     dut.expect_exact('example: Install capture channel')
     dut.expect_exact('example: Register capture callback')
+    dut.expect_exact('example: Enable capture channel')
     dut.expect_exact('example: Configure Trig pin')
     dut.expect_exact('example: Enable and start capture timer')

@@ -308,7 +308,7 @@ LCD
     - ``mcpwm_fault_set_oneshot_mode``, ``mcpwm_fault_set_cyc_mode`` are replaced by :cpp:func:`mcpwm_operator_set_brake_on_fault` and :cpp:func:`mcpwm_generator_set_actions_on_brake_event`.
     - ``mcpwm_capture_enable`` is removed. It's duplicated to :cpp:func:`mcpwm_capture_enable_channel`.
     - ``mcpwm_capture_disable`` is removed. It's duplicated to :cpp:func:`mcpwm_capture_capture_disable_channel`.
-    - ``mcpwm_capture_enable_channel`` and ``mcpwm_capture_disable_channel`` are replaced by :cpp:func:`mcpwm_new_capture_channel` and :cpp:func:`mcpwm_del_capture_channel`.
+    - ``mcpwm_capture_enable_channel`` and ``mcpwm_capture_disable_channel`` are replaced by :cpp:func:`mcpwm_capture_channel_enable` and :cpp:func:`mcpwm_capture_channel_disable`.
     - ``mcpwm_capture_signal_get_value`` and ``mcpwm_capture_signal_get_edge``: Capture timer count value and capture edge are provided in the capture event callback, via :cpp:type:`mcpwm_capture_event_data_t`. Capture data are only valuable when capture event happens. Providing single API to fetch capture data is meaningless.
     - ``mcpwm_sync_enable`` is removed. It's duplicated to :cpp:func:`mcpwm_sync_configure`.
     - ``mcpwm_sync_configure`` is replaced by :cpp:func:`mcpwm_timer_set_phase_on_sync`.

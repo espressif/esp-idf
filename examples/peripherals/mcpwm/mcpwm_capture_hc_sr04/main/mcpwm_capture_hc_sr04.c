@@ -83,6 +83,9 @@ void app_main(void)
     };
     ESP_ERROR_CHECK(mcpwm_capture_channel_register_event_callbacks(cap_chan, &cbs, cur_task));
 
+    ESP_LOGI(TAG, "Enable capture channel");
+    ESP_ERROR_CHECK(mcpwm_capture_channel_enable(cap_chan));
+
     ESP_LOGI(TAG, "Configure Trig pin");
     gpio_config_t io_conf = {
         .mode = GPIO_MODE_OUTPUT,
