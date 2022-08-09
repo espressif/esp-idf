@@ -7,10 +7,33 @@
 # Rules to write regex for hints on how to resolve errors
 # - Do not use more than one whitespace in a row. The script automatically merges several whitespaces into one when capturing output
 # - Do not use \n in your regex. They are all automatically deletes by the script when capturing output
+
+-
+    re: "error: implicit declaration of function 'bootloader_common_get_reset_reason'"
+    hint: "'bootloader_common_get_reset_reason()' has been removed. Please use the function 'esp_rom_get_reset_reason()' in the ROM component."
+
+-
+    re: "error: implicit declaration of function 'esp_secure_boot_verify_sbv2_signature_block|esp_secure_boot_verify_rsa_signature_block'"
+    hint: "'esp_secure_boot_verify_sbv2_signature_block()' and 'esp_secure_boot_verify_rsa_signature_block()' and has been made private and are no longer available."
+
 -
     re: "error: implicit declaration of function '(\\w+)'"
     hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'."
     match_to_output: True
+-
+    re: "fatal error: esp32\\w*\\/clk.h: No such file or directory"
+    hint: "The ESP Clock API (functions/types/macros prefixed with 'esp_clk') has been made into a private API. If users still require usage of the ESP Clock API (though this is not recommended), it can be included via  '#include \"esp_private/esp_clk.h\"'."
+-
+    re: "fatal error: esp32\\w*\\/cache_err_int.h: No such file or directory"
+    hint: "The Cache Error Interrupt API (functions/types/macros prefixed with 'esp_cache_err') has been made into a private API. If users still require usage of the Cache Error Interrupt API (though this is not recommended), it can be included via  '#include \"esp_private/cache_err_int.h\"'"
+
+-
+    re: "fatal error: brownout.h: No such file or directory"
+    hint: "The Brownout API (functions/types/macros prefixed with 'esp_brownout') has been made into a private API. If users still require usage of the Brownout API (though this is not recommended), it can be included via  '#include \"esp_private/brownout.h\"'."
+
+-
+    re: "fatal error: trax.h: No such file or directory"
+    hint: "The Trax API (functions/types/macros prefixed with 'trax_') has been made into a private API. If users still require usage of the Trax API (though this is not recommended), it can be included via  '#include \"esp_private/trax.h\"'."
 
 -
     re: "fatal error: [\\w/]+\\.h: No such file or directory"
@@ -43,3 +66,7 @@
 -
     re: "format '([^']+)' expects argument of type '((unsigned )?int|long)', but argument (\\w+) has type '([u]?int32_t)'( {aka '([^']+)'})?"
     hint: "The issue is better to resolve by replacing format specifiers to 'PRI'-family macros (include <inttypes.h> header file)."
+
+-
+    re: "Failed to resolve component 'esp_ipc'"
+    hint: "IPC component has been moved to esp_system. Any `REQUIRES esp_ipc` can simply be deleted as esp_system is REQUIRED by default."
