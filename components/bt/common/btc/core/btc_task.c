@@ -231,13 +231,15 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
  * @param  arg       paramter
  * @param  arg_len   length of paramter
  * @param  copy_func deep copy function
+ * @param  free_func deep free function
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
  */
-bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
+bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
 {
     btc_msg_t* lmsg;
-
+    bt_status_t ret;
     //                              arg XOR arg_len
     if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
         return BT_STATUS_PARM_INVALID;
@@ -266,8 +268,18 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         lmsg->arg = NULL;
     }
 
-    return btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
+    ret = btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
+    if (ret != BT_STATUS_SUCCESS) {
+        if (copy_func && free_func) {
+            free_func(lmsg);
+        }
+        if (lmsg->arg) {
+            osi_free(lmsg->arg);
+        }
+        osi_free(lmsg);
+    }
 
+    return ret;
 }
 
 /**

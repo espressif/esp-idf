@@ -300,7 +300,7 @@ static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_d
         msg.pid = BTC_PID_GAP_BT;
         msg.act = BTC_GAP_BT_SEARCH_DEVICES_EVT;
 
-        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_devices_copy_cb);
+        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_devices_copy_cb, NULL);
     } while (0);
 }
 
@@ -451,7 +451,7 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_S
         msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_GAP_BT;
         msg.act = BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT;
-        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_service_record_copy_cb);
+        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_service_record_copy_cb, NULL);
     } while (0);
 
 }
@@ -544,7 +544,7 @@ static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH 
         msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_GAP_BT;
         msg.act = BTC_GAP_BT_SEARCH_SERVICES_EVT;
-        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_services_copy_cb);
+        btc_transfer_context(&msg, &search, sizeof(tBTA_DM_SEARCH_PARAM), search_services_copy_cb, NULL);
     } while (0);
 }
 
@@ -622,7 +622,7 @@ static void btc_gap_bt_read_rssi_delta_cmpl_callback(void *p_data)
     param.read_rssi_delta.rssi_delta = result->rssi;
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+                               sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -713,7 +713,7 @@ static void btc_gap_bt_set_afh_channels_cmpl_callback(void *p_data)
     param.set_afh_channels.stat = btc_btm_status_to_esp_status(result->status);
 
     ret = btc_transfer_context(&msg, &param,
-                               sizeof(esp_bt_gap_cb_param_t), NULL);
+                               sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
@@ -739,7 +739,7 @@ static void btc_gap_bt_read_remote_name_cmpl_callback(void *p_data)
     param.read_rmt_name.stat = btc_btm_status_to_esp_status(result->status);
     memcpy(param.read_rmt_name.rmt_name,result->remote_bd_name,ESP_BT_GAP_MAX_BDNAME_LEN);
 
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }
@@ -765,7 +765,7 @@ static void btc_gap_bt_set_qos_cmpl_callback(void *p_data)
     param.qos_cmpl.t_poll = result->flow.latency / 625;
     memcpy(param.qos_cmpl.bda,result->rem_bda,BD_ADDR_LEN);
 
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL);
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
     }

@@ -266,7 +266,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
             param.connect.conn_id = event->connect.conn_handle;
             /* save connection handle */
             conn_handle = event->connect.conn_handle;
-            btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+            btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
         }
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
@@ -293,7 +293,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         msg.pid = BTC_PID_BLUFI;
         msg.act = ESP_BLUFI_EVENT_BLE_DISCONNECT;
         memcpy(param.disconnect.remote_bda, event->disconnect.conn.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
-        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+        btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 
         return 0;
     case BLE_GAP_EVENT_CONN_UPDATE:
@@ -424,7 +424,7 @@ void esp_blufi_deinit(void)
     msg.pid = BTC_PID_BLUFI;
     msg.act = ESP_BLUFI_EVENT_DEINIT_FINISH;
     param.deinit_finish.state = ESP_BLUFI_DEINIT_OK;
-    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+    btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
 }
 
 void esp_blufi_send_notify(void *arg)
@@ -496,7 +496,7 @@ int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg)
                 memcpy(param.connect.remote_bda, desc.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
 
                 param.connect.conn_id = event->connect.conn_handle;
-                btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+                btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
             }
             return 0;
         case BLE_GAP_EVENT_DISCONNECT: {
@@ -523,7 +523,7 @@ int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg)
             memcpy(param.disconnect.remote_bda,
                    event->disconnect.conn.peer_id_addr.val,
                    ESP_BLUFI_BD_ADDR_LEN);
-            btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
+            btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL, NULL);
             return 0;
         }
 

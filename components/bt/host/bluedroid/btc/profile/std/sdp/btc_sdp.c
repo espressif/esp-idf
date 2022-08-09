@@ -66,7 +66,7 @@ static void sdp_disable_handler(void)
     msg.pid = BTC_PID_SDP;
     msg.act = BTA_SDP_DISENABLE_EVT;
 
-    status = btc_transfer_context(&msg, NULL, 0, NULL);
+    status = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
 
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
@@ -855,7 +855,7 @@ static void btc_sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_da
     msg.pid = BTC_PID_SDP;
     msg.act = event;
 
-    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_SDP), NULL);
+    status = btc_transfer_context(&msg, p_data, sizeof(tBTA_SDP), NULL, NULL);
 
     if (status != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
