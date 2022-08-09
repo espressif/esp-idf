@@ -407,7 +407,7 @@ esp_err_t usbh_process(void)
         Exit critical section to handle device action flags in their listed order
         --------------------------------------------------------------------- */
         USBH_EXIT_CRITICAL();
-        ESP_LOGD(USBH_TAG, "Processing actions 0x%x", action_flags);
+        ESP_LOGD(USBH_TAG, "Processing actions 0x%"PRIx32"", action_flags);
         //Sanity check. If the device is being freed, there must not be any other action flags set
         assert(!(action_flags & DEV_FLAG_ACTION_FREE) || action_flags == DEV_FLAG_ACTION_FREE);
 
