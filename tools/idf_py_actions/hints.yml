@@ -17,6 +17,40 @@
     hint: "'esp_secure_boot_verify_sbv2_signature_block()' and 'esp_secure_boot_verify_rsa_signature_block()' and has been made private and are no longer available."
 
 -
+    re: "error: implicit declaration of function 'esp_cpu_ccount_t'"
+    hint: "Use esp_cpu_cycle_count_t defined in esp_cpu.h instead of esp_cpu_ccount_t."
+
+-
+    re: "error: implicit declaration of function 'esp_cpu_(g|s)et_ccount'"
+    hint: "Use esp_cpu_{}et_cycle_count() defined in esp_cpu.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (soc/cpu.h|compare_set.h): No such file or directory"
+    hint: "{} was removed. Include and use the API function provided by esp_cpu.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (esp_intr.h): No such file or directory"
+    hint: "{} was removed. Include esp_intr_alloc.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (esp_panic.h): No such file or directory"
+    hint: "{} was made private. Use functionalities provided in esp_debug_helpers.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: soc/(spinlock.h|clk_ctrl_os.h|rtc_wdt.h): No such file or directory"
+    hint: "{} must be included without the 'soc' part."
+    match_to_output: True
+
+-
+    re: "fatal error: (soc_log.h): No such file or directory"
+    hint: "{} was renamed and made private. Consider using the logging APIs provided under esp_log.h instead."
+    match_to_output: True
+
+-
     re: "error: implicit declaration of function '(\\w+)'"
     hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'."
     match_to_output: True
