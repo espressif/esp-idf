@@ -54,7 +54,7 @@ esp_hw_support
 - ``esp_cpu_get_ccount()``、``esp_cpu_set_ccount()`` 和 ``esp_cpu_in_ocd_debug_mode()`` 已从 ``esp_cpu.h`` 中移除。请分别使用 ``esp_cpu_get_cycle_count()``、``esp_cpu_set_cycle_count()`` 和 ``esp_cpu_dbgr_is_attached()`` 代替。
 - 头文件 ``esp_intr.h`` 已被移除。请包含 ``esp_intr_alloc.h`` 以分配和操作中断。
 - Panic API（即以 ``esp_panic`` 为前缀的函数、类型或宏）已被更新为私有 API。因此，原先的包含路径 ``#include "esp_panic.h"`` 已被移除。如仍需使用 Panic API（并不推荐），请使用 ``#include "esp_private/panic_reason.h"`` 来包含。此外，请包含 ``esp_debug_helpers.h`` 以使用与调试有关的任意辅助函数，如打印回溯。
-- 头文件 ``soc_log.h`` 现更名为 ``esp_hw_log.h``，所有日志宏也从 ``SOC_LOGx`` 更新为 ``ESP_HW_LOGx``。请使用更新后的格式。
+- 头文件 ``soc_log.h`` 现更名为 ``esp_hw_log.h``，并已更新为私有。建议用户使用 ``esp_log.h`` 头文件下的日志 API。
 - 包含头文件 ``spinlock.h``、``clk_ctrl_os.h`` 和 ``rtc_wdt.h`` 时不应当使用 ``soc`` 前缀，如 ``#include "spinlock.h"``。
 - ``esp_chip_info()`` 命令返回芯片版本，格式为 = 100 * ``主要 eFuse 版本`` + ``次要 eFuse 版本``。因此，为适应新格式， ``esp_chip_info_t`` 结构体中的 ``revision`` 被扩展为 uint16_t。
 
