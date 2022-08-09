@@ -14,16 +14,15 @@
 #include "sdkconfig.h"
 #include "decode_image.h"
 
-uint16_t **pixels;
+uint16_t *pixels;
 
 //Grab a rgb16 pixel from the esp32_tiles image
 static inline uint16_t get_bgnd_pixel(int x, int y)
 {
-    //Image has an 8x8 pixel margin, so we can also resolve e.g. [-3, 243]
-    x+=8;
-    y+=8;
-    return pixels[y][x];
+    //Get color of the pixel on x,y coords
+    return (uint16_t) *(pixels + (y * IMAGE_W) + x);
 }
+
 //This variable is used to detect the next frame.
 static int prev_frame=-1;
 
