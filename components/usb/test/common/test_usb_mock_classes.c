@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "usb/usb_types_ch9.h"
@@ -83,15 +83,15 @@ bool mock_msc_scsi_check_csw(mock_msc_bulk_csw_t *csw, uint32_t tag_expect)
     bool no_issues = true;
     if (csw->dCSWSignature != 0x53425355) {
         no_issues = false;
-        printf("Warning: csw signature corrupt (0x%X)\n", csw->dCSWSignature);
+        printf("Warning: csw signature corrupt (0x%"PRIX32")\n", csw->dCSWSignature);
     }
     if (csw->dCSWTag != tag_expect) {
         no_issues = false;
-        printf("Warning: csw tag unexpected! Expected %d got %d\n", tag_expect, csw->dCSWTag);
+        printf("Warning: csw tag unexpected! Expected %"PRIu32" got %"PRIu32"\n", tag_expect, csw->dCSWTag);
     }
     if (csw->dCSWDataResidue) {
         no_issues = false;
-        printf("Warning: csw indicates data residue of %d bytes!\n", csw->dCSWDataResidue);
+        printf("Warning: csw indicates data residue of %"PRIu32" bytes!\n", csw->dCSWDataResidue);
     }
     if (csw->bCSWStatus) {
         no_issues = false;
