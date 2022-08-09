@@ -49,6 +49,8 @@ typedef enum {
 
 void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
+void btc_ble_mesh_health_client_arg_deep_free(btc_msg_t *msg);
+
 void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg);
 
 void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg);

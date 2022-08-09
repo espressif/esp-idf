@@ -53,6 +53,8 @@ void btc_ble_mesh_config_client_cb_handler(btc_msg_t *msg);
 
 void btc_ble_mesh_config_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
+void btc_ble_mesh_config_client_arg_deep_free(btc_msg_t *msg);
+
 void btc_ble_mesh_config_client_publish_callback(uint32_t opcode, struct bt_mesh_model *model,
                                                  struct bt_mesh_msg_ctx *ctx,
                                                  struct net_buf_simple *buf);
