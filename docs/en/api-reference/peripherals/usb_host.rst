@@ -1,9 +1,6 @@
 USB Host
 ========
 
-.. warning::
-    The USB Host Library API is a beta version thus is subject to change.
-
 The document provides information regarding the USB Host Library. This document is split into the following sections:
 
 .. contents:: Sections
