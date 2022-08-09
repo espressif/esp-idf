@@ -43,3 +43,8 @@ PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
 
 PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
 PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable);
+
+PROVIDE ( esp_rom_spiflash_fix_dummylen = spi_dummy_len_fix );
+PROVIDE ( esp_rom_spiflash_set_drvs = SetSpiDrvs);
+PROVIDE ( esp_rom_spiflash_select_padsfunc = SelectSpiFunction );
+PROVIDE ( esp_rom_spiflash_common_cmd = SPI_Common_Command );

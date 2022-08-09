@@ -47,6 +47,11 @@ PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
 PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable );
 PROVIDE ( esp_rom_spiflash_erase_area = SPIEraseArea );
 
+PROVIDE ( esp_rom_spiflash_fix_dummylen = spi_dummy_len_fix );
+PROVIDE ( esp_rom_spiflash_set_drvs = SetSpiDrvs);
+PROVIDE ( esp_rom_spiflash_select_padsfunc = SelectSpiFunction );
+PROVIDE ( esp_rom_spiflash_common_cmd = SPI_Common_Command );
+
 PROVIDE ( esp_rom_regi2c_read = rom_i2c_readReg );
 PROVIDE ( esp_rom_regi2c_read_mask = rom_i2c_readReg_Mask );
 PROVIDE ( esp_rom_regi2c_write = rom_i2c_writeReg );
