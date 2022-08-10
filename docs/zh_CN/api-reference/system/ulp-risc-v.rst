@@ -11,7 +11,7 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
 如果您已依照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP RISC-V 工具链已经被默认安装到了您的开发环境中。
 
-.. note: 在早期版本的ESP-IDF中，RISC-V工具链具有不同的名称：`riscv-none-embed-gcc`。
+.. note: 在早期版本的 ESP-IDF 中，RISC-V 工具链具有不同的名称：`riscv-none-embed-gcc`。
 
 编译 ULP RISC-V 代码
 -----------------------------
@@ -51,18 +51,20 @@ ULP RISC-V 协处理器代码以 C 语言（或汇编语言）编写，使用基
 
    6. **创建 LD 导出脚本和头文件** （``ulp_app_name.ld`` 和 ``ulp_app_name.h``），包含来自 ``ulp_app_name.sym`` 的符号。此步骤可借助 ``esp32ulp_mapgen.py`` 工具来完成。
 
-   7. **将生成的二进制文件添加到要嵌入应用程序的二进制文件列表中。** 
+   7. **将生成的二进制文件添加到要嵌入应用程序的二进制文件列表中。**
+
+.. _ulp-riscv-access-variables:
 
 访问 ULP RISC-V 程序变量
 ----------------------------
 
-在 ULP RISC-V 程序中定义的全局符号也可以在主程序中使用。 
+在 ULP RISC-V 程序中定义的全局符号也可以在主程序中使用。
 
 例如，ULP RISC-V 程序可以定义 ``measurement_count`` 变量，此变量可以定义程序从深度睡眠中唤醒芯片之前需要进行的 ADC 测量的次数。
 
 .. code-block:: c
 
-    volatile int measurement_count; 
+    volatile int measurement_count;
 
     int some_function()
     {
@@ -136,10 +138,26 @@ ULP RISC-V 协处理器由定时器启动，调用 :cpp:func:`ulp_riscv_run` 即
 
 如需禁用定时器（有效防止 ULP 程序再次运行），请清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位，此项操作可在 ULP 代码或主程序中进行。
 
+
+调试 ULP RISC-V 程序
+----------------------------------
+
+在对 ULP RISC-V 进行编程时，若程序未按预期运行，有时很难找出的原因。因为其内核的简单性，许多标准的调试方法如 JTAG 或 ``printf`` 无法使用。
+
+以下方法可以帮助您调试 ULP RISC-V 程序：
+
+ * 通过共享变量查看程序状态：如 :ref:`ulp-riscv-access-variables` 中所述，主 CPU 以及 ULP 内核都可以轻松访问 RTC 内存中的全局变量。通过 ULP 向该变量中写入状态信息，然后通过主 CPU 读取状态信息，可帮助您了解 ULP 内核的状态。该方法的缺点在于它要求主 CPU 一直处于唤醒状态，但现实情况可能并非如此。有时，保持主 CPU 处于唤醒状态还可能会掩盖一些问题，因为某些问题可能仅在特定电源域断电时才会出现。
+
+ * 使用 bit-banged UART 驱动程序打印：ULP RISC-V 组件中有一个低速 bit-banged UART TX 驱动程序，可用于打印独立于主 CPU 状态的信息。有关如何使用此驱动程序的示例，请参阅 :example:`system/ulp_riscv/uart_print`。
+
+ * 陷阱信号：ULP RISC-V 有一个硬件陷阱，将在特定条件下触发，例如非法指令。这将导致主 CPU 被 :cpp:enumerator:`ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG` 唤醒。
+
+
 应用示例
 --------------------
 
 * 主处理器处于 Deep-sleep 状态时，ULP RISC-V 协处理器轮询 GPIO：:example:`system/ulp_riscv/gpio`。
+* ULP RISC-V 协处理器使用 bit-banged UART 驱动程序打印: :example:`system/ulp_riscv/uart_print`.
 * 主处理器处于 Deep-sleep 状态时，ULP RISC-V 协处理器读取外部温度传感器：:example:`system/ulp_riscv/ds18b20_onewire`。
 
 API 参考
