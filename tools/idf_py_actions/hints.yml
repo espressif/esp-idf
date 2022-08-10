@@ -52,8 +52,9 @@
 
 -
     re: "error: implicit declaration of function '(\\w+)'"
-    hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'."
+    hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the function has been removed, renamed or replaced by an alternative function - refer to the migration guide for more information."
     match_to_output: True
+
 -
     re: "fatal error: esp32\\w*\\/clk.h: No such file or directory"
     hint: "The ESP Clock API (functions/types/macros prefixed with 'esp_clk') has been made into a private API. If users still require usage of the ESP Clock API (though this is not recommended), it can be included via  '#include \"esp_private/esp_clk.h\"'."
@@ -71,7 +72,7 @@
 
 -
     re: "fatal error: [\\w/]+\\.h: No such file or directory"
-    hint: "Please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'."
+    hint: "Please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the header file has been removed, renamed or relocated - refer to the migration guide for more information."
 
 -
     re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
@@ -84,6 +85,10 @@
 -
     re: "CMake Error at .* \\(message\\): Could not create symbolic link for: error\\.c --> Cannot create a file when that file already exists\\."
     hint: "Run 'idf.py fullclean' and try the build again."
+
+-
+    re: "CMake Error at .* \\(message\\): Directory specified in EXTRA_COMPONENT_DIRS doesn't exist: \\/.*\\/examples\\/common_components\\/.*"
+    hint: "The component with path specified in the EXTRA_COMPONENT_DIRS variable has been moved to IDF component manager (or has been removed).\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
 
 -
     re: "ImportError: bad magic number in 'kconfiglib':"
@@ -104,3 +109,16 @@
 -
     re: "Failed to resolve component 'esp_ipc'"
     hint: "IPC component has been moved to esp_system. Any `REQUIRES esp_ipc` can simply be deleted as esp_system is REQUIRED by default."
+
+-
+    re: "error: invalid use of incomplete typedef 'esp_tls_t'"
+    hint: "The struct 'esp_tls_t' has now been made private - its elements can be only be accessed/modified through respective getter/setter functions. Please refer to the migration guide for more information."
+
+-
+    re: "error: enumeration value 'HTTP_EVENT_REDIRECT' not handled in switch"
+    hint: "The event handler, specified in the 'event_handler' element, of the 'esp_http_client_config_t' struct now needs to handle the new 'HTTP_EVENT_REDIRECT' event case."
+
+-
+    re: "Failed to resolve component '(?!esp_ipc)(\\w+)'"
+    hint: "The component {} has been moved to the IDF component manager or has been removed and refactored into some other component.\nPlease look out for component in 'https://components.espressif.com' and add using 'idf.py add-dependency' command.\nRefer to the migration guide for more details."
+    match_to_output: True
