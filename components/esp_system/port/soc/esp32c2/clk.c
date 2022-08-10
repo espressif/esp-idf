@@ -71,7 +71,9 @@ static const char *TAG = "clk";
     }
     rtc_init(cfg);
 
-    assert(rtc_clk_xtal_freq_get() == CONFIG_ESP32C2_XTAL_FREQ);
+#ifndef CONFIG_XTAL_FREQ_AUTO
+    assert(rtc_clk_xtal_freq_get() == CONFIG_XTAL_FREQ);
+#endif
 
     bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
     rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
