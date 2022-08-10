@@ -352,8 +352,9 @@ void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
  *
  * @param hal Context of the HAL layer
  * @param sample_rate PDM sample rate
+ * @param is_mono whether is mono
  */
-void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate);
+void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rate, bool is_mono);
 #endif
 
 #if SOC_I2S_SUPPORTS_PDM_RX
