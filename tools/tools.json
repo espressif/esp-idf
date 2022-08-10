@@ -173,51 +173,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "5da31dfe66ee97c0e940d81e7fac3fc604bb4cbf75294a29e6d5384ae08102dc",
-            "size": 63661064,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz"
+            "sha256": "698d8407e18275d18feb7d1afdb68800b97904fbe39080422fb8609afa49df30",
+            "size": 64781328,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-linux-amd64.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "1c1fadb50ecfd120b714e6ba094dca3f5a6ee511492dc45fe51f2cd2ed70fd61",
-            "size": 57730788,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-linux-arm64.tar.xz"
+            "sha256": "48ed01abff1e89e6fe1c3ebe4e00df6a0a67e53ae24979970464a4a3b64aa622",
+            "size": 60675980,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-linux-arm64.tar.xz"
           },
           "linux-armel": {
-            "sha256": "c588a0e760ed81be075a4e7d107e06a6842641c55a9ffd31b13ed258fd32cc7f",
-            "size": 59114212,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-linux-armel.tar.xz"
+            "sha256": "0e6131a9ab4e3da0a153ee75097012823ccf21f90c69368c3bf53c8a086736f8",
+            "size": 59117264,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-linux-armel.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "b61488cef94f3ef96863669c8fc54730ac512d5a9cb185affe9ae2f7e2de0cd2",
-            "size": 57097648,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-linux-armhf.tar.xz"
+            "sha256": "74173665e228d8b1c988de0d743607a2f661e2bd24619c246e25dba7a01f46bd",
+            "size": 57942128,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-linux-armhf.tar.xz"
           },
           "linux-i686": {
-            "sha256": "05b96a8c369f595698cbe37419c22b32242323d82d61995fa4c86f4398e9bd2c",
-            "size": 66238704,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-linux-i686.tar.xz"
+            "sha256": "d06511bb18057d72b555d6c5b62b0686f19e9f8c7d7eae218b712eed0907dbb2",
+            "size": 65914276,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-linux-i686.tar.xz"
           },
           "macos": {
-            "sha256": "8e64d517b08f9e2e98f28f425dea7ae4023fb3b923ebe4e93b701bda2a022740",
-            "size": 65781412,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "1c9d873c56469e3abec1e4214b7200d36804a605d4f0991e539b1577415409bf",
+            "size": 68189688,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-macos.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "8e64d517b08f9e2e98f28f425dea7ae4023fb3b923ebe4e93b701bda2a022740",
-            "size": 65781412,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "297249b0dc5307fd496c4d85d960b69824996c0c450a8c92f8414a5fd32a7c3b",
+            "size": 58460768,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-macos-arm64.tar.xz"
           },
-          "name": "esp-2022r1-RC1-11.2.0",
+          "name": "esp-2022r1-11.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "af0a1c38135d5bb28303b8d131cc395ce3c68b675e6a5a5f2fbfb9448125575e",
-            "size": 129791755,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-win32.zip"
+            "sha256": "858ee049d6d8de730ed3e30285c4adc1a9cdfe077b591ed0b6f2bfa5e3564f53",
+            "size": 129786756,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-win32.zip"
           },
           "win64": {
-            "sha256": "809d9833b3c183f25b231ff6478de600a633345dd4dbe0ad1cb008cd26ffc730",
-            "size": 133937875,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-RC1-win64.zip"
+            "sha256": "f469aff6a71113e3a145466d814184339e02248b158357766970646f5d2a3da7",
+            "size": 133936844,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32-elf-gcc11_2_0-esp-2022r1-win64.zip"
           }
         }
       ]
@@ -247,51 +247,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "5ddd838f94870aa0a94242895c8dde4da620e8ba3500ca6cec1799ff9ea74ba6",
-            "size": 51391900,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz"
+            "sha256": "56e5913b6662b8eec7d6b46780e668bc7e7cebef239e326a74f764c92a3cc841",
+            "size": 51546516,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-linux-amd64.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "a5c0274b852fc7264b7ee86add55a6f9f1696db78a6eac3cef30c139ffaa3567",
-            "size": 46583544,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-linux-arm64.tar.xz"
+            "sha256": "2f0ccc9d40279d6407ed9547250fb0434f16060faa94460c52b74614a38a1e21",
+            "size": 46338036,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-linux-arm64.tar.xz"
           },
           "linux-armel": {
-            "sha256": "4b2dff672af2601dd2ec1ee5be775fc44fcdc8aaa7093231653d939992e1256f",
-            "size": 43592340,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-linux-armel.tar.xz"
+            "sha256": "f71974c4aaf3f637f6adaa28bbbdf3a911db3385e0ab1544844513ec65185cc5",
+            "size": 43326084,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-linux-armel.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "eb84b3cac471c197de251ee65737b6f095b2ec216f67086bff7b3fbb5d405433",
-            "size": 45879964,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-linux-armhf.tar.xz"
+            "sha256": "73e3be22c993f1112fcb1f7631d82552a6b759f82f12cfb78e669c7303d92b25",
+            "size": 44856580,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-linux-armhf.tar.xz"
           },
           "linux-i686": {
-            "sha256": "5f69ad8c781c1db35da4347467a94921fa9b9781c4e112570fae384ac3113e69",
-            "size": 53635828,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-linux-i686.tar.xz"
+            "sha256": "504efe97ce24561537bd442494b1046fc8fb9cc43a1c06ef1afa4652b7517201",
+            "size": 53807024,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-linux-i686.tar.xz"
           },
           "macos": {
-            "sha256": "77dfcd053503fcc03b0aa8ba4df685d9322d0a6c8f475b715aef9be91e98e92a",
-            "size": 53023284,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "f53da9423490001727c5b6c3b8e1602b887783f0ed68e5defbb3c7712ada9631",
+            "size": 53568496,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-macos.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "77dfcd053503fcc03b0aa8ba4df685d9322d0a6c8f475b715aef9be91e98e92a",
-            "size": 53023284,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "3592e0fbdb2ca438c7360d93fd62ef0e05ead2fc8144eff344bbe1971d333287",
+            "size": 44218948,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-macos-arm64.tar.xz"
           },
-          "name": "esp-2022r1-RC1-11.2.0",
+          "name": "esp-2022r1-11.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "d98355285baf4cb405de399e1335714b05facbfa79b0469edb0d7eefaeabe5d9",
-            "size": 94982978,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-win32.zip"
+            "sha256": "96b873210438713a84ea6e39e591cdbbeef453cb431d8392ac3fa2e68a48bc97",
+            "size": 94981372,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-win32.zip"
           },
           "win64": {
-            "sha256": "10b69180ad21779f490cbbb08ef3bbcfa993b365e5d75d5e75c87cca251c2635",
-            "size": 99075649,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-RC1-win64.zip"
+            "sha256": "9ab0387e08047916bbf7ff0d2eb974c710bcf2e042cb04037b4dd93c9186f676",
+            "size": 99074758,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s2-elf-gcc11_2_0-esp-2022r1-win64.zip"
           }
         }
       ]
@@ -321,51 +321,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "117a47a535c9c96a36ac0c8b0574143e670cf12df353939819e2e0c94a30d23f",
-            "size": 51692156,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz"
+            "sha256": "5058b2e724166c34ca09ec2d5377350252de8bce5039b06c00352f9a8151f76e",
+            "size": 51899328,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-linux-amd64.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "eef51bd9917b311aebd13b2b560617fb9d4bc900b502d984248bec0be16f3593",
-            "size": 45438876,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-linux-arm64.tar.xz"
+            "sha256": "d2c6fb98a5018139a9f5af6eb808e968f1381a5b34547a185f4dec142b0fa44e",
+            "size": 45458872,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-linux-arm64.tar.xz"
           },
           "linux-armel": {
-            "sha256": "6475f629e08b9fe90e29cbe0fc1688ff2a325e5aff255d72ff0ddcaeb48e7c45",
-            "size": 43905524,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-linux-armel.tar.xz"
+            "sha256": "9944e67d95a5de9875670c5cd5cb0bb282ebac235a38b5fd6d53069813fead9e",
+            "size": 44532116,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-linux-armel.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "2fce387e79d154221a06f9d14b5d190e8afc82cbe92d9bcb70fe616c8440ba19",
-            "size": 44730884,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-linux-armhf.tar.xz"
+            "sha256": "c0a8836dd709605f8d68ea1fd6e8ae79b3fa76274bfffdd8e79eeadc8f1f3ce1",
+            "size": 44840304,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-linux-armhf.tar.xz"
           },
           "linux-i686": {
-            "sha256": "028879201a08d63ec34b31f602cd797956d61a85673ca1a22c3a7fcd669dc7fc",
-            "size": 53850872,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-linux-i686.tar.xz"
+            "sha256": "0feccf884e36b6e93c27c793729199b18df22a409557b16c90b2883a6748e041",
+            "size": 53956012,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-linux-i686.tar.xz"
           },
           "macos": {
-            "sha256": "6755cfd65e26745bd26d1b8990f7c9e8a85cd4b055dc25c27215630ac2d37b1d",
-            "size": 53839732,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "2b46730adc6afd8115e0be9365050a87f9523617e5e58ee35cb85ff1ddf2756c",
+            "size": 54256036,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-macos.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "6755cfd65e26745bd26d1b8990f7c9e8a85cd4b055dc25c27215630ac2d37b1d",
-            "size": 53839732,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "bb449ac62b9917638b35234c98ce03ddf1cac75c2d80fbd67c46ecec08369838",
+            "size": 44835256,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-macos-arm64.tar.xz"
           },
-          "name": "esp-2022r1-RC1-11.2.0",
+          "name": "esp-2022r1-11.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "9e94507bca64b622d8dad8b8c32e4c533af65c8424ea3950641bb89d80fca7dc",
-            "size": 95246498,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-win32.zip"
+            "sha256": "0c9ec6d296b66523e3990b195b6597dfc4030f2335bf904b614f990ad6dabbde",
+            "size": 95241895,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-win32.zip"
           },
           "win64": {
-            "sha256": "cdfb5aaa27b533c50d6cc8215fa8dba204fad3a68e1d1daf71b446d1faf594bc",
-            "size": 99497106,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-RC1-win64.zip"
+            "sha256": "7213a0bf22607e9c70febaabef37822c2ae5e071ac53d6467e6031b02bb0b2bf",
+            "size": 99495535,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/xtensa-esp32s3-elf-gcc11_2_0-esp-2022r1-win64.zip"
           }
         }
       ]
@@ -449,51 +449,51 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "504766020be61413031650d32e642d6e69f1205b2cc1691b8fa7e004d2f33322",
-            "size": 95539052,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-linux-amd64.tar.xz"
+            "sha256": "52710f804df4a033a2b621cc16cfa21023b42052819a51e35a2a164140bbf665",
+            "size": 110107900,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-linux-amd64.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "85dab0b6d57fccc85366757bf6b2162da967ed6d80d9734de695b4c48fbd1f94",
-            "size": 90927264,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-linux-arm64.tar.xz"
+            "sha256": "812a18f2ecdc3f72c1d098c4e8baa968841099ce9d9ecf95baea85ff71e11013",
+            "size": 104279292,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-linux-arm64.tar.xz"
           },
           "linux-armel": {
-            "sha256": "8e361785fcde89ce28934cb86ab95bda37a2d95beec37e9800c2a55b94592b35",
-            "size": 89429648,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-linux-armel.tar.xz"
+            "sha256": "bc6e3ff8323d1f8b137374788b5615152281aab9e7561c55ab1504145677b6c7",
+            "size": 102802824,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-linux-armel.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "c81a38675c5f323037dd981cc05f7abcc2119d0d55a28fd7c9d117b68087e0c5",
-            "size": 90271420,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-linux-armhf.tar.xz"
+            "sha256": "63f85a089fcd06939ed5e7e72ee5cdca590aa470075e409c0a4c59ef1cab3a7b",
+            "size": 102657540,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-linux-armhf.tar.xz"
           },
           "linux-i686": {
-            "sha256": "6595de9ebb2b3f86edd2173042a2700e0296bc4a56a6296b4b7b83f1d3dbe474",
-            "size": 99164996,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-linux-i686.tar.xz"
+            "sha256": "39d7295c30a23b5ea91baf61c207718ce86d4b1589014b030e121300370f696d",
+            "size": 111505972,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-linux-i686.tar.xz"
           },
           "macos": {
-            "sha256": "4497a479557e3d5dd6ad6fb8a5085c6c36717121db01dfe0faf3a8b27b37d339",
-            "size": 100787176,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "d3a6f42b02a5f1485ba3fa92b8a9d9f307f643420e22b3765e88bbe4570aee01",
+            "size": 112060920,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-macos.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "4497a479557e3d5dd6ad6fb8a5085c6c36717121db01dfe0faf3a8b27b37d339",
-            "size": 100787176,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-macos.tar.xz"
+            "sha256": "23d9a715d932a3af57fd7393b0789f88d0f70fedaf5b803deb9ab81dee271bd6",
+            "size": 101254152,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-macos-arm64.tar.xz"
           },
-          "name": "esp-2022r1-RC1-11.2.0",
+          "name": "esp-2022r1-11.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "d6435639f9058c409a4185d4c14a29b09dfca7d6934c59a85d18d4cf75877a63",
-            "size": 232598665,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-win32.zip"
+            "sha256": "3e677ef068d7f154d33b0d3788b5f985c5066d110028eac44e0f76b3bda4429b",
+            "size": 268053767,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-win32.zip"
           },
           "win64": {
-            "sha256": "c6c4d624333dcb93bd65fb19b5c44b4b1daab4642a890d853b2ae89938d37b79",
-            "size": 235685997,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1-RC1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-RC1-win64.zip"
+            "sha256": "324a5c679fef75313766cc48d3433c48bf23985a11b5070c5d19144538c6357b",
+            "size": 271158759,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2022r1/riscv32-esp-elf-gcc11_2_0-esp-2022r1-win64.zip"
           }
         }
       ]
