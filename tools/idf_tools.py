@@ -1977,6 +1977,8 @@ def action_install_python_env(args):  # type: ignore
         warn('Removing the existing Python environment in {}'.format(idf_python_env_path))
         shutil.rmtree(idf_python_env_path)
 
+    venv_can_upgrade = False
+
     if not os.path.exists(virtualenv_python):
         try:
             import venv  # noqa: F401
@@ -1986,6 +1988,7 @@ def action_install_python_env(args):  # type: ignore
             if sys.version_info[:2] >= (3, 9):
                 # upgrade pip & setuptools
                 virtualenv_options += ['--upgrade-deps']
+                venv_can_upgrade = True
 
             info('Creating a new Python environment in {}'.format(idf_python_env_path))
             subprocess.check_call([sys.executable, '-m', 'venv',
@@ -2000,6 +2003,12 @@ def action_install_python_env(args):  # type: ignore
     if env_copy.get('PIP_USER')  == 'yes':
         warn('Found PIP_USER="yes" in the environment. Disabling PIP_USER in this shell to install packages into a virtual environment.')
         env_copy['PIP_USER'] = 'no'
+
+    if not venv_can_upgrade:
+        info('Upgrading pip and setuptools...')
+        subprocess.check_call([virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools'],
+                              stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
+
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--no-warn-script-location']
     requirements_file_list = get_requirements(args.features)
     for requirement_file in requirements_file_list:
