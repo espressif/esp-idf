@@ -48,22 +48,22 @@ def test_esp_timer(dut: Dut) -> None:
     logging.info('Start time: {} us'.format(start_time))
 
     match = dut.expect(TIMER_DUMP_LINE_REGEX, timeout=2)
-    assert(match.group(1).decode('utf8') == 'periodic' and int(match.group(2)) == INITIAL_TIMER_PERIOD)
+    assert match.group(1).decode('utf8') == 'periodic' and int(match.group(2)) == INITIAL_TIMER_PERIOD
     match = dut.expect(TIMER_DUMP_LINE_REGEX, timeout=2)
-    assert(match.group(1).decode('utf8') == 'one-shot' and int(match.group(2)) == 0)
+    assert match.group(1).decode('utf8') == 'one-shot' and int(match.group(2)) == 0
 
     for i in range(0, 5):
         match = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)
         cur_time = int(match.group(1))
         diff = start_time + (i + 1) * INITIAL_TIMER_PERIOD - cur_time
         logging.info('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
-        assert(abs(diff) < 100)
+        assert abs(diff) < 100
 
     match = dut.expect(ONE_SHOT_REGEX, timeout=3)
     one_shot_timer_time = int(match.group(1))
     diff = start_time + ONE_SHOT_TIMER_PERIOD - one_shot_timer_time
     logging.info('One-shot timer, time: {} us, diff: {}'.format(one_shot_timer_time, diff))
-    assert(abs(diff) < 350)
+    assert abs(diff) < 350
 
     match = dut.expect(RESTART_REGEX, timeout=3)
     start_time = int(match.group(1))
@@ -74,7 +74,7 @@ def test_esp_timer(dut: Dut) -> None:
         cur_time = int(match.group(1))
         diff = start_time + (i + 1) * FINAL_TIMER_PERIOD - cur_time
         logging.info('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
-        assert(abs(diff) < 100)
+        assert abs(diff) < 100
 
     match = dut.expect(LIGHT_SLEEP_ENTER_REGEX, timeout=2)
     sleep_enter_time = int(match.group(1))
@@ -85,13 +85,13 @@ def test_esp_timer(dut: Dut) -> None:
     logging.info('Enter sleep: {}, exit sleep: {}, slept: {}'.format(
         sleep_enter_time, sleep_exit_time, sleep_time))
 
-    assert(abs(sleep_time - LIGHT_SLEEP_TIME) < 1000)
+    assert abs(sleep_time - LIGHT_SLEEP_TIME) < 1000
 
     for i in range(5, 7):
         match = dut.expect(PERIODIC_TIMER_REGEX, timeout=2)
         cur_time = int(match.group(1))
         diff = abs(start_time + (i + 1) * FINAL_TIMER_PERIOD - cur_time)
         logging.info('Callback #{}, time: {} us, diff: {} us'.format(i, cur_time, diff))
-        assert(diff < 100)
+        assert diff < 100
 
     dut.expect(STOP_REGEX, timeout=2)

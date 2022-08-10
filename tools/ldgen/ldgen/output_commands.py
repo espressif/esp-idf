@@ -65,7 +65,7 @@ class InputSectionDesc:
     """
 
     def __init__(self, entity, sections, exclusions=None, keep=False, sort=None):
-        assert (entity.specificity != Entity.Specificity.SYMBOL)
+        assert entity.specificity != Entity.Specificity.SYMBOL
 
         self.entity = entity
         self.sections = set(sections)
@@ -73,8 +73,8 @@ class InputSectionDesc:
         self.exclusions = set()
 
         if exclusions:
-            assert (not [e for e in exclusions if e.specificity == Entity.Specificity.SYMBOL or
-                         e.specificity == Entity.Specificity.NONE])
+            assert not [e for e in exclusions if e.specificity == Entity.Specificity.SYMBOL or
+                        e.specificity == Entity.Specificity.NONE]
             self.exclusions = set(exclusions)
         else:
             self.exclusions = set()
