@@ -599,14 +599,14 @@ class IDFTool(object):
         self.versions = OrderedDict()  # type: Dict[str, IDFToolVersion]
 
     def add_version(self, version):  # type: (IDFToolVersion) -> None
-        assert(type(version) is IDFToolVersion)
+        assert type(version) is IDFToolVersion
         self.versions[version.version] = version
 
     def get_path(self):  # type: () -> str
         return os.path.join(global_idf_tools_path or '', 'tools', self.name)
 
     def get_path_for_version(self, version):  # type: (str) -> str
-        assert(version in self.versions)
+        assert version in self.versions
         return os.path.join(self.get_path(), version)
 
     def get_export_paths(self, version):  # type: (str) -> List[str]
@@ -732,7 +732,7 @@ class IDFTool(object):
                     self.versions_installed.append(version)
 
     def download(self, version):  # type: (str) -> None
-        assert(version in self.versions)
+        assert version in self.versions
         download_obj = self.versions[version].get_download_for_platform(self._platform)
         if not download_obj:
             fatal('No packages for tool {} platform {}!'.format(self.name, self._platform))
@@ -768,12 +768,12 @@ class IDFTool(object):
     def install(self, version):  # type: (str) -> None
         # Currently this is called after calling 'download' method, so here are a few asserts
         # for the conditions which should be true once that method is done.
-        assert (version in self.versions)
+        assert version in self.versions
         download_obj = self.versions[version].get_download_for_platform(self._platform)
-        assert (download_obj is not None)
+        assert download_obj is not None
         archive_name = os.path.basename(download_obj.url)
         archive_path = os.path.join(global_idf_tools_path or '', 'dist', archive_name)
-        assert (os.path.isfile(archive_path))
+        assert os.path.isfile(archive_path)
         dest_dir = self.get_path_for_version(version)
         if os.path.exists(dest_dir):
             warn('destination path already exists, removing')

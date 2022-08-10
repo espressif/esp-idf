@@ -167,7 +167,7 @@ class SpiffsObjLuPage(SpiffsPage):
             img += struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
                                SpiffsPage._len_dict[self.build_config.obj_id_len], obj_id)
 
-        assert(len(img) <= self.build_config.page_size)
+        assert len(img) <= self.build_config.page_size
 
         img += b'\xFF' * (self.build_config.page_size - len(img))
 
@@ -249,7 +249,7 @@ class SpiffsObjIndexPage(SpiffsObjPageWithIdx):
             img += struct.pack(SpiffsPage._endianness_dict[self.build_config.endianness] +
                                SpiffsPage._len_dict[self.build_config.page_ix_len], page)
 
-        assert(len(img) <= self.build_config.page_size)
+        assert len(img) <= self.build_config.page_size
 
         img += b'\xFF' * (self.build_config.page_size - len(img))
 
@@ -275,7 +275,7 @@ class SpiffsObjDataPage(SpiffsObjPageWithIdx):
 
         img += self.contents
 
-        assert(len(img) <= self.build_config.page_size)
+        assert len(img) <= self.build_config.page_size
 
         img += b'\xFF' * (self.build_config.page_size - len(img))
 
@@ -374,7 +374,7 @@ class SpiffsBlock(object):
             for page in self.pages:
                 img += page.to_binary()
 
-        assert(len(img) <= self.build_config.block_size)
+        assert len(img) <= self.build_config.block_size
 
         img += b'\xFF' * (self.build_config.block_size - len(img))
         return img

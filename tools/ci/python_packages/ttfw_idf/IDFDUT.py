@@ -216,7 +216,7 @@ class IDFDUT(DUT.SerialDUT):
             if expected_rom_class and type(inst) != expected_rom_class:
                 raise RuntimeError('Target not expected')
             return inst.read_mac() is not None, get_target_by_rom_class(type(inst))
-        except(FatalError, RuntimeError):
+        except (FatalError, RuntimeError):
             return False, None
         finally:
             if inst is not None:
