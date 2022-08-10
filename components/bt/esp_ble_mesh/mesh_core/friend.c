@@ -64,6 +64,7 @@ enum {
 };
 
 static void (*friend_cb)(bool establish, uint16_t lpn_addr, uint8_t reason);
+static void enqueue_update(struct bt_mesh_friend *frnd, uint8_t md);
 
 static bool friend_init = false;
 
@@ -233,7 +234,23 @@ void bt_mesh_friend_sec_update(uint16_t net_idx)
         }
 
         if (net_idx == BLE_MESH_KEY_ANY || frnd->net_idx == net_idx) {
-            frnd->sec_update = 1U;
+            /* For case MESH/NODE/FRND/FN/BV-20-C.
+             * A situation is:
+             * The friend node may receive more than one different secure updates
+             * consecutively. And using the previous approach will cause only the
+             * latest Friend Update message been enqueued.
+             * So we update the implementation here to enqueue the Friend Update
+             * message immediately once a different secure beacon is received.
+             *
+             * A disadvantage of the change is:
+             * A friend node may receive different secure beacons. Then the
+             * beacon_cache mechanism will not work. This will cause the friend
+             * message queue been full of these secure beacons. So before enqueuing
+             * the secure updates, we should check if the currently received one
+             * is already exists in the message queue. Or enhance the beacon cache
+             * filtering mechanism.
+             */
+            enqueue_update(frnd, 1);
         }
     }
 }
@@ -699,7 +716,6 @@ static void enqueue_update(struct bt_mesh_friend *frnd, uint8_t md)
         return;
     }
 
-    frnd->sec_update = 0U;
     enqueue_buf(frnd, buf);
 }
 
@@ -1116,10 +1132,6 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
     BT_DBG("type %u", type);
 
     if (type == BLE_MESH_FRIEND_PDU_SINGLE) {
-        if (frnd->sec_update) {
-            enqueue_update(frnd, 1);
-        }
-
         enqueue_buf(frnd, buf);
         return;
     }
@@ -1136,10 +1148,6 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
     net_buf_slist_put(&seg->queue, buf);
 
     if (type == BLE_MESH_FRIEND_PDU_COMPLETE) {
-        if (frnd->sec_update) {
-            enqueue_update(frnd, 1);
-        }
-
         sys_slist_merge_slist(&frnd->queue, &seg->queue);
 
         frnd->queue_size += seg->seg_count;
