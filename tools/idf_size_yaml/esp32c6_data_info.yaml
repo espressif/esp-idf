@@ -1,0 +1,20 @@
+# Data_type:
+#   primary_address: value
+#   length: value or equation
+#   secondary_address: value if exist
+DRAM:
+  primary_address: 0x40800000
+  length: 0x80000
+  secondary_address: 0x40800000
+IRAM:
+  primary_address: 0x40800000
+  length: 0x80000
+CACHE_I:
+  primary_address: 0x42000000
+  length: 0x800000
+CACHE_D:
+  primary_address: 0x42000000
+  length: 0x800000
+RTC_SLOW_D: # TODO: IDF-5667 Better to rename to LP_RAM
+  primary_address: 0x50000000
+  length: 0x4000

@@ -14,6 +14,8 @@ function(__add_uf2_targets)
         set(uf2_family_id "0x332726f6")
     elseif("${target}" STREQUAL "esp32c2")
         set(uf2_family_id "0x2b88d29c")
+    elseif("${target}" STREQUAL "esp32c6") # TODO: IDF-5626
+        set(uf2_family_id "0x2b88d29c")
     elseif("${target}" STREQUAL "linux")
         return()
     else()
