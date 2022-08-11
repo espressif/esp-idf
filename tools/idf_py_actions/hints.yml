@@ -9,6 +9,10 @@
 # - Do not use \n in your regex. They are all automatically deletes by the script when capturing output
 
 -
+    re: "warning: passing argument 1 of 'esp_secure_boot_read_key_digests' from incompatible pointer type"
+    hint: "The parameter type of the function esp_secure_boot_read_key_digests() has been changed from ets_secure_boot_key_digests_t* to esp_secure_boot_key_digests_t*."
+
+-
     re: "error: implicit declaration of function 'bootloader_common_get_reset_reason'"
     hint: "'bootloader_common_get_reset_reason()' has been removed. Please use the function 'esp_rom_get_reset_reason()' in the ROM component."
 
@@ -23,6 +27,36 @@
 -
     re: "error: implicit declaration of function 'esp_cpu_(g|s)et_ccount'"
     hint: "Use esp_cpu_{}et_cycle_count() defined in esp_cpu.h instead."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_efuse_get_chip_ver'"
+    hint: "Function esp_efuse_get_chip_ver() has been removed. Use efuse_hal_get_major_chip_version(), efuse_hal_get_minor_chip_version() or efuse_hal_chip_revision() instead."
+
+-
+    re: "error: implicit declaration of function '(esp_random|esp_fill_random)'"
+    hint: "esp_random.h header file is not included by esp_system.h anymore. It shall then be manually included with #include \"esp_random.h\""
+
+-
+    re: "error: implicit declaration of function '(esp_base_mac_addr_(s|g)et|esp_efuse_mac_get_(custom|default)|esp_read_mac|esp_derive_local_mac)'"
+    hint: "esp_mac.h header file is not included by esp_system.h anymore. It shall then be manually included with #include \"esp_mac.h\""
+
+-
+    re: "error: (implicit declaration of function 'esp_chip_info'|unknown type name 'esp_chip_info_t')"
+    hint: "esp_chip_info.h header file is not included by esp_system.h anymore. It shall then be manually included with #include \"esp_chip_info.h\""
+
+-
+    re: "error: implicit declaration of function 'esp_int_wdt_\\w+'"
+    hint: "The Interrupt Watchdog API has been made private, it shall not be used anymore. You can still force its inclusion with #include \"esp_private/esp_int_wdt.h\" (not recommended)"
+
+-
+    re: "error: implicit declaration of function '(esp_spiram_get_chip_size|esp_spiram_get_size)'"
+    hint: "{}() has been deleted, please use esp_psram_get_size() instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (spiram.h|esp_spiram.h): No such file or directory"
+    hint: "{} was removed. Include esp_psram.h instead. Make sure to also add esp_psram as a dependency in your CMakeLists.txt file."
     match_to_output: True
 
 -
@@ -51,9 +85,14 @@
     match_to_output: True
 
 -
+    re: "fatal error: eh_frame_parser.h: No such file or directory"
+    hint: "Backtrace Parser API (eh_frame_parser.h) has been made private, it shall not be used anymore. You can still force its inclusion with #include \"esp_private/eh_frame_parser.h\" (not recommended)"
+
+-
     re: "error: implicit declaration of function '(\\w+)'"
     hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'."
     match_to_output: True
+
 -
     re: "fatal error: esp32\\w*\\/clk.h: No such file or directory"
     hint: "The ESP Clock API (functions/types/macros prefixed with 'esp_clk') has been made into a private API. If users still require usage of the ESP Clock API (though this is not recommended), it can be included via  '#include \"esp_private/esp_clk.h\"'."
