@@ -4,11 +4,11 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example mainly illustrates how to drive a brushed DC motor by generating two specific PWM signals. However the PWM signals from ESP chip can't drive motors directly as the motor usually consumes high current. So an H-bridge like [DRV8848](https://www.ti.com/product/DRV8848) should be used to provide the needed voltage and current for brushed DC motor. To simplify the DC motor control of MCPWM peripheral driver, there's a component called [bdc_motor](components/bdc_motor/README.md) which abstracts the common operations into a generic interface. The most useful operations are: `forward`, `reverse`, `coast` and `brake`.
+This example mainly illustrates how to drive a brushed DC motor by generating two specific PWM signals. However the PWM signals from ESP chip can't drive motors directly as the motor usually consumes high current. So an H-bridge like [DRV8848](https://www.ti.com/product/DRV8848) should be used to provide the needed voltage and current for brushed DC motor. To simplify the DC motor control of MCPWM peripheral driver, there's a component called [bdc_motor](https://components.espressif.com/component/espressif/bdc_motor) which abstracts the common operations into a generic interface. The most useful operations are: `forward`, `reverse`, `coast` and `brake`.
 
 To measure the speed of motor, a photoelectric encoder is used to generate the "speed feedback" signals (e.g. a pair of quadrature signal). In the example, we use the PCNT peripheral to decode that quadrature signals. For more information, please refer to [rotary encoder example](../../pcnt/rotary_encoder/README.md) as well.
 
-The example uses a simple PID algorithm to keep the motor spin in a stable speed. The PID component is fetched from the [IDF Component Registry](https://components.espressif.com/component/espressif/pid_ctrl).
+The example uses a simple PID algorithm to keep the motor spin in a stable speed. Like the [bdc_motor](https://components.espressif.com/component/espressif/bdc_motor), the [PID component](https://components.espressif.com/component/espressif/pid_ctrl) is also managed by the component manager. These components' dependencies are listed in the [manifest file](main/idf_component.yml).
 
 ## How to Use Example
 
