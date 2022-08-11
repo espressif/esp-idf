@@ -657,7 +657,10 @@ static void esp_hidh_dev_resources_free(esp_hidh_dev_t *dev)
     free((void *)dev->config.manufacturer_name);
     free((void *)dev->config.serial_number);
     for (uint8_t d = 0; d < dev->config.report_maps_len; d++) {
-        free((void *)dev->config.report_maps[d].data);
+        /* data of report map maybe is NULL */
+        if (dev->config.report_maps[d].data) {
+            free((void *)dev->config.report_maps[d].data);
+        }
     }
     free((void *)dev->config.report_maps);
     esp_hidh_dev_report_t *r;
