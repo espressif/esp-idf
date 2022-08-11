@@ -238,7 +238,8 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 {
     btc_msg_t* lmsg;
 
-    if (msg == NULL) {
+    //                              arg XOR arg_len
+    if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
         return BT_STATUS_PARM_INVALID;
     }
 
@@ -253,7 +254,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     if (arg) {
         lmsg->arg = (void *)osi_malloc(arg_len);
         if (lmsg->arg == NULL) {
-            free(lmsg);
+            osi_free(lmsg);
             return BT_STATUS_NOMEM;
         }
         memset(lmsg->arg, 0x00, arg_len);    //important, avoid arg which have no length
