@@ -8,7 +8,7 @@
 
    bt_common
    bt_le
-   :SOC_CLASSIC_BT_SUPPORTED: classic_bt
+   :SOC_BT_CLASSIC_SUPPORTED: classic_bt
    controller_vhci
    esp-ble-mesh
    nimble/index

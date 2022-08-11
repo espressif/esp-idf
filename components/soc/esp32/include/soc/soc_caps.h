@@ -69,7 +69,6 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
-#define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
@@ -387,3 +386,7 @@
 #define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BT_CLASSIC_SUPPORTED        (1)    /*!< Support Bluetooth Classic hardware */

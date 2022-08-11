@@ -442,3 +442,6 @@
 #define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
 #define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
 #define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
