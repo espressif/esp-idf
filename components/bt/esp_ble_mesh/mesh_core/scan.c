@@ -233,14 +233,11 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr,
 
         buf->len = len - 1;
 
-#if 0
-        /* TODO: Check with BLE Mesh BQB test cases */
         if ((type == BLE_MESH_DATA_MESH_PROV || type == BLE_MESH_DATA_MESH_MESSAGE ||
             type == BLE_MESH_DATA_MESH_BEACON) && (adv_type != BLE_MESH_ADV_NONCONN_IND)) {
             BT_DBG("Ignore mesh packet (type 0x%02x) with adv_type 0x%02x", type, adv_type);
             return;
         }
-#endif
 
         switch (type) {
         case BLE_MESH_DATA_MESH_MESSAGE:
