@@ -96,18 +96,6 @@
 #endif
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
-// Set efuse ROM_LOG_MODE on first boot
-//
-// For CONFIG_BOOT_ROM_LOG_ALWAYS_ON (default) or undefined (ESP32), leave
-// ROM_LOG_MODE undefined (no need to call this function during startup)
-#if CONFIG_BOOT_ROM_LOG_ALWAYS_OFF
-#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ALWAYS_OFF
-#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_LOW
-#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_LOW
-#elif CONFIG_BOOT_ROM_LOG_ON_GPIO_HIGH
-#define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
-#endif
-
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
@@ -621,7 +609,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_SPI_FLASH_SIZE_OVERRIDE
     int app_flash_size = esp_image_get_flash_size(fhdr.spi_size);
     if (app_flash_size < 1 * 1024 * 1024) {
-        ESP_LOGE(TAG, "Invalid flash size in app image header.");
+        ESP_EARLY_LOGE(TAG, "Invalid flash size in app image header.");
         abort();
     }
     bootloader_flash_update_size(app_flash_size);
@@ -639,10 +627,6 @@ void IRAM_ATTR call_start_cpu0(void)
         }
         esp_rom_delay_us(100);
     }
-#endif
-
-#ifdef ROM_LOG_MODE
-    esp_efuse_set_rom_log_scheme(ROM_LOG_MODE);
 #endif
 
     SYS_STARTUP_FN();
