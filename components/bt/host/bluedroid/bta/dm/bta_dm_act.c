@@ -2908,12 +2908,12 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
 
         if (p_result && p_result->status == BTM_SUCCESS) {
             BCM_STRNCPY_S((char *)sec_event.cfm_req.bd_name, (char *)p_result->remote_bd_name, BD_NAME_LEN);
-            sec_event.pin_req.bd_name[BD_NAME_LEN] = '\0';
+            sec_event.cfm_req.bd_name[BD_NAME_LEN] = '\0';
         } else { /* No name found */
             sec_event.cfm_req.bd_name[0] = '\0';
         }
 
-        sec_event.key_notif.passkey    = bta_dm_cb.num_val; /* get PIN code numeric number */
+        sec_event.cfm_req.num_val    = bta_dm_cb.num_val; /* get PIN code numeric number */
 
         /* 1 additional event data fields for this event */
         sec_event.cfm_req.just_works = bta_dm_cb.just_works;
