@@ -423,14 +423,6 @@ test_app_test_pytest_esp32c3_generic:
     - build_pytest_test_apps_esp32c3
   tags: [ esp32c3, generic ]
 
-test_app_test_pytest_esp32s2_usb_host:
-  extends:
-    - .pytest_test_apps_dir_template
-    - .rules:test:custom_test-esp32s2
-  needs:
-    - build_pytest_test_apps_esp32s2
-  tags: [ esp32s2, usb_host ]
-
 test_app_test_pytest_esp32s3_mspi_f8r8:
   extends:
     - .pytest_test_apps_dir_template
