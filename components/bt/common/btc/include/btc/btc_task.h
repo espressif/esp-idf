@@ -124,4 +124,11 @@ void btc_deinit(void);
 bool btc_check_queue_is_congest(void);
 int get_btc_work_queue_size(void);
 
+/**
+ * get the BTC thread handle
+ * @return           NULL: fail
+ *                   others: pointer of osi_thread structure of BTC
+ */
+osi_thread_t *btc_get_current_thread(void);
+
 #endif /* __BTC_TASK_H__ */

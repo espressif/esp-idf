@@ -176,6 +176,7 @@ typedef enum {
     SIG_BTU_GENERAL_ALARM,
     SIG_BTU_ONESHOT_ALARM,
     SIG_BTU_L2CAP_ALARM,
+    SIG_BTU_HCI_ADV_RPT_MSG,
     SIG_BTU_NUM,
 } SIG_BTU_t;
 
@@ -298,6 +299,7 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout);
 
 int get_btu_work_queue_size(void);
 
+osi_thread_t *btu_get_current_thread(void);
 /*
 #ifdef __cplusplus
 }
