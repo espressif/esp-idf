@@ -53,6 +53,9 @@ void light_driver_init(bool power)
         .max_leds = CONFIG_EXAMPLE_STRIP_LED_NUMBER,
         .strip_gpio_num = CONFIG_EXAMPLE_STRIP_LED_GPIO,
     };
-    ESP_ERROR_CHECK(led_strip_new_rmt_device(&led_strip_conf, &s_led_strip));
+    led_strip_rmt_config_t rmt_conf = {
+        .resolution_hz = 10 * 1000 * 1000, // 10MHz
+    };
+    ESP_ERROR_CHECK(led_strip_new_rmt_device(&led_strip_conf, &rmt_conf, &s_led_strip));
     light_driver_set_power(power);
 }
