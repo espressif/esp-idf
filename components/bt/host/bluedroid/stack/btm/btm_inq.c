@@ -2395,6 +2395,7 @@ tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff, BOOLEAN fec_required)
     if (controller_get_interface()->supports_extended_inquiry_response()) {
         BTM_TRACE_API("Write Extended Inquiry Response to controller\n");
         btsnd_hcic_write_ext_inquiry_response (p_buff, fec_required);
+        osi_free(p_buff);
         return BTM_SUCCESS;
     } else {
         osi_free(p_buff);

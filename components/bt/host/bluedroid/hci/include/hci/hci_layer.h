@@ -19,11 +19,13 @@
 #ifndef _HCI_LAYER_H_
 #define _HCI_LAYER_H_
 
+#include "common/bt_target.h"
 #include "stack/bt_types.h"
 #include "osi/allocator.h"
 #include "osi/osi.h"
 #include "osi/future.h"
 #include "osi/thread.h"
+#include "osi/pkt_queue.h"
 
 ///// LEGACY DEFINITIONS /////
 
@@ -46,6 +48,9 @@
 /* Local Bluetooth Controller ID for BR/EDR */
 #define LOCAL_BR_EDR_CONTROLLER_ID      0
 
+#define HCI_CMD_MSG_F_VND_FUTURE      (0x01)
+#define HCI_CMD_MSG_F_VND_QUEUED      (0x02)
+#define HCI_CMD_MSG_F_VND_SENT        (0x04)
 ///// END LEGACY DEFINITIONS /////
 
 typedef struct hci_hal_t hci_hal_t;
@@ -97,6 +102,12 @@ const hci_t *hci_layer_get_interface(void);
 int hci_start_up(void);
 void hci_shut_down(void);
 
-bool hci_host_task_post(uint32_t timeout);
+bool hci_downstream_data_post(uint32_t timeout);
+
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+int hci_adv_credits_prep_to_release(uint16_t num);
+int hci_adv_credits_try_release(uint16_t num);
+int hci_adv_credits_force_release(uint16_t num);
+#endif
 
 #endif /* _HCI_LAYER_H_ */
