@@ -454,6 +454,33 @@ void esp_sleep_enable_gpio_switch(bool enable)
 }
 #endif // SOC_GPIO_SUPPORT_SLP_SWITCH
 
+inline static void IRAM_ATTR misc_modules_sleep_prepare(void)
+{
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_down_cb_execute();
+#endif
+#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+    gpio_sleep_mode_config_apply();
+#endif
+#endif
+#if SOC_PM_SUPPORT_CPU_PD
+    rtc_cntl_hal_enable_cpu_retention(s_config.cpu_pd_mem);
+#endif
+}
+
+inline static void IRAM_ATTR misc_modules_wake_prepare(void)
+{
+#if SOC_PM_SUPPORT_CPU_PD
+    rtc_cntl_hal_disable_cpu_retention();
+#endif
+#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
+    gpio_sleep_mode_config_unapply();
+#endif
+#if CONFIG_MAC_BB_PD
+    mac_bb_power_up_cb_execute();
+#endif
+}
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
@@ -482,10 +509,6 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
     rtc_clk_cpu_freq_set_xtal();
 
-#if CONFIG_MAC_BB_PD
-    mac_bb_power_down_cb_execute();
-#endif
-
 #if SOC_PM_SUPPORT_EXT_WAKEUP
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
@@ -513,15 +536,13 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 #endif
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_apply();
-#endif
-#endif
-
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_read();
 #endif
+
+    if (!deep_sleep) {
+        misc_modules_sleep_prepare();
+    }
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (deep_sleep) {
@@ -597,19 +618,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+        misc_modules_wake_prepare();
     }
 
-#if SOC_PM_SUPPORT_CPU_PD
-    rtc_cntl_hal_disable_cpu_retention();
-#endif
-
-#if CONFIG_GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
-    gpio_sleep_mode_config_unapply();
-#endif
-
-#if CONFIG_MAC_BB_PD
-    mac_bb_power_up_cb_execute();
-#endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_write();
 #endif
@@ -792,10 +803,6 @@ esp_err_t esp_light_sleep_start(void)
     }
 
     periph_inform_out_light_sleep_overhead(s_config.sleep_time_adjustment - sleep_time_overhead_in);
-
-#if SOC_PM_SUPPORT_CPU_PD
-    rtc_cntl_hal_enable_cpu_retention(s_config.cpu_pd_mem);
-#endif
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
