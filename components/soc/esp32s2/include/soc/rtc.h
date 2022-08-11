@@ -540,6 +540,11 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, ui
  * 32k XTAL is being calibrated, but the oscillator has not started up (due to
  * incorrect loading capacitance, board design issue, or lack of 32 XTAL on board).
  *
+ * @note When 32k CLK is being calibrated, this function will check the accuracy
+ * of the clock. Since the xtal 32k or ext osc 32k is generally very stable, if
+ * the check fails, then consider this an invalid 32k clock and return 0. This
+ * check can filter some jamming signal.
+ *
  * @param cal_clk  clock to be measured
  * @param slow_clk_cycles  number of slow clock cycles to average
  * @return average slow clock period in microseconds, Q13.19 fixed point format,
