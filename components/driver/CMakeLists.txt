@@ -125,5 +125,3 @@ else()
                         REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
                         LDFRAGMENTS linker.lf)
 endif()
-
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

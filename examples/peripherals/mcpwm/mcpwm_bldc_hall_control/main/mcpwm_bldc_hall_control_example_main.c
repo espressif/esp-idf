@@ -344,7 +344,7 @@ void app_main(void)
         if (hall_sensor_value >= 1 && hall_sensor_value <= 6) {
             s_hall_actions[hall_sensor_value](generators);
         } else {
-            ESP_LOGE(TAG, "invalid bldc phase, wrong hall sensor value:%d", hall_sensor_value);
+            ESP_LOGE(TAG, "invalid bldc phase, wrong hall sensor value:%"PRIu32, hall_sensor_value);
         }
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }

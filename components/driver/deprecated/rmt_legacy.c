@@ -586,11 +586,11 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     s_rmt_source_clock_hz[channel] = rmt_source_clk_hz;
 #else
     if (s_rmt_source_clock_hz && rmt_source_clk_hz != s_rmt_source_clock_hz) {
-        ESP_LOGW(TAG, "RMT clock source has been configured to %d by other channel, now reconfigure it to %d", s_rmt_source_clock_hz, rmt_source_clk_hz);
+        ESP_LOGW(TAG, "RMT clock source has been configured to %"PRIu32" by other channel, now reconfigure it to %"PRIu32, s_rmt_source_clock_hz, rmt_source_clk_hz);
     }
     s_rmt_source_clock_hz = rmt_source_clk_hz;
 #endif
-    ESP_LOGD(TAG, "rmt_source_clk_hz: %d\n", rmt_source_clk_hz);
+    ESP_LOGD(TAG, "rmt_source_clk_hz: %"PRIu32, rmt_source_clk_hz);
 
     if (mode == RMT_MODE_TX) {
         uint16_t carrier_duty_percent = rmt_param->tx_config.carrier_duty_percent;
@@ -625,7 +625,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         }
         RMT_EXIT_CRITICAL();
 
-        ESP_LOGD(TAG, "Rmt Tx Channel %u|Gpio %u|Sclk_Hz %u|Div %u|Carrier_Hz %u|Duty %u",
+        ESP_LOGD(TAG, "Rmt Tx Channel %u|Gpio %u|Sclk_Hz %"PRIu32"|Div %u|Carrier_Hz %"PRIu32"|Duty %u",
                  channel, gpio_num, rmt_source_clk_hz, clk_div, carrier_freq_hz, carrier_duty_percent);
     } else if (RMT_MODE_RX == mode) {
         uint8_t filter_cnt = rmt_param->rx_config.filter_ticks_thresh;
@@ -659,7 +659,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #endif
         RMT_EXIT_CRITICAL();
 
-        ESP_LOGD(TAG, "Rmt Rx Channel %u|Gpio %u|Sclk_Hz %u|Div %u|Thresold %u|Filter %u",
+        ESP_LOGD(TAG, "Rmt Rx Channel %u|Gpio %u|Sclk_Hz %"PRIu32"|Div %u|Thresold %u|Filter %u",
                  channel, gpio_num, rmt_source_clk_hz, clk_div, threshold, filter_cnt);
     }
 

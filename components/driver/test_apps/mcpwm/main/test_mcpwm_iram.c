@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -78,7 +79,7 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     printf("disable cache, simulate GPIO capture signal\r\n");
     test_mcpwm_capture_gpio_simulate(cap_gpio);
 
-    printf("capture value: Pos=%u, Neg=%u\r\n", cap_value[0], cap_value[1]);
+    printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
     // Capture timer is clocked from APB by default
     uint32_t clk_src_res = esp_clk_apb_freq();
     TEST_ASSERT_UINT_WITHIN(2000, clk_src_res / 1000, cap_value[1] - cap_value[0]);

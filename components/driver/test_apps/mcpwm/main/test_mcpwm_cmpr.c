@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -101,7 +102,7 @@ TEST_CASE("mcpwm_comparator_event_callback", "[mcpwm]")
 
     vTaskDelay(pdMS_TO_TICKS(1000));
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
-    printf("compare_counts=%u\r\n", compare_counts);
+    printf("compare_counts=%"PRIu32"\r\n", compare_counts);
     // the timer period is 10ms, the expected compare_counts = 1s/10ms = 100
     TEST_ASSERT_INT_WITHIN(1, 100, compare_counts);
 

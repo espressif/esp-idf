@@ -307,7 +307,7 @@ static esp_err_t get_intr(essl_handle_t handle, uint32_t* out_raw, uint32_t* out
     if (ret != ESP_OK) return ret;
     ret = essl_clear_intr(handle, *out_raw, TIMEOUT_MAX);
     if (ret != ESP_OK) return ret;
-    ESP_LOGD(TAG, "intr: %08X", *out_raw);
+    ESP_LOGD(TAG, "intr: %08"PRIX32, *out_raw);
     return ESP_OK;
 }
 

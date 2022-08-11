@@ -207,8 +207,8 @@ void app_main(void)
     ESP_ERROR_CHECK(get_slave_max_buf_size(spi, &slave_max_tx_buf_size, &slave_max_rx_buf_size));
     uint32_t rx_buf_size = slave_max_tx_buf_size;
     printf("\n\n---------SLAVE INFO---------\n\n");
-    printf("Slave MAX Send Buffer Size:       %d\n", slave_max_tx_buf_size);
-    printf("Slave MAX Receive Buffer Size:    %d\n", slave_max_rx_buf_size);
+    printf("Slave MAX Send Buffer Size:       %"PRIu32"\n", slave_max_tx_buf_size);
+    printf("Slave MAX Receive Buffer Size:    %"PRIu32"\n", slave_max_rx_buf_size);
 
     uint8_t *recv_buf = heap_caps_calloc(1, rx_buf_size, MALLOC_CAP_DMA);
     if (!recv_buf) {
@@ -245,7 +245,7 @@ void app_main(void)
         uint32_t size_can_be_read = get_slave_tx_buf_size(spi) - size_has_read;
 
         if (size_can_be_read > rx_buf_size) {
-            ESP_LOGW(TAG, "Slave is going to send buffer(%d Bytes) larger than pre-negotiated MAX size", size_can_be_read);
+            ESP_LOGW(TAG, "Slave is going to send buffer(%"PRIu32" Bytes) larger than pre-negotiated MAX size", size_can_be_read);
             /**
              * NOTE:
              * In this condition, Master should still increase its counter (``size_has_read``) by the size that Slave has loaded,
@@ -277,7 +277,7 @@ void app_main(void)
         //Prepare your TX transaction in your own way. Here is an example.
         //You can set any size to send (shorter, longer or equal to the Slave Max RX buf size), Slave can get the actual length by ``trans_len`` member of ``spi_slave_hd_data_t``
         uint32_t actual_tx_size = (rand() % (slave_max_rx_buf_size - TX_SIZE_MIN + 1)) + TX_SIZE_MIN;
-        snprintf((char *)send_buf, slave_max_rx_buf_size, "this is master's transaction %d", tx_trans_id);
+        snprintf((char *)send_buf, slave_max_rx_buf_size, "this is master's transaction %"PRIu32, tx_trans_id);
 
         for (int i = 0; i < num_to_send; i++) {
             ESP_ERROR_CHECK(essl_spi_wrdma(spi, send_buf, actual_tx_size, -1, 0));

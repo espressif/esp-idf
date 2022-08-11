@@ -1719,7 +1719,6 @@ examples/peripherals/adc/single_read/adc2/main/adc2_example_main.c
 examples/peripherals/gpio/generic_gpio/example_test.py
 examples/peripherals/gpio/generic_gpio/main/gpio_example_main.c
 examples/peripherals/gpio/matrix_keyboard/components/matrix_keyboard/include/matrix_keyboard.h
-examples/peripherals/gpio/matrix_keyboard/components/matrix_keyboard/src/matrix_keyboard.c
 examples/peripherals/gpio/matrix_keyboard/main/matrix_keyboard_example_main.c
 examples/peripherals/i2c/i2c_simple/main/i2c_simple_main.c
 examples/peripherals/i2c/i2c_tools/example_test.py
