@@ -223,7 +223,6 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
                     'https://dl.espressif.com/dl/esp32s3_rom.elf',  # Not published
                     'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
-                    'https://www.espressif.com/sites/default/files/documentation/esp32-c2_datasheet_en.pdf',  # Not published
                     ]
 
 
