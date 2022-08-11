@@ -10,7 +10,7 @@ Bluetooth API
     bt_le
     :SOC_BT_CLASSIC_SUPPORTED: classic_bt
     controller_vhci
-    esp-ble-mesh
+    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh
     nimble/index
 
 ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) supports classic Bluetooth as well as BLE. On the other hand, Apache NimBLE based stack is BLE only. For users to make a choice:
