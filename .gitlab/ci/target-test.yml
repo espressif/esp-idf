@@ -208,6 +208,14 @@ example_test_pytest_esp32c3_flash_encryption:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, flash_encryption ]
 
+example_test_pytest_esp32s2_usb_device:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2-usb
+  needs:
+    - build_pytest_examples_esp32s2
+  tags: [ esp32s2, usb_device ]
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
