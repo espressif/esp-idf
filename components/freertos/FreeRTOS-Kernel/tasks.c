@@ -249,6 +249,15 @@ extern void esp_vApplicationIdleHook(void);
     tracePOST_MOVED_TASK_TO_READY_STATE( pxTCB )
 /*-----------------------------------------------------------*/
 
+#if ( configNUM_CORES > 1 )
+    #define prvCheckForYield( pxTCB, xCurCoreID, xYieldEqualPriority )                                      ( prvCheckForYieldUsingPrioritySMP( ( pxTCB )->uxPriority, ( pxTCB )->xCoreID, xCurCoreID, xYieldEqualPriority ) == pdTRUE )
+    #define prvCheckForYieldUsingPriority( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )   ( prvCheckForYieldUsingPrioritySMP( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority ) == pdTRUE )
+#else
+    #define prvCheckForYield( pxTargetTCB, xCurCoreID, xYieldEqualPriority )                                ( ( ( pxTargetTCB )->uxPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) > pxCurrentTCB[ 0 ]->uxPriority )
+    #define prvCheckForYieldUsingPriority( uxTaskPriority, xTaskCoreID, xCurCoreID, xYieldEqualPriority )   ( ( uxTaskPriority + ( ( xYieldEqualPriority == pdTRUE ) ? 1 : 0 ) ) >= pxCurrentTCB[ 0 ]->uxPriority )
+#endif /* configNUM_CORES > 1 */
+/*-----------------------------------------------------------*/
+
 #define tskCAN_RUN_HERE( cpuid ) ( cpuid==xPortGetCoreID() || cpuid==tskNO_AFFINITY )
 
 /*
@@ -624,6 +633,49 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                                       TaskFunction_t pxTaskCode,
                                       BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
+
+
+#if ( configNUM_CORES > 1 )
+
+/*
+ * Check whether a yield (on either core) is required after unblocking (or
+ * changing the priority of) a particular task.
+ *
+ * - This function is the SMP replacement for checking if an unblocked task has
+ *   a higher (or equal) priority than the current task.
+ * - It should be called before calling taskYIELD_IF_USING_PREEMPTION() or
+ *   before setting xYieldRequired
+ * - If it is the other core that requires a yield, this function will
+ *   internally trigger the other core to yield
+ *
+ * Note: In some special instances, a yield is triggered if the unblocked task
+ *       has an equal priority (such as in xTaskResumeAll). Thus the
+ *       xYieldEqualPriority parameter specifies whether to yield if the current
+ *       task has equal priority.
+ *
+ * Scheduling Algorithm:
+ * This function will bias towards yielding the current core.
+ * - If the unblocked task has a higher (or equal) priority than then current
+ *   core, the current core is yielded regardless of the current priority of the
+ *   other core.
+ * - A core (current or other) will only yield if their schedulers are not
+ *   suspended.
+ *
+ * Todo: This can be optimized (IDF-5772)
+ *
+ * Entry:
+ * - This function must be called in a critical section
+ * - A task must just have been unblocked, or its priority raised
+ * Exit:
+ * - Returns pdTRUE if the current core requires yielding
+ * - The other core will be triggered to yield if required
+ */
+static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
+                                                    BaseType_t xTaskCoreID,
+                                                    BaseType_t xCurCoreID,
+                                                    BaseType_t xYieldEqualPriority ) PRIVILEGED_FUNCTION;
+
+#endif /* configNUM_CORES > 1 */
 
 /*
  * freertos_tasks_c_additions_init() should only be called if the user definable
@@ -1192,7 +1244,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                                       TaskFunction_t pxTaskCode,
                                       BaseType_t xCoreID )
 {
-    TCB_t *curTCB, *tcb0, *tcb1;
+    TCB_t *tcb0, *tcb1;
 
     #if (configNUM_CORES < 2)
     xCoreID = 0;
@@ -1302,21 +1354,17 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
          * then it should run now. */
         taskENTER_CRITICAL();
 
-        curTCB = pxCurrentTCB[ xCoreID ];
-        if( curTCB == NULL || curTCB->uxPriority < pxNewTCB->uxPriority )
+        /* If the created task is of a higher priority than the current task
+         * then it should run now. */
+        if( pxCurrentTCB[ xPortGetCoreID() ] == NULL || prvCheckForYield( pxNewTCB, xPortGetCoreID(), pdTRUE ) )
         {
-            if( xCoreID == xPortGetCoreID() )
-            {
-                taskYIELD_IF_USING_PREEMPTION();
-            }
-            else {
-                taskYIELD_OTHER_CORE(xCoreID, pxNewTCB->uxPriority);
-            }
+            taskYIELD_IF_USING_PREEMPTION();
         }
         else
         {
             mtCOVERAGE_TEST_MARKER();
         }
+
         taskEXIT_CRITICAL();
     }
     else
@@ -1324,6 +1372,48 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         mtCOVERAGE_TEST_MARKER();
     }
 }
+/*-----------------------------------------------------------*/
+
+#if ( configNUM_CORES > 1 )
+
+    static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
+                                                        BaseType_t xTaskCoreID,
+                                                        BaseType_t xCurCoreID,
+                                                        BaseType_t xYieldEqualPriority )
+    {
+        if( xYieldEqualPriority == pdTRUE )
+        {
+            /* Increment the task priority to achieve the same affect as if( uxTaskPriority >= pxCurrentTCB->uxPriority ) */
+            uxTaskPriority++;
+        }
+
+        /* Indicate whether the current core needs to yield */
+        BaseType_t xYieldRequiredCurrentCore;
+
+        /* If the target task can run on the current core, and has a higher priority than the current core, then yield the current core */
+        if( ( ( xTaskCoreID == xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) ) && ( uxTaskPriority > pxCurrentTCB[ xCurCoreID ]->uxPriority ) )
+        {
+            /* Return true for the caller to yield the current core */
+            xYieldRequiredCurrentCore = pdTRUE;
+        }
+        /* If the target task can run on the other core, and has a higher priority then the other core, and the other core has not suspended scheduling, the yield the other core */
+        else if(    ( ( xTaskCoreID == !xCurCoreID ) || ( xTaskCoreID == tskNO_AFFINITY ) )
+                 && ( uxTaskPriority > pxCurrentTCB[ !xCurCoreID ]->uxPriority )
+                 && ( uxSchedulerSuspended[ !xCurCoreID ] == ( UBaseType_t ) pdFALSE ) )
+        {
+            /* Signal the other core to yield */
+            vPortYieldOtherCore( !xCurCoreID );
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+        else
+        {
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+
+        return xYieldRequiredCurrentCore;
+    }
+
+#endif /* configNUM_CORES > 1 */
 /*-----------------------------------------------------------*/
 
 #if ( INCLUDE_vTaskDelete == 1 )
@@ -1815,18 +1905,14 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  * priority than the calling task. */
                 if( uxNewPriority > uxCurrentBasePriority )
                 {
-                    if( pxTCB != pxCurrentTCB[xPortGetCoreID()] )
+                    if( pxTCB != pxCurrentTCB[ xPortGetCoreID() ] )
                     {
                         /* The priority of a task other than the currently
                          * running task is being raised.  Is the priority being
                          * raised above that of the running task? */
-                        if ( tskCAN_RUN_HERE(pxTCB->xCoreID) && uxNewPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                        if ( prvCheckForYieldUsingPriority( uxNewPriority, pxTCB->xCoreID, xPortGetCoreID(), pdTRUE ) )
                         {
                             xYieldRequired = pdTRUE;
-                        }
-                        else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                        {
-                            taskYIELD_OTHER_CORE( pxTCB->xCoreID, uxNewPriority );
                         }
                         else
                         {
@@ -1840,30 +1926,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                          * priority task able to run so no yield is required. */
                     }
                 }
-                else if( pxTCB == pxCurrentTCB[xPortGetCoreID()] )
+                else if( pxTCB == pxCurrentTCB[ xPortGetCoreID() ] )
                 {
                     /* Setting the priority of the running task down means
                      * there may now be another task of higher priority that
                      * is ready to execute. */
                     xYieldRequired = pdTRUE;
-                }
-                else if( pxTCB != pxCurrentTCB[xPortGetCoreID()] )
-                {
-                    /* The priority of a task other than the currently
-                     * running task is being raised.  Is the priority being
-                     * raised above that of the running task? */
-                    if( uxNewPriority >= pxCurrentTCB[xPortGetCoreID()]->uxPriority )
-                    {
-                        xYieldRequired = pdTRUE;
-                    }
-                    else if ( pxTCB->xCoreID != xPortGetCoreID() )      //Need to check if not currently running on other core
-                    {
-                        taskYIELD_OTHER_CORE( pxTCB->xCoreID, uxNewPriority );
-                    }
-                    else
-                    {
-                        mtCOVERAGE_TEST_MARKER();
-                    }
                 }
                 else
                 {
@@ -2142,12 +2210,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         /* It does not make sense to resume the calling task. */
         configASSERT( xTaskToResume );
-        taskENTER_CRITICAL();
 
-        /* The parameter cannot be NULL as it is impossible to resume the
-         * currently executing task. */
-        if( ( pxTCB != pxCurrentTCB[xPortGetCoreID()] ) && ( pxTCB != NULL ) )
+        taskENTER_CRITICAL();
         {
+            /* The parameter cannot be NULL as it is impossible to resume the
+             * currently executing task. */
+            if( ( pxTCB != pxCurrentTCB[xPortGetCoreID()] ) && ( pxTCB != NULL ) )
             {
                 if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
                 {
@@ -2158,17 +2226,13 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                     ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
                     prvAddTaskToReadyList( pxTCB );
 
-                    /* We may have just resumed a higher priority task. */
-                    if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                    /* A higher priority task may have just been resumed. */
+                    if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdTRUE ) )
                     {
                         /* This yield may not cause the task just resumed to run,
                          * but will leave the lists in the correct state for the
                          * next yield. */
                         taskYIELD_IF_USING_PREEMPTION();
-                    }
-                    else if( pxTCB->xCoreID != xPortGetCoreID() )
-                    {
-                        taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
                     }
                     else
                     {
@@ -2180,10 +2244,10 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                     mtCOVERAGE_TEST_MARKER();
                 }
             }
-        }
-        else
-        {
-            mtCOVERAGE_TEST_MARKER();
+            else
+            {
+                mtCOVERAGE_TEST_MARKER();
+            }
         }
         taskEXIT_CRITICAL();
     }
@@ -2217,7 +2281,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
          * simple as possible.  More information (albeit Cortex-M specific) is
          * provided on the following link:
          * https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
-        //portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
+        portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
         taskENTER_CRITICAL_ISR();
         {
@@ -2226,32 +2290,33 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                 traceTASK_RESUME_FROM_ISR( pxTCB );
 
                 /* Check the ready lists can be accessed. */
-                if( uxSchedulerSuspended[xPortGetCoreID()] == ( UBaseType_t ) pdFALSE )
+                if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
                 {
-
-                    ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
-                    prvAddTaskToReadyList( pxTCB );
-
-                    if( tskCAN_RUN_HERE( pxTCB->xCoreID ) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                    /* Ready lists can be accessed so move the task from the
+                     * suspended list to the ready list directly. */
+                    if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdTRUE ) )
                     {
                         xYieldRequired = pdTRUE;
-                    }
-                    else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                    {
-                        taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority);
+
+                        /* Mark that a yield is pending in case the user is not
+                         * using the return value to initiate a context switch
+                         * from the ISR using portYIELD_FROM_ISR. */
+                        xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                     }
                     else
                     {
                         mtCOVERAGE_TEST_MARKER();
                     }
 
+                    ( void ) uxListRemove( &( pxTCB->xStateListItem ) );
+                    prvAddTaskToReadyList( pxTCB );
                 }
                 else
                 {
                     /* The delayed or ready lists cannot be accessed so the task
                      * is held in the pending ready list until the scheduler is
                      * unsuspended. */
-                    vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
+                    vListInsertEnd( &( xPendingReadyList[ xPortGetCoreID() ] ), &( pxTCB->xEventListItem ) );
                 }
             }
             else
@@ -2283,7 +2348,7 @@ void vTaskStartScheduler( void )
             uint32_t ulIdleTaskStackSize;
 
             /* The Idle task is created using user provided RAM - obtain the
-            address of the RAM then create the idle task. */
+             * address of the RAM then create the idle task. */
             vApplicationGetIdleTaskMemory( &pxIdleTaskTCBBuffer, &pxIdleTaskStackBuffer, &ulIdleTaskStackSize );
             xIdleTaskHandle[ xCoreID ] = xTaskCreateStaticPinnedToCore( prvIdleTask,
                                                     configIDLE_TASK_NAME,
@@ -2549,7 +2614,7 @@ BaseType_t xTaskResumeAll( void )
 
                     /* If the moved task has a priority higher than the current
                      * task then a yield must be performed. */
-                    if( pxTCB->uxPriority >= pxCurrentTCB[ xCoreID ]->uxPriority )
+                    if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdTRUE ) )
                     {
                         xYieldPending[ xCoreID ] = pdTRUE;
                     }
@@ -3050,15 +3115,11 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
                         /* Preemption is on, but a context switch should only be
                          *  performed if the unblocked task has a priority that is
                          *  equal to or higher than the currently executing task. */
-                        if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority  )
+                        if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                         {
                             /* Pend the yield to be performed when the scheduler
                              * is unsuspended. */
-                            xYieldPending[xPortGetCoreID()] = pdTRUE;
-                        }
-                        else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                        {
-                            taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
+                            xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                         }
                         else
                         {
@@ -5791,15 +5852,11 @@ TickType_t uxTaskResetEventItemValue( void )
                     }
                 #endif
 
-                if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
-                    portYIELD_WITHIN_API();
-                }
-                else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                {
-                    taskYIELD_OTHER_CORE(pxTCB->xCoreID, pxTCB->uxPriority);
+                    taskYIELD_IF_USING_PREEMPTION();
                 }
                 else
                 {
@@ -5929,7 +5986,7 @@ TickType_t uxTaskResetEventItemValue( void )
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
-                if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
@@ -5937,10 +5994,11 @@ TickType_t uxTaskResetEventItemValue( void )
                     {
                         *pxHigherPriorityTaskWoken = pdTRUE;
                     }
-                }
-                else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                {
-                    taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
+
+                    /* Mark that a yield is pending in case the user is not
+                     * using the "xHigherPriorityTaskWoken" parameter to an ISR
+                     * safe FreeRTOS function. */
+                    xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                 }
                 else
                 {
@@ -6019,7 +6077,7 @@ TickType_t uxTaskResetEventItemValue( void )
                     vListInsertEnd( &( xPendingReadyList[xPortGetCoreID()] ), &( pxTCB->xEventListItem ) );
                 }
 
-                if( tskCAN_RUN_HERE(pxTCB->xCoreID) && pxTCB->uxPriority > pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
+                if( prvCheckForYield( pxTCB, xPortGetCoreID(), pdFALSE ) )
                 {
                     /* The notified task has a priority above the currently
                      * executing task so a yield is required. */
@@ -6027,10 +6085,11 @@ TickType_t uxTaskResetEventItemValue( void )
                     {
                         *pxHigherPriorityTaskWoken = pdTRUE;
                     }
-                }
-                else if ( pxTCB->xCoreID != xPortGetCoreID() )
-                {
-                    taskYIELD_OTHER_CORE( pxTCB->xCoreID, pxTCB->uxPriority );
+
+                    /* Mark that a yield is pending in case the user is not
+                     * using the "xHigherPriorityTaskWoken" parameter in an ISR
+                     * safe FreeRTOS function. */
+                    xYieldPending[ xPortGetCoreID() ] = pdTRUE;
                 }
                 else
                 {
