@@ -18,6 +18,7 @@
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
 * `expat <https://components.espressif.com/component/espressif/expat>`_
 * `coap <https://components.espressif.com/component/espressif/coap>`_
+* `tjpgd <https://components.espressif.com/component/espressif/esp_jpeg>`_
 
 .. note::
     请注意，http 解析功能以前属于 ``nghttp`` 组件一部分，但现在属于 :component:`http_parser <http_parser>` 组件。
