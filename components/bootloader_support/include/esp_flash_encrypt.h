@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 #ifndef BOOTLOADER_BUILD
 #include "spi_flash_mmap.h"
 #endif
@@ -183,6 +184,19 @@ void esp_flash_encryption_init_checks(void);
  *  - ESP_OK - Successfully
  */
 esp_err_t esp_flash_encryption_enable_secure_features(void);
+
+/** @brief Returns the verification status for all physical security features of flash encryption in release mode
+ *
+ * If the device has flash encryption feature configured in the release mode,
+ * then it is highly recommended to call this API in the application startup code.
+ * This API verifies the sanity of the eFuse configuration against
+ * the release (production) mode of the flash encryption feature.
+ *
+ * @return
+ *  - True - all eFuses are configured correctly
+ *  - False - not all eFuses are configured correctly.
+ */
+bool esp_flash_encryption_cfg_verify_release_mode(void);
 
 /** @brief Switches Flash Encryption from "Development" to "Release"
  *

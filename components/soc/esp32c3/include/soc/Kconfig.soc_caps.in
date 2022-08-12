@@ -711,6 +711,22 @@ config SOC_TWAI_SUPPORTS_RX_STATUS
     bool
     default y
 
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
 config SOC_SECURE_BOOT_V2_RSA
     bool
     default y

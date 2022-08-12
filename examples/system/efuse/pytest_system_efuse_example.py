@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 from __future__ import unicode_literals
 
@@ -248,6 +248,7 @@ def test_examples_efuse_with_virt_flash_enc_release(dut: Dut) -> None:
     dut.expect_exact('flash encryption is enabled (0 plaintext flashes left)', timeout=5)
     dut.expect('Flash encryption mode is RELEASE')
     dut.expect('Start eFuse example')
+    dut.expect('Flash Encryption is in RELEASE mode')
     dut.expect('example: Done')
 
 
@@ -772,6 +773,8 @@ def test_examples_efuse_with_virt_sb_v1_and_fe(dut: Dut) -> None:
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
+    dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+    dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
 
 
@@ -851,6 +854,8 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
+    dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+    dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
 
 
@@ -938,6 +943,8 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect_exact('flash_encrypt: Flash encryption mode is DEVELOPMENT (not secure)')
     dut.expect('main_task: Calling app_main()')
     dut.expect('Start eFuse example')
+    dut.expect('example: Flash Encryption is NOT in RELEASE mode')
+    dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
 
 

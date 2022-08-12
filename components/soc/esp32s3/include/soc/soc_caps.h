@@ -416,6 +416,13 @@
 #define SOC_RTC_SLOW_CLK_SUPPORT_RC_FAST_D256     (1)
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
+/*-------------------------- eFuse CAPS----------------------------*/
+#define SOC_EFUSE_DIS_DOWNLOAD_DCACHE 1
+#define SOC_EFUSE_HARD_DIS_JTAG 1
+#define SOC_EFUSE_DIS_USB_JTAG 1
+#define SOC_EFUSE_SOFT_DIS_JTAG 1
+#define SOC_EFUSE_DIS_DIRECT_BOOT 1
+
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_RSA              1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3

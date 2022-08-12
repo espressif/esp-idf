@@ -10,6 +10,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_secure_boot.h"
+#include "hal/efuse_hal.h"
 
 #ifndef BOOTLOADER_BUILD
 static __attribute__((unused)) const char *TAG = "secure_boot";
@@ -188,4 +189,220 @@ void esp_secure_boot_init_checks(void)
 #endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
 }
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+bool esp_secure_boot_cfg_verify_release_mode(void)
+{
+    bool result = false;
+    bool secure;
+
+    bool secure_boot_v1 = esp_efuse_read_field_bit(ESP_EFUSE_ABS_DONE_0);
+    bool chip_supports_sbv2 = efuse_hal_chip_revision() >= 300;
+    bool secure_boot_v2 = (chip_supports_sbv2) ? esp_efuse_read_field_bit(ESP_EFUSE_ABS_DONE_1) : false;
+    result = secure_boot_v1 || secure_boot_v2;
+    if (secure_boot_v1 && secure_boot_v2) {
+        ESP_LOGI(TAG, "ABS_DONE_0=1 (V1) and ABS_DONE_1=1 (V2)");
+        ESP_LOGI(TAG, "Secure boot V2 shall take the precedence");
+    } else if (!secure_boot_v1 && !secure_boot_v2) {
+        result = false;
+        ESP_LOGE(TAG, "Not enabled Secure Boot V1 (set ABS_DONE_0->1)");
+        if (chip_supports_sbv2) {
+            ESP_LOGE(TAG, "Not enabled Secure Boot V2 (set ABS_DONE_1->1)");
+        }
+    }
+
+    if (secure_boot_v1 && !secure_boot_v2) {
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_RD_DIS_BLK2);
+        result &= secure;
+        if (!secure) {
+            ESP_LOGW(TAG, "Not read-protected secure boot key (set RD_DIS_BLK2->1)");
+        }
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_BLK2);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not write-protected secure boot key (set WR_DIS_BLK2->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DISABLE_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled JTAG (set DISABLE_JTAG->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_CONSOLE_DEBUG_DISABLE);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled ROM BASIC interpreter fallback (set CONSOLE_DEBUG_DISABLE->1)");
+    }
+
+    if (secure_boot_v2) {
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_UART_DOWNLOAD_DIS);
+        result &= secure;
+        if (!secure) {
+            ESP_LOGW(TAG, "Not disabled UART ROM Download mode (set UART_DOWNLOAD_DIS->1)");
+        }
+
+        secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_EFUSE_RD_DISABLE);
+        result &= secure;
+        if (!secure) {
+            ESP_LOGW(TAG, "Not disabled write-protection for read-protection (set WR_DIS_EFUSE_RD_DISABLE->1)");
+        }
+    }
+
+    return result;
+}
+#else // not CONFIG_IDF_TARGET_ESP32
+bool esp_secure_boot_cfg_verify_release_mode(void)
+{
+    bool result = false;
+    bool secure;
+
+    secure = esp_secure_boot_enabled();
+    result = secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not enabled Secure Boot (SECURE_BOOT_EN->1)");
+    }
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE);
+    bool en_secure_download = esp_efuse_read_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
+    if (!secure && !en_secure_download) {
+        result &= false;
+        ESP_LOGW(TAG, "Download mode has not been changed, disable it or set security mode:");
+        ESP_LOGW(TAG, "Not disabled ROM Download mode (DIS_DOWNLOAD_MODE->1)");
+        ESP_LOGW(TAG, "Not enabled Security download mode (ENABLE_SECURITY_DOWNLOAD->1)");
+    }
+
+#if SOC_EFUSE_DIS_BOOT_REMAP
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_BOOT_REMAP);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled boot from RAM (set DIS_BOOT_REMAP->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_LEGACY_SPI_BOOT
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_LEGACY_SPI_BOOT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled Legcy SPI boot (set DIS_LEGACY_SPI_BOOT->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_DIRECT_BOOT
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DIRECT_BOOT);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled direct boot mode (set DIS_DIRECT_BOOT->1)");
+    }
+#endif
+
+#if SOC_EFUSE_HARD_DIS_JTAG
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_HARD_DIS_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled JTAG (set HARD_DIS_JTAG->1)");
+    }
+#endif
+
+#if SOC_EFUSE_SOFT_DIS_JTAG
+    size_t soft_dis_jtag_cnt_val = 0;
+    esp_efuse_read_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, &soft_dis_jtag_cnt_val);
+    if (soft_dis_jtag_cnt_val != ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count) {
+        result &= secure;
+        ESP_LOGW(TAG, "Not disabled JTAG in the soft way (set SOFT_DIS_JTAG->max)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_PAD_JTAG
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_PAD_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled JTAG PADs (set DIS_PAD_JTAG->1)");
+    }
+#endif
+
+#if SOC_EFUSE_DIS_USB_JTAG
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_DIS_USB_JTAG);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled USB JTAG (set DIS_USB_JTAG->1)");
+    }
+#endif
+
+#ifdef CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not enabled AGGRESSIVE KEY REVOKE (set SECURE_BOOT_AGGRESSIVE_REVOKE->1)");
+    }
+#endif
+
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_RD_DIS);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not disabled write-protection for read-protection (set WR_DIS_RD_DIS->1)");
+    }
+
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 1
+    unsigned purpose = ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2;
+#else
+    unsigned purpose = ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0; // DIGEST0, DIGEST1 and DIGEST2
+#endif
+    secure = false;
+    unsigned num_keys = 0;
+    for (unsigned i = 0; i < SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS; ++i) {
+        esp_efuse_block_t block;
+        if (esp_efuse_find_purpose(purpose + i, &block)) {
+            // if chip has a few secure boot slots then we check all
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+            bool revoke = esp_efuse_get_digest_revoke(i);
+            if (revoke) {
+                continue;
+            }
+#endif
+            ++num_keys;
+            secure = !esp_efuse_get_key_dis_read(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGE(TAG, "Secure boot key in BLOCK%d must NOT be read-protected (can not be used)", block);
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+                ESP_LOGE(TAG, "Revoke this secure boot key (set SECURE_BOOT_KEY_REVOKE%d->1)", i);
+#endif
+            }
+            secure = !esp_efuse_block_is_empty(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGE(TAG, "Secure boot key in BLOCK%d must NOT be empty (can not be used)", block);
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+                ESP_LOGE(TAG, "Revoke this secure boot key (set SECURE_BOOT_KEY_REVOKE%d->1)", i);
+#endif
+            }
+            secure = esp_efuse_get_key_dis_write(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGW(TAG, "Not write-protected secure boot key in BLOCK%d (set WR_DIS_KEY%d->1)", block, block - EFUSE_BLK_KEY0);
+            }
+#if SOC_EFUSE_KEY_PURPOSE_FIELD
+            secure = esp_efuse_get_keypurpose_dis_write(block);
+            result &= secure;
+            if (!secure) {
+                ESP_LOGW(TAG, "Not write-protected KEY_PURPOSE for BLOCK%d (set WR_DIS_KEY_PURPOSE%d->1)", block, block - EFUSE_BLK_KEY0);
+            }
+#endif
+        }
+    }
+    result &= secure;
+
+    secure = (num_keys != 0);
+    result &= secure;
+    if (!secure) {
+        ESP_LOGE(TAG, "No secure boot key found");
+    }
+
+    return result;
+}
+#endif // not CONFIG_IDF_TARGET_ESP32
+
 #endif // not BOOTLOADER_BUILD

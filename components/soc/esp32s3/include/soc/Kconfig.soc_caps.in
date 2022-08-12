@@ -987,6 +987,26 @@ config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 
+config SOC_EFUSE_DIS_DOWNLOAD_DCACHE
+    bool
+    default y
+
+config SOC_EFUSE_HARD_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
 config SOC_SECURE_BOOT_V2_RSA
     bool
     default y
