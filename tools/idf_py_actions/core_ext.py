@@ -30,9 +30,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         Calls ensure_build_directory() which will run cmake to generate a build
         directory (with the specified generator) as needed.
         """
-        hints = not args.no_hints
         ensure_build_directory(args, ctx.info_name)
-        run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False), hints=hints)
+        run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
     def size_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
@@ -45,10 +44,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
             print_hints(stdout, stderr)
 
-        hints = not args.no_hints
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
-                   custom_error_handler=tool_error_handler, hints=hints)
+                   custom_error_handler=tool_error_handler)
         run_target(target_name, args)
 
     def list_build_system_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:

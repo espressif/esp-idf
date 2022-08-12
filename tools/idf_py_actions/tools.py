@@ -117,7 +117,7 @@ def fit_text_in_terminal(out: str) -> str:
 
 class RunTool:
     def __init__(self, tool_name: str, args: List, cwd: str, env: Dict=None, custom_error_handler: FunctionType=None, build_dir: str=None,
-                 hints: bool=False, force_progression: bool=False, interactive: bool=False) -> None:
+                 hints: bool=True, force_progression: bool=False, interactive: bool=False) -> None:
         self.tool_name = tool_name
         self.args = args
         self.cwd = cwd
@@ -234,12 +234,12 @@ class RunTool:
 
 
 def run_tool(*args: Any, **kwargs: Any) -> None:
-    # Added in case some one use run_tool externally in a idf.py extensions
+    # Added in case someone uses run_tool externally in idf.py extensions
     return RunTool(*args, **kwargs)()
 
 
 def run_target(target_name: str, args: 'PropertyDict', env: Optional[Dict]=None,
-               custom_error_handler: FunctionType=None, force_progression: bool=False, hints: bool=False, interactive: bool=False) -> None:
+               custom_error_handler: FunctionType=None, force_progression: bool=False, interactive: bool=False) -> None:
     """Run target in build directory."""
     if env is None:
         env = {}
@@ -250,7 +250,7 @@ def run_target(target_name: str, args: 'PropertyDict', env: Optional[Dict]=None,
     if args.verbose:
         generator_cmd += [GENERATORS[args.generator]['verbose_flag']]
 
-    RunTool(generator_cmd[0], generator_cmd + [target_name], args.build_dir, env, custom_error_handler, hints=hints,
+    RunTool(generator_cmd[0], generator_cmd + [target_name], args.build_dir, env, custom_error_handler, hints=not args.no_hints,
             force_progression=force_progression, interactive=interactive)()
 
 
