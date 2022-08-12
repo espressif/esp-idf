@@ -238,6 +238,10 @@
 #define SOC_DIRAM_DRAM_LOW    0x3FC80000
 #define SOC_DIRAM_DRAM_HIGH   0x3FCE0000
 
+#define SOC_I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
+#define MAP_DRAM_TO_IRAM(addr) (addr + SOC_I_D_OFFSET)
+#define MAP_IRAM_TO_DRAM(addr) (addr - SOC_I_D_OFFSET)
+
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FC88000
 #define SOC_DMA_HIGH 0x3FD00000
@@ -250,10 +254,6 @@
 //(excluding RTC data region, that's checked separately.) See esp_ptr_internal().
 #define SOC_MEM_INTERNAL_LOW        0x3FC80000
 #define SOC_MEM_INTERNAL_HIGH       0x3FCE0000
-#define SOC_MEM_INTERNAL_LOW1       0x40370000
-#define SOC_MEM_INTERNAL_HIGH1      0x403E0000
-#define SOC_MEM_INTERNAL_LOW2       0x600FE000
-#define SOC_MEM_INTERNAL_HIGH2      0x60100000
 
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_IRAM_HIGH - SOC_IRAM_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
@@ -266,7 +266,8 @@
 #define SOC_DEBUG_HIGH 0x28000000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x3fcebf10
+#define SOC_ROM_STACK_START         0x3fcde710
+#define SOC_ROM_STACK_SIZE          0x2000
 
 //On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
 //There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.
