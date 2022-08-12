@@ -3,13 +3,10 @@
 # SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import print_function, unicode_literals
-
 import argparse
 import errno
 import http.client
 import logging
-from builtins import str
 
 
 def verbose_print(verbosity, *args):

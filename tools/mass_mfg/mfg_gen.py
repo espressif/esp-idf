@@ -4,15 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
-
 import argparse
 import csv
 import distutils.dir_util
 import os
 import sys
-
-from future.moves.itertools import zip_longest
+from itertools import zip_longest
 
 try:
     idf_path = os.environ['IDF_PATH']

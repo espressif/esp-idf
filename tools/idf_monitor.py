@@ -29,7 +29,6 @@ import subprocess
 import sys
 import threading
 import time
-from builtins import bytes
 from typing import Any, List, Optional, Type, Union
 
 import serial

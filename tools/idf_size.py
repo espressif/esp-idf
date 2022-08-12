@@ -9,8 +9,6 @@
 # SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-from __future__ import division, print_function, unicode_literals
-
 import argparse
 import collections
 import json
@@ -20,9 +18,16 @@ import sys
 from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
 import yaml
-from future.utils import iteritems
 
-Section = Dict[str, Union[str, int]]
+
+class Section(Dict):
+    # define for python type hints
+    size: int
+    address: int
+    name: str
+    sources: List[Dict]
+
+
 SectionDict = Dict[str, Section]
 
 
@@ -726,7 +731,7 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
         if diff_en:
             reference_json_dic = reference.get_json_dic()
             diff_json_dic = collections.OrderedDict([
-                (k, v - reference_json_dic[k]) for k, v in iteritems(current_json_dic)])
+                (k, v - reference_json_dic[k]) for k, v in current_json_dic.items()])
             output = format_json(collections.OrderedDict([('current', current_json_dic),
                                                           ('reference', reference_json_dic),
                                                           ('diff', diff_json_dic),
@@ -878,7 +883,7 @@ class StructureForDetailedSizes(object):
         Key can be either "archive" (for per-archive data) or "file" (for per-file data) in the result.
         """
         result = {}  # type: Dict[str, Dict[str, int]]
-        for _, section in iteritems(sections):
+        for _, section in sections.items():
             for s in section['sources']:
                 if not s[key] in result:
                     result[s[key]] = {}
@@ -962,7 +967,7 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
             header_format = _get_header_format(disp_list)
             output = header_format.format(header, *disp_list)
 
-            for key, data_info in iteritems(data):
+            for key, data_info in data.items():
                 if key not in selection:
                     continue
 
@@ -1003,7 +1008,7 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
             output += header_format.format('', *f_print)
             output += header_line
 
-            for key, data_info in iteritems(curr):
+            for key, data_info in curr.items():
                 try:
                     v2 = ref[key]
                 except KeyError:
@@ -1060,7 +1065,7 @@ class StructureForArchiveSymbols(object):
         interested_sections = LinkingSections.filter_sections(sections)
 
         result = dict([(t, {}) for t in interested_sections])  # type: Dict[str, Dict[str, int]]
-        for _, section in iteritems(sections):
+        for _, section in sections.items():
             section_name = section['name']
             if section_name not in interested_sections:
                 continue
@@ -1104,14 +1109,14 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
             output = format_json(current)
     else:
         def _get_item_pairs(name: str, section: collections.OrderedDict) -> collections.OrderedDict:
-            return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in iteritems(section)])
+            return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in section.items()])
 
         def _get_max_len(symbols_dict: Dict) -> Tuple[int, int]:
             # the lists have 0 in them because max() doesn't work with empty lists
             names_max_len = 0
             numbers_max_len = 0
-            for t, s in iteritems(symbols_dict):
-                numbers_max_len = max([numbers_max_len, *[len(str(x)) for _, x in iteritems(s)]])
+            for t, s in symbols_dict.items():
+                numbers_max_len = max([numbers_max_len, *[len(str(x)) for _, x in s.items()]])
                 names_max_len = max([names_max_len, *[len(x) for x in _get_item_pairs(t, s)]])
 
             return names_max_len, numbers_max_len
@@ -1119,12 +1124,12 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
         def _get_output(section_symbols: Dict) -> str:
             output = ''
             names_max_len, numbers_max_len  = _get_max_len(section_symbols)
-            for t, s in iteritems(section_symbols):
+            for t, s in section_symbols.items():
                 output += '{}Symbols from section: {}{}'.format(os.linesep, t, os.linesep)
                 item_pairs = _get_item_pairs(t, s)
-                for key, val in iteritems(item_pairs):
+                for key, val in item_pairs.items():
                     output += ' '.join([('\t{:<%d} : {:>%d}\n' % (names_max_len,numbers_max_len)).format(key, val)])
-                section_total = sum([val for _, val in iteritems(item_pairs)])
+                section_total = sum([val for _, val in item_pairs.items()])
                 output += 'Section total: {}{}'.format(section_total, os.linesep)
             return output
 
@@ -1147,8 +1152,8 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
                                                           '<CURRENT>',
                                                           '<REFERENCE>',
                                                           '<CURRENT> - <REFERENCE>') + os.linesep
-                current_section_total = sum([val for _, val in iteritems(current_item_pairs)])
-                reference_section_total = sum([val for _, val in iteritems(reference_item_pairs)])
+                current_section_total = sum([val for _, val in current_item_pairs.items()])
+                reference_section_total = sum([val for _, val in reference_item_pairs.items()])
                 diff_section_total = current_section_total - reference_section_total
                 all_item_names = sorted(list(frozenset(current_item_pairs.keys()) |
                                              frozenset(reference_item_pairs.keys())))

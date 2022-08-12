@@ -1,9 +1,6 @@
-from __future__ import print_function, unicode_literals
-
 import os
 import re
 import sys
-from builtins import str
 from threading import Event, Thread
 
 import paho.mqtt.client as mqtt

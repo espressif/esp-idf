@@ -5,14 +5,10 @@
 # CONDITIONS OF ANY KIND, either express or implied.
 
 # -*- coding: utf-8 -*-
-
-from __future__ import print_function, unicode_literals
-
 import os
 import re
 import socket
 import sys
-from builtins import input
 from threading import Event, Thread
 
 import netifaces
