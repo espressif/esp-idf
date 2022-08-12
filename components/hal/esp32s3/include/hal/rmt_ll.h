@@ -722,48 +722,57 @@ static inline uint32_t rmt_ll_rx_get_interrupt_status(rmt_dev_t *dev, uint32_t c
 /////////////////////////////They might be removed in the next major release (ESP-IDF 6.0)//////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_tx_get_status_word(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chnstatus[channel].val;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_status_word(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chmstatus[channel].val;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chnconf0[channel], div_cnt_chn);
     return div == 0 ? 256 : div;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->chmconf[channel].conf0, div_cnt_chm);
     return div == 0 ? 256 : div;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_idle_thres(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chmconf[channel].conf0.idle_thres_chm;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_tx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chnconf0[channel].mem_size_chn;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chmconf[channel].conf0.mem_size_chm;
 }
 
+__attribute__((always_inline))
 static inline bool rmt_ll_tx_is_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chnconf0[channel].tx_conti_mode_chn;
 }
 
+__attribute__((always_inline))
 static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint32_t channel)
 {
     rmt_clock_source_t clk_src = RMT_CLK_SRC_APB;
@@ -781,11 +790,13 @@ static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint
     return clk_src;
 }
 
+__attribute__((always_inline))
 static inline bool rmt_ll_tx_is_idle_enabled(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chnconf0[channel].idle_out_en_chn;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_tx_get_idle_level(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chnconf0[channel].idle_out_lv_chn;
@@ -799,46 +810,55 @@ static inline bool rmt_ll_is_mem_powered_down(rmt_dev_t *dev)
     return (dev->sys_conf.mem_force_pd) || !(dev->sys_conf.mem_force_pu);
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chmconf[channel].conf1.mem_owner_chm;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_rx_get_limit(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chm_rx_lim[channel].rx_lim_chm;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_tx_end_interrupt_status(rmt_dev_t *dev)
 {
     return dev->int_st.val & 0x0F;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_rx_end_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 16) & 0x0F;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_tx_err_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 4) & 0x0F;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_rx_err_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 20) & 0x0F;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_tx_thres_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 8) & 0x0F;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_rx_thres_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 24) & 0x0F;
 }
 
+__attribute__((always_inline))
 static inline uint32_t rmt_ll_get_tx_loop_interrupt_status(rmt_dev_t *dev)
 {
     return (dev->int_st.val >> 12) & 0x0F;

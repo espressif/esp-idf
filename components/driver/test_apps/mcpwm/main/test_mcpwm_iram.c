@@ -9,9 +9,9 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_clk.h"
-#include "esp_private/spi_flash_os.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
@@ -28,15 +28,12 @@ static bool IRAM_ATTR test_capture_callback_iram_safe(mcpwm_cap_channel_handle_t
     return false;
 }
 
-static void IRAM_ATTR test_mcpwm_capture_gpio_simulate(int gpio_sig)
+static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
 {
-    // disable flash cache
-    spi_flash_guard_get()->start();
+    int gpio_sig = (int)args;
     gpio_set_level(gpio_sig, 1);
     esp_rom_delay_us(1000);
     gpio_set_level(gpio_sig, 0);
-    // enable flash cache
-    spi_flash_guard_get()->end();
 }
 
 TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
@@ -77,7 +74,7 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
 
     printf("disable cache, simulate GPIO capture signal\r\n");
-    test_mcpwm_capture_gpio_simulate(cap_gpio);
+    unity_utils_run_cache_disable_stub(test_simulate_input_post_cache_disable, (void *)cap_gpio);
 
     printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
     // Capture timer is clocked from APB by default

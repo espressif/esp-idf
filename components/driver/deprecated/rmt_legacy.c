@@ -936,13 +936,9 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     RMT_ENTER_CRITICAL();
     // check channel's working mode
     if (p_rmt_obj[channel]->rx_buf) {
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)), false);
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_ERROR(RMT_DECODE_RX_CHANNEL(channel)), false);
-#if SOC_RMT_SUPPORT_RX_PINGPONG
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_THRES(RMT_DECODE_RX_CHANNEL(channel)), false);
-#endif
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_MASK(RMT_DECODE_RX_CHANNEL(channel)) | RMT_LL_EVENT_RX_ERROR(RMT_DECODE_RX_CHANNEL(channel)), false);
     } else {
-        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_DONE(channel) | RMT_LL_EVENT_TX_ERROR(channel) | RMT_LL_EVENT_TX_THRES(channel), false);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_MASK(channel) | RMT_LL_EVENT_TX_ERROR(channel), false);
     }
     RMT_EXIT_CRITICAL();
 
@@ -1001,10 +997,10 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     }
 
 #if CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
-            if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
-                ESP_LOGE(TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
-                return ESP_ERR_INVALID_ARG;
-            }
+    if (intr_alloc_flags & ESP_INTR_FLAG_IRAM ) {
+        ESP_LOGE(TAG, "ringbuf ISR functions in flash, but used in IRAM interrupt");
+        return ESP_ERR_INVALID_ARG;
+    }
 #endif
 
 #if !CONFIG_SPIRAM_USE_MALLOC
