@@ -15,11 +15,13 @@
 #define int_st_timers int_st
 #endif
 
-#define BIT_CALL (1 << 0)
-#define BIT_RESPONSE(TASK) (1 << (TASK+1))
-#define ALL_RESPONSE_BITS (((1 << NUM_TASKS) - 1) << 1)
+#define NUM_TASKS               8
+#define ALL_TASK_BITS           ((1 << NUM_TASKS) - 1)
+#define BIT_CALL(task)          (1 << (task))
+#define BIT_RESPONSE(task)      (1 << ((task) + NUM_TASKS))
+#define ALL_CALL_BITS           (ALL_TASK_BITS)
+#define ALL_RESPONSE_BITS       (ALL_TASK_BITS << NUM_TASKS)
 
-static const int NUM_TASKS = 8;
 static const int COUNT = 1000;
 static EventGroupHandle_t eg;
 static SemaphoreHandle_t done_sem;
@@ -33,7 +35,7 @@ static void task_event_group_call_response(void *param)
     for (int i = 0; i < COUNT; i++) {
         /* Wait until the common "call" bit is set, starts off all tasks
            (clear on return) */
-        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_CALL, true, false, portMAX_DELAY) );
+        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_CALL(task_num), true, false, portMAX_DELAY) );
 
         /* Set our individual "response" bit */
         xEventGroupSetBits(eg, BIT_RESPONSE(task_num));
@@ -55,20 +57,20 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
     /* Note: task_event_group_call_response all have higher priority than this task, so on this core
        they will always preempt this task.
 
-       This is important because we need to know all tasks have blocked on BIT_CALL each time we signal it,
-       or they get out of sync.
+       This is important because we need to know all tasks have blocked on their own BIT_CALL(task_num) each time we
+       signal it, or they get out of sync.
      */
     for (int c = 0; c < NUM_TASKS; c++) {
         xTaskCreatePinnedToCore(task_event_group_call_response, "tsk_call_resp", 4096, (void *)c, configMAX_PRIORITIES - 1, &task_handles[c], c % portNUM_PROCESSORS);
     }
 
     /* Tasks all start instantly, but this task will resume running at the same time as the higher priority tasks on the
-       other processor may still be setting up, so allow time for them to also block on BIT_CALL... */
+       other processor may still be setting up, so allow time for them to also block on BIT_CALL()... */
     vTaskDelay(10);
 
     for (int i = 0; i < COUNT; i++) {
-        /* signal all tasks with "CALL" bit... */
-        xEventGroupSetBits(eg, BIT_CALL);
+        /* signal all the "CALL" bits of each task */
+        xEventGroupSetBits(eg, ALL_CALL_BITS);
 
         /* Wait until all tasks have set their respective response bits */
         TEST_ASSERT_EQUAL_HEX16(ALL_RESPONSE_BITS, xEventGroupWaitBits(eg, ALL_RESPONSE_BITS, true, true, portMAX_DELAY));
@@ -87,8 +89,6 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
     vEventGroupDelete(eg);
 }
 
-#define BIT_DONE(X) (1<<(NUM_TASKS+1+X))
-
 static void task_test_sync(void *param)
 {
     int task_num = (int)param;
@@ -97,11 +97,11 @@ static void task_test_sync(void *param)
 
     for (int i = 0; i < COUNT; i++) {
         /* set our bit, and wait on all tasks to set their bits */
-        xEventGroupSync(eg, BIT_RESPONSE(task_num), ALL_RESPONSE_BITS, portMAX_DELAY);
+        xEventGroupSync(eg, BIT_CALL(task_num), ALL_CALL_BITS, portMAX_DELAY);
         /* clear our bit */
-        xEventGroupClearBits(eg, BIT_RESPONSE(task_num));
+        xEventGroupClearBits(eg, BIT_CALL(task_num));
     }
-    int after_done = xEventGroupSetBits(eg, BIT_DONE(task_num));
+    int after_done = xEventGroupSetBits(eg, BIT_RESPONSE(task_num));
 
     printf("Done %d = 0x%08x\n", task_num, after_done);
 
@@ -119,8 +119,8 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
     }
 
     for (int c = 0; c < NUM_TASKS; c++) {
-        printf("Waiting on %d (0x%08x)\n", c, BIT_DONE(c));
-        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_DONE(c), false, false, portMAX_DELAY) );
+        printf("Waiting on %d (0x%08x)\n", c, BIT_RESPONSE(c));
+        TEST_ASSERT( xEventGroupWaitBits(eg, BIT_RESPONSE(c), false, false, portMAX_DELAY) );
     }
 
     /* Ensure all tasks cleaned up correctly */
