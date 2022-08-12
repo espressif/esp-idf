@@ -61,6 +61,7 @@ void esp_crosscore_int_send_gdb_call(int core_id);
  */
 void esp_crosscore_int_send_print_backtrace(int core_id);
 
+#if CONFIG_ESP_TASK_WDT
 /**
  * Send an interrupt to a CPU indicating it call `task_wdt_timeout_abort_xtensa`.
  * This will make the CPU abort, using the interrupted task frame.
@@ -72,7 +73,9 @@ void esp_crosscore_int_send_print_backtrace(int core_id);
  * @param core_id Core that should abort
  */
 void esp_crosscore_int_send_twdt_abort(int core_id);
-#endif
+
+#endif // CONFIG_ESP_TASK_WDT
+#endif // !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
 
 #ifdef __cplusplus
 }

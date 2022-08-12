@@ -16,6 +16,17 @@ extern "C" {
 #endif
 
 /**
+ * @brief Type used to define the context of a Task WatchDog Timer implementation.
+ *        This is used internally in the TWDT driver, it is implementation specific.
+ */
+typedef void* twdt_ctx_t;
+
+/**
+ * @brief Type of the function used as an ISR callback.
+ */
+typedef void (*twdt_isr_callback)(void*);
+
+/**
  * @brief   Stop the Task Watchdog Timer (TWDT)
  *
  * This function will temporarily stop the timer until it is restarted/resumed by a call to esp_task_wdt_restart().

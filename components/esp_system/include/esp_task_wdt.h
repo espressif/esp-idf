@@ -32,18 +32,35 @@ typedef struct esp_task_wdt_user_handle_s * esp_task_wdt_user_handle_t;
 /**
  * @brief  Initialize the Task Watchdog Timer (TWDT)
  *
- * This function configures and initializes the TWDT. If the TWDT is already initialized when this function is called,
- * this function will update the TWDT's current configuration. This funciton will also subscribe the idle tasks if
+ * This function configures and initializes the TWDT. This function will subscribe the idle tasks if
  * configured to do so. For other tasks, users can subscribe them using esp_task_wdt_add() or esp_task_wdt_add_user().
+ * This function won't start the timer if no task have been registered yet.
  *
  * @note esp_task_wdt_init() must only be called after the scheduler is started. Moreover, it must not be called by
  *       multiple tasks simultaneously.
  * @param[in] config Configuration structure
  * @return
  *  - ESP_OK: Initialization was successful
+ *  - ESP_ERR_INVALID_STATE: Already initialized
  *  - Other: Failed to initialize TWDT
  */
 esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config);
+
+/**
+ * @brief Reconfigure the Task Watchdog Timer (TWDT)
+ *
+ * The function reconfigures the running TWDT. It must already be initialized when this function is called.
+ *
+ * @note esp_task_wdt_reconfigure() must not be called by multiple tasks simultaneously.
+ *
+ * @param[in] config Configuration structure
+ *
+ * @return
+ *  - ESP_OK: Reconfiguring was successful
+ *  - ESP_ERR_INVALID_STATE: TWDT not initialized yet
+ *  - Other: Failed to initialize TWDT
+ */
+esp_err_t esp_task_wdt_reconfigure(const esp_task_wdt_config_t *config);
 
 /**
  * @brief   Deinitialize the Task Watchdog Timer (TWDT)

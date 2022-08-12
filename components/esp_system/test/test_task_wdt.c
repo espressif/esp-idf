@@ -40,6 +40,60 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
+TEST_CASE("Task WDT inactive when no task to watch", "[task_wdt]")
+{
+    /* Make sure a timeout is NOT trigger when we have no task to watch */
+    timeout_flag = false;
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = TASK_WDT_TIMEOUT_MS,
+        .idle_core_mask = 0,
+        .trigger_panic = false,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
+    esp_rom_delay_us(2 * TASK_WDT_TIMEOUT_MS * 1000);
+    TEST_ASSERT_EQUAL(false, timeout_flag);
+    /* Add a task to watch, it should start the watchdog */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_add(NULL));
+    esp_rom_delay_us(TASK_WDT_TIMEOUT_MS * 1000);
+    TEST_ASSERT_EQUAL(true, timeout_flag);
+    /* Remove the task we just addded and make sure the WDT is stopped*/
+    timeout_flag = false;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
+    esp_rom_delay_us(2 * TASK_WDT_TIMEOUT_MS * 1000);
+    TEST_ASSERT_EQUAL(false, timeout_flag);
+    /* Success, terminate the test */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
+}
+
+TEST_CASE("Task WDT can be reconfigured", "[task_wdt]")
+{
+    /* Make sure a timeout is NOT trigger when we have no task to watch */
+    timeout_flag = false;
+    esp_task_wdt_config_t twdt_config = {
+        .timeout_ms = TASK_WDT_TIMEOUT_MS / 2,
+        .idle_core_mask = 0,
+        .trigger_panic = false,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_add(NULL));
+    /* Timer started, check that a timeout is raised after a while */
+    esp_rom_delay_us((TASK_WDT_TIMEOUT_MS / 2 + 1) * 1000);
+    TEST_ASSERT_EQUAL(true, timeout_flag);
+    /* Reconfigure the timer with a bigger timeout. The timer is restarted
+     * after reconfiguring it. */
+    twdt_config.timeout_ms = TASK_WDT_TIMEOUT_MS;
+    timeout_flag = false;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_reconfigure(&twdt_config));
+    esp_rom_delay_us((TASK_WDT_TIMEOUT_MS / 2 + 1) * 1000);
+    TEST_ASSERT_EQUAL(false, timeout_flag);
+    /* Should be triggered now, we've spent TASK_WDT_TIMEOUT_MS waiting */
+    esp_rom_delay_us((TASK_WDT_TIMEOUT_MS / 2 + 1) * 1000);
+    TEST_ASSERT_EQUAL(true, timeout_flag);
+    /* Success, terminate the test */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_delete(NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
+}
+
 TEST_CASE("Task WDT task feed", "[task_wdt]")
 {
     timeout_flag = false;
