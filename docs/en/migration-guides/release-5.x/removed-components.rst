@@ -40,6 +40,9 @@ The following components are removed since they were deprecated in IDF v4.x:
 .. note::
     OpenSSL-API component is no longer supported. It is not available in the IDF Component Registry, either. Please use :doc:`ESP-TLS </api-reference/protocols/esp_tls>` or :component:`mbedtls` API directly.
 
+.. note::
+    ``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc`` component. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. Also check :doc:`Peripherals Migration Guide </migration-guides/release-5.x/peripherals>` for more details.
+
 The targets components are no longer necessary after refactoring and have been removed:
 
  * ``esp32``
