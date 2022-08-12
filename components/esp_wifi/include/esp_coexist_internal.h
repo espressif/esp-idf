@@ -30,6 +30,7 @@ typedef enum {
 } coex_prefer_t;
 
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
+typedef esp_err_t (* coex_set_lpclk_source_callback_t)(void);
 
 /**
  * @brief Pre-Init software coexist
@@ -121,6 +122,18 @@ int coex_wifi_release(uint32_t event);
  *  @return : 0 - success, other - failed
  */
 int coex_wifi_channel_set(uint8_t primary, uint8_t secondary);
+
+/**
+ * @brief Register application callback function to Wi-Fi update low power clock module.
+ *
+ * @param callback : Wi-Fi update low power clock callback function
+ */
+void coex_wifi_register_update_lpclk_callback(coex_set_lpclk_source_callback_t callback);
+
+/**
+ * @brief Update low power clock interval
+ */
+void coex_update_lpclk_interval(void);
 
 /**
  * @brief Get coexistence event duration.

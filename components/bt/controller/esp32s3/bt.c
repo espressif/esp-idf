@@ -1080,7 +1080,6 @@ esp_err_t esp_bt_controller_deinit(void)
     osi_funcs_p = NULL;
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-    btdm_lpcycle_us = 0;
     return ESP_OK;
 }
 

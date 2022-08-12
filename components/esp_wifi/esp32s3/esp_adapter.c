@@ -42,6 +42,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
+#include "soc/system_reg.h"
 #include "phy_init_data.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
@@ -51,6 +52,8 @@
 #include "esp_coexist_adapter.h"
 
 #define TAG "esp_adapter"
+
+#define MHZ (1000000)
 
 #ifdef CONFIG_PM_ENABLE
 extern void wifi_apb80m_request(void);
@@ -485,7 +488,12 @@ static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
     /* The bit width of WiFi light sleep clock calibration is 12 while the one of
      * system is 19. It should shift 19 - 12 = 7.
     */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    if (GET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL)) {
+        uint64_t time_per_us = 1000000ULL;
+        return (((time_per_us << RTC_CLK_CAL_FRACT) / (MHZ)) >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    } else {
+        return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    }
 }
 
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)

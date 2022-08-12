@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -496,6 +496,15 @@ bool esp_wifi_internal_is_tsf_active(void);
   *
   */
 void esp_wifi_internal_update_light_sleep_wake_ahead_time(uint32_t);
+
+/**
+  * @brief     Update WiFi TSF tick interval
+  *
+  * @return
+  *    - true: Active
+  *    - false: Not active
+  */
+esp_err_t esp_wifi_update_tsf_tick_interval(void);
 #endif
 
 /**
