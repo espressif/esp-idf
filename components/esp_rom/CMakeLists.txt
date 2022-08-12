@@ -20,6 +20,11 @@ else()
                         "patches/esp_rom_spiflash.c"
                         "patches/esp_rom_regi2c.c"
                         "patches/esp_rom_efuse.c")
+
+    if(CONFIG_ESP_ROM_HAS_HEAP_TLSF AND CONFIG_ESP_ROM_TLSF_CHECK_PATCH)
+        list(APPEND sources "patches/esp_rom_tlsf.c")
+    endif()
+
     list(APPEND private_required_comp soc hal)
 endif()
 

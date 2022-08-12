@@ -25,8 +25,8 @@
 #include "tlsf.h"
 #else
 /* Header containing the declaration of tlsf_poison_fill_pfunc_set()
- * used to register multi_heap_internal_poison_fill_region() as a
- * callback to fill memory region with given patterns in the heap
+ * and tlsf_poison_check_pfunc_set() used to register callbacks to
+ * fill and check memory region with given patterns in the heap
  * components.
  */
 #include "rom/tlsf.h"
@@ -361,6 +361,7 @@ multi_heap_handle_t multi_heap_register(void *start, size_t size)
 #endif
 #ifdef CONFIG_HEAP_TLSF_USE_ROM_IMPL
     tlsf_poison_fill_pfunc_set(multi_heap_internal_poison_fill_region);
+    tlsf_poison_check_pfunc_set(multi_heap_internal_check_block_poisoning);
 #endif
     return multi_heap_register_impl(start, size);
 }
