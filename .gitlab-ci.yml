@@ -63,7 +63,7 @@ variables:
   BOT_DOCKER_IMAGE_TAG: ":latest"
 
   ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env-v5.0:2-3"
-  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env-v5.0:2"
+  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env-v5.0:3"
   AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test-v5.0:2-1"
   CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis-v5.0:2-1"
   TARGET_TEST_ENV_IMAGE: "$CI_DOCKER_REGISTRY/target-test-env-v5.0:2"

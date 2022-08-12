@@ -51,8 +51,8 @@ def main():  # type: () -> None
     # pass the extra_gdbinit_file if the build is reproducible
     kwargs['extra_gdbinit_file'] = get_prefix_map_gdbinit_path(kwargs['prog'])
 
-    del(kwargs['debug'])
-    del(kwargs['operation'])
+    del kwargs['debug']
+    del kwargs['operation']
 
     espcoredump = CoreDump(**kwargs)
     temp_core_files = None
