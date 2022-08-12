@@ -26,7 +26,13 @@ else()
             "debug_stubs.c")
 
     if(CONFIG_ESP_TASK_WDT)
-        list(APPEND srcs "task_wdt.c")
+        list(APPEND srcs "task_wdt/task_wdt.c")
+
+        if(CONFIG_ESP_TASK_WDT_USE_ESP_TIMER)
+            list(APPEND srcs "task_wdt/task_wdt_impl_esp_timer.c")
+        else()
+            list(APPEND srcs "task_wdt/task_wdt_impl_timergroup.c")
+        endif()
     endif()
 
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
