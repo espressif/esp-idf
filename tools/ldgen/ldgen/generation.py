@@ -134,9 +134,9 @@ class EntityNode:
 
     def add_child(self, entity):
         child_specificity = self.entity.specificity.value + 1
-        assert (child_specificity <= Entity.Specificity.SYMBOL.value)
+        assert child_specificity <= Entity.Specificity.SYMBOL.value
         name = entity[Entity.Specificity(child_specificity)]
-        assert (name and name != Entity.ALL)
+        assert name and name != Entity.ALL
 
         child = [c for c in self.children if c.name == name]
         assert (len(child) <= 1)
@@ -174,7 +174,7 @@ class EntityNode:
         for sections in self.get_output_sections():
             placement = self.placements[sections]
             if placement.is_significant():
-                assert (placement.node == self)
+                assert placement.node == self
 
                 keep = False
                 sort = None

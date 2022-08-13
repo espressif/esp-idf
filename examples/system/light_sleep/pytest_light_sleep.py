@@ -39,7 +39,7 @@ def test_light_sleep(dut: Dut) -> None:
     match = dut.expect(EXIT_SLEEP_REGEX)
     logging.info('Got second sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
     # sleep time error should be less than 1ms
-    assert(match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1)
+    assert match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
 
     # this time we'll test gpio wakeup
     dut.expect_exact(ENTERING_SLEEP_STR)
@@ -48,7 +48,7 @@ def test_light_sleep(dut: Dut) -> None:
     time.sleep(1)
     match = dut.expect(EXIT_SLEEP_PIN_REGEX)
     logging.info('Got third sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
-    assert(int(match.group(3)) < WAKEUP_INTERVAL_MS)
+    assert int(match.group(3)) < WAKEUP_INTERVAL_MS
 
     dut.expect(WAITING_FOR_GPIO_STR)
     logging.info('Is waiting for GPIO...')
@@ -62,9 +62,9 @@ def test_light_sleep(dut: Dut) -> None:
     time.sleep(1)
     match = dut.expect(EXIT_SLEEP_UART_REGEX)
     logging.info('Got third sleep period, wakeup from {}, slept for {}'.format(match.group(1), match.group(3)))
-    assert(int(match.group(3)) < WAKEUP_INTERVAL_MS)
+    assert int(match.group(3)) < WAKEUP_INTERVAL_MS
     logging.info('Went to sleep again')
 
     match = dut.expect(EXIT_SLEEP_REGEX)
-    assert(match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1)
+    assert match.group(1).decode('utf8') == 'timer' and int(match.group(3)) >= WAKEUP_INTERVAL_MS - 1 and int(match.group(3)) <= WAKEUP_INTERVAL_MS + 1
     logging.info('Woke up from timer again')
