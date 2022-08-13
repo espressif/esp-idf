@@ -396,9 +396,9 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_PARAM *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_gap_bt_search_service_record(char *p_param)
+static void btc_gap_bt_search_service_record(tBTA_DM_SEARCH_PARAM *p_data)
 {
-    tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param;
+    /* tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param; */
 
     switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
@@ -468,9 +468,9 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_S
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_gap_bt_search_services(char *p_param)
+static void btc_gap_bt_search_services(tBTA_DM_SEARCH_PARAM *p_data)
 {
-    tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param;
+    /* tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param; */
 
     switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
