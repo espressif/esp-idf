@@ -2222,8 +2222,9 @@ void bta_dm_queue_search (tBTA_DM_MSG *p_data)
     }
 
     bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_API_SEARCH));
-    memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_SEARCH));
-
+    if (bta_dm_search_cb.p_search_queue) { 
+        memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_SEARCH));
+    }
 }
 
 /*******************************************************************************
@@ -2243,7 +2244,9 @@ void bta_dm_queue_disc (tBTA_DM_MSG *p_data)
     }
 
     bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
-    memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
+    if (bta_dm_search_cb.p_search_queue) {
+        memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
+    }
 }
 #endif  ///SDP_INCLUDED == TRUE
 
@@ -6230,12 +6233,13 @@ static void bta_dm_gatt_disc_complete(UINT16 conn_id, tBTA_GATT_STATUS status)
             p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
             if ( bta_dm_search_cb.ble_raw_used > 0 ) {
                 p_msg->disc_result.result.disc_res.p_raw_data = osi_malloc(bta_dm_search_cb.ble_raw_used);
-
-                memcpy( p_msg->disc_result.result.disc_res.p_raw_data,
-                        bta_dm_search_cb.p_ble_rawdata,
-                        bta_dm_search_cb.ble_raw_used );
-
-                p_msg->disc_result.result.disc_res.raw_data_size = bta_dm_search_cb.ble_raw_used;
+                if (p_msg->disc_result.result.disc_res.p_raw_data) {
+                    memcpy( p_msg->disc_result.result.disc_res.p_raw_data,
+                            bta_dm_search_cb.p_ble_rawdata,
+                            bta_dm_search_cb.ble_raw_used );
+    
+                    p_msg->disc_result.result.disc_res.raw_data_size = bta_dm_search_cb.ble_raw_used;
+                }
             } else {
                 p_msg->disc_result.result.disc_res.p_raw_data = NULL;
                 bta_dm_search_cb.p_ble_rawdata = 0;
