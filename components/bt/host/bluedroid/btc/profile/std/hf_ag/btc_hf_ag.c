@@ -1475,10 +1475,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                 if (event == BTA_AG_AT_D_EVT && p_data->val.str) {           // dial_number_or_memory
                     memset(&param, 0, sizeof(esp_hf_cb_param_t));
                     param.out_call.num_or_loc = osi_malloc((strlen(p_data->val.str) + 1) * sizeof(char));
-                    sprintf(param.out_call.num_or_loc, p_data->val.str);
-                    btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
-                    send_indicator_update(BTA_AG_IND_CALLSETUP,BTA_AG_CALLSETUP_OUTGOING);
-                    osi_free(param.out_call.num_or_loc);
+                    if (param.out_call.num_or_loc) {
+                        sprintf(param.out_call.num_or_loc, p_data->val.str);
+                        btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);
+                        send_indicator_update(BTA_AG_IND_CALLSETUP,BTA_AG_CALLSETUP_OUTGOING);
+                        osi_free(param.out_call.num_or_loc);
+                    }
                 } else if (event == BTA_AG_AT_BLDN_EVT) {                    //dial_last
                     memset(&param, 0, sizeof(esp_hf_cb_param_t));
                     btc_hf_cb_to_app(ESP_HF_DIAL_EVT, &param);

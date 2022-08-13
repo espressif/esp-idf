@@ -139,10 +139,13 @@ static void search_devices_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
     tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
-    if (!p_src) {
+    if (!(p_src_data && p_dest_data)) {
         return;
     }
-    p_dest_data->p_data = (void *)osi_malloc(p_dest_data->len);
+    p_dest_data->p_data = (tBTA_DM_SEARCH *)osi_malloc(p_dest_data->len);
+    if (!p_dest_data->p_data) {
+        return;
+    }
     memset(p_dest_data->p_data, 0x00, p_dest_data->len);
     memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
 
@@ -183,10 +186,13 @@ static void search_service_record_copy_cb(btc_msg_t *msg, void *p_dest, void *p_
     tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
     tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
 
-    if (!p_src) {
+    if (!(p_src_data && p_dest_data)) {
         return;
     }
-    p_dest_data->p_data = osi_malloc(p_dest_data->len);
+    p_dest_data->p_data = (tBTA_DM_SEARCH *)osi_malloc(p_dest_data->len);
+    if (!p_dest_data->p_data) {
+        return;
+    }
     memset(p_dest_data->p_data, 0x00, p_dest_data->len);
     memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
     if ( p_dest_data->len > sizeof(tBTA_DM_SEARCH)){
@@ -553,10 +559,13 @@ static void search_services_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
     tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
     tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
 
-    if (!p_src) {
+    if (!(p_src_data && p_dest_data)) {
         return;
     }
-    p_dest_data->p_data = osi_malloc(p_dest_data->len);
+    p_dest_data->p_data = (tBTA_DM_SEARCH*)osi_malloc(p_dest_data->len);
+    if (p_dest_data->p_data == NULL) {
+        return;
+    }
     memset(p_dest_data->p_data, 0x00, p_dest_data->len);
     memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
 
