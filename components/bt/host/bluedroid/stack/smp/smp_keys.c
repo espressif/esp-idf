@@ -2182,12 +2182,12 @@ void smp_process_new_nonce(tSMP_CB *p_cb)
 static void smp_rand_back(tBTM_RAND_ENC *p)
 {
     tSMP_CB *p_cb = &smp_cb;
-    UINT8   *pp = p->param_buf;
     UINT8   failure = SMP_PAIR_FAIL_UNKNOWN;
     UINT8   state = p_cb->rand_enc_proc_state & ~0x80;
 
     SMP_TRACE_DEBUG ("%s state=0x%x", __FUNCTION__, state);
     if (p && p->status == HCI_SUCCESS) {
+        UINT8   *pp = p->param_buf;
         switch (state) {
         case SMP_GEN_SRAND_MRAND:
             memcpy((void *)p_cb->rand, p->param_buf, p->param_len);
