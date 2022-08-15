@@ -228,7 +228,7 @@ typedef struct {
     .ble_scan_classify_filter_enable         = 0,                                       \
     .main_xtal_freq             = CONFIG_XTAL_FREQ,                                     \
     .config_magic = CONFIG_MAGIC,                                                       \
-};
+}
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 
