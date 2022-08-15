@@ -210,6 +210,7 @@ test_idf_tools:
     when: on_failure
     paths:
       - tools/tools.new.json
+      - tools/test_idf_tools/test_python_env_logs.txt
     expire_in: 1 week
   script:
     # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
