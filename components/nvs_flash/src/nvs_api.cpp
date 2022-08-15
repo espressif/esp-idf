@@ -116,7 +116,7 @@ extern "C" esp_err_t nvs_flash_init_partition_ptr(const esp_partition_t *partiti
     return init_res;
 }
 
-#ifndef LINUX_TARGET
+#ifndef LINUX_HOST_LEGACY_TEST
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
 {
     esp_err_t lock_result = Lock::init();
@@ -239,7 +239,7 @@ extern "C" esp_err_t nvs_flash_erase(void)
 {
     return nvs_flash_erase_partition(NVS_DEFAULT_PART_NAME);
 }
-#endif // ! LINUX_TARGET
+#endif // LINUX_HOST_LEGACY_TEST
 
 extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
 {

@@ -39,8 +39,8 @@ COMPILER := gcc
 endif
 
 CPPFLAGS += -I../private_include -I../include -I../src -I../../esp_rom/include -I../../esp_rom/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../hal/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
-CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET
-CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET
+CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
+CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
 
 ifeq ($(COMPILER),clang)
