@@ -7,3 +7,4 @@ idf-build-apps
 junit_xml
 python-gitlab
 pyyaml
+SimpleWebSocketServer
