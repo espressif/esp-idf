@@ -32,6 +32,7 @@ if(NOT "${target}" STREQUAL "linux")
     list(APPEND srcs "unity_port_esp32.c")
     list(APPEND srcs "port/esp/unity_utils_memory_esp.c")
 else()
+    list(APPEND srcs "unity_port_linux.c")
     list(APPEND srcs "port/linux/unity_utils_memory_linux.c")
 endif()
 
@@ -43,10 +44,8 @@ if(CONFIG_UNITY_ENABLE_IDF_TEST_RUNNER)
     idf_component_optional_requires(PRIVATE spi_flash)
 endif()
 
-if(NOT "${target}" STREQUAL "linux")
-    target_compile_definitions(${COMPONENT_LIB} PUBLIC
-            -DUNITY_INCLUDE_CONFIG_H
-            )
-endif()
+target_compile_definitions(${COMPONENT_LIB} PUBLIC
+    -DUNITY_INCLUDE_CONFIG_H
+)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
