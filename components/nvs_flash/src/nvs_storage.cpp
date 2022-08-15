@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "nvs_storage.hpp"
+#if __has_include(<bsd/string.h>)
+// for strlcpy
+#include <bsd/string.h>
+#endif
 
 #ifndef ESP_PLATFORM
 // We need NO_DEBUG_STORAGE here since the integration tests on the host add some debug code.
@@ -755,11 +759,7 @@ void Storage::fillEntryInfo(Item &item, nvs_entry_info_t &info)
 
     for (auto &name : mNamespaces) {
         if(item.nsIndex == name.mIndex) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-            strncpy(info.namespace_name, name.mName, sizeof(info.namespace_name) - 1);
-#pragma GCC diagnostic pop
-            info.namespace_name[sizeof(info.namespace_name) -1] = '\0';
+            strlcpy(info.namespace_name, name.mName, sizeof(info.namespace_name));
             break;
         }
     }
