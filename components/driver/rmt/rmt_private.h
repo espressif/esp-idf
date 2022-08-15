@@ -34,9 +34,9 @@ extern "C" {
 
 // RMT driver object is per-channel, the interrupt source is shared between channels
 #if CONFIG_RMT_ISR_IRAM_SAFE
-#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
 #else
-#define RMT_INTR_ALLOC_FLAG     ESP_INTR_FLAG_SHARED
+#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED)
 #endif
 
 // Hopefully the channel offset won't change in other targets

@@ -29,9 +29,9 @@ extern "C" {
 #endif
 
 #if CONFIG_MCPWM_ISR_IRAM_SAFE
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
 #else
-#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
+#define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
 #endif
 
 #define MCPWM_PERIPH_CLOCK_PRE_SCALE (2)
@@ -193,6 +193,11 @@ typedef enum {
     MCPWM_CAP_TIMER_FSM_ENABLE,
 } mcpwm_cap_timer_fsm_t;
 
+typedef enum {
+    MCPWM_CAP_CHAN_FSM_INIT,
+    MCPWM_CAP_CHAN_FSM_ENABLE,
+} mcpwm_cap_channel_fsm_t;
+
 struct mcpwm_cap_timer_t {
     mcpwm_group_t *group;   // which group the capture timer belongs to
     portMUX_TYPE spinlock;  // spin lock, to prevent concurrently accessing capture timer level resources, including registers
@@ -206,7 +211,8 @@ struct mcpwm_cap_channel_t {
     int cap_chan_id;                  // capture channel ID, index from 0
     mcpwm_cap_timer_t *cap_timer;     // which capture timer that the channel resides in
     uint32_t prescale;                // prescale of capture signal
-    int gpio_num;                 // GPIO number used by the channel
+    int gpio_num;                     // GPIO number used by the channel
+    mcpwm_cap_channel_fsm_t fsm;      // driver FSM
     intr_handle_t intr;               // Interrupt handle
     mcpwm_capture_event_cb_t on_cap;  // Callback function which would be invoked in capture interrupt routine
     void *user_data;                  // user data which would be passed to the capture callback

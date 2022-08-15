@@ -170,7 +170,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_reset_fifo(bus->hal.dev);
     // install interrupt service, (I2S LCD mode only uses the "TX Unit", which leaves "RX Unit" for other purpose)
     // So the interrupt should also be able to share with other functionality
-    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus->bus_id].irq_id, isr_flags,
                                     (uint32_t)i2s_ll_get_intr_status_reg(bus->hal.dev),
                                     I2S_LL_EVENT_TX_EOF, lcd_default_isr_handler, bus, &bus->intr);

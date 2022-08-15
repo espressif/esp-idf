@@ -41,9 +41,9 @@
 #endif
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE
-#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
 #else
-#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
 #endif
 
 #define PCNT_PM_LOCK_NAME_LEN_MAX 16
@@ -283,7 +283,7 @@ esp_err_t pcnt_unit_enable(pcnt_unit_handle_t unit)
     if (unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(unit->pm_lock), TAG, "acquire pm_lock failed");
     }
-    // enable interupt service
+    // enable interrupt service
     if (unit->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(unit->intr), TAG, "enable interrupt service failed");
     }
@@ -366,7 +366,6 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
 {
     ESP_RETURN_ON_FALSE(unit && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     // unit event callbacks should be registered in init state
-    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
@@ -382,6 +381,7 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
 
     // lazy install interrupt service
     if (!unit->intr) {
+        ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
         int isr_flags = PCNT_INTR_ALLOC_FLAGS;
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
                             (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),

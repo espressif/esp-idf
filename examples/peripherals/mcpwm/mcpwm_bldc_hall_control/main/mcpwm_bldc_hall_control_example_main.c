@@ -321,6 +321,15 @@ void app_main(void)
         ESP_ERROR_CHECK(mcpwm_capture_channel_register_event_callbacks(cap_channels[i], &cbs, task_to_notify));
     }
 
+    ESP_LOGI(TAG, "Enable capture channels");
+    for (int i = 0; i < 3; i++) {
+        ESP_ERROR_CHECK(mcpwm_capture_channel_enable(cap_channels[i]));
+    }
+
+    ESP_LOGI(TAG, "Enable and start capture timer");
+    ESP_ERROR_CHECK(mcpwm_capture_timer_enable(cap_timer));
+    ESP_ERROR_CHECK(mcpwm_capture_timer_start(cap_timer));
+
     ESP_LOGI(TAG, "Start a timer to adjust motor speed periodically");
     esp_timer_handle_t periodic_timer = NULL;
     const esp_timer_create_args_t periodic_timer_args = {

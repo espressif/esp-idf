@@ -787,7 +787,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     mcpwm_ll_capture_enable_negedge(hal->dev, cap_channel, cap_conf->cap_edge & MCPWM_NEG_EDGE);
     mcpwm_ll_capture_enable_posedge(hal->dev, cap_channel, cap_conf->cap_edge & MCPWM_POS_EDGE);
     mcpwm_ll_capture_set_prescale(hal->dev, cap_channel, cap_conf->cap_prescale);
-    // capture feature should be used with interupt, so enable it by default
+    // capture feature should be used with interrupt, so enable it by default
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_channel), true);
     mcpwm_ll_intr_clear_capture_status(hal->dev, 1 << cap_channel);
     mcpwm_critical_exit(mcpwm_num);

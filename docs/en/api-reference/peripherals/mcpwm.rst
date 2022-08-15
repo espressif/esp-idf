@@ -814,6 +814,11 @@ The parameter ``user_data`` of :cpp:func:`mcpwm_capture_channel_register_event_c
 
 This function will lazy install interrupt service for the MCPWM capture channel, whereas the service can only be removed in :cpp:type:`mcpwm_del_capture_channel`.
 
+Enable and Disable Capture Channel
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The capture channel is not enabled after allocation by :cpp:func:`mcpwm_new_capture_channel`. You should call :cpp:func:`mcpwm_capture_channel_enable` and :cpp:func:`mcpwm_capture_channel_disable` accordingly to enable or disable the channel. If the interrupt service is lazy installed during registering event callbacks for the channel in :cpp:func:`mcpwm_capture_channel_register_event_callbacks`, :cpp:func:`mcpwm_capture_channel_enable` will enable the interrupt service as well.
+
 Enable and Disable Capture Timer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
