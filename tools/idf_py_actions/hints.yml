@@ -112,7 +112,7 @@
     match_to_output: True
 -
     re: "error: implicit declaration of function '(\\w+)'"
-    hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the function has been removed, renamed or replaced by an alternative function - refer to the migration guide for more information."
+    hint: "Please check that the function name is correct. Also it is possible that you've forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the function has been removed, renamed or replaced by an alternative function - refer to the migration guide for more information."
     match_to_output: True
 
 -
@@ -120,8 +120,8 @@
     hint: "``esp_adc_cal`` component is no longer supported. New adc calibration driver is in ``esp_adc``. Legacy adc calibration driver has been moved into ``esp_adc`` component. To use legacy ``esp_adc_cal`` driver APIs, you should add ``esp_adc`` component to the list of component requirements in CMakeLists.txt. For more information run 'idf.py docs -sp migration-guides/release-5.x/peripherals.html'."
 
 -
-    re: "fatal error: \\w+\\.h: No such file or directory"
-    hint: "Please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the header file has been removed, renamed or relocated - refer to the migration guide for more information."
+    re: "fatal error: [\\w/]+\\.h: No such file or directory"
+    hint: "Please make sure that the header name is correct. Also please check if you've specified all component dependencies with 'idf_component_register(REQUIRES ...)'. If the component is not present then it should be added by the IDF Component Manager. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the header file has been removed, renamed or relocated - refer to the migration guide for more information."
 
 -
     re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
