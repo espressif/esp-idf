@@ -35,7 +35,7 @@ def test_examples_sysview_tracing_heap_log(env, extra_data):
 
             gdb_args = '-x {} --directory={}'.format(tempfiles[0], os.path.join(proj_path, 'main'))
             with ttfw_idf.GDBProcess(os.path.join(proj_path, 'gdb.log'), elf_path, dut.app.target, gdb_args) as gdb:
-                gdb.pexpect_proc.expect_exact('Thread 1 hit Temporary breakpoint 2, heap_trace_stop ()')
+                gdb.pexpect_proc.expect_exact('Thread 1 "main" hit Temporary breakpoint 2, heap_trace_stop ()')
                 gdb.pexpect_proc.expect_exact('(gdb)')
 
                 # dut has been restarted by gdb since the last dut.expect()
