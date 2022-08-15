@@ -8,6 +8,109 @@
 # - Do not use more than one whitespace in a row. The script automatically merges several whitespaces into one when capturing output
 # - Do not use \n in your regex. They are all automatically deletes by the script when capturing output
 -
+    re: "warning: passing argument 1 of 'esp_secure_boot_read_key_digests' from incompatible pointer type"
+    hint: "The parameter type of the function esp_secure_boot_read_key_digests() has been changed from ets_secure_boot_key_digests_t* to esp_secure_boot_key_digests_t*."
+
+-
+    re: "error: implicit declaration of function 'bootloader_common_get_reset_reason'"
+    hint: "'bootloader_common_get_reset_reason()' has been removed. Please use the function 'esp_rom_get_reset_reason()' in the ROM component."
+
+-
+    re: "error: implicit declaration of function 'esp_secure_boot_verify_sbv2_signature_block|esp_secure_boot_verify_rsa_signature_block'"
+    hint: "'esp_secure_boot_verify_sbv2_signature_block()' and 'esp_secure_boot_verify_rsa_signature_block()' and has been made private and are no longer available."
+
+-
+    re: "error: implicit declaration of function 'esp_cpu_ccount_t'"
+    hint: "Use esp_cpu_cycle_count_t defined in esp_cpu.h instead of esp_cpu_ccount_t."
+
+-
+    re: "error: implicit declaration of function 'esp_cpu_(g|s)et_ccount'"
+    hint: "Use esp_cpu_{}et_cycle_count() defined in esp_cpu.h instead."
+    match_to_output: True
+
+-
+    re: "error: implicit declaration of function 'esp_efuse_get_chip_ver'"
+    hint: "Function esp_efuse_get_chip_ver() has been removed. Use efuse_hal_get_major_chip_version(), efuse_hal_get_minor_chip_version() or efuse_hal_chip_revision() instead."
+
+-
+    re: "error: implicit declaration of function '(esp_random|esp_fill_random)'"
+    hint: "esp_random.h header file is not included by esp_system.h anymore. It shall then be manually included with #include \"esp_random.h\""
+
+-
+    re: "error: implicit declaration of function '(esp_base_mac_addr_(s|g)et|esp_efuse_mac_get_(custom|default)|esp_read_mac|esp_derive_local_mac)'"
+    hint: "esp_mac.h header file is not included by esp_system.h anymore. It shall then be manually included with #include \"esp_mac.h\""
+
+-
+    re: "error: (implicit declaration of function 'esp_chip_info'|unknown type name 'esp_chip_info_t')"
+    hint: "esp_chip_info.h header file is not included by esp_system.h anymore. It shall then be manually included with #include \"esp_chip_info.h\""
+
+-
+    re: "error: implicit declaration of function 'esp_int_wdt_\\w+'"
+    hint: "The Interrupt Watchdog API has been made private, it shall not be used anymore. You can still force its inclusion with #include \"esp_private/esp_int_wdt.h\" (not recommended)"
+
+-
+    re: "error: implicit declaration of function '(esp_spiram_get_chip_size|esp_spiram_get_size)'"
+    hint: "{}() has been deleted, please use esp_psram_get_size() instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (spiram.h|esp_spiram.h): No such file or directory"
+    hint: "{} was removed. Include esp_psram.h instead. Make sure to also add esp_psram as a dependency in your CMakeLists.txt file."
+    match_to_output: True
+
+-
+    re: "fatal error: (soc/cpu.h|compare_set.h): No such file or directory"
+    hint: "{} was removed. Include and use the API function provided by esp_cpu.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (esp_intr.h): No such file or directory"
+    hint: "{} was removed. Include esp_intr_alloc.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: (esp_panic.h): No such file or directory"
+    hint: "{} was made private. Use functionalities provided in esp_debug_helpers.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: soc/(spinlock.h|clk_ctrl_os.h|rtc_wdt.h): No such file or directory"
+    hint: "{} must be included without the 'soc' part."
+    match_to_output: True
+
+-
+    re: "fatal error: (soc_log.h): No such file or directory"
+    hint: "{} was renamed and made private. Consider using the logging APIs provided under esp_log.h instead."
+    match_to_output: True
+
+-
+    re: "fatal error: eh_frame_parser.h: No such file or directory"
+    hint: "Backtrace Parser API (eh_frame_parser.h) has been made private, it shall not be used anymore. You can still force its inclusion with #include \"esp_private/eh_frame_parser.h\" (not recommended)"
+-
+    re: "error: unknown type name '(portTickType|xTaskHandle|xQueueHandle|xSemaphoreHandle|xQueueSetHandle|xQueueSetMemberHandle|xTimeOutType|xMemoryRegion|xTaskParameters|xTaskStatusType|xTimerHandle|xCoRoutineHandle|pdTASK_HOOK_CODE|tmrTIMER_CALLBACK|pdTASK_CODE|xListItem|xList)'"
+    hint: "You maybe using pre FreeRTOS V8.0.0 data types. The backward compatibility of such data types is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such data types."
+    match_to_output: True
+-
+    re: "error: 'portTICK_RATE_MS' undeclared"
+    hint: "You maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs."
+    match_to_output: True
+-
+    re: "error: implicit declaration of function '(eTaskStateGet|pcTaskGetTaskName|pcTimerGetTimerName|pcQueueGetQueueName|vTaskGetTaskInfo|xTaskGetIdleRunTimeCounter)'"
+    hint: "You maybe using pre FreeRTOS V8.0.0 APIs. The backward compatibility of such APIs is no longer enabled by default. Please turn on CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY explicitly to use such APIs."
+    match_to_output: True
+-
+    re: "error: unknown type name 'TaskSnapshot_t'"
+    hint: "The header file task_snapshot.h is no longer included as part of freertos/task.h. Users need to include freertos/task_snapshot.h explicitly."
+    match_to_output: True
+-
+    re: "error: implicit declaration of function '(pxTaskGetNext|vTaskGetSnapshot|uxTaskGetSnapshotAll)'"
+    hint: "The header file task_snapshot.h is no longer included as part of freertos/task.h. Users need to include freertos/task_snapshot.h explicitly."
+    match_to_output: True
+-
+    re: "error: implicit declaration of function '(portENTER_CRITICAL_NESTED|portEXIT_CRITICAL_NESTED|vPortCPUInitializeMutex|vPortCPUAcquireMutex|vPortCPUAcquireMutexTimeout|vPortCPUReleaseMutex)'"
+    hint: "The header file portmacro_deprecated.h has been removed. Users should refer the migration guide for alternative functions."
+    match_to_output: True
+-
     re: "error: implicit declaration of function '(\\w+)'"
     hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'.\nAlso, please check if the function has been removed, renamed or replaced by an alternative function - refer to the migration guide for more information."
     match_to_output: True
