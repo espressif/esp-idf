@@ -266,7 +266,7 @@ UART 输出处理
 
     - :example:`system/deep_sleep`：如何使用 Deep-sleep 唤醒触发器和 ULP 协处理器编程。
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32c2
 
     - :example:`system/deep_sleep`：如何通过定时器触发 Deep-sleep 唤醒。
 

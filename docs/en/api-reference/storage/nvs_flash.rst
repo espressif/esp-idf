@@ -82,14 +82,14 @@ Data stored in NVS partitions can be encrypted using AES-XTS in the manner simil
 
 The NVS Encryption is enabled by default when :doc:`Flash Encryption <../../security/flash-encryption>` is enabled. This is done because Wi-Fi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform level encryption is already enabled.
 
-For using NVS encryption, the partition table must contain the :ref:`nvs_key_partition`. Two partition tables containing the :ref:`nvs_key_partition` are provided for NVS encryption under the partition table option (menuconfig->Partition Table). They can be selected with the project configuration menu (``idf.py menuconfig``). Please refer to the example :example:`security/flash_encryption` for how to configure and use NVS encryption feature.
+For using NVS encryption, the partition table must contain the :ref:`nvs_key_partition`. Two partition tables containing the :ref:`nvs_key_partition` are provided for NVS encryption under the partition table option (``menuconfig`` > ``Partition Table``). They can be selected with the project configuration menu (``idf.py menuconfig``). Please refer to the example :example:`security/flash_encryption` for how to configure and use NVS encryption feature.
 
 .. _nvs_key_partition:
 
 NVS Key Partition
 ^^^^^^^^^^^^^^^^^
 
-An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted` and its size should be the minimum partition size (4KB). Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. Two additional partition tables which contain the :ref:`nvs_key_partition` are provided under the partition table option (menuconfig->Partition Table). They can be directly used for :ref:`nvs_encryption`. The structure of these partitions is depicted below.
+An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted` and its size should be the minimum partition size (4KB). Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. Two additional partition tables which contain the :ref:`nvs_key_partition` are provided under the partition table option (``menuconfig`` > ``Partition Table``). They can be directly used for :ref:`nvs_encryption`. The structure of these partitions is depicted below.
 
 .. highlight:: none
 

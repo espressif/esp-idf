@@ -82,14 +82,14 @@ NVS 分区内存储的数据可使用 AES-XTS 进行加密，类似于 IEEE P161
 
 启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和密码）。如已启用平台级加密，那么同时默认启用 NVS 加密有其必要性。
 
-使用 NVS 加密，分区表必须包含 :ref:`nvs_key_partition`。在分区表选项 (menuconfig->Partition Table) 下，为 NVS 加密提供了两个包含 :ref:`nvs_key_partition` 的分区表，您可以通过工程配置菜单 (``idf.py menuconfig``) 进行选择。请参考 :example:`security/flash_encryption` 中的例子，了解如何配置和使用 NVS 加密功能。
+使用 NVS 加密，分区表必须包含 :ref:`nvs_key_partition`。在分区表选项 (``menuconfig`` > ``Partition Table``) 下，为 NVS 加密提供了两个包含 :ref:`nvs_key_partition` 的分区表，您可以通过工程配置菜单 (``idf.py menuconfig``) 进行选择。请参考 :example:`security/flash_encryption` 中的例子，了解如何配置和使用 NVS 加密功能。
 
 .. _nvs_key_partition:
 
 NVS 密钥分区
 ^^^^^^^^^^^^^^^^^
 
-    应用程序如果想使用 NVS 加密，则需要编译进一个类型为 `data`，子类型为 `key` 的密钥分区。该分区应标记为 `已加密` 且最小为 4096 字节。如需了解更多详细信息，请参考 :doc:`分区表 <../../api-guides/partition-tables>`。在分区表选项 (menuconfig->Partition Table) 下提供了两个包含 :ref:`nvs_key_partition` 的额外分区表，可以直接用于 :ref:`nvs_encryption`。这些分区的具体结构见下表：
+应用程序如果想使用 NVS 加密，则需要编译进一个类型为 `data`，子类型为 `key` 的密钥分区。该分区应标记为 `已加密` 且最小为 4096 字节。如需了解更多详细信息，请参考 :doc:`分区表 <../../api-guides/partition-tables>`。在分区表选项 (``menuconfig`` > ``Partition Table``) 下提供了两个包含 :ref:`nvs_key_partition` 的额外分区表，可以直接用于 :ref:`nvs_encryption`。这些分区的具体结构见下表：
 
 .. highlight:: none
 
