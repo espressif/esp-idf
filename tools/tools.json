@@ -949,6 +949,40 @@
           }
         }
       ]
+    },
+    {
+      "description": "ESP ROM ELFs",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {
+        "ESP_ROM_ELF_DIR": "${TOOL_PATH}/"
+      },
+      "info_url": "https://github.com/espressif/esp-rom-elfs",
+      "install": "always",
+      "is_executable": false,
+      "license": "Apache-2.0",
+      "name": "esp-rom-elfs",
+      "supported_targets": [
+        "all"
+      ],
+      "version_cmd": [
+        ""
+      ],
+      "version_regex": "",
+      "versions": [
+        {
+          "any": {
+            "sha256": "add4bedbdd950c8409ff45bbf5610316e7d14c4635ea6906f057f2183ab3e3e9",
+            "size": 2454730,
+            "url": "https://github.com/espressif/esp-rom-elfs/releases/download/20220823/esp-rom-elfs-20220823.tar.gz"
+          },
+          "name": "20220823",
+          "status": "recommended"
+        }
+      ]
     }
   ],
   "version": 1
