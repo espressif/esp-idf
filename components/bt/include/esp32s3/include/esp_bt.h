@@ -180,7 +180,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .slave_ce_len_min = SLAVE_CE_LEN_MIN_DEFAULT,                          \
     .hw_recorrect_en = AGC_RECORRECT_EN,                                   \
     .cca_thresh = CONFIG_BT_CTRL_HW_CCA_VAL,                               \
-};
+}
 
 #else
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {0}; _Static_assert(0, "please enable bluetooth in menuconfig to use bt.h");
