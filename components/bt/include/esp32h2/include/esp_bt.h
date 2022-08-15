@@ -227,7 +227,7 @@ typedef struct {
     .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
     .scan_classify_filter_enable = false,                                               \
     .config_magic = CONFIG_MAGIC,                                                       \
-};
+}
 
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 
