@@ -64,7 +64,7 @@ class GDBProcess(CustomProcess):
         log_file = os.path.join(proj_path, 'gdb.log')
         super(GDBProcess, self).__init__(cmd, log_file)
         self.p.sendline('')  # it is for "---Type <return> to continue, or q <return> to quit---"
-        i = self.p.expect_exact(['Thread 1 hit Temporary breakpoint 2, app_main ()',
+        i = self.p.expect_exact(['Thread 1 "main" hit Temporary breakpoint 2, app_main ()',
                                  'Load failed'])
         if i == 0:
             Utility.console_log('gdb is at breakpoint')
@@ -91,7 +91,7 @@ class GDBProcess(CustomProcess):
     def break_till_end(self):
         self.p.sendline('b esp_restart')
         self.p.sendline('c')
-        self.p.expect_exact('Thread 1 hit Breakpoint 3, esp_restart ()')
+        self.p.expect_exact('Thread 1 "main" hit Breakpoint 3, esp_restart ()')
 
 
 class SerialThread(object):
