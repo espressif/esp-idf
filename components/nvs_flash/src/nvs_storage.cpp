@@ -305,7 +305,10 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
 
             if (findPage->state() == Page::PageState::UNINITIALIZED ||
                     findPage->state() == Page::PageState::INVALID) {
-                ESP_ERROR_CHECK(findItem(nsIndex, datatype, key, findPage, item));
+                err = findItem(nsIndex, datatype, key, findPage, item);
+                if (err != ESP_OK) {
+                    return err;
+                }
             }
             /* Get the version of the previous index with same <ns,key> */
             prevStart = item.blobIndex.chunkStart;
@@ -383,7 +386,10 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     if (findPage) {
         if (findPage->state() == Page::PageState::UNINITIALIZED ||
                 findPage->state() == Page::PageState::INVALID) {
-            ESP_ERROR_CHECK(findItem(nsIndex, datatype, key, findPage, item));
+            err = findItem(nsIndex, datatype, key, findPage, item);
+            if (err != ESP_OK) {
+                return err;
+            }
         }
         err = findPage->eraseItem(nsIndex, datatype, key);
         if (err == ESP_ERR_FLASH_OP_FAIL) {
