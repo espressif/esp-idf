@@ -9,14 +9,6 @@
 
 extern void app_main(void);
 
-void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression)
-{
-    ESP_LOGE("ESP_ERROR_CHECK", "Failed with esp_err_t: 0x%x", rc);
-    ESP_LOGE("ESP_ERROR_CHECK", "Expression: %s", expression);
-    ESP_LOGE("ESP_ERROR_CHECK", "Functions: %s %s(%d)", function, file, line);
-    abort();
-}
-
 esp_err_t esp_event_loop_create_default(void)
 {
     return ESP_OK;

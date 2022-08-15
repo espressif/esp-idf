@@ -1,4 +1,14 @@
-#include "catch.hpp"
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file provides a simple version of _esp_error_check_failed which is used on Linux target.
+ * For chip targets, esp_system component provides an implementation which uses esp_rom_printf and
+ * takes the possibility of the cache being disabled into account.
+ */
+#include <stdio.h>
+#include <stdlib.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
 
