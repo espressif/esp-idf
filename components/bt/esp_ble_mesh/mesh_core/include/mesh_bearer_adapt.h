@@ -573,9 +573,9 @@ struct bt_mesh_gatt_attr {
 #define BLE_MESH_GATT_PRIMARY_SERVICE(_service)     \
 {                                                   \
     .uuid = BLE_MESH_UUID_GATT_PRIMARY,             \
-    .perm = BLE_MESH_GATT_PERM_READ,                \
     .read = bt_mesh_gatts_attr_read_service,        \
     .user_data = _service,                          \
+    .perm = BLE_MESH_GATT_PERM_READ,                \
 }
 
 /** @def BLE_MESH_GATT_SECONDARY_SERVICE
@@ -588,9 +588,9 @@ struct bt_mesh_gatt_attr {
 #define BLE_MESH_GATT_SECONDARY_SERVICE(_service)   \
 {                                                   \
     .uuid = BLE_MESH_UUID_GATT_SECONDARY,           \
-    .perm = BLE_MESH_GATT_PERM_READ,                \
     .read = bt_mesh_gatts_attr_read_service,        \
     .user_data = _service,                          \
+    .perm = BLE_MESH_GATT_PERM_READ,                \
 }
 
 /** @def BLE_MESH_GATT_INCLUDE_SERVICE
@@ -603,9 +603,9 @@ struct bt_mesh_gatt_attr {
 #define BLE_MESH_GATT_INCLUDE_SERVICE(_service_incl)    \
 {                                                       \
     .uuid = BLE_MESH_UUID_GATT_INCLUDE,                 \
-    .perm = BLE_MESH_GATT_PERM_READ,                    \
     .read = bt_mesh_gatts_attr_read_included,           \
     .user_data = _service_incl,                         \
+    .perm = BLE_MESH_GATT_PERM_READ,                    \
 }
 
 /** @def BLE_MESH_GATT_CHARACTERISTIC
@@ -619,10 +619,10 @@ struct bt_mesh_gatt_attr {
 #define BLE_MESH_GATT_CHARACTERISTIC(_uuid, _props)             \
 {                                                               \
     .uuid = BLE_MESH_UUID_GATT_CHRC,                            \
-    .perm = BLE_MESH_GATT_PERM_READ,                            \
     .read = bt_mesh_gatts_attr_read_chrc,                       \
     .user_data = (&(struct bt_mesh_gatt_char) { .uuid = _uuid,  \
                            .properties = _props, }),            \
+    .perm = BLE_MESH_GATT_PERM_READ,                            \
 }
 
 /** @def BLE_MESH_GATT_DESCRIPTOR
@@ -639,10 +639,10 @@ struct bt_mesh_gatt_attr {
 #define BLE_MESH_GATT_DESCRIPTOR(_uuid, _perm, _read, _write, _value)   \
 {                           \
     .uuid = _uuid,          \
-    .perm = _perm,          \
     .read = _read,          \
     .write = _write,        \
     .user_data = _value,    \
+    .perm = _perm,          \
 }
 
 /** @def BLE_MESH_GATT_SERVICE
