@@ -15,6 +15,10 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif /**< __cplusplus */
+
 #include "sdkconfig.h"
 #include "driver/gpio.h"
 #include "esp_ble_mesh_defs.h"
@@ -51,5 +55,9 @@ void board_prov_complete(void);
 void board_led_operation(uint8_t pin, uint8_t onoff);
 
 esp_err_t board_init(void);
+
+#ifdef __cplusplus
+}
+#endif /**< __cplusplus */
 
 #endif
