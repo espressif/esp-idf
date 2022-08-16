@@ -14,6 +14,7 @@ RUN : \
     curl \
     flex \
     git \
+    git-lfs \
     gperf \
     lcov \
     libffi-dev \
