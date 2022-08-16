@@ -57,7 +57,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `cryptoauthlib`_ Microchip CryptoAuthentication Library - Copyright (c) 2015 - 2018 Microchip Technology Inc, is licensed under common Microchip software License as described in :example_file:`LICENSE file <peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/LICENSE>`
 
-* :component_file:`TLSF allocator <heap/heap_tlsf.c>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD license.
+* `TLSF allocator <https://github.com/espressif/tlsf>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD 3-clause license.
 
 * `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
 
