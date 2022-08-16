@@ -73,15 +73,15 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
-    mcpwm_oper_handle_t operator = NULL;
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = 0,
     };
     mcpwm_gen_handle_t generator = NULL;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(generator,
                 MCPWM_GEN_TIMER_EVENT_ACTION(MCPWM_TIMER_DIRECTION_UP, MCPWM_TIMER_EVENT_EMPTY, MCPWM_GEN_ACTION_TOGGLE),
@@ -93,7 +93,7 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
         .duty_cycle = 0.5,
         .first_pulse_duration_us = 10,
     };
-    TEST_ESP_OK(mcpwm_operator_apply_carrier(operator, &carrier_config));
+    TEST_ESP_OK(mcpwm_operator_apply_carrier(oper, &carrier_config));
 
     TEST_ESP_OK(mcpwm_timer_enable(timer));
 
@@ -104,7 +104,7 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
 
     printf("remove carrier from PWM wave\r\n");
     carrier_config.frequency_hz = 0;
-    TEST_ESP_OK(mcpwm_operator_apply_carrier(operator, &carrier_config));
+    TEST_ESP_OK(mcpwm_operator_apply_carrier(oper, &carrier_config));
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
     vTaskDelay(pdMS_TO_TICKS(200));
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
@@ -112,17 +112,17 @@ TEST_CASE("mcpwm_operator_carrier", "[mcpwm]")
 
     TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_generator(generator));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
-static bool test_cbc_brake_on_gpio_fault_callback(mcpwm_oper_handle_t operator, const mcpwm_brake_event_data_t *edata, void *user_data)
+static bool test_cbc_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
 {
     esp_rom_printf("cbc brake\r\n");
     return false;
 }
 
-static bool test_ost_brake_on_gpio_fault_callback(mcpwm_oper_handle_t operator, const mcpwm_brake_event_data_t *edata, void *user_data)
+static bool test_ost_brake_on_gpio_fault_callback(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_data)
 {
     esp_rom_printf("ost brake\r\n");
     return false;
@@ -145,16 +145,16 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
-    mcpwm_oper_handle_t operator = NULL;
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     printf("set brake event callbacks for operator\r\n");
     mcpwm_operator_event_callbacks_t cbs = {
         .on_brake_cbc = test_cbc_brake_on_gpio_fault_callback,
         .on_brake_ost = test_ost_brake_on_gpio_fault_callback,
     };
-    TEST_ESP_OK(mcpwm_operator_register_event_callbacks(operator, &cbs, NULL));
+    TEST_ESP_OK(mcpwm_operator_register_event_callbacks(oper, &cbs, NULL));
 
     printf("install gpio fault\r\n");
     mcpwm_gpio_fault_config_t gpio_fault_config = {
@@ -183,10 +183,10 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
         .brake_mode = MCPWM_OPER_BRAKE_MODE_CBC,
         .flags.cbc_recover_on_tez = true,
     };
-    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(operator, &brake_config));
+    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
     brake_config.fault = gpio_ost_fault;
     brake_config.brake_mode = MCPWM_OPER_BRAKE_MODE_OST;
-    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(operator, &brake_config));
+    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
     const int gen_a_gpio = 0;
@@ -197,9 +197,9 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
         .flags.io_loop_back = true,
     };
     generator_config.gen_gpio_num = gen_a_gpio;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &gen_a));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &gen_b));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
 
     printf("set generator actions on timer event\r\n");
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen_a,
@@ -229,7 +229,7 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
         // remove the fault signal
         gpio_set_level(cbc_fault_gpio, 0);
         // recovery
-        TEST_ESP_OK(mcpwm_operator_recover_from_fault(operator, gpio_cbc_fault));
+        TEST_ESP_OK(mcpwm_operator_recover_from_fault(oper, gpio_cbc_fault));
         vTaskDelay(pdMS_TO_TICKS(40));
         // should recovery automatically
         TEST_ASSERT_EQUAL(0, gpio_get_level(gen_a_gpio));
@@ -241,14 +241,14 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
         vTaskDelay(pdMS_TO_TICKS(10));
         TEST_ASSERT_EQUAL(1, gpio_get_level(gen_b_gpio));
         // can't recover because fault signal is still active
-        TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_operator_recover_from_fault(operator, gpio_ost_fault));
+        TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_operator_recover_from_fault(oper, gpio_ost_fault));
         // remove the fault signal
         gpio_set_level(ost_fault_gpio, 0);
         vTaskDelay(pdMS_TO_TICKS(40));
         // for ost brake, the generator can't recover before we manually recover it
         TEST_ASSERT_EQUAL(1, gpio_get_level(gen_b_gpio));
         // now it's safe to recover the operator
-        TEST_ESP_OK(mcpwm_operator_recover_from_fault(operator, gpio_ost_fault));
+        TEST_ESP_OK(mcpwm_operator_recover_from_fault(oper, gpio_ost_fault));
         vTaskDelay(pdMS_TO_TICKS(40));
         // should recovery now
         TEST_ASSERT_EQUAL(0, gpio_get_level(gen_b_gpio));
@@ -260,7 +260,7 @@ TEST_CASE("mcpwm_operator_brake_on_gpio_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_fault(gpio_ost_fault));
     TEST_ESP_OK(mcpwm_del_generator(gen_a));
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
@@ -281,9 +281,9 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
-    mcpwm_oper_handle_t operator = NULL;
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     printf("install soft fault\r\n");
     mcpwm_soft_fault_config_t soft_fault_config = {};
@@ -296,7 +296,7 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
         .brake_mode = MCPWM_OPER_BRAKE_MODE_CBC,
         .flags.cbc_recover_on_tez = true,
     };
-    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(operator, &brake_config));
+    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("create generators\r\n");
     const int gen_a_gpio = 0;
@@ -307,9 +307,9 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
         .flags.io_loop_back = true,
     };
     generator_config.gen_gpio_num = gen_a_gpio;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &gen_a));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_a));
     generator_config.gen_gpio_num = gen_b_gpio;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &gen_b));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &gen_b));
 
     printf("set generator actions on timer event\r\n");
     TEST_ESP_OK(mcpwm_generator_set_actions_on_timer_event(gen_a,
@@ -344,7 +344,7 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
         // start the timer, so that operator can recover at a specific event (e.g. tez)
         TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
         // recover on tez
-        TEST_ESP_OK(mcpwm_operator_recover_from_fault(operator, soft_fault));
+        TEST_ESP_OK(mcpwm_operator_recover_from_fault(oper, soft_fault));
         vTaskDelay(pdMS_TO_TICKS(40));
         // the generator output should be recoverd automatically
         TEST_ASSERT_EQUAL(0, gpio_get_level(gen_a_gpio));
@@ -352,7 +352,7 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
 
     printf("change the brake mode to ost\r\n");
     brake_config.brake_mode = MCPWM_OPER_BRAKE_MODE_OST;
-    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(operator, &brake_config));
+    TEST_ESP_OK(mcpwm_operator_set_brake_on_fault(oper, &brake_config));
 
     printf("trigger soft fault signal, brake in OST mode\r\n");
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_START_NO_STOP));
@@ -364,7 +364,7 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
         vTaskDelay(pdMS_TO_TICKS(40));
         // don't recover without a manual recover
         TEST_ASSERT_EQUAL(1, gpio_get_level(gen_b_gpio));
-        TEST_ESP_OK(mcpwm_operator_recover_from_fault(operator, soft_fault));
+        TEST_ESP_OK(mcpwm_operator_recover_from_fault(oper, soft_fault));
         vTaskDelay(pdMS_TO_TICKS(10));
         // should recovery now
         TEST_ASSERT_EQUAL(0, gpio_get_level(gen_b_gpio));
@@ -375,6 +375,6 @@ TEST_CASE("mcpwm_operator_brake_on_soft_fault", "[mcpwm]")
     TEST_ESP_OK(mcpwm_del_fault(soft_fault));
     TEST_ESP_OK(mcpwm_del_generator(gen_a));
     TEST_ESP_OK(mcpwm_del_generator(gen_b));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
