@@ -7,6 +7,10 @@
 #ifndef _BLE_MESH_EXAMPLE_NVS_H_
 #define _BLE_MESH_EXAMPLE_NVS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif /**< __cplusplus */
+
 #include <stdint.h>
 #include "esp_err.h"
 #include "nvs_flash.h"
@@ -20,5 +24,9 @@ esp_err_t ble_mesh_nvs_get_length(nvs_handle_t handle, const char *key, size_t *
 esp_err_t ble_mesh_nvs_restore(nvs_handle_t handle, const char *key, void *data, size_t length, bool *exist);
 
 esp_err_t ble_mesh_nvs_erase(nvs_handle_t handle, const char *key);
+
+#ifdef __cplusplus
+}
+#endif /**< __cplusplus */
 
 #endif /* _BLE_MESH_EXAMPLE_NVS_H_ */
