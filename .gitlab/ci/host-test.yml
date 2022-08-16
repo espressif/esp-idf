@@ -204,19 +204,24 @@ test_idf_py:
     - cd ${IDF_PATH}/tools/test_idf_py
     - ./test_idf_py.py
 
+# Test for create virtualenv. It must be invoked from Python, not from virtualenv.
+# Use docker image system python without any extra dependencies
 test_idf_tools:
-  extends: .host_test_template
+  extends:
+    - .host_test_template
+    - .before_script_minimal
   artifacts:
     when: on_failure
     paths:
       - tools/tools.new.json
     expire_in: 1 week
+  image:
+    name: $ESP_ENV_IMAGE
+    entrypoint: [""]  # use system python3. no extra pip package installed
   script:
-    # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
-    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif" | tr "\n" ":"); echo ${p%:})
     - cd ${IDF_PATH}/tools/test_idf_tools
-    - ./test_idf_tools.py
-    # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
+    - python3 -m pip install jsonschema
+    - python3 ./test_idf_tools.py
     - python3 ./test_idf_tools_python_env.py
 
 .test_efuse_table_on_host_template:
