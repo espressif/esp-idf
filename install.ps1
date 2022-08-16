@@ -13,7 +13,7 @@ $exit_code_tools = $proces_tools.ExitCode
 if ($exit_code_tools -ne 0) { exit $exit_code_tools }  # if error
 
 Write-Output "Setting up Python environment"
-$proces_py_env = Start-Process -Wait -PassThru  -NoNewWindow -FilePath "python" -Args "$IDF_PATH/tools/idf_tools.py install-python-env --features=${FEATURES}"
+$proces_py_env = Start-Process -Wait -PassThru  -NoNewWindow -FilePath "python" -Args "$IDF_PATH/tools/idf_tools.py install-python-env"
 $exit_code_py_env = $proces_py_env.ExitCode
 if ($exit_code_py_env -ne 0) { exit $exit_code_py_env } # if error
 
