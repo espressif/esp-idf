@@ -51,6 +51,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
+    $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hidd_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_hf_ag_api.h \
