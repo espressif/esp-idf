@@ -49,22 +49,22 @@ static uint8_t dev_uuid[16] = { 0xaa, 0x55 };
 static uint8_t app_key[16] = {0};
 
 static esp_ble_mesh_cfg_srv_t config_server = {
+    /* 3 transmissions with 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .relay = ESP_BLE_MESH_RELAY_ENABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
 #if CONFIG_BLE_MESH_DF_SRV
@@ -96,8 +96,10 @@ static esp_ble_mesh_df_srv_t directed_forwarding_server = {
 
 ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
 static esp_ble_mesh_gen_onoff_srv_t onoff_server_0 = {
-    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
-    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
+    .rsp_ctrl ={
+        .get_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
+        .set_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
+    },
 };
 
 static esp_ble_mesh_model_t root_models[] = {
@@ -124,8 +126,8 @@ static esp_ble_mesh_elem_t elements[] = {
 
 static esp_ble_mesh_comp_t composition = {
     .cid = CID_ESP,
-    .elements = elements,
     .element_count = ARRAY_SIZE(elements),
+    .elements = elements,
 };
 
 /* Disable OOB security for SILabs Android app */
@@ -134,8 +136,8 @@ static esp_ble_mesh_prov_t provision = {
 #if 0
     .output_size = 4,
     .output_actions = ESP_BLE_MESH_DISPLAY_NUMBER,
-    .input_actions = ESP_BLE_MESH_PUSH,
     .input_size = 4,
+    .input_actions = ESP_BLE_MESH_PUSH,
 #else
     .output_size = 0,
     .output_actions = 0,
@@ -200,7 +202,7 @@ static void example_handle_gen_onoff_msg(esp_ble_mesh_model_t *model,
                                          esp_ble_mesh_msg_ctx_t *ctx,
                                          esp_ble_mesh_server_recv_gen_onoff_set_t *set)
 {
-    esp_ble_mesh_gen_onoff_srv_t *srv = model->user_data;
+    esp_ble_mesh_gen_onoff_srv_t *srv = (esp_ble_mesh_gen_onoff_srv_t *)model->user_data;
 
     switch (ctx->recv_op) {
     case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET:
@@ -305,7 +307,7 @@ static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_ev
     case ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT");
         if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET) {
-            srv = param->model->user_data;
+            srv = (esp_ble_mesh_gen_onoff_srv_t *)param->model->user_data;
             ESP_LOGI(TAG, "onoff 0x%02x", srv->state.onoff);
             example_handle_gen_onoff_msg(param->model, &param->ctx, NULL);
         }
@@ -365,9 +367,10 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
 static void example_ble_mesh_directed_forwarding_server_cb(esp_ble_mesh_df_server_cb_event_t event,
                                                            esp_ble_mesh_df_server_cb_param_t *param)
 {
-    esp_ble_mesh_df_server_table_change_t change = {0};
+    esp_ble_mesh_df_server_table_change_t change;
     esp_ble_mesh_uar_t path_origin;
     esp_ble_mesh_uar_t path_target;
+    memset(&change, 0, sizeof(esp_ble_mesh_df_server_table_change_t));
 
     if (event == ESP_BLE_MESH_DF_SERVER_TABLE_CHANGE_EVT) {
         memcpy(&change, &param->value.table_change, sizeof(esp_ble_mesh_df_server_table_change_t));
@@ -456,7 +459,7 @@ static esp_err_t ble_mesh_init(void)
         return err;
     }
 
-    err = esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV|ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_node_prov_enable((esp_ble_mesh_prov_bearer_t)(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to enable mesh node (err %d)", err);
         return err;

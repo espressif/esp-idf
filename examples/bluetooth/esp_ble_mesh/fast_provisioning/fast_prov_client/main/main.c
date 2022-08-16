@@ -41,22 +41,22 @@ static const esp_ble_mesh_client_op_pair_t fast_prov_cli_op_pair[] = {
 };
 
 static esp_ble_mesh_cfg_srv_t config_server = {
+    /* 3 transmissions with a 20ms interval */
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
     .beacon = ESP_BLE_MESH_BEACON_ENABLED,
-#if defined(CONFIG_BLE_MESH_FRIEND)
-    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
-#else
-    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
-#endif
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
 #endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .friend_state = ESP_BLE_MESH_FRIEND_ENABLED,
+#else
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+#endif
     .default_ttl = 7,
-    /* 3 transmissions with a 20ms interval */
-    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
-    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 esp_ble_mesh_client_t config_client;
 esp_ble_mesh_client_t gen_onoff_client;
@@ -89,8 +89,8 @@ static esp_ble_mesh_elem_t elements[] = {
 
 static esp_ble_mesh_comp_t comp = {
     .cid           = CID_ESP,
-    .elements      = elements,
     .element_count = ARRAY_SIZE(elements),
+    .elements      = elements,
 };
 
 static esp_ble_mesh_prov_t prov = {
@@ -213,10 +213,10 @@ static void example_recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[BLE_M
 
 add:
         memcpy(add_dev.addr, addr, 6);
-        add_dev.addr_type = (uint8_t)addr_type;
+        add_dev.addr_type = (esp_ble_mesh_addr_type_t)addr_type;
         memcpy(add_dev.uuid, dev_uuid, 16);
         add_dev.oob_info = oob_info;
-        add_dev.bearer = (uint8_t)bearer;
+        add_dev.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
         flag = ADD_DEV_RM_AFTER_PROV_FLAG | ADD_DEV_START_PROV_NOW_FLAG | ADD_DEV_FLUSHABLE_DEV_FLAG;
         err = esp_ble_mesh_provisioner_add_unprov_dev(&add_dev, flag);
         if (err != ESP_OK) {
@@ -557,7 +557,7 @@ static esp_err_t ble_mesh_init(void)
         return ESP_FAIL;
     }
 
-    err = esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    err = esp_ble_mesh_provisioner_prov_enable((esp_ble_mesh_prov_bearer_t)(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: Failed to enable provisioning", __func__);
         return ESP_FAIL;
