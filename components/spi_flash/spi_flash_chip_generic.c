@@ -126,7 +126,19 @@ esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size)
         return ESP_ERR_FLASH_UNSUPPORTED_CHIP;
     }
 
-    *size = 1 << (id & 0xFF);
+    uint32_t temp_size = id & 0xFF;
+#define SPI_FLASH_LAST_LINEAR_VALUE (0x19)
+#define SPI_FLASH_HEX_A_F_RANGE (6)
+    // Support for sizes > 0x19
+    // Apparently the chipmakers decided to count in decimal with hexadecimal values
+    // The leads to having the following sizes:
+    // 0x15 - 0x19 -> 16Mbit - 256Mbit
+    // 0x20 - 0x21 -> 512Mbit -> 1Gbit
+    if (temp_size > SPI_FLASH_LAST_LINEAR_VALUE ) {
+        temp_size -= SPI_FLASH_HEX_A_F_RANGE;  // Remove the unused A-F slots that were jumped...
+    }
+
+    *size = 1 << temp_size;
     return ESP_OK;
 }
 
