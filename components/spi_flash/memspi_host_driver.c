@@ -86,22 +86,42 @@ static const char TAG[] = "memspi";
 
 esp_err_t memspi_host_read_id_hs(spi_flash_host_inst_t *host, uint32_t *id)
 {
-    uint32_t id_buf = 0;
+    uint32_t raw_flash_id = 0;
     spi_flash_trans_t t = {
         .command = CMD_RDID,
         .miso_len = 3,
-        .miso_data = ((uint8_t*) &id_buf),
+        .miso_data = ((uint8_t *)&raw_flash_id),
     };
     host->driver->common_command(host, &t);
 
-    uint32_t raw_flash_id = id_buf;
     ESP_EARLY_LOGV(TAG, "raw_chip_id: %X\n", raw_flash_id);
-    if (raw_flash_id == 0xFFFFFF || raw_flash_id == 0) {
+
+    uint8_t mfg_id = raw_flash_id & 0xFF;
+
+    if (mfg_id == 0xFF || mfg_id == 0) {
+        // We received no response or the FLASH requires 8 bits of clock before answering
+
+        // Try again with padding after the command
+        spi_flash_trans_t t = {
+            .command = CMD_RDID,
+            .dummy_bitlen = 8,
+            .miso_len = 3,
+            .miso_data = ((uint8_t *)&raw_flash_id),
+        };
+        host->driver->common_command(host, &t);
+
+        ESP_EARLY_LOGV(TAG, "raw_chip_id(8dummy): %X\n", raw_flash_id);
+
+        mfg_id = raw_flash_id & 0xFF;
+    }
+
+    if (mfg_id == 0xFF || mfg_id == 0) {
+        // Now we are sure we received no response from the chip
         ESP_EARLY_LOGE(TAG, "no response\n");
         return ESP_ERR_FLASH_NO_RESPONSE;
     }
+
     // Byte swap the flash id as it's usually written the other way around
-    uint8_t mfg_id = raw_flash_id & 0xFF;
     uint16_t flash_id = (raw_flash_id >> 16) | (raw_flash_id & 0xFF00);
     *id = ((uint32_t)mfg_id << 16) | flash_id;
     ESP_EARLY_LOGV(TAG, "chip_id: %X\n", *id);
