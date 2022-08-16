@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -335,6 +335,20 @@ static esp_err_t matrix_object_remove_instance(te_matrix_handle_t matrix_handle)
     return ret;
 }
 
+bool is_matrix_object_handle(touch_elem_handle_t element_handle)
+{
+    te_matrix_handle_list_t *item;
+    xSemaphoreTake(s_te_mat_obj->mutex, portMAX_DELAY);
+    SLIST_FOREACH(item, &s_te_mat_obj->handle_list, next) {
+        if (element_handle == item->matrix_handle) {
+            xSemaphoreGive(s_te_mat_obj->mutex);
+            return true;
+        }
+    }
+    xSemaphoreGive(s_te_mat_obj->mutex);
+    return false;
+}
+
 static bool matrix_channel_check(te_matrix_handle_t matrix_handle, touch_pad_t channel_num)
 {
     te_dev_t *device;
@@ -400,6 +414,13 @@ static inline void matrix_dispatch(te_matrix_handle_t matrix_handle, touch_elem_
         matrix_info.position = matrix_handle->position;
         void *arg = matrix_handle->config->arg;
         matrix_handle->config->callback(matrix_handle, &matrix_info, arg);  //Event callback
+    }
+}
+
+void matrix_enable_wakeup_calibration(te_matrix_handle_t matrix_handle, bool en)
+{
+    for (int idx = 0; idx < matrix_handle->x_channel_num + matrix_handle->y_channel_num; ++idx) {
+        matrix_handle->device[idx]->is_use_last_threshold = !en;
     }
 }
 

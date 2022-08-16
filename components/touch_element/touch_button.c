@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -296,6 +296,20 @@ static esp_err_t button_object_remove_instance(te_button_handle_t button_handle)
     return ret;
 }
 
+bool is_button_object_handle(touch_elem_handle_t element_handle)
+{
+    te_button_handle_list_t *item;
+    xSemaphoreTake(s_te_btn_obj->mutex, portMAX_DELAY);
+    SLIST_FOREACH(item, &s_te_btn_obj->handle_list, next) {
+        if (element_handle == item->button_handle) {
+            xSemaphoreGive(s_te_btn_obj->mutex);
+            return true;
+        }
+    }
+    xSemaphoreGive(s_te_btn_obj->mutex);
+    return false;
+}
+
 static bool button_channel_check(te_button_handle_t button_handle, touch_pad_t channel_num)
 {
     return (channel_num == button_handle->device->channel);
@@ -344,6 +358,11 @@ static inline void button_dispatch(te_button_handle_t button_handle, touch_elem_
         button_info.event = button_handle->event;
         button_handle->config->callback(button_handle, &button_info, button_handle->config->arg);  //Event callback
     }
+}
+
+void button_enable_wakeup_calibration(te_button_handle_t button_handle, bool en)
+{
+    button_handle->device->is_use_last_threshold = !en;
 }
 
 /**

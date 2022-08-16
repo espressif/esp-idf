@@ -292,7 +292,7 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_VERSION_2                 (1)     /*!<Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*!<15 Touch channels */
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /* Sopport touch proximity channel number. */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /*!<Support touch proximity channel number. */
 
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)  /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 #define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */

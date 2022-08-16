@@ -23,6 +23,7 @@
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+#include "hal/rtc_cntl_ll.h"
 
 #include "driver/uart.h"
 

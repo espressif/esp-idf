@@ -47,6 +47,11 @@ static inline void rtc_cntl_ll_ulp_int_clear(void)
     REG_SET_BIT(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_TRAP_INT_CLR);
 }
 
+static inline void rtc_cntl_ll_timer2_set_touch_wait_cycle(uint32_t wait_cycle)
+{
+    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, wait_cycle);
+}
+
 #ifdef __cplusplus
 }
 #endif
