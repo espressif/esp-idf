@@ -284,7 +284,7 @@ The GDB prompt can be used to inspect CPU registers, local and static variables,
 RTC Watchdog Timeout
 --------------------
 
-The RTC watchdog is used in the startup code to keep track of execution time and also helps to prevent a lock up caused by an unstable power source, it is enabled by default, see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`. If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the ROM bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
+The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the ROM bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
 
 .. only:: esp32
 
@@ -298,7 +298,7 @@ The RTC watchdog is used in the startup code to keep track of execution time and
 
         rst:0x10 (RTCWDT_RTC_RST)
 
-The RTC watchdog covers the execution time from the first stage bootloader (ROM bootloader) to application startup. It is initially set in the ROM bootloader, then configured in the bootloader with the :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000ms by default). During the application initialization stage, it is reconfigured again because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which allows the RTC watchdog to not be disabled before ``app_main`` and instead the RTC watchdog remains active and must be explicitly reset in your application.
+The RTC watchdog covers the execution time from the first stage bootloader (ROM bootloader) to application startup. It is initially set in the ROM bootloader, then configured in the bootloader with the :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000 ms by default). During the application initialization stage, it is reconfigured because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which prevents the RTC watchdog from being disabled before ``app_main``. Instead, the RTC watchdog remains active and must be fed periodically in your application's code.
 
 .. _Guru-Meditation-Errors:
 
