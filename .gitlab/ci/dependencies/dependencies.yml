@@ -33,6 +33,7 @@
     - docker
   patterns:
     - docker
+    - submodule
 
 "build:windows":
   labels:
