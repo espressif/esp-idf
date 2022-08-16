@@ -86,19 +86,19 @@ esp_err_t mcpwm_new_operator(const mcpwm_operator_config_t *config, mcpwm_oper_h
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 #endif
     esp_err_t ret = ESP_OK;
-    mcpwm_oper_t *operator= NULL;
+    mcpwm_oper_t *oper = NULL;
     ESP_GOTO_ON_FALSE(config && ret_oper, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
 
-    operator= heap_caps_calloc(1, sizeof(mcpwm_oper_t), MCPWM_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(operator, ESP_ERR_NO_MEM, err, TAG, "no mem for operator");
+    oper = heap_caps_calloc(1, sizeof(mcpwm_oper_t), MCPWM_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(oper, ESP_ERR_NO_MEM, err, TAG, "no mem for operator");
 
-    ESP_GOTO_ON_ERROR(mcpwm_operator_register_to_group(operator, config->group_id), err, TAG, "register operator failed");
-    mcpwm_group_t *group = operator->group;
+    ESP_GOTO_ON_ERROR(mcpwm_operator_register_to_group(oper, config->group_id), err, TAG, "register operator failed");
+    mcpwm_group_t *group = oper->group;
     int group_id = group->group_id;
     mcpwm_hal_context_t *hal = &group->hal;
-    int oper_id = operator->oper_id;
+    int oper_id = oper->oper_id;
 
     // reset MCPWM operator
     mcpwm_hal_operator_reset(hal, oper_id);
@@ -113,17 +113,17 @@ esp_err_t mcpwm_new_operator(const mcpwm_operator_config_t *config, mcpwm_oper_h
     mcpwm_ll_deadtime_enable_update_delay_on_sync(hal->dev, oper_id, config->flags.update_dead_time_on_sync);
     // set the clock source for dead time submodule, the resolution is the same to the MCPWM group
     mcpwm_ll_operator_set_deadtime_clock_src(hal->dev, oper_id, MCPWM_LL_DEADTIME_CLK_SRC_GROUP);
-    operator->deadtime_resolution_hz = group->resolution_hz;
+    oper->deadtime_resolution_hz = group->resolution_hz;
 
     // fill in other operator members
-    operator->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    *ret_oper = operator;
-    ESP_LOGD(TAG, "new operator (%d,%d) at %p", group_id, oper_id, operator);
+    oper->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+    *ret_oper = oper;
+    ESP_LOGD(TAG, "new operator (%d,%d) at %p", group_id, oper_id, oper);
     return ESP_OK;
 
 err:
-    if (operator) {
-        mcpwm_operator_destory(operator);
+    if (oper) {
+        mcpwm_operator_destory(oper);
     }
     return ret;
 }
@@ -253,13 +253,13 @@ esp_err_t mcpwm_operator_register_event_callbacks(mcpwm_oper_handle_t oper, cons
     return ESP_OK;
 }
 
-esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t operator, const mcpwm_brake_config_t *config)
+esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t oper, const mcpwm_brake_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(operator && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_group_t *group = operator->group;
+    ESP_RETURN_ON_FALSE(oper && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    mcpwm_group_t *group = oper->group;
     mcpwm_fault_t *fault = config->fault;
 
-    int oper_id = operator->oper_id;
+    int oper_id = oper->oper_id;
     mcpwm_ll_brake_enable_cbc_refresh_on_tez(group->hal.dev, oper_id, config->flags.cbc_recover_on_tez);
     mcpwm_ll_fault_enable_cbc_refresh_on_tep(group->hal.dev, oper_id, config->flags.cbc_recover_on_tep);
 
@@ -269,17 +269,17 @@ esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t operator, const 
         mcpwm_gpio_fault_t *gpio_fault = __containerof(fault, mcpwm_gpio_fault_t, base);
         mcpwm_ll_brake_enable_cbc_mode(group->hal.dev, oper_id, gpio_fault->fault_id, config->brake_mode == MCPWM_OPER_BRAKE_MODE_CBC);
         mcpwm_ll_brake_enable_oneshot_mode(group->hal.dev, oper_id, gpio_fault->fault_id, config->brake_mode  == MCPWM_OPER_BRAKE_MODE_OST);
-        operator->brake_mode_on_gpio_fault[gpio_fault->fault_id] = config->brake_mode;
+        oper->brake_mode_on_gpio_fault[gpio_fault->fault_id] = config->brake_mode;
         break;
     }
     case MCPWM_FAULT_TYPE_SOFT: {
         mcpwm_soft_fault_t *soft_fault = __containerof(fault, mcpwm_soft_fault_t, base);
-        ESP_RETURN_ON_FALSE(!soft_fault->operator || soft_fault->operator == operator, ESP_ERR_INVALID_STATE, TAG, "soft fault already used by another operator");
-        soft_fault->operator = operator;
-        soft_fault->base.group = operator->group;
+        ESP_RETURN_ON_FALSE(!soft_fault->oper || soft_fault->oper == oper, ESP_ERR_INVALID_STATE, TAG, "soft fault already used by another operator");
+        soft_fault->oper = oper;
+        soft_fault->base.group = oper->group;
         mcpwm_ll_brake_enable_soft_cbc(group->hal.dev, oper_id, config->brake_mode == MCPWM_OPER_BRAKE_MODE_CBC);
         mcpwm_ll_brake_enable_soft_ost(group->hal.dev, oper_id, config->brake_mode == MCPWM_OPER_BRAKE_MODE_OST);
-        operator->brake_mode_on_soft_fault = config->brake_mode;
+        oper->brake_mode_on_soft_fault = config->brake_mode;
         break;
     }
     default:
@@ -289,21 +289,21 @@ esp_err_t mcpwm_operator_set_brake_on_fault(mcpwm_oper_handle_t operator, const 
     return ESP_OK;
 }
 
-esp_err_t mcpwm_operator_recover_from_fault(mcpwm_oper_handle_t operator, mcpwm_fault_handle_t fault)
+esp_err_t mcpwm_operator_recover_from_fault(mcpwm_oper_handle_t oper, mcpwm_fault_handle_t fault)
 {
-    ESP_RETURN_ON_FALSE(operator && fault, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_group_t *group = operator->group;
+    ESP_RETURN_ON_FALSE(oper && fault, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    mcpwm_group_t *group = oper->group;
     mcpwm_operator_brake_mode_t brake_mode;
 
     // check the brake mode on the fault event
     switch (fault->type) {
     case MCPWM_FAULT_TYPE_GPIO: {
         mcpwm_gpio_fault_t *gpio_fault = __containerof(fault, mcpwm_gpio_fault_t, base);
-        brake_mode = operator->brake_mode_on_gpio_fault[gpio_fault->fault_id];
+        brake_mode = oper->brake_mode_on_gpio_fault[gpio_fault->fault_id];
         break;
     }
     case MCPWM_FAULT_TYPE_SOFT:
-        brake_mode = operator->brake_mode_on_soft_fault;
+        brake_mode = oper->brake_mode_on_soft_fault;
         break;
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "unknown fault type:%d", fault->type);
@@ -312,13 +312,13 @@ esp_err_t mcpwm_operator_recover_from_fault(mcpwm_oper_handle_t operator, mcpwm_
 
     bool fault_signal_is_active = false;
     if (brake_mode == MCPWM_OPER_BRAKE_MODE_OST) {
-        fault_signal_is_active = mcpwm_ll_ost_brake_active(group->hal.dev, operator->oper_id);
+        fault_signal_is_active = mcpwm_ll_ost_brake_active(group->hal.dev, oper->oper_id);
         // OST brake can't recover automatically, need to manually recovery the operator
         if (!fault_signal_is_active) {
-            mcpwm_ll_brake_clear_ost(group->hal.dev, operator->oper_id);
+            mcpwm_ll_brake_clear_ost(group->hal.dev, oper->oper_id);
         }
     } else {
-        fault_signal_is_active = mcpwm_ll_cbc_brake_active(group->hal.dev, operator->oper_id);
+        fault_signal_is_active = mcpwm_ll_cbc_brake_active(group->hal.dev, oper->oper_id);
         // CBC brake can recover automatically after deactivating the fault signal
     }
 
