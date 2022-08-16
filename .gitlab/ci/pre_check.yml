@@ -41,18 +41,6 @@ check_rom_api_header:
     - tools/ci/check_examples_rom_header.sh
     - tools/ci/check_api_violation.sh
 
-check_python_style:
-  extends:
-    - .pre_check_template
-    - .rules:patterns:python-files
-  artifacts:
-    when: on_failure
-    paths:
-      - flake8_output.txt
-    expire_in: 1 week
-  script:
-    - python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
-
 test_check_kconfigs:
   extends: .pre_check_template
   artifacts:
