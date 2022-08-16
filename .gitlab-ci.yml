@@ -77,8 +77,6 @@ variables:
 
   # target test repo parameters
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
-  CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
-  CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
 
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -183,20 +181,10 @@ before_script:
 
 .before_script_integration_test:
   before_script:
-    # need to install esptool, needn't install idf python env
-  - source tools/ci/utils.sh
-  - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
-  - *set_include_nightly_run
-  - source tools/ci/setup_python.sh
-  - add_gitlab_ssh_keys
-  - fetch_submodules
-  # download the constraint file manually
-  - mkdir -p ~/.espressif
-  - wget -O ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE} --header="Authorization:Bearer ${ESPCI_TOKEN}" ${GITLAB_HTTP_SERVER}/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw
-  - *download_test_python_contraint_file
-  # TODO: remove this, IDFCI-1207
-  - pip install esptool -c ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
-  - *download_test_python_tool
+    # needn't install idf python env
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
+    - add_gitlab_ssh_keys
 
 .before_script_macos:
   before_script:
