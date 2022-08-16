@@ -268,6 +268,5 @@ endif()
 
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
-    idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${cryptoauthlib})
+    idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
 endif()
