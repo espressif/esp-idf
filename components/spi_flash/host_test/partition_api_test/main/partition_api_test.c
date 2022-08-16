@@ -10,64 +10,74 @@
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_private/partition_linux.h"
+#include "unity.h"
+#include "unity_fixture.h"
 
-int main(int argc, char **argv)
+
+TEST_GROUP(partition_api);
+
+TEST_SETUP(partition_api)
 {
-    printf("Partition API Linux emulation test: ");
+}
 
-    ////////////////////////////////////////
-    //PARTITION LOOKUP:
+TEST_TEAR_DOWN(partition_api)
+{
+}
 
-    //1. esp_partition_find (label=STORAGE)
+TEST(partition_api, test_partition_find_basic)
+{
     esp_partition_iterator_t iter = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
-    assert(iter);
+    TEST_ASSERT_NOT_NULL(iter);
 
-    //2. esp_partition_get (label=STORAGE)
     const esp_partition_t *part = esp_partition_get(iter);
-    assert(part);
+    TEST_ASSERT_NOT_NULL(part);
 
-    //3. esp_partition_iterator_release (label STORAGE iter): assumed OK
     esp_partition_iterator_release(iter);
+}
 
-    ////////////////////////////////////////
-    //ITERATORS, PARTITION PROPERTIES:
-
-    //4. esp_partition_find_first (type=APP, subtype=ANY)
-    const esp_partition_t *partition_app = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
-    assert(partition_app);
-
-    //5. enumerate all APP partitions
-    iter = esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
-    assert(iter);
+TEST(partition_api, test_partition_find_app)
+{
+    esp_partition_iterator_t iter = esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    TEST_ASSERT_NOT_NULL(iter);
     size_t counter = 0;
 
     while (iter != NULL) {
         const esp_partition_t *part_data = esp_partition_get(iter);
         counter++;
-        assert(part_data);
+        TEST_ASSERT_NOT_NULL(part_data);
         iter = esp_partition_next(iter);
     }
     esp_partition_iterator_release(iter);
+}
 
-    //6. enumerate all DATA partitions and print details for each
-    iter = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
-    assert(iter);
-    counter = 0;
+TEST(partition_api, test_partition_find_data)
+{
+    esp_partition_iterator_t iter = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    TEST_ASSERT_NOT_NULL(iter);
+    size_t counter = 0;
 
     while (iter != NULL) {
         const esp_partition_t *part_data = esp_partition_get(iter);
         counter++;
-        assert(part_data);
+        TEST_ASSERT_NOT_NULL(part_data);
         iter = esp_partition_next(iter);
     }
     esp_partition_iterator_release(iter);
+}
 
-    //7. esp_partition_find_first (type=DATA, label=STORAGE)
+TEST(partition_api, test_partition_find_first)
+{
+    const esp_partition_t *partition_app = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL);
+    TEST_ASSERT_NOT_NULL(partition_app);
+
     const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
-    assert(partition_data);
+    TEST_ASSERT_NOT_NULL(partition_data);
+}
 
-    /////////////////////////////////////
-    //OPERATIONS
+TEST(partition_api, test_partition_ops)
+{
+    const esp_partition_t *partition_data = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    TEST_ASSERT_NOT_NULL(partition_data);
 
     uint8_t buff[] = "ABCDEFGHIJKLMNOP";
     size_t bufsize = sizeof(buff);
@@ -75,12 +85,12 @@ int main(int argc, char **argv)
 
     //8. esp_partition_write/raw
     esp_err_t err = esp_partition_write(partition_data, off, (const void *)buff, bufsize);
-    assert(err == ESP_OK);
+    TEST_ESP_OK(err);
 
     //9. esp_partition_read/raw
     uint8_t buffout[32] = {0};
     err = esp_partition_read(partition_data, off, (void *)buffout, bufsize);
-    assert(err == ESP_OK);
+    TEST_ESP_OK(err);
 
     //10. esp_partition_erase_range
     uint8_t buferase[bufsize];
@@ -90,17 +100,30 @@ int main(int argc, char **argv)
 
     err = esp_partition_erase_range(partition_data, sector_off, SPI_FLASH_SEC_SIZE);
     assert(esp_partition_read(partition_data, off, (void *)buffout, bufsize) == ESP_OK);
-    assert(err == ESP_OK && memcmp(buffout, buferase, bufsize) == 0);
+    TEST_ESP_OK(err);
+    TEST_ASSERT_EQUAL(0, memcmp(buffout, buferase, bufsize));
 
     //11. esp_partition_verify (partition_data)
     const esp_partition_t *verified_partition = esp_partition_verify(partition_data);
-    assert(verified_partition != NULL);
+    TEST_ASSERT_NOT_NULL(verified_partition);
+}
 
-    //12. release SPI FLASH emulation block from memory
-    err = esp_partition_file_munmap();
-    assert(err == ESP_OK);
+TEST_GROUP_RUNNER(partition_api)
+{
+    RUN_TEST_CASE(partition_api, test_partition_find_basic);
+    RUN_TEST_CASE(partition_api, test_partition_find_app);
+    RUN_TEST_CASE(partition_api, test_partition_find_data);
+    RUN_TEST_CASE(partition_api, test_partition_find_first);
+    RUN_TEST_CASE(partition_api, test_partition_ops);
+}
 
-    printf("OK\n");
+static void run_all_tests(void)
+{
+    RUN_TEST_GROUP(partition_api);
+}
 
+int main(int argc, char **argv)
+{
+    UNITY_MAIN_FUNC(run_all_tests);
     return 0;
 }
