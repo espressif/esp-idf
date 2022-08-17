@@ -243,7 +243,7 @@ static bool whether_contains_exapected_data(uint16_t *src, uint32_t src_len, uin
  *        2. Check rx right mono and left mono (requiring tx works in stereo mode)
  *        3. Check tx mono (requiring rx works in stereo mode)
  */
-TEST_CASE("I2S_mono_stereo_loopback_test", "[i2s_legacy]")
+TEST_CASE("I2S_legacy_mono_stereo_loopback_test", "[i2s_legacy]")
 {
 #define WRITE_BUF_LEN  2000
 #define READ_BUF_LEN   4000
