@@ -20,6 +20,14 @@ extern "C" {
 typedef soc_periph_lcd_clk_src_t lcd_clock_source_t;
 #endif
 
+/**
+ * @brief RGB color endian
+ */
+typedef enum {
+    LCD_RGB_ENDIAN_RGB, /*!< RGB data endian: RGB */
+    LCD_RGB_ENDIAN_BGR, /*!< RGB data endian: BGR */
+} lcd_color_rgb_endian_t;
+
 #ifdef __cplusplus
 }
 #endif
