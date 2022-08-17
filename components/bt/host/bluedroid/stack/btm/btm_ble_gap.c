@@ -4119,6 +4119,59 @@ tBTM_STATUS btm_ble_stop_adv(void)
     return rt;
 }
 
+tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
+{
+    tBTM_STATUS rt = BTM_SUCCESS;
+
+    osi_mutex_lock(&adv_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_mutex_lock(&scan_enable_lock, OSI_MUTEX_MAX_TIMEOUT);
+
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE)) {
+            osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = adv_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_SCAN_DUPLICATE_DISABLE)) {
+            osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = scan_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (rt == BTM_SUCCESS) {
+        btsnd_hcic_ble_set_random_addr(random_bda);
+    }
+
+    if (btm_cb.ble_ctr_cb.inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
+        if (btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_ENABLE)) {
+            osi_sem_take(&adv_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = adv_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+        if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, btm_cb.ble_ctr_cb.inq_var.scan_duplicate_filter)) {
+            osi_sem_take(&scan_enable_sem, OSI_SEM_MAX_TIMEOUT);
+            rt = scan_enable_status;
+        } else {
+            rt = BTM_BAD_VALUE_RET;
+        }
+    }
+
+    osi_mutex_unlock(&adv_enable_lock);
+    osi_mutex_unlock(&scan_enable_lock);
+
+    return rt;
+}
+
 
 /*******************************************************************************
 **
