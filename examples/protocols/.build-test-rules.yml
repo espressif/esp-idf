@@ -53,10 +53,9 @@ examples/protocols/asio/udp_echo_server:
       reason: lack of runners
 
 examples/protocols/coap_client:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: running this test on single platform is sufficient for coverage
 
 examples/protocols/coap_server:
   disable:
