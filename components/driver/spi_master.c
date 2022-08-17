@@ -329,6 +329,12 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     SPI_CHECK(dev_config->cs_ena_pretrans <= 1 || (dev_config->address_bits == 0 && dev_config->command_bits == 0) ||
         (dev_config->flags & SPI_DEVICE_HALFDUPLEX), "In full-duplex mode, only support cs pretrans delay = 1 and without address_bits and command_bits", ESP_ERR_INVALID_ARG);
 #endif
+
+    //Check post_cb status when `SPI_DEVICE_NO_RETURN_RESULT` flag is set.
+    if (dev_config->flags & SPI_DEVICE_NO_RETURN_RESULT) {
+        SPI_CHECK(dev_config->post_cb != NULL, "use feature flag 'SPI_DEVICE_NO_RETURN_RESULT' but no post callback function sets", ESP_ERR_INVALID_ARG);
+    }
+
     uint32_t lock_flag = ((dev_config->spics_io_num != -1)? SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED: 0);
 
     spi_bus_lock_dev_config_t lock_config = {
