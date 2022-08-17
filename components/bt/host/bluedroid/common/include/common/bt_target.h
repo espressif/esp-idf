@@ -1578,7 +1578,7 @@
 
 /* ERTM Tx window size */
 #ifndef RFC_FCR_OPT_TX_WINDOW_SIZE
-#define RFC_FCR_OPT_TX_WINDOW_SIZE  20
+#define RFC_FCR_OPT_TX_WINDOW_SIZE  10
 #endif
 
 /* ERTM Maximum transmissions before disconnecting */
