@@ -147,22 +147,14 @@ examples/system/startup_time:
       reason: lack of runners
 
 examples/system/sysview_tracing:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
-      temporary: true
-      reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+    - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/system/sysview_tracing_heap_log:
-  enable:
-    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
-      temporary: true
-      reason: the other targets are not tested yet
   disable_test:
-    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+    - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
