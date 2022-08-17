@@ -17,7 +17,7 @@
 #include "errno.h"
 #include "esp_tls_crypto.h"
 
-static const char *TAG = "TRANSPORT_WS";
+static const char *TAG = "transport_ws";
 
 #define WS_BUFFER_SIZE              CONFIG_WS_BUFFER_SIZE
 #define WS_FIN                      0x80
