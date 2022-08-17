@@ -79,6 +79,14 @@
 
   - "components/**/*"
 
+.patterns-target_test-i154: &patterns-target_test-i154
+  - "components/esp_netif/**/*"
+  - "components/esp_phy/**/*"
+  - "components/ieee802154/**/*"
+  - "components/lwip/**/*"
+  - "examples/common_components/iperf/**/*"
+  - "examples/openthread/**/*"
+
 .patterns-integration_test: &patterns-integration_test
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/integration_test/**/*"
@@ -781,6 +789,8 @@
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
 
 .rules:build:example_test-esp32:
   rules:
@@ -884,6 +894,8 @@
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
 
 .rules:build:example_test-esp32s2:
   rules:
@@ -936,6 +948,8 @@
       changes: *patterns-example_test-usb
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
 
 .rules:build:integration_test:
   rules:
@@ -1025,6 +1039,8 @@
       changes: *patterns-example_test-wifi
     - <<: *if-dev-push
       changes: *patterns-integration_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
     - <<: *if-dev-push
       changes: *patterns-unit_test
     - <<: *if-dev-push
@@ -2717,6 +2733,18 @@
     - <<: *if-label-target_test
     - <<: *if-dev-push
       changes: *patterns-example_test-wifi
+
+.rules:test:example_test-i154:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-target_test
+    - <<: *if-dev-push
+      changes: *patterns-target_test-i154
 
 .rules:test:host_test:
   rules:
