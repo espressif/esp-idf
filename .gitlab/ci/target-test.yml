@@ -973,6 +973,15 @@ UT_C2:
     - UT_T1_1
     - xtal_40mhz
 
+UT_C2_SPI_DUAL:
+  extends:
+    - .unit_test_esp32c2_template
+    - .rules:test:unit_test-esp32c2-spi_multi
+  tags:
+    - ESP32C2_IDF
+    - Example_SPI_Multi_device
+    - xtal_40mhz
+
 UT_C2_26M:
   extends: .unit_test_esp32c2_template
   tags:
