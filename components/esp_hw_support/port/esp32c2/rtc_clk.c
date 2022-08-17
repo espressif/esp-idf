@@ -126,6 +126,10 @@ static void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     /* Analog part */
     regi2c_ctrl_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
+    /* WAIT CALIBRATION DONE */
+    while(!regi2c_ctrl_ll_bbpll_calibration_is_done());
+    /* BBPLL CALIBRATION STOP */
+    regi2c_ctrl_ll_bbpll_calibration_stop();
 
     s_cur_pll_freq = pll_freq;
 }
