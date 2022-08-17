@@ -460,8 +460,6 @@ components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_netif/include/esp_netif_ppp.h
-components/esp_netif/include/esp_netif_slip.h
-components/esp_netif/lwip/esp_netif_lwip_slip.h
 components/esp_netif/private_include/esp_netif_private.h
 components/esp_netif/test/test_esp_netif.c
 components/esp_netif/test_apps/component_ut_test.py
@@ -1800,7 +1798,6 @@ examples/protocols/mqtt/ws/main/app_main.c
 examples/protocols/mqtt/ws/mqtt_ws_example_test.py
 examples/protocols/mqtt/wss/main/app_main.c
 examples/protocols/mqtt/wss/mqtt_wss_example_test.py
-examples/protocols/slip/slip_udp/components/slip_modem/include/slip_modem.h
 examples/protocols/slip/slip_udp/main/slip_client_main.c
 examples/protocols/sntp/example_test.py
 examples/protocols/sntp/main/sntp_example_main.c
