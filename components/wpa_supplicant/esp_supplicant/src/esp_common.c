@@ -23,6 +23,7 @@
 
 struct wpa_supplicant g_wpa_supp;
 
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 static TaskHandle_t s_supplicant_task_hdl = NULL;
 static void *s_supplicant_evt_queue = NULL;
 static void *s_supplicant_api_lock = NULL;
@@ -229,13 +230,24 @@ static void supplicant_sta_disconn_handler(void* arg, esp_event_base_t event_bas
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 				   u32 rssi, u8 channel, u64 current_tsf)
 {
-	if (type == WLAN_FC_STYPE_BEACON || type == WLAN_FC_STYPE_PROBE_RESP) {
-		return esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
-	} else if (type ==  WLAN_FC_STYPE_ACTION) {
-		return handle_action_frm(frame, len, sender, rssi, channel);
+	int ret = 0;
+
+	switch (type) {
+	case WLAN_FC_STYPE_BEACON:
+	case WLAN_FC_STYPE_PROBE_RESP:
+		ret = esp_handle_beacon_probe(type, frame, len, sender, rssi, channel, current_tsf);
+		break;
+#if defined(CONFIG_WPA_11KV_SUPPORT)
+	case WLAN_FC_STYPE_ACTION:
+		ret = handle_action_frm(frame, len, sender, rssi, channel);
+		break;
+#endif /* defined(CONFIG_WPA_11KV_SUPPORT) */
+	default:
+		ret = -1;
+		break;
 	}
 
-	return -1;
+	return ret;
 }
 
 #ifdef CONFIG_MBO
@@ -261,7 +273,7 @@ static bool bss_profile_match(u8 *sender)
 
 	return true;
 }
-#endif
+#endif /* CONFIG_MBO */
 
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
@@ -292,7 +304,6 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	esp_scan_init(wpa_s);
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
-
 	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
 			&supplicant_sta_conn_handler, NULL);
 	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
@@ -301,6 +312,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
+
 	wpa_cb->wpa_sta_rx_mgmt = ieee80211_handle_rx_frm;
 	/* Matching is done only for MBO at the moment, this can be extended for other features*/
 #ifdef CONFIG_MBO
@@ -309,6 +321,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 #else
 	wpa_cb->wpa_sta_profile_match = NULL;
 #endif
+
 	return 0;
 err:
 	esp_supplicant_common_deinit();
@@ -322,6 +335,7 @@ void esp_supplicant_common_deinit(void)
 	esp_scan_deinit(wpa_s);
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
+
 	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED,
 			&supplicant_sta_conn_handler);
 	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED,
@@ -341,6 +355,7 @@ void esp_supplicant_common_deinit(void)
 		}
 		wpa_printf(MSG_ERROR, "failed to send task delete event");
 	}
+
 }
 
 bool esp_rrm_is_rrm_supported_connection(void)
@@ -425,10 +440,6 @@ int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
 int esp_mbo_update_non_pref_chan(struct non_pref_chan_s *non_pref_chan)
 {
 	int ret = wpas_mbo_update_non_pref_chan(&g_wpa_supp, non_pref_chan);
-	if (ret == 0) {
-		esp_set_assoc_ie();
-	}
-
 	return ret;
 }
 
@@ -470,7 +481,7 @@ static size_t get_rm_enabled_ie(uint8_t *ie, size_t len)
 	*pos |= WLAN_RRM_CAPS_BEACON_REPORT_PASSIVE |
 #ifdef SCAN_CACHE_SUPPORTED
 		WLAN_RRM_CAPS_BEACON_REPORT_TABLE |
-#endif
+#endif /* SCAN_CACHE_SUPPORTED */
 		WLAN_RRM_CAPS_BEACON_REPORT_ACTIVE;
 
 	os_memcpy(ie, rrm_ie, sizeof(rrm_ie));
@@ -516,6 +527,7 @@ static size_t get_mbo_oce_assoc_ie(uint8_t *ie, size_t len)
 	return mbo_ie_len;
 }
 #endif
+#endif
 
 static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 {
@@ -539,7 +551,7 @@ static uint8_t get_extended_caps_ie(uint8_t *ie, size_t len)
 	return ext_caps_ie_len + 2;
 }
 
-
+#if defined(CONFIG_WPA_11KV_SUPPORT)
 static uint8_t get_operating_class_ie(uint8_t *ie, size_t len)
 {
 	uint8_t op_class_ie[4] = {0};
@@ -577,20 +589,19 @@ void esp_set_scan_ie(void)
 	ie_len = get_mbo_oce_scan_ie(pos, len);
 	pos += ie_len;
 	len -= ie_len;
-#endif
+#endif /* CONFIG_MBO */
 	esp_wifi_unset_appie_internal(WIFI_APPIE_PROBEREQ);
 	esp_wifi_set_appie_internal(WIFI_APPIE_PROBEREQ, ie, SCAN_IE_LEN - len, 0);
 	os_free(ie);
 #undef SCAN_IE_LEN
 }
-
-void esp_set_assoc_ie(void)
+#endif
+void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 {
 #define ASSOC_IE_LEN 128
 	uint8_t *ie, *pos;
 	size_t len = ASSOC_IE_LEN, ie_len;
-
-	ie = os_malloc(ASSOC_IE_LEN);
+	ie = os_malloc(ASSOC_IE_LEN + ies_len);
 	if (!ie) {
 		wpa_printf(MSG_ERROR, "failed to allocate ie");
 		return;
@@ -599,23 +610,31 @@ void esp_set_assoc_ie(void)
 	ie_len = get_extended_caps_ie(pos, len);
 	pos += ie_len;
 	len -= ie_len;
-	ie_len = get_operating_class_ie(pos, len);
-	pos += ie_len;
-	len -= ie_len;
+#ifdef CONFIG_WPA_11KV_SUPPORT
 	ie_len = get_rm_enabled_ie(pos, len);
 	pos += ie_len;
 	len -= ie_len;
 #ifdef CONFIG_MBO
+	ie_len = get_operating_class_ie(pos, len);
+	pos += ie_len;
+	len -= ie_len;
 	ie_len = get_mbo_oce_assoc_ie(pos, len);
 	pos += ie_len;
 	len -= ie_len;
+#endif /* CONFIG_MBO */
 #endif
+	if (ies_len) {
+		os_memcpy(pos, ies, ies_len);
+		pos += ies_len;
+		len -= ies_len;
+	}
 	esp_wifi_unset_appie_internal(WIFI_APPIE_ASSOC_REQ);
 	esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_REQ, ie, ASSOC_IE_LEN - len, 0);
 	os_free(ie);
 #undef ASSOC_IE_LEN
 }
 
+#ifdef CONFIG_WPA_11KV_SUPPORT
 void esp_get_tx_power(uint8_t *tx_power)
 {
 #define DEFAULT_MAX_TX_POWER 19 /* max tx power is 19.5 dbm */
@@ -691,3 +710,4 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 	}
 	return 0;
 }
+#endif

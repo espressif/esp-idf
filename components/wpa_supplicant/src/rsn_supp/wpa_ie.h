@@ -37,12 +37,16 @@ struct wpa_eapol_ie_parse {
 	const u8 *reassoc_deadline;
 	const u8 *key_lifetime;
 #endif /* CONFIG_IEEE80211R */
+	const u8 *transition_disable;
+	size_t transition_disable_len;
+	const u8 *rsnxe;
+	size_t rsnxe_len;
 };
 
 int wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 			     struct wpa_eapol_ie_parse *ie);
 int wpa_gen_wpa_ie(struct wpa_sm *sm, u8 *wpa_ie, size_t wpa_ie_len);
-
+int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len);
 int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
              struct wpa_ie_data *data);
 

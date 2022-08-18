@@ -54,7 +54,8 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_registrar.c"
     "src/wps/wps_validate.c")
 
-set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
+set(esp_srcs "esp_supplicant/src/esp_common.c"
+    "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_wps.c"
@@ -154,7 +155,6 @@ if(CONFIG_WPA_11KV_SUPPORT)
     "src/common/bss.c"
     "src/common/scan.c"
     "src/common/ieee802_11_common.c"
-    "esp_supplicant/src/esp_common.c"
     "esp_supplicant/src/esp_scan.c"
     )
 else()

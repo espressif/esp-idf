@@ -116,7 +116,6 @@ bool  wpa_attach(void)
         ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
     }
     esp_set_scan_ie();
-    esp_set_assoc_ie();
     return ret;
 }
 
@@ -184,7 +183,6 @@ int wpa_sta_connect(uint8_t *bssid)
 void wpa_config_done(void)
 {
     /* used in future for setting scan and assoc IEs */
-    esp_set_assoc_ie();
 }
 
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
@@ -200,6 +198,7 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
     data->capabilities = ie.capabilities;
     data->pmkid = ie.pmkid;
     data->mgmt_group_cipher = cipher_type_map_supp_to_public(ie.mgmt_group_cipher);
+    data->rsnxe_capa = ie.rsnxe_capa;
 
     return ret;
 }
@@ -225,7 +224,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     }
 }
 
-#ifndef ROAMING_SUPPORT
+#ifndef CONFIG_WPA_11KV_SUPPORT
 static inline int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
 	wpa_cb->wpa_sta_rx_mgmt = NULL;
@@ -270,6 +269,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
+    wpa_cb->wpa_sta_set_ap_rsnxe = wpa_sm_set_ap_rsnxe;
 
     esp_wifi_register_wpa3_cb(wpa_cb);
     ret = esp_supplicant_common_init(wpa_cb);
