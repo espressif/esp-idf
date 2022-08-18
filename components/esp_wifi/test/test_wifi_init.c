@@ -273,3 +273,109 @@ TEST_CASE("Calling esp_wifi_deinit() without stop", "[wifi_init]")
     sema = NULL;
     test_utils_task_delete(th);
 }
+
+static void wifi_country_code_task(void* arg)
+{
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) arg;
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_erase"));
+    nvs_flash_erase();
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
+    esp_err_t r = nvs_flash_init();
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+	    ESP_LOGI(TAG, EMPH_STR("no free pages or NFS version mismatch, erase.."));
+	    TEST_ESP_OK(nvs_flash_erase());
+	    r = nvs_flash_init();
+    }
+    TEST_ESP_OK(r);
+    //init tcpip stack
+    test_case_uses_tcpip();
+    ESP_LOGI(TAG, EMPH_STR("event_init"));
+    TEST_ESP_OK(event_init());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
+    TEST_ESP_OK(esp_wifi_init(&cfg));
+
+    wifi_country_t country;
+    wifi_country_t country_01 = {.cc="01", .schan=1, .nchan=11, .policy=WIFI_COUNTRY_POLICY_MANUAL};
+    wifi_country_t country_CN = {.cc="CN", .schan=1, .nchan=13, .policy=WIFI_COUNTRY_POLICY_MANUAL};
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country"));
+    TEST_ESP_OK(esp_wifi_get_country(&country));
+    TEST_ASSERT(country.cc[0] == country_CN.cc[0] && country.cc[1] == country_CN.cc[1]);
+
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_country"));
+    TEST_ESP_OK(esp_wifi_set_country(&country_01));
+
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country"));
+    TEST_ESP_OK(esp_wifi_get_country(&country));
+    TEST_ASSERT(country.cc[0] == country_01.cc[0] && country.cc[1] == country_01.cc[1]);
+
+
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("event_deinit"));
+    TEST_ESP_OK(event_deinit());
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
+    nvs_flash_deinit();
+
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_erase"));
+    nvs_flash_erase();
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
+    r = nvs_flash_init();
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+	    ESP_LOGI(TAG, EMPH_STR("no free pages or NFS version mismatch, erase.."));
+	    TEST_ESP_OK(nvs_flash_erase());
+	    r = nvs_flash_init();
+    }
+    TEST_ESP_OK(r);
+    //init tcpip stack
+    test_case_uses_tcpip();
+    ESP_LOGI(TAG, EMPH_STR("event_init"));
+    TEST_ESP_OK(event_init());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
+    TEST_ESP_OK(esp_wifi_init(&cfg));
+
+    char country_code_string[3];
+    char country_code_string_01[3] = "01";
+    char country_code_string_CN[3] = "CN";
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country_code"));
+    TEST_ESP_OK(esp_wifi_get_country_code(&country_code_string[0]));
+    TEST_ASSERT(country_code_string[0] == country_code_string_CN[0] && country_code_string[1] == country_code_string_CN[1]);
+
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_country_code"));
+    TEST_ESP_OK(esp_wifi_set_country_code(&country_code_string_01[0], false));
+
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_country_code"));
+    TEST_ESP_OK(esp_wifi_get_country_code(&country_code_string[0]));
+    TEST_ASSERT(country_code_string[0] == country_code_string_01[0] && country_code_string[1] == country_code_string_01[1]);
+
+
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_OK(esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("event_deinit"));
+    TEST_ESP_OK(event_deinit());
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
+    nvs_flash_deinit();
+
+    ESP_LOGI(TAG, "test passed...");
+    xSemaphoreGive(*sema);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("wifi set country code", "[wifi_init]")
+{
+    TaskHandle_t th = NULL;
+    SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
+    printf("Creating tasks\n");
+#ifndef CONFIG_FREERTOS_UNICORE
+    xTaskCreatePinnedToCore(wifi_country_code_task, "wifi_country_code_task", 2048*2, &sema, 3, &th, 0);
+#else
+    xTaskCreate(wifi_country_code_task, "wifi_country_code_task", 2048*2, &sema, 3, &th);
+#endif
+    TEST_ASSERT_NOT_NULL(th);
+    xSemaphoreTake(sema, portMAX_DELAY);
+    vSemaphoreDelete(sema);
+    sema = NULL;
+    test_utils_task_delete(th);
+}
