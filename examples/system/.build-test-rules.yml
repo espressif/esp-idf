@@ -43,10 +43,6 @@ examples/system/deep_sleep:
       reason: target esp32c2 is not supported yet
 
 examples/system/efuse:
-  disable:
-    - if: IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: target esp32c2 is not supported yet
   disable_test:
     - if: IDF_TARGET == "esp32s3"
       temporary: true
