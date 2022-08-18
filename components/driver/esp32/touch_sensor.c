@@ -34,6 +34,7 @@
 typedef struct {
     esp_timer_handle_t timer;
     uint16_t filtered_val[TOUCH_PAD_MAX];
+    uint32_t filter_last_val[TOUCH_PAD_MAX];
     uint16_t raw_val[TOUCH_PAD_MAX];
     uint32_t filter_period;
     uint32_t period;
@@ -97,9 +98,7 @@ esp_err_t touch_pad_set_filter_read_cb(filter_cb_t read_cb)
 
 static void touch_pad_filter_cb(void *arg)
 {
-    static uint32_t s_filtered_temp[TOUCH_PAD_MAX] = {0};
-
-    if (s_touch_pad_filter == NULL || rtc_touch_mux == NULL) {
+    if (s_touch_pad_filter == NULL) {
         return;
     }
     uint16_t val = 0;
@@ -109,10 +108,12 @@ static void touch_pad_filter_cb(void *arg)
         if ((s_touch_pad_init_bit >> i) & 0x1) {
             _touch_pad_read(i, &val, mode);
             s_touch_pad_filter->raw_val[i] = val;
-            s_filtered_temp[i] = s_filtered_temp[i] == 0 ? ((uint32_t)val << TOUCH_PAD_SHIFT_DEFAULT) : s_filtered_temp[i];
-            s_filtered_temp[i] = _touch_filter_iir((val << TOUCH_PAD_SHIFT_DEFAULT),
-                                                   s_filtered_temp[i], TOUCH_PAD_FILTER_FACTOR_DEFAULT);
-            s_touch_pad_filter->filtered_val[i] = (s_filtered_temp[i] + TOUCH_PAD_SHIFT_ROUND_DEFAULT) >> TOUCH_PAD_SHIFT_DEFAULT;
+            s_touch_pad_filter->filter_last_val[i] = s_touch_pad_filter->filter_last_val[i] == 0 ?
+                ((uint32_t)val << TOUCH_PAD_SHIFT_DEFAULT) : s_touch_pad_filter->filter_last_val[i];
+            s_touch_pad_filter->filter_last_val[i] = _touch_filter_iir((val << TOUCH_PAD_SHIFT_DEFAULT),
+                s_touch_pad_filter->filter_last_val[i], TOUCH_PAD_FILTER_FACTOR_DEFAULT);
+            s_touch_pad_filter->filtered_val[i] =
+                (s_touch_pad_filter->filter_last_val[i] + TOUCH_PAD_SHIFT_ROUND_DEFAULT) >> TOUCH_PAD_SHIFT_DEFAULT;
         }
     }
     if (s_filter_cb) {

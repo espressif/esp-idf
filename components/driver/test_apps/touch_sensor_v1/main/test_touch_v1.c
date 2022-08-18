@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -209,8 +209,8 @@ TEST_CASE("Touch Sensor all channel read test", "[touch]")
 {
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
-    esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "test_touch", &pm_lock);
-    esp_pm_lock_acquire(pm_lock);
+    TEST_ESP_OK(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "test_touch", &pm_lock));
+    TEST_ESP_OK(esp_pm_lock_acquire(pm_lock));
 #endif
     TOUCH_REG_BASE_TEST();
     test_touch_sw_read_test_runner();
@@ -218,8 +218,8 @@ TEST_CASE("Touch Sensor all channel read test", "[touch]")
     TEST_ESP_OK( test_touch_timer_read() );
     TEST_ESP_OK( test_touch_filtered_read() );
 #if CONFIG_PM_ENABLE
-    esp_pm_lock_release(pm_lock);
-    esp_pm_lock_delete(pm_lock);
+    TEST_ESP_OK(esp_pm_lock_release(pm_lock));
+    TEST_ESP_OK(esp_pm_lock_delete(pm_lock));
 #endif
 }
 
@@ -267,7 +267,7 @@ TEST_CASE("Touch Sensor parameters test", "[touch]")
     touch_val[1] = test_touch_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
                                         TOUCH_HVOLT_2V5, TOUCH_LVOLT_0V6, TOUCH_HVOLT_ATTEN_1V,
                                         TOUCH_PAD_SLOPE_DEFAULT);
-    touch_val[2] = test_touch_parameter(touch_list[0], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
+    touch_val[2] = test_touch_parameter(touch_list[2], TOUCH_PAD_MEASURE_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT,
                                         TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V5,
                                         TOUCH_PAD_SLOPE_DEFAULT);
 
