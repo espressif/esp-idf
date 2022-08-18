@@ -169,6 +169,7 @@ build:integration_test:
       - ethernet  # example_test*ethernet*
       - sdio      # UT_044, UT_045
       - usb       # USB Device & Host tests
+      - spi_multi # UT_C2_SPI_DUAL
   patterns:
     - "{0}-{1}-{2}"
     - "{0}-{2}"
