@@ -211,7 +211,7 @@ The application version is stored in :cpp:class:`esp_app_desc_t` structure. It i
 
 To set the version in your project manually, you need to set the ``PROJECT_VER`` variable in the ``CMakeLists.txt`` of your project. In application ``CMakeLists.txt``, put ``set(PROJECT_VER "0.1.0.1")`` before including ``project.cmake``.
 
-If the :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise, if the ``PROJECT_VER`` variable is not set in the project, it will be retrieved either from the ``$(PROJECT_PATH)/version.txt`` file (if present) or using git command ``git describe``. If neither is available, ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
+If the :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise, if the ``PROJECT_VER`` variable is not set in the project, it will be retrieved either from the ``$(PROJECT_PATH)/version.txt`` file (if present) or using git command ``git describe``. If neither is available, ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_app_get_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
 API Reference
 -------------
@@ -221,3 +221,4 @@ API Reference
 .. include-build-file:: inc/esp_mac.inc
 .. include-build-file:: inc/esp_chip_info.inc
 .. include-build-file:: inc/esp_cpu.inc
+.. include-build-file:: inc/esp_app_desc.inc

@@ -85,7 +85,7 @@ endif()
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
 idf_component_optional_requires(PRIVATE esp_gdbstub)
 
-idf_component_optional_requires(PRIVATE app_update)
+idf_component_optional_requires(PRIVATE esp_app_format)
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)

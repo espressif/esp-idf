@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@
 #include <unity.h>
 #include <test_utils.h>
 #include <esp_ota_ops.h>
-#include "bootloader_common.h"
 
 /* These OTA tests currently don't assume an OTA partition exists
    on the device, so they're a bit limited
@@ -91,6 +90,8 @@ TEST_CASE("esp_ota_get_next_update_partition logic", "[ota]")
 
 TEST_CASE("esp_ota_get_partition_description", "[ota]")
 {
+    extern esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
+
     const esp_partition_t *running = esp_ota_get_running_partition();
     TEST_ASSERT_NOT_NULL(running);
     esp_app_desc_t app_desc1, app_desc2;

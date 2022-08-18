@@ -19,7 +19,7 @@ set(srcs
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
-    set(priv_requires micro-ecc spi_flash efuse)
+    set(priv_requires micro-ecc spi_flash efuse esp_app_format)
     list(APPEND srcs
     "src/bootloader_init.c"
     "src/bootloader_clock_loader.c"
@@ -37,7 +37,7 @@ else()
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header
-    set(priv_requires spi_flash mbedtls efuse app_update heap)
+    set(priv_requires spi_flash mbedtls efuse heap esp_app_format)
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -85,6 +85,15 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                     REQUIRES "${requires}"
                     PRIV_REQUIRES "${priv_requires}")
+
+if(NOT BOOTLOADER_BUILD)
+    if(CONFIG_SECURE_SIGNED_ON_UPDATE)
+        if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR
+           CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE idf::app_update)
+        endif()
+    endif()
+endif()
 
 if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME))
     if(BOOTLOADER_BUILD)

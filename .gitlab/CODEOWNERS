@@ -78,6 +78,7 @@
 /components/driver/                   @esp-idf-codeowners/peripherals
 /components/efuse/                    @esp-idf-codeowners/system
 /components/esp_adc/                  @esp-idf-codeowners/peripherals
+/components/esp_app_format/           @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/esp_common/               @esp-idf-codeowners/system
 /components/esp_eth/                  @esp-idf-codeowners/network
 /components/esp_event/                @esp-idf-codeowners/system
