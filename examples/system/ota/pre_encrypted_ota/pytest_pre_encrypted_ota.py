@@ -77,7 +77,7 @@ def test_examples_protocol_pre_encrypted_ota_example(dut: Dut) -> None:
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + enc_bin_name)
         dut.expect('Magic Verified', timeout=30)
         dut.expect('Reading RSA private key', timeout=30)
-        dut.expect('upgrade successful. Rebooting', timeout=30)
+        dut.expect('upgrade successful. Rebooting', timeout=60)
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
     finally:
