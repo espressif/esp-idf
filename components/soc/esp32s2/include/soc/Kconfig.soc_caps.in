@@ -235,6 +235,10 @@ config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
 
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 6
+
 config SOC_CP_DMA_MAX_BUFFER_SIZE
     int
     default 4095
