@@ -173,6 +173,13 @@ config BT_GATT_MAX_SR_PROFILES
     help
         Maximum GATT Server Profiles Count
 
+config BT_GATT_MAX_SR_ATTRIBUTES
+    int "Max GATT Service Attributes"
+    depends on BT_GATTS_ENABLE && BT_BLUEDROID_ENABLED
+    range 1 500
+    default 100
+    help
+        Maximum GATT Service Attributes Count
 
 
 choice BT_GATTS_SEND_SERVICE_CHANGE_MODE
