@@ -49,8 +49,6 @@ TEST_CASE("tcp_transport: connect timeout", "[tcp_transport]")
     esp_transport_list_destroy(transport_list);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5144
 TEST_CASE("ssl_transport: connect timeout", "[tcp_transport]")
 {
     // Init the transport under test
@@ -123,7 +121,6 @@ TEST_CASE("ssl_transport: Keep alive test", "[tcp_transport]")
     esp_transport_close(ssl);
     esp_transport_list_destroy(transport_list);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("ws_transport: Keep alive test", "[tcp_transport]")
 {
@@ -154,8 +151,6 @@ TEST_CASE("ws_transport: Keep alive test", "[tcp_transport]")
     esp_transport_list_destroy(transport_list);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-//IDF-5144
 // Note: This functionality is tested and kept only for compatibility reasons with IDF <= 4.x
 //       It is strongly encouraged to use transport within lists only
 TEST_CASE("ssl_transport: Check that parameters (keepalive) are set independently on the list", "[tcp_transport]")
@@ -183,4 +178,3 @@ TEST_CASE("ssl_transport: Check that parameters (keepalive) are set independentl
     esp_transport_close(ssl);
     esp_transport_destroy(ssl);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
