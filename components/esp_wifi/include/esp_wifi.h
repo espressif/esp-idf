@@ -454,6 +454,21 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
 
 
 /**
+  * @brief     Clear AP list found in last scan
+  *
+  * @attention When the obtained ap list fails,bss info must be cleared,otherwise it may cause memory leakage.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_MODE: WiFi mode is wrong
+  *    - ESP_ERR_INVALID_ARG: invalid argument
+  */
+esp_err_t esp_wifi_clear_ap_list(void);
+
+
+/**
   * @brief     Get information of AP which the ESP32 station is associated with
   *
   * @attention When the obtained country information is empty, it means that the AP does not carry country information
