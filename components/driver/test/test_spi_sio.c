@@ -333,4 +333,4 @@ void test_slave_run(void)
     test_sio_slave_emulate(true);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("test sio all", "[spi_ms][test_env=Example_SPI_Multi_device]", test_master_run, test_slave_run);
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=Example_SPI_Multi_device]", test_master_run, test_slave_run);
