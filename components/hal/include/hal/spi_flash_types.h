@@ -158,9 +158,9 @@ struct spi_flash_host_driver_s {
      */
     void (*erase_block)(spi_flash_host_inst_t *host, uint32_t start_address);
     /**
-     * Read the status of the flash chip.
+     * Read the register of the flash chip.
      */
-    esp_err_t (*read_status)(spi_flash_host_inst_t *host, uint8_t *out_sr);
+    esp_err_t (*read_register)(spi_flash_host_inst_t *host, uint8_t reg_id, uint8_t *out_sr);
     /**
      * Disable write protection.
      */

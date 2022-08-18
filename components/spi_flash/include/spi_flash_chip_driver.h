@@ -31,10 +31,6 @@ typedef struct {
 } flash_chip_op_timeout_t;
 
 typedef enum {
-    SPI_FLASH_REG_STATUS = 1,
-} spi_flash_register_t;
-
-typedef enum {
    SPI_FLASH_CHIP_CAP_SUSPEND = BIT(0),            ///< Flash chip support suspend feature.
    SPI_FLASH_CHIP_CAP_32MB_SUPPORT = BIT(1),       ///< Flash chip driver support flash size larger than 32M Bytes.
    SPI_FLASH_CHIP_CAP_UNIQUE_ID = BIT(2),          ///< Flash chip driver support read the flash unique id.
@@ -186,10 +182,13 @@ struct spi_flash_chip_t {
      */
     esp_err_t (*read_id)(esp_flash_t *chip, uint32_t* out_chip_id);
 
+    /** Address of the status register. 0 if not required.*/
+    uint8_t status_reg_id;
+
     /*
      * Read the requested register (status, etc.).
      */
-    esp_err_t (*read_reg)(esp_flash_t *chip, spi_flash_register_t reg_id, uint32_t* out_reg);
+    esp_err_t (*read_reg)(esp_flash_t *chip, uint8_t reg_id, uint32_t* out_reg);
 
     /** Yield to other tasks. Called during erase operations. */
     esp_err_t (*yield)(esp_flash_t *chip, uint32_t wip);

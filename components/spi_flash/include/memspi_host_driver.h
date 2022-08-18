@@ -15,7 +15,7 @@
         .erase_chip = spi_flash_hal_erase_chip, \
         .erase_sector = spi_flash_hal_erase_sector, \
         .erase_block = spi_flash_hal_erase_block, \
-        .read_status = memspi_host_read_status_hs, \
+        .read_register = memspi_host_read_register_hs, \
         .set_write_protect = spi_flash_hal_set_write_protect, \
         .supports_direct_write = spi_flash_hal_supports_direct_write, \
         .supports_direct_read = spi_flash_hal_supports_direct_read, \
@@ -82,7 +82,7 @@ esp_err_t memspi_host_read_id_hs(spi_flash_host_inst_t *host, uint32_t *id);
  *  - ESP_OK: if success
  *  - or other cases from ``spi_hal_common_command``
  */
-esp_err_t memspi_host_read_status_hs(spi_flash_host_inst_t *host, uint8_t *out_sr);
+esp_err_t memspi_host_read_register_hs(spi_flash_host_inst_t *host, uint8_t reg_id, uint8_t *out_sr);
 
 /**
  * Flush the cache (if needed) after the contents are modified.

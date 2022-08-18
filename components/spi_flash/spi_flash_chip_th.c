@@ -69,6 +69,7 @@ const spi_flash_chip_t esp_flash_chip_th = {
     .set_io_mode = spi_flash_chip_generic_set_io_mode,
     .get_io_mode = spi_flash_chip_generic_get_io_mode,
 
+    .status_reg_id = 0,
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,

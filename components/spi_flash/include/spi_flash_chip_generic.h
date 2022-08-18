@@ -201,7 +201,7 @@ esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_
  * @param out_reg    Output of the register value
  * @return esp_err_t Error code passed from the ``read_status`` function of host driver.
  */
-esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, spi_flash_register_t reg_id, uint32_t* out_reg);
+esp_err_t spi_flash_chip_generic_read_reg(esp_flash_t* chip, uint8_t reg_id, uint32_t* out_reg);
 
 /**
  * @brief Read flash status via the RDSR command and wait for bit 0 (write in

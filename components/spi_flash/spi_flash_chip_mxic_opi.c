@@ -122,7 +122,7 @@ esp_err_t spi_flash_chip_mxic_opi_read_id(esp_flash_t *chip, uint32_t* out_chip_
     return ESP_OK;
 }
 
-esp_err_t spi_flash_chip_mxic_opi_read_reg(esp_flash_t *chip, spi_flash_register_t reg_id, uint32_t* out_reg)
+esp_err_t spi_flash_chip_mxic_opi_read_reg(esp_flash_t *chip, uint8_t reg_id, uint32_t* out_reg)
 {
     uint32_t stat_buf = 0;
     uint32_t length_zoom;
@@ -149,7 +149,7 @@ esp_err_t spi_flash_chip_mxic_opi_get_write_protect(esp_flash_t *chip, bool *out
     esp_err_t err = ESP_OK;
     uint32_t status;
     assert(out_write_protected!=NULL);
-    err = chip->chip_drv->read_reg(chip, SPI_FLASH_REG_STATUS, &status);
+    err = chip->chip_drv->read_reg(chip, chip->chip_drv->status_reg_id, &status);
     if (err != ESP_OK) {
         return err;
     }
@@ -410,6 +410,7 @@ const spi_flash_chip_t esp_flash_chip_mxic_opi = {
     .set_io_mode = spi_flash_chip_xmic_opi_set_io_mode,
     .get_io_mode = spi_flash_chip_mxic_opi_get_io_mode,
 
+    .status_reg_id = 0,
     .read_id = spi_flash_chip_mxic_opi_read_id,
     .read_reg = spi_flash_chip_mxic_opi_read_reg,
     .yield = spi_flash_chip_generic_yield,

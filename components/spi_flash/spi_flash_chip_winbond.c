@@ -23,6 +23,7 @@
 #define REGION_32BIT(start, len)    ((start) + (len) > (1<<24))
 #define ADDR_32BIT(addr)            (addr >= (1<<24))
 
+#define W25N_FAMILY 0xEFAA
 
 static const char TAG[] = "chip_wb";
 
@@ -37,6 +38,11 @@ esp_err_t spi_flash_chip_winbond_probe(esp_flash_t *chip, uint32_t flash_id)
     const uint8_t MFG_ID = 0xEF;
     if (flash_id >> 16 != MFG_ID) {
         return ESP_ERR_NOT_FOUND;
+    }
+
+    if ((flash_id >> 8) == W25N_FAMILY) {
+        // Overwrite the status register ID
+        ((spi_flash_chip_t*)chip->chip_drv)->status_reg_id = 0xC0;
     }
 
     return ESP_OK;
@@ -191,6 +197,7 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
     .set_io_mode = spi_flash_chip_generic_set_io_mode,
     .get_io_mode = spi_flash_chip_generic_get_io_mode,
 
+    .status_reg_id = 0,
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,

@@ -42,7 +42,7 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {
         .erase_chip = memspi_host_erase_chip,
         .erase_sector = memspi_host_erase_sector,
         .erase_block = memspi_host_erase_block,
-        .read_status = memspi_host_read_status_hs,
+        .read_register = memspi_host_read_register_hs,
         .set_write_protect = memspi_host_set_write_protect,
         .supports_direct_write = spi_flash_hal_gpspi_supports_direct_write,
         .supports_direct_read = spi_flash_hal_gpspi_supports_direct_read,
@@ -108,7 +108,7 @@ esp_err_t memspi_host_read_id_hs(spi_flash_host_inst_t *host, uint32_t *id)
     return ESP_OK;
 }
 
-esp_err_t memspi_host_read_status_hs(spi_flash_host_inst_t *host, uint8_t *out_sr)
+esp_err_t memspi_host_read_register_hs(spi_flash_host_inst_t *host, uint8_t reg_id, uint8_t *out_sr)
 {
     //NOTE: we do have a read id function, however it doesn't work in high freq
     uint32_t stat_buf = 0;
@@ -117,6 +117,12 @@ esp_err_t memspi_host_read_status_hs(spi_flash_host_inst_t *host, uint8_t *out_s
         .miso_data = ((uint8_t*) &stat_buf),
         .miso_len = 1
     };
+
+    if(reg_id != 0) {
+        t.mosi_data = ((uint8_t*) &reg_id);
+        t.mosi_len = 1;
+    }
+
     esp_err_t err = host->driver->common_command(host, &t);
     if (err != ESP_OK) {
         return err;
