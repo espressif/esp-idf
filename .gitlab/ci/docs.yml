@@ -41,7 +41,7 @@
 # stage: pre_check
 check_readme_links:
   extends:
-    - .pre_check_job_template
+    - .pre_check_template
   tags: ["build", "amd64", "internet"]
   allow_failure: true
   script:
@@ -49,7 +49,7 @@ check_readme_links:
 
 check_docs_lang_sync:
   extends:
-    - .pre_check_job_template
+    - .pre_check_template
     - .doc-rules:build:docs
   script:
     - cd docs
@@ -62,7 +62,6 @@ check_docs_lang_sync:
   dependencies: []
   script:
     - cd docs
-    - pip install -U -r $IDF_PATH/tools/requirements/requirements.docs.txt
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
   parallel:
     matrix:
@@ -72,11 +71,10 @@ check_docs_lang_sync:
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
   extends:
-    - .pre_check_job_template
+    - .pre_check_template
     - .doc-rules:build:docs
   script:
     - cd docs
-    - pip install -U -r $IDF_PATH/tools/requirements/requirements.docs.txt
     - build-docs gh-linkcheck
 
 # stage: build_doc
@@ -148,8 +146,6 @@ build_docs_pdf:
     DOC_BUILDERS: "latex"
 
 .deploy_docs_template:
-  extends:
-    - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
@@ -161,7 +157,6 @@ build_docs_pdf:
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
-    - pip install -U -r $IDF_PATH/tools/requirements/requirements.docs.txt
     - deploy-docs
 
 # stage: test_deploy
@@ -227,5 +222,4 @@ check_doc_links:
   allow_failure: true
   script:
     - cd docs
-    - pip install -U -r $IDF_PATH/tools/requirements/requirements.docs.txt
     - build-docs -t $DOCTGT -l $DOCLANG linkcheck

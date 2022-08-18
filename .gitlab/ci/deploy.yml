@@ -1,5 +1,4 @@
 .deploy_job_template:
-  extends: .before_script_no_sync_submodule
   stage: deploy
   image: $ESP_ENV_IMAGE
   tags:
