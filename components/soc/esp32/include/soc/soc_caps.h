@@ -376,9 +376,6 @@
 #define SOC_SDMMC_USE_IOMUX  1
 #define SOC_SDMMC_NUM_SLOTS  2
 
-/*------------------------------ BLE --------------------------------------------*/
-#define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
-
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (0)    /*!< Hardware TSF is not supported */
 #define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
