@@ -78,6 +78,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
             "openthread/src/core/mac/mac_links.cpp"
             "openthread/src/core/thread/announce_begin_server.cpp"
             "openthread/src/core/thread/announce_sender.cpp"
+            "openthread/src/core/thread/address_resolver.cpp"
             "openthread/src/core/thread/discover_scanner.cpp"
             "openthread/src/core/thread/energy_scan_server.cpp"
             "openthread/src/core/thread/key_manager.cpp"
