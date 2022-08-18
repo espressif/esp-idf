@@ -45,11 +45,11 @@ TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
 {
     // The operator can even work without the timer
     printf("create operator and generator\r\n");
-    mcpwm_oper_handle_t operator = NULL;
+    mcpwm_oper_handle_t oper = NULL;
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
 
     mcpwm_gen_handle_t generator = NULL;
     const int gen_gpio = 0;
@@ -57,7 +57,7 @@ TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
         .gen_gpio_num = gen_gpio,
         .flags.io_loop_back = true, // loop back for test
     };
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
     printf("add force level to the generator, hold on");
     for (int i = 0; i < 10; i++) {
@@ -74,7 +74,7 @@ TEST_CASE("mcpwm_generator_force_level_hold_on", "[mcpwm]")
 
     printf("delete generator and operator\r\n");
     TEST_ESP_OK(mcpwm_del_generator(generator));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
 }
 
 TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
@@ -92,13 +92,13 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
     TEST_ESP_OK(mcpwm_timer_enable(timer));
 
     printf("create operator\r\n");
-    mcpwm_oper_handle_t operator = NULL;
+    mcpwm_oper_handle_t oper = NULL;
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
         .flags.update_gen_action_on_tez = true,
     };
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     printf("create generator\r\n");
     mcpwm_gen_handle_t generator = NULL;
@@ -107,7 +107,7 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
         .gen_gpio_num = gen_gpio,
         .flags.io_loop_back = true, // loop back for test
     };
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator));
 
     printf("add force level to the generator, and recovery by events");
     TEST_ESP_OK(mcpwm_generator_set_force_level(generator, 0, false));
@@ -142,7 +142,7 @@ TEST_CASE("mcpwm_generator_force_level_recovery", "[mcpwm]")
     printf("delete generator, operator and timer\r\n");
     TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_generator(generator));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
@@ -227,9 +227,9 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
-    mcpwm_oper_handle_t operator = NULL;
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     TEST_ESP_OK(mcpwm_timer_enable(timer));
 
@@ -238,8 +238,8 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     mcpwm_comparator_config_t comparator_config = {
         .flags.update_cmp_on_tez = true,
     };
-    TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparator_a));
-    TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparator_b));
+    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator_a));
+    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator_b));
     TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator_a, cmpa));
     TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator_b, cmpb));
 
@@ -248,9 +248,9 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = gpioa,
     };
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator_a));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator_a));
     generator_config.gen_gpio_num = gpiob;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator_b));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator_b));
 
     set_generator_actions(generator_a, generator_b, comparator_a, comparator_b);
 
@@ -264,7 +264,7 @@ static void mcpwm_gen_action_test_template(uint32_t timer_resolution, uint32_t p
     TEST_ESP_OK(mcpwm_del_generator(generator_b));
     TEST_ESP_OK(mcpwm_del_comparator(comparator_a));
     TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
@@ -398,9 +398,9 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     mcpwm_operator_config_t operator_config = {
         .group_id = 0,
     };
-    mcpwm_oper_handle_t operator = NULL;
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    mcpwm_oper_handle_t oper = NULL;
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     TEST_ESP_OK(mcpwm_timer_enable(timer));
 
@@ -409,8 +409,8 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     mcpwm_comparator_config_t comparator_config = {
         .flags.update_cmp_on_tez = true,
     };
-    TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparator_a));
-    TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparator_b));
+    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator_a));
+    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator_b));
     TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator_a, cmpa));
     TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator_b, cmpb));
 
@@ -419,9 +419,9 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     mcpwm_generator_config_t generator_config = {
         .gen_gpio_num = gpioa,
     };
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator_a));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator_a));
     generator_config.gen_gpio_num = gpiob;
-    TEST_ESP_OK(mcpwm_new_generator(operator, &generator_config, &generator_b));
+    TEST_ESP_OK(mcpwm_new_generator(oper, &generator_config, &generator_b));
 
     set_generator_actions(generator_a, generator_b, comparator_a, comparator_b);
     set_dead_time(generator_a, generator_b);
@@ -436,7 +436,7 @@ static void mcpwm_deadtime_test_template(uint32_t timer_resolution, uint32_t per
     TEST_ESP_OK(mcpwm_del_generator(generator_b));
     TEST_ESP_OK(mcpwm_del_comparator(comparator_a));
     TEST_ESP_OK(mcpwm_del_comparator(comparator_b));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 

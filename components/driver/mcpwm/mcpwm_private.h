@@ -109,7 +109,7 @@ struct mcpwm_oper_t {
 
 struct mcpwm_cmpr_t {
     int cmpr_id;                       // comparator ID, index from 0
-    mcpwm_oper_t *operator;            // which operator that the comparator resides in
+    mcpwm_oper_t *oper;                // which operator that the comparator resides in
     intr_handle_t intr;                // interrupt handle
     portMUX_TYPE spinlock;             // spin lock
     uint32_t compare_ticks;            // compare value of this comparator
@@ -119,7 +119,7 @@ struct mcpwm_cmpr_t {
 
 struct mcpwm_gen_t {
     int gen_id;             // generator ID, index from 0
-    mcpwm_oper_t *operator; // which operator that the generator resides in
+    mcpwm_oper_t *oper;     // which operator that the generator resides in
     int gen_gpio_num;       // GPIO number used by the generator
     portMUX_TYPE spinlock;  // spin lock
 };
@@ -138,7 +138,7 @@ struct mcpwm_fault_t {
 struct mcpwm_gpio_fault_t {
     mcpwm_fault_t base;  // base class
     int fault_id;        // fault detector ID, index from 0
-    int gpio_num;  // GPIO number of fault detector
+    int gpio_num;        // GPIO number of fault detector
     intr_handle_t intr;  // interrupt handle
     mcpwm_fault_event_cb_t on_fault_enter; // ISR callback function that would be invoked when fault signal got triggered
     mcpwm_fault_event_cb_t on_fault_exit;  // ISR callback function that would be invoked when fault signal got clear
@@ -147,7 +147,7 @@ struct mcpwm_gpio_fault_t {
 
 struct mcpwm_soft_fault_t {
     mcpwm_fault_t base;     // base class
-    mcpwm_oper_t *operator; // the operator where the soft fault allocated from
+    mcpwm_oper_t *oper;     // the operator where the soft fault allocated from
 };
 
 typedef enum {
