@@ -447,14 +447,24 @@ static void IRAM_ATTR gpio_intr_service(void *arg)
 esp_err_t gpio_install_isr_service(int intr_alloc_flags)
 {
     GPIO_CHECK(gpio_context.gpio_isr_func == NULL, "GPIO isr service already installed", ESP_ERR_INVALID_STATE);
-    esp_err_t ret;
-    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_context.gpio_isr_func = (gpio_isr_func_t *) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
-    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
-    if (gpio_context.gpio_isr_func == NULL) {
-        ret = ESP_ERR_NO_MEM;
-    } else {
-        ret = gpio_isr_register(gpio_intr_service, NULL, intr_alloc_flags, &gpio_context.gpio_isr_handle);
+    esp_err_t ret = ESP_ERR_NO_MEM;
+    gpio_isr_func_t *isr_func = (gpio_isr_func_t *) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
+    if (isr_func) {
+        portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+        if (gpio_context.gpio_isr_func == NULL) {
+            gpio_context.gpio_isr_func = isr_func;
+            portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+            ret = gpio_isr_register(gpio_intr_service, NULL, intr_alloc_flags, &gpio_context.gpio_isr_handle);
+            if (ret != ESP_OK) {
+                // registering failed, uninstall isr service
+                gpio_uninstall_isr_service();
+            }
+        } else {
+            // isr service already installed, free allocated resource
+            portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+            ret = ESP_ERR_INVALID_STATE;
+            free(isr_func);
+        }
     }
 
     return ret;
