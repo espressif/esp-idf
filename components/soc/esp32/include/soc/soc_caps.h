@@ -130,8 +130,11 @@
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif
 
-/*-------------------------- CACHE CAPS --------------------------------------*/
+
+/*-------------------------- CACHE/MMU CAPS ----------------------------------*/
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+#define SOC_MMU_LINEAR_ADDRESS_REGION_NUM       5
+
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2

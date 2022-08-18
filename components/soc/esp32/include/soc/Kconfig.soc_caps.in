@@ -207,6 +207,10 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 5
+
 config SOC_CPU_CORES_NUM
     int
     default 2

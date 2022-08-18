@@ -35,20 +35,6 @@ extern "C" {
 #define BYTES_TO_MMU_PAGE(bytes)        ((bytes) / MMU_PAGE_SIZE)
 #endif
 
-/**
- * @brief Get the vaddr start for PSRAM
- *
- * @return PSRAM vaddr start address
- */
-intptr_t mmu_get_psram_vaddr_start(void);
-
-/**
- * @brief Get the vaddr end for PSRAM
- *
- * @return PSRAM vaddr end address
- */
-intptr_t mmu_get_psram_vaddr_end(void);
-
 /*----------------------------------------------------------------------------
                     Part 1 APIs (See @Backgrounds on top of this file)
 -------------------------------------------------------------------------------*/

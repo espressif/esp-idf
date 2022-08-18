@@ -26,6 +26,7 @@
 #include "esp_private/mmu_psram_flash.h"
 #include "esp_psram_impl.h"
 #include "esp_psram.h"
+#include "mmu.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/himem.h"
@@ -43,8 +44,14 @@
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #endif
 
-
-#if CONFIG_SPIRAM
+/**
+ * Two types of PSRAM memory regions for now:
+ * - 8bit aligned
+ * - 32bit aligned
+ */
+#define PSRAM_MEM_TYPE_NUM          2
+#define PSRAM_MEM_8BIT_ALIGNED      0
+#define PSRAM_MEM_32BIT_ALIGNED     1
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern uint8_t _ext_ram_bss_start;
@@ -56,13 +63,33 @@ extern uint8_t _ext_ram_noinit_start;
 extern uint8_t _ext_ram_noinit_end;
 #endif  //#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
-//These variables are in bytes
-static intptr_t s_allocable_vaddr_start;
-static intptr_t s_allocable_vaddr_end;
-static intptr_t s_mapped_vaddr_start;
-static intptr_t s_mapped_vaddr_end;
+typedef struct {
+    intptr_t vaddr_start;
+    intptr_t vaddr_end;
+    size_t size;        //in bytes
+} psram_mem_t;
 
-static bool s_spiram_inited;
+typedef struct {
+    bool is_initialised;
+    /**
+     * @note 1
+     * As we can't use heap allocator during this stage, we need to statically declare these regions.
+     * Luckily only S2 has two different types of memory regions:
+     * - byte-aligned memory
+     * - word-aligned memory
+     * On the other hand, the type number usually won't be very big
+     *
+     * On other chips, only one region is needed.
+     * So for chips other than S2, size of `regions_to_heap[1]` and `mapped_regions[1]`will always be zero.
+     *
+     * If in the future, this condition is worse (dbus memory isn't consecutive), we need to delegate this context
+     * to chip-specific files, and only keep a (void *) pointer here pointing to those chip-specific contexts
+     */
+    psram_mem_t regions_to_heap[PSRAM_MEM_TYPE_NUM];     //memory regions that are available to be added to the heap allocator
+    psram_mem_t mapped_regions[PSRAM_MEM_TYPE_NUM];      //mapped memory regions
+} psram_ctx_t;
+
+static psram_ctx_t s_psram_ctx;
 static const char* TAG = "esp_psram";
 
 
@@ -86,26 +113,28 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
 
+
 esp_err_t esp_psram_init(void)
 {
-    if (s_spiram_inited) {
+    if (s_psram_ctx.is_initialised) {
         return ESP_ERR_INVALID_STATE;
     }
-    esp_err_t ret;
+
+    esp_err_t ret = ESP_FAIL;
     ret = esp_psram_impl_enable(PSRAM_MODE);
     if (ret != ESP_OK) {
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
-        ESP_EARLY_LOGE(TAG, "SPI RAM enabled but initialization failed. Bailing out.");
+        ESP_EARLY_LOGE(TAG, "PSRAM enabled but initialization failed. Bailing out.");
 #endif
         return ret;
     }
-    s_spiram_inited = true;
+    s_psram_ctx.is_initialised = true;
 
     uint32_t psram_physical_size = 0;
     ret = esp_psram_impl_get_physical_size(&psram_physical_size);
     assert(ret == ESP_OK);
 
-    ESP_EARLY_LOGI(TAG, "Found %dMB SPI RAM device", psram_physical_size / (1024 * 1024));
+    ESP_EARLY_LOGI(TAG, "Found %dMB PSRAM device", psram_physical_size / (1024 * 1024));
     ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 #if CONFIG_IDF_TARGET_ESP32
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
@@ -155,98 +184,167 @@ esp_err_t esp_psram_init(void)
     ESP_EARLY_LOGV(TAG, "after copy .rodata, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
+    /**
+     * For now,
+     * - we only need to use MMU driver when PSRAM is enabled
+     * - MMU driver isn't public
+     *
+     * So we call `esp_mmu_init()` here, instead of calling it in startup code.
+     */
+    esp_mmu_init();
 
     //----------------------------------Map the PSRAM physical range to MMU-----------------------------//
-    intptr_t vaddr_start = mmu_get_psram_vaddr_start();
-    if (vaddr_start + psram_available_size > mmu_get_psram_vaddr_end()) {
-        psram_available_size = mmu_get_psram_vaddr_end() - vaddr_start;
-        ESP_EARLY_LOGV(TAG, "Virtual address not enough for PSRAM, map as much as we can. %dMB is mapped", psram_available_size / 1024 / 1024);
-    }
+    /**
+     * @note 2
+     * Similarly to @note 1, we expect HW DBUS memory to be consecutive.
+     *
+     * If situation is worse in the future (memory region isn't consecutive), we need to put these logics into chip-specific files
+     */
+    size_t total_mapped_size = 0;
+    size_t size_to_map = 0;
+    size_t byte_aligned_size = 0;
+    ret = esp_mmu_get_largest_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &byte_aligned_size);
+    assert(ret == ESP_OK);
+    size_to_map = MIN(byte_aligned_size, psram_available_size);
+
+    const void *v_start_8bit_aligned = NULL;
+    ret = esp_mmu_find_vaddr_range(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, &v_start_8bit_aligned);
+    assert(ret == ESP_OK);
 
 #if CONFIG_IDF_TARGET_ESP32
-    s_mapping(vaddr_start, psram_available_size);
+    s_mapping((int)v_start_8bit_aligned, size_to_map);
 #else
     uint32_t actual_mapped_len = 0;
-    mmu_hal_map_region(0, MMU_TARGET_PSRAM0, vaddr_start, MMU_PAGE_TO_BYTES(start_page), psram_available_size, &actual_mapped_len);
-    ESP_EARLY_LOGV(TAG, "actual_mapped_len is 0x%x bytes", actual_mapped_len);
+    mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_8bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
+    start_page += BYTES_TO_MMU_PAGE(actual_mapped_len);
+    ESP_EARLY_LOGV(TAG, "8bit-aligned-region: actual_mapped_len is 0x%x bytes", actual_mapped_len);
 
-    cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, vaddr_start, actual_mapped_len);
+    cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_8bit_aligned, actual_mapped_len);
     cache_ll_l1_enable_bus(0, bus_mask);
 #if !CONFIG_FREERTOS_UNICORE
-    bus_mask = cache_ll_l1_get_bus(1, vaddr_start, actual_mapped_len);
+    bus_mask = cache_ll_l1_get_bus(1, (uint32_t)v_start_8bit_aligned, actual_mapped_len);
     cache_ll_l1_enable_bus(1, bus_mask);
 #endif
 #endif  //#if CONFIG_IDF_TARGET_ESP32
 
+    s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size = size_to_map;
+    s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_start = (intptr_t)v_start_8bit_aligned;
+    s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_end = (intptr_t)v_start_8bit_aligned + size_to_map;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size = size_to_map;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start = (intptr_t)v_start_8bit_aligned;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_end = (intptr_t)v_start_8bit_aligned + size_to_map;
+    ESP_EARLY_LOGV(TAG, "8bit-aligned-range: 0x%x B, starting from: 0x%x", s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size, v_start_8bit_aligned);
+    total_mapped_size += size_to_map;
+
+#if CONFIG_IDF_TARGET_ESP32S2
+    /**
+     * On ESP32S2, there are 2 types of DBUS memory:
+     * - byte-aligned-memory
+     * - word-aligned-memory
+     *
+     * If byte-aligned-memory isn't enough, we search for word-aligned-memory to do mapping
+     */
+    if (total_mapped_size < psram_available_size) {
+        size_to_map = psram_available_size - total_mapped_size;
+
+        size_t word_aligned_size = 0;
+        ret = esp_mmu_get_largest_free_block(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &word_aligned_size);
+        assert(ret == ESP_OK);
+        size_to_map = MIN(word_aligned_size, size_to_map);
+
+        const void *v_start_32bit_aligned = NULL;
+        ret = esp_mmu_find_vaddr_range(size_to_map, MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, &v_start_32bit_aligned);
+        assert(ret == ESP_OK);
+
+        mmu_hal_map_region(0, MMU_TARGET_PSRAM0, (intptr_t)v_start_32bit_aligned, MMU_PAGE_TO_BYTES(start_page), size_to_map, &actual_mapped_len);
+        ESP_EARLY_LOGV(TAG, "32bit-aligned-region: actual_mapped_len is 0x%x bytes", actual_mapped_len);
+
+        cache_bus_mask_t bus_mask = cache_ll_l1_get_bus(0, (uint32_t)v_start_32bit_aligned, actual_mapped_len);
+        cache_ll_l1_enable_bus(0, bus_mask);
+
+        s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size = size_to_map;
+        s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_start = (intptr_t)v_start_32bit_aligned;
+        s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_end = (intptr_t)v_start_32bit_aligned + size_to_map;
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size = size_to_map;
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_start = (intptr_t)v_start_32bit_aligned;
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_end = (intptr_t)v_start_32bit_aligned + size_to_map;
+        ESP_EARLY_LOGV(TAG, "32bit-aligned-range: 0x%x B, starting from: 0x%x", s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size, v_start_32bit_aligned);
+        total_mapped_size += size_to_map;
+    }
+#endif  //  #if CONFIG_IDF_TARGET_ESP32S2
+
+    if (total_mapped_size < psram_available_size) {
+        ESP_EARLY_LOGW(TAG, "Virtual address not enough for PSRAM, map as much as we can. %dMB is mapped", total_mapped_size / 1024 / 1024);
+    }
+
     /*------------------------------------------------------------------------------
     * After mapping, we DON'T care about the PSRAM PHYSICAL ADDRESSS ANYMORE!
     *----------------------------------------------------------------------------*/
-    s_mapped_vaddr_start = vaddr_start;
-    s_mapped_vaddr_end = vaddr_start + psram_available_size;
-    s_allocable_vaddr_start = vaddr_start;
-    s_allocable_vaddr_end = vaddr_start + psram_available_size;
 
     //------------------------------------Configure .bss in PSRAM-------------------------------------//
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     //should never be negative number
     uint32_t ext_bss_size = ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
     ESP_EARLY_LOGV(TAG, "ext_bss_size is %d", ext_bss_size);
-    s_allocable_vaddr_start += ext_bss_size;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_bss_size;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_bss_size;
 #endif  //#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
     uint32_t ext_noinit_size = ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
     ESP_EARLY_LOGV(TAG, "ext_noinit_size is %d", ext_noinit_size);
-    s_allocable_vaddr_start += ext_noinit_size;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_noinit_size;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_noinit_size;
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
-    s_allocable_vaddr_end -= esp_himem_reserved_area_size() - 1;
+    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= esp_himem_reserved_area_size() - 1;
 #endif
 
-    ESP_EARLY_LOGV(TAG, "s_allocable_vaddr_start is 0x%x, s_allocable_vaddr_end is 0x%x", s_allocable_vaddr_start, s_allocable_vaddr_end);
     return ESP_OK;
 }
 
-/**
- * Add the PSRAM available region to heap allocator. Heap allocator knows the capabilities of this type of memory,
- * so there's no need to explicitly specify them.
- */
+
 esp_err_t esp_psram_extram_add_to_heap_allocator(void)
 {
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (s_allocable_vaddr_end - s_allocable_vaddr_start) / 1024);
-    return heap_caps_add_region(s_allocable_vaddr_start, s_allocable_vaddr_end);
-}
+    esp_err_t ret = ESP_FAIL;
 
-esp_err_t IRAM_ATTR esp_psram_extram_get_mapped_range(intptr_t *out_vstart, intptr_t *out_vend)
-{
-    if (!out_vstart || !out_vend) {
-        return ESP_ERR_INVALID_ARG;
+    uint32_t byte_aligned_caps[] = {MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT};
+    ret = heap_caps_add_region_with_caps(byte_aligned_caps,
+                                         s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start,
+                                         s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_end);
+    if (ret != ESP_OK) {
+        return ret;
     }
 
-    if (!s_spiram_inited) {
-        return ESP_ERR_INVALID_STATE;
+    if (s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size) {
+        assert(s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_start);
+        uint32_t word_aligned_caps[] = {MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_32BIT};
+        ret = heap_caps_add_region_with_caps(word_aligned_caps,
+                                             s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_start,
+                                             s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].vaddr_end);
+        if (ret != ESP_OK) {
+            return ret;
+        }
     }
 
-    *out_vstart = s_mapped_vaddr_start;
-    *out_vend = s_mapped_vaddr_end;
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of PSRAM memory to heap allocator",
+                   (s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size) / 1024);
+
     return ESP_OK;
 }
 
-esp_err_t esp_psram_extram_get_alloced_range(intptr_t *out_vstart, intptr_t *out_vend)
+
+bool IRAM_ATTR esp_psram_check_ptr_addr(const void *p)
 {
-    if (!out_vstart || !out_vend) {
-        return ESP_ERR_INVALID_ARG;
+    if (!s_psram_ctx.is_initialised) {
+        return false;
     }
 
-    if (!s_spiram_inited) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    *out_vstart = s_allocable_vaddr_start;
-    *out_vend = s_allocable_vaddr_end;
-    return ESP_OK;
+    return ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_end) ||
+           ((intptr_t)p >= s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_start && (intptr_t)p < s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_end);
 }
+
 
 esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
 {
@@ -276,9 +374,9 @@ esp_err_t esp_psram_extram_reserve_dma_pool(size_t size)
     return ESP_OK;
 }
 
-bool IRAM_ATTR esp_psram_is_initialized(void)
+bool IRAM_ATTR __attribute__((pure)) esp_psram_is_initialized(void)
 {
-    return s_spiram_inited;
+    return s_psram_ctx.is_initialised;
 }
 
 size_t esp_psram_get_size(void)
@@ -302,45 +400,68 @@ uint8_t esp_psram_io_get_cs_io(void)
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
  initialized (in a two-core system) or after the heap allocator has taken ownership of the memory.
 */
-bool esp_psram_extram_test(void)
+static bool s_test_psram(intptr_t v_start, size_t size, intptr_t reserved_start, intptr_t reserved_end)
 {
-#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-    const void *keepout_addr_low = (const void*)&_ext_ram_noinit_start;
-    const void *keepout_addr_high = (const void*)&_ext_ram_noinit_end;
-#else
-    const void *keepout_addr_low = 0;
-    const void *keepout_addr_high = 0;
-#endif
-
-    volatile int *spiram = (volatile int *)s_mapped_vaddr_start;
+    volatile int *spiram = (volatile int *)v_start;
     size_t p;
-    size_t s = s_mapped_vaddr_end - s_mapped_vaddr_start;
-    int errct=0;
-    int initial_err=-1;
-    for (p=0; p<(s/sizeof(int)); p+=8) {
-        const void *addr = (const void *)&spiram[p];
-        if ((keepout_addr_low <= addr) && (addr < keepout_addr_high)) {
+    int errct = 0;
+    int initial_err = -1;
+    for (p = 0; p < (size / sizeof(int)); p += 8) {
+        intptr_t addr = (intptr_t)&spiram[p];
+        if ((reserved_start <= addr) && (addr < reserved_end)) {
             continue;
         }
-        spiram[p]=p^0xAAAAAAAA;
+        spiram[p] = p ^ 0xAAAAAAAA;
     }
-    for (p=0; p<(s/sizeof(int)); p+=8) {
-        const void *addr = (const void *)&spiram[p];
-        if ((keepout_addr_low <= addr) && (addr < keepout_addr_high)) {
+    for (p = 0; p < (size / sizeof(int)); p += 8) {
+        intptr_t addr = (intptr_t)&spiram[p];
+        if ((reserved_start <= addr) && (addr < reserved_end)) {
             continue;
         }
-        if (spiram[p]!=(p^0xAAAAAAAA)) {
+        if (spiram[p] != (p ^ 0xAAAAAAAA)) {
             errct++;
-            if (errct==1) initial_err=p*4;
+            if (errct == 1) {
+                initial_err = p * 4;
+            }
         }
     }
     if (errct) {
-        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, s/32, initial_err + s_mapped_vaddr_start);
+        ESP_EARLY_LOGE(TAG, "SPI SRAM memory test fail. %d/%d writes failed, first @ %X\n", errct, size/32, initial_err + v_start);
         return false;
     } else {
         ESP_EARLY_LOGI(TAG, "SPI SRAM memory test OK");
         return true;
     }
+
 }
 
-#endif  //#if CONFIG_SPIRAM
+bool esp_psram_extram_test(void)
+{
+    bool test_success = false;
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    intptr_t noinit_vstart = (intptr_t)&_ext_ram_noinit_start;
+    intptr_t noinit_vend = (intptr_t)&_ext_ram_noinit_end;
+#else
+    intptr_t noinit_vstart = 0;
+    intptr_t noinit_vend = 0;
+#endif
+    test_success = s_test_psram(s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].vaddr_start,
+                                s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size,
+                                noinit_vstart,
+                                noinit_vend);
+    if (!test_success) {
+        return false;
+    }
+
+    if (s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size) {
+        test_success = s_test_psram(s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].vaddr_start,
+                                    s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size,
+                                    0,
+                                    0);
+    }
+    if (!test_success) {
+        return false;
+    }
+
+    return true;
+}
