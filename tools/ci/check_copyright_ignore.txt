@@ -1285,12 +1285,9 @@ components/soc/soc_include_legacy_warn.c
 components/spi_flash/cache_utils.h
 components/spi_flash/include/esp_spi_flash_counters.h
 components/spi_flash/include/spi_flash_chip_boya.h
-components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h
-components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
-components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/sim/SpiFlash.cpp
 components/spi_flash/sim/flash_mock.cpp
 components/spi_flash/sim/flash_mock_util.c
@@ -1300,7 +1297,6 @@ components/spi_flash/spi_flash_chip_boya.c
 components/spi_flash/spi_flash_chip_gd.c
 components/spi_flash/spi_flash_chip_issi.c
 components/spi_flash/spi_flash_chip_mxic.c
-components/spi_flash/spi_flash_chip_mxic_opi.c
 components/spi_flash/spi_flash_chip_winbond.c
 components/spi_flash/test/test_esp_flash.c
 components/spi_flash/test/test_flash_encryption.c

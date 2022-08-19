@@ -16,4 +16,4 @@
  * default autodetection, this is used as a catchall if a more specific chip_drv
  * is not found.
  */
-extern const spi_flash_chip_t esp_flash_chip_winbond;
+extern const spi_flash_chip_t esp_flash_chip_winbond_w25n;

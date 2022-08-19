@@ -13,6 +13,7 @@
 #include "spi_flash_chip_winbond.h"
 #include "spi_flash_chip_boya.h"
 #include "spi_flash_chip_th.h"
+#include "spi_flash_chip_winbond_w25n.h"
 #include "sdkconfig.h"
 
 #if !CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
@@ -36,6 +37,7 @@ static const spi_flash_chip_t *default_registered_chips[] = {
     &esp_flash_chip_mxic,
 #endif
 #ifdef CONFIG_SPI_FLASH_SUPPORT_WINBOND_CHIP
+    &esp_flash_chip_winbond_w25n,
     &esp_flash_chip_winbond,
 #endif
 #ifdef CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP

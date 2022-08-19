@@ -51,6 +51,7 @@ else()
         "spi_flash_chip_boya.c"
         "spi_flash_chip_mxic_opi.c"
         "spi_flash_chip_th.c"
+        "spi_flash_chip_winbond_w25n.c"
         "memspi_host_driver.c")
 
     list(APPEND cache_srcs

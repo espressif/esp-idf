@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include "esp_flash.h"
@@ -30,9 +22,7 @@ typedef struct {
     uint32_t page_program_timeout;  ///< Timeout for page program operation
 } flash_chip_op_timeout_t;
 
-typedef enum {
-    SPI_FLASH_REG_STATUS = 1,
-} spi_flash_register_t;
+#define SPI_FLASH_REG_STATUS (1)
 
 typedef enum {
    SPI_FLASH_CHIP_CAP_SUSPEND = BIT(0),            ///< Flash chip support suspend feature.
@@ -189,7 +179,7 @@ struct spi_flash_chip_t {
     /*
      * Read the requested register (status, etc.).
      */
-    esp_err_t (*read_reg)(esp_flash_t *chip, spi_flash_register_t reg_id, uint32_t* out_reg);
+    esp_err_t (*read_reg)(esp_flash_t *chip, uint8_t reg_id, uint32_t* out_reg);
 
     /** Yield to other tasks. Called during erase operations. */
     esp_err_t (*yield)(esp_flash_t *chip, uint32_t wip);
