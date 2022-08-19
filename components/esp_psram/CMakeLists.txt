@@ -14,7 +14,7 @@ set(srcs)
 if(CONFIG_SPIRAM)
     list(APPEND srcs "esp_psram.c"
                      "mmu.c"
-                     "mmu_psram.c")
+                     "mmu_psram_flash.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs "esp32/esp_psram_extram_cache.c"

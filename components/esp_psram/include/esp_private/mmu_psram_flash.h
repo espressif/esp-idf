@@ -5,13 +5,16 @@
  */
 
 /**
- * This file will be redesigned into MMU driver, to maintain all the external
- * memory contexts including:
- * - Flash
- * - PSRAM
- * - DDR
+ * @Backgrounds
  *
- * Now only MMU-PSRAM related private APIs
+ * This file contains 2 parts:
+ * 1. Feature: Copy Flash content to PSRAM. Related APIs are private:
+ *    - mmu_config_psram_text_segment()
+ *    - mmu_config_psram_rodata_segment()
+ *
+ * 2. Private APIs used by `flash_mmap.c` and `cache_utils.c`
+ *    APIs in 2 are due to lack of MMU driver. There will be an MMU driver to maintain vaddr range.
+ *    APIs in 2 will be refactored when MMU driver is ready
  */
 
 #pragma once
@@ -46,7 +49,9 @@ intptr_t mmu_get_psram_vaddr_start(void);
  */
 intptr_t mmu_get_psram_vaddr_end(void);
 
-
+/*----------------------------------------------------------------------------
+                    Part 1 APIs (See @Backgrounds on top of this file)
+-------------------------------------------------------------------------------*/
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 /**
  * @brief Copy Flash texts to PSRAM
@@ -56,7 +61,24 @@ intptr_t mmu_get_psram_vaddr_end(void);
  * @param[out] out_page      Used pages
  */
 esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
+#endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
+#if CONFIG_SPIRAM_RODATA
+/**
+ * @brief Copy Flash rodata to PSRAM
+ *
+ * @param[in]  start_page    PSRAM physical start page
+ * @param[in]  psram_size    PSRAM available size
+ * @param[out] out_page      Used pages
+ */
+esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
+#endif  //#if CONFIG_SPIRAM_RODATA
+
+
+/*----------------------------------------------------------------------------
+                    Part 2 APIs (See @Backgrounds on top of this file)
+-------------------------------------------------------------------------------*/
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 /**
  * @brief Init other file requested MMU variables
  *
@@ -90,17 +112,7 @@ uint32_t instruction_flash_end_page_get(void);
 int instruction_flash2spiram_offset(void);
 #endif  // #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
-
 #if CONFIG_SPIRAM_RODATA
-/**
- * @brief Copy Flash rodata to PSRAM
- *
- * @param[in]  start_page    PSRAM physical start page
- * @param[in]  psram_size    PSRAM available size
- * @param[out] out_page      Used pages
- */
-esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
-
 /**
  * @brief Init other file requested MMU variables
  *

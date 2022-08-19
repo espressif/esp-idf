@@ -42,7 +42,7 @@
 
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
-#include "esp_private/mmu.h"
+#include "esp_private/mmu_psram_flash.h"
 #endif
 
 #ifndef NDEBUG
