@@ -801,9 +801,12 @@ static inline void i2c_ll_master_fsm_rst(i2c_dev_t *hw)
 static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
 {
     hw->scl_sp_conf.scl_rst_slv_num = 9;
-    hw->scl_sp_conf.scl_rst_slv_en = 0;
-    hw->ctr.conf_upgate = 1;
     hw->scl_sp_conf.scl_rst_slv_en = 1;
+    hw->ctr.conf_upgate = 1;
+    // hardward will clear scl_rst_slv_en after sending SCL pulses,
+    // and we should set conf_upgate bit to synchronize register value.
+    while (hw->scl_sp_conf.scl_rst_slv_en);
+    hw->ctr.conf_upgate = 1;
 }
 
 /**
