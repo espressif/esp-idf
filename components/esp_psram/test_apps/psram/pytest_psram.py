@@ -37,7 +37,7 @@ def test_psram_esp32s2(dut: Dut) -> None:
 
 
 @pytest.mark.esp32s3
-@pytest.mark.quad_psram
+@pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
     [
