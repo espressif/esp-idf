@@ -14,4 +14,4 @@ entries:
                 esp_psram_impl_octal (noflash)
 
         if IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y:
-            mmu_psram (noflash)
+            mmu_psram_flash (noflash)

@@ -23,7 +23,7 @@
 #include "hal/cache_ll.h"
 #include "esp_private/esp_psram_io.h"
 #include "esp_private/esp_psram_extram.h"
-#include "esp_private/mmu.h"
+#include "esp_private/mmu_psram_flash.h"
 #include "esp_psram_impl.h"
 #include "esp_psram.h"
 
