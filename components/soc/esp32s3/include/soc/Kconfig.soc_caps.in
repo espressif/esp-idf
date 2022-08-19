@@ -1031,6 +1031,10 @@ config SOC_WIFI_MESH_SUPPORT
     bool
     default y
 
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
 config SOC_TWAI_BRP_MIN
     int
     default 2

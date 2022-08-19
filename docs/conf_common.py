@@ -34,7 +34,8 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_blufi.rst',
            'api-reference/bluetooth/esp-ble-mesh.rst',
            'api-reference/bluetooth/index.rst',
-           'api-reference/bluetooth/nimble/index.rst']
+           'api-reference/bluetooth/nimble/index.rst',
+           'migration-guides/release-5.x/bluetooth-low-energy.rst']
 
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
@@ -144,7 +145,7 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**',
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
-                            'SOC_CLASSIC_BT_SUPPORTED':CLASSIC_BT_DOCS,
+                            'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
