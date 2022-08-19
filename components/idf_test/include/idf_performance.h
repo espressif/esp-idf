@@ -52,7 +52,7 @@
 
 // events dispatched per second by event loop library
 #ifndef IDF_PERFORMANCE_MIN_EVENT_DISPATCH
-#define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      25000
+#define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      22000
 #endif
 #ifndef IDF_PERFORMANCE_MIN_EVENT_DISPATCH_PSRAM
 #define IDF_PERFORMANCE_MIN_EVENT_DISPATCH_PSRAM                                21000
