@@ -38,9 +38,13 @@ COMPILER := gcc
 endif
 
 CPPFLAGS += -I../private_include -I../include -I../src -I../../esp_rom/include -I../../esp_rom/include/linux -I../../log/include -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../hal/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -g2 -ggdb
-CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET
-CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET
+CFLAGS += -fprofile-arcs -ftest-coverage -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
+CXXFLAGS += -std=c++11 -Wall -Werror -DLINUX_TARGET -DLINUX_HOST_LEGACY_TEST
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
+
+ifeq ($(shell uname -s),Linux)
+LDFLAGS += -lbsd
+endif
 
 ifeq ($(COMPILER),clang)
 CFLAGS += -fsanitize=address
@@ -52,13 +56,16 @@ OBJ_FILES = $(SOURCE_FILES:.cpp=.o)
 OBJ_FILES_C = $(SOURCE_FILES_C:.c=.o)
 
 COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
+MBEDTLS_LIB := ../../mbedtls/mbedtls/library/libmbedcrypto.a
 
 $(OBJ_FILES): %.o: %.cpp
 $(OBJ_FILES_C): %.c: %.c
 
-$(TEST_PROGRAM): clean-coverage $(OBJ_FILES) $(OBJ_FILES_C)
+$(MBEDTLS_LIB):
 	$(MAKE) -C ../../mbedtls/mbedtls/ lib
-	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) $(OBJ_FILES_C) ../../mbedtls/mbedtls/library/libmbedcrypto.a
+
+$(TEST_PROGRAM): $(OBJ_FILES) $(OBJ_FILES_C) $(MBEDTLS_LIB) | clean-coverage
+	g++ -o $@ $^ $(LDFLAGS)
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
