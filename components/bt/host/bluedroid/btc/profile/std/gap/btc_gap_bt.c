@@ -899,7 +899,7 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_GAP_BT_ACT_START_DISCOVERY: {
-        btc_gap_bt_start_discovery(msg->arg);
+        btc_gap_bt_start_discovery(arg);
         break;
     }
     case BTC_GAP_BT_ACT_CANCEL_DISCOVERY: {
@@ -907,23 +907,23 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_GAP_BT_ACT_GET_REMOTE_SERVICES: {
-        btc_gap_bt_get_remote_services(msg->arg);
+        btc_gap_bt_get_remote_services((bt_bdaddr_t *)msg->arg);
         break;
     }
     case BTC_GAP_BT_ACT_GET_REMOTE_SERVICE_RECORD: {
-        btc_gap_bt_get_remote_service_record(msg->arg);
+        btc_gap_bt_get_remote_service_record(arg);
         break;
     }
     case BTC_GAP_BT_ACT_SET_COD: {
-        btc_gap_bt_set_cod(msg->arg);
+        btc_gap_bt_set_cod(arg);
         break;
     }
     case BTC_GAP_BT_ACT_READ_RSSI_DELTA: {
-        btc_gap_bt_read_rssi_delta(msg->arg);
+        btc_gap_bt_read_rssi_delta(arg);
         break;
     }
     case BTC_GAP_BT_ACT_REMOVE_BOND_DEVICE:{
-        btc_gap_bt_remove_bond_device(msg->arg);
+        btc_gap_bt_remove_bond_device(arg);
         break;
     }
     case BTC_GAP_BT_ACT_SET_PIN_TYPE:{
@@ -1026,15 +1026,15 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
 {
     switch (msg->act) {
     case BTC_GAP_BT_SEARCH_DEVICES_EVT: {
-        btc_gap_bt_search_devices_evt(msg->arg);
+        btc_gap_bt_search_devices_evt((tBTA_DM_SEARCH_PARAM *)msg->arg);
         break;
     }
     case BTC_GAP_BT_SEARCH_SERVICES_EVT: {
-        btc_gap_bt_search_services(msg->arg);
+        btc_gap_bt_search_services((char *)msg->arg);
         break;
     }
     case BTC_GAP_BT_SEARCH_SERVICE_RECORD_EVT: {
-        btc_gap_bt_search_service_record(msg->arg);
+        btc_gap_bt_search_service_record((char *)msg->arg);
         break;
     }
     case BTC_GAP_BT_READ_RSSI_DELTA_EVT:{

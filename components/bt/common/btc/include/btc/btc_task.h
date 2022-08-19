@@ -20,7 +20,7 @@ typedef struct btc_msg {
     uint8_t aid;    //application id
     uint8_t pid;    //profile id
     uint8_t act;    //profile action, defined in seprerate header files
-    void   *arg;    //param for btc function or function param
+    UINT8   arg[0]; //param for btc function or function param
 } btc_msg_t;
 
 typedef struct btc_adv_packet {
@@ -116,11 +116,10 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 /**
  * transfer an message to another module in tha same task.
  * @param  msg       message
- * @param  arg       paramter
  * @return           BT_STATUS_SUCCESS: success
  *                   others: fail
  */
-bt_status_t btc_inter_profile_call(btc_msg_t *msg, void *arg);
+bt_status_t btc_inter_profile_call(btc_msg_t *msg);
 
 bt_status_t btc_init(void);
 void btc_deinit(void);
