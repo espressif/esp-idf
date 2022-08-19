@@ -49,7 +49,10 @@ extern "C" {
 #define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
 #define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
 
-#define RTC_SLOW_CLK_FREQ_150K      150000
+// On esp32c3, RC_SLOW_CLK has a freq of ~136kHz
+#define SOC_CLK_RC_SLOW_FREQ_APPROX    136000
+// '150K' does not mean the actual freq, it represents the clock source is RC_SLOW_CLK. RC_SLOW_CLK has a freq of ~150kHz only on esp32.
+#define RTC_SLOW_CLK_FREQ_150K      SOC_CLK_RC_SLOW_FREQ_APPROX
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
 #define RTC_SLOW_CLK_FREQ_32K       32768
 
@@ -74,7 +77,7 @@ extern "C" {
 #define DELAY_SLOW_CLK_SWITCH           300
 #define DELAY_8M_ENABLE                 50
 
-/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
+/* Number of RC_FAST_D256 clock cycles to use for XTAL frequency estimation.
  * 10 cycles will take approximately 300 microseconds.
  */
 #define XTAL_FREQ_EST_CYCLES            10
@@ -155,7 +158,7 @@ typedef enum {
 typedef enum {
     RTC_CPU_FREQ_SRC_XTAL,  //!< XTAL
     RTC_CPU_FREQ_SRC_PLL,   //!< PLL (480M or 320M)
-    RTC_CPU_FREQ_SRC_8M,    //!< Internal 8M RTC oscillator
+    RTC_CPU_FREQ_SRC_8M,    //!< Internal 17.5M RC oscillator
     RTC_CPU_FREQ_SRC_APLL   //!< APLL
 } rtc_cpu_freq_src_t;
 
@@ -173,9 +176,9 @@ typedef struct rtc_cpu_freq_config_s {
  * @brief RTC SLOW_CLK frequency values
  */
 typedef enum {
-    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 150 kHz RC oscillator
+    RTC_SLOW_FREQ_RTC = 0,      //!< Internal 136 kHz RC oscillator
     RTC_SLOW_FREQ_32K_XTAL = 1, //!< External 32 kHz XTAL
-    RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 8 MHz RC oscillator, divided by 256
+    RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 17.5 MHz RC oscillator, divided by 256
 } rtc_slow_freq_t;
 
 /**
@@ -183,11 +186,11 @@ typedef enum {
  */
 typedef enum {
     RTC_FAST_FREQ_XTALD4 = 0,   //!< Main XTAL, divided by 4
-    RTC_FAST_FREQ_8M = 1,       //!< Internal 8 MHz RC oscillator
+    RTC_FAST_FREQ_8M = 1,       //!< Internal 17.5 MHz RC oscillator
 } rtc_fast_freq_t;
 
-/* With the default value of CK8M_DFREQ, 8M clock frequency is 8.5 MHz +/- 7% */
-#define RTC_FAST_CLK_FREQ_APPROX 8500000
+/* With the default value of CK8M_DFREQ, RTC_FAST clock frequency is 17.5 MHz +/- 7% */
+#define RTC_FAST_CLK_FREQ_APPROX 17500000
 
 #define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
 
@@ -199,9 +202,9 @@ typedef enum {
  */
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
-    RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
+    RTC_CAL_8MD256 = 1,        //!< Internal 17.5 MHz RC oscillator, divided by 256
     RTC_CAL_32K_XTAL = 2,      //!< External 32 kHz XTAL
-    RTC_CAL_INTERNAL_OSC = 3   //!< Internal 150 kHz oscillator
+    RTC_CAL_INTERNAL_OSC = 3   //!< Internal 136 kHz oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -213,9 +216,9 @@ typedef struct {
     rtc_fast_freq_t fast_freq : 1;  //!< RTC_FAST_CLK frequency to set
     rtc_slow_freq_t slow_freq : 2;  //!< RTC_SLOW_CLK frequency to set
     uint32_t clk_rtc_clk_div : 8;
-    uint32_t clk_8m_clk_div : 3;        //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
-    uint32_t slow_clk_dcap : 8;     //!< RTC 150k clock adjustment parameter (higher value leads to lower frequency)
-    uint32_t clk_8m_dfreq : 8;      //!< RTC 8m clock adjustment parameter (higher value leads to higher frequency)
+    uint32_t clk_8m_clk_div : 3;        //!< RTC_FAST_CLK source RC_FAST clock divider (division is by clk_8m_div+1, i.e. 0 means ~17.5MHz frequency)
+    uint32_t slow_clk_dcap : 8;     //!< RC_SLOW clock adjustment parameter (higher value leads to lower frequency)
+    uint32_t clk_8m_dfreq : 8;      //!< RC_FAST clock adjustment parameter (higher value leads to higher frequency)
 } rtc_clk_config_t;
 
 /**
@@ -333,31 +336,31 @@ bool rtc_clk_32k_enabled(void);
 void rtc_clk_32k_bootstrap(uint32_t cycle);
 
 /**
- * @brief Enable or disable 8 MHz internal oscillator
+ * @brief Enable or disable 17.5 MHz internal oscillator
  *
- * Output from 8 MHz internal oscillator is passed into a configurable
+ * Output from 17.5 MHz internal oscillator is passed into a configurable
  * divider, which by default divides the input clock frequency by 256.
  * Output of the divider may be used as RTC_SLOW_CLK source.
  * Output of the divider is referred to in register descriptions and code as
  * 8md256 or simply d256. Divider values other than 256 may be configured, but
  * this facility is not currently needed, so is not exposed in the code.
  *
- * When 8MHz/256 divided output is not needed, the divider should be disabled
+ * When RC_FAST_D256 divided output is not needed, the divider should be disabled
  * to reduce power consumption.
  *
- * @param clk_8m_en true to enable 8MHz generator
+ * @param clk_8m_en true to enable 17.5MHz generator
  * @param d256_en true to enable /256 divider
  */
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en);
 
 /**
- * @brief Get the state of 8 MHz internal oscillator
+ * @brief Get the state of 17.5 MHz internal oscillator
  * @return true if the oscillator is enabled
  */
 bool rtc_clk_8m_enabled(void);
 
 /**
- * @brief Get the state of /256 divider which is applied to 8MHz clock
+ * @brief Get the state of /256 divider which is applied to 17.5MHz clock
  * @return true if the divided output is enabled
  */
 bool rtc_clk_8md256_enabled(void);
@@ -395,9 +398,9 @@ rtc_slow_freq_t rtc_clk_slow_freq_get(void);
 /**
  * @brief Get the approximate frequency of RTC_SLOW_CLK, in Hz
  *
- * - if RTC_SLOW_FREQ_RTC is selected, returns ~150000
+ * - if RTC_SLOW_FREQ_RTC is selected, returns 136000
  * - if RTC_SLOW_FREQ_32K_XTAL is selected, returns 32768
- * - if RTC_SLOW_FREQ_8MD256 is selected, returns ~33000
+ * - if RTC_SLOW_FREQ_8MD256 is selected, returns ~68000
  *
  * rtc_clk_cal function can be used to get more precise value by comparing
  * RTC_SLOW_CLK frequency to the frequency of main XTAL.
@@ -568,22 +571,22 @@ uint64_t rtc_deep_slp_time_get(void);
 void rtc_clk_wait_for_slow_cycle(void);
 
 /**
- * @brief Enable the rtc digital 8M clock
+ * @brief Enable the digital RC_FAST_CLK
  *
- * This function is used to enable the digital rtc 8M clock to support peripherals.
- * For enabling the analog 8M clock, using `rtc_clk_8M_enable` function above.
+ * This function is used to enable the digital RC_FAST clock to support peripherals.
+ * For enabling the analog 17.5M clock, using `rtc_clk_8M_enable` function above.
  */
 void rtc_dig_clk8m_enable(void);
 
 /**
- * @brief Disable the rtc digital 8M clock
+ * @brief Disable the digital RC_FAST_CLK
  *
- * This function is used to disable the digital rtc 8M clock, which is only used to support peripherals.
+ * This function is used to disable the digital RC_FAST clock, which is only used to support peripherals.
  */
 void rtc_dig_clk8m_disable(void);
 
 /**
- * @brief Get whether the rtc digital 8M clock is enabled
+ * @brief Get whether the digital RC_FAST_CLK is enabled
  */
 bool rtc_dig_8m_enabled(void);
 
@@ -639,7 +642,7 @@ typedef struct {
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
     uint32_t bt_pd_en : 1;              //!< power down BT
     uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
-    uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
+    uint32_t int_8m_pd_en : 1;          //!< Power down Internal 17.5M oscillator
     uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
@@ -669,7 +672,7 @@ typedef struct {
 #define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
 #define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
 #define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
-#define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
+#define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 17.5M oscillator
 #define RTC_SLEEP_PD_XTAL               BIT(11) //!< Power down main XTAL
 
 //These flags are not power domains, but will affect some sleep parameters
@@ -785,7 +788,7 @@ uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt);
  * RTC power and clock control initialization settings
  */
 typedef struct {
-    uint32_t ck8m_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for 8M clock to be ready
+    uint32_t ck8m_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for 17.5M clock to be ready
     uint32_t xtal_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for XTAL clock to be ready
     uint32_t pll_wait : 8;          //!< Number of rtc_fast_clk cycles to wait for PLL to be ready
     uint32_t clkctl_init : 1;       //!< Perform clock control related initialization
