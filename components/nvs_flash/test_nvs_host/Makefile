@@ -2,7 +2,6 @@ TEST_PROGRAM=test_nvs
 all: $(TEST_PROGRAM)
 
 SOURCE_FILES = \
-	esp_error_check_stub.cpp \
 	$(addprefix ../src/, \
 		nvs_types.cpp \
 		nvs_api.cpp \
@@ -30,7 +29,7 @@ SOURCE_FILES = \
 	test_nvs_initialization.cpp \
 	main.cpp
 
-SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c
+SOURCE_FILES_C = ../../esp_rom/linux/esp_rom_crc.c ../../esp_common/src/esp_err_check_linux.c
 
 ifeq ($(shell $(CC) -v 2>&1 | grep -c "clang version"), 1)
 COMPILER := clang
