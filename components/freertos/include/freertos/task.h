@@ -2655,12 +2655,13 @@ BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify,
  * not have this parameter and always waits for notifications on index 0.
  *
  * @param ulBitsToClearOnEntry Bits that are set in ulBitsToClearOnEntry value
- * will be cleared in the calling task's notification value before the task
- * checks to see if any notifications are pending, and optionally blocks if no
- * notifications are pending.  Setting ulBitsToClearOnEntry to ULONG_MAX (if
- * limits.h is included) or 0xffffffffUL (if limits.h is not included) will have
- * the effect of resetting the task's notification value to 0.  Setting
- * ulBitsToClearOnEntry to 0 will leave the task's notification value unchanged.
+ * will be cleared in the calling task's notification value before the task is
+ * marked as waiting for a new notification (provided a notification is not
+ * already pending). Optionally blocks if no notifications are pending. Setting
+ * ulBitsToClearOnEntry to ULONG_MAX (if limits.h is included) or 0xffffffffUL
+ * (if limits.h is not included) will have the effect of resetting the task's
+ * notification value to 0. Setting ulBitsToClearOnEntry to 0 will leave the
+ * task's notification value unchanged.
  *
  * @param ulBitsToClearOnExit If a notification is pending or received before
  * the calling task exits the xTaskNotifyWait() function then the task's
