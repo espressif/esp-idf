@@ -3,10 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/**
- * About test environment UT_T1_GPIO:
- * Please connect GPIO18 and GPIO19
- */
 #include <stdio.h>
 #include <string.h>
 #include "esp_system.h"
@@ -20,8 +16,6 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/rtc_io_periph.h"
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP32C2)
 
 #define RTCIO_CHECK(condition) TEST_ASSERT_MESSAGE((condition == ESP_OK), "ret is not ESP_OK")
 #define RTCIO_VERIFY(condition, msg) TEST_ASSERT_MESSAGE((condition), msg)
@@ -77,14 +71,41 @@ const int s_test_map[TEST_GPIO_PIN_COUNT] = {
     GPIO_NUM_20,   //GPIO20
     GPIO_NUM_21,   //GPIO21
 };
+#elif defined CONFIG_IDF_TARGET_ESP32S3
+#define TEST_GPIO_PIN_COUNT 21
+const int s_test_map[TEST_GPIO_PIN_COUNT] = {
+    // GPIO_NUM_0,    //GPIO0   // Workaround: GPIO0 is strap pin, can not be used pullup/pulldown test.
+    GPIO_NUM_1,    //GPIO1
+    GPIO_NUM_2,    //GPIO2
+    GPIO_NUM_3,    //GPIO3
+    GPIO_NUM_4,    //GPIO4
+    GPIO_NUM_5,    //GPIO5
+    GPIO_NUM_6,    //GPIO6
+    GPIO_NUM_7,    //GPIO7
+    GPIO_NUM_8,    //GPIO8
+    GPIO_NUM_9,    //GPIO9
+    GPIO_NUM_10,   //GPIO10
+    GPIO_NUM_11,   //GPIO11
+    GPIO_NUM_12,   //GPIO12
+    GPIO_NUM_13,   //GPIO13
+    GPIO_NUM_14,   //GPIO14
+    GPIO_NUM_15,   //GPIO15
+    GPIO_NUM_16,   //GPIO16
+    GPIO_NUM_17,   //GPIO17
+    GPIO_NUM_18,   //GPIO18
+    GPIO_NUM_19,   //GPIO19
+    GPIO_NUM_20,   //GPIO20
+    GPIO_NUM_21,   //GPIO21
+};
 #endif
 
 /*
  * Test output/input function.
  */
-TEST_CASE("RTCIO input/output test", "[rtcio]")
+TEST_CASE("RTCIO_input/output_test", "[rtcio]")
 {
     ESP_LOGI(TAG, "RTCIO input/output test");
+
     // init rtcio
     for (int i = 0; i < GPIO_PIN_COUNT; i++) {
         if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
@@ -97,7 +118,7 @@ TEST_CASE("RTCIO input/output test", "[rtcio]")
     }
 
     for (int cnt = 0; cnt < TEST_COUNT; cnt++) {
-        uint32_t level = cnt % 2;
+        int level = cnt % 2;
         ESP_LOGI(TAG, "RTCIO output level %d", level);
         for (int i = 0; i < GPIO_PIN_COUNT; i++) {
             if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
@@ -105,6 +126,7 @@ TEST_CASE("RTCIO input/output test", "[rtcio]")
                 vTaskDelay(10 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(i) != level) {
                     ESP_LOGE(TAG, "RTCIO input/output test err, gpio%d", i);
+                    TEST_FAIL();
                 }
             }
         }
@@ -124,9 +146,10 @@ TEST_CASE("RTCIO input/output test", "[rtcio]")
  * Test pullup/pulldown function.
  * Note: extern circuit should not connect.
  */
-TEST_CASE("RTCIO pullup/pulldown test", "[rtcio]")
+TEST_CASE("RTCIO_pullup/pulldown_test", "[rtcio]")
 {
     ESP_LOGI(TAG, "RTCIO pullup/pulldown test");
+
     // init rtcio
     for (int i = 0; i < TEST_GPIO_PIN_COUNT; i++) {
         int num = rtc_io_number_get(s_test_map[i]);
@@ -140,7 +163,7 @@ TEST_CASE("RTCIO pullup/pulldown test", "[rtcio]")
     }
 
     for (int cnt = 0; cnt < TEST_COUNT; cnt++) {
-        uint32_t level = cnt % 2;
+        int level = cnt % 2;
         ESP_LOGI(TAG, "RTCIO pull level %d", level);
         for (int i = 0; i < TEST_GPIO_PIN_COUNT; i++) {
             int num = rtc_io_number_get(s_test_map[i]);
@@ -155,6 +178,7 @@ TEST_CASE("RTCIO pullup/pulldown test", "[rtcio]")
                 vTaskDelay(20 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(s_test_map[i]) != level) {
                     ESP_LOGE(TAG, "RTCIO pullup/pulldown test err, gpio%d", s_test_map[i]);
+                    TEST_FAIL();
                 }
             }
         }
@@ -174,9 +198,10 @@ TEST_CASE("RTCIO pullup/pulldown test", "[rtcio]")
 /*
  * Test output OD function.
  */
-TEST_CASE("RTCIO output OD test", "[rtcio]")
+TEST_CASE("RTCIO_output_OD_test", "[rtcio]")
 {
     ESP_LOGI(TAG, "RTCIO output OD test");
+
     // init rtcio
     for (int i = 0; i < GPIO_PIN_COUNT; i++) {
         if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
@@ -189,7 +214,7 @@ TEST_CASE("RTCIO output OD test", "[rtcio]")
     }
 
     for (int cnt = 0; cnt < TEST_COUNT; cnt++) {
-        uint32_t level = cnt % 2;
+        int level = cnt % 2;
         ESP_LOGI(TAG, "RTCIO output level %d", level);
         for (int i = 0; i < GPIO_PIN_COUNT; i++) {
             if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
@@ -197,6 +222,7 @@ TEST_CASE("RTCIO output OD test", "[rtcio]")
                 vTaskDelay(10 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(i) != level) {
                     ESP_LOGE(TAG, "RTCIO output OD test err, gpio%d", i);
+                    TEST_FAIL();
                 }
             }
         }
@@ -215,9 +241,10 @@ TEST_CASE("RTCIO output OD test", "[rtcio]")
 /*
  * Test rtcio hold function.
  */
-TEST_CASE("RTCIO output hold test", "[rtcio]")
+TEST_CASE("RTCIO_output_hold_test", "[rtcio]")
 {
     ESP_LOGI(TAG, "RTCIO output hold test");
+
     // init rtcio
     for (int i = 0; i < GPIO_PIN_COUNT; i++) {
         if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
@@ -240,11 +267,12 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
             vTaskDelay(10 / portTICK_PERIOD_MS);
             if (rtc_gpio_get_level(i) == 0) {
                 ESP_LOGE(TAG, "RTCIO hold test err, gpio%d", i);
+                TEST_FAIL();
             }
         }
     }
 
-    //unhold all rtcio.
+    // unhold all rtcio.
     for (int i = 0; i < GPIO_PIN_COUNT; i++) {
         if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
             RTCIO_CHECK( rtc_gpio_hold_dis(i) );
@@ -253,7 +281,7 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
 
     // check the unhold status
     for (int cnt = 0; cnt < 4; cnt++) {
-        uint32_t level = cnt % 2;
+        int level = cnt % 2;
         ESP_LOGI(TAG, "RTCIO output level %d", level);
         for (int i = 0; i < GPIO_PIN_COUNT; i++) {
             if (GPIO_IS_VALID_OUTPUT_GPIO(i) && rtc_gpio_is_valid_gpio(i)) {
@@ -261,6 +289,7 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
                 vTaskDelay(10 / portTICK_PERIOD_MS);
                 if (rtc_gpio_get_level(i) != level) {
                     ESP_LOGE(TAG, "RTCIO output OD test err, gpio%d", i);
+                    TEST_FAIL();
                 }
             }
         }
@@ -275,5 +304,3 @@ TEST_CASE("RTCIO output hold test", "[rtcio]")
     }
     ESP_LOGI(TAG, "RTCIO hold test over");
 }
-
-#endif
