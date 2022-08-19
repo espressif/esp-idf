@@ -19,6 +19,11 @@
 #include "esp_gap_ble_api.h"
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define BLUFI_APP_UUID      0xFFFF
 #define BLUFI_DEVICE_NAME            "BLUFI_DEVICE"
 
@@ -80,4 +85,7 @@ void esp_blufi_adv_start(void);
 
 void esp_blufi_send_encap(void *arg);
 
+#ifdef __cplusplus
+}
+#endif
 #endif/* _ESP_BLUFI_ */
