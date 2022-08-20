@@ -4,10 +4,12 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
 import time
+from textwrap import indent
 from threading import Thread
 from typing import Any, Dict, List, Optional
 
@@ -16,6 +18,45 @@ from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import PropertyDict, ensure_build_directory
 
 PYTHON = sys.executable
+ESP_ROM_INFO_FILE = 'roms.json'
+GDBINIT_PYTHON_TEMPLATE = '''
+# Add Python GDB extensions
+python
+import sys
+sys.path = {sys_path}
+import freertos_gdb
+end
+'''
+GDBINIT_PYTHON_NOT_SUPPORTED = '''
+# Python scripting is not supported in this copy of GDB.
+# Please make sure that your Python distribution contains Python shared library.
+'''
+GDBINIT_BOOTLOADER_ADD_SYMBOLS = '''
+# Load bootloader symbols
+set confirm off
+  add-symbol-file {boot_elf}
+set confirm on
+'''
+GDBINIT_BOOTLOADER_NOT_FOUND = '''
+# Bootloader elf was not found
+'''
+GDBINIT_APP_ADD_SYMBOLS = '''
+# Load application file
+file {app_elf}
+'''
+GDBINIT_CONNECT = '''
+# Connect to the default openocd-esp port and break on app_main()
+target remote :3333
+monitor reset halt
+flushregs
+thbreak app_main
+continue
+'''
+GDBINIT_MAIN = '''
+source {py_extensions}
+source {symbols}
+source {connect}
+'''
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Dict:
@@ -91,22 +132,111 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # execute simple python command to check is it supported
         return subprocess.run([gdb, '--batch-silent', '--ex', 'python import os'], stderr=subprocess.DEVNULL).returncode == 0
 
-    def create_local_gdbinit(gdb: str, gdbinit: str, elf_file: str) -> None:
-        with open(gdbinit, 'w') as f:
+    def get_normalized_path(path: str) -> str:
+        if os.name == 'nt':
+            return os.path.normpath(path).replace('\\','\\\\')
+        return path
+
+    def get_rom_if_condition_str(date_addr: int, date_str: str) -> str:
+        r = []
+        for i in range(0, len(date_str), 4):
+            value = hex(int.from_bytes(bytes(date_str[i:i + 4], 'utf-8'), 'little'))
+            r.append(f'(*(int*) {hex(date_addr + i)}) == {value}')
+        return 'if ' + ' && '.join(r)
+
+    def generate_gdbinit_rom_add_symbols(target: str) -> str:
+        base_ident = '  '
+        rom_elfs_dir = os.getenv('ESP_ROM_ELF_DIR')
+        if not rom_elfs_dir:
+            raise FatalError('ESP_ROM_ELF_DIR environment variable is not defined. Please try to run IDF "install" and "export" scripts.')
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), ESP_ROM_INFO_FILE), 'r') as f:
+            roms = json.load(f)
+            if target not in roms:
+                msg_body = f'Target "{target}" was not found in "{ESP_ROM_INFO_FILE}". Please check IDF integrity.'
+                if os.getenv('ESP_IDF_GDB_TESTING'):
+                    raise FatalError(msg_body)
+                print(f'Warning: {msg_body}')
+                return f'# {msg_body}'
+            r = ['', f'# Load {target} ROM ELF symbols']
+            is_one_revision = len(roms[target]) == 1
+            if not is_one_revision:
+                r.append('define target hookpost-remote')
+            r.append('set confirm off')
+            # Workaround for reading ROM data on xtensa chips
+            # This should be deleted after the new openocd-esp release (newer than v0.11.0-esp32-20220706)
+            xtensa_chips = ['esp32', 'esp32s2', 'esp32s3']
+            if target in xtensa_chips:
+                r.append('monitor xtensa set_permissive 1')
+            # Since GDB does not have 'else if' statement than we use nested 'if..else' instead.
+            for i, k in enumerate(roms[target], 1):
+                indent_str = base_ident * i
+                rom_file = get_normalized_path(os.path.join(rom_elfs_dir, f'{target}_rev{k["rev"]}_rom.elf'))
+                build_date_addr = int(k['build_date_str_addr'], base=16)
+                r.append(indent(f'# if $_streq((char *) {hex(build_date_addr)}, "{k["build_date_str"]}")', indent_str))
+                r.append(indent(get_rom_if_condition_str(build_date_addr, k['build_date_str']), indent_str))
+                r.append(indent(f'add-symbol-file {rom_file}', indent_str + base_ident))
+                r.append(indent('else', indent_str))
+                if i == len(roms[target]):
+                    # In case no one known ROM ELF fits - print error and exit with error code 1
+                    indent_str += base_ident
+                    msg_body = f'unknown {target} ROM revision.'
+                    if os.getenv('ESP_IDF_GDB_TESTING'):
+                        r.append(indent(f'echo Error: {msg_body}\\n', indent_str))
+                        r.append(indent('quit 1', indent_str))
+                    else:
+                        r.append(indent(f'echo Warning: {msg_body}\\n', indent_str))
+            # Close 'else' operators
+            for i in range(len(roms[target]), 0, -1):
+                r.append(indent('end', base_ident * i))
+            if target in xtensa_chips:
+                r.append('monitor xtensa set_permissive 0')
+            r.append('set confirm on')
+            if not is_one_revision:
+                r.append('end')
+            r.append('')
+            return os.linesep.join(r)
+        raise FatalError(f'{ESP_ROM_INFO_FILE} file not found. Please check IDF integrity.')
+
+    def generate_gdbinit_files(gdb: str, gdbinit: Optional[str], project_desc: Dict[str, Any]) -> None:
+        app_elf = get_normalized_path(os.path.join(project_desc['build_dir'], project_desc['app_elf']))
+        if not os.path.exists(app_elf):
+            raise FatalError('ELF file not found. You need to build & flash the project before running debug targets')
+
+        # Recreate empty 'gdbinit' directory
+        gdbinit_dir = os.path.join(project_desc['build_dir'], 'gdbinit')
+        if os.path.isfile(gdbinit_dir):
+            os.remove(gdbinit_dir)
+        elif os.path.isdir(gdbinit_dir):
+            shutil.rmtree(gdbinit_dir)
+        os.mkdir(gdbinit_dir)
+
+        # Prepare gdbinit for Python GDB extensions import
+        py_extensions = os.path.join(gdbinit_dir, 'py_extensions')
+        with open(py_extensions, 'w') as f:
             if is_gdb_with_python(gdb):
-                f.write('python\n')
-                f.write('import sys\n')
-                f.write(f'sys.path = {sys.path}\n')
-                f.write('import freertos_gdb\n')
-                f.write('end\n')
-            if os.name == 'nt':
-                elf_file = elf_file.replace('\\','\\\\')
-            f.write('file {}\n'.format(elf_file))
-            f.write('target remote :3333\n')
-            f.write('mon reset halt\n')
-            f.write('flushregs\n')
-            f.write('thb app_main\n')
-            f.write('c\n')
+                f.write(GDBINIT_PYTHON_TEMPLATE.format(sys_path=sys.path))
+            else:
+                f.write(GDBINIT_PYTHON_NOT_SUPPORTED)
+
+        # Prepare gdbinit for related ELFs symbols load
+        symbols = os.path.join(gdbinit_dir, 'symbols')
+        with open(symbols, 'w') as f:
+            boot_elf = get_normalized_path(project_desc['bootloader_elf']) if 'bootloader_elf' in project_desc else None
+            if boot_elf and os.path.exists(boot_elf):
+                f.write(GDBINIT_BOOTLOADER_ADD_SYMBOLS.format(boot_elf=boot_elf))
+            else:
+                f.write(GDBINIT_BOOTLOADER_NOT_FOUND)
+            f.write(generate_gdbinit_rom_add_symbols(project_desc['target']))
+            f.write(GDBINIT_APP_ADD_SYMBOLS.format(app_elf=app_elf))
+
+        # Generate the gdbinit for target connect if no custom gdbinit is present
+        if not gdbinit:
+            gdbinit = os.path.join(gdbinit_dir, 'connect')
+            with open(gdbinit, 'w') as f:
+                f.write(GDBINIT_CONNECT)
+
+        with open(os.path.join(gdbinit_dir, 'gdbinit'), 'w') as f:
+            f.write(GDBINIT_MAIN.format(py_extensions=py_extensions, symbols=symbols, connect=gdbinit))
 
     def debug_cleanup() -> None:
         print('cleaning up debug targets')
@@ -191,7 +321,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         processes['openocd_outfile_name'] = openocd_out_name
         print('OpenOCD started as a background task {}'.format(process.pid))
 
-    def get_gdb_args(gdbinit: str, project_desc: Dict[str, Any]) -> List:
+    def get_gdb_args(project_desc: Dict[str, Any]) -> List:
+        gdbinit = os.path.join(project_desc['build_dir'], 'gdbinit', 'gdbinit')
         args = ['-x={}'.format(gdbinit)]
         debug_prefix_gdbinit = project_desc.get('debug_prefix_map_gdbinit')
         if debug_prefix_gdbinit:
@@ -205,16 +336,14 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         project_desc = get_project_desc(args, ctx)
         local_dir = project_desc['build_dir']
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
-        if gdbinit is None:
-            gdbinit = os.path.join(local_dir, 'gdbinit')
-            create_local_gdbinit(gdb, gdbinit, os.path.join(args.build_dir, project_desc['app_elf']))
+        generate_gdbinit_files(gdb, gdbinit, project_desc)
 
         # this is a workaround for gdbgui
         # gdbgui is using shlex.split for the --gdb-args option. When the input is:
         # - '"-x=foo -x=bar"', would return ['foo bar']
         # - '-x=foo', would return ['-x', 'foo'] and mess up the former option '--gdb-args'
         # so for one item, use extra double quotes. for more items, use no extra double quotes.
-        gdb_args_list = get_gdb_args(gdbinit, project_desc)
+        gdb_args_list = get_gdb_args(project_desc)
         gdb_args = '"{}"'.format(' '.join(gdb_args_list)) if len(gdb_args_list) == 1 else ' '.join(gdb_args_list)
         args = ['gdbgui', '-g', gdb, '--gdb-args', gdb_args]
         print(args)
@@ -286,16 +415,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         watch_openocd.start()
         processes['threads_to_join'].append(watch_openocd)
         project_desc = get_project_desc(args, ctx)
-
-        elf_file = os.path.join(args.build_dir, project_desc['app_elf'])
-        if not os.path.exists(elf_file):
-            raise FatalError('ELF file not found. You need to build & flash the project before running debug targets', ctx)
         gdb = project_desc['monitor_toolprefix'] + 'gdb'
-        local_dir = project_desc['build_dir']
-        if gdbinit is None:
-            gdbinit = os.path.join(local_dir, 'gdbinit')
-            create_local_gdbinit(gdb, gdbinit, elf_file)
-        args = [gdb, *get_gdb_args(gdbinit, project_desc)]
+        generate_gdbinit_files(gdb, gdbinit, project_desc)
+        args = [gdb, *get_gdb_args(project_desc)]
         if gdb_tui is not None:
             args += ['-tui']
         t = Thread(target=run_gdb, args=(args,))
