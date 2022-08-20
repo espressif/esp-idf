@@ -114,7 +114,8 @@ void wifi_init_sta(void)
             /* Setting a password implies station will connect to all security modes including WEP/WPA.
              * However these modes are deprecated and not advisable to be used. Incase your Access point
              * doesn't support WPA2, these mode can be enabled by commenting below line */
-	     .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+	     .threshold.authmode = WIFI_AUTH_WPA3_PSK,
+	     .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );

@@ -46,6 +46,21 @@ cleanup:
 }
 
 
+struct crypto_bignum * crypto_bignum_init_uint(unsigned int val)
+{
+
+    mbedtls_mpi *bn = os_zalloc(sizeof(mbedtls_mpi));
+    if (bn == NULL) {
+        return NULL;
+    }
+
+    mbedtls_mpi_init(bn);
+    mbedtls_mpi_lset(bn, val);
+
+    return (struct crypto_bignum *)bn;
+}
+
+
 void crypto_bignum_deinit(struct crypto_bignum *n, int clear)
 {
     mbedtls_mpi_free((mbedtls_mpi *)n);
@@ -160,6 +175,39 @@ int crypto_bignum_mulmod(const struct crypto_bignum *a,
     res = esp_mpi_mul_mpi_mod((mbedtls_mpi *) d, (mbedtls_mpi *) a, (mbedtls_mpi *) b, (mbedtls_mpi *) c);
 #endif
     return res ? -1 : 0;
+}
+
+
+int crypto_bignum_sqrmod(const struct crypto_bignum *a,
+                         const struct crypto_bignum *b,
+                         struct crypto_bignum *c)
+{
+    int res;
+    struct crypto_bignum *tmp = crypto_bignum_init();
+    if (!tmp) {
+        return -1;
+    }
+
+    res = mbedtls_mpi_copy((mbedtls_mpi *) tmp,(const mbedtls_mpi *) a);
+    res = crypto_bignum_mulmod(a,tmp,b,c);
+
+    crypto_bignum_deinit(tmp, 0);
+    return res ? -1 : 0;
+}
+
+
+int crypto_bignum_rshift(const struct crypto_bignum *a, int n,
+                         struct crypto_bignum *r)
+{
+    int res;
+    res = mbedtls_mpi_copy((mbedtls_mpi *) r,(const mbedtls_mpi *) a);
+    if (res) {
+        return -1;
+    }
+
+    res = mbedtls_mpi_shift_r((mbedtls_mpi *)r, n);
+    return res ? -1 : 0;
+
 }
 
 
