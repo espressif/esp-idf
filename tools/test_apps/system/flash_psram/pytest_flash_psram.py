@@ -36,4 +36,4 @@ MSPI_F4R4_configs = [p.name.replace('sdkconfig.ci.', '') for p in pathlib.Path(o
 @pytest.mark.MSPI_F4R4
 @pytest.mark.parametrize('config', MSPI_F4R4_configs, indirect=True)
 def test_flash4_psram4(dut: Dut) -> None:
-    dut.expect_exact('flash psram test success')
+    dut.expect_exact('flash psram test success', timeout=40)
