@@ -12,27 +12,14 @@
 #include "soc/sens_reg.h"
 #include "soc/rtc_periph.h"
 #include "ulp_riscv.h"
+#include "ulp_riscv_lock.h"
 #include "ulp_test_app.h"
+#include "ulp_test_shared.h"
 #include "unity.h"
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-typedef enum{
-    RISCV_READ_WRITE_TEST = 1,
-    RISCV_DEEP_SLEEP_WAKEUP_TEST,
-    RISCV_LIGHT_SLEEP_WAKEUP_TEST,
-    RISCV_STOP_TEST,
-    RISCV_NO_COMMAND,
-} riscv_test_commands_t;
-
-typedef enum {
-    RISCV_COMMAND_OK = 1,
-    RISCV_COMMAND_NOK,
-    RISCV_COMMAND_INVALID,
-} riscv_test_command_reply_t;
-
-#define XOR_MASK 0xDEADBEEF
 #define ULP_WAKEUP_PERIOD 1000000 // 1 second
 
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_test_app_bin_start");
@@ -211,4 +198,32 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][reset=
     /* Enter Deep Sleep */
     esp_deep_sleep_start();
     UNITY_TEST_FAIL(__LINE__, "Should not get here!");
+}
+
+TEST_CASE("ULP-RISC-V mutex", "[ulp]")
+{
+    /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
+    load_and_start_ulp_firmware();
+
+    /* Setup test data */
+    ulp_riscv_incrementer = 0;
+    ulp_main_cpu_reply = RISCV_NO_COMMAND;
+    ulp_main_cpu_command = RISCV_MUTEX_TEST;
+
+    ulp_riscv_lock_t *lock = (ulp_riscv_lock_t*)&ulp_lock;
+
+    for (int i = 0; i < MUTEX_TEST_ITERATIONS; i++) {
+        ulp_riscv_lock_acquire(lock);
+        ulp_riscv_incrementer++;
+        ulp_riscv_lock_release(lock);
+    }
+
+    while(ulp_main_cpu_reply != RISCV_COMMAND_OK) {
+        // Wait for ULP to finish
+    }
+
+    /* If the variable is protected there should be no race conditions
+       results should be the sum of increments made by ULP and by main CPU
+    */
+    TEST_ASSERT_EQUAL(2*MUTEX_TEST_ITERATIONS, ulp_riscv_incrementer);
 }

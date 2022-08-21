@@ -75,6 +75,7 @@ if(ULP_COCPU_IS_RISCV)
     list(APPEND ULP_S_SOURCES
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/start.S"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_lock.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_uart.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c")
@@ -100,7 +101,8 @@ if(ULP_COCPU_IS_RISCV)
     list(APPEND EXTRA_LINKER_ARGS "-Wl,--gc-sections")
     list(APPEND EXTRA_LINKER_ARGS "-Wl,-Map=\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map\"")
     #Makes the csr utillies for riscv visible:
-    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include")
+    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
+                                                       "${IDF_PATH}/components/ulp/ulp_riscv/shared/include")
     target_link_libraries(${ULP_APP_NAME} "-T \"${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.periperals.ld\"")
     target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
 
