@@ -19,7 +19,7 @@ The SD SPI driver uses software-controlled CS signal.
 How to Use
 ----------
 
-Firstly, use the macro :c:macro:`SDSPI_DEVICE_CONFIG_DEFAULT` to initialize a structure :cpp:type:`sdmmc_slot_config_t`, which is used to initialize an SD SPI device. This macro will also fill in the default pin mappings, which is same as the pin mappings of SDMMC host driver. Modify the host and pins of the structure to desired value. Then call `sdspi_host_init_device` to initialize the SD SPI device and attach to its bus.
+Firstly, use the macro :c:macro:`SDSPI_DEVICE_CONFIG_DEFAULT` to initialize a structure :cpp:type:`sdspi_device_config_t`, which is used to initialize an SD SPI device. This macro will also fill in the default pin mappings, which is same as the pin mappings of SDMMC host driver. Modify the host and pins of the structure to desired value. Then call `sdspi_host_init_device` to initialize the SD SPI device and attach to its bus.
 
 Then use :c:macro:`SDSPI_HOST_DEFAULT` macro to initialize a :cpp:type:`sdmmc_host_t` structure, which is used to store the state and configurations of upper layer (SD/SDIO/MMC driver). Modify the `slot` parameter of the structure to the SD SPI device spi_handle just returned from `sdspi_host_init_device`. Call `sdmmc_card_init` with the :cpp:type:`sdmmc_host_t` to probe and initialize the SD card.
 
