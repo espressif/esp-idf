@@ -55,10 +55,10 @@
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
 #if CONFIG_I2S_ISR_IRAM_SAFE
-#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define I2S_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define I2S_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif //CONFIG_I2S_ISR_IRAM_SAFE
 #define I2S_DMA_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
@@ -371,7 +371,7 @@ uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uin
     if (bufsize > I2S_DMA_BUFFER_MAX_SIZE) {
         uint32_t frame_num = I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame;
         bufsize = frame_num * bytes_per_frame;
-        ESP_LOGW(TAG, "dma frame num is out of dma buffer size, limited to %d", frame_num);
+        ESP_LOGW(TAG, "dma frame num is out of dma buffer size, limited to %"PRIu32, frame_num);
     }
     return bufsize;
 }
@@ -436,7 +436,7 @@ esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bu
     if (handle->dir == I2S_DIR_RX) {
         i2s_ll_rx_set_eof_num(handle->controller->hal.dev, bufsize);
     }
-    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %d, dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %d", num, bufsize);
+    ESP_LOGD(TAG, "DMA malloc info: dma_desc_num = %"PRIu32", dma_desc_buf_size = dma_frame_num * slot_num * data_bit_width = %"PRIu32, num, bufsize);
     return ESP_OK;
 err:
     i2s_free_dma_desc(handle);
@@ -465,10 +465,10 @@ uint32_t i2s_set_get_apll_freq(uint32_t mclk_freq_hz)
         return 0;
     }
     if (ret == ESP_ERR_INVALID_STATE) {
-        ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz while the expected frequency is %d Hz", real_freq, expt_freq);
-        ESP_LOGW(TAG, "Trying to work at %d Hz...", real_freq);
+        ESP_LOGW(TAG, "APLL is occupied already, it is working at %"PRIu32" Hz while the expected frequency is %"PRIu32" Hz", real_freq, expt_freq);
+        ESP_LOGW(TAG, "Trying to work at %"PRIu32" Hz...", real_freq);
     }
-    ESP_LOGD(TAG, "APLL expected frequency is %d Hz, real frequency is %d Hz", expt_freq, real_freq);
+    ESP_LOGD(TAG, "APLL expected frequency is %"PRIu32" Hz, real frequency is %"PRIu32" Hz", expt_freq, real_freq);
     return real_freq;
 }
 #endif

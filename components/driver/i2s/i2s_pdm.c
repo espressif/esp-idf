@@ -61,7 +61,7 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
     ESP_RETURN_ON_ERROR(i2s_pdm_tx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
-    ESP_LOGD(TAG, "Clock division info: [sclk] %d Hz [mdiv] %d [mclk] %d Hz [bdiv] %d [bclk] %d Hz",
+    ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %d [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, clk_info.mclk_div, clk_info.mclk, clk_info.bclk_div, clk_info.bclk);
 
     portENTER_CRITICAL(&g_i2s.spinlock);
@@ -348,7 +348,7 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
     ESP_RETURN_ON_ERROR(i2s_pdm_rx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
-    ESP_LOGD(TAG, "Clock division info: [sclk] %d Hz [mdiv] %d [mclk] %d Hz [bdiv] %d [bclk] %d Hz",
+    ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %d [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
              clk_info.sclk, clk_info.mclk_div, clk_info.mclk, clk_info.bclk_div, clk_info.bclk);
 
     portENTER_CRITICAL(&g_i2s.spinlock);

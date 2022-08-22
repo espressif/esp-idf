@@ -129,7 +129,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, mcpwm_timer_clock_sour
         }
         mcpwm_ll_group_set_clock_prescale(group->hal.dev, MCPWM_PERIPH_CLOCK_PRE_SCALE);
         group->resolution_hz = periph_src_clk_hz / MCPWM_PERIPH_CLOCK_PRE_SCALE;
-        ESP_LOGD(TAG, "group (%d) clock resolution:%uHz", group->group_id, group->resolution_hz);
+        ESP_LOGD(TAG, "group (%d) clock resolution:%"PRIu32"Hz", group->group_id, group->resolution_hz);
     }
     return ret;
 }

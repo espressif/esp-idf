@@ -81,12 +81,12 @@ typedef struct {
 /**
  * @brief MCPWM operator brake event callback function
  *
- * @param[in] operator MCPWM operator handle
+ * @param[in] oper MCPWM operator handle
  * @param[in] edata MCPWM brake event data, fed by driver
  * @param[in] user_ctx User data, set in `mcpwm_operator_register_event_callbacks()`
  * @return Whether a high priority task has been waken up by this function
  */
-typedef bool (*mcpwm_brake_event_cb_t)(mcpwm_oper_handle_t operator, const mcpwm_brake_event_data_t *edata, void *user_ctx);
+typedef bool (*mcpwm_brake_event_cb_t)(mcpwm_oper_handle_t oper, const mcpwm_brake_event_data_t *edata, void *user_ctx);
 
 /**
  * @brief MCPWM fault event data

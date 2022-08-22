@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_clk.h"
-#include "esp_private/spi_flash_os.h"
 #include "driver/mcpwm_cap.h"
 #include "driver/mcpwm_sync.h"
 #include "driver/gpio.h"
@@ -27,15 +28,12 @@ static bool IRAM_ATTR test_capture_callback_iram_safe(mcpwm_cap_channel_handle_t
     return false;
 }
 
-static void IRAM_ATTR test_mcpwm_capture_gpio_simulate(int gpio_sig)
+static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
 {
-    // disable flash cache
-    spi_flash_guard_get()->start();
+    int gpio_sig = (int)args;
     gpio_set_level(gpio_sig, 1);
     esp_rom_delay_us(1000);
     gpio_set_level(gpio_sig, 0);
-    // enable flash cache
-    spi_flash_guard_get()->end();
 }
 
 TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
@@ -71,19 +69,23 @@ TEST_CASE("mcpwm_capture_iram_safe", "[mcpwm]")
     uint32_t cap_value[2] = {0};
     TEST_ESP_OK(mcpwm_capture_channel_register_event_callbacks(pps_channel, &cbs, cap_value));
 
+    printf("enable capture channel\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_enable(pps_channel));
+
     printf("enable and start capture timer\r\n");
     TEST_ESP_OK(mcpwm_capture_timer_enable(cap_timer));
     TEST_ESP_OK(mcpwm_capture_timer_start(cap_timer));
 
     printf("disable cache, simulate GPIO capture signal\r\n");
-    test_mcpwm_capture_gpio_simulate(cap_gpio);
+    unity_utils_run_cache_disable_stub(test_simulate_input_post_cache_disable, (void *)cap_gpio);
 
-    printf("capture value: Pos=%u, Neg=%u\r\n", cap_value[0], cap_value[1]);
+    printf("capture value: Pos=%"PRIu32", Neg=%"PRIu32"\r\n", cap_value[0], cap_value[1]);
     // Capture timer is clocked from APB by default
     uint32_t clk_src_res = esp_clk_apb_freq();
     TEST_ASSERT_UINT_WITHIN(2000, clk_src_res / 1000, cap_value[1] - cap_value[0]);
 
     printf("uninstall capture channel and timer\r\n");
+    TEST_ESP_OK(mcpwm_capture_channel_disable(pps_channel));
     TEST_ESP_OK(mcpwm_del_capture_channel(pps_channel));
     TEST_ESP_OK(mcpwm_capture_timer_disable(cap_timer));
     TEST_ESP_OK(mcpwm_del_capture_timer(cap_timer));

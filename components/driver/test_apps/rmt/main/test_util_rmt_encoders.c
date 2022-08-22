@@ -6,8 +6,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/cdefs.h>
+#include "sdkconfig.h"
 #include "unity.h"
 #include "driver/rmt_encoder.h"
+#include "esp_attr.h"
+
+#if CONFIG_RMT_ISR_IRAM_SAFE
+#define TEST_RMT_ENCODER_ATTR IRAM_ATTR
+#else
+#define TEST_RMT_ENCODER_ATTR
+#endif
 
 typedef struct {
     rmt_encoder_t base;
@@ -17,6 +25,7 @@ typedef struct {
     rmt_symbol_word_t reset_code;
 } rmt_led_strip_encoder_t;
 
+TEST_RMT_ENCODER_ATTR
 static size_t rmt_encode_led_strip(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);

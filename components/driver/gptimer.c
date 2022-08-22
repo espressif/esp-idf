@@ -71,9 +71,9 @@ typedef enum {
 struct gptimer_t {
     gptimer_group_t *group;
     int timer_id;
-    unsigned int resolution_hz;
-    unsigned long long reload_count;
-    unsigned long long alarm_count;
+    uint32_t resolution_hz;
+    uint64_t reload_count;
+    uint64_t alarm_count;
     gptimer_count_direction_t direction;
     timer_hal_context_t hal;
     gptimer_fsm_t fsm;
@@ -164,7 +164,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     esp_err_t ret = ESP_OK;
     gptimer_t *timer = NULL;
     ESP_GOTO_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->resolution_hz, ESP_ERR_INVALID_ARG, err, TAG, "invalid timer resolution:%d", config->resolution_hz);
+    ESP_GOTO_ON_FALSE(config->resolution_hz, ESP_ERR_INVALID_ARG, err, TAG, "invalid timer resolution:%"PRIu32, config->resolution_hz);
 
     timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for gptimer");
@@ -197,7 +197,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     timer->fsm = GPTIMER_FSM_INIT; // put the timer into init state
     timer->direction = config->direction;
     timer->flags.intr_shared = config->flags.intr_shared;
-    ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%uHz", group_id, timer_id, timer, timer->resolution_hz);
+    ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%"PRIu32"Hz", group_id, timer_id, timer, timer->resolution_hz);
     *ret_timer = timer;
     return ESP_OK;
 
@@ -245,7 +245,6 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 {
     gptimer_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(timer && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
@@ -261,6 +260,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 
     // lazy install interrupt service
     if (!timer->intr) {
+        ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
         // if user wants to control the interrupt allocation more precisely, we can expose more flags in `gptimer_config_t`
         int isr_flags = timer->flags.intr_shared ? ESP_INTR_FLAG_SHARED | GPTIMER_INTR_ALLOC_FLAGS : GPTIMER_INTR_ALLOC_FLAGS;
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,
@@ -318,7 +318,7 @@ esp_err_t gptimer_enable(gptimer_handle_t timer)
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire pm_lock failed");
     }
-    // enable interrupt interupt service
+    // enable interrupt service
     if (timer->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(timer->intr), TAG, "enable interrupt service failed");
     }
@@ -474,7 +474,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     timer_ll_set_clock_prescale(timer->hal.dev, timer_id, prescale);
     timer->resolution_hz = counter_src_hz / prescale; // this is the real resolution
     if (timer->resolution_hz != resolution_hz) {
-        ESP_LOGW(TAG, "resolution lost, expect %u, real %u", resolution_hz, timer->resolution_hz);
+        ESP_LOGW(TAG, "resolution lost, expect %"PRIu32", real %"PRIu32, resolution_hz, timer->resolution_hz);
     }
     return ret;
 }

@@ -42,13 +42,13 @@ static esp_err_t mcpwm_generator_register_to_operator(mcpwm_gen_t *gen, mcpwm_op
     ESP_RETURN_ON_FALSE(gen_id >= 0, ESP_ERR_NOT_FOUND, TAG, "no free generator in operator (%d,%d)", oper->group->group_id, oper->oper_id);
 
     gen->gen_id = gen_id;
-    gen->operator = oper;
+    gen->oper = oper;
     return ESP_OK;
 }
 
 static void mcpwm_generator_unregister_from_operator(mcpwm_gen_t *gen)
 {
-    mcpwm_oper_t *oper = gen->operator;
+    mcpwm_oper_t *oper = gen->oper;
     int gen_id = gen->gen_id;
 
     portENTER_CRITICAL(&oper->spinlock);
@@ -58,7 +58,7 @@ static void mcpwm_generator_unregister_from_operator(mcpwm_gen_t *gen)
 
 static esp_err_t mcpwm_generator_destory(mcpwm_gen_t *gen)
 {
-    if (gen->operator) {
+    if (gen->oper) {
         mcpwm_generator_unregister_from_operator(gen);
     }
     free(gen);
@@ -113,7 +113,7 @@ err:
 esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen)
 {
     ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *oper = gen->operator;
+    mcpwm_oper_t *oper = gen->oper;
     mcpwm_group_t *group = oper->group;
 
     ESP_LOGD(TAG, "del generator (%d,%d,%d)", group->group_id, oper->oper_id, gen->gen_id);
@@ -125,7 +125,7 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen)
 esp_err_t mcpwm_generator_set_force_level(mcpwm_gen_handle_t gen, int level, bool hold_on)
 {
     ESP_RETURN_ON_FALSE(gen && level <= 1, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *oper = gen->operator;
+    mcpwm_oper_t *oper = gen->oper;
     mcpwm_group_t *group = oper->group;
     mcpwm_hal_context_t *hal = &group->hal;
     int oper_id = oper->oper_id;
@@ -151,9 +151,9 @@ esp_err_t mcpwm_generator_set_force_level(mcpwm_gen_handle_t gen, int level, boo
 esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcpwm_gen_timer_event_action_t ev_act, ...)
 {
     ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *operator= gen->operator;
-    mcpwm_group_t *group = operator->group;
-    mcpwm_timer_t *timer = operator->timer;
+    mcpwm_oper_t *oper = gen->oper;
+    mcpwm_group_t *group = oper->group;
+    mcpwm_timer_t *timer = oper->timer;
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_STATE, TAG, "no timer is connected to the operator");
     mcpwm_gen_timer_event_action_t ev_act_itor = ev_act;
     bool invalid_utep = false;
@@ -171,7 +171,7 @@ esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcp
             va_end(it);
             ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_ARG, TAG, "UTEP and DTEZ can't be reached under MCPWM_TIMER_COUNT_MODE_UP_DOWN mode");
         }
-        mcpwm_ll_generator_set_action_on_timer_event(group->hal.dev, operator->oper_id, gen->gen_id,
+        mcpwm_ll_generator_set_action_on_timer_event(group->hal.dev, oper->oper_id, gen->gen_id,
                 ev_act_itor.direction, ev_act_itor.event, ev_act_itor.action);
         ev_act_itor = va_arg(it, mcpwm_gen_timer_event_action_t);
     }
@@ -182,13 +182,13 @@ esp_err_t mcpwm_generator_set_actions_on_timer_event(mcpwm_gen_handle_t gen, mcp
 esp_err_t mcpwm_generator_set_actions_on_compare_event(mcpwm_gen_handle_t gen, mcpwm_gen_compare_event_action_t ev_act, ...)
 {
     ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *operator= gen->operator;
-    mcpwm_group_t *group = operator->group;
+    mcpwm_oper_t *oper = gen->oper;
+    mcpwm_group_t *group = oper->group;
     mcpwm_gen_compare_event_action_t ev_act_itor = ev_act;
     va_list it;
     va_start(it, ev_act);
     while (ev_act_itor.comparator) {
-        mcpwm_ll_generator_set_action_on_compare_event(group->hal.dev, operator->oper_id, gen->gen_id,
+        mcpwm_ll_generator_set_action_on_compare_event(group->hal.dev, oper->oper_id, gen->gen_id,
                 ev_act_itor.direction, ev_act_itor.comparator->cmpr_id, ev_act_itor.action);
         ev_act_itor = va_arg(it, mcpwm_gen_compare_event_action_t);
     }
@@ -199,13 +199,13 @@ esp_err_t mcpwm_generator_set_actions_on_compare_event(mcpwm_gen_handle_t gen, m
 esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t gen, mcpwm_gen_brake_event_action_t ev_act, ...)
 {
     ESP_RETURN_ON_FALSE(gen, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    mcpwm_oper_t *operator= gen->operator;
-    mcpwm_group_t *group = operator->group;
+    mcpwm_oper_t *oper = gen->oper;
+    mcpwm_group_t *group = oper->group;
     mcpwm_gen_brake_event_action_t ev_act_itor = ev_act;
     va_list it;
     va_start(it, ev_act);
     while (ev_act_itor.brake_mode != MCPWM_OPER_BRAKE_MODE_INVALID) {
-        mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, operator->oper_id, gen->gen_id,
+        mcpwm_ll_generator_set_action_on_brake_event(group->hal.dev, oper->oper_id, gen->gen_id,
                 ev_act_itor.direction, ev_act_itor.brake_mode, ev_act_itor.action);
         ev_act_itor = va_arg(it, mcpwm_gen_brake_event_action_t);
     }
@@ -216,13 +216,13 @@ esp_err_t mcpwm_generator_set_actions_on_brake_event(mcpwm_gen_handle_t gen, mcp
 esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_gen_handle_t out_generator, const mcpwm_dead_time_config_t *config)
 {
     ESP_RETURN_ON_FALSE(in_generator && out_generator && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(in_generator->operator == out_generator->operator, ESP_ERR_INVALID_ARG, TAG, "in/out generator are not derived from the same operator");
+    ESP_RETURN_ON_FALSE(in_generator->oper == out_generator->oper, ESP_ERR_INVALID_ARG, TAG, "in/out generator are not derived from the same operator");
     ESP_RETURN_ON_FALSE(config->negedge_delay_ticks < MCPWM_LL_MAX_DEAD_DELAY && config->posedge_delay_ticks < MCPWM_LL_MAX_DEAD_DELAY,
                         ESP_ERR_INVALID_ARG, TAG, "delay time out of range");
-    mcpwm_oper_t *operator= in_generator->operator;
-    mcpwm_group_t *group = operator->group;
+    mcpwm_oper_t *oper = in_generator->oper;
+    mcpwm_group_t *group = oper->group;
     mcpwm_hal_context_t *hal = &group->hal;
-    int oper_id = operator->oper_id;
+    int oper_id = oper->oper_id;
 
     // Note: to better understand the following code, you should read the deadtime module topology diagram in the TRM
     // check if we want to bypass the deadtime module
@@ -258,7 +258,7 @@ esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_g
         mcpwm_ll_deadtime_set_falling_delay(hal->dev, oper_id, config->negedge_delay_ticks);
     }
 
-    ESP_LOGD(TAG, "operator (%d,%d) dead time (R:%u,F:%u), topology code:%x", group->group_id, oper_id,
+    ESP_LOGD(TAG, "operator (%d,%d) dead time (R:%"PRIu32",F:%"PRIu32"), topology code:%"PRIx32, group->group_id, oper_id,
              config->posedge_delay_ticks, config->negedge_delay_ticks, mcpwm_ll_deadtime_get_switch_topology(hal->dev, oper_id));
     return ESP_OK;
 }

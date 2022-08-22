@@ -109,7 +109,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     mcpwm_ll_timer_set_clock_prescale(hal->dev, timer_id, prescale);
     timer->resolution_hz = group->resolution_hz / prescale;
     if (timer->resolution_hz != config->resolution_hz) {
-        ESP_LOGW(TAG, "adjust timer resolution to %uHz", timer->resolution_hz);
+        ESP_LOGW(TAG, "adjust timer resolution to %"PRIu32"Hz", timer->resolution_hz);
     }
 
     // set the peak tickes that the timer can reach to
@@ -130,7 +130,7 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     timer->fsm = MCPWM_TIMER_FSM_INIT;
     *ret_timer = timer;
-    ESP_LOGD(TAG, "new timer(%d,%d) at %p, resolution:%uHz, peak:%u, count_mod:%c",
+    ESP_LOGD(TAG, "new timer(%d,%d) at %p, resolution:%"PRIu32"Hz, peak:%"PRIu32", count_mod:%c",
              group_id, timer_id, timer, timer->resolution_hz, timer->peak_ticks, "SUDB"[timer->count_mode]);
     return ESP_OK;
 
@@ -166,7 +166,6 @@ esp_err_t mcpwm_del_timer(mcpwm_timer_handle_t timer)
 esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const mcpwm_timer_event_callbacks_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(timer && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     mcpwm_group_t *group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
@@ -189,6 +188,7 @@ esp_err_t mcpwm_timer_register_event_callbacks(mcpwm_timer_handle_t timer, const
 
     // lazy install interrupt service
     if (!timer->intr) {
+        ESP_RETURN_ON_FALSE(timer->fsm == MCPWM_TIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
         int isr_flags = MCPWM_INTR_ALLOC_FLAG;
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(mcpwm_periph_signals.groups[group_id].irq_id, isr_flags,
                             (uint32_t)mcpwm_ll_intr_get_status_reg(hal->dev), MCPWM_LL_EVENT_TIMER_MASK(timer_id),

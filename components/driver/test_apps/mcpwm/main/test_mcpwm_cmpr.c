@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
@@ -14,7 +15,7 @@
 TEST_CASE("mcpwm_comparator_install_uninstall", "[mcpwm]")
 {
     mcpwm_timer_handle_t timer;
-    mcpwm_oper_handle_t operator;
+    mcpwm_oper_handle_t oper;
     mcpwm_cmpr_handle_t comparators[SOC_MCPWM_COMPARATORS_PER_OPERATOR];
 
     mcpwm_timer_config_t timer_config = {
@@ -29,25 +30,25 @@ TEST_CASE("mcpwm_comparator_install_uninstall", "[mcpwm]")
     };
     printf("install timer and operator");
     TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
 
     printf("install comparator\r\n");
     mcpwm_comparator_config_t comparator_config = {};
     for (int i = 0; i < SOC_MCPWM_COMPARATORS_PER_OPERATOR; i++) {
-        TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparators[i]));
+        TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparators[i]));
     }
-    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_comparator(operator, &comparator_config, &comparators[0]));
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, mcpwm_new_comparator(oper, &comparator_config, &comparators[0]));
 
     printf("connect MCPWM timer and operators\r\n");
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
 
     printf("uninstall timer, operator and comparators\r\n");
     // can't delete operator if the comparators are still in working
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_del_operator(operator));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_del_operator(oper));
     for (int i = 0; i < SOC_MCPWM_COMPARATORS_PER_OPERATOR; i++) {
         TEST_ESP_OK(mcpwm_del_comparator(comparators[i]));
     }
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }
 
@@ -61,7 +62,7 @@ static bool test_compare_on_reach(mcpwm_cmpr_handle_t cmpr, const mcpwm_compare_
 TEST_CASE("mcpwm_comparator_event_callback", "[mcpwm]")
 {
     mcpwm_timer_handle_t timer;
-    mcpwm_oper_handle_t operator;
+    mcpwm_oper_handle_t oper;
     mcpwm_cmpr_handle_t comparator;
 
     mcpwm_timer_config_t timer_config = {
@@ -75,15 +76,15 @@ TEST_CASE("mcpwm_comparator_event_callback", "[mcpwm]")
         .group_id = 0,
     };
     mcpwm_comparator_config_t comparator_config = {};
-    printf("install timer, operator and comparator");
+    printf("install timer, operator and comparator\r\n");
     TEST_ESP_OK(mcpwm_new_timer(&timer_config, &timer));
-    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &operator));
-    TEST_ESP_OK(mcpwm_new_comparator(operator, &comparator_config, &comparator));
+    TEST_ESP_OK(mcpwm_new_operator(&operator_config, &oper));
+    TEST_ESP_OK(mcpwm_new_comparator(oper, &comparator_config, &comparator));
 
     // set compare value before connecting timer and operator will fail
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, mcpwm_comparator_set_compare_value(comparator, 5000));
     printf("connect MCPWM timer and operators\r\n");
-    TEST_ESP_OK(mcpwm_operator_connect_timer(operator, timer));
+    TEST_ESP_OK(mcpwm_operator_connect_timer(oper, timer));
     // compare ticks can't exceed the timer's period ticks
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_comparator_set_compare_value(comparator, 20 * 1000));
     TEST_ESP_OK(mcpwm_comparator_set_compare_value(comparator, 5 * 1000));
@@ -101,13 +102,13 @@ TEST_CASE("mcpwm_comparator_event_callback", "[mcpwm]")
 
     vTaskDelay(pdMS_TO_TICKS(1000));
     TEST_ESP_OK(mcpwm_timer_start_stop(timer, MCPWM_TIMER_STOP_EMPTY));
-    printf("compare_counts=%u\r\n", compare_counts);
+    printf("compare_counts=%"PRIu32"\r\n", compare_counts);
     // the timer period is 10ms, the expected compare_counts = 1s/10ms = 100
     TEST_ASSERT_INT_WITHIN(1, 100, compare_counts);
 
     printf("uninstall timer, operator and comparator\r\n");
     TEST_ESP_OK(mcpwm_timer_disable(timer));
     TEST_ESP_OK(mcpwm_del_comparator(comparator));
-    TEST_ESP_OK(mcpwm_del_operator(operator));
+    TEST_ESP_OK(mcpwm_del_operator(oper));
     TEST_ESP_OK(mcpwm_del_timer(timer));
 }

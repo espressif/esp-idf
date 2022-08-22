@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -67,7 +59,7 @@ static void matrix_kbd_debounce_timer_callback(TimerHandle_t xTimer)
     uint32_t row_out = dedic_gpio_bundle_read_out(mkbd->row_bundle);
     uint32_t col_in = dedic_gpio_bundle_read_in(mkbd->col_bundle);
     row_out = (~row_out) & ((1 << mkbd->nr_row_gpios) - 1);
-    ESP_LOGD(TAG, "row_out=%x, col_in=%x", row_out, col_in);
+    ESP_LOGD(TAG, "row_out=%"PRIx32", col_in=%"PRIx32, row_out, col_in);
     int row = -1;
     int col = -1;
     uint32_t key_code = 0;

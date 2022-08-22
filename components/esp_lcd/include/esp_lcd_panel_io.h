@@ -208,7 +208,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus);
  */
 typedef struct {
     int cs_gpio_num;         /*!< GPIO used for CS line, set to -1 will declaim exclusively use of I80 bus */
-    unsigned int pclk_hz;    /*!< Frequency of pixel clock */
+    uint32_t pclk_hz;        /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Transaction queue size, larger queue, higher throughput */
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data was tranferred done */
     void *user_ctx;    /*!< User private data, passed directly to on_color_trans_done's user_ctx */

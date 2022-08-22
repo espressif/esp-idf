@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -226,7 +227,7 @@ static void i2s_read_task(void *args) {
     while (task_run_flag) {
         ret = i2s_channel_read(rx_handle, recv_buf, 2000, &recv_size, 300);
         if (ret == ESP_ERR_TIMEOUT) {
-            printf("Read timeout count: %d\n", cnt++);
+            printf("Read timeout count: %"PRIu32"\n", cnt++);
         }
     }
 
@@ -245,7 +246,7 @@ static void i2s_write_task(void *args) {
     while (task_run_flag) {
         ret = i2s_channel_write(tx_handle, send_buf, 2000, &send_size, 300);
         if (ret == ESP_ERR_TIMEOUT) {
-            printf("Write timeout count: %d\n", cnt++);
+            printf("Write timeout count: %"PRIu32"\n", cnt++);
         }
     }
 
@@ -607,7 +608,7 @@ TEST_CASE("I2S_memory_leak_test", "[i2s]")
         TEST_ESP_OK(i2s_del_channel(rx_handle));
         TEST_ASSERT(memory_left == esp_get_free_heap_size());
     }
-    printf("\r\nHeap size after: %d\n", esp_get_free_heap_size());
+    printf("\r\nHeap size after: %"PRIu32"\n", esp_get_free_heap_size());
 }
 
 TEST_CASE("I2S_loopback_test", "[i2s]")
@@ -762,7 +763,7 @@ static void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_c
         vTaskDelay(pdMS_TO_TICKS(TEST_I2S_PERIOD_MS));
         TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
         TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &real_pulse));
-        printf("[%d Hz] %d pulses, expected %d, err %d\n", test_freq[i], real_pulse, expt_pulse, real_pulse - expt_pulse);
+        printf("[%"PRIu32" Hz] %d pulses, expected %d, err %d\n", test_freq[i], real_pulse, expt_pulse, real_pulse - expt_pulse);
         TEST_ESP_OK(i2s_channel_disable(rx_chan));
         // Check if the error between real pulse number and expected pulse number is within 1%
         TEST_ASSERT_INT_WITHIN(expt_pulse * 0.01, expt_pulse, real_pulse);
@@ -858,7 +859,7 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
     size_t bytes_read = 0;
     int i;
     for (i = 0; i < test_num; i++) {
-        printf("Testing %d Hz sample rate\n", test_freq[i]);
+        printf("Testing %"PRIu32" Hz sample rate\n", test_freq[i]);
         std_cfg.clk_cfg.sample_rate_hz = test_freq[i];
         std_cfg.clk_cfg.sample_rate_hz = test_freq[i];
         TEST_ESP_OK(i2s_channel_reconfig_std_clock(rx_handle, &std_cfg.clk_cfg));
@@ -870,7 +871,7 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
         }
         TEST_ESP_OK(i2s_channel_disable(rx_handle));
         if (count > 0) {
-            printf("package lost detected at %d Hz\n", test_freq[i]);
+            printf("package lost detected at %"PRIu32" Hz\n", test_freq[i]);
             goto finish;
         }
     }

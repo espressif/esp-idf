@@ -10,15 +10,13 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "driver/pulse_cnt.h"
 #include "driver/gpio.h"
 #include "spi_flash_mmap.h"
 #include "esp_attr.h"
 #include "soc/soc_caps.h"
-#include "esp_private/spi_flash_os.h"
 #include "test_pulse_cnt_board.h"
-
-#if CONFIG_PCNT_ISR_IRAM_SAFE
 
 static bool IRAM_ATTR test_pcnt_iram_safe_callback(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *event_data, void *user_data)
 {
@@ -29,13 +27,10 @@ static bool IRAM_ATTR test_pcnt_iram_safe_callback(pcnt_unit_handle_t unit, cons
     return false;
 }
 
-static void IRAM_ATTR test_pcnt_iram_simulation(int gpio_sig)
+static void IRAM_ATTR test_simulate_input_post_cache_disable(void *args)
 {
-    // disable flash cache
-    spi_flash_guard_get()->start();
+    int gpio_sig = (int)args;
     test_gpio_simulate_rising_edge(gpio_sig, 2);
-    // enable flash cache
-    spi_flash_guard_get()->end();
 }
 
 TEST_CASE("pcnt_iram_interrupt_safe", "[pcnt]")
@@ -83,8 +78,9 @@ TEST_CASE("pcnt_iram_interrupt_safe", "[pcnt]")
 
     printf("disable cache and check interrupt triggered\r\n");
     TEST_ESP_OK(pcnt_unit_clear_count(unit));
-    // the function that will disable the flash must be placed in the IRAM
-    test_pcnt_iram_simulation(TEST_PCNT_GPIO_A);
+
+    // disable flash cache and run simulation
+    unity_utils_run_cache_disable_stub(test_simulate_input_post_cache_disable, (void *)TEST_PCNT_GPIO_A);
     // check if the interrupt has fired up
     TEST_ASSERT_EQUAL(1, num_of_event_triggered);
 
@@ -101,5 +97,3 @@ TEST_CASE("pcnt_iram_interrupt_safe", "[pcnt]")
     TEST_ESP_OK(pcnt_del_channel(channelB));
     TEST_ESP_OK(pcnt_del_unit(unit));
 }
-
-#endif // CONFIG_PCNT_ISR_IRAM_SAFE

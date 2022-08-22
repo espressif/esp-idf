@@ -103,9 +103,9 @@ static bool ledc_slow_clk_calibrate(void)
         s_ledc_slow_clk_8M = periph_rtc_dig_clk8m_get_freq();
 #if CONFIG_IDF_TARGET_ESP32H2
         /* Workaround: Calibration cannot be done for CLK8M on H2, we just use its theoretic frequency */
-        ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate CLK8M_CLK : %d Hz", s_ledc_slow_clk_8M);
+        ESP_LOGD(LEDC_TAG, "Calibration cannot be performed, approximate CLK8M_CLK : %"PRIu32" Hz", s_ledc_slow_clk_8M);
 #else
-        ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %d Hz", s_ledc_slow_clk_8M);
+        ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %"PRIu32" Hz", s_ledc_slow_clk_8M);
 #endif
         return true;
     }
@@ -548,7 +548,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     }
 
     /* The following debug message makes more sense for AUTO mode. */
-    ESP_LOGD(LEDC_TAG, "Using clock source %d (in %s mode), divisor: 0x%x\n",
+    ESP_LOGD(LEDC_TAG, "Using clock source %d (in %s mode), divisor: 0x%"PRIx32,
              timer_clk_src, (speed_mode == LEDC_LOW_SPEED_MODE ? "slow" : "fast"), div_param);
 
     /* The following block configures the global clock.
@@ -587,8 +587,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     return ESP_OK;
 
 error:
-    ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%d",
-             (uint32_t ) div_param);
+    ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%"PRIu32, div_param);
     return ESP_FAIL;
 }
 
@@ -603,11 +602,11 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
     LEDC_ARG_CHECK(!((timer_conf->clk_cfg == LEDC_USE_RTC8M_CLK) && (speed_mode != LEDC_LOW_SPEED_MODE)), "Only low speed channel support RTC8M_CLK");
     periph_module_enable(PERIPH_LEDC_MODULE);
     if (freq_hz == 0 || duty_resolution == 0 || duty_resolution >= LEDC_TIMER_BIT_MAX) {
-        ESP_LOGE(LEDC_TAG, "freq_hz=%u duty_resolution=%u", freq_hz, duty_resolution);
+        ESP_LOGE(LEDC_TAG, "freq_hz=%"PRIu32" duty_resolution=%"PRIu32, freq_hz, duty_resolution);
         return ESP_ERR_INVALID_ARG;
     }
     if (timer_num > LEDC_TIMER_3) {
-        ESP_LOGE(LEDC_TAG, "invalid timer #%u", timer_num);
+        ESP_LOGE(LEDC_TAG, "invalid timer #%"PRIu32, timer_num);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -673,9 +672,8 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     portENTER_CRITICAL(&ledc_spinlock);
     ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
     portEXIT_CRITICAL(&ledc_spinlock);
-    ESP_LOGD(LEDC_TAG, "LEDC_PWM CHANNEL %1u|GPIO %02u|Duty %04u|Time %01u",
-             ledc_channel, gpio_num, duty, timer_select
-            );
+    ESP_LOGD(LEDC_TAG, "LEDC_PWM CHANNEL %"PRIu32"|GPIO %02u|Duty %04"PRIu32"|Time %"PRIu32,
+             ledc_channel, gpio_num, duty, timer_select);
     /*set LEDC signal in gpio matrix*/
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_level(gpio_num, output_invert);
@@ -1048,13 +1046,13 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur, dir, step_num, cycle_num, scale);
         portEXIT_CRITICAL(&ledc_spinlock);
-        ESP_LOGD(LEDC_TAG, "cur duty: %d; target: %d, step: %d, cycle: %d; scale: %d; dir: %d\n",
+        ESP_LOGD(LEDC_TAG, "cur duty: %"PRIu32"; target: %"PRIu32", step: %d, cycle: %d; scale: %d; dir: %d\n",
                  duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, dir, 0, 1, 0);
         portEXIT_CRITICAL(&ledc_spinlock);
-        ESP_LOGD(LEDC_TAG, "Set to target duty: %d", target_duty);
+        ESP_LOGD(LEDC_TAG, "Set to target duty: %"PRIu32, target_duty);
     }
     return ESP_OK;
 }
