@@ -1,0 +1,21 @@
+menu "OpenThread RCP Example"
+
+    config OPENTHREAD_UART_PIN_MANUAL
+        bool "Configure RCP UART pin manually"
+        default n
+        help
+            Select this to choose UART pin manually
+
+    config OPENTHREAD_UART_RX_PIN
+        int "The number of RX pin"
+        depends on OPENTHREAD_UART_PIN_MANUAL
+        default 4
+        range 0 25
+
+    config OPENTHREAD_UART_TX_PIN
+        int "The number of TX pin"
+        depends on OPENTHREAD_UART_PIN_MANUAL
+        default 5
+        range 0 25
+
+endmenu
