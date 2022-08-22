@@ -17,6 +17,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * This header file provides POSIX-compatible definitions of directory
  * access functions and related data types.
@@ -53,3 +57,6 @@ void rewinddir(DIR* pdir);
 int closedir(DIR* pdir);
 int readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);
 
+#ifdef __cplusplus
+}
+#endif
