@@ -126,6 +126,22 @@ set sleep_init default param
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 0xf
 
 
+/*
+The follow value is used to get a reasonable rtc voltage dbias value according to digital dbias & some other value
+storing in efuse
+*/
+#define K_RTC_MID_MUL10000 198
+#define K_DIG_MID_MUL10000 211
+#define V_RTC_MID_MUL10000  10181
+#define V_DIG_MID_MUL10000  10841
+
+/*
+set LDO slave during CPU switch
+*/
+#define DEFAULT_LDO_SLAVE 0x7
+
+
+
 /**
  * @brief Possible main XTAL frequency values.
  *

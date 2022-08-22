@@ -183,3 +183,11 @@ KEY3,                                     EFUSE_BLK7,    0,  256,     Key3 or us
 KEY4,                                     EFUSE_BLK8,    0,  256,     Key4 or user data
 KEY5,                                     EFUSE_BLK9,    0,  256,     Key5 or user data
 SYS_DATA_PART2,                           EFUSE_BLK10,   0,  256,     System configuration
+
+# AUTO CONFIG DIG&RTC DBIAS#
+################
+K_RTC_LDO,                            EFUSE_BLK1,  141,    7,     BLOCK1 K_RTC_LDO
+K_DIG_LDO,                            EFUSE_BLK1,  148,    7,     BLOCK1 K_DIG_LDO
+V_RTC_DBIAS20,                        EFUSE_BLK1,  155,    8,     BLOCK1 voltage of rtc dbias20
+V_DIG_DBIAS20,                        EFUSE_BLK1,  163,    8,     BLOCK1 voltage of digital dbias20
+DIG_DBIAS_HVT,                        EFUSE_BLK1,  171,    5,     BLOCK1 digital dbias when hvt
