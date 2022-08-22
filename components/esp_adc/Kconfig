@@ -41,7 +41,19 @@ menu "ADC and ADC Calibration"
                 This option will allow the ADC calibration component to use Lookup Tables
                 to correct for non-linear behavior in 11db attenuation. Other attenuations
                 do not exhibit non-linear behavior hence will not be affected by this option.
-
     endmenu
+
+    config ADC_DISABLE_DAC_OUTPUT
+        depends on SOC_DAC_SUPPORTED
+        bool "Disable DAC when ADC2 is in use"
+        default y
+        help
+            By default, this is set. The ADC oneshot driver will disable the output of the
+            corresponding DAC channels:
+            ESP32:   IO25 and IO26
+            ESP32S2: IO17 and IO18
+
+            Disable this option so as to measure the output of DAC by internal ADC, for test usage.
+
 
 endmenu
