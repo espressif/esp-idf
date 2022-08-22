@@ -129,7 +129,7 @@ def test_examples_protocol_advanced_https_ota_example(dut: Dut) -> None:
 
             print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
             dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
-            dut.expect('upgrade successful. Rebooting ...', timeout=60)
+            dut.expect('upgrade successful. Rebooting ...', timeout=150)
     finally:
         thread1.terminate()
 
@@ -383,7 +383,7 @@ def test_examples_protocol_advanced_https_ota_example_chunked(dut: Dut) -> None:
         dut.expect('Starting Advanced OTA example', timeout=30)
         print('writing to device: {}'.format('https://' + host_ip + ':8070/' + bin_name))
         dut.write('https://' + host_ip + ':8070/' + bin_name)
-        dut.expect('upgrade successful. Rebooting ...', timeout=60)
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
         dut.expect('OTA example app_main start', timeout=10)
@@ -437,7 +437,7 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(dut: Dut) -> 
     try:
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(redirection_server_port) + '/' + bin_name))
         dut.write('https://' + host_ip + ':' + str(redirection_server_port) + '/' + bin_name)
-        dut.expect('upgrade successful. Rebooting ...', timeout=60)
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
         dut.expect('OTA example app_main start', timeout=10)
@@ -612,7 +612,7 @@ def test_examples_protocol_advanced_https_ota_example_nimble_gatts(dut: Dut) -> 
         print('Started GAP advertising.')
 
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
-        dut.expect('upgrade successful. Rebooting ...', timeout=60)
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
         dut.expect('OTA example app_main start', timeout=10)
@@ -665,7 +665,7 @@ def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(dut: Dut) 
         print('Started GAP advertising.')
 
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
-        dut.expect('upgrade successful. Rebooting ...', timeout=60)
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
         dut.expect('OTA example app_main start', timeout=10)
@@ -716,7 +716,7 @@ def test_examples_protocol_advanced_https_ota_example_openssl_aligned_bin(dut: D
         dut.expect('Starting Advanced OTA example', timeout=30)
         print('writing to device: {}'.format('https://' + host_ip + ':8070/' + aligned_bin_name))
         dut.write('https://' + host_ip + ':8070/' + aligned_bin_name)
-        dut.expect('upgrade successful. Rebooting ...', timeout=60)
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
         dut.expect('OTA example app_main start', timeout=10)
