@@ -170,4 +170,35 @@ Most common configurations are listed below:
 
 - Broker address now is set in :cpp:member:`esp_mqtt_client_config_t::broker::address::uri`
 - Security related to broker verification in :cpp:member:`esp_mqtt_client_config_t::broker::verification`
-- Client username is set in :cpp:member:`esp_mqtt_client_config_t::credentials::username`   
+- Client username is set in :cpp:member:`esp_mqtt_client_config_t::credentials::username`
+
+
+ESP-Modbus
+----------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ESP-IDF component ``freemodbus`` has been removed from ESP-IDF and will be supported as a separate component. Additional information for the ``ESP-Modbus`` component can be found in the separate repository:
+
+* `ESP-Modbus component on GitHub <https://www.github.com/espressif/esp-modbus>`__
+
+The ``main`` component folder of the new application shall include the component manager manifest file ``idf_component.yml`` as in example below:
+
+.. highlight:: none
+
+::
+
+  dependencies:
+    espressif/esp-modbus:
+      version: "^1.0"
+
+The ``esp-modbus`` component can be found in `component manager registry <https://components.espressif.com/component/espressif/esp-modbus>`__. Refer to `component manager documentation <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-component-manager.html>`__ for more information on how to set up the component manager.
+
+Applications targeting v4.x releases of ESP-IDF which use the new ``esp-modbus`` component should exclude the legacy ``freemodbus`` component from the build. This can be achieved using the below statement in project ``CMakeLists.txt``:
+
+.. highlight:: none
+
+::
+
+  set(EXCLUDE_COMPONENTS freemodbus)
