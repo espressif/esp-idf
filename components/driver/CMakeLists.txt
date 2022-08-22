@@ -65,6 +65,10 @@ if(CONFIG_SOC_PCNT_SUPPORTED)
     list(APPEND srcs "pulse_cnt.c" "deprecated/pcnt_legacy.c")
 endif()
 
+if(CONFIG_SOC_GPIO_SUPPORT_ETM)
+    list(APPEND srcs "gpio/gpio_etm.c")
+endif()
+
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
     list(APPEND srcs "sdmmc_transaction.c" "sdmmc_host.c")
 endif()

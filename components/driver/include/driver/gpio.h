@@ -13,6 +13,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_types.h"
 #include "esp_rom_gpio.h"
+#include "driver/gpio_etm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,7 +151,7 @@ esp_err_t gpio_set_level(gpio_num_t gpio_num, uint32_t level);
 int gpio_get_level(gpio_num_t gpio_num);
 
 /**
- * @brief	 GPIO set direction
+ * @brief    GPIO set direction
  *
  * Configure GPIO direction,such as output_only,input_only,output_and_input
  *
@@ -480,7 +481,7 @@ esp_err_t gpio_sleep_sel_en(gpio_num_t gpio_num);
 esp_err_t gpio_sleep_sel_dis(gpio_num_t gpio_num);
 
 /**
- * @brief	 GPIO set direction at sleep
+ * @brief    GPIO set direction at sleep
  *
  * Configure GPIO direction,such as output_only,input_only,output_and_input
  *

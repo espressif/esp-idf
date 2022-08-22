@@ -1,6 +1,9 @@
 set(srcs "test_app_main.c"
          "test_etm_core.c")
 
+if(CONFIG_SOC_GPIO_SUPPORT_ETM)
+    list(APPEND srcs "test_gpio_etm.c")
+endif()
 
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
