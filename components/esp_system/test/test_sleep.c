@@ -15,6 +15,7 @@
 #include "soc/gpio_periph.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
+#include "driver/uart.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
@@ -208,7 +209,10 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     clk_source = UART_SCLK_XTAL;
 #endif
     uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
-    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+
+    uint32_t sclk_freq;
+    TEST_ESP_OK(uart_get_sclk_freq(clk_source, &sclk_freq));
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
 #endif
 
     rtc_cpu_freq_config_t config_xtal, config_default;
