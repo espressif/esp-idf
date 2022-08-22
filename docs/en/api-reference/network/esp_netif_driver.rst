@@ -91,7 +91,12 @@ Network stack connection
 ------------------------
 
 The packet data path functions for transmitting and freeing the rx buffer (defined in the I/O driver) are called from
-the esp-netif, specifically from its TCP/IP stack connecting layer. The following API reference outlines these network stack
-interaction with the esp-netif.
+the esp-netif, specifically from its TCP/IP stack connecting layer.
+
+Note, that IDF provides several network stack configurations for the most common network interfaces, such as for the WiFi station or Ethernet.
+These configurations are defined in :component_file:`esp_netif/include/esp_netif_defaults.h` and should be sufficient for most network drivers.
+(In rare cases, expert users might want to define custom lwIP based interface layers; it is possible, but an explicit dependency to lwIP needs to be set)
+
+The following API reference outlines these network stack interaction with the esp-netif:
 
 .. include-build-file:: inc/esp_netif_net_stack.inc

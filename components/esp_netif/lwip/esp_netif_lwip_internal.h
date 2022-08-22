@@ -8,7 +8,6 @@
 
 #include "esp_netif.h"
 #include "esp_netif_ppp.h"
-#include "esp_netif_slip.h"
 #include "lwip/netif.h"
 #include "dhcpserver/dhcpserver.h"
 
@@ -39,10 +38,10 @@ typedef struct esp_netif_ip_lost_timer_s {
 /**
  * @brief Check the netif if of a specific P2P type
  */
-#if CONFIG_PPP_SUPPORT || CONFIG_LWIP_SLIP_SUPPORT
-#define _IS_NETIF_POINT2POINT_TYPE(netif, type) (netif->related_data && netif->related_data->is_point2point && netif->related_data->netif_type == type)
+#if CONFIG_PPP_SUPPORT
+#define ESP_NETIF_IS_POINT2POINT_TYPE(netif, type) (netif->related_data && netif->related_data->is_point2point && netif->related_data->netif_type == type)
 #else
-#define _IS_NETIF_POINT2POINT_TYPE(netif, type) false
+#define ESP_NETIF_IS_POINT2POINT_TYPE(netif, type) false
 #endif
 
 /**
@@ -51,12 +50,11 @@ typedef struct esp_netif_ip_lost_timer_s {
 enum netif_types {
     COMMON_LWIP_NETIF,
     PPP_LWIP_NETIF,
-    SLIP_LWIP_NETIF
 };
 
 /**
  * @brief Related data to esp-netif (additional data for some special types of netif
- * (typically for point-point network types, such as PPP or SLIP)
+ * (typically for point-point network types, such as PPP)
  */
 typedef struct netif_related_data {
     bool is_point2point;
