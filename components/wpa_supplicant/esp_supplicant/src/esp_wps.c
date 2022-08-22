@@ -1910,8 +1910,8 @@ int esp_wifi_wps_disable(void)
         wpa_printf(MSG_ERROR, "wps disable: failed to disable wps, ret=%d", ret);
     }
 
-    /* Only disconnect in case of WPS pending */
-    if (wps_status == WPS_STATUS_PENDING) {
+    /* Only disconnect in case of WPS pending/done */
+    if ((wps_status == WPS_STATUS_PENDING) || (wps_status == WPS_STATUS_SUCCESS)) {
         esp_wifi_disconnect();
     }
     esp_wifi_set_wps_start_flag_internal(false);
