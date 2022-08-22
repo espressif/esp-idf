@@ -15,7 +15,7 @@
 #include "esp_transport_internal.h"
 #include "esp_transport.h"
 
-static const char *TAG = "TRANSPORT";
+static const char *TAG = "transport";
 
 /**
  * This list will hold all transport available
