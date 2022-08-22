@@ -218,16 +218,7 @@ static void btc_thread_handler(void *arg)
 
 static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 {
-    btc_msg_t *lmsg;
-
-    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t));
-    if (lmsg == NULL) {
-        return BT_STATUS_NOMEM;
-    }
-
-    memcpy(lmsg, msg, sizeof(btc_msg_t));
-
-    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 0, timeout) == false) {
+    if (osi_thread_post(btc_thread, btc_thread_handler, msg, 0, timeout) == false) {
         return BT_STATUS_BUSY;
     }
 
@@ -245,30 +236,37 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
  */
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func)
 {
-    btc_msg_t lmsg;
+    btc_msg_t* lmsg;
 
-    if (msg == NULL) {
+    //                              arg XOR arg_len
+    if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0))) {
         return BT_STATUS_PARM_INVALID;
     }
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
-    memcpy(&lmsg, msg, sizeof(btc_msg_t));
-    if (arg) {
-        lmsg.arg = (void *)osi_malloc(arg_len);
-        if (lmsg.arg == NULL) {
-            return BT_STATUS_NOMEM;
-        }
-        memset(lmsg.arg, 0x00, arg_len);    //important, avoid arg which have no length
-        memcpy(lmsg.arg, arg, arg_len);
-        if (copy_func) {
-            copy_func(&lmsg, lmsg.arg, arg);
-        }
-    } else {
-        lmsg.arg = NULL;
+    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t));
+    if (lmsg == NULL) {
+        return BT_STATUS_NOMEM;
     }
 
-    return btc_task_post(&lmsg, OSI_THREAD_MAX_TIMEOUT);
+    memcpy(lmsg, msg, sizeof(btc_msg_t));
+    if (arg) {
+        lmsg->arg = (void *)osi_malloc(arg_len);
+        if (lmsg->arg == NULL) {
+            osi_free(lmsg);
+            return BT_STATUS_NOMEM;
+        }
+        memset(lmsg->arg, 0x00, arg_len);    //important, avoid arg which have no length
+        memcpy(lmsg->arg, arg, arg_len);
+        if (copy_func) {
+            copy_func(lmsg, lmsg->arg, arg);
+        }
+    } else {
+        lmsg->arg = NULL;
+    }
+
+    return btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
 
 }
 
