@@ -1,8 +1,6 @@
 Core Dump
 =========
 
-{IDF_TARGET_ROM_ELF:default="https://dl.espressif.com/dl/esp32_rom.elf", esp32="https://dl.espressif.com/dl/esp32_rom.elf", esp32s2="https://dl.espressif.com/dl/esp32s2_rom.elf", esp32s3="https://dl.espressif.com/dl/esp32s3_rom.elf", esp32c3="https://dl.espressif.com/dl/esp32c3_rev3_rom.elf"}
-
 Overview
 --------
 
@@ -116,7 +114,7 @@ ROM Functions in Backtraces
 It is possible situation that at the moment of crash some tasks or/and crashed task itself have one or more ROM functions in their callstacks.
 Since ROM is not part of the program ELF it will be impossible for GDB to parse such callstacks, because it tries to analyse functions' prologues to accomplish that.
 In that case callstack printing will be broken with error message at the first ROM function.
-To overcome this issue you can use ROM ELF provided by Espressif ({IDF_TARGET_ROM_ELF}) and pass it to 'espcoredump.py'.
+To overcome this issue, you can use the `ROM ELF <https://github.com/espressif/esp-rom-elfs/releases>`_ provided by Espressif. You can find the {IDF_TARGET_PATH_NAME}'s corresponding ROM ELF file from the list of released archives. The ROM ELF file can then be passed to ``espcoredump.py``. More details about ROM ELFs can be found `here <https://github.com/espressif/esp-rom-elfs/blob/master/README.md>`_.
 
 Dumping variables on demand
 ---------------------------
