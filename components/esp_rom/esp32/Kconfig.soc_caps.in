@@ -18,3 +18,7 @@ config ESP_ROM_HAS_JPEG_DECODE
 config ESP_ROM_SUPPORT_MULTIPLE_UART
     bool
     default y
+
+config ESP_ROM_NEEDS_SWSETUP_WORKAROUND
+    bool
+    default y

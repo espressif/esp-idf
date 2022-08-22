@@ -65,6 +65,7 @@
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
 
+#include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
 
 #if CONFIG_SPIRAM
@@ -306,6 +307,20 @@ static void do_core_init(void)
     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_stdio_dev, "w");
+#if ESP_ROM_NEEDS_SWSETUP_WORKAROUND
+    /*
+    - This workaround for printf functions using 32-bit time_t after the 64-bit time_t upgrade
+    - The 32-bit time_t usage is triggered through ROM Newlib functions printf related functions calling __swsetup_r() on
+      the first call to a particular file pointer (i.e., stdin, stdout, stderr)
+    - Thus, we call the toolchain version of __swsetup_r() now (before any printf calls are made) to setup all of the
+      file pointers. Thus, the ROM newlib code will never call the ROM version of __swsetup_r().
+    - See IDFGH-7728 for more details
+    */
+    extern int __swsetup_r(struct _reent *, FILE *);
+    __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stdout);
+    __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stderr);
+    __swsetup_r(_GLOBAL_REENT, _GLOBAL_REENT->_stdin);
+#endif // ESP_ROM_NEEDS_SWSETUP_WORKAROUND
 #else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
     _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
 #endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)

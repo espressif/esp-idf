@@ -473,7 +473,6 @@ components/esp_pm/include/esp_private/pm_impl.h
 components/esp_pm/include/esp_private/pm_trace.h
 components/esp_pm/pm_locks.c
 components/esp_pm/test/test_pm.c
-components/esp_rom/esp32/esp_rom_caps.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld
 components/esp_rom/esp32/ld/esp32.rom.eco3.ld
 components/esp_rom/esp32/ld/esp32.rom.ld
@@ -499,7 +498,6 @@ components/esp_rom/esp32h2/ld/esp32h2.rom.libgcc.ld
 components/esp_rom/esp32h2/ld/esp32h2.rom.newlib-nano.ld
 components/esp_rom/esp32h2/ld/esp32h2.rom.newlib.ld
 components/esp_rom/esp32h2/ld/esp32h2.rom.version.ld
-components/esp_rom/esp32s2/esp_rom_caps.h
 components/esp_rom/esp32s2/ld/esp32s2.rom.api.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.libgcc.ld
