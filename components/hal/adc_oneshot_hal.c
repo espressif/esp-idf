@@ -25,7 +25,7 @@
 #endif
 
 
-#if SOC_DAC_SUPPORTED
+#if CONFIG_ADC_DISABLE_DAC_OUTPUT
 // To disable DAC, workarounds, see this function body to know more
 static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel);
 #endif
@@ -52,7 +52,7 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
     adc_ll_amp_disable();  //Currently the LNA is not open, close it by default.
 #endif
 
-#if SOC_DAC_SUPPORTED
+#if CONFIG_ADC_DISABLE_DAC_OUTPUT
     s_disable_dac(hal, chan);
 #endif
 
@@ -144,7 +144,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
 /*---------------------------------------------------------------
                     Workarounds
 ---------------------------------------------------------------*/
-#if SOC_DAC_SUPPORTED
+#if CONFIG_ADC_DISABLE_DAC_OUTPUT
 static void s_disable_dac(adc_oneshot_hal_ctx_t *hal, adc_channel_t channel)
 {
     /**

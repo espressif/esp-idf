@@ -44,7 +44,7 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     adc_oneshot_unit_handle_t adc1_handle;
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
 
@@ -53,7 +53,7 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
     adc_oneshot_unit_handle_t adc2_handle;
     adc_oneshot_unit_init_cfg_t init_config2 = {
         .unit_id = ADC_UNIT_2,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config2, &adc2_handle));
 #endif //#if (SOC_ADC_PERIPH_NUM >= 2)
@@ -135,7 +135,7 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
     adc_oneshot_unit_handle_t adc_handle;
     adc_oneshot_unit_init_cfg_t init_config = {
         .unit_id = unit_id,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config, &adc_handle));
 

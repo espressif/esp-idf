@@ -134,7 +134,7 @@ TEST_CASE("ADC1 oneshot raw average / std_deviation", "[adc_oneshot][ignore][man
     adc_oneshot_unit_handle_t adc1_handle;
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config1, &adc1_handle));
 
@@ -254,7 +254,7 @@ static void s_adc_cali_speed(adc_unit_t unit_id, adc_channel_t channel)
         adc_oneshot_unit_handle_t adc_handle;
         adc_oneshot_unit_init_cfg_t init_config = {
             .unit_id = unit_id,
-            .ulp_mode = false,
+            .ulp_mode = ADC_ULP_MODE_DISABLE,
         };
         TEST_ESP_OK(adc_oneshot_new_unit(&init_config, &adc_handle));
 
