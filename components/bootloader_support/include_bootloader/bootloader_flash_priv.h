@@ -26,6 +26,7 @@
 #define CMD_WRSR2      0x31 /* Not all SPI flash uses this command */
 #define CMD_WRSR3      0x11 /* Not all SPI flash uses this command */
 #define CMD_WREN       0x06
+#define CMD_WRENVSR    0x50 /* Flash write enable for volatile SR bits */
 #define CMD_WRDI       0x04
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */

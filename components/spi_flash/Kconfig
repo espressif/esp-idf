@@ -279,4 +279,11 @@ menu "SPI Flash driver"
             application is not using flash encryption feature and is in need of some additional
             memory from IRAM region (~1KB) then this config can be disabled.
 
+    config SPI_FLASH_HPM_ENABLE
+        bool
+        default n
+        help
+            This option is invisible, and will be selected automatically
+            when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+
 endmenu

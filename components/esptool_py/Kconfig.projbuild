@@ -128,6 +128,7 @@ menu "Serial flasher config"
         config ESPTOOLPY_FLASHFREQ_120M
             depends on IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
             bool "120 MHz"
+            select SPI_FLASH_HPM_ENABLE
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
         config ESPTOOLPY_FLASHFREQ_40M

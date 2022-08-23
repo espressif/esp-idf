@@ -103,7 +103,8 @@ struct esp_flash_t {
     uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation.
     uint32_t chip_id;               ///< Detected chip id.
     uint32_t busy             :1;   ///< This flag is used to verify chip's status.
-    uint32_t reserved_flags   :31;  ///< reserved.
+    uint32_t hpm_dummy_ena    :1;   ///< This flag is used to verify whether flash works under HPM status.
+    uint32_t reserved_flags   :30;  ///< reserved.
 };
 
 
