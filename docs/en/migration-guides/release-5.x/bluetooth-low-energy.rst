@@ -1,6 +1,8 @@
 Bluetooth Low Energy
 ====================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Bluedroid
 ---------
 
@@ -8,7 +10,7 @@ Bluedroid
 
     - :component_file:`bt/host/bluedroid/api/include/api/esp_gap_ble_api.h`
 
-        - In :cpp:enum:`esp_gap_ble_cb_event_t`
+        - In :cpp:enum:`esp_gap_ble_cb_event_t`:
 
             - ``ESP_GAP_BLE_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT`` renamed to ``ESP_GAP_BLE_SET_PREFERRED_DEFAULT_PHY_COMPLETE_EVT``
             - ``ESP_GAP_BLE_SET_PREFERED_PHY_COMPLETE_EVT`` renamed to ``ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT``
@@ -22,7 +24,7 @@ Bluedroid
 
     - :component_file:`bt/host/bluedroid/api/include/api/esp_gatt_defs.h`
 
-        - In :cpp:enum:`esp_gatt_status_t`
+        - In :cpp:enum:`esp_gatt_status_t`:
 
             - ``ESP_GATT_ENCRYPED_MITM`` renamed to ``ESP_GATT_ENCRYPTED_MITM``
             - ``ESP_GATT_ENCRYPED_NO_MITM`` renamed to ``ESP_GATT_ENCRYPTED_NO_MITM``
@@ -34,10 +36,10 @@ Nimble
 
     - :component_file:`bt/host/nimble/esp-hci/include/esp_nimble_hci.h`
 
-        - Remove : esp_err_t esp_nimble_hci_and_controller_init(void);
+        - Remove ``esp_err_t esp_nimble_hci_and_controller_init(void)``
 
             - Controller initialization, enable and HCI initialization calls have been moved to `nimble_port_init`. This function can be deleted directly.
 
-        - Remove : esp_err_t esp_nimble_hci_and_controller_deinit(void);
+        - Remove ``esp_err_t esp_nimble_hci_and_controller_deinit(void)``
 
             - Controller deinitialization, disable and HCI deinitialization calls have been moved to `nimble_port_deinit`. This function can be deleted directly.
