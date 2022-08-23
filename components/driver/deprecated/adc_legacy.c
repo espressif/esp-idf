@@ -13,6 +13,7 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_pm.h"
 #include "soc/rtc.h"
 #include "driver/rtc_io.h"
@@ -36,25 +37,10 @@
 #include "esp_efuse_rtc_calib.h"
 #endif
 
-#define ADC_CHECK_RET(fun_ret) ({                  \
-    if (fun_ret != ESP_OK) {                                \
-        ESP_LOGE(ADC_TAG,"%s:%d\n",__FUNCTION__,__LINE__);  \
-        return ESP_FAIL;                                    \
-    }                                                       \
-})
 
 static const char *ADC_TAG = "ADC";
 
-#define ADC_CHECK(a, str, ret_val) ({                                               \
-    if (!(a)) {                                                                     \
-        ESP_LOGE(ADC_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);                \
-        return (ret_val);                                                           \
-    }                                                                               \
-})
-
 #define ADC_GET_IO_NUM(periph, channel) (adc_channel_io_map[periph][channel])
-
-#define ADC_CHANNEL_CHECK(periph, channel) ADC_CHECK(channel < SOC_ADC_CHANNEL_NUM(periph), "ADC"#periph" channel error", ESP_ERR_INVALID_ARG)
 
 //////////////////////// Locks ///////////////////////////////////////////
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
@@ -121,7 +107,7 @@ static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw);
 ---------------------------------------------------------------*/
 esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
 {
-    ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
 
     int io = ADC_GET_IO_NUM(ADC_UNIT_1, channel);
     if (io < 0) {
@@ -136,7 +122,7 @@ esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
 #if (SOC_ADC_PERIPH_NUM >= 2)
 esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
 {
-    ADC_CHANNEL_CHECK(ADC_UNIT_2, channel);
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_2), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
 
     int io = ADC_GET_IO_NUM(ADC_UNIT_2, channel);
     if (io < 0) {
@@ -183,24 +169,23 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 
 esp_err_t adc_common_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 {
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(adc_unit), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
+
     gpio_num_t gpio_num = 0;
     //If called with `ADC_UNIT_BOTH (ADC_UNIT_1 | ADC_UNIT_2)`, both if blocks will be run
     if (adc_unit == ADC_UNIT_1) {
-        ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
         gpio_num = ADC_GET_IO_NUM(ADC_UNIT_1, channel);
-        ADC_CHECK_RET(rtc_gpio_init(gpio_num));
-        ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-        ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
-        ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
-    }
-    if (adc_unit == ADC_UNIT_2) {
-        ADC_CHANNEL_CHECK(ADC_UNIT_2, channel);
+
+    } else if (adc_unit == ADC_UNIT_2) {
         gpio_num = ADC_GET_IO_NUM(ADC_UNIT_2, channel);
-        ADC_CHECK_RET(rtc_gpio_init(gpio_num));
-        ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-        ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
-        ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
+    } else {
+        return ESP_ERR_INVALID_ARG;
     }
+
+    ESP_RETURN_ON_ERROR(rtc_gpio_init(gpio_num), ADC_TAG, "rtc_gpio_init fail");
+    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED), ADC_TAG, "rtc_gpio_set_direction fail");
+    ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(gpio_num), ADC_TAG, "rtc_gpio_pulldown_dis fail");
+    ESP_RETURN_ON_ERROR(rtc_gpio_pullup_dis(gpio_num), ADC_TAG, "rtc_gpio_pullup_dis fail");
 
     return ESP_OK;
 }
@@ -223,7 +208,7 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 
 esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t width_bit)
 {
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "unsupported bit width", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(width_bit < ADC_WIDTH_MAX, ESP_ERR_INVALID_ARG, ADC_TAG, "unsupported bit width");
     adc_bitwidth_t bitwidth = 0;
 #if CONFIG_IDF_TARGET_ESP32
     if ((uint32_t)width_bit == (uint32_t)ADC_BITWIDTH_DEFAULT) {
@@ -287,8 +272,8 @@ esp_err_t adc_rtc_reset(void)
  *------------------------------------------------------------------------------------*/
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
-    ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
-    ADC_CHECK(atten < SOC_ADC_ATTEN_NUM, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
+    ESP_RETURN_ON_FALSE(atten < SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
 
     adc_common_gpio_init(ADC_UNIT_1, channel);
     SARADC1_ENTER();
@@ -305,7 +290,7 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "unsupported bit width", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(width_bit < ADC_WIDTH_MAX, ESP_ERR_INVALID_ARG, ADC_TAG, "unsupported bit width");
     adc_bitwidth_t bitwidth = 0;
 #if CONFIG_IDF_TARGET_ESP32
     if ((uint32_t)width_bit == (uint32_t)ADC_BITWIDTH_DEFAULT) {
@@ -375,7 +360,7 @@ esp_err_t adc1_rtc_mode_acquire(void)
 
 esp_err_t adc1_lock_release(void)
 {
-    ADC_CHECK((uint32_t *)adc1_dma_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
+    ESP_RETURN_ON_FALSE((uint32_t *)adc1_dma_lock != NULL, ESP_ERR_INVALID_STATE, ADC_TAG, "adc1 lock release called before acquire");
     /* Use locks to avoid digtal and RTC controller conflicts. for adc1, block until acquire the lock. */
 
     adc_power_release();
@@ -386,7 +371,7 @@ esp_err_t adc1_lock_release(void)
 int adc1_get_raw(adc1_channel_t channel)
 {
     int adc_value;
-    ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
     adc1_rtc_mode_acquire();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -440,8 +425,8 @@ void adc1_ulp_enable(void)
 ---------------------------------------------------------------*/
 esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 {
-    ADC_CHANNEL_CHECK(ADC_UNIT_2, channel);
-    ADC_CHECK(atten <= SOC_ADC_ATTEN_NUM, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_2), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
+    ESP_RETURN_ON_FALSE(atten <= SOC_ADC_ATTEN_NUM, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC2 Atten Err");
 
     adc_common_gpio_init(ADC_UNIT_2, channel);
 
@@ -513,9 +498,9 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     int adc_value = 0;
     adc_bitwidth_t bitwidth = 0;
 
-    ADC_CHECK(raw_out != NULL, "ADC out value err", ESP_ERR_INVALID_ARG);
-    ADC_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "unsupported bit width", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(raw_out != NULL, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC out value err");
+    ESP_RETURN_ON_FALSE(channel < ADC2_CHANNEL_MAX, ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Channel Err");
+    ESP_RETURN_ON_FALSE(width_bit < ADC_WIDTH_MAX, ESP_ERR_INVALID_ARG, ADC_TAG, "unsupported bit width");
 #if CONFIG_IDF_TARGET_ESP32
     if ((uint32_t)width_bit == (uint32_t)ADC_BITWIDTH_DEFAULT) {
         bitwidth = SOC_ADC_RTC_MAX_BITWIDTH;
