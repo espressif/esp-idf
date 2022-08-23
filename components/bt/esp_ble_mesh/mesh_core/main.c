@@ -78,6 +78,11 @@ int bt_mesh_provision(const uint8_t net_key[16], uint16_t net_idx,
 
     memcpy(bt_mesh.dev_key, dev_key, 16);
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+        IS_ENABLED(CONFIG_BLE_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+        bt_mesh_lpn_group_add(BLE_MESH_ADDR_ALL_NODES);
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         BT_DBG("Storing network information persistently");
         bt_mesh_store_net();
@@ -110,6 +115,12 @@ void bt_mesh_node_reset(void)
     bt_mesh_tx_reset();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_LPN_SUB_ALL_NODES_ADDR)) {
+            uint16_t group = BLE_MESH_ADDR_ALL_NODES;
+
+            bt_mesh_lpn_group_del(&group, 1);
+        }
+
         bt_mesh_lpn_disable(true);
     }
 
