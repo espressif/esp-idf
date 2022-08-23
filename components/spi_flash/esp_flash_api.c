@@ -19,6 +19,9 @@
 #include "spi_flash_mmap.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_spiflash.h"
+#include "esp_private/esp_clk.h"
+#include "esp_spi_flash_counters.h"
+
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
 #endif //CONFIG_IDF_TARGET_ESP32S2
@@ -64,6 +67,66 @@ DRAM_ATTR static const char TAG[] = "spi_flash";
             return ESP_ERR_FLASH_UNSUPPORTED_CHIP;              \
         }                                                   \
     } while (0)
+
+
+#if CONFIG_SPI_FLASH_ENABLE_COUNTERS
+static esp_flash_counters_t esp_flash_stats;
+
+#define COUNTER_START()     uint32_t ts_begin = esp_cpu_get_cycle_count()
+#define COUNTER_STOP(counter)  \
+    do{ \
+        esp_flash_stats.counter.count++; \
+        esp_flash_stats.counter.time += (esp_cpu_get_cycle_count() - ts_begin) / (esp_clk_cpu_freq() / 1000000); \
+    } while(0)
+
+#define COUNTER_ADD_BYTES(counter, size) \
+    do { \
+        esp_flash_stats.counter.bytes += size; \
+    } while (0)
+
+
+
+const esp_flash_counters_t *esp_flash_get_counters(void)
+{
+    return &esp_flash_stats;
+}
+
+void esp_flash_reset_counters(void)
+{
+    memset(&esp_flash_stats, 0, sizeof(esp_flash_stats));
+}
+
+void esp_flash_dump_counters(FILE* stream)
+{
+    if (stream != NULL) {
+        fprintf(stream, " read: count=%8ld  time=%8ldus  bytes=%8ld\n", esp_flash_stats.read.count, esp_flash_stats.read.time, esp_flash_stats.read.bytes);
+        fprintf(stream, "write: count=%8ld  time=%8ldus  bytes=%8ld\n", esp_flash_stats.write.count, esp_flash_stats.write.time, esp_flash_stats.write.bytes);
+        fprintf(stream, "erase: count=%8ld  time=%8ldus  bytes=%8ld\n", esp_flash_stats.erase.count, esp_flash_stats.erase.time, esp_flash_stats.erase.bytes);
+    }
+}
+
+
+const spi_flash_counters_t *spi_flash_get_counters(void)
+{
+    return (spi_flash_counters_t *)esp_flash_get_counters();
+}
+
+void spi_flash_reset_counters(void)
+{
+    esp_flash_reset_counters();
+}
+
+void spi_flash_dump_counters(void)
+{
+    esp_flash_dump_counters(stdout);
+}
+
+#else
+#define COUNTER_START()
+#define COUNTER_STOP(counter)
+#define COUNTER_ADD_BYTES(counter, size)
+
+#endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 #define IO_STR_LEN  10
 
@@ -534,6 +597,8 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     uint32_t block_erase_size = chip->chip_drv->erase_block == NULL ? 0 : chip->chip_drv->block_erase_size;
     uint32_t sector_size = chip->chip_drv->sector_size;
 
+    COUNTER_START();
+
     if (sector_size == 0 || (block_erase_size % sector_size) != 0) {
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
@@ -600,6 +665,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
             err = chip->chip_drv->erase_block(chip, erase_addr);
             erase_addr += block_erase_size;
             len_remain -= block_erase_size;
+            COUNTER_ADD_BYTES(erase, block_erase_size);
         } else
 #endif
         {
@@ -607,6 +673,7 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
             err = chip->chip_drv->erase_sector(chip, erase_addr);
             erase_addr += sector_size;
             len_remain -= sector_size;
+            COUNTER_ADD_BYTES(erase, sector_size);
         }
 
         assert(len_remain < len);
@@ -625,6 +692,8 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         }
         bus_acquired = false;
     }
+
+    COUNTER_STOP(erase);
 
     return rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, start, len);
 }
@@ -811,6 +880,8 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
         }
     }
 
+    COUNTER_START();
+
     err = ESP_OK;
     do {
         err = rom_spiflash_api_funcs->start(chip);
@@ -840,11 +911,14 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
         address += length_to_read;
         length -= length_to_read;
         buffer = (void*)((intptr_t)buffer + length_to_read);
+        COUNTER_ADD_BYTES(read, length_to_read);
     } while (err == ESP_OK && length > 0);
 
     if (chip->os_func->release_temp_buffer != NULL) {
         chip->os_func->release_temp_buffer(chip->os_func_data, temp_buffer);
     }
+
+    COUNTER_STOP(read);
     return err;
 }
 
@@ -953,6 +1027,9 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     // Indicate whether the bus is acquired by the driver, needs to be released before return
     bool bus_acquired = false;
     err = ESP_OK;
+
+    COUNTER_START();
+
     /* Write output in chunks, either by buffering on stack or
        by artificially cutting into MAX_WRITE_CHUNK parts (in an OS
        environment, this prevents writing from causing interrupt or higher priority task
@@ -997,6 +1074,7 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
         err = chip->chip_drv->write(chip, write_buf, write_addr, write_len);
         len_remain -= write_len;
         assert(len_remain < length);
+        COUNTER_ADD_BYTES(write, write_len);
 
         if (err != ESP_OK) {
             //Error happens, we end flash operation. Re-enable cache and flush it
@@ -1028,12 +1106,13 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
         buffer = (void *)((intptr_t)buffer + write_len);
     }
 
+    COUNTER_STOP(write);
     err = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
 
     return err;
 
 restore_cache:
-
+    COUNTER_STOP(write);
     ret = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
     if (ret != ESP_OK) {
        ESP_DRAM_LOGE(TAG, "restore cache fail\n");
@@ -1077,6 +1156,8 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
     bool bus_acquired = false;
 
     const uint8_t *ssrc = (const uint8_t *)buffer;
+
+    COUNTER_START();
 
     /* On ESP32, write_encrypted encrypts data in RAM as it writes,
        so copy to a temporary buffer - 32 bytes at a time.
@@ -1168,6 +1249,7 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
             goto restore_cache;
         }
         err = rom_spiflash_api_funcs->end(chip, ESP_OK);
+        COUNTER_ADD_BYTES(write, encrypt_byte);
 #if CONFIG_IDF_TARGET_ESP32S2
         esp_crypto_dma_lock_release();
 #endif //CONFIG_IDF_TARGET_ESP32S2
@@ -1187,12 +1269,13 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
 #endif //CONFIG_SPI_FLASH_VERIFY_WRITE
     }
 
+    COUNTER_STOP(write);
     err = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
 
     return err;
 
 restore_cache:
-
+    COUNTER_STOP(write);
     ret = rom_spiflash_api_funcs->flash_end_flush_cache(chip, err, bus_acquired, address, length);
     if (ret != ESP_OK) {
        ESP_DRAM_LOGE(TAG, "restore cache fail\n");
@@ -1222,6 +1305,7 @@ esp_err_t IRAM_ATTR esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address
         return ESP_ERR_INVALID_ARG;
     }
 
+    COUNTER_START();
     const uint8_t *map;
     spi_flash_mmap_handle_t map_handle;
     size_t map_src = address & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
@@ -1233,6 +1317,9 @@ esp_err_t IRAM_ATTR esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address
     }
     memcpy(out_buffer, map + (address - map_src), length);
     spi_flash_munmap(map_handle);
+
+    COUNTER_ADD_BYTES(read, length);
+    COUNTER_STOP(read);
     return err;
 }
 

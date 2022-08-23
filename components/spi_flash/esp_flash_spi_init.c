@@ -439,7 +439,7 @@ esp_err_t esp_flash_app_init(void)
     spi_flash_init_lock();
     spi_flash_guard_set(&g_flash_guard_default_ops);
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
-    spi_flash_reset_counters();
+    esp_flash_reset_counters();
 #endif
 #if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     err = esp_flash_init_main_bus_lock();

@@ -35,13 +35,13 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_ENABLE_COUNTERS
         bool "Enable operation counters"
-        default 0
+        default n
         help
             This option enables the following APIs:
 
-            - spi_flash_reset_counters
-            - spi_flash_dump_counters
-            - spi_flash_get_counters
+            - esp_flash_reset_counters
+            - esp_flash_dump_counters
+            - esp_flash_get_counters
 
             These APIs may be used to collect performance data for spi_flash APIs
             and to help understand behaviour of libraries which use SPI flash.
