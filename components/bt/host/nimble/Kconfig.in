@@ -638,6 +638,7 @@ config BT_NIMBLE_USE_ESP_TIMER
 
 config BT_NIMBLE_LEGACY_VHCI_ENABLE
     bool
+    depends on BT_CONTROLLER_ENABLED
     default y if (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
     default n
     help
