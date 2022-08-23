@@ -245,7 +245,7 @@ void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_
 {
     srand(seed);
     for (int i = 0; i < send_buf_size; i++) {
-        slave_send_buf[i] = rand();
-        master_send_buf[i] = rand();
+        slave_send_buf[i] = rand() % 256;
+        master_send_buf[i] = rand() % 256;
     }
 }
