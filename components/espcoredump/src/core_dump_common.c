@@ -286,7 +286,7 @@ inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
 
 inline bool esp_core_dump_in_isr_context(void)
 {
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
     /* This function will be used to check whether a panic occurred in an ISR.
      * In that case, the execution frame must be switch to the interrupt stack.
      * However, in case where the task watchdog ISR calls the panic handler,
@@ -296,9 +296,9 @@ inline bool esp_core_dump_in_isr_context(void)
      * TODO: IDF-5694. */
     extern bool g_twdt_isr;
     return xPortInterruptedFromISRContext() && !g_twdt_isr;
-#else // CONFIG_ESP_TASK_WDT
+#else // CONFIG_ESP_TASK_WDT_EN
     return xPortInterruptedFromISRContext();
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_EN
 }
 
 inline core_dump_task_handle_t esp_core_dump_get_current_task_handle()

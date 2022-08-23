@@ -25,7 +25,7 @@ else()
             "xt_wdt.c"
             "debug_stubs.c")
 
-    if(CONFIG_ESP_TASK_WDT)
+    if(CONFIG_ESP_TASK_WDT_EN)
         list(APPEND srcs "task_wdt/task_wdt.c")
 
         if(CONFIG_ESP_TASK_WDT_USE_ESP_TIMER)

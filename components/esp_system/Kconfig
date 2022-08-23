@@ -393,7 +393,7 @@ menu "ESP System Settings"
         help
             Also detect if interrupts on CPU 1 are disabled for too long.
 
-    config ESP_TASK_WDT
+    config ESP_TASK_WDT_EN
         bool "Enable Task Watchdog Timer"
         default y
         select FREERTOS_ENABLE_TASK_SNAPSHOT
@@ -407,14 +407,14 @@ menu "ESP System Settings"
         # Software implementation of Task Watchdog, handy for targets with only a single
         # Timer Group, such as the ESP32-C2
         bool
-        depends on ESP_TASK_WDT
+        depends on ESP_TASK_WDT_EN
         default y if IDF_TARGET_ESP32C2
         default n if !IDF_TARGET_ESP32C2
         select ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 
     config ESP_TASK_WDT_INIT
         bool "Initialize Task Watchdog Timer on startup"
-        depends on ESP_TASK_WDT
+        depends on ESP_TASK_WDT_EN
         default y
         help
             Enabling this option will cause the Task Watchdog Timer to be initialized
