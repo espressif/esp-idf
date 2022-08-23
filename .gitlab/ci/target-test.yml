@@ -935,6 +935,31 @@ UT_S2_SPI_DUAL:
     - ESP32S2_IDF
     - Example_SPI_Multi_device
 
+UT_S2_SPI_QUAD:
+  extends: .unit_test_esp32s2_template
+  tags:
+    - ESP32S2_IDF
+    - Example_SPI_Quad_Multi_device
+
+UT_S3_SPI_QUAD:
+  extends: .unit_test_esp32s3_template
+  tags:
+    - ESP32S3_IDF
+    - Example_SPI_Quad_Multi_device
+
+UT_C2_SPI_QUAD:
+  extends: .unit_test_esp32c2_template
+  tags:
+    - ESP32C2_IDF
+    - Example_SPI_Quad_Multi_device
+    - xtal_40mhz
+
+UT_C3_SPI_QUAD:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - Example_SPI_Quad_Multi_device
+
 UT_S2_SDSPI:
   extends: .unit_test_esp32s2_template
   tags:

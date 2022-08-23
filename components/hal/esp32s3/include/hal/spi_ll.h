@@ -76,6 +76,21 @@ typedef enum {
 } spi_ll_trans_len_cond_t;
 FLAG_ATTR(spi_ll_trans_len_cond_t)
 
+// SPI base command in esp32s3
+typedef enum {
+     /* Slave HD Only */
+    SPI_LL_BASE_CMD_HD_WRBUF    = 0x01,
+    SPI_LL_BASE_CMD_HD_RDBUF    = 0x02,
+    SPI_LL_BASE_CMD_HD_WRDMA    = 0x03,
+    SPI_LL_BASE_CMD_HD_RDDMA    = 0x04,
+    SPI_LL_BASE_CMD_HD_SEG_END  = 0x05,
+    SPI_LL_BASE_CMD_HD_EN_QPI   = 0x06,
+    SPI_LL_BASE_CMD_HD_WR_END   = 0x07,
+    SPI_LL_BASE_CMD_HD_INT0     = 0x08,
+    SPI_LL_BASE_CMD_HD_INT1     = 0x09,
+    SPI_LL_BASE_CMD_HD_INT2     = 0x0A,
+} spi_ll_base_command_t;
+
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
@@ -1090,6 +1105,93 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 
 #undef SPI_LL_RST_MASK
 #undef SPI_LL_UNUSED_INT_MASK
+
+/**
+ * Get the base spi command in esp32s3
+ *
+ * @param cmd_t           Command value
+ */
+static inline uint8_t spi_ll_get_slave_hd_base_command(spi_command_t cmd_t)
+{
+    uint8_t cmd_base = 0x00;
+    switch (cmd_t)
+    {
+    case SPI_CMD_HD_WRBUF:
+        cmd_base = SPI_LL_BASE_CMD_HD_WRBUF;
+        break;
+    case SPI_CMD_HD_RDBUF:
+        cmd_base = SPI_LL_BASE_CMD_HD_RDBUF;
+        break;
+    case SPI_CMD_HD_WRDMA:
+        cmd_base = SPI_LL_BASE_CMD_HD_WRDMA;
+        break;
+    case SPI_CMD_HD_RDDMA:
+        cmd_base = SPI_LL_BASE_CMD_HD_RDDMA;
+        break;
+    case SPI_CMD_HD_SEG_END:
+        cmd_base = SPI_LL_BASE_CMD_HD_SEG_END;
+        break;
+    case SPI_CMD_HD_EN_QPI:
+        cmd_base = SPI_LL_BASE_CMD_HD_EN_QPI;
+        break;
+    case SPI_CMD_HD_WR_END:
+        cmd_base = SPI_LL_BASE_CMD_HD_WR_END;
+        break;
+    case SPI_CMD_HD_INT0:
+        cmd_base = SPI_LL_BASE_CMD_HD_INT0;
+        break;
+    case SPI_CMD_HD_INT1:
+        cmd_base = SPI_LL_BASE_CMD_HD_INT1;
+        break;
+    case SPI_CMD_HD_INT2:
+        cmd_base = SPI_LL_BASE_CMD_HD_INT2;
+        break;
+    default:
+        HAL_ASSERT(cmd_base);
+    }
+    return cmd_base;
+}
+
+/**
+ * Get the spi communication command
+ *
+ * @param cmd_t           Base command value
+ * @param line_mode       Line mode of SPI transaction phases: CMD, ADDR, DOUT/DIN.
+ */
+static inline uint16_t spi_ll_get_slave_hd_command(spi_command_t cmd_t, spi_line_mode_t line_mode)
+{
+    uint8_t cmd_base = spi_ll_get_slave_hd_base_command(cmd_t);
+    uint8_t cmd_mod = 0x00; //CMD:1-bit, ADDR:1-bit, DATA:1-bit
+
+    if (line_mode.data_lines == 2) {
+        if (line_mode.addr_lines == 2) {
+            cmd_mod = 0x50; //CMD:1-bit, ADDR:2-bit, DATA:2-bit
+        } else {
+            cmd_mod = 0x10; //CMD:1-bit, ADDR:1-bit, DATA:2-bit
+        }
+    } else if (line_mode.data_lines == 4) {
+        if (line_mode.addr_lines == 4) {
+            cmd_mod = 0xA0; //CMD:1-bit, ADDR:4-bit, DATA:4-bit
+        } else {
+            cmd_mod = 0x20; //CMD:1-bit, ADDR:1-bit, DATA:4-bit
+        }
+    }
+    if (cmd_base == SPI_LL_BASE_CMD_HD_SEG_END || cmd_base == SPI_LL_BASE_CMD_HD_EN_QPI) {
+        cmd_mod = 0x00;
+    }
+
+    return cmd_base | cmd_mod;
+}
+
+/**
+ * Get the dummy bits
+ *
+ * @param line_mode       Line mode of SPI transaction phases: CMD, ADDR, DOUT/DIN.
+ */
+static inline int spi_ll_get_slave_hd_dummy_bits(spi_line_mode_t line_mode)
+{
+    return 8;
+}
 
 #ifdef __cplusplus
 }
