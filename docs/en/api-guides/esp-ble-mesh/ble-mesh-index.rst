@@ -16,9 +16,11 @@ Please see the :doc:`ble-mesh-architecture` for information about the implementa
 
 ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.1, users can refer `here <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ for the certification details of ESP-BLE-MESH.
 
-.. note::
+.. only:: SOC_WIFI_MESH_SUPPORT
+    
+    .. note::
 
-  If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIF-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`.
+      If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-WIFI-MESH. For more information and documentation see :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`.
 
 
 .. _getting-started-with-ble-mesh:
@@ -229,9 +231,8 @@ ESP-BLE-MESH Examples
 ESP-BLE-MESH Demo Videos
 ========================
 
-* `Provisioning of ESP-BLE-MESH nodes using Smartphone App <https://download.espressif.com/BLE_MESH/Docs4Customers/esp-ble-mesh-demo.mp4>`_
-* `Espressif Fast Provisioning using ESP-BLE-MESH App <https://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.4_Demo_Fast_Provision/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
-* `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.5_Demo_Coexistence/ESP_BLE_MESH_%26_WIFI_Coexistence.mp4>`_
+* `Espressif Fast Provisioning using ESP-BLE-MESH App <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
+* `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`_
 
 
 ESP-BLE-MESH FAQ

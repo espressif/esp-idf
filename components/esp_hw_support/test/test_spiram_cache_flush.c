@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@ This code tests the interaction between PSRAM and SPI flash routines.
 #include <stdio.h>
 #include <string.h>
 #include "esp_heap_caps.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_partition.h"
 #include "test_utils.h"
 #include "soc/soc.h"

@@ -9,3 +9,5 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS  "."
                     REQUIRES console nvs_flash bt
                     REQUIRED_IDF_TARGETS esp32)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

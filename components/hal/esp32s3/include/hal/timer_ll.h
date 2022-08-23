@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,7 @@ static inline void timer_ll_set_clock_prescale(timg_dev_t *hw, uint32_t timer_nu
  * @param en True: enable auto reload mode
  *           False: disable auto reload mode
  */
+__attribute__((always_inline))
 static inline void timer_ll_enable_auto_reload(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
     hw->hw_timer[timer_num].config.tn_autoreload = en;
@@ -154,6 +155,7 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
  * @param timer_num Timer number in the group
  * @param reload_val Reload counter value
  */
+__attribute__((always_inline))
 static inline void timer_ll_set_reload_value(timg_dev_t *hw, uint32_t timer_num, uint64_t reload_val)
 {
     hw->hw_timer[timer_num].loadhi.tn_load_hi = (uint32_t)(reload_val >> 32);

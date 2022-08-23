@@ -132,6 +132,16 @@
 #define XCHAL_ERRATUM_497       0
 #endif
 
+/*
+ * Erratum 572 (releases TBD, but present in ESP32S3)
+ * Disable zero-overhead loop buffer to prevent rare illegal instruction
+ * exceptions while executing zero-overhead loops.
+ */
+#if ( XCHAL_HAVE_LOOPS && XCHAL_LOOP_BUFFER_SIZE != 0 )
+#define XCHAL_ERRATUM_572   1
+#else
+#define XCHAL_ERRATUM_572   0
+#endif
 
 /*----------------------------------------------------------------------
                 ISA

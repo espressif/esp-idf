@@ -1,0 +1,15 @@
+{
+  "signal": [
+    {
+      "name": "pwm_A",
+      "wave": "01....0..1....0..1"
+    },
+    {
+      "name": "pwm_B",
+      "wave": "01..0....1..0....1"
+    }
+  ],
+  "head": {
+    "text": "Single Edge Asymmetric Waveform, Active High"
+  }
+}

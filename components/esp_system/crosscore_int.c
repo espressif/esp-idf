@@ -6,11 +6,12 @@
 #include <stdint.h>
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
 #include "soc/periph_defs.h"
 
-#include "hal/cpu_hal.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 
@@ -30,6 +31,7 @@
 
 #if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
 #define REASON_PRINT_BACKTRACE  BIT(2)
+#define REASON_TWDT_ABORT       BIT(4)
 #endif
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -51,7 +53,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 
     //Clear the interrupt first.
 #if CONFIG_IDF_TARGET_ESP32
-    if (cpu_hal_get_core_id()==0) {
+    if (esp_cpu_get_core_id()==0) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
     } else {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
@@ -59,7 +61,7 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
 #elif CONFIG_IDF_TARGET_ESP32S2
     DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
 #elif CONFIG_IDF_TARGET_ESP32S3
-    if (cpu_hal_get_core_id()==0) {
+    if (esp_cpu_get_core_id()==0) {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
     } else {
         WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
@@ -89,22 +91,29 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
         update_breakpoints();
     }
 #endif // !CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2 // IDF-2986
+#if CONFIG_IDF_TARGET_ARCH_XTENSA // IDF-2986
     if (my_reason_val & REASON_PRINT_BACKTRACE) {
         esp_backtrace_print(100);
     }
-#endif
+
+    if (my_reason_val & REASON_TWDT_ABORT) {
+        extern void task_wdt_timeout_abort_xtensa(bool);
+        /* Called from a crosscore interrupt, thus, we are not the core that received
+         * the TWDT interrupt, call the function with `false` as a parameter. */
+        task_wdt_timeout_abort_xtensa(false);
+    }
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
 }
 
 //Initialize the crosscore interrupt on this core. Call this once
 //on each active core.
 void esp_crosscore_int_init(void) {
     portENTER_CRITICAL(&reason_spinlock);
-    reason[cpu_hal_get_core_id()]=0;
+    reason[esp_cpu_get_core_id()]=0;
     portEXIT_CRITICAL(&reason_spinlock);
     esp_err_t err __attribute__((unused)) = ESP_OK;
 #if portNUM_PROCESSORS > 1
-    if (cpu_hal_get_core_id()==0) {
+    if (esp_cpu_get_core_id()==0) {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
         err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
@@ -160,5 +169,9 @@ void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
 void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
+}
+
+void IRAM_ATTR esp_crosscore_int_send_twdt_abort(int core_id) {
+    esp_crosscore_int_send(core_id, REASON_TWDT_ABORT);
 }
 #endif

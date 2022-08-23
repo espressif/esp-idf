@@ -18,26 +18,21 @@ SECTIONS
   .rtc.text :
   {
     . = ALIGN(4);
+    _rtc_fast_start = ABSOLUTE(.);
     _rtc_text_start = ABSOLUTE(.);
     *(.rtc.entry.text)
 
     mapping[rtc_text]
 
     *rtc_wake_stub*.*(.literal .text .literal.* .text.*)
+    *(.rtc_text_end_test)
+
+    /* 16B padding for possible CPU prefetch and 4B alignment for PMS split lines */
+    . += _esp_memprot_prefetch_pad_size;
+    . = ALIGN(4);
+
     _rtc_text_end = ABSOLUTE(.);
   } > rtc_iram_seg
-
-  /**
-   * This section is required to skip rtc.text area because rtc_iram_seg and
-   * rtc_data_seg are reflect the same address space on different buses.
-   */
-  .rtc.dummy :
-  {
-    _rtc_dummy_start = ABSOLUTE(.);
-    _rtc_fast_start = ABSOLUTE(.);
-    . = SIZEOF(.rtc.text);
-    _rtc_dummy_end = ABSOLUTE(.);
-  } > rtc_data_seg
 
   /**
    * This section located in RTC FAST Memory area.
@@ -196,14 +191,8 @@ SECTIONS
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     *(.jcr)
-
-    _esp_system_init_fn_array_start = ABSOLUTE(.);
-    KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))
-    _esp_system_init_fn_array_end = ABSOLUTE(.);
 
     mapping[dram0_data]
 
@@ -354,6 +343,10 @@ SECTIONS
     soc_reserved_memory_region_start = ABSOLUTE(.);
     KEEP (*(.reserved_memory_address))
     soc_reserved_memory_region_end = ABSOLUTE(.);
+    /* System init functions registered via ESP_SYSTEM_INIT_FN */
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
     /* Literals are also RO data. */
     _lit4_start = ABSOLUTE(.);
@@ -402,11 +395,11 @@ SECTIONS
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
   {
+    /* iram_end_test section exists for use by memprot unit tests only */
+    *(.iram_end_test)
     /* ESP32-S3 memprot requires 16B padding for possible CPU prefetch and 256B alignment for PMS split lines */
     . += _esp_memprot_prefetch_pad_size;
     . = ALIGN(_esp_memprot_align_size);
-    /* iram_end_test section exists for use by memprot unit tests only */
-    *(.iram_end_test)
     _iram_text_end = ABSOLUTE(.);
   } > iram0_0_seg
 
@@ -438,6 +431,25 @@ SECTIONS
     . = ALIGN (8);
     _heap_start = ABSOLUTE(.);
   } > dram0_0_seg
+
+  /** This section will be used by the debugger and disassembler to get more information
+    * about raw data present in the code.
+    * Indeed, it may be required to add some padding at some points in the code
+    * in order to align a branch/jump destination on a particular bound.
+    * Padding these instructions will generate null bytes that shall be
+    * interpreted as data, and not code by the debugger or disassembler.
+    * This section will only be present in the ELF file, not in the final binary
+    * For more details, check GCC-212
+    */
+  .xt.prop 0 :
+  {
+    KEEP (*(.xt.prop .gnu.linkonce.prop.*))
+  }
+
+  .xt.lit 0 :
+  {
+    KEEP (*(.xt.lit .gnu.linkonce.p.*))
+  }
 }
 
 ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),

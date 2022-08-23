@@ -12,20 +12,12 @@ set(srcs
    )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "../async_memcpy_impl_gdma.c"
-        "dport_access.c"
-        "esp_hmac.c"
-        "esp_ds.c"
-        "esp_crypto_lock.c")
+    list(APPEND srcs "esp_hmac.c"
+                     "esp_ds.c"
+                     "esp_crypto_lock.c")
 
-    if(CONFIG_SPIRAM)
-        list(APPEND srcs "spiram.c")
-
-        if(CONFIG_SPIRAM_MODE_QUAD)
-            list(APPEND srcs "spiram_psram.c")
-        elseif(CONFIG_SPIRAM_MODE_OCT)
-            list(APPEND srcs "opiram_psram.c")
-        endif()
+    if(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE)
+        list(APPEND srcs "esp_memprot.c" "../esp_memprot_conv.c")
     endif()
 endif()
 

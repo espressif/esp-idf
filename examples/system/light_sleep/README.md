@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Light Sleep Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -58,6 +61,14 @@ Note #2: only UART0 and UART1 (if has) are supported to be configured as wake up
 
 Note #3: due to limitation of the HW, the bytes that received during light sleep is only used for waking up, and it will not be received by UART peripheral or passed to the driver.
 
+### Wake-up by Touch Pad
+
+For this example, pressing any registered touch buttons can wake up the chip.
+
+Note #1: For light sleep, all registered touch buttons can wake up the chip. But only the channel which is configured as wake up channel can wake up the chip from deep sleep.
+
+Note #2: Waking-up by touch pad relies on 'touch_element' driver, which can only support ESP32-S2 and ESP32-S3 currently.
+
 ```
 Entering light sleep
 Returned from light sleep, reason: timer, t=2713 ms, slept for 1999 ms
@@ -80,6 +91,11 @@ Entering light sleep
 Returned from light sleep, reason: pin, t=12564 ms, slept for 1 ms
 Waiting for GPIO9 to go high...
 Entering light sleep
+...
+I (361) touch_wakeup: Button[1] Press
+Returned from light sleep, reason: touch, t=14471 ms, slept for 467 ms
+Entering light sleep
+
 ...
 ```
 

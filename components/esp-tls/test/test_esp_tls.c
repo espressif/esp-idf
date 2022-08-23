@@ -15,7 +15,10 @@
 #include "sha/sha_parallel_engine.h"
 #elif SOC_SHA_SUPPORT_DMA
 #include "sha/sha_dma.h"
+#else
+#include "sha/sha_block.h"
 #endif
+#include "test_utils.h"
 
 const char *test_cert_pem =   "-----BEGIN CERTIFICATE-----\n"\
                               "MIICrDCCAZQCCQD88gCs5AFs/jANBgkqhkiG9w0BAQsFADAYMRYwFAYDVQQDDA1F\n"\
@@ -64,6 +67,11 @@ const char *test_key_pem =    "-----BEGIN PRIVATE KEY-----\n"\
                               "Aogx44Fozd1t2hYcozPuZD4s\n"\
                               "-----END PRIVATE KEY-----\n";
 
+#if SOC_SHA_SUPPORT_SHA512
+#define SHA_TYPE SHA2_512
+#else
+#define SHA_TYPE SHA2_256
+#endif //SOC_SHA_SUPPORT_SHA512
 
 static void test_leak_setup(const char *file, long line)
 {
@@ -76,7 +84,7 @@ static void test_leak_setup(const char *file, long line)
     // which is considered as leaked otherwise
     const uint8_t input_buffer[64];
     uint8_t output_buffer[64];
-    esp_sha(SHA2_512, input_buffer, sizeof(input_buffer), output_buffer);
+    esp_sha(SHA_TYPE, input_buffer, sizeof(input_buffer), output_buffer);
     test_utils_record_free_mem();
 }
 

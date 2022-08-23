@@ -67,18 +67,17 @@ extern "C" {
 #define RTC_CNTL_DBIAS_1V25 30
 #define RTC_CNTL_DBIAS_1V30 31 //voltage is about 1.34v in fact
 
-#define DELAY_FAST_CLK_SWITCH           3
-#define DELAY_SLOW_CLK_SWITCH           300
-#define DELAY_8M_ENABLE                 50
-
-/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
- * 10 cycles will take approximately 300 microseconds.
+/* Delays for various clock sources to be enabled/switched.
+ * All values are in microseconds.
  */
-#define XTAL_FREQ_EST_CYCLES            10
+#define SOC_DELAY_RTC_FAST_CLK_SWITCH       3
+#define SOC_DELAY_RTC_SLOW_CLK_SWITCH       300
+#define SOC_DELAY_RC_FAST_ENABLE            50
+#define SOC_DELAY_RC_FAST_DIGI_SWITCH       5
 
-#define DIG_DBIAS_80M   RTC_CNTL_DBIAS_1V20
-#define DIG_DBIAS_160M  RTC_CNTL_DBIAS_1V20
-
+/* Core voltage (to be supported) */
+#define DIG_DBIAS_80M       RTC_CNTL_DBIAS_1V20
+#define DIG_DBIAS_120M      RTC_CNTL_DBIAS_1V20
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
@@ -128,6 +127,8 @@ storing in efuse (based on ATE 5k ECO3 chips)
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
+    RTC_XTAL_FREQ_26M = 26,     //!< 26 MHz XTAL
+    RTC_XTAL_FREQ_32M = 32,     //!< 32 MHz XTAL
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
@@ -161,7 +162,7 @@ typedef enum {
 typedef struct {
     rtc_xtal_freq_t xtal_freq : 8;             //!< Main XTAL frequency
     uint32_t cpu_freq_mhz : 10;                //!< CPU frequency to set, in MHz
-    soc_rtc_fast_clk_src_t fast_clk_src : 1;   //!< RTC_FAST_CLK clock source to choose
+    soc_rtc_fast_clk_src_t fast_clk_src : 2;   //!< RTC_FAST_CLK clock source to choose
     soc_rtc_slow_clk_src_t slow_clk_src : 2;   //!< RTC_SLOW_CLK clock source to choose
     uint32_t clk_rtc_clk_div : 8;
     uint32_t clk_8m_clk_div : 3;               //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)
@@ -173,12 +174,12 @@ typedef struct {
  * Default initializer for rtc_clk_config_t
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
-    .xtal_freq = RTC_XTAL_FREQ_40M, \
+    .xtal_freq = CONFIG_XTAL_FREQ, \
     .cpu_freq_mhz = 80, \
     .fast_clk_src = SOC_RTC_FAST_CLK_SRC_RC_FAST, \
     .slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW, \
     .clk_rtc_clk_div = 0, \
-    .clk_8m_clk_div = 0, \
+    .clk_8m_clk_div = 1, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
 }
@@ -277,9 +278,9 @@ bool rtc_clk_8md256_enabled(void);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
- * @param slow_freq clock source (one of soc_rtc_slow_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_slow_clk_src_t values)
  */
-void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t slow_freq);
+void rtc_clk_slow_src_set(soc_rtc_slow_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_SLOW_CLK source
@@ -303,9 +304,9 @@ uint32_t rtc_clk_slow_freq_get_hz(void);
 
 /**
  * @brief Select source for RTC_FAST_CLK
- * @param fast_freq clock source (one of soc_rtc_fast_clk_src_t values)
+ * @param clk_src clock source (one of soc_rtc_fast_clk_src_t values)
  */
-void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t fast_freq);
+void rtc_clk_fast_src_set(soc_rtc_fast_clk_src_t clk_src);
 
 /**
  * @brief Get the RTC_FAST_CLK source

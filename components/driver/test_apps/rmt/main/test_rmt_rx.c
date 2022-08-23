@@ -26,7 +26,7 @@ typedef struct {
 } test_nec_rx_user_data_t;
 
 TEST_RMT_CALLBACK_ATTR
-static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t high_task_wakeup = pdFALSE;
     test_nec_rx_user_data_t *test_user_data = (test_nec_rx_user_data_t *)user_data;
@@ -35,8 +35,8 @@ static bool test_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_
     for (size_t i = 0; i < edata->num_symbols; i++) {
         esp_rom_printf("{%d:%d},{%d:%d}\r\n", remote_codes[i].level0, remote_codes[i].duration0, remote_codes[i].level1, remote_codes[i].duration1);
     }
-    vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
     test_user_data->received_symbol_num = edata->num_symbols;
+    vTaskNotifyGiveFromISR(test_user_data->task_to_notify, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;
 }
 
@@ -100,7 +100,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         0x0440, 0x3003 // address, command
     }, 4, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, 34);
+    TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
     TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
     printf("send NEC frame without carrier\r\n");
@@ -108,7 +108,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         0x0440, 0x3003 // address, command
     }, 4, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, 34);
+    TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
     // ready to receive
@@ -118,7 +118,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         0xFF00, 0xFF00, 0xFF00, 0xFF00
     }, 8, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, 66);
+    TEST_ASSERT_EQUAL(66, test_user_data.received_symbol_num);
 #else
     // ready to receive
     TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
@@ -150,7 +150,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         0x0440, 0x3003 // address, command
     }, 4, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, 34);
+    TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
     TEST_ESP_OK(rmt_receive(rx_channel, remote_codes, sizeof(remote_codes), &receive_config));
@@ -159,7 +159,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         0xFF00, 0xFF00, 0xFF00, 0xFF00
     }, 8, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, 66);
+    TEST_ASSERT_EQUAL(66, test_user_data.received_symbol_num);
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
     printf("disable modulation and demodulation for tx and rx channels\r\n");
@@ -173,7 +173,7 @@ static void test_rmt_rx_nec_carrier(size_t mem_block_symbols, bool with_dma, rmt
         0x0440, 0x3003 // address, command
     }, 4, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
-    TEST_ASSERT_EQUAL(test_user_data.received_symbol_num, 34);
+    TEST_ASSERT_EQUAL(34, test_user_data.received_symbol_num);
 
     TEST_ESP_OK(rmt_tx_wait_all_done(tx_channel, -1));
     printf("disable tx and rx channels\r\n");

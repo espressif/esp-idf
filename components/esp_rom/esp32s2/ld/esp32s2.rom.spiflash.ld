@@ -23,3 +23,4 @@ PROVIDE ( esp_rom_spiflash_wait_idle = SPI_Wait_Idle );
 PROVIDE ( esp_rom_spiflash_config_readmode = SPIReadModeCnfig );
 PROVIDE ( esp_rom_spiflash_erase_block = SPIEraseBlock );
 PROVIDE ( esp_rom_spiflash_write_encrypted = SPI_Encrypt_Write );
+PROVIDE ( esp_rom_spiflash_erase_area = SPIEraseArea );

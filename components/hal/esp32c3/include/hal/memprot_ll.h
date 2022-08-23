@@ -61,16 +61,16 @@ static inline uint32_t memprot_ll_iram0_get_intr_source_num(void)
  * 1. IRAM0/DRAM0 split-lines must be aligned to 512B boundaries (PMS module restriction)
  * 2. split address must fall into appropriate IRAM0/DRAM0 region
  */
-static inline memprot_ll_err_t memprot_ll_set_iram0_split_line(const void *line_addr, uint32_t sensitive_reg)
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
     uint32_t addr = (uint32_t)line_addr;
 
     if (addr < IRAM0_SRAM_LEVEL_1_LOW || addr > IRAM0_SRAM_LEVEL_3_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
+        return MEMP_HAL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
     }
 
     if (addr % 0x200 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     uint32_t category[3] = {0};
@@ -95,21 +95,21 @@ static inline memprot_ll_err_t memprot_ll_set_iram0_split_line(const void *line_
 
     REG_WRITE(sensitive_reg, reg_cfg);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 /* can be both IRAM0/DRAM0 address */
-static inline memprot_ll_err_t memprot_ll_set_iram0_split_line_main_I_D(const void *line_addr)
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line_main_I_D(const void *line_addr)
 {
     return memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_1_REG);
 }
 
-static inline memprot_ll_err_t memprot_ll_set_iram0_split_line_I_0(const void *line_addr)
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line_I_0(const void *line_addr)
 {
     return memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG);
 }
 
-static inline memprot_ll_err_t memprot_ll_set_iram0_split_line_I_1(const void *line_addr)
+static inline memprot_hal_err_t memprot_ll_set_iram0_split_line_I_1(const void *line_addr)
 {
     return memprot_ll_set_iram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
 }
@@ -343,59 +343,59 @@ static inline uint32_t memprot_ll_rtcfast_get_splitaddr_register(void)
  * 2. RTCFAST split-line must be aligned to 4B boundaries (PMS stores 11 bits of 13-bit offset in 8kB RTCFAST region)
  * 3. RTCFAST has weird section structure (text -> dummy (!) -> force -> data) - .dummy section seems to have wrong mapping (it doesn't fall inline with .rtctext)
  */
-static inline memprot_ll_err_t memprot_ll_set_rtcfast_split_line(const void *line_addr, memprot_ll_world_t world)
+static inline memprot_hal_err_t memprot_ll_set_rtcfast_split_line(const void *line_addr, memprot_hal_world_t world)
 {
     uint32_t addr = (uint32_t)line_addr;
     uint32_t mask;
 
     if (addr < SOC_RTC_IRAM_LOW || addr >= SOC_RTC_IRAM_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
+        return MEMP_HAL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
     }
 
     if (addr % 0x4 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     switch (world) {
-    case MEMP_LL_WORLD_0:
+    case MEMP_HAL_WORLD_0:
         mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_M;
         break;
-    case MEMP_LL_WORLD_1:
+    case MEMP_HAL_WORLD_1:
         mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_M;
         break;
     default:
-        return MEMP_LL_ERR_WORLD_INVALID;
+        return MEMP_HAL_ERR_WORLD_INVALID;
     }
 
     //offset bits to store are the same width for both worlds -> using SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_V
     CLEAR_PERI_REG_MASK(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_9_REG, mask);
     REG_SET_BITS(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_9_REG, mask, (addr >> 2) & SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_V);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
-static inline memprot_ll_err_t memprot_ll_get_rtcfast_split_line(memprot_ll_world_t world, void **line_addr)
+static inline memprot_hal_err_t memprot_ll_get_rtcfast_split_line(memprot_hal_world_t world, void **line_addr)
 {
     uint32_t reg_addr = REG_READ(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_9_REG);
     uint32_t mask = 0;
     uint32_t shift = 0;
 
     switch (world) {
-    case MEMP_LL_WORLD_0:
+    case MEMP_HAL_WORLD_0:
         mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_M;
         shift = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_0_S;
         break;
-    case MEMP_LL_WORLD_1:
+    case MEMP_HAL_WORLD_1:
         mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_M;
         shift = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_SPLTADDR_WORLD_1_S;
         break;
     default:
-        return MEMP_LL_ERR_WORLD_INVALID;
+        return MEMP_HAL_ERR_WORLD_INVALID;
     }
 
     *line_addr = (void *)((((reg_addr & mask) >> shift) << 2) + SOC_RTC_IRAM_LOW);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 ///////////////////////////////////
@@ -418,48 +418,48 @@ static inline uint32_t memprot_ll_rtcfast_set_permissions(bool r, bool w, bool x
     return permissions;
 }
 
-static inline memprot_ll_err_t memprot_ll_rtcfast_set_pms_area(bool r, bool w, bool x, memprot_ll_world_t world, memprot_ll_area_t area)
+static inline memprot_hal_err_t memprot_ll_rtcfast_set_pms_area(bool r, bool w, bool x, memprot_hal_world_t world, memprot_hal_area_t area)
 {
     uint32_t bits = 0;
     uint32_t mask = 0;
 
     switch (world) {
-    case MEMP_LL_WORLD_0: {
+    case MEMP_HAL_WORLD_0: {
         switch (area) {
-        case MEMP_LL_AREA_LOW:
+        case MEMP_HAL_AREA_LOW:
             bits = memprot_ll_rtcfast_set_permissions(r, w, x) << SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L_S;
             mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L_M;
             break;
-        case MEMP_LL_AREA_HIGH:
+        case MEMP_HAL_AREA_HIGH:
             bits = memprot_ll_rtcfast_set_permissions(r, w, x) << SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H_S;
             mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H_M;
             break;
         default:
-            return MEMP_LL_ERR_AREA_INVALID;
+            return MEMP_HAL_ERR_AREA_INVALID;
         }
     } break;
-    case MEMP_LL_WORLD_1: {
+    case MEMP_HAL_WORLD_1: {
         switch (area) {
-        case MEMP_LL_AREA_LOW:
+        case MEMP_HAL_AREA_LOW:
             bits = memprot_ll_rtcfast_set_permissions(r, w, x) << SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L_S;
             mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L_M;
             break;
-        case MEMP_LL_AREA_HIGH:
+        case MEMP_HAL_AREA_HIGH:
             bits = memprot_ll_rtcfast_set_permissions(r, w, x) << SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H_S;
             mask = SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H_M;
             break;
         default:
-            return MEMP_LL_ERR_AREA_INVALID;
+            return MEMP_HAL_ERR_AREA_INVALID;
         }
     } break;
     default:
-        return MEMP_LL_ERR_WORLD_INVALID;
+        return MEMP_HAL_ERR_WORLD_INVALID;
     }
 
     CLEAR_PERI_REG_MASK(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, mask);
     REG_SET_BITS(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, bits, mask);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline void memprot_ll_rtcfast_get_permissions(uint32_t perms, bool *r, bool *w, bool *x)
@@ -469,42 +469,42 @@ static inline void memprot_ll_rtcfast_get_permissions(uint32_t perms, bool *r, b
     *x = perms & SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_X_F;
 }
 
-static inline memprot_ll_err_t memprot_ll_rtcfast_get_pms_area(bool *r, bool *w, bool *x, memprot_ll_world_t world, memprot_ll_area_t area)
+static inline memprot_hal_err_t memprot_ll_rtcfast_get_pms_area(bool *r, bool *w, bool *x, memprot_hal_world_t world, memprot_hal_area_t area)
 {
     uint32_t permissions = 0;
 
     switch (world) {
-    case MEMP_LL_WORLD_0: {
+    case MEMP_HAL_WORLD_0: {
         switch (area) {
-        case MEMP_LL_AREA_LOW:
+        case MEMP_HAL_AREA_LOW:
             permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_L);
             break;
-        case MEMP_LL_AREA_HIGH:
+        case MEMP_HAL_AREA_HIGH:
             permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_0_H);
             break;
         default:
-            return MEMP_LL_ERR_AREA_INVALID;
+            return MEMP_HAL_ERR_AREA_INVALID;
         }
     } break;
-    case MEMP_LL_WORLD_1: {
+    case MEMP_HAL_WORLD_1: {
         switch (area) {
-        case MEMP_LL_AREA_LOW:
+        case MEMP_HAL_AREA_LOW:
             permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_L);
             break;
-        case MEMP_LL_AREA_HIGH:
+        case MEMP_HAL_AREA_HIGH:
             permissions = REG_GET_FIELD(SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_10_REG, SENSITIVE_CORE_0_PIF_PMS_CONSTRAIN_RTCFAST_WORLD_1_H);
             break;
         default:
-            return MEMP_LL_ERR_AREA_INVALID;
+            return MEMP_HAL_ERR_AREA_INVALID;
         }
     } break;
     default:
-        return MEMP_LL_ERR_WORLD_INVALID;
+        return MEMP_HAL_ERR_WORLD_INVALID;
     }
 
     memprot_ll_rtcfast_get_permissions(permissions, r, w, x);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
 static inline uint32_t memprot_ll_rtcfast_get_permission_register(void)
@@ -601,17 +601,17 @@ static inline uint32_t memprot_ll_dram0_get_intr_source_num(void)
 ///////////////////////////////////
 // DRAM0 - SPLIT LINES
 
-static inline memprot_ll_err_t memprot_ll_set_dram0_split_line(const void *line_addr, uint32_t sensitive_reg)
+static inline memprot_hal_err_t memprot_ll_set_dram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
     uint32_t addr = (uint32_t)line_addr;
 
     //sanity check: split address required above unified mgmt region & 32bit aligned
     if (addr < DRAM0_SRAM_LEVEL_1_LOW || addr > DRAM0_SRAM_LEVEL_3_HIGH) {
-        return MEMP_LL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
+        return MEMP_HAL_ERR_SPLIT_ADDR_OUT_OF_RANGE;
     }
     //split-line must be divisible by 512 (PMS module restriction)
     if (addr % 0x200 != 0) {
-        return MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED;
+        return MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED;
     }
 
     uint32_t category[3] = {0};
@@ -636,15 +636,15 @@ static inline memprot_ll_err_t memprot_ll_set_dram0_split_line(const void *line_
 
     REG_WRITE(sensitive_reg, reg_cfg);
 
-    return MEMP_LL_OK;
+    return MEMP_HAL_OK;
 }
 
-static inline memprot_ll_err_t memprot_ll_set_dram0_split_line_D_0(const void *line_addr)
+static inline memprot_hal_err_t memprot_ll_set_dram0_split_line_D_0(const void *line_addr)
 {
     return memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG);
 }
 
-static inline memprot_ll_err_t memprot_ll_set_dram0_split_line_D_1(const void *line_addr)
+static inline memprot_hal_err_t memprot_ll_set_dram0_split_line_D_1(const void *line_addr)
 {
     return memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG);
 }

@@ -40,4 +40,6 @@
 #define DR_REG_BLE_TIMER_BASE                   0x6004B800
 #define DR_REG_BLE_SEC_BASE                     0x6004C000
 #define DR_REG_COEX_BIT_BASE                    0x6004C400
+#define DR_REG_MODEM_CLKRST_BASE                0x6004d800
 #define DR_REG_I2C_MST_BASE                     0x6004E800
+#define DR_REG_AES_XTS_BASE                     0x600CC000

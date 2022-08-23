@@ -350,6 +350,7 @@ int tlsv12_key_x_server_params_hash(u16 tls_version, u8 hash_alg,
 		alg = CRYPTO_HASH_ALG_SHA256;
 		hlen = SHA256_MAC_LEN;
 		break;
+#ifdef CONFIG_CRYPTO_MBEDTLS
 	case TLS_HASH_ALG_SHA384:
 		alg = CRYPTO_HASH_ALG_SHA384;
 		hlen = 48;
@@ -358,6 +359,7 @@ int tlsv12_key_x_server_params_hash(u16 tls_version, u8 hash_alg,
 		alg = CRYPTO_HASH_ALG_SHA512;
 		hlen = 64;
 		break;
+#endif
 	default:
 		return -1;
 	}

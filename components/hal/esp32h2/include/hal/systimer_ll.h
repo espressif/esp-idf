@@ -10,12 +10,10 @@
 #include "soc/systimer_struct.h"
 #include "hal/assert.h"
 
-#define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
-#define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
-#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
-#define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
-
-#define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
+#define SYSTIMER_LL_COUNTER_CLOCK       0 // Counter used by esptimer, to generate the system level wall clock
+#define SYSTIMER_LL_COUNTER_OS_TICK     1 // Counter used by RTOS porting layer, to generate the OS tick
+#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 0 // Alarm used by OS tick, dedicated for core 0
+#define SYSTIMER_LL_ALARM_CLOCK         2 // Alarm used by esptimer
 
 #ifdef __cplusplus
 extern "C" {

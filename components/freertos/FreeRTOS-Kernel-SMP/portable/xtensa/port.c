@@ -17,8 +17,9 @@
 #include "xtensa/config/core.h"
 #include "xtensa/config/core-isa.h"
 #include "xtensa/xtruntime.h"
-#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
 #include "esp_private/esp_int_wdt.h"
+#include "esp_private/systimer.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 #include "esp_task.h"
@@ -28,13 +29,25 @@
 #include "esp_task_wdt.h"
 #include "esp_heap_caps_init.h"
 #include "esp_freertos_hooks.h"
-#include "esp32/spiram.h"                   /* Required by esp_spiram_reserve_dma_pool() */
+#include "esp_intr_alloc.h"
+#include "esp_memory_utils.h"
+#if CONFIG_SPIRAM
+/* Required by esp_psram_extram_reserve_dma_pool() */
+#include "esp_psram.h"
+#include "esp_private/esp_psram_extram.h"
+#endif
 #ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
 #endif
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #include "esp_gdbstub.h"                    /* Required by esp_gdbstub_init() */
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
+#include "soc/periph_defs.h"
+#include "soc/system_reg.h"
+#include "hal/systimer_hal.h"
+#include "hal/systimer_ll.h"
+#endif // CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 
 /*
 OS state variables
@@ -64,6 +77,16 @@ Variables used by IDF critical sections only (SMP tracks critical nesting inside
 */
 BaseType_t port_uxCriticalNestingIDF[portNUM_PROCESSORS] = {0};
 BaseType_t port_uxCriticalOldInterruptStateIDF[portNUM_PROCESSORS] = {0};
+
+/*
+*******************************************************************************
+* Interrupt stack. The size of the interrupt stack is determined by the config
+* parameter "configISR_STACK_SIZE" in FreeRTOSConfig.h
+*******************************************************************************
+*/
+volatile StackType_t DRAM_ATTR __attribute__((aligned(16))) port_IntStack[portNUM_PROCESSORS][configISR_STACK_SIZE];
+/* One flag for each individual CPU. */
+volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 
 BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout)
 {
@@ -145,6 +168,9 @@ void vPortSetStackWatchpoint( void *pxStackStart )
 
 // ---------------------- Tick Timer -----------------------
 
+BaseType_t xPortSysTickHandler(void);
+
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 extern void _frxt_tick_timer_init(void);
 extern void _xt_tick_divisor_init(void);
 
@@ -160,13 +186,121 @@ void vPortSetupTimer(void)
     _frxt_tick_timer_init();
 }
 
+#elif CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
+
+_Static_assert(SOC_CPU_CORES_NUM <= SOC_SYSTIMER_ALARM_NUM - 1, "the number of cores must match the number of core alarms in SYSTIMER");
+
+void SysTickIsrHandler(void *arg);
+
+static uint32_t s_handled_systicks[portNUM_PROCESSORS] = { 0 };
+
+#define SYSTICK_INTR_ID (ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE)
+
+/**
+ * @brief Set up the systimer peripheral to generate the tick interrupt
+ *
+ * Both timer alarms are configured in periodic mode.
+ * It is done at the same time so SysTicks for both CPUs occur at the same time or very close.
+ * Shifts a time of triggering interrupts for core 0 and core 1.
+ */
+void vPortSetupTimer(void)
+{
+    unsigned cpuid = xPortGetCoreID();
+#ifdef CONFIG_FREERTOS_CORETIMER_SYSTIMER_LVL3
+    const unsigned level = ESP_INTR_FLAG_LEVEL3;
+#else
+    const unsigned level = ESP_INTR_FLAG_LEVEL1;
+#endif
+    /* Systimer HAL layer object */
+    static systimer_hal_context_t systimer_hal;
+    /* set system timer interrupt vector */
+    ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
+
+    if (cpuid == 0) {
+        periph_module_enable(PERIPH_SYSTIMER_MODULE);
+        systimer_hal_init(&systimer_hal);
+        systimer_hal_tick_rate_ops_t ops = {
+            .ticks_to_us = systimer_ticks_to_us,
+            .us_to_ticks = systimer_us_to_ticks,
+        };
+        systimer_hal_set_tick_rate_ops(&systimer_hal, &ops);
+        systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK, 0);
+        systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK);
+
+        for (cpuid = 0; cpuid < SOC_CPU_CORES_NUM; cpuid++) {
+            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, cpuid, false);
+        }
+
+        for (cpuid = 0; cpuid < portNUM_PROCESSORS; ++cpuid) {
+            uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
+
+            /* configure the timer */
+            systimer_hal_connect_alarm_counter(&systimer_hal, alarm_id, SYSTIMER_LL_COUNTER_OS_TICK);
+            systimer_hal_set_alarm_period(&systimer_hal, alarm_id, 1000000UL / CONFIG_FREERTOS_HZ);
+            systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_PERIOD);
+            systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, cpuid, true);
+            if (cpuid == 0) {
+                systimer_hal_enable_alarm_int(&systimer_hal, alarm_id);
+                systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK);
+#ifndef CONFIG_FREERTOS_UNICORE
+                // SysTick of core 0 and core 1 are shifted by half of period
+                systimer_hal_counter_value_advance(&systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK, 1000000UL / CONFIG_FREERTOS_HZ / 2);
+#endif
+            }
+        }
+    } else {
+        uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
+        systimer_hal_enable_alarm_int(&systimer_hal, alarm_id);
+    }
+}
+
+/**
+ * @brief Systimer interrupt handler.
+ *
+ * The Systimer interrupt for SysTick works in periodic mode no need to calc the next alarm.
+ * If a timer interrupt is ever serviced more than one tick late, it is necessary to process multiple ticks.
+ */
+IRAM_ATTR void SysTickIsrHandler(void *arg)
+{
+    uint32_t cpuid = xPortGetCoreID();
+    systimer_hal_context_t *systimer_hal = (systimer_hal_context_t *)arg;
+#ifdef CONFIG_PM_TRACE
+    ESP_PM_TRACE_ENTER(TICK, cpuid);
+#endif
+
+    uint32_t alarm_id = SYSTIMER_LL_ALARM_OS_TICK_CORE0 + cpuid;
+    do {
+        systimer_ll_clear_alarm_int(systimer_hal->dev, alarm_id);
+
+        uint32_t diff = systimer_hal_get_counter_value(systimer_hal, SYSTIMER_LL_COUNTER_OS_TICK) / systimer_ll_get_alarm_period(systimer_hal->dev, alarm_id) - s_handled_systicks[cpuid];
+        if (diff > 0) {
+            if (s_handled_systicks[cpuid] == 0) {
+                s_handled_systicks[cpuid] = diff;
+                diff = 1;
+            } else {
+                s_handled_systicks[cpuid] += diff;
+            }
+
+            do {
+                xPortSysTickHandler();
+            } while (--diff);
+        }
+    } while (systimer_ll_is_alarm_int_fired(systimer_hal->dev, alarm_id));
+
+#ifdef CONFIG_PM_TRACE
+    ESP_PM_TRACE_EXIT(TICK, cpuid);
+#endif
+}
+
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
+
 // --------------------- App Start-up ----------------------
 
 static const char *TAG = "cpu_start";
 
 extern void app_main(void);
 
-static void main_task(void* args)
+static void main_task(void *args)
 {
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
@@ -180,8 +314,8 @@ static void main_task(void* args)
 
     // Now we have startup stack RAM available for heap, enable any DMA pool memory
 #if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-    if (g_spiram_ok) {
-        esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+    if (esp_psram_is_initialized()) {
+        esp_err_t r = esp_psram_extram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
             abort();
@@ -333,6 +467,13 @@ BaseType_t xPortStartScheduler( void )
 
     port_xSchedulerRunning[xPortGetCoreID()] = 1;
 
+#if configNUM_CORES > 1
+    // Workaround for non-thread safe multi-core OS startup (see IDF-4524)
+    if (xPortGetCoreID() != 0) {
+        vTaskStartSchedulerOtherCores();
+    }
+#endif // configNUM_CORES > 1
+
     // Cannot be directly called from C; never returns
     __asm__ volatile ("call0    _frxt_dispatch\n");
 
@@ -354,7 +495,7 @@ void *pvPortMalloc( size_t xSize )
     return heap_caps_malloc(xSize, FREERTOS_SMP_MALLOC_CAPS);
 }
 
-void vPortFree( void * pv )
+void vPortFree( void *pv )
 {
     heap_caps_free(pv);
 }
@@ -386,16 +527,21 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
                                    StackType_t **ppxIdleTaskStackBuffer,
                                    uint32_t *pulIdleTaskStackSize )
 {
-    StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+    StaticTask_t *pxTCBBufferTemp;
+    /* Stack always grows downwards (from high address to low address) on all
+     * ESP Xtensa targets. Given that the heap allocator likely allocates memory
+     * from low to high address, we allocate the stack first and then the TCB so
+     * that the stack does not grow downwards into the TCB.
+     *
+     * Allocate TCB and stack buffer in internal memory. */
     pxStackBufferTemp = pvPortMalloc(CONFIG_FREERTOS_IDLE_TASK_STACKSIZE);
-    assert(pxTCBBufferTemp != NULL);
+    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
     assert(pxStackBufferTemp != NULL);
-    //Write back pointers
-    *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
+    assert(pxTCBBufferTemp != NULL);
+    // Write back pointers
     *ppxIdleTaskStackBuffer = pxStackBufferTemp;
+    *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
     *pulIdleTaskStackSize = CONFIG_FREERTOS_IDLE_TASK_STACKSIZE;
 }
 
@@ -405,14 +551,19 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
 {
     StaticTask_t *pxTCBBufferTemp;
     StackType_t *pxStackBufferTemp;
-    //Allocate TCB and stack buffer in internal memory
-    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+    /* Stack always grows downwards (from high address to low address) on all
+     * ESP Xtensa targets. Given that the heap allocator likely allocates memory
+     * from low to high address, we allocate the stack first and then the TCB so
+     * that the stack does not grow downwards into the TCB.
+     *
+     * Allocate TCB and stack buffer in internal memory. */
     pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
-    assert(pxTCBBufferTemp != NULL);
+    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
     assert(pxStackBufferTemp != NULL);
-    //Write back pointers
-    *ppxTimerTaskTCBBuffer = pxTCBBufferTemp;
+    assert(pxTCBBufferTemp != NULL);
+    // Write back pointers
     *ppxTimerTaskStackBuffer = pxStackBufferTemp;
+    *ppxTimerTaskTCBBuffer = pxTCBBufferTemp;
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
 #endif //( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -558,9 +709,9 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 
 void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
 
-void vPortCleanUpCoprocArea( void * pxTCB )
+void vPortCleanUpCoprocArea( void *pxTCB )
 {
-    StackType_t * coproc_area;
+    StackType_t *coproc_area;
     BaseType_t xCoreID;
 
     /* Calculate the coproc save area in the stack from the TCB base */
@@ -581,7 +732,7 @@ void vPortCleanUpCoprocArea( void * pxTCB )
 // ------- Thread Local Storage Pointers Deletion Callbacks -------
 
 #if ( CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS )
-void vPortTLSPointersDelCb( void * pxTCB )
+void vPortTLSPointersDelCb( void *pxTCB )
 {
     /* Typecast pxTCB to StaticTask_t type to access TCB struct members.
      * pvDummy15 corresponds to pvThreadLocalStoragePointers member of the TCB.
@@ -594,10 +745,8 @@ void vPortTLSPointersDelCb( void * pxTCB )
     /* We need to iterate over half the depth of the pvThreadLocalStoragePointers area
      * to access all TLS pointers and their respective TLS deletion callbacks.
      */
-    for( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ )
-    {
-        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL )    //If del cb is set
-        {
+    for ( int x = 0; x < ( configNUM_THREAD_LOCAL_STORAGE_POINTERS / 2 ); x++ ) {
+        if ( pvThreadLocalStoragePointersDelCallback[ x ] != NULL ) {  //If del cb is set
             /* In case the TLSP deletion callback has been overwritten by a TLS pointer, gracefully abort. */
             if ( !esp_ptr_executable( pvThreadLocalStoragePointersDelCallback[ x ] ) ) {
                 // We call EARLY log here as currently portCLEAN_UP_TCB() is called in a critical section

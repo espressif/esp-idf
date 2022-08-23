@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -6,8 +11,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_rom_sys.h"
+#include "esp_private/spi_flash_os.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"  // for ETSTimer type
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -18,6 +24,8 @@
 #include "esp32c3/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/ets_sys.h"
 #endif
 
 static void test_correct_delay_timer_func(void* arg)

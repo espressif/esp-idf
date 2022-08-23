@@ -4,15 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-from __future__ import print_function
-
 import argparse
+import asyncio
 import json
 import os
 import sys
 import textwrap
 import time
-from builtins import input as binput
 from getpass import getpass
 
 try:
@@ -40,15 +38,17 @@ def on_except(err):
         print(err)
 
 
-def get_security(secver, pop='', verbose=False):
-    if secver == 1:
+def get_security(secver, username, password, pop='', verbose=False):
+    if secver == 2:
+        return security.Security2(username, password, verbose)
+    elif secver == 1:
         return security.Security1(pop, verbose)
     elif secver == 0:
         return security.Security0(verbose)
     return None
 
 
-def get_transport(sel_transport, service_name):
+async def get_transport(sel_transport, service_name):
     try:
         tp = None
         if (sel_transport == 'softap'):
@@ -56,8 +56,6 @@ def get_transport(sel_transport, service_name):
                 service_name = '192.168.4.1:80'
             tp = transport.Transport_HTTP(service_name)
         elif (sel_transport == 'ble'):
-            if service_name is None:
-                raise RuntimeError('"--service_name" must be specified for ble transport')
             # BLE client is now capable of automatically figuring out
             # the primary service from the advertisement data and the
             # characteristics corresponding to each endpoint.
@@ -66,9 +64,9 @@ def get_transport(sel_transport, service_name):
             # in which case, the automated discovery will fail and the client
             # will fallback to using the provided UUIDs instead
             nu_lookup = {'prov-session': 'ff51', 'prov-config': 'ff52', 'proto-ver': 'ff53'}
-            tp = transport.Transport_BLE(devname=service_name,
-                                         service_uuid='021a9004-0382-4aea-bff4-6b3f1c5adfb4',
+            tp = transport.Transport_BLE(service_uuid='021a9004-0382-4aea-bff4-6b3f1c5adfb4',
                                          nu_lookup=nu_lookup)
+            await tp.connect(devname=service_name)
         elif (sel_transport == 'console'):
             tp = transport.Transport_Console()
         return tp
@@ -77,9 +75,9 @@ def get_transport(sel_transport, service_name):
         return None
 
 
-def version_match(tp, protover, verbose=False):
+async def version_match(tp, protover, verbose=False):
     try:
-        response = tp.send_data('proto-ver', protover)
+        response = await tp.send_data('proto-ver', protover)
 
         if verbose:
             print('proto-ver response : ', response)
@@ -106,11 +104,11 @@ def version_match(tp, protover, verbose=False):
         return None
 
 
-def has_capability(tp, capability='none', verbose=False):
+async def has_capability(tp, capability='none', verbose=False):
     # Note : default value of `capability` argument cannot be empty string
     # because protocomm_httpd expects non zero content lengths
     try:
-        response = tp.send_data('proto-ver', capability)
+        response = await tp.send_data('proto-ver', capability)
 
         if verbose:
             print('proto-ver response : ', response)
@@ -140,24 +138,24 @@ def has_capability(tp, capability='none', verbose=False):
     return False
 
 
-def get_version(tp):
+async def get_version(tp):
     response = None
     try:
-        response = tp.send_data('proto-ver', '---')
+        response = await tp.send_data('proto-ver', '---')
     except RuntimeError as e:
         on_except(e)
         response = ''
     return response
 
 
-def establish_session(tp, sec):
+async def establish_session(tp, sec):
     try:
         response = None
         while True:
             request = sec.security_session(response)
             if request is None:
                 break
-            response = tp.send_data('prov-session', request)
+            response = await tp.send_data('prov-session', request)
             if (response is None):
                 return False
         return True
@@ -166,27 +164,27 @@ def establish_session(tp, sec):
         return None
 
 
-def custom_config(tp, sec, custom_info, custom_ver):
+async def custom_config(tp, sec, custom_info, custom_ver):
     try:
         message = prov.custom_config_request(sec, custom_info, custom_ver)
-        response = tp.send_data('custom-config', message)
+        response = await tp.send_data('custom-config', message)
         return (prov.custom_config_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
 
 
-def custom_data(tp, sec, custom_data):
+async def custom_data(tp, sec, custom_data):
     try:
         message = prov.custom_data_request(sec, custom_data)
-        response = tp.send_data('custom-data', message)
+        response = await tp.send_data('custom-data', message)
         return (prov.custom_data_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
 
 
-def scan_wifi_APs(sel_transport, tp, sec):
+async def scan_wifi_APs(sel_transport, tp, sec):
     APs = []
     group_channels = 0
     readlen = 100
@@ -209,13 +207,13 @@ def scan_wifi_APs(sel_transport, tp, sec):
     try:
         message = prov.scan_start_request(sec, blocking=True, group_channels=group_channels)
         start_time = time.time()
-        response = tp.send_data('prov-scan', message)
+        response = await tp.send_data('prov-scan', message)
         stop_time = time.time()
         print('++++ Scan process executed in ' + str(stop_time - start_time) + ' sec')
         prov.scan_start_response(sec, response)
 
         message = prov.scan_status_request(sec)
-        response = tp.send_data('prov-scan', message)
+        response = await tp.send_data('prov-scan', message)
         result = prov.scan_status_response(sec, response)
         print('++++ Scan results : ' + str(result['count']))
         if result['count'] != 0:
@@ -224,7 +222,7 @@ def scan_wifi_APs(sel_transport, tp, sec):
             while remaining:
                 count = [remaining, readlen][remaining > readlen]
                 message = prov.scan_result_request(sec, index, count)
-                response = tp.send_data('prov-scan', message)
+                response = await tp.send_data('prov-scan', message)
                 APs += prov.scan_result_response(sec, response)
                 remaining -= count
                 index += count
@@ -236,37 +234,37 @@ def scan_wifi_APs(sel_transport, tp, sec):
     return APs
 
 
-def send_wifi_config(tp, sec, ssid, passphrase):
+async def send_wifi_config(tp, sec, ssid, passphrase):
     try:
         message = prov.config_set_config_request(sec, ssid, passphrase)
-        response = tp.send_data('prov-config', message)
+        response = await tp.send_data('prov-config', message)
         return (prov.config_set_config_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
 
 
-def apply_wifi_config(tp, sec):
+async def apply_wifi_config(tp, sec):
     try:
         message = prov.config_apply_config_request(sec)
-        response = tp.send_data('prov-config', message)
+        response = await tp.send_data('prov-config', message)
         return (prov.config_apply_config_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
 
 
-def get_wifi_config(tp, sec):
+async def get_wifi_config(tp, sec):
     try:
         message = prov.config_get_status_request(sec)
-        response = tp.send_data('prov-config', message)
+        response = await tp.send_data('prov-config', message)
         return prov.config_get_status_response(sec, response)
     except RuntimeError as e:
         on_except(e)
         return None
 
 
-def wait_wifi_connected(tp, sec):
+async def wait_wifi_connected(tp, sec):
     """
     Wait for provisioning to report Wi-Fi is connected
 
@@ -278,7 +276,7 @@ def wait_wifi_connected(tp, sec):
     while True:
         time.sleep(TIME_PER_POLL)
         print('\n==== Wi-Fi connection state  ====')
-        ret = get_wifi_config(tp, sec)
+        ret = await get_wifi_config(tp, sec)
         if ret == 'connecting':
             continue
         elif ret == 'connected':
@@ -288,7 +286,7 @@ def wait_wifi_connected(tp, sec):
             retry -= 1
             print('Waiting to poll status again (status %s, %d tries left)...' % (ret, retry))
         else:
-            print('---- Provisioning failed ----')
+            print('---- Provisioning failed! ----')
             return False
 
 
@@ -299,7 +297,7 @@ def desc_format(*args):
     return desc
 
 
-if __name__ == '__main__':
+async def main():
     parser = argparse.ArgumentParser(description=desc_format(
                                      'ESP Provisioning tool for configuring devices '
                                      'running protocomm based provisioning service.',
@@ -331,14 +329,29 @@ if __name__ == '__main__':
                             '\t- 0 : No security',
                             '\t- 1 : X25519 key exchange + AES-CTR encryption',
                             '\t      + Authentication using Proof of Possession (PoP)',
+                            '\t- 2 : SRP6a + AES-GCM encryption',
                             'In case device side application uses IDF\'s provisioning manager, '
                             'the compatible security version is automatically determined from '
                             'capabilities retrieved via the version endpoint'))
 
-    parser.add_argument('--pop', dest='pop', type=str, default='',
+    parser.add_argument('--pop', dest='sec1_pop', type=str, default='',
                         help=desc_format(
                             'This specifies the Proof of possession (PoP) when security scheme 1 '
                             'is used'))
+
+    parser.add_argument('--sec2_username', dest='sec2_usr', type=str, default='',
+                        help=desc_format(
+                            'Username for security scheme 2 (SRP6a)'))
+
+    parser.add_argument('--sec2_pwd', dest='sec2_pwd', type=str, default='',
+                        help=desc_format(
+                            'Password for security scheme 2 (SRP6a)'))
+
+    parser.add_argument('--sec2_gen_cred', help='Generate salt and verifier for security scheme 2 (SRP6a)', action='store_true')
+
+    parser.add_argument('--sec2_salt_len', dest='sec2_salt_len', type=int, default=16,
+                        help=desc_format(
+                            'Salt length for security scheme 2 (SRP6a)'))
 
     parser.add_argument('--ssid', dest='ssid', type=str, default='',
                         help=desc_format(
@@ -347,7 +360,7 @@ if __name__ == '__main__':
                             'If Wi-Fi scanning is supported by the provisioning service, this need not '
                             'be specified'))
 
-    parser.add_argument('--passphrase', dest='passphrase', type=str, default='',
+    parser.add_argument('--passphrase', dest='passphrase', type=str,
                         help=desc_format(
                             'This configures the device to use Passphrase for the Wi-Fi network to which '
                             'we would like it to connect to permanently, once provisioning is complete. '
@@ -363,110 +376,123 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    obj_transport = get_transport(args.mode.lower(), args.name)
+    if args.secver == 2 and args.sec2_gen_cred:
+        if not args.sec2_usr or not args.sec2_pwd:
+            raise ValueError('Username/password cannot be empty for security scheme 2 (SRP6a)')
+
+        print('==== Salt-verifier for security scheme 2 (SRP6a) ====')
+        security.sec2_gen_salt_verifier(args.sec2_usr, args.sec2_pwd, args.sec2_salt_len)
+        sys.exit()
+
+    obj_transport = await get_transport(args.mode.lower(), args.name)
     if obj_transport is None:
-        print('---- Failed to establish connection ----')
-        exit(1)
+        raise RuntimeError('Failed to establish connection')
 
-    # If security version not specified check in capabilities
-    if args.secver is None:
-        # First check if capabilities are supported or not
-        if not has_capability(obj_transport):
-            print('Security capabilities could not be determined. Please specify "--sec_ver" explicitly')
-            print('---- Invalid Security Version ----')
-            exit(2)
+    try:
+        # If security version not specified check in capabilities
+        if args.secver is None:
+            # First check if capabilities are supported or not
+            if not await has_capability(obj_transport):
+                print('Security capabilities could not be determined, please specify "--sec_ver" explicitly')
+                raise ValueError('Invalid Security Version')
 
-        # When no_sec is present, use security 0, else security 1
-        args.secver = int(not has_capability(obj_transport, 'no_sec'))
-        print('Security scheme determined to be :', args.secver)
+            # When no_sec is present, use security 0, else security 1
+            args.secver = int(not await has_capability(obj_transport, 'no_sec'))
+            print(f'==== Security Scheme: {args.secver} ====')
 
-        if (args.secver != 0) and not has_capability(obj_transport, 'no_pop'):
-            if len(args.pop) == 0:
-                print('---- Proof of Possession argument not provided ----')
-                exit(2)
-        elif len(args.pop) != 0:
-            print('---- Proof of Possession will be ignored ----')
-            args.pop = ''
+        if (args.secver == 1):
+            if not await has_capability(obj_transport, 'no_pop'):
+                if len(args.sec1_pop) == 0:
+                    prompt_str = 'Proof of Possession required: '
+                    args.sec1_pop = getpass(prompt_str)
+            elif len(args.sec1_pop) != 0:
+                print('Proof of Possession will be ignored')
+                args.sec1_pop = ''
 
-    obj_security = get_security(args.secver, args.pop, args.verbose)
-    if obj_security is None:
-        print('---- Invalid Security Version ----')
-        exit(2)
+        if (args.secver == 2):
+            if len(args.sec2_usr) == 0:
+                args.sec2_usr = input('Security Scheme 2 - SRP6a Username required: ')
+            if len(args.sec2_pwd) == 0:
+                prompt_str = 'Security Scheme 2 - SRP6a Password required: '
+                args.sec2_pwd = getpass(prompt_str)
 
-    if args.version != '':
-        print('\n==== Verifying protocol version ====')
-        if not version_match(obj_transport, args.version, args.verbose):
-            print('---- Error in protocol version matching ----')
-            exit(3)
-        print('==== Verified protocol version successfully ====')
+        obj_security = get_security(args.secver, args.sec2_usr, args.sec2_pwd, args.sec1_pop, args.verbose)
+        if obj_security is None:
+            raise ValueError('Invalid Security Version')
 
-    print('\n==== Starting Session ====')
-    if not establish_session(obj_transport, obj_security):
-        print('Failed to establish session. Ensure that security scheme and proof of possession are correct')
-        print('---- Error in establishing session ----')
-        exit(4)
-    print('==== Session Established ====')
+        if args.version != '':
+            print('\n==== Verifying protocol version ====')
+            if not await version_match(obj_transport, args.version, args.verbose):
+                raise RuntimeError('Error in protocol version matching')
+            print('==== Verified protocol version successfully ====')
 
-    if args.custom_data != '':
-        print('\n==== Sending Custom data to esp32 ====')
-        if not custom_data(obj_transport, obj_security, args.custom_data):
-            print('---- Error in custom data ----')
-            exit(5)
-        print('==== Custom data sent successfully ====')
+        print('\n==== Starting Session ====')
+        if not await establish_session(obj_transport, obj_security):
+            print('Failed to establish session. Ensure that security scheme and proof of possession are correct')
+            raise RuntimeError('Error in establishing session')
+        print('==== Session Established ====')
 
-    if args.ssid == '':
-        if not has_capability(obj_transport, 'wifi_scan'):
-            print('---- Wi-Fi Scan List is not supported by provisioning service ----')
-            print('---- Rerun esp_prov with SSID and Passphrase as argument ----')
-            exit(3)
+        if args.custom_data != '':
+            print('\n==== Sending Custom data to Target ====')
+            if not await custom_data(obj_transport, obj_security, args.custom_data):
+                raise RuntimeError('Error in custom data')
+            print('==== Custom data sent successfully ====')
 
-        while True:
-            print('\n==== Scanning Wi-Fi APs ====')
-            start_time = time.time()
-            APs = scan_wifi_APs(args.mode.lower(), obj_transport, obj_security)
-            end_time = time.time()
-            print('\n++++ Scan finished in ' + str(end_time - start_time) + ' sec')
-            if APs is None:
-                print('---- Error in scanning Wi-Fi APs ----')
-                exit(8)
-
-            if len(APs) == 0:
-                print('No APs found!')
-                exit(9)
-
-            print('==== Wi-Fi Scan results ====')
-            print('{0: >4} {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}'.format(
-                'S.N.', 'SSID', 'BSSID', 'CHN', 'RSSI', 'AUTH'))
-            for i in range(len(APs)):
-                print('[{0: >2}] {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}'.format(
-                    i + 1, APs[i]['ssid'], APs[i]['bssid'], APs[i]['channel'], APs[i]['rssi'], APs[i]['auth']))
+        if args.ssid == '':
+            if not await has_capability(obj_transport, 'wifi_scan'):
+                raise RuntimeError('Wi-Fi Scan List is not supported by provisioning service')
 
             while True:
-                try:
-                    select = int(binput('Select AP by number (0 to rescan) : '))
-                    if select < 0 or select > len(APs):
-                        raise ValueError
+                print('\n==== Scanning Wi-Fi APs ====')
+                start_time = time.time()
+                APs = await scan_wifi_APs(args.mode.lower(), obj_transport, obj_security)
+                end_time = time.time()
+                print('\n++++ Scan finished in ' + str(end_time - start_time) + ' sec')
+                if APs is None:
+                    raise RuntimeError('Error in scanning Wi-Fi APs')
+
+                if len(APs) == 0:
+                    print('No APs found!')
+                    sys.exit()
+
+                print('==== Wi-Fi Scan results ====')
+                print('{0: >4} {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}'.format(
+                    'S.N.', 'SSID', 'BSSID', 'CHN', 'RSSI', 'AUTH'))
+                for i in range(len(APs)):
+                    print('[{0: >2}] {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}'.format(
+                        i + 1, APs[i]['ssid'], APs[i]['bssid'], APs[i]['channel'], APs[i]['rssi'], APs[i]['auth']))
+
+                while True:
+                    try:
+                        select = int(input('Select AP by number (0 to rescan) : '))
+                        if select < 0 or select > len(APs):
+                            raise ValueError
+                        break
+                    except ValueError:
+                        print('Invalid input! Retry')
+
+                if select != 0:
                     break
-                except ValueError:
-                    print('Invalid input! Retry')
 
-            if select != 0:
-                break
+            args.ssid = APs[select - 1]['ssid']
 
-        args.ssid = APs[select - 1]['ssid']
-        prompt_str = 'Enter passphrase for {0} : '.format(args.ssid)
-        args.passphrase = getpass(prompt_str)
+        if args.passphrase is None:
+            prompt_str = 'Enter passphrase for {0} : '.format(args.ssid)
+            args.passphrase = getpass(prompt_str)
 
-    print('\n==== Sending Wi-Fi credential to esp32 ====')
-    if not send_wifi_config(obj_transport, obj_security, args.ssid, args.passphrase):
-        print('---- Error in send Wi-Fi config ----')
-        exit(6)
-    print('==== Wi-Fi Credentials sent successfully ====')
+        print('\n==== Sending Wi-Fi Credentials to Target ====')
+        if not await send_wifi_config(obj_transport, obj_security, args.ssid, args.passphrase):
+            raise RuntimeError('Error in send Wi-Fi config')
+        print('==== Wi-Fi Credentials sent successfully ====')
 
-    print('\n==== Applying config to esp32 ====')
-    if not apply_wifi_config(obj_transport, obj_security):
-        print('---- Error in apply Wi-Fi config ----')
-        exit(7)
-    print('==== Apply config sent successfully ====')
+        print('\n==== Applying Wi-Fi Config to Target ====')
+        if not await apply_wifi_config(obj_transport, obj_security):
+            raise RuntimeError('Error in apply Wi-Fi config')
+        print('==== Apply config sent successfully ====')
 
-    wait_wifi_connected(obj_transport, obj_security)
+        await wait_wifi_connected(obj_transport, obj_security)
+    finally:
+        await obj_transport.disconnect()
+
+if __name__ == '__main__':
+    asyncio.run(main())

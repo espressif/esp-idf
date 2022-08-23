@@ -6,9 +6,10 @@
 
 #include <stdlib.h>
 
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_ipc_isr.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/cache_utils.h"
 
 #include "soc/soc_memory_layout.h"
 #include "esp_cpu.h"
@@ -16,16 +17,11 @@
 #include "soc/rtc.h"
 
 #include "hal/soc_hal.h"
-#include "hal/cpu_hal.h"
 
 #include "esp_private/cache_err_int.h"
 
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/dport_access.h"
-#endif
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #ifdef CONFIG_IDF_TARGET_ESP32S2
@@ -68,7 +64,8 @@ static void print_state_for_core(const void *f, int core)
      * Don't print it on abort to reduce clutter.
      * On other architectures, register values need to be known for backtracing.
      */
-#if defined(__XTENSA__) && defined(XCHAL_HAVE_WINDOWED)
+#if (CONFIG_IDF_TARGET_ARCH_XTENSA && defined(XCHAL_HAVE_WINDOWED)) || \
+    (CONFIG_IDF_TARGET_ARCH_RISCV && CONFIG_ESP_SYSTEM_USE_EH_FRAME)
     if (!g_panic_abort) {
 #else
     if (true) {
@@ -105,7 +102,7 @@ static void print_state(const void *f)
 
 static void frame_to_panic_info(void *frame, panic_info_t *info, bool pseudo_excause)
 {
-    info->core = cpu_hal_get_core_id();
+    info->core = esp_cpu_get_core_id();
     info->exception = PANIC_EXCEPTION_FAULT;
     info->details = NULL;
     info->reason = "Unknown";
@@ -129,7 +126,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
      * Setup environment and perform necessary architecture/chip specific
      * steps here prior to the system panic handler.
      * */
-    int core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
 
     // If multiple cores arrive at panic handler, save frames for all of them
     g_exc_frames[core_id] = frame;
@@ -157,14 +154,19 @@ static void panic_handler(void *frame, bool pseudo_excause)
     esp_panic_handler_reconfigure_wdts();
 
     esp_rom_delay_us(1);
-    SOC_HAL_STALL_OTHER_CORES();
-#endif
+    // Stall all other cores
+    for (uint32_t i = 0; i < SOC_CPU_CORES_NUM; i++) {
+        if (i != core_id) {
+            esp_cpu_stall(i);
+        }
+    }
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     esp_ipc_isr_stall_abort();
 
-    if (esp_cpu_in_ocd_debug_mode()) {
+    if (esp_cpu_dbgr_is_attached()) {
 #if __XTENSA__
-        if (!(esp_ptr_executable(cpu_ll_pc_to_ptr(panic_get_address(frame))) && (panic_get_address(frame) & 0xC0000000U))) {
+        if (!(esp_ptr_executable(esp_cpu_pc_to_addr(panic_get_address(frame))) && (panic_get_address(frame) & 0xC0000000U))) {
             /* Xtensa ABI sets the 2 MSBs of the PC according to the windowed call size
              * Incase the PC is invalid, GDB will fail to translate addresses to function names
              * Hence replacing the PC to a placeholder address in case of invalid PC
@@ -196,7 +198,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
  */
 static void IRAM_ATTR panic_enable_cache(void)
 {
-    int core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
 
     if (!spi_flash_cache_enabled()) {
         esp_ipc_isr_stall_abort();

@@ -11,14 +11,34 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "freertos/queue.h"
 #include "unity.h"
 #include "test_utils.h"
+#include <string.h>
 
-static QueueHandle_t yield_task_sequence;
+// Array to store the task ids of the test threads being yielded
+static volatile uint32_t task_yield_sequence[3];
+
+// Index variable to access the yield sequence array
+static volatile uint32_t idx = 0;
+
+// Lock to protect the shared variables to store task id
+static portMUX_TYPE idx_lock;
+
+// Synchronization variable to have a deterministic dispatch sequence of the test threads
 static volatile bool task_sequence_ready;
+
+// Synchronization variable between the test threads and the unity task
 static volatile uint32_t count;
-static SemaphoreHandle_t mutex;
+
+// Lock variable to create a blocked task scenario
+static volatile SemaphoreHandle_t task_mutex;
+
+// This helper macro is used to store the task id atomically
+#define STORE_TASK_ID(task_id)  ({ \
+        portENTER_CRITICAL(&idx_lock); \
+        task_yield_sequence[idx++] = task_id; \
+        portEXIT_CRITICAL(&idx_lock); \
+})
 
 /*
  * Test yielding for same priority tasks on the same core.
@@ -30,13 +50,13 @@ static SemaphoreHandle_t mutex;
  */
 static void yield_task1(void *arg)
 {
-    /* Set the task sequence flag once yield_task1 runs */
-    task_sequence_ready = true;
-
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
+
+    /* Notify the yield_task2 to run */
+    task_sequence_ready = true;
 
     /* Yield */
     taskYIELD();
@@ -44,21 +64,21 @@ static void yield_task1(void *arg)
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
 static void yield_task2(void *arg)
 {
+    uint32_t task_id = (uint32_t)arg;
+
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
         taskYIELD();
     };
 
-    uint32_t task_id = (uint32_t)arg;
-
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Yield */
     taskYIELD();
@@ -66,21 +86,26 @@ static void yield_task2(void *arg)
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield must run the next ready task of the same priority", "[freertos][ignore]")
+TEST_CASE("Task yield must run the next ready task of the same priority", "[freertos]")
 {
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
     /* Reset task count */
     count = 0;
 
     /* Reset task sequence flag */
     task_sequence_ready = false;
-
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
 
     /* Create test tasks */
     xTaskCreatePinnedToCore(yield_task1, "yield_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
@@ -91,15 +116,11 @@ TEST_CASE("Task yield must run the next ready task of the same priority", "[free
         vTaskDelay(10);
     }
 
-    /* Verify that the yield is successful and the next ready task is run */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
+    idx = 0;
 
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    /* Verify that the yield is successful and the next ready task is run */
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 }
 
 /*
@@ -113,104 +134,96 @@ TEST_CASE("Task yield must run the next ready task of the same priority", "[free
  */
 static void test_task1(void *arg)
 {
-    /* Set the task sequence flag once test_task1 runs */
-    task_sequence_ready = true;
-
     uint32_t task_id = (uint32_t)arg;
 
     /* Block on mutex taken by the unity task */
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(mutex, portMAX_DELAY));
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(task_mutex, portMAX_DELAY));
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Increment task count to notify unity task */
     count++;
 
     /* Release mutex */
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(mutex));
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(task_mutex));
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
 static void test_task2(void *arg)
 {
-    /* Wait for the other task to run for the test to begin */
-    while (!task_sequence_ready) {
-        taskYIELD();
-    };
-
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Yield */
     taskYIELD();
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield must not run a blocked task", "[freertos][ignore]")
+TEST_CASE("Task yield must not run a blocked task", "[freertos]")
 {
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
     /* Reset task count */
     count = 0;
 
-    /* Reset task sequence flag */
-    task_sequence_ready = false;
-
     /* Create mutex and acquire it */
-    mutex = xSemaphoreCreateMutex();
-    TEST_ASSERT_NOT_EQUAL(NULL, mutex);
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(mutex, portMAX_DELAY));
+    task_mutex = xSemaphoreCreateMutex();
+    TEST_ASSERT_NOT_EQUAL(NULL, task_mutex);
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(task_mutex, portMAX_DELAY));
 
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
-
-    /* Create test tasks */
+    /* Create test_task1. This gets blocked. */
     xTaskCreatePinnedToCore(test_task1, "test_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
+
+    /* Wait for test_task1 to start up and get blocked */
+    vTaskDelay(10);
+
+    /* Create test_task2. This issues the yield. */
     xTaskCreatePinnedToCore(test_task2, "test_task2", 2048, (void *)2, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
 
-    /* Wait for at least one of the tasks to finish up */
-    while (count == 0) {
+    /* Wait for test_task2 to finish up */
+    while (count != 1) {
         vTaskDelay(10);
     }
+
+    /* Release mutex. This should unblock test_task1. */
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(task_mutex));
+
+    /* Wait for test_task1 to finish up */
+    vTaskDelay(10);
+
+    idx = 0;
 
     /* Verify that the yield results in the same task running again and not the blocked task */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 
     /* Verify that the task yield did not result in a context switch */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 
-    /* Release mutex */
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGive(mutex));
+    /* Verify that the other task is scheduled once it is unblocked */
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
 
-    /* Wait for the second task to finish up */
-    while (count != 2) {
-        vTaskDelay(10);
-    }
-
-    /* Verify that the second task is scheduled once it is unblocked */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
-
-    /* Cleanup mutex */
-    vSemaphoreDelete(mutex);
-
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    /* Cleanup task mutex */
+    vSemaphoreDelete(task_mutex);
 }
 
 /*
@@ -223,22 +236,24 @@ TEST_CASE("Task yield must not run a blocked task", "[freertos][ignore]")
  */
 static void test_critical_task1(void *arg)
 {
-    /* Set the task sequence flag once test_critical_task1 runs */
-    task_sequence_ready = true;
-
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Suspend scheduler */
     vTaskSuspendAll();
 
+    /* Set the task sequence flag once test_critical_task1 runs */
+    task_sequence_ready = true;
+
     /* Yield */
     taskYIELD();
 
-    /* Store task_id on queue again */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array.
+     * No need for a lock when the scheduler is suspended.
+     */
+    task_yield_sequence[idx++] = task_id;
 
     /* Increment task count to notify unity task */
     count++;
@@ -246,70 +261,65 @@ static void test_critical_task1(void *arg)
     /* Resume scheduler */
     xTaskResumeAll();
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
 static void test_critical_task2(void *arg)
 {
+    uint32_t task_id = (uint32_t)arg;
+
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
         taskYIELD();
     };
 
-    uint32_t task_id = (uint32_t)arg;
-
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield must not happen when scheduler is suspended", "[freertos][ignore]")
+TEST_CASE("Task yield must not happen when scheduler is suspended", "[freertos]")
 {
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
     /* Reset task count */
     count = 0;
 
     /* Reset task sequence flag */
     task_sequence_ready = false;
 
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
-
     /* Create test tasks */
     xTaskCreatePinnedToCore(test_critical_task1, "test_critical_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
     xTaskCreatePinnedToCore(test_critical_task2, "test_critical_task2", 2048, (void *)2, UNITY_FREERTOS_PRIORITY - 1, NULL, UNITY_FREERTOS_CPU);
 
-    /* Wait for at least one of the tasks to finish up */
-    while (count == 0) {
-        vTaskDelay(10);
-    }
-
-    /* Verify that the first task runs */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
-
-    /* Verify that the task yield when the scheduler is suspended did not result in a context switch */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
-
-    /* Wait for the second task to finish up */
+    /* Wait for both the tasks to finish up */
     while (count != 2) {
         vTaskDelay(10);
     }
 
-    /* Verify that the second task is scheduled once the scheduler is resumed */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
+    idx = 0;
 
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    /* Verify that test_critical_task1 runs first */
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
+
+    /* Verify that the task yield, when the scheduler is suspended, did not result in a context switch */
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
+
+    /* Verify that test_critical_task2 is scheduled once the scheduler is resumed */
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 }
 
 /*
@@ -323,48 +333,49 @@ static void high_prio_task(void *arg)
 {
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Lower priority task must yield immediately on creation of higher priority task", "[freertos][ignore]")
+TEST_CASE("Task yield must happen when a task creates a higher priority task", "[freertos]")
 {
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
     /* Reset task count */
     count = 0;
 
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
-
-    /* Create test tasks */
+    /* Create test task */
     xTaskCreatePinnedToCore(high_prio_task, "high_prio_task", 2048, (void *)1, UNITY_FREERTOS_PRIORITY + 1, NULL, UNITY_FREERTOS_CPU);
 
     uint32_t unity_task_id = 2;
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &unity_task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(unity_task_id);
 
-    /* Wait for the newly created task to finish up */
+    /* Wait for the test task to finish up */
     while (count == 0) {
         vTaskDelay(10);
     }
 
+    idx = 0;
+
     /* Verify that the unity task yields as soon as a higher prio task is created */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
 
     /* Verify that the unity task_id is stored after the higher priority task runs */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
-
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 }
 
 /*
@@ -379,59 +390,59 @@ static void low_prio_task(void *arg)
 {
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-   TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Lower priority task must yield immediately when the priority of another task is raised", "[freertos][ignore]")
+TEST_CASE("Task yield must happed when a task raises the priority of another priority task", "[freertos]")
 {
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
     /* Reset task count */
     count = 0;
 
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
-
-    /* Create test tasks */
+    /* Create test task */
     TaskHandle_t task_handle;
     xTaskCreatePinnedToCore(low_prio_task, "low_prio_task", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, &task_handle, UNITY_FREERTOS_CPU);
 
     uint32_t unity_task_id = 2;
-    /* Store unity task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &unity_task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(unity_task_id);
 
     /* Raise the priority of the lower priority task */
     vTaskPrioritySet(task_handle, UNITY_FREERTOS_PRIORITY + 1);
 
-    /* Store unity task_id on queue again */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &unity_task_id, 0));
+    /* Store unity task_id in the sequence array again */
+    STORE_TASK_ID(unity_task_id);
 
-    /* Wait for at least the task to finish up */
+    /* Wait for the test task to finish up */
     while (count == 0) {
         vTaskDelay(10);
     }
 
+    idx = 0;
+
     /* Verify that the unity task does not yield to a lower priority task when it is created */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 
     /* Verify that the unity task_id yielded once the priority of the lower priority task is raised */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx++]);
 
-    /* Verify that the unity task_id is stored again once the other task finishes up */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
-
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    /* Verify that the unity task_id is stored again once the test task finishes up */
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx++]);
 }
 
 #if (portNUM_PROCESSORS > 1) && !(CONFIG_FREERTOS_UNICORE)
@@ -446,43 +457,55 @@ TEST_CASE("Lower priority task must yield immediately when the priority of anoth
  */
 static void other_core_task1(void *arg)
 {
-    /* Set the task sequence flag once other_core_task1 runs */
-    task_sequence_ready = true;
-
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
-    while (1) { }
+    while (1) {
+        vTaskDelay(10);
+    }
 }
 
 static void other_core_task2(void *arg)
 {
+    uint32_t task_id = (uint32_t)arg;
+
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
         taskYIELD();
     };
 
-    uint32_t task_id = (uint32_t)arg;
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Increment task count to notify unity task */
+    count++;
 
-    while (1) { }
+    while (1) {
+        vTaskDelay(10);
+    }
 }
 
-TEST_CASE("Task yield on other core can go through", "[freertos][ignore]")
+TEST_CASE("Task yield must happen when issued from another core", "[freertos]")
 {
     TaskHandle_t other_core_taskhandle1;
     TaskHandle_t other_core_taskhandle2;
 
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
+    /* Reset task count */
+    count = 0;
+
     /* Reset task sequence flag */
     task_sequence_ready = false;
-
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
 
     /* Create test tasks */
     xTaskCreatePinnedToCore(other_core_task1, "test_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, &other_core_taskhandle1, !UNITY_FREERTOS_CPU);
@@ -491,10 +514,13 @@ TEST_CASE("Task yield on other core can go through", "[freertos][ignore]")
     /* Wait for everything to be setup */
     vTaskDelay(10);
 
-    /* Verify that other_core_task1 runs */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
+    uint32_t idx1 = 0;
+
+    /* Verify that other_core_task1 runs first */
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx1++]);
+
+    /* Set the task sequence flag once other_core_task1 runs */
+    task_sequence_ready = true;
 
     /* Force an yield on the other core */
 #if CONFIG_FREERTOS_SMP
@@ -503,12 +529,13 @@ TEST_CASE("Task yield on other core can go through", "[freertos][ignore]")
     vPortYieldOtherCore(!UNITY_FREERTOS_CPU);
 #endif
 
-    /* Verify that other_core_task1 yields and other_core_task2 runs */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
+    /* Wait for the test task to finish up */
+    while (count == 0) {
+        vTaskDelay(10);
+    }
 
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    /* Verify that other_core_task1 yields and other_core_task2 runs */
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx1++]);
 
     /* Cleanup test tasks */
     vTaskDelete(other_core_taskhandle1);
@@ -532,19 +559,21 @@ static volatile bool yield_triggered = false;
  */
 static void other_core_critical_task1(void *arg)
 {
-    /* Set the task sequence flag once other_core_critical_task1 runs */
-    task_sequence_ready = true;
-
     uint32_t task_id = (uint32_t)arg;
 
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Suspend scheduler*/
     vTaskSuspendAll();
 
-    /* Store task_id on queue again */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array again.
+     * No need for a lock when the scheduler is supended.
+     */
+    task_yield_sequence[idx++] = task_id;
+
+    /* Set the task sequence flag once other_core_critical_task1 runs */
+    task_sequence_ready = true;
 
     /* Increment task count to notify unity task */
     count++;
@@ -554,40 +583,45 @@ static void other_core_critical_task1(void *arg)
     /* Resume scheduler */
     xTaskResumeAll();
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
 static void other_core_critical_task2(void *arg)
 {
+    uint32_t task_id = (uint32_t)arg;
+
     /* Wait for the other task to run for the test to begin */
     while (!task_sequence_ready) {
         taskYIELD();
     };
 
-    uint32_t task_id = (uint32_t)arg;
-
-    /* Store task_id on queue */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueSend(yield_task_sequence, &task_id, 0));
+    /* Store task_id in the sequence array */
+    STORE_TASK_ID(task_id);
 
     /* Increment task count to notify unity task */
     count++;
 
-    /* Delete itself */
+    /* Delete self */
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Task yield on other core must not happen when scheduler is suspended", "[freertos][ignore]")
+TEST_CASE("Task yield on other core must not happen when scheduler is suspended", "[freertos]")
 {
+    /* Reset yield sequence index */
+    idx = 0;
+
+    /* Reset yield sequence array */
+    memset((void *)task_yield_sequence, 0, sizeof(task_yield_sequence));
+
+    /* Initialize idx lock */
+    portMUX_INITIALIZE(&idx_lock);
+
     /* Reset task count */
     count = 0;
 
     /* Reset task sequence flag */
     task_sequence_ready = false;
-
-    /* Create task yielding sequence queue */
-    yield_task_sequence = xQueueCreate(3, sizeof(uint32_t));
-    TEST_ASSERT_NOT_EQUAL(NULL, yield_task_sequence);
 
     /* Create test tasks */
     xTaskCreatePinnedToCore(other_core_critical_task1, "other_core_critical_task1", 2048, (void *)1, UNITY_FREERTOS_PRIORITY - 1, NULL, !UNITY_FREERTOS_CPU);
@@ -604,14 +638,13 @@ TEST_CASE("Task yield on other core must not happen when scheduler is suspended"
     /* Set yield triggered flag */
     yield_triggered = true;
 
+    uint32_t idx1 = 0;
+
     /* Verify that the first task runs */
-    uint32_t task_id;
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx1++]);
 
     /* Verify that the task yield when the scheduler is suspended did not result in a context switch */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(1, task_id);
+    TEST_ASSERT_EQUAL(1, task_yield_sequence[idx1++]);
 
     /* Wait for the second task to finish up */
     while (count != 2) {
@@ -619,11 +652,7 @@ TEST_CASE("Task yield on other core must not happen when scheduler is suspended"
     }
 
     /* Verify that the second task is scheduled once the critical section is over */
-    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(yield_task_sequence, &task_id, 0));
-    TEST_ASSERT_EQUAL(2, task_id);
-
-    /* Cleanup yield sequence queue */
-    vQueueDelete(yield_task_sequence);
+    TEST_ASSERT_EQUAL(2, task_yield_sequence[idx1++]);
 }
 #endif // !CONFIG_FREERTOS_SMP
 #endif // (portNUM_PROCESSORS > 1) && !(CONFIG_FREERTOS_UNICORE)

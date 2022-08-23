@@ -36,13 +36,13 @@ void config_broker(esp_mqtt_client_config_t &mqtt_client_cfg, BrokerConfiguratio
     std::visit(overloaded{
         [&mqtt_client_cfg](Host const & host)
         {
-            mqtt_client_cfg.host = host.address.c_str();
-            mqtt_client_cfg.path = host.path.c_str();
-            mqtt_client_cfg.transport = host.transport;
+            mqtt_client_cfg.broker.address.hostname = host.address.c_str();
+            mqtt_client_cfg.broker.address.path = host.path.c_str();
+            mqtt_client_cfg.broker.address.transport = host.transport;
         },
         [&mqtt_client_cfg](URI const & uri)
         {
-            mqtt_client_cfg.uri = uri.address.c_str();
+            mqtt_client_cfg.broker.address.uri = uri.address.c_str();
         },
         []([[maybe_unused ]]auto & unknown)
         {
@@ -55,18 +55,18 @@ void config_broker(esp_mqtt_client_config_t &mqtt_client_cfg, BrokerConfiguratio
         []([[maybe_unused]]Insecure const & insecure) {},
         [&mqtt_client_cfg](GlobalCAStore const & use_global_store)
         {
-            mqtt_client_cfg.use_global_ca_store = true;
+            mqtt_client_cfg.broker.verification.use_global_ca_store = true;
         },
         [&mqtt_client_cfg](CryptographicInformation const & certificates)
         {
             std::visit(overloaded{
                 [&mqtt_client_cfg](PEM const & pem)
                 {
-                    mqtt_client_cfg.cert_pem = pem.data;
+                    mqtt_client_cfg.broker.verification.certificate= pem.data;
                 }, [&mqtt_client_cfg](DER const & der)
                 {
-                    mqtt_client_cfg.cert_pem = der.data;
-                    mqtt_client_cfg.cert_len = der.len;
+                    mqtt_client_cfg.broker.verification.certificate = der.data;
+                    mqtt_client_cfg.broker.verification.certificate_len = der.len;
                 }}, certificates);
         },
         []([[maybe_unused]] PSK const & psk) {},
@@ -76,7 +76,7 @@ void config_broker(esp_mqtt_client_config_t &mqtt_client_cfg, BrokerConfiguratio
         }
     },
     broker.security);
-    mqtt_client_cfg.port = broker.address.port;
+    mqtt_client_cfg.broker.address.port = broker.address.port;
 }
 
 /*
@@ -85,12 +85,12 @@ void config_broker(esp_mqtt_client_config_t &mqtt_client_cfg, BrokerConfiguratio
  */
 void config_client_credentials(esp_mqtt_client_config_t &mqtt_client_cfg, ClientCredentials const &credentials)
 {
-    mqtt_client_cfg.client_id = credentials.client_id.has_value() ?  credentials.client_id.value().c_str() : nullptr ;
-    mqtt_client_cfg.username = credentials.username.has_value() ?  credentials.username.value().c_str() : nullptr ;
+    mqtt_client_cfg.credentials.client_id = credentials.client_id.has_value() ?  credentials.client_id.value().c_str() : nullptr ;
+    mqtt_client_cfg.credentials.username = credentials.username.has_value() ?  credentials.username.value().c_str() : nullptr ;
     std::visit(overloaded{
         [&mqtt_client_cfg](Password const & password)
         {
-            mqtt_client_cfg.password = password.data.c_str();
+            mqtt_client_cfg.credentials.authentication.password = password.data.c_str();
         },
         [](ClientCertificate const & certificate) {},
         [](SecureElement const & enable_secure_element) {},

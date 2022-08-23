@@ -23,6 +23,9 @@ esp_event_loop_handle_t loop_without_task;
 
 static void application_task(void* args)
 {
+    // Wait to be started by the main task
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
     while(1) {
         ESP_LOGI(TAG, "application_task: running application task");
         esp_event_loop_run(loop_without_task, 100);
@@ -58,6 +61,9 @@ static void task_iteration_handler(void* handler_args, esp_event_base_t base, in
 
 static void task_event_source(void* args)
 {
+    // Wait to be started by the main task
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
     for(int iteration = 1; iteration <= TASK_ITERATIONS_COUNT; iteration++) {
         esp_event_loop_handle_t loop_to_post_to;
 
@@ -112,12 +118,19 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_instance_register_with(loop_with_task, TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, loop_with_task, NULL));
     ESP_ERROR_CHECK(esp_event_handler_instance_register_with(loop_without_task, TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, loop_without_task, NULL));
 
+    // Create the event source task
+    TaskHandle_t task_event_source_hdl;
     ESP_LOGI(TAG, "starting event source");
+    xTaskCreate(task_event_source, "task_event_source", 3072, NULL, uxTaskPriorityGet(NULL) + 1, &task_event_source_hdl);
 
-    // Create the event source task with the same priority as the current task
-    xTaskCreate(task_event_source, "task_event_source", 3072, NULL, uxTaskPriorityGet(NULL), NULL);
-
+    // Create the application task
+    TaskHandle_t application_task_hdl;
     ESP_LOGI(TAG, "starting application task");
-    // Create the application task with the same priority as the current task
-    xTaskCreate(application_task, "application_task", 3072, NULL, uxTaskPriorityGet(NULL), NULL);
+    xTaskCreate(application_task, "application_task", 3072, NULL, uxTaskPriorityGet(NULL) + 1, &application_task_hdl);
+
+    // Start the event source task first to post an event
+    xTaskNotifyGive(task_event_source_hdl);
+
+    // Start the application task to run the event handlers
+    xTaskNotifyGive(application_task_hdl);
 }

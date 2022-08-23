@@ -1,0 +1,5 @@
+# This config is split between targets since different component needs to be included
+CONFIG_IDF_TARGET="esp32c2"
+CONFIG_XTAL_FREQ_26=y
+
+TEST_COMPONENTS=esp_timer

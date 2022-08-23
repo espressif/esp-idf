@@ -93,8 +93,8 @@ struct hostapd_data {
 
 	u8 own_addr[ETH_ALEN];
 	struct sta_info *sta_list; /* STA info list head */
-#define STA_HASH_SIZE 10
-#define STA_HASH(sta) (sta[5] & 0xa)
+#define STA_HASH_SIZE 16
+#define STA_HASH(sta) (sta[5] & 0xf)
 	struct sta_info *sta_hash[STA_HASH_SIZE];
 	int num_sta; /* number of entries in sta_list */
 

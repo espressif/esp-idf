@@ -30,6 +30,13 @@
 #include "esp_private/partition_linux.h"
 #endif
 
+#ifndef CONFIG_IDF_TARGET_LINUX
+#define MMU_PAGE_SIZE CONFIG_MMU_PAGE_SIZE
+#else
+// No relation to the page size on Linux; assume the same value as on ESP32
+#define MMU_PAGE_SIZE 65536
+#endif // CONFIG_MMU_PAGE_SIZE
+
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
@@ -78,7 +85,7 @@ static esp_err_t load_partitions(void)
     esp_rom_md5_init(&context);
 #endif
 
-    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(0x10000 - 1);
+    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(MMU_PAGE_SIZE - 1);
     uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
 
 #if CONFIG_IDF_TARGET_LINUX
@@ -355,9 +362,6 @@ esp_err_t esp_partition_register_external(esp_flash_t *flash_chip, size_t offset
     if (out_partition != NULL) {
         *out_partition = NULL;
     }
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-    return ESP_ERR_NOT_SUPPORTED;
-#endif
 
     if (offset + size > flash_chip->size) {
         return ESP_ERR_INVALID_SIZE;

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- |
 
 #ESP-IDF Multi Adv Example
 
@@ -17,7 +17,7 @@ idf.py set-target <chip_name>
 
 ### Hardware Required
 
-* A development board with ESP32-C3 SoC and ESP32-S3 and BLE5.0 supported chips (e.g., ESP32-C3-DevKitC, etc.)
+* A development board with ESP32-C3 SoC,ESP32-S3/ESP32-H2/ESP32-C2 SoC and BLE5.0 supported chips (e.g., ESP32-C3-DevKitC, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.

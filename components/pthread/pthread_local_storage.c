@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <errno.h>
 #include <pthread.h>
 #include <string.h>
@@ -150,7 +142,7 @@ static void pthread_local_storage_thread_deleted_callback(int index, void *v_tls
     free(tls);
 }
 
-#if defined(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP && !CONFIG_FREERTOS_SMP // IDF-4955
 /* Called from FreeRTOS task delete hook */
 void pthread_local_storage_cleanup(TaskHandle_t task)
 {
@@ -171,7 +163,7 @@ void __wrap_vPortCleanUpTCB(void *tcb)
     pthread_local_storage_cleanup(tcb);
     __real_vPortCleanUpTCB(tcb);
 }
-#endif
+#endif  // CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP && !CONFIG_FREERTOS_SMP
 
 /* this function called from pthread_task_func for "early" cleanup of TLS in a pthread */
 void pthread_internal_local_storage_destructor_callback(void)
@@ -182,14 +174,14 @@ void pthread_internal_local_storage_destructor_callback(void)
         /* remove the thread-local-storage pointer to avoid the idle task cleanup
            calling it again...
         */
-#if defined(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP && !CONFIG_FREERTOS_SMP // IDF-4955
         vTaskSetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX, NULL);
 #else
         vTaskSetThreadLocalStoragePointerAndDelCallback(NULL,
                                                         PTHREAD_TLS_INDEX,
                                                         NULL,
                                                         NULL);
-#endif
+#endif // CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP && !CONFIG_FREERTOS_SMP
     }
 }
 

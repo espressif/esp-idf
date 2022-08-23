@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 """
 Test script for unit test case.
@@ -307,7 +296,20 @@ def run_unit_test_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log('Running unit test for config: ' + ut_config, 'O')
-        dut = env.get_dut('unit-test-app', app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
+
+        # Get the console baudrate from the sdkconfig
+        _app = ttfw_idf.UT(app_path=UT_APP_PATH, config_name=ut_config, target=env.default_dut_cls.TARGET)
+        baud = _app.get_sdkconfig_config_value('CONFIG_ESP_CONSOLE_UART_BAUDRATE')
+        if baud is None:
+            baud = 115200
+            Utility.console_log('Can\'t find console baudrate in sdkconfig, use 115200 as default')
+        else:
+            baud = int(baud, 10) if isinstance(baud, str) else baud
+            Utility.console_log('Console baudrate is {}'.format(baud))
+
+        # Get the DUT with specified baudrate
+        dut = env.get_dut('unit-test-app', app_path=UT_APP_PATH, app_config_name=ut_config,
+                          allow_dut_exception=True, baudrate=baud)
         if len(case_config[ut_config]) > 0:
             replace_app_bin(dut, 'unit-test-app', case_config[ut_config][0].get('app_bin'))
         dut.start_app()

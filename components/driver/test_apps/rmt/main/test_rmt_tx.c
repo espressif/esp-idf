@@ -160,7 +160,7 @@ TEST_CASE("rmt_ping_pong_trans_with_dma", "[rmt]")
 #endif
 
 TEST_RMT_CALLBACK_ATTR
-static bool test_rmt_tx_done_cb_check_event_data(rmt_channel_handle_t channel, rmt_tx_done_event_data_t *edata, void *user_data)
+static bool test_rmt_tx_done_cb_check_event_data(rmt_channel_handle_t channel, const rmt_tx_done_event_data_t *edata, void *user_data)
 {
     uint32_t *p_expected_encoded_size = (uint32_t *)user_data;
     TEST_ASSERT_EQUAL(*p_expected_encoded_size, edata->num_symbols);
@@ -237,7 +237,7 @@ TEST_CASE("rmt_trans_done_event_callback_with_dma", "[rmt]")
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
 
 TEST_RMT_CALLBACK_ATTR
-static bool test_rmt_loop_done_cb_check_event_data(rmt_channel_handle_t channel, rmt_tx_done_event_data_t *edata, void *user_data)
+static bool test_rmt_loop_done_cb_check_event_data(rmt_channel_handle_t channel, const rmt_tx_done_event_data_t *edata, void *user_data)
 {
     uint32_t *p_expected_encoded_size = (uint32_t *)user_data;
     TEST_ASSERT_EQUAL(*p_expected_encoded_size, edata->num_symbols);
@@ -454,7 +454,7 @@ TEST_CASE("rmt_tx_nec_carrier_with_dma", "[rmt]")
 #endif
 
 TEST_RMT_CALLBACK_ATTR
-static bool test_rmt_tx_done_cb_record_time(rmt_channel_handle_t channel, rmt_tx_done_event_data_t *edata, void *user_data)
+static bool test_rmt_tx_done_cb_record_time(rmt_channel_handle_t channel, const rmt_tx_done_event_data_t *edata, void *user_data)
 {
     int64_t *record_time = (int64_t *)user_data;
     *record_time = esp_timer_get_time();

@@ -4,8 +4,6 @@ idf_component_register(SRCS "esp_mqtt_cxx.cpp"
                     INCLUDE_DIRS "include"
                     )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE "-std=gnu++17")
-
 if(TEST_BUILD)
     message(STATUS "Test build")
     idf_component_get_property(mqtt_dir mqtt COMPONENT_DIR)
@@ -23,3 +21,4 @@ else()
     idf_component_get_property(experimental_cpp_component_lib experimental_cpp_component COMPONENT_LIB)
     target_link_libraries(${COMPONENT_LIB} PUBLIC ${log_lib} ${mqtt_lib} ${experimental_cpp_component_lib})
 endif()
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

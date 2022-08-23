@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # WPA2 Enterprise Example
 
 This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption. The example does the following steps:
@@ -46,9 +49,9 @@ idf.py -p PORT flash monitor
   mkdir demoCA/private
   sh -c "echo '01' > ./demoCA/serial"
   touch ./demoCA/index.txt
-  touch xpextensions 
+  touch xpextensions
 
-     add following lines in xpextensions file 
+     add following lines in xpextensions file
 
       [ xpclient_ext ]
       extendedKeyUsage = 1.3.6.1.5.5.7.3.2
@@ -79,7 +82,7 @@ idf.py -p PORT flash monitor
   openssl pkcs12 -in client.p12 -out client.pem
   openssl pkcs12 -in server.p12 -out server.pem
 
-   
+
 
 ### Example output
 

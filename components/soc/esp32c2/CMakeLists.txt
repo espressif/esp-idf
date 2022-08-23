@@ -8,6 +8,7 @@ set(srcs
     "ledc_periph.c"
     "i2c_periph.c"
     "uart_periph.c"
+    "temperature_sensor_periph.c"
     "timer_periph.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

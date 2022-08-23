@@ -314,7 +314,7 @@ typedef union {
 } systimer_date_reg_t;
 
 
-typedef struct {
+typedef struct systimer_dev_t {
     volatile systimer_conf_reg_t conf;
     volatile systimer_unit_op_reg_t unit_op[2];
     volatile systimer_unit_load_val_reg_t unit_load_val[2];

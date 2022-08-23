@@ -48,17 +48,14 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
 {
     esp_err_t ret = ESP_OK;
 
-#if CONFIG_IDF_TARGET_ESP32S3
-    ESP_LOGE(TAG, "ULP temporarily unsupported on ESP32-S3, running sleep + ULP risks causing permanent damage to chip");
-    abort();
-// Fix in-progress: DIG-160
-#endif //CONFIG_IDF_TARGET_ESP32S3
 
 #if CONFIG_IDF_TARGET_ESP32S2
-    /* Set RTC_CNTL_COCPU_SHUT_RESET_EN to make sure COCPU is reset after halt. */
+    /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
+    esp_rom_delay_us(20);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
-    /* The coprocessor cpu trap signal doesnt have a stable reset value,
+     /* The coprocessor cpu trap signal doesnt have a stable reset value,
        force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
 
@@ -75,14 +72,12 @@ esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
     ret = ulp_riscv_config_wakeup_source(cfg->wakeup_source);
 
 #elif CONFIG_IDF_TARGET_ESP32S3
-    /* The coprocessor cpu trap signal doesnt have a stable reset value,
-       force ULP-RISC-V clock on to stop RTC_COCPU_TRAP_TRIG_EN from waking the CPU*/
+    /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
     esp_rom_delay_us(20);
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
-
-    /* Set RTC_CNTL_COCPU_SHUT_RESET_EN to make sure COCPU is reset after halt. */
-    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
 
     /* Disable ULP timer */
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);

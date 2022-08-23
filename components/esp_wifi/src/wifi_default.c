@@ -134,7 +134,7 @@ static void wifi_default_action_sta_got_ip(void *arg, esp_event_base_t base, int
 /**
  * @brief Clear default handlers
  */
-esp_err_t _esp_wifi_clear_default_wifi_handlers(void)
+static esp_err_t clear_default_wifi_handlers(void)
 {
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_START, wifi_default_action_sta_start);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, wifi_default_action_sta_stop);
@@ -153,7 +153,7 @@ esp_err_t _esp_wifi_clear_default_wifi_handlers(void)
 /**
  * @brief Set default handlers
  */
-esp_err_t _esp_wifi_set_default_wifi_handlers(void)
+static esp_err_t set_default_wifi_handlers(void)
 {
     if (wifi_default_handlers_set) {
         return ESP_OK;
@@ -205,7 +205,7 @@ esp_err_t _esp_wifi_set_default_wifi_handlers(void)
     return ESP_OK;
 
 fail:
-    _esp_wifi_clear_default_wifi_handlers();
+    clear_default_wifi_handlers();
     return err;
 }
 
@@ -214,7 +214,7 @@ fail:
  */
 esp_err_t esp_wifi_set_default_wifi_sta_handlers(void)
 {
-    return _esp_wifi_set_default_wifi_handlers();
+    return set_default_wifi_handlers();
 }
 
 /**
@@ -222,7 +222,7 @@ esp_err_t esp_wifi_set_default_wifi_sta_handlers(void)
  */
 esp_err_t esp_wifi_set_default_wifi_ap_handlers(void)
 {
-    return _esp_wifi_set_default_wifi_handlers();
+    return set_default_wifi_handlers();
 }
 
 /**
@@ -246,7 +246,7 @@ esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif)
 
     if (i == MAX_WIFI_IFS) { // if all wifi default netifs are null
         ESP_LOGD(TAG, "Clearing wifi default handlers");
-        _esp_wifi_clear_default_wifi_handlers();
+        clear_default_wifi_handlers();
     }
     return disconnect_and_destroy(esp_netif);
 }

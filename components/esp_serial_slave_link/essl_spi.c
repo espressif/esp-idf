@@ -8,6 +8,7 @@
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_memory_utils.h"
 #include "driver/spi_master.h"
 #include "esp_private/periph_ctrl.h"
 #include "essl_internal.h"

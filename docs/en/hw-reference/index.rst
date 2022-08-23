@@ -1,5 +1,5 @@
 ************************************
-{IDF_TARGET_NAME} Hardware Reference
+Hardware Reference
 ************************************
 :link_to_translation:`zh_CN:[中文]`
 
@@ -22,5 +22,5 @@
     Espressif KiCad Library <https://github.com/espressif/kicad-libraries>
     ESP Product Selector <https://products.espressif.com/#/product-selector?names=>
     Regulatory Certificates <https://www.espressif.com/en/certificates?keys={IDF_TARGET_NAME}>
-    Chip Series Comparison <chip-series-comparison>
+    Chip Series Comparison <https://products.espressif.com/#/product-comparison>
     User Forum (Hardware) <https://esp32.com/viewforum.php?f=12>

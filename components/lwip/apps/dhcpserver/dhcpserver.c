@@ -17,7 +17,15 @@
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
 
-#if ESP_DHCP
+#if ESP_DHCPS
+
+#ifdef LWIP_HOOK_FILENAME
+#include LWIP_HOOK_FILENAME
+#endif
+
+#ifndef LWIP_HOOK_DHCPS_POST_APPEND_OPTS
+#define LWIP_HOOK_DHCPS_POST_APPEND_OPTS(netif, dhcps, state, pp_opts)
+#endif
 
 #define BOOTP_BROADCAST 0x8000
 
@@ -538,6 +546,7 @@ static void send_offer(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 
     end = add_msg_type(&m->options[4], DHCPOFFER);
     end = add_offer_options(dhcps, end);
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPOFFER, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -615,6 +624,7 @@ static void send_nak(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
     create_msg(dhcps, m);
 
     end = add_msg_type(&m->options[4], DHCPNAK);
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPNAK, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -691,6 +701,7 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 
     end = add_msg_type(&m->options[4], DHCPACK);
     end = add_offer_options(dhcps, end);
+    LWIP_HOOK_DHCPS_POST_APPEND_OPTS(dhcps->netif, dhcps, DHCPACK, &end)
     end = add_end(end);
 
     p = dhcps_pbuf_alloc(len);
@@ -1419,4 +1430,4 @@ err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver)
     }
     return ERR_ARG;
 }
-#endif // ESP_DHCP
+#endif // ESP_DHCPS

@@ -68,9 +68,7 @@ int wpa_ether_send(void *ctx, const u8 *dest, u16 proto,
     os_memcpy(eth->h_source, gWpaSm.own_addr, ETH_ALEN);
     eth->h_proto = host_to_be16(proto);
 
-    esp_wifi_internal_tx(WIFI_IF_STA, buffer, sizeof(struct l2_ethhdr) + data_len);
-
-    return ESP_OK;
+    return esp_wifi_internal_tx(WIFI_IF_STA, buffer, sizeof(struct l2_ethhdr) + data_len);
 }
 
 int hostapd_send_eapol(const u8 *source, const u8 *sta_addr,

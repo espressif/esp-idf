@@ -1,19 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+/* ADC/DAC are not supported in the new I2S driver, but still available in the legacy I2S driver for backward compatibility
+ * Please turn to the dedicated ADC/DAC driver instead */
+#pragma message("ADC/DAC on ESP32 will no longer supported via I2S driver")
+
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_partition.h"
 #include "driver/i2s.h"
-#include "driver/adc.h"
 #include "audio_example_file.h"
-#include "esp_adc_cal.h"
 #include "esp_rom_sys.h"
+#include "driver/adc.h"
+#include "esp_adc_cal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
-
 static const char* TAG = "ad/da";
 #define V_REF   1100
 #define ADC1_TEST_CHANNEL (ADC1_CHANNEL_7)
@@ -92,7 +101,7 @@ void example_erase_flash(void)
     data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
             ESP_PARTITION_SUBTYPE_DATA_FAT, PARTITION_NAME);
     if (data_partition != NULL) {
-        printf("partiton addr: 0x%08x; size: %d; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
+        printf("partiton addr: 0x%08"PRIx32"; size: %"PRIu32"; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
     }
     printf("Erase size: %d Bytes\n", FLASH_ERASE_SIZE);
     ESP_ERROR_CHECK(esp_partition_erase_range(data_partition, 0, FLASH_ERASE_SIZE));
@@ -200,7 +209,7 @@ void example_i2s_adc_dac(void*arg)
     data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
             ESP_PARTITION_SUBTYPE_DATA_FAT, PARTITION_NAME);
     if (data_partition != NULL) {
-        printf("partiton addr: 0x%08x; size: %d; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
+        printf("partiton addr: 0x%08"PRIx32"; size: %"PRIu32"; label: %s\n", data_partition->address, data_partition->size, data_partition->label);
     } else {
         ESP_LOGE(TAG, "Partition error: can't find partition name: %s\n", PARTITION_NAME);
         vTaskDelete(NULL);
@@ -271,15 +280,15 @@ void example_i2s_adc_dac(void*arg)
 
 void adc_read_task(void* arg)
 {
-    adc1_config_width(ADC_WIDTH_12Bit);
-    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_DB_11);
     esp_adc_cal_characteristics_t characteristics;
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, &characteristics);
     while(1) {
         uint32_t voltage;
-        esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
-        ESP_LOGI(TAG, "%d mV", voltage);
         vTaskDelay(200 / portTICK_PERIOD_MS);
+        esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
+        ESP_LOGI(TAG, "%"PRIu32" mV", voltage);
     }
 }
 

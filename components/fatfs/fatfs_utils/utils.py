@@ -42,7 +42,7 @@ FATFS_SECONDS_GRANULARITY: int = 2
 LONG_NAMES_ENCODING: str = 'utf-16'
 SHORT_NAMES_ENCODING: str = 'utf-8'
 
-ALLOWED_SECTOR_SIZES: List[int] = [512, 1024, 2048, 4096]
+ALLOWED_SECTOR_SIZES: List[int] = [4096]
 ALLOWED_SECTORS_PER_CLUSTER: List[int] = [1, 2, 4, 8, 16, 32, 64, 128]
 
 
@@ -68,6 +68,17 @@ def get_fatfs_type(clusters_count: int) -> int:
     if clusters_count <= FAT16_MAX_CLUSTERS:
         return FAT16
     return FAT32
+
+
+def get_fat_sectors_count(clusters_count: int, sector_size: int) -> int:
+    fatfs_type_ = get_fatfs_type(clusters_count)
+    if fatfs_type_ == FAT32:
+        raise NotImplementedError('FAT32 is not supported!')
+    # number of byte halves
+    cluster_s: int = fatfs_type_ // 4
+    fat_size_bytes: int = (
+        clusters_count * 2 + cluster_s) if fatfs_type_ == FAT16 else (clusters_count * 3 + 1) // 2 + cluster_s
+    return (fat_size_bytes + sector_size - 1) // sector_size
 
 
 def required_clusters_count(cluster_size: int, content: bytes) -> int:
@@ -181,7 +192,7 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--fat_type',
                         default=0,
                         type=int,
-                        choices=[12, 16, 0],
+                        choices=[FAT12, FAT16, 0],
                         help="""
                         Type of fat. Select 12 for fat12, 16 for fat16. Don't set, or set to 0 for automatic
                         calculation using cluster size and partition size.
@@ -253,7 +264,6 @@ class FATDefaults:
     FAT_TABLES_COUNT: int = 1
     SECTORS_PER_CLUSTER: int = 1
     SECTOR_SIZE: int = 0x1000
-    SECTORS_PER_FAT: int = 1
     HIDDEN_SECTORS: int = 0
     ENTRY_SIZE: int = 32
     NUM_HEADS: int = 0xff
@@ -261,7 +271,7 @@ class FATDefaults:
     SEC_PER_TRACK: int = 0x3f
     VOLUME_LABEL: str = 'Espressif'
     FILE_SYS_TYPE: str = 'FAT'
-    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory
+    ROOT_ENTRIES_COUNT: int = 512  # number of entries in the root directory, recommended 512
     MEDIA_TYPE: int = 0xf8
     SIGNATURE_WORD: bytes = b'\x55\xAA'
 
@@ -269,3 +279,5 @@ class FATDefaults:
     VERSION: int = 2
     TEMP_BUFFER_SIZE: int = 32
     UPDATE_RATE: int = 16
+    WR_SIZE: int = 16
+    WL_SECTOR_SIZE: int = 4096

@@ -1,0 +1,11 @@
+# Python package requirements for CI in ESP-IDF.
+# This feature can be enabled by running "install.{sh,bat,ps1,fish} --enable-ci"
+
+# ci
+coverage
+idf-build-apps
+jsonschema
+junit_xml
+python-gitlab
+pyyaml
+SimpleWebSocketServer

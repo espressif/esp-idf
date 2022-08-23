@@ -5,9 +5,11 @@
  */
 
 #include <string.h>
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_app_trace.h"
 #include "esp_app_trace_port.h"
+#include "esp_private/startup_internal.h"
 
 #ifdef CONFIG_APPTRACE_DEST_UART0
 #define ESP_APPTRACE_DEST_UART_NUM 0
@@ -44,7 +46,7 @@ esp_err_t esp_apptrace_init(void)
     void *hw_data = NULL;
 
     // 'esp_apptrace_init()' is called on every core, so ensure to do main initialization only once
-    if (cpu_hal_get_core_id() == 0) {
+    if (esp_cpu_get_core_id() == 0) {
         memset(&s_trace_channels, 0, sizeof(s_trace_channels));
         hw = esp_apptrace_jtag_hw_get(&hw_data);
         ESP_APPTRACE_LOGD("HW interface %p", hw);
@@ -73,6 +75,11 @@ esp_err_t esp_apptrace_init(void)
     }
 
     return ESP_OK;
+}
+
+ESP_SYSTEM_INIT_FN(esp_apptrace_init, ESP_SYSTEM_INIT_ALL_CORES, 115)
+{
+    return esp_apptrace_init();
 }
 
 void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size)

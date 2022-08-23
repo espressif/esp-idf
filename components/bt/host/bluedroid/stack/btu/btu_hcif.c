@@ -43,6 +43,7 @@
 #include "common/bt_trace.h"
 
 #include "osi/thread.h"
+#include "osi/pkt_queue.h"
 //#include "osi/mutex.h"
 // TODO(zachoverflow): remove this horrible hack
 #include "stack/btu.h"
@@ -124,8 +125,6 @@ static void btu_hcif_ssr_evt_dump (UINT8 *p, UINT16 evt_len);
 
 #if BLE_INCLUDED == TRUE
 static void btu_ble_ll_conn_complete_evt (UINT8 *p, UINT16 evt_len);
-static void btu_ble_process_adv_pkt (UINT8 *p);
-static void btu_ble_process_adv_dis(UINT8 *p);
 static void btu_ble_read_remote_feat_evt (UINT8 *p);
 static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len);
 static void btu_ble_ll_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handle);
@@ -355,15 +354,15 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 #if (BLE_INCLUDED == TRUE)
     case HCI_BLE_EVENT:
         STREAM_TO_UINT8  (ble_sub_code, p);
-
+        hci_evt_len--;
         HCI_TRACE_DEBUG("BLE HCI(id=%d) event = 0x%02x)", hci_evt_code,  ble_sub_code);
 
         switch (ble_sub_code) {
         case HCI_BLE_ADV_PKT_RPT_EVT: /* result of inquiry */
-            btu_ble_process_adv_pkt(p);
-            break;
         case HCI_BLE_ADV_DISCARD_REPORT_EVT:
-            btu_ble_process_adv_dis(p);
+        case HCI_BLE_DIRECT_ADV_EVT:
+            // These three events are directed to another specialized processing path
+            HCI_TRACE_ERROR("Unexpected HCI BLE event = 0x%02x", ble_sub_code);
             break;
         case HCI_BLE_CONN_COMPLETE_EVT:
             btu_ble_ll_conn_complete_evt(p, hci_evt_len);
@@ -453,15 +452,21 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
 
     STREAM_TO_UINT16(opcode, stream);
 
-    // Eww...horrible hackery here
-    /* If command was a VSC, then extract command_complete callback */
-    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC
+    assert (p_buf->layer_specific == HCI_CMD_BUF_TYPE_METADATA);
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p_buf);
+    metadata->command_complete_cb = btu_hcif_command_complete_evt;
+    metadata->command_status_cb = btu_hcif_command_status_evt;
+    metadata->opcode = opcode;
+
+    vsc_callback = metadata->context;
+    /* If command is not a VSC, then the context field should be empty */
+    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) != HCI_GRP_VENDOR_SPECIFIC
 #if BLE_INCLUDED == TRUE
-            || (opcode == HCI_BLE_RAND)
-            || (opcode == HCI_BLE_ENCRYPT)
+            && (opcode != HCI_BLE_RAND)
+            && (opcode != HCI_BLE_ENCRYPT)
 #endif
-       ) {
-        vsc_callback = *((void **)(p_buf + 1));
+        ) {
+        assert (vsc_callback == NULL);
     }
 
     hci_layer_get_interface()->transmit_command(
@@ -474,6 +479,7 @@ void btu_hcif_send_cmd (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_buf)
     btu_check_bt_sleep ();
 #endif
 }
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 {
@@ -494,15 +500,22 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
 
     sync_info->opcode = opcode;
 
-    // Eww...horrible hackery here
-    /* If command was a VSC, then extract command_complete callback */
-    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC
+    assert (p_buf->layer_specific == HCI_CMD_BUF_TYPE_METADATA);
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(p_buf);
+    metadata->command_complete_cb = btu_hcif_command_complete_evt;
+    metadata->command_status_cb = btu_hcif_command_status_evt;
+    metadata->command_free_cb = NULL;
+    metadata->opcode = opcode;
+
+    vsc_callback = metadata->context;
+    /* If command is not a VSC, then the context field should be empty */
+    if ((opcode & HCI_GRP_VENDOR_SPECIFIC) != HCI_GRP_VENDOR_SPECIFIC
 #if BLE_INCLUDED == TRUE
-            || (opcode == HCI_BLE_RAND)
-            || (opcode == HCI_BLE_ENCRYPT)
+            && (opcode != HCI_BLE_RAND)
+            && (opcode != HCI_BLE_ENCRYPT)
 #endif
-       ) {
-        vsc_callback = *((void **)(p_buf + 1));
+        ) {
+        assert (vsc_callback == NULL);
     }
 
     hci_layer_get_interface()->transmit_command(
@@ -1436,7 +1449,11 @@ static void btu_hcif_command_status_evt_on_task(BT_HDR *event)
         stream,
         hack->context);
 
-    osi_free(hack->command);
+    // check the HCI command integrity: opcode
+    hci_cmd_metadata_t *metadata = HCI_GET_CMD_METAMSG(hack->command);
+    assert(metadata->opcode == opcode);
+
+    HCI_FREE_CMD_BUF(hack->command);
     osi_free(event);
 }
 
@@ -2015,18 +2032,6 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt (UINT8 *p)
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-static void btu_ble_process_adv_pkt (UINT8 *p)
-{
-    HCI_TRACE_DEBUG("btu_ble_process_adv_pkt\n");
-
-    btm_ble_process_adv_pkt(p);
-}
-
-static void btu_ble_process_adv_dis(UINT8 *p)
-{
-    btm_ble_process_adv_discard_evt(p);
-}
-
 static void btu_ble_ll_conn_complete_evt ( UINT8 *p, UINT16 evt_len)
 {
     btm_ble_conn_complete(p, evt_len, FALSE);
@@ -2208,7 +2213,12 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
         STREAM_TO_UINT8(ext_adv_report.dir_addr_type, p);
         STREAM_TO_BDADDR(ext_adv_report.dir_addr, p);
         STREAM_TO_UINT8(ext_adv_report.adv_data_len, p);
-        ext_adv_report.adv_data = p;
+        if (ext_adv_report.adv_data_len) {
+            ext_adv_report.adv_data = p;
+        } else {
+            ext_adv_report.adv_data = NULL;
+        }
+
         btm_ble_ext_adv_report_evt(&ext_adv_report);
         p += ext_adv_report.adv_data_len;
     }
@@ -2247,8 +2257,8 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len)
         return;
     }
 
-    if (evt_len < sizeof(tBTM_PERIOD_ADV_REPORT)) {
-        HCI_TRACE_ERROR("%s, Invalid params, the adv len is to short.", __func__);
+    if (evt_len < MIN_BLE_PERIODIC_ADV_REPORT_LEN) {
+        HCI_TRACE_ERROR("%s, Invalid params, the adv len is too short.", __func__);
         return;
     }
 
@@ -2259,12 +2269,16 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len)
     STREAM_TO_UINT8(adv_report.data_status, p);
     STREAM_TO_UINT8(adv_report.data_length, p);
 
-    if (evt_len <= adv_report.data_length) {
+    if ((evt_len - MIN_BLE_PERIODIC_ADV_REPORT_LEN) != adv_report.data_length) {
         HCI_TRACE_ERROR("%s, Invalid ev_len = %d is less than adv len = %d", __func__, evt_len, adv_report.data_length);
         return;
     }
 
-    adv_report.data = p;
+    if (adv_report.data_length) {
+        adv_report.data = p;
+    } else {
+        adv_report.data = NULL;
+    }
 
     btm_ble_periodic_adv_report_evt(&adv_report);
 

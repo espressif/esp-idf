@@ -18,7 +18,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
-#include "hal/i2s_types_priv.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,8 @@ extern "C" {
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
-#define I2S_LL_BASE_CLK                (2*APB_CLK_FREQ)
+// [clk_tree] TODO: replace the following switch table by clk_tree API
+#define I2S_LL_BASE_CLK                (96*1000000)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
@@ -201,7 +202,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock,  ESP32-H2 only support `I2S_CLK_D2CLK`
+ * @param src I2S source clock, ESP32-H2 only support `I2S_CLK_SRC_PLL_96M` for now
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
@@ -217,6 +218,40 @@ static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 {
     hw->tx_conf1.tx_bck_div_num = val - 1;
+}
+
+/**
+ * @brief Set I2S tx raw clock division
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param x  div x
+ * @param y  div y
+ * @param z  div z
+ * @param yn1 yn1
+ */
+static inline void i2s_ll_tx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
+{
+    hw->tx_clkm_div_conf.tx_clkm_div_x = x;
+    hw->tx_clkm_div_conf.tx_clkm_div_y = y;
+    hw->tx_clkm_div_conf.tx_clkm_div_z = z;
+    hw->tx_clkm_div_conf.tx_clkm_div_yn1 = yn1;
+}
+
+/**
+ * @brief Set I2S rx raw clock division
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param x  div x
+ * @param y  div y
+ * @param z  div z
+ * @param yn1 yn1
+ */
+static inline void i2s_ll_rx_set_raw_clk_div(i2s_dev_t *hw, uint32_t x, uint32_t y, uint32_t z, uint32_t yn1)
+{
+    hw->rx_clkm_div_conf.rx_clkm_div_x = x;
+    hw->rx_clkm_div_conf.rx_clkm_div_y = y;
+    hw->rx_clkm_div_conf.rx_clkm_div_z = z;
+    hw->rx_clkm_div_conf.rx_clkm_div_yn1 = yn1;
 }
 
 /**
@@ -273,7 +308,7 @@ finish:
             hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 1;
         } else {
             hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / numerator - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % numerator + 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % numerator;
             hw->tx_clkm_div_conf.tx_clkm_div_z = numerator;
             hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
         }
@@ -347,7 +382,7 @@ finish:
             hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 1;
         } else {
             hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / numerator - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % numerator + 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % numerator;
             hw->rx_clkm_div_conf.rx_clkm_div_z = numerator;
             hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
         }
@@ -556,23 +591,23 @@ static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
  * @brief Set I2S tx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_sel select slot to send data
+ * @param slot_mask select slot to send data
  */
-static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+static inline void i2s_ll_tx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
 {
     /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
      * Otherwise always enable the first two slots */
     hw->tx_tdm_ctrl.tx_tdm_tot_chan_num = 1;  // tx_tdm_tot_chan_num = 2 slots - 1 = 1
     hw->tx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
-    switch (slot_sel)
+    switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_LEFT:
-        hw->tx_tdm_ctrl.val |= 0x02;
-        break;
-    case I2S_STD_SLOT_ONLY_RIGHT:
+    case I2S_STD_SLOT_LEFT:
         hw->tx_tdm_ctrl.val |= 0x01;
         break;
-    case I2S_STD_SLOT_LEFT_RIGHT:
+    case I2S_STD_SLOT_RIGHT:
+        hw->tx_tdm_ctrl.val |= 0x02;
+        break;
+    case I2S_STD_SLOT_BOTH:
         hw->tx_tdm_ctrl.val |= 0x03;
         break;
     default:
@@ -584,23 +619,23 @@ static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_
  * @brief Set I2S rx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_sel select slot to receive data
+ * @param slot_mask select slot to receive data
  */
-static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+static inline void i2s_ll_rx_select_std_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
 {
     /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
      * Otherwise always enable the first two slots */
     hw->rx_tdm_ctrl.rx_tdm_tot_chan_num = 1;  // rx_tdm_tot_chan_num = 2 slots - 1 = 1
     hw->rx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
-    switch (slot_sel)
+    switch (slot_mask)
     {
-    case I2S_STD_SLOT_ONLY_LEFT:
-        hw->rx_tdm_ctrl.val |= 0x02;
-        break;
-    case I2S_STD_SLOT_ONLY_RIGHT:
+    case I2S_STD_SLOT_LEFT:
         hw->rx_tdm_ctrl.val |= 0x01;
         break;
-    case I2S_STD_SLOT_LEFT_RIGHT:
+    case I2S_STD_SLOT_RIGHT:
+        hw->rx_tdm_ctrl.val |= 0x02;
+        break;
+    case I2S_STD_SLOT_BOTH:
         hw->rx_tdm_ctrl.val |= 0x03;
         break;
     default:
@@ -608,6 +643,28 @@ static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_
     }
 }
 
+/**
+ * @brief PDM slot mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mod Channel mode
+ *            while tx_ws_idle_pol = 0:
+ *            0: stereo
+ *            1: Both slots transmit left
+ *            2: Both slots transmit right
+ *            3: Left transmits `conf_single_data` right transmits data
+ *            4: Right transmits `conf_single_data` left transmits data
+ *            while tx_ws_idle_pol = 1:
+              0: stereo
+ *            1: Both slots transmit right
+ *            2: Both slots transmit left
+ *            3: Right transmits `conf_single_data` left transmits data
+ *            4: Left transmits `conf_single_data` right transmits data
+ */
+static inline void i2s_ll_tx_set_pdm_chan_mod(i2s_dev_t *hw, uint32_t mod)
+{
+    hw->tx_conf.tx_chan_mod = mod;
+}
 
 /**
  * @brief Set TX WS signal pol level
@@ -772,18 +829,6 @@ static inline void i2s_ll_tx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t pa
 static inline void i2s_ll_tx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
 {
     hw->tx_pcm2pdm_conf.tx_pdm_hp_bypass = !enable;
-}
-
-/**
- * @brief Enable I2S TX PDM sigma-delta codec
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param dither I2S TX PDM sigmadelta dither value
- */
-static inline void i2s_ll_tx_enable_pdm_sd_codec(i2s_dev_t *hw, bool enable)
-{
-    hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = enable;
-    hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = enable;
 }
 
 /**
@@ -1021,6 +1066,75 @@ static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
 {
     hw->rx_conf.rx_mono = mono_ena;
     hw->rx_conf.rx_mono_fst_vld = mono_ena;
+}
+
+/**
+ * @brief PDM TX DMA data take mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param is_mono   The DMA data only has one slot (mono) or contains two slots (stereo)
+ * @param is_fst_valid  Whether take the DMA data at the first half period
+ *                      Only take effet when 'is_mono' is true
+ */
+static inline void i2s_ll_tx_pdm_dma_take_mode(i2s_dev_t *hw, bool is_mono, bool is_fst_valid)
+{
+    hw->tx_conf.tx_mono = is_mono;
+    hw->tx_conf.tx_mono_fst_vld = is_fst_valid;
+}
+
+/**
+ * @brief PDM TX slot mode
+ * @note     Mode     Left Slot       Right Slot      Chan Mode       WS Pol
+ *          -----------------------------------------------------------------
+ *           Stereo   Left            Right           0               x
+ *          -----------------------------------------------------------------
+ *           Mono     Left            Left            1               0
+ *           Mono     Right           Right           2               0
+ *           Mono     Single          Right           3               0
+ *           Mono     Left            Single          4               0
+ *          -----------------------------------------------------------------
+ *           Mono     Right           Right           1               1
+ *           Mono     Left            Left            2               1
+ *           Mono     Left            Single          3               1
+ *           Mono     Single          Right           4               1
+ * @note  The 'Single' above means always sending the value of `conf_single_data` reg
+ *        The default value of `conf_single_data` reg is '0', it is not public for now
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param is_mono   The DMA data only has one slot (mono) or contains two slots (stereo)
+ * @param is_copy   Whether the un-selected slot copies the data from the selected one
+ *                  If not, the un-selected slot will transmit the data from 'conf_single_data'
+ * @param mask      The slot mask to selet the slot
+ */
+static inline void i2s_ll_tx_pdm_slot_mode(i2s_dev_t *hw, bool is_mono, bool is_copy, i2s_pdm_slot_mask_t mask)
+{
+    if (is_mono) {
+        /* The default tx_ws_idle_pol is false */
+        if (is_copy) {
+            hw->tx_conf.tx_chan_mod = mask == I2S_PDM_SLOT_LEFT ? 1 : 2;
+        } else {
+            hw->tx_conf.tx_chan_mod = mask == I2S_PDM_SLOT_LEFT ? 4 : 3;
+        }
+    } else {
+        hw->tx_conf.tx_chan_mod = 0;
+    }
+}
+
+/**
+ * @brief PDM TX line mode
+ * @note    Mode         DAC Mode        2 lines output
+ *          -------------------------------------------
+ *          PDM codec    0               1
+ *          DAC 1-line   1               0
+ *          DAC 2-line   1               1
+ *
+ * @param hw    Peripheral I2S hardware instance address.
+ * @param line_mode    PDM TX line mode
+ */
+static inline void i2s_ll_tx_pdm_line_mode(i2s_dev_t *hw, i2s_pdm_tx_line_mode_t line_mode)
+{
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_mode_en = line_mode > I2S_PDM_TX_ONE_LINE_CODEC;
+    hw->tx_pcm2pdm_conf.tx_pdm_dac_2out_en = line_mode != I2S_PDM_TX_ONE_LINE_DAC;
 }
 
 #ifdef __cplusplus

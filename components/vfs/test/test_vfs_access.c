@@ -14,6 +14,7 @@
 #include "esp_vfs_dev.h"
 #include "esp_vfs_fat.h"
 #include "wear_levelling.h"
+#include "test_utils.h"
 
 static wl_handle_t test_wl_handle;
 
@@ -88,6 +89,8 @@ static inline void test_fatfs_delete_file(const char *name)
     TEST_ASSERT_EQUAL(ret, 0);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5139
 TEST_CASE("Can use access() for FATFS", "[vfs][fatfs][wear_levelling]")
 {
     const char *path = "/spiflash/access.txt";
@@ -127,3 +130,4 @@ TEST_CASE("Can use access() for FATFS", "[vfs][fatfs][wear_levelling]")
 
     test_spi_flash_teardown();
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

@@ -196,6 +196,18 @@ esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode);
 esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 
 /**
+ * @brief Get the frequency of a clock source for the UART
+ *
+ * @param sclk Clock source
+ * @param[out] out_freq_hz Output of frequency, in Hz
+ *
+ * @return
+ *  - ESP_ERR_INVALID_ARG: if the clock source is not supported
+ *  - otherwise ESP_OK
+ */
+esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz);
+
+/**
  * @brief Set UART baud rate.
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
@@ -565,6 +577,18 @@ esp_err_t uart_flush_input(uart_port_t uart_num);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
+
+/**
+ * @brief   UART get TX ring buffer free space size
+ *
+ * @param   uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param   size Pointer of size_t to accept the free space size
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t uart_get_tx_buffer_free_size(uart_port_t uart_num, size_t *size);
 
 /**
  * @brief   UART disable pattern detect function.

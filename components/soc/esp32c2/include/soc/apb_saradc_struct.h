@@ -684,6 +684,7 @@ typedef struct {
     volatile apb_saradc_apb_ctrl_date_reg_t saradc_apb_ctrl_date;
 } apb_dev_t;
 
+extern apb_dev_t APB_SARADC;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(apb_dev_t) == 0x400, "Invalid size of apb_dev_t structure");

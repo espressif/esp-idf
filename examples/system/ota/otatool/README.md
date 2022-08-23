@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # OTA Tool Example
 
 This example demonstrates common operations the OTA tool [otatool.py](../../../../components/app_update/otatool.py) allows the user to perform:

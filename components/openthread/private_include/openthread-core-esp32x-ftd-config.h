@@ -150,6 +150,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTING_NAT64_ENABLE
+ *
+ * Define to 1 to enable Border Routing NAT64 support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_NAT64_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_NAT64_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_ECDSA_ENABLE
  *
  * Define to 1 to enable ECDSA support.

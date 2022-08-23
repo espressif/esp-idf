@@ -58,6 +58,7 @@
 // defined correctly
 #define SOC_BROWNOUT_RESET_SUPPORTED    "Not determined"
 #define SOC_TWAI_BRP_DIV_SUPPORTED      "Not determined"
+#define SOC_DPORT_WORKAROUND            "Not determined"
 #endif
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
@@ -68,40 +69,42 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
-#define SOC_BLUEDROID_SUPPORTED     1
-#define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
 #define SOC_EMAC_SUPPORTED          1
-#define SOC_CPU_CORES_NUM           2
 #define SOC_ULP_SUPPORTED           1
 #define SOC_CCOMP_TIMER_SUPPORTED   1
-#define SOC_RTC_FAST_MEM_SUPPORTED        1
-#define SOC_RTC_SLOW_MEM_SUPPORTED        1
+#define SOC_RTC_FAST_MEM_SUPPORTED  1
+#define SOC_RTC_SLOW_MEM_SUPPORTED  1
+#define SOC_RTC_MEM_SUPPORTED       1
 #define SOC_I2S_SUPPORTED           1
 #define SOC_RMT_SUPPORTED           1
-#define SOC_SIGMADELTA_SUPPORTED    1
+#define SOC_SDM_SUPPORTED           1
 #define SOC_SUPPORT_COEXISTENCE     1
 #define SOC_AES_SUPPORTED           1
 #define SOC_MPI_SUPPORTED           1
 #define SOC_SHA_SUPPORTED           1
 #define SOC_FLASH_ENC_SUPPORTED     1
 #define SOC_SECURE_BOOT_SUPPORTED   1
+#define SOC_TOUCH_SENSOR_SUPPORTED  1
+
+#if SOC_CAPS_ECO_VER < 2
+#define SOC_DPORT_WORKAROUND                   1
+#endif // SOC_CAPS_ECO_VER < 2
+#define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
+
+/*-------------------------- XTAL CAPS ---------------------------------------*/
+#define SOC_XTAL_SUPPORT_26M            1
+#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_AUTO_DETECT    1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-/**
- * TO BE REMOVED
- * Check if adc support digital controller (DMA) mode.
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 0)
-
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
@@ -112,15 +115,15 @@
 #define SOC_ADC_PATT_LEN_MAX                    (16) //Two pattern table, each contains 16 items. Each item takes 1 byte. But only support ADC1 using DMA mode
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (9)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_DIGI_RESULT_BYTES               (2)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
-#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (2000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (20*1000)
 
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (9)
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 #define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
-
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #if SOC_CAPS_ECO_VER >= 1
@@ -131,12 +134,13 @@
 #define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
+#define SOC_CPU_CORES_NUM               2
+#define SOC_CPU_INTR_NUM                32
+#define SOC_CPU_HAS_FPU                 1
+
 #define SOC_CPU_BREAKPOINTS_NUM         2
 #define SOC_CPU_WATCHPOINTS_NUM         2
-
 #define SOC_CPU_WATCHPOINT_SIZE         64 // bytes
-
-#define SOC_CPU_HAS_FPU             1
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_PERIPH_NUM      2
@@ -217,7 +221,6 @@
 #define SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP   (1)    ///< The number of capture timers that each group has
 #define SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER (3)    ///< The number of capture channels that each capture timer has
 #define SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP    (3)    ///< The number of GPIO synchros that each group has
-#define SOC_MCPWM_BASE_CLK_HZ       (160000000ULL)  ///< Base Clock frequency of 160MHz
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines
@@ -249,9 +252,9 @@
 #define SOC_RTCIO_HOLD_SUPPORTED 1
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM            1U
-#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_GROUPS             1U
+#define SOC_SDM_CHANNELS_PER_GROUP 8
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED 1  //Support enabling MOSI and MISO phases together under Halfduplex mode
@@ -302,6 +305,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32 have 3 UART.
 #define SOC_UART_NUM                (3)
+#define SOC_UART_SUPPORT_APB_CLK    (1)         /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
@@ -377,6 +381,13 @@
 #define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
 
 /*-------------------------- WI-FI HARDWARE CAPS -------------------------------*/
-#define SOC_WIFI_HW_TSF                 (0)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM Support */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_HW_TSF                 (0)    /*!< Hardware TSF is not supported */
+#define SOC_WIFI_FTM_SUPPORT            (0)    /*!< FTM is not supported */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
+#define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */
+
+/*---------------------------------- Bluetooth CAPS ----------------------------------*/
+#define SOC_BLE_SUPPORTED               (1)    /*!< Support Bluetooth Low Energy hardware */
+#define SOC_BT_CLASSIC_SUPPORTED        (1)    /*!< Support Bluetooth Classic hardware */

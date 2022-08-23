@@ -9,10 +9,9 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
-#include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
-#include "hal/interrupt_controller_hal.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_cpu.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -49,7 +48,7 @@ volatile bool int_wdt_cpu1_ticked = false;
 static void IRAM_ATTR tick_hook(void)
 {
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
-    if (cpu_hal_get_core_id() != 0) {
+    if (esp_cpu_get_core_id() != 0) {
         int_wdt_cpu1_ticked = true;
     } else {
         // Only feed wdt if app cpu also ticked.
@@ -71,7 +70,7 @@ static void IRAM_ATTR tick_hook(void)
         }
     }
 #else // CONFIG_ESP_INT_WDT_CHECK_CPU1
-    if (cpu_hal_get_core_id() != 0) {
+    if (esp_cpu_get_core_id() != 0) {
         return;
     } else {
         // Todo: Check if there's a way to avoid reconfiguring the stages on each feed.
@@ -135,16 +134,16 @@ void esp_int_wdt_cpu_init(void)
 #if SOC_TIMER_GROUPS > 1
     assert((CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (portTICK_PERIOD_MS << 1)) && "Interrupt watchdog timeout needs to be at least twice the RTOS tick period!");
     // Register tick hook for current CPU to feed the INT WDT
-    esp_register_freertos_tick_hook_for_cpu(tick_hook, cpu_hal_get_core_id());
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, esp_cpu_get_core_id());
     /*
      * Register INT WDT interrupt for current CPU. We do this manually as the timeout interrupt should call an assembly
      * panic handler (see riscv/vector.S and xtensa_vectors.S).
      */
     esp_intr_disable_source(WDT_INT_NUM);
-    esp_rom_route_intr_matrix(cpu_hal_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+    esp_rom_route_intr_matrix(esp_cpu_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
 #if SOC_CPU_HAS_FLEXIBLE_INTC
-    interrupt_controller_hal_set_int_type(WDT_INT_NUM, INTR_TYPE_LEVEL);
-    interrupt_controller_hal_set_int_level(WDT_INT_NUM, SOC_INTERRUPT_LEVEL_MEDIUM);
+    esp_cpu_intr_set_type(WDT_INT_NUM, INTR_TYPE_LEVEL);
+    esp_cpu_intr_set_priority(WDT_INT_NUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 #endif
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /*

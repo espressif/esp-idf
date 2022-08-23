@@ -153,7 +153,7 @@ esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block)
     if (esp_efuse_read_field_bit(ESP_EFUSE_XTS_KEY_LENGTH_256)) {
         return ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY;
     }
-    return ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY;
+    return ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS;
 }
 
 
@@ -189,7 +189,7 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
     if (block < EFUSE_BLK_KEY0 || block >= EFUSE_BLK_KEY_MAX || key_size_bytes > 32 || purpose >= ESP_EFUSE_KEY_PURPOSE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
-    if ((purpose == ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2 || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY) && (key_size_bytes != 16)) {
+    if ((purpose == ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2 || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS) && (key_size_bytes != 16)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -202,9 +202,10 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
         ESP_EFUSE_CHK(esp_efuse_write_block(block, key, offset_in_bits, key_size_bytes * 8));
         if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY) {
             ESP_EFUSE_CHK(esp_efuse_set_key_purpose(block, purpose));
-        }
-        if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY) {
-            ESP_EFUSE_CHK(esp_efuse_set_key_dis_read(block));
+            ESP_EFUSE_CHK(esp_efuse_write_field_bit(ESP_EFUSE_RD_DIS_KEY0_LOW));
+            ESP_EFUSE_CHK(esp_efuse_write_field_bit(ESP_EFUSE_RD_DIS_KEY0_HI));
+        } else if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS) {
+            ESP_EFUSE_CHK(esp_efuse_write_field_bit(ESP_EFUSE_RD_DIS_KEY0_LOW));
         }
         ESP_EFUSE_CHK(esp_efuse_set_key_dis_write(block));
         return esp_efuse_batch_write_commit();
@@ -227,7 +228,7 @@ esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t key
     for (unsigned i_key = 0; i_key < number_of_keys; i_key++) {
         purpose = purposes[i_key];
         ESP_LOGI(TAG, "Writing EFUSE_BLK_KEY0 with purpose %d", purpose);
-        size_t key_size = (purpose == ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2 || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY) ? 16 : 32;
+        size_t key_size = (purpose == ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2 || purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY_DERIVED_FROM_128_EFUSE_BITS) ? 16 : 32;
         ESP_EFUSE_CHK(esp_efuse_write_key(EFUSE_BLK_KEY0, purpose, keys[i_key], key_size));
     }
     return esp_efuse_batch_write_commit();
@@ -237,7 +238,7 @@ err_exit:
     return err;
 }
 
-esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys)
+esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *trusted_keys)
 {
     if (trusted_keys == NULL) {
         return ESP_FAIL;

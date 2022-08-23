@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Intel net test suite for LwIP network stack
 
 This project provides a test interface to esp32 network stack in order to execute standard set of
@@ -46,7 +49,7 @@ Purpose of this test is to execute standard network suite on a ESP32 network sta
 DUT, Device (Network stack in this case) under test, runs normally on target, but a specific interface with configured esp-netif for passing arbitrary data to
 and from the network stack. Embedded code `net_suite.c` implements an application which serves stdin/stdout and propagates the data to/from this test interface.
 
-Standard Intel net suite executed by TTCN3 engine uses udp ports for input/ouput of network packets. Python script `net_suite.py` translates this communication 
+Standard Intel net suite executed by TTCN3 engine uses udp ports for input/ouput of network packets. Python script `net_suite.py` translates this communication
 from/to those udp ports to stdin/stdout, where after propagating over USB/UART to the ESP32 board are processed in the network stack (on the target).
 
 Actual test execution, progress, evaluation and test reporting is done using standard net-test-suite scripts running on PC.

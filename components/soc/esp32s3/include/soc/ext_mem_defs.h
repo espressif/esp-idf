@@ -26,7 +26,7 @@ extern "C" {
 #define ESP_CACHE_TEMP_ADDR             0x3C800000
 
 #define BUS_SIZE(bus_name)                 (bus_name##_ADDRESS_HIGH - bus_name##_ADDRESS_LOW)
-#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) <= bus_name##_ADDRESS_HIGH)
+#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 
 #define ADDRESS_IN_IRAM0(vaddr)            ADDRESS_IN_BUS(IRAM0, vaddr)
 #define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
@@ -80,12 +80,8 @@ extern "C" {
  */
 #define MMU_VALID_VAL_MASK 0x3fff
 /**
- * Helper macro to make a MMU entry invalid
- */
-#define INVALID_PHY_PAGE 0xffff
-/**
  * Max MMU available paddr page num.
- * `MMU_MAX_PADDR_PAGE_NUM * MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * `MMU_MAX_PADDR_PAGE_NUM * CONFIG_MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
  * 16384 * 64KB, means MMU can support 1GB paddr at most
  */
 #define MMU_MAX_PADDR_PAGE_NUM    16384

@@ -14,7 +14,12 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "bt_app_core.h"
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
 #include "driver/i2s.h"
+#else
+#include "driver/i2s_std.h"
+#endif
 #include "freertos/ringbuf.h"
 
 /*******************************
@@ -38,6 +43,9 @@ static QueueHandle_t s_bt_app_task_queue = NULL;  /* handle of work queue */
 static TaskHandle_t s_bt_app_task_handle = NULL;  /* handle of application task  */
 static TaskHandle_t s_bt_i2s_task_handle = NULL;  /* handle of I2S task */
 static RingbufHandle_t s_ringbuf_i2s = NULL;     /* handle of ringbuffer for I2S */
+#ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+extern i2s_chan_handle_t tx_chan;
+#endif
 
 /*******************************
  * STATIC FUNCTION DEFINITIONS
@@ -99,7 +107,11 @@ static void bt_i2s_task_handler(void *arg)
         /* receive data from ringbuffer and write it to I2S DMA transmit buffer */
         data = (uint8_t *)xRingbufferReceive(s_ringbuf_i2s, &item_size, (TickType_t)portMAX_DELAY);
         if (item_size != 0){
+        #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
             i2s_write(0, data, item_size, &bytes_written, portMAX_DELAY);
+        #else
+            i2s_channel_write(tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
+        #endif
             vRingbufferReturnItem(s_ringbuf_i2s, (void *)data);
         }
     }
@@ -139,7 +151,7 @@ bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, i
 void bt_app_task_start_up(void)
 {
     s_bt_app_task_queue = xQueueCreate(10, sizeof(bt_app_msg_t));
-    xTaskCreate(bt_app_task_handler, "BtAppTask", 3072, NULL, configMAX_PRIORITIES - 3, &s_bt_app_task_handle);
+    xTaskCreate(bt_app_task_handler, "BtAppTask", 3072, NULL, 10, &s_bt_app_task_handle);
 }
 
 void bt_app_task_shut_down(void)

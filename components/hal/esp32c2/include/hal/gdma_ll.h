@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stddef.h> /* Required for NULL constant */
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/gdma_struct.h"

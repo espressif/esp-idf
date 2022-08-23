@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "nvs_storage.hpp"
+#if __has_include(<bsd/string.h>)
+// for strlcpy
+#include <bsd/string.h>
+#endif
 
 #ifndef ESP_PLATFORM
 // We need NO_DEBUG_STORAGE here since the integration tests on the host add some debug code.
@@ -305,7 +309,10 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
 
             if (findPage->state() == Page::PageState::UNINITIALIZED ||
                     findPage->state() == Page::PageState::INVALID) {
-                ESP_ERROR_CHECK(findItem(nsIndex, datatype, key, findPage, item));
+                err = findItem(nsIndex, datatype, key, findPage, item);
+                if (err != ESP_OK) {
+                    return err;
+                }
             }
             /* Get the version of the previous index with same <ns,key> */
             prevStart = item.blobIndex.chunkStart;
@@ -383,7 +390,10 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
     if (findPage) {
         if (findPage->state() == Page::PageState::UNINITIALIZED ||
                 findPage->state() == Page::PageState::INVALID) {
-            ESP_ERROR_CHECK(findItem(nsIndex, datatype, key, findPage, item));
+            err = findItem(nsIndex, datatype, key, findPage, item);
+            if (err != ESP_OK) {
+                return err;
+            }
         }
         err = findPage->eraseItem(nsIndex, datatype, key);
         if (err == ESP_ERR_FLASH_OP_FAIL) {
@@ -749,11 +759,7 @@ void Storage::fillEntryInfo(Item &item, nvs_entry_info_t &info)
 
     for (auto &name : mNamespaces) {
         if(item.nsIndex == name.mIndex) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"
-            strncpy(info.namespace_name, name.mName, sizeof(info.namespace_name) - 1);
-#pragma GCC diagnostic pop
-            info.namespace_name[sizeof(info.namespace_name) -1] = '\0';
+            strlcpy(info.namespace_name, name.mName, sizeof(info.namespace_name));
             break;
         }
     }

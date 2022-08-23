@@ -7,7 +7,7 @@
 #include <string.h>
 #include <sys/param.h>
 
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "soc/system_reg.h"
 #include "soc/soc_memory_layout.h"
 #include "esp32c3/rom/cache.h"
@@ -16,60 +16,10 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_rom_spiflash.h"
-
-static const char *TAG = "spiflash_c3";
+#include "esp_private/spi_flash_os.h"
 
 #define SPICACHE SPIMEM0
 #define SPIFLASH SPIMEM1
-
-extern void IRAM_ATTR flash_rom_init(void);
-esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size)
-{
-    const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
-    esp_rom_spiflash_result_t rc;
-
-    assert((dest_addr % 16) == 0);
-    assert((size % 16) == 0);
-
-    /* src needs to be 32 bit aligned */
-    if (!esp_ptr_internal(src) || (intptr_t)src & 0x3) {
-        WORD_ALIGNED_ATTR uint8_t block[128]; // Need to buffer in RAM as we write
-        while (size > 0) {
-            size_t next_block = MIN(size, sizeof(block));
-            memcpy(block, src, next_block);
-
-            esp_rom_spiflash_result_t r = spi_flash_write_encrypted_chip(dest_addr, block, next_block);
-            if (r != ESP_ROM_SPIFLASH_RESULT_OK) {
-                return r;
-            }
-
-            size -= next_block;
-            dest_addr += next_block;
-            src = ((uint8_t *)src) + next_block;
-        }
-        bzero(block, sizeof(block));
-
-        return ESP_ROM_SPIFLASH_RESULT_OK;
-    } else { // Already in internal memory
-        ESP_LOGV(TAG, "calling esp_rom_spiflash_write_encrypted addr 0x%x src %p size 0x%x", dest_addr, src, size);
-
-#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-        /* The ROM function SPI_Encrypt_Write assumes ADDR_BITLEN is already set but new
-           implementation doesn't automatically set this to a usable value */
-        SPIFLASH.user1.usr_addr_bitlen = 23;
-#endif
-
-        if (ops && ops->start) {
-            ops->start();
-        }
-        flash_rom_init();
-        rc = esp_rom_spiflash_write_encrypted(dest_addr, (uint32_t *)src, size);
-        if (ops && ops->end) {
-            ops->end();
-        }
-        return rc;
-    }
-}
 
 #define FLASH_WRAP_CMD   0x77
 esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)

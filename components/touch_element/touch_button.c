@@ -1,17 +1,12 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <sys/queue.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
@@ -301,6 +296,20 @@ static esp_err_t button_object_remove_instance(te_button_handle_t button_handle)
     return ret;
 }
 
+bool is_button_object_handle(touch_elem_handle_t element_handle)
+{
+    te_button_handle_list_t *item;
+    xSemaphoreTake(s_te_btn_obj->mutex, portMAX_DELAY);
+    SLIST_FOREACH(item, &s_te_btn_obj->handle_list, next) {
+        if (element_handle == item->button_handle) {
+            xSemaphoreGive(s_te_btn_obj->mutex);
+            return true;
+        }
+    }
+    xSemaphoreGive(s_te_btn_obj->mutex);
+    return false;
+}
+
 static bool button_channel_check(te_button_handle_t button_handle, touch_pad_t channel_num)
 {
     return (channel_num == button_handle->device->channel);
@@ -349,6 +358,11 @@ static inline void button_dispatch(te_button_handle_t button_handle, touch_elem_
         button_info.event = button_handle->event;
         button_handle->config->callback(button_handle, &button_info, button_handle->config->arg);  //Event callback
     }
+}
+
+void button_enable_wakeup_calibration(te_button_handle_t button_handle, bool en)
+{
+    button_handle->device->is_use_last_threshold = !en;
 }
 
 /**

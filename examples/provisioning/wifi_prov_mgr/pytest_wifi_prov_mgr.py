@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO)
 esp_prov.config_throw_except = True
 
 
-@pytest.mark.supported_targets
+@pytest.mark.esp32
 @pytest.mark.generic
 @pytest.mark.xfail(reason='Runner unable to connect to target over Bluetooth', run=False)
 def test_examples_wifi_prov_mgr(dut: Dut) -> None:

@@ -1,37 +1,57 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/soc_caps.h"
-#include "soc/systimer_struct.h"
 #include "hal/systimer_types.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+typedef struct systimer_dev_t *systimer_soc_handle_t;   // systimer SOC layer handle
+
+// the definitions of the following functions are provided by esp_hw_support component, see esp_hw_support/port/${TARGET}/systimer.c
+typedef uint64_t (*ticks_to_us_func_t)(uint64_t ticks); // prototype of function to convert ticks to microseconds
+typedef uint64_t (*us_to_ticks_func_t)(uint64_t us);    // prototype of function to convert microseconds to ticks
+
+/**
+ * @brief systimer HAL context structure
+ */
 typedef struct {
-    systimer_dev_t *dev;
+    systimer_soc_handle_t dev;      /*!< systimer peripheral base address */
+    ticks_to_us_func_t ticks_to_us; /*!< function to convert ticks to microseconds */
+    us_to_ticks_func_t us_to_ticks; /*!< function to convert microseconds to ticks */
 } systimer_hal_context_t;
+
+/**
+ * @brief systimer HAL configuration structure
+ */
+typedef struct {
+    ticks_to_us_func_t ticks_to_us; /*!< function to convert ticks to microseconds */
+    us_to_ticks_func_t us_to_ticks; /*!< function to convert microseconds to ticks */
+} systimer_hal_tick_rate_ops_t;
 
 /**
  * @brief initialize systimer in HAL layer
  */
 void systimer_hal_init(systimer_hal_context_t *hal);
+
+/**
+ * @brief Deinitialize systimer HAL layer
+ */
+void systimer_hal_deinit(systimer_hal_context_t *hal);
+
+/**
+ * @brief Set tick rate operation functions
+ */
+void systimer_hal_set_tick_rate_ops(systimer_hal_context_t *hal, systimer_hal_tick_rate_ops_t *ops);
 
 /**
  * @brief enable systimer counter
@@ -93,7 +113,7 @@ void systimer_hal_connect_alarm_counter(systimer_hal_context_t *hal, uint32_t al
  */
 void systimer_hal_counter_can_stall_by_cpu(systimer_hal_context_t *hal, uint32_t counter_id, uint32_t cpu_id, bool can);
 
-#if !SOC_SYSTIMER_FIXED_TICKS_US
+#if !SOC_SYSTIMER_FIXED_DIVIDER
 /**
  * @brief set increase steps for systimer counter on different clock source
  */

@@ -82,7 +82,8 @@ The default stack sizes for these tasks are usually set conservatively high, to 
    :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
    - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
-   - If using the :doc:`mDNS </api-reference/protocols/mdns>` and/or :doc:`MQTT </api-reference/protocols/mqtt>` components, they create tasks with stack sizes configured by :ref:`CONFIG_MDNS_TASK_STACK_SIZE` and :ref:`CONFIG_MQTT_TASK_STACK_SIZE`, respectively. MQTT stack size can also be configured using ``task_stack`` field of :cpp:class:`esp_mqtt_client_config_t`.
+   - If using the :doc:`MQTT </api-reference/protocols/mqtt>` component, it creates a task with stack size configured by :ref:`CONFIG_MQTT_TASK_STACK_SIZE`. MQTT stack size can also be configured using ``task_stack`` field of :cpp:class:`esp_mqtt_client_config_t`.
+   - To see how to optimize RAM usage when using ``mDNS``, please check `Performance Optimization <https://espressif.github.io/esp-protocols/mdns/en/index.html#minimizing-ram-usage>`__.
 
 .. note::
 
@@ -130,6 +131,8 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
     - Enable :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not (incorrectly) used from ISRs, this option is safe to enable in all configurations.
     - Enable :ref:`CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH`. Enabling this option will place snapshot-related functions, such as ``vTaskGetSnapshot`` or ``uxTaskGetSnapshotAll``, in flash.
+    - Enable :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not (incorrectly) used from ISRs, this option is safe to enable in all configurations.
+    - Enable :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g. if :ref:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the IDF drivers where this is the case you will get an error at run-time when installing the driver in question.
     :SOC_WIFI_SUPPORTED: - Disable Wi-Fi options :ref:`CONFIG_ESP32_WIFI_IRAM_OPT` and/or :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`. Disabling these options will free available IRAM at the cost of Wi-Fi performance.
     :esp32c3 or esp32s3: - :ref:`CONFIG_SPI_FLASH_ROM_IMPL` enabling this option will free some IRAM but will mean that esp_flash bugfixes and new flash chip support is not available.
     :esp32: - :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` disabling this option will free some IRAM but is only available in some flash configurations (see the configuration item help text).

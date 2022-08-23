@@ -83,7 +83,7 @@ typedef union {
 
 /**
  * The following structure represents the NOTE section in the coredump.
- * Its type must be PR_STATUS as it contains the regsiters values and the
+ * Its type must be PR_STATUS as it contains the registers value and the
  * program status.
  * As our coredump will be used with GDB, we only need to fill the info
  * it needs. We are going to use the macros taken from GDB's elf32-riscv.c
@@ -106,7 +106,7 @@ typedef union {
 #define PRSTATUS_OFFSET_PR_REG		72
 #define ELF_GREGSET_T_SIZE		    128
 
-/* We can determine the padding thank to the previous macros */
+/* We can determine the padding thanks to the previous macros */
 #define PRSTATUS_SIG_PADDING        (PRSTATUS_OFFSET_PR_CURSIG)
 #define PRSTATUS_PID_PADDING        (PRSTATUS_OFFSET_PR_PID - PRSTATUS_OFFSET_PR_CURSIG - sizeof(uint16_t))
 #define PRSTATUS_REG_PADDING        (PRSTATUS_OFFSET_PR_REG - PRSTATUS_OFFSET_PR_PID - sizeof(uint32_t))
@@ -172,7 +172,7 @@ inline uint16_t esp_core_dump_get_arch_id()
 }
 
 /**
- * Reset fake tasks' stack counter. This lets use reuse the previously allocated
+ * Reset fake tasks' stack counter. This lets us reuse the previously allocated
  * fake stacks.
  */
 void esp_core_dump_reset_fake_stacks(void)
@@ -358,9 +358,9 @@ void esp_core_dump_port_set_crashed_tcb(uint32_t handle) {
 }
 
 /**
- * Function returning the extra info to be written in the dedicated section in
- * the core file.
- * info must not be NULL, it will be affected to the extra info data.
+ * Function returning the extra info to be written to the dedicated section in
+ * the core file. *info must not be NULL, it will be assigned to the extra info
+ * data.
  * The size, in bytes, of the data pointed by info is returned.
  */
 uint32_t esp_core_dump_get_extra_info(void **info)

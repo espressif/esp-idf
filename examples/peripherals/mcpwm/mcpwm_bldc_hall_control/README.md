@@ -1,50 +1,53 @@
 | Supported Targets | ESP32 | ESP32-S3 |
 | ----------------- | ----- | -------- |
 
-# MCPWM BLDC Hall motor control Example
+# MCPWM BLDC Motor Control with HALL Sensor Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example will illustrate how to use MCPWM driver to control BLDC motor with hall sensor feedback. In the example, a timer is running at the background to update the motor speed periodically.
-
-With the hardware fault detection feature of MCPWM, the example will shut down the MOSFETs when over current happens.
+The MCPWM peripheral can generate three pairs of complementary PWMs by the internal dead time submodule, which is suitable for a BLDC motor application. This example demonstrates how to use the MCPWM peripheral to control a BLDC motor in a six-step commutation scheme.
+We will change the on/off state of the six MOSFETs in a predefined order when the Hall sensor detects a change of the motor phase, so that the motor can spin in a predefined direction.
 
 ## How to Use Example
 
 ### Hardware Required
 
-1. The BLDC motor used in this example has a hall sensor capture sequence of `6-->4-->5-->1-->3-->2-->6-->4-->` and so on.
-2. A three-phase gate driver, this example uses [IR2136](https://www.infineon.com/cms/en/product/power/gate-driver-ics/ir2136s/).
-3. Six N-MOSFETs, this example uses [IRF540NS](https://www.infineon.com/cms/en/product/power/mosfet/12v-300v-n-channel-power-mosfet/irf540ns/).
-4. A development board with any Espressif SoC which features MCPWM peripheral (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
-5. A USB cable for Power supply and programming.
+1. A ESP board with MCPWM peripheral supported (e.g. ESP32-S3-Motor-DevKit)
+2. A BLDC motor whose commutation table is `6-->4-->5-->1-->3-->2-->6`
+3. A three-phase gate driver, for example, the [DRV8302](https://www.ti.com.cn/product/zh-cn/DRV8302)
+4. Six N-MOSFETs, for example, the [IRF540NS](https://www.infineon.com/cms/en/product/power/mosfet/12v-300v-n-channel-power-mosfet/irf540ns/)
+5. A USB cable for Power supply and programming
 
 Connection :
 
 ```
-          ┌─────────────────────────────────────────────┐
-          │                                             │
-          │         ┌───────────────────────────┐       │
-          │         │                           │       │
-┌─────────┴─────────┴───────────┐      ┌────────┴───────┴──────────┐
-│      GPIO19      GPIO18       │      │        EN    FAULT        │
-│                         GPIO21├──────┤PWM_UH                     │        ┌────────────┐
-│                         GPIO22├──────┤PWM_UL                    U├────────┤            │
-│                               │      │                           │        │            │
-│                         GPIO23├──────┤PWM_VH                    V├────────┤    BLDC    │
-│         ESP Board       GPIO25├──────┤PWM_VL   3-Phase Bridge    │        │            │
-│                               │      │               +          W├────────┤            │
-│                         GPIO26├──────┤PWM_WH      MOSFET         │        └─┬───┬───┬──┘
-│                         GPIO27├──────┤PWM_WL                     │          │   │   │
-│    GPIO5  GPIO4  GPIO2        │      │                           │          │   │   │
-└─────┬──────┬──────┬───────────┘      └───────────────────────────┘          │   │   │
-      │      │      │   Hall U                                                │   │   │
-      │      │      └─────────────────────────────────────────────────────────┘   │   │
-      │      │          Hall V                                                    │   │
-      │      └────────────────────────────────────────────────────────────────────┘   │
-      │                 Hall W                                                        │
-      └───────────────────────────────────────────────────────────────────────────────┘
+              +---------------------------------------------------------------------------------+
+              |                                                                                 |
+              |                             +---------------------------------------------+     |  VM
+              |                             |                                             |     |   ^
+              |                             |         +---------------------------+       |     |   |
+              |                             |         |                           |       |     |   |
++-------------+-----------------------------+---------+-----------+      +--------+-------+-----+---++
+|            GND           BLDC_DRV_FAULT_GPIO   BLDC_DRV_EN_GPIO |      |        EN    FAULT  GND   |
+|                                                BLDC_PWM_UH_GPIO +------+PWM_UH                     |        +------------+
+|                                                BLDC_PWM_UL_GPIO +------+PWM_UL                    U+--------+            |
+|                                                                 |      |                           |        |            |
+|                     ESP Board                  BLDC_PWM_VH_GPIO +------+PWM_VH                    V+--------+    BLDC    |
+|                                                BLDC_PWM_VL_GPIO +------+PWM_VL   3-Phase Bridge    |        |            |
+|                                                                 |      |               +          W+--------+            |
+|                                                BLDC_PWM_WH_GPIO +------+PWM_WH      MOSFET         |        +-+---+---+--+
+|                                                BLDC_PWM_WL_GPIO +------+PWM_WL                     |          |   |   |
+|   HALL_CAP_W_GPIO    HALL_CAP_V_GPIO    HALL_CAP_U_GPIO         |      |                           |          |   |   |
++-----------+------------------+------------------+---------------+      +---------------------------+          |   |   |
+            |                  |                  |       Hall U                                                |   |   |
+            |                  |                  +-------------------------------------------------------------+   |   |
+            |                  |                          Hall V                                                    |   |
+            |                  +------------------------------------------------------------------------------------+   |
+            |                                             Hall W                                                        |
+            +-----------------------------------------------------------------------------------------------------------+
 ```
+
+You can change the GPIO number in the [example code](main/mcpwm_bldc_hall_control_example_main.c) according to your board. You can define the spin direction in the code as well by the `BLDC_SPIN_DIRECTION_CCW` macro.
 
 ### Build and Flash
 
@@ -62,20 +65,42 @@ Run the example, you will see the following output log:
 ```
 ...
 I (0) cpu_start: Starting scheduler on APP CPU.
-I (327) example: Disable gate driver
-I (327) gpio: GPIO[18]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (337) example: Setup PWM and Hall GPIO (pull up internally)
-I (347) example: Initialize PWM (default to turn off all MOSFET)
-I (357) example: Initialize over current fault action
-I (357) example: Initialize Hall sensor capture
-I (367) example: Please turn on the motor power
-I (5367) example: Enable gate driver
-I (5367) example: Changing speed at background
+I (307) example: Disable MOSFET gate
+I (307) gpio: GPIO[46]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (317) example: Create MCPWM timer
+I (317) example: Create MCPWM operator
+I (327) example: Connect operators to the same timer
+I (327) example: Create comparators
+I (337) example: Create over current fault detector
+I (337) gpio: GPIO[10]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (347) example: Set brake mode on the fault event
+I (357) example: Create PWM generators
+I (357) gpio: GPIO[47]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (367) gpio: GPIO[21]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (377) gpio: GPIO[14]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (387) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (397) gpio: GPIO[12]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (407) gpio: GPIO[11]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (417) example: Set generator actions
+I (417) example: Setup deadtime
+I (427) example: Turn off all the gates by default
+I (427) example: Create Hall sensor capture channels
+I (437) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (447) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (457) gpio: GPIO[6]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (457) example: Register event callback for capture channels
+I (467) example: Start a timer to adjust motor speed periodically
+I (477) example: Enable MOSFET gate
+I (477) example: Start the MCPWM timer
 ...
 ```
 
-## Dive into the example
+The BLDC motor will update the speed periodically.
 
-1. How to change the rotation direction?
+## Troubleshooting
 
-      The rotation direction is controlled by how the hall sensor value is parsed. If you pass `false` to `bldc_get_hall_sensor_value`, the BLDC should rotate in clock wise. Likewise, passing `true` to that function will make tha BLDC rotate in counter clock wise.
+* Make sure your ESP board and H-bridge module have been connected to the same GND panel.
+* Check the fault signal polarity, otherwise the motor will not spin if the MCPWM detector treats the normal level as a fault one.
+* Don't use the PC USB as the power source of the BLDC motor (see the `VM` in the above connection diagram), it might damage your UAB port.
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

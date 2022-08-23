@@ -1,7 +1,7 @@
 /**
  * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
@@ -31,40 +31,40 @@ typedef union {
  */
 typedef union {
     struct {
-        /** div_cnt : R/W; bitpos: [7:0]; default: 2;
+        /** div_cnt_chn : R/W; bitpos: [7:0]; default: 2;
          *  This field is used to configure clock divider for channel n.
          */
-        uint32_t div_cnt: 8;
-        /** idle_thres : R/W; bitpos: [23:8]; default: 4096;
+        uint32_t div_cnt_chn: 8;
+        /** idle_thres_chn : R/W; bitpos: [23:8]; default: 4096;
          *  Receiving ends when no edge is detected on input signals for continuous clock
          *  cycles longer than this field value.
          */
-        uint32_t idle_thres: 16;
-        /** mem_size : R/W; bitpos: [26:24]; default: 1;
+        uint32_t idle_thres_chn: 16;
+        /** mem_size_chn : R/W; bitpos: [26:24]; default: 1;
          *  This field is used to configure the maximum blocks allocated to channel n. The
          *  valid range is from 1 ~ 4-n.
          */
-        uint32_t mem_size: 3;
-        /** carrier_eff_en : R/W; bitpos: [27]; default: 1;
+        uint32_t mem_size_chn: 3;
+        /** carrier_eff_en_chn : R/W; bitpos: [27]; default: 1;
          *  1: Add carrier modulation on output signals only at data sending state for channel
          *  n. 0: Add carrier modulation on signals at all states for channel n. States here
          *  include idle state (ST_IDLE), reading data from RAM (ST_RD_MEM), and sending data
          *  stored in RAM (ST_SEND). Only valid when RMT_CARRIER_EN_CHn is set to 1.
          */
-        uint32_t carrier_eff_en: 1;
-        /** carrier_en : R/W; bitpos: [28]; default: 1;
+        uint32_t carrier_eff_en_chn: 1;
+        /** carrier_en_chn : R/W; bitpos: [28]; default: 1;
          *  This bit is used to enable carrier modulation for channel n. 1: Add carrier
          *  modulation on output signals. 0: No carrier modulation is added on output signals.
          */
-        uint32_t carrier_en: 1;
-        /** carrier_out_lv : R/W; bitpos: [29]; default: 1;
+        uint32_t carrier_en_chn: 1;
+        /** carrier_out_lv_chn : R/W; bitpos: [29]; default: 1;
          *  This bit is used to configure the position of carrier wave for channel n.
          *
          *  1'h0: Add carrier wave on low-level output signals.
          *
          *  1'h1: Add carrier wave on high-level output signals.
          */
-        uint32_t carrier_out_lv: 1;
+        uint32_t carrier_out_lv_chn: 1;
         uint32_t reserved_30: 2;
     };
     uint32_t val;
@@ -75,72 +75,72 @@ typedef union {
  */
 typedef union {
     struct {
-        /** tx_start : R/W; bitpos: [0]; default: 0;
+        /** tx_start_chn : R/W; bitpos: [0]; default: 0;
          *  Set this bit to start sending data on channel n.
          */
-        uint32_t tx_start: 1;
-        /** rx_en : R/W; bitpos: [1]; default: 0;
+        uint32_t tx_start_chn: 1;
+        /** rx_en_chn : R/W; bitpos: [1]; default: 0;
          *  Set this bit to enable receiver to receive data on channel n.
          */
-        uint32_t rx_en: 1;
-        /** mem_wr_rst : WO; bitpos: [2]; default: 0;
+        uint32_t rx_en_chn: 1;
+        /** mem_wr_rst_chn : WO; bitpos: [2]; default: 0;
          *  Set this bit to reset RAM write address accessed by the receiver for channel n.
          */
-        uint32_t mem_wr_rst: 1;
-        /** mem_rd_rst : WO; bitpos: [3]; default: 0;
+        uint32_t mem_wr_rst_chn: 1;
+        /** mem_rd_rst_chn : WO; bitpos: [3]; default: 0;
          *  Set this bit to reset RAM read address accessed by the transmitter for channel n.
          */
-        uint32_t mem_rd_rst: 1;
-        /** apb_mem_rst : WO; bitpos: [4]; default: 0;
+        uint32_t mem_rd_rst_chn: 1;
+        /** apb_mem_rst_chn : WO; bitpos: [4]; default: 0;
          *  Set this bit to reset W/R ram address for channel n by accessing apb fifo.
          */
-        uint32_t apb_mem_rst: 1;
-        /** mem_owner : R/W; bitpos: [5]; default: 1;
+        uint32_t apb_mem_rst_chn: 1;
+        /** mem_owner_chn : R/W; bitpos: [5]; default: 1;
          *  This bit marks the ownership of channel n's RAM block.
          *
          *  1'h1: Receiver is using the RAM.
          *
          *  1'h0: Transmitter is using the RAM.
          */
-        uint32_t mem_owner: 1;
-        /** tx_conti_mode : R/W; bitpos: [6]; default: 0;
+        uint32_t mem_owner_chn: 1;
+        /** tx_conti_mode_chn : R/W; bitpos: [6]; default: 0;
          *  Set this bit to restart transmission in continuous node from the first data in
          *  channel n.
          */
-        uint32_t tx_conti_mode: 1;
-        /** rx_filter_en : R/W; bitpos: [7]; default: 0;
+        uint32_t tx_conti_mode_chn: 1;
+        /** rx_filter_en_chn : R/W; bitpos: [7]; default: 0;
          *  Set this bit to enable the receiver's filter for channel n.
          */
-        uint32_t rx_filter_en: 1;
-        /** rx_filter_thres : R/W; bitpos: [15:8]; default: 15;
+        uint32_t rx_filter_en_chn: 1;
+        /** rx_filter_thres_chn : R/W; bitpos: [15:8]; default: 15;
          *  Set this field to ignore the input pulse when its width is less than
          *  RMT_RX_FILTER_THRES_CHn APB clock cycles in receive mode.
          */
-        uint32_t rx_filter_thres: 8;
-        /** chk_rx_carrier_en : R/W; bitpos: [16]; default: 0;
+        uint32_t rx_filter_thres_chn: 8;
+        /** chk_rx_carrier_en_chn : R/W; bitpos: [16]; default: 0;
          *  Set this bit to enable memory loop read mode when carrier modulation is enabled for
          *  channel n.
          */
-        uint32_t chk_rx_carrier_en: 1;
-        /** ref_always_on : R/W; bitpos: [17]; default: 0;
+        uint32_t chk_rx_carrier_en_chn: 1;
+        /** ref_always_on_chn : R/W; bitpos: [17]; default: 0;
          *  Set this bit to select a base clock for channel n.
          *
          *  1'h1: APB_CLK    1'h0: REF_TICK
          */
-        uint32_t ref_always_on: 1;
-        /** idle_out_lv : R/W; bitpos: [18]; default: 0;
+        uint32_t ref_always_on_chn: 1;
+        /** idle_out_lv_chn : R/W; bitpos: [18]; default: 0;
          *  This bit configures the level of output signals in channel n when the transmitter
          *  is in idle state.
          */
-        uint32_t idle_out_lv: 1;
-        /** idle_out_en : R/W; bitpos: [19]; default: 0;
+        uint32_t idle_out_lv_chn: 1;
+        /** idle_out_en_chn : R/W; bitpos: [19]; default: 0;
          *  This is the output enable bit for channel n in idle state.
          */
-        uint32_t idle_out_en: 1;
-        /** tx_stop : R/W; bitpos: [20]; default: 0;
+        uint32_t idle_out_en_chn: 1;
+        /** tx_stop_chn : R/W; bitpos: [20]; default: 0;
          *  Set this bit to stop the transmitter of channel n sending data out.
          */
-        uint32_t tx_stop: 1;
+        uint32_t tx_stop_chn: 1;
         uint32_t reserved_21: 11;
     };
     uint32_t val;
@@ -214,16 +214,16 @@ typedef union {
  */
 typedef union {
     struct {
-        /** carrier_low_thres_ch : R/W; bitpos: [15:0]; default: 0;
+        /** carrier_low_thres_chn : R/W; bitpos: [15:0]; default: 0;
          *  The low level period in carrier modulation mode is (RMT_CARRIER_LOW_THRES_CHn + 1)
          *  clock cycles for channel n.
          */
-        uint32_t carrier_low_thres_ch: 16;
-        /** carrier_high_thres_ch : R/W; bitpos: [31:16]; default: 0;
+        uint32_t carrier_low_thres_chn: 16;
+        /** carrier_high_thres_chn : R/W; bitpos: [31:16]; default: 0;
          *  The high level period in carrier modulation mode is (RMT_CARRIER_HIGH_THRES_CHn +
          *  1) clock cycles for channel n.
          */
-        uint32_t carrier_high_thres_ch: 16;
+        uint32_t carrier_high_thres_chn: 16;
     };
     uint32_t val;
 } rmt_chn_rx_carrier_rm_reg_t;
@@ -235,46 +235,46 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mem_waddr_ex : RO; bitpos: [8:0]; default: 0;
+        /** mem_waddr_ex_chn : RO; bitpos: [8:0]; default: 0;
          *  This field records the memory address offset when receiver of channel n is using
          *  the RAM.
          */
-        uint32_t mem_waddr_ex: 9;
+        uint32_t mem_waddr_ex_chn: 9;
         uint32_t reserved_9: 1;
-        /** mem_raddr_ex : RO; bitpos: [18:10]; default: 0;
+        /** mem_raddr_ex_chn : RO; bitpos: [18:10]; default: 0;
          *  This field records the memory address offset when transmitter of channel n is using
          *  the RAM.
          */
-        uint32_t mem_raddr_ex: 9;
+        uint32_t mem_raddr_ex_chn: 9;
         uint32_t reserved_19: 1;
-        /** state : RO; bitpos: [22:20]; default: 0;
+        /** state_chn : RO; bitpos: [22:20]; default: 0;
          *  This field records the FSM status of channel n.
          */
-        uint32_t state: 3;
-        /** mem_owner_err : RO; bitpos: [23]; default: 0;
+        uint32_t state_chn: 3;
+        /** mem_owner_err_chn : RO; bitpos: [23]; default: 0;
          *  This status bit will be set when the ownership of memory block is violated.
          */
-        uint32_t mem_owner_err: 1;
-        /** mem_full : RO; bitpos: [24]; default: 0;
+        uint32_t mem_owner_err_chn: 1;
+        /** mem_full_chn : RO; bitpos: [24]; default: 0;
          *  This status bit will be set if the receiver receives more data than the memory
          *  allows.
          */
-        uint32_t mem_full: 1;
-        /** mem_empty : RO; bitpos: [25]; default: 0;
+        uint32_t mem_full_chn: 1;
+        /** mem_empty_chn : RO; bitpos: [25]; default: 0;
          *  This status bit will be set when the data to be sent is more than memory allows and
          *  the wrap mode is disabled.
          */
-        uint32_t mem_empty: 1;
-        /** apb_mem_wr_err : RO; bitpos: [26]; default: 0;
+        uint32_t mem_empty_chn: 1;
+        /** apb_mem_wr_err_chn : RO; bitpos: [26]; default: 0;
          *  This status bit will be set if the offset address out of memory size when writes
          *  RAM via APB bus.
          */
-        uint32_t apb_mem_wr_err: 1;
-        /** apb_mem_rd_err : RO; bitpos: [27]; default: 0;
+        uint32_t apb_mem_wr_err_chn: 1;
+        /** apb_mem_rd_err_chn : RO; bitpos: [27]; default: 0;
          *  This status bit will be set if the offset address out of memory size when reads RAM
          *  via APB bus.
          */
-        uint32_t apb_mem_rd_err: 1;
+        uint32_t apb_mem_rd_err_chn: 1;
         uint32_t reserved_28: 4;
     };
     uint32_t val;
@@ -285,15 +285,15 @@ typedef union {
  */
 typedef union {
     struct {
-        /** apb_mem_waddr_ch0 : RO; bitpos: [8:0]; default: 0;
+        /** apb_mem_waddr_chn : RO; bitpos: [8:0]; default: 0;
          *  This field records the memory address offset when channel n writes RAM via APB bus.
          */
-        uint32_t apb_mem_waddr_ch0: 9;
+        uint32_t apb_mem_waddr_chn: 9;
         uint32_t reserved_9: 1;
-        /** apb_mem_raddr_ch0 : RO; bitpos: [18:10]; default: 0;
+        /** apb_mem_raddr_chn : RO; bitpos: [18:10]; default: 0;
          *  This field records the memory address offset when channel n reads RAM via APB bus.
          */
-        uint32_t apb_mem_raddr_ch0: 9;
+        uint32_t apb_mem_raddr_chn: 9;
         uint32_t reserved_19: 13;
     };
     uint32_t val;
@@ -676,16 +676,16 @@ typedef union {
  */
 typedef union {
     struct {
-        /** low : R/W; bitpos: [15:0]; default: 64;
+        /** carrier_low_chn : R/W; bitpos: [15:0]; default: 64;
          *  This field is used to configure the clock cycles of carrier wave at low level for
          *  channel n.
          */
-        uint32_t low: 16;
-        /** high : R/W; bitpos: [31:16]; default: 64;
+        uint32_t carrier_low_chn: 16;
+        /** carrier_high_chn : R/W; bitpos: [31:16]; default: 64;
          *  This field is used to configure the clock cycles of carrier wave at high level for
          *  channel n.
          */
-        uint32_t high: 16;
+        uint32_t carrier_high_chn: 16;
     };
     uint32_t val;
 } rmt_chncarrier_duty_reg_t;
@@ -697,26 +697,26 @@ typedef union {
  */
 typedef union {
     struct {
-        /** tx_lim : R/W; bitpos: [8:0]; default: 128;
+        /** tx_lim_chn : R/W; bitpos: [8:0]; default: 128;
          *  This field is used to configure the maximum entries that channel n can send out.
          *  When RMT_MEM_SIZE_CHn = 1, this field can be set to any value among 0 ~ 128
          *  (64*32/16 = 128). When RMT_MEM_SIZE_CHn > 1, this field can be set to any value
          *  among (0 ~ 128)*RMT_MEM_SIZE_CHn.
          */
-        uint32_t tx_lim: 9;
-        /** tx_loop_num : R/W; bitpos: [18:9]; default: 0;
+        uint32_t tx_lim_chn: 9;
+        /** tx_loop_num_chn : R/W; bitpos: [18:9]; default: 0;
          *  This field is used to configure the maximum loop times when continuous transmission
          *  mode is enabled.
          */
-        uint32_t tx_loop_num: 10;
-        /** tx_loop_cnt_en : R/W; bitpos: [19]; default: 0;
+        uint32_t tx_loop_num_chn: 10;
+        /** tx_loop_cnt_en_chn : R/W; bitpos: [19]; default: 0;
          *  This bit is used to enable loop counting.
          */
-        uint32_t tx_loop_cnt_en: 1;
-        /** loop_count_reset : WO; bitpos: [20]; default: 0;
+        uint32_t tx_loop_cnt_en_chn: 1;
+        /** loop_count_reset_chn : WO; bitpos: [20]; default: 0;
          *  This bit is used to reset loop counting when continuous transmission mode is valid.
          */
-        uint32_t loop_count_reset: 1;
+        uint32_t loop_count_reset_chn: 1;
         uint32_t reserved_21: 11;
     };
     uint32_t val;
@@ -750,7 +750,7 @@ typedef union {
         /** tx_sim_en : R/W; bitpos: [4]; default: 0;
          *  This bit is used to enable multiple channels to start sending data simultaneously.
          */
-        uint32_t en: 1;
+        uint32_t tx_sim_en: 1;
         uint32_t reserved_5: 27;
     };
     uint32_t val;
@@ -773,23 +773,23 @@ typedef union {
 
 
 typedef struct rmt_dev_t {
-    volatile rmt_chndata_reg_t data_ch[4];
+    volatile rmt_chndata_reg_t chndata[4];
     volatile struct {
-        volatile rmt_chnconf0_reg_t conf0;
-        volatile rmt_chnconf1_reg_t conf1;
+        rmt_chnconf0_reg_t conf0;
+        rmt_chnconf1_reg_t conf1;
     } conf_ch[4];
-    volatile rmt_chnstatus_reg_t status_ch[4];
-    volatile rmt_chnaddr_reg_t apb_mem_addr_ch[4];
+    volatile rmt_chnstatus_reg_t chnstatus[4];
+    volatile rmt_chnaddr_reg_t chnaddr[4];
     volatile rmt_int_raw_reg_t int_raw;
     volatile rmt_int_st_reg_t int_st;
     volatile rmt_int_ena_reg_t int_ena;
     volatile rmt_int_clr_reg_t int_clr;
-    volatile rmt_chncarrier_duty_reg_t carrier_duty_ch[4];
-    volatile rmt_chn_tx_lim_reg_t tx_lim_ch[4];
+    volatile rmt_chncarrier_duty_reg_t chncarrier_duty[4];
+    volatile rmt_chn_tx_lim_reg_t chn_tx_lim[4];
     volatile rmt_apb_conf_reg_t apb_conf;
     volatile rmt_tx_sim_reg_t tx_sim;
     volatile rmt_ref_cnt_rst_reg_t ref_cnt_rst;
-    volatile rmt_chn_rx_carrier_rm_reg_t ch_rx_carrier_rm[4];
+    volatile rmt_chn_rx_carrier_rm_reg_t chn_rx_carrier_rm[4];
     uint32_t reserved_09c[24];
     volatile rmt_date_reg_t date;
 } rmt_dev_t;

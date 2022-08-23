@@ -18,6 +18,7 @@ import subprocess
 import tempfile
 from io import open
 from threading import Event, Thread
+from typing import List, Optional, Set, Tuple, Union
 
 
 class HeaderFailed(Exception):
@@ -26,28 +27,28 @@ class HeaderFailed(Exception):
 
 
 class HeaderFailedSdkconfig(HeaderFailed):
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Sdkconfig Error'
 
 
 class HeaderFailedBuildError(HeaderFailed):
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Header Build Error'
 
 
 class HeaderFailedCppGuardMissing(HeaderFailed):
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Header Missing C++ Guard'
 
 
 class HeaderFailedContainsCode(HeaderFailed):
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Header Produced non-zero object'
 
 
 #   Creates a temp file and returns both output as a string and a file name
 #
-def exec_cmd_to_temp_file(what, suffix=''):
+def exec_cmd_to_temp_file(what: List, suffix: str='') -> Tuple[int, str, str, str, str]:
     out_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     rc, out, err, cmd = exec_cmd(what, out_file)
     with open(out_file.name, 'r', encoding='utf-8') as f:
@@ -55,12 +56,12 @@ def exec_cmd_to_temp_file(what, suffix=''):
     return rc, out, err, out_file.name, cmd
 
 
-def exec_cmd(what, out_file=subprocess.PIPE):
+def exec_cmd(what: List, out_file: Union['tempfile._TemporaryFileWrapper[bytes]', int]=subprocess.PIPE) -> Tuple[int, str, str, str]:
     p = subprocess.Popen(what, stdin=subprocess.PIPE, stdout=out_file, stderr=subprocess.PIPE)
-    output, err = p.communicate()
+    output_b, err_b = p.communicate()
     rc = p.returncode
-    output = output.decode('utf-8') if output is not None else None
-    err = err.decode('utf-8') if err is not None else None
+    output: str = output_b.decode('utf-8') if output_b is not None else ''
+    err: str = err_b.decode('utf-8') if err_b is not None else ''
     return rc, output, err, ' '.join(what)
 
 
@@ -74,11 +75,11 @@ class PublicHeaderChecker:
     PREPROC_OUT_DIFFERENT_WITH_EXT_C_HDR_OK = 6    # -> Both preprocessors produce different, non-zero output with extern "C" (header seems OK)
     PREPROC_OUT_DIFFERENT_NO_EXT_C_HDR_FAILED = 7  # -> Both preprocessors produce different, non-zero output without extern "C" (header fails)
 
-    def log(self, message, debug=False):
+    def log(self, message: str, debug: bool=False) -> None:
         if self.verbose or debug:
             print(message)
 
-    def __init__(self, verbose=False, jobs=1, prefix=None):
+    def __init__(self, verbose: bool=False, jobs: int=1, prefix: Optional[str]=None) -> None:
         self.gcc = '{}gcc'.format(prefix)
         self.gpp = '{}g++'.format(prefix)
         self.verbose = verbose
@@ -88,27 +89,27 @@ class PublicHeaderChecker:
         self.error_macro = re.compile(r'#error')
         self.error_orphan_kconfig = re.compile(r'#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED')
         self.kconfig_macro = re.compile(r'\bCONFIG_[A-Z0-9_]+')
-        self.assembly_nocode = r'^\s*(\.file|\.text|\.ident).*$'
-        self.check_threads = []
+        self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute).*$'
+        self.check_threads: List[Thread] = []
 
-        self.job_queue = queue.Queue()
-        self.failed_queue = queue.Queue()
+        self.job_queue: queue.Queue = queue.Queue()
+        self.failed_queue: queue.Queue = queue.Queue()
         self.terminate = Event()
 
-    def __enter__(self):
+    def __enter__(self) -> 'PublicHeaderChecker':
         for i in range(self.jobs):
             t = Thread(target=self.check_headers, args=(i, ))
             self.check_threads.append(t)
             t.start()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type: str, exc_value: str, traceback: str) -> None:
         self.terminate.set()
         for t in self.check_threads:
             t.join()
 
     # thread function process incoming header file from a queue
-    def check_headers(self, num):
+    def check_headers(self, num: int) -> None:
         while not self.terminate.is_set():
             if not self.job_queue.empty():
                 task = self.job_queue.get()
@@ -125,10 +126,10 @@ class PublicHeaderChecker:
                         self.terminate.set()
                         raise
 
-    def get_failed(self):
+    def get_failed(self) -> List:
         return list(self.failed_queue.queue)
 
-    def join(self):
+    def join(self) -> None:
         for t in self.check_threads:
             while t.is_alive() and not self.terminate.is_set():
                 t.join(1)  # joins with timeout to respond to keyboard interrupt
@@ -147,7 +148,7 @@ class PublicHeaderChecker:
     #   - Fail the test if the preprocessor outputs are the same (but with some code)
     #   - If outputs different, pass the test
     # 4) If header passed the steps 1) and 3) test that it produced zero assembly code
-    def check_one_header(self, header, num):
+    def check_one_header(self, header: str, num: int) -> None:
         res = self.preprocess_one_header(header, num)
         if res == self.COMPILE_ERR_REF_CONFIG_HDR_FAILED:
             raise HeaderFailedSdkconfig()
@@ -173,7 +174,7 @@ class PublicHeaderChecker:
                 if temp_header:
                     os.unlink(temp_header)
 
-    def compile_one_header(self, header):
+    def compile_one_header(self, header: str) -> None:
         rc, out, err, cmd = exec_cmd([self.gcc, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
@@ -184,7 +185,7 @@ class PublicHeaderChecker:
         self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
         raise HeaderFailedBuildError()
 
-    def preprocess_one_header(self, header, num, ignore_sdkconfig_issue=False):
+    def preprocess_one_header(self, header: str, num: int, ignore_sdkconfig_issue: bool=False) -> int:
         all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
         if not ignore_sdkconfig_issue:
             # just strip commnets to check for CONFIG_... macros
@@ -232,11 +233,19 @@ class PublicHeaderChecker:
                 pass
 
     # Get compilation data from an example to list all public header files
-    def list_public_headers(self, ignore_dirs, ignore_files, only_dir=None):
+    def list_public_headers(self, ignore_dirs: List, ignore_files: Union[List, Set], only_dir: str=None) -> None:
         idf_path = os.getenv('IDF_PATH')
+        if idf_path is None:
+            raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
         project_dir = os.path.join(idf_path, 'examples', 'get-started', 'blink')
-        subprocess.check_call(['idf.py', 'reconfigure'], cwd=project_dir)
-        build_commands_json = os.path.join(project_dir, 'build', 'compile_commands.json')
+        build_dir = tempfile.mkdtemp()
+        sdkconfig = os.path.join(build_dir, 'sdkconfig')
+        try:
+            os.unlink(os.path.join(project_dir, 'sdkconfig'))
+        except FileNotFoundError:
+            pass
+        subprocess.check_call(['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', 'reconfigure'], cwd=project_dir)
+        build_commands_json = os.path.join(build_dir, 'compile_commands.json')
         with open(build_commands_json, 'r', encoding='utf-8') as f:
             build_command = json.load(f)[0]['command'].split()
         include_dir_flags = []
@@ -249,13 +258,13 @@ class PublicHeaderChecker:
                     include_dirs.append(item[2:])  # Removing the leading "-I"
             if item.startswith('-D'):
                 include_dir_flags.append(item.replace('\\',''))  # removes escaped quotes, eg: -DMBEDTLS_CONFIG_FILE=\\\"mbedtls/esp_config.h\\\"
-        include_dir_flags.append('-I' + os.path.join(project_dir, 'build', 'config'))
+        include_dir_flags.append('-I' + os.path.join(build_dir, 'config'))
         include_dir_flags.append('-DCI_HEADER_CHECK')
-        sdkconfig_h = os.path.join(project_dir, 'build', 'config', 'sdkconfig.h')
+        sdkconfig_h = os.path.join(build_dir, 'config', 'sdkconfig.h')
         # prepares a main_c file for easier sdkconfig checks and avoid compilers warning when compiling headers directly
         with open(sdkconfig_h, 'a') as f:
             f.write('#define IDF_SDKCONFIG_INCLUDED')
-        main_c = os.path.join(project_dir, 'build', 'compile.c')
+        main_c = os.path.join(build_dir, 'compile.c')
         with open(main_c, 'w') as f:
             f.write('#if defined(IDF_CHECK_SDKCONFIG_INCLUDED) && ! defined(IDF_SDKCONFIG_INCLUDED)\n'
                     '#error CONFIG_VARS_USED_WHILE_SDKCONFIG_NOT_INCLUDED\n'
@@ -277,22 +286,22 @@ class PublicHeaderChecker:
         self.include_dir_flags = include_dir_flags
         ignore_files = set(ignore_files)
         # processes public include files, removing ignored files
-        for f in all_include_files:
-            rel_path_file = os.path.relpath(f, idf_path)
+        for file_name in all_include_files:
+            rel_path_file = os.path.relpath(file_name, idf_path)
             if any([os.path.commonprefix([d, rel_path_file]) == d for d in ignore_dirs]):
-                self.log('{} - file ignored (inside ignore dir)'.format(f))
+                self.log('{} - file ignored (inside ignore dir)'.format(file_name))
                 continue
             if rel_path_file in ignore_files:
-                self.log('{} - file ignored'.format(f))
+                self.log('{} - file ignored'.format(file_name))
                 continue
-            files_to_check.append(f)
+            files_to_check.append(file_name)
         # removes duplicates and places headers to a work queue
-        for f in set(files_to_check):
-            self.job_queue.put(f)
+        for file_name in set(files_to_check):
+            self.job_queue.put(file_name)
         self.job_queue.put(None)  # to indicate the last job
 
 
-def check_all_headers():
+def check_all_headers() -> None:
     parser = argparse.ArgumentParser('Public header checker file', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='''\
     Tips for fixing failures reported by this script
     ------------------------------------------------

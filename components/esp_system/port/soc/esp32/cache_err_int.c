@@ -18,19 +18,18 @@
 
 #include "esp_err.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 
 #include "esp_intr_alloc.h"
 #include "soc/dport_reg.h"
-#include "hal/cpu_hal.h"
 
-#include "esp32/dport_access.h"
 #include "esp_rom_sys.h"
 
 #include "sdkconfig.h"
 
 void esp_cache_err_int_init(void)
 {
-    uint32_t core_id = cpu_hal_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
     ESP_INTR_DISABLE(ETS_MEMACCESS_ERR_INUM);
 
     // We do not register a handler for the interrupt because it is interrupt

@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Ethernet Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -22,7 +25,7 @@ Besides that, `esp_eth` component can drive third-party Ethernet module which in
 The ESP-IDF supports the usage of multiple Ethernet interfaces at a time when external modules are utilized which is also demonstrated by this example. There are several options you can combine:
    * Internal EMAC and one SPI Ethernet module.
    * Two SPI Ethernet modules of the same type connected to single SPI interface and accessed by switching appropriate CS.
-   * Internal EMAC and two SPI Ethernet modules of the same type. 
+   * Internal EMAC and two SPI Ethernet modules of the same type.
 
 #### Pin Assignment
 

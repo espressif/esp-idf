@@ -8,6 +8,7 @@
 #include "esp_rom_sys.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "hal/clk_tree_ll.h"
 #include "soc/timer_group_reg.h"
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
@@ -151,13 +152,16 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, ui
     }
 
     /* Enable requested clock (90k clock is always on) */
-    int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
-    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
-        REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, 1);
+    bool dig_32k_xtal_enabled = clk_ll_xtal32k_digi_is_enabled();
+    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+        clk_ll_xtal32k_digi_enable();
     }
 
+    bool rc_fast_enabled = clk_ll_rc_fast_is_enabled();
+    bool rc_fast_d256_enabled = clk_ll_rc_fast_d256_is_enabled();
     if (cal_clk == RTC_CAL_8MD256) {
-        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        rtc_clk_8m_enable(true, true);
+        clk_ll_rc_fast_d256_digi_enable();
     }
 
     uint32_t cal_val;
@@ -169,10 +173,14 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles, ui
 
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
 
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN, dig_32k_xtal_state);
+    /* if dig_32k_xtal was originally off and enabled due to calibration, then set back to off state */
+    if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_enabled) {
+        clk_ll_xtal32k_digi_disable();
+    }
 
     if (cal_clk == RTC_CAL_8MD256) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_D256_EN);
+        clk_ll_rc_fast_d256_digi_disable();
+        rtc_clk_8m_enable(rc_fast_enabled, rc_fast_d256_enabled);
     }
 
     return cal_val;

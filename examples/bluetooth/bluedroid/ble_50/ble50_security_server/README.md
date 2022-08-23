@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF BLE50 Security Server Example
 
@@ -24,7 +24,7 @@ There are some important points for this demo:
 
 ### Hardware Required
 
-* A development board with ESP32-C3 SoC, ESP32-S3 and BLE5.0 supoorted chips. (e.g., ESP32-C3-DevKitC-1, etc.)
+* A development board with ESP32-C3 SoC, ESP32-S3, ESP32-C2/ESP32-H2 SoC and BLE5.0 supoorted chips. (e.g., ESP32-C3-DevKitC-1, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.

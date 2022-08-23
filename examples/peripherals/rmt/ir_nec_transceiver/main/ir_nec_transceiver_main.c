@@ -6,6 +6,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "esp_log.h"
 #include "driver/rmt_tx.h"
 #include "driver/rmt_rx.h"
@@ -141,12 +142,12 @@ static void example_parse_nec_frame(rmt_symbol_word_t *rmt_nec_symbols, size_t s
     }
 }
 
-static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, rmt_rx_done_event_data_t *edata, void *user_data)
+static bool example_rmt_rx_done_callback(rmt_channel_handle_t channel, const rmt_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t high_task_wakeup = pdFALSE;
-    TaskHandle_t task_to_notify = (TaskHandle_t)user_data;
+    QueueHandle_t receive_queue = (QueueHandle_t)user_data;
     // send the received RMT symbols to the parser task
-    xTaskNotifyFromISR(task_to_notify, (uint32_t)edata, eSetValueWithOverwrite, &high_task_wakeup);
+    xQueueSendFromISR(receive_queue, edata, &high_task_wakeup);
     return high_task_wakeup == pdTRUE;
 }
 
@@ -163,11 +164,12 @@ void app_main(void)
     ESP_ERROR_CHECK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
 
     ESP_LOGI(TAG, "register RX done callback");
-    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+    QueueHandle_t receive_queue = xQueueCreate(1, sizeof(rmt_rx_done_event_data_t));
+    assert(receive_queue);
     rmt_rx_event_callbacks_t cbs = {
         .on_recv_done = example_rmt_rx_done_callback,
     };
-    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_channel, &cbs, cur_task));
+    ESP_ERROR_CHECK(rmt_rx_register_event_callbacks(rx_channel, &cbs, receive_queue));
 
     // the following timing requirement is based on NEC protocol
     rmt_receive_config_t receive_config = {
@@ -211,14 +213,14 @@ void app_main(void)
 
     // save the received RMT symbols
     rmt_symbol_word_t raw_symbols[64]; // 64 symbols should be sufficient for a standard NEC frame
-    rmt_rx_done_event_data_t *rx_data = NULL;
+    rmt_rx_done_event_data_t rx_data;
     // ready to receive
     ESP_ERROR_CHECK(rmt_receive(rx_channel, raw_symbols, sizeof(raw_symbols), &receive_config));
     while (1) {
         // wait for RX done signal
-        if (xTaskNotifyWait(0x00, ULONG_MAX, (uint32_t *)&rx_data, pdMS_TO_TICKS(1000)) == pdTRUE) {
+        if (xQueueReceive(receive_queue, &rx_data, pdMS_TO_TICKS(1000)) == pdPASS) {
             // parse the receive symbols and print the result
-            example_parse_nec_frame(rx_data->received_symbols, rx_data->num_symbols);
+            example_parse_nec_frame(rx_data.received_symbols, rx_data.num_symbols);
             // start receive again
             ESP_ERROR_CHECK(rmt_receive(rx_channel, raw_symbols, sizeof(raw_symbols), &receive_config));
         } else {

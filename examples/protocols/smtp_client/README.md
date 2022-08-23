@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # SMTP Client Example
 
 The Example is SMTP client demo. It sends and email with attachment to recipient.

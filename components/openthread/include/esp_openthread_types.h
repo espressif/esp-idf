@@ -21,8 +21,7 @@ extern "C" {
  * @brief OpenThread event declarations
  *
  */
-typedef enum
-{
+typedef enum {
     OPENTHREAD_EVENT_START,                     /*!< OpenThread stack start */
     OPENTHREAD_EVENT_STOP,                      /*!< OpenThread stack stop */
     OPENTHREAD_EVENT_IF_UP,                     /*!< OpenThread network interface up */
@@ -69,8 +68,7 @@ typedef struct {
  * @brief The radio mode of OpenThread.
  *
  */
-typedef enum
-{
+typedef enum {
     RADIO_MODE_NATIVE = 0x0,   /*!< Use the native 15.4 radio */
     RADIO_MODE_UART_RCP = 0x1, /*!< UART connection to a 15.4 capable radio co-processor (RCP) */
     RADIO_MODE_SPI_RCP = 0x2,  /*!< SPI connection to a 15.4 capable radio co-processor (RCP) */
@@ -80,8 +78,7 @@ typedef enum
  * @brief How OpenThread connects to the host.
  *
  */
-typedef enum
-{
+typedef enum {
     HOST_CONNECTION_MODE_NONE = 0x0,     /*!< Disable host connection */
     HOST_CONNECTION_MODE_CLI_UART = 0x1, /*!< CLI UART connection to the host */
     HOST_CONNECTION_MODE_RCP_UART = 0x2, /*!< RCP UART connection to the host */

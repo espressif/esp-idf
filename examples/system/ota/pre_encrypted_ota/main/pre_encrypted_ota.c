@@ -84,7 +84,11 @@ static esp_err_t _decrypt_cb(decrypt_cb_arg_t *args, void *user_ctx)
             // It is unlikely to not have App Descriptor available in first iteration of decrypt callback.
             assert(args->data_out_len >= app_desc_offset + sizeof(esp_app_desc_t));
             esp_app_desc_t *app_info = (esp_app_desc_t *) &args->data_out[app_desc_offset];
-            return validate_image_header(app_info);
+            err = validate_image_header(app_info);
+            if (err != ESP_OK) {
+                free(pargs.data_out);
+            }
+            return err;
         }
     } else {
         args->data_out_len = 0;

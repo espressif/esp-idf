@@ -355,6 +355,34 @@ In code, the waterproof configuration may look like as follows:
         ...
     }
 
+Wakeup from Light/Deep Sleep
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Only Touch Button can be configured as wake up source.
+
+Light or deep sleep are both supported to be waken up by touch sensor. For the light sleep, any installed touch button can wake it up. But only the sleep button can wake up from deep sleep, and the touch sensor will do a calibration immediately, the reference value will be calibrated to a wrong value if our finger doesn't remove timely. Though the wrong reference value will recover after the finger remove away and have no affect to the driver logic, if you don't want to see a wrong reference value while waking up from deep sleep, you can call :cpp:func:`touch_element_sleep_enable_wakeup_calibration` to disable the wakeup calibration.
+
+The Touch Element Wakeup example is available in `example/system/light_sleep` directory.
+
+.. code-block:: c
+
+    void app_main()
+    {
+        ...
+        touch_element_install();
+        touch_button_install();                 //Initialize the touch button
+        touch_button_create(&element_handle);  //Create a new Touch element
+
+        ...
+
+        // ESP_ERROR_CHECK(touch_element_enable_light_sleep(&sleep_config));
+        ESP_ERROR_CHECK(touch_element_enable_deep_sleep(button_handle[0], &sleep_config));
+        // ESP_ERROR_CHECK(touch_element_sleep_enable_wakeup_calibration(button_handle[0], false)); // (optional) Disable wakeup calibration to prevent updating the base line to a wrong value
+
+        touch_element_start();
+
+        ...
+    }
 
 Application Example
 -------------------

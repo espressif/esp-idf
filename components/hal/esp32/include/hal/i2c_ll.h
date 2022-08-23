@@ -11,6 +11,7 @@
 #include "hal/misc.h"
 #include "soc/i2c_periph.h"
 #include "soc/i2c_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/i2c_types.h"
 
 #ifdef __cplusplus
@@ -81,8 +82,6 @@ typedef struct {
 #define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_EMPTY_INT_ENA_M)
 // I2C slave RX interrupt bitmap
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_FULL_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
-// I2C source clock frequency
-#define I2C_LL_CLK_SRC_FREQ(src_clk)  (80*1000*1000)
 // I2C max timeout value
 #define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_REG_V
 
@@ -791,7 +790,7 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  *
  * @return None
  */
-static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
+static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
     ;//Not support on ESP32
 }
@@ -888,6 +887,39 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
 static inline void i2c_ll_update(i2c_dev_t *hw)
 {
     ;// ESP32 do not support
+}
+
+/**
+ * @brief  Configure I2C SCL timing
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
+ * @param  wait_high_period The I2C SCL wait rising edge period.
+ *
+ * @return None.
+ */
+static inline void i2c_ll_set_scl_clk_timing(i2c_dev_t *hw, int high_period, int low_period, int wait_high_period)
+{
+    (void)wait_high_period;
+    hw->scl_low_period.period = low_period;
+    hw->scl_high_period.period = high_period;
+}
+
+/**
+ * @brief  Get I2C SCL timing configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period Pointer to accept the SCL high period
+ * @param  low_period Pointer to accept the SCL low period
+ *
+ * @return None
+ */
+static inline void i2c_ll_get_scl_clk_timing(i2c_dev_t *hw, int *high_period, int *low_period, int *wait_high_period)
+{
+    *wait_high_period = 0; // Useless
+    *high_period = hw->scl_high_period.period;
+    *low_period = hw->scl_low_period.period;
 }
 
 #ifdef __cplusplus

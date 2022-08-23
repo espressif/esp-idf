@@ -197,6 +197,21 @@ static bool app_key_is_valid(uint16_t app_idx)
     return false;
 }
 
+static bool mod_pub_app_key_bound(struct bt_mesh_model *model,
+                                  uint16_t app_idx)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
+        if (model->keys[i] == app_idx) {
+            return true;
+        }
+    }
+
+    BT_ERR("Appkey(0x%02x) not bound to this model.", app_idx);
+    return false;
+}
+
 static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
                             uint16_t app_idx, uint8_t cred_flag, uint8_t ttl, uint8_t period,
                             uint8_t retransmit, bool store)
@@ -237,7 +252,11 @@ static uint8_t _mod_pub_set(struct bt_mesh_model *model, uint16_t pub_addr,
         return STATUS_SUCCESS;
     }
 
-    if (!bt_mesh_app_key_find(app_idx)) {
+    /* For case MESH/NODE/CFG/MP/BI-03-C, need to check if appkey
+     * is bound to model identified by the ModelIdentifier.
+     */
+    if (!bt_mesh_app_key_find(app_idx) ||
+        !mod_pub_app_key_bound(model, app_idx)) {
         return STATUS_INVALID_APPKEY;
     }
 
@@ -3049,7 +3068,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
         goto failed;
     }
 
-    if (param->period_log > 0x10) {
+    if (param->period_log > 0x11) {
         status = STATUS_CANNOT_SET;
         goto failed;
     }
@@ -3202,19 +3221,18 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
     }
 
     if (sub_src == BLE_MESH_ADDR_UNASSIGNED ||
-            sub_dst == BLE_MESH_ADDR_UNASSIGNED ||
-            sub_period == 0x00) {
+        sub_dst == BLE_MESH_ADDR_UNASSIGNED ||
+        sub_period == 0x00) {
         /* Only an explicit address change to unassigned should
          * trigger clearing of the values according to
          * MESH/NODE/CFG/HBS/BV-02-C.
          */
         if (sub_src == BLE_MESH_ADDR_UNASSIGNED ||
-                sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
+            sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
             cfg->hb_sub.src = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.dst = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.min_hops = BLE_MESH_TTL_MAX;
             cfg->hb_sub.max_hops = 0U;
-            cfg->hb_sub.count = 0U;
         }
 
         period_ms = 0;
@@ -3239,6 +3257,11 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
     }
 
     hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+
+    /* For case MESH/NODE/CFG/HBS/BV-02-C, set count_log to 0
+     * when Heartbeat Subscription Status message is sent.
+     */
+    cfg->hb_sub.count = 0U;
 
     /* MESH/NODE/CFG/HBS/BV-01-C expects the MinHops to be 0x7f after
      * disabling subscription, but 0x00 for subsequent Get requests.

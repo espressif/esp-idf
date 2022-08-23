@@ -9,7 +9,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_rom_sys.h"
-#include "hal/interrupt_controller_hal.h"
+#include "esp_cpu.h"
 #include "unity.h"
 #include "test_utils.h"
 
@@ -70,7 +70,7 @@ static void spin_task(void *arg)
 
     //Last iteration of the last spin task on this core. Reenable this core's tick interrupt
     if (total_iter_count[xPortGetCoreID()] == (NUM_PINNED_SPIN_TASK_PER_CORE * SPIN_TASK_NUM_ITER)) {
-        interrupt_controller_hal_enable_interrupts(1 <<TICK_INTR_IDX);
+        esp_cpu_intr_enable(1 <<TICK_INTR_IDX);
     }
     vTaskDelete(NULL);
 }
@@ -81,7 +81,7 @@ static void blocker_task(void *arg)
 
     //Disable tick interrupts on core 1 the duration of the test
     taskDISABLE_INTERRUPTS();
-    interrupt_controller_hal_disable_interrupts(1 << TICK_INTR_IDX);
+    esp_cpu_intr_disable(1 << TICK_INTR_IDX);
     taskENABLE_INTERRUPTS();
 
     while (!*exit_loop) {
@@ -93,7 +93,7 @@ static void blocker_task(void *arg)
 
     //Reenable tick interrupt on core 1
     taskDISABLE_INTERRUPTS();
-    interrupt_controller_hal_enable_interrupts(1 << TICK_INTR_IDX);
+    esp_cpu_intr_enable(1 << TICK_INTR_IDX);
     taskENABLE_INTERRUPTS();
 
     vTaskDelete(NULL);
@@ -114,7 +114,7 @@ TEST_CASE("Test FreeRTOS Scheduling Round Robin", "[freertos]")
 
     //Disable tick interrupts on core 0 the duration of the test
     taskDISABLE_INTERRUPTS();
-    interrupt_controller_hal_disable_interrupts(1 << TICK_INTR_IDX);
+    esp_cpu_intr_disable(1 << TICK_INTR_IDX);
     taskENABLE_INTERRUPTS();
 
     TaskHandle_t core0_task_hdls[NUM_PINNED_SPIN_TASK_PER_CORE];
@@ -158,7 +158,7 @@ TEST_CASE("Test FreeRTOS Scheduling Round Robin", "[freertos]")
     vTaskResume(blocker_task_hdl);
     //Reenable tick interrupt on core 0
     taskDISABLE_INTERRUPTS();
-    interrupt_controller_hal_enable_interrupts(1 << TICK_INTR_IDX);
+    esp_cpu_intr_enable(1 << TICK_INTR_IDX);
     taskENABLE_INTERRUPTS();
     vTaskDelay(10); //Wait for blocker task to clean up
     //Clean up queues

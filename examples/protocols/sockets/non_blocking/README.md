@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 
 # TCP non-blocking client and server examples
 
@@ -8,7 +11,7 @@ It could be configured to run either a TCP server, or a TCP client, or both, in 
 
 ## How to use example
 
-The example is configured by default as the TCP client. 
+The example is configured by default as the TCP client.
 
 Note that the example uses string representation of IP addresses and ports and thus
 could be used on both IPv4 and IPv6 protocols.

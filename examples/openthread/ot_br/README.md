@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # OpenThread Border Router Example
 
 ## Overview
@@ -18,8 +21,8 @@ Connect the two SoCs via UART, below is an example setup with ESP32 DevKitC and 
 
 ESP32 pin | ESP32-H2 pin
 ----------|-------------
-   GND    |      G 
-   GPIO4  |      TX      
+   GND    |      G
+   GPIO4  |      TX
    GPIO5  |      RX
 
 ### Configure the project
@@ -231,16 +234,16 @@ sudo sysctl -w net/ipv6/conf/wlan0/accept_ra_rt_info_max_plen=128
 For mobile devices, the route table rules will be automatically configured after iOS 14 and Android 8.1.
 
 
-### Testing IPv6 connectivity 
+### Testing IPv6 connectivity
 
 Now in the joining device, check the IP addresses:
 
 ```
-> ipaddr                                                              
+> ipaddr
 fde6:75ff:def4:3bc3:9e9e:3ef:4245:28b5
-fdde:ad00:beef:0:0:ff:fe00:c402                                       
+fdde:ad00:beef:0:0:ff:fe00:c402
 fdde:ad00:beef:0:ad4a:9a9a:3cd6:e423
-fe80:0:0:0:f011:2951:569e:9c4a                                        
+fe80:0:0:0:f011:2951:569e:9c4a
 ```
 
 You'll notice an IPv6 global prefix with only on address assigned under it. This is the routable address of this Thread node.
@@ -275,7 +278,7 @@ Done
 This service will also become visible on the Wi-Fi network:
 
 ```bash
-$ avahi-browse -r _test._udp -t   
+$ avahi-browse -r _test._udp -t
 
 + enp1s0 IPv6 my-service                                    _test._udp           local
 = enp1s0 IPv6 my-service                                    _test._udp           local

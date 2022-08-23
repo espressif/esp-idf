@@ -129,8 +129,7 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void);
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
 
-#if SOC_TOUCH_SENSOR_NUM > 0
-
+#if SOC_TOUCH_SENSOR_SUPPORTED
 /**
  * @brief Enable wakeup by touch sensor
  *
@@ -157,8 +156,7 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void);
  * @return touch pad which caused wakeup
  */
 touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
-
-#endif // SOC_TOUCH_SENSOR_NUM > 0
+#endif // SOC_TOUCH_SENSOR_SUPPORTED
 
 /**
  * @brief Returns true if a GPIO number is valid for use as wakeup source.
@@ -299,6 +297,22 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void);
 esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
 
 /**
+ * @brief Enable wakeup by bluetooth
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
+ */
+esp_err_t esp_sleep_enable_bt_wakeup(void);
+
+/**
+ * @brief Disable wakeup by bluetooth
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from bluetooth is not supported
+ */
+esp_err_t esp_sleep_disable_bt_wakeup(void);
+
+/**
  * @brief Enable wakeup by WiFi MAC
  * @return
  *      - ESP_OK on success
@@ -344,7 +358,7 @@ uint64_t esp_sleep_get_gpio_wakeup_status(void);
  *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
 esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
-                                   esp_sleep_pd_option_t option);
+                              esp_sleep_pd_option_t option);
 
 /**
  * @brief Enter deep sleep with the configured wakeup options

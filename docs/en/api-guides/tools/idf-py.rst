@@ -31,7 +31,7 @@ be created can be specified by the ``--path`` option.
 Create a new component: create-component
 ----------------------------------------
 
-This command creates a new component, which will have a minimum set of files 
+This command creates a new component, which will have a minimum set of files
 necessary for building.
 
 .. code-block:: bash
@@ -84,7 +84,7 @@ Build the project: build
 ------------------------
 
 .. code-block:: bash
-  
+
   idf.py build
 
 Running this command will build the project found in the current directory. This can involve multiple steps:
@@ -95,7 +95,7 @@ Running this command will build the project found in the current directory. This
 
 Building is incremental so if no source files or configuration has changed since the last build, nothing will be done.
 
-Additionally, the command can be run with ``app``, ``bootloader`` and 
+Additionally, the command can be run with ``app``, ``bootloader`` and
 ``partition-table`` arguments to build only the app, bootloader or partition table
 as applicable.
 
@@ -139,9 +139,16 @@ You can use ``-p`` and ``-b`` options to set serial port name and flasher baud r
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
-Similarly to the ``build`` command, the command can be run with ``app``, 
+Similarly to the ``build`` command, the command can be run with ``app``,
 ``bootloader`` and ``partition-table`` arguments to flash only the app, bootloader
 or partition table as applicable.
+
+Hints on how to resolve errors
+==============================
+
+``idf.py`` will try to suggest hints on how to resolve errors. It works with a database of hints stored in :idf_file:`tools/idf_py_actions/hints.yml` and the hints will be printed if a match is found for the given error. The menuconfig, gdb and openocd targets are not supported at the moment by automatic hints on resolving errors.
+
+The ``--no-hints`` argument of ``idf.py`` can be used to turn the hints off in case they are not desired.
 
 Important notes
 ===============
@@ -204,7 +211,7 @@ Reconfigure the project: reconfigure
   idf.py reconfigure
 
 This command re-runs CMake_ even if it doesn't seem to need re-running.
-This isn't necessary during normal usage, but can be useful after adding/removing 
+This isn't necessary during normal usage, but can be useful after adding/removing
 files from the source tree, or when modifying CMake cache variables.
 For example, ``idf.py -DNAME='VALUE' reconfigure`` can be used to set variable ``NAME`` in CMake cache to value ``VALUE``.
 
@@ -233,6 +240,7 @@ Note that some older versions of CCache may exhibit bugs on some platforms, so i
 
 - ``-v`` flag causes both ``idf.py`` and the build system to produce verbose build output. This can be useful for debugging build problems.
 - ``--cmake-warn-uninitialized`` (or ``-w``) will cause CMake to print uninitialized variable warnings found in the project directory only. This only controls CMake variable warnings inside CMake itself, not other types of build warnings. This option can also be set permanently by setting the ``IDF_CMAKE_WARN_UNINITIALIZED`` environment variable to a non-zero value.
+- ``--no-hints`` flag to disable hints on resolving errors and disable capturing output.
 
 .. _cmake: https://cmake.org
 .. _ninja: https://ninja-build.org

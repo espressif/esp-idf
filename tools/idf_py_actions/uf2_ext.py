@@ -1,10 +1,13 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from idf_py_actions.tools import ensure_build_directory, run_target
+from typing import Dict, List
+
+from click.core import Context
+from idf_py_actions.tools import PropertyDict, ensure_build_directory, run_target
 
 
-def action_extensions(base_actions, project_path):
-    def uf2_target(target_name, ctx, args):
+def action_extensions(base_actions: Dict, project_path: List) -> Dict:
+    def uf2_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
 

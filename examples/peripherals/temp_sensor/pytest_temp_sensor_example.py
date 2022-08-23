@@ -8,6 +8,7 @@ from pytest_embedded.dut import Dut
 @pytest.mark.esp32s2
 @pytest.mark.esp32c3
 @pytest.mark.esp32s3
+@pytest.mark.esp32c2
 @pytest.mark.generic
 def test_temp_sensor_example(dut: Dut) -> None:
     dut.expect_exact('Install temperature sensor')

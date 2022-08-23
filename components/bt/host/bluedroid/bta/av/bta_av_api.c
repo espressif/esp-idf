@@ -117,9 +117,8 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id,
         p_buf->hdr.event = BTA_AV_API_REGISTER_EVT;
         if (p_service_name) {
             BCM_STRNCPY_S(p_buf->p_service_name, p_service_name, BTA_SERVICE_NAME_LEN);
-            p_buf->p_service_name[BTA_SERVICE_NAME_LEN - 1] = 0;
         } else {
-            p_buf->p_service_name[0] = 0;
+            p_buf->p_service_name[0] = '\0';
         }
         p_buf->app_id = app_id;
         p_buf->p_app_data_cback = p_data_cback;
@@ -307,9 +306,10 @@ void BTA_AvReconfig(tBTA_AV_HNDL hndl, BOOLEAN suspend, UINT8 sep_info_idx,
         p_buf->num_protect  = num_protect;
         p_buf->suspend      = suspend;
         p_buf->sep_info_idx = sep_info_idx;
-        p_buf->p_protect_info = (UINT8 *)(p_buf + 1);
         memcpy(p_buf->codec_info, p_codec_info, AVDT_CODEC_SIZE);
-        memcpy(p_buf->p_protect_info, p_protect_info, num_protect);
+        if (p_protect_info && num_protect) {
+            memcpy(p_buf->p_protect_info, p_protect_info, num_protect);
+        }
         bta_sys_sendmsg(p_buf);
     }
 }

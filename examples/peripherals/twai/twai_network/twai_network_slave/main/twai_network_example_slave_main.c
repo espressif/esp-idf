@@ -146,7 +146,7 @@ static void twai_transmit_task(void *arg)
                     data_message.data[i] = (sensor_data >> (i * 8)) & 0xFF;
                 }
                 twai_transmit(&data_message, portMAX_DELAY);
-                ESP_LOGI(EXAMPLE_TAG, "Transmitted data value %d", sensor_data);
+                ESP_LOGI(EXAMPLE_TAG, "Transmitted data value %"PRIu32, sensor_data);
                 vTaskDelay(pdMS_TO_TICKS(DATA_PERIOD_MS));
                 if (xSemaphoreTake(stop_data_sem, 0) == pdTRUE) {
                     break;

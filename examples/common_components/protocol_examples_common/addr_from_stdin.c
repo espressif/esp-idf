@@ -50,7 +50,7 @@ esp_err_t get_addr_from_stdin(int port, int sock_type, int *ip_protocol, int *ad
             return ESP_OK;
 
         }
-#if CONFIG_LWIP_IPV6
+#if CONFIG_EXAMPLE_CONNECT_IPV6
         else if (cur->ai_family == AF_INET6) {
             *ip_protocol = IPPROTO_IPV6;
             *addr_family = AF_INET6;

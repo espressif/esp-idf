@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "hal/cpu_hal.h" // for cpu_hal_get_cycle_count()
+#include "esp_cpu.h" // for esp_cpu_get_cycle_count()
 #include "esp_compiler.h"
 #include "esp_log.h"
 #include "esp_log_private.h"
@@ -115,8 +115,8 @@ uint32_t esp_log_early_timestamp(void)
 #if CONFIG_IDF_TARGET_ESP32
     /* ESP32 ROM stores separate clock rate values for each CPU, but we want the PRO CPU value always */
     extern uint32_t g_ticks_per_us_pro;
-    return cpu_hal_get_cycle_count() / (g_ticks_per_us_pro * 1000);
+    return esp_cpu_get_cycle_count() / (g_ticks_per_us_pro * 1000);
 #else
-    return cpu_hal_get_cycle_count() / (esp_rom_get_cpu_ticks_per_us() * 1000);
+    return esp_cpu_get_cycle_count() / (esp_rom_get_cpu_ticks_per_us() * 1000);
 #endif
 }

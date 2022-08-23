@@ -29,8 +29,7 @@ skip:
   - "components/spiffs/spiffs"
   - "components/tinyusb/tinyusb"
   - "components/unity/unity"
-  - "examples/build_system/cmake/import_lib/main/lib/tinyxml2"
-  - "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"
+  - "components/heap/tlsf"
 
   # disabled temporarily to pass the CI
   - "components/bt/common/btc/core/btc_task.c"

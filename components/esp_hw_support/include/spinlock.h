@@ -5,15 +5,14 @@
  */
 #pragma once
 
+#include "sdkconfig.h"
 #include <stdint.h>
 #include <stdbool.h>
-#include "sdkconfig.h"
-#include "hal/cpu_hal.h"
-#include "compare_set.h"
-#include "soc/soc.h"
+#include "esp_cpu.h"
 
 #if __XTENSA__
 #include "xtensa/xtruntime.h"
+#include "xt_utils.h"
 #endif
 
 #ifdef __cplusplus
@@ -35,20 +34,7 @@ extern "C" {
 typedef struct {
     NEED_VOLATILE_MUX uint32_t owner;
     NEED_VOLATILE_MUX uint32_t count;
-}spinlock_t;
-
-#if (CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
-/**
- * @brief Check if the pointer is on external ram
- * @param p pointer
- * @return true: on external ram; false: not on external ram
- */
-static inline bool __attribute__((always_inline)) spinlock_ptr_external_ram(const void *p)
-{
-    //On esp32, this external virtual address rergion is for psram
-    return ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
-}
-#endif
+} spinlock_t;
 
 /**
  * @brief Initialize a lock to its default state - unlocked
@@ -80,65 +66,68 @@ static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t
 static inline bool __attribute__((always_inline)) spinlock_acquire(spinlock_t *lock, int32_t timeout)
 {
 #if !CONFIG_FREERTOS_UNICORE && !BOOTLOADER_BUILD
-    uint32_t result;
     uint32_t irq_status;
-    uint32_t ccount_start;
     uint32_t core_id, other_core_id;
+    bool lock_set;
+    esp_cpu_cycle_count_t start_count;
 
     assert(lock);
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 
-    if(timeout != SPINLOCK_WAIT_FOREVER){
-        RSR(CCOUNT, ccount_start);
+    // Note: The core IDs are the full 32 bit (CORE_ID_REGVAL_PRO/CORE_ID_REGVAL_APP) values
+    core_id = xt_utils_get_raw_core_id();
+    other_core_id = CORE_ID_REGVAL_XOR_SWAP ^ core_id;
+
+    /* lock->owner should be one of SPINLOCK_FREE, CORE_ID_REGVAL_PRO,
+     * CORE_ID_REGVAL_APP:
+     *  - If SPINLOCK_FREE, we want to atomically set to 'core_id'.
+     *  - If "our" core_id, we can drop through immediately.
+     *  - If "other_core_id", we spin here.
+     */
+
+    // The caller is already the owner of the lock. Simply increment the nesting count
+    if (lock->owner == core_id) {
+        assert(lock->count > 0 && lock->count < 0xFF);    // Bad count value implies memory corruption
+        lock->count++;
+        XTOS_RESTORE_INTLEVEL(irq_status);
+        return true;
     }
 
-    /*spin until we own a core */
-    RSR(PRID, core_id);
+    /* First attempt to take the lock.
+     *
+     * Note: We do a first attempt separately (instead of putting this into a loop) in order to avoid call to
+     * esp_cpu_get_cycle_count(). This doing a first attempt separately makes acquiring a free lock quicker, which
+     * is the case for the majority of spinlock_acquire() calls (as spinlocks are free most of the time since they
+     * aren't meant to be held for long).
+     */
+    lock_set = esp_cpu_compare_and_set(&lock->owner, SPINLOCK_FREE, core_id);
+    if (lock_set || timeout == SPINLOCK_NO_WAIT) {
+        // We've successfully taken the lock, or we are not retrying
+        goto exit;
+    }
 
-    /* Note: coreID is the full 32 bit core ID (CORE_ID_REGVAL_PRO/CORE_ID_REGVAL_APP) */
-
-    other_core_id = CORE_ID_REGVAL_XOR_SWAP ^ core_id;
+    // First attempt to take the lock has failed. Retry until the lock is taken, or until we timeout.
+    start_count = esp_cpu_get_cycle_count();
     do {
-
-        /* lock->owner should be one of SPINLOCK_FREE, CORE_ID_REGVAL_PRO,
-         * CORE_ID_REGVAL_APP:
-         *  - If SPINLOCK_FREE, we want to atomically set to 'core_id'.
-         *  - If "our" core_id, we can drop through immediately.
-         *  - If "other_core_id", we spin here.
-         */
-        result = core_id;
-
-#if (CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
-        if (spinlock_ptr_external_ram(lock)) {
-            compare_and_set_extram(&lock->owner, SPINLOCK_FREE, &result);
-        } else {
-#endif
-        compare_and_set_native(&lock->owner, SPINLOCK_FREE, &result);
-#if (CONFIG_SPIRAM && CONFIG_IDF_TARGET_ESP32)
-        }
-#endif
-        if(result != other_core_id) {
+        lock_set = esp_cpu_compare_and_set(&lock->owner, SPINLOCK_FREE, core_id);
+        if (lock_set) {
             break;
         }
+        // Keep looping if we are waiting forever, or check if we have timed out
+    } while ((timeout == SPINLOCK_WAIT_FOREVER) || (esp_cpu_get_cycle_count() - start_count) <= timeout);
 
-        if (timeout != SPINLOCK_WAIT_FOREVER) {
-            uint32_t ccount_now;
-            ccount_now = cpu_hal_get_cycle_count();
-            if (ccount_now - ccount_start > (unsigned)timeout) {
-                XTOS_RESTORE_INTLEVEL(irq_status);
-                return false;
-            }
-        }
-    }while(1);
+exit:
+    if (lock_set) {
+        assert(lock->owner == core_id);
+        assert(lock->count == 0);   // This is the first time the lock is set, so count should still be 0
+        lock->count++;  // Finally, we increment the lock count
+    } else {    // We timed out waiting for lock
+        assert(lock->owner == SPINLOCK_FREE || lock->owner == other_core_id);
+        assert(lock->count < 0xFF); // Bad count value implies memory corruption
+    }
 
-    /* any other value implies memory corruption or uninitialized mux */
-    assert(result == core_id || result == SPINLOCK_FREE);
-    assert((result == SPINLOCK_FREE) == (lock->count == 0)); /* we're first to lock iff count is zero */
-    assert(lock->count < 0xFF); /* Bad count value implies memory corruption */
-
-    lock->count++;
     XTOS_RESTORE_INTLEVEL(irq_status);
-    return true;
+    return lock_set;
 
 #else  // !CONFIG_FREERTOS_UNICORE
     return true;
@@ -167,11 +156,11 @@ static inline void __attribute__((always_inline)) spinlock_release(spinlock_t *l
     assert(lock);
     irq_status = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 
-    RSR(PRID, core_id);
-    assert(core_id == lock->owner); // This is a mutex we didn't lock, or it's corrupt
+    core_id = xt_utils_get_raw_core_id();
+    assert(core_id == lock->owner); // This is a lock that we didn't acquire, or the lock is corrupt
     lock->count--;
 
-    if(!lock->count) {
+    if (!lock->count) { // If this is the last recursive release of the lock, mark the lock as free
         lock->owner = SPINLOCK_FREE;
     } else {
         assert(lock->count < 0x100); // Indicates memory corruption

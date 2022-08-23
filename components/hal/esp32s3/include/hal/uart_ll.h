@@ -118,37 +118,17 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t *source_clk)
 }
 
 /**
- * @brief  Get the UART source clock frequency.
- *
- * @param  hw Beginning address of the peripheral registers.
- *
- * @return Current source clock frequency
- */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
-{
-    switch (hw->clk_conf.sclk_sel) {
-        default:
-        case 1:
-            return APB_CLK_FREQ;
-        case 2:
-            return RTC_CLK_FREQ;
-        case 3:
-            return XTAL_CLK_FREQ;
-    }
-}
-
-/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud rate to be set.
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
  * @return None
  */
-FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
+FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
 #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
-    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
     int sclk_div = DIV_UP(sclk_freq, max_div * baud);
 
@@ -165,12 +145,12 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
  * @brief  Get the current baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
  * @return The current baudrate
  */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
+FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     uart_clkdiv_reg_t div_reg = hw->clkdiv;
     return ((sclk_freq << 4)) /
         (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * (HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1));

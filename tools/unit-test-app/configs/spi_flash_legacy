@@ -1,4 +1,0 @@
-# This config is for all targets
-TEST_COMPONENTS=spi_flash
-CONFIG_SPIRAM=y
-CONFIG_SPI_FLASH_USE_LEGACY_IMPL=y

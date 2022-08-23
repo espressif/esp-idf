@@ -29,7 +29,6 @@ import subprocess
 import sys
 import threading
 import time
-from builtins import bytes
 from typing import Any, List, Optional, Type, Union
 
 import serial
@@ -84,15 +83,16 @@ class Monitor:
         websocket_client=None,  # type: Optional[WebSocketClient]
         enable_address_decoding=True,  # type: bool
         timestamps=False,  # type: bool
-        timestamp_format=''  # type: str
+        timestamp_format='',  # type: str
+        force_color=False  # type: bool
     ):
         self.event_queue = queue.Queue()  # type: queue.Queue
         self.cmd_queue = queue.Queue()  # type: queue.Queue
         self.console = miniterm.Console()
-
-        sys.stderr = get_converter(sys.stderr, decode_output=True)
-        self.console.output = get_converter(self.console.output)
-        self.console.byte_output = get_converter(self.console.byte_output)
+        # if the variable is set ANSI will be printed even if we do not print to terminal
+        sys.stderr = get_converter(sys.stderr, decode_output=True, force_color=force_color)
+        self.console.output = get_converter(self.console.output, force_color=force_color)
+        self.console.byte_output = get_converter(self.console.byte_output, force_color=force_color)
 
         self.elf_file = elf_file or ''
         self.elf_exists = os.path.exists(self.elf_file)
@@ -233,7 +233,8 @@ class SerialMonitor(Monitor):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
         """ Use 'with self' to temporarily disable monitoring behaviour """
         self.console_reader.start()
-        self.serial_reader.gdb_exit = self.gdb_helper.gdb_exit  # write gdb_exit flag
+        if self.elf_exists:
+            self.serial_reader.gdb_exit = self.gdb_helper.gdb_exit  # write gdb_exit flag
         self.serial_reader.start()
 
     def _pre_start(self) -> None:
@@ -353,7 +354,8 @@ def main() -> None:
                       ws,
                       not args.disable_address_decoding,
                       args.timestamps,
-                      args.timestamp_format)
+                      args.timestamp_format,
+                      args.force_color)
 
         yellow_print('--- Quit: {} | Menu: {} | Help: {} followed by {} ---'.format(
             key_description(monitor.console_parser.exit_key),

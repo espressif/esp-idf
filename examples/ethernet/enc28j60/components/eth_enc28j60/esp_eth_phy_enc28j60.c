@@ -8,7 +8,7 @@
 #include <sys/cdefs.h>
 #include "esp_log.h"
 #include "esp_eth.h"
-#include "eth_phy_regs_struct.h"
+#include "eth_phy_802_3_regs.h"
 #include "esp_eth_enc28j60.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

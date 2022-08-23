@@ -22,6 +22,7 @@
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
 #include "soc/pcnt_periph.h"
+#include "soc/gpio_pins.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
 #include "hal/gpio_hal.h"
@@ -29,6 +30,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/pulse_cnt.h"
+#include "esp_memory_utils.h"
 
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
@@ -39,9 +41,9 @@
 #endif
 
 #if CONFIG_PCNT_ISR_IRAM_SAFE
-#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
 #else
-#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
+#define PCNT_INTR_ALLOC_FLAGS (ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED)
 #endif
 
 #define PCNT_PM_LOCK_NAME_LEN_MAX 16
@@ -79,7 +81,7 @@ typedef enum {
 struct pcnt_unit_t {
     pcnt_group_t *group;                                  // which group the pcnt unit belongs to
     portMUX_TYPE spinlock;                                // Spinlock, stop one unit from accessing different parts of a same register concurrently
-    uint32_t unit_id;                                     // allocated unit numerical ID
+    int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
@@ -96,7 +98,7 @@ struct pcnt_unit_t {
 
 struct pcnt_chan_t {
     pcnt_unit_t *unit;   // pointer to the PCNT unit where it derives from
-    uint32_t channel_id; // channel ID, index from 0
+    int channel_id;      // channel ID, index from 0
     int edge_gpio_num;
     int level_gpio_num;
 };
@@ -281,7 +283,7 @@ esp_err_t pcnt_unit_enable(pcnt_unit_handle_t unit)
     if (unit->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(unit->pm_lock), TAG, "acquire pm_lock failed");
     }
-    // enable interupt service
+    // enable interrupt service
     if (unit->intr) {
         ESP_RETURN_ON_ERROR(esp_intr_enable(unit->intr), TAG, "enable interrupt service failed");
     }
@@ -364,7 +366,6 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
 {
     ESP_RETURN_ON_FALSE(unit && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     // unit event callbacks should be registered in init state
-    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
     pcnt_group_t *group = unit->group;
     int group_id = group->group_id;
     int unit_id = unit->unit_id;
@@ -380,6 +381,7 @@ esp_err_t pcnt_unit_register_event_callbacks(pcnt_unit_handle_t unit, const pcnt
 
     // lazy install interrupt service
     if (!unit->intr) {
+        ESP_RETURN_ON_FALSE(unit->fsm == PCNT_UNIT_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
         int isr_flags = PCNT_INTR_ALLOC_FLAGS;
         ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(pcnt_periph_signals.groups[group_id].irq, isr_flags,
                             (uint32_t)pcnt_ll_get_intr_status_reg(group->hal.dev), PCNT_LL_UNIT_WATCH_EVENT(unit_id),
@@ -556,11 +558,22 @@ esp_err_t pcnt_new_channel(pcnt_unit_handle_t unit, const pcnt_chan_config_t *co
         esp_rom_gpio_connect_in_signal(config->edge_gpio_num,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
                                        config->flags.invert_edge_input);
+    } else {
+        // using virtual IO
+        esp_rom_gpio_connect_in_signal(config->flags.virt_edge_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].pulse_sig,
+                                       config->flags.invert_edge_input);
     }
+
     if (config->level_gpio_num >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << config->level_gpio_num;
         ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config level GPIO failed");
         esp_rom_gpio_connect_in_signal(config->level_gpio_num,
+                                       pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
+                                       config->flags.invert_level_input);
+    } else {
+        // using virtual IO
+        esp_rom_gpio_connect_in_signal(config->flags.virt_level_io_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT,
                                        pcnt_periph_signals.groups[group_id].units[unit_id].channels[channel_id].control_sig,
                                        config->flags.invert_level_input);
     }

@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include "esp_log.h"
 #include "esp_vfs.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "openocd_semihosting.h"
 
 #ifndef CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS
@@ -78,7 +78,7 @@ static inline bool ctx_is_unused(const vfs_semihost_ctx_t* ctx)
 
 #define FAIL_IF_NO_DEBUGGER() \
     do { \
-        if (!cpu_hal_is_debugger_attached()) { \
+        if (!esp_cpu_dbgr_is_attached()) { \
             errno = EIO; \
             return -1; \
         } \
@@ -172,7 +172,7 @@ esp_err_t esp_vfs_semihost_register(const char* base_path)
         .lseek_p = &vfs_semihost_lseek,
     };
     ESP_LOGD(TAG, "Register semihosting driver '%s'", base_path);
-    if (!cpu_hal_is_debugger_attached()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         ESP_LOGE(TAG, "OpenOCD is not connected!");
         return ESP_ERR_NOT_SUPPORTED;
     }

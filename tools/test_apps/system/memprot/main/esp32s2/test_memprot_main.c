@@ -3,7 +3,7 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp32s2/memprot.h"
 #include "soc/soc.h"
 
@@ -94,9 +94,6 @@
 static uint8_t fnc_call0_buff[] = {0xf0, 0x22, 0x11, 0x0d, 0xf0, 0x00, 0x00, 0x00};
 
 volatile bool g_override_illegal_instruction = false;
-
-#define MAP_DRAM_TO_IRAM(addr)       (addr - SOC_DIRAM_DRAM_LOW + SOC_DIRAM_IRAM_LOW)
-#define MAP_IRAM_TO_DRAM(addr)       (addr - SOC_DIRAM_IRAM_LOW + SOC_DIRAM_DRAM_LOW)
 
 #define SRAM_TEST_BUFFER_SIZE      0x400
 #define SRAM_TEST_OFFSET           0x200

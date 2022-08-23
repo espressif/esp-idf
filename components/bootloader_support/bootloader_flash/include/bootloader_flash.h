@@ -7,7 +7,8 @@
 
 #include <stdint.h>
 #include <esp_err.h>
-#include <esp_spi_flash.h> /* including in bootloader for error values */
+#include "spi_flash_mmap.h" /* including in bootloader for error values */
+#include "esp_private/spi_flash_os.h"
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "bootloader_flash_override.h"
@@ -49,6 +50,12 @@ esp_err_t bootloader_flash_xmc_startup(void);
   */
 esp_err_t  __attribute__((weak)) bootloader_flash_unlock(void);
 
+/**
+ * @brief Reset the flash chip (66H + 99H).
+ *
+ * @return ESP_OK if success, otherwise ESP_FAIL.
+ */
+esp_err_t bootloader_flash_reset_chip(void);
 
 #ifdef __cplusplus
 }

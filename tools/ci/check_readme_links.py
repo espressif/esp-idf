@@ -2,19 +2,8 @@
 #
 # Checks that all links in the readme markdown files are valid
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 import argparse
@@ -27,8 +16,7 @@ import urllib.error
 import urllib.request
 from collections import defaultdict, namedtuple
 from pathlib import Path
-
-EXCLUDE_DOCS_LIST = ['examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/**']
+from typing import List
 
 # The apple apps links are not accessible from the company network for some reason
 EXCLUDE_URL_LIST = ['https://apps.apple.com/in/app/esp-ble-provisioning/id1473590141', 'https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630']
@@ -37,28 +25,28 @@ Link = namedtuple('Link', ['file', 'url'])
 
 
 class ReadmeLinkError(Exception):
-    def __init__(self, file, url):
+    def __init__(self, file: str, url: str) -> None:
         self.file = file
         self.url = url
 
 
 class RelativeLinkError(ReadmeLinkError):
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Relative link error, file - {} not found, linked from {}'.format(self.url, self.file)
 
 
 class UrlLinkError(ReadmeLinkError):
-    def __init__(self, file, url, error_code):
+    def __init__(self, file: str, url: str, error_code: str):
         self.error_code = error_code
         super().__init__(file, url)
 
-    def __str__(self):
+    def __str__(self) -> str:
         files = [str(f) for f in self.file]
         return 'URL error, url - {} in files - {} is not accessible, request returned {}'.format(self.url, ', '.join(files), self.error_code)
 
 
 # we do not want a failed test just due to bad network conditions, for non 404 errors we simply print a warning
-def check_url(url, files, timeout):
+def check_url(url: str, files: str, timeout: float) -> None:
     try:
         with urllib.request.urlopen(url, timeout=timeout):
             return
@@ -71,7 +59,7 @@ def check_url(url, files, timeout):
         print('Unable to access {}, err = {}'.format(url, str(e)))
 
 
-def check_web_links(web_links):
+def check_web_links(web_links: defaultdict) -> List:
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         errors = []
@@ -85,7 +73,7 @@ def check_web_links(web_links):
         return errors
 
 
-def check_file_links(file_links):
+def check_file_links(file_links: List) -> List:
     errors = []
 
     for link in file_links:
@@ -98,17 +86,16 @@ def check_file_links(file_links):
     return errors
 
 
-def get_md_links(folder):
+def get_md_links(folder: str) -> List:
     MD_LINK_RE = r'\[.+?\]\((.+?)(#.+)?\)'
 
-    idf_path = Path(os.getenv('IDF_PATH'))
+    idf_path_str = os.getenv('IDF_PATH')
+    if idf_path_str is None:
+        raise RuntimeError("Environment variable 'IDF_PATH' wasn't set.")
+    idf_path = Path(idf_path_str)
     links = []
 
     for path in (idf_path / folder).rglob('*.md'):
-        if any([path.relative_to(idf_path).match(exclude_doc) for exclude_doc in EXCLUDE_DOCS_LIST]):
-            print('{} - excluded'.format(path))
-            continue
-
         with path.open(encoding='utf8') as f:
             content = f.read()
 
@@ -121,7 +108,7 @@ def get_md_links(folder):
     return links
 
 
-def check_readme_links(args):
+def check_readme_links(args: argparse.Namespace) -> int:
 
     links = get_md_links('examples')
     print('Found {} links'.format(len(links)))

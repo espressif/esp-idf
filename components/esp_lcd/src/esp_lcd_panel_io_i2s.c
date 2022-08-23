@@ -95,7 +95,7 @@ struct lcd_panel_io_i80_t {
     esp_lcd_panel_io_t base;   // Base class of generic lcd panel io
     esp_lcd_i80_bus_t *bus;    // Which bus the device is attached to
     int cs_gpio_num;           // GPIO used for CS line
-    unsigned int pclk_hz;      // PCLK clock frequency
+    uint32_t pclk_hz;          // PCLK clock frequency
     size_t clock_prescale;     // Prescaler coefficient, determined by user's configured PCLK frequency
     QueueHandle_t trans_queue; // Transaction queue, transactions in this queue are pending for scheduler to dispatch
     QueueHandle_t done_queue;  // Transaction done queue, transactions in this queue are finished but not recycled by the caller
@@ -152,7 +152,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
     int bus_id = -1;
     for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
-        if (i2s_priv_register_object(bus, i) == ESP_OK) {
+        if (i2s_platform_acquire_occupation(i, "esp_lcd_panel_io_i2s") == ESP_OK) {
             bus_id = i;
             break;
         }
@@ -170,7 +170,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_reset_fifo(bus->hal.dev);
     // install interrupt service, (I2S LCD mode only uses the "TX Unit", which leaves "RX Unit" for other purpose)
     // So the interrupt should also be able to share with other functionality
-    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus->bus_id].irq_id, isr_flags,
                                     (uint32_t)i2s_ll_get_intr_status_reg(bus->hal.dev),
                                     I2S_LL_EVENT_TX_EOF, lcd_default_isr_handler, bus, &bus->intr);
@@ -185,7 +185,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_bypass_pcm(bus->hal.dev, true);
     i2s_ll_tx_set_slave_mod(bus->hal.dev, false);
     i2s_ll_tx_set_bits_mod(bus->hal.dev, bus_config->bus_width);
-    i2s_ll_tx_select_slot(bus->hal.dev, I2S_STD_SLOT_ONLY_LEFT); // mono
+    i2s_ll_tx_select_std_slot(bus->hal.dev, I2S_STD_SLOT_BOTH, true); // copy mono
     bus->bus_width = bus_config->bus_width;
     i2s_ll_tx_enable_right_first(bus->hal.dev, true);
 #if SOC_I2S_SUPPORTS_DMA_EQUAL
@@ -214,7 +214,7 @@ err:
             esp_intr_free(bus->intr);
         }
         if (bus->bus_id >= 0) {
-            i2s_priv_deregister_object(bus->bus_id);
+            i2s_platform_release_occupation(bus->bus_id);
         }
         if (bus->format_buffer) {
             free(bus->format_buffer);
@@ -233,7 +233,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus)
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(LIST_EMPTY(&bus->device_list), ESP_ERR_INVALID_STATE, err, TAG, "device list not empty");
     int bus_id = bus->bus_id;
-    i2s_priv_deregister_object(bus_id);
+    i2s_platform_release_occupation(bus_id);
     esp_intr_free(bus->intr);
     if (bus->pm_lock) {
         esp_pm_lock_delete(bus->pm_lock);
@@ -263,7 +263,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     // because we set the I2S's left channel data same to right channel, so f_pclk = f_i2s/pclk_div/2
     uint32_t pclk_prescale = bus->resolution_hz / 2 / io_config->pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= I2S_LL_BCK_MAX_PRESCALE, ESP_ERR_NOT_SUPPORTED, err, TAG,
-                      "prescaler can't satisfy PCLK clock %u", io_config->pclk_hz);
+                      "prescaler can't satisfy PCLK clock %"PRIu32"Hz", io_config->pclk_hz);
     i80_device = heap_caps_calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i80_device, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 panel io");
     // create two queues for i80 device
@@ -302,7 +302,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
     }
     *ret_io = &(i80_device->base);
-    ESP_LOGD(TAG, "new i80 lcd panel io @%p on bus(%d), pclk=%uHz", i80_device, bus->bus_id, i80_device->pclk_hz);
+    ESP_LOGD(TAG, "new i80 lcd panel io @%p on bus(%d), pclk=%"PRIu32"Hz", i80_device, bus->bus_id, i80_device->pclk_hz);
     return ESP_OK;
 
 err:
@@ -593,9 +593,9 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
-        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_D2CLK);
+        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_SRC_PLL_160M);
 #if CONFIG_PM_ENABLE
-        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_bus_lcd", &bus->pm_lock);
+        ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_controller_lcd", &bus->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");
         ESP_LOGD(TAG, "installed ESP_PM_APB_FREQ_MAX lock");
 #endif

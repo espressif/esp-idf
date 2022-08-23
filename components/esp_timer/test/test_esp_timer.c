@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -381,6 +386,8 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
 }
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5052
 TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
 {
     int64_t begin = esp_timer_get_time();
@@ -392,6 +399,7 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     int ns_per_call = (int) ((end - begin) * 1000 / iter_count);
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff(void)
 {
@@ -667,9 +675,9 @@ TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
     vSemaphoreDelete(sem);
 }
 
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+#if !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
-#include "soc/dport_reg.h"
+#include "dport_access.h"
 static bool task_stop;
 static bool time_jumped;
 
@@ -795,7 +803,7 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
     TEST_ASSERT(time_jumped == false);
 }
 
-#endif // !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+#endif // !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {

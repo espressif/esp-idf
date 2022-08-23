@@ -12,6 +12,30 @@
             "description": "Packages for supporting debugging from web browser",
             "optional": true,
             "requirement_path": "tools/requirements/requirements.gdbgui.txt"
+        },
+        {
+            "name": "pytest",
+            "description": "Packages for CI with pytest",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.pytest.txt"
+        },
+        {
+            "name": "ttfw",
+            "description": "Packages for CI with ttfw",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.ttfw.txt"
+        },
+        {
+            "name": "ci",
+            "description": "Packages for ESP-IDF CI scripts",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.ci.txt"
+        },
+        {
+            "name": "docs",
+            "description": "Packages for building ESP-IDF documentation",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.docs.txt"
         }
     ]
 }

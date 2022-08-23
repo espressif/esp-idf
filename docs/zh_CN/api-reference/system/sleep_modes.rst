@@ -67,7 +67,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     RTC IO 模块中包含这样一个逻辑——当发生触摸传感器中断时，触发唤醒。要启用此唤醒源，用户需要在芯片进入睡眠模式前配置触摸传感器中断功能。
 
     .. only:: esp32
-    
+
         ESP32 修订版 0 和 1 仅在 RTC 外设没有被强制供电时支持该唤醒源（即 ESP_PD_DOMAIN_RTC_PERIPH 应被设置为 ESP_PD_OPTION_AUTO）。
 
     可调用 :cpp:func:`esp_sleep_enable_touchpad_wakeup` 函数来启用该唤醒源。
@@ -78,7 +78,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     ^^^^^^^^^^^^^^^^^^^^^^
 
     RTC IO 模块中包含这样一个逻辑——当某个 RTC GPIO 被设置为预定义的逻辑值时，触发唤醒。RTC IO 是 RTC 外设电源域的一部分，因此如果该唤醒源被请求，RTC 外设将在 Deep-sleep 模式期间保持供电。
-    
+
     在此模式下，RTC IO 模块被使能，因此也可以使用内部上拉或下拉电阻。配置时，应用程序需要在调用函数 :cpp:func:`esp_deep_sleep_start` 前先调用函数 :cpp:func:`rtc_gpio_pullup_en` 和 :cpp:func:`rtc_gpio_pulldown_en`。
 
     .. only:: esp32
@@ -115,7 +115,7 @@ RTC 控制器中内嵌定时器，可用于在预定义的时间到达后唤醒�
     当芯片处于睡眠模式时，ULP 协处理器仍然运行，可用于轮询传感器、监视 ADC 或触摸传感器的值，并在检测到特殊事件时唤醒芯片。ULP 协处理器是 RTC 外设电源域的一部分，运行存储在 RTC 低速内存中的程序。如果这一唤醒源被请求，RTC 低速内存将会在睡眠期间保持供电状态。RTC 外设会在 ULP 协处理器开始运行程序前自动上电；一旦程序停止运行，RTC 外设会再次自动断电。
 
     .. only:: esp32
-    
+
         ESP32 修订版 0 和 1 仅在 RTC 外设没有被强制供电时支持该唤醒（即 ESP_PD_DOMAIN_RTC_PERIPH 应被设置为 ESP_PD_OPTION_AUTO）。
 
     可调用 :cpp:func:`esp_sleep_enable_ulp_wakeup` 函数来启用此唤醒源。
@@ -168,6 +168,36 @@ RTC 外设和内存断电
 
     {IDF_TARGET_NAME} 中只有 RTC 高速内存，因此，如果程序中的某些值被标记为 ``RTC_DATA_ATTR``、``RTC_SLOW_ATTR`` 或 ``RTC_FAST_ATTR`` 属性，那么所有这些值都将被存入 RTC 高速内存，默认情况下保持供电。如果有需要，您也可以使用函数 :cpp:func:`esp_sleep_pd_config` 对其进行修改。
 
+Flash 断电
+----------
+
+默认情况下，调用函数 :cpp:func:`esp_light_sleep_start` 后， flash **不会** 断电，因为在 sleep 过程中断电 flash 存在风险。具体而言，flash 断电需要时间，但是在此期间，系统有可能被唤醒，导致 flash 重新被上电。此时，断电尚未完成又重新上电的硬件行为有可能导致 flash 无法正常工作。
+
+理论上讲，在 flash 完全断电后可以仅唤醒系统，然而现实情况是 flash 断电所需的时间很难预测。如果用户为 flash 供电电路添加了滤波电容，断电所需时间可能会更长。此外，即使可以预知 flash 彻底断电所需的时间，有时也不能通过设置足够长的睡眠时间来确保 flash 断电的安全（比如，突发的异步唤醒源会使得实际的睡眠时间不可控）。
+
+.. warning::
+    如果在 flash 的供电电路上添加了滤波电容，那么应当尽一切可能避免 flash 断电。
+
+因为这些不可控的因素，ESP-IDF 很难保证 flash断电的绝对安全。因此 ESP-IDF 不推荐用户断电 flash。对于一些功耗敏感型应用，可以通过设置 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND` 来减少 light sleep 期间 flash 的功耗。这种方式在几乎所有场景下都要比断电 flash 更好，兼顾了安全性和功耗。
+
+.. only:: SOC_SPIRAM_SUPPORTED
+
+    值得一提的是，PSRAM 也有一个类似的 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND`。
+
+考虑到有些用户能够充分评估断电 flash 的风险，并希望通过断电 flash 来获得更低的功耗，因此 ESP-IDF 提供了两种断电 flash 的机制：
+
+    .. list::
+
+        - 设置 Kconfig 配置项 :ref:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 将使 ESP-IDF 以一个严格的条件来断电 flash。严格的条件具体指的是，RTC timer 是唯一的唤醒源 **且** 睡眠时间比 flash 彻底断电所需时间更长。
+        - 调用函数 ``esp_sleep_pd_config(ESP_PD_DOMAIN_VDDSDIO, ESP_PD_OPTION_OFF)`` 将使 ESP-IDF 以一个宽松的条件来断电 flash。宽松的条件具体指的是 RTC timer 唤醒源未被使能 **或** 睡眠时间比 flash 彻底断电所需时间更长。
+
+.. note::
+
+    .. list::
+
+        - Light sleep 时，ESP-IDF 没有提供保证 flash 一定会被断电的机制。
+        - 不管用户的配置如何，函数 :cpp:func:`esp_deep_sleep_start` 都会强制断电 flash。
+
 进入 Light-sleep 模式
 -------------------------
 
@@ -196,7 +226,7 @@ RTC 外设和内存断电
 .. only:: esp32c3
 
     在 Deep-sleep 模式中：
-        - 数字 GPIO (GPIO6 ~ 21) 处于高阻态。 
+        - 数字 GPIO (GPIO6 ~ 21) 处于高阻态。
         - RTC GPIO (GPIO0 ~ 5) 可能处于以下状态：
             - 如果未启用保持 (hold) 功能，RTC GPIO 将处于高阻态。
             - 如果启用保持功能，RTC GPIO 管脚将会在保持功能开启时处于锁存状态。
@@ -213,7 +243,7 @@ UART 输出处理
 
 :cpp:func:`esp_sleep_get_wakeup_cause` 函数可用于检测是何种唤醒源在睡眠期间被触发。
 
-.. only:: SOC_TOUCH_SENSOR_NUM
+.. only:: SOC_TOUCH_SENSOR_SUPPORTED
 
     对于触摸传感器唤醒源，可以调用函数 :cpp:func:`esp_sleep_get_touchpad_wakeup_status` 来确认触发唤醒的触摸管脚。
 

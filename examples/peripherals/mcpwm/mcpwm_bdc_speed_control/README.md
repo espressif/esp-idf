@@ -4,7 +4,11 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example mainly illustrates how to drive a brushed DC motor by generating two specific PWM signals. However the PWM signals from ESP32 can't drive motors directly as the motor usually consumes high current. So an H-bridge like [DRV8848](https://www.ti.com/product/DRV8848) should be used to provide the needed voltage and current for brushed DC motor. To measure the speed of motor, a photoelectric encoder is used to generate the "speed feedback" signals (e.g. a pair of quadrature signal). The example uses a simple PID control approach to keep the motor speed in a constant speed. The example provides a console command line interface for user to update the PID parameters according to actual situation.
+This example mainly illustrates how to drive a brushed DC motor by generating two specific PWM signals. However the PWM signals from ESP chip can't drive motors directly as the motor usually consumes high current. So an H-bridge like [DRV8848](https://www.ti.com/product/DRV8848) should be used to provide the needed voltage and current for brushed DC motor. To simplify the DC motor control of MCPWM peripheral driver, there's a component called [bdc_motor](https://components.espressif.com/component/espressif/bdc_motor) which abstracts the common operations into a generic interface. The most useful operations are: `forward`, `reverse`, `coast` and `brake`.
+
+To measure the speed of motor, a photoelectric encoder is used to generate the "speed feedback" signals (e.g. a pair of quadrature signal). In the example, we use the PCNT peripheral to decode that quadrature signals. For more information, please refer to [rotary encoder example](../../pcnt/rotary_encoder/README.md) as well.
+
+The example uses a simple PID algorithm to keep the motor spin in a stable speed. Like the [bdc_motor](https://components.espressif.com/component/espressif/bdc_motor), the [PID component](https://components.espressif.com/component/espressif/pid_ctrl) is also managed by the component manager. These components' dependencies are listed in the [manifest file](main/idf_component.yml).
 
 ## How to Use Example
 
@@ -12,7 +16,7 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Hardware Required
 
-* A development board with any Espressif SoC which features MCPWM and PCNT peripheral (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with any Espressif SoC which features MCPWM and PCNT peripheral (e.g., ESP32-DevKitC, ESP32-S3-Motor-Devkit, etc.)
 * A USB cable for Power supply and programming
 * A separate 12V power supply for brushed DC motor and H-bridge (the voltage depends on the motor model used in the example)
 * A motor driving board to transfer pwm signal into driving signal
@@ -23,28 +27,28 @@ Connection :
 ```
                                      Power(12V)
                                          |
-                                         v
-+----------------+             +--------------------+
-|                |             |      H-Bridge      |
-|            GND +<----------->| GND                |      +--------------+
-|                |             |                    |      |              |
-|  GENA_GPIO_NUM +----PWM0A--->| IN_A         OUT_A +----->|   Brushed    |
-|                |             |                    |      |     DC       |
-|  GENB_GPIO_NUM +----PWM0B--->| IN_B         OUT_B +----->|    Motor     |
-|                |             |                    |      |              |
-| ESP            |             +--------------------+      |              |
-|                |                                         +------+-------+
-|                |                                                |
-|                |             +--------------------+             |
-|         VCC3.3 +------------>| VCC    Encoder     |             |
-|                |             |                    |             |
-|            GND +<----------->|                    |<------------+
-|                |             |                    |
-|PHASEA_GPIO_NUM |<---PhaseA---+ C1                 |
-|                |             |                    |
-|PHASEB_GPIO_NUM |<---PhaseB---+ C2                 |
-|                |             |                    |
-+----------------+             +--------------------+
+      ESP                                v
++-------------------+             +--------------------+
+|                   |             |      H-Bridge      |
+|               GND +<----------->| GND                |      +--------------+
+|                   |             |                    |      |              |
+|  BDC_MCPWM_GPIO_A +----PWM0A--->| IN_A         OUT_A +----->|   Brushed    |
+|                   |             |                    |      |     DC       |
+|  BDC_MCPWM_GPIO_B +----PWM0B--->| IN_B         OUT_B +----->|    Motor     |
+|                   |             |                    |      |              |
+|                   |             +--------------------+      |              |
+|                   |                                         +------+-------+
+|                   |                                                |
+|                   |             +--------------------+             |
+|            VCC3.3 +------------>| VCC    Encoder     |             |
+|                   |             |                    |             |
+|               GND +<----------->|                    |<------------+
+|                   |             |                    |
+|BDC_ENCODER_GPIO_A |<---PhaseA---+ C1                 |
+|                   |             |                    |
+|BDC_ENCODER_GPIO_B |<---PhaseB---+ C2                 |
+|                   |             |                    |
++-------------------+             +--------------------+
 ```
 
 ### Build and Flash
@@ -62,51 +66,30 @@ Run the example, you will see the following output log:
 
 ```
 I (0) cpu_start: Starting scheduler on APP CPU.
-configure mcpwm gpio
-init mcpwm driver
-init and start rotary encoder
-init PID control block
-init motor control timer
-D (561) gptimer: new group (0) @0x3fce0a24
-D (561) gptimer: new gptimer (0,0) at 0x3fce0964, resolution=1000000Hz
-create motor control task
-start motor control timer
-D (571) gptimer: install interrupt service for timer (0,0)
-install console command line
-
-Type 'help' to get the list of commands.
-Use UP/DOWN arrows to navigate through command history.
-Press TAB when typing command name to auto-complete.
-dc-motor>
-dc-motor> help
-help
-  Print the list of registered commands
-
-pid  [-p <kp>] [-i <ki>] [-d <kd>]
-  Set PID parameters
-       -p <kp>  Set Kp value of PID
-       -i <ki>  Set Ki value of PID
-       -d <kd>  Set Kd value of PID
+I (308) example: Create DC motor
+I (308) gpio: GPIO[7]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (318) gpio: GPIO[15]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (328) example: Init pcnt driver to decode rotary signal
+I (328) gpio: GPIO[36]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (338) gpio: GPIO[35]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (348) gpio: GPIO[35]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (358) gpio: GPIO[36]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+I (368) example: Create PID control block
+I (378) example: Create a timer to do PID calculation periodically
+I (378) example: Enable motor
+I (388) example: Forward motor
+I (388) example: Start motor speed loop
 ```
 
-### Set PID parameters
+### View velocity curve in [Serial Studio](https://github.com/Serial-Studio/Serial-Studio)
 
-* Command: `pid -p <double> -i <double> -d <double> -t <loc/inc>`
-* 'p' - proportion value
-* 'i' - integral value
-* 'd' - differential value
-* 't' - PID calculation type (locational or incremental).
+To help tune the PID parameters (i.e. `Kp`, `Ki` and `Kd` in the example), this example supports to log a short string frame of runtime motor speed. The string frame can be parsed by [Serial Studio](https://github.com/Serial-Studio/Serial-Studio). This example also provides the [communication description file](serial-studio-dashboard.json) out of the box, which can be loaded by Serial Studio and then plot the curves as follows:
 
-```bash
-mcpwm-motor> pid -p 0.8 -i 0.02 -d 0.1 -t inc
-pid: kp = 0.800
-pid: ki = 0.020
-pid: kd = 0.100
-pid: type = increment
-```
+![bdc_speed_dashboard](bdc_speed_dashboard.png)
 
 ## Troubleshooting
 
 * Make sure your ESP board and H-bridge module have been connected to the same GND panel.
+* The PID parameter set in ths example might not work well in all kinds of motors, because it's not adaptive. You need to fine tune the parameters again by yourself.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

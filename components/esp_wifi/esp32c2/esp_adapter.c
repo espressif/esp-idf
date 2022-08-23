@@ -789,5 +789,7 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._malloc_internal =  malloc_internal_wrapper,
     ._free = free,
     ._esp_timer_get_time = esp_timer_get_time,
+    ._env_is_chip = env_is_chip_wrapper,
+    ._slowclk_cal_get = esp_clk_slowclk_cal_get_wrapper,
     ._magic = COEX_ADAPTER_MAGIC,
 };

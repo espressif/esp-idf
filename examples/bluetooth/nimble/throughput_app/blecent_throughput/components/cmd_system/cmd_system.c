@@ -11,7 +11,7 @@
 #include "esp_console.h"
 #include "esp_chip_info.h"
 #include "esp_sleep.h"
-#include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "argtable3/argtable3.h"
@@ -53,7 +53,12 @@ void register_system(void)
 static int get_version(int argc, char **argv)
 {
     esp_chip_info_t info;
+    uint32_t flash_size;
     esp_chip_info(&info);
+    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
+        printf("Get flash size failed");
+        return 1;
+    }
     printf("IDF Version:%s\r\n", esp_get_idf_version());
     printf("Chip info:\r\n");
     printf("\tmodel:%s\r\n", info.model == CHIP_ESP32 ? "ESP32" : "Unknow");
@@ -63,7 +68,7 @@ static int get_version(int argc, char **argv)
            info.features & CHIP_FEATURE_BLE ? "/BLE" : "",
            info.features & CHIP_FEATURE_BT ? "/BT" : "",
            info.features & CHIP_FEATURE_EMB_FLASH ? "/Embedded-Flash:" : "/External-Flash:",
-           spi_flash_get_chip_size() / (1024 * 1024), " MB");
+           flash_size / (1024 * 1024), " MB");
     printf("\trevision number:%d\r\n", info.revision);
     return 0;
 }

@@ -74,9 +74,6 @@ static void btc_deinit_bluetooth(void)
 #if BTA_DYNAMIC_MEMORY
     xSemaphoreTake(deinit_semaphore, BTA_DISABLE_DELAY / portTICK_PERIOD_MS);
 #endif /* #if BTA_DYNAMIC_MEMORY */
-#if (BLE_INCLUDED == TRUE)
-    btc_gap_ble_deinit();
-#endif  ///BLE_INCLUDED == TRUE
     bta_dm_sm_deinit();
 #if (GATTC_INCLUDED)
     bta_gattc_deinit();

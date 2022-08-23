@@ -28,12 +28,12 @@
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "esp_cpu.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
-#include "hal/interrupt_controller_hal.h"
 #include "phy_init_data.h"
 #include "esp_private/periph_ctrl.h"
 #include "nvs.h"
@@ -41,7 +41,7 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
-#include "esp32/dport_access.h"
+#include "dport_access.h"
 #include "esp_rom_sys.h"
 #include "esp32/rom/ets_sys.h"
 
@@ -283,16 +283,6 @@ static void * wifi_thread_semphr_get_wrapper(void)
     return (void*)sem;
 }
 
-static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreTakeFromISR(semphr, hptw);
-}
-
-static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
-{
-    return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
-}
-
 static int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_tick)
 {
     if (block_time_tick == OSI_FUNCS_TIME_BLOCKING) {
@@ -306,6 +296,82 @@ static int32_t semphr_give_wrapper(void *semphr)
 {
     return (int32_t)xSemaphoreGive(semphr);
 }
+
+
+static void *internal_semphr_create_wrapper(uint32_t max, uint32_t init)
+{
+    wifi_static_queue_t *semphr = heap_caps_calloc(1, sizeof(wifi_static_queue_t), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    if (!semphr) {
+        return NULL;
+    }
+
+#ifdef CONFIG_SPIRAM_USE_MALLOC
+    semphr->storage = heap_caps_calloc(1, sizeof(StaticSemaphore_t), MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    if (!semphr->storage) {
+        goto _error;
+    }
+
+    semphr->handle = xSemaphoreCreateCountingStatic(max, init, semphr->storage);
+    if (!semphr->handle) {
+        goto _error;
+    }
+    return (void *)semphr;
+
+_error:
+    if (semphr) {
+        if (semphr->storage) {
+            free(semphr->storage);
+        }
+
+        free(semphr);
+    }
+    return NULL;
+#else
+    semphr->handle = xSemaphoreCreateCounting(max, init);
+    return (void *)semphr;
+#endif
+}
+
+void internal_semphr_delete_wrapper(void *semphr)
+{
+    wifi_static_queue_t *semphr_item = (wifi_static_queue_t *)semphr;
+    if (semphr_item) {
+        if (semphr_item->handle) {
+            vSemaphoreDelete(semphr_item->handle);
+        }
+#ifdef CONFIG_SPIRAM_USE_MALLOC
+        if (semphr_item->storage) {
+            free(semphr_item->storage);
+        }
+#endif
+        free(semphr_item);
+    }
+}
+
+static int32_t IRAM_ATTR internal_semphr_take_from_isr_wrapper(void *semphr, void *hptw)
+{
+    return (int32_t)xSemaphoreTakeFromISR(((wifi_static_queue_t *)semphr)->handle, hptw);
+}
+
+static int32_t IRAM_ATTR internal_semphr_give_from_isr_wrapper(void *semphr, void *hptw)
+{
+    return (int32_t)xSemaphoreGiveFromISR(((wifi_static_queue_t *)semphr)->handle, hptw);
+}
+
+static int32_t internal_semphr_take_wrapper(void *semphr, uint32_t block_time_tick)
+{
+    if (block_time_tick == OSI_FUNCS_TIME_BLOCKING) {
+        return (int32_t)xSemaphoreTake(((wifi_static_queue_t *)semphr)->handle, portMAX_DELAY);
+    } else {
+        return (int32_t)xSemaphoreTake(((wifi_static_queue_t *)semphr)->handle, block_time_tick);
+    }
+}
+
+static int32_t internal_semphr_give_wrapper(void *semphr)
+{
+    return (int32_t)xSemaphoreGive(((wifi_static_queue_t *)semphr)->handle);
+}
+
 
 static void * recursive_mutex_create_wrapper(void)
 {
@@ -671,8 +737,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._set_intr = set_intr_wrapper,
     ._clear_intr = clear_intr_wrapper,
     ._set_isr = set_isr_wrapper,
-    ._ints_on = interrupt_controller_hal_enable_interrupts,
-    ._ints_off = interrupt_controller_hal_disable_interrupts,
+    ._ints_on = esp_cpu_intr_enable,
+    ._ints_off = esp_cpu_intr_disable,
     ._is_from_isr = is_from_isr_wrapper,
     ._spin_lock_create = spin_lock_create_wrapper,
     ._spin_lock_delete = free,
@@ -793,12 +859,12 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._int_disable = wifi_int_disable_wrapper,
     ._int_enable = wifi_int_restore_wrapper,
     ._task_yield_from_isr = task_yield_from_isr_wrapper,
-    ._semphr_create = semphr_create_wrapper,
-    ._semphr_delete = semphr_delete_wrapper,
-    ._semphr_take_from_isr = semphr_take_from_isr_wrapper,
-    ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
-    ._semphr_take = semphr_take_wrapper,
-    ._semphr_give = semphr_give_wrapper,
+    ._semphr_create = internal_semphr_create_wrapper,
+    ._semphr_delete = internal_semphr_delete_wrapper,
+    ._semphr_take_from_isr = internal_semphr_take_from_isr_wrapper,
+    ._semphr_give_from_isr = internal_semphr_give_from_isr_wrapper,
+    ._semphr_take = internal_semphr_take_wrapper,
+    ._semphr_give = internal_semphr_give_wrapper,
     ._is_in_isr = coex_is_in_isr_wrapper,
     ._malloc_internal =  malloc_internal_wrapper,
     ._free = free,

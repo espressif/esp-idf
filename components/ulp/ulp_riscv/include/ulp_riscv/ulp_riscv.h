@@ -6,4 +6,4 @@
 #pragma once
 
 #warning Contents of ulp_riscv/ulp_riscv.h have been deprecated. Please include the header which contains the actual definitions you are trying to use, e.g. "ulp_riscv_register_ops.h".
-#include "../ulp_riscv_register_ops.h"
+#include "../../ulp_core/include/ulp_riscv_register_ops.h"

@@ -31,8 +31,8 @@
 
 // Currently no runners for S3
 #define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
-// Currently, no runners for S3
-#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
+// Currently, no runners for S3 and C2
+#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C2))
 // Can't test eMMC (slot 0) and PSRAM together
 #define WITH_EMMC_TEST  (SOC_SDMMC_HOST_SUPPORTED && !CONFIG_SPIRAM && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 
@@ -249,40 +249,16 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
     sd_test_board_power_off();
 }
 
-static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int pin_cs)
-{
-    sd_test_board_power_on();
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_miso = pin_miso;
-    slot_config.gpio_mosi = pin_mosi;
-    slot_config.gpio_sck = pin_sck;
-    slot_config.gpio_cs = pin_cs;
-    slot_config.dma_channel = SPI_DMA_CH_AUTO;
-
-    TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
-
-    probe_core(config.slot);
-
-    TEST_ESP_OK(sdspi_host_deinit());
-
-    TEST_ESP_OK(spi_bus_free(config.slot));
-
-    sd_test_board_power_off();
-}
 
 TEST_CASE("probe SD in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
 }
 
 // No runner for this
 TEST_CASE("probe SD in SPI mode, slot 0", "[sd][ignore]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
 }
 #endif //WITH_SDSPI_TEST
 
@@ -869,10 +845,6 @@ static void test_sdspi_erase_blocks(size_t start_block, size_t block_count)
     float time_er = 1e3f * (t_stop_wr.tv_sec - t_start_er.tv_sec) + 1e-3f * (t_stop_wr.tv_usec - t_start_er.tv_usec);
     printf("Erase duration: %.2fms\n", time_er);
 
-    // nominal delay before re-init card
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    // has to re-init card, after erase operation.
-    TEST_ESP_OK(sdmmc_card_init(&config, card));
     printf("Verifying erase state...\n");
     uint8_t erase_mem_byte = 0xFF;
     // ensure all the blocks are erased and are up to after erase state.

@@ -152,6 +152,7 @@ disable=print-statement,
         too-many-statements,
         ungrouped-imports,  # since we have isort in pre-commit
         no-name-in-module,  # since we have flake8 to check this
+        too-many-instance-attributes,
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

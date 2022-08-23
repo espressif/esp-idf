@@ -31,11 +31,11 @@ Background
 
 Secure Boot protects a device from running any unauthorized (i.e., unsigned) code by checking that each piece of software that is being booted is signed. On an {IDF_TARGET_NAME}, these pieces of software include the second stage bootloader and each application binary. Note that the first stage bootloader does not require signing as it is ROM code thus cannot be changed.
 
-.. only:: not esp32c2
+.. only:: SOC_SECURE_BOOT_V2_RSA
 
     A new RSA based Secure Boot verification scheme (Secure Boot V2) has been introduced on the ESP32 (ECO3 onwards), ESP32-S2, ESP32-S3 and ESP32-C3 (ECO3 onwards).
 
-.. only:: esp32c2
+.. only:: SOC_SECURE_BOOT_V2_ECC
 
     A new ECC based Secure Boot verification scheme (Secure Boot V2) has been introduced on the ESP32-C2.
 
@@ -162,7 +162,7 @@ The content of each signature block is shown in the following table:
     .. note::
       R and M' are used for hardware-assisted Montgomery Multiplication.
 
-.. only:: esp32c2
+.. only:: SOC_SECURE_BOOT_V2_ECC
 
     .. list-table:: Content of a Signature Block
         :widths: 10 10 40
@@ -289,7 +289,7 @@ How To Enable Secure Boot V2
 
     4. Select the desired UART ROM download mode in "UART ROM download mode". By default, it is set to "Permanently switch to Secure mode" which is generally recommended. For production devices, the most secure option is to set it to "Permanently disabled".
 
-5. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
+5. Set other menuconfig options (as desired). Then exit menuconfig and save your configuration.
 
 6. The first time you run ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
@@ -303,7 +303,7 @@ How To Enable Secure Boot V2
 
 8. When you're ready to flash the bootloader, run the specified command (you have to enter it yourself, this step is not performed by the build system) and then wait for flashing to complete.
 
-9. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 4.
+9. Run ``idf.py flash`` to build and flash the partition table and the just-built app image. The app image will be signed using the signing key you generated in step 6.
 
 .. note:: ``idf.py flash`` doesn't flash the bootloader if Secure Boot is enabled.
 
@@ -472,6 +472,11 @@ Secure Boot & Flash Encryption
 ------------------------------
 
 If Secure Boot is used without :doc:`Flash Encryption <flash-encryption>`, it is possible to launch "time-of-check to time-of-use" attack, where flash contents are swapped after the image is verified and running. Therefore, it is recommended to use both the features together.
+
+.. only:: esp32c2
+
+    .. important::
+       {IDF_TARGET_NAME} has only one eFuse key block, which is used for both keys: Secure Boot and Flash Encryption. The eFuse key block can only be burned once. Therefore these keys should be burned together at the same time. Please note that "Secure Boot" and "Flash Encryption" can not be enabled separately as subsequent writes to eFuse key block shall return an error.
 
 .. _signed-app-verify-v2:
 

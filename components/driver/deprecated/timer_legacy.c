@@ -90,12 +90,12 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
 #endif
 #if SOC_TIMER_GROUP_SUPPORT_AHB
     case TIMER_SRC_CLK_AHB:
-        *time = (double)timer_val * div / 48 * 1000 * 1000;
+        *time = (double)timer_val * div / (48 * 1000 * 1000);
         break;
 #endif
 #if SOC_TIMER_GROUP_SUPPORT_PLL_F40M
     case TIMER_SRC_CLK_PLL_F40M:
-        *time = (double)timer_val * div / 40 * 1000 * 1000;
+        *time = (double)timer_val * div / (40 * 1000 * 1000);
         break;
 #endif
     default:

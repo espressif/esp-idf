@@ -109,7 +109,7 @@ static void twai_receive_task(void *arg)
                     for (int i = 0; i < rx_msg.data_length_code; i++) {
                         data |= (rx_msg.data[i] << (i * 8));
                     }
-                    ESP_LOGI(EXAMPLE_TAG, "Received data value %d", data);
+                    ESP_LOGI(EXAMPLE_TAG, "Received data value %"PRIu32, data);
                     data_msgs_rec ++;
                 }
             }

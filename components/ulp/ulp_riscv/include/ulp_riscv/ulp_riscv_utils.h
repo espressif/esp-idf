@@ -5,5 +5,5 @@
  */
 #pragma once
 
-#warning ulp_riscv_utils.h has been moved one level up. Please include the file without the ulp_riscv prefix.
-#include "../ulp_riscv_utils.h"
+#warning ulp_riscv_utils.h has been moved. Please include the file without the ulp_riscv prefix.
+#include "../../ulp_core/include/ulp_riscv_utils.h"

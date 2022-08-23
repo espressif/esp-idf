@@ -5,6 +5,7 @@
  */
 #include <stdbool.h>
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
@@ -79,7 +80,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     if (boot_index == INVALID_INDEX) {
         return boot_index; // Unrecoverable failure (not due to corrupt ota data or bad partition contents)
     }
-    if (bootloader_common_get_reset_reason(0) != DEEPSLEEP_RESET) {
+    if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP) {
         // Factory firmware.
 #ifdef CONFIG_BOOTLOADER_FACTORY_RESET
         bool reset_level = false;

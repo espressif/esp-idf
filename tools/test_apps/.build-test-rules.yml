@@ -1,0 +1,154 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+tools/test_apps/build_system/custom_partition_subtypes:
+  enable:
+    - if: IDF_TARGET in ["esp32", "linux"]
+      reason: the test should be run on ESP32 and linux
+
+tools/test_apps/build_system/ldgen_test:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+tools/test_apps/peripherals/usb:
+  enable:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/phy/phy_multi_init_data_test:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+tools/test_apps/protocols/esp_netif/build_config:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32c3"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/protocols/mdns:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: lack of runners
+
+tools/test_apps/protocols/mqtt/publish_connect_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s2" or IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: lack of runners
+
+tools/test_apps/protocols/netif_components:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: true
+      reason: one target is enough to verify netif component dependencies
+
+tools/test_apps/security/secure_boot:
+#  disable:
+#    - if: SOC_SECURE_BOOT_SUPPORTED != 1
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+tools/test_apps/system/bootloader_sections:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+tools/test_apps/system/build_test:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+tools/test_apps/system/cxx_no_except:
+  enable:
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32c3"
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/eh_frame:
+  enable:
+    - if: IDF_TARGET in ["esp32c2", "esp32c3", "esp32h2"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/flash_psram:
+  enable:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/g0_components:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h2"
+
+tools/test_apps/system/g1_components:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+tools/test_apps/system/gdb_loadable_elf:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
+
+tools/test_apps/system/longjmp_test:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+tools/test_apps/system/memprot:
+  enable:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/monitor_ide_integration:
+  enable:
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2"
+      temporary: true
+      reason: the other targets are not tested yet
+  disable_test:
+    - if: IDF_TARGET == "esp32s2"
+      temporary: true
+      reason: lack of runners
+
+tools/test_apps/system/no_embedded_paths:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+tools/test_apps/system/panic:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h2"
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32s2"]
+      temporary: true
+      reason: lack of runners

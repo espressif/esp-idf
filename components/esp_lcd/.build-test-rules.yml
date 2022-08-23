@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_lcd/test_apps/i80_lcd:
+  disable:
+    - if: SOC_LCD_I80_SUPPORTED != 1
+
+components/esp_lcd/test_apps/rgb_lcd:
+  disable:
+    - if: SOC_LCD_RGB_SUPPORTED != 1

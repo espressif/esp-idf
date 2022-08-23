@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,7 @@ typedef struct {
     uint32_t mem_type_mask;     /*!< Memory types required to protect. See esp_mprot_mem_t enum */
 } esp_memp_config_t;
 
-#define ESP_MEMPROT_DEFAULT_CONFIG() {\
+#define ESP_MEMPROT_DEFAULT_CONFIG() { \
     .invoke_panic_handler = true, \
     .lock_feature = true, \
     .split_addr = NULL, \

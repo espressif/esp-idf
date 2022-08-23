@@ -1,4 +1,5 @@
 dependencies:
+  espressif/mdns: "^1.0.3"
   idf: ">=4.1"
   espressif/esp-modbus:
     version: "^1.0"

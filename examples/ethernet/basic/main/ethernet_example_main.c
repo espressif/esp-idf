@@ -152,7 +152,6 @@ void app_main(void)
     gpio_install_isr_service(0);
 
     // Init SPI bus
-    spi_device_handle_t spi_handle[CONFIG_EXAMPLE_SPI_ETHERNETS_NUM] = { NULL };
     spi_bus_config_t buscfg = {
         .miso_io_num = CONFIG_EXAMPLE_ETH_SPI_MISO_GPIO,
         .mosi_io_num = CONFIG_EXAMPLE_ETH_SPI_MOSI_GPIO,
@@ -173,82 +172,33 @@ void app_main(void)
     esp_eth_mac_t *mac_spi[CONFIG_EXAMPLE_SPI_ETHERNETS_NUM];
     esp_eth_phy_t *phy_spi[CONFIG_EXAMPLE_SPI_ETHERNETS_NUM];
     esp_eth_handle_t eth_handle_spi[CONFIG_EXAMPLE_SPI_ETHERNETS_NUM] = { NULL };
-#if CONFIG_EXAMPLE_USE_KSZ8851SNL
-    spi_device_interface_config_t devcfg = {
+    spi_device_interface_config_t spi_devcfg = {
         .mode = 0,
         .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
         .queue_size = 20
     };
-
     for (int i = 0; i < CONFIG_EXAMPLE_SPI_ETHERNETS_NUM; i++) {
         // Set SPI module Chip Select GPIO
-        devcfg.spics_io_num = spi_eth_module_config[i].spi_cs_gpio;
-
-        ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle[i]));
-        // KSZ8851SNL ethernet driver is based on spi driver
-        eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_handle[i]);
-
+        spi_devcfg.spics_io_num = spi_eth_module_config[i].spi_cs_gpio;
         // Set remaining GPIO numbers and configuration used by the SPI module
-        ksz8851snl_config.int_gpio_num = spi_eth_module_config[i].int_gpio;
         phy_config_spi.phy_addr = spi_eth_module_config[i].phy_addr;
         phy_config_spi.reset_gpio_num = spi_eth_module_config[i].phy_reset_gpio;
-
+#if CONFIG_EXAMPLE_USE_KSZ8851SNL
+        eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
+        ksz8851snl_config.int_gpio_num = spi_eth_module_config[i].int_gpio;
         mac_spi[i] = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config_spi);
         phy_spi[i] = esp_eth_phy_new_ksz8851snl(&phy_config_spi);
-    }
 #elif CONFIG_EXAMPLE_USE_DM9051
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 1,
-        .address_bits = 7,
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .queue_size = 20
-    };
-
-    for (int i = 0; i < CONFIG_EXAMPLE_SPI_ETHERNETS_NUM; i++) {
-        // Set SPI module Chip Select GPIO
-        devcfg.spics_io_num = spi_eth_module_config[i].spi_cs_gpio;
-
-        ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle[i]));
-        // dm9051 ethernet driver is based on spi driver
-        eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle[i]);
-
-        // Set remaining GPIO numbers and configuration used by the SPI module
+        eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
         dm9051_config.int_gpio_num = spi_eth_module_config[i].int_gpio;
-        phy_config_spi.phy_addr = spi_eth_module_config[i].phy_addr;
-        phy_config_spi.reset_gpio_num = spi_eth_module_config[i].phy_reset_gpio;
-
         mac_spi[i] = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config_spi);
         phy_spi[i] = esp_eth_phy_new_dm9051(&phy_config_spi);
-    }
 #elif CONFIG_EXAMPLE_USE_W5500
-    spi_device_interface_config_t devcfg = {
-        .command_bits = 16, // Actually it's the address phase in W5500 SPI frame
-        .address_bits = 8,  // Actually it's the control phase in W5500 SPI frame
-        .mode = 0,
-        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
-        .queue_size = 20
-    };
-
-    for (int i = 0; i < CONFIG_EXAMPLE_SPI_ETHERNETS_NUM; i++) {
-        // Set SPI module Chip Select GPIO
-        devcfg.spics_io_num = spi_eth_module_config[i].spi_cs_gpio;
-
-        ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle[i]));
-        // w5500 ethernet driver is based on spi driver
-        eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(spi_handle[i]);
-
-        // Set remaining GPIO numbers and configuration used by the SPI module
+        eth_w5500_config_t w5500_config = ETH_W5500_DEFAULT_CONFIG(CONFIG_EXAMPLE_ETH_SPI_HOST, &spi_devcfg);
         w5500_config.int_gpio_num = spi_eth_module_config[i].int_gpio;
-        phy_config_spi.phy_addr = spi_eth_module_config[i].phy_addr;
-        phy_config_spi.reset_gpio_num = spi_eth_module_config[i].phy_reset_gpio;
-
         mac_spi[i] = esp_eth_mac_new_w5500(&w5500_config, &mac_config_spi);
         phy_spi[i] = esp_eth_phy_new_w5500(&phy_config_spi);
-    }
-#endif //CONFIG_EXAMPLE_USE_W5500
-
-    for (int i = 0; i < CONFIG_EXAMPLE_SPI_ETHERNETS_NUM; i++) {
+#endif
         esp_eth_config_t eth_config_spi = ETH_DEFAULT_CONFIG(mac_spi[i], phy_spi[i]);
         ESP_ERROR_CHECK(esp_eth_driver_install(&eth_config_spi, &eth_handle_spi[i]));
 

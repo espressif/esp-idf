@@ -20,7 +20,7 @@
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_heap_caps.h"
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "stdatomic.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"
@@ -654,7 +654,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
 #if SOC_SPI_SUPPORT_OCT
-        if (flags & SPICOMMON_BUSFLAG_OCTAL) {
+        if ((flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL) {
             int io_nums[] = {bus_config->data4_io_num, bus_config->data5_io_num, bus_config->data6_io_num, bus_config->data7_io_num};
             uint8_t io_signals[4][2] = {{spi_periph_signal[host].spid4_out, spi_periph_signal[host].spid4_in},
                                         {spi_periph_signal[host].spid5_out, spi_periph_signal[host].spid5_in},

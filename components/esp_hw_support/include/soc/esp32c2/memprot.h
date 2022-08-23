@@ -27,14 +27,6 @@ extern "C" {
 #define DRAM_SRAM_START             0x3FC7C000
 #endif
 
-#ifndef MAP_DRAM_TO_IRAM
-#define MAP_DRAM_TO_IRAM(addr)       (addr - DRAM_SRAM_START + IRAM_SRAM_START)
-#endif
-
-#ifndef MAP_IRAM_TO_DRAM
-#define MAP_IRAM_TO_DRAM(addr)       (addr - IRAM_SRAM_START + DRAM_SRAM_START)
-#endif
-
 typedef enum {
     MEMPROT_NONE =              0x00000000,
     MEMPROT_IRAM0_SRAM =        0x00000001,

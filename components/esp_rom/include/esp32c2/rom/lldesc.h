@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include "sys/queue.h"
+#include "esp_rom_lldesc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,32 +44,6 @@ extern "C" {
 #define LLDESC_RX_AMPDU_ENTRY_MBLK_NUM  4
 #define LLDESC_RX_AMPDU_LEN_MLBK_NUM    8
 #endif /* !ESP_MAC_5 */
-/*
- *  SLC2 DMA Desc struct, aka lldesc_t
- *
- * --------------------------------------------------------------
- * | own | EoF | sub_sof | 5'b0   | length [11:0] | size [11:0] |
- * --------------------------------------------------------------
- * |            buf_ptr [31:0]                                  |
- * --------------------------------------------------------------
- * |            next_desc_ptr [31:0]                            |
- * --------------------------------------------------------------
- */
-
-/* this bitfield is start from the LSB!!! */
-typedef struct lldesc_s {
-    volatile uint32_t size  : 12,
-             length: 12,
-             offset: 5, /* h/w reserved 5bit, s/w use it as offset in buffer */
-             sosf  : 1, /* start of sub-frame */
-             eof   : 1, /* end of frame */
-             owner : 1; /* hw or sw */
-    volatile const uint8_t *buf;       /* point to buffer data */
-    union {
-        volatile uint32_t empty;
-        STAILQ_ENTRY(lldesc_s) qe;  /* pointing to the next desc */
-    };
-} lldesc_t;
 
 typedef struct tx_ampdu_entry_s {
     uint32_t sub_len  : 12,

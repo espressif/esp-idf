@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Partitions Tool Example
 
 This example demonstrates common operations the partitions tool [parttool.py](../../../components/partition_table/parttool.py) allows the user to perform:

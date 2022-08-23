@@ -49,25 +49,17 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
 
-* :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License as described in :component_file:`COPYING file<asio/asio/asio/COPYING>`.
-
 * :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mqtt/esp-mqtt/LICENSE>`.
 
 * :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
 
 * `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
 
-* `cryptoauthlib`_ Microchip CryptoAuthentication Library - Copyright (c) 2015 - 2018 Microchip Technology Inc, is licensed under common Microchip software License as described in :example_file:`LICENSE file <peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/LICENSE>`
-
-* :component_file:`TLSF allocator <heap/heap_tlsf.c>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD license.
-
-* `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
+* `TLSF allocator <https://github.com/espressif/tlsf>` Two Level Segregated Fit memory allocator, Copyright (c) 2006-2016, Matthew Conte, and licensed under the BSD 3-clause license.
 
 * :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under BSD License as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
 
 * :component_file:`UBSAN runtime <esp_system/ubsan.c>` — Copyright (c) 2016, Linaro Limited and Jiří Zárevúcky, licensed under the BSD 2-clause license.
-
-* `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
 
 * :component:`HTTP Parser <http_parser>` Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file<http_parser/LICENSE.txt>`.
 
@@ -169,7 +161,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
-.. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
-.. _qrcode: https://github.com/nayuki/QR-Code-generator
-.. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
 .. _SEGGER SystemView: https://www.segger.com/downloads/systemview/

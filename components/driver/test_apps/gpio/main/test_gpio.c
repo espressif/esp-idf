@@ -16,6 +16,7 @@
 #include <string.h>
 #include "test_gpio.h"
 #include "esp_system.h"
+#include "esp_cpu.h"
 #include "esp_sleep.h"
 #include "unity.h"
 #include "unity_test_utils.h"
@@ -29,8 +30,9 @@
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_attr.h"
+#include "esp_private/spi_flash_os.h"
 
 // Enable internal routing for the output and input gpio pins
 #define TEST_GPIO_INTERNAL_ROUTING    1
@@ -103,7 +105,7 @@ TEST_CASE("GPIO_config_parameters_test", "[gpio]")
 static void gpio_isr_edge_handler(void *arg)
 {
     uint32_t gpio_num = (uint32_t) arg;
-    esp_rom_printf("GPIO[%d] intr on core %d, val: %d\n", gpio_num, cpu_hal_get_core_id(), gpio_get_level(gpio_num));
+    esp_rom_printf("GPIO[%d] intr on core %d, val: %d\n", gpio_num, esp_cpu_get_core_id(), gpio_get_level(gpio_num));
     edge_intr_times++;
 }
 

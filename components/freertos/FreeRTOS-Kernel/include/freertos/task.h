@@ -2656,12 +2656,13 @@ BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify,
  * not have this parameter and always waits for notifications on index 0.
  *
  * @param ulBitsToClearOnEntry Bits that are set in ulBitsToClearOnEntry value
- * will be cleared in the calling task's notification value before the task
- * checks to see if any notifications are pending, and optionally blocks if no
- * notifications are pending.  Setting ulBitsToClearOnEntry to ULONG_MAX (if
- * limits.h is included) or 0xffffffffUL (if limits.h is not included) will have
- * the effect of resetting the task's notification value to 0.  Setting
- * ulBitsToClearOnEntry to 0 will leave the task's notification value unchanged.
+ * will be cleared in the calling task's notification value before the task is
+ * marked as waiting for a new notification (provided a notification is not
+ * already pending). Optionally blocks if no notifications are pending. Setting
+ * ulBitsToClearOnEntry to ULONG_MAX (if limits.h is included) or 0xffffffffUL
+ * (if limits.h is not included) will have the effect of resetting the task's
+ * notification value to 0. Setting ulBitsToClearOnEntry to 0 will leave the
+ * task's notification value unchanged.
  *
  * @param ulBitsToClearOnExit If a notification is pending or received before
  * the calling task exits the xTaskNotifyWait() function then the task's
@@ -3314,8 +3315,24 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
  *     or
  *   + Time slicing is in use and there is a task of equal priority to the
  *     currently running task.
+ *
+ * Note: For SMP, this function must only be called by core 0. Other cores should
+ *       call xTaskIncrementTickOtherCores() instead.
  */
 BaseType_t xTaskIncrementTick( void ) PRIVILEGED_FUNCTION;
+
+#ifdef ESP_PLATFORM
+/*
+ * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS ONLY
+ * INTENDED FOR USE WHEN IMPLEMENTING A PORT OF THE SCHEDULER AND IS
+ * AN INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
+ *
+ * Called from all other cores except core 0 when their tick interrupt
+ * occurs. This function will check if the current core requires time slicing,
+ * and also call the application tick hook.
+ */
+BaseType_t xTaskIncrementTickOtherCores( void ) PRIVILEGED_FUNCTION;
+#endif // ESP_PLATFORM
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
@@ -3368,6 +3385,25 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
                                       TickType_t xTicksToWait,
                                       const BaseType_t xWaitIndefinitely ) PRIVILEGED_FUNCTION;
+
+#ifdef ESP_PLATFORM
+/*
+ * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
+ * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
+ *
+ * This function is a wrapper to take the "xKernelLock" spinlock of tasks.c.
+ * This lock is taken whenver any of the kernel's data structures are
+ * accessed/modified, such as when adding/removing tasks to/from the delayed
+ * task list or various event lists.
+ *
+ * This functions is meant to be called by xEventGroupSetBits() and
+ * vEventGroupDelete() as both those functions will access event lists (instead
+ * of delegating the entire responsibility to one of vTask...EventList()
+ * functions).
+ */
+void vTaskTakeKernelLock( void );
+void vTaskReleaseKernelLock( void );
+#endif //  ESP_PLATFORM
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN

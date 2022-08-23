@@ -11,10 +11,8 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "soc/soc.h"
-#include "soc/dport_access.h"
-#ifdef CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#else
+#ifndef CONFIG_IDF_TARGET_ESP32
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #endif
@@ -107,8 +105,19 @@ void esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd);
  */
 void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
 {
+#if CONFIG_FREERTOS_SMP
+    /*
+    Temporary workaround to prevent deadlocking on the SMP FreeRTOS kernel lock after stalling the other CPU.
+    See IDF-5257
+    */
+    taskENTER_CRITICAL();
+#endif
     if (s_stall_state == STALL_STATE_RUNNING) {
+#if CONFIG_FREERTOS_SMP
+        BaseType_t intLvl = portDISABLE_INTERRUPTS();
+#else
         BaseType_t intLvl = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
         const uint32_t cpu_id = xPortGetCoreID();
         if (s_count_of_nested_calls[cpu_id]++ == 0) {
             IPC_ISR_ENTER_CRITICAL();
@@ -119,7 +128,11 @@ void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
         }
 
         /* Interrupts are already disabled by the parent, we're nested here. */
+#if CONFIG_FREERTOS_SMP
+        portRESTORE_INTERRUPTS(intLvl);
+#else
         portCLEAR_INTERRUPT_MASK_FROM_ISR(intLvl);
+#endif
     }
 }
 
@@ -130,11 +143,22 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
         if (--s_count_of_nested_calls[cpu_id] == 0) {
             esp_ipc_isr_finish_cmd = 1;
             IPC_ISR_EXIT_CRITICAL();
+#if CONFIG_FREERTOS_SMP
+            portRESTORE_INTERRUPTS(s_stored_interrupt_level);
+#else
             portCLEAR_INTERRUPT_MASK_FROM_ISR(s_stored_interrupt_level);
+#endif
         } else if (s_count_of_nested_calls[cpu_id] < 0) {
             assert(0);
         }
     }
+#if CONFIG_FREERTOS_SMP
+    /*
+    Temporary workaround to prevent deadlocking on the SMP FreeRTOS kernel lock after stalling the other CPU.
+    See IDF-5257
+    */
+    taskEXIT_CRITICAL();
+#endif
 }
 
 void IRAM_ATTR esp_ipc_isr_stall_pause(void)
@@ -156,12 +180,6 @@ void IRAM_ATTR esp_ipc_isr_stall_resume(void)
     s_stall_state = STALL_STATE_RUNNING;
     IPC_ISR_EXIT_CRITICAL();
 }
-
-void esp_dport_access_stall_other_cpu_start(void) __attribute__((alias("esp_ipc_isr_stall_other_cpu")));
-void esp_dport_access_stall_other_cpu_end(void) __attribute__((alias("esp_ipc_isr_release_other_cpu")));
-void esp_dport_access_int_pause(void) __attribute__((alias("esp_ipc_isr_stall_pause")));
-void esp_dport_access_int_abort(void) __attribute__((alias("esp_ipc_isr_stall_abort")));
-void esp_dport_access_int_resume(void) __attribute__((alias("esp_ipc_isr_stall_resume")));
 
 /* End public API functions */
 

@@ -24,6 +24,8 @@
 #include "esp_rom_sys.h"
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5136
 static void test_setup(size_t max_files)
 {
     extern const char fatfs_start[] asm("_binary_fatfs_img_start");
@@ -337,3 +339,10 @@ TEST_CASE("(raw) read speed test", "[fatfs][timeout=60]")
     free(buf);
     test_teardown();
 }
+#else //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+TEST_CASE("FATFS dummy test", "[spi_flash]")
+{
+    printf("This test does nothing, just to make the UT build fatfs-fast-seek passed.\n");
+    printf("When any case above is supported, remove this test case\n");
+}
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

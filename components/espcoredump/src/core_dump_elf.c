@@ -6,8 +6,7 @@
 #include <string.h>
 #include "esp_attr.h"
 #include "esp_partition.h"
-#include "esp_ota_ops.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_flash_encrypt.h"
 #include "sdkconfig.h"
 #include "core_dump_checksum.h"
@@ -15,6 +14,10 @@
 #include "esp_core_dump_port.h"
 #include "esp_core_dump_port_impl.h"
 #include "esp_core_dump_common.h"
+
+#ifdef CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+#include "esp_app_desc.h"
+#endif
 
 #define ELF_CLASS ELFCLASS32
 
@@ -496,7 +499,7 @@ static int elf_write_core_dump_info(core_dump_elf_t *self)
 
     ESP_COREDUMP_LOG_PROCESS("================ Processing coredump info ================");
     int data_len = (int)sizeof(self->elf_version_info.app_elf_sha256);
-    data_len = esp_ota_get_app_elf_sha256((char*)self->elf_version_info.app_elf_sha256, (size_t)data_len);
+    data_len = esp_app_get_elf_sha256((char*)self->elf_version_info.app_elf_sha256, (size_t)data_len);
     ESP_COREDUMP_LOG_PROCESS("Application SHA256='%s', length=%d.",
                                 self->elf_version_info.app_elf_sha256, data_len);
     self->elf_version_info.version = esp_core_dump_elf_version();

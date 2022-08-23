@@ -1,0 +1,3 @@
+# This config is split between targets since different component needs to be included
+CONFIG_IDF_TARGET="esp32c2"
+TEST_EXCLUDE_COMPONENTS=app_trace bootloader_support console efuse esp_common esp_eth esp_event esp_hid esp_http_client esp_http_server esp_netif esp_phy esp_ringbuf esp_rom esp_wifi espcoredump hal lwip mbedtls mdns mqtt newlib nvs_flash partition_table protocomm sdmmc spiffs freertos esp_hw_support esp_ipc esp_system esp_timer driver heap pthread soc spi_flash vfs

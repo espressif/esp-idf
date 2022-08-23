@@ -27,3 +27,4 @@ idf_component_register(SRCS ${srcs}
                     PRIV_INCLUDE_DIRS private_include
                     REQUIRES spi_flash idf_test cmock
                     PRIV_REQUIRES perfmon driver esp_netif)
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

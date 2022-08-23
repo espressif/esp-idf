@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-C3 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF BLE throughput GATT SERVER Test
 
@@ -26,7 +26,7 @@ please set: `idf.py menuconfig --> Component config --> Example 'GATT CLIENT THR
 
 ### Hardware Required
 
-* A development board with ESP32/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32/ESP32-C3/ESP32-C2/ESP32-H2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.

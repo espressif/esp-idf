@@ -13,21 +13,7 @@
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-#include_next "esp_efuse.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/secure_boot.h"
-#endif
+#include "esp_efuse_chip.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,6 +45,17 @@ typedef enum {
     ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH, /**< ROM logging is enabled when specific GPIO level is high during start up */
     ESP_EFUSE_ROM_LOG_ALWAYS_OFF    /**< Disable ROM logging permanently */
 } esp_efuse_rom_log_scheme_t;
+
+#if CONFIG_ESP32_REV_MIN_3 || !CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief Pointers to the trusted key digests.
+ *
+ * The number of digests depends on the SOC's capabilities.
+ */
+typedef struct {
+    const void *key_digests[SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS]; /**< Pointers to the key digests */
+} esp_secure_boot_key_digests_t;
+#endif
 
 /**
  * @brief   Reads bits from EFUSE field and writes it into an array.
@@ -277,13 +274,6 @@ esp_err_t esp_efuse_read_block(esp_efuse_block_t blk, void* dst_key, size_t offs
  *    - ESP_ERR_EFUSE_REPEATED_PROG: Error repeated programming of programmed bits
  */
 esp_err_t esp_efuse_write_block(esp_efuse_block_t blk, const void* src_key, size_t offset_in_bits, size_t size_bits);
-
-/**
- * @brief   Returns chip version from efuse
- *
- * @return chip version
- */
-uint8_t esp_efuse_get_chip_ver(void);
 
 /**
  * @brief   Returns chip package from efuse
@@ -756,14 +746,30 @@ esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t key
 /**
  * @brief Read key digests from efuse. Any revoked/missing digests will be marked as NULL
  *
- * @param[out] trusted_keys The number of digest in range 0..2
+ * @param[out] trusted_key_digests Trusted keys digests, stored in this parameter after successfully
+ *                                 completing this function.
+ *                                 The number of digests depends on the SOC's capabilities.
  *
  * @return
  *    - ESP_OK: Successful.
  *    - ESP_FAIL: If trusted_keys is NULL or there is no valid digest.
  */
-esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys);
+esp_err_t esp_secure_boot_read_key_digests(esp_secure_boot_key_digests_t *trusted_key_digests);
 #endif
+
+/**
+ * @brief   Checks eFuse errors in BLOCK0.
+ *
+ * @note Refers to ESP32-C3 only.
+ *
+ * It does a BLOCK0 check if eFuse EFUSE_ERR_RST_ENABLE is set.
+ * If BLOCK0 has an error, it prints the error and returns ESP_FAIL, which should be treated as esp_restart.
+ *
+ * @return
+ *         - ESP_OK: No errors in BLOCK0.
+ *         - ESP_FAIL: Error in BLOCK0 requiring reboot.
+ */
+esp_err_t esp_efuse_check_errors(void);
 
 #ifdef __cplusplus
 }

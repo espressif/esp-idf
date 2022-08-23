@@ -30,6 +30,7 @@
 #include "esp_wpa3_i.h"
 #include "esp_wpa2.h"
 #include "esp_common_i.h"
+#include "esp_owe_i.h"
 
 #include "esp_wps.h"
 #include "eap_server/eap.h"
@@ -83,7 +84,7 @@ int  wpa_config_profile(uint8_t *bssid)
 
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
-    } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
+    } else if (esp_wifi_sta_prof_is_rsn_internal()) {
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
     } else if (esp_wifi_sta_prof_is_wapi_internal()) {
         wpa_set_profile(WPA_PROTO_WAPI, esp_wifi_sta_get_prof_authmode_internal());
@@ -219,6 +220,7 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
     data->capabilities = ie.capabilities;
     data->pmkid = ie.pmkid;
     data->mgmt_group_cipher = cipher_type_map_supp_to_public(ie.mgmt_group_cipher);
+    data->rsnxe_capa = ie.rsnxe_capa;
 
     return ret;
 }
@@ -242,6 +244,9 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
         default:
             break;
     }
+#ifdef CONFIG_OWE_STA
+    owe_deinit();
+#endif /* CONFIG_OWE_STA */
 }
 
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
@@ -269,13 +274,17 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, bool *pmf_enable)
 {
     struct sta_info *sta_info;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
 
     if (!hapd) {
         return 0;
+    }
+
+    if (*sta) {
+       ap_free_sta(hapd, *sta);
     }
     sta_info = ap_sta_add(hapd, bssid);
     if (!sta_info) {
@@ -284,13 +293,12 @@ static bool hostap_sta_join(void **sm, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, boo
     }
 #ifdef CONFIG_WPS_REGISTRAR
     if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable)) {
-        *sm = sta_info;
+        *sta = sta_info;
         return true;
     }
 #endif
-    if (wpa_ap_join(sm, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
-        sta_info->wpa_sm = *sm;
-        *sm = sta_info;
+    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, pmf_enable)) {
+        *sta = sta_info;
         return true;
     }
 
@@ -334,8 +342,12 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
+    wpa_cb->wpa_sta_set_ap_rsnxe = wpa_sm_set_ap_rsnxe;
 
     esp_wifi_register_wpa3_cb(wpa_cb);
+#ifdef CONFIG_OWE_STA
+    esp_wifi_register_owe_cb(wpa_cb);
+#endif /* CONFIG_OWE_STA */
     eloop_init();
     ret = esp_supplicant_common_init(wpa_cb);
 

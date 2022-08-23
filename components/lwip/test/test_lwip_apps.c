@@ -18,6 +18,8 @@
 #define ETH_PING_END_TIMEOUT_MS (ETH_PING_DURATION_MS * 2)
 #define TEST_ICMP_DESTINATION_DOMAIN_NAME "127.0.0.1"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5047
 static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
     uint8_t ttl;
@@ -110,6 +112,7 @@ TEST_CASE("localhost ping test", "[lwip]")
 
     vEventGroupDelete(eth_event_group);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("dhcp server init/deinit", "[lwip][leaks=0]")
 {

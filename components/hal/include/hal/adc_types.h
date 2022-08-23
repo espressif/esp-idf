@@ -36,41 +36,28 @@ typedef enum {
 } adc_channel_t;
 
 /**
- * @brief ADC attenuation parameter. Different parameters determine the range of the ADC. See ``adc1_config_channel_atten``.
+ * @brief ADC attenuation parameter. Different parameters determine the range of the ADC.
  */
 typedef enum {
-    ADC_ATTEN_DB_0   = 0,  ///<No input attenumation, ADC can measure up to approx. 800 mV
+    ADC_ATTEN_DB_0   = 0,  ///<No input attenuation, ADC can measure up to approx.
     ADC_ATTEN_DB_2_5 = 1,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB (1.33 x)
     ADC_ATTEN_DB_6   = 2,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB (2 x)
     ADC_ATTEN_DB_11  = 3,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 11 dB (3.55 x)
 } adc_atten_t;
 
-/**
- * @brief ADC resolution setting option.
- * @note  Only used in single read mode
- */
 typedef enum {
-#if CONFIG_IDF_TARGET_ESP32
-    ADC_WIDTH_BIT_9  = 0, /*!< ADC capture width is 9Bit. */
-    ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. */
-    ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. */
-    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif SOC_ADC_RTC_MAX_BITWIDTH == 12
-    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif SOC_ADC_RTC_MAX_BITWIDTH == 13
-    ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
-#endif
-    ADC_WIDTH_MAX,
-} adc_bits_width_t;
-
-typedef enum {
+    ADC_BITWIDTH_DEFAULT = 0, ///< Default ADC output bits, max supported width will be selected
     ADC_BITWIDTH_9  = 9,      ///< ADC output width is 9Bit
     ADC_BITWIDTH_10 = 10,     ///< ADC output width is 10Bit
     ADC_BITWIDTH_11 = 11,     ///< ADC output width is 11Bit
     ADC_BITWIDTH_12 = 12,     ///< ADC output width is 12Bit
     ADC_BITWIDTH_13 = 13,     ///< ADC output width is 13Bit
-    ADC_BITWIDTH_DEFAULT = ADC_BITWIDTH_13,     ///< Default ADC output bits, max supported width will be selected
 } adc_bitwidth_t;
+
+typedef enum {
+    ADC_ULP_MODE_FSM = 1,     ///< ADC is controlled by ULP FSM
+    ADC_ULP_MODE_RISCV = 2,   ///< ADC is controlled by ULP RISCV
+} adc_ulp_mode_t;
 
 /**
  * @brief ADC digital controller (DMA mode) work mode.
@@ -80,17 +67,12 @@ typedef enum {
     ADC_CONV_SINGLE_UNIT_2 = 2,  ///< Only use ADC2 for conversion
     ADC_CONV_BOTH_UNIT     = 3,  ///< Use Both ADC1 and ADC2 for conversion simultaneously
     ADC_CONV_ALTER_UNIT    = 7,  ///< Use both ADC1 and ADC2 for conversion by turn. e.g. ADC1 -> ADC2 -> ADC1 -> ADC2 .....
-    ADC_CONV_UNIT_MAX,
 } adc_digi_convert_mode_t;
 
 /**
  * @brief ADC digital controller (DMA mode) output data format option.
  */
 typedef enum {
-    ADC_DIGI_FORMAT_12BIT __attribute__((deprecated)),  /*!<ADC to DMA data format,                [15:12]-channel, [11: 0]-12 bits ADC data (`adc_digi_output_data_t`). Note: For single convert mode. */
-    ADC_DIGI_FORMAT_11BIT __attribute__((deprecated)),  /*!<ADC to DMA data format, [15]-adc unit, [14:11]-channel, [10: 0]-11 bits ADC data (`adc_digi_output_data_t`). Note: For multi or alter convert mode. */
-    ADC_DIGI_FORMAT_MAX   __attribute__((deprecated)),
-
     ADC_DIGI_OUTPUT_FORMAT_TYPE1,   ///< See `adc_digi_output_data_t.type1`
     ADC_DIGI_OUTPUT_FORMAT_TYPE2,   ///< See `adc_digi_output_data_t.type2`
 } adc_digi_output_format_t;
@@ -128,7 +110,7 @@ typedef struct {
                                         If (channel < ADC_CHANNEL_MAX), The data is valid.
                                         If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint16_t unit:      1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
-        } type2;                    /*!<When the configured output format is 11bit. `ADC_DIGI_FORMAT_11BIT` */
+        } type2;                    /*!<When the configured output format is 11bit.*/
         uint16_t val;               /*!<Raw data value */
     };
 } adc_digi_output_data_t;
@@ -148,7 +130,7 @@ typedef struct {
                                             If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint32_t unit:          1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
             uint32_t reserved17_31: 15; /*!<Reserved17. */
-        } type2;                         /*!<When the configured output format is 12bit. `ADC_DIGI_FORMAT_11BIT` */
+        } type2;                        /*!<When the configured output format is 12bit. */
         uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;
@@ -161,141 +143,18 @@ typedef struct {
 typedef struct {
     union {
         struct {
-            uint32_t data:          13; /*!<ADC real output data info. Resolution: 13 bit. */
+            uint32_t data:          12; /*!<ADC real output data info. Resolution: 12 bit. */
+            uint32_t reserved12:    1;  /*!<Reserved12. */
             uint32_t channel:       4;  /*!<ADC channel index info.
                                             If (channel < ADC_CHANNEL_MAX), The data is valid.
                                             If (channel > ADC_CHANNEL_MAX), The data is invalid. */
             uint32_t unit:          1;  /*!<ADC unit index info. 0: ADC1; 1: ADC2.  */
             uint32_t reserved17_31: 14; /*!<Reserved17. */
-        } type2;                         /*!<When the configured output format is 12bit. `ADC_DIGI_FORMAT_11BIT` */
+        } type2;                        /*!<When the configured output format is 12bit. */
         uint32_t val;                   /*!<Raw data value */
     };
 } adc_digi_output_data_t;
 #endif
-
-
-#if SOC_ADC_FILTER_SUPPORTED
-/*---------------------------------------------------------------
-                    Filter
----------------------------------------------------------------*/
-/**
- * @brief ADC digital controller (DMA mode) filter index options.
- *
- * @note  For ESP32-S2, The filter object of the ADC is fixed.
- */
-typedef enum {
-    ADC_DIGI_FILTER_IDX0 = 0, /*!<The filter index 0.
-                                  For ESP32-S2, It can only be used to filter all enabled channels of ADC1 unit at the same time. */
-    ADC_DIGI_FILTER_IDX1,     /*!<The filter index 1.
-                                  For ESP32-S2, It can only be used to filter all enabled channels of ADC2 unit at the same time. */
-    ADC_DIGI_FILTER_IDX_MAX
-} adc_digi_filter_idx_t;
-
-/**
- * @brief ADC digital controller (DMA mode) filter type options.
- *        Expression: filter_data = (k-1)/k * last_data + new_data / k.
- */
-typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
-    ADC_DIGI_FILTER_DIS = -1,  /*!< Disable filter */
-#endif
-    ADC_DIGI_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2. */
-    ADC_DIGI_FILTER_IIR_4,     /*!<The filter mode is first-order IIR filter. The coefficient is 4. */
-    ADC_DIGI_FILTER_IIR_8,     /*!<The filter mode is first-order IIR filter. The coefficient is 8. */
-    ADC_DIGI_FILTER_IIR_16,    /*!<The filter mode is first-order IIR filter. The coefficient is 16. */
-    ADC_DIGI_FILTER_IIR_64,    /*!<The filter mode is first-order IIR filter. The coefficient is 64. */
-    ADC_DIGI_FILTER_IIR_MAX
-} adc_digi_filter_mode_t;
-
-/**
- * @brief ADC digital controller (DMA mode) filter configuration.
- *
- * @note  For ESP32-S2, The filter object of the ADC is fixed.
- * @note  For ESP32-S2, The filter object is always all enabled channels.
- */
-typedef struct {
-    adc_unit_t adc_unit;        /*!<Set adc unit number for filter.
-                                    For ESP32-S2, Filter IDX0/IDX1 can only be used to filter all enabled channels of ADC1/ADC2 unit at the same time. */
-    adc_channel_t channel;      /*!<Set adc channel number for filter.
-                                    For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
-    adc_digi_filter_mode_t mode;/*!<Set adc filter mode for filter. See ``adc_digi_filter_mode_t``. */
-} adc_digi_filter_t;
-#endif  // #if SOC_ADC_FILTER_SUPPORTED
-
-#if SOC_ADC_MONITOR_SUPPORTED
-/*---------------------------------------------------------------
-                    Monitor
----------------------------------------------------------------*/
-/**
- * @brief ADC digital controller (DMA mode) monitor index options.
- *
- * @note  For ESP32-S2, The monitor object of the ADC is fixed.
- */
-typedef enum {
-    ADC_DIGI_MONITOR_IDX0 = 0, /*!<The monitor index 0.
-                                  For ESP32-S2, It can only be used to monitor all enabled channels of ADC1 unit at the same time. */
-    ADC_DIGI_MONITOR_IDX1,     /*!<The monitor index 1.
-                                  For ESP32-S2, It can only be used to monitor all enabled channels of ADC2 unit at the same time. */
-    ADC_DIGI_MONITOR_IDX_MAX
-} adc_digi_monitor_idx_t;
-
-/**
- * @brief Set monitor mode of adc digital controller.
- *        MONITOR_HIGH:If ADC_OUT >  threshold, Generates monitor interrupt.
- *        MONITOR_LOW: If ADC_OUT <  threshold, Generates monitor interrupt.
- */
-typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
-    ADC_DIGI_MONITOR_DIS = 0,  /*!<Disable monitor. */
-    ADC_DIGI_MONITOR_EN,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
-                               /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
-#else
-    ADC_DIGI_MONITOR_HIGH = 0,  /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
-    ADC_DIGI_MONITOR_LOW,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
-#endif
-    ADC_DIGI_MONITOR_MAX
-} adc_digi_monitor_mode_t;
-
-/**
- * @brief ADC digital controller (DMA mode) monitor configuration.
- *
- * @note  For ESP32-S2, The monitor object of the ADC is fixed.
- * @note  For ESP32-S2, The monitor object is always all enabled channels.
- */
-typedef struct {
-    adc_unit_t adc_unit;            /*!<Set adc unit number for monitor.
-                                        For ESP32-S2, monitor IDX0/IDX1 can only be used to monitor all enabled channels of ADC1/ADC2 unit at the same time. */
-    adc_channel_t channel;          /*!<Set adc channel number for monitor.
-                                        For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
-    adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
-    uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
-    uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
-#else
-    uint32_t threshold;             /*!<Set monitor threshold of adc digital controller. */
-#endif
-} adc_digi_monitor_t;
-#endif  //#if SOC_ADC_MONITOR_SUPPORTED
-
-/*---------------------------------------------------------------
-            To Be Deprecated TODO: IDF-3610
----------------------------------------------------------------*/
-#ifdef CONFIG_IDF_TARGET_ESP32
-/**
- * @brief ESP32 ADC DMA source selection.
- */
-#else
-/**
- * @brief ESP32 ADC DMA source selection.
- *
- * @deprecated  Not applicable on ESP32-S2 because ESP32-S2 doesn't use I2S DMA.
- */
-#endif
-typedef enum {
-    ADC_I2S_DATA_SRC_IO_SIG = 0, /*!< I2S data from GPIO matrix signal  */
-    ADC_I2S_DATA_SRC_ADC = 1,    /*!< I2S data from ADC */
-    ADC_I2S_DATA_SRC_MAX,
-} adc_i2s_source_t;
 
 #if CONFIG_IDF_TARGET_ESP32S2
 /**

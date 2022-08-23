@@ -12,7 +12,6 @@
 
 #include "esp_transport.h"
 #include "esp_transport_ssl.h"
-#include "esp_transport_utils.h"
 #include "esp_transport_internal.h"
 
 #define INVALID_SOCKET (-1)
@@ -21,7 +20,7 @@
     transport_esp_tls_t *ssl = ssl_get_context_data(t);  \
     if (!ssl) { return; }
 
-static const char *TAG = "TRANSPORT_BASE";
+static const char *TAG = "transport_base";
 
 typedef enum {
     TRANS_SSL_INIT = 0,
@@ -39,23 +38,19 @@ typedef struct transport_esp_tls {
     int                      sockfd;
 } transport_esp_tls_t;
 
-static inline struct transport_esp_tls * ssl_get_context_data(esp_transport_handle_t t)
+/**
+ * @brief      Destroys esp-tls transport used in the foundation transport
+ *
+ * @param[in]  transport esp-tls handle
+ */
+void esp_transport_esp_tls_destroy(struct transport_esp_tls* transport_esp_tls);
+
+static inline transport_esp_tls_t *ssl_get_context_data(esp_transport_handle_t t)
 {
     if (!t) {
         return NULL;
     }
-    if (t->data) {  // Prefer internal ssl context (independent from the list)
-        return (transport_esp_tls_t*)t->data;
-    }
-    if (t->base && t->base->transport_esp_tls) {    // Next one is the lists inherent context
-        t->data = t->base->transport_esp_tls;       // Optimize: if we have base context, use it as internal
-        return t->base->transport_esp_tls;
-    }
-    // If we don't have a valid context, let's to create one
-    transport_esp_tls_t *ssl = esp_transport_esp_tls_create();
-    ESP_TRANSPORT_MEM_CHECK(TAG, ssl, return NULL)
-    t->data = ssl;
-    return ssl;
+    return (transport_esp_tls_t *)t->data;
 }
 
 static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms, bool is_plain_tcp)
@@ -103,7 +98,6 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
     ssl->cfg.timeout_ms = timeout_ms;
-    ssl->cfg.is_plain_tcp = false;
 
     ssl->ssl_initialized = true;
     ssl->tls = esp_tls_init();
@@ -174,6 +168,8 @@ static int base_poll_read(esp_transport_handle_t t, int timeout_ms)
         esp_transport_capture_errno(t, sock_errno);
         ESP_LOGE(TAG, "poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
+    } else if (ret == 0) {
+        ESP_LOGD(TAG, "poll_read: select - Timeout before any socket was ready!");
     }
     return ret;
 }
@@ -197,6 +193,8 @@ static int base_poll_write(esp_transport_handle_t t, int timeout_ms)
         esp_transport_capture_errno(t, sock_errno);
         ESP_LOGE(TAG, "poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
+    } else if (ret == 0) {
+        ESP_LOGD(TAG, "poll_write: select - Timeout before any socket was ready!");
     }
     return ret;
 }
@@ -232,7 +230,7 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
         ESP_LOGW(TAG, "Poll timeout or error, errno=%s, fd=%d, timeout_ms=%d", strerror(errno), ssl->sockfd, timeout_ms);
         return poll;
     }
-    int ret = send(ssl->sockfd,(const unsigned char *) buffer, len, 0);
+    int ret = send(ssl->sockfd, (const unsigned char *) buffer, len, 0);
     if (ret < 0) {
         ESP_LOGE(TAG, "tcp_write error, errno=%s", strerror(errno));
         esp_transport_capture_errno(t, errno);
@@ -242,51 +240,64 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
 
 static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
-    int poll;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
-    if ((poll = esp_transport_poll_read(t, timeout_ms)) <= 0) {
-        return poll;
+    int poll = esp_transport_poll_read(t, timeout_ms);
+    if (poll == -1) {
+        return ERR_TCP_TRANSPORT_CONNECTION_FAILED;
     }
+    if (poll == 0) {
+        return ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+    }
+
     int ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
+        if (ret == ESP_TLS_ERR_SSL_WANT_READ || ret == ESP_TLS_ERR_SSL_TIMEOUT) {
+            ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+        }
+
         esp_tls_error_handle_t esp_tls_error_handle;
         if (esp_tls_get_error_handle(ssl->tls, &esp_tls_error_handle) == ESP_OK) {
             esp_transport_set_errors(t, esp_tls_error_handle);
         } else {
             ESP_LOGE(TAG, "Error in obtaining the error handle");
         }
-    }
-    if (ret == 0) {
+    } else if (ret == 0) {
         if (poll > 0) {
             // no error, socket reads 0 while previously detected as readable -> connection has been closed cleanly
             capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN);
         }
-        ret = -1;
+        ret = ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN;
     }
     return ret;
 }
 
 static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
-    int poll;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
-    if ((poll = esp_transport_poll_read(t, timeout_ms)) <= 0) {
-        return poll;
+    int poll = esp_transport_poll_read(t, timeout_ms);
+    if (poll == -1) {
+        return ERR_TCP_TRANSPORT_CONNECTION_FAILED;
     }
+    if (poll == 0) {
+        return ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+    }
+
     int ret = recv(ssl->sockfd, (unsigned char *)buffer, len, 0);
     if (ret < 0) {
         ESP_LOGE(TAG, "tcp_read error, errno=%s", strerror(errno));
         esp_transport_capture_errno(t, errno);
-    }
-    if (ret == 0) {
+        if (errno == EAGAIN) {
+            ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+        }
+    } else if (ret == 0) {
         if (poll > 0) {
             // no error, socket reads 0 while previously detected as readable -> connection has been closed cleanly
             capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN);
         }
-        ret = -1;
+        ret = ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN;
     }
     return ret;
 }
@@ -308,18 +319,14 @@ static int base_close(esp_transport_handle_t t)
     return ret;
 }
 
-static int base_destroy(esp_transport_handle_t t)
+static int base_destroy(esp_transport_handle_t transport)
 {
-    transport_esp_tls_t *ssl = ssl_get_context_data(t);
+    transport_esp_tls_t *ssl = ssl_get_context_data(transport);
     if (ssl) {
-        esp_transport_close(t);
-        if (t->base && t->base->transport_esp_tls &&
-            t->data == t->base->transport_esp_tls) {
-            // if internal ssl the same as the foundation transport,
-            // just zero out, it will be freed on list destroy
-            t->data = NULL;
-        }
-        esp_transport_esp_tls_destroy(t->data); // okay to pass NULL
+        esp_transport_close(transport);
+        esp_transport_destroy_foundation_transport(transport->foundation);
+
+        esp_transport_esp_tls_destroy(transport->data); // okay to pass NULL
     }
     return 0;
 }
@@ -331,7 +338,7 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
 }
 
 #ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
-void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key)
+void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t *psk_hint_key)
 {
     GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
     ssl->cfg.psk_hint_key =  psk_hint_key;
@@ -446,19 +453,7 @@ void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq
     ssl->cfg.if_name = if_name;
 }
 
-esp_transport_handle_t esp_transport_ssl_init(void)
-{
-    esp_transport_handle_t t = esp_transport_init();
-    if (t == NULL) {
-        return NULL;
-    }
-    esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, base_close, base_poll_read, base_poll_write, base_destroy);
-    esp_transport_set_async_connect_func(t, ssl_connect_async);
-    t->_get_socket = base_get_socket;
-    return t;
-}
-
-struct transport_esp_tls* esp_transport_esp_tls_create(void)
+static transport_esp_tls_t *esp_transport_esp_tls_create(void)
 {
     transport_esp_tls_t *transport_esp_tls = calloc(1, sizeof(transport_esp_tls_t));
     if (transport_esp_tls == NULL) {
@@ -468,21 +463,55 @@ struct transport_esp_tls* esp_transport_esp_tls_create(void)
     return transport_esp_tls;
 }
 
-void esp_transport_esp_tls_destroy(struct transport_esp_tls* transport_esp_tls)
+static esp_transport_handle_t esp_transport_base_init(void)
+{
+    esp_transport_handle_t transport = esp_transport_init();
+    if (transport == NULL) {
+        return NULL;
+    }
+    transport->foundation = esp_transport_init_foundation_transport();
+    ESP_TRANSPORT_MEM_CHECK(TAG, transport->foundation,
+                            free(transport);
+                            return NULL);
+
+    transport->data = esp_transport_esp_tls_create();
+    ESP_TRANSPORT_MEM_CHECK(TAG, transport->data,
+                            free(transport->foundation);
+                            free(transport);
+                            return NULL)
+    return transport;
+}
+
+esp_transport_handle_t esp_transport_ssl_init(void)
+{
+    esp_transport_handle_t ssl_transport = esp_transport_base_init();
+    if (ssl_transport == NULL) {
+        return NULL;
+    }
+    ((transport_esp_tls_t *)ssl_transport->data)->cfg.is_plain_tcp = false;
+    esp_transport_set_func(ssl_transport, ssl_connect, ssl_read, ssl_write, base_close, base_poll_read, base_poll_write, base_destroy);
+    esp_transport_set_async_connect_func(ssl_transport, ssl_connect_async);
+    ssl_transport->_get_socket = base_get_socket;
+    return ssl_transport;
+}
+
+
+void esp_transport_esp_tls_destroy(struct transport_esp_tls *transport_esp_tls)
 {
     free(transport_esp_tls);
 }
 
 esp_transport_handle_t esp_transport_tcp_init(void)
 {
-    esp_transport_handle_t t = esp_transport_init();
-    if (t == NULL) {
+    esp_transport_handle_t tcp_transport = esp_transport_base_init();
+    if (tcp_transport == NULL) {
         return NULL;
     }
-    esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, base_close, base_poll_read, base_poll_write, base_destroy);
-    esp_transport_set_async_connect_func(t, tcp_connect_async);
-    t->_get_socket = base_get_socket;
-    return t;
+    ((transport_esp_tls_t *)tcp_transport->data)->cfg.is_plain_tcp = true;
+    esp_transport_set_func(tcp_transport, tcp_connect, tcp_read, tcp_write, base_close, base_poll_read, base_poll_write, base_destroy);
+    esp_transport_set_async_connect_func(tcp_transport, tcp_connect_async);
+    tcp_transport->_get_socket = base_get_socket;
+    return tcp_transport;
 }
 
 void esp_transport_tcp_set_keep_alive(esp_transport_handle_t t, esp_transport_keep_alive_t *keep_alive_cfg)

@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +21,7 @@
 static const char* TAG = "security0";
 
 static esp_err_t sec0_session_setup(uint32_t session_id,
-                                    SessionData *req, SessionData *resp,
-                                    const protocomm_security_pop_t *pop)
+                                    SessionData *req, SessionData *resp)
 {
     Sec0Payload *out = (Sec0Payload *) malloc(sizeof(Sec0Payload));
     S0SessionResp *s0resp = (S0SessionResp *) malloc(sizeof(S0SessionResp));
@@ -66,7 +57,7 @@ static void sec0_session_setup_cleanup(uint32_t session_id, SessionData *resp)
 }
 
 static esp_err_t sec0_req_handler(protocomm_security_handle_t handle,
-                                  const protocomm_security_pop_t *pop,
+                                  const void *sec_params,
                                   uint32_t session_id,
                                   const uint8_t *inbuf, ssize_t inlen,
                                   uint8_t **outbuf, ssize_t *outlen,
@@ -88,7 +79,7 @@ static esp_err_t sec0_req_handler(protocomm_security_handle_t handle,
     }
 
     session_data__init(&resp);
-    ret = sec0_session_setup(session_id, req, &resp, pop);
+    ret = sec0_session_setup(session_id, req, &resp);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Session setup error %d", ret);
         session_data__free_unpacked(req, NULL);

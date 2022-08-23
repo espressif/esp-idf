@@ -599,14 +599,14 @@ class IDFTool(object):
         self.versions = OrderedDict()  # type: Dict[str, IDFToolVersion]
 
     def add_version(self, version):  # type: (IDFToolVersion) -> None
-        assert(type(version) is IDFToolVersion)
+        assert type(version) is IDFToolVersion
         self.versions[version.version] = version
 
     def get_path(self):  # type: () -> str
         return os.path.join(global_idf_tools_path or '', 'tools', self.name)
 
     def get_path_for_version(self, version):  # type: (str) -> str
-        assert(version in self.versions)
+        assert version in self.versions
         return os.path.join(self.get_path(), version)
 
     def get_export_paths(self, version):  # type: (str) -> List[str]
@@ -732,7 +732,7 @@ class IDFTool(object):
                     self.versions_installed.append(version)
 
     def download(self, version):  # type: (str) -> None
-        assert(version in self.versions)
+        assert version in self.versions
         download_obj = self.versions[version].get_download_for_platform(self._platform)
         if not download_obj:
             fatal('No packages for tool {} platform {}!'.format(self.name, self._platform))
@@ -768,12 +768,12 @@ class IDFTool(object):
     def install(self, version):  # type: (str) -> None
         # Currently this is called after calling 'download' method, so here are a few asserts
         # for the conditions which should be true once that method is done.
-        assert (version in self.versions)
+        assert version in self.versions
         download_obj = self.versions[version].get_download_for_platform(self._platform)
-        assert (download_obj is not None)
+        assert download_obj is not None
         archive_name = os.path.basename(download_obj.url)
         archive_path = os.path.join(global_idf_tools_path or '', 'dist', archive_name)
-        assert (os.path.isfile(archive_path))
+        assert os.path.isfile(archive_path)
         dest_dir = self.get_path_for_version(version)
         if os.path.exists(dest_dir):
             warn('destination path already exists, removing')
@@ -1022,9 +1022,20 @@ class IDFRecord:
     def features(self) -> List[str]:
         return self._features
 
-    def extend_features(self, features: List[str]) -> None:
-        # Features can be only updated, but always maintain existing features.
-        self._features = list(set(features + self._features))
+    def update_features(self, add: Tuple[str, ...] = (), remove: Tuple[str, ...] = ()) -> None:
+        # Update features, but maintain required feature 'core'
+        # If the same feature is present in both argument's tuples, do not update this feature
+        add_set = set(add)
+        remove_set = set(remove)
+        # Remove duplicates
+        features_to_add = add_set.difference(remove_set)
+        features_to_remove = remove_set.difference(add_set)
+
+        features = set(self._features)
+        features.update(features_to_add)
+        features.difference_update(features_to_remove)
+        features.add('core')
+        self._features = list(features)
 
     @property
     def targets(self) -> List[str]:
@@ -1051,7 +1062,7 @@ class IDFRecord:
             # When some of these key attributes, which are irreplaceable with default values, are not found, raise VallueError
             raise ValueError('Inconsistent record')
 
-        idf_record_obj.extend_features(record_dict.get('features', []))
+        idf_record_obj.update_features(record_dict.get('features', []))
         idf_record_obj.extend_targets(record_dict.get('targets', []))
 
         unset = record_dict.get('unset')
@@ -1328,13 +1339,18 @@ def feature_to_requirements_path(feature):  # type: (str) -> str
     return os.path.join(global_idf_path or '', 'tools', 'requirements', 'requirements.{}.txt'.format(feature))
 
 
-def add_and_check_features(idf_env_obj, features_str):  # type: (IDFEnv, str) -> list[str]
+def process_and_check_features(idf_env_obj, features_str):  # type: (IDFEnv, str) -> list[str]
     new_features = []
+    remove_features = []
     for new_feature_candidate in features_str.split(','):
-        if os.path.isfile(feature_to_requirements_path(new_feature_candidate)):
-            new_features += [new_feature_candidate]
-
-    idf_env_obj.get_active_idf_record().extend_features(new_features)
+        if new_feature_candidate.startswith('-'):
+            remove_features += [new_feature_candidate.lstrip('-')]
+        else:
+            new_feature_candidate = new_feature_candidate.lstrip('+')
+            # Feature to be added needs to be checked if is valid
+            if os.path.isfile(feature_to_requirements_path(new_feature_candidate)):
+                new_features += [new_feature_candidate]
+    idf_env_obj.get_active_idf_record().update_features(tuple(new_features), tuple(remove_features))
     return idf_env_obj.get_active_idf_record().features
 
 
@@ -1847,7 +1863,7 @@ def get_wheels_dir():  # type: () -> Optional[str]
 
 def get_requirements(new_features):  # type: (str) -> list[str]
     idf_env_obj = IDFEnv.get_idf_env()
-    features = add_and_check_features(idf_env_obj, new_features)
+    features = process_and_check_features(idf_env_obj, new_features)
     idf_env_obj.save()
     return [feature_to_requirements_path(feature) for feature in features]
 
@@ -1863,8 +1879,7 @@ def get_constraints(idf_version):  # type: (str) -> str
     try:
         age = datetime.date.today() - datetime.date.fromtimestamp(os.path.getmtime(constraint_path))
         if age < datetime.timedelta(days=1):
-            info(f'Skipping the download of {constraint_path} because it was downloaded recently. If you believe '
-                 f'that this is causing you trouble then remove it manually and re-run your install script.')
+            info(f'Skipping the download of {constraint_path} because it was downloaded recently.')
             return constraint_path
     except OSError:
         # doesn't exist or inaccessible
@@ -1886,6 +1901,7 @@ def get_constraints(idf_version):  # type: (str) -> str
         return constraint_path
     else:
         fatal('Failed to download, and retry count has expired')
+        info('See the help on how to disable constraints in order to work around this issue.')
         raise DownloadError()
 
 
@@ -1961,6 +1977,8 @@ def action_install_python_env(args):  # type: ignore
         warn('Removing the existing Python environment in {}'.format(idf_python_env_path))
         shutil.rmtree(idf_python_env_path)
 
+    venv_can_upgrade = False
+
     if not os.path.exists(virtualenv_python):
         try:
             import venv  # noqa: F401
@@ -1970,6 +1988,7 @@ def action_install_python_env(args):  # type: ignore
             if sys.version_info[:2] >= (3, 9):
                 # upgrade pip & setuptools
                 virtualenv_options += ['--upgrade-deps']
+                venv_can_upgrade = True
 
             info('Creating a new Python environment in {}'.format(idf_python_env_path))
             subprocess.check_call([sys.executable, '-m', 'venv',
@@ -1984,6 +2003,12 @@ def action_install_python_env(args):  # type: ignore
     if env_copy.get('PIP_USER')  == 'yes':
         warn('Found PIP_USER="yes" in the environment. Disabling PIP_USER in this shell to install packages into a virtual environment.')
         env_copy['PIP_USER'] = 'no'
+
+    if not venv_can_upgrade:
+        info('Upgrading pip and setuptools...')
+        subprocess.check_call([virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools'],
+                              stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
+
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--no-warn-script-location']
     requirements_file_list = get_requirements(args.features)
     for requirement_file in requirements_file_list:
@@ -2386,6 +2411,8 @@ def main(argv):  # type: (list[str]) -> None
     uninstall.add_argument('--dry-run', help='Print unused tools.', action='store_true')
     uninstall.add_argument('--remove-archives', help='Remove old archive versions and archives from unused tools.', action='store_true')
 
+    no_constraints_default = os.environ.get('IDF_PYTHON_CHECK_CONSTRAINTS', '').lower() in ['0', 'n', 'no']
+
     if IDF_MAINTAINER:
         for subparser in [download, install]:
             subparser.add_argument('--mirror-prefix-map', nargs='*',
@@ -2403,9 +2430,10 @@ def main(argv):  # type: (list[str]) -> None
     install_python_env.add_argument('--no-index', help='Work offline without retrieving wheels index')
     install_python_env.add_argument('--features', default='core', help='A comma separated list of desired features for installing.'
                                                                        ' It defaults to installing just the core funtionality.')
-    install_python_env.add_argument('--no-constraints', action='store_true', default=False,
+    install_python_env.add_argument('--no-constraints', action='store_true', default=no_constraints_default,
                                     help='Disable constraint settings. Use with care and only when you want to manage '
-                                         'package versions by yourself.')
+                                         'package versions by yourself. It can be set with the IDF_PYTHON_CHECK_CONSTRAINTS '
+                                         'environment variable.')
 
     if IDF_MAINTAINER:
         add_version = subparsers.add_parser('add-version', help='Add or update download info for a version')
@@ -2430,9 +2458,10 @@ def main(argv):  # type: (list[str]) -> None
 
     check_python_dependencies = subparsers.add_parser('check-python-dependencies',
                                                       help='Check that all required Python packages are installed.')
-    check_python_dependencies.add_argument('--no-constraints', action='store_true', default=False,
+    check_python_dependencies.add_argument('--no-constraints', action='store_true', default=no_constraints_default,
                                            help='Disable constraint settings. Use with care and only when you want '
-                                                'to manage package versions by yourself.')
+                                                'to manage package versions by yourself. It can be set with the IDF_PYTHON_CHECK_CONSTRAINTS '
+                                                'environment variable.')
 
     args = parser.parse_args(argv)
 

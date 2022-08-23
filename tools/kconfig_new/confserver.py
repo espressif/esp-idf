@@ -3,8 +3,6 @@
 # Long-running server process uses stdin & stdout to communicate JSON
 # with a caller
 #
-from __future__ import print_function
-
 import argparse
 import json
 import os
@@ -66,7 +64,7 @@ def main():
 
     if args.env_file is not None:
         env = json.load(args.env_file)
-        os.environ.update(confgen.dict_enc_for_env(env))
+        os.environ.update(env)
 
     run_server(args.kconfig, args.config, args.sdkconfig_rename)
 

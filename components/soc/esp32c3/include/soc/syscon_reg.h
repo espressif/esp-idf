@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/**
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SYSCON_REG_H_
 #define _SOC_SYSCON_REG_H_
 
@@ -178,7 +170,7 @@ extern "C" {
 #define SYSTEM_WIFI_CLK_WIFI_EN_M  ((SYSTEM_WIFI_CLK_WIFI_EN_V)<<(SYSTEM_WIFI_CLK_WIFI_EN_S))
 #define SYSTEM_WIFI_CLK_WIFI_EN_V  0x0
 #define SYSTEM_WIFI_CLK_WIFI_EN_S  0
-/* Mask for all Bluetooth clock bits, 11, 12, 16, 17 */
+/* Mask for all Bluetooth clock bits, 11, 16, 17 */
 #define SYSTEM_WIFI_CLK_BT_EN  0x0
 #define SYSTEM_WIFI_CLK_BT_EN_M  ((SYSTEM_WIFI_CLK_BT_EN_V)<<(SYSTEM_WIFI_CLK_BT_EN_S))
 #define SYSTEM_WIFI_CLK_BT_EN_V  0x0
@@ -194,7 +186,7 @@ extern "C" {
 
 /* Remaining single bit clock masks */
 #define SYSTEM_WIFI_CLK_SDIOSLAVE_EN  BIT(4)
-#define SYSTEM_WIFI_CLK_UNUSED_BIT5  BIT(5)
+#define SYSTEM_WIFI_CLK_I2C_CLK_EN  BIT(5)
 #define SYSTEM_WIFI_CLK_UNUSED_BIT12  BIT(12)
 #define SYSTEM_WIFI_CLK_EMAC_EN  BIT(14)
 #define SYSTEM_WIFI_CLK_RNG_EN  BIT(15)
@@ -203,19 +195,19 @@ extern "C" {
 #define SYSTEM_WIFI_RST_EN_REG        SYSCON_WIFI_RST_EN_REG
 /* SYSTEM_WIFI_RST_EN : R/W ;bitpos:[31:0] ;default: 32'h0 ; */
 /*description: */
-#define SYSTEM_BB_RST           BIT(0)
-#define SYSTEM_FE_RST           BIT(1)
-#define SYSTEM_MAC_RST          BIT(2)
-#define SYSTEM_BT_RST           BIT(3)
-#define SYSTEM_BTMAC_RST        BIT(4)
-#define SYSTEM_SDIO_RST         BIT(5)
-#define SYSTEM_EMAC_RST         BIT(7)
-#define SYSTEM_MACPWR_RST       BIT(8)
-#define SYSTEM_RW_BTMAC_RST     BIT(9)
-#define SYSTEM_RW_BTLP_RST      BIT(10)
-#define BLE_REG_REST_BIT        BIT(11)
-#define BLE_PWR_REG_REST_BIT    BIT(12)
-#define BLE_BB_REG_REST_BIT     BIT(13)
+#define SYSTEM_WIFIBB_RST           BIT(0)
+#define SYSTEM_FE_RST               BIT(1)
+#define SYSTEM_WIFIMAC_RST          BIT(2)
+#define SYSTEM_BTBB_RST             BIT(3)    /* Bluetooth Baseband */
+#define SYSTEM_BTMAC_RST            BIT(4)    /* deprecated */
+#define SYSTEM_SDIO_RST             BIT(5)
+#define SYSTEM_EMAC_RST             BIT(7)
+#define SYSTEM_MACPWR_RST           BIT(8)
+#define SYSTEM_RW_BTMAC_RST         BIT(9)    /* Bluetooth MAC */
+#define SYSTEM_RW_BTLP_RST          BIT(10)   /* Bluetooth Low Power Module */
+#define SYSTEM_RW_BTMAC_REG_RST     BIT(11)   /* Bluetooth MAC Regsiters */
+#define SYSTEM_RW_BTLP_REG_RST      BIT(12)   /* Bluetooth Low Power Registers */
+#define SYSTEM_BTBB_REG_RST         BIT(13)   /* Bluetooth Baseband Registers */
 
 #define SYSCON_HOST_INF_SEL_REG          (DR_REG_SYSCON_BASE + 0x01C)
 /* SYSCON_PERI_IO_SWAP : R/W ;bitpos:[7:0] ;default: 8'h0 ; */

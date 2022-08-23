@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Custom Flash Driver Example
 
 This example shows how to override the default chip driver list provided by IDF. Please make sure the SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST config option is enabled when you build this project (though it should already be enabled by default via `sdkconfig.defaults`). See [the programming guide](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/storage/spi_flash_override_driver.html) for more details regarding this feature.

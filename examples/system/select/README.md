@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Synchronous I/O multiplexing example
 
 The example demonstrates the use of synchronous I/O multiplexing by the select()

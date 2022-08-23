@@ -14,6 +14,7 @@ from typing import Any, Optional
 
 import pytest
 import websocket
+from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
 
 OPCODE_TEXT = 0x1
@@ -109,7 +110,7 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
 @pytest.mark.esp32c3
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
-@pytest.mark.wifi
+@pytest.mark.wifi_router
 def test_examples_protocol_https_wss_server(dut: Dut) -> None:
 
     # Get binary file
@@ -119,11 +120,16 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
 
     logging.info('Starting wss_server test app')
 
+    logging.info('Waiting to connect with AP')
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_router'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
     # Parse IP address of STA
     got_port = int(dut.expect(r'Server listening on port (\d+)', timeout=30)[1].decode())
-    logging.info('Waiting to connect with AP')
-
-    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)', timeout=30)[1].decode()
+    got_ip = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
 
     logging.info('Got IP   : {}'.format(got_ip))
     logging.info('Got Port : {}'.format(got_port))
@@ -140,8 +146,18 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
         opcode, data = ws.read()
         data = data.decode('UTF-8')
         if data != DATA:
-            raise RuntimeError('Failed to receive the correct echo response')
+            raise RuntimeError(f'Failed to receive the correct echo response.')
         logging.info('Correct echo response obtained from the wss server')
+
+        # Test for PING
+        logging.info('Testing for send PING')
+        ws.write(data=DATA, opcode=OPCODE_PING)
+        dut.expect('Got a WS PING frame, Replying PONG')
+        opcode, data = ws.read()
+        data = data.decode('UTF-8')
+        if data != DATA or opcode != OPCODE_PONG:
+            raise RuntimeError('Failed to receive the PONG response')
+        logging.info('Passed the test for PING')
 
         # Test for keepalive
         logging.info('Testing for keep alive (approx time = 20s)')

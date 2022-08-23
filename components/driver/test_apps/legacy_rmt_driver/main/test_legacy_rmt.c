@@ -7,14 +7,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
-#include "hal/cpu_hal.h"
 #include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "esp_rom_gpio.h"
-
 #include "ir_tools.h"
 #include "driver/rmt.h"
 
@@ -295,7 +295,7 @@ static void do_nec_tx_rx(uint32_t flags)
     // build NEC codes
     cmd = 0x20;
     while (cmd <= 0x30) {
-        ESP_LOGI(TAG, "Send command 0x%x to address 0x%x", cmd, addr);
+        ESP_LOGI(TAG, "Send command 0x%"PRIx32" to address 0x%"PRIx32, cmd, addr);
         // Send new key code
         TEST_ESP_OK(s_ir_builder->build_frame(s_ir_builder, addr, cmd));
         TEST_ESP_OK(s_ir_builder->get_result(s_ir_builder, &items, &length));
@@ -315,7 +315,7 @@ static void do_nec_tx_rx(uint32_t flags)
             length /= 4; // one RMT = 4 Bytes
             if (s_ir_parser->input(s_ir_parser, items, length) == ESP_OK) {
                 if (s_ir_parser->get_scan_code(s_ir_parser, &addr, &cmd, &repeat) == ESP_OK) {
-                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04x cmd: 0x%04x", repeat ? "(repeat)" : "", addr, cmd);
+                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04"PRIx32" cmd: 0x%04"PRIx32, repeat ? "(repeat)" : "", addr, cmd);
                 }
             }
             vRingbufferReturnItem(rb, (void *) items);
@@ -397,7 +397,7 @@ TEST_CASE("RMT TX stop", "[rmt]")
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     // build NEC codes
-    ESP_LOGI(TAG, "Plan to send command 0x%x~0x%x to address 0x%x", cmd, cmd + count, addr);
+    ESP_LOGI(TAG, "Plan to send command 0x%"PRIx32"~0x%"PRIx32" to address 0x%"PRIx32, cmd, cmd + count, addr);
     for (int i = 0; i <= count; i++) {
         TEST_ESP_OK(s_ir_builder->build_frame(s_ir_builder, addr, cmd));
         cmd++;
@@ -417,7 +417,7 @@ TEST_CASE("RMT TX stop", "[rmt]")
             length /= 4; // one RMT = 4 Bytes
             if (s_ir_parser->input(s_ir_parser, frames, length) == ESP_OK) {
                 if (s_ir_parser->get_scan_code(s_ir_parser, &addr, &cmd, &repeat) == ESP_OK) {
-                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04x cmd: 0x%04x", repeat ? "(repeat)" : "", addr, cmd);
+                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04"PRIx32"cmd: 0x%04"PRIx32, repeat ? "(repeat)" : "", addr, cmd);
                     num++;
                 }
             }
@@ -483,9 +483,9 @@ static uint32_t tx_end_time0, tx_end_time1;
 static void rmt_tx_end_cb(rmt_channel_t channel, void *arg)
 {
     if (channel == 0) {
-        tx_end_time0 = cpu_hal_get_cycle_count();
+        tx_end_time0 = esp_cpu_get_cycle_count();
     } else {
-        tx_end_time1 = cpu_hal_get_cycle_count();
+        tx_end_time1 = esp_cpu_get_cycle_count();
     }
 }
 TEST_CASE("RMT TX simultaneously", "[rmt]")
@@ -527,11 +527,13 @@ TEST_CASE("RMT TX simultaneously", "[rmt]")
     TEST_ESP_OK(rmt_wait_tx_done(channel0, portMAX_DELAY));
     TEST_ESP_OK(rmt_wait_tx_done(channel1, portMAX_DELAY));
 
-    ESP_LOGI(TAG, "tx_end_time0=%u, tx_end_time1=%u", tx_end_time0, tx_end_time1);
+    ESP_LOGI(TAG, "tx_end_time0=%"PRIu32", tx_end_time1=%"PRIu32, tx_end_time0, tx_end_time1);
     TEST_ASSERT_LESS_OR_EQUAL_UINT32(2000, tx_end_time1 - tx_end_time0);
 
     TEST_ESP_OK(rmt_remove_channel_from_group(channel0));
     TEST_ESP_OK(rmt_remove_channel_from_group(channel1));
+
+    rmt_register_tx_end_callback(NULL, NULL);
 
     TEST_ESP_OK(rmt_driver_uninstall(channel0));
     TEST_ESP_OK(rmt_driver_uninstall(channel1));
@@ -568,7 +570,7 @@ TEST_CASE("RMT TX loop", "[rmt]")
     // register callback functions, invoked when tx loop count to ceiling
     rmt_register_tx_end_callback(rmt_tx_loop_end, NULL);
     // build NEC codes
-    ESP_LOGI(TAG, "Send command 0x%x to address 0x%x", cmd, addr);
+    ESP_LOGI(TAG, "Send command 0x%"PRIx32" to address 0x%"PRIx32, cmd, addr);
     // Send new key code
     TEST_ESP_OK(s_ir_builder->build_frame(s_ir_builder, addr, cmd));
     TEST_ESP_OK(s_ir_builder->get_result(s_ir_builder, &items, &length));
@@ -582,7 +584,7 @@ TEST_CASE("RMT TX loop", "[rmt]")
             if (s_ir_parser->input(s_ir_parser, items, length) == ESP_OK) {
                 if (s_ir_parser->get_scan_code(s_ir_parser, &addr, &cmd, &repeat) == ESP_OK) {
                     count++;
-                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04x cmd: 0x%04x", repeat ? "(repeat)" : "", addr, cmd);
+                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04"PRIx32" cmd: 0x%04"PRIx32, repeat ? "(repeat)" : "", addr, cmd);
                 }
             }
             vRingbufferReturnItem(rb, (void *) items);
@@ -593,6 +595,42 @@ TEST_CASE("RMT TX loop", "[rmt]")
     }
 
     TEST_ASSERT_EQUAL(10, count);
+    rmt_register_tx_end_callback(NULL, NULL);
     rmt_clean_testbench(tx_channel, rx_channel);
 }
 #endif
+
+static void IRAM_ATTR test_delay_post_cache_disable(void *args)
+{
+    esp_rom_delay_us(10000);
+}
+
+TEST_CASE("RMT Interrupt IRAM Safe", "[rmt]")
+{
+    rmt_config_t tx = {
+        .channel = RMT_CHANNEL_0,
+        .gpio_num = 0,
+        .mem_block_num = 1,
+        .clk_div = 40,
+        .rmt_mode = RMT_MODE_TX,
+    };
+    TEST_ESP_OK(rmt_config(&tx));
+    TEST_ESP_OK(rmt_set_source_clk(tx.channel, RMT_BASECLK_APB));
+    // install interrupt with IRAM safe
+    TEST_ESP_OK(rmt_driver_install(tx.channel, 0, ESP_INTR_FLAG_IRAM));
+
+    // send a large buffer, ensure the RMT hardware is still in work when we disable the flash cache afterwords
+    rmt_item32_t items[256] = {};
+    for (int i = 0; i < 256; i++) {
+        items[i].level0 = 0;
+        items[i].duration0 = 1;
+        items[i].level1 = 1;
+        items[i].duration1 = 1;
+    }
+    rmt_write_items(RMT_CHANNEL_0, items, 256, false);
+
+    unity_utils_run_cache_disable_stub(test_delay_post_cache_disable, NULL);
+
+    TEST_ESP_OK(rmt_wait_tx_done(RMT_CHANNEL_0, portMAX_DELAY));
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_CHANNEL_0));
+}

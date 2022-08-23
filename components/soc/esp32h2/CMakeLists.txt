@@ -3,14 +3,15 @@ set(srcs
     "dedic_gpio_periph.c"
     "gdma_periph.c"
     "gpio_periph.c"
+    "sdm_periph.c"
     "interrupts.c"
     "spi_periph.c"
     "ledc_periph.c"
     "rmt_periph.c"
-    "sigmadelta_periph.c"
     "i2s_periph.c"
     "i2c_periph.c"
     "uart_periph.c"
+    "temperature_sensor_periph.c"
     "timer_periph.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

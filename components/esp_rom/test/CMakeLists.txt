@@ -1,6 +1,7 @@
 idf_component_register(SRC_DIRS .
                        PRIV_INCLUDE_DIRS . ${CMAKE_CURRENT_BINARY_DIR}
                        PRIV_REQUIRES cmock test_utils)
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h"
                 COMMAND xxd -i "logo.jpg" "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h"

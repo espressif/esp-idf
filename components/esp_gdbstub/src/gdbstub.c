@@ -13,6 +13,7 @@
 #include "soc/uart_reg.h"
 #include "soc/periph_defs.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "hal/wdt_hal.h"
@@ -192,7 +193,7 @@ static int wp_count = 0;
 static uint32_t bp_list[GDB_BP_SIZE] = {0};
 static uint32_t wp_list[GDB_WP_SIZE] = {0};
 static uint32_t wp_size[GDB_WP_SIZE] = {0};
-static watchpoint_trigger_t wp_access[GDB_WP_SIZE] = {0};
+static esp_cpu_watchpoint_trigger_t wp_access[GDB_WP_SIZE] = {0};
 
 static volatile bool step_in_progress = false;
 static bool not_send_reason = false;
@@ -438,16 +439,16 @@ void update_breakpoints(void)
 {
     for (size_t i = 0; i < GDB_BP_SIZE; i++) {
         if (bp_list[i] != 0) {
-            cpu_ll_set_breakpoint(i, (uint32_t)bp_list[i]);
+            esp_cpu_set_breakpoint(i, (const void *)bp_list[i]);
         } else {
-            cpu_hal_clear_breakpoint(i);
+            esp_cpu_clear_breakpoint(i);
         }
     }
     for (size_t i = 0; i < GDB_WP_SIZE; i++) {
         if (wp_list[i] != 0) {
-            cpu_hal_set_watchpoint(i, (void *)wp_list[i], wp_size[i], wp_access[i]);
+            esp_cpu_set_watchpoint(i, (void *)wp_list[i], wp_size[i], wp_access[i]);
         } else {
-            cpu_hal_clear_watchpoint(i);
+            esp_cpu_clear_watchpoint(i);
         }
     }
 }
@@ -514,7 +515,7 @@ static void handle_Z2_command(const unsigned char *cmd, int len)
         esp_gdbstub_send_str_packet("E02");
         return;
     }
-    wp_access[wp_count] = WATCHPOINT_TRIGGER_ON_WO;
+    wp_access[wp_count] = ESP_CPU_WATCHPOINT_STORE;
     wp_size[wp_count] = size;
     wp_list[wp_count++] = (uint32_t)addr;
     update_breakpoints();
@@ -533,7 +534,7 @@ static void handle_Z3_command(const unsigned char *cmd, int len)
         esp_gdbstub_send_str_packet("E02");
         return;
     }
-    wp_access[wp_count] = WATCHPOINT_TRIGGER_ON_RO;
+    wp_access[wp_count] = ESP_CPU_WATCHPOINT_LOAD;
     wp_size[wp_count] = size;
     wp_list[wp_count++] = (uint32_t)addr;
     update_breakpoints();
@@ -552,7 +553,7 @@ static void handle_Z4_command(const unsigned char *cmd, int len)
         esp_gdbstub_send_str_packet("E02");
         return;
     }
-    wp_access[wp_count] = WATCHPOINT_TRIGGER_ON_RW;
+    wp_access[wp_count] = ESP_CPU_WATCHPOINT_ACCESS;
     wp_size[wp_count] = size;
     wp_list[wp_count++] = (uint32_t)addr;
     update_breakpoints();

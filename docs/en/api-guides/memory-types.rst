@@ -119,24 +119,14 @@ Jump table optimizations can be re-enabled for individual source files that don'
 IROM (code executed from flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If a function is not explicitly placed into :ref:`iram` or RTC memory, it is placed into flash. The mechanism by which Flash MMU is used to allow code execution from flash is described in *{IDF_TARGET_NAME} Technical Reference Manual* > *Memory Management and Protection Units (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mpummu>`__]. As IRAM is limited, most of an application's binary code must be placed into IROM instead.
-
-During :doc:`startup`, the bootloader (which runs from IRAM) configures the MMU flash cache to map the app's instruction code region to the instruction space. Flash accessed via the MMU is cached using some internal SRAM and accessing cached flash data is as fast as accessing other types of internal memory.
-
-RTC FAST memory
-^^^^^^^^^^^^^^^
-
-The same region of RTC FAST memory can be accessed as both instruction and data memory. Code which has to run after wake-up from deep sleep mode has to be placed into RTC memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
+If a function is not explicitly placed into :ref:`iram` or RTC memory, it is placed into flash. As IRAM is limited, most of an application's binary code must be placed into IROM instead.
 
 .. only:: esp32
 
-     RTC FAST memory can only be accessed by the PRO CPU.
+    The mechanism by which Flash MMU is used to allow code execution from flash is described in *{IDF_TARGET_NAME} Technical Reference Manual* > *Memory Management and Protection Units (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mpummu>`__].
 
-     In single core mode, remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA capable.
+During :doc:`startup`, the bootloader (which runs from IRAM) configures the MMU flash cache to map the app's instruction code region to the instruction space. Flash accessed via the MMU is cached using some internal SRAM and accessing cached flash data is as fast as accessing other types of internal memory.
 
-.. only:: not esp32 and not esp32c2
-
-     Remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
 
 .. _drom:
 
@@ -163,6 +153,24 @@ The ``DRAM_ATTR`` attribute can be used to force constants from DROM into the :r
     Example::
 
         RTC_NOINIT_ATTR uint32_t rtc_noinit_data;
+
+
+.. only:: SOC_RTC_FAST_MEM_SUPPORTED
+
+    RTC FAST memory
+    ^^^^^^^^^^^^^^^
+
+    The same region of RTC FAST memory can be accessed as both instruction and data memory. Code which has to run after wake-up from deep sleep mode has to be placed into RTC memory. Please check detailed description in :doc:`deep sleep <deep-sleep-stub>` documentation.
+
+    .. only:: esp32
+
+        RTC FAST memory can only be accessed by the PRO CPU.
+
+        In single core mode, remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA capable.
+
+    .. only:: not esp32
+
+        Remaining RTC FAST memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
 
 
 DMA Capable Requirement

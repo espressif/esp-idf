@@ -6,6 +6,12 @@ menu "ESP-MQTT Configurations"
         help
             If not, this library will use MQTT protocol 3.1
 
+    config MQTT_PROTOCOL_5
+        bool "Enable MQTT protocol 5.0"
+        default n
+        help
+            If not, this library will not support MQTT 5.0
+
     config MQTT_TRANSPORT_SSL
         bool "Enable MQTT over SSL"
         default y

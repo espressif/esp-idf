@@ -1,14 +1,8 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <sys/queue.h>
@@ -280,6 +274,8 @@ static esp_err_t slider_object_set_threshold(void)
     return ret;
 }
 
+// workaround for compilation error on xtensa-esp32s3-elf-gcc (crosstool-NG esp-2022r1-RC1) 11.2.0 (IDF-5725)
+__attribute__((optimize("-Os")))
 static void slider_object_process_state(void)
 {
     te_slider_handle_list_t *item;
@@ -330,6 +326,20 @@ static esp_err_t slider_object_remove_instance(te_slider_handle_t slider_handle)
         }
     }
     return ret;
+}
+
+bool is_slider_object_handle(touch_elem_handle_t element_handle)
+{
+    te_slider_handle_list_t *item;
+    xSemaphoreTake(s_te_sld_obj->mutex, portMAX_DELAY);
+    SLIST_FOREACH(item, &s_te_sld_obj->handle_list, next) {
+        if (element_handle == item->slider_handle) {
+            xSemaphoreGive(s_te_sld_obj->mutex);
+            return true;
+        }
+    }
+    xSemaphoreGive(s_te_sld_obj->mutex);
+    return false;
 }
 
 static bool slider_channel_check(te_slider_handle_t slider_handle, touch_pad_t channel_num)
@@ -407,6 +417,13 @@ static inline void slider_dispatch(te_slider_handle_t slider_handle, touch_elem_
         slider_info.position = slider_handle->position;
         void *arg = slider_handle->config->arg;
         slider_handle->config->callback(slider_handle, &slider_info, arg);  //Event callback
+    }
+}
+
+void slider_enable_wakeup_calibration(te_slider_handle_t slider_handle, bool en)
+{
+    for (int idx = 0; idx < slider_handle->channel_sum; ++idx) {
+        slider_handle->device[idx]->is_use_last_threshold = !en;
     }
 }
 

@@ -15,11 +15,11 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_cpu.h"
 #include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
-#include "hal/cpu_hal.h"
-#include "hal/cpu_ll.h"
+#include "hal/dedic_gpio_cpu_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
@@ -67,7 +67,7 @@ struct dedic_gpio_bundle_t {
     int gpio_array[];    // array of GPIO numbers (configured by user)
 };
 
-static esp_err_t dedic_gpio_build_platform(uint32_t core_id)
+static esp_err_t dedic_gpio_build_platform(int core_id)
 {
     esp_err_t ret = ESP_OK;
     if (!s_platform[core_id]) {
@@ -196,7 +196,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
     dedic_gpio_bundle_t *bundle = NULL;
     uint32_t out_mask = 0;
     uint32_t in_mask = 0;
-    uint32_t core_id = cpu_hal_get_core_id(); // dedicated GPIO will be binded to the CPU who invokes this API
+    int core_id = esp_cpu_get_core_id(); // dedicated GPIO will be binded to the CPU who invokes this API
 
     ESP_GOTO_ON_FALSE(config && ret_bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     ESP_GOTO_ON_FALSE(config->gpio_array && config->array_size > 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid GPIO array or size");
@@ -233,7 +233,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
         }
         portEXIT_CRITICAL(&s_platform[core_id]->spinlock);
         ESP_GOTO_ON_FALSE(out_mask, ESP_ERR_NOT_FOUND, err, TAG, "no free outward channels on core[%d]", core_id);
-        ESP_LOGD(TAG, "new outward bundle(%p) on core[%d], offset=%d, mask(%x)", bundle, core_id, out_offset, out_mask);
+        ESP_LOGD(TAG, "new outward bundle(%p) on core[%d], offset=%"PRIu32", mask(%"PRIx32")", bundle, core_id, out_offset, out_mask);
     }
 
     // configure inwards channels
@@ -255,7 +255,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
         }
         portEXIT_CRITICAL(&s_platform[core_id]->spinlock);
         ESP_GOTO_ON_FALSE(in_mask, ESP_ERR_NOT_FOUND, err, TAG, "no free inward channels on core[%d]", core_id);
-        ESP_LOGD(TAG, "new inward bundle(%p) on core[%d], offset=%d, mask(%x)", bundle, core_id, in_offset, in_mask);
+        ESP_LOGD(TAG, "new inward bundle(%p) on core[%d], offset=%"PRIu32", mask(%"PRIx32")", bundle, core_id, in_offset, in_mask);
     }
 
     // route dedicated GPIO channel signals to GPIO matrix
@@ -271,7 +271,7 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
             esp_rom_gpio_connect_out_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].out_sig_per_channel[out_offset + i], config->flags.out_invert, false);
         }
 #if !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
-        cpu_ll_enable_dedic_gpio_output(s_platform[core_id]->out_occupied_mask);
+        dedic_gpio_cpu_ll_enable_output(s_platform[core_id]->out_occupied_mask);
 #endif // !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
     }
 
@@ -306,7 +306,7 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle)
     bool recycle_all = false;
     ESP_GOTO_ON_FALSE(bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
 
-    uint32_t core_id = cpu_hal_get_core_id();
+    uint32_t core_id = esp_cpu_get_core_id();
     ESP_GOTO_ON_FALSE(core_id == bundle->core_id, ESP_FAIL, err, TAG, "del bundle on wrong CPU");
 
     portENTER_CRITICAL(&s_platform[core_id]->spinlock);
@@ -353,14 +353,14 @@ void dedic_gpio_bundle_write(dedic_gpio_bundle_handle_t bundle, uint32_t mask, u
 {
     // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
-    cpu_ll_write_dedic_gpio_mask(bundle->out_mask & (mask << bundle->out_offset), value << bundle->out_offset);
+    dedic_gpio_cpu_ll_write_mask(bundle->out_mask & (mask << bundle->out_offset), value << bundle->out_offset);
 }
 
 uint32_t dedic_gpio_bundle_read_out(dedic_gpio_bundle_handle_t bundle)
 {
     // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
-    uint32_t value =  cpu_ll_read_dedic_gpio_out();
+    uint32_t value =  dedic_gpio_cpu_ll_read_out();
     return (value & bundle->out_mask) >> (bundle->out_offset);
 }
 
@@ -368,7 +368,7 @@ uint32_t dedic_gpio_bundle_read_in(dedic_gpio_bundle_handle_t bundle)
 {
     // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
-    uint32_t value  = cpu_ll_read_dedic_gpio_in();
+    uint32_t value  = dedic_gpio_cpu_ll_read_in();
     return (value & bundle->in_mask) >> (bundle->in_offset);
 }
 
@@ -377,7 +377,7 @@ esp_err_t dedic_gpio_bundle_set_interrupt_and_callback(dedic_gpio_bundle_handle_
 {
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(bundle, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    uint32_t core_id = cpu_hal_get_core_id();
+    int core_id = esp_cpu_get_core_id();
     // lazy alloc interrupt
     ESP_GOTO_ON_ERROR(dedic_gpio_install_interrupt(core_id), err, TAG, "allocate interrupt on core %d failed", core_id);
 

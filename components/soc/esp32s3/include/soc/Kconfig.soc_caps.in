@@ -3,26 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_BROWNOUT_RESET_SUPPORTED
-    bool
-    default y
-
-config SOC_CPU_BREAKPOINTS_NUM
-    int
-    default 2
-
-config SOC_CPU_WATCHPOINTS_NUM
-    int
-    default 2
-
-config SOC_CPU_WATCHPOINT_SIZE
-    int
-    default 64
-
-config SOC_CPU_HAS_FPU
-    bool
-    default y
-
 config SOC_LEDC_SUPPORT_APB_CLOCK
     bool
     default y
@@ -95,10 +75,6 @@ config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
 
-config SOC_CPU_CORES_NUM
-    int
-    default 2
-
 config SOC_CACHE_SUPPORT_WRAP
     bool
     default y
@@ -112,10 +88,6 @@ config SOC_RISCV_COPROC_SUPPORTED
     default y
 
 config SOC_BT_SUPPORTED
-    bool
-    default y
-
-config SOC_BLUEDROID_SUPPORTED
     bool
     default y
 
@@ -155,6 +127,10 @@ config SOC_RTC_SLOW_MEM_SUPPORTED
     bool
     default y
 
+config SOC_RTC_MEM_SUPPORTED
+    bool
+    default y
+
 config SOC_PSRAM_DMA_CAPABLE
     bool
     default y
@@ -171,7 +147,11 @@ config SOC_RMT_SUPPORTED
     bool
     default y
 
-config SOC_SIGMADELTA_SUPPORTED
+config SOC_SDM_SUPPORTED
+    bool
+    default y
+
+config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
@@ -211,6 +191,18 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_MEMPROT_SUPPORTED
+    bool
+    default y
+
+config SOC_TOUCH_SENSOR_SUPPORTED
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_40M
+    bool
+    default y
+
 config SOC_APPCPU_HAS_CLOCK_GATING_BUG
     bool
     default y
@@ -235,6 +227,10 @@ config SOC_ADC_MONITOR_SUPPORTED
     bool
     default y
 
+config SOC_ADC_DMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
     int
     default 2
@@ -255,9 +251,21 @@ config SOC_ADC_PATT_LEN_MAX
     int
     default 24
 
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
 config SOC_ADC_DIGI_MAX_BITWIDTH
     int
-    default 13
+    default 12
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 4
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 4
 
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
@@ -286,6 +294,34 @@ config SOC_ADC_CALIBRATION_V1_SUPPORTED
 config SOC_APB_BACKUP_DMA
     bool
     default y
+
+config SOC_BROWNOUT_RESET_SUPPORTED
+    bool
+    default y
+
+config SOC_CPU_CORES_NUM
+    int
+    default 2
+
+config SOC_CPU_INTR_NUM
+    int
+    default 32
+
+config SOC_CPU_HAS_FPU
+    bool
+    default y
+
+config SOC_CPU_BREAKPOINTS_NUM
+    int
+    default 2
+
+config SOC_CPU_WATCHPOINTS_NUM
+    int
+    default 2
+
+config SOC_CPU_WATCHPOINT_SIZE
+    int
+    default 64
 
 config SOC_DS_SIGNATURE_MAX_BIT_LEN
     int
@@ -451,10 +487,6 @@ config SOC_MCPWM_SWSYNC_CAN_PROPAGATE
     bool
     default y
 
-config SOC_MCPWM_BASE_CLK_HZ
-    int
-    default 160000000
-
 config SOC_PCNT_GROUPS
     bool
     default y
@@ -587,11 +619,11 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
-config SOC_SIGMADELTA_NUM
+config SOC_SDM_GROUPS
     bool
     default y
 
-config SOC_SIGMADELTA_CHANNEL_NUM
+config SOC_SDM_CHANNELS_PER_GROUP
     int
     default 8
 
@@ -659,10 +691,6 @@ config SOC_SPIRAM_SUPPORTED
     bool
     default y
 
-config SOC_SYSTIMER_SUPPORTED
-    bool
-    default y
-
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
@@ -679,9 +707,9 @@ config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 20
 
-config SOC_SYSTIMER_FIXED_TICKS_US
-    int
-    default 16
+config SOC_SYSTIMER_FIXED_DIVIDER
+    bool
+    default y
 
 config SOC_SYSTIMER_INT_LEVEL
     bool
@@ -756,6 +784,10 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     default y
 
 config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
+
+config SOC_UART_SUPPORT_APB_CLK
     bool
     default y
 
@@ -899,6 +931,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
     bool
     default y
@@ -906,6 +942,14 @@ config SOC_FLASH_ENCRYPTION_XTS_AES_128
 config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
+
+config SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE
+    int
+    default 16
+
+config SOC_MEMPROT_MEM_ALIGN_SIZE
+    int
+    default 256
 
 config SOC_PHY_DIG_REGS_MEM_SIZE
     int
@@ -976,6 +1020,22 @@ config SOC_WIFI_FTM_SUPPORT
     default y
 
 config SOC_WIFI_GCMP_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_WAPI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_CSI_SUPPORT
+    bool
+    default y
+
+config SOC_WIFI_MESH_SUPPORT
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
     bool
     default y
 

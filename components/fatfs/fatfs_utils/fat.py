@@ -22,6 +22,7 @@ class FAT:
         self.clusters[Cluster.ROOT_BLOCK_ID].allocate_cluster()
 
     def __init__(self, boot_sector_state: BootSectorState, init_: bool) -> None:
+        self._first_free_cluster_id = 0
         self.boot_sector_state = boot_sector_state
         self.clusters: List[Cluster] = [Cluster(cluster_id=i,
                                                 boot_sector_state=self.boot_sector_state,
@@ -38,11 +39,30 @@ class FAT:
         is_cluster_last_: bool = value_ == (1 << self.boot_sector_state.fatfs_type) - 1
         return is_cluster_last_
 
+    def chain_content(self, cluster_id_: int) -> bytearray:
+        bin_im: bytearray = self.boot_sector_state.binary_image
+        if self.is_cluster_last(cluster_id_):
+            data_address_ = Cluster.compute_cluster_data_address(self.boot_sector_state, cluster_id_)
+            content_: bytearray = bin_im[data_address_: data_address_ + self.boot_sector_state.sector_size]
+            return content_
+        fat_value_: int = self.get_cluster_value(cluster_id_)
+        data_address_ = Cluster.compute_cluster_data_address(self.boot_sector_state, cluster_id_)
+        content_ = bin_im[data_address_: data_address_ + self.boot_sector_state.sector_size]
+
+        while not self.is_cluster_last(cluster_id_):
+            cluster_id_ = fat_value_
+            fat_value_ = self.get_cluster_value(cluster_id_)
+            data_address_ = Cluster.compute_cluster_data_address(self.boot_sector_state, cluster_id_)
+            content_ += bin_im[data_address_: data_address_ + self.boot_sector_state.sector_size]
+        return content_
+
     def find_free_cluster(self) -> Cluster:
         # finds first empty cluster and allocates it
-        for cluster in self.clusters:
+        for cluster_id, cluster in enumerate(self.clusters[self._first_free_cluster_id:],
+                                             start=self._first_free_cluster_id):
             if cluster.is_empty:
                 cluster.allocate_cluster()
+                self._first_free_cluster_id = cluster_id
                 return cluster
         raise NoFreeClusterException('No free cluster available!')
 

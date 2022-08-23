@@ -11,6 +11,8 @@
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_private/systimer.h"
+#include "esp_private/periph_ctrl.h"
 #include "sdkconfig.h"
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_SYSTIMER
 #include "soc/periph_defs.h"
@@ -80,7 +82,13 @@ void vPortSetupTimer(void)
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE + cpuid, ESP_INTR_FLAG_IRAM | level, SysTickIsrHandler, &systimer_hal, NULL));
 
     if (cpuid == 0) {
+        periph_module_enable(PERIPH_SYSTIMER_MODULE);
         systimer_hal_init(&systimer_hal);
+        systimer_hal_tick_rate_ops_t ops = {
+            .ticks_to_us = systimer_ticks_to_us,
+            .us_to_ticks = systimer_us_to_ticks,
+        };
+        systimer_hal_set_tick_rate_ops(&systimer_hal, &ops);
         systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK, 0);
         systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_LL_COUNTER_OS_TICK);
 
@@ -151,6 +159,8 @@ IRAM_ATTR void SysTickIsrHandler(void *arg)
 
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
+
+extern void esp_vApplicationTickHook(void);
 /**
  * @brief Handler of SysTick
  *
@@ -165,11 +175,27 @@ BaseType_t xPortSysTickHandler(void)
     portbenchmarkIntLatency();
 #endif //configBENCHMARK
     traceISR_ENTER(SYSTICK_INTR_ID);
-    BaseType_t ret = xTaskIncrementTick();
-    if(ret != pdFALSE) {
+
+    // Call IDF Tick Hook
+    esp_vApplicationTickHook();
+
+    // Call FreeRTOS Increment tick function
+    BaseType_t xSwitchRequired;
+#if CONFIG_FREERTOS_UNICORE
+    xSwitchRequired = xTaskIncrementTick();
+#else
+    if (xPortGetCoreID() == 0) {
+        xSwitchRequired = xTaskIncrementTick();
+    } else {
+        xSwitchRequired = xTaskIncrementTickOtherCores();
+    }
+#endif
+
+    // Check if yield is required
+    if (xSwitchRequired != pdFALSE) {
         portYIELD_FROM_ISR();
     } else {
         traceISR_EXIT();
     }
-    return ret;
+    return xSwitchRequired;
 }

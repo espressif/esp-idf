@@ -15,7 +15,7 @@
 #include "esp_console.h"
 #include "esp_chip_info.h"
 #include "esp_sleep.h"
-#include "esp_spi_flash.h"
+#include "esp_flash.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "argtable3/argtable3.h"
@@ -39,6 +39,7 @@ static void register_light_sleep(void);
 #if WITH_TASKS_INFO
 static void register_tasks(void);
 #endif
+static void register_log_level(void);
 
 void register_system_common(void)
 {
@@ -49,6 +50,7 @@ void register_system_common(void)
 #if WITH_TASKS_INFO
     register_tasks();
 #endif
+    register_log_level();
 }
 
 void register_system_sleep(void)
@@ -68,6 +70,7 @@ static int get_version(int argc, char **argv)
 {
     const char *model;
     esp_chip_info_t info;
+    uint32_t flash_size;
     esp_chip_info(&info);
 
     switch(info.model) {
@@ -86,11 +89,18 @@ static int get_version(int argc, char **argv)
         case CHIP_ESP32H2:
             model = "ESP32-H2";
             break;
+        case CHIP_ESP32C2:
+            model = "ESP32-C2";
+            break;
         default:
             model = "Unknown";
             break;
     }
 
+    if(esp_flash_get_size(NULL, &flash_size) != ESP_OK) {
+        printf("Get flash size failed");
+        return 1;
+    }
     printf("IDF Version:%s\r\n", esp_get_idf_version());
     printf("Chip info:\r\n");
     printf("\tmodel:%s\r\n", model);
@@ -100,7 +110,7 @@ static int get_version(int argc, char **argv)
            info.features & CHIP_FEATURE_BLE ? "/BLE" : "",
            info.features & CHIP_FEATURE_BT ? "/BT" : "",
            info.features & CHIP_FEATURE_EMB_FLASH ? "/Embedded-Flash:" : "/External-Flash:",
-           spi_flash_get_chip_size() / (1024 * 1024), " MB");
+           flash_size / (1024 * 1024), " MB");
     printf("\trevision number:%d\r\n", info.revision);
     return 0;
 }
@@ -386,6 +396,71 @@ static void register_light_sleep(void)
         .hint = NULL,
         .func = &light_sleep,
         .argtable = &light_sleep_args
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+}
+
+/** log_level command changes log level via esp_log_level_set */
+
+static struct {
+    struct arg_str *tag;
+    struct arg_str *level;
+    struct arg_end *end;
+} log_level_args;
+
+static const char* s_log_level_names[] = {
+    "none",
+    "error",
+    "warn",
+    "info",
+    "debug",
+    "verbose"
+};
+
+static int log_level(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **) &log_level_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, log_level_args.end, argv[0]);
+        return 1;
+    }
+    assert(log_level_args.tag->count == 1);
+    assert(log_level_args.level->count == 1);
+    const char* tag = log_level_args.tag->sval[0];
+    const char* level_str = log_level_args.level->sval[0];
+    esp_log_level_t level;
+    size_t level_len = strlen(level_str);
+    for (level = ESP_LOG_NONE; level <= ESP_LOG_VERBOSE; level++) {
+        if (memcmp(level_str, s_log_level_names[level], level_len) == 0) {
+            break;
+        }
+    }
+    if (level > ESP_LOG_VERBOSE) {
+        printf("Invalid log level '%s', choose from none|error|warn|info|debug|verbose\n", level_str);
+        return 1;
+    }
+    if (level > CONFIG_LOG_MAXIMUM_LEVEL) {
+        printf("Can't set log level to %s, max level limited in menuconfig to %s. "
+               "Please increase CONFIG_LOG_MAXIMUM_LEVEL in menuconfig.\n",
+               s_log_level_names[level], s_log_level_names[CONFIG_LOG_MAXIMUM_LEVEL]);
+        return 1;
+    }
+    esp_log_level_set(tag, level);
+    return 0;
+}
+
+static void register_log_level(void)
+{
+    log_level_args.tag = arg_str1(NULL, NULL, "<tag|*>", "Log tag to set the level for, or * to set for all tags");
+    log_level_args.level = arg_str1(NULL, NULL, "<none|error|warn|debug|verbose>", "Log level to set. Abbreviated words are accepted.");
+    log_level_args.end = arg_end(2);
+
+    const esp_console_cmd_t cmd = {
+        .command = "log_level",
+        .help = "Set log level for all tags or a specific tag.",
+        .hint = NULL,
+        .func = &log_level,
+        .argtable = &log_level_args
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }

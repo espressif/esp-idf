@@ -8,7 +8,6 @@
 #define _ESP_HTTP_CLIENT_H
 
 #include "freertos/FreeRTOS.h"
-#include "http_parser.h"
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include <sys/socket.h>
@@ -427,6 +426,7 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
  * @return
  *     - (0) if stream doesn't contain content-length header, or chunked encoding (checked by `esp_http_client_is_chunked` response)
  *     - (-1: ESP_FAIL) if any errors
+ *     - (-ESP_ERR_HTTP_EAGAIN = -0x7007) if call is timed-out before any data was ready
  *     - Download data length defined by content-length header
  */
 int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client);
@@ -451,6 +451,8 @@ bool esp_http_client_is_chunked_response(esp_http_client_handle_t client);
  * @return
  *     - (-1) if any errors
  *     - Length of data was read
+ *
+ * @note  (-ESP_ERR_HTTP_EAGAIN = -0x7007) is returned when call is timed-out before any data was ready
  */
 int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len);
 

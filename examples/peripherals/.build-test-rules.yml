@@ -1,0 +1,236 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/peripherals/adc/continuous_read:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: adc dma mode isn't supported on these targets
+
+examples/peripherals/gpio/generic_gpio:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/gpio/matrix_keyboard:
+  enable:
+    - if: IDF_TARGET == "esp32s2"
+
+examples/peripherals/i2c/i2c_self_test:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/i2c/i2c_simple:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/i2c/i2c_tools:
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/i2s/i2s_adc_dac:
+  disable:
+    - if: SOC_I2S_SUPPORTS_ADC_DAC != 1
+
+examples/peripherals/i2s/i2s_basic/i2s_pdm:
+  disable:
+    - if: SOC_I2S_SUPPORTS_PDM != 1
+
+examples/peripherals/i2s/i2s_basic/i2s_std:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+
+examples/peripherals/i2s/i2s_basic/i2s_tdm:
+  disable:
+    - if: SOC_I2S_SUPPORTS_TDM != 1
+
+examples/peripherals/i2s/i2s_codec/i2s_es8311:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+
+examples/peripherals/i2s/i2s_recorder:
+  disable:
+    - if: SOC_I2S_SUPPORTS_PDM_RX != 1
+
+examples/peripherals/lcd/i80_controller:
+  disable:
+    - if: SOC_LCD_I80_SUPPORTED != 1
+
+examples/peripherals/lcd/rgb_panel:
+  disable:
+    - if: SOC_LCD_RGB_SUPPORTED != 1
+
+examples/peripherals/mcpwm:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+
+examples/peripherals/mcpwm/mcpwm_bdc_speed_control:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/mcpwm/mcpwm_bldc_hall_control:
+  disable:
+    - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32s3"
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/pcnt:
+  disable:
+    - if: SOC_PCNT_SUPPORTED != 1
+
+examples/peripherals/rmt:
+  disable:
+    - if: SOC_RMT_SUPPORTED != 1
+
+examples/peripherals/rmt/ir_nec_transceiver:
+  disable:
+    - if: SOC_RMT_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/rmt/musical_buzzer:
+  enable:
+    - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT == 1
+
+examples/peripherals/rmt/onewire_ds18b20:
+  disable:
+    - if: SOC_RMT_SUPPORTED != 1
+
+examples/peripherals/rmt/stepper_motor:
+  enable:
+    - if: SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP == 1
+
+examples/peripherals/sdio:
+  disable:
+    - if: SOC_SDIO_SLAVE_SUPPORTED != 1
+
+examples/peripherals/secure_element/atecc608_ecdsa:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/peripherals/sigma_delta:
+  disable:
+    - if: SOC_SDM_SUPPORTED != 1
+
+examples/peripherals/spi_master/hd_eeprom:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/spi_master/lcd:
+  enable:
+    - if: IDF_TARGET in ["esp32", "esp32c3", "esp32s2"]
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/peripherals/spi_slave/receiver:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/spi_slave/sender:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/spi_slave_hd/append_mode/master:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/spi_slave_hd/append_mode/slave:
+  enable:
+    - if: IDF_TARGET == "esp32s2"
+      temporary: true
+      reason: the other targets are not tested yet
+
+examples/peripherals/spi_slave_hd/segment_mode/seg_master:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+
+examples/peripherals/spi_slave_hd/segment_mode/seg_slave:
+  disable:
+    - if: IDF_TARGET == "esp32"
+      temporary: true
+      reason: not tested yet
+
+examples/peripherals/temp_sensor:
+  disable:
+    - if: SOC_TEMP_SENSOR_SUPPORTED != 1
+
+examples/peripherals/touch_sensor:
+  disable:
+    - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
+
+examples/peripherals/touch_sensor/touch_element:
+  enable:
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
+      reason: only supports esp32s2 and esp32s3
+
+examples/peripherals/touch_sensor/touch_sensor_v1:
+  disable:
+    - if: SOC_TOUCH_VERSION_1 != 1
+
+examples/peripherals/touch_sensor/touch_sensor_v2:
+  disable:
+    - if: SOC_TOUCH_VERSION_2 != 1
+
+examples/peripherals/twai:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1
+
+examples/peripherals/twai/twai_alert_and_recovery:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/twai/twai_self_test:
+  disable:
+    - if: IDF_TARGET == "esp32c2"
+      temporary: true
+      reason: target esp32c2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+
+examples/peripherals/uart/uart_echo_rs485:
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "esp32h2"
+
+examples/peripherals/usb:
+  disable:
+    - if: SOC_USB_PERIPH_NUM != 1
+
+examples/peripherals/wave_gen:
+  enable:
+    - if: IDF_TARGET == "esp32"
+      temporary: true
+      reason: the other targets are not tested yet

@@ -12,22 +12,10 @@
 #include "sys/queue.h"
 #include "esp_log.h"
 
-#include "esp_transport.h"
 #include "esp_transport_internal.h"
-#include "esp_transport_utils.h"
+#include "esp_transport.h"
 
-static const char *TAG = "TRANSPORT";
-
-/**
- * Transport layer error structure including
- * * esp-tls last error storage
- * * sock-errno
- */
-struct esp_transport_error_storage {
-    struct esp_tls_last_error esp_tls_err_h_base;   /*!< esp-tls last error container */
-    // additional fields
-    int    sock_errno;                              /*!< last socket error captured for this transport */
-};
+static const char *TAG = "transport";
 
 /**
  * This list will hold all transport available
@@ -35,37 +23,6 @@ struct esp_transport_error_storage {
 STAILQ_HEAD(esp_transport_list_t, esp_transport_item_t);
 
 struct transport_esp_tls;
-
-/**
- * Internal transport structure holding list of transports and other data common to all transports
- */
-typedef struct esp_transport_internal {
-    struct esp_transport_list_t list;                      /*!< List of transports */
-    struct esp_foundation_transport *base;       /*!< Base transport pointer shared for each list item */
-} esp_transport_internal_t;
-
-static esp_foundation_transport_t * esp_transport_init_foundation_transport(void)
-{
-    esp_foundation_transport_t *foundation = calloc(1, sizeof(esp_foundation_transport_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, foundation, return NULL);
-    foundation->error_handle = calloc(1, sizeof(struct esp_transport_error_storage));
-    ESP_TRANSPORT_MEM_CHECK(TAG, foundation->error_handle,
-                        free(foundation);
-                        return NULL);
-    foundation->transport_esp_tls = esp_transport_esp_tls_create();
-    ESP_TRANSPORT_MEM_CHECK(TAG, foundation->transport_esp_tls,
-                        free(foundation->error_handle);
-                        free(foundation);
-                        return NULL);
-    return foundation;
-}
-
-static void esp_transport_destroy_foundation_transport(esp_foundation_transport_t *foundation)
-{
-    esp_transport_esp_tls_destroy(foundation->transport_esp_tls);
-    free(foundation->error_handle);
-    free(foundation);
-}
 
 static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_handle_t t)
 {
@@ -77,14 +34,10 @@ static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_han
 
 esp_transport_list_handle_t esp_transport_list_init(void)
 {
-    esp_transport_list_handle_t transport = calloc(1, sizeof(esp_transport_internal_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, transport, return NULL);
-    STAILQ_INIT(&transport->list);
-    transport->base = esp_transport_init_foundation_transport();
-    ESP_TRANSPORT_MEM_CHECK(TAG, transport->base,
-                            free(transport);
-                            return NULL);
-    return transport;
+    esp_transport_list_handle_t transport_list = calloc(1, sizeof(struct esp_transport_list_t));
+    ESP_TRANSPORT_MEM_CHECK(TAG, transport_list, return NULL);
+    STAILQ_INIT(transport_list);
+    return transport_list;
 }
 
 esp_err_t esp_transport_list_add(esp_transport_list_handle_t h, esp_transport_handle_t t, const char *scheme)
@@ -95,9 +48,7 @@ esp_err_t esp_transport_list_add(esp_transport_list_handle_t h, esp_transport_ha
     t->scheme = calloc(1, strlen(scheme) + 1);
     ESP_TRANSPORT_MEM_CHECK(TAG, t->scheme, return ESP_ERR_NO_MEM);
     strcpy(t->scheme, scheme);
-    STAILQ_INSERT_TAIL(&h->list, t, next);
-    // Each transport in a list to share the same error tracker
-    t->base = h->base;
+    STAILQ_INSERT_TAIL(h, t, next);
     return ESP_OK;
 }
 
@@ -107,10 +58,10 @@ esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handl
         return NULL;
     }
     if (scheme == NULL) {
-        return STAILQ_FIRST(&h->list);
+        return STAILQ_FIRST(h);
     }
     esp_transport_handle_t item;
-    STAILQ_FOREACH(item, &h->list, next) {
+    STAILQ_FOREACH(item, h, next) {
         if (strcasecmp(item->scheme, scheme) == 0) {
             return item;
         }
@@ -121,29 +72,28 @@ esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handl
 esp_err_t esp_transport_list_destroy(esp_transport_list_handle_t h)
 {
     esp_transport_list_clean(h);
-    esp_transport_destroy_foundation_transport(h->base);
     free(h);
     return ESP_OK;
 }
 
 esp_err_t esp_transport_list_clean(esp_transport_list_handle_t h)
 {
-    esp_transport_handle_t item = STAILQ_FIRST(&h->list);
+    esp_transport_handle_t item = STAILQ_FIRST(h);
     esp_transport_handle_t tmp;
     while (item != NULL) {
         tmp = STAILQ_NEXT(item, next);
         esp_transport_destroy(item);
         item = tmp;
     }
-    STAILQ_INIT(&h->list);
+    STAILQ_INIT(h);
     return ESP_OK;
 }
 
 esp_transport_handle_t esp_transport_init(void)
 {
-    esp_transport_handle_t t = calloc(1, sizeof(struct esp_transport_item_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, t, return NULL);
-    return t;
+    esp_transport_handle_t transport = calloc(1, sizeof(struct esp_transport_item_t));
+    ESP_TRANSPORT_MEM_CHECK(TAG, transport, return NULL);
+    return transport;
 }
 
 esp_transport_handle_t esp_transport_get_payload_transport_handle(esp_transport_handle_t t)
@@ -156,10 +106,10 @@ esp_transport_handle_t esp_transport_get_payload_transport_handle(esp_transport_
 
 esp_err_t esp_transport_destroy(esp_transport_handle_t t)
 {
-    if (t->_destroy) {
+    if (t && t->_destroy) {
         t->_destroy(t);
     }
-    if (t->scheme) {
+    if (t && t->scheme) {
         free(t->scheme);
     }
     free(t);
@@ -302,40 +252,34 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
 
 esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t)
 {
-    if (t && t->base && t->base->error_handle) {
-        return &t->base->error_handle->esp_tls_err_h_base;
+    if (t && t->foundation && t->foundation->error_handle) {
+        return &t->foundation->error_handle->esp_tls_err_h_base;
     }
     return NULL;
 }
 
 int esp_transport_get_errno(esp_transport_handle_t t)
 {
-    if (t && t->base && t->base->error_handle) {
-        int actual_errno = t->base->error_handle->sock_errno;
-        t->base->error_handle->sock_errno = 0;
+    if (t && t->foundation && t->foundation->error_handle) {
+        int actual_errno = t->foundation->error_handle->sock_errno;
+        t->foundation->error_handle->sock_errno = 0;
         return actual_errno;
     }
     return -1;
 }
 
-void capture_tcp_transport_error(esp_transport_handle_t t, enum tcp_transport_errors error)
+void capture_tcp_transport_error(esp_transport_handle_t t, enum esp_tcp_transport_err_t error)
 {
     esp_tls_last_error_t *err_handle = esp_transport_get_error_handle(t);
     switch (error) {
-        case ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT:
-            err_handle->last_error = ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT;
-            break;
-        case ERR_TCP_TRANSPORT_CANNOT_RESOLVE_HOSTNAME:
-            err_handle->last_error = ESP_ERR_ESP_TLS_CANNOT_RESOLVE_HOSTNAME;
-            break;
         case ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN:
             err_handle->last_error = ESP_ERR_ESP_TLS_TCP_CLOSED_FIN;
             break;
+        case ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT:
+            err_handle->last_error = ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT;
+            break;
         case ERR_TCP_TRANSPORT_CONNECTION_FAILED:
             err_handle->last_error = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
-            break;
-        case ERR_TCP_TRANSPORT_SETOPT_FAILED:
-            err_handle->last_error = ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED;
             break;
         case ERR_TCP_TRANSPORT_NO_MEM:
             err_handle->last_error = ESP_ERR_NO_MEM;
@@ -345,19 +289,19 @@ void capture_tcp_transport_error(esp_transport_handle_t t, enum tcp_transport_er
 
 void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle)
 {
-    if (t && t->base && t->base->error_handle) {
-        memcpy(&t->base->error_handle->esp_tls_err_h_base, error_handle, sizeof(esp_tls_last_error_t));
+    if (t && t->foundation && t->foundation->error_handle) {
+        memcpy(&t->foundation->error_handle->esp_tls_err_h_base, error_handle, sizeof(esp_tls_last_error_t));
         int sock_error;
         if (esp_tls_get_and_clear_error_type(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, &sock_error) == ESP_OK) {
-            t->base->error_handle->sock_errno = sock_error;
+            t->foundation->error_handle->sock_errno = sock_error;
         }
     }
 }
 
 void esp_transport_capture_errno(esp_transport_handle_t t, int sock_errno)
 {
-    if (t && t->base && t->base->error_handle) {
-        t->base->error_handle->sock_errno = sock_errno;
+    if (t && t->foundation && t->foundation->error_handle) {
+        t->foundation->error_handle->sock_errno = sock_errno;
     }
 }
 
@@ -367,4 +311,25 @@ int esp_transport_get_socket(esp_transport_handle_t t)
         return  t->_get_socket(t);
     }
     return -1;
+}
+
+esp_err_t esp_transport_translate_error(enum esp_tcp_transport_err_t error)
+{
+    esp_err_t err = ESP_FAIL;
+    switch (error) {
+        case ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN:
+            err = ESP_ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN;
+            break;
+        case ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT:
+            err = ESP_ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+            break;
+        case ERR_TCP_TRANSPORT_CONNECTION_FAILED:
+            err = ESP_ERR_TCP_TRANSPORT_CONNECTION_FAILED;
+            break;
+        case ERR_TCP_TRANSPORT_NO_MEM:
+            err = ESP_ERR_TCP_TRANSPORT_NO_MEM;
+            break;
+    }
+
+    return err;
 }

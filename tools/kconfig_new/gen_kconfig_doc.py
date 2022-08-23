@@ -7,19 +7,8 @@
 # generated, allowing options to be referenced in other documents
 # (using :ref:`CONFIG_FOO`)
 #
-# Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import print_function
 
 import re
@@ -108,6 +97,8 @@ class ConfigTargetVisibility(object):
             return (False, None)
 
     def _visible(self, node):
+        if node.item == kconfiglib.COMMENT:
+            return (False, None)
         if isinstance(node.item, kconfiglib.Symbol) or isinstance(node.item, kconfiglib.Choice):
             dependencies = node.item.direct_dep  # "depends on" for configs
             name_id = node.item.name
@@ -159,7 +150,7 @@ def write_docs(config, visibility, filename):
 
 def node_is_menu(node):
     try:
-        return node.item == kconfiglib.MENU or node.is_menuconfig
+        return node.item in [kconfiglib.MENU, kconfiglib.COMMENT] or node.is_menuconfig
     except AttributeError:
         return False  # not all MenuNodes have is_menuconfig for some reason
 
@@ -179,7 +170,7 @@ def get_link_anchor(node):
     try:
         return 'CONFIG_%s' % node.item.name
     except AttributeError:
-        assert(node_is_menu(node))  # only menus should have no item.name
+        assert node_is_menu(node)  # only menus should have no item.name
 
     # for menus, build a link anchor out of the parents
     result = []

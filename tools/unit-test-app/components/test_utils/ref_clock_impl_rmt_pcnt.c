@@ -39,7 +39,7 @@ static rmt_channel_handle_t s_rmt_chan;
 static rmt_encoder_handle_t s_rmt_encoder;
 static volatile uint32_t s_milliseconds;
 
-static bool on_reach_watch_point(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
+static bool on_reach_watch_point(pcnt_unit_handle_t unit, const pcnt_watch_event_data_t *edata, void *user_ctx)
 {
     s_milliseconds += REF_CLOCK_PRESCALER_MS;
     return false;
@@ -107,6 +107,7 @@ void ref_clock_init(void)
     };
     rmt_transmit_config_t trans_config = {
         .loop_count = 0, // no loop
+        .flags.eot_level = 1,
     };
     TEST_ESP_OK(rmt_transmit(s_rmt_chan, s_rmt_encoder, &data, sizeof(data), &trans_config));
 

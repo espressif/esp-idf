@@ -1,0 +1,2 @@
+dependencies:
+  espressif/led_strip: "^2.0.0"

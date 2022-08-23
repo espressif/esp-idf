@@ -201,7 +201,7 @@ bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task
     task->stack_start = (uint32_t)rtos_snapshot.pxTopOfStack;
     task->stack_end = (uint32_t)rtos_snapshot.pxEndOfStack;
 
-    if (!xPortInterruptedFromISRContext() && handle == esp_core_dump_get_current_task_handle()) {
+    if (!esp_core_dump_in_isr_context() && handle == esp_core_dump_get_current_task_handle()) {
         // Set correct stack top for current task; only modify if we came from the task,
         // and not an ISR that crashed.
         task->stack_start = (uint32_t) s_exc_frame;
@@ -213,7 +213,7 @@ bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task
     if (handle == esp_core_dump_get_current_task_handle()) {
         ESP_COREDUMP_LOG_PROCESS("Crashed task %x", handle);
         esp_core_dump_port_set_crashed_tcb((uint32_t)handle);
-        if (xPortInterruptedFromISRContext()) {
+        if (esp_core_dump_in_isr_context()) {
             esp_core_dump_switch_task_stack_to_isr(task, interrupted_stack);
         }
     }
@@ -286,7 +286,15 @@ inline bool esp_core_dump_tcb_addr_is_sane(uint32_t addr)
 
 inline bool esp_core_dump_in_isr_context(void)
 {
-    return xPortInterruptedFromISRContext();
+    /* This function will be used to check whether a panic occurred in an ISR.
+     * In that case, the execution frame must be switch to the interrupt stack.
+     * However, in case where the task watchdog ISR calls the panic handler,
+     * `xPortInterruptedFromISRContext` returns true, BUT, we don't want to
+     * switch the frame to the ISR context. Thus, check that we are not
+     * coming from TWDT ISR. This should be refactored.
+     * TODO: IDF-5694. */
+    extern bool g_twdt_isr;
+    return xPortInterruptedFromISRContext() && !g_twdt_isr;
 }
 
 inline core_dump_task_handle_t esp_core_dump_get_current_task_handle()

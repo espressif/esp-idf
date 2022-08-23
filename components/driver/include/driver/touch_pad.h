@@ -6,4 +6,8 @@
 
 #pragma once
 
+#include "soc/soc_caps.h"
+
+#if SOC_TOUCH_SENSOR_SUPPORTED
 #include "driver/touch_sensor.h"
+#endif

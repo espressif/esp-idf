@@ -32,6 +32,7 @@ which are undefined if the following flag is not defined */
 #include <protocomm_security.h>
 #include <protocomm_security0.h>
 #include <protocomm_security1.h>
+#include "test_utils.h"
 
 #include "session.pb-c.h"
 
@@ -48,7 +49,7 @@ typedef struct {
     uint32_t id;
     uint8_t  sec_ver;
     uint8_t  weak;
-    const protocomm_security_pop_t *pop;
+    const protocomm_security1_params_t *pop;
     uint8_t device_pubkey[PUBLIC_KEY_LEN];
     uint8_t client_pubkey[PUBLIC_KEY_LEN];
     uint8_t sym_key[PUBLIC_KEY_LEN];
@@ -186,7 +187,7 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
     }
     flip_endian(session->sym_key, PUBLIC_KEY_LEN);
 
-    const protocomm_security_pop_t *pop = session->pop;
+    const protocomm_security1_params_t *pop = session->pop;
     if (pop != NULL && pop->data != NULL && pop->len != 0) {
         ESP_LOGD(TAG, "Adding proof of possession");
         uint8_t sha_out[PUBLIC_KEY_LEN];
@@ -637,7 +638,7 @@ esp_err_t test_req_handler (uint32_t session_id,
     return ESP_OK;
 }
 
-static esp_err_t start_test_service(uint8_t sec_ver, const protocomm_security_pop_t *pop)
+static esp_err_t start_test_service(uint8_t sec_ver, const protocomm_security1_params_t *pop)
 {
     test_pc = protocomm_new();
     if (test_pc == NULL) {
@@ -685,7 +686,7 @@ static esp_err_t test_security1_no_encryption (void)
     ESP_LOGI(TAG, "Starting Security 1 no encryption test");
 
     const char *pop_data = "test pop";
-    protocomm_security_pop_t pop = {
+    protocomm_security1_params_t pop = {
         .data = (const uint8_t *)pop_data,
         .len  = strlen(pop_data)
     };
@@ -752,7 +753,7 @@ static esp_err_t test_security1_session_overflow (void)
     ESP_LOGI(TAG, "Starting Security 1 session overflow test");
 
     const char *pop_data = "test pop";
-    protocomm_security_pop_t pop = {
+    protocomm_security1_params_t pop = {
         .data = (const uint8_t *)pop_data,
         .len  = strlen(pop_data)
     };
@@ -830,7 +831,7 @@ static esp_err_t test_security1_wrong_pop (void)
     ESP_LOGI(TAG, "Starting Security 1 wrong auth test");
 
     const char *pop_data = "test pop";
-    protocomm_security_pop_t pop = {
+    protocomm_security1_params_t pop = {
         .data = (const uint8_t *)pop_data,
         .len  = strlen(pop_data)
     };
@@ -861,7 +862,7 @@ static esp_err_t test_security1_wrong_pop (void)
     }
 
     const char *wrong_pop_data = "wrong pop";
-    protocomm_security_pop_t wrong_pop = {
+    protocomm_security1_params_t wrong_pop = {
         .data = (const uint8_t *)wrong_pop_data,
         .len  = strlen(wrong_pop_data)
     };
@@ -887,12 +888,12 @@ static esp_err_t test_security1_wrong_pop (void)
     return ESP_OK;
 }
 
-__attribute__((unused)) static esp_err_t test_security1_insecure_client (void)
+static esp_err_t test_security1_insecure_client (void)
 {
     ESP_LOGI(TAG, "Starting Security 1 insecure client test");
 
     const char *pop_data = "test pop";
-    protocomm_security_pop_t pop = {
+    protocomm_security1_params_t pop = {
         .data = (const uint8_t *)pop_data,
         .len  = strlen(pop_data)
     };
@@ -939,12 +940,12 @@ __attribute__((unused)) static esp_err_t test_security1_insecure_client (void)
     return ESP_OK;
 }
 
-__attribute__((unused)) static esp_err_t test_security1_weak_session (void)
+static esp_err_t test_security1_weak_session (void)
 {
     ESP_LOGI(TAG, "Starting Security 1 weak session test");
 
     const char *pop_data = "test pop";
-    protocomm_security_pop_t pop = {
+    protocomm_security1_params_t pop = {
         .data = (const uint8_t *)pop_data,
         .len  = strlen(pop_data)
     };
@@ -1056,7 +1057,7 @@ static esp_err_t test_security1 (void)
     ESP_LOGI(TAG, "Starting Sec1 test");
 
     const char *pop_data = "test pop";
-    protocomm_security_pop_t pop = {
+    protocomm_security1_params_t pop = {
         .data = (const uint8_t *)pop_data,
         .len  = strlen(pop_data)
     };

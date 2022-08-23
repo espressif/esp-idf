@@ -1,5 +1,5 @@
 # This is the project CMakeLists.txt file for the test subproject
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.16)
 
 # Include the components directory of the main application:
 #

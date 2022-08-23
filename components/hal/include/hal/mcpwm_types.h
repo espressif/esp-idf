@@ -1,29 +1,56 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
+#include "soc/clk_tree_defs.h"
+#include "soc/soc_caps.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief MCPWM timer clock source
+ */
+#if SOC_MCPWM_SUPPORTED
+typedef soc_periph_mcpwm_timer_clk_src_t mcpwm_timer_clock_source_t;
+#else
+typedef int mcpwm_timer_clock_source_t;
+#endif // SOC_MCPWM_SUPPORTED
+
+/**
+ * @brief MCPWM capture clock source
+ */
+#if SOC_MCPWM_SUPPORTED
+typedef soc_periph_mcpwm_capture_clk_src_t mcpwm_capture_clock_source_t;
+#else
+typedef int mcpwm_capture_clock_source_t;
+#endif // SOC_MCPWM_SUPPORTED
+
+/**
+ * @brief MCPWM timer count direction
+ */
 typedef enum {
     MCPWM_TIMER_DIRECTION_UP,   /*!< Counting direction: Increase */
     MCPWM_TIMER_DIRECTION_DOWN, /*!< Counting direction: Decrease */
 } mcpwm_timer_direction_t;
 
+/**
+ * @brief MCPWM timer events
+ */
 typedef enum {
-    MCPWM_TIMER_EVENT_ZERO, /*!< MCPWM timer counts to zero */
-    MCPWM_TIMER_EVENT_PEAK, /*!< MCPWM timer counts to peak */
+    MCPWM_TIMER_EVENT_EMPTY,   /*!< MCPWM timer counts to zero (i.e. counter is empty) */
+    MCPWM_TIMER_EVENT_FULL,    /*!< MCPWM timer counts to peak (i.e. counter is full) */
+    MCPWM_TIMER_EVENT_INVALID, /*!< MCPWM timer invalid event */
 } mcpwm_timer_event_t;
 
+/**
+ * @brief MCPWM timer count modes
+ */
 typedef enum {
     MCPWM_TIMER_COUNT_MODE_PAUSE,   /*!< MCPWM timer paused */
     MCPWM_TIMER_COUNT_MODE_UP,      /*!< MCPWM timer counting up */
@@ -31,14 +58,20 @@ typedef enum {
     MCPWM_TIMER_COUNT_MODE_UP_DOWN, /*!< MCPWM timer counting up and down */
 } mcpwm_timer_count_mode_t;
 
+/**
+ * @brief MCPWM timer commands, specify the way to start or stop the timer
+ */
 typedef enum {
-    MCPWM_TIMER_STOP_AT_ZERO,       /*!< MCPWM timer stops when couting to zero */
-    MCPWM_TIMER_STOP_AT_PEAK,       /*!< MCPWM timer stops when counting to peak */
-    MCPWM_TIMER_START_NO_STOP,      /*!< MCPWM timer starts couting */
-    MCPWM_TIMER_START_STOP_AT_ZERO, /*!< MCPWM timer starts counting and stops when couting to zero */
-    MCPWM_TIMER_START_STOP_AT_PEAK, /*!< MCPWM timer starts counting and stops when counting to peak */
-} mcpwm_timer_execute_cmd_t;
+    MCPWM_TIMER_STOP_EMPTY,       /*!< MCPWM timer stops when next count reaches zero */
+    MCPWM_TIMER_STOP_FULL,        /*!< MCPWM timer stops when next count reaches peak */
+    MCPWM_TIMER_START_NO_STOP,    /*!< MCPWM timer starts couting, and don't stop until received stop command */
+    MCPWM_TIMER_START_STOP_EMPTY, /*!< MCPWM timer starts counting and stops when next count reaches zero */
+    MCPWM_TIMER_START_STOP_FULL,  /*!< MCPWM timer starts counting and stops when next count reaches peak */
+} mcpwm_timer_start_stop_cmd_t;
 
+/**
+ * @brief MCPWM generator actions
+ */
 typedef enum {
     MCPWM_GEN_ACTION_KEEP,   /*!< Generator action: Keep the same level */
     MCPWM_GEN_ACTION_LOW,    /*!< Generator action: Force to low level */
@@ -46,7 +79,23 @@ typedef enum {
     MCPWM_GEN_ACTION_TOGGLE, /*!< Generator action: Toggle level */
 } mcpwm_generator_action_t;
 
+/**
+ * @brief MCPWM operator brake mode
+ */
 typedef enum {
-    MCPWM_TRIP_TYPE_CBC, /*!< CBC trip type, shut down the operator cycle by cycle*/
-    MCPWM_TRIP_TYPE_OST, /*!< OST trip type, shut down the operator in one shot */
-} mcpwm_trip_type_t;
+    MCPWM_OPER_BRAKE_MODE_CBC,     /*!< Brake mode: CBC (cycle by cycle)*/
+    MCPWM_OPER_BRAKE_MODE_OST,     /*!< Brake mode, OST (one shot) */
+    MCPWM_OPER_BRAKE_MODE_INVALID, /*!< MCPWM operator invalid brake mode */
+} mcpwm_operator_brake_mode_t;
+
+/**
+ * @brief MCPWM capture edge
+ */
+typedef enum {
+    MCPWM_CAP_EDGE_POS, /*!< Capture on the positive edge */
+    MCPWM_CAP_EDGE_NEG, /*!< Capture on the negative edge */
+} mcpwm_capture_edge_t;
+
+#ifdef __cplusplus
+}
+#endif

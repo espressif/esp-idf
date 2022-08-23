@@ -26,6 +26,10 @@ extern "C" {
 #define ESP_HF_PEER_FEAT_ECC        0x80        /* Enhanced Call Control */
 #define ESP_HF_PEER_FEAT_EXTERR    0x100        /* Extended error codes */
 #define ESP_HF_PEER_FEAT_CODEC     0x200        /* Codec Negotiation */
+/* HFP 1.7+ */
+#define ESP_HF_PEER_FEAT_HF_IND    0x400        /* HF Indicators */
+#define ESP_HF_PEER_FEAT_ESCO_S4   0x800        /* eSCO S4 Setting Supported */
+
 
 /* CHLD feature masks of HF AG */
 #define ESP_HF_CHLD_FEAT_REL           0x01       /* 0  Release waiting call or held calls */
@@ -98,7 +102,7 @@ typedef union
     } volume_control;                             /*!< AG callback param of ESP_HF_VOLUME_CONTROL_EVT */
 
     /**
-     * @brief ESP_HF_UNAT_RESPOSNE_EVT
+     * @brief ESP_HF_UNAT_RESPONSE_EVT
      */
     struct hf_unat_rep_param {
         char *unat;                               /*!< Unknown AT command string */
@@ -126,14 +130,14 @@ typedef union
     } out_call;                                   /*!< AG callback param of ESP_HF_DIAL_EVT */
 
     /**
-     * @brief ESP_HF_VTS_RESPOSNE_EVT
+     * @brief ESP_HF_VTS_RESPONSE_EVT
      */
     struct hf_vts_rep_param {
         char *code;                               /*!< MTF code from HF Client */
     }vts_rep;                                     /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
 
     /**
-     * @brief ESP_HF_NREC_RESPOSNE_EVT
+     * @brief ESP_HF_NREC_RESPONSE_EVT
      */
     struct hf_nrec_param {
        esp_hf_nrec_t state;                       /*!< NREC enabled or disabled */
@@ -208,14 +212,12 @@ typedef void (* esp_hf_cb_t) (esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
-esp_err_t esp_bt_hf_register_callback(esp_hf_cb_t callback);
+esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback);
 
 /**
  *
  * @brief           Initialize the bluetooth HF AG module.
  *                  This function should be called after esp_bluedroid_enable() completes successfully.
- *
- * @param[in]       remote_addr: remote bluetooth device address
  *
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
@@ -223,14 +225,12 @@ esp_err_t esp_bt_hf_register_callback(esp_hf_cb_t callback);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr);
+esp_err_t esp_hf_ag_init(void);
 
 /**
  *
  * @brief           De-initialize for HF AG module.
  *                  This function should be called only after esp_bluedroid_enable() completes successfully.
- *
- * @param[in]       remote_addr: remote bluetooth device address
  *
  * @return
  *                  - ESP_OK: success
@@ -238,12 +238,12 @@ esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_deinit(esp_bd_addr_t remote_addr);
+esp_err_t esp_hf_ag_deinit(void);
 
 /**
  *
  * @brief           To establish a Service Level Connection to remote bluetooth HFP client device.
- *                  This function must be called after esp_bt_hf_init() and before esp_bt_hf_deinit().
+ *                  This function must be called after esp_hf_ag_init() and before esp_hf_ag_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth HFP client device address
  *
@@ -253,12 +253,12 @@ esp_err_t esp_bt_hf_deinit(esp_bd_addr_t remote_addr);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_connect(esp_bd_addr_t remote_bda);
+esp_err_t esp_hf_ag_slc_connect(esp_bd_addr_t remote_bda);
 
 /**
  *
  * @brief           Disconnect from the remote HFP client. This function must be called
- *                  after esp_bt_hf_init() and before esp_bt_hf_deinit().
+ *                  after esp_hf_ag_init() and before esp_hf_ag_deinit().
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
@@ -268,7 +268,7 @@ esp_err_t esp_bt_hf_connect(esp_bd_addr_t remote_bda);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_disconnect(esp_bd_addr_t remote_bda);
+esp_err_t esp_hf_ag_slc_disconnect(esp_bd_addr_t remote_bda);
 
 /**
  *
@@ -283,7 +283,7 @@ esp_err_t esp_bt_hf_disconnect(esp_bd_addr_t remote_bda);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_connect_audio(esp_bd_addr_t remote_bda);
+esp_err_t esp_hf_ag_audio_connect(esp_bd_addr_t remote_bda);
 
 /**
  *
@@ -298,14 +298,14 @@ esp_err_t esp_bt_hf_connect_audio(esp_bd_addr_t remote_bda);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_bda);
+esp_err_t esp_hf_ag_audio_disconnect(esp_bd_addr_t remote_bda);
 
 /**
  *
  * @brief           Response of Volume Recognition Command(AT+VRA) from HFP client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
- * @param[in]       remote_bda: the device address of voice recognization initiator
+ * @param[in]       remote_bda: the device address of voice recognition initiator
  *
  * @param[in]       value: 0 - voice recognition disabled, 1- voice recognition enabled
  *
@@ -315,7 +315,7 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_bda);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_bda, esp_hf_vr_state_t value);
+esp_err_t esp_hf_ag_vra_control(esp_bd_addr_t remote_bda, esp_hf_vr_state_t value);
 
 /**
  *
@@ -334,7 +334,7 @@ esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_bda, esp_hf_vr_state_t value);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_control_target_t type, int volume);
+esp_err_t esp_hf_ag_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_control_target_t type, int volume);
 
  /**
  *
@@ -351,7 +351,7 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_contr
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat);
+esp_err_t esp_hf_ag_unknown_at_send(esp_bd_addr_t remote_addr, char *unat);
 
  /**
  *
@@ -367,11 +367,11 @@ esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_bda, esp_hf_at_response_code_t response_code, esp_hf_cme_err_t error_code);
+esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_t response_code, esp_hf_cme_err_t error_code);
 
  /**
  *
- * @brief           Usolicited send device status notificationto HFP Client.
+ * @brief           Unsolicited send device status notification to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -385,13 +385,13 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_bda, esp_hf_at_response_c
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_call_status_t call_state,
+esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr, esp_hf_call_status_t call_state,
                                             esp_hf_call_setup_status_t call_setup_state,
                                             esp_hf_network_state_t ntk_state, int signal);
 
  /**
  *
- * @brief           Response to device individual indicatiors to HFP Client.
+ * @brief           Response to device individual indicators to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist with HFP client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
@@ -400,7 +400,7 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_cal
  * @param[in]       ntk_state: network service state
  * @param[in]       signal: signal strength from 0 to 5
  * @param[in]       roam: roam state
- * @param[in]       batt_lev: batery level from 0 to 5
+ * @param[in]       batt_lev: battery level from 0 to 5
  * @param[in]       call_held_status: call held status
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -408,7 +408,7 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_cal
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
+esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
                                 esp_hf_call_status_t call_state,
                                 esp_hf_call_setup_status_t call_setup_state,
                                 esp_hf_network_state_t ntk_state, int signal, esp_hf_roaming_status_t roam, int batt_lev,
@@ -427,7 +427,7 @@ esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name);
+esp_err_t esp_hf_ag_cops_response(esp_bd_addr_t remote_addr, char *name);
 
 /**
  *
@@ -448,7 +448,7 @@ esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name);
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_current_call_direction_t dir,
+esp_err_t esp_hf_ag_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_current_call_direction_t dir,
                                  esp_hf_current_call_status_t current_call_state, esp_hf_current_call_mode_t mode,
                                  esp_hf_current_call_mpty_type_t mpty, char *number, esp_hf_call_addr_type_t type);
 
@@ -466,7 +466,7 @@ esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type);
+esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type);
 
 /**
  *
@@ -481,7 +481,7 @@ esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_h
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t state);
+esp_err_t esp_hf_ag_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t state);
 
 /**
  *
@@ -501,7 +501,7 @@ esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t 
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_answer_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                                 esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                                 char *number, esp_hf_call_addr_type_t call_addr_type);
 
@@ -523,7 +523,7 @@ esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int n
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_reject_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                                 esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                                 char *number, esp_hf_call_addr_type_t call_addr_type);
 
@@ -545,7 +545,7 @@ esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_out_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                             esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                             char *number, esp_hf_call_addr_type_t call_addr_type);
 
@@ -567,7 +567,7 @@ esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_
  *                  - ESP_FAIL: others
  *
  */
-esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_end_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                             esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                             char *number, esp_hf_call_addr_type_t call_addr_type);
 
@@ -584,7 +584,7 @@ esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_
  *                  - ESP_FAIL: if callback is a NULL function pointer
  *
  */
-esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send);
+esp_err_t esp_hf_ag_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send);
 
 
 /**
@@ -595,7 +595,7 @@ esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_h
  *                  After this function is called, lower layer will invoke esp_hf_client_outgoing_data_cb_t to fetch data
  *
  */
-void esp_hf_outgoing_data_ready(void);
+void esp_hf_ag_outgoing_data_ready(void);
 
 #ifdef __cplusplus
 }

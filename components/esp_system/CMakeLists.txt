@@ -26,10 +26,6 @@ else()
             "xt_wdt.c"
             "debug_stubs.c")
 
-    if(NOT (${target} STREQUAL "esp32c2"))
-        list(APPEND srcs "debug_stubs.c")
-    endif()
-
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
         list(APPEND srcs "eh_frame_parser.c")
     endif()
@@ -89,7 +85,7 @@ endif()
 # need to introduce panic "event" concept to remove this dependency (IDF-2194)
 idf_component_optional_requires(PRIVATE esp_gdbstub)
 
-idf_component_optional_requires(PRIVATE app_update)
+idf_component_optional_requires(PRIVATE esp_app_format)
 
 if(CONFIG_PM_ENABLE)
     idf_component_optional_requires(PRIVATE pm)
@@ -102,3 +98,11 @@ endif()
 if(CONFIG_SW_COEXIST_ENABLE OR CONFIG_EXTERNAL_COEX_ENABLE)
     idf_component_optional_requires(PRIVATE esp_wifi)
 endif()
+
+if(NOT BOOTLOADER_BUILD)
+    if(CONFIG_SPIRAM)
+        idf_component_optional_requires(PRIVATE esp_psram)
+    endif()
+endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

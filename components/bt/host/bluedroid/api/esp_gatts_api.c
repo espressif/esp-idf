@@ -85,13 +85,18 @@ esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
 
 esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db,
                                         esp_gatt_if_t gatts_if,
-                                        uint8_t max_nb_attr,
+                                        uint16_t max_nb_attr,
                                         uint8_t srvc_inst_id)
 {
     btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (max_nb_attr > ESP_GATT_ATTR_HANDLE_MAX) {
+        LOG_ERROR("%s the number of attribute should not be greater than CONFIG_BT_GATT_MAX_SR_ATTRIBUTES\n");
+        return ESP_ERR_INVALID_ARG;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;
@@ -254,7 +259,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
-    if (!p_tcb) {
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
         LOG_WARN("%s, The connection not created.", __func__);
         return ESP_ERR_INVALID_STATE;
     }
@@ -286,6 +291,12 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    tGATT_TCB       *p_tcb = gatt_get_tcb_by_idx(conn_id);
+    if (!gatt_check_connection_state_by_tcb(p_tcb)) {
+        LOG_WARN("%s, The connection not created.", __func__);
+        return ESP_ERR_INVALID_STATE;
+    }
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GATTS;

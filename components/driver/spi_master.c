@@ -111,7 +111,7 @@ We have two bits to control the interrupt:
 */
 
 #include <string.h>
-#include "driver/spi_common_internal.h"
+#include "esp_private/spi_common_internal.h"
 #include "driver/spi_master.h"
 
 #include "esp_log.h"
@@ -329,6 +329,12 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     SPI_CHECK(dev_config->cs_ena_pretrans <= 1 || (dev_config->address_bits == 0 && dev_config->command_bits == 0) ||
         (dev_config->flags & SPI_DEVICE_HALFDUPLEX), "In full-duplex mode, only support cs pretrans delay = 1 and without address_bits and command_bits", ESP_ERR_INVALID_ARG);
 #endif
+
+    //Check post_cb status when `SPI_DEVICE_NO_RETURN_RESULT` flag is set.
+    if (dev_config->flags & SPI_DEVICE_NO_RETURN_RESULT) {
+        SPI_CHECK(dev_config->post_cb != NULL, "use feature flag 'SPI_DEVICE_NO_RETURN_RESULT' but no post callback function sets", ESP_ERR_INVALID_ARG);
+    }
+
     uint32_t lock_flag = ((dev_config->spics_io_num != -1)? SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED: 0);
 
     spi_bus_lock_dev_config_t lock_config = {
@@ -612,9 +618,13 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
         //cur_cs is changed to DEV_NUM_MAX here
         spi_post_trans(host);
+
+        if (!(host->device[cs]->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT)) {
+            //Return transaction descriptor.
+            xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
+        }
+
         // spi_bus_lock_bg_pause(bus_attr->lock);
-        //Return transaction descriptor.
-        xQueueSendFromISR(host->device[cs]->ret_queue, &host->cur_trans_buf, &do_yield);
 #ifdef CONFIG_PM_ENABLE
         //Release APB frequency lock
         esp_pm_lock_release(bus_attr->pm_lock);
@@ -704,7 +714,9 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!is_half_duplex || !bus_attr->dma_enabled || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
 #endif
 #if !SOC_SPI_HD_BOTH_INOUT_SUPPORTED
+    //On these chips, HW doesn't support using both TX and RX phases when in halfduplex mode
     SPI_CHECK(!is_half_duplex || !tx_enabled || !rx_enabled, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(!is_half_duplex || !trans_desc->length || !trans_desc->rxlength, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
 #endif
     //MOSI phase is skipped only when both tx_buffer and SPI_TRANS_USE_TXDATA are not set.
     SPI_CHECK(trans_desc->length != 0 || !tx_enabled, "trans tx_buffer should be NULL and SPI_TRANS_USE_TXDATA should be cleared to skip MOSI phase.", ESP_ERR_INVALID_ARG);

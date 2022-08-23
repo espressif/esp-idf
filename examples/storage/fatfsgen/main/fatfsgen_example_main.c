@@ -66,13 +66,17 @@ void app_main(void)
     if (!EXAMPLE_FATFS_MODE_READ_ONLY){
         // Open file for reading
         ESP_LOGI(TAG, "Opening file");
-        FILE *f = fopen(device_filename, "wb");
-        if (f == NULL) {
-            ESP_LOGE(TAG, "Failed to open file for writing");
-            return;
+        FILE *f;
+        for(int i = 0; i < CONFIG_EXAMPLE_FATFS_WRITE_COUNT; i++){
+            f = fopen(device_filename, "wb");
+            if (f == NULL) {
+                ESP_LOGE(TAG, "Failed to open file for writing");
+                return;
+            }
+            fprintf(f, "This is written by the device");
+            fclose(f);
         }
-        fprintf(f, "This is written by the device");
-        fclose(f);
+
         ESP_LOGI(TAG, "File written");
 
         // Open file for reading

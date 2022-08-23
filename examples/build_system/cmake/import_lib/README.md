@@ -1,12 +1,17 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Import Third-Party CMake Library Example
 
 This example demonstrates how to import third-party CMake libraries.
 
 ## Example Flow
 
-[tinyxml2](https://github.com/leethomason/tinyxml2) is a 
-a small C++ XML parser. It is imported, without modification, for use in the project's `main` component (see the `main` component's [CMakeLists.txt](main/CMakeLists.txt)). To demonstrate the library being used, a sample XML is embedded into the project.
-This sample XML is then read and parsed later on using `tinyxml2`.
+[tinyxml2](https://github.com/leethomason/tinyxml2) is a small C++ XML parser.
+
+It is imported, without modification, into the [tinyxml2](components/tinyxml2/) component. Please refer to the component CMakeLists.txt file for the description of the process: [components/tinyxml2/CMakeLists.txt](components/tinyxml2/CMakeLists.txt).
+
+To demonstrate the library being used, a sample XML is embedded into the project. This sample XML is then read and parsed using `tinyxml2`. Please refer to the [main](main/) component for details.
 
 ### Output
 

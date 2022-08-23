@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -35,7 +35,12 @@
 #include "esp_gap_bt_api.h"
 #include "esp_a2dp_api.h"
 #include "esp_avrc_api.h"
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+// DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
 #include "driver/i2s.h"
+#else
+#include "driver/i2s_std.h"
+#endif
 
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
@@ -69,6 +74,10 @@ typedef struct {
 
 static prepare_type_env_t a_prepare_write_env;
 static prepare_type_env_t b_prepare_write_env;
+
+#ifndef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+i2s_chan_handle_t tx_chan;
+#endif
 
 //Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
@@ -681,36 +690,47 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(err);
 
-    i2s_config_t i2s_config = {
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+    /* I2S configuration parameters */
+    i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
-#else
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
-#endif
-        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .sample_rate = 44100,
         .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .dma_desc_num = 6,
-        .dma_frame_num = 60,
-        .intr_alloc_flags = 0,                                                  //Default interrupt priority
-        .tx_desc_auto_clear = true                                              //Auto clear tx descriptor on underflow
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
+        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
+        .dma_buf_count = 6,
+        .dma_buf_len = 60,
+        .intr_alloc_flags = 0,                              /* default interrupt priority */
+        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
     };
 
-
-    i2s_driver_install(0, &i2s_config, 0, NULL);
-#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-    i2s_set_pin(0, NULL);
+    /* enable I2S */
+    ESP_ERROR_CHECK(i2s_driver_install(0, &i2s_config, 0, NULL));
+    ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
+    ESP_ERROR_CHECK(i2s_set_pin(0, NULL));
 #else
-    i2s_pin_config_t pin_config = {
-        .bck_io_num = CONFIG_EXAMPLE_I2S_BCK_PIN,
-        .ws_io_num = CONFIG_EXAMPLE_I2S_LRCK_PIN,
-        .data_out_num = CONFIG_EXAMPLE_I2S_DATA_PIN,
-        .data_in_num = -1                                                       //Not used
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    chan_cfg.auto_clear = true;
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
+        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
+            .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+            .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
+            .din = I2S_GPIO_UNUSED,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
+        },
     };
-
-    i2s_set_pin(0, &pin_config);
+    /* enable I2S */
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
 #endif
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();

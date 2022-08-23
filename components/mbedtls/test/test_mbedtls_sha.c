@@ -21,6 +21,8 @@
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
 #include "soc/soc_caps.h"
+#include "test_utils.h"
+#include "esp_memory_utils.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
@@ -41,6 +43,7 @@ static const uint8_t sha256_thousand_as[32] = {
     0x41, 0xed, 0xec, 0xe4, 0x2d, 0x63, 0xe8, 0xd9, 0xbf, 0x51, 0x5a, 0x9b, 0xa6, 0x93, 0x2e, 0x1c,
     0x20, 0xcb, 0xc9, 0xf5, 0xa5, 0xd1, 0x34, 0x64, 0x5a, 0xdb, 0x5d, 0xb1, 0xb9, 0x73, 0x7e, 0xa3
 };
+
 
 static const uint8_t sha256_thousand_bs[32] = {
     0xf6, 0xf1, 0x18, 0xe1, 0x20, 0xe5, 0x2b, 0xe0, 0xbd, 0x0c, 0xfd, 0xf2, 0x79, 0x4c, 0xd1, 0x2c, 0x07, 0x68, 0x6c, 0xc8, 0x71, 0x23, 0x5a, 0xc2, 0xf1, 0x14, 0x59, 0x37, 0x8e, 0x6d, 0x23, 0x5b
@@ -94,7 +97,9 @@ TEST_CASE("mbedtls SHA interleaving", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha1_thousand_as, sha1, 20, "SHA1 calculation");
 }
 
+#define SHA_TASK_STACK_SIZE (10*1024)
 static SemaphoreHandle_t done_sem;
+
 static void tskRunSHA1Test(void *pvParameters)
 {
     mbedtls_sha1_context sha1_ctx;
@@ -133,7 +138,6 @@ static void tskRunSHA256Test(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-#define SHA_TASK_STACK_SIZE (10*1024)
 
 TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
 {
@@ -342,7 +346,6 @@ TEST_CASE("mbedtls SHA session passed between tasks", "[mbedtls]")
 
 
 
-
 /* Random input generated and hashed using python:
 
     import hashlib
@@ -385,6 +388,7 @@ const uint8_t test_vector_digest[] = {
     0xf9, 0x08, 0x82, 0x82, 0x83, 0x06, 0xc1, 0x8a,
     0x98, 0x5d, 0x36, 0xc0, 0xb7, 0xeb, 0x35, 0xe0,
 };
+
 
 TEST_CASE("mbedtls SHA, input in flash", "[mbedtls]")
 {

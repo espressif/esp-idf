@@ -16,6 +16,7 @@
 #endif
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_memory_utils.h"
 #include "esp_rom_gpio.h"
 #include "soc/rmt_periph.h"
 #include "soc/rtc.h"
@@ -238,7 +239,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     // resolution loss due to division, calculate the real resolution
     rx_channel->base.resolution_hz = group->resolution_hz / real_div;
     if (rx_channel->base.resolution_hz != config->resolution_hz) {
-        ESP_LOGW(TAG, "channel resolution loss, real=%u", rx_channel->base.resolution_hz);
+        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, rx_channel->base.resolution_hz);
     }
 
     rmt_ll_rx_set_mem_blocks(hal->regs, channel_id, rx_channel->base.mem_block_num);
@@ -281,7 +282,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     rx_channel->base.disable = rmt_rx_disable;
     // return general channel handle
     *ret_chan = &rx_channel->base;
-    ESP_LOGD(TAG, "new rx channel(%d,%d) at %p, gpio=%d, res=%uHz, hw_mem_base=%p, ping_pong_size=%d",
+    ESP_LOGD(TAG, "new rx channel(%d,%d) at %p, gpio=%d, res=%"PRIu32"Hz, hw_mem_base=%p, ping_pong_size=%d",
              group_id, channel_id, rx_channel, config->gpio_num, rx_channel->base.resolution_hz,
              rx_channel->base.hw_mem_base, rx_channel->ping_pong_symbols);
     return ESP_OK;
@@ -404,7 +405,7 @@ static esp_err_t rmt_rx_demodulate_carrier(rmt_channel_handle_t channel, const r
     portEXIT_CRITICAL(&channel->spinlock);
 
     if (real_frequency > 0) {
-        ESP_LOGD(TAG, "enable carrier demodulation for channel(%d,%d), freq=%uHz", group_id, channel_id, real_frequency);
+        ESP_LOGD(TAG, "enable carrier demodulation for channel(%d,%d), freq=%"PRIu32"Hz", group_id, channel_id, real_frequency);
     } else {
         ESP_LOGD(TAG, "disable carrier demodulation for channel(%d, %d)", group_id, channel_id);
     }

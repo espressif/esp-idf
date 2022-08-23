@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 614c862c2cfa8ccda3a79183ce767255
+// md5_digest_table 3ac9188bf7eb0a27f3f636085a260743
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -331,6 +331,14 @@ static const esp_efuse_desc_t SECURE_VERSION[] = {
     {EFUSE_BLK0, 139, 16}, 	 // Secure version for anti-rollback,
 };
 
+static const esp_efuse_desc_t DISABLE_WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 160, 1}, 	 // Disables check of wafer version major,
+};
+
+static const esp_efuse_desc_t DISABLE_BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK0, 161, 1}, 	 // Disables check of blk version major,
+};
+
 static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 40, 8}, 	 // Factory MAC addr [0],
     {EFUSE_BLK1, 32, 8}, 	 // Factory MAC addr [1],
@@ -384,16 +392,21 @@ static const esp_efuse_desc_t SPI_PAD_CONFIG_D7[] = {
     {EFUSE_BLK1, 108, 6}, 	 // SPI_PAD_configure D7,
 };
 
-static const esp_efuse_desc_t WAFER_VERSION[] = {
-    {EFUSE_BLK1, 114, 3}, 	 // WAFER version 0:A,
+static const esp_efuse_desc_t WAFER_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 114, 2}, 	 // WAFER_VERSION_MAJOR,
+};
+
+static const esp_efuse_desc_t WAFER_VERSION_MINOR[] = {
+    {EFUSE_BLK1, 132, 3}, 	 // WAFER_VERSION_MINOR least significant bits,
+    {EFUSE_BLK1, 116, 1}, 	 // WAFER_VERSION_MINOR most significant bit,
 };
 
 static const esp_efuse_desc_t FLASH_VERSION[] = {
     {EFUSE_BLK1, 117, 4}, 	 // Flash_version,
 };
 
-static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version,
+static const esp_efuse_desc_t BLK_VERSION_MAJOR[] = {
+    {EFUSE_BLK1, 121, 2}, 	 // BLK_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t PSRAM_VERSION[] = {
@@ -408,8 +421,8 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
 };
 
-static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2,
+static const esp_efuse_desc_t BLK_VERSION_MINOR[] = {
+    {EFUSE_BLK2, 132, 3}, 	 // BLK_VERSION_MINOR of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -847,6 +860,16 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[] = {
+    &DISABLE_WAFER_VERSION_MAJOR[0],    		// Disables check of wafer version major
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[] = {
+    &DISABLE_BLK_VERSION_MAJOR[0],    		// Disables check of blk version major
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[0],    		// Factory MAC addr [0]
     &MAC_FACTORY[1],    		// Factory MAC addr [1]
@@ -912,8 +935,14 @@ const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_D7[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
-    &WAFER_VERSION[0],    		// WAFER version 0:A
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[] = {
+    &WAFER_VERSION_MAJOR[0],    		// WAFER_VERSION_MAJOR
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[] = {
+    &WAFER_VERSION_MINOR[0],    		// WAFER_VERSION_MINOR least significant bits
+    &WAFER_VERSION_MINOR[1],    		// WAFER_VERSION_MINOR most significant bit
     NULL
 };
 
@@ -922,8 +951,8 @@ const esp_efuse_desc_t* ESP_EFUSE_FLASH_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
-    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[] = {
+    &BLK_VERSION_MAJOR[0],    		// BLK_VERSION_MAJOR
     NULL
 };
 
@@ -942,8 +971,8 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[] = {
+    &BLK_VERSION_MINOR[0],    		// BLK_VERSION_MINOR of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2
     NULL
 };
 

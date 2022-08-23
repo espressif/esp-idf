@@ -11,9 +11,9 @@ import sys
 try:
     import pkg_resources
 except ImportError:
-    print('pkg_resources cannot be imported probably because the pip package is not installed and/or using a '
-          'legacy Python interpreter. Please refer to the Get Started section of the ESP-IDF Programming Guide for '
-          'setting up the required packages.')
+    print('pkg_resources cannot be imported. The most common cause is a missing pip or setuptools package. '
+          'If you\'ve installed a custom Python then these packages are provided separately and have to be installed as well. '
+          'Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required packages.')
     sys.exit(1)
 
 try:

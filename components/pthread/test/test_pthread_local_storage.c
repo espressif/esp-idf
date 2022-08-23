@@ -173,6 +173,7 @@ typedef struct {
     int last_idx; // index of last key where destructor was called
 } destr_test_state_t;
 
+
 static void s_test_repeat_destructor(void *vp_state);
 static void *s_test_repeat_destructor_thread(void *vp_state);
 

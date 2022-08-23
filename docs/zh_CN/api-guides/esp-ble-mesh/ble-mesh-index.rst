@@ -4,9 +4,6 @@ ESP-BLE-MESH
 
 :link_to_translation:`en:[English]`
 
-概述
-=====
-
 蓝牙 mesh 网络实现了无线设备的“多对多”通讯，其可用于建立包含大量设备的网络。
 
 设备能将数据中继至不在初始设备无线电覆盖范围内的其他设备。这样，mesh 网络就能够覆盖非常大的物理区域，并且囊括大量设备。Mesh 网络非常适用于楼宇自动化、传感器网络和其他物联网解决方案，这些情景下数以十计、百计、千计的设备需要与其他设备进行安全可靠的通信。
@@ -19,9 +16,12 @@ ESP-BLE-MESH 基于 Zephyr 蓝牙 Mesh 协议栈的顶端，其实现支持设�
 
 ESP-BLE-MESH 的实现和认证基于最新的 `Mesh Profile v1.0.1 <https://www.bluetooth.org/docman/handlers/downloaddoc.ashx?doc_id=457092>`_ 。有关 ESP-BLE-MESH 认证的细节，请参考 `此处 <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ 。
 
-.. note::
+.. only:: SOC_WIFI_MESH_SUPPORT
 
-  如果您在寻找 ESP32 基于 Wi-Fi 的 mesh 方案，请查阅乐鑫的另一款产品 ESP-WIFI-MESH。更多相关信息及文档，请参见 :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`。
+    .. note::
+
+      如果您在寻找 ESP32 基于 Wi-Fi 的 mesh 方案，请查阅乐鑫的另一款产品 ESP-WIFI-MESH。更多相关信息及文档，请参见 :doc:`ESP-WIFI-MESH <../../api-reference/network/esp-wifi-mesh>`。
+
 
 .. _getting-started-with-ble-mesh:
 
@@ -33,6 +33,7 @@ ESP-BLE-MESH 快速入门
 我们将会展示如何搭建并运行一个包含 3 个节点的小型 ESP-BLE-MESH 网络，其中包含设备配网、节点配置，以及向特定节点上的 Generic OnOff Server Model 发送开关灯命令。
 
 如果您是第一次接触 ESP-IDF，请参见 esp-idf :doc:`../../get-started/index` 来设置开发环境，编译、烧写和运行示例应用程序。
+
 
 硬件及软件准备
 --------------

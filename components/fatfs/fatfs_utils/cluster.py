@@ -30,7 +30,6 @@ class Cluster:
                  cluster_id: int,
                  boot_sector_state: BootSectorState,
                  init_: bool) -> None:
-
         self.id: int = cluster_id
         self.boot_sector_state: BootSectorState = boot_sector_state
 
@@ -40,7 +39,6 @@ class Cluster:
         if self.id == Cluster.RESERVED_BLOCK_ID and init_:
             self.set_in_fat(self.INITIAL_BLOCK_SWITCH[self.boot_sector_state.fatfs_type])
             return
-
         self.cluster_data_address: int = self._compute_cluster_data_address()
         assert self.cluster_data_address
 
@@ -143,7 +141,6 @@ class Cluster:
         2. if the cluster index is odd, we set the first half of the computed byte and the full consequent byte.
         Order of half bytes is 1, 3, 2.
         """
-
         # value must fit into number of bits of the fat (12, 16 or 32)
         assert value <= (1 << self.boot_sector_state.fatfs_type) - 1
         half_bytes = split_by_half_byte_12_bit_little_endian(value)

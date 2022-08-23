@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Device Provisioning Protocol (Enrollee) Example
 
 This example shows how to configure ESP32 as an enrollee using Device Provisioning Protocol(DPP) also known as Wi-Fi Easy Connect.
@@ -13,7 +16,7 @@ To run the example with an Android 10+ device follow below steps -
 3. Now go to Settings->WiFi & Internet->Wi-Fi->Example-AP->Advanced->Add Device.
 4. Scan QR Code using the scanner, which will make ESP32 connect to Example-AP.
 
-Optional configuration available 
+Optional configuration available
 
 *Note:*
 - QR Code should be displayed as dark on a white/light background to work properly.

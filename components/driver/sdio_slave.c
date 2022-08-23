@@ -84,7 +84,7 @@ The driver of FIFOs works as below:
 #include "freertos/FreeRTOS.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/gpio_periph.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "freertos/semphr.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
@@ -616,7 +616,7 @@ esp_err_t sdio_slave_send_get_finished(void **out_arg, TickType_t wait)
 
 esp_err_t sdio_slave_transmit(uint8_t *addr, size_t len)
 {
-    uint32_t timestamp = cpu_hal_get_cycle_count();
+    uint32_t timestamp = esp_cpu_get_cycle_count();
     uint32_t ret_stamp;
 
     esp_err_t err = sdio_slave_send_queue(addr, len, (void *)timestamp, portMAX_DELAY);

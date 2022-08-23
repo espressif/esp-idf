@@ -460,6 +460,11 @@ out:
     return ESP_ERR_NO_MEM;
 }
 
+ESP_SYSTEM_INIT_FN(esp_timer_startup_init, BIT(0), 100)
+{
+    return esp_timer_init();
+}
+
 esp_err_t esp_timer_deinit(void)
 {
     if (!is_initialized()) {

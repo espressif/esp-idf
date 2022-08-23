@@ -94,6 +94,14 @@ typedef struct {
     touch_pad_t guard_channel;     //!< Waterproof Guard-Sensor channel number (index)
     float guard_sensitivity;       //!< Waterproof Guard-Sensor sensitivity
 } touch_elem_waterproof_config_t;
+
+/**
+ * @brief   Touch element sleep configuration passed to touch_element_enable_light_sleep or touch_element_enable_deep_sleep
+*/
+typedef struct {
+    uint16_t sample_count;                     //!< scan times in every measurement, normally equal to the 'sample_count' field in 'touch_elem_hw_config_t'.
+    uint16_t sleep_cycle;                    //!< sleep_cycle decide the interval between two measurements， t_sleep = sleep_cycle / (RTC_SLOW_CLK frequency), normally equal to the 'sleep_cycle' field in 'touch_elem_hw_config_t'.
+} touch_elem_sleep_config_t;
 /* ------------------------------------------------------------------------------------------------------------------ */
 typedef void *touch_elem_handle_t;        //!< Touch element handle type
 typedef uint32_t touch_elem_event_t;      //!< Touch element event type
@@ -255,6 +263,75 @@ esp_err_t touch_element_waterproof_add(touch_elem_handle_t element_handle);
  *      - ESP_ERR_NOT_FOUND: Failed to search element_handle from waterproof mask_handle list
  */
 esp_err_t touch_element_waterproof_remove(touch_elem_handle_t element_handle);
+
+/**
+ * @brief   Touch element light sleep initialization
+ *
+ * @note    It should be called after touch button element installed.
+ *          Any of installed touch element can wake up from the light sleep
+ *
+ * @param[in] sleep_config Sleep configurations, set NULL to use default config
+ * @return
+ *      - ESP_OK: Successfully initialized touch sleep
+ *      - ESP_ERR_INVALID_STATE: Touch element is not installed or touch sleep has been installed
+ *      - ESP_ERR_INVALID_ARG: inputed argument is NULL
+ *      - ESP_ERR_NO_MEM: no memory for touch sleep struct
+ *      - ESP_ERR_NOT_SUPPORTED: inputed wakeup_elem_handle is not touch_button_handle_t type, currently only touch_button_handle_t supported
+ */
+esp_err_t touch_element_enable_light_sleep(const touch_elem_sleep_config_t *sleep_config);
+
+/**
+ * @brief   Release the resources that allocated by touch_element_enable_deep_sleep()
+ *
+ * This function will also disable the touch sensor to wake up the device
+ *
+ * @return
+ *      - ESP_OK: uninstall success
+ *      - ESP_ERR_INVALID_STATE: touch sleep has not been installed
+ */
+esp_err_t touch_element_disable_light_sleep(void);
+
+/**
+ * @brief   Touch element deep sleep initialization
+ *
+ * This function will enable the device wake-up from deep sleep or light sleep by touch sensor
+ *
+ * @note    It should be called after touch button element installed.
+ *          Only one touch button can be registered as the deep sleep wake-up button
+ *
+ * @param[in] wakeup_elem_handle    Touch element instance handle for waking up the device, only support button element
+ * @param[in] sleep_config          Sleep configurations, set NULL to use default config
+ *
+ * @return
+ *      - ESP_OK: Successfully initialized touch sleep
+ *      - ESP_ERR_INVALID_STATE: Touch element is not installed or touch sleep has been installed
+ *      - ESP_ERR_INVALID_ARG: inputed argument is NULL
+ *      - ESP_ERR_NO_MEM: no memory for touch sleep struct
+ *      - ESP_ERR_NOT_SUPPORTED: inputed wakeup_elem_handle is not touch_button_handle_t type, currently only touch_button_handle_t supported
+ */
+esp_err_t touch_element_enable_deep_sleep(touch_elem_handle_t wakeup_elem_handle, const touch_elem_sleep_config_t *sleep_config);
+
+/**
+ * @brief   Release the resources that allocated by touch_element_enable_deep_sleep()
+ *
+ * This function will also disable the touch sensor to wake up the device
+ *
+ * @return
+ *      - ESP_OK: uninstall success
+ *      - ESP_ERR_INVALID_STATE: touch sleep has not been installed
+ */
+esp_err_t touch_element_disable_deep_sleep(void);
+
+/**
+ * @brief   Touch element wake up calibrations
+ *
+ * This function will also disable the touch sensor to wake up the device
+ *
+ * @return
+ *      - ESP_OK: uninstall success
+ *      - ESP_ERR_INVALID_STATE: touch sleep has not been installed
+ */
+esp_err_t touch_element_sleep_enable_wakeup_calibration(touch_elem_handle_t element_handle, bool en);
 
 #ifdef __cplusplus
 }

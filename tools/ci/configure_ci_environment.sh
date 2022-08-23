@@ -31,12 +31,6 @@ fi
 # Set ccache base directory to the project checkout path, to cancel out differences between runners
 export CCACHE_BASEDIR="${CI_PROJECT_DIR}"
 
-# In tools/ci/find_apps_build_apps.sh, we use --work-dir argument to copy apps to a separate location
-# before building them. This results in cache misses, even though the same code is compiled.
-# To solve this issue, we can disable 'hash_dir' option of ccache by setting CCACHE_NOHASHDIR env variable.
-# Note, this can result in issues with debug information, see:
-#   https://ccache.dev/manual/4.5.html#_compiling_in_different_directories
-#
 # 'CI_CCACHE_DISABLE_NOHASHDIR' variable can be used at project level to revert to hash_dir=true, in
 # case we start seeing failures due to false cache hits.
 if [ "${CI_CCACHE_DISABLE_NOHASHDIR}" != "1" ]; then

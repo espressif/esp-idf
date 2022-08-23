@@ -347,7 +347,11 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
         return err;
     }
     if (out_status) {
-        *out_status = MMC_R1(cmd.response);
+        if (host_is_spi(card)) {
+            *out_status = SD_SPI_R2(cmd.response);
+        } else {
+            *out_status = MMC_R1(cmd.response);
+        }
     }
     return ESP_OK;
 }
@@ -414,6 +418,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     }
     uint32_t status = 0;
     size_t count = 0;
+    /* SD mode: wait for the card to become idle based on R1 status */
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
         // TODO: add some timeout here
         err = sdmmc_send_cmd_send_status(card, &status);
@@ -422,6 +427,27 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         }
         if (++count % 10 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+        }
+    }
+    /* SPI mode: although card busy indication is based on the busy token,
+     * SD spec recommends that the host checks the results of programming by sending
+     * SEND_STATUS command. Some of the conditions reported in SEND_STATUS are not
+     * reported via a data error token.
+     */
+    if (host_is_spi(card)) {
+        err = sdmmc_send_cmd_send_status(card, &status);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if (status & SD_SPI_R2_CARD_LOCKED) {
+            ESP_LOGE(TAG, "%s: write failed, card is locked: r2=0x%04x",
+                     __func__, status);
+            return ESP_ERR_INVALID_STATE;
+        }
+        if (status != 0) {
+            ESP_LOGE(TAG, "%s: card status indicates an error after write operation: r2=0x%04x",
+                     __func__, status);
+            return ESP_ERR_INVALID_RESPONSE;
         }
     }
     return ESP_OK;
@@ -546,7 +572,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
 
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd (ERASE_GROUP_START) returned 0x%x", __func__, err);
         return err;
     }
 
@@ -556,7 +582,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
 
     err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd (ERASE_GROUP_END) returned 0x%x", __func__, err);
         return err;
     }
 
@@ -565,15 +591,27 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
     cmd.flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY;
     cmd.opcode = MMC_ERASE;
     cmd.arg = cmd38_arg;
-    // TODO: best way, application to compute timeout value. For this card
-    // structure should have a place holder for erase_timeout.
-    cmd.timeout_ms = (SDMMC_ERASE_BLOCK_TIMEOUT_MS + sector_count);
+    cmd.timeout_ms = sdmmc_get_erase_timeout_ms(card, cmd38_arg, sector_count * card->csd.sector_size / 1024);
 
     err = sdmmc_send_cmd(card, &cmd);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd (ERASE) returned 0x%x", __func__, err);
         return err;
     }
+
+    if (host_is_spi(card)) {
+        uint32_t status;
+        err = sdmmc_send_cmd_send_status(card, &status);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if (status != 0) {
+            ESP_LOGE(TAG, "%s: card status indicates an error after erase operation: r2=0x%04x",
+                     __func__, status);
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+    }
+
     return ESP_OK;
 }
 
@@ -644,9 +682,10 @@ esp_err_t sdmmc_full_erase(sdmmc_card_t* card)
     if (card->is_mmc) {
         arg = sdmmc_mmc_can_sanitize(card) == ESP_OK ? SDMMC_MMC_DISCARD_ARG: SDMMC_MMC_TRIM_ARG;
     }
-    err = sdmmc_erase_sectors(card, 0,  card->csd.capacity, arg);
+    err = sdmmc_erase_sectors(card, 0, card->csd.capacity, arg);
     if ((err == ESP_OK) && (arg == SDMMC_MMC_DISCARD_ARG)) {
-        return sdmmc_mmc_sanitize(card, SDMMC_ERASE_BLOCK_TIMEOUT_MS + card->csd.capacity);
+        uint32_t timeout_ms = sdmmc_get_erase_timeout_ms(card, SDMMC_MMC_DISCARD_ARG, card->csd.capacity * ((uint64_t) card->csd.sector_size) / 1024);
+        return sdmmc_mmc_sanitize(card, timeout_ms);
     }
     return err;
 }

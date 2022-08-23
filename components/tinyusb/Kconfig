@@ -107,11 +107,18 @@ menu "TinyUSB Stack"
                     Name of the MSC device.
 
             config TINYUSB_DESC_HID_STRING
-                depends on TINYUSB_HID_ENABLED
+                depends on TINYUSB_HID_COUNT > 0
                 string "HID Device String"
                 default "Espressif HID Device"
                 help
                     Name of the HID device
+
+            config TINYUSB_DESC_MIDI_STRING
+                depends on TINYUSB_MIDI_ENABLED
+                string "MIDI Device String"
+                default "Espressif MIDI Device"
+                help
+                    Name of the MIDI device
         endmenu # "Descriptor configuration"
 
         menu "Massive Storage Class (MSC)"
@@ -125,6 +132,7 @@ menu "TinyUSB Stack"
                 depends on TINYUSB_MSC_ENABLED
                 int "MSC FIFO size"
                 default 512
+                range 64 10000
                 help
                     MSC FIFO size, in bytes.
         endmenu # "Massive Storage Class"
@@ -148,6 +156,7 @@ menu "TinyUSB Stack"
                 depends on TINYUSB_CDC_ENABLED
                 int "CDC FIFO size of RX channel"
                 default 64
+                range 64 10000
                 help
                     CDC FIFO size of RX channel.
 
@@ -158,6 +167,22 @@ menu "TinyUSB Stack"
                 help
                     CDC FIFO size of TX channel.
         endmenu # "Communication Device Class"
-    endif # TINYUSB
 
+        menu "MIDI"
+            config TINYUSB_MIDI_ENABLED
+                bool "Enable TinyUSB MIDI feature"
+                default n
+                help
+                    Enable TinyUSB MIDI feature.
+        endmenu # "MIDI"
+
+        menu "Human Interface Device Class (HID)"
+            config TINYUSB_HID_COUNT
+                int "TinyUSB HID interfaces count"
+                default 0
+                range 0 4
+                help
+                    Setting value greater than 0 will enable TinyUSB HID feature.
+        endmenu # "HID Device Class (HID)"
+    endif # TINYUSB
 endmenu # "TinyUSB Stack"

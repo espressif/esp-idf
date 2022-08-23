@@ -42,12 +42,6 @@ static const char* TAG = "ulp";
 
 esp_err_t ulp_run(uint32_t entry_point)
 {
-#if CONFIG_IDF_TARGET_ESP32S3
-    ESP_LOGE(TAG, "ULP temporarily unsupported on ESP32-S3, running sleep + ULP risks causing permanent damage to chip");
-    abort();
-// Fix in-progress: DIG-160
-#endif //CONFIG_IDF_TARGET_ESP32S3
-
 #if CONFIG_IDF_TARGET_ESP32
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);

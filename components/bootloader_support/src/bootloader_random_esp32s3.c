@@ -11,8 +11,8 @@
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_saradc.h"
+#include "hal/regi2c_ctrl.h"
+#include "soc/regi2c_saradc.h"
 
 void bootloader_random_enable(void)
 {
@@ -83,8 +83,6 @@ void bootloader_random_disable(void)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
 
-    //Stop SAR ADC clock
-    CLEAR_PERI_REG_MASK(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_SARADC_CLK_EN);
     //Power off SAR ADC
     REG_SET_FIELD(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 0);
     //return to ADC RTC controller

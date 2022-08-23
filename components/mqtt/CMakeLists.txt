@@ -1,11 +1,15 @@
-idf_component_register(SRCS "esp-mqtt/mqtt_client.c"
-                            "esp-mqtt/lib/mqtt_msg.c"
-                            "esp-mqtt/lib/mqtt_outbox.c"
-                            "esp-mqtt/lib/platform_esp32_idf.c"
+set(srcs esp-mqtt/mqtt_client.c esp-mqtt/lib/mqtt_msg.c esp-mqtt/lib/mqtt_outbox.c esp-mqtt/lib/platform_esp32_idf.c)
+
+if(CONFIG_MQTT_PROTOCOL_5)
+    list(APPEND srcs esp-mqtt/lib/mqtt5_msg.c esp-mqtt/mqtt5_client.c)
+endif()
+
+idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS esp-mqtt/include
                     PRIV_INCLUDE_DIRS "esp-mqtt/lib/include"
-                    PRIV_REQUIRES lwip
+                    PRIV_REQUIRES esp_timer
                     )
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 if(TEST_BUILD)
 message(STATUS "building MOCKS")
@@ -13,10 +17,9 @@ idf_component_get_property(tcp_transport_dir tcp_transport COMPONENT_DIR)
 idf_component_get_property(esp_hw_support_dir esp_hw_support COMPONENT_DIR)
 idf_component_get_property(esp_event_dir esp_event COMPONENT_DIR)
 idf_component_get_property(log_dir log COMPONENT_DIR)
-idf_component_get_property(freertos_dir freertos COMPONENT_DIR)
+idf_component_get_property(freertos_dir freertos COMPONENT_OVERRIDEN_DIR)
 idf_component_get_property(http_parser_dir http_parser COMPONENT_DIR)
 idf_component_get_property(esp_wifi_dir esp_wifi COMPONENT_DIR)
-idf_component_get_property(esp_hw_support_dir esp_hw_support COMPONENT_DIR)
 idf_component_get_property(esp_tls_dir esp-tls COMPONENT_DIR)
 idf_component_get_property(esp_netif_dir esp_netif COMPONENT_DIR)
 idf_component_get_property(esp_common_dir esp_common COMPONENT_DIR)
@@ -56,10 +59,6 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
      ${esp_event_dir}/include/esp_event.h
      ${esp_hw_support_dir}/include/esp_mac.h
      ${esp_hw_support_dir}/include/esp_random.h
-     ${esp_system_dir}/include/esp_system.h
-     ${esp_tls_dir}/esp_tls.h
-     ${freertos_dir}/FreeRTOS-Kernel/include/freertos/queue.h
-     ${freertos_dir}/FreeRTOS-Kernel/include/freertos/task.h
      ${freertos_dir}/FreeRTOS-Kernel/include/freertos/event_groups.h
      ${log_dir}/include/esp_log.h
      ${http_parser_dir}/http_parser.h
@@ -74,13 +73,9 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
      ${MOCK_GEN_DIR}/Mockesp_event.c
      ${MOCK_GEN_DIR}/Mockesp_mac.c
      ${MOCK_GEN_DIR}/Mockesp_random.c
-     ${MOCK_GEN_DIR}/Mockesp_system.c
-     ${MOCK_GEN_DIR}/Mockesp_tls.c
      ${MOCK_GEN_DIR}/Mockesp_log.c
      ${MOCK_GEN_DIR}/Mockhttp_parser.c
      ${MOCK_GEN_DIR}/Mockevent_groups.c
-     ${MOCK_GEN_DIR}/Mockqueue.c
-     ${MOCK_GEN_DIR}/Mocktask.c
     )
 
  add_custom_command(
@@ -122,17 +117,12 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
     )
  target_link_libraries(mocks PUBLIC ${cmock_lib})
  target_compile_definitions(mocks PUBLIC
-     CONFIG_LOG_MAXIMUM_LEVEL=5
-     CONFIG_LOG_DEFAULT_LEVEL=3
-     CONFIG_ESP_TLS_USING_MBEDTLS
-     CONFIG_ESP_TLS_SERVER
      CONFIG_LOG_TIMESTAMP_SOURCE_RTOS)
  target_link_options(${COMPONENT_LIB} INTERFACE -fsanitize=address)
 
  target_link_libraries(${COMPONENT_LIB} PUBLIC mocks)
 
 else()
-    idf_component_get_property(http_parser_lib http_parser COMPONENT_LIB)
-    idf_component_get_property(tcp_transport_lib tcp_transport COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${http_parser_lib} ${tcp_transport_lib})
+    idf_component_optional_requires(PUBLIC esp_event tcp_transport)
+    idf_component_optional_requires(PRIVATE http_parser)
 endif()

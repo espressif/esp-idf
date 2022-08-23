@@ -61,20 +61,18 @@ INPUT = \
     $(PROJECT_PATH)/components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/console/esp_console.h \
-    $(PROJECT_PATH)/components/driver/include/driver/adc.h \
     $(PROJECT_PATH)/components/driver/include/driver/dac_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/dedic_gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gpio.h \
     $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/driver/include/driver/i2c.h \
-    $(PROJECT_PATH)/components/driver/include/driver/i2s.h \
     $(PROJECT_PATH)/components/driver/include/driver/ledc.h \
     $(PROJECT_PATH)/components/driver/include/driver/rtc_io.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdio_slave.h \
+    $(PROJECT_PATH)/components/driver/include/driver/sdm.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdmmc_host.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdmmc_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/sdspi_host.h \
-    $(PROJECT_PATH)/components/driver/include/driver/sigmadelta.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_master.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_slave.h \
@@ -82,17 +80,23 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/driver/include/driver/twai.h \
     $(PROJECT_PATH)/components/driver/include/driver/uart.h \
-    $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse.h \
+    $(PROJECT_PATH)/components/efuse/$(IDF_TARGET)/include/esp_efuse_chip.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
-    $(PROJECT_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali_scheme.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_cali.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_continuous.h \
+    $(PROJECT_PATH)/components/esp_adc/include/esp_adc/adc_oneshot.h \
+    $(PROJECT_PATH)/components/esp_app_format/include/esp_app_desc.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_driver.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_com.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_mac.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_netif_glue.h \
     $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy.h \
+    $(PROJECT_PATH)/components/esp_eth/include/esp_eth_phy_802_3.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
@@ -156,12 +160,11 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/esp_flash_err.h \
     $(PROJECT_PATH)/components/hal/include/hal/gpio_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/sigmadelta_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/sdm_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_flash_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
@@ -178,7 +181,6 @@ INPUT = \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
-    $(PROJECT_PATH)/components/mdns/include/mdns.h \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
@@ -206,7 +208,7 @@ INPUT = \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_flash_spi_init.h \
     $(PROJECT_PATH)/components/spi_flash/include/esp_partition.h \
-    $(PROJECT_PATH)/components/spi_flash/include/esp_spi_flash.h \
+    $(PROJECT_PATH)/components/spi_flash/include/spi_flash_mmap.h \
     $(PROJECT_PATH)/components/spiffs/include/esp_spiffs.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb.h \
     $(PROJECT_PATH)/components/tinyusb/additions/include/tinyusb_types.h \
@@ -251,6 +253,7 @@ PREDEFINED             = \
 	_Static_assert()= \
     IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
+    FORCE_INLINE_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \
     configSUPPORT_STATIC_ALLOCATION=1 \
     configQUEUE_REGISTRY_SIZE=1 \

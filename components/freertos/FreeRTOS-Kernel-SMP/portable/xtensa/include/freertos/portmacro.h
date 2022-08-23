@@ -16,8 +16,9 @@
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
 #include "esp_macros.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_memory_utils.h"
 
 /*
 Note: We should not include any FreeRTOS headers (directly or indirectly) here as this will create a reverse dependency
@@ -252,7 +253,7 @@ static inline void __attribute__((always_inline)) vPortYieldFromISR( void )
 
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void )
 {
-    return (BaseType_t) cpu_hal_get_core_id();
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 /* ------------------------------------------------ IDF Compatibility --------------------------------------------------
@@ -267,7 +268,7 @@ static inline BaseType_t xPortInIsrContext(void)
     return xPortCheckIfInISR();
 }
 
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void);
+BaseType_t xPortInterruptedFromISRContext(void);
 
 static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
@@ -283,18 +284,6 @@ static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
 }
 
 // ---------------------- Spinlocks ------------------------
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#if defined(CONFIG_SPIRAM)
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
 
 static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout)
 {
@@ -354,6 +343,9 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 
     return ((ps_reg & PS_INTLEVEL_MASK) == 0);
 }
+
+// Added for backward compatibility with IDF
+#define portYIELD_WITHIN_API()                      vTaskYieldWithinAPI()
 
 // ----------------------- System --------------------------
 

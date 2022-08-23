@@ -5,7 +5,7 @@
  */
 #include "sdkconfig.h"
 #include "bootloader_random.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "soc/wdev_reg.h"
 
 #ifndef BOOTLOADER_BUILD
@@ -43,10 +43,10 @@
                values.
             */
             random = REG_READ(WDEV_RND_REG);
-            start = cpu_hal_get_cycle_count();
+            start = esp_cpu_get_cycle_count();
             do {
                 random ^= REG_READ(WDEV_RND_REG);
-                now = cpu_hal_get_cycle_count();
+                now = esp_cpu_get_cycle_count();
             } while (now - start < RNG_CPU_WAIT_CYCLE_NUM);
         }
         buffer_bytes[i] = random >> ((i % 4) * 8);

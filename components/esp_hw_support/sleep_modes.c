@@ -10,6 +10,7 @@
 #include <sys/param.h>
 
 #include "esp_attr.h"
+#include "esp_memory_utils.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/system_internal.h"
@@ -22,6 +23,7 @@
 #include "soc/soc_caps.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+#include "hal/rtc_cntl_ll.h"
 
 #include "driver/uart.h"
 
@@ -32,7 +34,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/rtc_hal.h"
 #include "hal/uart_hal.h"
-#if SOC_TOUCH_SENSOR_NUM > 0
+#if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
 #include "driver/touch_sensor.h"
 #include "driver/touch_sensor_common.h"
@@ -45,6 +47,7 @@
 #include "esp_private/brownout.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/startup_internal.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -182,10 +185,16 @@ static bool s_light_sleep_wakeup = false;
 static portMUX_TYPE spinlock_rtc_deep_sleep = portMUX_INITIALIZER_UNLOCKED;
 
 static const char *TAG = "sleep";
-static bool s_adc_tsen_enabled = false;
+static RTC_FAST_ATTR bool s_adc_tsen_enabled = false;
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 static bool s_ultra_low_enabled = false;
 
+static bool s_periph_use_8m_flag = false;
+
+void esp_sleep_periph_use_8m(bool use_or_not)
+{
+    s_periph_use_8m_flag = use_or_not;
+}
 
 static uint32_t get_power_down_flags(void);
 #if SOC_PM_SUPPORT_EXT_WAKEUP
@@ -365,9 +374,6 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 
 inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
 
-//TODO: IDF-4813
-bool esp_no_sleep = false;
-
 inline static bool is_light_sleep(uint32_t pd_flags)
 {
     return (pd_flags & RTC_SLEEP_PD_DIG) == 0;
@@ -375,12 +381,6 @@ inline static bool is_light_sleep(uint32_t pd_flags)
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
-#if CONFIG_IDF_TARGET_ESP32S3
-    if (esp_no_sleep) {
-        ESP_EARLY_LOGE(TAG, "Sleep cannot be used with Touch/ULP for now.");
-        abort();
-    }
-#endif //CONFIG_IDF_TARGET_ESP32S3
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
     // For deep sleep, wait for the contents of UART FIFO to be sent.
@@ -399,10 +399,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     bool rtc_using_8md256 = false;
 #endif
     //Keep the RTC8M_CLK on if the ledc low-speed channel is clocked by RTC8M_CLK in lightsleep mode
-    bool dig_8m_enabled = !deep_sleep && rtc_dig_8m_enabled();
+    bool periph_using_8m = !deep_sleep && s_periph_use_8m_flag;
 
     //Override user-configured power modes.
-    if (rtc_using_8md256 || dig_8m_enabled) {
+    if (rtc_using_8md256 || periph_using_8m) {
         pd_flags &= ~RTC_SLEEP_PD_INT_8M;
     }
 
@@ -479,7 +479,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     if (!s_ultra_low_enabled) {
         sleep_flags |= RTC_SLEEP_NO_ULTRA_LOW;
     }
-    if (rtc_dig_8m_enabled()) {
+    if (periph_using_8m) {
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
@@ -542,7 +542,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
 
     if (!deep_sleep) {
-        s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+        s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
         misc_modules_wake_prepare();
     }
 
@@ -645,19 +645,52 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     return err;
 }
 
+/**
+ * vddsdio is used for power supply of spi flash
+ *
+ * pd flash via menuconfig  |  pd flash via `esp_sleep_pd_config`  |  result
+ * ---------------------------------------------------------------------------------------------------
+ * 0                        |  0                                   |  no pd flash
+ * x                        |  1                                   |  pd flash with relaxed conditions(force_pd)
+ * 1                        |  0                                   |  pd flash with strict  conditions(safe_pd)
+ */
+static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_duration)
+{
+    bool force_pd = !(s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) || (s_config.sleep_duration > vddsdio_pd_sleep_duration);
+    bool safe_pd  = (s_config.wakeup_triggers == RTC_TIMER_TRIG_EN) && (s_config.sleep_duration > vddsdio_pd_sleep_duration);
+    return (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_OFF) ? force_pd : safe_pd;
+}
+
 esp_err_t esp_light_sleep_start(void)
 {
-    s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+    s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
-    /* We will be calling esp_timer_private_advance inside DPORT access critical
+    /*
+    Note: We are about to stall the other CPU via the esp_ipc_isr_stall_other_cpu(). However, there is a chance of
+    deadlock if after stalling the other CPU, we attempt to take spinlocks already held by the other CPU that is.
+
+    Thus any functions that we call after stalling the other CPU will need to have the locks taken first to avoid
+    deadlock.
+
+    Todo: IDF-5257
+    */
+
+    /* We will be calling esp_timer_private_set inside DPORT access critical
      * section. Make sure the code on the other CPU is not holding esp_timer
      * lock, otherwise there will be deadlock.
      */
     esp_timer_private_lock();
 
+    /* We will be calling esp_rtc_get_time_us() below. Make sure the code on the other CPU is not holding the
+     * esp_rtc_get_time_us() lock, otherwise there will be deadlock. esp_rtc_get_time_us() is called via:
+     *
+     * - esp_clk_slowclk_cal_set() -> esp_rtc_get_time_us()
+     */
+    esp_clk_private_lock();
+
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
-    uint32_t ccount_at_sleep_start = cpu_ll_get_cycle_count();
+    uint32_t ccount_at_sleep_start = esp_cpu_get_cycle_count();
     uint64_t high_res_time_at_start = esp_timer_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
@@ -672,8 +705,15 @@ esp_err_t esp_light_sleep_start(void)
 
     // Re-calibrate the RTC Timer clock
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-    uint64_t time_per_us = 1000000ULL;
-    s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
+    if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        uint64_t time_per_us = 1000000ULL;
+        s_config.rtc_clk_cal_period = (time_per_us << RTC_CLK_CAL_FRACT) / rtc_clk_slow_freq_get_hz();
+    } else {
+        // If the external 32 kHz XTAL does not exist, use the internal 150 kHz RC oscillator
+        // as the RTC slow clock source.
+        s_config.rtc_clk_cal_period = rtc_clk_cal(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
+        esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
+    }
 #elif CONFIG_RTC_CLK_SRC_INT_RC && CONFIG_IDF_TARGET_ESP32S2
     s_config.rtc_clk_cal_period = rtc_clk_cal_cycling(RTC_CAL_RTC_MUX, RTC_CLK_SRC_CAL_CYCLES);
     esp_clk_slowclk_cal_set(s_config.rtc_clk_cal_period);
@@ -720,7 +760,7 @@ esp_err_t esp_light_sleep_start(void)
                         flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
                         + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
 
-        if (s_config.sleep_duration > vddsdio_pd_sleep_duration) {
+        if (can_power_down_vddsdio(vddsdio_pd_sleep_duration)) {
             if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
                 s_config.sleep_time_adjustment += flash_enable_time_us;
             }
@@ -758,32 +798,20 @@ esp_err_t esp_light_sleep_start(void)
 
     s_light_sleep_wakeup = true;
 
-    // System timer has been clock gated for the duration of the sleep, correct for that.
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-    /**
-     * On esp32c3, rtc_time_get() is non-blocking, esp_timer_get_time() is
-     * blocking, and the measurement data shows that this order is better.
-     */
-    uint64_t high_res_time_at_end = esp_timer_get_time();
+    // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
-#else
-    uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t high_res_time_at_end = esp_timer_get_time();
-#endif
-
     uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
-    uint64_t high_res_time_diff = high_res_time_at_end - high_res_time_at_start;
 
-    int64_t time_diff = rtc_time_diff - high_res_time_diff;
-    /* Small negative values (up to 1 RTC_SLOW clock period) are possible,
-     * for very small values of sleep_duration. Ignore those to keep esp_timer
-     * monotonic.
+    /**
+     * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
+     * In this case, just ignore the time compensation and keep esp_timer monotonic.
      */
-    if (time_diff > 0) {
-        esp_timer_private_advance(time_diff);
+    if (rtc_time_diff > 0) {
+        esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
     }
     esp_set_time_from_rtc();
 
+    esp_clk_private_unlock();
     esp_timer_private_unlock();
     esp_ipc_isr_release_other_cpu();
     if (!wdt_was_enabled) {
@@ -792,7 +820,7 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
     portEXIT_CRITICAL(&light_sleep_lock);
-    s_config.sleep_time_overhead_out = (cpu_ll_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+    s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
     return err;
 }
 
@@ -852,14 +880,17 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
+#endif //CONFIG_IDF_TARGET_ESP32
+
+#if CONFIG_ULP_COPROC_TYPE_FSM
     s_config.wakeup_triggers |= RTC_ULP_TRIG_EN;
     return ESP_OK;
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-    s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
+#elif CONFIG_ULP_COPROC_TYPE_RISCV
+    s_config.wakeup_triggers |= (RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
 #else
     return ESP_ERR_NOT_SUPPORTED;
-#endif
+#endif //CONFIG_ULP_COPROC_TYPE_FSM
 }
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
@@ -901,7 +932,7 @@ static void touch_wakeup_prepare(void)
 }
 #endif
 
-#if SOC_TOUCH_SENSOR_NUM > 0
+#if SOC_TOUCH_SENSOR_SUPPORTED
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
@@ -928,7 +959,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
     return (ret == ESP_OK) ? pad_num : TOUCH_PAD_MAX;
 }
 
-#endif // SOC_TOUCH_SENSOR_NUM > 0
+#endif // SOC_TOUCH_SENSOR_SUPPORTED
 
 bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num)
 {
@@ -1365,9 +1396,7 @@ static uint32_t get_power_down_flags(void)
      * value of this field.
      */
     if (s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] == ESP_PD_OPTION_AUTO) {
-#ifdef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
-        s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_OFF;
-#else
+#ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
         s_config.pd_options[ESP_PD_DOMAIN_VDDSDIO] = ESP_PD_OPTION_ON;
 #endif
     }
@@ -1391,7 +1420,7 @@ void esp_deep_sleep_disable_rom_logging(void)
     rtc_suppress_rom_log();
 }
 
-void rtc_sleep_enable_adc_tesn_monitor(bool enable)
+void esp_sleep_enable_adc_tsens_monitor(bool enable)
 {
     s_adc_tsen_enabled = enable;
 }
@@ -1400,3 +1429,15 @@ void rtc_sleep_enable_ultra_low(bool enable)
 {
     s_ultra_low_enabled = enable;
 }
+
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+ESP_SYSTEM_INIT_FN(esp_sleep_startup_init, BIT(0), 105)
+{
+    // Configure to isolate (disable the Input/Output/Pullup/Pulldown
+    // function of the pin) all GPIO pins in sleep state
+    esp_sleep_config_gpio_isolate();
+    // Enable automatic switching of GPIO configuration
+    esp_sleep_enable_gpio_switch(true);
+    return ESP_OK;
+}
+#endif

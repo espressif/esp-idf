@@ -35,7 +35,7 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
  The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP source files.  Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
-3. Build the application as usual (e.g. `idf.py app`).
+3. Build the application as usual (e.g., `idf.py app`).
 
    Inside, the build system will take the following steps to build ULP program:
 
@@ -52,6 +52,8 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
    6. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
    7. **Add the generated binary to the list of binary files** to be embedded into the application.
+
+.. _ulp-riscv-access-variables:
 
 Accessing the ULP RISC-V Program Variables
 ------------------------------------------
@@ -96,6 +98,18 @@ To access the ULP RISC-V program variables from the main program, the generated 
         ulp_measurement_count = 64;
     }
 
+Mutual Exclusion
+^^^^^^^^^^^^^^^^
+
+If mutual exclusion is needed when accessing a variable shared between the main program and ULP then this can be achieved by using the ULP RISC-V lock API:
+
+ * :cpp:func:`ulp_riscv_lock_acquire`
+ * :cpp:func:`ulp_riscv_lock_release`
+
+The ULP does not have any hardware instructions to facilitate mutual exclusion so the lock API achieves this through a software algorithm (`Peterson's algorithm <https://en.wikipedia.org/wiki/Peterson%27s_algorithm>`_).
+
+The locks are intended to only be called from a single thread in the main program, and will not provide mutual exclusion if used simultaneously from multiple threads.
+
 Starting the ULP RISC-V Program
 -------------------------------
 
@@ -136,13 +150,30 @@ The program runs until the field ``RTC_CNTL_COCPU_DONE`` in register ``RTC_CNTL_
 
 To disable the timer (effectively preventing the ULP program from running again), please clear the ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` bit in the ``RTC_CNTL_ULP_CP_TIMER_REG`` register. This can be done both from the ULP code and from the main program.
 
+
+Debugging Your ULP RISC-V Program
+----------------------------------
+
+When programming the ULP RISC-V, it can sometimes be challenging to figure out why the program is not behaving as expected. Due to the simplicity of the core, many of the standard methods of debugging, e.g., JTAG or ``printf``, are simply not available.
+
+Keeping this in mind, here are some ways that may help you debug you ULP RISC-V program:
+
+ * Share program state through shared variables: as described in :ref:`ulp-riscv-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
+
+ * Use the bit-banged UART driver to print: the ULP RISC-V component comes with a low-speed bit-banged UART TX driver that can be used for printing information independently of the main CPU state. See :example:`system/ulp_riscv/uart_print` for an example of how to use this driver.
+
+ * Trap signal: the ULP RISC-V has a hardware trap that will trigger under certain conditions, e.g., illegal instruction. This will cause the main CPU to be woken up with the wake-up cause :cpp:enumerator:`ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG`.
+
 Application Examples
 --------------------
 
 * ULP RISC-V Coprocessor polls GPIO while main CPU is in deep sleep: :example:`system/ulp_riscv/gpio`.
+* ULP RISC-V Coprocessor uses bit-banged UART driver to print: :example:`system/ulp_riscv/uart_print`.
 * ULP RISC-V Coprocessor reads external temperature sensor while main CPU is in deep sleep: :example:`system/ulp_riscv/ds18b20_onewire`.
 
 API Reference
 -------------
 
 .. include-build-file:: inc/ulp_riscv.inc
+.. include-build-file:: inc/ulp_riscv_lock_shared.inc
+.. include-build-file:: inc/ulp_riscv_lock.inc

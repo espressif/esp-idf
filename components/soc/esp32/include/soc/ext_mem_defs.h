@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-
 #define IRAM0_CACHE_ADDRESS_LOW     0x400D0000
 #define IRAM0_CACHE_ADDRESS_HIGH    0x40400000
 
@@ -30,7 +29,7 @@ extern "C" {
 #define DROM0_CACHE_ADDRESS_HIGH    0x3F800000
 
 
-#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) <= bus_name##_ADDRESS_HIGH)
+#define ADDRESS_IN_BUS(bus_name, vaddr)    ((vaddr) >= bus_name##_ADDRESS_LOW && (vaddr) < bus_name##_ADDRESS_HIGH)
 #define ADDRESS_IN_IRAM0_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM0_CACHE, vaddr)
 #define ADDRESS_IN_IRAM1_CACHE(vaddr)      ADDRESS_IN_BUS(IRAM1_CACHE, vaddr)
 #define ADDRESS_IN_IROM0_CACHE(vaddr)      ADDRESS_IN_BUS(IROM0_CACHE, vaddr)

@@ -13,33 +13,6 @@
 extern "C" {
 #endif
 
-#define ESP_BT_HF_NUMBER_LEN           (32)
-#define ESP_BT_HF_OPERATOR_NAME_LEN    (16)
-
-#ifndef BTC_HSAG_SERVICE_NAME
-#define BTC_HSAG_SERVICE_NAME ("Headset Gateway")
-#endif
-
-#ifndef BTC_HFAG_SERVICE_NAME
-#define BTC_HFAG_SERVICE_NAME ("Handsfree Gateway")
-#endif
-
-#ifndef BTC_HF_SERVICES
-#define BTC_HF_SERVICES    (BTA_HSP_SERVICE_MASK | BTA_HFP_SERVICE_MASK )
-#endif
-
-#ifndef BTC_HF_SERVICE_NAMES
-#define BTC_HF_SERVICE_NAMES {BTC_HSAG_SERVICE_NAME , BTC_HFAG_SERVICE_NAME}
-#endif
-
-#ifndef BTC_HF_SECURITY
-#define BTC_HF_SECURITY    (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
-#endif
-
-#define BTC_HF_CALL_END_TIMEOUT       6
-
-#define BTC_HF_INVALID_IDX       -1
-
 /// in-band ring tone state
 typedef enum {
     ESP_HF_IN_BAND_RINGTONE_NOT_PROVIDED = 0,
@@ -243,9 +216,9 @@ typedef enum {
     ESP_HF_CME_INCORRECT_PASSWORD = 16,           /*!< incorrect password */
     ESP_HF_CME_SIM_PIN2_REQUIRED = 17,            /*!< SIM PIN2 required */
     ESP_HF_CME_SIM_PUK2_REQUIRED = 18,            /*!< SIM PUK2 required */
-    ESP_HF_CME_MEMEORY_FULL = 20,                 /*!< memory full */
+    ESP_HF_CME_MEMORY_FULL = 20,                  /*!< memory full */
     ESP_HF_CME_INVALID_INDEX = 21,                /*!< invalid index */
-    ESP_HF_CME_MEMEORY_FAILURE = 23,              /*!< memory failure */
+    ESP_HF_CME_MEMORY_FAILURE = 23,              /*!< memory failure */
     ESP_HF_CME_TEXT_STRING_TOO_LONG = 24,         /*!< test string too long */
     ESP_HF_CME_INVALID_CHARACTERS_IN_TEXT_STRING = 25,  /*!< invalid characters in text string */
     ESP_HF_CME_DIAL_STRING_TOO_LONG = 26,         /*!< dial string too long*/
@@ -254,84 +227,6 @@ typedef enum {
     ESP_HF_CME_NETWORK_TIMEOUT = 31,              /*!< network timeout */
     ESP_HF_CME_NETWORK_NOT_ALLOWED = 32,          /*!< network not allowed --emergency calls only */
 } esp_hf_cme_err_t;
-
-/** Callback for connection state change.
- *  state will have one of the values from BtHfConnectionState
- */
-typedef void (* esp_hf_connection_state_callback)(esp_hf_connection_state_t state, esp_bd_addr_t *bd_addr);
-
-/** Callback for audio connection state change.
- *  state will have one of the values from BtHfAudioState
- */
-typedef void (* esp_hf_audio_state_callback)(esp_hf_audio_state_t state, esp_bd_addr_t *bd_addr);
-
-/** Callback for VR connection state change.
- *  state will have one of the values from BtHfVRState
- */
-typedef void (* esp_hf_vr_cmd_callback)(esp_hf_vr_state_t state, esp_bd_addr_t *bd_addr);
-
-/** Callback for answer incoming call (ATA)
- */
-typedef void (* esp_hf_answer_call_cmd_callback)(esp_bd_addr_t *bd_addr);
-
-/** Callback for disconnect call (AT+CHUP)
- */
-typedef void (* esp_hf_hangup_call_cmd_callback)(esp_bd_addr_t *bd_addr);
-
-/** Callback for disconnect call (AT+CHUP)
- *  type will denote Speaker/Mic gain (BtHfVolumeControl).
- */
-typedef void (* esp_hf_volume_cmd_callback)(esp_hf_volume_control_target_t type, int volume, esp_bd_addr_t *bd_addr);
-
-/** Callback for dialing an outgoing call
- *  If number is NULL, redial
- */
-typedef void (* esp_hf_dial_call_cmd_callback)(char *number, esp_bd_addr_t *bd_addr);
-
-/** Callback for sending DTMF tones
- *  tone contains the dtmf character to be sent
- */
-typedef void (* esp_hf_dtmf_cmd_callback)(char tone, esp_bd_addr_t *bd_addr);
-
-/** Callback for enabling/disabling noise reduction/echo cancellation
- *  value will be 1 to enable, 0 to disable
- */
-typedef void (* esp_hf_nrec_cmd_callback)(esp_hf_nrec_t nrec, esp_bd_addr_t *bd_addr);
-
-/** Callback for AT+BCS and event from BAC
- *  WBS enable, WBS disable
- */
-typedef void (* esp_hf_wbs_callback)(esp_hf_wbs_config_t wbs, esp_bd_addr_t *bd_addr);
-
-/** Callback for call hold handling (AT+CHLD)
- *  value will contain the call hold command (0, 1, 2, 3)
- */
-typedef void (* esp_hf_chld_cmd_callback)(esp_hf_chld_type_t chld, esp_bd_addr_t *bd_addr);
-
-/** Callback for CNUM (subscriber number)
- */
-typedef void (* esp_hf_cnum_cmd_callback)(esp_bd_addr_t *bd_addr);
-
-/** Callback for indicators (CIND)
- */
-typedef void (* esp_hf_cind_cmd_callback)(esp_bd_addr_t *bd_addr);
-
-/** Callback for operator selection (COPS)
- */
-typedef void (* esp_hf_cops_cmd_callback)(esp_bd_addr_t *bd_addr);
-
-/** Callback for call list (AT+CLCC)
- */
-typedef void (* esp_hf_clcc_cmd_callback) (esp_bd_addr_t *bd_addr);
-
-/** Callback for unknown AT command recd from AG
- *  at_string will contain the unparsed AT string
- */
-typedef void (* esp_hf_unknown_at_cmd_callback)(char *at_string, esp_bd_addr_t *bd_addr);
-
-/** Callback for keypressed (HSP) event.
- */
-typedef void (* esp_hf_key_pressed_cmd_callback)(esp_bd_addr_t *bd_addr);
 
 #ifdef __cplusplus
 }

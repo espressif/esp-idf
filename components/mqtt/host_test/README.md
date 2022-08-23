@@ -1,3 +1,6 @@
+| Supported Targets | Linux |
+| ----------------- | ----- |
+
 # Description
 
 This directory contains test code for the mqtt client that runs on host.

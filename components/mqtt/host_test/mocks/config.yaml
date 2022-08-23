@@ -7,6 +7,8 @@
             - array
             - callback
           :includes_h_pre_orig_header:
+            - local_FreeRTOS_config.h
+            - esp_attr.h
             - FreeRTOS.h
             - net/if.h
           :strippables:

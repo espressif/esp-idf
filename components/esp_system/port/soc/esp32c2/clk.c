@@ -11,17 +11,16 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 #include "esp_private/esp_clk.h"
 #include "esp_clk_internal.h"
 #include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/uart.h"
 #include "esp32c2/rom/rtc.h"
 #include "soc/system_reg.h"
-#include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_clock.h"
@@ -72,8 +71,12 @@ static const char *TAG = "clk";
     }
     rtc_init(cfg);
 
-    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
+#ifndef CONFIG_XTAL_FREQ_AUTO
+    assert(rtc_clk_xtal_freq_get() == CONFIG_XTAL_FREQ);
+#endif
 
+    bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
+    rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #endif
 
@@ -126,7 +129,7 @@ static const char *TAG = "clk";
     }
 
     // Re calculate the ccount to make time calculation correct.
-    cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz );
+    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
 }
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)

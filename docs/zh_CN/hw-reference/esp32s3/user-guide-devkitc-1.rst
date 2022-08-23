@@ -1,8 +1,10 @@
-===================
-ESP32-S3-DevKitC-1
-===================
+========================
+ESP32-S3-DevKitC-1 v1.1
+========================
 
 :link_to_translation:`en: [English]`
+
+更早版本：:doc:`user-guide-devkitc-1-v1.0`
 
 本指南将帮助您快速上手 ESP32-S3-DevKitC-1，并提供该款开发板的详细信息。
 
@@ -10,7 +12,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 
 板上模组的大部分管脚均已引出至开发板两侧排针，开发人员可根据实际需求，轻松通过跳线连接多种外围设备，也可将开发板插在面包板上使用。
 
-.. figure:: ../../../_static/esp32-s3-devkitc-1-v1-isometric.png
+.. figure:: ../../../_static/esp32-s3-devkitc-1-v1.1-isometric.png
     :align: center
     :alt: ESP32-S3-DevKitC-1（板载 ESP32-S3-WROOM-1 模组）
 
@@ -34,9 +36,9 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
 组件介绍
 --------
 
-.. _user-guide-s3-devkitc-1-v1-board-front:
+.. _user-guide-s3-devkitc-1-v1.1-board-front:
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-annotated-photo.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1.1-annotated-photo.png
     :align: center
     :alt: ESP32-S3-DevKitC-1 - 正面
 
@@ -55,7 +57,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
    * - 5 V to 3.3 V LDO（5 V 转 3.3 V LDO）
      - 电源转换器，输入 5 V，输出 3.3 V。
    * - Pin Headers（排针）
-     - 所有可用 GPIO 管脚（除 flash 的 SPI 总线）均已引出至开发板的排针。请查看 :ref:`user-guide-s3-devkitc-1-v1-header-blocks` 获取更多信息。
+     - 所有可用 GPIO 管脚（除 flash 的 SPI 总线）均已引出至开发板的排针。请查看 :ref:`user-guide-s3-devkitc-1-v1.1-header-blocks` 获取更多信息。
    * - USB-to-UART Port（USB 转 UART 接口）
      - Micro-USB 接口，可用作开发板的供电接口，可烧录固件至芯片，也可作为通信接口，通过板载 USB 转 UART 桥接器与芯片通信。
    * - Boot Button（Boot 键）
@@ -67,7 +69,7 @@ ESP32-S3-DevKitC-1 是一款入门级开发板，搭载 Wi-Fi + Bluetooth® LE �
    * - USB-to-UART Bridge（USB 转 UART 桥接器）
      - 单芯片 USB 至 UART 桥接器，可提供高达 3 Mbps 的传输速率。
    * - RGB LED
-     - 可寻址 RGB 发光二极管，由 GPIO48 驱动。
+     - 可寻址 RGB 发光二极管，由 GPIO38 驱动。
    * - 3.3 V Power On LED（3.3 V 电源指示灯）
      - 开发板连接 USB 电源后，该指示灯亮起。
 
@@ -212,12 +214,12 @@ ESP32-S3-DevKitC-1 的主要组件和连接方式如下图所示。
 - 5V 和 G (GND) 排针供电
 - 3V3 和 G (GND) 排针供电
 
-.. _user-guide-s3-devkitc-1-v1-header-blocks:
+.. _user-guide-s3-devkitc-1-v1.1-header-blocks:
 
 排针
 ----
 
-下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-s3-devkitc-1-v1-board-front` 所示，排针的序号与 `开发板原理图 <https://dl.espressif.com/dl/SCH_ESP32-S3-DEVKITC-1_V1_20210312C.pdf>`_ (PDF) 一致。
+下表列出了开发板两侧排针（J1 和 J3）的 **名称** 和 **功能**，排针的名称如图 :ref:`user-guide-s3-devkitc-1-v1.1-board-front` 所示，排针的序号与 `开发板原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-S3-DevKitC-1_V1.1_20220413.pdf>`_ (PDF) 一致。
 
 
 J1
@@ -266,13 +268,13 @@ J3
 7      41    I/O/T        MTDI, GPIO41, CLK_OUT1
 8      40    I/O/T        MTDO, GPIO40, CLK_OUT2
 9      39    I/O/T        MTCK, GPIO39, CLK_OUT3, SUBSPICS1
-10     38    I/O/T        GPIO38, FSPIWP, SUBSPIWP
+10     38    I/O/T        GPIO38, FSPIWP, SUBSPIWP, RGB LED
 11     37    I/O/T        SPIDQS, GPIO37, FSPIQ, SUBSPIQ
 12     36    I/O/T        SPIIO7, GPIO36, FSPICLK, SUBSPICLK
 13     35    I/O/T        SPIIO6, GPIO35, FSPID, SUBSPID
 14     0     I/O/T        RTC_GPIO0, GPIO0
 15     45    I/O/T        GPIO45
-16     48    I/O/T        GPIO48, SPICLK_N, SUBSPICLK_N_DIFF, RGB LED
+16     48    I/O/T        GPIO48, SPICLK_N, SUBSPICLK_N_DIFF
 17     47    I/O/T        GPIO47, SPICLK_P, SUBSPICLK_P_DIFF
 18     21    I/O/T        RTC_GPIO21, GPIO21
 19     20    I/O/T        RTC_GPIO20, GPIO20, U1CTS, ADC2_CH9, CLK_OUT1, USB_D+
@@ -285,14 +287,14 @@ J3
 .. [#] P：电源；I：输入；O：输出；T：可设置为高阻。
 
 
-有关管脚功能名称的解释，请参考 `芯片规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_ (PDF)。
+有关管脚功能名称的解释，请参考 `ESP32-S3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_ (PDF)。
 
 
 管脚布局
 ^^^^^^^^^^^
 
 
-.. figure:: ../../../_static/ESP32-S3_DevKitC-1_pinlayout.jpg
+.. figure:: ../../../_static/ESP32-S3_DevKitC-1_pinlayout_v1.1.jpg
     :align: center
     :scale: 50%
     :alt: ESP32-S3-DevKitC-1（点击放大）
@@ -303,7 +305,11 @@ J3
 硬件版本
 ============
 
-无历史版本。
+:doc:`首次发布 <user-guide-devkitc-1-v1.0>`
+
+.. note::
+
+    目前两个版本开发板均可订购，主要差异在于 RGB LED 所连接的管脚不同。
 
 
 相关文档
@@ -312,9 +318,14 @@ J3
 - `ESP32-S3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-S3-WROOM-1 & ESP32-S3-WROOM-1U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-S3-WROOM-2 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-2_datasheet_cn.pdf>`_ (PDF)
-- `ESP32-S3-DevKitC-1 原理图 <https://dl.espressif.com/dl/SCH_ESP32-S3-DEVKITC-1_V1_20210312C.pdf>`_ (PDF)
-- `ESP32-S3-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/PCB_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
+- `ESP32-S3-DevKitC-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-S3-DevKitC-1_V1.1_20220413.pdf>`_ (PDF)
+- `ESP32-S3-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-S3-DevKitC-1_V1.1_20220429.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 尺寸图源文件 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.dxf>`_ (DXF) - 可使用 `Autodesk Viewer <https://viewer.autodesk.com/>`_ 查看
 
 有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。
+
+.. toctree::
+    :hidden:
+
+    user-guide-devkitc-1-v1.0

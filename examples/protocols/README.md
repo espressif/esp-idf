@@ -8,7 +8,7 @@ See the [README.md](../README.md) file in the upper level [examples](../) direct
 
 ### About the `example_connect()` Function
 
-Protocols examples use a simple helper function, `example_connect()`, to establish Wi-Fi and/or Ethernet connection. This function is implemented in [examples/common_components/protocol_examples/common/connect.c](../common_components/protocol_examples_common/connect.c), and has a very simple behavior: block until connection is established and IP address is obtained, then return. This function is used to reduce the amount of boilerplate and to keep the example code focused on the protocol or library being demonstrated.
+Protocols examples use a simple helper function, `example_connect()`, to establish Wi-Fi and/or Ethernet connection. This function is implemented in [examples/common_components/protocol_examples_common/include/protocol_examples_common.h](../common_components/protocol_examples_common/include/protocol_examples_common.h), and has a very simple behavior: block until connection is established and IP address is obtained, then return. This function is used to reduce the amount of boilerplate and to keep the example code focused on the protocol or library being demonstrated.
 
 The simple `example_connect()` function does not handle timeouts, does not gracefully handle various error conditions, and is only suited for use in examples. When developing real applications, this helper function needs to be replaced with full Wi-Fi / Ethernet connection handling code. Such code can be found in [examples/wifi/getting_started/](../wifi/getting_started) and [examples/ethernet/basic/](../ethernet/basic) examples.
 

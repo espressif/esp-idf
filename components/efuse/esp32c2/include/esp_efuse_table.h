@@ -8,8 +8,9 @@
 extern "C" {
 #endif
 
+#include "esp_efuse.h"
 
-// md5_digest_table af57e8a6a405ebf239cc552f713c91d0
+// md5_digest_table 5bc3d3149d5d4c75461337fa415d6533
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -44,24 +45,33 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_CUSTOM_MAC[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
-extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_RF_REF_I_BIAS_CONFIG[];
-extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VOL_BIAS_CONFIG_LOW[];
-extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VOL_BIAS_CONFIG_HIGH[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MINOR[];
+extern const esp_efuse_desc_t* ESP_EFUSE_BLK_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_LOW[];
-extern const esp_efuse_desc_t* ESP_EFUSE_PVT_HIGH[];
-extern const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_0[];
-extern const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_1[];
-extern const esp_efuse_desc_t* ESP_EFUSE_ADC_CALIBRATION_2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_256BIT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_128BIT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_SB_128BIT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIG_DBIAS_HVT[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_SLP_DBIAS2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_SLP_DBIAS26[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_ACT_DBIAS26[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_ACT_STEPD10[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS13[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS29[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_SLP_DBIAS31[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS31[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RTC_LDO_ACT_DBIAS13[];
 
 #ifdef __cplusplus
 }

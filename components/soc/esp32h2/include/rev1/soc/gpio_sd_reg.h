@@ -3,8 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_GPIO_SD_REG_H_
-#define _SOC_GPIO_SD_REG_H_
+#pragma once
 
 #include "soc/soc.h"
 
@@ -100,7 +99,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_GPIO_SD_REG_H_ */

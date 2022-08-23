@@ -54,6 +54,10 @@ int wpa_sm_set_key(struct install_key *sm, enum wpa_alg alg,
         u8 *key, size_t key_len,
         enum key_flag key_flag);
 
+int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len);
+
+int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
+
 #ifdef CONFIG_IEEE80211R
 
 int wpa_sm_set_ft_params(struct wpa_sm *sm, const u8 *ies, size_t ies_len);
@@ -115,4 +119,12 @@ wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies, size_t ies_len,
 }
 
 #endif /* CONFIG_IEEE80211R */
+struct wpa_sm * get_wpa_sm(void);
+
+void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm);
+
+int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_ie, size_t dh_len);
+
+struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group);
+
 #endif /* WPA_H */

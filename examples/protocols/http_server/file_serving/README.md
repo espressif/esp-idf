@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Simple HTTP File Server Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -70,7 +73,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
    The following steps assume that IP address 192.168.1.100 was assigned.
 
-2. Test the example interactively in a web browser. The default port is 80. 
+2. Test the example interactively in a web browser. The default port is 80.
 
     1. Open path http://192.168.1.100/ or http://192.168.1.100/index.html to see an HTML page with list of files on the server. The page will initially be empty.
     2. Use the file upload form on the webpage to select and upload a file to the server.

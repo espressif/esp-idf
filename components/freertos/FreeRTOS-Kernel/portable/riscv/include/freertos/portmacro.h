@@ -46,6 +46,7 @@
 #include "soc/interrupt_core0_reg.h"
 #include "esp_macros.h"
 #include "esp_attr.h"
+#include "esp_cpu.h"
 #include "esp_rom_sys.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
@@ -181,32 +182,6 @@ typedef struct {
     (mux)->count = 0; \
 })
 
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * @note Isn't a real atomic CAS.
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
 // ------------------ Critical Sections --------------------
 
 /**
@@ -273,7 +248,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @return true Core can yield
  * @return false Core cannot yield
  */
-static inline bool xPortCanYield(void);
+FORCE_INLINE_ATTR bool xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
@@ -314,9 +289,9 @@ void vPortSetStackWatchpoint(void *pxStackStart);
  * @note [refactor-todo] IDF should call a FreeRTOS like macro instead of port function directly
  * @return BaseType_t Core ID
  */
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
+FORCE_INLINE_ATTR BaseType_t xPortGetCoreID(void)
 {
-    return (BaseType_t) cpu_hal_get_core_id();
+    return (BaseType_t) esp_cpu_get_core_id();
 }
 
 
@@ -433,25 +408,9 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 
 // --------------------- Interrupts ------------------------
 
-
-
-// ---------------------- Spinlocks ------------------------
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#if defined(CONFIG_SPIRAM)
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
-
 // ---------------------- Yielding -------------------------
 
-static inline bool IRAM_ATTR xPortCanYield(void)
+FORCE_INLINE_ATTR bool xPortCanYield(void)
 {
     uint32_t threshold = REG_READ(INTERRUPT_CORE0_CPU_INT_THRESH_REG);
     /* when enter critical code, FreeRTOS will mask threshold to RVHAL_EXCM_LEVEL
@@ -507,7 +466,7 @@ extern int xPortSwitchFlag;
 // --------------------- Debugging -------------------------
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#define UNTESTED_FUNCTION() do{ esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
 #else
 #define UNTESTED_FUNCTION()
 #endif

@@ -5,16 +5,51 @@
  */
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
- *  We put 2nd bootloader in the high address space (before ROM stack/data/bss).
- *  See memory usage for ROM bootloader at the end of this file.
+ *
+ *  ESP32-S3 ROM static data usage is as follows:
+ *  - 0x3fcd7e00 - 0x3fce9704: Shared buffers, used in UART/USB/SPI download mode only
+ *  - 0x3fce9710 - 0x3fceb710: PRO CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x3fceb710 - 0x3fced710: APP CPU stack, can be reclaimed as heap after RTOS startup
+ *  - 0x3fced710 - 0x3fcf0000: ROM .bss and .data (not easily reclaimable)
+ *
+ *  The 2nd stage bootloader can take space up to the end of ROM shared
+ *  buffers area (0x3fce9704). For alignment purpose we shall use value (0x3fce9700).
  */
+
+/* The offset between Dbus and Ibus. Used to convert between 0x403xxxxx and 0x3fcxxxxx addresses. */
+iram_dram_offset = 0x6f0000;
+
+/* We consider 0x3fce9700 to be the last usable address for 2nd stage bootloader stack overhead, dram_seg,
+ * and work out iram_seg and iram_loader_seg addresses from there, backwards.
+ */
+
+/* These lengths can be adjusted, if necessary: */
+bootloader_usable_dram_end = 0x3fce9700;
+bootloader_stack_overhead = 0x2000; /* For safety margin between bootloader data section and startup stacks */
+bootloader_dram_seg_len = 0x4000;
+bootloader_iram_loader_seg_len = 0x7000;
+bootloader_iram_seg_len = 0x3000;
+
+/* Start of the lower region is determined by region size and the end of the higher region */
+bootloader_dram_seg_end = bootloader_usable_dram_end - bootloader_stack_overhead;
+bootloader_dram_seg_start = bootloader_dram_seg_end - bootloader_dram_seg_len;
+bootloader_iram_loader_seg_start = bootloader_dram_seg_start - bootloader_iram_loader_seg_len + iram_dram_offset;
+bootloader_iram_seg_start = bootloader_iram_loader_seg_start - bootloader_iram_seg_len;
 
 MEMORY
 {
-  iram_seg (RWX) :                  org = 0x403B6000, len = 0x3000
-  iram_loader_seg (RWX) :           org = 0x403B9000, len = 0x7000
-  dram_seg (RW) :                   org = 0x3FCD0000, len = 0x4000
+  iram_seg (RWX) :                  org = bootloader_iram_seg_start, len = bootloader_iram_seg_len
+  iram_loader_seg (RWX) :           org = bootloader_iram_loader_seg_start, len = bootloader_iram_loader_seg_len
+  dram_seg (RW) :                   org = bootloader_dram_seg_start, len = bootloader_dram_seg_len
 }
+
+/* The app may use RAM for static allocations up to the start of iram_loader_seg.
+ * If you have changed something above and this assert fails:
+ * 1. Check what the new value of bootloader_iram_loader_seg start is.
+ * 2. Update the value in this assert.
+ * 3. Update SRAM_IRAM_END in components/esp_system/ld/esp32s3/memory.ld.in to the same value.
+ */
+ASSERT(bootloader_iram_loader_seg_start == 0x403cc700, "bootloader_iram_loader_seg_start inconsistent with SRAM_IRAM_END");
 
 /* Default entry point: */
 ENTRY(call_start_cpu0);
@@ -107,8 +142,6 @@ SECTIONS
     *(.sdata)
     *(.sdata.*)
     *(.gnu.linkonce.s.*)
-    *(.sdata2)
-    *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     *(.jcr)
     _data_end = ABSOLUTE(.);
@@ -121,6 +154,7 @@ SECTIONS
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
+    *(.sdata2 .sdata2.*)
     __XT_EXCEPTION_TABLE_ = ABSOLUTE(.);
     *(.xt_except_table)
     *(.gcc_except_table)
@@ -179,29 +213,62 @@ SECTIONS
     _etext = .;
   } > iram_seg
 
-}
+  /** This section will be used by the debugger and disassembler to get more information
+   * about raw data present in the code.
+   * Indeed, it may be required to add some padding at some points in the code
+   * in order to align a branch/jump destination on a particular bound.
+   * Padding these instructions will generate null bytes that shall be
+   * interpreted as data, and not code by the debugger or disassembler.
+   * This section will only be present in the ELF file, not in the final binary
+   * For more details, check GCC-212
+   */
+  .xt.prop 0 :
+  {
+    KEEP (*(.xt.prop .gnu.linkonce.prop.*))
+  }
 
+  .xt.lit 0 :
+  {
+    KEEP (*(.xt.lit .gnu.linkonce.p.*))
+  }
+
+}
 
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *
- *  +--------+--------------+------+ 0x3FCD_8000
- *  |        ^              |
- *  |        |              |
- *  |        | data/bss     |
- *  |        |              |
- *  |        v              |
- *  +------------------------------+ 0x3FCE_9910
- *  |        ^              |
- *  |        |              |
- *  |        | stack (pro)  |
- *  |        |              |
- *  |        v              |
- *  +------------------------------+ 0x3FCE_B910
- *  |        ^              |
- *  |        |              |
- *  |        | stack (app)  |
- *  |        |              |
- *  |        v              |
- *  +--------+--------------+------+ 0x3FCE_D910
+ * 0x3fcd7e00 ------------------> _dram0_0_start
+ *            |               |
+ *            |               |
+ *            |               |   1. Large buffers that are only used in certain boot modes, see shared_buffers.h
+ *            |               |
+ *            |               |
+ * 0x3fce9710 ------------------> __stack_sentry
+ *            |               |
+ *            |               |   2. Startup pro cpu stack (freed when IDF app is running)
+ *            |               |
+ * 0x3fceb710 ------------------> __stack (pro cpu)
+ *            |               |
+ *            |               |      Startup app cpu stack
+ *            |               |
+ * 0x3fced710 ------------------> __stack_app (app cpu)
+ *            |               |
+ *            |               |
+ *            |               |   3. Shared memory only used in startup code or nonos/early boot*
+ *            |               |      (can be freed when IDF runs)
+ *            |               |
+ *            |               |
+ * 0x3fceee34 ------------------> _dram0_rtos_reserved_start
+ *            |               |
+ *            |               |
+ *            |               |   4. Shared memory used in startup code and when IDF runs
+ *            |               |
+ *            |               |
+ * 0x3fcef770 ------------------> _dram0_rtos_reserved_end
+ *            |               |
+ * 0x3fcef81c ------------------> _data_start_interface
+ *            |               |
+ *            |               |   5. End of DRAM is the 'interface' data with constant addresses (ECO compatible)
+ *            |               |
+ * 0x3fcf0000 ------------------> _data_end_interface
  */

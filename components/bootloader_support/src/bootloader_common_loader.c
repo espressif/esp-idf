@@ -17,6 +17,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
+#include "hal/efuse_hal.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -63,7 +64,13 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
     }
 
 #ifndef CONFIG_IDF_ENV_FPGA
-    uint8_t revision = bootloader_common_get_chip_revision();
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32H2)
+    uint8_t revision = efuse_hal_get_major_chip_version();
+    // min_chip_rev keeps the MAJOR wafer version for these chips
+#else
+    uint8_t revision = efuse_hal_get_minor_chip_version();
+    // min_chip_rev keeps the MINOR wafer version for these chips
+#endif
     if (revision < img_hdr->min_chip_rev) {
         /* To fix this error, please update mininum supported chip revision from configuration,
          * located in TARGET (e.g. ESP32) specific options under "Component config" menu */
@@ -103,30 +110,6 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
         }
     }
     return active_otadata;
-}
-
-esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
-{
-    if (partition == NULL || app_desc == NULL || partition->offset == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    const uint32_t app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
-    const uint32_t mmap_size = app_desc_offset + sizeof(esp_app_desc_t);
-    const uint8_t *image = bootloader_mmap(partition->offset, mmap_size);
-    if (image == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, mmap_size);
-        return ESP_FAIL;
-    }
-
-    memcpy(app_desc, image + app_desc_offset, sizeof(esp_app_desc_t));
-    bootloader_munmap(image);
-
-    if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
-        return ESP_ERR_NOT_FOUND;
-    }
-
-    return ESP_OK;
 }
 
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )

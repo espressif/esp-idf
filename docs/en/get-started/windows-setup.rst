@@ -9,7 +9,7 @@ Introduction
 
 ESP-IDF requires some prerequisite tools to be installed so you can build firmware for supported chips. The prerequisite tools include Python, Git, cross-compilers, CMake and Ninja build tools.
 
-For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
+For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_ or another graphical IDE with CMake support instead.
 
 .. note::
     Limitations:
@@ -119,13 +119,19 @@ Related Documents
 
 For advanced users who want to customize the install process:
 
+* :doc:`windows-setup-update`
+* :doc:`establish-serial-connection`
+* `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+* :doc:`../api-guides/tools/idf-monitor`
+
 .. toctree::
+    :hidden:
     :maxdepth: 1
 
     windows-setup-update
     establish-serial-connection
-    eclipse-setup
-    vscode-setup
+    flashing-troubleshooting
     ../api-guides/tools/idf-monitor
 
 .. _CMake: https://cmake.org/download/

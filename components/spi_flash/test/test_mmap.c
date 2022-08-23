@@ -6,13 +6,16 @@
 #include <freertos/semphr.h>
 
 #include <unity.h>
-#include <esp_spi_flash.h>
+#include <spi_flash_mmap.h>
 #include <esp_attr.h>
 #include <esp_partition.h>
 #include <esp_flash_encrypt.h>
 
 #include "test_utils.h"
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5138
 static uint32_t buffer[1024];
 
 /* read-only region used for mmap tests, intialised in setup_mmap_tests() */
@@ -20,22 +23,25 @@ static uint32_t start;
 static uint32_t end;
 
 static spi_flash_mmap_handle_t handle1, handle2, handle3;
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 static esp_err_t spi_flash_read_maybe_encrypted(size_t src_addr, void *des_addr, size_t size)
 {
     if (!esp_flash_encryption_enabled()) {
-        return spi_flash_read(src_addr, des_addr, size);
+        return esp_flash_read(NULL, des_addr, src_addr, size);
     } else {
-        return spi_flash_read_encrypted(src_addr, des_addr, size);
+        return esp_flash_read_encrypted(NULL, src_addr, des_addr, size);
     }
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5138
 static esp_err_t spi_flash_write_maybe_encrypted(size_t des_addr, const void *src_addr, size_t size)
 {
     if (!esp_flash_encryption_enabled()) {
-        return spi_flash_write(des_addr, src_addr, size);
+        return esp_flash_write(NULL, src_addr, des_addr, size);
     } else {
-        return spi_flash_write_encrypted(des_addr, src_addr, size);
+        return esp_flash_write_encrypted(NULL, des_addr, src_addr, size);
     }
 }
 
@@ -72,7 +78,7 @@ static void setup_mmap_tests(void)
             uint32_t sector_offs = abs_sector * SPI_FLASH_SEC_SIZE;
             bool sector_needs_write = false;
 
-            ESP_ERROR_CHECK( spi_flash_read_maybe_encrypted(sector_offs, buffer, sizeof(buffer)) );
+            TEST_ESP_OK( spi_flash_read_maybe_encrypted(sector_offs, buffer, sizeof(buffer)) );
 
             for (uint32_t word = 0; word < 1024; ++word) {
                 uint32_t val = rand();
@@ -86,8 +92,8 @@ static void setup_mmap_tests(void)
             }
             /* Only rewrite the sector if it has changed */
             if (sector_needs_write) {
-                ESP_ERROR_CHECK( spi_flash_erase_sector((uint16_t) abs_sector) );
-                ESP_ERROR_CHECK( spi_flash_write_maybe_encrypted(sector_offs, (const uint8_t *) buffer, sizeof(buffer)) );
+                TEST_ESP_OK( esp_flash_erase_region(NULL, (uint16_t) abs_sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE) );
+                TEST_ESP_OK( spi_flash_write_maybe_encrypted(sector_offs, (const uint8_t *) buffer, sizeof(buffer)) );
             }
         }
     }
@@ -99,7 +105,7 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
 
     printf("Mapping %x (+%x)\n", start, end - start);
     const void *ptr1;
-    ESP_ERROR_CHECK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res: handle=%d ptr=%p\n", handle1, ptr1);
 
     spi_flash_mmap_dump();
@@ -117,7 +123,7 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     }
     printf("Mapping %x (+%x)\n", start - 0x10000, 0x20000);
     const void *ptr2;
-    ESP_ERROR_CHECK( spi_flash_mmap(start - 0x10000, 0x20000, SPI_FLASH_MMAP_DATA, &ptr2, &handle2) );
+    TEST_ESP_OK( spi_flash_mmap(start - 0x10000, 0x20000, SPI_FLASH_MMAP_DATA, &ptr2, &handle2) );
     printf("mmap_res: handle=%d ptr=%p\n", handle2, ptr2);
 
     TEST_ASSERT_EQUAL_HEX32(start - 0x10000, spi_flash_cache2phys(ptr2));
@@ -127,7 +133,7 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
 
     printf("Mapping %x (+%x)\n", start, 0x10000);
     const void *ptr3;
-    ESP_ERROR_CHECK( spi_flash_mmap(start, 0x10000, SPI_FLASH_MMAP_DATA, &ptr3, &handle3) );
+    TEST_ESP_OK( spi_flash_mmap(start, 0x10000, SPI_FLASH_MMAP_DATA, &ptr3, &handle3) );
     printf("mmap_res: handle=%d ptr=%p\n", handle3, ptr3);
 
     TEST_ASSERT_EQUAL_HEX32(start, spi_flash_cache2phys(ptr3));
@@ -166,7 +172,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     printf("Mapping %x (+%x)\n", start, end - start);
     spi_flash_mmap_handle_t handle1;
     const void *ptr1;
-    ESP_ERROR_CHECK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_INST, &ptr1, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_INST, &ptr1, &handle1) );
     printf("mmap_res: handle=%d ptr=%p\n", handle1, ptr1);
 
     spi_flash_mmap_dump();
@@ -183,7 +189,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     printf("Mapping %x (+%x)\n", start - 0x10000, 0x20000);
     spi_flash_mmap_handle_t handle2;
     const void *ptr2;
-    ESP_ERROR_CHECK( spi_flash_mmap(start - 0x10000, 0x20000, SPI_FLASH_MMAP_INST, &ptr2, &handle2) );
+    TEST_ESP_OK( spi_flash_mmap(start - 0x10000, 0x20000, SPI_FLASH_MMAP_INST, &ptr2, &handle2) );
     printf("mmap_res: handle=%d ptr=%p\n", handle2, ptr2);
 
     TEST_ASSERT_EQUAL_HEX32(start - 0x10000, spi_flash_cache2phys(ptr2));
@@ -194,7 +200,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     printf("Mapping %x (+%x)\n", start, 0x10000);
     spi_flash_mmap_handle_t handle3;
     const void *ptr3;
-    ESP_ERROR_CHECK( spi_flash_mmap(start, 0x10000, SPI_FLASH_MMAP_INST, &ptr3, &handle3) );
+    TEST_ESP_OK( spi_flash_mmap(start, 0x10000, SPI_FLASH_MMAP_INST, &ptr3, &handle3) );
     printf("mmap_res: handle=%d ptr=%p\n", handle3, ptr3);
 
     TEST_ASSERT_EQUAL_HEX32(start, spi_flash_cache2phys(ptr3));
@@ -240,7 +246,7 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]"
 
     spi_flash_mmap_handle_t handle1;
     const void *ptr1;
-    ESP_ERROR_CHECK( spi_flash_mmap_pages(pages, nopages, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap_pages(pages, nopages, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res: handle=%d ptr=%p\n", handle1, ptr1);
 
     spi_flash_mmap_dump();
@@ -272,10 +278,10 @@ TEST_CASE("flash_mmap invalidates just-written data", "[spi_flash][mmap]")
         TEST_IGNORE_MESSAGE("flash encryption enabled, spi_flash_write_encrypted() test won't pass as-is");
     }
 
-    ESP_ERROR_CHECK( spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE) );
+    TEST_ESP_OK( esp_flash_erase_region(NULL, start, SPI_FLASH_SEC_SIZE) );
 
     /* map erased test region to ptr1 */
-    ESP_ERROR_CHECK( spi_flash_mmap(start, test_size, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap(start, test_size, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res ptr1: handle=%d ptr=%p\n", handle1, ptr1);
 
     /* verify it's all 0xFF */
@@ -290,14 +296,14 @@ TEST_CASE("flash_mmap invalidates just-written data", "[spi_flash][mmap]")
     /* write flash region to 0xEE */
     uint8_t buf[test_size];
     memset(buf, 0xEE, test_size);
-    ESP_ERROR_CHECK( spi_flash_write(start, buf, test_size) );
+    TEST_ESP_OK( esp_flash_write(NULL, buf, start, test_size) );
 
     /* re-map the test region at ptr1.
 
        this is a fresh mmap call so should trigger a cache flush,
        ensuring we see the updated flash.
     */
-    ESP_ERROR_CHECK( spi_flash_mmap(start, test_size, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap(start, test_size, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res ptr1 #2: handle=%d ptr=%p\n", handle1, ptr1);
 
     /* assert that ptr1 now maps to the new values on flash,
@@ -316,7 +322,7 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
 
     printf("Mapping %x (+%x)\n", start, end - start);
     const void *ptr1;
-    ESP_ERROR_CHECK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap(start, end - start, SPI_FLASH_MMAP_DATA, &ptr1, &handle1) );
     printf("mmap_res: handle=%d ptr=%p\n", handle1, ptr1);
 
     spi_flash_mmap_dump();
@@ -333,12 +339,14 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
         }
     }
     uint32_t free_pages = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
-    uint32_t flash_pages = spi_flash_get_chip_size() / SPI_FLASH_MMU_PAGE_SIZE;
+    uint32_t flash_size;
+    TEST_ESP_OK(esp_flash_get_size(NULL, &flash_size));
+    uint32_t flash_pages = flash_size / SPI_FLASH_MMU_PAGE_SIZE;
     free_pages = (free_pages > flash_pages) ? flash_pages : free_pages;
 
     printf("Mapping %x (+%x)\n", 0, free_pages * SPI_FLASH_MMU_PAGE_SIZE);
     const void *ptr2;
-    ESP_ERROR_CHECK( spi_flash_mmap(0, free_pages * SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMAP_DATA, &ptr2, &handle2) );
+    TEST_ESP_OK( spi_flash_mmap(0, free_pages * SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMAP_DATA, &ptr2, &handle2) );
     printf("mmap_res: handle=%d ptr=%p\n", handle2, ptr2);
 
     spi_flash_mmap_dump();
@@ -356,6 +364,7 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
 
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 {
@@ -391,6 +400,8 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_HEX8_ARRAY(constant_data, buf, sizeof(constant_data));
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5138
 TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash][mmap]")
 {
     const void *ptr = NULL;
@@ -400,7 +411,7 @@ TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash][mmap]")
 
     TEST_ASSERT_EQUAL_HEX(SPI_FLASH_CACHE2PHYS_FAIL, spi_flash_cache2phys(ptr));
 
-    ESP_ERROR_CHECK( spi_flash_mmap(start, test_size, SPI_FLASH_MMAP_DATA, &ptr, &handle1) );
+    TEST_ESP_OK( spi_flash_mmap(start, test_size, SPI_FLASH_MMAP_DATA, &ptr, &handle1) );
     TEST_ASSERT_NOT_NULL(ptr);
     TEST_ASSERT_NOT_EQUAL(0, handle1);
 
@@ -459,3 +470,4 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
     spi_flash_munmap(handle);
     TEST_ASSERT_EQUAL(0, memcmp(buf, read_data, sizeof(buf)));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

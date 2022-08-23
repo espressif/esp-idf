@@ -13,12 +13,11 @@
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"
 #include "esp_transport_ws.h"
-#include "esp_transport_utils.h"
 #include "esp_transport_internal.h"
 #include "errno.h"
 #include "esp_tls_crypto.h"
 
-static const char *TAG = "TRANSPORT_WS";
+static const char *TAG = "transport_ws";
 
 #define WS_BUFFER_SIZE              CONFIG_WS_BUFFER_SIZE
 #define WS_FIN                      0x80
@@ -152,6 +151,15 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     unsigned char client_key[28] = {0};
 
     const char *user_agent_ptr = (ws->user_agent) ? (ws->user_agent) : "ESP32 Websocket Client";
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+    if (!ws->buffer) {
+        ws->buffer = malloc(WS_BUFFER_SIZE);
+        if (!ws->buffer) {
+            ESP_LOGE(TAG, "Cannot allocate buffer for connect, need-%d", WS_BUFFER_SIZE);
+            return -1;
+        }
+    }
+#endif
 
     size_t outlen = 0;
     esp_crypto_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
@@ -238,6 +246,10 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "Invalid websocket key");
         return -1;
     }
+#ifdef CONFIG_WS_DYNAMIC_BUFFER
+    free(ws->buffer);
+    ws->buffer = NULL;
+#endif
     return 0;
 }
 
@@ -591,6 +603,10 @@ static int ws_get_socket(esp_transport_handle_t t)
 
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
+    if (parent_handle == NULL || parent_handle->foundation == NULL) {
+      ESP_LOGE(TAG, "Invalid parent ptotocol");
+      return NULL;
+    }
     esp_transport_handle_t t = esp_transport_init();
     if (t == NULL) {
         return NULL;
@@ -601,6 +617,8 @@ esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handl
         return NULL;
     });
     ws->parent = parent_handle;
+    t->foundation = parent_handle->foundation;
+
 
     ws->path = strdup("/");
     ESP_TRANSPORT_MEM_CHECK(TAG, ws->path, {

@@ -30,8 +30,7 @@ To begin with, make sure that the NimBLE stack is enabled from menuconfig :ref:`
 
 Typical programming sequence with NimBLE stack consists of the following steps:
     * Initialize NVS flash using :cpp:func:`nvs_flash_init` API. This is because ESP controller uses NVS during initialization.
-    * Call :cpp:func:`esp_nimble_hci_and_controller_init` to initialize ESP controller as well as transport layer. This will also link the host and controller modules together. Alternatively, if ESP controller is already initialized, then :cpp:func:`esp_nimble_hci_init` can be called for the remaining initialization.
-    * Initialize the host stack using ``nimble_port_init``.
+    * Initialize the host and controller stack using ``nimble_port_init``.
     * Initialize the required NimBLE host configuration parameters and callbacks
     * Perform application specific tasks/initialization
     * Run the thread for host stack using ``nimble_port_freertos_init``

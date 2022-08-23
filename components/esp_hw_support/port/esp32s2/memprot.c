@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include "sdkconfig.h"
 #include "soc/sensitive_reg.h"
-#include "soc/dport_access.h"
 #include "soc/periph_defs.h"
 #include "esp_intr_alloc.h"
 #include "hal/memprot_ll.h"
@@ -26,14 +25,14 @@ extern int _data_start;
 extern int _rtc_text_end;
 extern int _rtc_dummy_end;
 
-static inline esp_err_t esp_memprot_ll_err_to_esp_err(memprot_ll_err_t err)
+static inline esp_err_t esp_memprot_ll_err_to_esp_err(memprot_hal_err_t err)
 {
     switch (err) {
-    case MEMP_LL_OK: return ESP_OK;
-    case MEMP_LL_FAIL: return ESP_FAIL;
-    case MEMP_LL_ERR_SPLIT_ADDR_INVALID: return ESP_ERR_INVALID_STATE;
-    case MEMP_LL_ERR_SPLIT_ADDR_UNALIGNED: return ESP_ERR_INVALID_SIZE;
-    case MEMP_LL_ERR_UNI_BLOCK_INVALID: return ESP_ERR_NOT_FOUND;
+    case MEMP_HAL_OK: return ESP_OK;
+    case MEMP_HAL_FAIL: return ESP_FAIL;
+    case MEMP_HAL_ERR_SPLIT_ADDR_INVALID: return ESP_ERR_INVALID_STATE;
+    case MEMP_HAL_ERR_SPLIT_ADDR_UNALIGNED: return ESP_ERR_INVALID_SIZE;
+    case MEMP_HAL_ERR_UNI_BLOCK_INVALID: return ESP_ERR_NOT_FOUND;
     default:
         return ESP_FAIL;
     }
@@ -803,8 +802,8 @@ esp_err_t esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uin
     }
 
     //if being debugged check we are not glitched and dont enable Memprot
-    if (esp_cpu_in_ocd_debug_mode()) {
-        ESP_FAULT_ASSERT(esp_cpu_in_ocd_debug_mode());
+    if (esp_cpu_dbgr_is_attached()) {
+        ESP_FAULT_ASSERT(esp_cpu_dbgr_is_attached());
     } else {
         //initialize for specific buses (any memory type does the job)
         if (invoke_panic_handler) {

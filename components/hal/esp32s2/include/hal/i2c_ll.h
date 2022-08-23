@@ -1,22 +1,15 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for I2C register operations
 
 #pragma once
 #include "soc/i2c_periph.h"
 #include "soc/i2c_struct.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/i2c_types.h"
 
 #ifdef __cplusplus
@@ -88,8 +81,6 @@ typedef struct {
 #define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_WM_INT_ENA_M)
 // I2C slave RX interrupt bitmap
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
-// I2C source clock
-#define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_REF_TICK) ? 1000*1000 : 80*1000*1000); // Another clock is APB clock
 // I2C max timeout value
 #define I2C_LL_MAX_TIMEOUT I2C_TIME_OUT_REG_V
 /**
@@ -789,10 +780,10 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  *
  * @return None
  */
-static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
+static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
     // src_clk : (1) for APB_CLK, (0) for REF_CLK
-    hw->ctr.ref_always_on = (src_clk == I2C_SCLK_REF_TICK) ? 0 : 1;
+    hw->ctr.ref_always_on = (src_clk == I2C_CLK_SRC_REF_TICK) ? 0 : 1;
 }
 
 /**
@@ -905,6 +896,39 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
 static inline void i2c_ll_update(i2c_dev_t *hw)
 {
     ;// ESP32S2 do not support
+}
+
+/**
+ * @brief  Configure I2C SCL timing
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
+ * @param  wait_high_period The I2C SCL wait rising edge period.
+ *
+ * @return None.
+ */
+static inline void i2c_ll_set_scl_clk_timing(i2c_dev_t *hw, int high_period, int low_period, int wait_high_period)
+{
+    hw->scl_low_period.period = low_period;
+    hw->scl_high_period.period = high_period;
+    hw->scl_high_period.scl_wait_high_period = wait_high_period;
+}
+
+/**
+ * @brief  Get I2C SCL timing configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period Pointer to accept the SCL high period
+ * @param  low_period Pointer to accept the SCL low period
+ *
+ * @return None
+ */
+static inline void i2c_ll_get_scl_clk_timing(i2c_dev_t *hw, int *high_period, int *low_period, int *wait_high_period)
+{
+    *high_period = hw->scl_high_period.period;
+    *wait_high_period = hw->scl_high_period.scl_wait_high_period;
+    *low_period = hw->scl_low_period.period;
 }
 
 #ifdef __cplusplus

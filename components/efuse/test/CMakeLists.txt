@@ -16,3 +16,4 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        PRIV_INCLUDE_DIRS "." "${dir}/include" "../private_include" "../${target}/private_include"
                        PRIV_REQUIRES cmock test_utils efuse bootloader_support esp_timer
                        )
+ target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

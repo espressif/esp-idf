@@ -1,4 +1,7 @@
-# ESP-MQTT SSL example with PSK verification 
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
+# ESP-MQTT SSL example with PSK verification
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -8,11 +11,11 @@ This example connects to a local broker configured to PSK authentication
 
 ### Hardware Required
 
-This example can be executed on any ESP32 board, the only required interface is WiFi (or ethernet) to connect to a MQTT 
+This example can be executed on any ESP32 board, the only required interface is WiFi (or ethernet) to connect to a MQTT
 broker with preconfigured PSK verification method.
 
 #### Mosquitto settings
-In case of using mosquitto broker, here is how to enable PSK authentication in `mosquitto.config`, 
+In case of using mosquitto broker, here is how to enable PSK authentication in `mosquitto.config`,
 ```
 psk_hint hint
 psk_file path_to_your_psk_file

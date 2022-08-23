@@ -41,6 +41,9 @@
         FLASH_TPUW,                       EFUSE_BLK0,   49,    4,      Configure flash startup delay after SoC being powered up (the unit is ms/2). When the value is 15 delay will be 7.5 ms
         SECURE_BOOT_EN,                   EFUSE_BLK0,   53,    1,      Enable secure boot
         SECURE_VERSION,                   EFUSE_BLK0,   54,    4,      Secure version for anti-rollback
+        ENABLE_CUSTOM_MAC,                EFUSE_BLK0,   58,    1,      True if MAC_CUSTOM is burned
+        DISABLE_WAFER_VERSION_MAJOR,      EFUSE_BLK0,   59,    1,      Disables check of wafer version major
+        DISABLE_BLK_VERSION_MAJOR,        EFUSE_BLK0,   60,    1,      Disables check of blk version major
 
 
 # USER_DATA BLOCK# - System configuration
@@ -51,27 +54,24 @@
 
 # SYS_DATA_PART1 BLOCK# - System configuration
 #######################
-    MAC_FACTORY,                          EFUSE_BLK2,   40,    8,     Factory MAC addr [0]
-    ,                                     EFUSE_BLK2,   32,    8,     Factory MAC addr [1]
-    ,                                     EFUSE_BLK2,   24,    8,     Factory MAC addr [2]
-    ,                                     EFUSE_BLK2,   16,    8,     Factory MAC addr [3]
-    ,                                     EFUSE_BLK2,    8,    8,     Factory MAC addr [4]
-    ,                                     EFUSE_BLK2,    0,    8,     Factory MAC addr [5]
+    # EFUSE_RD_BLK2_DATA0_REG
+        MAC_FACTORY,                          EFUSE_BLK2,   40,    8,     Factory MAC addr [0]
+        ,                                     EFUSE_BLK2,   32,    8,     Factory MAC addr [1]
+        ,                                     EFUSE_BLK2,   24,    8,     Factory MAC addr [2]
+        ,                                     EFUSE_BLK2,   16,    8,     Factory MAC addr [3]
+        ,                                     EFUSE_BLK2,    8,    8,     Factory MAC addr [4]
+        ,                                     EFUSE_BLK2,    0,    8,     Factory MAC addr [5]
 
-    WAFER_VERSION,                        EFUSE_BLK2,   48,    3,     EFUSE_WAFER_VERSION
-    PKG_VERSION,                          EFUSE_BLK2,   51,    3,     EFUSE_PKG_VERSION
-    BLOCK2_VERSION,                       EFUSE_BLK2,   54,    3,     EFUSE_BLOCK2_VERSION
-    RF_REF_I_BIAS_CONFIG,                 EFUSE_BLK2,   57,    4,     EFUSE_RF_REF_I_BIAS_CONFIG
-    LDO_VOL_BIAS_CONFIG_LOW,              EFUSE_BLK2,   61,    3,     EFUSE_LDO_VOL_BIAS_CONFIG_LOW
+    # EFUSE_RD_BLK2_DATA1_REG
+        # mac_id_high 16 bits
+        WAFER_VERSION_MINOR,                  EFUSE_BLK2,   48,    4,     WAFER_VERSION_MINOR
+        WAFER_VERSION_MAJOR,                  EFUSE_BLK2,   52,    2,     WAFER_VERSION_MAJOR
+        PKG_VERSION,                          EFUSE_BLK2,   54,    3,     EFUSE_PKG_VERSION
+        BLK_VERSION_MINOR,                    EFUSE_BLK2,   57,    3,     BLK_VERSION_MINOR
+        BLK_VERSION_MAJOR,                    EFUSE_BLK2,   60,    2,     BLK_VERSION_MAJOR
 
-    LDO_VOL_BIAS_CONFIG_HIGH,             EFUSE_BLK2,   64,   27,     EFUSE_LDO_VOL_BIAS_CONFIG_HIGH
-    PVT_LOW,                              EFUSE_BLK2,   91,    5,     EFUSE_PVT_LOW
-
-    PVT_HIGH,                             EFUSE_BLK2,   96,   10,     EFUSE_PVT_HIGH
-    ADC_CALIBRATION_0,                    EFUSE_BLK2,  106,   22,     EFUSE_ADC_CALIBRATION_0
-
-    ADC_CALIBRATION_1,                    EFUSE_BLK2,  128,   32,     EFUSE_ADC_CALIBRATION_1
-    ADC_CALIBRATION_2,                    EFUSE_BLK2,  160,   32,     EFUSE_ADC_CALIBRATION_2
+    # EFUSE_RD_BLK2_DATA2_REG
+        PVT_LOW,                              EFUSE_BLK2,   91,    5,     EFUSE_PVT_LOW
 
 
 ################
@@ -79,3 +79,17 @@ KEY0,                                     EFUSE_BLK3,    0,  256,     [256bit FE
 KEY0.FE_256BIT,                           EFUSE_BLK3,    0,  256,     [256bit FE key]
 KEY0.FE_128BIT,                           EFUSE_BLK3,    0,  128,     [128bit FE key]
 KEY0.SB_128BIT,                           EFUSE_BLK3,  128,  128,     [128bit SB key]
+
+# AUTO CONFIG DIG&RTC DBIAS#
+################
+OCODE,                                  EFUSE_BLK2,     62,    7,      OCode
+DIG_DBIAS_HVT,                          EFUSE_BLK2,    105,    5,      BLOCK2 digital dbias when hvt
+DIG_LDO_SLP_DBIAS2,                     EFUSE_BLK2,    110,    7,      BLOCK2 DIG_LDO_DBG0_DBIAS2
+DIG_LDO_SLP_DBIAS26,                    EFUSE_BLK2,    117,    8,      BLOCK2 DIG_LDO_DBG0_DBIAS26
+DIG_LDO_ACT_DBIAS26,                    EFUSE_BLK2,    125,    6,      BLOCK2 DIG_LDO_ACT_DBIAS26
+DIG_LDO_ACT_STEPD10,                    EFUSE_BLK2,    131,    4,      BLOCK2 DIG_LDO_ACT_STEPD10
+RTC_LDO_SLP_DBIAS13,                    EFUSE_BLK2,    135,    7,      BLOCK2 DIG_LDO_SLP_DBIAS13
+RTC_LDO_SLP_DBIAS29,                    EFUSE_BLK2,    142,    9,      BLOCK2 DIG_LDO_SLP_DBIAS29
+RTC_LDO_SLP_DBIAS31,                    EFUSE_BLK2,    151,    6,      BLOCK2 DIG_LDO_SLP_DBIAS31
+RTC_LDO_ACT_DBIAS31,                    EFUSE_BLK2,    157,    6,      BLOCK2 DIG_LDO_ACT_DBIAS31
+RTC_LDO_ACT_DBIAS13,                    EFUSE_BLK2,    163,    8,      BLOCK2 DIG_LDO_ACT_DBIAS13

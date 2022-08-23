@@ -63,7 +63,7 @@ typedef struct {
     .wps_type = type, \
     .factory_info = {   \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(manufacturer, "ESPRESSIF")  \
-        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(model_number, "ESP32")  \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(model_number, CONFIG_IDF_TARGET)  \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(model_name, "ESPRESSIF IOT")  \
         ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_STR(device_name, "ESP DEVICE")  \
     },  \

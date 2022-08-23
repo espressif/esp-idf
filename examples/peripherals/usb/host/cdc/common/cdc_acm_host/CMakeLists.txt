@@ -13,3 +13,6 @@ idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include}
                        REQUIRES ${require}
                        )
+if(CONFIG_USB_OTG_SUPPORTED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+endif()

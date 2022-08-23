@@ -53,7 +53,7 @@ static esp_usb_console_cb_t s_tx_cb;
 static void *s_cb_arg;
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
-static spinlock_t s_write_lock = SPINLOCK_INITIALIZER;
+static portMUX_TYPE s_write_lock = portMUX_INITIALIZER_UNLOCKED;
 void esp_usb_console_write_char(char c);
 #define ISR_FLAG  ESP_INTR_FLAG_IRAM
 #else
@@ -399,11 +399,11 @@ void esp_usb_console_write_char(char c)
 }
 static inline void write_lock_acquire(void)
 {
-    spinlock_acquire(&s_write_lock, SPINLOCK_WAIT_FOREVER);
+    portENTER_CRITICAL_SAFE(&s_write_lock);
 }
 static inline void write_lock_release(void)
 {
-    spinlock_release(&s_write_lock);
+    portEXIT_CRITICAL_SAFE(&s_write_lock);
 }
 
 #else // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF

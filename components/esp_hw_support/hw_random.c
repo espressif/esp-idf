@@ -10,7 +10,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_attr.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "soc/wdev_reg.h"
 #include "esp_private/esp_clk.h"
 
@@ -47,7 +47,7 @@ uint32_t IRAM_ATTR esp_random(void)
     uint32_t ccount;
     uint32_t result = 0;
     do {
-        ccount = cpu_hal_get_cycle_count();
+        ccount = esp_cpu_get_cycle_count();
         result ^= REG_READ(WDEV_RND_REG);
     } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
     last_ccount = ccount;

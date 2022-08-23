@@ -1,8 +1,11 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # C++ pthread Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-Support for the [C++ threads](http://www.cplusplus.com/reference/thread/thread/) in ESP-IDF is implemented on top of the [ESP-pthread](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_pthread.html#overview) component. Thus, C++ threads created using the standard thread class constructor will automatically inherit the current ESP-pthread configuration. This example demonstrates how to leverage the thread configuration functions provided by ESP-pthread (e.g., `esp_pthread_get_default_config()` and `esp_pthread_set_cfg()`) to modify the stack sizes, priorities, names, and core affinities of the C++ threads. 
+Support for the [C++ threads](http://www.cplusplus.com/reference/thread/thread/) in ESP-IDF is implemented on top of the [ESP-pthread](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/esp_pthread.html#overview) component. Thus, C++ threads created using the standard thread class constructor will automatically inherit the current ESP-pthread configuration. This example demonstrates how to leverage the thread configuration functions provided by ESP-pthread (e.g., `esp_pthread_get_default_config()` and `esp_pthread_set_cfg()`) to modify the stack sizes, priorities, names, and core affinities of the C++ threads.
 
 **Note: Due to the use of the C++ threads, this example is written in C++ instead of C.**
 

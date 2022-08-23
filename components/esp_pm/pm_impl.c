@@ -13,13 +13,14 @@
 #include "esp_err.h"
 #include "esp_pm.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 
 #include "esp_private/crosscore_int.h"
 
 #include "soc/rtc.h"
-#include "hal/cpu_hal.h"
 #include "hal/uart_ll.h"
 #include "hal/uart_types.h"
+#include "driver/uart.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -532,7 +533,7 @@ static void IRAM_ATTR update_ccompare(void)
     /* disable level 4 and below */
     uint32_t irq_status = XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
 #endif
-    uint32_t ccount = cpu_hal_get_cycle_count();
+    uint32_t ccount = esp_cpu_get_cycle_count();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
     if ((ccompare - CCOMPARE_MIN_CYCLES_IN_FUTURE) - ccount < UINT32_MAX / 2) {
         uint32_t diff = ccompare - ccount;
@@ -658,7 +659,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                  * work for timer interrupt, and changing CCOMPARE would clear
                  * the interrupt flag.
                  */
-                cpu_hal_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
+                esp_cpu_set_cycle_count(XTHAL_GET_CCOMPARE(XT_TIMER_INDEX) - 16);
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
@@ -732,7 +733,11 @@ void esp_pm_impl_init(void)
     while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
     /* When DFS is enabled, override system setting and use REFTICK as UART clock source */
     uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), clk_source);
-    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+
+    uint32_t sclk_freq;
+    esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);
+    assert(err == ESP_OK);
+    uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_PM_TRACE
@@ -789,7 +794,11 @@ void esp_pm_impl_init(void)
 void esp_pm_impl_idle_hook(void)
 {
     int core_id = xPortGetCoreID();
+#if CONFIG_FREERTOS_SMP
+    uint32_t state = portDISABLE_INTERRUPTS();
+#else
     uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
     if (!s_core_idle[core_id]
 #ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
     && !periph_should_skip_light_sleep()
@@ -798,7 +807,11 @@ void esp_pm_impl_idle_hook(void)
         esp_pm_lock_release(s_rtos_lock_handle[core_id]);
         s_core_idle[core_id] = true;
     }
+#if CONFIG_FREERTOS_SMP
+    portRESTORE_INTERRUPTS(state);
+#else
     portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+#endif
     ESP_PM_TRACE_ENTER(IDLE, core_id);
 }
 
@@ -809,7 +822,11 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     /* Prevent higher level interrupts (than the one this function was called from)
      * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
      */
+#if CONFIG_FREERTOS_SMP
+    uint32_t state = portDISABLE_INTERRUPTS();
+#else
     uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
+#endif
 #if defined(CONFIG_FREERTOS_SYSTICK_USES_CCOUNT) && (portNUM_PROCESSORS == 2)
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
@@ -820,7 +837,11 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
 #else
     leave_idle();
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && portNUM_PROCESSORS == 2
+#if CONFIG_FREERTOS_SMP
+    portRESTORE_INTERRUPTS(state);
+#else
     portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
+#endif
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 
@@ -829,7 +850,7 @@ void esp_pm_impl_waiti(void)
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     int core_id = xPortGetCoreID();
     if (s_skipped_light_sleep[core_id]) {
-        cpu_hal_waiti();
+        esp_cpu_wait_for_intr();
         /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
          * is now taken. However since we are back to idle task, we can release
          * the lock so that vApplicationSleep can attempt to enter light sleep.
@@ -838,7 +859,7 @@ void esp_pm_impl_waiti(void)
     }
     s_skipped_light_sleep[core_id] = true;
 #else
-    cpu_hal_waiti();
+    esp_cpu_wait_for_intr();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 

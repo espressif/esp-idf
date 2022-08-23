@@ -1,0 +1,4 @@
+# This example is not supported with newlib nano:
+#   - First 64-bit integers are not supported in newlib nano
+#   - There is also issue with `PRIu8` format specifier with newlib nano (observed on ESP32-C2, see IDFCI-1375)
+CONFIG_NEWLIB_NANO_FORMAT=n

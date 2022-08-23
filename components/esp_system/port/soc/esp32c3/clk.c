@@ -11,16 +11,15 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 #include "esp_clk_internal.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/uart.h"
 #include "soc/system_reg.h"
-#include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
-#include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -69,13 +68,19 @@ static const char *TAG = "clk";
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     soc_reset_reason_t rst_reas;
     rst_reas = esp_rom_get_reset_reason(0);
-    if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
+    if (rst_reas == RESET_REASON_CHIP_POWER_ON
+#if SOC_EFUSE_HAS_EFUSE_RST_BUG
+        || rst_reas == RESET_REASON_CORE_EFUSE_CRC
+#endif
+        ) {
         cfg.cali_ocode = 1;
     }
     rtc_init(cfg);
 
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
 
+    bool rc_fast_d256_is_enabled = rtc_clk_8md256_enabled();
+    rtc_clk_8m_enable(true, rc_fast_d256_is_enabled);
     rtc_clk_fast_src_set(SOC_RTC_FAST_CLK_SRC_RC_FAST);
 #endif
 
@@ -130,7 +135,7 @@ static const char *TAG = "clk";
     }
 
     // Re calculate the ccount to make time calculation correct.
-    cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * new_freq_mhz / old_freq_mhz );
+    esp_cpu_set_cycle_count( (uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz );
 }
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
@@ -241,7 +246,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
                              SYSTEM_CRYPTO_RSA_CLK_EN;
         wifi_bt_sdio_clk = SYSTEM_WIFI_CLK_WIFI_EN |
                            SYSTEM_WIFI_CLK_BT_EN_M |
-                           SYSTEM_WIFI_CLK_UNUSED_BIT5 |
+                           SYSTEM_WIFI_CLK_I2C_CLK_EN |
                            SYSTEM_WIFI_CLK_UNUSED_BIT12;
     }
 

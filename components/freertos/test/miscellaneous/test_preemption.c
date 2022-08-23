@@ -16,12 +16,20 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
 
 static volatile bool trigger;
 static volatile bool flag;
+
+#ifndef CONFIG_FREERTOS_SMP
+#define MAX_YIELD_COUNT 10000
+#else
+//TODO: IDF-5081
+#define MAX_YIELD_COUNT 17000
+#endif // CONFIG_FREERTOS_SMP
+
 
 /* Task:
    - Waits for 'trigger' variable to be set
@@ -36,7 +44,7 @@ static void task_send_to_queue(void *param)
 
     while(!trigger) {}
 
-    ccount = cpu_hal_get_cycle_count();
+    ccount = esp_cpu_get_cycle_count();
     flag = true;
     xQueueSendToBack(queue, &ccount, 0);
     /* This is to ensure that higher priority task
@@ -65,12 +73,12 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
 
         uint32_t yield_ccount, now_ccount, delta;
         TEST_ASSERT( xQueueReceive(queue, &yield_ccount, 100 / portTICK_PERIOD_MS) );
-        now_ccount = cpu_hal_get_cycle_count();
+        now_ccount = esp_cpu_get_cycle_count();
         TEST_ASSERT( flag );
 
         delta = now_ccount - yield_ccount;
         printf("Yielding from lower priority task took %u cycles\n", delta);
-        TEST_ASSERT(delta < 10000);
+        TEST_ASSERT(delta < MAX_YIELD_COUNT);
 
         vTaskDelete(sender_task);
         vQueueDelete(queue);
@@ -97,17 +105,17 @@ TEST_CASE("Yield from lower priority task, other CPU", "[freertos]")
 
         vTaskDelay(2); /* make sure everything is set up */
         trigger = true;
-        trigger_ccount = cpu_hal_get_cycle_count();
+        trigger_ccount = esp_cpu_get_cycle_count();
 
         // yield_ccount is not useful in this test as it's the other core's CCOUNT
         // so we use trigger_ccount instead
         TEST_ASSERT( xQueueReceive(queue, &yield_ccount, 100 / portTICK_PERIOD_MS) );
-        now_ccount = cpu_hal_get_cycle_count();
+        now_ccount = esp_cpu_get_cycle_count();
         TEST_ASSERT( flag );
 
         delta = now_ccount - trigger_ccount;
         printf("Yielding from task on other core took %u cycles\n", delta);
-        TEST_ASSERT(delta < 10000);
+        TEST_ASSERT(delta < MAX_YIELD_COUNT);
 
         vQueueDelete(queue);
         vTaskDelete(sender_task);

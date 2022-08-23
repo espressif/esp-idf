@@ -15,8 +15,8 @@
 #pragma once
 
 #include <stdbool.h>
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_saradc.h"
+#include "hal/regi2c_ctrl.h"
+#include "soc/regi2c_saradc.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_struct.h"
@@ -29,25 +29,6 @@ extern "C" {
 #define TEMPERATURE_SENSOR_LL_ADC_FACTOR     (0.4386)
 #define TEMPERATURE_SENSOR_LL_DAC_FACTOR     (27.88)
 #define TEMPERATURE_SENSOR_LL_OFFSET_FACTOR  (20.52)
-
-#define TEMPERATURE_SENSOR_LL_RANGE_NUM (5)
-
-typedef struct {
-    int offset;
-    int reg_val;
-    int range_min;
-    int range_max;
-    int error_max;
-} temp_sensor_ll_attribute_t;
-
-static const temp_sensor_ll_attribute_t temp_sensor_ll_attributes[TEMPERATURE_SENSOR_LL_RANGE_NUM] = {
-    /*Offset, reg_val, min, max, error */
-    {   -2,     5,    50,  125,   3},
-    {   -1,     7,    20,  100,   2},
-    {    0,    15,   -10,   80,   1},
-    {    1,    11,   -30,   50,   2},
-    {    2,    10,   -40,   20,   3},
-};
 
 /**
  * @brief Enable the temperature sensor power.
@@ -79,16 +60,12 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
 }
 
 /**
- * @brief Set the hardware range, you can refer to the table ``temp_sensor_ll_attributes``
+ * @brief Set the hardware range, you can refer to the table ``temperature_sensor_attributes``
  *
- * @param tsens_dac ``reg_val`` in table ``temp_sensor_ll_attributes``
+ * @param tsens_dac ``reg_val`` in table ``temperature_sensor_attributes``
  */
 static inline void temperature_sensor_ll_set_range(uint32_t tsens_dac)
 {
-    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_TSENS_DAC, tsens_dac);
 }
 

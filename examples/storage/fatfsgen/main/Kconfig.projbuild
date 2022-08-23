@@ -7,6 +7,13 @@ menu "Example Configuration"
             If read-only mode is set, the generated fatfs image will be raw (without wear levelling support).
             Otherwise it will support wear levelling that enables read-write mounting.
 
+    config EXAMPLE_FATFS_WRITE_COUNT
+        int "Number of volumes"
+        default 1
+        range 1 600
+        help
+            Number of writes to the file (for testing purposes).
+
     config EXAMPLE_FATFS_DEFAULT_DATETIME
         bool "Default modification date and time for generated FATFS image"
         default n

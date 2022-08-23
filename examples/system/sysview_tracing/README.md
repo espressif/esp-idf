@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
 # Example: Application Level Tracing - SystemView Tracing (sysview_tracing)
 
 This test code shows how to perform system-wide behavioral analysis of the program using [SEGGER SystemView tool](https://www.segger.com/products/development-tools/systemview/).
@@ -127,7 +127,7 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181
     xtensa-esp32-elf-gdb -x gdbinit build/sysview_tracing.elf
     ```
 
-    **Note:** Replace `xtensa-esp32-elf-gdb` with `xtensa-esp32s2-elf-gdb` if running the example on ESP32-S2.
+    **Note:** Replace `xtensa-esp32-elf-gdb` with the related gdb tool (e.g. `xtensa-esp32s2-elf-gdb`, `xtensa-esp32s3-elf-gdb` or `riscv32-esp-elf-gdb`) if running the example on different chip.
 
 7.  When program prints the last message, interrupt its execution (e.g. by pressing `CTRL+C`) and type the following command in GDB console to stop tracing:
 

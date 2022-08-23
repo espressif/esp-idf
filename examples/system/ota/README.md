@@ -86,12 +86,14 @@ cp ca_cert.pem /path/to/ota/example/server_certs/
 
 ### Internal workflow of the OTA Example
 
-After booting, the firmware prints "Starting OTA example" to the console and:
+After booting, the firmware:
 
-1. Connects via Ethernet or to the AP using the provided SSID and password (Wi-Fi case)
-2. Connects to the HTTPS server and downloads the new image
-3. Writes the image to flash, and instructs the bootloader to boot from this image after the next reset
-4. Reboots
+1. prints "OTA example app_main start" to the console
+2. Connects via Ethernet or to the AP using the provided SSID and password (Wi-Fi case)
+3. prints "Starting OTA example task" to the console
+4. Connects to the HTTPS server and downloads the new image
+5. Writes the image to flash, and instructs the bootloader to boot from this image after the next reset
+6. Reboots
 
 If you want to rollback to the `factory` app after the upgrade (or to the first OTA partition in case the `factory` partition does not exist), run the command `idf.py erase_otadata`. This restores the `ota_data` partition to its initial state.
 

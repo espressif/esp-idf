@@ -3,10 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_CPU_CORES_NUM
-    bool
-    default y
-
 config SOC_ADC_SUPPORTED
     bool
     default y
@@ -24,14 +20,6 @@ config SOC_TWAI_SUPPORTED
     default y
 
 config SOC_BT_SUPPORTED
-    bool
-    default y
-
-config SOC_BLUEDROID_SUPPORTED
-    bool
-    default y
-
-config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y
 
@@ -59,6 +47,10 @@ config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
 
+config SOC_RTC_MEM_SUPPORTED
+    bool
+    default y
+
 config SOC_I2S_SUPPORTED
     bool
     default y
@@ -67,7 +59,11 @@ config SOC_RMT_SUPPORTED
     bool
     default y
 
-config SOC_SIGMADELTA_SUPPORTED
+config SOC_SDM_SUPPORTED
+    bool
+    default y
+
+config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
@@ -93,13 +89,17 @@ config SOC_DIG_SIGN_SUPPORTED
 
 config SOC_ECC_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_FLASH_ENC_SUPPORTED
     bool
     default y
 
 config SOC_SECURE_BOOT_SUPPORTED
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_32M
     bool
     default y
 
@@ -135,6 +135,10 @@ config SOC_ADC_MONITOR_SUPPORTED
     bool
     default y
 
+config SOC_ADC_DMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
     int
     default 1
@@ -155,9 +159,21 @@ config SOC_ADC_PATT_LEN_MAX
     int
     default 8
 
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
 config SOC_ADC_DIGI_MAX_BITWIDTH
     int
     default 12
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 4
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 4
 
 config SOC_ADC_DIGI_FILTER_NUM
     int
@@ -195,6 +211,18 @@ config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_CPU_INTR_NUM
+    int
+    default 32
+
+config SOC_CPU_HAS_FLEXIBLE_INTC
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 8
@@ -202,10 +230,6 @@ config SOC_CPU_BREAKPOINTS_NUM
 config SOC_CPU_WATCHPOINTS_NUM
     int
     default 8
-
-config SOC_CPU_HAS_FLEXIBLE_INTC
-    bool
-    default y
 
 config SOC_CPU_WATCHPOINT_SIZE
     hex
@@ -467,11 +491,11 @@ config SOC_SHA_SUPPORT_SHA256
     bool
     default y
 
-config SOC_SIGMADELTA_NUM
+config SOC_SDM_GROUPS
     int
     default 1
 
-config SOC_SIGMADELTA_CHANNEL_NUM
+config SOC_SDM_CHANNELS_PER_GROUP
     int
     default 4
 
@@ -559,10 +583,6 @@ config SOC_MEMSPI_SRC_FREQ_12M_SUPPORTED
     bool
     default y
 
-config SOC_SYSTIMER_SUPPORTED
-    bool
-    default y
-
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2
@@ -579,9 +599,9 @@ config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 20
 
-config SOC_SYSTIMER_FIXED_TICKS_US
-    int
-    default 16
+config SOC_SYSTIMER_FIXED_DIVIDER
+    bool
+    default y
 
 config SOC_SYSTIMER_INT_LEVEL
     bool
@@ -614,10 +634,6 @@ config SOC_TIMER_GROUP_SUPPORT_AHB
 config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
-
-config SOC_TOUCH_SENSOR_NUM
-    bool
-    default n
 
 config SOC_TWAI_BRP_MIN
     int
@@ -675,6 +691,10 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     bool
     default y
 
+config SOC_UART_SUPPORT_AHB_CLK
+    bool
+    default y
+
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default y
@@ -716,5 +736,13 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     default y
 
 config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y

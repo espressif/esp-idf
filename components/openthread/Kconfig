@@ -92,17 +92,17 @@ menu "OpenThread"
         help
             Select this option to enable border router features in OpenThread.
 
-    config OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC
-        bool "Build esp_openthread libraries from source"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Override the shipped libopenthread_br.a and libopenthread_port.a, for internal builds.
-
     config OPENTHREAD_NUM_MESSAGE_BUFFERS
         int "The number of openthread message buffers"
         depends on OPENTHREAD_ENABLED
         default 65
         range 50 100
+
+    config OPENTHREAD_DNS64_CLIENT
+        bool "Use dns64 client"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to acquire NAT64 address from dns servers.
 
 endmenu

@@ -50,7 +50,6 @@ TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
         .bits_per_pixel = 1,
-        .color_space = ESP_LCD_COLOR_SPACE_MONOCHROME,
         .reset_gpio_num = -1,
     };
     TEST_ESP_OK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));

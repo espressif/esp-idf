@@ -3,8 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_EFUSE_STRUCT_H_
-#define _SOC_EFUSE_STRUCT_H_
+#pragma once
+
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -164,7 +166,9 @@ typedef volatile struct efuse_dev_s {
     } rd_repeat_data3;
     union {
         struct {
-            uint32_t rpt4_reserved4:24;                          /*Reserved.*/
+            uint32_t disable_wafer_version_major: 1;
+            uint32_t disable_blk_version_major: 1;
+            uint32_t rpt4_reserved4:22;                          /*Reserved.*/
             uint32_t reserved24:     8;                          /*Reserved.*/
         };
         uint32_t val;
@@ -181,19 +185,34 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t spi_pad_conf_2:  18;                        /*Stores the second part of SPI_PAD_CONF.*/
-            uint32_t wafer_version:    3;
+            uint32_t wafer_version_minor_low:    3;
             uint32_t pkg_version:      3;
-            uint32_t sys_data_part0_0: 8;                        /*Stores the fist 14 bits of the zeroth part of system data.*/
+            uint32_t blk_version_minor:3;
+            uint32_t sys_data_part0_0: 5;
         };
         uint32_t val;
     } rd_mac_spi_sys_3;
     uint32_t rd_mac_spi_sys_4;                                   /*BLOCK1 data register $n.*/
-    uint32_t rd_mac_spi_sys_5;                                   /*BLOCK1 data register $n.*/
+    union {
+        struct {
+            uint32_t reserved1:              23;
+            uint32_t wafer_version_minor_high:    1;
+            uint32_t wafer_version_major:    2;
+            uint32_t reserved2:              6;
+        };
+        uint32_t val;
+    } rd_mac_spi_sys_5;                                          /*BLOCK1 data register $n.*/
     uint32_t rd_sys_part1_data0;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data1;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data2;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data3;                                 /*Register $n of BLOCK2 (system).*/
-    uint32_t rd_sys_part1_data4;                                 /*Register $n of BLOCK2 (system).*/
+    union {
+        struct {
+            uint32_t blk_version_major :     2;
+            uint32_t reserved1:              30;
+        };
+        uint32_t val;
+    } rd_sys_part1_data4;                                        /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data5;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data6;                                 /*Register $n of BLOCK2 (system).*/
     uint32_t rd_sys_part1_data7;                                 /*Register $n of BLOCK2 (system).*/
@@ -352,30 +371,30 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t mac_spi_8m_err_num: 3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t mac_spi_8m_fail:    1;                      /*0: Means no failure and that the data of MAC_SPI_8M is reliable 1: Means that programming user data failed and the number of error bytes is over 6.*/
+            uint32_t reserved3:          1;                      /*Reserved.*/
             uint32_t sys_part1_num:      3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t sys_part1_fail:     1;                      /*0: Means no failure and that the data of system part1 is reliable 1: Means that programming user data failed and the number of error bytes is over 6.*/
+            uint32_t mac_spi_8m_fail:    1;                      /*0: Means no failure and that the data of MAC_SPI_8M is reliable 1: Means that programming MAC_SPI_8M failed and the number of error bytes is over 6.*/
             uint32_t usr_data_err_num:   3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t usr_data_fail:      1;                      /*0: Means no failure and that the user data is reliable 1: Means that programming user data failed and the number of error bytes is over 6.*/
+            uint32_t sys_part1_fail:     1;                      /*0: Means no failure and that the data of system part1 is reliable 1: Means that programming the data of system part1 failed and the number of error bytes is over 6.*/
             uint32_t key0_err_num:       3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t key0_fail:          1;                      /*0: Means no failure and that the data of key$n is reliable 1: Means that programming key$n failed and the number of error bytes is over 6.*/
+            uint32_t usr_data_fail:      1;                      /*0: Means no failure and that the data of user data is reliable 1: Means that programming user data failed and the number of error bytes is over 6.*/
             uint32_t key1_err_num:       3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t key1_fail:          1;                      /*0: Means no failure and that the data of key$n is reliable 1: Means that programming key$n failed and the number of error bytes is over 6.*/
+            uint32_t key0_fail:          1;                      /*0: Means no failure and that the data of key0 is reliable 1: Means that programming key0 failed and the number of error bytes is over 6.*/
             uint32_t key2_err_num:       3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t key2_fail:          1;                      /*0: Means no failure and that the data of key$n is reliable 1: Means that programming key$n failed and the number of error bytes is over 6.*/
+            uint32_t key1_fail:          1;                      /*0: Means no failure and that the data of key1 is reliable 1: Means that programming key1 failed and the number of error bytes is over 6.*/
             uint32_t key3_err_num:       3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t key3_fail:          1;                      /*0: Means no failure and that the data of key$n is reliable 1: Means that programming key$n failed and the number of error bytes is over 6.*/
+            uint32_t key2_fail:          1;                      /*0: Means no failure and that the data of key2 is reliable 1: Means that programming key2 failed and the number of error bytes is over 6.*/
             uint32_t key4_err_num:       3;                      /*The value of this signal means the number of error bytes.*/
-            uint32_t key4_fail:          1;                      /*0: Means no failure and that the data of key$n is reliable 1: Means that programming key$n failed and the number of error bytes is over 6.*/
+            uint32_t key3_fail:          1;                      /*0: Means no failure and that the data of key3 is reliable 1: Means that programming key3 failed and the number of error bytes is over 6.*/
         };
         uint32_t val;
     } rd_rs_err0;
     union {
         struct {
             uint32_t key5_err_num:      3;                       /*The value of this signal means the number of error bytes.*/
-            uint32_t key5_fail:         1;                       /*0: Means no failure and that the data of KEY5 is reliable 1: Means that programming user data failed and the number of error bytes is over 6.*/
+            uint32_t key4_fail:         1;                       /*0: Means no failure and that the data of KEY4 is reliable 1: Means that programming KEY4 failed and the number of error bytes is over 6.*/
             uint32_t sys_part2_err_num: 3;                       /*The value of this signal means the number of error bytes.*/
-            uint32_t sys_part2_fail:    1;                       /*0: Means no failure and that the data of system part2 is reliable 1: Means that programming user data failed and the number of error bytes is over 6.*/
+            uint32_t key5_fail:         1;                       /*0: Means no failure and that the data of KEY5 is reliable 1: Means that programming KEY5 failed and the number of error bytes is over 6.*/
             uint32_t reserved8:        24;                       /*Reserved.*/
         };
         uint32_t val;
@@ -498,5 +517,3 @@ extern efuse_dev_t EFUSE;
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /* _SOC_EFUSE_STRUCT_H_ */

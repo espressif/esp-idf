@@ -8,8 +8,10 @@ idf_component_register(SRCS "esp_spiffs.c"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "." "spiffs/src"
                     REQUIRES spi_flash
-                    PRIV_REQUIRES bootloader_support esptool_py)
+                    PRIV_REQUIRES bootloader_support esptool_py vfs)
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

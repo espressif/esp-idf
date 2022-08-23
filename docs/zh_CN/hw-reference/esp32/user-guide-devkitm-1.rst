@@ -123,7 +123,7 @@ ESP32-DevKitM-1 上电前，请首先确认开发板完好无损。
 
 .. attention::
 
-  ESP32-DevKitM-1 搭载的模组为单核 MCU 模组，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
+  对于2021年12月2日之前生产的ESP32-DevKitM-1， 其搭载的模组为单核 MCU 模组。请查看 `PCN-2021-021 <https://www.espressif.com/sites/default/files/pcn_downloads/PCN-2021-021%20ESP32-U4WDH%20%E5%8D%87%E7%BA%A7%E4%B8%BA%E5%8F%8C%E6%A0%B8%E5%A4%84%E7%90%86%E5%99%A8%E4%BA%A7%E5%93%81.pdf>`_ 以确定开发板上搭载的模组是否为单核模组。对于搭载单核模组的开发板，烧录应用程序前，需要在 :ref:`menuconfig <get-started-configure>` 中使能单核模式 (:ref:`CONFIG_FREERTOS_UNICORE`)。
 
 硬件参考
 ===========
@@ -168,7 +168,7 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
       
    * - 编号
      - 名称 
-     - 类型
+     - 类型 [1]_
      - 功能     
    * - 1
      - GND 
@@ -237,7 +237,7 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
    * - 17
      - IO12 
      - I/O 
-     - GPIO12, ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI, HSPIQ, HS2_DATA2, SD_DATA2, EMAC_TXD3       
+     - GPIO12, ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI [2]_, HSPIQ, HS2_DATA2, SD_DATA2, EMAC_TXD3       
    * - 18
      - IO13 
      - I/O 
@@ -245,15 +245,15 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
    * - 19
      - IO15 
      - I/O 
-     - GPIO15, ADC2_CH3, TOUCH3, RTC_GPIO13, MTDO, HSPICS0, HS2_CMD, SD_CMD, EMAC_RXD3      
+     - GPIO15, ADC2_CH3, TOUCH3, RTC_GPIO13, MTDO [2]_, HSPICS0, HS2_CMD, SD_CMD, EMAC_RXD3      
    * - 20
      - IO2 
      - I/O 
-     - GPIO2, ADC2_CH2, TOUCH2, RTC_GPIO12, HSPIWP, HS2_DATA0, SD_DATA0      
+     - GPIO2 [2]_, ADC2_CH2, TOUCH2, RTC_GPIO12, HSPIWP, HS2_DATA0, SD_DATA0      
    * - 21
      - IO0 
      - I/O 
-     - GPIO0, ADC2_CH1, TOUCH1, RTC_GPIO11, CLK_OUT1, EMAC_TX_CLK      
+     - GPIO0 [2]_, ADC2_CH1, TOUCH1, RTC_GPIO11, CLK_OUT1, EMAC_TX_CLK      
    * - 22
      - IO4 
      - I/O 
@@ -269,7 +269,7 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
    * - 25
      - IO5 
      - I/O 
-     - GPIO5, HS1_DATA6, VSPICS0, EMAC_RX_CLK      
+     - GPIO5 [2]_, HS1_DATA6, VSPICS0, EMAC_RX_CLK      
    * - 26
      - IO18 
      - I/O 
@@ -297,8 +297,23 @@ ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
    * - 32
      - RXD0 
      - I/O 
-     - GPIO3, U0RXD, CLK_OUT2     
+     - GPIO3, U0RXD, CLK_OUT2
 
+.. [1] P：电源；I：输入；O：输出。
+.. [2] MTDI、GPIO0、GPIO2、MTDO 和 GPIO5 为 Strapping 管脚。在芯片上电和系统复位过程中，Strapping 管脚根据管脚的二进制电压值控制芯片功能。Strapping 管脚的具体描述和应用，请参考 `《ESP32 技术规格书》`_ > 章节 Strapping 管脚。
+
+管脚布局
+^^^^^^^^
+
+ESP32-DevKitM-1 的主要组件和连接方式如下图所示。
+
+.. figure:: ../../../_static/ESP32_DevKitM-1_pinlayout.png
+    :align: center
+    :scale: 43%
+    :alt: ESP32-DevKitM-1 （点击放大）
+    :figclass: align-center
+
+    ESP32-DevKitM-1 （点击放大）
 
 硬件修订历史
 ===============

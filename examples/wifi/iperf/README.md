@@ -1,18 +1,21 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Iperf Example
 
 ## Note about iperf version
 The iperf example doesn't support all features in standard iperf. It's compitable with iperf version 2.x.
 
 ## Note about 80MHz flash frequency
-The iperf can get better throughput if the SPI flash frequency is set to 80MHz, but the system may crash in 80MHz mode for ESP-WROVER-KIT. 
-Removing R140~R145 from the board can fix this issue. Currently the default SPI frequency is set to 40MHz, if you want to change the SPI flash 
+The iperf can get better throughput if the SPI flash frequency is set to 80MHz, but the system may crash in 80MHz mode for ESP-WROVER-KIT.
+Removing R140~R145 from the board can fix this issue. Currently the default SPI frequency is set to 40MHz, if you want to change the SPI flash
 frequency to 80MHz, please make sure R140~R145 are removed from ESP-WROVER-KIT or use ESP32 DevKitC.
 
 ## Introduction
-This example implements the protocol used by the common performance measurement tool [iPerf](https://iperf.fr/). 
+This example implements the protocol used by the common performance measurement tool [iPerf](https://iperf.fr/).
 Performance can be measured between two ESP32s running this example, or between a single ESP32 and a computer running the iPerf tool
 
-Demo steps to test station TCP Tx performance: 
+Demo steps to test station TCP Tx performance:
 
 1. Build the iperf example with sdkconfig.defaults, which contains performance test specific configurations
 

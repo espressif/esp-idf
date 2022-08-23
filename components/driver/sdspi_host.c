@@ -43,7 +43,7 @@
 typedef struct {
     spi_host_device_t   host_id; //!< SPI host id.
     spi_device_handle_t spi_handle; //!< SPI device handle, used for transactions
-    uint8_t gpio_cs;            //!< CS GPIO
+    uint8_t gpio_cs;            //!< CS GPIO, or GPIO_UNUSED
     uint8_t gpio_cd;            //!< Card detect GPIO, or GPIO_UNUSED
     uint8_t gpio_wp;            //!< Write protect GPIO, or GPIO_UNUSED
     uint8_t gpio_int;            //!< Write protect GPIO, or GPIO_UNUSED
@@ -120,13 +120,17 @@ static slot_info_t* remove_slot_info(sdspi_dev_handle_t handle)
 /// Set CS high for given slot
 static void cs_high(slot_info_t *slot)
 {
-    gpio_set_level(slot->gpio_cs, 1);
+    if (slot->gpio_cs != GPIO_UNUSED) {
+        gpio_set_level(slot->gpio_cs, 1);
+    }
 }
 
 /// Set CS low for given slot
 static void cs_low(slot_info_t *slot)
 {
-    gpio_set_level(slot->gpio_cs, 0);
+    if (slot->gpio_cs != GPIO_UNUSED) {
+        gpio_set_level(slot->gpio_cs, 0);
+    }
 }
 
 /// Return true if WP pin is configured and is low
@@ -248,7 +252,9 @@ static esp_err_t deinit_slot(slot_info_t *slot)
         .mode = GPIO_MODE_INPUT,
         .intr_type = GPIO_INTR_DISABLE,
     };
-    gpio_config(&config);
+    if (pin_bit_mask != 0) {
+        gpio_config(&config);
+    }
 
     if (slot->semphr_int) {
         vSemaphoreDelete(slot->semphr_int);
@@ -289,7 +295,7 @@ esp_err_t sdspi_host_set_card_clk(sdspi_dev_handle_t handle, uint32_t freq_khz)
     if (slot == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_LOGD(TAG, "Setting card clock to %d kHz", freq_khz);
+    ESP_LOGD(TAG, "Setting card clock to %"PRIu32" kHz", freq_khz);
     return configure_spi_dev(slot, freq_khz * 1000);
 }
 
@@ -332,13 +338,20 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
         .mode = GPIO_MODE_OUTPUT,
         .pin_bit_mask = 1ULL << slot_config->gpio_cs,
     };
-
-    ret = gpio_config(&io_conf);
-    if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "gpio_config (CS) failed with rc=0x%x", ret);
-        goto cleanup;
+    if (slot_config->gpio_cs != SDSPI_SLOT_NO_CS) {
+        slot->gpio_cs = slot_config->gpio_cs;
+    } else {
+        slot->gpio_cs = GPIO_UNUSED;
     }
-    cs_high(slot);
+
+    if (slot->gpio_cs != GPIO_UNUSED) {
+        ret = gpio_config(&io_conf);
+        if (ret != ESP_OK) {
+            ESP_LOGD(TAG, "gpio_config (CS) failed with rc=0x%x", ret);
+            goto cleanup;
+        }
+        cs_high(slot);
+    }
 
     // Configure CD and WP pins
     io_conf = (gpio_config_t) {
@@ -434,7 +447,7 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
     uint32_t cmd_arg;
     memcpy(&cmd_arg, cmd->arguments, sizeof(cmd_arg));
     cmd_arg = __builtin_bswap32(cmd_arg);
-    ESP_LOGV(TAG, "%s: slot=%i, CMD%d, arg=0x%08x flags=0x%x, data=%p, data_size=%i crc=0x%02x",
+    ESP_LOGV(TAG, "%s: slot=%i, CMD%d, arg=0x%08"PRIx32" flags=0x%x, data=%p, data_size=%"PRIu32" crc=0x%02x",
              __func__, handle, cmd_index, cmd_arg, flags, data, data_size, cmd->crc7);
 
     spi_device_acquire_bus(slot->spi_handle, portMAX_DELAY);
@@ -482,7 +495,8 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
 {
     size_t cmd_size = SDSPI_CMD_R1_SIZE;
     if ((flags & SDSPI_CMD_FLAG_RSP_R1) ||
-        (flags & SDSPI_CMD_FLAG_NORSP)) {
+        (flags & SDSPI_CMD_FLAG_NORSP) ||
+        (flags & SDSPI_CMD_FLAG_RSP_R1B )) {
         cmd_size = SDSPI_CMD_R1_SIZE;
     } else if (flags & SDSPI_CMD_FLAG_RSP_R2) {
         cmd_size = SDSPI_CMD_R2_SIZE;
@@ -521,6 +535,13 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
     // now shift the response to match the offset of sdspi_hw_cmd_t
     ret = shift_cmd_response(cmd, cmd_size);
     if (ret != ESP_OK) return ESP_ERR_TIMEOUT;
+
+    if (flags & SDSPI_CMD_FLAG_RSP_R1B) {
+        ret = poll_busy(slot, cmd->timeout_ms, no_use_polling);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+    }
 
     return ESP_OK;
 }
@@ -777,7 +798,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
         // card to process it
         sdspi_hw_cmd_t stop_cmd;
         make_hw_cmd(MMC_STOP_TRANSMISSION, 0, cmd->timeout_ms, &stop_cmd);
-        ret = start_command_default(slot, SDSPI_CMD_FLAG_RSP_R1, &stop_cmd);
+        ret = start_command_default(slot, SDSPI_CMD_FLAG_RSP_R1B, &stop_cmd);
         if (ret != ESP_OK) {
             return ret;
         }
@@ -948,54 +969,4 @@ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_t
         return ESP_ERR_TIMEOUT;
     }
     return ESP_OK;
-}
-
-//Deprecated, make use of new sdspi_host_init_device
-esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
-{
-    esp_err_t ret = ESP_OK;
-    if (get_slot_info(slot) != NULL) {
-        ESP_LOGE(TAG, "Bus already initialized. Call `sdspi_host_init_dev` to attach an sdspi device to an initialized bus.");
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    //Assume the slot number equals to the host id.
-    spi_host_device_t host_id = slot;
-    // Initialize SPI bus
-    spi_bus_config_t buscfg = {
-        .miso_io_num = slot_config->gpio_miso,
-        .mosi_io_num = slot_config->gpio_mosi,
-        .sclk_io_num = slot_config->gpio_sck,
-        .quadwp_io_num = GPIO_NUM_NC,
-        .quadhd_io_num = GPIO_NUM_NC
-    };
-    ret = spi_bus_initialize(host_id, &buscfg,
-            slot_config->dma_channel);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "spi_bus_initialize failed with rc=0x%x", ret);
-        return ret;
-    }
-
-    sdspi_dev_handle_t sdspi_handle;
-    sdspi_device_config_t dev_config = {
-        .host_id = host_id,
-        .gpio_cs = slot_config->gpio_cs,
-        .gpio_cd = slot_config->gpio_cd,
-        .gpio_wp = slot_config->gpio_wp,
-        .gpio_int = slot_config->gpio_int,
-    };
-    ret =  sdspi_host_init_device(&dev_config, &sdspi_handle);
-    if (ret != ESP_OK) {
-        goto cleanup;
-    }
-    if (sdspi_handle != (int)host_id) {
-        ESP_LOGE(TAG, "The deprecated sdspi_host_init_slot should be called before all other devices on the specified bus.");
-        sdspi_host_remove_device(sdspi_handle);
-        ret = ESP_ERR_INVALID_STATE;
-        goto cleanup;
-    }
-    return ESP_OK;
-cleanup:
-    spi_bus_free(slot);
-    return ret;
 }

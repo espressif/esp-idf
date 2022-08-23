@@ -27,7 +27,6 @@ class FATFS:
                  fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
                  sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
                  sector_size: int = FATDefaults.SECTOR_SIZE,
-                 sectors_per_fat: int = FATDefaults.SECTORS_PER_FAT,
                  hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
                  long_names_enabled: bool = False,
                  use_default_datetime: bool = True,
@@ -39,7 +38,6 @@ class FATFS:
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
                  explicit_fat_type: int = None,
                  media_type: int = FATDefaults.MEDIA_TYPE) -> None:
-
         # root directory bytes should be aligned by sector size
         assert (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
         # number of bytes in the root dir must be even multiple of BPB_BytsPerSec
@@ -55,7 +53,6 @@ class FATFS:
                                             file_sys_type=file_sys_type,
                                             num_heads=num_heads,
                                             fat_tables_cnt=fat_tables_cnt,
-                                            sectors_per_fat=sectors_per_fat,
                                             sectors_per_cluster=sectors_per_cluster,
                                             media_type=media_type,
                                             hidden_sectors=hidden_sectors,

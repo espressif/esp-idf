@@ -14,16 +14,15 @@
 #include "esp_task.h"
 
 #include "nimble/nimble_npl.h"
-#include "syscfg/syscfg.h"
-#include "esp_nimble_cfg.h"
-#include "nimble/ble.h"
+#include "esp_bt_cfg.h"
+
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
+#include "driver/uart.h"
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#if (SOC_ESP_NIMBLE_CONTROLLER)
-#define NIMBLE_LL_STACK_SIZE CONFIG_BT_NIMBLE_CONTROLLER_TASK_STACK_SIZE
 #endif
 
 /**
@@ -97,6 +96,11 @@ typedef enum {
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
+typedef struct {
+    uint8_t type;
+    uint8_t val[6];
+} esp_ble_addr_t;
+
 /**
  * @brief  Set BLE TX power
  *         Connection Tx power should only be set after connection created.
@@ -114,8 +118,7 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
  */
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
 
-
-#define CONFIG_VERSION  0x02109228
+#define CONFIG_VERSION  0x20220409
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -124,7 +127,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *        some options or parameters of some functions enabled by config mask.
  */
 
-struct esp_bt_controller_config_t{
+typedef struct {
     uint32_t config_version;
     uint16_t ble_ll_resolv_list_size;
     uint16_t ble_hci_evt_hi_buf_count;
@@ -166,86 +169,67 @@ struct esp_bt_controller_config_t{
     uint8_t ble_hci_uart_uart_parity;
     uint8_t enable_tx_cca;
     uint8_t cca_rssi_thresh;
+    uint8_t cca_drop_mode;
+    int8_t  cca_low_tx_pwr;
     uint8_t sleep_en;
     uint8_t coex_phy_coded_tx_rx_time_limit;
+    uint8_t dis_scan_backoff;
+    uint8_t scan_classify_filter_enable;
     uint32_t config_magic;
-};
+} esp_bt_controller_config_t;
 
-typedef struct esp_bt_controller_config_t esp_bt_controller_config_t;
-
-#ifdef CONFIG_BT_NIMBLE_RUN_BQB_TEST
-#define RUN_BQB_TEST CONFIG_BT_NIMBLE_RUN_BQB_TEST
-#else
-#define RUN_BQB_TEST 0
-#endif
-
-#ifdef CONFIG_BT_NIMBLE_RUN_QA_TEST
-#define RUN_QA_TEST CONFIG_BT_NIMBLE_RUN_QA_TEST
-#else
-#define RUN_QA_TEST 0
-#endif
-
-#ifdef CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
-#define HCI_UART_EN CONFIG_BT_NIMBLE_CONTROL_USE_UART_HCI
-#else
-#define HCI_UART_EN 0 // hci ram mode
-#endif
-
-#ifdef CONFIG_BT_NIMBLE_SLEEP_ENABLE
-#define NIMBLE_SLEEP_ENABLE CONFIG_BT_NIMBLE_SLEEP_ENABLE
-#else
-#define NIMBLE_SLEEP_ENABLE  0
-#endif
 
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                                           \
     .config_version = CONFIG_VERSION,                                                   \
-    .ble_ll_resolv_list_size = MYNEWT_VAL(BLE_LL_RESOLV_LIST_SIZE),                     \
-    .ble_hci_evt_hi_buf_count = MYNEWT_VAL(BLE_HCI_EVT_HI_BUF_COUNT),                   \
-    .ble_hci_evt_lo_buf_count = MYNEWT_VAL(BLE_HCI_EVT_LO_BUF_COUNT),                   \
-    .ble_ll_sync_list_cnt = BLE_LL_SYNC_LIST_CNT_N,                                     \
-    .ble_ll_sync_cnt = BLE_LL_SYNC_CNT_N,                                               \
-    .ble_ll_rsp_dup_list_count = CONFIG_BT_NIMBLE_LL_DUP_SCAN_LIST_COUNT,               \
-    .ble_ll_adv_dup_list_count = CONFIG_BT_NIMBLE_LL_DUP_SCAN_LIST_COUNT,               \
+    .ble_ll_resolv_list_size = CONFIG_BT_LE_LL_RESOLV_LIST_SIZE,                        \
+    .ble_hci_evt_hi_buf_count = DEFAULT_BT_LE_HCI_EVT_HI_BUF_COUNT,                     \
+    .ble_hci_evt_lo_buf_count = DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT,                     \
+    .ble_ll_sync_list_cnt = DEFAULT_BT_LE_MAX_PERIODIC_ADVERTISER_LIST,                 \
+    .ble_ll_sync_cnt = DEFAULT_BT_LE_MAX_PERIODIC_SYNCS,                                \
+    .ble_ll_rsp_dup_list_count = CONFIG_BT_LE_LL_DUP_SCAN_LIST_COUNT,                   \
+    .ble_ll_adv_dup_list_count = CONFIG_BT_LE_LL_DUP_SCAN_LIST_COUNT,                   \
     .ble_ll_tx_pwr_dbm = BLE_LL_TX_PWR_DBM_N,                                           \
     .rtc_freq = RTC_FREQ_N,                                                             \
-    .ble_ll_sca = MYNEWT_VAL(BLE_LL_SCA),                                               \
+    .ble_ll_sca = CONFIG_BT_LE_LL_SCA,                                                  \
     .ble_ll_scan_phy_number = BLE_LL_SCAN_PHY_NUMBER_N,                                 \
     .ble_ll_conn_def_auth_pyld_tmo = BLE_LL_CONN_DEF_AUTH_PYLD_TMO_N,                   \
     .ble_ll_jitter_usecs = BLE_LL_JITTER_USECS_N,                                       \
     .ble_ll_sched_max_adv_pdu_usecs = BLE_LL_SCHED_MAX_ADV_PDU_USECS_N,                 \
     .ble_ll_sched_direct_adv_max_usecs = BLE_LL_SCHED_DIRECT_ADV_MAX_USECS_N,           \
     .ble_ll_sched_adv_max_usecs = BLE_LL_SCHED_ADV_MAX_USECS_N,                         \
-    .ble_scan_rsp_data_max_len = BLE_SCAN_RSP_DATA_MAX_LEN_N,                           \
+    .ble_scan_rsp_data_max_len = DEFAULT_BT_LE_SCAN_RSP_DATA_MAX_LEN_N,                 \
     .ble_ll_cfg_num_hci_cmd_pkts = BLE_LL_CFG_NUM_HCI_CMD_PKTS_N,                       \
     .ble_ll_ctrl_proc_timeout_ms = BLE_LL_CTRL_PROC_TIMEOUT_MS_N,                       \
-    .nimble_max_connections = MYNEWT_VAL(BLE_MAX_CONNECTIONS),                          \
-    .ble_whitelist_size = MYNEWT_VAL(BLE_LL_WHITELIST_SIZE),                            \
-    .ble_acl_buf_size = MYNEWT_VAL(BLE_ACL_BUF_SIZE),                                   \
-    .ble_acl_buf_count = MYNEWT_VAL(BLE_ACL_BUF_COUNT),                                 \
-    .ble_hci_evt_buf_size = MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE),                           \
-    .ble_multi_adv_instances = MYNEWT_VAL(BLE_MULTI_ADV_INSTANCES),                     \
-    .ble_ext_adv_max_size = MYNEWT_VAL(BLE_EXT_ADV_MAX_SIZE),                           \
+    .nimble_max_connections = DEFAULT_BT_LE_MAX_CONNECTIONS,                            \
+    .ble_whitelist_size = DEFAULT_BT_NIMBLE_WHITELIST_SIZE,                             \
+    .ble_acl_buf_size = DEFAULT_BT_LE_ACL_BUF_SIZE,                                     \
+    .ble_acl_buf_count = DEFAULT_BT_LE_ACL_BUF_COUNT,                                   \
+    .ble_hci_evt_buf_size = DEFAULT_BT_LE_HCI_EVT_BUF_SIZE,                             \
+    .ble_multi_adv_instances = DEFAULT_BT_LE_MAX_EXT_ADV_INSTANCES,                     \
+    .ble_ext_adv_max_size = DEFAULT_BT_LE_EXT_ADV_MAX_SIZE,                             \
     .controller_task_stack_size = NIMBLE_LL_STACK_SIZE,                                 \
     .controller_task_prio       = ESP_TASK_BT_CONTROLLER_PRIO,                          \
     .controller_run_cpu         = 0,                                                    \
     .enable_qa_test             = RUN_QA_TEST,                                          \
     .enable_bqb_test            = RUN_BQB_TEST,                                         \
     .enable_uart_hci            = HCI_UART_EN,                                          \
-    .ble_hci_uart_port          = MYNEWT_VAL(BLE_HCI_UART_PORT),                        \
-    .ble_hci_uart_baud          = MYNEWT_VAL(BLE_HCI_UART_BAUD),                        \
-    .ble_hci_uart_data_bits     = MYNEWT_VAL(BLE_HCI_UART_DATA_BITS),                   \
-    .ble_hci_uart_stop_bits     = MYNEWT_VAL(BLE_HCI_UART_STOP_BITS),                   \
-    .ble_hci_uart_flow_ctrl     = MYNEWT_VAL(BLE_HCI_UART_FLOW_CTRL),                   \
-    .ble_hci_uart_uart_parity   = MYNEWT_VAL(BLE_HCI_UART_PARITY),                      \
-    .enable_tx_cca              = MYNEWT_VAL(BLE_TX_CCA_ENABLED),                       \
-    .cca_rssi_thresh            = 256 - MYNEWT_VAL(BLE_CCA_RSSI_THRESH),                \
+    .ble_hci_uart_port          = DEFAULT_BT_LE_HCI_UART_PORT,                          \
+    .ble_hci_uart_baud          = DEFAULT_BT_LE_HCI_UART_BAUD,                          \
+    .ble_hci_uart_data_bits     = DEFAULT_BT_LE_HCI_UART_DATA_BITS,                     \
+    .ble_hci_uart_stop_bits     = DEFAULT_BT_LE_HCI_UART_STOP_BITS,                     \
+    .ble_hci_uart_flow_ctrl     = DEFAULT_BT_LE_HCI_UART_FLOW_CTRL,                     \
+    .ble_hci_uart_uart_parity   = DEFAULT_BT_LE_HCI_UART_PARITY,                        \
+    .enable_tx_cca              = DEFAULT_BT_LE_TX_CCA_ENABLED,                         \
+    .cca_rssi_thresh            = 256 - DEFAULT_BT_LE_CCA_RSSI_THRESH,                  \
+    .cca_drop_mode              = 0,                                                    \
+    .cca_low_tx_pwr             = 0,                                                    \
     .sleep_en                   = NIMBLE_SLEEP_ENABLE,                                  \
-    .coex_phy_coded_tx_rx_time_limit = CONFIG_BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_EFF,  \
+    .coex_phy_coded_tx_rx_time_limit = DEFAULT_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF,     \
+    .scan_classify_filter_enable = false,                                               \
     .config_magic = CONFIG_MAGIC,                                                       \
 };
 
-
-esp_err_t esp_bt_controller_init(struct esp_bt_controller_config_t *cfg);
+esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
 
 /**
  * @brief  Get BT controller is initialised/de-initialised/enabled/disabled
@@ -345,7 +329,7 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
 esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
 
 /* Returns random static address or -1 if not present */
-extern int esp_ble_hw_get_static_addr(ble_addr_t *addr);
+extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
 
 #ifdef __cplusplus
 }

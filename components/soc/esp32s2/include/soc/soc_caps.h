@@ -43,7 +43,6 @@
 #define SOC_DAC_SUPPORTED               1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
-#define SOC_CPU_CORES_NUM               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_RISCV_COPROC_SUPPORTED      1
@@ -53,16 +52,18 @@
 #define SOC_ULP_SUPPORTED               1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
-#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
-#define SOC_TEMP_SENSOR_SUPPORTED           1
-#define SOC_CACHE_SUPPORT_WRAP              1
+#define SOC_EFUSE_KEY_PURPOSE_FIELD     1
+#define SOC_TEMP_SENSOR_SUPPORTED       1
+#define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
-#define SOC_PSRAM_DMA_CAPABLE               1
-#define SOC_XT_WDT_SUPPORTED                1
+#define SOC_RTC_MEM_SUPPORTED           1
+#define SOC_PSRAM_DMA_CAPABLE           1
+#define SOC_XT_WDT_SUPPORTED            1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
-#define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_SDM_SUPPORTED               1
+#define SOC_SYSTIMER_SUPPORTED          1
 #define SOC_SUPPORT_COEXISTENCE         0
 #define SOC_AES_SUPPORTED               1
 #define SOC_MPI_SUPPORTED               1
@@ -71,7 +72,11 @@
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       1
+#define SOC_MEMPROT_SUPPORTED           1
+#define SOC_TOUCH_SENSOR_SUPPORTED      1
 
+/*-------------------------- XTAL CAPS ---------------------------------------*/
+#define SOC_XTAL_SUPPORT_40M            1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
@@ -80,6 +85,7 @@
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_DMA_SUPPORTED                   1
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
@@ -88,7 +94,10 @@
 /*!< Digital */
 #define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
 #define SOC_ADC_PATT_LEN_MAX                    (32) /*!< Two pattern table, each contains 16 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+#define SOC_ADC_DIGI_RESULT_BYTES               (2)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (2)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
@@ -108,9 +117,11 @@
 #define SOC_CP_DMA_MAX_BUFFER_SIZE (4095) /*!< Maximum size of the buffer that can be attached to descriptor */
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
+#define SOC_CPU_CORES_NUM               (1U)
+#define SOC_CPU_INTR_NUM                32
+
 #define SOC_CPU_BREAKPOINTS_NUM         2
 #define SOC_CPU_WATCHPOINTS_NUM         2
-
 #define SOC_CPU_WATCHPOINT_SIZE         64 // bytes
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
@@ -228,9 +239,9 @@
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM            1U
-#define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
+/*-------------------------- Sigma Delta Modulator CAPS -----------------*/
+#define SOC_SDM_GROUPS             1U
+#define SOC_SDM_CHANNELS_PER_GROUP 8
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_HD_BOTH_INOUT_SUPPORTED     1   //Support enabling MOSI and MISO phases together under Halfduplex mode
@@ -265,13 +276,12 @@
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
-#define SOC_SYSTIMER_COUNTER_NUM  (1)  // Number of counter units
-#define SOC_SYSTIMER_ALARM_NUM    (3)  // Number of alarm units
-#define SOC_SYSTIMER_BIT_WIDTH_LO (32) // Bit width of systimer low part
-#define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
+#define SOC_SYSTIMER_COUNTER_NUM  1  // Number of counter units
+#define SOC_SYSTIMER_ALARM_NUM    3  // Number of alarm units
+#define SOC_SYSTIMER_BIT_WIDTH_LO 32 // Bit width of systimer low part
+#define SOC_SYSTIMER_BIT_WIDTH_HI 32 // Bit width of systimer high part
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_SYSTIMER_SUPPORTED             1
 #define SOC_TIMER_GROUPS                  (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)
@@ -282,7 +292,7 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_VERSION_2                 (1)     /*!<Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*!<15 Touch channels */
-#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /* Sopport touch proximity channel number. */
+#define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /*!<Support touch proximity channel number. */
 
 #define SOC_TOUCH_PAD_THRESHOLD_MAX         (0x1FFFFF)  /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 #define SOC_TOUCH_PAD_MEASURE_WAIT_MAX      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
@@ -296,6 +306,7 @@
 // ESP32-S2 has 2 UART.
 #define SOC_UART_NUM                (2)
 #define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
+#define SOC_UART_SUPPORT_APB_CLK    (1)         /*!< Support APB as the clock source */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
@@ -349,8 +360,13 @@
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS 1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
+
+/*-------------------------- MEMPROT CAPS ------------------------------------*/
+#define SOC_MEMPROT_CPU_PREFETCH_PAD_SIZE   16
+#define SOC_MEMPROT_MEM_ALIGN_SIZE          4
 
 /* Has "crypto DMA", which is shared with SHA */
 #define SOC_AES_CRYPTO_DMA      (1)
@@ -390,5 +406,8 @@
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)    /*!< Support hardware TSF */
-#define SOC_WIFI_FTM_SUPPORT            (1)    /*!< FTM Support */
-#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP Support(GCMP128 and GCMP256) */
+#define SOC_WIFI_FTM_SUPPORT            (1)    /*!< Support FTM */
+#define SOC_WIFI_GCMP_SUPPORT           (0)    /*!< GCMP is not supported(GCMP128 and GCMP256) */
+#define SOC_WIFI_WAPI_SUPPORT           (1)    /*!< Support WAPI */
+#define SOC_WIFI_CSI_SUPPORT            (1)    /*!< Support CSI */
+#define SOC_WIFI_MESH_SUPPORT           (1)    /*!< Support WIFI MESH */

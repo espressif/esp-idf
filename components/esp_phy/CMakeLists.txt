@@ -31,7 +31,7 @@ endif()
 # [refactor-todo]: requires "driver" component for periph_ctrl header file
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES nvs_flash driver efuse esp_timer
+                    PRIV_REQUIRES nvs_flash driver efuse esp_timer esp_wifi
                     LDFRAGMENTS "${ldfragments}"
                     EMBED_FILES  ${embed_files}
                     )
@@ -112,3 +112,5 @@ if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
     esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
     esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

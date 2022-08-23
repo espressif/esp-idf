@@ -10,7 +10,7 @@
  * Unless required by applicable law or agreed to in writing, this
  * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
  * CONDITIONS OF ANY KIND, either express or implied.
-*/
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -28,7 +28,10 @@
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
+#include "esp_ot_cli_extension.h"
 #include "esp_ot_config.h"
+#include "esp_ot_wifi_cmd.h"
+#include "esp_vfs_dev.h"
 #include "esp_vfs_eventfd.h"
 #include "esp_wifi.h"
 #include "mdns.h"
@@ -51,8 +54,6 @@
 #include "openthread/logging.h"
 #include "openthread/tasklet.h"
 #include "openthread/thread_ftd.h"
-#include "esp_ot_wifi_cmd.h"
-#include "esp_ot_cli_extension.h"
 
 #define TAG "esp_ot_br"
 
@@ -100,7 +101,7 @@ static void create_config_network(otInstance *instance)
         return;
     }
 
-    uint16_t network_name_len = strnlen(CONFIG_OPENTHREAD_NETWORK_NAME, OT_NETWORK_NAME_MAX_SIZE + 1);
+    uint16_t network_name_len = strlen(CONFIG_OPENTHREAD_NETWORK_NAME);
 
     assert(network_name_len <= OT_NETWORK_NAME_MAX_SIZE);
 
@@ -166,7 +167,7 @@ static void ot_task_worker(void *aContext)
     };
 
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
-    esp_netif_t *openthread_netif = esp_netif_new(&cfg);
+    esp_netif_t       *openthread_netif = esp_netif_new(&cfg);
     assert(openthread_netif != NULL);
     // Initialize the OpenThread stack
 
@@ -182,9 +183,8 @@ static void ot_task_worker(void *aContext)
     ESP_ERROR_CHECK(esp_openthread_border_router_init());
     create_config_network(esp_openthread_get_instance());
     launch_openthread_network(esp_openthread_get_instance());
-#else
-    esp_cli_custom_command_init();
 #endif // CONFIG_OPENTHREAD_BR_AUTO_START
+    esp_cli_custom_command_init();
     esp_openthread_lock_release();
 
     // Run the main loop
@@ -212,6 +212,7 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
 #if CONFIG_OPENTHREAD_BR_AUTO_START
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));

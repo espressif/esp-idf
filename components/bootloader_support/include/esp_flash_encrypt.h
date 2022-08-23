@@ -9,7 +9,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #ifndef BOOTLOADER_BUILD
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #endif
 #include "hal/efuse_ll.h"
 #include "sdkconfig.h"
@@ -85,6 +85,49 @@ bool esp_flash_encryption_enabled(void);
  */
 esp_err_t esp_flash_encrypt_check_and_update(void);
 
+/** @brief Returns the Flash Encryption state and prints it
+ *
+ * @return True  - Flash Encryption is enabled
+ *         False - Flash Encryption is not enabled
+ */
+bool esp_flash_encrypt_state(void);
+
+/** @brief Checks if the first initialization was done
+ *
+ * If the first initialization was done then FLASH_CRYPT_CNT != 0
+ *
+ * @return true - the first initialization was done
+ *         false - the first initialization was NOT done
+ */
+bool esp_flash_encrypt_initialized_once(void);
+
+/** @brief The first initialization of Flash Encryption key and related eFuses
+ *
+ * @return ESP_OK if all operations succeeded
+ */
+esp_err_t esp_flash_encrypt_init(void);
+
+/** @brief Encrypts flash content
+ *
+ * @return ESP_OK if all operations succeeded
+ */
+esp_err_t esp_flash_encrypt_contents(void);
+
+/** @brief Activates Flash encryption on the chip
+ *
+ * It burns FLASH_CRYPT_CNT eFuse based on the CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE option.
+ *
+ * @return ESP_OK if all operations succeeded
+ */
+esp_err_t esp_flash_encrypt_enable(void);
+
+/** @brief Returns True if the write protection of FLASH_CRYPT_CNT is set
+ *
+ * @param print_error Print error if it is write protected
+ *
+ * @return true - if FLASH_CRYPT_CNT is write protected
+ */
+bool esp_flash_encrypt_is_write_protected(bool print_error);
 
 /** @brief Encrypt-in-place a block of flash sectors
  *

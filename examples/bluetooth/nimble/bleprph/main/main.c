@@ -20,7 +20,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 /* BLE */
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -31,16 +30,20 @@
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
-        0x02, 0x01, 0x06,
-	0x03, 0x03, 0xab, 0xcd,
-	0x03, 0x03, 0x18, 0x11,
-	0x11, 0X09, 'e', 's', 'p', '3', '2', 'h', '2', '-', 'B', 'L', 'E', '5', '0', '-', 'S', '\0',
+    0x02, 0x01, 0x06,
+    0x03, 0x03, 0xab, 0xcd,
+    0x03, 0x03, 0x18, 0x11,
+    0x11, 0X09, 'n', 'i', 'm', 'b', 'l', 'e', '-', 'b', 'l', 'e', 'p', 'r', 'p', 'h', '-', 'e',
 };
 #endif
 
 static const char *tag = "NimBLE_BLE_PRPH";
 static int bleprph_gap_event(struct ble_gap_event *event, void *arg);
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+static uint8_t own_addr_type = BLE_OWN_ADDR_RANDOM;
+#else
 static uint8_t own_addr_type;
+#endif
 
 void ble_store_config_init(void);
 
@@ -231,7 +234,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-	    ext_bleprph_advertise();
+            ext_bleprph_advertise();
 #else
             bleprph_advertise();
 #endif
@@ -245,7 +248,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
 
         /* Connection terminated; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
-	ext_bleprph_advertise();
+        ext_bleprph_advertise();
 #else
         bleprph_advertise();
 #endif
@@ -369,13 +372,40 @@ bleprph_on_reset(int reason)
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
 }
 
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+static void
+ble_app_set_addr(void)
+{
+    ble_addr_t addr;
+    int rc;
+
+    /* generate new non-resolvable private address */
+    rc = ble_hs_id_gen_rnd(0, &addr);
+    assert(rc == 0);
+
+    /* set generated address */
+    rc = ble_hs_id_set_rnd(addr.val);
+
+    assert(rc == 0);
+}
+#endif
+
 static void
 bleprph_on_sync(void)
 {
     int rc;
 
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+    /* Generate a non-resolvable private address. */
+    ble_app_set_addr();
+#endif
+
     /* Make sure we have proper identity address set (public preferred) */
+#if CONFIG_EXAMPLE_RANDOM_ADDR
+    rc = ble_hs_util_ensure_addr(1);
+#else
     rc = ble_hs_util_ensure_addr(0);
+#endif
     assert(rc == 0);
 
     /* Figure out address to use while advertising (no privacy for now) */
@@ -421,8 +451,6 @@ app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_nimble_hci_and_controller_init());
 
     nimble_port_init();
     /* Initialize the NimBLE host configuration. */

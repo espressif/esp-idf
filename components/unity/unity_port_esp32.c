@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "unity.h"
 #include "sdkconfig.h"
-#include "hal/cpu_hal.h"
+#include "esp_cpu.h"
 #include "esp_rom_uart.h"
 #include "esp_private/esp_clk.h"
 
@@ -90,12 +90,12 @@ void unity_gets(char *dst, size_t len)
 
 void unity_exec_time_start(void)
 {
-    s_test_start = cpu_hal_get_cycle_count();
+    s_test_start = esp_cpu_get_cycle_count();
 }
 
 void unity_exec_time_stop(void)
 {
-    s_test_stop = cpu_hal_get_cycle_count();
+    s_test_stop = esp_cpu_get_cycle_count();
 }
 
 uint32_t unity_exec_time_get_ms(void)

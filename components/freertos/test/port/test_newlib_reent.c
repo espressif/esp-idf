@@ -17,6 +17,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
+#include "test_utils.h"
 
 volatile static int done;
 volatile static int error;
@@ -48,10 +49,11 @@ TEST_CASE("Test for per-task non-reentrant tasks", "[freertos]")
 {
     done = 0;
     error = 0;
-    xTaskCreatePinnedToCore(tskTestRand, "tsk1", 2048, (void *)100, 3, NULL, 0);
-    xTaskCreatePinnedToCore(tskTestRand, "tsk2", 2048, (void *)200, 3, NULL, 0);
-    xTaskCreatePinnedToCore(tskTestRand, "tsk3", 2048, (void *)300, 3, NULL, portNUM_PROCESSORS - 1);
-    xTaskCreatePinnedToCore(tskTestRand, "tsk4", 2048, (void *)400, 3, NULL, 0);
+    const uint32_t stack_size = 3072;
+    xTaskCreatePinnedToCore(tskTestRand, "tsk1", stack_size, (void *)100, 3, NULL, 0);
+    xTaskCreatePinnedToCore(tskTestRand, "tsk2", stack_size, (void *)200, 3, NULL, 0);
+    xTaskCreatePinnedToCore(tskTestRand, "tsk3", stack_size, (void *)300, 3, NULL, portNUM_PROCESSORS - 1);
+    xTaskCreatePinnedToCore(tskTestRand, "tsk4", stack_size, (void *)400, 3, NULL, 0);
     while (done != 4) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }

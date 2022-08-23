@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 */
 #include "esp_system.h"
 
-#include "driver/adc.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -17,9 +16,10 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 #include "soc/soc_caps.h"
+#define CONFIG_ADC_SUPPRESS_DEPRECATE_WARN 1
+#include "driver/adc.h"
 
 #if SOC_DAC_SUPPORTED
-#include "driver/i2s.h"
 #include "driver/dac.h"
 #include "esp_adc_cal.h"
 

@@ -18,7 +18,10 @@
 #include "crypto/crypto.h"
 #include "../src/common/sae.h"
 #include "utils/wpabuf.h"
+#include "test_utils.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5046
 typedef struct crypto_bignum crypto_bignum;
 
 
@@ -42,9 +45,6 @@ void wpabuf_free2(struct wpabuf *buf)
         return;
     os_free(buf);
 }
-
-
-
 
 TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 {
@@ -74,7 +74,7 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         TEST_ASSERT(sae_set_group(&sae, IANA_SECP256R1) == 0);
 
-        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd, strlen((const char *)pwd), NULL, &sae) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd, strlen((const char *)pwd), &sae) == 0);
 
         buf = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
 
@@ -84,7 +84,7 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* Parsing commit created by self will be detected as reflection attack*/
         TEST_ASSERT(sae_parse_commit(&sae,
-                    wpabuf_mhead(buf), buf->used, NULL, 0, default_groups) == SAE_SILENTLY_DISCARD);
+                    wpabuf_mhead(buf), buf->used, NULL, 0, default_groups, 0) == SAE_SILENTLY_DISCARD);
 
         wpabuf_free2(buf);
         sae_clear_temp_data(&sae);
@@ -112,10 +112,10 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         TEST_ASSERT(sae_set_group(&sae2, IANA_SECP256R1) == 0);
 
         /* STA1 prepares for commit*/
-        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd, strlen((const char *)pwd), NULL, &sae1) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd, strlen((const char *)pwd), &sae1) == 0);
 
         /* STA2 prepares for commit*/
-        TEST_ASSERT(sae_prepare_commit(addr2, addr1, pwd, strlen((const char *)pwd), NULL, &sae2) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr2, addr1, pwd, strlen((const char *)pwd), &sae2) == 0);
 
         /* STA1 creates commit msg buffer*/
         buf1 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
@@ -135,11 +135,11 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 parses STA2 commit*/
         TEST_ASSERT(sae_parse_commit(&sae1,
-                    wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups) == 0);
+                    wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA2 parses STA1 commit*/
         TEST_ASSERT(sae_parse_commit(&sae2,
-                    wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups) == 0);
+                    wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA1 processes commit*/
         TEST_ASSERT(sae_process_commit(&sae1) == 0);
@@ -200,10 +200,10 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
         TEST_ASSERT(sae_set_group(&sae2, IANA_SECP256R1) == 0);
 
         /* STA1 prepares for commit*/
-        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd1, strlen((const char *)pwd1), NULL, &sae1) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr1, addr2, pwd1, strlen((const char *)pwd1), &sae1) == 0);
 
         /* STA2 prepares for commit*/
-        TEST_ASSERT(sae_prepare_commit(addr2, addr1, pwd2, strlen((const char *)pwd2), NULL, &sae2) == 0);
+        TEST_ASSERT(sae_prepare_commit(addr2, addr1, pwd2, strlen((const char *)pwd2), &sae2) == 0);
 
         /* STA1 creates commit msg buffer*/
         buf1 = wpabuf_alloc2(SAE_COMMIT_MAX_LEN);
@@ -220,11 +220,11 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
 
         /* STA1 parses STA2 commit*/
         TEST_ASSERT(sae_parse_commit(&sae1,
-                    wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups) == 0);
+                    wpabuf_mhead(buf2), buf2->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA2 parses STA1 commit*/
         TEST_ASSERT(sae_parse_commit(&sae2,
-                    wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups) == 0);
+                    wpabuf_mhead(buf1), buf1->used, NULL, 0, default_groups, 0) == 0);
 
         /* STA1 processes commit*/
         TEST_ASSERT(sae_process_commit(&sae1) == 0);
@@ -261,5 +261,6 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
     ESP_LOGI("SAE Test", "=========== Complete ============");
 
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 
 #endif /* CONFIG_WPA3_SAE */

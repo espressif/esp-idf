@@ -1,11 +1,6 @@
-/** ROM APIs
+/**
+ * ROM APIs
  */
-
-/* user may provide newer version of tjpgd */
-/* so here directly assign the symbols with the ROM API address to make sure one from rom is correctly linked */
-PROVIDE ( esp_rom_tjpgd_decomp = 0x40000108 );
-PROVIDE ( esp_rom_tjpgd_prepare = 0x40000104 );
-
 PROVIDE ( esp_rom_crc32_le = crc32_le );
 PROVIDE ( esp_rom_crc16_le = crc16_le );
 PROVIDE ( esp_rom_crc8_le  = crc8_le );
@@ -45,6 +40,12 @@ PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
 
 PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
 PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable );
+PROVIDE ( esp_rom_spiflash_erase_area = SPIEraseArea );
+
+PROVIDE ( esp_rom_spiflash_fix_dummylen = spi_dummy_len_fix );
+PROVIDE ( esp_rom_spiflash_set_drvs = SetSpiDrvs);
+PROVIDE ( esp_rom_spiflash_select_padsfunc = SelectSpiFunction );
+PROVIDE ( esp_rom_spiflash_common_cmd = SPI_Common_Command );
 
 PROVIDE ( esp_rom_regi2c_read = rom_i2c_readReg );
 PROVIDE ( esp_rom_regi2c_read_mask = rom_i2c_readReg_Mask );

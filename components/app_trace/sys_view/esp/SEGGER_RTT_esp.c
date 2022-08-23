@@ -12,6 +12,8 @@
 
 #include "esp_app_trace.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
+#include "esp_private/startup_internal.h"
 
 const static char *TAG = "segger_rtt";
 
@@ -157,7 +159,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
   uint8_t event_id = *pbuf;
 #if CONFIG_APPTRACE_SV_DEST_UART
   if (
-    (APPTRACE_SV_DEST_CPU != cpu_hal_get_core_id()) &&
+    (APPTRACE_SV_DEST_CPU != esp_cpu_get_core_id()) &&
     (
       (event_id == SYSVIEW_EVTID_ISR_ENTER) ||
       (event_id == SYSVIEW_EVTID_ISR_EXIT) ||
@@ -188,7 +190,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
       return 0;
   }
 #if CONFIG_APPTRACE_SV_DEST_JTAG
-  if (cpu_hal_get_core_id()) { // dual core specific code
+  if (esp_cpu_get_core_id()) { // dual core specific code
     // use the highest - 1 bit of event ID to indicate core ID
     // the highest bit can not be used due to event ID encoding method
     // this reduces supported ID range to [0..63] (for 1 byte IDs) plus [128..16383] (for 2 bytes IDs)
@@ -287,5 +289,18 @@ int SEGGER_RTT_ConfigDownBuffer(unsigned BufferIndex, const char* sName, void* p
   esp_apptrace_down_buffer_config(s_down_buf, sizeof(s_down_buf));
   return 0;
 }
+
+/*************************** Init hook ****************************
+ *
+ * This init function is placed here because this port file will be
+ * linked whenever SystemView is used.
+ */
+
+ESP_SYSTEM_INIT_FN(sysview_init, BIT(0), 120)
+{
+    SEGGER_SYSVIEW_Conf();
+    return ESP_OK;
+}
+
 
 /*************************** End of file ****************************/

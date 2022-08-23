@@ -1,13 +1,16 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Partition Memory Map Example
 
-This example demonstrates how to use `esp_partition_mmap` to configure MMU and map a partition into memory address space for read operations. 
+This example demonstrates how to use `esp_partition_mmap` to configure MMU and map a partition into memory address space for read operations.
 
 # Example Flow
 
-The example uses a [custom partition table](./partitions_example.csv), with a data partition `storage` used for demonstration. Before mapping this partition to memory, 
+The example uses a [custom partition table](./partitions_example.csv), with a data partition `storage` used for demonstration. Before mapping this partition to memory,
 data is written to the partition used for verification.
 
-The partition API function `esp_partition_mmap` is used to get a pointer to the mapped memory region and a handle to the mapping. The pointer is used to transparently read back the 
+The partition API function `esp_partition_mmap` is used to get a pointer to the mapped memory region and a handle to the mapping. The pointer is used to transparently read back the
 verification data written previously. Once the data written and read are verified to be the same, the function `spi_flash_munmap` is used to release the mapping.
 
 ### Output

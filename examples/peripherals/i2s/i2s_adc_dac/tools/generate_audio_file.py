@@ -1,9 +1,8 @@
-from __future__ import print_function
-
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import struct
 import wave
-from builtins import range
 
 try:
     from typing import List

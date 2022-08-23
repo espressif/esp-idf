@@ -38,7 +38,7 @@ TEST_CASE("mqtt init with invalid url", "[mqtt][leaks=0]")
 {
     test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt_cfg = {
-            .uri = "INVALID",
+            .broker.address.uri = "INVALID",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     TEST_ASSERT_EQUAL(NULL, client );
@@ -49,7 +49,7 @@ TEST_CASE("mqtt init and deinit", "[mqtt][leaks=0]")
     test_leak_setup(__FILE__, __LINE__);
     const esp_mqtt_client_config_t mqtt_cfg = {
             // no connection takes place, but the uri has to be valid for init() to succeed
-            .uri = "mqtts://localhost:8883",
+            .broker.address.uri = "mqtts://localhost:8883",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     TEST_ASSERT_NOT_EQUAL(NULL, client );
@@ -73,7 +73,7 @@ TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
     const int size = 2000;
     const esp_mqtt_client_config_t mqtt_cfg = {
             // no connection takes place, but the uri has to be valid for init() to succeed
-            .uri = "mqtts://localhost:8883",
+            .broker.address.uri = "mqtts://localhost:8883",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     TEST_ASSERT_NOT_EQUAL(NULL, client );

@@ -1,0 +1,12 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/spi_flash/host_test/partition_api_test:
+  enable:
+    - if: IDF_TARGET == "linux"
+      reason: only test on linux
+
+components/spi_flash/test_apps/flash_encryption:
+  disable_test:
+    - if: IDF_TARGET in ["esp32c2", "esp32s2"]
+      temporary: true
+      reason: No runners # IDF-5634

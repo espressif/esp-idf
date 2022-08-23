@@ -41,7 +41,6 @@
 /* Zigbee configuration */
 #define IEEE_CHANNEL_MASK               (1l << 13)  /* Zigbee default setting is channel 13 for light example usage */
 #define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example */
-#define MAX_CHILDREN                    10          /* the max amount of connected devices */
 
 /* groups cluster attributes */
 typedef struct {

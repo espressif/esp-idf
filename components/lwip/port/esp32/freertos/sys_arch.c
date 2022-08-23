@@ -53,6 +53,7 @@ static sys_mutex_t g_lwip_protect_mutex = NULL;
 
 static pthread_key_t sys_thread_sem_key;
 static void sys_thread_sem_free(void* data);
+sys_thread_t g_lwip_task;
 
 #if !LWIP_COMPAT_MUTEX
 
@@ -426,6 +427,11 @@ sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize
      thread function without adaption here. */
   ret = xTaskCreatePinnedToCore(thread, name, stacksize, arg, prio, &rtos_task,
           CONFIG_LWIP_TCPIP_TASK_AFFINITY);
+
+  g_lwip_task = rtos_task;
+
+  LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_task_hdlxxx : %x, prio:%d,stack:%d\n",
+             (u32_t)g_lwip_task,TCPIP_THREAD_PRIO,TCPIP_THREAD_STACKSIZE));
 
   if (ret != pdTRUE) {
     return NULL;

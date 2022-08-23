@@ -34,7 +34,8 @@ BT_DOCS = ['api-guides/blufi.rst',
            'api-reference/bluetooth/esp_blufi.rst',
            'api-reference/bluetooth/esp-ble-mesh.rst',
            'api-reference/bluetooth/index.rst',
-           'api-reference/bluetooth/nimble/index.rst']
+           'api-reference/bluetooth/nimble/index.rst',
+           'migration-guides/release-5.x/bluetooth-low-energy.rst']
 
 CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_a2dp.rst',
@@ -46,7 +47,8 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_hf_client.rst',
                    'api-reference/bluetooth/esp_hf_ag.rst',
                    'api-reference/bluetooth/esp_spp.rst',
-                   'api-reference/bluetooth/esp_gap_bt.rst']
+                   'api-reference/bluetooth/esp_gap_bt.rst',
+                   'migration-guides/release-5.x/bluetooth-classic.rst']
 
 WIFI_DOCS = ['api-guides/wifi.rst',
              'api-guides/wifi-security.rst',
@@ -99,9 +101,15 @@ RISCV_DOCS = []  # type: list[str]
 
 TWAI_DOCS = ['api-reference/peripherals/twai.rst']
 
-SIGMADELTA_DOCS = ['api-reference/peripherals/sigmadelta.rst']
+SDM_DOCS = ['api-reference/peripherals/sdm.rst']
 
 I2S_DOCS = ['api-reference/peripherals/i2s.rst']
+
+RTC_MEM_DOCS = ['api-guides/deep-sleep-stub.rst']
+
+ADC_DOCS = ['api-reference/peripherals/adc_oneshot.rst',
+            'api-reference/peripherals/adc_calibration.rst']
+ADC_DMA_DOCS = ['api-reference/peripherals/adc_continuous.rst']
 
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
@@ -110,7 +118,8 @@ ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
               'hw-reference/esp32/**',
-              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
+              'api-guides/esp-wifi-mesh.rst',
+              'api-reference/network/esp-wifi-mesh.rst'] + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/usb-console.rst',
@@ -119,21 +128,24 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
                 'api-reference/peripherals/touch_element.rst',
-                'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
+                'api-guides/esp-wifi-mesh.rst',
+                'api-reference/network/esp-wifi-mesh.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
-                'api-guides/RF_calibration.rst']
+                'api-guides/esp-wifi-mesh.rst',
+                'api-reference/network/esp-wifi-mesh.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
-                'api-guides/RF_calibration.rst']
+                'api-guides/esp-wifi-mesh.rst',
+                'api-reference/network/esp-wifi-mesh.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_WIFI_SUPPORTED':WIFI_DOCS,
-                            'SOC_CLASSIC_BT_SUPPORTED':CLASSIC_BT_DOCS,
+                            'SOC_BT_CLASSIC_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SUPPORT_COEXISTENCE':COEXISTENCE_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
@@ -145,7 +157,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,
                             'SOC_RMT_SUPPORTED':RMT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
-                            'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
+                            'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
                             'SOC_RISCV_COPROC_SUPPORTED':RISCV_COPROC_DOCS,
                             'SOC_DIG_SIGN_SUPPORTED':['api-reference/peripherals/ds.rst'],
@@ -156,7 +168,10 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
                             'SOC_I2S_SUPPORTED':I2S_DOCS,
-                            'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
+                            'SOC_RTC_MEM_SUPPORTED': RTC_MEM_DOCS,
+                            'SOC_ADC_SUPPORTED':ADC_DOCS,
+                            'SOC_ADC_DMA_SUPPORTED':ADC_DMA_DOCS,
+                            'SOC_SDM_SUPPORTED':SDM_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
@@ -209,7 +224,6 @@ linkcheck_exclude_documents = ['index',  # several false positives due to the wa
 linkcheck_ignore = ['https://webhome.phy.duke.edu/~rgb/General/dieharder.php',  # Certificate error
                     'https://dl.espressif.com/dl/esp32s3_rom.elf',  # Not published
                     'https://docs.espressif.com/projects/esptool/en/latest/esp32c2/espefuse/index.html',  # Not published
-                    'https://www.espressif.com/sites/default/files/documentation/esp32-c2_datasheet_en.pdf',  # Not published
                     ]
 
 

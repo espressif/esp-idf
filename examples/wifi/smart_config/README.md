@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # smartconfig Example
 
 This example shows how ESP32 connects to a target AP with ESPTOUCH.
@@ -6,7 +9,7 @@ This example shows how ESP32 connects to a target AP with ESPTOUCH.
 
 ### Hardware Required
 
-Download ESPTOUCH APP from app store: 
+Download ESPTOUCH APP from app store:
 [Android source code](https://github.com/EspressifApp/EsptouchForAndroid)
 [iOS source code](https://github.com/EspressifApp/EsptouchForIOS) is available.
 

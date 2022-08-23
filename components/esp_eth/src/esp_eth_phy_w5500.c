@@ -8,7 +8,7 @@
 #include <sys/cdefs.h>
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_eth.h"
+#include "esp_eth_driver.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
@@ -96,7 +96,7 @@ err:
 static esp_err_t w5500_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
     esp_err_t ret = ESP_OK;
-    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "can't set mediator to null");
+    ESP_GOTO_ON_FALSE(eth, ESP_ERR_INVALID_ARG, err, TAG, "mediator can't be null");
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     w5500->eth = eth;
     return ESP_OK;

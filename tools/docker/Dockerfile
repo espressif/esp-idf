@@ -14,8 +14,10 @@ RUN : \
     curl \
     flex \
     git \
+    git-lfs \
     gperf \
     lcov \
+    libbsd-dev \
     libffi-dev \
     libncurses-dev \
     libpython2.7 \
@@ -24,6 +26,7 @@ RUN : \
     ninja-build \
     python3 \
     python3-venv \
+    ruby \
     unzip \
     wget \
     xz-utils \
@@ -72,6 +75,10 @@ RUN : \
   && $IDF_PATH/tools/idf_tools.py --non-interactive install-python-env \
   && rm -rf $IDF_TOOLS_PATH/dist \
   && :
+
+# The constraint file has been downloaded and the right Python package versions installed. No need to check and
+# download this at every invocation of the container.
+ENV IDF_PYTHON_CHECK_CONSTRAINTS=no
 
 # Ccache is installed, enable it by default
 ENV IDF_CCACHE_ENABLE=1

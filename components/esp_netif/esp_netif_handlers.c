@@ -58,7 +58,6 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
         if (esp_netif_is_valid_static_ip(&ip)) {
             ip_event_got_ip_t evt = {
                     .esp_netif = esp_netif,
-                    .if_index = -1, // to indicate ptr to if used
                     .ip_changed = false,
             };
 

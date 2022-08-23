@@ -119,7 +119,7 @@ The second device has joined the Thread network as a router (or a child).
 
 ## Extension commands
 
-You can refer to the [extension command](../extension_command/README.md) about the extension commands.
+You can refer to the [extension command](https://github.com/espressif/esp-thread-br/blob/main/components/esp_ot_cli_extension/README.md) about the extension commands.
 
 The following examples are supported by `ot_cli`:
 

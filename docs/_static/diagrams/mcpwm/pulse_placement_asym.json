@@ -1,0 +1,15 @@
+{
+  "signal": [
+    {
+      "name": "pwm_A",
+      "wave": "0.1..0..1..0..1..0..1..0.."
+    },
+    {
+      "name": "pwm_B",
+      "wave": "01.....0.....1.....0.....1"
+    }
+  ],
+  "head": {
+    "text": "Pulse Placement Asymmetric Waveform"
+  }
+}

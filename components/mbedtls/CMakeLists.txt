@@ -137,8 +137,10 @@ target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 if(CONFIG_SOC_SHA_SUPPORTED)
     if(CONFIG_SOC_SHA_SUPPORT_DMA)
         set(SHA_PERIPHERAL_TYPE "dma")
-    else()
+    elseif(CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
         set(SHA_PERIPHERAL_TYPE "parallel_engine")
+    else()
+        set(SHA_PERIPHERAL_TYPE "block")
     endif()
 endif()
 
@@ -163,7 +165,6 @@ if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
-
     if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
@@ -174,6 +175,7 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
+
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
@@ -252,8 +254,10 @@ if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 endif()
 
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
-set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver)
-set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver)
+
+if(CONFIG_PM_ENABLE)
+    target_link_libraries(mbedcrypto PRIVATE idf::esp_pm)
+endif()
 
 target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
@@ -264,6 +268,5 @@ endif()
 
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
-    idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${cryptoauthlib})
+    idf_component_optional_requires(PRIVATE espressif__esp-cryptoauthlib esp-cryptoauthlib)
 endif()

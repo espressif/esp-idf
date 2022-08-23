@@ -87,7 +87,7 @@ Configuration example (master):
         .scl_io_num = I2C_MASTER_SCL_IO,         // select GPIO specific to your project
         .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = I2C_MASTER_FREQ_HZ,  // select frequency specific to your project
-        // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
+        .clk_flags = 0,                          // you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here
     };
 
 .. only:: SOC_I2C_SUPPORT_SLAVE
@@ -105,6 +105,7 @@ Configuration example (master):
             .mode = I2C_MODE_SLAVE,
             .slave.addr_10bit_en = 0,
             .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
+            .clk_flags = 0,
         };
 
 At this stage, :cpp:func:`i2c_param_config` also sets a few other I2C configuration parameters to default values that are defined by the I2C specification. For more details on the values and how to modify them, see :ref:`i2c-api-customized-configuration`.
@@ -205,6 +206,12 @@ Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
 .. note::
 
     The clock frequency of SCL in master mode should not be lager than max frequency for SCL mentioned in the table above.
+
+.. note::
+
+    The clock frequency of SCL will be influenced by the pull-up resistors and wire capacitance (or might slave capacitance) together. Therefore, users need to choose correct pull-up resistors by themselves to make the frequency accurate. It is recommended by I2C protocol that the pull-up resistors commonly range from 1KOhms to 10KOhms, but different frequencies need different resistors.
+
+    Generally speaking, the higher frequency is selected, the smaller resistor should be used (but not less than 1KOhms). This is because high resistor will decline the current, which will lengthen the rising time and reduce the frequency. Usually, range 2KOhms to 5KOhms is what we recommend, but users also might need to make some adjustment depends on their reality.
 
 .. _i2c-api-install-driver:
 

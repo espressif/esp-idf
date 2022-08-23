@@ -1,10 +1,13 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Example: ESPTimer C++ class
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example demonstrates usage of the ESPTimer c++ class in ESP-IDF.
 
-In this example, the `sdkconfig.defaults` file sets the `CONFIG_COMPILER_CXX_EXCEPTIONS` option. 
+In this example, the `sdkconfig.defaults` file sets the `CONFIG_COMPILER_CXX_EXCEPTIONS` option.
 This enables both compile time support (`-fexceptions` compiler flag) and run-time support for C++ exception handling.
 This is necessary for the C++ APIs.
 

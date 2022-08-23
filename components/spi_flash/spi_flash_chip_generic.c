@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +12,7 @@
 #include "hal/spi_flash_encrypt_hal.h"
 #include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_private/spi_flash_os.h"
 
 typedef struct flash_chip_dummy {
     uint8_t dio_dummy_bitlen;
@@ -40,6 +33,20 @@ DRAM_ATTR const static flash_chip_dummy_t default_flash_chip_dummy = {
     .slowrd_dummy_bitlen = SPI_FLASH_SLOWRD_DUMMY_BITLEN,
 };
 
+DRAM_ATTR const static flash_chip_dummy_t hpm_flash_chip_dummy = {
+    .dio_dummy_bitlen = SPI_FLASH_DIO_HPM_DUMMY_BITLEN,
+    .qio_dummy_bitlen = SPI_FLASH_QIO_HPM_DUMMY_BITLEN,
+    .qout_dummy_bitlen = SPI_FLASH_QOUT_DUMMY_BITLEN,
+    .dout_dummy_bitlen = SPI_FLASH_DOUT_DUMMY_BITLEN,
+    .fastrd_dummy_bitlen = SPI_FLASH_FASTRD_DUMMY_BITLEN,
+    .slowrd_dummy_bitlen = SPI_FLASH_SLOWRD_DUMMY_BITLEN,
+};
+
+
+DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&default_flash_chip_dummy;
+
+DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy_hpm = (flash_chip_dummy_t *)&hpm_flash_chip_dummy;
+
 // These are the pointer to HW flash encryption. Default using hardware encryption.
 DRAM_ATTR static spi_flash_encryption_t esp_flash_encryption_default __attribute__((__unused__)) = {
     .flash_encryption_enable = spi_flash_encryption_hal_enable,
@@ -49,8 +56,6 @@ DRAM_ATTR static spi_flash_encryption_t esp_flash_encryption_default __attribute
     .flash_encryption_destroy = spi_flash_encryption_hal_destroy,
     .flash_encryption_check = spi_flash_encryption_hal_check,
 };
-
-DRAM_ATTR flash_chip_dummy_t *rom_flash_chip_dummy = (flash_chip_dummy_t *)&default_flash_chip_dummy;
 
 #define SPI_FLASH_DEFAULT_IDLE_TIMEOUT_MS           200
 #define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT_MS     4000
@@ -68,6 +73,12 @@ const DRAM_ATTR flash_chip_op_timeout_t spi_flash_chip_generic_timeout = {
     .sector_erase_timeout = SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT_MS * 1000,
     .page_program_timeout = SPI_FLASH_GENERIC_PAGE_PROGRAM_TIMEOUT_MS * 1000,
 };
+
+#define SET_FLASH_ERASE_STATUS(CHIP, status) do { \
+    if (CHIP->os_func->set_flash_op_status) { \
+        CHIP->os_func->set_flash_op_status(status); \
+    } \
+} while(0)
 
 static const char TAG[] = "chip_generic";
 
@@ -130,6 +141,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
     }
     //The chip didn't accept the previous write command. Ignore this in preparation stage.
     if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
+        SET_FLASH_ERASE_STATUS(chip, SPI_FLASH_OS_IS_ERASING_STATUS_FLAG);
         chip->host->driver->erase_chip(chip->host);
         chip->busy = 1;
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
@@ -137,6 +149,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
 #else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->chip_erase_timeout);
 #endif
+        SET_FLASH_ERASE_STATUS(chip, 0);
     }
     // Ensure WEL is 0, even if the erase failed.
     if (err == ESP_ERR_NOT_SUPPORTED) {
@@ -154,6 +167,7 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
     }
     //The chip didn't accept the previous write command. Ignore this in preparationstage.
     if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
+        SET_FLASH_ERASE_STATUS(chip, SPI_FLASH_OS_IS_ERASING_STATUS_FLAG);
         chip->host->driver->erase_sector(chip->host, start_address);
         chip->busy = 1;
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
@@ -161,6 +175,7 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
 #else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->sector_erase_timeout);
 #endif
+        SET_FLASH_ERASE_STATUS(chip, 0);
     }
     // Ensure WEL is 0, even if the erase failed.
     if (err == ESP_ERR_NOT_SUPPORTED) {
@@ -178,6 +193,7 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
     }
     //The chip didn't accept the previous write command. Ignore this in preparationstage.
     if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
+        SET_FLASH_ERASE_STATUS(chip, SPI_FLASH_OS_IS_ERASING_STATUS_FLAG);
         chip->host->driver->erase_block(chip->host, start_address);
         chip->busy = 1;
 #ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
@@ -185,6 +201,7 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
 #else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->block_erase_timeout);
 #endif
+        SET_FLASH_ERASE_STATUS(chip, 0);
     }
     // Ensure WEL is 0, even if the erase failed.
     if (err == ESP_ERR_NOT_SUPPORTED) {
@@ -462,35 +479,35 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint32_t
     case SPI_FLASH_QIO:
         //for QIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_QIO_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->qio_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->qio_dummy_bitlen : rom_flash_chip_dummy->qio_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_QIO_4B: CMD_FASTRD_QIO);
         conf_required = true;
         break;
     case SPI_FLASH_QOUT:
         addr_bitlen = SPI_FLASH_QOUT_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->qout_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->qout_dummy_bitlen : rom_flash_chip_dummy->qout_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_QUAD_4B: CMD_FASTRD_QUAD);
         break;
     case SPI_FLASH_DIO:
         //for DIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
         addr_bitlen = SPI_FLASH_DIO_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->dio_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->dio_dummy_bitlen : rom_flash_chip_dummy->dio_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_DIO_4B: CMD_FASTRD_DIO);
         conf_required = true;
         break;
     case SPI_FLASH_DOUT:
         addr_bitlen = SPI_FLASH_DOUT_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->dout_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->dout_dummy_bitlen : rom_flash_chip_dummy->dout_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_DUAL_4B: CMD_FASTRD_DUAL);
         break;
     case SPI_FLASH_FASTRD:
         addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->fastrd_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->fastrd_dummy_bitlen : rom_flash_chip_dummy->fastrd_dummy_bitlen);
         read_command = (addr_32bit? CMD_FASTRD_4B: CMD_FASTRD);
         break;
     case SPI_FLASH_SLOWRD:
         addr_bitlen = SPI_FLASH_SLOWRD_ADDR_BITLEN;
-        dummy_cyclelen_base = rom_flash_chip_dummy->slowrd_dummy_bitlen;
+        dummy_cyclelen_base = (chip->hpm_dummy_ena ? rom_flash_chip_dummy_hpm->slowrd_dummy_bitlen : rom_flash_chip_dummy->slowrd_dummy_bitlen);
         read_command = (addr_32bit? CMD_READ_4B: CMD_READ);
         break;
     default:

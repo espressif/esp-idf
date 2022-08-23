@@ -38,3 +38,5 @@ wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api
 Declaration is '.. cpp:member:: int max_files'.
 wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
 Declaration is '.. cpp:member:: size_t allocation_unit_size'.
+wear-levelling.rst:line: WARNING: Duplicate C++ declaration, also defined at api-reference/storage/fatfs:line.
+Declaration is '.. cpp:member:: bool disk_status_check_enable'.

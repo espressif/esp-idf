@@ -13,10 +13,12 @@ list(APPEND extra_link_flags "-u pthread_include_pthread_cond_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_local_storage_impl")
 list(APPEND extra_link_flags "-u pthread_include_pthread_rwlock_impl")
 
-if(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP)
+if(CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP AND NOT CONFIG_FREERTOS_SMP) # See IDF-4955
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=vPortCleanUpTCB")
 endif()
 
 if(extra_link_flags)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "${extra_link_flags}")
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

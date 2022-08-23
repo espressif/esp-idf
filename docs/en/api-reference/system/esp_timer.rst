@@ -1,5 +1,5 @@
-High Resolution Timer
-=====================
+High Resolution Timer (ESP Timer)
+=================================
 
 {IDF_TARGET_HR_TIMER:default = "SYSTIMER", esp32 = "LAC timer"}
 

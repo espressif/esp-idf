@@ -21,6 +21,7 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
+#include "test_utils.h"
 
 TEST_CASE("mbedtls AES self-tests", "[aes]")
 {

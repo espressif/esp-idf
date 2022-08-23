@@ -21,14 +21,6 @@ from ldgen.linker_script import LinkerScript
 from ldgen.sdkconfig import SDKConfig
 from pyparsing import ParseException, ParseFatalException
 
-try:
-    import confgen
-except Exception:
-    parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    kconfig_new_dir = os.path.abspath(parent_dir_name + '/kconfig_new')
-    sys.path.insert(0, kconfig_new_dir)
-    import confgen
-
 
 def _update_environment(args):
     env = [(name, value) for (name,value) in (e.split('=',1) for e in args.env)]
@@ -38,7 +30,7 @@ def _update_environment(args):
 
     if args.env_file is not None:
         env = json.load(args.env_file)
-        os.environ.update(confgen.dict_enc_for_env(env))
+        os.environ.update(env)
 
 
 def main():

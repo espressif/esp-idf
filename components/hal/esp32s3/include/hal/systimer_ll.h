@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdint.h>
@@ -18,13 +10,11 @@
 #include "soc/systimer_struct.h"
 #include "hal/assert.h"
 
-#define SYSTIMER_LL_COUNTER_CLOCK       (0) // Counter used for "wallclock" time
-#define SYSTIMER_LL_COUNTER_OS_TICK     (1) // Counter used for OS tick
-#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 (0) // Alarm used for OS tick of CPU core 0
-#define SYSTIMER_LL_ALARM_OS_TICK_CORE1 (1) // Alarm used for OS tick of CPU core 1
-#define SYSTIMER_LL_ALARM_CLOCK         (2) // Alarm used for "wallclock" time
-
-#define SYSTIMER_LL_TICKS_PER_US        (16) // 16 systimer ticks == 1us
+#define SYSTIMER_LL_COUNTER_CLOCK       0 // Counter used by esptimer, to generate the system level wall clock
+#define SYSTIMER_LL_COUNTER_OS_TICK     1 // Counter used by RTOS porting layer, to generate the OS tick
+#define SYSTIMER_LL_ALARM_OS_TICK_CORE0 0 // Alarm used by OS tick, dedicated for core 0
+#define SYSTIMER_LL_ALARM_OS_TICK_CORE1 1 // Alarm used by OS tick, dedicated for core 1
+#define SYSTIMER_LL_ALARM_CLOCK         2 // Alarm used by esptimer
 
 #ifdef __cplusplus
 extern "C" {

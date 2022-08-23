@@ -21,7 +21,6 @@ extern "C" {
 
 /**
  * @brief Define memory space of each RMT channel (in words = 4 bytes)
- *
  */
 #define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
 
@@ -40,6 +39,8 @@ typedef struct {
     };
 } rmt_item32_t;
 
+
+#if SOC_RMT_SUPPORTED
 /**
  * @brief RMT hardware memory layout
  */
@@ -48,11 +49,11 @@ typedef struct {
         volatile rmt_item32_t data32[SOC_RMT_MEM_WORDS_PER_CHANNEL];
     } chan[SOC_RMT_CHANNELS_PER_GROUP];
 } rmt_mem_t;
+#endif // SOC_RMT_SUPPORTED
 
 /**
-* @brief RMT channel ID
-*
-*/
+ * @brief RMT channel ID
+ */
 typedef enum {
     RMT_CHANNEL_0,  /*!< RMT channel number 0 */
     RMT_CHANNEL_1,  /*!< RMT channel number 1 */
@@ -69,7 +70,6 @@ typedef enum {
 
 /**
  * @brief RMT Internal Memory Owner
- *
  */
 typedef enum {
     RMT_MEM_OWNER_TX, /*!< RMT RX mode, RMT transmitter owns the memory block*/
@@ -79,15 +79,17 @@ typedef enum {
 
 /**
  * @brief Clock Source of RMT Channel
- *
  */
+#if SOC_RMT_SUPPORTED
 typedef soc_periph_rmt_clk_src_legacy_t rmt_source_clk_t;
+#else
+typedef int rmt_source_clk_t;
+#endif // SOC_RMT_SUPPORTED
 
 /**
  * @brief RMT Data Mode
  *
  * @note We highly recommended to use MEM mode not FIFO mode since there will be some gotcha in FIFO mode.
- *
  */
 typedef enum {
     RMT_DATA_MODE_FIFO, /*<! RMT memory access in FIFO mode */
@@ -97,7 +99,6 @@ typedef enum {
 
 /**
  * @brief RMT Channel Working Mode (TX or RX)
- *
  */
 typedef enum {
     RMT_MODE_TX, /*!< RMT TX mode */
@@ -117,7 +118,6 @@ typedef enum {
 
 /**
  * @brief RMT Carrier Level
- *
  */
 typedef enum {
     RMT_CARRIER_LEVEL_LOW,  /*!< RMT carrier wave is modulated for low Level output */
@@ -127,7 +127,6 @@ typedef enum {
 
 /**
  * @brief RMT Channel Status
- *
  */
 typedef enum {
     RMT_CHANNEL_UNINIT, /*!< RMT channel uninitialized */
@@ -136,15 +135,15 @@ typedef enum {
 } rmt_channel_status_t;
 
 /**
-* @brief Data struct of RMT channel status
-*/
+ * @brief Data struct of RMT channel status
+ */
 typedef struct {
     rmt_channel_status_t status[RMT_CHANNEL_MAX]; /*!< Store the current status of each channel */
 } rmt_channel_status_result_t;
 
 /**
-* @brief Data struct of RMT TX configure parameters
-*/
+ * @brief Data struct of RMT TX configure parameters
+ */
 typedef struct {
     uint32_t carrier_freq_hz;          /*!< RMT carrier frequency */
     rmt_carrier_level_t carrier_level; /*!< Level of the RMT output, when the carrier is applied */
@@ -159,8 +158,8 @@ typedef struct {
 } rmt_tx_config_t;
 
 /**
-* @brief Data struct of RMT RX configure parameters
-*/
+ * @brief Data struct of RMT RX configure parameters
+ */
 typedef struct {
     uint16_t idle_threshold;     /*!< RMT RX idle threshold */
     uint8_t filter_ticks_thresh; /*!< RMT filter tick number */
@@ -174,8 +173,8 @@ typedef struct {
 } rmt_rx_config_t;
 
 /**
-* @brief Data struct of RMT configure parameters
-*/
+ * @brief Data struct of RMT configure parameters
+ */
 typedef struct {
     rmt_mode_t rmt_mode;   /*!< RMT mode: transmitter or receiver */
     rmt_channel_t channel; /*!< RMT channel */
@@ -232,45 +231,43 @@ typedef struct {
     }
 
 /**
-* @brief RMT interrupt handle
-*
-*/
+ * @brief RMT interrupt handle
+ */
 typedef intr_handle_t rmt_isr_handle_t;
 
 /**
-* @brief Type of RMT Tx End callback function
-*
-*/
+ * @brief Type of RMT Tx End callback function
+ */
 typedef void (*rmt_tx_end_fn_t)(rmt_channel_t channel, void *arg);
 
 /**
-* @brief Structure encapsulating a RMT TX end callback
-*/
+ * @brief Structure encapsulating a RMT TX end callback
+ */
 typedef struct {
     rmt_tx_end_fn_t function; /*!< Function which is called on RMT TX end */
     void *arg;                /*!< Optional argument passed to function */
 } rmt_tx_end_callback_t;
 
 /**
-* @brief User callback function to convert uint8_t type data to rmt format(rmt_item32_t).
-*
-*        This function may be called from an ISR, so, the code should be short and efficient.
-*
-* @param  src Pointer to the buffer storing the raw data that needs to be converted to rmt format.
-* @param[out] dest Pointer to the buffer storing the rmt format data.
-* @param  src_size The raw data size.
-* @param  wanted_num The number of rmt format data that wanted to get.
-* @param[out] translated_size The size of the raw data that has been converted to rmt format,
-*             it should return 0 if no data is converted in user callback.
-* @param[out] item_num The number of the rmt format data that actually converted to,
-*             it can be less than wanted_num if there is not enough raw data, but cannot exceed wanted_num.
-*             it should return 0 if no data was converted.
-*
-* @note
-*       In fact, item_num should be a multiple of translated_size, e.g. :
-*       When we convert each byte of uint8_t type data to rmt format data,
-*       the relation between item_num and translated_size should be `item_num = translated_size*8`.
-*/
+ * @brief User callback function to convert uint8_t type data to rmt format(rmt_item32_t).
+ *
+ *        This function may be called from an ISR, so, the code should be short and efficient.
+ *
+ * @param  src Pointer to the buffer storing the raw data that needs to be converted to rmt format.
+ * @param[out] dest Pointer to the buffer storing the rmt format data.
+ * @param  src_size The raw data size.
+ * @param  wanted_num The number of rmt format data that wanted to get.
+ * @param[out] translated_size The size of the raw data that has been converted to rmt format,
+ *             it should return 0 if no data is converted in user callback.
+ * @param[out] item_num The number of the rmt format data that actually converted to,
+ *             it can be less than wanted_num if there is not enough raw data, but cannot exceed wanted_num.
+ *             it should return 0 if no data was converted.
+ *
+ * @note
+ *       In fact, item_num should be a multiple of translated_size, e.g. :
+ *       When we convert each byte of uint8_t type data to rmt format data,
+ *       the relation between item_num and translated_size should be `item_num = translated_size*8`.
+ */
 typedef void (*sample_to_rmt_t)(const void *src, rmt_item32_t *dest, size_t src_size, size_t wanted_num, size_t *translated_size, size_t *item_num);
 
 #ifdef __cplusplus

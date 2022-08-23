@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include "esp_partition.h"
 #include "esp_log.h"
@@ -19,6 +11,7 @@
 #include "esp_flash_internal.h"
 #include "esp_flash_encrypt.h"
 #include "esp_rom_crc.h"
+#include "esp_private/spi_flash_os.h"
 
 #define BLANK_COREDUMP_SIZE 0xFFFFFFFF
 
@@ -49,15 +42,9 @@ typedef struct _core_dump_flash_config_t
 /* Core dump flash data. */
 static core_dump_flash_config_t s_core_flash_config;
 
-#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-#define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           spi_flash_write(_off_, _data_, _len_)
-#define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) spi_flash_write_encrypted(_off_, _data_, _len_)
-#define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   spi_flash_erase_range(_off_, _len_)
-#else
 #define ESP_COREDUMP_FLASH_WRITE(_off_, _data_, _len_)           esp_flash_write(esp_flash_default_chip, _data_, _off_, _len_)
 #define ESP_COREDUMP_FLASH_WRITE_ENCRYPTED(_off_, _data_, _len_) esp_flash_write_encrypted(esp_flash_default_chip, _off_, _data_, _len_)
 #define ESP_COREDUMP_FLASH_ERASE(_off_, _len_)                   esp_flash_erase_region(esp_flash_default_chip, _off_, _len_)
-#endif
 
 esp_err_t esp_core_dump_image_check(void);
 static esp_err_t esp_core_dump_partition_and_size_get(const esp_partition_t **partition, uint32_t* size);

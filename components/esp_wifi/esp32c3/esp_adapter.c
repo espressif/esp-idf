@@ -35,6 +35,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc.h"
 #include "soc/syscon_reg.h"
+#include "soc/system_reg.h"
 #include "phy_init_data.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
@@ -46,6 +47,8 @@
 #include "esp32c3/rom/ets_sys.h"
 
 #define TAG "esp_adapter"
+
+#define MHZ (1000000)
 
 #ifdef CONFIG_PM_ENABLE
 extern void wifi_apb80m_request(void);
@@ -393,15 +396,15 @@ static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repea
 
 static void wifi_reset_mac_wrapper(void)
 {
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
-    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
+    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
 }
 
 static void IRAM_ATTR wifi_rtc_enable_iso_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_power_down();
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
 #endif
 }
 
@@ -409,8 +412,8 @@ static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
 {
 #if CONFIG_MAC_BB_PD
     esp_mac_bb_power_up();
-    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
-    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_MAC_RST);
+    SET_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
+    CLEAR_PERI_REG_MASK(SYSCON_WIFI_RST_EN_REG, SYSTEM_WIFIMAC_RST);
 #endif
 }
 
@@ -434,7 +437,12 @@ static uint32_t esp_clk_slowclk_cal_get_wrapper(void)
     /* The bit width of WiFi light sleep clock calibration is 12 while the one of
      * system is 19. It should shift 19 - 12 = 7.
     */
-    return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    if (GET_PERI_REG_MASK(SYSTEM_BT_LPCK_DIV_FRAC_REG, SYSTEM_LPCLK_SEL_XTAL)) {
+        uint64_t time_per_us = 1000000ULL;
+        return (((time_per_us << RTC_CLK_CAL_FRACT) / (MHZ)) >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    } else {
+        return (esp_clk_slowclk_cal_get() >> (RTC_CLK_CAL_FRACT - SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH));
+    }
 }
 
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)

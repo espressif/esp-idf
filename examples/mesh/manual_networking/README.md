@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Mesh Manual Networking Example
 
 ESP-MESH provides the function of self-organized networking, but if users disable this function on one node, users must designate a parent for this node.

@@ -28,7 +28,7 @@
 #include "osi/allocator.h"
 
 #if (BTC_HF_INCLUDED == TRUE)
-esp_err_t esp_bt_hf_register_callback(esp_hf_cb_t callback)
+esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -40,7 +40,7 @@ esp_err_t esp_bt_hf_register_callback(esp_hf_cb_t callback)
     return ESP_OK;
 }
 
-esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr)
+esp_err_t esp_hf_ag_init(void)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -50,16 +50,12 @@ esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr)
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_INIT_EVT;
 
-    btc_hf_args_t arg;
-    memset(&arg, 0, sizeof(btc_hf_args_t));
-    memcpy(&(arg.init), remote_addr, sizeof(esp_bd_addr_t));
-
     /* Switch to BTC context */
-    bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
+    bt_status_t status = btc_transfer_context(&msg, NULL, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_deinit(esp_bd_addr_t remote_addr)
+esp_err_t esp_hf_ag_deinit(void)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -69,16 +65,12 @@ esp_err_t esp_bt_hf_deinit(esp_bd_addr_t remote_addr)
     msg.pid = BTC_PID_HF;
     msg.act = BTC_HF_DEINIT_EVT;
 
-    btc_hf_args_t arg;
-    memset(&arg, 0, sizeof(btc_hf_args_t));
-    memcpy(&(arg.deinit), remote_addr, sizeof(esp_bd_addr_t));
-
     /* Switch to BTC context */
-    bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_hf_args_t), NULL);
+    bt_status_t status = btc_transfer_context(&msg, NULL, sizeof(btc_hf_args_t), NULL);
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_connect(esp_bd_addr_t remote_addr)
+esp_err_t esp_hf_ag_slc_connect(esp_bd_addr_t remote_addr)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -97,7 +89,7 @@ esp_err_t esp_bt_hf_connect(esp_bd_addr_t remote_addr)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_disconnect(esp_bd_addr_t remote_addr)
+esp_err_t esp_hf_ag_slc_disconnect(esp_bd_addr_t remote_addr)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -116,7 +108,7 @@ esp_err_t esp_bt_hf_disconnect(esp_bd_addr_t remote_addr)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_connect_audio(esp_bd_addr_t remote_addr)
+esp_err_t esp_hf_ag_audio_connect(esp_bd_addr_t remote_addr)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -135,7 +127,7 @@ esp_err_t esp_bt_hf_connect_audio(esp_bd_addr_t remote_addr)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_addr)
+esp_err_t esp_hf_ag_audio_disconnect(esp_bd_addr_t remote_addr)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -154,7 +146,7 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_addr)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_addr, esp_hf_vr_state_t value)
+esp_err_t esp_hf_ag_vra_control(esp_bd_addr_t remote_addr, esp_hf_vr_state_t value)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -174,7 +166,7 @@ esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_addr, esp_hf_vr_state_t value)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_control_target_t type, int volume)
+esp_err_t esp_hf_ag_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_control_target_t type, int volume)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -195,7 +187,7 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_cont
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat)
+esp_err_t esp_hf_ag_unknown_at_send(esp_bd_addr_t remote_addr, char *unat)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -215,7 +207,7 @@ esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat)
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_addr, esp_hf_at_response_code_t response_code, esp_hf_cme_err_t error_code)
+esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_addr, esp_hf_at_response_code_t response_code, esp_hf_cme_err_t error_code)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -236,7 +228,7 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_addr, esp_hf_at_response_
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr,
+esp_err_t esp_hf_ag_devices_status_indchange(esp_bd_addr_t remote_addr,
                                             esp_hf_call_status_t call_state,
                                             esp_hf_call_setup_status_t call_setup_state,
                                             esp_hf_network_state_t ntk_state, int signal)
@@ -262,7 +254,7 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr,
     return (state == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
+esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
                                 esp_hf_call_status_t call_state,
                                 esp_hf_call_setup_status_t call_setup_state,
                                 esp_hf_network_state_t ntk_state, int signal, esp_hf_roaming_status_t roam, int batt_lev,
@@ -292,7 +284,7 @@ esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name)
+esp_err_t esp_hf_ag_cops_response(esp_bd_addr_t remote_addr, char *name)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -312,7 +304,7 @@ esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_current_call_direction_t dir,
+esp_err_t esp_hf_ag_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_current_call_direction_t dir,
                                  esp_hf_current_call_status_t current_call_state, esp_hf_current_call_mode_t mode,
                                  esp_hf_current_call_mpty_type_t mpty, char *number, esp_hf_call_addr_type_t type)
 {
@@ -342,7 +334,7 @@ esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type)
+esp_err_t esp_hf_ag_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_hf_subscriber_service_type_t type)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -363,7 +355,7 @@ esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_h
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t state)
+esp_err_t esp_hf_ag_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t state)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -383,7 +375,7 @@ esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t 
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_answer_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                                 esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                                 char *number, esp_hf_call_addr_type_t call_addr_type)
 {
@@ -410,7 +402,7 @@ esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int n
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_reject_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                                 esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                                 char *number, esp_hf_call_addr_type_t call_addr_type)
 {
@@ -437,7 +429,7 @@ esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_end_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                             esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                             char *number, esp_hf_call_addr_type_t call_addr_type)
 {
@@ -464,7 +456,7 @@ esp_err_t esp_bt_hf_end_call(esp_bd_addr_t remote_addr, int num_active, int num_
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
+esp_err_t esp_hf_ag_out_call(esp_bd_addr_t remote_addr, int num_active, int num_held,
                             esp_hf_call_status_t call_state,  esp_hf_call_setup_status_t call_setup_state,
                             char *number, esp_hf_call_addr_type_t call_addr_type)
 {
@@ -491,7 +483,7 @@ esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send)
+esp_err_t esp_hf_ag_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
@@ -512,7 +504,7 @@ esp_err_t esp_bt_hf_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_h
 }
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
-void esp_hf_outgoing_data_ready(void)
+void esp_hf_ag_outgoing_data_ready(void)
 {
     btc_hf_ci_sco_data();
 }

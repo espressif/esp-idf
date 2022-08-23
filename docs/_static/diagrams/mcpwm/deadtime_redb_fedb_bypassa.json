@@ -1,0 +1,29 @@
+{
+  "signal": [
+    {
+      "name": "origin_A",
+      "wave": "0...1.....0..."
+    },
+    {
+      "name": "origin_B",
+      "wave": "0...1.....0...",
+      "node": "....a.....b..."
+    },
+    {
+      "name": "pwm_A",
+      "wave": "0...1.....0..."
+    },
+    {
+      "name": "pwm_B",
+      "wave": "0....1.....0..",
+      "node": ".....c.....d..."
+    }
+  ],
+  "edge": [
+    "a|->c RED",
+    "b|->d FED"
+  ],
+  "head": {
+    "text": "Bypass A, RED + FED on B"
+  }
+}

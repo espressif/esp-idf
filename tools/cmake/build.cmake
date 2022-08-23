@@ -103,6 +103,9 @@ function(__build_set_default_build_specifications)
                                     "-Wextra"
                                     "-Wno-unused-parameter"
                                     "-Wno-sign-compare"
+                                    # ignore multiple enum conversion warnings since gcc 11
+                                    # TODO: IDF-5163
+                                    "-Wno-enum-conversion"
                                     # Default is dwarf-5 since GCC 11, fallback to dwarf-4 because of binary size
                                     # TODO: IDF-5160
                                     "-gdwarf-4"
@@ -110,14 +113,55 @@ function(__build_set_default_build_specifications)
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
 
-    list(APPEND c_compile_options   "-std=gnu99")
-
-    list(APPEND cxx_compile_options "-std=gnu++11")
-
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
     idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
+endfunction()
+
+function(__build_set_lang_version)
+    if(NOT IDF_TARGET STREQUAL "linux")
+        # Building for chip targets: we use a known version of the toolchain.
+        # Use latest supported versions.
+        set(c_std gnu17)
+        set(cxx_std gnu++20)
+    else()
+        enable_language(C CXX)
+        # Building for Linux target, fall back to an older version of the standard
+        # if the preferred one is not supported by the compiler.
+        set(preferred_c_versions gnu17 gnu11 gnu99)
+        set(ver_found FALSE)
+        foreach(c_version ${preferred_c_versions})
+            check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
+            if(ver_${c_version}_supported)
+                set(c_std ${c_version})
+                set(ver_found TRUE)
+                break()
+            endif()
+        endforeach()
+        if(NOT ver_found)
+            message(FATAL_ERROR "Failed to set C language standard to one of the supported versions: "
+                                "${preferred_c_versions}. Please upgrade the host compiler.")
+        endif()
+
+        set(preferred_cxx_versions gnu++20 gnu++2a gnu++17 gnu++14)
+        set(ver_found FALSE)
+        foreach(cxx_version ${preferred_cxx_versions})
+            check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
+            if(ver_${cxx_version}_supported)
+                set(cxx_std ${cxx_version})
+                set(ver_found TRUE)
+                break()
+            endif()
+        endforeach()
+        if(NOT ver_found)
+            message(FATAL_ERROR "Failed to set C++ language standard to one of the supported versions: "
+                                "${preferred_cxx_versions}. Please upgrade the host compiler.")
+        endif()
+    endif()
+
+    idf_build_set_property(C_COMPILE_OPTIONS "-std=${c_std}" APPEND)
+    idf_build_set_property(CXX_COMPILE_OPTIONS "-std=${cxx_std}" APPEND)
 endfunction()
 
 #
@@ -144,6 +188,7 @@ function(__build_init idf_path)
     idf_build_set_property(IDF_COMPONENT_MANAGER 0)
 
     __build_set_default_build_specifications()
+    __build_set_lang_version()
 
     # Add internal components to the build
     idf_build_get_property(idf_path IDF_PATH)
@@ -449,10 +494,8 @@ macro(idf_build_process target)
         set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
 
         set(__contents "components:\n")
-        idf_build_get_property(__component_targets __COMPONENT_TARGETS)
-        foreach(__component_target ${__component_targets})
-            __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
-            __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
+        foreach(__component_name ${components})
+            idf_component_get_property(__component_dir ${__component_name} COMPONENT_DIR)
             set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
         endforeach()
 

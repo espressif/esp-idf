@@ -11,13 +11,13 @@
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_system.h"
+#include "esp_cpu.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "hal/cpu_hal.h"
 #include "esp_eth_enc28j60.h"
 #include "enc28j60.h"
 #include "sdkconfig.h"
@@ -1038,6 +1038,7 @@ static esp_err_t emac_enc28j60_del(esp_eth_mac_t *mac)
 {
     emac_enc28j60_t *emac = __containerof(mac, emac_enc28j60_t, parent);
     vTaskDelete(emac->rx_task_hdl);
+    spi_bus_remove_device(emac->spi_hdl);
     vSemaphoreDelete(emac->spi_lock);
     vSemaphoreDelete(emac->reg_trans_lock);
     vSemaphoreDelete(emac->tx_ready_sem);
@@ -1055,12 +1056,25 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
     /* enc28j60 driver is interrupt driven */
     MAC_CHECK(enc28j60_config->int_gpio_num >= 0, "error interrupt gpio number", err, NULL);
+    /* SPI device init */
+    spi_device_interface_config_t spi_devcfg;
+    memcpy(&spi_devcfg, enc28j60_config->spi_devcfg, sizeof(spi_device_interface_config_t));
+    if (enc28j60_config->spi_devcfg->command_bits == 0 && enc28j60_config->spi_devcfg->address_bits == 0) {
+        /* configure default SPI frame format */
+        spi_devcfg.command_bits = 3;
+        spi_devcfg.address_bits = 5;
+    } else {
+        MAC_CHECK(enc28j60_config->spi_devcfg->command_bits == 3 || enc28j60_config->spi_devcfg->address_bits == 5,
+                    "incorrect SPI frame format (command_bits/address_bits)", err, NULL);
+    }
+    MAC_CHECK(spi_bus_add_device(enc28j60_config->spi_host_id, &spi_devcfg, &emac->spi_hdl) == ESP_OK,
+                                    "adding device to SPI host #%d failed", err, NULL, enc28j60_config->spi_host_id + 1);
+
     emac->last_bank = 0xFF;
     emac->next_packet_ptr = ENC28J60_BUF_RX_START;
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
     emac->int_gpio_num = enc28j60_config->int_gpio_num;
-    emac->spi_hdl = enc28j60_config->spi_hdl;
     emac->parent.set_mediator = emac_enc28j60_set_mediator;
     emac->parent.init = emac_enc28j60_init;
     emac->parent.deinit = emac_enc28j60_deinit;
@@ -1088,7 +1102,7 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
     /* create enc28j60 task */
     BaseType_t core_num = tskNO_AFFINITY;
     if (mac_config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
-        core_num = cpu_hal_get_core_id();
+        core_num = esp_cpu_get_core_id();
     }
     BaseType_t xReturned = xTaskCreatePinnedToCore(emac_enc28j60_task, "enc28j60_tsk", mac_config->rx_task_stack_size, emac,
                            mac_config->rx_task_prio, &emac->rx_task_hdl, core_num);

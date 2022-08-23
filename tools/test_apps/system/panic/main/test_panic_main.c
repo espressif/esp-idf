@@ -16,7 +16,11 @@ static const char* get_test_name(void);
 static void test_abort(void);
 static void test_abort_cache_disabled(void);
 static void test_int_wdt(void);
-static void test_task_wdt(void);
+static void test_task_wdt_cpu0(void);
+#if !CONFIG_FREERTOS_UNICORE
+static void test_task_wdt_cpu1(void);
+static void test_task_wdt_both_cpus(void);
+#endif
 static void test_storeprohibited(void);
 static void test_cache_error(void);
 static void test_int_wdt_cache_disabled(void);
@@ -50,7 +54,11 @@ void app_main(void)
     HANDLE_TEST(test_abort);
     HANDLE_TEST(test_abort_cache_disabled);
     HANDLE_TEST(test_int_wdt);
-    HANDLE_TEST(test_task_wdt);
+    HANDLE_TEST(test_task_wdt_cpu0);
+#if !CONFIG_FREERTOS_UNICORE
+    HANDLE_TEST(test_task_wdt_cpu1);
+    HANDLE_TEST(test_task_wdt_both_cpus);
+#endif
     HANDLE_TEST(test_storeprohibited);
     HANDLE_TEST(test_cache_error);
     HANDLE_TEST(test_int_wdt_cache_disabled);
@@ -87,12 +95,40 @@ static void test_int_wdt(void)
     }
 }
 
-static void test_task_wdt(void)
+static void test_task_wdt_cpu0(void)
 {
     while (true) {
         ;
     }
 }
+
+#if !CONFIG_FREERTOS_UNICORE
+static void infinite_loop(void* arg) {
+    (void) arg;
+    while(1) {
+        ;
+    }
+}
+
+static void test_task_wdt_cpu1(void)
+{
+    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 1, NULL, 1);
+    while (true) {
+        vTaskDelay(1);
+    }
+}
+
+static void test_task_wdt_both_cpus(void)
+{
+    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 4, NULL, 1);
+    /* Give some time to the task on CPU 1 to be scheduled */
+    vTaskDelay(1);
+    xTaskCreatePinnedToCore(infinite_loop, "Infinite loop", 1024, NULL, 4, NULL, 0);
+    while (true) {
+        ;
+    }
+}
+#endif
 
 static void __attribute__((no_sanitize_undefined)) test_storeprohibited(void)
 {

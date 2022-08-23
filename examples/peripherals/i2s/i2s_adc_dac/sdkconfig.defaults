@@ -1,0 +1,7 @@
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_adc_dac_example.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_adc_dac_example.csv"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+# ADC/DAC are only supported in the legacy driver, suppress the warnings while using the legacy driver
+CONFIG_I2S_SUPPRESS_DEPRECATE_WARN=y
+CONFIG_ADC_SUPPRESS_DEPRECATE_WARN=y

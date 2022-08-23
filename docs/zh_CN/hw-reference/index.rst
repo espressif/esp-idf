@@ -1,5 +1,5 @@
 *******************************
-{IDF_TARGET_NAME} H/W 硬件参考
+H/W 硬件参考
 *******************************
 :link_to_translation:`en:[English]`
 
@@ -22,5 +22,5 @@
     乐鑫 KiCad 库 <https://github.com/espressif/kicad-libraries>
     乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>
     乐鑫产品证书 <https://www.espressif.com/zh-hans/certificates?keys={IDF_TARGET_NAME}>
-    芯片系列对比 <chip-series-comparison>
+    芯片系列对比 <https://products.espressif.com/#/product-comparison>
     官方论坛硬件版块 <https://www.esp32.com/viewforum.php?f=30>

@@ -41,9 +41,6 @@ extern "C" {
 #define ADC_HAL_DMA_INTR_MASK                           BIT(9)
 #endif
 
-//For ADC module, each conversion contains 4 bytes
-#define ADC_HAL_DATA_LEN_PER_CONV 4
-
 /**
  * @brief Enum for DMA descriptor status
  */
@@ -82,8 +79,6 @@ typedef struct adc_hal_dma_ctx_t {
 } adc_hal_dma_ctx_t;
 
 typedef struct adc_hal_digi_ctrlr_cfg_t {
-    bool                        conv_limit_en;      //1: adc conversion will stop when `conv_limit_num` reaches. 0: won't stop. NOTE: esp32 should always be set to 1.
-    uint32_t                    conv_limit_num;     //see `conv_limit_en`
     uint32_t                    adc_pattern_len;    //total pattern item number, including ADC1 and ADC2
     adc_digi_pattern_config_t   *adc_pattern;       //pattern item
     uint32_t                    sample_freq_hz;     //ADC sample frequency
@@ -230,25 +225,6 @@ void adc_hal_digi_dis_intr(adc_hal_dma_ctx_t *hal, uint32_t mask);
  * @param hal Context of the HAL
  */
 void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal);
-
-
-/*---------------------------------------------------------------
-                    ADC Single Read
----------------------------------------------------------------*/
-/**
- * Start an ADC conversion and get the converted value.
- *
- * @note It may be block to wait conversion finish.
- *
- * @param      adc_n   ADC unit.
- * @param      channel ADC channel number.
- * @param[out] out_raw ADC converted result
- *
- * @return
- *      - ESP_OK:                The value is valid.
- *      - ESP_ERR_INVALID_STATE: The value is invalid.
- */
-esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw);
 
 #ifdef __cplusplus
 }

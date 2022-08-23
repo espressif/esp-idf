@@ -100,19 +100,10 @@ menu "SPI Flash driver"
             bool "Allowed"
     endchoice
 
-    config SPI_FLASH_USE_LEGACY_IMPL
-        bool "Use the legacy implementation before IDF v4.0"
-        default n
-        help
-            The implementation of SPI flash has been greatly changed in IDF v4.0.
-            Enable this option to use the legacy implementation.
-
     config SPI_FLASH_SHARE_SPI1_BUS
         bool  "Support other devices attached to SPI1 bus"
         default n
-        # The bus lock on SPI1 is meaningless when the legacy implementation is used, or the SPI
-        # driver does not support SPI1.
-        depends on !SPI_FLASH_USE_LEGACY_IMPL && !IDF_TARGET_ESP32S2
+        depends on !IDF_TARGET_ESP32S2
         help
             Each SPI bus needs a lock for arbitration among devices. This allows multiple
             devices on a same bus, but may reduce the speed of esp_flash driver access to the
@@ -160,7 +151,7 @@ menu "SPI Flash driver"
     config SPI_FLASH_AUTO_SUSPEND
         bool "Auto suspend long erase/write operations (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_USE_LEGACY_IMPL && !SPI_FLASH_ROM_IMPL
+        depends on IDF_TARGET_ESP32C3 && !SPI_FLASH_ROM_IMPL
         help
             This option is default n before ESP32-C3, because it needs bootloader support.
 
@@ -191,14 +182,12 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
         bool "Flash timeout checkout disabled"
-        depends on !SPI_FLASH_USE_LEGACY_IMPL
         default n
         help
             This option is helpful if you are using a flash chip whose timeout is quite large or unpredictable.
 
     config SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
         bool "Override default chip driver list"
-        depends on !SPI_FLASH_USE_LEGACY_IMPL
         default n
         help
             This option allows the chip driver list to be customized, instead of using the default list provided by
@@ -208,6 +197,28 @@ menu "SPI Flash driver"
             `default_registered_chips` structure must be provided by the user.
 
             See example: custom_chip_driver under examples/storage for more details.
+
+    menu "SPI Flash behavior when brownout"
+
+        config SPI_FLASH_BROWNOUT_RESET_XMC
+            bool "Enable sending reset when brownout for XMC flash chips"
+            default y
+            select SPI_FLASH_BROWNOUT_RESET
+            help
+                When this option is selected, the patch will be enabled for XMC.
+                Follow the recommended flow by XMC for better stability.
+
+                DO NOT DISABLE UNLESS YOU KNOW WHAT YOU ARE DOING.
+
+        config SPI_FLASH_BROWNOUT_RESET
+            bool
+            default y
+            select ESP_SYSTEM_BROWNOUT_INTR
+            help
+                When brownout happens during flash erase/write operations,
+                send reset command to stop the flash operations to improve stability.
+
+    endmenu
 
     menu "Auto-detect flash chips"
         visible if !SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST
@@ -288,5 +299,12 @@ menu "SPI Flash driver"
             is kept enabled irrespective of state of flash encryption feature. However, in case
             application is not using flash encryption feature and is in need of some additional
             memory from IRAM region (~1KB) then this config can be disabled.
+
+    config SPI_FLASH_HPM_ENABLE
+        bool
+        default n
+        help
+            This option is invisible, and will be selected automatically
+            when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
 
 endmenu

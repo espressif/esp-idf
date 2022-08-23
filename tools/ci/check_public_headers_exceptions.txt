@@ -3,8 +3,10 @@
 components/xtensa/include/xtensa/
 components/xtensa/include/
 components/xtensa/esp32/include/xtensa/config/
+components/xtensa/esp32s2/include/xtensa/config/
+components/xtensa/esp32s3/include/xtensa/config/
 
-components/newlib/platform_include/
+
 
 components/freertos/esp_additions/include/freertos_tasks_c_additions.h
 components/freertos/FreeRTOS-Kernel/include/freertos/
@@ -22,15 +24,18 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
 components/esp_common/include/esp_private/
 
-components/esp32/include/esp32/brownout.h
-components/esp32/include/esp32/cache_err_int.h
-
-components/driver/include/driver/sdmmc_defs.h
-components/driver/include/driver/sdmmc_types.h
-
+# LWIP: sockets.h uses #include_next<>, which doesn't work correctly with the checker
+# memp_std.h is supposed to be included multiple times with different settings
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
+components/lwip/include/lwip/sockets.h
+components/lwip/lwip/src/include/lwip/prot/nd6.h
 
+## Header produced non-zero object:
 components/esp_phy/esp32/include/phy_init_data.h
+components/esp_phy/esp32s2/include/phy_init_data.h
+components/esp_phy/esp32s3/include/phy_init_data.h
+components/esp_phy/esp32c3/include/phy_init_data.h
+components/esp_phy/esp32c2/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
@@ -57,8 +62,6 @@ components/esp-tls/private_include/
 
 components/protobuf-c/
 
-components/mdns/include/mdns_console.h
-
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 
@@ -79,7 +82,6 @@ components/unity/include/unity_test_runner.h
 components/cmock/CMock/src/cmock.h
 components/cmock/CMock/src/cmock_internals.h
 
-components/efuse/include/esp_efuse.h
 
 components/openthread/openthread/
 
@@ -94,16 +96,9 @@ components/esp_hw_support/include/esp_private/esp_memprot_internal.h
 
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
-components/heap/include/esp_heap_task_info.h
 components/esp_wifi/include/esp_private/wifi_os_adapter.h
-components/asio/port/include/esp_exception.h
-components/esp_common/include/esp_compiler.h
-
 ### To be fixed: headers that rely on implicit inclusion
 #
-components/lwip/lwip/src/include/lwip/prot/nd6.h
-components/lwip/port/esp32/include/netif/dhcp_state.h
-components/soc/src/esp32/rtc_clk_common.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h
@@ -117,12 +112,7 @@ components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp_rom/include/esp32c2/rom/rtc.h
-components/esp32/include/esp32/dport_access.h
-components/esp32/include/rom/sha.h
-components/esp32/include/rom/secure_boot.h
-components/driver/esp32/include/touch_sensor.h
 components/esp_ringbuf/include/freertos/ringbuf.h
-components/efuse/esp32/include/esp_efuse_table.h
 components/esp_wifi/include/esp_wifi_crypto_types.h
 components/esp_wifi/include/esp_coexist_internal.h
 components/esp_wifi/include/esp_wifi_netif.h
@@ -134,14 +124,32 @@ components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
-components/bootloader_support/include/bootloader_util.h
-components/console/linenoise/linenoise.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h
 components/fatfs/diskio/diskio_sdmmc.h
 components/openssl/include/openssl/ssl.h
 components/ulp/include/ulp_common.h
 components/ulp/include/esp32s2/ulp_riscv.h
-components/lwip/include/apps/sntp/sntp.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
+components/usb/include/esp_private/usb_phy.h
+components/usb/include/usb/usb_types_stack.h
+
+### To be fixed: files which don't compile for esp32s2 target:
+
+components/esp_psram/include/esp32/himem.h
+components/esp_rom/include/esp32/rom/ets_sys.h
+components/esp_rom/include/esp32/rom/rtc.h
+components/esp_rom/include/esp32/rom/uart.h
+
+
+### To be fixed: files which don't compile for esp32s3 target:
+
+
+### To be fixed: files which don't compile for esp32c3 target:
+
+components/esp_system/port/include/private/esp_private/trax.h
+components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
+components/riscv/include/esp_private/panic_reason.h
+components/riscv/include/riscv/interrupt.h
+components/riscv/include/riscv/rvruntime-frames.h

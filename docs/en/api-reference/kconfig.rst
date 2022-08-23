@@ -4,10 +4,7 @@ Project Configuration
 Introduction
 ============
 
-ESP-IDF uses kconfiglib_ which is a Python-based extension to the Kconfig_ system which provides a compile-time
-project configuration mechanism. Kconfig is based around options of several types: integer, string, boolean. Kconfig
-files specify dependencies between options, default values of the options, the way the options are grouped together,
-etc.
+ESP-IDF uses kconfiglib_ which is a Python-based extension to the Kconfig_ system which provides a compile-time project configuration mechanism. Kconfig is based around options of several types: integer, string, boolean. Kconfig files specify dependencies between options, default values of the options, the way the options are grouped together, etc.
 
 For the complete list of available features please see Kconfig_ and `kconfiglib extentions`_.
 
@@ -44,25 +41,14 @@ The following attributes of ``Kconfig`` files are standardized:
 Format checker
 --------------
 
-``tools/check_kconfigs.py`` is provided for checking the ``Kconfig`` formatting
-rules. The checker checks all ``Kconfig`` and ``Kconfig.projbuild`` files in
-the ESP-IDF directory and generates a new file with suffix ``.new`` with some
-recommendations how to fix issues (if there are any). Please note that the
-checker cannot correct all rules and the responsibility of the developer is to
-check and make final corrections in order to pass the tests. For example,
-indentations will be corrected if there isn't some misleading previous
-formatting but it cannot come up with a common prefix for options inside a
-menu.
+``tools/check_kconfigs.py`` is provided for checking the ``Kconfig`` formatting rules. The checker checks all ``Kconfig`` and ``Kconfig.projbuild`` files in the ESP-IDF directory and generates a new file with suffix ``.new`` with some recommendations how to fix issues (if there are any). Please note that the checker cannot correct all rules and the responsibility of the developer is to check and make final corrections in order to pass the tests. For example, indentations will be corrected if there isn't some misleading previous formatting but it cannot come up with a common prefix for options inside a menu.
 
 .. _configuration-options-compatibility:
 
 Backward Compatibility of Kconfig Options
 =========================================
 
-The standard Kconfig_ tools ignore unknown options in ``sdkconfig``. So if a
-developer has custom settings for options which are renamed in newer ESP-IDF
-releases then the given setting for the option would be silently ignored.
-Therefore, several features have been adopted to avoid this:
+The standard Kconfig_ tools ignore unknown options in ``sdkconfig``. So if a developer has custom settings for options which are renamed in newer ESP-IDF releases then the given setting for the option would be silently ignored. Therefore, several features have been adopted to avoid this:
 
 1. ``confgen.py`` is used by the tool chain to pre-process ``sdkconfig`` files before anything else, for example
    ``menuconfig``, would read them. As the consequence, the settings for old options will be kept and not ignored.

@@ -1,4 +1,5 @@
 set(include_dirs
+    include
     include/apps
     include/apps/sntp
     lwip/src/include
@@ -55,6 +56,9 @@ set(srcs
     "lwip/src/core/ipv6/mld6.c"
     "lwip/src/core/ipv6/nd6.c"
     "lwip/src/netif/ethernet.c"
+    "lwip/src/netif/bridgeif.c"
+    "lwip/src/netif/bridgeif_fdb.c"
+    "lwip/src/netif/slipif.c"
     "lwip/src/netif/slipif.c"
     "lwip/src/netif/ppp/auth.c"
     "lwip/src/netif/ppp/ccp.c"
@@ -85,7 +89,7 @@ set(srcs
     "port/esp32/hooks/lwip_default_hooks.c"
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
-    "port/esp32/netif/wlanif.c")
+    "port/esp32/sockets_ext.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
     list(APPEND srcs
@@ -121,18 +125,10 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/sha1.c")
 endif()
 
-if(CONFIG_ETH_ENABLED)
-    list(APPEND srcs "port/esp32/netif/ethernetif.c")
-endif()
-
 if(CONFIG_VFS_SUPPORT_IO)
     list(APPEND srcs "port/esp32/vfs_lwip.c")
 else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
-endif()
-
-if(CONFIG_OPENTHREAD_ENABLED)
-    list(APPEND srcs "port/esp32/netif/openthreadif.c")
 endif()
 
 if(CONFIG_LWIP_ICMP)
@@ -153,21 +149,15 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
-                    REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES esp_netif)
+                    PRIV_REQUIRES vfs)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
 
 set_source_files_properties(
-    lwip/src/netif/ppp/ppp.c
-    PROPERTIES COMPILE_FLAGS
-    -Wno-uninitialized
-    )
-set_source_files_properties(
     lwip/src/netif/ppp/pppos.c
     PROPERTIES COMPILE_FLAGS
-    -Wno-implicit-fallthrough
+    -Wno-type-limits
     )
 # "comparison is always false due to limited range of data type" warning
 # when setting CONFIG_LWIP_TCP_WND_DEFAULT to 65535
@@ -175,6 +165,13 @@ set_source_files_properties(
     lwip/src/core/tcp.c
     PROPERTIES COMPILE_FLAGS
     -Wno-type-limits
+)
+
+# ignore some declaration mismatches
+set_source_files_properties(
+    lwip/src/netif/ppp/chap_ms.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-array-parameter
 )
 
 if(CONFIG_OPENTHREAD_ENABLED)
@@ -188,3 +185,5 @@ endif()
 if(CONFIG_LWIP_DHCP_RESTORE_LAST_IP)
     idf_component_optional_requires(PRIVATE nvs_flash)
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

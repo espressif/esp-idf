@@ -7,11 +7,6 @@ entries:
         gptimer: gptimer_set_alarm_action (noflash)
         gptimer: gptimer_start (noflash)
         gptimer: gptimer_stop (noflash)
-    if GDMA_CTRL_FUNC_IN_IRAM = y:
-        gdma: gdma_start (noflash)
-        gdma: gdma_stop (noflash)
-        gdma: gdma_append (noflash)
-        gdma: gdma_reset (noflash)
     if PCNT_CTRL_FUNC_IN_IRAM = y:
         pulse_cnt: pcnt_unit_start (noflash)
         pulse_cnt: pcnt_unit_stop (noflash)
@@ -20,3 +15,5 @@ entries:
     if GPIO_CTRL_FUNC_IN_IRAM = y:
         gpio: gpio_set_level (noflash)
         gpio: gpio_intr_disable (noflash)
+    if SDM_CTRL_FUNC_IN_IRAM = y:
+        sdm: sdm_channel_set_duty (noflash)

@@ -14,11 +14,10 @@
 
 #include "esp_err.h"
 #include "esp_partition.h"
-#include "esp_spi_flash.h"
+#include "spi_flash_mmap.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
-#include "esp_spi_flash.h"
 #include "sdkconfig.h"
 
 #include "esp_ota_ops.h"
@@ -30,6 +29,20 @@
 #include "esp_system.h"
 #include "esp_efuse.h"
 #include "esp_attr.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/secure_boot.h"
+#endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
@@ -638,8 +651,14 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
 
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 static esp_err_t esp_ota_set_anti_rollback(void) {
-    const esp_app_desc_t *app_desc = esp_ota_get_app_description();
-    return esp_efuse_update_secure_version(app_desc->secure_version);
+    const esp_partition_t* partition = esp_ota_get_running_partition();
+    esp_app_desc_t app_desc = {0};
+
+    esp_err_t err = esp_ota_get_partition_description(partition, &app_desc);
+    if (err == ESP_OK) {
+        return esp_efuse_update_secure_version(app_desc.secure_version);
+    }
+    return err;
 }
 #endif
 
@@ -899,7 +918,7 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
     }
 
     esp_err_t ret;
-    ets_secure_boot_key_digests_t trusted_keys;
+    esp_secure_boot_key_digests_t trusted_keys;
     ret = esp_secure_boot_read_key_digests(&trusted_keys);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Could not read the secure boot key digests from efuse. Aborting..");

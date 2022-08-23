@@ -52,7 +52,7 @@ typedef struct {
     esp_mbedtls_sha512_mode mode;
 } mbedtls_sha512_context;
 
-#elif SOC_SHA_SUPPORT_DMA
+#elif SOC_SHA_SUPPORT_DMA || SOC_SHA_SUPPORT_RESUME
 
 typedef enum {
     ESP_SHA512_STATE_INIT,

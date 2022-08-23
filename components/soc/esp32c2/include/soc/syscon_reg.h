@@ -209,6 +209,7 @@ extern "C" {
 #define BLE_REG_REST_BIT        BIT(11)
 #define BLE_PWR_REG_REST_BIT    BIT(12)
 #define BLE_BB_REG_REST_BIT     BIT(13)
+#define BLE_RPA_REST_BIT        BIT(27)
 
 #define SYSCON_HOST_INF_SEL_REG          (DR_REG_SYSCON_BASE + 0x1C)
 /* SYSCON_PERI_IO_SWAP : R/W ;bitpos:[7:0] ;default: 8'h0 ; */

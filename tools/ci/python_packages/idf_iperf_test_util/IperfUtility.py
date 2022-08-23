@@ -1,8 +1,9 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 import os
 import re
 import subprocess
 import time
-from builtins import object, range, str
 
 from idf_iperf_test_util import LineChart
 from tiny_test_fw import DUT, Utility

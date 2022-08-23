@@ -36,23 +36,8 @@
 
 .extern pxCurrentTCB
 
-/*
-*******************************************************************************
-* Interrupt stack. The size of the interrupt stack is determined by the config
-* parameter "configISR_STACK_SIZE" in FreeRTOSConfig.h
-*******************************************************************************
-*/
-    .data
-    .align      16
     .global     port_IntStack
     .global     port_switch_flag    //Required by sysview_tracing build
-port_IntStack:
-    .space      configISR_STACK_SIZE*portNUM_PROCESSORS     /* This allocates stacks for each individual CPU. */
-port_IntStackTop:
-    .word       0
-port_switch_flag:
-    .space      portNUM_PROCESSORS*4 /* One flag for each individual CPU. */
-
     .text
 
 /*
@@ -446,6 +431,10 @@ _frxt_dispatch:
 .L_frxt_dispatch_sol:
 
     /* Solicited stack frame. Restore minimal context and return from vPortYield(). */
+    #if XCHAL_HAVE_THREADPTR
+    l32i    a2,  sp, XT_SOL_THREADPTR
+    wur.threadptr a2
+    #endif
     l32i    a3,  sp, XT_SOL_PS
     #ifdef __XTENSA_CALL0_ABI__
     l32i    a12, sp, XT_SOL_A12
@@ -533,6 +522,10 @@ vPortYield:
     rsr     a2,  PS
     s32i    a0,  sp, XT_SOL_PC
     s32i    a2,  sp, XT_SOL_PS
+    #if XCHAL_HAVE_THREADPTR
+    rur.threadptr a2
+    s32i    a2,  sp, XT_SOL_THREADPTR
+    #endif
     #ifdef __XTENSA_CALL0_ABI__
     s32i    a12, sp, XT_SOL_A12         /* save callee-saved registers      */
     s32i    a13, sp, XT_SOL_A13

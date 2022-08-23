@@ -3,8 +3,6 @@
 # SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import print_function, unicode_literals
-
 import errno
 import filecmp
 import os
@@ -16,7 +14,6 @@ import sys
 import tempfile
 import threading
 import time
-from builtins import object
 from io import open
 
 XTENSA_ARGS = '--toolchain-prefix xtensa-esp32-elf-'

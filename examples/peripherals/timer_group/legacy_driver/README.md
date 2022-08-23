@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Example: General Purpose Timer
 
 This example uses the timer group driver to generate timer interrupts at two specified alarm intervals.

@@ -34,9 +34,17 @@ menu "Wi-Fi Provisioning Manager"
     config WIFI_PROV_BLE_FORCE_ENCRYPTION
         bool
         prompt "Force Link Encryption during characteristic Read / Write"
-        depends on BT_NIMBLE_ENABLED
         default y
         help
             Used to enforce link encryption when attempting to read / write characteristic
+
+    config WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+        bool "Keep BT on after provisioning is done"
+        depends on BT_ENABLED
+
+    config WIFI_PROV_DISCONNECT_AFTER_PROV
+        bool "Terminate connection after provisioning is done"
+        depends on WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+        default y
 
 endmenu

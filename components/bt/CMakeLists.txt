@@ -1,52 +1,46 @@
 if(CONFIG_BT_ENABLED)
-    if(CONFIG_IDF_TARGET_ESP32)
-        set(srcs "controller/esp32/bt.c"
-                 "controller/esp32/hli_api.c"
-                 "controller/esp32/hli_vectors.S")
-    elseif(CONFIG_IDF_TARGET_ESP32C3)
-        set(srcs "controller/esp32c3/bt.c")
-    elseif(CONFIG_IDF_TARGET_ESP32S3)
-        set(srcs "controller/esp32s3/bt.c")
-    elseif(CONFIG_IDF_TARGET_ESP32H2)
-        set(srcs "controller/esp32h2/bt.c")
-    endif()
 
-    if(CONFIG_NIMBLE_USE_UART_HCI)
-        set(srcs
-            "porting/nimble/src/hal_uart.c"
-            )
-    else()
-    endif()
-
-    set(include_dirs common/osi/include)
+    set(srcs "")
+    set(include_dirs "")
 
     if(CONFIG_IDF_TARGET_ESP32)
-       list(APPEND include_dirs include/esp32/include)
+        list(APPEND srcs "controller/esp32/bt.c"
+                         "controller/esp32/hli_api.c"
+                         "controller/esp32/hli_vectors.S")
+        list(APPEND include_dirs include/esp32/include)
+
     elseif(CONFIG_IDF_TARGET_ESP32C3)
-       list(APPEND include_dirs include/esp32c3/include)
+        list(APPEND srcs "controller/esp32c3/bt.c")
+        list(APPEND include_dirs include/esp32c3/include)
+
     elseif(CONFIG_IDF_TARGET_ESP32S3)
-       list(APPEND include_dirs include/esp32s3/include)
+        list(APPEND srcs "controller/esp32s3/bt.c")
+        list(APPEND include_dirs include/esp32s3/include)
+
     elseif(CONFIG_IDF_TARGET_ESP32H2)
-       if(CONFIG_BT_BLUEDROID_ENABLED)
-           list(APPEND include_dirs
-                host/nimble/nimble/porting/nimble/include
-                host/nimble/nimble/nimble/include
-                host/nimble/nimble/porting/npl/freertos/include
-                host/nimble/nimble/nimble/transport/ram/include
-                host/nimble/port/include
-                include/esp32h2/include)
-       else()
-           list(APPEND include_dirs include/esp32h2/include)
-       endif()
+        list(APPEND srcs "controller/esp32h2/bt.c")
+        list(APPEND include_dirs include/esp32h2/include)
+
+    elseif(CONFIG_IDF_TARGET_ESP32C2)
+        list(APPEND srcs "controller/esp32c2/bt.c")
+        list(APPEND include_dirs include/esp32c2/include)
     endif()
+
+
+    # Common
+    list(APPEND include_dirs common/osi/include)
 
     list(APPEND priv_include_dirs
             common/btc/include
-            common/include)
+            common/include
+            porting/mem/
+        )
     list(APPEND include_dirs
          common/api/include/api
          common/btc/profile/esp/blufi/include
-         common/btc/profile/esp/include)
+         common/btc/profile/esp/include
+        )
+
 
     list(APPEND srcs "common/btc/core/btc_alarm.c"
          "common/api/esp_blufi_api.c"
@@ -59,6 +53,8 @@ if(CONFIG_BT_ENABLED)
          "common/osi/buffer.c"
          "common/osi/config.c"
          "common/osi/fixed_queue.c"
+         "common/osi/pkt_queue.c"
+         "common/osi/fixed_pkt_queue.c"
          "common/osi/future.c"
          "common/osi/hash_functions.c"
          "common/osi/hash_map.c"
@@ -66,8 +62,11 @@ if(CONFIG_BT_ENABLED)
          "common/osi/mutex.c"
          "common/osi/thread.c"
          "common/osi/osi.c"
-         "common/osi/semaphore.c")
+         "common/osi/semaphore.c"
+         "porting/mem/bt_osi_mem.c"
+         )
 
+    # Host Bluedroid
     if(CONFIG_BT_BLUEDROID_ENABLED)
 
         list(APPEND priv_include_dirs
@@ -361,16 +360,10 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/smp/smp_l2c.c"
                    "host/bluedroid/stack/smp/smp_main.c"
                    "host/bluedroid/stack/smp/smp_utils.c")
-if(CONFIG_IDF_TARGET_ESP32H2)
-       if(CONFIG_BT_BLUEDROID_ENABLED)
-                   list(APPEND srcs
-                   "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
-                   "host/nimble/nimble/porting/nimble/src/os_msys_init.c"
-                   "host/nimble/port/src/esp_nimble_mem.c")
-       endif()
-endif()
 
-            list(APPEND srcs "common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c")
+
+        list(APPEND srcs "common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c")
+
         if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c")
         endif()
@@ -475,12 +468,54 @@ endif()
                     "esp_ble_mesh/mesh_models/server/time_scene_server.c")
     endif()
 
+
+
+    if(CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
+            list(APPEND srcs
+                    "porting/npl/freertos/src/npl_os_freertos.c"
+                    "porting/nimble/src/os_msys_init.c"
+            )
+
+            list(APPEND include_dirs
+                    porting/include
+                    porting/nimble/include
+                    porting/npl/freertos/include
+                    porting/transport/include
+            )
+
+            if(CONFIG_BT_LE_HCI_INTERFACE_USE_UART)
+                list(APPEND srcs
+                        "porting/transport/uart/hci_uart.c"
+                    )
+            endif()
+    endif()
+
+
+    if(NOT (CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS))
+        list(APPEND include_dirs
+                porting/ext/tinycrypt/include
+            )
+        list(APPEND srcs "porting/ext/tinycrypt/src/utils.c"
+                "porting/ext/tinycrypt/src/sha256.c"
+                "porting/ext/tinycrypt/src/ecc.c"
+                "porting/ext/tinycrypt/src/ctr_prng.c"
+                "porting/ext/tinycrypt/src/ctr_mode.c"
+                "porting/ext/tinycrypt/src/aes_decrypt.c"
+                "porting/ext/tinycrypt/src/aes_encrypt.c"
+                "porting/ext/tinycrypt/src/ccm_mode.c"
+                "porting/ext/tinycrypt/src/ecc_dsa.c"
+                "porting/ext/tinycrypt/src/cmac_mode.c"
+                "porting/ext/tinycrypt/src/ecc_dh.c"
+                "porting/ext/tinycrypt/src/hmac_prng.c"
+                "porting/ext/tinycrypt/src/ecc_platform_specific.c"
+                "porting/ext/tinycrypt/src/hmac.c"
+                "porting/ext/tinycrypt/src/cbc_mode.c")
+    endif()
+
     if(CONFIG_BT_NIMBLE_ENABLED)
 
         list(APPEND include_dirs
-                    host/nimble/nimble/porting/nimble/include
-                    host/nimble/port/include
-                    host/nimble/nimble/nimble/include
+
                     host/nimble/nimble/nimble/host/include
                     host/nimble/nimble/nimble/host/services/ans/include
                     host/nimble/nimble/nimble/host/services/bas/include
@@ -494,31 +529,7 @@ endif()
                     host/nimble/nimble/nimble/host/util/include
                     host/nimble/nimble/nimble/host/store/ram/include
                     host/nimble/nimble/nimble/host/store/config/include
-                    host/nimble/nimble/porting/npl/freertos/include
-                    host/nimble/nimble/nimble/transport/ram/include
-                    host/nimble/esp-hci/include)
-
-    if(NOT CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS)
-
-        list(APPEND include_dirs
-                    host/nimble/nimble/ext/tinycrypt/include)
-
-        list(APPEND srcs "host/nimble/nimble/ext/tinycrypt/src/utils.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/sha256.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ecc.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ctr_prng.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ctr_mode.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/aes_decrypt.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/aes_encrypt.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ccm_mode.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ecc_dsa.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/cmac_mode.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ecc_dh.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/hmac_prng.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/ecc_platform_specific.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/hmac.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/cbc_mode.c")
-    endif()
+                    )
 
         list(APPEND srcs "host/nimble/nimble/nimble/host/util/src/addr.c"
                     "host/nimble/nimble/nimble/host/services/gatt/src/ble_svc_gatt.c"
@@ -577,39 +588,46 @@ endif()
                     "host/nimble/nimble/nimble/host/store/ram/src/ble_store_ram.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_config.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
-                    "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
-                    "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
-                    "host/nimble/nimble/porting/nimble/src/os_cputime_pwr2.c"
-                    "host/nimble/nimble/porting/nimble/src/hal_timer.c"
-                    "host/nimble/nimble/porting/nimble/src/os_msys_init.c"
-                    "host/nimble/nimble/porting/nimble/src/nimble_port.c"
-                    "host/nimble/port/src/esp_nimble_mem.c"
-                    "host/nimble/esp-hci/src/esp_nimble_hci.c"
-                    "host/nimble/nimble/porting/nimble/src/os_cputime.c")
+                )
 
-        if(CONFIG_IDF_TARGET_ESP32)
+            list(APPEND srcs
+                "host/nimble/nimble/porting/nimble/src/nimble_port.c"
+                "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
+            )
+            list(APPEND include_dirs
+                porting/include
+                host/nimble/nimble/porting/nimble/include
+                host/nimble/port/include
+            )
+
+        if(NOT CONFIG_BT_LE_CONTROLLER_NPL_OS_PORTING_SUPPORT)
             list(APPEND srcs
                     "host/nimble/nimble/porting/nimble/src/endian.c"
                     "host/nimble/nimble/porting/nimble/src/os_mempool.c"
                     "host/nimble/nimble/porting/nimble/src/mem.c"
-                    "host/nimble/nimble/porting/nimble/src/os_mbuf.c")
-        elseif(CONFIG_IDF_TARGET_ESP32C3)
-            list(APPEND srcs
-                    "host/nimble/nimble/porting/nimble/src/endian.c"
-                    "host/nimble/nimble/porting/nimble/src/os_mempool.c"
-                    "host/nimble/nimble/porting/nimble/src/mem.c"
-                    "host/nimble/nimble/porting/nimble/src/os_mbuf.c")
-        elseif(CONFIG_IDF_TARGET_ESP32S3)
-            list(APPEND srcs
-                    "host/nimble/nimble/porting/nimble/src/endian.c"
-                    "host/nimble/nimble/porting/nimble/src/os_mempool.c"
-                    "host/nimble/nimble/porting/nimble/src/mem.c"
-                    "host/nimble/nimble/porting/nimble/src/os_mbuf.c")
+                    "host/nimble/nimble/porting/nimble/src/os_mbuf.c"
+                    "host/nimble/nimble/porting/nimble/src/os_msys_init.c"
+                    "host/nimble/nimble/porting/npl/freertos/src/npl_os_freertos.c"
+                    )
+            list(APPEND include_dirs
+                    host/nimble/nimble/porting/npl/freertos/include
+                    host/nimble/nimble/porting/nimble/include
+                    host/nimble/nimble/nimble/include
+            )
         endif()
 
-
+        if(CONFIG_BT_NIMBLE_LEGACY_VHCI_ENABLE)
             list(APPEND srcs
+                "host/nimble/esp-hci/src/esp_nimble_hci.c"
+            )
+            list(APPEND include_dirs
+                host/nimble/esp-hci/include
+            )
+        endif()
+
+        list(APPEND srcs
                     "common/btc/profile/esp/blufi/nimble_host/esp_blufi.c")
+
         if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c")
         endif()
@@ -662,7 +680,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc esp_timer esp_pm esp_phy mbedtls
+                REQUIRES esp_timer esp_wifi
+                PRIV_REQUIRES nvs_flash soc esp_pm esp_phy mbedtls driver vfs
                 LDFRAGMENTS "linker.lf")
 
 if(CONFIG_BT_ENABLED)
@@ -681,7 +700,14 @@ if(CONFIG_BT_ENABLED)
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     elseif(CONFIG_IDF_TARGET_ESP32H2)
-        add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/libcontroller_5p0_seq.a")
+        if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+            add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/beta1/libble_app.a")
+        elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+            add_prebuilt_library(nimblelib "controller/lib_esp32h2/esp32h2-bt-lib/beta2/libble_app.a")
+        endif()
+        target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
+    elseif(CONFIG_IDF_TARGET_ESP32C2)
+        add_prebuilt_library(nimblelib "controller/lib_esp32c2/esp32c2-bt-lib/libble_app.a")
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
     endif()
 
@@ -691,6 +717,8 @@ if(CONFIG_BT_ENABLED)
         "host/bluedroid/btc/profile/std/gatt/btc_gatt_util.c"
         "host/bluedroid/btc/profile/std/gatt/btc_gatts.c"
         PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
+
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()
 
 if(CONFIG_BT_NIMBLE_MESH)

@@ -32,9 +32,13 @@
 
 #include "driver/gpio.h"
 #include "esp_sleep.h"
+#include "test_utils.h"
 
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+//IDF-5131
 RTC_DATA_ATTR static int boot_count = 0;
+
 static const char *TAG = "ota_test";
 
 /* @brief Copies a current app to next partition using handle.
@@ -821,6 +825,7 @@ static void test_flow6(void)
 // 3 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0 using esp_ota_write_with_offset", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow6, test_flow6);
 
+//IDF-5145
 TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_INVALID when image is ivalid", "[partitions]")
 {
     const esp_partition_t *cur_app = esp_ota_get_running_partition();
@@ -842,3 +847,4 @@ TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_
     TEST_ESP_ERR(ESP_ERR_IMAGE_INVALID, bootloader_common_get_sha256_of_partition(other_app->address, other_app->size, other_app->type, sha_256_other_app));
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha_256_cur_app, sha_256_other_app, sizeof(sha_256_cur_app), "must be the same");
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

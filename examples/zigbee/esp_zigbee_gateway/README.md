@@ -1,4 +1,7 @@
-# Gateway Example 
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
+# Gateway Example
 
 (See the `README.md` file in the upper level 'examples' directory for more information about examples.)
 
@@ -36,20 +39,20 @@ Build the project, flash it to the board, and start the monitor tool to view the
 
 As you run the example, you will see the following log:
 
-esp_zigbee_gateway:  
-I (660) ESP_ZB_GATEWAY: status: -1  
-I (670) ESP_ZB_GATEWAY: Zigbee stack initialized  
-I (680) ESP_ZB_GATEWAY: Zigbee rcp device booted  
-I (1280) ESP_ZB_GATEWAY: Start network formation  
-I (3060) ESP_ZB_GATEWAY: Formed network successfully (ieee extended address: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651)  
-I (4060) ESP_ZB_GATEWAY: status: 0  
-I (4400) ESP_ZB_GATEWAY: Network steering started  
+esp_zigbee_gateway:
+I (660) ESP_ZB_GATEWAY: status: -1
+I (670) ESP_ZB_GATEWAY: Zigbee stack initialized
+I (680) ESP_ZB_GATEWAY: Zigbee rcp device booted
+I (1280) ESP_ZB_GATEWAY: Start network formation
+I (3060) ESP_ZB_GATEWAY: Formed network successfully (ieee extended address: f9:54:2d:01:a0:03:f7:84, PAN ID: 0x8651)
+I (4060) ESP_ZB_GATEWAY: status: 0
+I (4400) ESP_ZB_GATEWAY: Network steering started
 
 ## Gateway Functions
 
  * After Zigbee gateway starts up, it will read MAC ieee address and Zigbee stack version number from the Zigbee rcp and start working together with Zigbee rcp via UART communication to form a Zigbee network
  * More Gateway functionalities supporting Wi-Fi interaction will come later
- 
+
 ## Troubleshooting
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon

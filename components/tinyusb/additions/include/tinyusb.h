@@ -18,48 +18,6 @@
 extern "C" {
 #endif
 
-
-/* tinyusb uses buffers with type of uint8_t[] but in our driver we are reading them as a 32-bit word */
-#if (CFG_TUD_ENDPOINT0_SIZE < 4)
-#   define CFG_TUD_ENDPOINT0_SIZE 4
-#   warning "CFG_TUD_ENDPOINT0_SIZE was too low and was set to 4"
-#endif
-
-#if TUSB_OPT_DEVICE_ENABLED
-
-#   if CFG_TUD_HID
-#      if (CFG_TUD_HID_BUFSIZE < 4)
-#         define CFG_TUD_HID_BUFSIZE 4
-#         warning "CFG_TUD_HID_BUFSIZE was too low and was set to 4"
-#      endif
-#   endif
-
-#   if CFG_TUD_CDC
-#      if (CFG_TUD_CDC_EP_BUFSIZE < 4)
-#         define CFG_TUD_CDC_EP_BUFSIZE 4
-#         warning "CFG_TUD_CDC_EP_BUFSIZE was too low and was set to 4"
-#      endif
-#   endif
-
-#   if CFG_TUD_MSC
-#      if (CFG_TUD_MSC_BUFSIZE < 4)
-#         define CFG_TUD_MSC_BUFSIZE 4
-#         warning "CFG_TUD_MSC_BUFSIZE was too low and was set to 4"
-#      endif
-#   endif
-
-#   if CFG_TUD_MIDI
-#       if (CFG_TUD_MIDI_EPSIZE < 4)
-#          define CFG_TUD_MIDI_EPSIZE 4
-#          warning "CFG_TUD_MIDI_EPSIZE was too low and was set to 4"
-#       endif
-#   endif
-
-#   if CFG_TUD_CUSTOM_CLASS
-#          warning "Please check that the buffer is more then 4 bytes"
-#   endif
-#endif
-
 /**
  * @brief Configuration structure of the tinyUSB core
  */

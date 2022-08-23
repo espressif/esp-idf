@@ -28,6 +28,9 @@ static void print_auth_mode(int authmode)
     case WIFI_AUTH_OPEN:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_OPEN");
         break;
+    case WIFI_AUTH_OWE:
+        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_OWE");
+        break;
     case WIFI_AUTH_WEP:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WEP");
         break;

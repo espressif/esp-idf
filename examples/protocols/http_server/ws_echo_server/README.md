@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Websocket echo server
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -24,7 +27,7 @@ We register the URI handler with the standard API `httpd_register_uri_handler()`
 ```c
 static const httpd_uri_t ws_uri_handler_options = {
         ... // httpd options
-        
+
         .is_websocket = true,               // Mandatory: set to `true` to handler websocket protocol
         .handle_ws_control_frames = false,  // Optional: set to `true` for the handler to receive control packets, too
         .supported_subprotocol = "chat",    // Optional: set supported subprotocol for this handler

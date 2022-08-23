@@ -23,10 +23,10 @@ extern "C" {
  * ADC work mode
  */
 typedef enum adc_hal_work_mode_t {
-    ADC_HAL_ULP_MODE,
     ADC_HAL_SINGLE_READ_MODE,
     ADC_HAL_CONTINUOUS_READ_MODE,
-    ADC_HAL_PWDET_MODE
+    ADC_HAL_PWDET_MODE,
+    ADC_HAL_ULP_FSM_MODE,
 } adc_hal_work_mode_t;
 
 /**

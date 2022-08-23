@@ -21,4 +21,4 @@ idf_component_mock(INCLUDE_DIRS ${include_dirs}
     MOCK_HEADER_FILES
     ${original_spi_flash_dir}/include/esp_partition.h
     ${original_spi_flash_dir}/include/esp_flash.h
-    ${original_spi_flash_dir}/include/esp_spi_flash.h)
+    ${original_spi_flash_dir}/include/spi_flash_mmap.h)

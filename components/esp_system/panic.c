@@ -15,7 +15,6 @@
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
-#include "hal/cpu_hal.h"
 #include "hal/wdt_types.h"
 #include "hal/wdt_hal.h"
 
@@ -25,9 +24,9 @@
 
 #include "sdkconfig.h"
 
-#if __has_include("esp_ota_ops.h")
-#include "esp_ota_ops.h"
-#define HAS_ESP_OTA 1
+#if __has_include("esp_app_desc.h")
+#define WITH_ELF_SHA256
+#include "esp_app_desc.h"
 #endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
@@ -277,7 +276,7 @@ void esp_panic_handler(panic_info_t *info)
     // If on-chip-debugger is attached, and system is configured to be aware of this,
     // then only print up to details. Users should be able to probe for the other information
     // in debug mode.
-    if (esp_cpu_in_ocd_debug_mode()) {
+    if (esp_cpu_dbgr_is_attached()) {
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
@@ -291,7 +290,7 @@ void esp_panic_handler(panic_info_t *info)
 #endif
 #endif
 
-        cpu_hal_set_breakpoint(0, info->addr); // use breakpoint 0
+        esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
 
@@ -313,13 +312,13 @@ void esp_panic_handler(panic_info_t *info)
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
-#if HAS_ESP_OTA
+#ifdef WITH_ELF_SHA256
     panic_print_str("\r\nELF file SHA256: ");
     char sha256_buf[65];
-    esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
+    esp_app_get_elf_sha256(sha256_buf, sizeof(sha256_buf));
     panic_print_str(sha256_buf);
     panic_print_str("\r\n");
-#endif //HAS_ESP_OTA
+#endif
 
     panic_print_str("\r\n");
 
@@ -349,6 +348,10 @@ void esp_panic_handler(panic_info_t *info)
     } else {
         disable_all_wdts();
         s_dumping_core = true;
+        /* No matter if we come here from abort or an exception, this variable must be reset.
+         * Else, any exception/error occuring during the current panic handler would considered
+         * an abort. */
+        g_panic_abort = false;
 #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
         esp_core_dump_to_flash(info);
 #endif

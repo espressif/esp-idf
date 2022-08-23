@@ -18,7 +18,7 @@ extern "C" {
 /// GATT INVALID HANDLE
 #define ESP_GATT_ILLEGAL_HANDLE             0
 /// GATT attribute max handle
-#define ESP_GATT_ATTR_HANDLE_MAX            100
+#define ESP_GATT_ATTR_HANDLE_MAX            UC_CONFIG_BT_GATT_MAX_SR_ATTRIBUTES
 #define ESP_GATT_MAX_READ_MULTI_HANDLES     10           /* Max attributes to read in one request */
 
 
@@ -201,8 +201,8 @@ typedef enum {
     ESP_GATT_MORE                   =   0x8a,   /* 0x8a */    /* relate to BTA_GATT_MORE in bta/bta_gatt_api.h */
     ESP_GATT_INVALID_CFG            =   0x8b,   /* 0x8b */    /* relate to BTA_GATT_INVALID_CFG in bta/bta_gatt_api.h */
     ESP_GATT_SERVICE_STARTED        =   0x8c,   /* 0x8c */    /* relate to BTA_GATT_SERVICE_STARTED in bta/bta_gatt_api.h */
-    ESP_GATT_ENCRYPED_MITM          =   ESP_GATT_OK,    /* relate to BTA_GATT_ENCRYPED_MITM in bta/bta_gatt_api.h */
-    ESP_GATT_ENCRYPED_NO_MITM       =   0x8d,   /* 0x8d */    /* relate to BTA_GATT_ENCRYPED_NO_MITM in bta/bta_gatt_api.h */
+    ESP_GATT_ENCRYPTED_MITM         =   ESP_GATT_OK,          /* relate to BTA_GATT_ENCRYPED_MITM in bta/bta_gatt_api.h */
+    ESP_GATT_ENCRYPTED_NO_MITM      =   0x8d,   /* 0x8d */    /* relate to BTA_GATT_ENCRYPED_NO_MITM in bta/bta_gatt_api.h */
     ESP_GATT_NOT_ENCRYPTED          =   0x8e,   /* 0x8e */    /* relate to BTA_GATT_NOT_ENCRYPTED in bta/bta_gatt_api.h */
     ESP_GATT_CONGESTED              =   0x8f,   /* 0x8f */    /* relate to BTA_GATT_CONGESTED in bta/bta_gatt_api.h */
     ESP_GATT_DUP_REG                =   0x90,   /* 0x90 */    /* relate to BTA_GATT_DUP_REG in bta/bta_gatt_api.h */
@@ -215,7 +215,7 @@ typedef enum {
     ESP_GATT_UNKNOWN_ERROR          =   0xef,   /* 0xef */    /* relate to BTA_GATT_UNKNOWN_ERROR in bta/bta_gatt_api.h */
     ESP_GATT_CCC_CFG_ERR            =   0xfd,   /* 0xFD Client Characteristic Configuration Descriptor Improperly Configured */    /* relate to BTA_GATT_CCC_CFG_ERR in bta/bta_gatt_api.h */
     ESP_GATT_PRC_IN_PROGRESS        =   0xfe,   /* 0xFE Procedure Already in progress */  /* relate to BTA_GATT_PRC_IN_PROGRESS in bta/bta_gatt_api.h */
-    ESP_GATT_OUT_OF_RANGE           =   0xff,   /* 0xFFAttribute value out of range */    /* relate to BTA_GATT_OUT_OF_RANGE in bta/bta_gatt_api.h */
+    ESP_GATT_OUT_OF_RANGE           =   0xff,   /* 0xFF Attribute value out of range */    /* relate to BTA_GATT_OUT_OF_RANGE in bta/bta_gatt_api.h */
 } esp_gatt_status_t;
 
 /* relate to BTA_GATT_CONN_xxx in bta/bta_gatt_api.h */

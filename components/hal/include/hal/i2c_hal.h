@@ -178,9 +178,32 @@ void i2c_hal_slave_handle_event(i2c_hal_context_t *hal, i2c_intr_event_t *event)
  *         the expected SCL frequency.
  *
  * @param  hal Context of the HAL layer
- * @param  src_clk Source clock to use choosen from `i2c_sclk_t` type
+ * @param  src_clk Source clock to use choosen from `i2c_clock_source_t` type
  */
 #define i2c_hal_set_source_clk(hal, src_clk) i2c_ll_set_source_clk((hal)->dev, src_clk)
+
+/**
+ * @brief  Configure I2C SCL timing
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period The I2C SCL hight period (in core clock cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
+ * @param  wait_high_period The I2C SCL wait rising edge period.
+ *
+ * @return None.
+ */
+#define i2c_hal_set_scl_clk_timing(hal, high_period, low_period, wait_high_period) i2c_ll_set_scl_clk_timing((hal)->dev, high_period, low_period, wait_high_period)
+
+/**
+ * @brief  Get I2C SCL timing configuration
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  high_period Pointer to accept the SCL high period
+ * @param  low_period Pointer to accept the SCL low period
+ *
+ * @return None
+ */
+#define i2c_hal_get_scl_clk_timing(hal, high_period, low_period, wait_high_period) i2c_ll_get_scl_clk_timing((hal)->dev, high_period, low_period, wait_high_period)
 
 /**
  * @brief  Init the I2C master.
@@ -463,11 +486,12 @@ void i2c_hal_get_rxfifo_cnt(i2c_hal_context_t *hal, uint32_t *len);
  *
  * @param  hal Context of the HAL layer
  * @param  scl_freq The scl frequency to be set
- * @param  src_clk Source clock of I2C
+ * @param  src_clk The source clock of I2C
+ * @param  source_freq Source clock frequency of I2C
  *
  * @return None
  */
-void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_sclk_t src_clk);
+void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, int scl_freq, i2c_clock_source_t src_clk, int source_freq);
 
 /**
  * @brief  Get I2C txFIFO writeable length

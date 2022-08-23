@@ -84,7 +84,7 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 
     spi_transaction_t mst_trans;
     spi_slave_transaction_t slv_trans;
-    spi_slave_transaction_t* ret;
+    spi_slave_transaction_t *ret;
 
     for (int i = 0; i < 8; i ++) {
         int tlen = i * 2 + 1;
@@ -143,123 +143,194 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 #endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
 
-//TODO IDF-4455
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2, ESP32H2)
-//These tests are ESP32 only due to lack of runners
 /********************************************************************************
- *      Test SIO Master & Slave
+ *                             Test SIO Master
+ * SIO Slave is not suported, and one unit test is limited to one feature, so,,,
+ * sio master test can be splited to singal-input and single-output
+ *
+ * for single-output:      master               slave
+ *                       cs-----cs  ------------- cs
+ *                       clk----clk ------------- clk
+ *                       d------mosi------------- mosi
+ *                       q      miso------------- miso
+ * master can get input on mosi pin after output finish in sio mode, but in this
+ * case, master can get no data from slave, so check assert on the slave.
+ *
+ * ------------------------------------------------------------------------------
+ * for single-input:       master               slave
+ *                       cs-----cs  ------------- cs
+ *                       clk----clk ------------- clk
+ *                       d-\    mosi------------- mosi
+ *                       q  \\--miso------------- miso
+ * In this case, master can get input data from slave after output finish, but
+ * slave can get no data from master due to internal broke, besides output data
+ * from both master and slave on miso line will get conflict in master's output
+ * frame.
  ********************************************************************************/
-//if test_mosi is false, test on miso of slave, otherwise test on mosi of slave
-void test_sio_master_round(bool test_mosi)
-{
-    spi_device_handle_t spi;
-    WORD_ALIGNED_ATTR uint8_t rx_buffer[320];
+#define TRANS_LEN       1024
+#define MAX_TRANS_BUFF  64
+#define TEST_NUM        8
 
-    if (test_mosi) {
-        ESP_LOGI(MASTER_TAG, "======== TEST MOSI ===========");
-    } else {
-        ESP_LOGI(MASTER_TAG, "======== TEST MISO ===========");
+WORD_ALIGNED_ATTR uint8_t sio_master_rx_buff[TRANS_LEN];
+WORD_ALIGNED_ATTR uint8_t sio_slave_rx_buff [TRANS_LEN];
+
+void test_sio_master_trans(bool sio_master_in)
+{
+    spi_device_handle_t dev_0;
+    uint8_t *master_tx_max = heap_caps_calloc(TRANS_LEN * 2, 1, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL_MESSAGE(master_tx_max, "malloc failed, exit.\n");
+
+    // write somethin to a long buffer for test long transmition
+    for (uint16_t i = 0; i < TRANS_LEN; i++) {
+        master_tx_max[i] = i;
+        master_tx_max[TRANS_LEN * 2 - i - 1] = i;
     }
 
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    if (!test_mosi) bus_cfg.mosi_io_num = bus_cfg.miso_io_num;
+    if (sio_master_in) {
+        // normally, spi read data from port Q and write data to port D
+        // test master input from port D (output default.), so link port D (normally named mosi) to miso pin.
+        bus_cfg.mosi_io_num = bus_cfg.miso_io_num;
+        printf("\n====================Test sio master input====================\n");
+    } else {
+        printf("\n============Test sio master output, data checked by slave.=============\n");
+    }
     bus_cfg.miso_io_num = -1;
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, 0));
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 
     spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     dev_cfg.flags = SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_3WIRE;
-    dev_cfg.clock_speed_hz = 1*1000*1000;
-    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
+    dev_cfg.clock_speed_hz = 1 * 1000 * 1000;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &dev_0));
+    printf("CS:CLK:MO:MI: %d\t%d\t%d\t%d\n", dev_cfg.spics_io_num, bus_cfg.sclk_io_num, bus_cfg.mosi_io_num, bus_cfg.miso_io_num);
 
-    for (int i = 0; i < 8; i ++) {
-        int tlen = i*2+1;
-        int rlen = 9-i;
-        spi_transaction_t t = {
-            .length = tlen*8,
-            .tx_buffer = spitest_master_send+i,
-            .rxlength = rlen*8,
-            .rx_buffer = rx_buffer+i,
-        };
-        memset(rx_buffer, 0x66, sizeof(rx_buffer));
+    for (int i = 0; i < TEST_NUM; i ++) {
+        spi_transaction_t trans = {};
+        if (sio_master_in) {
+            // master input only section
+            trans.rxlength = (i + 1) * 8 * 8;
+            // test a huge data for last transmition
+            if (i >= TEST_NUM - 1) {
+                trans.rxlength = TRANS_LEN * 8;
+            }
+            trans.rx_buffer = sio_master_rx_buff;
+            trans.length = 0;
+            trans.tx_buffer = NULL;
+            memset(sio_master_rx_buff, 0, sizeof(sio_master_rx_buff));
+        } else {
+            // master output only section
+            trans.length = MAX_TRANS_BUFF / (i + 1) * 8;
+            // test a huge data for last transmition
+            if (i >= TEST_NUM - 1) {
+                trans.length = TRANS_LEN * 8;
+            }
+            trans.tx_buffer = master_tx_max;
+            trans.rxlength = 0;
+            trans.rx_buffer = NULL;
+            // use some differnt data
+            trans.tx_buffer += (i % 2) ? TRANS_LEN : 0;
+        }
 
         //get signal
         unity_wait_for_signal("slave ready");
 
-        TEST_ESP_OK(spi_device_transmit(spi, &t));
-        uint8_t* exp_ptr = spitest_slave_send+i;
-        ESP_LOG_BUFFER_HEXDUMP("master tx", t.tx_buffer, tlen, ESP_LOG_INFO);
-        ESP_LOG_BUFFER_HEXDUMP("exp tx", exp_ptr, rlen, ESP_LOG_INFO);
-        ESP_LOG_BUFFER_HEXDUMP("master rx", t.rx_buffer, rlen, ESP_LOG_INFO);
-        if (!test_mosi) {
-            TEST_ASSERT_EQUAL_HEX8_ARRAY(exp_ptr+tlen, t.rx_buffer, rlen);
+        TEST_ESP_OK(spi_device_transmit(dev_0, &trans));
+        if (sio_master_in) {
+            ESP_LOG_BUFFER_HEXDUMP("master rx", trans.rx_buffer, trans.rxlength / 8, ESP_LOG_INFO);
+            TEST_ASSERT_EQUAL_HEX8_ARRAY(master_tx_max + i, trans.rx_buffer, trans.rxlength / 8);
+        } else {
+            printf("%d master output\n", trans.length / 8);
+            ESP_LOG_BUFFER_HEXDUMP("master tx", trans.tx_buffer, trans.length / 8, ESP_LOG_INFO);
         }
     }
 
-    master_free_device_bus(spi);
+    free(master_tx_max);
+    master_free_device_bus(dev_0);
 }
 
-void test_sio_master(void)
+void test_sio_slave_emulate(bool sio_master_in)
 {
-    test_sio_master_round(true);
-    unity_send_signal("master ready");
-    test_sio_master_round(false);
-}
+    uint8_t *slave_tx_max = heap_caps_calloc(TRANS_LEN * 2, 1, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL_MESSAGE(slave_tx_max, "malloc failed, exit.\n");
 
-void test_sio_slave_round(bool test_mosi)
-{
-    WORD_ALIGNED_ATTR uint8_t rx_buffer[320];
+    // write somethin to a long buffer for test long transmition
+    for (uint16_t i = 0; i < TRANS_LEN; i++) {
+        slave_tx_max[i] = i;
+        slave_tx_max[TRANS_LEN * 2 - i - 1] = i;
+    }
 
-    if (test_mosi) {
-        ESP_LOGI(SLAVE_TAG, "======== TEST MOSI ===========");
+    if (sio_master_in) {
+        printf("\n==================Test sio master input.================\n");
     } else {
-        ESP_LOGI(SLAVE_TAG, "======== TEST MISO ===========");
+        printf("\n==================Test sio master output.=================\n");
     }
 
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slv_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+#if CONFIG_IDF_TARGET_ESP32
+    // esp32 use different pin for slave in current runner
     bus_cfg.mosi_io_num = spi_periph_signal[TEST_SLAVE_HOST].spid_iomux_pin;
     bus_cfg.miso_io_num = spi_periph_signal[TEST_SLAVE_HOST].spiq_iomux_pin;
     bus_cfg.sclk_io_num = spi_periph_signal[TEST_SLAVE_HOST].spiclk_iomux_pin;
 
-    spi_slave_interface_config_t slv_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     slv_cfg.spics_io_num = spi_periph_signal[TEST_SLAVE_HOST].spics0_iomux_pin;
-    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slv_cfg, 0));
+#endif
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slv_cfg, SPI_DMA_CH_AUTO));
+    printf("CS:CLK:MO:MI: %d\t%d\t%d\t%d\n", slv_cfg.spics_io_num, bus_cfg.sclk_io_num, bus_cfg.mosi_io_num, bus_cfg.miso_io_num);
 
-    for (int i = 0; i < 8; i++) {
-        int tlen = 9-i;
-        int rlen = i*2+1;
-        spi_slave_transaction_t t = {
-            .length = (tlen+rlen)*8,
-            .tx_buffer = spitest_slave_send+i,
-            .rx_buffer = rx_buffer,
-        };
+    for (int i = 0; i < TEST_NUM; i++) {
+        spi_slave_transaction_t trans = {};
+        if (sio_master_in) {
+            // slave output only section
+            trans.length = (i + 1) * 8 * 8;
+            // test a huge data for last transmition
+            if (i >= TEST_NUM - 1) {
+                trans.length = TRANS_LEN * 8;
+            }
+            trans.tx_buffer = slave_tx_max + i;
+            trans.rx_buffer = NULL;
+        } else {
+            // slave input only section
+            trans.length = MAX_TRANS_BUFF / (i + 1) * 8;
+            // test a huge data for last transmition
+            if (i >= TEST_NUM - 1) {
+                trans.length = TRANS_LEN * 8;
+            }
+            trans.tx_buffer = NULL;
+            trans.rx_buffer = sio_slave_rx_buff;
+            memset(sio_slave_rx_buff, 0, sizeof(sio_slave_rx_buff));
+        }
 
-        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &t, portMAX_DELAY));
-
-        ESP_LOG_BUFFER_HEXDUMP("slave tx", t.tx_buffer, tlen+rlen, ESP_LOG_INFO);
-
-        //send signal_idx
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &trans, portMAX_DELAY));
         unity_send_signal("slave ready");
 
-        uint8_t *exp_ptr = spitest_master_send+i;
-        spi_slave_transaction_t* ret_t;
-        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &ret_t, portMAX_DELAY));
+        spi_slave_transaction_t *p_slave_ret;
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &p_slave_ret, portMAX_DELAY));
 
-        ESP_LOG_BUFFER_HEXDUMP("exp tx", exp_ptr, tlen+rlen, ESP_LOG_INFO);
-        ESP_LOG_BUFFER_HEXDUMP("slave rx", t.rx_buffer, tlen+rlen, ESP_LOG_INFO);
-        if (test_mosi) {
-            TEST_ASSERT_EQUAL_HEX8_ARRAY(exp_ptr, t.rx_buffer, rlen);
+        if (sio_master_in) {
+            ESP_LOG_BUFFER_HEXDUMP("slave tx", trans.tx_buffer, trans.length / 8, ESP_LOG_INFO);
+        } else {
+            ESP_LOG_BUFFER_HEXDUMP("slave rx", trans.rx_buffer, trans.length / 8, ESP_LOG_INFO);
+            TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tx_max + TRANS_LEN * (i % 2), trans.rx_buffer, trans.length / 8);
         }
     }
 
+    free(slave_tx_max);
     spi_slave_free(TEST_SLAVE_HOST);
 }
 
-void test_sio_slave(void)
+void test_master_run(void)
 {
-    test_sio_slave_round(true);
-    unity_wait_for_signal("master ready");
-    test_sio_slave_round(false);
+    test_sio_master_trans(false);
+    unity_send_signal("master ready");
+    test_sio_master_trans(true);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32C2, ESP32H2)
+void test_slave_run(void)
+{
+    test_sio_slave_emulate(false);
+    unity_wait_for_signal("master ready");
+    test_sio_slave_emulate(true);
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test_SIO_Mode_Multi_Board", "[spi_ms][test_env=Example_SPI_Multi_device]", test_master_run, test_slave_run);

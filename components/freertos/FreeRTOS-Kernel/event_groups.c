@@ -45,18 +45,6 @@
 #include "timers.h"
 #include "event_groups.h"
 
-#ifdef ESP_PLATFORM
-#define taskCRITICAL_MUX &pxEventBits->eventGroupMux
-#undef taskENTER_CRITICAL
-#undef taskEXIT_CRITICAL
-#undef taskENTER_CRITICAL_ISR
-#undef taskEXIT_CRITICAL_ISR
-#define taskENTER_CRITICAL( )     portENTER_CRITICAL( taskCRITICAL_MUX )
-#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( taskCRITICAL_MUX )
-#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
-#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
-#endif
-
 /* Lint e961, e750 and e9021 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -92,7 +80,7 @@ typedef struct EventGroupDef_t
     #endif
 
 #ifdef ESP_PLATFORM
-    portMUX_TYPE eventGroupMux;     //Mutex required due to SMP
+    portMUX_TYPE xEventGroupLock;   /* Spinlock required for SMP critical sections */
 #endif // ESP_PLATFORM
 } EventGroup_t;
 
@@ -150,7 +138,7 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
 
             traceEVENT_GROUP_CREATE( pxEventBits );
 #ifdef ESP_PLATFORM
-            portMUX_INITIALIZE( &pxEventBits->eventGroupMux );
+            portMUX_INITIALIZE( &pxEventBits->xEventGroupLock );
 #endif // ESP_PLATFORM
         }
         else
@@ -203,7 +191,7 @@ static BaseType_t prvTestWaitCondition( const EventBits_t uxCurrentEventBits,
             #endif /* configSUPPORT_STATIC_ALLOCATION */
 
 #ifdef ESP_PLATFORM
-            portMUX_INITIALIZE( &pxEventBits->eventGroupMux );
+            portMUX_INITIALIZE( &pxEventBits->xEventGroupLock );
 #endif // ESP_PLATFORM
 
             traceEVENT_GROUP_CREATE( pxEventBits );
@@ -240,7 +228,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
     #endif
 
 #ifdef ESP_PLATFORM // IDF-3755
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 #else
     vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -287,7 +275,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
         }
     }
 #ifdef ESP_PLATFORM // IDF-3755
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 #else
     xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -316,7 +304,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
         if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
         {
             /* The task timed out, just return the current event bit value. */
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
             {
                 uxReturn = pxEventBits->uxEventBits;
 
@@ -333,7 +321,7 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
                     mtCOVERAGE_TEST_MARKER();
                 }
             }
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 
             xTimeoutOccurred = pdTRUE;
         }
@@ -383,7 +371,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
     #endif
 
 #ifdef ESP_PLATFORM // IDF-3755
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 #else
     vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -455,7 +443,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
         }
     }
 #ifdef ESP_PLATFORM // IDF-3755
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 #else
     xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -483,7 +471,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 
         if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
         {
-            taskENTER_CRITICAL();
+            taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
             {
                 /* The task timed out, just return the current event bit value. */
                 uxReturn = pxEventBits->uxEventBits;
@@ -508,7 +496,7 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 
                 xTimeoutOccurred = pdTRUE;
             }
-            taskEXIT_CRITICAL();
+            taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
         }
         else
         {
@@ -539,7 +527,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
     configASSERT( xEventGroup );
     configASSERT( ( uxBitsToClear & eventEVENT_BITS_CONTROL_BYTES ) == 0 );
 
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
     {
         traceEVENT_GROUP_CLEAR_BITS( xEventGroup, uxBitsToClear );
 
@@ -550,7 +538,7 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
         /* Clear the bits. */
         pxEventBits->uxEventBits &= ~uxBitsToClear;
     }
-    taskEXIT_CRITICAL();
+    taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 
     return uxReturn;
 }
@@ -606,7 +594,10 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
     pxList = &( pxEventBits->xTasksWaitingForBits );
     pxListEnd = listGET_END_MARKER( pxList ); /*lint !e826 !e740 !e9087 The mini list structure is used as the list end to save RAM.  This is checked and valid. */
 #ifdef ESP_PLATFORM // IDF-3755
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
+    /* We are about to traverse a task list which is a kernel data structure.
+     * Thus we need to call vTaskTakeKernelLock() to take the kernel lock. */
+    vTaskTakeKernelLock();
 #else
     vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -682,7 +673,9 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
         pxEventBits->uxEventBits &= ~uxBitsToClear;
     }
 #ifdef ESP_PLATFORM // IDF-3755
-    taskEXIT_CRITICAL();
+    /* Release the previously taken kernel lock, then release the event group spinlock. */
+    vTaskReleaseKernelLock();
+    taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 #else
     ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -699,7 +692,12 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
     traceEVENT_GROUP_DELETE( xEventGroup );
 
     // IDF-3755
-    taskENTER_CRITICAL();
+    taskENTER_CRITICAL( &( pxEventBits->xEventGroupLock ) );
+#ifdef ESP_PLATFORM
+    /* We are about to traverse a task list which is a kernel data structure.
+     * Thus we need to call vTaskTakeKernelLock() to take the kernel lock. */
+    vTaskTakeKernelLock();
+#endif
     {
         while( listCURRENT_LIST_LENGTH( pxTasksWaitingForBits ) > ( UBaseType_t ) 0 )
         {
@@ -709,7 +707,11 @@ void vEventGroupDelete( EventGroupHandle_t xEventGroup )
             vTaskRemoveFromUnorderedEventList( pxTasksWaitingForBits->xListEnd.pxNext, eventUNBLOCKED_DUE_TO_BIT_SET );
         }
     }
-    taskEXIT_CRITICAL();
+#ifdef ESP_PLATFORM
+    /* Release the previously taken kernel lock. */
+    vTaskReleaseKernelLock();
+#endif
+    taskEXIT_CRITICAL( &( pxEventBits->xEventGroupLock ) );
 
         #if ( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 0 ) )
             {

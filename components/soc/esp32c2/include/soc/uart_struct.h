@@ -3,9 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_UART_STRUCT_H_
-#define _SOC_UART_STRUCT_H_
+#pragma once
 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -396,7 +396,3 @@ extern uart_dev_t UART1;
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_UART_STRUCT_H_ */

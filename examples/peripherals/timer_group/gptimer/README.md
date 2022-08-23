@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- |
+
 # Example: General Purpose Timer
 
 This example illustrates how to use gptimer APIs to generate periodic alarm events and how different alarm actions behave on events.

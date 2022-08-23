@@ -96,7 +96,8 @@ FatFs 分区生成器
 
 该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化磨损均衡。
 
-目前最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 "." 字符以及其他字符如 "+"、","、";"、"="、"[" and also "]" 等。长文件名字符采用 utf-16 编码，而短文件名采用 utf-8 编码。
+目前的最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 ``.`` 字符以及其他字符，如 ``+``、``,``、``;``、``=``、``[`` and ``]`` 等。
+
 
 构建系统中使用 FatFs 分区生成器
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -120,7 +121,10 @@ FatFs 分区生成器
 
 2. base_dir - 目录名称，该目录会被编码为 FatFs 分区，也可以选择将其被烧录进设备。但注意必须在分区表中指定合适的分区大小。
 
-3. ``FLASH_IN_PROJECT`` 标志 - 用户可以通过指定 ``FLASH_IN_PROJECT``，选择在执行 ``idf.py flash -p <PORT>`` 时让分区镜像自动与应用程序二进制文件、分区表等一同烧录进设备。
+3. ``FLASH_IN_PROJECT`` 标志 - 可选参数，用户可以通过指定 ``FLASH_IN_PROJECT``，选择在执行 ``idf.py flash -p <PORT>`` 时让分区镜像自动与应用程序二进制文件、分区表等一同烧录进设备。
+
+4. ``PRESERVE_TIME`` 标志 - 可选参数，用户可强制让目标镜像保留源文件夹的时间戳。如果不保留，每个目标镜像的时间戳都将设置为 FATFS 默认初始时间（1980 年 1 月 1 日）。
+
 
 例如::
 
@@ -134,10 +138,10 @@ FatFs 分区生成器
 FatFs 分区分析器
 ------------------
 
-我们为 FatFs 提供了分区分析器 (:component_file:`fatfsparse.py<fatfs/fatfsparse.py>`)。该工具仍处于开发阶段，提供的功能有限。
+我们为 FatFs 提供分区分析器 (:component_file:`fatfsparse.py<fatfs/fatfsparse.py>`)。
 
-目前，FatFs 分区分析器可用于分析由 FatFs 分区生成器 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) 生成的镜像（不支持磨损均衡和长文件名称）以及在主机上生成与 FatFs 卷标相同名称的文件夹结构。
+该分析器为 FatFs 分区生成器 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) 的逆向工具，可以根据 FatFs 镜像在主机上生成文件夹结构。
 
 您可以使用::
 
-    ./fatfsparse.py fatfs_image.img
+    ./fatfsparse.py [-h] [--long-name-support] [--wear-leveling] fatfs_image.img

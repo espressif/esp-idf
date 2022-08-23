@@ -11,19 +11,24 @@ if(target STREQUAL "linux")
                         "${target}/esp_rom_crc.c"
                         "${target}/esp_rom_md5.c"
                         "${target}/esp_rom_efuse.c")
+    list(APPEND include_dirs "${IDF_PATH}/tools/mocks/soc/include")
 else()
     list(APPEND include_dirs "${target}")
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
-                        "patches/esp_rom_tjpgd.c"
-                        "patches/esp_rom_regi2c.c")
+                        "patches/esp_rom_regi2c.c"
+                        "patches/esp_rom_efuse.c")
     list(APPEND private_required_comp soc hal)
 endif()
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     list(APPEND sources "patches/esp_rom_longjmp.S")
+endif()
+
+if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+    list(APPEND sources "patches/esp_rom_systimer.c")
 endif()
 
 idf_component_register(SRCS ${sources}
@@ -194,10 +199,16 @@ else() # Regular app build
         rom_linker_script("version")
         rom_linker_script("mbedtls")
 
-        if(CONFIG_NEWLIB_NANO_FORMAT AND time_t_size EQUAL 4)
-            # nano formatting functions in ROM are built for 32-bit time_t,
-            # only link them if the toolchain is also using 32-bit time_t and nano formatting was requested.
-            rom_linker_script("newlib-nano")
+        if(time_t_size EQUAL 8)
+            # The ROM functions listed in this linker script depend on sizeof(time_t).
+            # Since ROM for ESP32-C2 was compiled for 64-bit time_t, only link these functions
+            # if the toolchain is also using 64-bit time_t.
+            rom_linker_script("newlib-time")
+
+            if(CONFIG_NEWLIB_NANO_FORMAT)
+                # nano formatting functions in ROM are also built for 64-bit time_t.
+                rom_linker_script("newlib-nano")
+            endif()
         endif()
 
         if(CONFIG_HEAP_TLSF_USE_ROM_IMPL)

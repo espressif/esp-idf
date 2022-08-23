@@ -33,6 +33,7 @@
     - docker
   patterns:
     - docker
+    - submodule
 
 "build:windows":
   labels:
@@ -154,6 +155,66 @@ build:integration_test:
   included_in:
     - build:component_ut
     - "build:component_ut-{0}"
+    - build:target_test
+
+# To reduce the specific runners' usage.
+# Do not create these jobs by default patterns on development branches
+# Can be triggered by labels or related changes
+"test:{0}-{1}-{2}":
+  matrix:
+    - *target_test
+    - *all_targets
+    - - bt        # example_test_005
+      - wifi      # example_test_002, example_test*wifi*
+      - ethernet  # example_test*ethernet*
+      - sdio      # UT_044, UT_045
+      - usb       # USB Device & Host tests
+      - spi_multi # UT_C2_SPI_DUAL
+  patterns:
+    - "{0}-{1}-{2}"
+    - "{0}-{2}"
+    - "target_test-{2}"
+  labels:
+    - "{0}_{1}"
+    - "{0}"
+    - target_test
+  included_in:
+    - "build:{0}-{1}"
+    - "build:{0}"
+    - build:target_test
+
+# For example_test*flash_encryption_wifi_high_traffic jobs
+# set `INCLUDE_NIGHTLY_RUN` variable when triggered on development branches
+"test:example_test-{0}-include_nightly_run-rule":
+  matrix:
+    - - esp32
+      - esp32c3
+  specific_rules:
+    - "if-example_test-ota-include_nightly_run-rule"
+  included_in:
+    - "build:example_test-{0}"
+    - "build:example_test"
+    - build:target_test
+
+# due to the lack of runners, c2 tests will only be triggered by label
+"test:{0}-esp32c2":
+  matrix:
+    - *target_test
+  labels:
+    - "{0}_esp32c2"
+  included_in:
+    - "build:{0}"
+    - "build:{0}-esp32c2"
+    - build:target_test
+
+# overwrite the esp32c2 component ut again
+"test:component_ut-esp32c2": # component_ut will trigger by unit_test as well, since now we have 2 kinds of UT
+  labels:
+    - "component_ut_esp32c2"
+    - "unit_test_esp32c2"
+  included_in:
+    - build:component_ut
+    - "build:component_ut-esp32c2"
     - build:target_test
 
 # due to the lack of runners, s3 tests will only be triggered by label

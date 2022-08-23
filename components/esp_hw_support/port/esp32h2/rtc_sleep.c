@@ -19,8 +19,8 @@
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/rtc.h"
 #include "regi2c_ctrl.h"
-#include "regi2c_bias.h"
-#include "regi2c_ulp.h"
+#include "soc/regi2c_bias.h"
+#include "soc/regi2c_ulp.h"
 #include "esp_efuse.h"
 #include "i2c_pmu.h"
 #include "esp_hw_log.h"
@@ -47,7 +47,7 @@ static const char *TAG = "rtc_sleep";
 void rtc_sleep_pu(rtc_sleep_pu_config_t cfg)
 {
     REG_SET_FIELD(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU, cfg.dig_fpu);
-    REG_SET_FIELD(RTC_CNTL_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU, cfg.rtc_fpu);
+    REG_SET_FIELD(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU, cfg.rtc_fpu);
     REG_SET_FIELD(SYSCON_FRONT_END_MEM_PD_REG, SYSCON_DC_MEM_FORCE_PU, cfg.fe_fpu);
     REG_SET_FIELD(SYSCON_FRONT_END_MEM_PD_REG, SYSCON_PBUS_MEM_FORCE_PU, cfg.fe_fpu);
     REG_SET_FIELD(SYSCON_FRONT_END_MEM_PD_REG, SYSCON_AGC_MEM_FORCE_PU, cfg.fe_fpu);

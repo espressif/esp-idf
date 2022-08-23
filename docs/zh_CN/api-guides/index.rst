@@ -11,12 +11,12 @@ API 指南
    bootloader
    build-system
    core_dump
-   deep-sleep-stub
+   :SOC_RTC_MEM_SUPPORTED: deep-sleep-stub
    :SOC_USB_OTG_SUPPORTED: dfu
    error-handling
    :SOC_BT_SUPPORTED: esp-ble-mesh/ble-mesh-index
    freertos-smp
-   esp-wifi-mesh
+   :SOC_WIFI_MESH_SUPPORT: esp-wifi-mesh
    event-handling
    fatal-errors
    ../security/flash-encryption
@@ -30,7 +30,7 @@ API 指南
    openthread
    partition-tables
    performance/index
-   :not esp32c2: RF_calibration
+   RF_calibration
    :esp32: ../security/secure-boot-v1
    ../security/secure-boot-v2
    :SOC_SPIRAM_SUPPORTED: external-ram

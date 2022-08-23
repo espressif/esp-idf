@@ -91,9 +91,12 @@ Similarly for HTTPS transport:
 
 You may set security for transport in ESP local control using following options:
 
-1. `PROTOCOM_SEC1`: specifies that end to end encryption is used.
-2. `PROTOCOM_SEC0`: specifies that data will be exchanged as a plain text.
-3. `PROTOCOM_SEC_CUSTOM`: you can define your own security requirement. Please note that you will also have to provide `custom_handle` of type `protocomm_security_t *` in this context.
+1. `PROTOCOM_SEC2`: specifies that SRP6a based key exchange and end to end encryption based on AES-GCM is used. This is the most preffered option as it adds a robust security with Augmented PAKE protocol i.e. SRP6a.
+2. `PROTOCOM_SEC1`: specifies that Curve25519 based key exchange and end to end encryption based on AES-CTR is used.
+3. `PROTOCOM_SEC0`: specifies that data will be exchanged as a plain text (no security).
+4. `PROTOCOM_SEC_CUSTOM`: you can define your own security requirement. Please note that you will also have to provide `custom_handle` of type `protocomm_security_t *` in this context.
+
+.. note:: The respective security schemes need to be enabled through the project configuration menu. Please refer to the Enabling protocom security version section in :doc:`Protocol Communication </api-reference/provisioning/protocomm>` for more details.
 
 Creating a property
 -------------------

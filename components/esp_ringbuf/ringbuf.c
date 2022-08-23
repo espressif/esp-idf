@@ -782,7 +782,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
         portENTER_CRITICAL(&pxRingbuffer->mux);
         if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
             //Item is available for retrieval
-            BaseType_t xIsSplit;
+            BaseType_t xIsSplit = pdFALSE;
             if (pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) {
                 //Second argument (pxIsSplit) is unused for byte buffers
                 *pvItem1 = pxRingbuffer->pvGetItem(pxRingbuffer, NULL, xMaxSize, xItemSize1);
@@ -836,7 +836,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
 
     portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if(prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
-        BaseType_t xIsSplit;
+        BaseType_t xIsSplit = pdFALSE;
         if (pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) {
             //Second argument (pxIsSplit) is unused for byte buffers
             *pvItem1 = pxRingbuffer->pvGetItem(pxRingbuffer, NULL, xMaxSize, xItemSize1);
@@ -1354,11 +1354,12 @@ BaseType_t xRingbufferAddToQueueSetRead(RingbufHandle_t xRingbuffer, QueueSetHan
     BaseType_t xReturn;
     portENTER_CRITICAL(&pxRingbuffer->mux);
     //Cannot add semaphore to queue set if semaphore is not empty. Temporarily hold semaphore
-    BaseType_t xHoldSemaphore = xSemaphoreTake(rbGET_RX_SEM_HANDLE(pxRingbuffer), 0);
+    BaseType_t result = xSemaphoreTake(rbGET_RX_SEM_HANDLE(pxRingbuffer), 0);
     xReturn = xQueueAddToSet(rbGET_RX_SEM_HANDLE(pxRingbuffer), xQueueSet);
-    if (xHoldSemaphore == pdTRUE) {
+    if (result == pdTRUE) {
         //Return semaphore if temporarily held
-        configASSERT(xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer)) == pdTRUE);
+        result = xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
+        configASSERT(result == pdTRUE);
     }
     portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xReturn;
@@ -1380,11 +1381,12 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
     BaseType_t xReturn;
     portENTER_CRITICAL(&pxRingbuffer->mux);
     //Cannot remove semaphore from queue set if semaphore is not empty. Temporarily hold semaphore
-    BaseType_t xHoldSemaphore = xSemaphoreTake(rbGET_RX_SEM_HANDLE(pxRingbuffer), 0);
+    BaseType_t result = xSemaphoreTake(rbGET_RX_SEM_HANDLE(pxRingbuffer), 0);
     xReturn = xQueueRemoveFromSet(rbGET_RX_SEM_HANDLE(pxRingbuffer), xQueueSet);
-    if (xHoldSemaphore == pdTRUE) {
+    if (result == pdTRUE) {
         //Return semaphore if temporarily held
-        configASSERT(xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer)) == pdTRUE);
+        result = xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
+        configASSERT(result == pdTRUE);
     }
     portEXIT_CRITICAL(&pxRingbuffer->mux);
     return xReturn;

@@ -3,11 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_I2S_STRUCT_H_
-#define _SOC_I2S_STRUCT_H_
-
+#pragma once
 
 #include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -197,7 +196,7 @@ typedef volatile struct i2s_dev_s {
             uint32_t reserved26                    :    6;  /*Reserved*/
         };
         uint32_t val;
-    } tx_pcm2pdm_conf;
+    } tx_pcm2pdm_conf; // Only available on I2S0
     union {
         struct {
             uint32_t tx_pdm_fp                     :    10;  /*I2S TX PDM Fp*/
@@ -207,7 +206,7 @@ typedef volatile struct i2s_dev_s {
             uint32_t reserved26                    :    6;  /*Reserved*/
         };
         uint32_t val;
-    } tx_pcm2pdm_conf1;
+    } tx_pcm2pdm_conf1; // Only available on I2S0
     uint32_t reserved_48;
     uint32_t reserved_4c;
     union {
@@ -336,7 +335,3 @@ extern i2s_dev_t I2S1;
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_I2S_STRUCT_H_ */

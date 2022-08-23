@@ -1,17 +1,20 @@
+| Supported Targets | ESP32 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Finding Partitions Example
 
 This example demonstrates how to use the partition API functions `esp_partition_find`  and `esp_partition_find_first` to search the device partition table.
 These functions return the matching partitions given a set of constraints. By constraints we simply mean
-properties that returned results should match - notably partition type, subtype and label/name. In the case of `esp_partition_find_first`, the first matching instance is returned; 
+properties that returned results should match - notably partition type, subtype and label/name. In the case of `esp_partition_find_first`, the first matching instance is returned;
 for `esp_partition_find`, an iterator is returned iterating over matching instances.
 
 # Example Flow
 
-The example uses a [custom partition table](./partitions_example.csv). The first part uses `esp_partition_find_first` to search for partition instances 
-using two constraints - type and subtype. However, the partition table contains partitions with same type/subtype combination. In order to differentiate these partitions, 
+The example uses a [custom partition table](./partitions_example.csv). The first part uses `esp_partition_find_first` to search for partition instances
+using two constraints - type and subtype. However, the partition table contains partitions with same type/subtype combination. In order to differentiate these partitions,
 a third constraint - the label, is specified.
 
-The second part shows how to iterate over partitions that match certain constraints, manually checking the properties of each iterated partition. 
+The second part shows how to iterate over partitions that match certain constraints, manually checking the properties of each iterated partition.
 The iterator is obtained using `esp_partition_find` and is released after its use to avoid memory leaks.
 
 ### Output

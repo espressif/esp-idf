@@ -48,18 +48,6 @@
     #error configUSE_TIMERS must be set to 1 to make the xTimerPendFunctionCall() function available.
 #endif
 
-#ifdef ESP_PLATFORM
-#define taskCRITICAL_MUX &xTimerMux
-#undef taskENTER_CRITICAL
-#undef taskEXIT_CRITICAL
-#undef taskENTER_CRITICAL_ISR
-#undef taskEXIT_CRITICAL_ISR
-#define taskENTER_CRITICAL( )     portENTER_CRITICAL( taskCRITICAL_MUX )
-#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( taskCRITICAL_MUX )
-#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
-#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
-#endif
-
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -160,8 +148,9 @@
     PRIVILEGED_DATA static TaskHandle_t xTimerTaskHandle = NULL;
 
 #ifdef ESP_PLATFORM
-/* Mux. We use a single mux for all the timers for now. ToDo: maybe increase granularity here? */
-PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
+/* Spinlock required in SMP when accessing the timers. For now we use a single lock
+ * Todo: Each timer could possible have its own lock for increased granularity. */
+PRIVILEGED_DATA portMUX_TYPE xTimerLock = portMUX_INITIALIZER_UNLOCKED;
 #endif // ESP_PLATFORM
 
 /*lint -restore */
@@ -470,7 +459,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         Timer_t * pxTimer = xTimer;
 
         configASSERT( xTimer );
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( uxAutoReload != pdFALSE )
             {
@@ -481,7 +470,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 pxTimer->ucStatus &= ~tmrSTATUS_IS_AUTORELOAD;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
     }
 /*-----------------------------------------------------------*/
 
@@ -491,7 +480,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         UBaseType_t uxReturn;
 
         configASSERT( xTimer );
-        taskENTER_CRITICAL( );
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( ( pxTimer->ucStatus & tmrSTATUS_IS_AUTORELOAD ) == 0 )
             {
@@ -504,7 +493,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 uxReturn = ( UBaseType_t ) pdTRUE;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
 
         return uxReturn;
     }
@@ -616,7 +605,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         BaseType_t xTimerListsWereSwitched;
 
 #ifdef ESP_PLATFORM
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
 #else
         vTaskSuspendAll();
 #endif // ESP_PLATFORM
@@ -634,7 +623,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 if( ( xListWasEmpty == pdFALSE ) && ( xNextExpireTime <= xTimeNow ) )
                 {
 #ifdef ESP_PLATFORM
-                    taskEXIT_CRITICAL();
+                    taskEXIT_CRITICAL( &xTimerLock );
 #else
                     ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -658,7 +647,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                     vQueueWaitForMessageRestricted( xTimerQueue, ( xNextExpireTime - xTimeNow ), xListWasEmpty );
 
 #ifdef ESP_PLATFORM // IDF-3755
-                    taskEXIT_CRITICAL();
+                    taskEXIT_CRITICAL( &xTimerLock );
 #else
                     if( xTaskResumeAll() == pdFALSE )
 #endif // ESP_PLATFORM
@@ -680,7 +669,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
             else
             {
 #ifdef ESP_PLATFORM // IDF-3755
-                taskEXIT_CRITICAL();
+                taskEXIT_CRITICAL( &xTimerLock );
 #else
                 ( void ) xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -856,9 +845,6 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                         {
                             /* The timer expired before it was added to the active
                              * timer list.  Process it now. */
-                            pxTimer->pxCallbackFunction( ( TimerHandle_t ) pxTimer );
-                            traceTIMER_EXPIRED( pxTimer );
-
                             if( ( pxTimer->ucStatus & tmrSTATUS_IS_AUTORELOAD ) != 0 )
                             {
                                 xResult = xTimerGenericCommand( pxTimer, tmrCOMMAND_START_DONT_TRACE, xMessage.u.xTimerParameters.xMessageValue + pxTimer->xTimerPeriodInTicks, NULL, tmrNO_DELAY );
@@ -867,8 +853,12 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                             }
                             else
                             {
-                                mtCOVERAGE_TEST_MARKER();
+                                pxTimer->ucStatus &= ( ( uint8_t ) ~tmrSTATUS_IS_ACTIVE );
                             }
+
+                            /* Call the timer callback. */
+                            traceTIMER_EXPIRED( pxTimer );
+                            pxTimer->pxCallbackFunction( ( TimerHandle_t ) pxTimer );
                         }
                         else
                         {
@@ -998,7 +988,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         /* Check that the list from which active timers are referenced, and the
          * queue used to communicate with the timer service, have been
          * initialised. */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( xTimerQueue == NULL )
             {
@@ -1040,7 +1030,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
     }
 /*-----------------------------------------------------------*/
 
@@ -1052,7 +1042,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         configASSERT( xTimer );
 
         /* Is the timer in the list of active timers? */
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             if( ( pxTimer->ucStatus & tmrSTATUS_IS_ACTIVE ) == 0 )
             {
@@ -1063,7 +1053,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
                 xReturn = pdTRUE;
             }
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
 
         return xReturn;
     } /*lint !e818 Can't be pointer to const due to the typedef. */
@@ -1076,11 +1066,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
         configASSERT( xTimer );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             pvReturn = pxTimer->pvTimerID;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
 
         return pvReturn;
     }
@@ -1093,11 +1083,11 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
         configASSERT( xTimer );
 
-        taskENTER_CRITICAL();
+        taskENTER_CRITICAL( &xTimerLock );
         {
             pxTimer->pvTimerID = pvNewID;
         }
-        taskEXIT_CRITICAL();
+        taskEXIT_CRITICAL( &xTimerLock );
     }
 /*-----------------------------------------------------------*/
 

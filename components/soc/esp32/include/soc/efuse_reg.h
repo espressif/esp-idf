@@ -200,15 +200,12 @@
 #define EFUSE_RD_FLASH_CRYPT_CONFIG_M  ((EFUSE_RD_FLASH_CRYPT_CONFIG_V)<<(EFUSE_RD_FLASH_CRYPT_CONFIG_S))
 #define EFUSE_RD_FLASH_CRYPT_CONFIG_V  0xF
 #define EFUSE_RD_FLASH_CRYPT_CONFIG_S  28
-/* EFUSE_RD_DIG_VOL_L6: RO; bitpos:[27:24]; */
-/*descritpion: This field stores the difference between the digital regulator voltage at level6 and 1.2 V. (RO)
-  BIT[27] is the sign bit, 0: + , 1: -
-  BIT[26:24] is the difference value, unit: 0.017V
-  volt_lv6 = BIT[27] ? 1.2 - BIT[26:24] * 0.017 : 1.2 + BIT[26:24] * 0.017     */
-#define EFUSE_RD_DIG_VOL_L6          0x0F
-#define EFUSE_RD_DIG_VOL_L6_M        ((EFUSE_RD_DIG_VOL_L6_V)<<(EFUSE_RD_DIG_VOL_L6_S))
-#define EFUSE_RD_DIG_VOL_L6_V        0x0F
-#define EFUSE_RD_DIG_VOL_L6_S        24
+/* EFUSE_RD_WAFER_VERSION_MINOR: RO; bitpos:[25:24]; */
+/*descritpion: Wafer version minor*/
+#define EFUSE_RD_WAFER_VERSION_MINOR          0x00000003
+#define EFUSE_RD_WAFER_VERSION_MINOR_M        ((EFUSE_RD_WAFER_VERSION_MINOR_V)<<(EFUSE_RD_WAFER_VERSION_MINOR_S))
+#define EFUSE_RD_WAFER_VERSION_MINOR_V        0x03
+#define EFUSE_RD_WAFER_VERSION_MINOR_S        24
 /* EFUSE_RD_VOL_LEVEL_HP_INV: RO; bitpos:[23:22] */
 /*description: This field stores the voltage level for CPU to run at 240 MHz, or for flash/PSRAM to run at 80 MHz.
 0x0: level 7; 0x1: level 6; 0x2: level 5; 0x3: level 4. (RO)*/

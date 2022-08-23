@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+#include "test_utils.h"
 
 static void timer_callback(TimerHandle_t timer)
 {

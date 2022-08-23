@@ -191,8 +191,8 @@ The detailed description of all instructions is presented below:
     label:   nop                        // definition of variable label
 
 
-**AND** - Logical AND of two operands
--------------------------------------
+**AND** - Bitwise logical AND of two operands
+---------------------------------------------
 
 **Syntax**
     **AND** *Rdst, Rsrc1, Rsrc2*
@@ -209,7 +209,7 @@ The detailed description of all instructions is presented below:
   2 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-  The instruction does a logical AND of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
+  The instruction does a bitwise logical AND of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
 
 **Examples**::
 
@@ -226,8 +226,8 @@ The detailed description of all instructions is presented below:
     label:  nop                     // definition of variable label
 
 
-**OR** - Logical OR of two operands
------------------------------------
+**OR** - Bitwise logical OR of two operands
+-------------------------------------------
 
 **Syntax**
   **OR** *Rdst, Rsrc1, Rsrc2*
@@ -244,7 +244,7 @@ The detailed description of all instructions is presented below:
   2 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-  The instruction does a logical OR of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
+  The instruction does a bitwise logical OR of a source register and another source register or a 16-bit signed value and stores the result to the destination register.
 
 **Examples**::
 
@@ -796,10 +796,10 @@ The detailed description of all instructions is presented below:
   Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
 
     // JUMPR target, threshold, LE is implemented as:
-    
+
              JUMPR target, threshold, EQ
              JUMPR target, threshold, LT
- 
+
     // JUMPR target, threshold, GE is implemented as:
 
              JUMPR target, threshold, EQ
@@ -1041,27 +1041,28 @@ The detailed description of all instructions is presented below:
   2:        .set  wait_cnt, 10  // Set a constant
             WAIT  wait_cnt      // wait for 10 cycles
 
+.. only:: not esp32
 
-**TSENS** – do measurement with temperature sensor
---------------------------------------------------
+    **TSENS** – do measurement with temperature sensor
+    --------------------------------------------------
 
-**Syntax**
-   - **TSENS**   *Rdst, Wait_Delay*
+    **Syntax**
+      - **TSENS**   *Rdst, Wait_Delay*
 
-**Operands**
-  - *Rdst* – Destination Register R[0..3], result will be stored to this register
-  - *Wait_Delay* – number of cycles used to perform the measurement
+    **Operands**
+      - *Rdst* – Destination Register R[0..3], result will be stored to this register
+      - *Wait_Delay* – number of cycles used to perform the measurement
 
-**Cycles**
-  2 + *Wait_Delay* + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
+    **Cycles**
+      2 + *Wait_Delay* + 3 * TSENS_CLK to execute, 4 cycles to fetch next instruction
 
-**Description**
-   The instruction performs measurement using TSENS and stores the result into a general purpose register.
+    **Description**
+      The instruction performs measurement using TSENS and stores the result into a general purpose register.
 
-**Examples**::
+    **Examples**::
 
-  1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
-                                   // and store result to R1
+      1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
+                                      // and store result to R1
 
 
 **ADC** – do measurement with ADC

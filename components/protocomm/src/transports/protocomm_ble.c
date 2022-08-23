@@ -318,6 +318,15 @@ static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt
 {
     esp_err_t ret;
     ESP_LOGD(TAG, "Inside disconnect w/ session - %d", param->disconnect.conn_id);
+
+#ifdef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+    /* Ignore BLE events received after protocomm layer is stopped */
+    if (protoble_internal == NULL) {
+        ESP_LOGI(TAG,"Protocomm layer has already stopped");
+        return;
+    }
+#endif
+
     if (protoble_internal->pc_ble->sec &&
             protoble_internal->pc_ble->sec->close_transport_session) {
         ret = protoble_internal->pc_ble->sec->close_transport_session(protoble_internal->pc_ble->sec_inst,
@@ -405,8 +414,10 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
             (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) &character_prop_read_write;
         } else if (i % 3 == 2) {
             /* Characteristic Value */
-            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE | \
-                    ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE ;
+#if CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION
+            (*gatt_db_generated)[i].att_desc.perm        |= ESP_GATT_PERM_READ_ENCRYPTED | ESP_GATT_PERM_WRITE_ENCRYPTED;
+#endif
             (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_128;
             (*gatt_db_generated)[i].att_desc.uuid_p       = protoble_internal->g_nu_lookup[i / 3].uuid128;
             (*gatt_db_generated)[i].att_desc.max_length   = CHAR_VAL_LEN_MAX;
@@ -570,11 +581,24 @@ esp_err_t protocomm_ble_stop(protocomm_t *pc)
             (protoble_internal != NULL ) &&
             (pc == protoble_internal->pc_ble)) {
         esp_err_t ret = ESP_OK;
+
+#ifndef CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+	/* If flag is not enabled, stop the stack. */
         ret = simple_ble_stop();
         if (ret) {
             ESP_LOGE(TAG, "BLE stop failed");
         }
-        simple_ble_deinit();
+#else
+#ifdef CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
+        /* Keep BT stack on, but terminate the connection after provisioning */
+	ret = simple_ble_disconnect();
+	if (ret) {
+	    ESP_LOGE(TAG, "BLE disconnect failed");
+	}
+	simple_ble_deinit();
+#endif  // CONFIG_WIFI_PROV_DISCONNECT_AFTER_PROV
+#endif  // CONFIG_WIFI_PROV_KEEP_BLE_ON_AFTER_PROV
+
         protocomm_ble_cleanup();
         return ret;
     }

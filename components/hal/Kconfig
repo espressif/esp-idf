@@ -16,7 +16,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         config HAL_ASSERTION_DISABLE
             bool "Disabled"
             depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 0
-        config HAL_ASSERTION_SILIENT
+        config HAL_ASSERTION_SILENT
             bool "Silent"
             depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 1
         config HAL_ASSERTION_ENABLE
@@ -28,7 +28,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
         int
         default COMPILER_OPTIMIZATION_ASSERTION_LEVEL if HAL_ASSERTION_EQUALS_SYSTEM
         default 0 if HAL_ASSERTION_DISABLE
-        default 1 if HAL_ASSERTION_SILIENT
+        default 1 if HAL_ASSERTION_SILENT
         default 2 if HAL_ASSERTION_ENABLE
 
     choice HAL_LOG_LEVEL

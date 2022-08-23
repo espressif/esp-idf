@@ -66,7 +66,6 @@ esp_err_t esp_lcd_new_panel_ssd1306(const esp_lcd_panel_io_handle_t io, const es
     esp_err_t ret = ESP_OK;
     ssd1306_panel_t *ssd1306 = NULL;
     ESP_GOTO_ON_FALSE(io && panel_dev_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(panel_dev_config->color_space == ESP_LCD_COLOR_SPACE_MONOCHROME, ESP_ERR_INVALID_ARG, err, TAG, "support monochrome only");
     ESP_GOTO_ON_FALSE(panel_dev_config->bits_per_pixel == 1, ESP_ERR_INVALID_ARG, err, TAG, "bpp must be 1");
     ssd1306 = calloc(1, sizeof(ssd1306_panel_t));
     ESP_GOTO_ON_FALSE(ssd1306, ESP_ERR_NO_MEM, err, TAG, "no mem for ssd1306 panel");
@@ -171,7 +170,7 @@ static esp_err_t panel_ssd1306_draw_bitmap(esp_lcd_panel_t *panel, int x_start, 
     }, 2);
     // transfer frame buffer
     size_t len = (y_end - y_start) * (x_end - x_start) * ssd1306->bits_per_pixel / 8;
-    esp_lcd_panel_io_tx_color(io, 0, color_data, len);
+    esp_lcd_panel_io_tx_color(io, -1, color_data, len);
 
     return ESP_OK;
 }

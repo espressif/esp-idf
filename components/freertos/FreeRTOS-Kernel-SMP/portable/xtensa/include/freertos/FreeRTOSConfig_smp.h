@@ -177,6 +177,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #endif // CONFIG_FREERTOS_TLSP_DELETION_CALLBACKS
 #define configSTACK_DEPTH_TYPE                          uint32_t
 #define configUSE_NEWLIB_REENTRANT                      1
+#define configNEWLIB_REENTRANT_IS_DYNAMIC               1   // IDF Newlib supports dynamic reentrancy. We provide our own __getreent() function
 #define configENABLE_BACKWARD_COMPATIBILITY             0
 #define configASSERT(a)                                 assert(a)
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H       1
@@ -292,7 +293,7 @@ Default values for trace macros added by ESP-IDF and are not part of Vanilla Fre
 
 #ifndef __ASSEMBLER__
 #if CONFIG_APPTRACE_SV_ENABLE
-extern uint32_t port_switch_flag[];
+extern volatile uint32_t port_switch_flag[portNUM_PROCESSORS];
 #define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
 #else
 #define os_task_switch_is_pended(_cpu_) (false)

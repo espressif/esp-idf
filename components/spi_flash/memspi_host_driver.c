@@ -9,7 +9,7 @@
 #include "memspi_host_driver.h"
 #include "string.h"
 #include "esp_log.h"
-#include "cache_utils.h"
+#include "esp_private/cache_utils.h"
 #include "esp_flash_partitions.h"
 #include "esp_memory_utils.h"
 

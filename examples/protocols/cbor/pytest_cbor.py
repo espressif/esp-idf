@@ -9,7 +9,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
-@pytest.mark.wifi
+@pytest.mark.generic
 def test_examples_cbor(dut: Dut) -> None:
 
     dut.expect(r'example: encoded buffer size \d+')

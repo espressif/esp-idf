@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C3 | ESP32-S3 |
-| ----------------- | -------- | -------- |
+| Supported Targets | ESP32-C2 | ESP32-C3 | ESP32-H2 | ESP32-S3 |
+| ----------------- | -------- | -------- | -------- | -------- |
 
 # ESP-IDF Gatt Security Client Example
 
@@ -26,7 +26,7 @@ Please, check this [tutorial](tutorial/ble50_security_client_Example_Walkthrough
 
 ### Hardware Required
 
-* A development board with ESP32-C3 SoC, ESP32-S3 SoC and BT5.0 supported chip (e.g., ESP32-C3-DevKitC-1 etc.)
+* A development board with ESP32-C3 SoC, ESP32-S3 SoC, ESP32-C2/ESP32-H2 SoC and BT5.0 supported chip (e.g., ESP32-C3-DevKitC-1 etc.)
 * A USB cable for Power supply and programming
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.

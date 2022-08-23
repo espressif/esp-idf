@@ -12,11 +12,18 @@ def deepsleep_test(dut: Dut, case_name: str) -> None:
     if dut.target == 'esp32c3':
         # Known issue: IDF-5003
         dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=40)
+    elif dut.target == 'esp32c2':
+        # Known issue: IDF-5003
+        dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=60)
     else:
         dut.expect(r'rst:.*\(%s\)' % reset_reason, timeout=10)
 
 
-@pytest.mark.supported_targets
+# IDF-5131
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.esp32s3
+@pytest.mark.esp32c3
 @pytest.mark.generic
 def test_rtc_8md256_deepsleep(dut: Dut) -> None:
     deepsleep_test(dut, '"Can use 8MD256 as RTC clock source in deepsleep"')

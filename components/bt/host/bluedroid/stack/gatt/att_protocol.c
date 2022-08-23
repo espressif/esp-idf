@@ -312,6 +312,12 @@ BT_HDR *attp_build_value_cmd (UINT16 payload_size, UINT8 op_code, UINT16 handle,
             p_buf->len += 2;
         }
 
+        if(payload_size < GATT_DEF_BLE_MTU_SIZE || payload_size > GATT_MAX_MTU_SIZE) {
+            GATT_TRACE_ERROR("invalid payload_size %d", payload_size);
+            osi_free(p_buf);
+            return NULL;
+        }
+
         if (len > 0 && p_data != NULL) {
             /* ensure data not exceed MTU size */
             if (payload_size - p_buf->len < len) {

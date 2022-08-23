@@ -47,6 +47,8 @@ typedef struct {
     wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
+/* Strength of authmodes */
+/* OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA2_ENTERPRISE < WPA3_PSK = WPA2_WPA3_PSK */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
     WIFI_AUTH_WEP,              /**< authenticate mode : WEP */
@@ -57,6 +59,7 @@ typedef enum {
     WIFI_AUTH_WPA3_PSK,         /**< authenticate mode : WPA3_PSK */
     WIFI_AUTH_WPA2_WPA3_PSK,    /**< authenticate mode : WPA2_WPA3_PSK */
     WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
+    WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
@@ -194,7 +197,8 @@ typedef enum {
 /** @brief Structure describing parameters for a WiFi fast scan */
 typedef struct {
     int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
-    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
+    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
+                                               Note: Incase this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
 }wifi_scan_threshold_t;
 
 typedef enum {
@@ -218,6 +222,14 @@ typedef struct {
     bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
     bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
+
+/** Configuration for SAE PWE derivation */
+typedef enum {
+    WPA3_SAE_PWE_UNSPECIFIED,
+    WPA3_SAE_PWE_HUNT_AND_PECK,
+    WPA3_SAE_PWE_HASH_TO_ELEMENT,
+    WPA3_SAE_PWE_BOTH,
+} wifi_sae_pwe_method_t;
 
 /** @brief Soft-AP configuration settings for the ESP32 */
 typedef struct {
@@ -250,7 +262,9 @@ typedef struct {
     uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
     uint32_t mbo_enabled:1;       /**< Whether MBO is enabled for the connection */
     uint32_t ft_enabled:1;        /**< Whether FT is enabled for the connection */
-    uint32_t reserved:28;         /**< Reserved for future feature set */
+    uint32_t owe_enabled:1;       /**< Whether OWE is enabled for the connection */
+    uint32_t reserved:27;         /**< Reserved for future feature set */
+    wifi_sae_pwe_method_t sae_pwe_h2e;     /**< Whether SAE hash to element is enabled */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
