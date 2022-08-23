@@ -570,7 +570,7 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
     const unsigned int key_size = 2048;
     const int exponent = 65537;
 
-#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT && !CONFIG_ESP_TASK_WDT_INIT
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
     /* Check that generating keys doesnt starve the watchdog if interrupt-based driver is used */
     esp_task_wdt_config_t twdt_config = {
         .timeout_ms = 1000,
@@ -578,7 +578,7 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
         .trigger_panic = true,
     };
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_init(&twdt_config));
-#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT && !CONFIG_ESP_TASK_WDT_INIT
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
 
     mbedtls_rsa_init(&ctx);
     mbedtls_ctr_drbg_init(&ctr_drbg);
@@ -592,9 +592,9 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
 
-#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT && !CONFIG_ESP_TASK_WDT_INIT
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
-#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT && !CONFIG_ESP_TASK_WDT_INIT
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT && CONFIG_ESP_TASK_WDT_EN && !CONFIG_ESP_TASK_WDT_INIT
 
 }
 

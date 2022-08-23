@@ -222,7 +222,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_INT_WDT after interrupt watchdog
         do_int_wdt_hw,
         check_reset_reason_int_wdt);
 
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 static void do_task_wdt(void)
 {
     setup_values();
@@ -252,7 +252,7 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_TASK_WDT after task watchdog",
         "[reset_reason][reset="RESET"]",
         do_task_wdt,
         check_reset_reason_task_wdt);
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_EN
 
 static void do_rtc_wdt(void)
 {

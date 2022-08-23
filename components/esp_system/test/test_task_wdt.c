@@ -6,7 +6,7 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 
 #include <stdbool.h>
 #include "unity.h"
@@ -153,4 +153,4 @@ TEST_CASE("Task WDT user feed", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_EN

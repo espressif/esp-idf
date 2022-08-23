@@ -9,7 +9,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 
-#if CONFIG_ESP_TASK_WDT
+#if CONFIG_ESP_TASK_WDT_EN
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,7 +29,7 @@ typedef void (*twdt_isr_callback)(void*);
 /**
  * @brief   Stop the Task Watchdog Timer (TWDT)
  *
- * This function will temporarily stop the timer until it is restarted/resumed by a call to esp_task_wdt_restart().
+ * This function will temporarily stop the timer until it is restarted by a call to esp_task_wdt_restart().
 
  * @note esp_task_wdt_stop() must not be called by multiple tasks simultaneously.
  * @return
@@ -41,7 +41,7 @@ esp_err_t esp_task_wdt_stop(void);
 /**
  * @brief   Restart the Task Watchdog Timer (TWDT)
  *
- * This function will restart/resume the timer after it has been stopped by esp_task_wdt_stop().
+ * This function will restart the timer after it has been stopped by esp_task_wdt_stop().
 
  * @note esp_task_wdt_restart() must not be called by multiple tasks simultaneously.
  * @return
@@ -54,4 +54,4 @@ esp_err_t esp_task_wdt_restart(void);
 }
 #endif
 
-#endif // CONFIG_ESP_TASK_WDT
+#endif // CONFIG_ESP_TASK_WDT_EN
