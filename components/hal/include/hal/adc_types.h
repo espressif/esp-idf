@@ -55,8 +55,9 @@ typedef enum {
 } adc_bitwidth_t;
 
 typedef enum {
-    ADC_ULP_MODE_FSM = 1,     ///< ADC is controlled by ULP FSM
-    ADC_ULP_MODE_RISCV = 2,   ///< ADC is controlled by ULP RISCV
+    ADC_ULP_MODE_DISABLE = 0, ///< ADC ULP mode is disabled
+    ADC_ULP_MODE_FSM     = 1, ///< ADC is controlled by ULP FSM
+    ADC_ULP_MODE_RISCV   = 2, ///< ADC is controlled by ULP RISCV
 } adc_ulp_mode_t;
 
 /**

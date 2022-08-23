@@ -72,7 +72,7 @@ TEST_CASE("ADC oneshot fast work with ISR", "[adc_oneshot]")
     //-------------ADC1 Init---------------//
     adc_oneshot_unit_init_cfg_t init_config1 = {
         .unit_id = ADC_UNIT_1,
-        .ulp_mode = false,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     TEST_ESP_OK(adc_oneshot_new_unit(&init_config1, &isr_test_ctx.adc_handle));
 
