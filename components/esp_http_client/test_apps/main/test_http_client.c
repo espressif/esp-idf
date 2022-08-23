@@ -145,3 +145,8 @@ TEST_CASE("esp_http_client_init() should return NULL if configured with wrong ur
     TEST_ASSERT_NULL(client);
     esp_http_client_cleanup(client);
 }
+
+void app_main(void)
+{
+    unity_run_menu();
+}
