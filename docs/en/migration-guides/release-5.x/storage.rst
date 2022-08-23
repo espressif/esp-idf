@@ -1,90 +1,91 @@
 Storage
 =======
 
-Breaking changes:
-~~~~~~~~~~~~~~~~~
+FatFs
+-----
 
-f_mkfs() signature change in FATFS v0.14
-----------------------------------------
+FatFs is now updated to v0.14. As a result, the function signature of ``f_mkfs()`` has changed. The new signature is ``FRESULT f_mkfs (const TCHAR* path, const MKFS_PARM* opt, void* work, UINT len);`` which uses ``MKFS_PARM`` struct as a second argument.
 
-New signature is ``FRESULT f_mkfs (const TCHAR* path, const MKFS_PARM* opt, void* work, UINT len);`` which now uses ``MKFS_PARM`` struct as a second argument.
+Partition Table
+---------------
 
-Partition table generation no longer supports misaligned partitions
--------------------------------------------------------------------
+The partition table generator no longer supports misaligned partitions. When generating a partition table, ``esp-idf`` only accepts partitions with offsets that align to 4 KB. This change only affects generating new partition tables. Reading and writing to already existing partitions remains unchanged.
 
-When generating a partiton table, ``esp-idf`` will no longer accept partitions which offset does not align to 4kB. This change only affects generating new partition tables, reading and writing to already existing partitions remains unchanged.
 
-esp_vfs_semihost_register() signature change
---------------------------------------------
-
-New signature is ``esp_err_t esp_vfs_semihost_register(const char* base_path);`` Absolute path as a second parameter will no longer in use. Instead, the OpenOCD command ``ESP_SEMIHOST_BASEDIR`` should be used to set the full path on the host.
-
-NVS
+VFS
 ---
 
-``nvs_entry_find()``, ``nvs_entry_next()`` and ``nvs_entry_info()`` always return ``esp_err_t`` now instead of ``void`` or ``nvs_iterator_t``. This provides better error reporting when parameters are invalid or something goes wrong internally than returning ``nullptr`` instead of a valid iterator or checking parameters with ``assert``. ``nvs_entry_find()`` and ``nvs_entry_next()`` modify iterators via parameters now instead of returning an iterator.
+The ``esp_vfs_semihost_register()`` function signature is changed as follows:
+
+- The new signature is ``esp_err_t esp_vfs_semihost_register(const char* base_path);``
+- The ``host_path`` parameter of the old signature no longer exists. Instead, the OpenOCD command ``ESP_SEMIHOST_BASEDIR`` should be used to set the full path on the host.
+
+Function Signature Changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following functions now return ``esp_err_t`` instead of ``void`` or ``nvs_iterator_t``. Previously, when parameters were invalid or when something goes wrong internally, these functions would ``assert()`` or return a ``nullptr``. With an ``esp_err_t`` returned, you can get better error reporting.
+
+- :cpp:func:`nvs_entry_find`
+- :cpp:func:`nvs_entry_next`
+- :cpp:func:`nvs_entry_info`
+
+Because the ``esp_err_t`` return type changes, the usage patterns of ``nvs_entry_find()`` and ``nvs_entry_next()`` become different. Both functions now modify iterators via parameters instead of returning an iterator.
 
 The old programming pattern to iterate over an NVS partition was as follows:
 
-.. highlight:: c
-
-::
+.. code-block:: c
 
     nvs_iterator_t it = nvs_entry_find(<nvs_partition_name>, <namespace>, NVS_TYPE_ANY);
     while (it != NULL) {
             nvs_entry_info_t info;
             nvs_entry_info(it, &info);
             it = nvs_entry_next(it);
-            printf("key '%s', type '%d' \n", info.key, info.type);
+            printf("key '%s', type '%d'", info.key, info.type);
     };
 
 The new programming pattern to iterate over an NVS partition is now:
 
-.. highlight:: c
-
-::
+.. code-block:: c
 
     nvs_iterator_t it = nullptr;
     esp_err_t res = nvs_entry_find(<nvs_partition_name>, <namespace>, NVS_TYPE_ANY, &it);
     while(res == ESP_OK) {
         nvs_entry_info_t info;
         nvs_entry_info(it, &info); // Can omit error check if parameters are guaranteed to be non-NULL
-        printf("key '%s', type '%d' \n", info.key, info.type);
+        printf("key '%s', type '%d'", info.key, info.type);
         res = nvs_entry_next(&it);
     }
     nvs_release_iterator(it);
 
-Signature Changes
-^^^^^^^^^^^^^^^^^
-
-``nvs_iterator_t nvs_entry_find(const char *part_name, const char *namespace_name, nvs_type_t type)`` changes to ``esp_err_t nvs_entry_find(const char *part_name, const char *namespace_name, nvs_type_t type, nvs_iterator_t *output_iterator)``. The iterator is returned via the parameter ``output_iterator`` instead of a return value. This allows reporting additional errors, like e.g. memory errors, via the new return value.
-
-``nvs_iterator_t nvs_entry_next(nvs_iterator_t iterator)`` changes to ``esp_err_t nvs_entry_next(nvs_iterator_t *it)``. This allows reporting parameter errors and internal errors, like e.g. flash errors.
-
-``void nvs_entry_info(nvs_iterator_t iterator, nvs_entry_info_t *out_info)`` changes to ``esp_err_t nvs_entry_info(const nvs_iterator_t iterator, nvs_entry_info_t *out_info)`` to allow reporting parameter errors.
-
 Iterator Validity
 ^^^^^^^^^^^^^^^^^
 
-Note that due to the new signatures, it is possible to have an invalid iterator from ``nvs_entry_find()``, if there is a parameter errors. Hence, it is important to initialize the iterator with ``NULL`` before using ``nvs_entry_find()`` to avoid complex error checking before calling ``nvs_release_iterator()``. A good example is the programming pattern above.
+Note that because the function signature changes, if there is a parameter error, you may get an invalid iterator from ``nvs_entry_find()``. Hence, it is important to initialize the iterator to ``NULL`` before using ``nvs_entry_find()``, so that you can avoid complex error checking before calling ``nvs_release_iterator()``. A good example is the programming pattern above.
 
-Removed SDSPI deprecated API
+
+Removed SDSPI Deprecated API
 ----------------------------
 
-Removed structure ``sdspi_slot_config_t`` and fuction ``sdspi_host_init_slot``. These were replaced by a structure ``sdspi_device_config_t`` and a fuction ``sdspi_host_init_device`` respectively.
+Structure ``sdspi_slot_config_t`` and function ``sdspi_host_init_slot()`` are removed, and replaced by structure ``sdspi_device_config_t`` and function ``sdspi_host_init_device()`` respectively.
 
-SPI Flash Interface
--------------------
+ROM SPI Flash
+^^^^^^^^^^^^^
 
-Version before v5.0, spi flash functions in rom can be included by ``esp32**/rom/spi_flash.h``. However, your code written for different chips may be filled with ROM headers of different versions. At the meantime not all the APIs can be used on all chips.
+In versions before v5.0, ROM SPI flash functions were included via ``esp32**/rom/spi_flash.h``. Thus, code written to support different ESP chips might be filled with ROM headers of different targets. Furthermore, not all of the APIs could be used on all ESP chips.
 
-Therefore, the common APIs are extracted to ``esp_rom_spiflash.h``. Although it's not a breaking change, it is strongly recommended to only use the functions with prefix ``esp_rom_spiflash`` included by ``esp_rom_spiflash.h`` for better cross-compatibility.
+Now, the common APIs are extracted to ``esp_rom_spiflash.h``. Although it is not a breaking change, you are strongly recommended to only use the functions from this header (i.e., prefixed with ``esp_rom_spiflash`` and included by ``esp_rom_spiflash.h``) for better cross-compatibility between ESP chips.
 
-To make the API clearer, we renamed the function ``esp_rom_spiflash_lock`` to ``esp_rom_spiflash_set_bp``. We renamed ``esp_rom_spiflash_unlock`` to ``esp_rom_spiflash_clear_bp``.
+To make ROM SPI flash APIs clearer, the following functions are also renamed:
 
-ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can directly parse the real clock frequency value to the flash initialization structure. For example, if you want the flash frequency is 80M, you can write the code like:
+- ``esp_rom_spiflash_lock()`` to ``esp_rom_spiflash_set_bp()``
+- ``esp_rom_spiflash_unlock()`` to ``esp_rom_spiflash_clear_bp()``
 
-.. code:: c
+SPI Flash Driver
+^^^^^^^^^^^^^^^^
+
+The ``esp_flash_speed_t`` ``enum`` type is now deprecated. Instead, you may now directly pass the real clock frequency value to the flash configuration structure. The following example demonstrates how to configure a flash frequency of 80MHz:
+
+.. code-block:: c
 
     esp_flash_spi_device_config_t dev_cfg = {
         // Other members
@@ -92,29 +93,32 @@ ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can direct
         // Other members
     };
 
-Breaking changes in legacy APIs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Legacy SPI Flash Driver
+^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to make spi_flash driver more stable, legacy spi_flash driver is removed on v5.0. Legacy spi_flash driver refers to default spi_flash driver since v3.0 and spi_flash driver with configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` switched on on v4.0 series. The major breaking change is legacy spi_flash driver is not supported on new version anymore. Therefore, the configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is removed. After that, following functions will no longer exist. But meanwhile, you can use our new APIs instead.
+To make SPI flash drivers more stable, the legacy SPI flash driver is removed from v5.0. The legacy SPI flash driver refers to default spi_flash driver since v3.0, and the SPI flash driver with configuration option ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` enabled since v4.0. The major breaking change here is that the legacy spi_flash driver is no longer supported from v5.0. Therefore, the legacy driver APIs and the ``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` configuration option are both removed. Please use the new spi_flash driver's APIs instead.
 
-+---------------------------------+-------------------------------+
-|         Removed items           |          Replacement          |
-+=================================+===============================+
-| ``spi_flash_erase_sector()``    | ``esp_flash_erase_region``    |
-+---------------------------------+-------------------------------+
-| ``spi_flash_erase_range()``     | ``esp_flash_erase_region``    |
-+---------------------------------+-------------------------------+
-| ``spi_flash_write``             | ``esp_flash_write``           |
-+---------------------------------+-------------------------------+
-| ``spi_flash_read()``            | ``esp_flash_read``            |
-+---------------------------------+-------------------------------+
-| ``spi_flash_write_encrypted()`` | ``esp_flash_write_encrypted`` |
-+---------------------------------+-------------------------------+
-| ``spi_flash_read_encrypted``    | ``esp_flash_read_encrypted``  |
-+---------------------------------+-------------------------------+
+.. list-table::
+    :widths: 50 50
+    :header-rows: 1
+
+    * - Removed items
+      - Replacement
+    * - ``spi_flash_erase_sector()``
+      - ``esp_flash_erase_region()``
+    * - ``spi_flash_erase_range()``
+      - ``esp_flash_erase_region()``
+    * - ``spi_flash_write()``
+      - ``esp_flash_write()``
+    * - ``spi_flash_read()``
+      - ``esp_flash_read()``
+    * - ``spi_flash_write_encrypted()``
+      - ``esp_flash_write_encrypted()``
+    * - ``spi_flash_read_encrypted()``
+      - ``esp_flash_read_encrypted()``
 
 .. note::
 
-    New functions with prefix ``esp_flash`` accept an additional ``esp_flash_t*`` parameter.  You can simply set it to NULL means that the function will operate the main flash(``esp_flash_default_chip``)
+    New functions with prefix ``esp_flash`` accept an additional ``esp_flash_t*`` parameter. You can simply set it to NULL. This will make the function to run the main flash (``esp_flash_default_chip``).
 
-Header ``esp_spi_flash.h`` has been deprecated, system functions are no longer public. To make use of flash memory mapping APIs, you should include ``spi_flash_mmap.h`` instead.
+The ``esp_spi_flash.h`` header is deprecated as system functions are no longer public. To use flash memory mapping APIs, you may include ``spi_flash_mmap.h`` instead.
