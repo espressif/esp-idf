@@ -50,6 +50,10 @@ examples/peripherals/i2s/i2s_basic/i2s_tdm:
   disable:
     - if: SOC_I2S_SUPPORTS_TDM != 1
 
+examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
+  disable:
+    - if: SOC_I2S_SUPPORTS_TDM != 1
+
 examples/peripherals/i2s/i2s_codec/i2s_es8311:
   disable:
     - if: SOC_I2S_SUPPORTED != 1
