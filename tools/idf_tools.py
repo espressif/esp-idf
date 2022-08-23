@@ -128,8 +128,11 @@ class Platforms:
         'osx': PLATFORM_MACOS,
         'darwin': PLATFORM_MACOS,
         'Darwin-x86_64': PLATFORM_MACOS,
+        'x86_64-apple-darwin': PLATFORM_MACOS,
         PLATFORM_MACOS_ARM64: PLATFORM_MACOS_ARM64,
         'Darwin-arm64': PLATFORM_MACOS_ARM64,
+        'aarch64-apple-darwin': PLATFORM_MACOS_ARM64,
+        'arm64-apple-darwin': PLATFORM_MACOS_ARM64,
         # Linux
         PLATFORM_LINUX64: PLATFORM_LINUX64,
         'linux64': PLATFORM_LINUX64,
