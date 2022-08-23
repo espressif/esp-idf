@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "unity.h"
 #include "esp_log.h"
 #include "soc/soc_caps.h"
 #include "esp_private/adc_private.h"
