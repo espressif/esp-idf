@@ -252,6 +252,14 @@ component_ut_pytest_esp32_flash_encryption:
     - build_pytest_components_esp32
   tags: [ esp32, flash_encryption ]
 
+component_ut_pytest_esp32_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  tags: [ esp32, flash_mutli ]
+
 component_ut_pytest_esp32s2_generic:
   extends:
     - .pytest_components_dir_template
@@ -259,6 +267,14 @@ component_ut_pytest_esp32s2_generic:
   needs:
     - build_pytest_components_esp32s2
   tags: [ esp32s2, generic ]
+
+component_ut_pytest_esp32s2_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  tags: [ esp32s2, flash_mutli ]
 
 component_ut_pytest_esp32s3_generic:
   extends:
@@ -292,6 +308,14 @@ component_ut_pytest_esp32s3_flash_encryption_f8r8:
     - build_pytest_components_esp32s3
   tags: [ esp32s3, flash_encryption_f8r8 ]
 
+component_ut_pytest_esp32s3_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  tags: [ esp32s3, flash_mutli ]
+
 component_ut_pytest_esp32c2_generic:
   extends:
     - .pytest_components_dir_template
@@ -323,6 +347,14 @@ component_ut_pytest_esp32c3_flash_encryption:
   needs:
     - build_pytest_components_esp32c3
   tags: [ esp32c3, flash_encryption ]
+
+component_ut_pytest_esp32c3_flash_multi:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3, flash_mutli ]
 
 .pytest_test_apps_dir_template:
   extends: .pytest_template
@@ -987,6 +1019,14 @@ UT_C2_26M:
     - ESP32C2_IDF
     - UT_T1_1
     - xtal_26mhz
+
+UT_C2_FLASH:
+  extends:
+    - .unit_test_esp32c2_template
+  tags:
+    - ESP32C2_IDF
+    - UT_T1_ESP_FLASH
+    - xtal_40mhz
 
 UT_C3:
   extends: .unit_test_esp32c3_template
