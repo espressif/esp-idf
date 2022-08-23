@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "unity.h"
 #include "esp_log.h"
 #include "soc/adc_periph.h"
 #include "esp_adc/adc_oneshot.h"
