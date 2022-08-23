@@ -30,7 +30,7 @@ API Guides
    openthread
    partition-tables
    performance/index
-   RF_calibration
+   :not esp32c6: RF_calibration
    :esp32: ../security/secure-boot-v1
    ../security/secure-boot-v2
    :SOC_SPIRAM_SUPPORTED: external-ram
