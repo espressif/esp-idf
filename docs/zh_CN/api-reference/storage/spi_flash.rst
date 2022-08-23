@@ -153,7 +153,7 @@ SPI Flash 加密
 内存映射 API
 ------------------
 
-{IDF_TARGET_CACHE_SIZE:default="64 KB"}
+{IDF_TARGET_CACHE_SIZE:default="64 KB",esp32c2=16~64 KB}
 
 {IDF_TARGET_NAME} 的内存硬件可以将 flash 部分区域映射到指令地址空间和数据地址空间。此映射仅用于读操作，不能通过写入 flash 映射的存储区域来改变 flash 中的内容。
 

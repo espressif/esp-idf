@@ -1,5 +1,5 @@
 +---------------+---------------------------------------+-------------------------------------+
-| Max CPU       |            Lock Acquisition           | CPU and APB Frequncies              |
+| Max CPU       |            Lock Acquisition           | CPU and APB Frequencies             |
 | Frequency Set |                                       |                                     |
 +---------------+---------------------------------------+-------------------------------------+
 |      240      | | Any of ``ESP_PM_CPU_FREQ_MAX``      |                                     |
