@@ -56,6 +56,8 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param);
 
 static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
+    uint8_t *bda = NULL;
+
     switch (event) {
     /* when authentication completed, this event comes */
     case ESP_BT_GAP_AUTH_CMPL_EVT: {
@@ -87,6 +89,18 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     /* when GAP mode changed, this event comes */
     case ESP_BT_GAP_MODE_CHG_EVT:
         ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_MODE_CHG_EVT mode: %d", param->mode_chg.mode);
+        break;
+    /* when ACL connection completed, this event comes */
+    case ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT:
+        bda = (uint8_t *)param->acl_conn_cmpl_stat.bda;
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_ACL_CONN_CMPL_STAT_EVT Connected to [%02x:%02x:%02x:%02x:%02x:%02x], status: 0x%x",
+                 bda[0], bda[1], bda[2], bda[3], bda[4], bda[5], param->acl_conn_cmpl_stat.stat);
+        break;
+    /* when ACL disconnection completed, this event comes */
+    case ESP_BT_GAP_ACL_DISCONN_CMPL_STAT_EVT:
+        bda = (uint8_t *)param->acl_disconn_cmpl_stat.bda;
+        ESP_LOGI(BT_AV_TAG, "ESP_BT_GAP_ACL_DISC_CMPL_STAT_EVT Disconnected from [%02x:%02x:%02x:%02x:%02x:%02x], reason: 0x%x",
+                 bda[0], bda[1], bda[2], bda[3], bda[4], bda[5], param->acl_disconn_cmpl_stat.reason);
         break;
     /* others */
     default: {
