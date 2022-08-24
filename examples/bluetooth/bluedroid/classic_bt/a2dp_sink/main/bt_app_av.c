@@ -273,6 +273,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         /* for now only SBC stream is supported */
         if (a2d->audio_cfg.mcc.type == ESP_A2D_MCT_SBC) {
             int sample_rate = 16000;
+            int ch_count = 2;
             char oct0 = a2d->audio_cfg.mcc.cie.sbc[0];
             if (oct0 & (0x01 << 6)) {
                 sample_rate = 32000;
@@ -281,7 +282,11 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             } else if (oct0 & (0x01 << 4)) {
                 sample_rate = 48000;
             }
-            i2s_set_clk(0, sample_rate, 16, 2);
+            if (oct0 & (0x01 << 3)) {
+                ch_count = 1;
+            }
+
+            i2s_set_clk(0, sample_rate, 16, ch_count);
 
             ESP_LOGI(BT_AV_TAG, "Configure audio player: %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],
