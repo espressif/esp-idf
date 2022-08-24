@@ -220,7 +220,7 @@ Notes:
 #if ( configUSE_QUEUE_SETS != 1 )
   #define traceQUEUE_SEND( pxQueue )                SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XQUEUEGENERICSEND, SEGGER_SYSVIEW_ShrinkId((U32)pxQueue), (U32)pvItemToQueue, xTicksToWait, xCopyPosition)
 #else
-  #define traceQUEUE_SEND( pxQueue )                SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XQUEUEGENERICSEND, SEGGER_SYSVIEW_ShrinkId((U32)pxQueue), 0, 0, xCopyPosition)
+  #define traceQUEUE_SEND( pxQueue )                SYSVIEW_RecordU32x4(apiFastID_OFFSET + apiID_XQUEUEGENERICSEND, SEGGER_SYSVIEW_ShrinkId((U32)pxQueue), 0, 0, 0)
 #endif
 
 #endif // CONFIG_FREERTOS_SMP
