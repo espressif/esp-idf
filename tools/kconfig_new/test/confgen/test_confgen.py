@@ -170,6 +170,55 @@ class ConfigTestCase(ConfgenBaseTestCase):
         self.invoke_and_test(self.input, 'CONFIG_UNKNOWN', 'not in')
 
 
+class RenameConfigTestCase(ConfgenBaseTestCase):
+    @classmethod
+    def setUpClass(self):
+        super(RenameConfigTestCase, self).setUpClass()
+        # `args` attribute is a dictionary containing the parameters to pass to `confgen.py`.
+        # Specify the name of the output file, this will generate the argument `--output config`.
+        self.args.update({'output': 'config'})
+        # Setup the KConfig file content in the `input` attribute.
+        # Let's define an option that is enabled by default, this is very important.
+        # Indeed, as we explicitly disables it by its former name below, rename will be considered as functional
+        # if the new name, `(CONFIG_)RENAMED_OPTION` is also disabled in the final configuration file.
+        self.input = """
+        config RENAMED_OPTION
+            bool "Renamed option"
+            default y
+        """
+
+    def setUp(self):
+        super(RenameConfigTestCase, self).setUp()
+        # Setup the actual test. What we want to do is to have a configuration file containing which
+        # option should be enabled or not, this is the equivalent of the `sdkconfig` that we can find
+        # in the examples.
+        with tempfile.NamedTemporaryFile(mode='w+', prefix='test_confgen_', delete=False) as f:
+            self.addCleanup(os.remove, f.name)
+            # The current file name will be given to `confgen.py` after `--config` argument.
+            self.args.update({'config': f.name})
+            # Specify the content of that configuration file, in our case, we want to explicitely
+            # have an option, which needs to be renamed, disabled/not set.
+            f.write(textwrap.dedent("""
+            # CONFIG_NAMED_OPTION is not set
+            """))
+        # The configuration file is ready, we need to prepare a `rename` configuration file which will
+        # provide the new name for `CONFIG_NAMED_OPTION` we defined above
+        with tempfile.NamedTemporaryFile(mode='w+', prefix='test_confgen_', delete=False) as f:
+            self.addCleanup(os.remove, f.name)
+            # Same as above, the following entry will result in the generation of `--sdkconfig-rename`
+            # parameter followed by the current temporary file name.
+            self.args.update({'sdkconfig-rename': f.name})
+            # The content of our `rename` file is simple: replace `CONFIG_NAMED_OPTION` by `CONFIG_RENAMED_OPTION`
+            f.write(textwrap.dedent("""
+            CONFIG_NAMED_OPTION             CONFIG_RENAMED_OPTION
+            """))
+
+    def testRenamedOptionDisabled(self):
+        # Invoke the unit test, specify that the final `sdkconfig` generated must contain the string:
+        # "# CONFIG_RENAMED_OPTION is not set"
+        self.invoke_and_test(self.input, '# CONFIG_RENAMED_OPTION is not set')
+
+
 class HeaderTestCase(ConfgenBaseTestCase):
     @classmethod
     def setUpClass(self):
