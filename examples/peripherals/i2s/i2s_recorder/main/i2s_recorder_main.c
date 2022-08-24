@@ -10,6 +10,7 @@
 #include <math.h>
 #include <sys/unistd.h>
 #include <sys/stat.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_system.h"
@@ -20,7 +21,7 @@
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
 #include "sdmmc_cmd.h"
-#include "sdkconfig.h"
+#include "format_wav.h"
 
 static const char *TAG = "pdm_rec_example";
 
@@ -90,40 +91,15 @@ void mount_sdcard(void)
     sdmmc_card_print_info(stdout, card);
 }
 
-void generate_wav_header(char *wav_header, uint32_t wav_size, uint32_t sample_rate)
-{
-    // See this for reference: http://soundfile.sapp.org/doc/WaveFormat/
-    uint32_t file_size = wav_size + WAVE_HEADER_SIZE - 8;
-    uint32_t byte_rate = BYTE_RATE;
-
-    const char set_wav_header[] = {
-        'R', 'I', 'F', 'F', // ChunkID
-        file_size, file_size >> 8, file_size >> 16, file_size >> 24, // ChunkSize
-        'W', 'A', 'V', 'E', // Format
-        'f', 'm', 't', ' ', // Subchunk1ID
-        0x10, 0x00, 0x00, 0x00, // Subchunk1Size (16 for PCM)
-        0x01, 0x00, // AudioFormat (1 for PCM)
-        0x01, 0x00, // NumChannels (1 channel)
-        sample_rate, sample_rate >> 8, sample_rate >> 16, sample_rate >> 24, // SampleRate
-        byte_rate, byte_rate >> 8, byte_rate >> 16, byte_rate >> 24, // ByteRate
-        0x02, 0x00, // BlockAlign
-        0x10, 0x00, // BitsPerSample (16 bits)
-        'd', 'a', 't', 'a', // Subchunk2ID
-        wav_size, wav_size >> 8, wav_size >> 16, wav_size >> 24, // Subchunk2Size
-    };
-
-    memcpy(wav_header, set_wav_header, sizeof(set_wav_header));
-}
-
 void record_wav(uint32_t rec_time)
 {
     // Use POSIX and C standard library functions to work with files.
     int flash_wr_size = 0;
     ESP_LOGI(TAG, "Opening file");
 
-    char wav_header_fmt[WAVE_HEADER_SIZE];
     uint32_t flash_rec_time = BYTE_RATE * rec_time;
-    generate_wav_header(wav_header_fmt, flash_rec_time, CONFIG_EXAMPLE_SAMPLE_RATE);
+    const wav_header_t wav_header =
+        WAV_HEADER_PCM_DEFAULT(flash_rec_time, 16, CONFIG_EXAMPLE_SAMPLE_RATE, 1);
 
     // First check if file exists before creating a new file.
     struct stat st;
@@ -140,7 +116,7 @@ void record_wav(uint32_t rec_time)
     }
 
     // Write the header to the WAV file
-    fwrite(wav_header_fmt, 1, WAVE_HEADER_SIZE, f);
+    fwrite(&wav_header, sizeof(wav_header), 1, f);
 
     // Start recording
     while (flash_wr_size < flash_rec_time) {
@@ -148,7 +124,7 @@ void record_wav(uint32_t rec_time)
         if (i2s_channel_read(rx_handle, (char *)i2s_readraw_buff, SAMPLE_SIZE, &bytes_read, 1000) == ESP_OK) {
             printf("[0] %d [1] %d [2] %d [3]%d ...\n", i2s_readraw_buff[0], i2s_readraw_buff[1], i2s_readraw_buff[2], i2s_readraw_buff[3]);
             // Write the samples to the WAV file
-            fwrite(i2s_readraw_buff, 1, bytes_read, f);
+            fwrite(i2s_readraw_buff, bytes_read, 1, f);
             flash_wr_size += bytes_read;
         } else {
             printf("Read Failed!\n");
