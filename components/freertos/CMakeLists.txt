@@ -140,7 +140,12 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES soc esp_pm)
 
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
-idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/include/freertos/")
+
+if(CONFIG_FREERTOS_SMP)
+    idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/FreeRTOS-Kernel-SMP/include/freertos/")
+else()
+    idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/FreeRTOS-Kernel/include/freertos/")
+endif()
 
 if(CONFIG_FREERTOS_DEBUG_OCDAWARE)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority") #will be removed
