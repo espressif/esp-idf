@@ -87,8 +87,8 @@ enum {
    layers we might need to temporarily buffer up data */
 
 /* 18 frames is equivalent to 6.89*18*2.9 ~= 360 ms @ 44.1 khz, 20 ms mediatick */
-#define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (25)
-#define JITTER_BUFFER_WATER_LEVEL (5)
+#define JITTER_BUFFER_WATER_LEVEL              (15)
+#define MAX_OUTPUT_A2DP_SNK_FRAME_QUEUE_SZ     (18 + JITTER_BUFFER_WATER_LEVEL)
 
 typedef struct {
     uint32_t sig;
@@ -362,7 +362,6 @@ void btc_a2dp_sink_reset_decoder(UINT8 *p_av)
 static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
 {
     tBT_SBC_HDR *p_msg;
-    int nb_of_msgs_to_process = 0;
 
     osi_sem_give(&a2dp_sink_local_param.btc_aa_snk_cb.post_sem);
     if (fixed_queue_is_empty(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ)) {
@@ -372,9 +371,7 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
             btc_a2dp_sink_flush_q(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ);
             return;
         }
-        nb_of_msgs_to_process = fixed_queue_length(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ);
-        APPL_TRACE_DEBUG("nb:%d", nb_of_msgs_to_process);
-        while (nb_of_msgs_to_process > 0) {
+        while ((p_msg = (tBT_SBC_HDR *)fixed_queue_try_peek_first(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ)) != NULL ) {
             if (btc_a2dp_sink_state != BTC_A2DP_SINK_STATE_ON){
                 return;
             }
@@ -385,7 +382,6 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
             }
             btc_a2dp_sink_handle_inc_media(p_msg);
             osi_free(p_msg);
-            nb_of_msgs_to_process--;
         }
         APPL_TRACE_DEBUG(" Process Frames - ");
     }
