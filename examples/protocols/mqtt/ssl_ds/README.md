@@ -40,21 +40,25 @@ openssl genrsa -out client.key
 openssl req -out client.csr -key client.key -new
 ```
 
-Paste the generated CSR in the [Mosquitto test certificate signer](https://test.mosquitto.org/ssl/index.php), click Submit and copy the downloaded `client.crt` in the `main` directory.
-
-Please note, that the supplied file `client.crt` in the `main` directory is only a placeholder for your client certificate (i.e. the example "as is" would compile but would not connect to the broker)
+Paste the generated CSR in the [Mosquitto test certificate signer](https://test.mosquitto.org/ssl/index.php), click Submit and downloaded the `client.crt`. This `client.crt` file shall be used as the device certificate.
 
 #### 3) Configure the DS peripheral
 
-*  The DS peripheral can be configured with the python script [configure_ds.py](README.md#configure_ds-py) by executing the following command
+* i) Install the [esp_secure_cert configuration utility](https://github.com/espressif/esp_secure_cert_mgr/tree/main/tools#esp_secure_cert-configuration-tool) with following command:
+```
+pip install esp-secure-cert-tool
+```
+*  The DS peripheral can be configured by executing the following command:
 
 ```
-    python configure_ds.py --port /* USB COM port */ --private-key /* RSA priv key */
+configure_esp_secure_cert.py -p /* Serial port */ --device-cert /* Device cert */ --private-key /* RSA priv key */ --target_chip /* target chip */ --configure_ds
 ```
 
 In the command USB COM port is nothing but the serial port to which the ESP chip is connected. see
 [check serial port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/establish-serial-connection.html#check-port-on-windows) for more details.
 RSA private key is nothing but the client private key ( RSA ) generated in Step 2.
+
+> Note: More details about the `esp-secure-cert-tool` utility can be found [here](https://github.com/espressif/esp_secure_cert_mgr/tree/main/tools).
 
 #### 4) Connection cofiguration
 * Open the project configuration menu (`idf.py menuconfig`)
