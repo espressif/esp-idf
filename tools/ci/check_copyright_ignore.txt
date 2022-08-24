@@ -730,7 +730,6 @@ components/hal/esp32/include/hal/rwdt_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/trace_ll.h
-components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32c3/hmac_hal.c
 components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h

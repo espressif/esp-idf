@@ -80,30 +80,18 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, uart_sclk_t* source_clk)
 }
 
 /**
- * @brief  Get the UART source clock frequency.
- *
- * @param  hw Beginning address of the peripheral registers.
- *
- * @return Current source clock frequency
- */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_sclk_freq(uart_dev_t *hw)
-{
-    return (hw->conf0.tick_ref_always_on) ? APB_CLK_FREQ : REF_CLK_FREQ;
-}
-
-/**
  * @brief  Configure the baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
  * @param  baud The baud rate to be set. When the source clock is APB, the max baud rate is `UART_LL_BITRATE_MAX`
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
 
  * @return None
  */
-FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
+FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
-    uint32_t sclk_freq, clk_div;
+    uint32_t clk_div;
 
-    sclk_freq = uart_ll_get_sclk_freq(hw);
     clk_div = ((sclk_freq) << 4) / baud;
     // The baud rate configuration register is divided into
     // an integer part and a fractional part.
@@ -115,12 +103,12 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud)
  * @brief  Get the current baud-rate.
  *
  * @param  hw Beginning address of the peripheral registers.
+ * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
  * @return The current baudrate
  */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw)
+FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    uint32_t sclk_freq = uart_ll_get_sclk_freq(hw);
     typeof(hw->clk_div) div_reg = hw->clk_div;
     return ((sclk_freq << 4)) / ((div_reg.div_int << 4) | div_reg.div_frag);
 }
