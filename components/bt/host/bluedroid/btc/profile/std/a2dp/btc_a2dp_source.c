@@ -42,8 +42,6 @@
 
 #if BTC_AV_SRC_INCLUDED
 
-extern osi_thread_t *btc_thread;
-
 /*****************************************************************************
  **  Constants
  *****************************************************************************/
@@ -118,6 +116,8 @@ enum {
 #define MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ         (5)
 #define MAX_OUTPUT_A2DP_SRC_FRAME_QUEUE_SZ     (27) // 18 for 20ms tick
 
+#define BTC_A2DP_SRC_DATA_QUEUE_IDX            (1)
+
 typedef struct {
     uint32_t sig;
     void *param;
@@ -154,6 +154,7 @@ typedef struct {
     tBTC_AV_MEDIA_FEEDINGS media_feeding;
     SBC_ENC_PARAMS encoder;
     osi_alarm_t *media_alarm;
+    struct osi_event *poll_data;
 } tBTC_A2DP_SOURCE_CB;
 
 typedef struct {
@@ -283,7 +284,7 @@ bool btc_a2dp_source_startup(void)
 
     APPL_TRACE_EVENT("## A2DP SOURCE START MEDIA THREAD ##");
 
-    a2dp_source_local_param.btc_aa_src_task_hdl = btc_thread;
+    a2dp_source_local_param.btc_aa_src_task_hdl = btc_get_current_thread();
 
     if (btc_a2dp_source_ctrl(BTC_MEDIA_TASK_INIT, NULL) == false) {
         goto error_exit;
@@ -1509,7 +1510,7 @@ static void btc_a2dp_source_aa_stop_tx(void)
 static void btc_a2dp_source_alarm_cb(UNUSED_ATTR void *context)
 {
     if (a2dp_source_local_param.btc_aa_src_task_hdl) {
-        osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
+        osi_thread_post_event(a2dp_source_local_param.btc_aa_src_cb.poll_data, OSI_THREAD_MAX_TIMEOUT);
     } else {
         APPL_TRACE_DEBUG("[%s] A2DP ALREADY FREED", __func__);
         btc_a2dp_source_aa_stop_tx();
@@ -1564,6 +1565,11 @@ static void btc_a2dp_source_thread_init(UNUSED_ATTR void *context)
 
     btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_ON;
 
+    struct osi_event *poll_data = osi_event_create(btc_a2dp_source_handle_timer, NULL);
+    assert(poll_data != NULL);
+    osi_event_bind(poll_data, a2dp_source_local_param.btc_aa_src_task_hdl, BTC_A2DP_SRC_DATA_QUEUE_IDX);
+    a2dp_source_local_param.btc_aa_src_cb.poll_data = poll_data;
+
     a2dp_source_local_param.btc_aa_src_cb.TxAaQ = fixed_queue_new(QUEUE_SIZE_MAX);
 
     btc_a2dp_control_init();
@@ -1579,6 +1585,9 @@ static void btc_a2dp_source_thread_cleanup(UNUSED_ATTR void *context)
     fixed_queue_free(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, osi_free_func);
 
     a2dp_source_local_param.btc_aa_src_cb.TxAaQ = NULL;
+
+    osi_event_delete(a2dp_source_local_param.btc_aa_src_cb.poll_data);
+    a2dp_source_local_param.btc_aa_src_cb.poll_data = NULL;
 }
 
 #endif /* BTC_AV_INCLUDED */

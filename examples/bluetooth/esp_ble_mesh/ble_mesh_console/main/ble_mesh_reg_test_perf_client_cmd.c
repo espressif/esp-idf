@@ -51,6 +51,7 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
     esp_ble_mesh_msg_ctx_t ctx;
     transaction_t *trans = NULL;
     ble_mesh_test_perf_throughput_data *profile_context = (ble_mesh_test_perf_throughput_data *)params;
+    esp_err_t result = ESP_OK;
 
     ESP_LOGD(TAG, "enter %s\n", __func__);
 
@@ -65,6 +66,7 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
     data = malloc(profile_context->length);
     if (data == NULL) {
         ESP_LOGE(TAG, " %s, %d, malloc fail\n", __func__, __LINE__);
+        goto cleanup;
     }
 
     for (i = 1; i <= profile_context->test_num; i++) {
@@ -73,16 +75,29 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
         TRANSACTION_INIT(&trans, TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE,
                     TRANS_MESH_SEND_MESSAGE_EVT, SEND_MESSAGE_TIMEOUT, &start_time, NULL);
         //tx: data  profile_context->length
-        esp_ble_mesh_client_model_send_msg(profile_context->model, &ctx, profile_context->opcode,
-                                           profile_context->length, data, 8000, profile_context->need_ack, profile_context->device_role);
+        result = esp_ble_mesh_client_model_send_msg(profile_context->model, &ctx, profile_context->opcode,
+                                                    profile_context->length, data, 8000,
+                                                    profile_context->need_ack,
+                                                    profile_context->device_role);
         ble_mesh_test_performance_client_model_accumulate_statistics(profile_context->length);
         transaction_run(trans);
+
+        if (result == ESP_OK) {
+            ESP_LOGI(TAG, "VendorModel:SendPackage,OK");
+        } else {
+            ESP_LOGI(TAG, "VendorModel:SendPackage,Fail");
+        }
     }
 
     ESP_LOGI(TAG, "VendorModel:SendPackage,Finish");
+
+cleanup:
     free(params);
-    vTaskDelete(NULL);
+    if (data != NULL) {
+        free(data);
+    }
     ESP_LOGD(TAG, "exit %s\n", __func__);
+    vTaskDelete(NULL);
 }
 
 int ble_mesh_test_performance_client_model(int argc, char **argv)

@@ -97,7 +97,7 @@ MEMORY
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x40070000, len = 0x2000
+  rtc_iram_seg(RWX) :                org = 0x40070000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
 

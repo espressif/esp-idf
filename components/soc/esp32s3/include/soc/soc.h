@@ -284,6 +284,10 @@
 #define SOC_DIRAM_DRAM_LOW    0x3FC88000
 #define SOC_DIRAM_DRAM_HIGH   0x3FCF0000
 
+#define SOC_I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
+#define MAP_DRAM_TO_IRAM(addr) (addr + SOC_I_D_OFFSET)
+#define MAP_IRAM_TO_DRAM(addr) (addr - SOC_I_D_OFFSET)
+
 // Region of memory accessible via DMA in internal memory. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FC88000
 #define SOC_DMA_HIGH 0x3FD00000
@@ -303,7 +307,8 @@
 #define SOC_MEM_INTERNAL_HIGH       0x403E2000
 
 // Start (highest address) of ROM boot stack, only relevant during early boot
-#define SOC_ROM_STACK_START         0x3fcebf10
+#define SOC_ROM_STACK_START         0x3fceb710
+#define SOC_ROM_STACK_SIZE          0x2000
 
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************

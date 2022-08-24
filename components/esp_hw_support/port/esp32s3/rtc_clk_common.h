@@ -19,7 +19,10 @@
 #define DPORT_SOC_CLK_SEL_PLL    1
 #define DPORT_SOC_CLK_SEL_8M     2
 
-#define RTC_FAST_CLK_FREQ_8M        8500000
+// On esp32s3, RC_FAST_CLK has a freq of ~17.5MHz
+#define SOC_CLK_RC_FAST_FREQ_APPROX 17500000
+// '8M' does not mean the actual freq, it only represents the clock source is RC_FAST_CLK.
+#define RTC_FAST_CLK_FREQ_8M  SOC_CLK_RC_FAST_FREQ_APPROX
 
 #ifdef __cplusplus
 extern "C" {

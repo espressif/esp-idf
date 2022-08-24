@@ -1,0 +1,24 @@
+menu "ESP Ringbuf"
+
+
+    config RINGBUF_PLACE_FUNCTIONS_INTO_FLASH
+        bool "Place non-ISR ringbuf functions into flash"
+        default n
+        help
+            Place non-ISR ringbuf functions (like xRingbufferCreate/xRingbufferSend) into flash.
+            This frees up IRAM, but the functions can no longer be called when the cache is disabled.
+
+
+    config RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH
+        bool "Place ISR ringbuf functions into flash"
+        default n
+        help
+            Place non-ISR ringbuf functions (like xRingbufferSendFromISR/xRingbufferReceiveFromISR) into flash.
+            This frees up IRAM, but the functions can no longer be called when the cache is disabled
+            or from an IRAM interrupt context.
+
+            This option is not compatible with ESP-IDF drivers which is configured to run the ISR from an IRAM context,
+            e.g. CONFIG_UART_ISR_IN_IRAM.
+
+
+endmenu

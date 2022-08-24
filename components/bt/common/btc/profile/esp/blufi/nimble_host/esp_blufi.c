@@ -256,7 +256,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
 
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
-            memcpy(param.connect.remote_bda, desc.peer_id_addr.val, sizeof(esp_bd_addr_t));
+            memcpy(param.connect.remote_bda, desc.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
 
             param.connect.conn_id = event->connect.conn_handle;
             /* save connection handle */
@@ -270,7 +270,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         return 0;
     case BLE_GAP_EVENT_DISCONNECT:
         ESP_LOGI(TAG, "disconnect; reason=%d\n", event->disconnect.reason);
-        memcpy(blufi_env.remote_bda, event->disconnect.conn.peer_id_addr.val, sizeof(esp_bd_addr_t));
+        memcpy(blufi_env.remote_bda, event->disconnect.conn.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
         blufi_env.is_connected = false;
         blufi_env.recv_seq = blufi_env.send_seq = 0;
         blufi_env.sec_mode = 0x0;
@@ -287,7 +287,7 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_BLUFI;
         msg.act = ESP_BLUFI_EVENT_BLE_DISCONNECT;
-        memcpy(param.disconnect.remote_bda, event->disconnect.conn.peer_id_addr.val, sizeof(esp_bd_addr_t));
+        memcpy(param.disconnect.remote_bda, event->disconnect.conn.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
         btc_transfer_context(&msg, &param, sizeof(esp_blufi_cb_param_t), NULL);
 
         return 0;

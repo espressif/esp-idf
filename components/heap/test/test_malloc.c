@@ -132,3 +132,25 @@ TEST_CASE("malloc(0) should return a NULL pointer", "[heap]")
     p = malloc(0);
     TEST_ASSERT(p == NULL);
 }
+
+static bool failure_occured = false;
+
+static void test_alloc_failure_callback(size_t size, uint32_t caps, const char * function_name)
+{
+    failure_occured = true;
+}
+
+TEST_CASE("malloc/calloc(0) should not call failure callback", "[heap]")
+{
+    void* ptr = NULL;
+    esp_err_t ret = heap_caps_register_failed_alloc_callback(test_alloc_failure_callback);
+    TEST_ASSERT(ret == ESP_OK);
+    ptr = malloc(0);
+    TEST_ASSERT_NULL(ptr);
+    /* Check that our callback was NOT called */
+    TEST_ASSERT_FALSE(failure_occured);
+    /* Do the same thing for calloc */
+    ptr = calloc(0, 0);
+    TEST_ASSERT_NULL(ptr);
+    TEST_ASSERT_FALSE(failure_occured);
+}

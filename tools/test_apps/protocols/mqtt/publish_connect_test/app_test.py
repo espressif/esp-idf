@@ -29,7 +29,7 @@ def set_server_cert_cn(ip):
          '-CAkey', _path('ca.key'), '-CAcreateserial', '-out', _path('srv.crt'), '-days', '360']]
     for args in arg_list:
         if subprocess.check_call(args) != 0:
-            raise('openssl command {} failed'.format(args))
+            raise RuntimeError('openssl command {} failed'.format(args))
 
 
 def get_my_ip():
@@ -275,7 +275,7 @@ def connection_tests(dut, cases):
             dut.expect('MQTT_EVENT_ERROR: Test={}'.format(test_nr), timeout=30)
             dut.expect('ESP-TLS ERROR: ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED')  # expect ... handshake error (PEER_DID_NOT_RETURN_A_CERTIFICATE)
             if 'PEER_DID_NOT_RETURN_A_CERTIFICATE' not in s.get_last_ssl_error():
-                raise('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
+                raise RuntimeError('Unexpected ssl error from the server {}'.format(s.get_last_ssl_error()))
 
     for case in ['CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH', 'CONFIG_EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD']:
         # These cases connect to server with both server and client verification (client key might be password protected)

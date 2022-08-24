@@ -224,7 +224,7 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
 #if SOC_ADC_RTC_CTRL_SUPPORTED
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
-static uint32_t get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan)
+uint32_t get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t chan)
 {
     adc_atten_t atten = adc_ll_get_atten(adc_n, chan);
     extern uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten);

@@ -2655,12 +2655,13 @@ BaseType_t xTaskGenericNotifyFromISR( TaskHandle_t xTaskToNotify,
  * not have this parameter and always waits for notifications on index 0.
  *
  * @param ulBitsToClearOnEntry Bits that are set in ulBitsToClearOnEntry value
- * will be cleared in the calling task's notification value before the task
- * checks to see if any notifications are pending, and optionally blocks if no
- * notifications are pending.  Setting ulBitsToClearOnEntry to ULONG_MAX (if
- * limits.h is included) or 0xffffffffUL (if limits.h is not included) will have
- * the effect of resetting the task's notification value to 0.  Setting
- * ulBitsToClearOnEntry to 0 will leave the task's notification value unchanged.
+ * will be cleared in the calling task's notification value before the task is
+ * marked as waiting for a new notification (provided a notification is not
+ * already pending). Optionally blocks if no notifications are pending. Setting
+ * ulBitsToClearOnEntry to ULONG_MAX (if limits.h is included) or 0xffffffffUL
+ * (if limits.h is not included) will have the effect of resetting the task's
+ * notification value to 0. Setting ulBitsToClearOnEntry to 0 will leave the
+ * task's notification value unchanged.
  *
  * @param ulBitsToClearOnExit If a notification is pending or received before
  * the calling task exits the xTaskNotifyWait() function then the task's
@@ -3366,6 +3367,25 @@ void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
 void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
                                       TickType_t xTicksToWait,
                                       const BaseType_t xWaitIndefinitely ) PRIVILEGED_FUNCTION;
+
+#ifdef ESP_PLATFORM
+/*
+ * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN
+ * INTERFACE WHICH IS FOR THE EXCLUSIVE USE OF THE SCHEDULER.
+ *
+ * This function is a wrapper to take the "xTaskQueueMutex" spinlock of tasks.c.
+ * This lock is taken whenver any of the task lists or event lists are
+ * accessed/modified, such as when adding/removing tasks to/from the delayed
+ * task list or various event lists.
+ *
+ * This functions is meant to be called by xEventGroupSetBits() and
+ * vEventGroupDelete() as both those functions will access event lists (instead
+ * of delegating the entire responsibility to one of vTask...EventList()
+ * functions).
+ */
+void vTaskTakeEventListLock( void );
+void vTaskReleaseEventListLock( void );
+#endif //  ESP_PLATFORM
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS AN

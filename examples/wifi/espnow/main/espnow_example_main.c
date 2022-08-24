@@ -318,13 +318,13 @@ static esp_err_t example_espnow_init(void)
 
     /* Initialize sending parameters. */
     send_param = malloc(sizeof(example_espnow_send_param_t));
-    memset(send_param, 0, sizeof(example_espnow_send_param_t));
     if (send_param == NULL) {
         ESP_LOGE(TAG, "Malloc send parameter fail");
         vSemaphoreDelete(s_example_espnow_queue);
         esp_now_deinit();
         return ESP_FAIL;
     }
+    memset(send_param, 0, sizeof(example_espnow_send_param_t));
     send_param->unicast = false;
     send_param->broadcast = true;
     send_param->state = 0;

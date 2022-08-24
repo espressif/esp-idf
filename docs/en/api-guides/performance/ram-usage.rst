@@ -130,6 +130,8 @@ The following options will reduce IRAM usage of some ESP-IDF features:
 
     - Enable :ref:`CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not (incorrectly) used from ISRs, this option is safe to enable in all configurations.
     - Enable :ref:`CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH`. Enabling this option will place snapshot-related functions, such as ``vTaskGetSnapshot`` or ``uxTaskGetSnapshotAll``, in flash.
+    - Enable :ref:`CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH`. Provided these functions are not (incorrectly) used from ISRs, this option is safe to enable in all configurations.
+    - Enable :ref:`CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH`. This option is not safe to use if the ISR ringbuf functions are used from an IRAM interrupt context, e.g. if :ref:`CONFIG_UART_ISR_IN_IRAM` is enabled. For the IDF drivers where this is the case you will get an error at run-time when installing the driver in question.
     - Disable Wi-Fi options :ref:`CONFIG_ESP32_WIFI_IRAM_OPT` and/or :ref:`CONFIG_ESP32_WIFI_RX_IRAM_OPT`. Disabling these options will free available IRAM at the cost of Wi-Fi performance.
     :esp32c3 or esp32s3: - :ref:`CONFIG_SPI_FLASH_ROM_IMPL` enabling this option will free some IRAM but will mean that esp_flash bugfixes and new flash chip support is not available.
     :esp32: - :ref:`CONFIG_SPI_FLASH_ROM_DRIVER_PATCH` disabling this option will free some IRAM but is only available in some flash configurations (see the configuration item help text).

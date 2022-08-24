@@ -26,7 +26,7 @@ from functools import partial
 from future.utils import iteritems
 
 try:
-    from itertools import izip as zip
+    from itertools import izip as zip  # type: ignore
 except ImportError:
     # Python 3
     pass
@@ -82,7 +82,7 @@ class UF2Writer(object):
         md5_part = self._to_uint32(addr)
         md5_part += self._to_uint32(len_chunk)
         md5_part += hashlib.md5(chunk).digest()
-        assert(len(md5_part) == self.UF2_MD5_PART_SIZE)
+        assert len(md5_part) == self.UF2_MD5_PART_SIZE
 
         block += md5_part
         block += b'\x00' * (self.UF2_DATA_SIZE - self.UF2_MD5_PART_SIZE - len_chunk)

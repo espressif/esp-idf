@@ -229,9 +229,8 @@ ESP-BLE-MESH Examples
 ESP-BLE-MESH Demo Videos
 ========================
 
-* `Provisioning of ESP-BLE-MESH nodes using Smartphone App <http://download.espressif.com/BLE_MESH/Docs4Customers/esp-ble-mesh-demo.mp4>`_
-* `Espressif Fast Provisioning using ESP-BLE-MESH App <http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.4_Demo_Fast_Provision/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
-* `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.5_Demo_Coexistence/ESP_BLE_MESH_%26_WIFI_Coexistence.mp4>`_
+* `Espressif Fast Provisioning using ESP-BLE-MESH App <https://dl.espressif.com/BLE/public/ESP32_BLE_Mesh_Fast_Provision.mp4>`_
+* `Espressif ESP-BLE-MESH and Wi-Fi Coexistence <https://dl.espressif.com/BLE/public/ESP_BLE_MESH_WIFI_Coexistence.mp4>`_
 
 
 ESP-BLE-MESH FAQ

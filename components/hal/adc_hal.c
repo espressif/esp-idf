@@ -14,6 +14,7 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 //ADC utilises I2S0 DMA on ESP32
+#include "hal/i2s_hal.h"
 #include "hal/i2s_ll.h"
 #include "hal/i2s_types.h"
 #include "soc/i2s_struct.h"
@@ -232,14 +233,21 @@ static void adc_hal_digi_sample_freq_config(adc_hal_context_t *hal, uint32_t fre
     adc_ll_digi_clk_sel(0);   //use APB
 #else
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK);    /*!< Clock from PLL_D2_CLK(160M)*/
-    uint32_t bck = I2S_BASE_CLK / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_B_DEFAULT / ADC_LL_CLKM_DIV_A_DEFAULT) / 2 / freq;
-    i2s_ll_mclk_div_t clk = {
-        .mclk_div = ADC_LL_CLKM_DIV_NUM_DEFAULT,
-        .a = ADC_LL_CLKM_DIV_A_DEFAULT,
-        .b = ADC_LL_CLKM_DIV_B_DEFAULT,
+    uint32_t bclk_div = 16;
+    uint32_t bclk = freq * 2;
+    uint32_t mclk = bclk * bclk_div;
+    uint32_t mclk_div = I2S_BASE_CLK / mclk;
+    i2s_hal_clock_cfg_t i2s_hal_clk_cfg = {
+        .sclk = I2S_BASE_CLK,
+        .bclk = bclk,
+        .bclk_div = bclk_div,
+        .mclk = mclk ,
+        .mclk_div = mclk_div,
     };
-    i2s_ll_rx_set_clk(hal->dev, &clk);
-    i2s_ll_rx_set_bck_div_num(hal->dev, bck);
+    i2s_ll_mclk_div_t mclk_set = {};
+    i2s_hal_mclk_div_decimal_cal(&i2s_hal_clk_cfg, &mclk_set);
+    i2s_ll_rx_set_clk(hal->dev, &mclk_set);
+    i2s_ll_rx_set_bck_div_num(hal->dev, i2s_hal_clk_cfg.bclk_div);
 #endif
 }
 
@@ -350,7 +358,7 @@ void adc_hal_digi_start(adc_hal_context_t *hal, uint8_t *data_buf)
 
     //reset the current descriptor address
     hal->cur_desc_ptr = &hal->desc_dummy_head;
-    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * ADC_HAL_DATA_LEN_PER_CONV, hal->desc_max_num);
+    adc_hal_digi_dma_link_descriptors(hal->rx_desc, data_buf, hal->eof_num * SOC_ADC_DIGI_DATA_BYTES_PER_CONV, hal->desc_max_num);
 
     //start DMA
     adc_dma_ll_rx_start(hal->dev, hal->dma_chan, (lldesc_t *)hal->rx_desc);

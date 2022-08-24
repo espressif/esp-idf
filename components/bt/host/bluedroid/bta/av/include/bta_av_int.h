@@ -260,10 +260,10 @@ typedef struct {
 typedef struct {
     BT_HDR              hdr;
     UINT8               codec_info[AVDT_CODEC_SIZE];    /* codec configuration */
-    UINT8               *p_protect_info;
-    UINT8               num_protect;
     BOOLEAN             suspend;
     UINT8               sep_info_idx;
+    UINT8               num_protect;
+    UINT8               p_protect_info[0];
 } tBTA_AV_API_RCFG;
 
 /* data type for BTA_AV_CI_SETCONFIG_OK_EVT and BTA_AV_CI_SETCONFIG_FAIL_EVT */
@@ -272,10 +272,10 @@ typedef struct {
     tBTA_AV_HNDL        hndl;
     UINT8               err_code;
     UINT8               category;
-    UINT8               num_seid;
-    UINT8               *p_seid;
     BOOLEAN             recfg_needed;
     UINT8               avdt_handle;  /* local sep type for which this stream will be set up */
+    UINT8               num_seid;
+    UINT8               p_seid[0];
 } tBTA_AV_CI_SETCONFIG;
 
 /* data type for all stream events from AVDTP */
