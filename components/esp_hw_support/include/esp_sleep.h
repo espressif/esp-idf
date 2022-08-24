@@ -69,7 +69,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_TIMER,        //!< Wakeup caused by timer
     ESP_SLEEP_WAKEUP_TOUCHPAD,     //!< Wakeup caused by touchpad
     ESP_SLEEP_WAKEUP_ULP,          //!< Wakeup caused by ULP program
-    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only)
+    ESP_SLEEP_WAKEUP_GPIO,         //!< Wakeup caused by GPIO (light sleep only on ESP32, S2 and S3)
     ESP_SLEEP_WAKEUP_UART,         //!< Wakeup caused by UART (light sleep only)
     ESP_SLEEP_WAKEUP_WIFI,              //!< Wakeup caused by WIFI (light sleep only)
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
