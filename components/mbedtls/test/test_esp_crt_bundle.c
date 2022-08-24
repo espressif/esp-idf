@@ -29,6 +29,7 @@
 
 #include "unity.h"
 #include "test_utils.h"
+#include "unity_test_utils.h"
 
 #define SERVER_ADDRESS "localhost"
 #define SERVER_PORT "4433"
@@ -51,6 +52,7 @@ extern const uint8_t wrong_sig_crt_pem_end[]   asm("_binary_wrong_sig_crt_esp32_
 extern const uint8_t correct_sig_crt_pem_start[] asm("_binary_correct_sig_crt_esp32_com_pem_start");
 extern const uint8_t correct_sig_crt_pem_end[]   asm("_binary_correct_sig_crt_esp32_com_pem_end");
 
+#define SEM_TIMEOUT 10000
 typedef struct {
     mbedtls_ssl_context ssl;
     mbedtls_net_context listen_fd;
@@ -187,7 +189,7 @@ void server_task(void *pvParameters)
 exit:
     endpoint_teardown(&server);
     xSemaphoreGive(*sema);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 
@@ -250,24 +252,57 @@ esp_err_t client_setup(mbedtls_endpoint_t *client)
     return ESP_OK;
 }
 
-int client_task(const uint8_t *bundle, size_t bundle_size, esp_crt_validate_res_t *res)
+void client_task(void *pvParameters)
 {
+    SemaphoreHandle_t *client_signal_sem = (SemaphoreHandle_t *) pvParameters;
     int ret = ESP_FAIL;
 
     mbedtls_endpoint_t client;
-
-    *res = ESP_CRT_VALIDATE_UNKNOWN;
+    esp_crt_validate_res_t res = ESP_CRT_VALIDATE_UNKNOWN;
 
     if (client_setup(&client) != ESP_OK) {
         ESP_LOGE(TAG, "SSL client setup failed");
         goto exit;
     }
 
-    esp_crt_bundle_attach(&client.conf);
-    if (bundle) {
-        /* Set a bundle different from the menuconfig bundle */
-        esp_crt_bundle_set(bundle, bundle_size);
+    /* Test with default crt bundle that doesnt contain the ca crt */
+    ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
+    if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
+        goto exit;
     }
+
+    ESP_LOGI(TAG, "Connected.");
+    mbedtls_ssl_set_bio(&client.ssl, &client.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+    ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
+    while ( ( ret = mbedtls_ssl_handshake( &client.ssl ) ) != 0 ) {
+        if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
+            printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
+            break;
+        }
+    }
+
+    ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
+    ret  = mbedtls_ssl_get_verify_result(&client.ssl);
+
+    res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
+
+    if (res == ESP_CRT_VALIDATE_OK) {
+        ESP_LOGI(TAG, "Certificate verification passed!");
+    } else {
+        ESP_LOGE(TAG, "Certificate verification failed!");
+    }
+    TEST_ASSERT(res == ESP_CRT_VALIDATE_FAIL);
+
+    // Reset session before new connection
+    mbedtls_ssl_close_notify(&client.ssl);
+    mbedtls_ssl_session_reset(&client.ssl);
+    mbedtls_net_free( &client.client_fd);
+
+    /* Test with bundle that does contain the CA crt */
+    esp_crt_bundle_attach(&client.conf);
+    esp_crt_bundle_set(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start);
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
     if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
@@ -289,14 +324,14 @@ int client_task(const uint8_t *bundle, size_t bundle_size, esp_crt_validate_res_
     ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
     ret  = mbedtls_ssl_get_verify_result(&client.ssl);
 
-    *res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
+    res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
 
-    if (*res == ESP_CRT_VALIDATE_OK) {
+    if (res == ESP_CRT_VALIDATE_OK) {
         ESP_LOGI(TAG, "Certificate verification passed!");
     } else {
         ESP_LOGE(TAG, "Certificate verification failed!");
     }
-
+    TEST_ASSERT(res == ESP_CRT_VALIDATE_OK);
 
     // Reset session before new connection
     mbedtls_ssl_close_notify(&client.ssl);
@@ -309,42 +344,45 @@ exit:
     mbedtls_ssl_session_reset(&client.ssl);
     esp_crt_bundle_detach(&client.conf);
     endpoint_teardown(&client);
-
-    return ret;
+    xSemaphoreGive(*client_signal_sem);
+    vTaskSuspend(NULL);
 }
 
 
 TEST_CASE("custom certificate bundle", "[mbedtls]")
 {
-   esp_crt_validate_res_t validate_res;
-
    test_case_uses_tcpip();
 
    SemaphoreHandle_t signal_sem = xSemaphoreCreateBinary();
    TEST_ASSERT_NOT_NULL(signal_sem);
 
    exit_flag = false;
-   xTaskCreate(server_task, "server task", 8192, &signal_sem, 10, NULL);
+   TaskHandle_t server_task_handle;
+   xTaskCreate(server_task, "server task", 8192, &signal_sem, 10, &server_task_handle);
 
    // Wait for the server to start up
-   if (!xSemaphoreTake(signal_sem, 10000 / portTICK_PERIOD_MS)) {
+   if (!xSemaphoreTake(signal_sem, SEM_TIMEOUT / portTICK_PERIOD_MS)) {
        TEST_FAIL_MESSAGE("signal_sem not released, server start failed");
    }
 
-   /* Test with default crt bundle that doesnt contain the ca crt */
-   client_task(NULL, 0, &validate_res);
-   TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_FAIL);
+   SemaphoreHandle_t client_signal_sem = xSemaphoreCreateBinary();
+   TEST_ASSERT_NOT_NULL(client_signal_sem);
 
-   /* Test with bundle that does contain the CA crt */
-   client_task(server_cert_bundle_start, server_cert_bundle_end - server_cert_bundle_start, &validate_res);
-   TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_OK);
+   TaskHandle_t client_task_handle;
+   xTaskCreate(client_task, "client task", 8192, &client_signal_sem, 10, &client_task_handle);
+
+   if (!xSemaphoreTake(client_signal_sem, SEM_TIMEOUT / portTICK_PERIOD_MS)) {
+       TEST_FAIL_MESSAGE("client_signal_sem not released, client exit failed");
+   }
+   unity_utils_task_delete(client_task_handle);
 
    exit_flag = true;
 
-   if (!xSemaphoreTake(signal_sem, 10000 / portTICK_PERIOD_MS)) {
+   if (!xSemaphoreTake(signal_sem, SEM_TIMEOUT / portTICK_PERIOD_MS)) {
        TEST_FAIL_MESSAGE("signal_sem not released, server exit failed");
    }
-
+   unity_utils_task_delete(server_task_handle);
+   vSemaphoreDelete(client_signal_sem);
    vSemaphoreDelete(signal_sem);
 }
 
