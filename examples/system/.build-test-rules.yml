@@ -136,12 +136,6 @@ examples/system/select:
       temporary: true
       reason: lack of runners
 
-examples/system/startup_time:
-  disable_test:
-    - if: IDF_TARGET == "esp32s3" or IDF_TARGET == "esp32c2"
-      temporary: true
-      reason: lack of runners
-
 examples/system/sysview_tracing:
   disable_test:
     - if: IDF_TARGET != "esp32"
