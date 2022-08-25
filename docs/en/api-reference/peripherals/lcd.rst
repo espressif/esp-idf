@@ -231,6 +231,11 @@ LCD examples are located under: :example:`peripherals/lcd`:
 * RGB panel example with scatter chart UI - :example:`peripherals/lcd/rgb_panel`
 * I2C interfaced OLED display scrolling text - :example:`peripherals/lcd/i2c_oled`
 
+Other LCD drivers
+-----------------
+
+Drivers for some LCD and touch controllers are available in `IDF Component Registry <https://components.espressif.com/search/lcd>`_. The list of available and planned drivers with links is in this `table <https://github.com/espressif/esp-bsp/blob/master/LCD.md>`__.
+
 API Reference
 -------------
 
