@@ -109,8 +109,8 @@ def print_hints(*filenames: str) -> None:
             try:
                 if variables_list:
                     for variables in variables_list:
-                        hint_vars = variables['re_variables']
-                        re_vars = variables['hint_variables']
+                        hint_vars = variables['hint_variables']
+                        re_vars = variables['re_variables']
                         regex = hint['re'].format(*re_vars)
                         if re.compile(regex).search(output):
                             try:
