@@ -34,7 +34,7 @@ class TestPythonInstall(unittest.TestCase):
 
     def run_idf_tools(self, extra_args):  # type: (List[str]) -> str
         args = [sys.executable, '../idf_tools.py'] + extra_args
-        ret = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
+        ret = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=300)
         decoded_output = ret.stdout.decode('utf-8', 'ignore')
         with open(os.path.join(IDF_PATH, 'tools', 'test_idf_tools', 'test_python_env_logs.txt'), 'a+') as w:
             # stack() returns list of callers frame records. [1] represent caller of this function
