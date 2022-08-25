@@ -46,7 +46,6 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 
     switch (state) {
         case MBEDTLS_SSL_HELLO_REQUEST:
-            ssl->MBEDTLS_PRIVATE(major_ver) = MBEDTLS_SSL_MAJOR_VERSION_3;
             break;
         case MBEDTLS_SSL_CLIENT_HELLO:
             if (add) {
