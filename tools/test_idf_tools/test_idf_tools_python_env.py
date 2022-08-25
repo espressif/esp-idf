@@ -33,7 +33,7 @@ class TestPythonInstall(unittest.TestCase):
 
     def run_idf_tools(self, extra_args):  # type: (List[str]) -> str
         args = [sys.executable, '../idf_tools.py'] + extra_args
-        ret = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
+        ret = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=300)
         return ret.stdout.decode('utf-8', 'ignore')
 
     def test_default_arguments(self):  # type: () -> None
