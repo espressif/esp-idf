@@ -48,11 +48,12 @@ Paste the generated CSR in the [Mosquitto test certificate signer](https://test.
 ```
 pip install esp-secure-cert-tool
 ```
-*  The DS peripheral can be configured by executing the following command:
+* ii) The DS peripheral can be configured by executing the following command:
 
 ```
-configure_esp_secure_cert.py -p /* Serial port */ --device-cert /* Device cert */ --private-key /* RSA priv key */ --target_chip /* target chip */ --configure_ds
+configure_esp_secure_cert.py -p /* Serial port */ --device-cert /* Device cert */ --private-key /* RSA priv key */ --target_chip /* target chip */ --configure_ds  --skip_flash
 ```
+This command shall generate a partition named `esp_secure_cert.bin` in the `esp_secure_cert_data` directory. This partition would be aumatically detected by the build system and flashed at appropriate offset when `idf.py flash` command is used. For this process, the command must be executed in the current folder only.
 
 In the command USB COM port is nothing but the serial port to which the ESP chip is connected. see
 [check serial port](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/establish-serial-connection.html#check-port-on-windows) for more details.
