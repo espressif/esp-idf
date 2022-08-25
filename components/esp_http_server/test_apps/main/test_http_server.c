@@ -243,3 +243,8 @@ TEST_CASE("Max Allowed Sockets Test", "[HTTP SERVER]")
     config.max_open_sockets += 1;
     TEST_ASSERT(httpd_start(&hd, &config) != ESP_OK);
 }
+
+void app_main(void)
+{
+    unity_run_menu();
+}
