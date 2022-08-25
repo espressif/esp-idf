@@ -598,7 +598,7 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
     if(esp_bluedroid_get_status() == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
 	return 0;
     }
-    uint8_t len = hci_ev[1] + 3;
+    uint16_t len = hci_ev[1] + 3;
     uint8_t *data = (uint8_t *)malloc(len);
     data[0] = 0x04;
     memcpy(&data[1], hci_ev, len - 1);
@@ -608,22 +608,17 @@ ble_hs_hci_rx_evt(uint8_t *hci_ev, void *arg)
     return 0;
 }
 
-static void *trans_om;
-void hci_trans_free_mbuf(void)
-{
-    os_mbuf_free_chain(trans_om);
-}
+
 int
 ble_hs_rx_data(struct os_mbuf *om, void *arg)
 {
-    uint8_t len = om->om_len + 1;
+    uint16_t len = om->om_len + 1;
     uint8_t *data = (uint8_t *)malloc(len);
     data[0] = 0x02;
-    memcpy(&data[1], om->om_data, len - 1);
+    os_mbuf_copydata(om, 0, len - 1, &data[1]);
     host_recv_pkt_cb(data, len);
-    trans_om = om;
     free(data);
-    hci_trans_free_mbuf();
+    os_mbuf_free_chain(om);
     return 0;
 }
 
