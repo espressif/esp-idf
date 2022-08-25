@@ -21,8 +21,9 @@ entries:
         esp_clk:esp_rtc_get_time_us (noflash)
         if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
             sleep_gpio:gpio_sleep_mode_config_apply (noflash)
-        if IDF_TARGET_ESP32 = n && IDF_TARGET_ESP32S2 = n:
+        if SOC_PM_SUPPORT_CPU_PD = y || SOC_PM_SUPPORT_TAGMEM_PD = y:
             sleep_retention:sleep_enable_memory_retention (noflash)
+        if SOC_PM_SUPPORT_CPU_PD = y:
             sleep_retention:cpu_domain_pd_allowed (noflash)
 
 [mapping:esp_system_pm]
