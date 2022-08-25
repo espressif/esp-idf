@@ -125,9 +125,7 @@ test_lwip_dhcps_fuzzer_on_host:
 test_spiffs_on_host:
   extends: .host_test_template
   script:
-    - cd components/spiffs/test_spiffs_host/
-    - make test
-    - cd ../test_spiffsgen
+    - cd components/spiffs/test_spiffsgen/
     - ./test_spiffsgen.py
 
 test_fatfsgen_on_host:
@@ -445,6 +443,14 @@ test_partition_api_host:
     - cd ${IDF_PATH}/components/spi_flash/host_test/partition_api_test
     - idf.py build
     - timeout 5 ./build/partition_api_test.elf >test.log
+    - grep " 0 Failures" test.log
+
+test_spiffs_host:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/components/spiffs/host_test
+    - idf.py build
+    - timeout 5 ./build/host_test_spiffs.elf >test.log
     - grep " 0 Failures" test.log
 
 test_gen_soc_caps_kconfig:

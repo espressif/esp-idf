@@ -37,6 +37,9 @@ _Static_assert(CONFIG_SPIFFS_META_LENGTH >= sizeof(spiffs_time_t),
         "SPIFFS_META_LENGTH size should be >= sizeof(spiffs_time_t)");
 #endif //CONFIG_SPIFFS_USE_MTIME
 
+_Static_assert(ESP_SPIFFS_PATH_MAX == ESP_VFS_PATH_MAX,
+               "SPIFFS max path length has to be aligned with the VFS max path length");
+
 /**
  * @brief SPIFFS DIR structure
  */
