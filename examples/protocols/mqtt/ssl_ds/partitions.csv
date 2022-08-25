@@ -1,6 +1,6 @@
 # ESP-IDF Partition Table
 # Name, Type, SubType, Offset, Size, Flags
-esp_secure_cert,0x3F,,0xD000,0x2000,
+esp_secure_cert,0x3F,,,0x2000,
 nvs,data,nvs,,24K,
 phy_init,data,phy,,4K,
 factory,app,factory,0x20000,1M,
