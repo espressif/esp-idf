@@ -21,8 +21,8 @@ set(extra_allowed_components
 # These components are currently included into "G1" build, but shouldn't.
 # After removing the extra dependencies, remove the components from this list as well.
 set(extra_components_which_shouldnt_be_included
-    # app_update gets added because of bootloader_support, spi_flash, espcoredump.
-    #   bootloader_support, spi_flash, espcoredump should be removed from dependencies;
+    # app_update gets added because of spi_flash.
+    # spi_flash should be removed from dependencies;
     app_update
     # of G1 components, bootloader is only included from spi_flash
     #   [refactor-todo]: see if this dependency from spi_flash can be made weak
@@ -36,6 +36,8 @@ set(extra_components_which_shouldnt_be_included
     # [refactor-todo]: driver is a dependency of esp_pm, esp_timer, spi_flash, vfs, esp_wifi, ${IDF_TARGET}
     #   all of these should be removed from G1 except for spi_flash.
     driver
+    # esp_app_format is dependency of bootloader_support, app_update
+    esp_app_format
     # [refactor-todo]: efuse is a dependency of esp_hw_support, esp_system.
     #   Figure out if these components can exist without a dependency on efuse.
     #   If not, see if esp_hw_support can provide minimal efuse component replacement in G1 build.
