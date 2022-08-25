@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -76,7 +77,7 @@ static void tp_example_set_thresholds(void)
         touch_pad_read_benchmark(button[i], &touch_value);
         //set interrupt threshold.
         touch_pad_set_thresh(button[i], touch_value * button_threshold[i]);
-        ESP_LOGI(TAG, "touch pad [%d] base %d, thresh %d", \
+        ESP_LOGI(TAG, "touch pad [%d] base %"PRIu32", thresh %"PRIu32, \
                  button[i], touch_value, (uint32_t)(touch_value * button_threshold[i]));
     }
 }
@@ -113,10 +114,10 @@ static void tp_example_read_task(void *pvParameter)
             /* if guard pad be touched, other pads no response. */
             if (evt.pad_num == button[3]) {
                 guard_mode_flag = 1;
-                ESP_LOGW(TAG, "TouchSensor [%d] be activated, enter guard mode", evt.pad_num);
+                ESP_LOGW(TAG, "TouchSensor [%"PRIu32"] be activated, enter guard mode", evt.pad_num);
             } else {
                 if (guard_mode_flag == 0) {
-                    ESP_LOGI(TAG, "TouchSensor [%d] be activated, status mask 0x%x", evt.pad_num, evt.pad_status);
+                    ESP_LOGI(TAG, "TouchSensor [%"PRIu32"] be activated, status mask 0x%"PRIu32"", evt.pad_num, evt.pad_status);
                 } else {
                     ESP_LOGW(TAG, "In guard mode. No response");
                 }
@@ -126,19 +127,19 @@ static void tp_example_read_task(void *pvParameter)
             /* if guard pad be touched, other pads no response. */
             if (evt.pad_num == button[3]) {
                 guard_mode_flag = 0;
-                ESP_LOGW(TAG, "TouchSensor [%d] be inactivated, exit guard mode", evt.pad_num);
+                ESP_LOGW(TAG, "TouchSensor [%"PRIu32"] be inactivated, exit guard mode", evt.pad_num);
             } else {
                 if (guard_mode_flag == 0) {
-                    ESP_LOGI(TAG, "TouchSensor [%d] be inactivated, status mask 0x%x", evt.pad_num, evt.pad_status);
+                    ESP_LOGI(TAG, "TouchSensor [%"PRIu32"] be inactivated, status mask 0x%"PRIu32, evt.pad_num, evt.pad_status);
                 }
             }
         }
         if (evt.intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
-            ESP_LOGI(TAG, "The touch sensor group measurement is done [%d].", evt.pad_num);
+            ESP_LOGI(TAG, "The touch sensor group measurement is done [%"PRIu32"].", evt.pad_num);
         }
         if (evt.intr_mask & TOUCH_PAD_INTR_MASK_TIMEOUT) {
             /* Add your exception handling in here. */
-            ESP_LOGI(TAG, "Touch sensor channel %d measure timeout. Skip this exception channel!!", evt.pad_num);
+            ESP_LOGI(TAG, "Touch sensor channel %"PRIu32" measure timeout. Skip this exception channel!!", evt.pad_num);
             touch_pad_timeout_resume(); // Point on the next channel to measure.
         }
     }
