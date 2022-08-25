@@ -19,8 +19,6 @@
   needs:
     - job: fast_template_app
       artifacts: false
-  variables:
-    LDGEN_CHECK_MAPPING: 1
   artifacts:
     paths:
       - "**/build*/size.json"
