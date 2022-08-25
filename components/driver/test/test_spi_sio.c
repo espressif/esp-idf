@@ -204,6 +204,7 @@ void test_sio_master_trans(bool sio_master_in)
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &dev_0));
     printf("CS:CLK:MO:MI: %d\t%d\t%d\t%d\n", dev_cfg.spics_io_num, bus_cfg.sclk_io_num, bus_cfg.mosi_io_num, bus_cfg.miso_io_num);
 
+    unity_send_signal("Master ready");
     for (int i = 0; i < TEST_NUM; i ++) {
         spi_transaction_t trans = {};
         if (sio_master_in) {
@@ -232,7 +233,7 @@ void test_sio_master_trans(bool sio_master_in)
         }
 
         //get signal
-        unity_wait_for_signal("slave ready");
+        unity_wait_for_signal("Slave ready");
 
         TEST_ESP_OK(spi_device_transmit(dev_0, &trans));
         if (sio_master_in) {
@@ -278,6 +279,7 @@ void test_sio_slave_emulate(bool sio_master_in)
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slv_cfg, SPI_DMA_CH_AUTO));
     printf("CS:CLK:MO:MI: %d\t%d\t%d\t%d\n", slv_cfg.spics_io_num, bus_cfg.sclk_io_num, bus_cfg.mosi_io_num, bus_cfg.miso_io_num);
 
+    unity_wait_for_signal("Master ready");
     for (int i = 0; i < TEST_NUM; i++) {
         spi_slave_transaction_t trans = {};
         if (sio_master_in) {
@@ -302,15 +304,15 @@ void test_sio_slave_emulate(bool sio_master_in)
         }
 
         TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &trans, portMAX_DELAY));
-        unity_send_signal("slave ready");
+        unity_send_signal("Slave ready");
 
         spi_slave_transaction_t *p_slave_ret;
         TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &p_slave_ret, portMAX_DELAY));
 
         if (sio_master_in) {
-            ESP_LOG_BUFFER_HEXDUMP("slave tx", trans.tx_buffer, trans.length / 8, ESP_LOG_INFO);
+            ESP_LOG_BUFFER_HEXDUMP("Slave tx", trans.tx_buffer, trans.length / 8, ESP_LOG_INFO);
         } else {
-            ESP_LOG_BUFFER_HEXDUMP("slave rx", trans.rx_buffer, trans.length / 8, ESP_LOG_INFO);
+            ESP_LOG_BUFFER_HEXDUMP("Slave rx", trans.rx_buffer, trans.length / 8, ESP_LOG_INFO);
             TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_tx_max + TRANS_LEN * (i % 2), trans.rx_buffer, trans.length / 8);
         }
     }
@@ -322,14 +324,12 @@ void test_sio_slave_emulate(bool sio_master_in)
 void test_master_run(void)
 {
     test_sio_master_trans(false);
-    unity_send_signal("master ready");
     test_sio_master_trans(true);
 }
 
 void test_slave_run(void)
 {
     test_sio_slave_emulate(false);
-    unity_wait_for_signal("master ready");
     test_sio_slave_emulate(true);
 }
 
