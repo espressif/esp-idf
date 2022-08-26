@@ -178,7 +178,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     assert(res);
     res = calculate_characterization_coefficients(&efuse_parsed_data, chars);
     assert(res);
-    ESP_LOGD(LOG_TAG, "adc%d (atten leven %d) calibration done: A:%d B:%d\n", adc_num, atten, chars->coeff_a, chars->coeff_b);
+    ESP_LOGD(LOG_TAG, "adc%d (atten leven %d) calibration done: A:%"PRId32" B:%"PRId32"\n", adc_num, atten, chars->coeff_a, chars->coeff_b);
 
     // Initialize remaining fields
     chars->adc_num = adc_num;

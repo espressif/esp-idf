@@ -174,7 +174,7 @@ static void calc_first_step_coefficients(const adc_calib_info_t *parsed_data, ca
 {
     ctx->chars_first_step.coeff_a = coeff_a_scaling * parsed_data->ref_data.ver1.voltage / parsed_data->ref_data.ver1.digi;
     ctx->chars_first_step.coeff_b = 0;
-    ESP_LOGV(TAG, "Calib V1, Cal Voltage = %d, Digi out = %d, Coef_a = %d\n", parsed_data->ref_data.ver1.voltage, parsed_data->ref_data.ver1.digi, ctx->chars_first_step.coeff_a);
+    ESP_LOGV(TAG, "Calib V1, Cal Voltage = %"PRId32", Digi out = %"PRId32", Coef_a = %"PRId32"\n", parsed_data->ref_data.ver1.voltage, parsed_data->ref_data.ver1.digi, ctx->chars_first_step.coeff_a);
 }
 
 static void calc_second_step_coefficients(const adc_cali_curve_fitting_config_t *config, cali_chars_curve_fitting_t *ctx)
@@ -224,7 +224,7 @@ static int32_t get_reading_error(uint64_t v_cali_1, const cali_chars_second_step
 
         term[i] = term[i] / (*param->coeff)[atten][i][1];
         error += (int32_t)term[i] * (*param->sign)[atten][i];
-        ESP_LOGV(TAG, "term%d is %llu, error is %d", i, term[i], error);
+        ESP_LOGV(TAG, "term%d is %llu, error is %"PRId32, i, term[i], error);
     }
 
     return error;
