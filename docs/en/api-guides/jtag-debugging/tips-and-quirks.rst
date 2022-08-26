@@ -71,6 +71,8 @@ FreeRTOS support
 
 OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS tasks as threads. Viewing them all can be done using the GDB ``i threads`` command, changing to a certain task is done with ``thread n``, with ``n`` being the number of the thread. FreeRTOS detection can be disabled in target's configuration. For more details see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
+GDB has a Python extension for FreeRTOS support. ESP-IDF automatically loads this module into GDB with the ``idf.py gdb`` command when the system requirements are met. See more details in :ref:`jtag-debugging-examples-command-line-08`.
+
 .. only:: esp32
 
     .. _jtag-debugging-tip-code-flash-voltage:

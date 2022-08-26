@@ -245,6 +245,7 @@ Examples in this section
 5. :ref:`jtag-debugging-examples-command-line-05`
 6. :ref:`jtag-debugging-examples-command-line-06`
 7. :ref:`jtag-debugging-examples-command-line-07`
+8. :ref:`jtag-debugging-examples-command-line-08`
 
 
 .. _jtag-debugging-examples-command-line-01:
@@ -445,10 +446,6 @@ To check it delete all breakpoints and enter ``c`` to resume application. Then e
 
 In particular case above, the application has been halted in line 52 of code in file ``freertos_hooks.c``. Now you can resume it again by enter ``c`` or do some debugging as discussed below.
 
-.. note::
-
-    In MSYS2 shell Ctrl+C does not halt the target but exists debugger. To resolve this issue consider debugging with :ref:`jtag-debugging-examples-eclipse` or check a workaround under http://www.mingw.org/wiki/Workaround_for_GDB_Ctrl_C_Interrupt.
-
 
 .. _jtag-debugging-examples-command-line-04:
 
@@ -625,6 +622,34 @@ If current value of ``i`` is less than ``2`` and program is resumed, it will bli
     Breakpoint 3, blink_task (pvParameter=0x0) at /home/user-name/esp/blink/main/./blink.c:34
     34          gpio_set_level(BLINK_GPIO, 0);
     (gdb)
+
+
+.. _jtag-debugging-examples-command-line-08:
+
+Debugging FreeRTOS Objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This part might be interesting when you are debugging FreeRTOS tasks interactions.
+Users that need to use the FreeRTOS task interactions can use the GDB ``freertos`` command. The ``freertos`` command is not native to GDB and comes from the `freertos-gdb <https://pypi.org/project/freertos-gdb>`_ Python extension module. The ``freertos`` command contains a series of sub-commands as demonstrated in the code snippet::
+
+    (gdb) freertos
+    "freertos" must be followed by the name of a subcommand.
+    List of freertos subcommands:
+
+    freertos queue --  Generate a print out of the current queues info.
+    freertos semaphore --  Generate a print out of the current semaphores info.
+    freertos task --  Generate a print out of the current tasks and their states.
+    freertos timer --  Generate a print out of the current timers info.
+
+For a more detailed description of this extension, please refer to https://pypi.org/project/freertos-gdb.
+
+.. note::
+
+    The freertos-gdb Python module is included as a Python package requirement by ESP-IDF, thus should be automatically installed (see :ref:`get-started-set-up-tools` for more details).
+
+    The FreeRTOS extension automatically loads in case GDB is executed with command via ``idf.py gdb``. Otherwise, the module could be enabled via the ``python import freertos_gdb`` command inside GDB.
+
+    Users only need to have Python 3.6 (or above) that contains a Python shared library.
 
 
 Obtaining help on commands
