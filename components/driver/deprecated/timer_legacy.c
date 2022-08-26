@@ -63,7 +63,7 @@ esp_err_t timer_get_counter_value(timer_group_t group_num, timer_idx_t timer_num
     ESP_RETURN_ON_FALSE(timer_val != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_PARAM_ADDR_ERROR);
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
-    *timer_val = timer_ll_get_counter_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num);
+    *timer_val = timer_hal_capture_and_get_counter_value(&p_timer_obj[group_num][timer_num]->hal);
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
@@ -74,7 +74,7 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     ESP_RETURN_ON_FALSE(timer_num < TIMER_MAX, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NUM_ERROR);
     ESP_RETURN_ON_FALSE(time != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_PARAM_ADDR_ERROR);
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
-    uint64_t timer_val = timer_ll_get_counter_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num);
+    uint64_t timer_val = timer_hal_capture_and_get_counter_value(&p_timer_obj[group_num][timer_num]->hal);
     uint32_t div = p_timer_obj[group_num][timer_num]->divider;
     // [clk_tree] TODO: replace the following switch table by clk_tree API
     switch (p_timer_obj[group_num][timer_num]->clk_src) {
@@ -432,6 +432,7 @@ void IRAM_ATTR timer_group_enable_alarm_in_isr(timer_group_t group_num, timer_id
 
 uint64_t IRAM_ATTR timer_group_get_counter_value_in_isr(timer_group_t group_num, timer_idx_t timer_num)
 {
+    timer_ll_trigger_soft_capture(p_timer_obj[group_num][timer_num]->hal.dev, timer_num);
     uint64_t val = timer_ll_get_counter_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num);
     return val;
 }
