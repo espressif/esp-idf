@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include "inttypes.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3
@@ -85,7 +86,7 @@ int32_t esp_adc_cal_get_reading_error(const esp_adc_error_calc_param_t *param, u
 
         term[i] = term[i] / (*param->coeff)[atten][i][1];
         error += (int32_t)term[i] * (*param->sign)[atten][i];
-        ESP_LOGV(TAG, "term%d is %llu, error is %d", i, term[i], error);
+        ESP_LOGV(TAG, "term%d is %llu, error is %"PRId32, i, term[i], error);
     }
 
     return error;

@@ -107,7 +107,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 
     adc_power_acquire();
 
-    ESP_LOGD(TAG, "new adc unit%d is created", unit->unit_id);
+    ESP_LOGD(TAG, "new adc unit%"PRId32" is created", unit->unit_id);
     *ret_unit = unit;
     return ESP_OK;
 
@@ -193,13 +193,13 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     bool success_free = s_adc_unit_free(handle->unit_id);
-    ESP_RETURN_ON_FALSE(success_free, ESP_ERR_NOT_FOUND, TAG, "adc%d isn't in use", handle->unit_id + 1);
+    ESP_RETURN_ON_FALSE(success_free, ESP_ERR_NOT_FOUND, TAG, "adc%"PRId32" isn't in use", handle->unit_id + 1);
 
     _lock_acquire(&s_ctx.mutex);
     s_ctx.units[handle->unit_id] = NULL;
     _lock_release(&s_ctx.mutex);
 
-    ESP_LOGD(TAG, "adc unit%d is deleted", handle->unit_id);
+    ESP_LOGD(TAG, "adc unit%"PRId32" is deleted", handle->unit_id);
     free(handle);
 
     adc_power_release();
