@@ -37,8 +37,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)
       .text size:   37908 bytes
    .vectors size:    1024 bytes
 Used Flash size :  186524 bytes
-      .text     :  146944 bytes
-      .rodata   :   39580 bytes
+           .text:  146944 bytes
+         .rodata:   39580 bytes
 Total image size:  234780 bytes (.bin may be padded larger)
 
 ***
@@ -62,8 +62,8 @@ Used static IRAM:  181518 bytes ( -50446 remain, 138.5% used) Overflow detected!
       .text size:  180491 bytes
    .vectors size:    1027 bytes
 Used Flash size :  531135 bytes
-      .text     :  432171 bytes
-      .rodata   :   98708 bytes
+           .text:  432171 bytes
+         .rodata:   98708 bytes
 Total image size:  730117 bytes (.bin may be padded larger)
 
 ***
@@ -76,8 +76,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)
       .text size:   37908 bytes
    .vectors size:    1024 bytes
 Used Flash size :  186524 bytes
-      .text     :  146944 bytes
-      .rodata   :   39580 bytes
+           .text:  146944 bytes
+         .rodata:   39580 bytes
 Total image size:  234780 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
@@ -130,8 +130,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)
       .text size:   37908 bytes
    .vectors size:    1024 bytes
 Used Flash size :  186524 bytes
-      .text     :  146944 bytes
-      .rodata   :   39580 bytes
+           .text:  146944 bytes
+         .rodata:   39580 bytes
 Total image size:  234780 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
@@ -427,47 +427,47 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)
       .text size:   37908 bytes
    .vectors size:    1024 bytes
 Used Flash size :  186524 bytes
-      .text     :  146944 bytes
-      .rodata   :   39580 bytes
+           .text:  146944 bytes
+         .rodata:   39580 bytes
 Total image size:  234780 bytes (.bin may be padded larger)
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-	p_uart_obj                     :  12
-	s_rtc_isr_handle               :   4
-	s_rtc_isr_handler_list         :   4
+    p_uart_obj                     :  12
+    s_rtc_isr_handle               :   4
+    s_rtc_isr_handler_list         :   4
 Section total: 20
 
 Symbols from section: .dram0.data
-	timer_spinlock                 :  16
-	periph_spinlock                :   8
-	s_rtc_isr_handler_list_lock    :   8
-	uart_selectlock                :   8
+    timer_spinlock                 :  16
+    periph_spinlock                :   8
+    s_rtc_isr_handler_list_lock    :   8
+    uart_selectlock                :   8
 Section total: 40
 
 Symbols from section: .flash.rodata
-	str1.4                         : 249
-	get_clk_en_mask                : 128
-	get_rst_en_mask                : 128
-	__FUNCTION__$5441              :  24
-	TG                             :   8
+    str1.4                         : 249
+    get_clk_en_mask                : 128
+    get_rst_en_mask                : 128
+    __FUNCTION__$5441              :  24
+    TG                             :   8
 Section total: 537
 
 Symbols from section: .flash.text
-	get_clk_en_mask                : 211
-	get_rst_en_mask                : 157
-	timer_group_intr_enable        : 112
-	rtc_isr                        :  86
-	periph_module_enable           :  78
-	rtc_isr_ensure_installed       :  75
-	rtc_gpio_force_hold_dis_all    :  65
-	rtc_isr_register               :  65
-	is_wifi_clk_peripheral         :  28
-	uart_set_select_notif_callback :  26
-	get_rst_en_reg                 :  25
-	get_clk_en_reg                 :  21
-	uart_get_selectlock            :  12
+    get_clk_en_mask                : 211
+    get_rst_en_mask                : 157
+    timer_group_intr_enable        : 112
+    rtc_isr                        :  86
+    periph_module_enable           :  78
+    rtc_isr_ensure_installed       :  75
+    rtc_gpio_force_hold_dis_all    :  65
+    rtc_isr_register               :  65
+    is_wifi_clk_peripheral         :  28
+    uart_set_select_notif_callback :  26
+    get_rst_en_reg                 :  25
+    get_clk_en_reg                 :  21
+    uart_get_selectlock            :  12
 Section total: 961
 
 Symbols from section: .iram0.text
@@ -505,8 +505,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          18796     
       .text size:   37908 bytes                                       18796         +19112
    .vectors size:    1024 bytes                                           0          +1024
 Used Flash size :  186524 bytes                                           0        +186524
-      .text     :  146944 bytes                                           0        +146944
-      .rodata   :   39580 bytes                                           0         +39580
+           .text:  146944 bytes                                           0        +146944
+         .rodata:   39580 bytes                                           0         +39580
 Total image size:  234780 bytes (.bin may be padded larger)           25960        +208820
 
 ***
@@ -522,8 +522,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38932     
       .text size:   37908 bytes                                       37908
    .vectors size:    1024 bytes                                        1024
 Used Flash size :  186524 bytes                                      186524
-      .text     :  146944 bytes                                      146944
-      .rodata   :   39580 bytes                                       39580
+           .text:  146944 bytes                                      146944
+         .rodata:   39580 bytes                                       39580
 Total image size:  234780 bytes (.bin may be padded larger)          234780
 
 ***
@@ -539,8 +539,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38956     
       .text size:   37908 bytes                                       37929            -21
    .vectors size:    1024 bytes                                        1027             -3
 Used Flash size :  186524 bytes                                       99551         +86973
-      .text     :  146944 bytes                                       77191         +69753
-      .rodata   :   39580 bytes                                       22360         +17220
+           .text:  146944 bytes                                       77191         +69753
+         .rodata:   39580 bytes                                       22360         +17220
 Total image size:  234780 bytes (.bin may be padded larger)          147087         +87693
 
 ***
@@ -556,8 +556,8 @@ Used static IRAM:   38956 bytes (  92116 remain, 29.7% used)          38932     
       .text size:   37929 bytes                                       37908            +21
    .vectors size:    1027 bytes                                        1024             +3
 Used Flash size :   99551 bytes                                      186524         -86973
-      .text     :   77191 bytes                                      146944         -69753
-      .rodata   :   22360 bytes                                       39580         -17220
+           .text:   77191 bytes                                      146944         -69753
+         .rodata:   22360 bytes                                       39580         -17220
 Total image size:  147087 bytes (.bin may be padded larger)          234780         -87693
 
 ***
@@ -574,8 +574,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          18796     
       .text size:   37908 bytes                                       18796         +19112
    .vectors size:    1024 bytes                                           0          +1024
 Used Flash size :  186524 bytes                                           0        +186524
-      .text     :  146944 bytes                                           0        +146944
-      .rodata   :   39580 bytes                                           0         +39580
+           .text:  146944 bytes                                           0        +146944
+         .rodata:   39580 bytes                                           0         +39580
 Total image size:  234780 bytes (.bin may be padded larger)           25960        +208820
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss              & 0.rodata              IRAM .text                & 0.text             & 0.vectors          & _loader.text            ram_st_total             Flash .text               & .rodata             flash_total
@@ -639,8 +639,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38932     
       .text size:   37908 bytes                                       37908
    .vectors size:    1024 bytes                                        1024
 Used Flash size :  186524 bytes                                      186524
-      .text     :  146944 bytes                                      146944
-      .rodata   :   39580 bytes                                       39580
+           .text:  146944 bytes                                      146944
+         .rodata:   39580 bytes                                       39580
 Total image size:  234780 bytes (.bin may be padded larger)          234780
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
@@ -698,8 +698,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38956     
       .text size:   37908 bytes                                       37929            -21
    .vectors size:    1024 bytes                                        1027             -3
 Used Flash size :  186524 bytes                                       99551         +86973
-      .text     :  146944 bytes                                       77191         +69753
-      .rodata   :   39580 bytes                                       22360         +17220
+           .text:  146944 bytes                                       77191         +69753
+         .rodata:   39580 bytes                                       22360         +17220
 Total image size:  234780 bytes (.bin may be padded larger)          147087         +87693
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
@@ -769,8 +769,8 @@ Used static IRAM:   38956 bytes (  92116 remain, 29.7% used)          38932     
       .text size:   37929 bytes                                       37908            +21
    .vectors size:    1027 bytes                                        1024             +3
 Used Flash size :   99551 bytes                                      186524         -86973
-      .text     :   77191 bytes                                      146944         -69753
-      .rodata   :   22360 bytes                                       39580         -17220
+           .text:   77191 bytes                                      146944         -69753
+         .rodata:   22360 bytes                                       39580         -17220
 Total image size:  147087 bytes (.bin may be padded larger)          234780         -87693
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
@@ -841,8 +841,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          18796     
       .text size:   37908 bytes                                       18796         +19112
    .vectors size:    1024 bytes                                           0          +1024
 Used Flash size :  186524 bytes                                           0        +186524
-      .text     :  146944 bytes                                           0        +146944
-      .rodata   :   39580 bytes                                           0         +39580
+           .text:  146944 bytes                                           0        +146944
+         .rodata:   39580 bytes                                           0         +39580
 Total image size:  234780 bytes (.bin may be padded larger)           25960        +208820
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss              & 0.rodata              IRAM .text                & 0.text             & 0.vectors          & _loader.text            ram_st_total             Flash .text               & .rodata             flash_total
@@ -1185,8 +1185,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38932     
       .text size:   37908 bytes                                       37908
    .vectors size:    1024 bytes                                        1024
 Used Flash size :  186524 bytes                                      186524
-      .text     :  146944 bytes                                      146944
-      .rodata   :   39580 bytes                                       39580
+           .text:  146944 bytes                                      146944
+         .rodata:   39580 bytes                                       39580
 Total image size:  234780 bytes (.bin may be padded larger)          234780
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
@@ -1487,8 +1487,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38956     
       .text size:   37908 bytes                                       37929            -21
    .vectors size:    1024 bytes                                        1027             -3
 Used Flash size :  186524 bytes                                       99551         +86973
-      .text     :  146944 bytes                                       77191         +69753
-      .rodata   :   39580 bytes                                       22360         +17220
+           .text:  146944 bytes                                       77191         +69753
+         .rodata:   39580 bytes                                       22360         +17220
 Total image size:  234780 bytes (.bin may be padded larger)          147087         +87693
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
@@ -1976,8 +1976,8 @@ Used static IRAM:   38956 bytes (  92116 remain, 29.7% used)          38932     
       .text size:   37929 bytes                                       37908            +21
    .vectors size:    1027 bytes                                        1024             +3
 Used Flash size :   99551 bytes                                      186524         -86973
-      .text     :   77191 bytes                                      146944         -69753
-      .rodata   :   22360 bytes                                       39580         -17220
+           .text:   77191 bytes                                      146944         -69753
+         .rodata:   22360 bytes                                       39580         -17220
 Total image size:  147087 bytes (.bin may be padded larger)          234780         -87693
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
@@ -2466,8 +2466,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          18796     
       .text size:   37908 bytes                                       18796         +19112
    .vectors size:    1024 bytes                                           0          +1024
 Used Flash size :  186524 bytes                                           0        +186524
-      .text     :  146944 bytes                                           0        +146944
-      .rodata   :   39580 bytes                                           0         +39580
+           .text:  146944 bytes                                           0        +146944
+         .rodata:   39580 bytes                                           0         +39580
 Total image size:  234780 bytes (.bin may be padded larger)           25960        +208820
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
@@ -2553,8 +2553,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          18796     
       .text size:   37908 bytes                                       18796         +19112
    .vectors size:    1024 bytes                                           0          +1024
 Used Flash size :  186524 bytes                                           0        +186524
-      .text     :  146944 bytes                                           0        +146944
-      .rodata   :   39580 bytes                                           0         +39580
+           .text:  146944 bytes                                           0        +146944
+         .rodata:   39580 bytes                                           0         +39580
 Total image size:  234780 bytes (.bin may be padded larger)           25960        +208820
 
 Symbols within the archive: libc.a (Not all symbols may be reported)
@@ -2618,8 +2618,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38932     
       .text size:   37908 bytes                                       37908
    .vectors size:    1024 bytes                                        1024
 Used Flash size :  186524 bytes                                      186524
-      .text     :  146944 bytes                                      146944
-      .rodata   :   39580 bytes                                       39580
+           .text:  146944 bytes                                      146944
+         .rodata:   39580 bytes                                       39580
 Total image size:  234780 bytes (.bin may be padded larger)          234780
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
@@ -2695,8 +2695,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38956     
       .text size:   37908 bytes                                       37929            -21
    .vectors size:    1024 bytes                                        1027             -3
 Used Flash size :  186524 bytes                                       99551         +86973
-      .text     :  146944 bytes                                       77191         +69753
-      .rodata   :   39580 bytes                                       22360         +17220
+           .text:  146944 bytes                                       77191         +69753
+         .rodata:   39580 bytes                                       22360         +17220
 Total image size:  234780 bytes (.bin may be padded larger)          147087         +87693
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
@@ -2837,8 +2837,8 @@ Used static IRAM:   38956 bytes (  92116 remain, 29.7% used)          38932     
       .text size:   37929 bytes                                       37908            +21
    .vectors size:    1027 bytes                                        1024             +3
 Used Flash size :   99551 bytes                                      186524         -86973
-      .text     :   77191 bytes                                      146944         -69753
-      .rodata   :   22360 bytes                                       39580         -17220
+           .text:   77191 bytes                                      146944         -69753
+         .rodata:   22360 bytes                                       39580         -17220
 Total image size:  147087 bytes (.bin may be padded larger)          234780         -87693
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
@@ -2979,8 +2979,8 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)          38956     
       .text size:   37908 bytes                                       37929            -21
    .vectors size:    1024 bytes                                        1027             -3
 Used Flash size :  186524 bytes                                       99551         +86973
-      .text     :  146944 bytes                                       77191         +69753
-      .rodata   :   39580 bytes                                       22360         +17220
+           .text:  146944 bytes                                       77191         +69753
+         .rodata:   39580 bytes                                       22360         +17220
 Total image size:  234780 bytes (.bin may be padded larger)          147087         +87693
 
 Symbols within the archive: libfreertos.a (Not all symbols may be reported)
@@ -3276,8 +3276,8 @@ Used stat D/IRAM:   43020 bytes ( 153588 remain, 21.9% used)
       .text size:   32905 bytes
    .vectors size:    1027 bytes
 Used Flash size :   93019 bytes
-      .text     :   74439 bytes
-      .rodata   :   18580 bytes
+           .text:   74439 bytes
+         .rodata:   18580 bytes
 Total image size:  134103 bytes (.bin may be padded larger)
 
 ***
@@ -3289,8 +3289,8 @@ Used stat D/IRAM:  207299 bytes ( -18883 remain, 110.0% used) Overflow detected!
       .text size:  171884 bytes
    .vectors size:    1027 bytes
 Used Flash size :  519371 bytes
-      .text     :  420899 bytes
-      .rodata   :   98216 bytes
+           .text:  420899 bytes
+         .rodata:   98216 bytes
 Total image size:  708078 bytes (.bin may be padded larger)
 
 ***
@@ -3302,8 +3302,8 @@ Used stat D/IRAM:   43020 bytes ( 153588 remain, 21.9% used)
       .text size:   32905 bytes
    .vectors size:    1027 bytes
 Used Flash size :   93019 bytes
-      .text     :   74439 bytes
-      .rodata   :   18580 bytes
+           .text:   74439 bytes
+         .rodata:   18580 bytes
 Total image size:  134103 bytes (.bin may be padded larger)
 
 ***
@@ -3335,8 +3335,8 @@ Used stat D/IRAM:   43020 bytes ( 153588 remain, 21.9% used)
       .text size:   32905 bytes
    .vectors size:    1027 bytes
 Used Flash size :   93019 bytes
-      .text     :   74439 bytes
-      .rodata   :   18580 bytes
+           .text:   74439 bytes
+         .rodata:   18580 bytes
 Total image size:  134103 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
@@ -3375,8 +3375,8 @@ Used stat D/IRAM:   43020 bytes ( 153588 remain, 21.9% used)
       .text size:   32905 bytes
    .vectors size:    1027 bytes
 Used Flash size :   93019 bytes
-      .text     :   74439 bytes
-      .rodata   :   18580 bytes
+           .text:   74439 bytes
+         .rodata:   18580 bytes
 Total image size:  134103 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
@@ -3603,84 +3603,84 @@ Used stat D/IRAM:   43020 bytes ( 153588 remain, 21.9% used)
       .text size:   32905 bytes
    .vectors size:    1027 bytes
 Used Flash size :   93019 bytes
-      .text     :   74439 bytes
-      .rodata   :   18580 bytes
+           .text:   74439 bytes
+         .rodata:   18580 bytes
 Total image size:  134103 bytes (.bin may be padded larger)
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-	p_timer_obj                    :  16
-	p_uart_obj                     :   8
-	s_rtc_isr_handle               :   4
-	s_rtc_isr_handler_list         :   4
+    p_timer_obj                    :  16
+    p_uart_obj                     :   8
+    s_rtc_isr_handle               :   4
+    s_rtc_isr_handler_list         :   4
 Section total: 32
 
 Symbols from section: .dram0.data
-	uart_context                   :  32
-	timer_spinlock                 :  16
-	periph_spinlock                :   8
-	rtc_spinlock                   :   8
-	s_rtc_isr_handler_list_lock    :   8
-	uart_selectlock                :   8
+    uart_context                   :  32
+    timer_spinlock                 :  16
+    periph_spinlock                :   8
+    rtc_spinlock                   :   8
+    s_rtc_isr_handler_list_lock    :   8
+    uart_selectlock                :   8
 Section total: 80
 
 Symbols from section: .flash.rodata
-	timer_get_counter_value.str1.4 : 146
-	get_clk_en_mask                : 136
-	get_rst_en_mask                : 136
-	uart_pattern_enqueue.str1.4    :  88
-	uart_flush_input.str1.4        :  45
-	uart_set_word_length.str1.4    :  31
-	__FUNCTION__$7196              :  27
-	__FUNCTION__$5699              :  24
-	__FUNCTION__$6971              :  23
-	__FUNCTION__$6966              :  22
-	__FUNCTION__$6896              :  21
-	__FUNCTION__$6901              :  21
-	__FUNCTION__$6906              :  19
-	__FUNCTION__$6911              :  19
-	__FUNCTION__$6926              :  18
-	__FUNCTION__$6932              :  18
-	__FUNCTION__$7131              :  18
-	uart_pattern_pop_pos.str1.4    :  18
-	__FUNCTION__$7202              :  17
-	__FUNCTION__$6916              :  16
-	__FUNCTION__$6921              :  16
-	uart_set_stop_bits.str1.4      :  15
+    timer_get_counter_value.str1.4 : 146
+    get_clk_en_mask                : 136
+    get_rst_en_mask                : 136
+    uart_pattern_enqueue.str1.4    :  88
+    uart_flush_input.str1.4        :  45
+    uart_set_word_length.str1.4    :  31
+    __FUNCTION__$7196              :  27
+    __FUNCTION__$5699              :  24
+    __FUNCTION__$6971              :  23
+    __FUNCTION__$6966              :  22
+    __FUNCTION__$6896              :  21
+    __FUNCTION__$6901              :  21
+    __FUNCTION__$6906              :  19
+    __FUNCTION__$6911              :  19
+    __FUNCTION__$6926              :  18
+    __FUNCTION__$6932              :  18
+    __FUNCTION__$7131              :  18
+    uart_pattern_pop_pos.str1.4    :  18
+    __FUNCTION__$7202              :  17
+    __FUNCTION__$6916              :  16
+    __FUNCTION__$6921              :  16
+    uart_set_stop_bits.str1.4      :  15
 Section total: 894
 
 Symbols from section: .flash.text
-	uart_flush_input               : 453
-	uart_wait_tx_done              : 417
-	get_clk_en_mask                : 267
-	get_rst_en_mask                : 198
-	timer_group_intr_enable        : 184
-	uart_set_word_length           : 144
-	uart_set_stop_bits             : 128
-	periph_module_enable           : 112
-	uart_get_bufferedlen           : 109
-	uart_enable_intr_mask          :  98
-	uart_disable_intr_mask         :  96
-	uart_set_baudrate              :  96
-	rtc_isr                        :  90
-	uart_get_baudrate              :  82
-	uart_set_parity                :  82
-	rtc_isr_ensure_installed       :  79
-	uart_pattern_queue_update      :  74
-	uart_get_parity                :  69
-	uart_get_stop_bits             :  69
-	uart_get_word_length           :  69
-	rtc_isr_register               :  62
-	rtc_gpio_force_hold_dis_all    :  53
-	is_wifi_clk_peripheral         :  38
-	uart_is_driver_installed       :  30
-	get_rst_en_reg                 :  25
-	uart_set_select_notif_callback :  23
-	get_clk_en_reg                 :  21
-	uart_disable_rx_intr           :  18
-	uart_enable_rx_intr            :  18
-	uart_get_selectlock            :  12
+    uart_flush_input               : 453
+    uart_wait_tx_done              : 417
+    get_clk_en_mask                : 267
+    get_rst_en_mask                : 198
+    timer_group_intr_enable        : 184
+    uart_set_word_length           : 144
+    uart_set_stop_bits             : 128
+    periph_module_enable           : 112
+    uart_get_bufferedlen           : 109
+    uart_enable_intr_mask          :  98
+    uart_disable_intr_mask         :  96
+    uart_set_baudrate              :  96
+    rtc_isr                        :  90
+    uart_get_baudrate              :  82
+    uart_set_parity                :  82
+    rtc_isr_ensure_installed       :  79
+    uart_pattern_queue_update      :  74
+    uart_get_parity                :  69
+    uart_get_stop_bits             :  69
+    uart_get_word_length           :  69
+    rtc_isr_register               :  62
+    rtc_gpio_force_hold_dis_all    :  53
+    is_wifi_clk_peripheral         :  38
+    uart_is_driver_installed       :  30
+    get_rst_en_reg                 :  25
+    uart_set_select_notif_callback :  23
+    get_clk_en_reg                 :  21
+    uart_disable_rx_intr           :  18
+    uart_enable_rx_intr            :  18
+    uart_get_selectlock            :  12
 Section total: 3216
 
 Symbols from section: .iram0.text
@@ -3723,8 +3723,8 @@ Used stat D/IRAM:       0 bytes (      0 remain, 0.0% used)           43020     
       .text size:       0 bytes                                       32905         -32905
    .vectors size:       0 bytes                                        1027          -1027
 Used Flash size :  186524 bytes                                       93019         +93505
-      .text     :  146944 bytes                                       74439         +72505
-      .rodata   :   39580 bytes                                       18580         +21000
+           .text:  146944 bytes                                       74439         +72505
+         .rodata:   39580 bytes                                       18580         +21000
 Total image size:  234780 bytes (.bin may be padded larger)          134103        +100677
 
 ***
@@ -3735,8 +3735,8 @@ Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .bss  size:    3664 bytes
       .text size:   37128 bytes
 Used Flash size :  110492 bytes
-      .text     :   85252 bytes
-      .rodata   :   24984 bytes
+           .text:   85252 bytes
+         .rodata:   24984 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 
 ***
@@ -3747,8 +3747,8 @@ Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .bss  size:    3664 bytes
       .text size:   37128 bytes
 Used Flash size :  110492 bytes
-      .text     :   85252 bytes
-      .rodata   :   24984 bytes
+           .text:   85252 bytes
+         .rodata:   24984 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 
 ***
@@ -3759,8 +3759,8 @@ Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .bss  size:    3664 bytes
       .text size:   37128 bytes
 Used Flash size :  110492 bytes
-      .text     :   85252 bytes
-      .rodata   :   24984 bytes
+           .text:   85252 bytes
+         .rodata:   24984 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data .rtc.data DRAM .bss IRAM0 .text ram_st_total Flash .text & .rodata & .appdesc flash_total
@@ -3796,8 +3796,8 @@ Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .bss  size:    3664 bytes
       .text size:   37128 bytes
 Used Flash size :  110492 bytes
-      .text     :   85252 bytes
-      .rodata   :   24984 bytes
+           .text:   85252 bytes
+         .rodata:   24984 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data .rtc.data DRAM .bss IRAM0 .text ram_st_total Flash .text & .rodata & .appdesc flash_total
@@ -3955,70 +3955,70 @@ Used stat D/IRAM:   45656 bytes ( 282024 remain, 13.9% used)
       .bss  size:    3664 bytes
       .text size:   37128 bytes
 Used Flash size :  110492 bytes
-      .text     :   85252 bytes
-      .rodata   :   24984 bytes
+           .text:   85252 bytes
+         .rodata:   24984 bytes
 Total image size:  152484 bytes (.bin may be padded larger)
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-	ref_counts                                    :  27
-	.p_uart_obj                                   :   8
+    ref_counts                                    :  27
+    .p_uart_obj                                   :   8
 Section total: 35
 
 Symbols from section: .dram0.data
-	uart_context                                  :  32
-	.uart_selectlock                              :   8
-	..g_spi_lock_main_flash_dev                   :   4
+    uart_context                                  :  32
+    .uart_selectlock                              :   8
+    ..g_spi_lock_main_flash_dev                   :   4
 Section total: 44
 
 Symbols from section: .flash.appdesc
 Section total: 0
 
 Symbols from section: .flash.rodata
-	periph_module_enable.str1.4                   :  64
-	uart_disable_intr_mask_and_return_prev.str1.4 :  54
-	uart_pattern_pop_pos.str1.4                   :  49
-	uart_set_stop_bits.str1.4                     :  46
-	uart_set_word_length.str1.4                   :  46
-	uart_flush_input.str1.4                       :  45
-	__FUNCTION__.7485                             :  39
-	__FUNCTION__.7477                             :  27
-	__FUNCTION__.7240                             :  22
-	__FUNCTION__.7171                             :  21
-	__FUNCTION__.7176                             :  21
-	__func__.4215                                 :  21
-	__FUNCTION__.7181                             :  19
-	__FUNCTION__.7186                             :  19
-	__FUNCTION__.7201                             :  18
-	__FUNCTION__.7206                             :  18
-	__FUNCTION__.7412                             :  18
-	__FUNCTION__.7489                             :  17
-	__FUNCTION__.7191                             :  16
-	__FUNCTION__.7196                             :  16
+    periph_module_enable.str1.4                   :  64
+    uart_disable_intr_mask_and_return_prev.str1.4 :  54
+    uart_pattern_pop_pos.str1.4                   :  49
+    uart_set_stop_bits.str1.4                     :  46
+    uart_set_word_length.str1.4                   :  46
+    uart_flush_input.str1.4                       :  45
+    __FUNCTION__.7485                             :  39
+    __FUNCTION__.7477                             :  27
+    __FUNCTION__.7240                             :  22
+    __FUNCTION__.7171                             :  21
+    __FUNCTION__.7176                             :  21
+    __func__.4215                                 :  21
+    __FUNCTION__.7181                             :  19
+    __FUNCTION__.7186                             :  19
+    __FUNCTION__.7201                             :  18
+    __FUNCTION__.7206                             :  18
+    __FUNCTION__.7412                             :  18
+    __FUNCTION__.7489                             :  17
+    __FUNCTION__.7191                             :  16
+    __FUNCTION__.7196                             :  16
 Section total: 596
 
 Symbols from section: .flash.text
-	periph_module_enable                          : 682
-	uart_flush_input                              : 580
-	uart_wait_tx_done                             : 484
-	uart_set_stop_bits                            : 178
-	uart_set_word_length                          : 178
-	uart_get_bufferedlen                          : 152
-	uart_disable_intr_mask_and_return_prev        : 138
-	uart_enable_intr_mask                         : 122
-	uart_get_baudrate                             : 116
-	uart_set_baudrate                             : 116
-	uart_set_parity                               : 116
-	uart_get_parity                               :  86
-	uart_get_stop_bits                            :  86
-	uart_get_word_length                          :  86
-	uart_pattern_queue_update                     :  80
-	uart_is_driver_installed                      :  34
-	uart_set_select_notif_callback                :  30
-	periph_ll_get_clk_en_reg                      :  28
-	periph_ll_get_rst_en_reg                      :  28
-	uart_get_selectlock                           :   6
+    periph_module_enable                          : 682
+    uart_flush_input                              : 580
+    uart_wait_tx_done                             : 484
+    uart_set_stop_bits                            : 178
+    uart_set_word_length                          : 178
+    uart_get_bufferedlen                          : 152
+    uart_disable_intr_mask_and_return_prev        : 138
+    uart_enable_intr_mask                         : 122
+    uart_get_baudrate                             : 116
+    uart_set_baudrate                             : 116
+    uart_set_parity                               : 116
+    uart_get_parity                               :  86
+    uart_get_stop_bits                            :  86
+    uart_get_word_length                          :  86
+    uart_pattern_queue_update                     :  80
+    uart_is_driver_installed                      :  34
+    uart_set_select_notif_callback                :  30
+    periph_ll_get_clk_en_reg                      :  28
+    periph_ll_get_rst_en_reg                      :  28
+    uart_get_selectlock                           :   6
 Section total: 3326
 
 Symbols from section: .iram0.bss
@@ -4053,8 +4053,8 @@ Used stat D/IRAM:   48466 bytes ( 279214 remain, 14.8% used)
       .bss  size:    3664 bytes
       .text size:   39754 bytes
 Used Flash size :  117008 bytes
-      .text     :   90400 bytes
-      .rodata   :   26352 bytes
+           .text:   90400 bytes
+         .rodata:   26352 bytes
 Total image size:  161810 bytes (.bin may be padded larger)
 
 ***
@@ -4067,8 +4067,8 @@ Total sizes:
 Used stat D/IRAM:  551174 bytes (-223494 remain, 168.2% used) Overflow detected! You can run idf.py size-files for more information.
       .text size:  551174 bytes
 Used Flash size :  494592 bytes
-      .text     :  410978 bytes
-      .rodata   :   83358 bytes
+           .text:  410978 bytes
+         .rodata:   83358 bytes
 Total image size: 1045766 bytes (.bin may be padded larger)
 
 ***
@@ -4079,8 +4079,8 @@ Used stat D/IRAM:   48466 bytes ( 279214 remain, 14.8% used)
       .bss  size:    3664 bytes
       .text size:   39754 bytes
 Used Flash size :  117008 bytes
-      .text     :   90400 bytes
-      .rodata   :   26352 bytes
+           .text:   90400 bytes
+         .rodata:   26352 bytes
 Total image size:  161810 bytes (.bin may be padded larger)
 
 ***
@@ -4091,8 +4091,8 @@ Used stat D/IRAM:   48466 bytes ( 279214 remain, 14.8% used)
       .bss  size:    3664 bytes
       .text size:   39754 bytes
 Used Flash size :  117008 bytes
-      .text     :   90400 bytes
-      .rodata   :   26352 bytes
+           .text:   90400 bytes
+         .rodata:   26352 bytes
 Total image size:  161810 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data .rtc.data DRAM .bss IRAM0 .text ram_st_total Flash .text & .rodata & .appdesc flash_total
@@ -4130,8 +4130,8 @@ Used stat D/IRAM:   48466 bytes ( 279214 remain, 14.8% used)
       .bss  size:    3664 bytes
       .text size:   39754 bytes
 Used Flash size :  117008 bytes
-      .text     :   90400 bytes
-      .rodata   :   26352 bytes
+           .text:   90400 bytes
+         .rodata:   26352 bytes
 Total image size:  161810 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data .rtc.data DRAM .bss IRAM0 .text ram_st_total Flash .text & .rodata & .appdesc flash_total
@@ -4295,100 +4295,100 @@ Used stat D/IRAM:   48466 bytes ( 279214 remain, 14.8% used)
       .bss  size:    3664 bytes
       .text size:   39754 bytes
 Used Flash size :  117008 bytes
-      .text     :   90400 bytes
-      .rodata   :   26352 bytes
+           .text:   90400 bytes
+         .rodata:   26352 bytes
 Total image size:  161810 bytes (.bin may be padded larger)
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-	ref_counts                                    :  27
-	.p_uart_obj                                   :   8
+    ref_counts                                    :  27
+    .p_uart_obj                                   :   8
 Section total: 35
 
 Symbols from section: .dram0.data
-	uart_context                                  :  32
-	.uart_selectlock                              :   8
-	..g_spi_lock_main_flash_dev                   :   4
+    uart_context                                  :  32
+    .uart_selectlock                              :   8
+    ..g_spi_lock_main_flash_dev                   :   4
 Section total: 44
 
 Symbols from section: .flash.appdesc
 Section total: 0
 
 Symbols from section: .flash.rodata
-	gpio_set_pull_mode.str1.4                     :  93
-	periph_module_enable.str1.4                   :  64
-	gpio_input_enable.str1.4                      :  62
-	uart_disable_intr_mask_and_return_prev.str1.4 :  54
-	uart_pattern_pop_pos.str1.4                   :  49
-	uart_set_stop_bits.str1.4                     :  46
-	uart_set_word_length.str1.4                   :  46
-	uart_flush_input.str1.4                       :  45
-	__FUNCTION__.7467                             :  39
-	__FUNCTION__.7459                             :  27
-	gpio_sleep_output_enable.str1.4               :  27
-	__FUNCTION__.6231                             :  26
-	__FUNCTION__.6223                             :  25
-	__FUNCTION__.6235                             :  25
-	__FUNCTION__.6240                             :  25
-	__FUNCTION__.6246                             :  25
-	__FUNCTION__.6219                             :  24
-	__FUNCTION__.6227                             :  24
-	__FUNCTION__.6215                             :  23
-	__FUNCTION__.6211                             :  22
-	__FUNCTION__.7222                             :  22
-	__FUNCTION__.6207                             :  21
-	__FUNCTION__.7153                             :  21
-	__FUNCTION__.7158                             :  21
-	__func__.4238                                 :  21
-	__FUNCTION__.6261                             :  19
-	__FUNCTION__.7163                             :  19
-	__FUNCTION__.7168                             :  19
-	__FUNCTION__.6257                             :  18
-	__FUNCTION__.7183                             :  18
-	__FUNCTION__.7188                             :  18
-	__FUNCTION__.7394                             :  18
-	__FUNCTION__.7471                             :  17
-	__FUNCTION__.7173                             :  16
-	__FUNCTION__.7178                             :  16
+    gpio_set_pull_mode.str1.4                     :  93
+    periph_module_enable.str1.4                   :  64
+    gpio_input_enable.str1.4                      :  62
+    uart_disable_intr_mask_and_return_prev.str1.4 :  54
+    uart_pattern_pop_pos.str1.4                   :  49
+    uart_set_stop_bits.str1.4                     :  46
+    uart_set_word_length.str1.4                   :  46
+    uart_flush_input.str1.4                       :  45
+    __FUNCTION__.7467                             :  39
+    __FUNCTION__.7459                             :  27
+    gpio_sleep_output_enable.str1.4               :  27
+    __FUNCTION__.6231                             :  26
+    __FUNCTION__.6223                             :  25
+    __FUNCTION__.6235                             :  25
+    __FUNCTION__.6240                             :  25
+    __FUNCTION__.6246                             :  25
+    __FUNCTION__.6219                             :  24
+    __FUNCTION__.6227                             :  24
+    __FUNCTION__.6215                             :  23
+    __FUNCTION__.6211                             :  22
+    __FUNCTION__.7222                             :  22
+    __FUNCTION__.6207                             :  21
+    __FUNCTION__.7153                             :  21
+    __FUNCTION__.7158                             :  21
+    __func__.4238                                 :  21
+    __FUNCTION__.6261                             :  19
+    __FUNCTION__.7163                             :  19
+    __FUNCTION__.7168                             :  19
+    __FUNCTION__.6257                             :  18
+    __FUNCTION__.7183                             :  18
+    __FUNCTION__.7188                             :  18
+    __FUNCTION__.7394                             :  18
+    __FUNCTION__.7471                             :  17
+    __FUNCTION__.7173                             :  16
+    __FUNCTION__.7178                             :  16
 Section total: 1055
 
 Symbols from section: .flash.rodata_noload
 Section total: 0
 
 Symbols from section: .flash.text
-	periph_module_enable                          : 736
-	uart_flush_input                              : 580
-	uart_wait_tx_done                             : 484
-	gpio_sleep_set_pull_mode                      : 318
-	uart_set_stop_bits                            : 178
-	uart_set_word_length                          : 178
-	gpio_sleep_set_direction                      : 156
-	uart_get_bufferedlen                          : 152
-	gpio_sleep_pulldown_en                        : 148
-	gpio_sleep_pullup_en                          : 148
-	gpio_sleep_sel_en                             : 148
-	gpio_sleep_pulldown_dis                       : 146
-	gpio_sleep_pullup_dis                         : 146
-	gpio_sleep_sel_dis                            : 146
-	uart_disable_intr_mask_and_return_prev        : 138
-	gpio_sleep_input_enable                       : 126
-	gpio_sleep_output_enable                      : 126
-	gpio_sleep_input_disable                      : 124
-	gpio_sleep_output_disable                     : 124
-	uart_enable_intr_mask                         : 122
-	uart_get_baudrate                             : 116
-	uart_set_baudrate                             : 116
-	uart_set_parity                               : 116
-	uart_get_parity                               :  86
-	uart_get_stop_bits                            :  86
-	uart_get_word_length                          :  86
-	uart_pattern_queue_update                     :  80
-	periph_ll_get_clk_en_reg                      :  50
-	periph_ll_get_rst_en_reg                      :  50
-	uart_is_driver_installed                      :  34
-	uart_set_select_notif_callback                :  30
-	uart_get_selectlock                           :   6
+    periph_module_enable                          : 736
+    uart_flush_input                              : 580
+    uart_wait_tx_done                             : 484
+    gpio_sleep_set_pull_mode                      : 318
+    uart_set_stop_bits                            : 178
+    uart_set_word_length                          : 178
+    gpio_sleep_set_direction                      : 156
+    uart_get_bufferedlen                          : 152
+    gpio_sleep_pulldown_en                        : 148
+    gpio_sleep_pullup_en                          : 148
+    gpio_sleep_sel_en                             : 148
+    gpio_sleep_pulldown_dis                       : 146
+    gpio_sleep_pullup_dis                         : 146
+    gpio_sleep_sel_dis                            : 146
+    uart_disable_intr_mask_and_return_prev        : 138
+    gpio_sleep_input_enable                       : 126
+    gpio_sleep_output_enable                      : 126
+    gpio_sleep_input_disable                      : 124
+    gpio_sleep_output_disable                     : 124
+    uart_enable_intr_mask                         : 122
+    uart_get_baudrate                             : 116
+    uart_set_baudrate                             : 116
+    uart_set_parity                               : 116
+    uart_get_parity                               :  86
+    uart_get_stop_bits                            :  86
+    uart_get_word_length                          :  86
+    uart_pattern_queue_update                     :  80
+    periph_ll_get_clk_en_reg                      :  50
+    periph_ll_get_rst_en_reg                      :  50
+    uart_is_driver_installed                      :  34
+    uart_set_select_notif_callback                :  30
+    uart_get_selectlock                           :   6
 Section total: 5280
 
 Symbols from section: .iram0.bss
@@ -4425,8 +4425,8 @@ Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
-      .text     :   87463 bytes
-      .rodata   :   27132 bytes
+           .text:   87463 bytes
+         .rodata:   27132 bytes
 Total image size:  170889 bytes (.bin may be padded larger)
 
 ***
@@ -4439,8 +4439,8 @@ Used stat D/IRAM:   94049 bytes (  41119 remain, 69.6% used)
       .data size:   68929 bytes
       .bss  size:   25120 bytes
 Used Flash size :  461714 bytes
-      .text     :  366715 bytes
-      .rodata   :   94743 bytes
+           .text:  366715 bytes
+         .rodata:   94743 bytes
 Total image size:  868549 bytes (.bin may be padded larger)
 
 ***
@@ -4453,8 +4453,8 @@ Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
-      .text     :   87463 bytes
-      .rodata   :   27132 bytes
+           .text:   87463 bytes
+         .rodata:   27132 bytes
 Total image size:  170889 bytes (.bin may be padded larger)
 
 ***
@@ -4467,8 +4467,8 @@ Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
-      .text     :   87463 bytes
-      .rodata   :   27132 bytes
+           .text:   87463 bytes
+         .rodata:   27132 bytes
 Total image size:  170889 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
             Archive File DRAM .data .rtc.data DRAM .bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata & .appdesc flash_total
@@ -4511,8 +4511,8 @@ Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
-      .text     :   87463 bytes
-      .rodata   :   27132 bytes
+           .text:   87463 bytes
+         .rodata:   27132 bytes
 Total image size:  170889 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
              Object File DRAM .data .rtc.data DRAM .bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata & .appdesc flash_total
@@ -4777,74 +4777,74 @@ Used stat D/IRAM:   11772 bytes ( 123396 remain, 8.7% used)
       .data size:    9252 bytes
       .bss  size:    2520 bytes
 Used Flash size :  114851 bytes
-      .text     :   87463 bytes
-      .rodata   :   27132 bytes
+           .text:   87463 bytes
+         .rodata:   27132 bytes
 Total image size:  170889 bytes (.bin may be padded larger)
 
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-	ref_counts                                    :   37
-	p_uart_obj                                    :   12
+    ref_counts                                    :   37
+    p_uart_obj                                    :   12
 Section total: 49
 
 Symbols from section: .dram0.data
-	uart_context                                  :   48
-	periph_spinlock                               :    8
-	uart_selectlock                               :    8
+    uart_context                                  :   48
+    periph_spinlock                               :    8
+    uart_selectlock                               :    8
 Section total: 64
 
 Symbols from section: .flash.appdesc
 Section total: 0
 
 Symbols from section: .flash.rodata
-	periph_module_enable.str1.4                   :   64
-	uart_disable_intr_mask_and_return_prev.str1.4 :   54
-	uart_pattern_pop_pos.str1.4                   :   49
-	uart_set_stop_bits.str1.4                     :   46
-	uart_set_word_length.str1.4                   :   46
-	uart_flush_input.str1.4                       :   45
-	__FUNCTION__$8051                             :   39
-	__FUNCTION__$8043                             :   27
-	__FUNCTION__$7806                             :   22
-	__FUNCTION__$7737                             :   21
-	__FUNCTION__$7742                             :   21
-	__func__$4997                                 :   21
-	__FUNCTION__$7747                             :   19
-	__FUNCTION__$7752                             :   19
-	__FUNCTION__$7767                             :   18
-	__FUNCTION__$7772                             :   18
-	__FUNCTION__$7978                             :   18
-	__FUNCTION__$8055                             :   17
-	__FUNCTION__$7757                             :   16
-	__FUNCTION__$7762                             :   16
-	g_spi_lock_main_flash_dev                     :    4
+    periph_module_enable.str1.4                   :   64
+    uart_disable_intr_mask_and_return_prev.str1.4 :   54
+    uart_pattern_pop_pos.str1.4                   :   49
+    uart_set_stop_bits.str1.4                     :   46
+    uart_set_word_length.str1.4                   :   46
+    uart_flush_input.str1.4                       :   45
+    __FUNCTION__$8051                             :   39
+    __FUNCTION__$8043                             :   27
+    __FUNCTION__$7806                             :   22
+    __FUNCTION__$7737                             :   21
+    __FUNCTION__$7742                             :   21
+    __func__$4997                                 :   21
+    __FUNCTION__$7747                             :   19
+    __FUNCTION__$7752                             :   19
+    __FUNCTION__$7767                             :   18
+    __FUNCTION__$7772                             :   18
+    __FUNCTION__$7978                             :   18
+    __FUNCTION__$8055                             :   17
+    __FUNCTION__$7757                             :   16
+    __FUNCTION__$7762                             :   16
+    g_spi_lock_main_flash_dev                     :    4
 Section total: 600
 
 Symbols from section: .flash.rodata_noload
 Section total: 0
 
 Symbols from section: .flash.text
-	periph_module_enable                          : 1131
-	uart_flush_input                              :  509
-	uart_wait_tx_done                             :  393
-	uart_set_stop_bits                            :  130
-	uart_set_word_length                          :  130
-	periph_ll_get_rst_en_reg                      :  125
-	uart_disable_intr_mask_and_return_prev        :  122
-	periph_ll_get_clk_en_reg                      :  121
-	uart_get_bufferedlen                          :  108
-	uart_enable_intr_mask                         :  100
-	uart_get_baudrate                             :   88
-	uart_set_parity                               :   88
-	uart_set_baudrate                             :   84
-	uart_pattern_queue_update                     :   74
-	uart_get_parity                               :   68
-	uart_get_stop_bits                            :   68
-	uart_get_word_length                          :   64
-	uart_is_driver_installed                      :   30
-	uart_set_select_notif_callback                :   23
-	uart_get_selectlock                           :   12
+    periph_module_enable                          : 1131
+    uart_flush_input                              :  509
+    uart_wait_tx_done                             :  393
+    uart_set_stop_bits                            :  130
+    uart_set_word_length                          :  130
+    periph_ll_get_rst_en_reg                      :  125
+    uart_disable_intr_mask_and_return_prev        :  122
+    periph_ll_get_clk_en_reg                      :  121
+    uart_get_bufferedlen                          :  108
+    uart_enable_intr_mask                         :  100
+    uart_get_baudrate                             :   88
+    uart_set_parity                               :   88
+    uart_set_baudrate                             :   84
+    uart_pattern_queue_update                     :   74
+    uart_get_parity                               :   68
+    uart_get_stop_bits                            :   68
+    uart_get_word_length                          :   64
+    uart_is_driver_installed                      :   30
+    uart_set_select_notif_callback                :   23
+    uart_get_selectlock                           :   12
 Section total: 3468
 
 Symbols from section: .iram0.bss
@@ -18188,10 +18188,2576 @@ Producing JSON output for esp32s3...
 }
 
 ***
+Producing CSV output...
+Total sizes:,,,
+Used static DRAM,17620 bytes (163116 remain 9.7% used),,,
+.data size,9324 bytes,,,
+.bss  size,8296 bytes,,,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),,,
+.text size,37908 bytes,,,
+.vectors size,1024 bytes,,,
+Used Flash size ,186524 bytes,,,
+.text,146944 bytes,,,
+.rodata,39580 bytes,,,
+Total image size,234780 bytes (.bin may be padded larger),,,
+Total sizes:,,,
+Used static DRAM,17620 bytes (163116 remain 9.7% used),,,
+.data size,9324 bytes,,,
+.bss  size,8296 bytes,,,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),,,
+.text size,37908 bytes,,,
+.vectors size,1024 bytes,,,
+Used Flash size ,186524 bytes,,,
+.text,146944 bytes,,,
+.rodata,39580 bytes,,,
+Total image size,234780 bytes (.bin may be padded larger),,,
+Per-archive contributions to ELF file:
+Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+liblwip.a,14,3751,0,0,3765,66978,13936
+libc.a,0,0,0,0,0,55583,3709
+libesp32.a,2635,2375,7758,0,12768,4814,8133
+libfreertos.a,4156,832,12428,425,17841,0,1545
+libspi_flash.a,36,359,7004,0,7399,886,1624
+libsoc.a,660,8,3887,0,4555,0,3456
+libheap.a,1331,4,4376,0,5711,1218,980
+libgcc.a,4,20,104,0,128,5488,888
+libvfs.a,232,103,0,0,335,3770,403
+libunity.a,0,121,0,0,121,2316,830
+libstdc++.a,8,16,0,0,24,1827,1062
+libnewlib.a,152,272,853,0,1277,803,86
+libpthread.a,16,12,174,0,202,774,638
+libdriver.a,40,20,0,0,60,961,537
+liblog.a,8,268,456,0,732,396,166
+libapp_update.a,0,0,0,0,0,123,717
+libhal.a,0,0,515,0,515,0,32
+libtcpip_adapter.a,0,81,0,0,81,180,359
+libm.a,0,0,92,0,92,0,0
+libmain.a,0,0,0,0,0,53,10
+libcxx.a,0,0,0,0,0,11,0
+libxtensa-debug-module.a,0,0,8,0,8,0,0
+libbootloader_support.a,0,0,0,0,0,0,0
+libcoexist.a,0,0,0,0,0,0,0
+libcore.a,0,0,0,0,0,0,0
+libethernet.a,0,0,0,0,0,0,0
+libmbedtls.a,0,0,0,0,0,0,0
+libmesh.a,0,0,0,0,0,0,0
+libnet80211.a,0,0,0,0,0,0,0
+libnvs_flash.a,0,0,0,0,0,0,0
+libphy.a,0,0,0,0,0,0,0
+libpp.a,0,0,0,0,0,0,0
+librtc.a,0,0,0,0,0,0,0
+libsmartconfig_ack.a,0,0,0,0,0,0,0
+libwpa.a,0,0,0,0,0,0,0
+libwpa2.a,0,0,0,0,0,0,0
+libwpa_supplicant.a,0,0,0,0,0,0,0
+libwps.a,0,0,0,0,0,0,0
+Total sizes:,,,
+Used static DRAM,17620 bytes (163116 remain 9.7% used),,,
+.data size,9324 bytes,,,
+.bss  size,8296 bytes,,,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),,,
+.text size,37908 bytes,,,
+.vectors size,1024 bytes,,,
+Used Flash size ,186524 bytes,,,
+.text,146944 bytes,,,
+.rodata,39580 bytes,,,
+Total image size,234780 bytes (.bin may be padded larger),,,
+Per-file contributions to ELF file:
+Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+lib_a-vfprintf.o,0,0,0,0,0,14193,704
+lib_a-svfprintf.o,0,0,0,0,0,13834,756
+lib_a-svfiprintf.o,0,0,0,0,0,9642,1176
+lib_a-vfiprintf.o,0,0,0,0,0,9933,704
+tcp_in.o,0,54,0,0,54,8127,916
+nd6.o,8,1027,0,0,1035,8427,136
+tasks.o,20,700,5667,0,6387,0,503
+tcp_out.o,0,0,0,0,0,5060,1124
+tcp.o,4,23,0,0,27,4290,1384
+sockets.o,0,728,0,0,728,4627,824
+api_msg.o,0,0,0,0,0,3763,1366
+dhcp.o,0,8,0,0,8,3456,1401
+panic.o,2579,5,2145,0,4729,0,0
+esp_err_to_name.o,0,0,0,0,0,50,4091
+unwind-dw2-fde.o,4,20,0,0,24,3316,404
+pbuf.o,0,1,0,0,1,2453,1161
+portasm.o,3084,0,480,0,3564,0,0
+lib_a-dtoa.o,0,0,0,0,0,3522,13
+ip6.o,0,0,0,0,0,3212,124
+spi_flash_rom_patch.o,0,0,2518,0,2518,0,766
+etharp.o,0,241,0,0,241,2618,658
+udp.o,2,4,0,0,6,3020,216
+intr_alloc.o,8,22,726,0,756,1749,710
+multi_heap.o,857,0,2217,0,3074,0,0
+queue.o,8,56,2569,0,2633,0,369
+unwind-dw2-xtensa.o,0,0,0,0,0,2172,324
+flash_ops.o,32,41,2352,0,2425,99,0
+rtc_clk.o,660,8,1794,0,2462,0,0
+lib_a-mprec.o,0,0,0,0,0,2134,296
+ip6_frag.o,0,6,0,0,6,1905,442
+api_lib.o,0,0,0,0,0,1425,919
+vfs.o,192,40,0,0,232,1995,132
+igmp.o,0,12,0,0,12,1604,707
+unity_platform.o,0,13,0,0,13,1511,600
+vfs_uart.o,40,63,0,0,103,1775,271
+esp_timer_esp32.o,8,26,1295,0,1329,254,526
+rtc_periph.o,0,0,0,0,0,0,2080
+dns.o,0,1292,0,0,1292,1809,206
+heap_caps.o,4,0,1195,0,1199,188,593
+eh_personality.o,0,0,0,0,0,1561,384
+ip4.o,0,6,0,0,6,1664,139
+flash_mmap.o,0,296,1298,0,1594,124,327
+xtensa_vectors.o,8,0,1272,425,1705,0,36
+cpu_start.o,0,1,806,0,807,277,486
+clk.o,0,0,67,0,67,581,893
+netif.o,0,241,0,0,241,1239,287
+sys_arch.o,0,8,0,0,8,1216,222
+multi_heap_poisoning.o,470,0,964,0,1434,0,0
+heap_caps_init.o,0,4,0,0,4,1030,387
+timers.o,8,56,1149,0,1213,0,233
+mld6.o,0,4,0,0,4,1334,0
+cache_utils.o,4,14,836,0,854,81,390
+raw.o,0,4,0,0,4,1087,223
+esp_timer.o,8,20,702,0,730,429,142
+system_api.o,0,8,589,0,597,0,662
+soc_memory_layout.o,0,0,0,0,0,0,1239
+icmp.o,0,0,0,0,0,769,371
+xtensa_intr_asm.o,1024,0,51,0,1075,0,0
+log.o,8,268,456,0,732,396,166
+pthread.o,8,8,174,0,190,298,512
+icmp6.o,0,0,0,0,0,863,127
+port.o,0,16,617,0,633,0,369
+rtc_init.o,0,0,980,0,980,0,0
+rtc_time.o,0,0,803,0,803,0,137
+dport_access.o,8,40,539,0,587,189,129
+lib_a-fseeko.o,0,0,0,0,0,862,0
+unity.o,0,108,0,0,108,767,90
+esp_ota_ops.o,0,0,0,0,0,123,717
+tcpip.o,0,16,0,0,16,644,191
+time.o,0,32,139,0,171,691,0
+periph_ctrl.o,8,0,0,0,8,520,256
+timers.o,0,12,0,0,12,638,131
+partition.o,0,8,0,0,8,582,141
+locks.o,8,0,552,0,560,0,84
+pthread_local_storage.o,8,4,0,0,12,476,126
+ipc.o,0,36,159,0,195,329,104
+inet_chksum.o,0,0,0,0,0,580,0
+tcpip_adapter_lwip.o,0,81,0,0,81,180,359
+crosscore_int.o,8,8,204,0,220,126,148
+netbuf.o,0,0,0,0,0,154,326
+vfs_lwip.o,0,0,0,0,0,307,155
+timer.o,16,0,0,0,16,112,281
+int_wdt.o,0,1,87,0,88,301,0
+eh_globals.o,0,16,0,0,16,149,193
+brownout.o,0,0,0,0,0,145,191
+windowspill_asm.o,0,0,311,0,311,0,0
+cpu_util.o,0,0,310,0,310,0,0
+rtc_module.o,8,8,0,0,16,291,0
+xtensa_context.o,0,0,299,0,299,0,0
+eh_terminate.o,0,0,0,0,0,117,141
+ethernet.o,0,0,0,0,0,244,12
+dport_panic_highint_hdl.,8,0,234,0,242,0,0
+lib_a-reent.o,0,0,0,0,0,232,0
+lib_a-fopen.o,0,0,0,0,0,228,0
+syscall_table.o,144,240,0,0,384,67,0
+dhcpserver.o,0,4,0,0,4,203,0
+freertos_hooks.o,8,128,43,0,179,137,0
+lib_a-puts.o,0,0,0,0,0,182,0
+test_utils.o,0,0,0,0,0,38,140
+lib_a-sprintf.o,0,0,0,0,0,167,0
+cache_err_int.o,0,0,56,0,56,98,0
+list.o,0,0,142,0,142,0,0
+xtensa_intr.o,0,0,104,0,104,0,35
+syscalls.o,0,0,94,0,94,45,0
+si_class_type_info.o,0,0,0,0,0,0,136
+dbg_stubs.o,0,2072,32,0,2104,100,0
+lib_a-assert.o,0,0,0,0,0,68,60
+lib_a-flags.o,0,0,0,0,0,127,0
+lib_a-printf.o,0,0,0,0,0,116,0
+ip4_addr.o,0,0,0,0,0,72,40
+class_type_info.o,0,0,0,0,0,0,112
+lib_a-s_frexp.o,0,0,0,0,0,110,0
+memp.o,0,0,0,0,0,0,108
+lib2funcs.o,0,0,104,0,104,0,0
+lib_a-vprintf.o,0,0,0,0,0,94,0
+lib_a-s_fpclassify.o,0,0,92,0,92,0,0
+def.o,0,0,0,0,0,91,0
+lib_a-fiprintf.o,0,0,0,0,0,84,0
+hw_random.o,0,4,74,0,78,0,0
+stack_check.o,0,4,0,0,4,32,42
+clock.o,0,0,72,0,72,0,0
+reent_init.o,0,0,68,0,68,0,2
+app_main.o,0,0,0,0,0,53,10
+state_asm--restore_extra,0,0,62,0,62,0,0
+state_asm--save_extra_nw,0,0,62,0,62,0,0
+new_opv.o,0,0,0,0,0,0,56
+ip.o,0,60,0,0,60,50,0
+uart.o,8,12,0,0,20,38,0
+xtensa_vector_defaults.o,0,0,46,0,46,0,0
+lib_a-fseek.o,0,0,0,0,0,45,0
+_divdi3.o,0,0,0,0,0,0,40
+_moddi3.o,0,0,0,0,0,0,40
+_udivdi3.o,0,0,0,0,0,0,40
+_umoddi3.o,0,0,0,0,0,0,40
+new_op.o,0,0,0,0,0,0,40
+xtensa_init.o,0,4,32,0,36,0,0
+interrupts--intlevel.o,0,0,0,0,0,0,32
+init.o,0,0,0,0,0,27,0
+wifi_init.o,0,0,0,0,0,17,9
+ip6_addr.o,0,0,0,0,0,0,20
+lib_a-errno.o,0,0,0,0,0,10,0
+int_asm--set_intclear.o,0,0,8,0,8,0,0
+eri.o,0,0,8,0,8,0,0
+cxx_exception_stubs.o,0,0,0,0,0,6,0
+cxx_guards.o,0,0,0,0,0,5,0
+FreeRTOS-openocd.o,4,0,0,0,4,0,0
+eh_term_handler.o,4,0,0,0,4,0,0
+eh_unex_handler.o,4,0,0,0,4,0,0
+bootloader_flash.o,0,0,0,0,0,0,0
+bootloader_sha.o,0,0,0,0,0,0,0
+esp_image_format.o,0,0,0,0,0,0,0
+lib_a-fputs.o,0,0,0,0,0,0,0
+lib_a-snprintf.o,0,0,0,0,0,0,0
+lib_a-strerror.o,0,0,0,0,0,0,0
+lib_a-sysgettod.o,0,0,0,0,0,0,0
+lib_a-u_strerr.o,0,0,0,0,0,0,0
+lib_a-vsnprintf.o,0,0,0,0,0,0,0
+lib_a-xpg_strerror_r.o,0,0,0,0,0,0,0
+coexist_api.o,0,0,0,0,0,0,0
+coexist_arbit.o,0,0,0,0,0,0,0
+coexist_core.o,0,0,0,0,0,0,0
+coexist_dbg.o,0,0,0,0,0,0,0
+coexist_hw.o,0,0,0,0,0,0,0
+coexist_param.o,0,0,0,0,0,0,0
+coexist_timer.o,0,0,0,0,0,0,0
+misc_nvs.o,0,0,0,0,0,0,0
+gpio.o,0,0,0,0,0,0,0
+ets_timer_legacy.o,0,0,0,0,0,0,0
+event_default_handlers.o,0,0,0,0,0,0,0
+event_loop.o,0,0,0,0,0,0,0
+lib_printf.o,0,0,0,0,0,0,0
+phy_init.o,0,0,0,0,0,0,0
+sha.o,0,0,0,0,0,0,0
+wifi_os_adapter.o,0,0,0,0,0,0,0
+emac_dev.o,0,0,0,0,0,0,0
+emac_main.o,0,0,0,0,0,0,0
+event_groups.o,0,0,0,0,0,0,0
+ringbuf.o,0,0,0,0,0,0,0
+_addsubdf3.o,0,0,0,0,0,0,0
+_cmpdf2.o,0,0,0,0,0,0,0
+_divdf3.o,0,0,0,0,0,0,0
+_divsf3.o,0,0,0,0,0,0,0
+_extendsfdf2.o,0,0,0,0,0,0,0
+_fixdfsi.o,0,0,0,0,0,0,0
+_floatdidf.o,0,0,0,0,0,0,0
+_floatdisf.o,0,0,0,0,0,0,0
+_floatsidf.o,0,0,0,0,0,0,0
+_muldf3.o,0,0,0,0,0,0,0
+_popcountsi2.o,0,0,0,0,0,0,0
+ethernetif.o,0,0,0,0,0,0,0
+ethip6.o,0,0,0,0,0,0,0
+wlanif.o,0,0,0,0,0,0,0
+esp_sha256.o,0,0,0,0,0,0,0
+mesh.o,0,0,0,0,0,0,0
+mesh_common.o,0,0,0,0,0,0,0
+mesh_config.o,0,0,0,0,0,0,0
+mesh_main.o,0,0,0,0,0,0,0
+mesh_parent.o,0,0,0,0,0,0,0
+mesh_route.o,0,0,0,0,0,0,0
+mesh_schedule.o,0,0,0,0,0,0,0
+mesh_timer.o,0,0,0,0,0,0,0
+mesh_utilities.o,0,0,0,0,0,0,0
+mesh_wifi.o,0,0,0,0,0,0,0
+ieee80211.o,0,0,0,0,0,0,0
+ieee80211_action.o,0,0,0,0,0,0,0
+ieee80211_action_vendor.,0,0,0,0,0,0,0
+ieee80211_api.o,0,0,0,0,0,0,0
+ieee80211_crypto.o,0,0,0,0,0,0,0
+ieee80211_crypto_ccmp.o,0,0,0,0,0,0,0
+ieee80211_crypto_tkip.o,0,0,0,0,0,0,0
+ieee80211_crypto_wep.o,0,0,0,0,0,0,0
+ieee80211_debug.o,0,0,0,0,0,0,0
+ieee80211_ets.o,0,0,0,0,0,0,0
+ieee80211_hostap.o,0,0,0,0,0,0,0
+ieee80211_ht.o,0,0,0,0,0,0,0
+ieee80211_ie_vendor.o,0,0,0,0,0,0,0
+ieee80211_input.o,0,0,0,0,0,0,0
+ieee80211_ioctl.o,0,0,0,0,0,0,0
+ieee80211_mesh_quick.o,0,0,0,0,0,0,0
+ieee80211_misc.o,0,0,0,0,0,0,0
+ieee80211_nvs.o,0,0,0,0,0,0,0
+ieee80211_output.o,0,0,0,0,0,0,0
+ieee80211_phy.o,0,0,0,0,0,0,0
+ieee80211_power.o,0,0,0,0,0,0,0
+ieee80211_proto.o,0,0,0,0,0,0,0
+ieee80211_regdomain.o,0,0,0,0,0,0,0
+ieee80211_rfid.o,0,0,0,0,0,0,0
+ieee80211_scan.o,0,0,0,0,0,0,0
+ieee80211_sta.o,0,0,0,0,0,0,0
+ieee80211_timer.o,0,0,0,0,0,0,0
+wl_chm.o,0,0,0,0,0,0,0
+wl_cnx.o,0,0,0,0,0,0,0
+nvs_api.o,0,0,0,0,0,0,0
+nvs_item_hash_list.o,0,0,0,0,0,0,0
+nvs_page.o,0,0,0,0,0,0,0
+nvs_pagemanager.o,0,0,0,0,0,0,0
+nvs_storage.o,0,0,0,0,0,0,0
+nvs_types.o,0,0,0,0,0,0,0
+phy.o,0,0,0,0,0,0,0
+phy_chip_v7.o,0,0,0,0,0,0,0
+phy_chip_v7_ana.o,0,0,0,0,0,0,0
+phy_chip_v7_cal.o,0,0,0,0,0,0,0
+esf_buf.o,0,0,0,0,0,0,0
+if_hwctrl.o,0,0,0,0,0,0,0
+lmac.o,0,0,0,0,0,0,0
+pm.o,0,0,0,0,0,0,0
+pm_for_bcn_only_mode.o,0,0,0,0,0,0,0
+pp.o,0,0,0,0,0,0,0
+pp_debug.o,0,0,0,0,0,0,0
+pp_timer.o,0,0,0,0,0,0,0
+rate_control.o,0,0,0,0,0,0,0
+trc.o,0,0,0,0,0,0,0
+wdev.o,0,0,0,0,0,0,0
+bt_bb.o,0,0,0,0,0,0,0
+pm.o,0,0,0,0,0,0,0
+rtc.o,0,0,0,0,0,0,0
+rtc_analog.o,0,0,0,0,0,0,0
+smartconfig_ack.o,0,0,0,0,0,0,0
+gpio_periph.o,0,0,0,0,0,0,0
+rtc_sleep.o,0,0,0,0,0,0,0
+bad_alloc.o,0,0,0,0,0,0,0
+del_op.o,0,0,0,0,0,0,0
+del_opv.o,0,0,0,0,0,0,0
+eh_exception.o,0,0,0,0,0,0,0
+new_handler.o,0,0,0,0,0,0,0
+pure.o,0,0,0,0,0,0,0
+tinfo.o,0,0,0,0,0,0,0
+ap_config.o,0,0,0,0,0,0,0
+common.o,0,0,0,0,0,0,0
+wpa.o,0,0,0,0,0,0,0
+wpa_auth.o,0,0,0,0,0,0,0
+wpa_auth_ie.o,0,0,0,0,0,0,0
+wpa_common.o,0,0,0,0,0,0,0
+wpa_debug.o,0,0,0,0,0,0,0
+wpa_ie.o,0,0,0,0,0,0,0
+wpa_main.o,0,0,0,0,0,0,0
+wpabuf.o,0,0,0,0,0,0,0
+wpas_glue.o,0,0,0,0,0,0,0
+wpa2_internal.o,0,0,0,0,0,0,0
+os_xtensa.o,0,0,0,0,0,0,0
+wps_internal.o,0,0,0,0,0,0,0
+Total sizes:,,,
+Used static DRAM,17620 bytes (163116 remain 9.7% used),,,
+.data size,9324 bytes,,,
+.bss  size,8296 bytes,,,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),,,
+.text size,37908 bytes,,,
+.vectors size,1024 bytes,,,
+Used Flash size ,186524 bytes,,,
+.text,146944 bytes,,,
+.rodata,39580 bytes,,,
+Total image size,234780 bytes (.bin may be padded larger),,,
+
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+p_uart_obj,12
+s_rtc_isr_handle,4
+s_rtc_isr_handler_list,4
+Section total: 20
+
+Symbols from section: .dram0.data
+timer_spinlock,16
+periph_spinlock,8
+s_rtc_isr_handler_list_lock,8
+uart_selectlock,8
+Section total: 40
+
+Symbols from section: .flash.rodata
+str1.4,249
+get_clk_en_mask,128
+get_rst_en_mask,128
+__FUNCTION__$5441,24
+TG,8
+Section total: 537
+
+Symbols from section: .flash.text
+get_clk_en_mask,211
+get_rst_en_mask,157
+timer_group_intr_enable,112
+rtc_isr,86
+periph_module_enable,78
+rtc_isr_ensure_installed,75
+rtc_gpio_force_hold_dis_all,65
+rtc_isr_register,65
+is_wifi_clk_peripheral,28
+uart_set_select_notif_callback,26
+get_rst_en_reg,25
+get_clk_en_reg,21
+uart_get_selectlock,12
+Section total: 961
+
+Symbols from section: .iram0.text
+Section total: 0
+
+Symbols from section: .iram0.vectors
+Section total: 0
+
+Symbols from section: .noinit
+Section total: 0
+
+Symbols from section: .rtc.bss
+Section total: 0
+
+Symbols from section: .rtc.data
+Section total: 0
+
+Symbols from section: .rtc.text
+Section total: 0
+
+Symbols from section: .rtc_noinit
+Section total: 0
+,<CURRENT>:,<REFERENCE>,Difference
+File,app.map,app2.map,<CURRENT> - <REFERENCE>
+Used static DRAM,17620 bytes (163116 remain 9.7% used),10604,+7016,-7016 remain,0 total
+.data size,9324 bytes,8580,+744,
+.bss  size,8296 bytes,2024,+6272,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),38956,-24,24 remain,0 total
+.text size,37908 bytes,37929,-21,
+.vectors size,1024 bytes,1027,-3,
+Used Flash size ,186524 bytes,99551,+86973,
+.text,146944 bytes,77191,+69753,
+.rodata,39580 bytes,22360,+17220,
+Total image size,234780 bytes (.bin may be padded larger),147087,+87693,
+,<CURRENT>:,<REFERENCE>,Difference
+File,app.map,app2.map,<CURRENT> - <REFERENCE>
+Used static DRAM,17620 bytes (163116 remain 9.7% used),10604,+7016,-7016 remain,0 total
+.data size,9324 bytes,8580,+744,
+.bss  size,8296 bytes,2024,+6272,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),38956,-24,24 remain,0 total
+.text size,37908 bytes,37929,-21,
+.vectors size,1024 bytes,1027,-3,
+Used Flash size ,186524 bytes,99551,+86973,
+.text,146944 bytes,77191,+69753,
+.rodata,39580 bytes,22360,+17220,
+Total image size,234780 bytes (.bin may be padded larger),147087,+87693,
+Per-archive contributions to ELF file:
+Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata,flash_total
+,<C>,<R>,<C>-<R>,<C>,<R>,<C>-<R>,<C>,<R>
+libc.a,,364,-364,,,,,
+libesp32.a,2635,2118,+517,2375,81,+2294,7758,5462
+libfreertos.a,4156,4140,+16,832,792,+40,12428,12459
+libspi_flash.a,36,779,-743,359,294,+65,7004,4896
+libsoc.a,660,208,+452,8,4,+4,3887,6790
+libheap.a,1331,304,+1027,4,4,,4376,3129
+libgcc.a,4,,+4,20,,+20,104,
+libvfs.a,232,308,-76,103,48,+55,,
+libnewlib.a,152,152,,272,272,,853,820
+libpthread.a,16,8,+8,12,12,,174,
+libdriver.a,40,112,-72,20,20,,,
+liblog.a,8,8,,268,272,-4,456,222
+libapp_update.a,,,,,4,-4,,109
+libhal.a,,,,,,,515,447
+libmain.a,,,,,,,,
+libcxx.a,,,,,,,,
+libbootloader_support.a,,,,,,,,1028
+libwpa_supplicant.a,,,,,,,,
+The following entries are present in <CURRENT> only:
+Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+liblwip.a,14,3751,0,0,3765,66978,13936
+libunity.a,0,121,0,0,121,2316,830
+libstdc++.a,8,16,0,0,24,1827,1062
+libtcpip_adapter.a,0,81,0,0,81,180,359
+libm.a,0,0,92,0,92,0,0
+libxtensa-debug-module.a,0,0,8,0,8,0,0
+libcoexist.a,0,0,0,0,0,0,0
+libcore.a,0,0,0,0,0,0,0
+libethernet.a,0,0,0,0,0,0,0
+libmbedtls.a,0,0,0,0,0,0,0
+libmesh.a,0,0,0,0,0,0,0
+libnet80211.a,0,0,0,0,0,0,0
+libnvs_flash.a,0,0,0,0,0,0,0
+libphy.a,0,0,0,0,0,0,0
+libpp.a,0,0,0,0,0,0,0
+librtc.a,0,0,0,0,0,0,0
+libsmartconfig_ack.a,0,0,0,0,0,0,0
+libwpa.a,0,0,0,0,0,0,0
+libwpa2.a,0,0,0,0,0,0,0
+libwps.a,0,0,0,0,0,0,0
+The following entries are present in <REFERENCE> only:
+Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+libesp_common.a,8,184,239,0,431,783,5421
+libesp_timer.a,16,20,794,0,830,723,493
+libesp_ringbuf.a,0,0,858,0,858,0,150
+libxtensa.a,0,0,217,0,217,0,0
+libsoc_esp32.a,0,0,0,0,0,0,160
+(exe),0,0,0,3,3,3,12
+libefuse.a,0,0,0,0,0,0,0
+libmbedcrypto.a,0,0,0,0,0,0,0
+,<CURRENT>:,<REFERENCE>,Difference
+File,app.map,app2.map,<CURRENT> - <REFERENCE>
+Used static DRAM,17620 bytes (163116 remain 9.7% used),10604,+7016,-7016 remain,0 total
+.data size,9324 bytes,8580,+744,
+.bss  size,8296 bytes,2024,+6272,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),38956,-24,24 remain,0 total
+.text size,37908 bytes,37929,-21,
+.vectors size,1024 bytes,1027,-3,
+Used Flash size ,186524 bytes,99551,+86973,
+.text,146944 bytes,77191,+69753,
+.rodata,39580 bytes,22360,+17220,
+Total image size,234780 bytes (.bin may be padded larger),147087,+87693,
+Per-file contributions to ELF file:
+Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata,flash_total
+,<C>,<R>,<C>-<R>,<C>,<R>,<C>-<R>,<C>,<R>
+lib_a-vfprintf.o,,,,,,,,
+lib_a-svfprintf.o,,,,,,,,
+lib_a-svfiprintf.o,,,,,,,,
+lib_a-vfiprintf.o,,,,,,,,
+lib_a-dtoa.o,,,,,,,,
+lib_a-mprec.o,,,,,,,,
+lib_a-fseeko.o,,,,,,,,
+windowspill_asm.o,,,,,,,311,315
+lib_a-reent.o,,,,,,,,
+lib_a-fopen.o,,,,,,,,
+lib_a-puts.o,,,,,,,,
+lib_a-assert.o,,,,,,,,
+lib_a-flags.o,,,,,,,,
+lib_a-printf.o,,,,,,,,
+lib_a-s_frexp.o,,,,,,,,
+lib_a-vprintf.o,,,,,,,,
+lib_a-fiprintf.o,,,,,,,,
+state_asm--restore_extra,,,,,,,62,62
+state_asm--save_extra_nw,,,,,,,62,62
+lib_a-fseek.o,,,,,,,,
+_divdi3.o,,,,,,,,
+_moddi3.o,,,,,,,,
+_udivdi3.o,,,,,,,,
+_umoddi3.o,,,,,,,,
+interrupts--intlevel.o,,,,,,,,
+lib_a-errno.o,,,,,,,,
+int_asm--set_intclear.o,,,,,,,8,8
+lib_a-fputs.o,,,,,,,,
+lib_a-snprintf.o,,,,,,,,
+lib_a-strerror.o,,,,,,,,
+lib_a-sysgettod.o,,,,,,,,
+lib_a-u_strerr.o,,,,,,,,
+_addsubdf3.o,,,,,,,,
+_cmpdf2.o,,,,,,,,
+_divdf3.o,,,,,,,,
+_fixdfsi.o,,,,,,,,
+_floatsidf.o,,,,,,,,
+_muldf3.o,,,,,,,,
+_popcountsi2.o,,,,,,,,
+The following entries are present in <CURRENT> only:
+Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+tcp_in.o,0,54,0,0,54,8127,916
+nd6.o,8,1027,0,0,1035,8427,136
+tasks.o,20,700,5667,0,6387,0,503
+tcp_out.o,0,0,0,0,0,5060,1124
+tcp.o,4,23,0,0,27,4290,1384
+sockets.o,0,728,0,0,728,4627,824
+api_msg.o,0,0,0,0,0,3763,1366
+dhcp.o,0,8,0,0,8,3456,1401
+panic.o,2579,5,2145,0,4729,0,0
+esp_err_to_name.o,0,0,0,0,0,50,4091
+unwind-dw2-fde.o,4,20,0,0,24,3316,404
+pbuf.o,0,1,0,0,1,2453,1161
+portasm.o,3084,0,480,0,3564,0,0
+ip6.o,0,0,0,0,0,3212,124
+spi_flash_rom_patch.o,0,0,2518,0,2518,0,766
+etharp.o,0,241,0,0,241,2618,658
+udp.o,2,4,0,0,6,3020,216
+intr_alloc.o,8,22,726,0,756,1749,710
+multi_heap.o,857,0,2217,0,3074,0,0
+queue.o,8,56,2569,0,2633,0,369
+unwind-dw2-xtensa.o,0,0,0,0,0,2172,324
+flash_ops.o,32,41,2352,0,2425,99,0
+rtc_clk.o,660,8,1794,0,2462,0,0
+ip6_frag.o,0,6,0,0,6,1905,442
+api_lib.o,0,0,0,0,0,1425,919
+vfs.o,192,40,0,0,232,1995,132
+igmp.o,0,12,0,0,12,1604,707
+unity_platform.o,0,13,0,0,13,1511,600
+vfs_uart.o,40,63,0,0,103,1775,271
+esp_timer_esp32.o,8,26,1295,0,1329,254,526
+rtc_periph.o,0,0,0,0,0,0,2080
+dns.o,0,1292,0,0,1292,1809,206
+heap_caps.o,4,0,1195,0,1199,188,593
+eh_personality.o,0,0,0,0,0,1561,384
+ip4.o,0,6,0,0,6,1664,139
+flash_mmap.o,0,296,1298,0,1594,124,327
+xtensa_vectors.o,8,0,1272,425,1705,0,36
+cpu_start.o,0,1,806,0,807,277,486
+clk.o,0,0,67,0,67,581,893
+netif.o,0,241,0,0,241,1239,287
+sys_arch.o,0,8,0,0,8,1216,222
+multi_heap_poisoning.o,470,0,964,0,1434,0,0
+heap_caps_init.o,0,4,0,0,4,1030,387
+timers.o,8,56,1149,0,1213,0,233
+mld6.o,0,4,0,0,4,1334,0
+cache_utils.o,4,14,836,0,854,81,390
+raw.o,0,4,0,0,4,1087,223
+esp_timer.o,8,20,702,0,730,429,142
+system_api.o,0,8,589,0,597,0,662
+soc_memory_layout.o,0,0,0,0,0,0,1239
+icmp.o,0,0,0,0,0,769,371
+xtensa_intr_asm.o,1024,0,51,0,1075,0,0
+log.o,8,268,456,0,732,396,166
+pthread.o,8,8,174,0,190,298,512
+icmp6.o,0,0,0,0,0,863,127
+port.o,0,16,617,0,633,0,369
+rtc_init.o,0,0,980,0,980,0,0
+rtc_time.o,0,0,803,0,803,0,137
+dport_access.o,8,40,539,0,587,189,129
+unity.o,0,108,0,0,108,767,90
+esp_ota_ops.o,0,0,0,0,0,123,717
+tcpip.o,0,16,0,0,16,644,191
+time.o,0,32,139,0,171,691,0
+periph_ctrl.o,8,0,0,0,8,520,256
+timers.o,0,12,0,0,12,638,131
+partition.o,0,8,0,0,8,582,141
+locks.o,8,0,552,0,560,0,84
+pthread_local_storage.o,8,4,0,0,12,476,126
+ipc.o,0,36,159,0,195,329,104
+inet_chksum.o,0,0,0,0,0,580,0
+tcpip_adapter_lwip.o,0,81,0,0,81,180,359
+crosscore_int.o,8,8,204,0,220,126,148
+netbuf.o,0,0,0,0,0,154,326
+vfs_lwip.o,0,0,0,0,0,307,155
+timer.o,16,0,0,0,16,112,281
+int_wdt.o,0,1,87,0,88,301,0
+eh_globals.o,0,16,0,0,16,149,193
+brownout.o,0,0,0,0,0,145,191
+cpu_util.o,0,0,310,0,310,0,0
+rtc_module.o,8,8,0,0,16,291,0
+xtensa_context.o,0,0,299,0,299,0,0
+eh_terminate.o,0,0,0,0,0,117,141
+ethernet.o,0,0,0,0,0,244,12
+dport_panic_highint_hdl.,8,0,234,0,242,0,0
+syscall_table.o,144,240,0,0,384,67,0
+dhcpserver.o,0,4,0,0,4,203,0
+freertos_hooks.o,8,128,43,0,179,137,0
+test_utils.o,0,0,0,0,0,38,140
+lib_a-sprintf.o,0,0,0,0,0,167,0
+cache_err_int.o,0,0,56,0,56,98,0
+list.o,0,0,142,0,142,0,0
+xtensa_intr.o,0,0,104,0,104,0,35
+syscalls.o,0,0,94,0,94,45,0
+si_class_type_info.o,0,0,0,0,0,0,136
+dbg_stubs.o,0,2072,32,0,2104,100,0
+ip4_addr.o,0,0,0,0,0,72,40
+class_type_info.o,0,0,0,0,0,0,112
+memp.o,0,0,0,0,0,0,108
+lib2funcs.o,0,0,104,0,104,0,0
+lib_a-s_fpclassify.o,0,0,92,0,92,0,0
+def.o,0,0,0,0,0,91,0
+hw_random.o,0,4,74,0,78,0,0
+stack_check.o,0,4,0,0,4,32,42
+clock.o,0,0,72,0,72,0,0
+reent_init.o,0,0,68,0,68,0,2
+app_main.o,0,0,0,0,0,53,10
+new_opv.o,0,0,0,0,0,0,56
+ip.o,0,60,0,0,60,50,0
+uart.o,8,12,0,0,20,38,0
+xtensa_vector_defaults.o,0,0,46,0,46,0,0
+new_op.o,0,0,0,0,0,0,40
+xtensa_init.o,0,4,32,0,36,0,0
+init.o,0,0,0,0,0,27,0
+wifi_init.o,0,0,0,0,0,17,9
+ip6_addr.o,0,0,0,0,0,0,20
+eri.o,0,0,8,0,8,0,0
+cxx_exception_stubs.o,0,0,0,0,0,6,0
+cxx_guards.o,0,0,0,0,0,5,0
+FreeRTOS-openocd.o,4,0,0,0,4,0,0
+eh_term_handler.o,4,0,0,0,4,0,0
+eh_unex_handler.o,4,0,0,0,4,0,0
+bootloader_flash.o,0,0,0,0,0,0,0
+bootloader_sha.o,0,0,0,0,0,0,0
+esp_image_format.o,0,0,0,0,0,0,0
+lib_a-vsnprintf.o,0,0,0,0,0,0,0
+lib_a-xpg_strerror_r.o,0,0,0,0,0,0,0
+coexist_api.o,0,0,0,0,0,0,0
+coexist_arbit.o,0,0,0,0,0,0,0
+coexist_core.o,0,0,0,0,0,0,0
+coexist_dbg.o,0,0,0,0,0,0,0
+coexist_hw.o,0,0,0,0,0,0,0
+coexist_param.o,0,0,0,0,0,0,0
+coexist_timer.o,0,0,0,0,0,0,0
+misc_nvs.o,0,0,0,0,0,0,0
+gpio.o,0,0,0,0,0,0,0
+ets_timer_legacy.o,0,0,0,0,0,0,0
+event_default_handlers.o,0,0,0,0,0,0,0
+event_loop.o,0,0,0,0,0,0,0
+lib_printf.o,0,0,0,0,0,0,0
+phy_init.o,0,0,0,0,0,0,0
+sha.o,0,0,0,0,0,0,0
+wifi_os_adapter.o,0,0,0,0,0,0,0
+emac_dev.o,0,0,0,0,0,0,0
+emac_main.o,0,0,0,0,0,0,0
+event_groups.o,0,0,0,0,0,0,0
+ringbuf.o,0,0,0,0,0,0,0
+_divsf3.o,0,0,0,0,0,0,0
+_extendsfdf2.o,0,0,0,0,0,0,0
+_floatdidf.o,0,0,0,0,0,0,0
+_floatdisf.o,0,0,0,0,0,0,0
+ethernetif.o,0,0,0,0,0,0,0
+ethip6.o,0,0,0,0,0,0,0
+wlanif.o,0,0,0,0,0,0,0
+esp_sha256.o,0,0,0,0,0,0,0
+mesh.o,0,0,0,0,0,0,0
+mesh_common.o,0,0,0,0,0,0,0
+mesh_config.o,0,0,0,0,0,0,0
+mesh_main.o,0,0,0,0,0,0,0
+mesh_parent.o,0,0,0,0,0,0,0
+mesh_route.o,0,0,0,0,0,0,0
+mesh_schedule.o,0,0,0,0,0,0,0
+mesh_timer.o,0,0,0,0,0,0,0
+mesh_utilities.o,0,0,0,0,0,0,0
+mesh_wifi.o,0,0,0,0,0,0,0
+ieee80211.o,0,0,0,0,0,0,0
+ieee80211_action.o,0,0,0,0,0,0,0
+ieee80211_action_vendor.,0,0,0,0,0,0,0
+ieee80211_api.o,0,0,0,0,0,0,0
+ieee80211_crypto.o,0,0,0,0,0,0,0
+ieee80211_crypto_ccmp.o,0,0,0,0,0,0,0
+ieee80211_crypto_tkip.o,0,0,0,0,0,0,0
+ieee80211_crypto_wep.o,0,0,0,0,0,0,0
+ieee80211_debug.o,0,0,0,0,0,0,0
+ieee80211_ets.o,0,0,0,0,0,0,0
+ieee80211_hostap.o,0,0,0,0,0,0,0
+ieee80211_ht.o,0,0,0,0,0,0,0
+ieee80211_ie_vendor.o,0,0,0,0,0,0,0
+ieee80211_input.o,0,0,0,0,0,0,0
+ieee80211_ioctl.o,0,0,0,0,0,0,0
+ieee80211_mesh_quick.o,0,0,0,0,0,0,0
+ieee80211_misc.o,0,0,0,0,0,0,0
+ieee80211_nvs.o,0,0,0,0,0,0,0
+ieee80211_output.o,0,0,0,0,0,0,0
+ieee80211_phy.o,0,0,0,0,0,0,0
+ieee80211_power.o,0,0,0,0,0,0,0
+ieee80211_proto.o,0,0,0,0,0,0,0
+ieee80211_regdomain.o,0,0,0,0,0,0,0
+ieee80211_rfid.o,0,0,0,0,0,0,0
+ieee80211_scan.o,0,0,0,0,0,0,0
+ieee80211_sta.o,0,0,0,0,0,0,0
+ieee80211_timer.o,0,0,0,0,0,0,0
+wl_chm.o,0,0,0,0,0,0,0
+wl_cnx.o,0,0,0,0,0,0,0
+nvs_api.o,0,0,0,0,0,0,0
+nvs_item_hash_list.o,0,0,0,0,0,0,0
+nvs_page.o,0,0,0,0,0,0,0
+nvs_pagemanager.o,0,0,0,0,0,0,0
+nvs_storage.o,0,0,0,0,0,0,0
+nvs_types.o,0,0,0,0,0,0,0
+phy.o,0,0,0,0,0,0,0
+phy_chip_v7.o,0,0,0,0,0,0,0
+phy_chip_v7_ana.o,0,0,0,0,0,0,0
+phy_chip_v7_cal.o,0,0,0,0,0,0,0
+esf_buf.o,0,0,0,0,0,0,0
+if_hwctrl.o,0,0,0,0,0,0,0
+lmac.o,0,0,0,0,0,0,0
+pm.o,0,0,0,0,0,0,0
+pm_for_bcn_only_mode.o,0,0,0,0,0,0,0
+pp.o,0,0,0,0,0,0,0
+pp_debug.o,0,0,0,0,0,0,0
+pp_timer.o,0,0,0,0,0,0,0
+rate_control.o,0,0,0,0,0,0,0
+trc.o,0,0,0,0,0,0,0
+wdev.o,0,0,0,0,0,0,0
+bt_bb.o,0,0,0,0,0,0,0
+pm.o,0,0,0,0,0,0,0
+rtc.o,0,0,0,0,0,0,0
+rtc_analog.o,0,0,0,0,0,0,0
+smartconfig_ack.o,0,0,0,0,0,0,0
+gpio_periph.o,0,0,0,0,0,0,0
+rtc_sleep.o,0,0,0,0,0,0,0
+bad_alloc.o,0,0,0,0,0,0,0
+del_op.o,0,0,0,0,0,0,0
+del_opv.o,0,0,0,0,0,0,0
+eh_exception.o,0,0,0,0,0,0,0
+new_handler.o,0,0,0,0,0,0,0
+pure.o,0,0,0,0,0,0,0
+tinfo.o,0,0,0,0,0,0,0
+ap_config.o,0,0,0,0,0,0,0
+common.o,0,0,0,0,0,0,0
+wpa.o,0,0,0,0,0,0,0
+wpa_auth.o,0,0,0,0,0,0,0
+wpa_auth_ie.o,0,0,0,0,0,0,0
+wpa_common.o,0,0,0,0,0,0,0
+wpa_debug.o,0,0,0,0,0,0,0
+wpa_ie.o,0,0,0,0,0,0,0
+wpa_main.o,0,0,0,0,0,0,0
+wpabuf.o,0,0,0,0,0,0,0
+wpas_glue.o,0,0,0,0,0,0,0
+wpa2_internal.o,0,0,0,0,0,0,0
+os_xtensa.o,0,0,0,0,0,0,0
+wps_internal.o,0,0,0,0,0,0,0
+The following entries are present in <REFERENCE> only:
+Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+tasks.c.obj,12,700,5737,0,6449,0,451
+esp_err_to_name.c.obj,0,0,0,0,0,53,5101
+vfs_uart.c.obj,116,8,0,0,124,3758,783
+panic.c.obj,2029,5,2223,0,4257,0,0
+portasm.S.obj,3084,0,476,0,3560,0,0
+intr_alloc.c.obj,8,22,656,0,686,1681,704
+queue.c.obj,0,0,2411,0,2411,0,366
+uart.c.obj,56,12,0,0,68,2099,452
+multi_heap.c.obj,300,0,2245,0,2545,0,0
+cpu_start.c.obj,0,1,1067,0,1068,255,1073
+rtc_clk.c.obj,160,4,2104,0,2268,0,0
+vfs.c.obj,192,40,0,0,232,1892,132
+gpio.c.obj,32,0,0,0,32,1193,970
+spi_flash_hal_iram.c.obj,24,0,1798,0,1822,0,0
+xtensa_vectors.S.obj,8,0,1344,425,1777,0,36
+task_wdt.c.obj,53,4,0,0,57,1223,494
+spi_flash_chip_generic.c,340,0,1423,0,1763,0,0
+flash_mmap.c.obj,0,264,1320,0,1584,125,296
+cache_utils.c.obj,4,14,833,0,851,81,430
+heap_caps.c.obj,4,0,884,0,888,50,362
+timers.c.obj,8,56,1007,0,1071,0,223
+esp_timer_impl_lac.c.obj,8,8,514,0,530,322,389
+heap_caps_init.c.obj,0,4,0,0,4,834,379
+soc_memory_layout.c.obj,0,0,0,0,0,0,1197
+periph_ctrl.c.obj,8,0,0,0,8,696,488
+port.c.obj,0,32,737,0,769,0,340
+xtensa_intr_asm.S.obj,1024,0,51,0,1075,0,0
+bootloader_flash_config_,0,0,1028,0,1028,17,0
+rtc_time.c.obj,0,0,819,0,819,0,194
+ringbuf.c.obj,0,0,858,0,858,0,150
+rtc_init.c.obj,0,0,956,0,956,0,0
+esp_flash_api.c.obj,0,0,600,0,600,16,244
+clk.c.obj,0,0,64,0,64,582,208
+partition.c.obj,0,8,0,0,8,668,181
+time.c.obj,0,32,123,0,155,719,0
+memory_layout_utils.c.ob,0,0,0,0,0,505,295
+rtc_wdt.c.obj,0,0,796,0,796,0,0
+esp_timer.c.obj,8,12,280,0,300,401,104
+dport_access.c.obj,8,40,422,0,470,189,126
+ipc.c.obj,0,56,192,0,248,367,117
+log.c.obj,8,264,34,0,306,484,147
+locks.c.obj,8,0,487,0,495,5,84
+esp_flash_spi_init.c.obj,120,4,0,0,124,191,261
+uart_hal.c.obj,0,0,0,0,0,493,0
+flash_qio_mode.c.obj,0,0,0,0,0,490,0
+crosscore_int.c.obj,8,8,195,0,211,134,146
+int_wdt.c.obj,0,1,94,0,95,341,0
+system_api_esp32.c.obj,0,0,435,0,435,0,0
+esp_app_desc.c.obj,0,0,109,0,109,12,256
+lib_a-locale.o,364,0,0,0,364,0,10
+uart_hal_iram.c.obj,0,0,0,0,0,147,222
+xtensa_context.S.obj,0,0,367,0,367,0,0
+esp_ota_ops.c.obj,0,4,0,0,4,147,214
+spi_flash_hal.c.obj,0,0,0,0,0,302,48
+brownout.c.obj,0,0,0,0,0,120,203
+freertos_hooks.c.obj,8,128,47,0,183,243,0
+spi_flash_chip_gd.c.obj,95,0,181,0,276,0,0
+brownout_hal.c.obj,0,0,0,0,0,269,0
+dport_panic_highint_hdl.,12,0,250,0,262,0,0
+soc_hal.c.obj,24,0,234,0,258,0,0
+memspi_host_driver.c.obj,43,0,206,0,249,0,0
+rtc_module.c.obj,16,8,0,0,24,231,0
+syscall_table.c.obj,144,240,0,0,384,82,0
+debug_helpers.c.obj,0,0,217,0,217,0,0
+spi_flash_chip_issi.c.ob,97,0,101,0,198,0,0
+pthread_local_storage.c.,8,4,0,0,12,183,0
+log_freertos.c.obj,0,8,188,0,196,0,0
+gpio_periph.c.obj,0,0,0,0,0,0,160
+cache_err_int.c.obj,0,0,56,0,56,98,0
+heap.c.obj,0,0,151,0,151,0,0
+xtensa_intr.c.obj,0,0,113,0,113,0,35
+spi_flash_os_func_noos.c,16,0,127,0,143,0,0
+spi_flash_os_func_app.c.,24,0,91,0,115,25,0
+list.c.obj,0,0,138,0,138,0,0
+blink.c.obj,0,0,0,0,0,72,39
+pthread.c.obj,0,8,0,0,8,81,0
+bootloader_mem.c.obj,0,0,0,0,0,58,20
+cpu_util.c.obj,0,0,75,0,75,0,0
+lib_a-mbtowc_r.o,0,0,0,0,0,72,0
+lib_a-localeconv.o,0,0,0,0,0,63,0
+flash_ops.c.obj,20,4,14,0,38,29,0
+reent_init.c.obj,0,0,59,0,59,0,0
+rtc_io.c.obj,0,0,0,0,0,53,0
+syscalls.c.obj,0,0,0,0,0,50,0
+mpu_hal.c.obj,0,0,0,0,0,47,0
+xtensa_vector_defaults.S,0,0,46,0,46,0,0
+xtensa_init.c.obj,0,4,32,0,36,0,0
+spi_flash_chip_drivers.c,20,0,0,0,20,0,0
+pthread.c.obj,0,0,0,0,0,12,0
+crtend.o,0,0,0,0,0,0,8
+pm_esp32.c.obj,0,0,0,0,0,8,0
+cpu_hal.c.obj,0,0,8,0,8,0,0
+crti.o,0,0,0,3,3,3,0
+cxx_exception_stubs.cpp.,0,0,0,0,0,6,0
+cxx_guards.cpp.obj,0,0,0,0,0,5,0
+crtbegin.o,0,0,0,0,0,0,4
+FreeRTOS-openocd.c.obj,4,0,0,0,4,0,0
+crt0.o,0,0,0,0,0,0,0
+crtn.o,0,0,0,0,0,0,0
+project_elf_src.c.obj,0,0,0,0,0,0,0
+bootloader_common.c.obj,0,0,0,0,0,0,0
+bootloader_efuse_esp32.c,0,0,0,0,0,0,0
+bootloader_flash.c.obj,0,0,0,0,0,0,0
+bootloader_random.c.obj,0,0,0,0,0,0,0
+bootloader_sha.c.obj,0,0,0,0,0,0,0
+bootloader_utility.c.obj,0,0,0,0,0,0,0
+esp_image_format.c.obj,0,0,0,0,0,0,0
+flash_partitions.c.obj,0,0,0,0,0,0,0
+isatty.o,0,0,0,0,0,0,0
+lib_a-bzero.o,0,0,0,0,0,0,0
+lib_a-ctype_.o,0,0,0,0,0,0,0
+lib_a-environ.o,0,0,0,0,0,0,0
+lib_a-envlock.o,0,0,0,0,0,0,0
+lib_a-fclose.o,0,0,0,0,0,0,0
+lib_a-fflush.o,0,0,0,0,0,0,0
+lib_a-findfp.o,0,0,0,0,0,0,0
+lib_a-fputwc.o,0,0,0,0,0,0,0
+lib_a-fvwrite.o,0,0,0,0,0,0,0
+lib_a-fwalk.o,0,0,0,0,0,0,0
+lib_a-getenv_r.o,0,0,0,0,0,0,0
+lib_a-gettzinfo.o,0,0,0,0,0,0,0
+lib_a-gmtime_r.o,0,0,0,0,0,0,0
+lib_a-impure.o,0,0,0,0,0,0,0
+lib_a-iswspace.o,0,0,0,0,0,0,0
+lib_a-lcltime_r.o,0,0,0,0,0,0,0
+lib_a-makebuf.o,0,0,0,0,0,0,0
+lib_a-mbrtowc.o,0,0,0,0,0,0,0
+lib_a-memchr.o,0,0,0,0,0,0,0
+lib_a-memcmp.o,0,0,0,0,0,0,0
+lib_a-memcpy.o,0,0,0,0,0,0,0
+lib_a-memmove.o,0,0,0,0,0,0,0
+lib_a-memset.o,0,0,0,0,0,0,0
+lib_a-month_lengths.o,0,0,0,0,0,0,0
+lib_a-putc.o,0,0,0,0,0,0,0
+lib_a-putchar.o,0,0,0,0,0,0,0
+lib_a-qsort.o,0,0,0,0,0,0,0
+lib_a-refill.o,0,0,0,0,0,0,0
+lib_a-sccl.o,0,0,0,0,0,0,0
+lib_a-siscanf.o,0,0,0,0,0,0,0
+lib_a-stdio.o,0,0,0,0,0,0,0
+lib_a-strcmp.o,0,0,0,0,0,0,0
+lib_a-strcpy.o,0,0,0,0,0,0,0
+lib_a-strcspn.o,0,0,0,0,0,0,0
+lib_a-strerror_r.o,0,0,0,0,0,0,0
+lib_a-strlcpy.o,0,0,0,0,0,0,0
+lib_a-strlen.o,0,0,0,0,0,0,0
+lib_a-strncmp.o,0,0,0,0,0,0,0
+lib_a-strncpy.o,0,0,0,0,0,0,0
+lib_a-strstr.o,0,0,0,0,0,0,0
+lib_a-strtol.o,0,0,0,0,0,0,0
+lib_a-strtoll.o,0,0,0,0,0,0,0
+lib_a-strtoul.o,0,0,0,0,0,0,0
+lib_a-strtoull.o,0,0,0,0,0,0,0
+lib_a-svfiscanf.o,0,0,0,0,0,0,0
+lib_a-tzcalc_limits.o,0,0,0,0,0,0,0
+lib_a-tzlock.o,0,0,0,0,0,0,0
+lib_a-tzset.o,0,0,0,0,0,0,0
+lib_a-tzset_r.o,0,0,0,0,0,0,0
+lib_a-tzvars.o,0,0,0,0,0,0,0
+lib_a-ungetc.o,0,0,0,0,0,0,0
+lib_a-wbuf.o,0,0,0,0,0,0,0
+lib_a-wcrtomb.o,0,0,0,0,0,0,0
+lib_a-wctomb_r.o,0,0,0,0,0,0,0
+lib_a-wsetup.o,0,0,0,0,0,0,0
+spi_common.c.obj,0,0,0,0,0,0,0
+esp_efuse_api.c.obj,0,0,0,0,0,0,0
+esp_efuse_fields.c.obj,0,0,0,0,0,0,0
+esp_efuse_table.c.obj,0,0,0,0,0,0,0
+esp_efuse_utility.c.obj,0,0,0,0,0,0,0
+hw_random.c.obj,0,0,0,0,0,0,0
+pm_locks.c.obj,0,0,0,0,0,0,0
+system_api.c.obj,0,0,0,0,0,0,0
+_bswapsi2.o,0,0,0,0,0,0,0
+esp_sha256.c.obj,0,0,0,0,0,0,0
+sha.c.obj,0,0,0,0,0,0,0
+gpio_hal.c.obj,0,0,0,0,0,0,0
+rtc_io_hal.c.obj,0,0,0,0,0,0,0
+rtc_io_periph.c.obj,0,0,0,0,0,0,0
+spi_periph.c.obj,0,0,0,0,0,0,0
+uart_periph.c.obj,0,0,0,0,0,0,0
+spi_flash_rom_patch.c.ob,0,0,0,0,0,0,0
+md5-internal.c.obj,0,0,0,0,0,0,0
+debug_helpers_asm.S.obj,0,0,0,0,0,0,0
+,<CURRENT>:,<REFERENCE>,Difference
+File,app.map,app2.map,<CURRENT> - <REFERENCE>
+Used static DRAM,17620 bytes (163116 remain 9.7% used),10604,+7016,-7016 remain,0 total
+.data size,9324 bytes,8580,+744,
+.bss  size,8296 bytes,2024,+6272,
+Used static IRAM,38932 bytes (92140 remain 29.7% used),38956,-24,24 remain,0 total
+.text size,37908 bytes,37929,-21,
+.vectors size,1024 bytes,1027,-3,
+Used Flash size ,186524 bytes,99551,+86973,
+.text,146944 bytes,77191,+69753,
+.rodata,39580 bytes,22360,+17220,
+Total image size,234780 bytes (.bin may be padded larger),147087,+87693,
+
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+.dram0.bss,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+p_uart_obj,12,12,
+s_rtc_isr_handle,4,4,
+s_rtc_isr_handler_list,4,4,
+Section total:,20,20,
+
+.dram0.data,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+_gpio_hal,0,8,-8
+gpio_context,0,24,-24
+periph_spinlock,8,8,
+rtc_spinlock,0,8,-8
+s_rtc_isr_handler_list_lock,8,8,
+timer_spinlock,16,0,+16
+uart_context,0,48,-48
+uart_selectlock,8,8,
+Section total:,40,112,-72
+
+.flash.rodata,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+TG,8,0,+8
+__FUNCTION__$5441,24,0,+24
+__FUNCTION__$6237,0,19,-19
+__FUNCTION__$6241,0,18,-18
+__FUNCTION__$6245,0,20,-20
+__FUNCTION__$6249,0,19,-19
+__FUNCTION__$6253,0,16,-16
+__FUNCTION__$6257,0,15,-15
+__FUNCTION__$6262,0,15,-15
+__FUNCTION__$6282,0,19,-19
+__FUNCTION__$6912,0,21,-21
+__FUNCTION__$6917,0,21,-21
+__FUNCTION__$6922,0,19,-19
+__FUNCTION__$6927,0,19,-19
+__FUNCTION__$6932,0,16,-16
+__FUNCTION__$6937,0,16,-16
+__FUNCTION__$6942,0,18,-18
+__FUNCTION__$6948,0,18,-18
+__FUNCTION__$6982,0,22,-22
+__FUNCTION__$6987,0,23,-23
+__FUNCTION__$7173,0,18,-18
+__FUNCTION__$7238,0,27,-27
+__FUNCTION__$7244,0,17,-17
+__func__$6052,0,22,-22
+__func__$6060,0,21,-21
+__func__$6068,0,23,-23
+get_clk_en_mask,128,0,+128
+get_rst_en_mask,128,0,+128
+gpio_input_disable.str1.4,0,188,-188
+gpio_input_enable.str1.4,0,243,-243
+gpio_od_enable.str1.4,0,62,-62
+gpio_output_disable.str1.4,0,192,-192
+gpio_output_enable.str1.4,0,27,-27
+gpio_set_direction.str1.4,0,51,-51
+periph_module_enable,0,488,-488
+str1.4,249,0,+249
+uart_flush_input.str1.4,0,45,-45
+uart_pattern_enqueue.str1.4,0,88,-88
+uart_pattern_pop_pos.str1.4,0,18,-18
+uart_set_stop_bits.str1.4,0,15,-15
+uart_set_word_length.str1.4,0,31,-31
+Section total:,537,1910,-1373
+
+.flash.text,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+get_clk_en_mask,211,0,+211
+get_clk_en_reg,21,0,+21
+get_rst_en_mask,157,0,+157
+get_rst_en_reg,25,0,+25
+gpio_input_disable,0,132,-132
+gpio_input_enable,0,140,-140
+gpio_od_disable,0,98,-98
+gpio_od_enable,0,118,-118
+gpio_output_disable,0,184,-184
+gpio_output_enable,0,153,-153
+gpio_set_direction,0,172,-172
+gpio_set_level,0,196,-196
+is_wifi_clk_peripheral,28,0,+28
+periph_module_enable,78,696,-618
+rtc_gpio_force_hold_dis_all,65,53,+12
+rtc_isr,86,90,-4
+rtc_isr_ensure_installed,75,79,-4
+rtc_isr_register,65,62,+3
+timer_group_intr_enable,112,0,+112
+uart_disable_intr_mask,0,96,-96
+uart_disable_rx_intr,0,18,-18
+uart_enable_intr_mask,0,98,-98
+uart_enable_rx_intr,0,18,-18
+uart_flush_input,0,457,-457
+uart_get_baudrate,0,82,-82
+uart_get_bufferedlen,0,109,-109
+uart_get_parity,0,69,-69
+uart_get_selectlock,12,12,
+uart_get_stop_bits,0,69,-69
+uart_get_word_length,0,69,-69
+uart_is_driver_installed,0,30,-30
+uart_pattern_queue_update,0,74,-74
+uart_set_baudrate,0,96,-96
+uart_set_parity,0,82,-82
+uart_set_select_notif_callback,26,23,+3
+uart_set_stop_bits,0,128,-128
+uart_set_word_length,0,144,-144
+uart_wait_tx_done,0,425,-425
+Section total:,961,4272,-3311
+
+.iram0.text,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+.iram0.vectors,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+.noinit,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+.rtc.bss,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+.rtc.data,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+.rtc.text,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+.rtc_noinit,<CURRENT>,<REFERENCE>,<CURRENT> - <REFERENCE>
+Section total:,0,0,
+
+***
+Producing CSV output for esp32s2...
+Total sizes:,,,
+Used stat D/IRAM,43020 bytes (153588 remain 21.9% used),,,
+.data size,7152 bytes,,,
+.bss  size,1936 bytes,,,
+.text size,32905 bytes,,,
+.vectors size,1027 bytes,,,
+Used Flash size ,93019 bytes,,,
+.text,74439 bytes,,,
+.rodata,18580 bytes,,,
+Total image size,134103 bytes (.bin may be padded larger),,,
+Total sizes:,,,
+Used stat D/IRAM,43020 bytes (153588 remain 21.9% used),,,
+.data size,7152 bytes,,,
+.bss  size,1936 bytes,,,
+.text size,32905 bytes,,,
+.vectors size,1027 bytes,,,
+Used Flash size ,93019 bytes,,,
+.text,74439 bytes,,,
+.rodata,18580 bytes,,,
+Total image size,134103 bytes (.bin may be padded larger),,,
+Per-archive contributions to ELF file:
+Archive File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+libc.a,364,4,0,0,368,54964,3645
+libfreertos.a,2080,736,10555,425,13796,0,1175
+libesp32s2.a,2621,22,4210,0,6853,4169,2209
+libsoc.a,405,8,7075,0,7488,1574,878
+libspi_flash.a,775,416,4114,0,5305,1109,1130
+libvfs.a,272,48,0,0,320,5581,555
+libesp_common.a,8,72,87,0,167,416,5304
+libheap.a,304,4,3171,0,3479,888,741
+libdriver.a,80,32,0,0,112,3216,894
+libnewlib.a,152,272,812,0,1236,856,84
+libesp_timer.a,16,20,668,0,704,657,546
+libesp_ringbuf.a,0,0,858,0,858,0,150
+liblog.a,8,272,594,0,874,94,147
+libapp_update.a,0,4,0,0,4,151,470
+libmain.a,0,0,0,0,0,192,196
+libhal.a,0,0,337,0,337,0,32
+libpthread.a,8,12,0,0,20,264,0
+libgcc.a,0,0,0,0,0,0,160
+(exe),0,0,0,3,3,3,12
+libcxx.a,0,0,0,0,0,11,0
+libbootloader_support.a,0,0,0,0,0,0,0
+libmbedcrypto.a,0,0,0,0,0,0,0
+libsoc_esp32s2.a,0,0,0,0,0,0,0
+libwpa_supplicant.a,0,0,0,0,0,0,0
+libxtensa.a,0,0,0,0,0,0,0
+Total sizes:,,,
+Used stat D/IRAM,43020 bytes (153588 remain 21.9% used),,,
+.data size,7152 bytes,,,
+.bss  size,1936 bytes,,,
+.text size,32905 bytes,,,
+.vectors size,1027 bytes,,,
+Used Flash size ,93019 bytes,,,
+.text,74439 bytes,,,
+.rodata,18580 bytes,,,
+Total image size,134103 bytes (.bin may be padded larger),,,
+Per-file contributions to ELF file:
+Object File,DRAM .data,& 0.bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata
+lib_a-vfprintf.o,0,0,0,0,0,13681,700
+lib_a-svfprintf.o,0,0,0,0,0,13294,752
+lib_a-svfiprintf.o,0,0,0,0,0,9623,1172
+lib_a-vfiprintf.o,0,0,0,0,0,9933,700
+tasks.c.obj,12,660,4954,0,5626,0,406
+esp_err_to_name.c.obj,0,0,0,0,0,53,5101
+panic.c.obj,2552,1,2321,0,4874,0,0
+vfs_uart.c.obj,80,8,0,0,88,3689,423
+lib_a-dtoa.o,0,0,0,0,0,3524,13
+intr_alloc.c.obj,8,13,660,0,681,1682,706
+queue.c.obj,0,0,2397,0,2397,0,424
+uart.c.obj,40,8,0,0,48,2087,452
+multi_heap.c.obj,300,0,2273,0,2573,0,0
+lib_a-mprec.o,0,0,0,0,0,2144,296
+rtc_clk.c.obj,381,8,1867,0,2256,0,0
+vfs.c.obj,192,40,0,0,232,1892,132
+portasm.S.obj,1544,0,365,0,1909,0,0
+spi_flash_hal_iram.c.obj,24,0,1804,0,1828,0,0
+spi_flash_chip_generic.c,340,0,1417,0,1757,0,0
+task_wdt.c.obj,53,4,0,0,57,1190,496
+flash_mmap.c.obj,0,392,1200,0,1592,124,252
+heap_caps.c.obj,4,0,898,0,902,50,362
+xtensa_vectors.S.obj,0,0,864,425,1289,0,0
+rtc_init.c.obj,0,0,1255,0,1255,0,8
+timers.c.obj,8,56,987,0,1051,0,223
+heap_caps_init.c.obj,0,4,0,0,4,838,379
+cpu_start.c.obj,0,0,536,0,536,152,489
+esp_timer_impl_systimer.,8,8,388,0,404,252,442
+ringbuf.c.obj,0,0,858,0,858,0,150
+periph_ctrl.c.obj,8,0,0,0,8,661,272
+clk.c.obj,0,0,34,0,34,626,281
+lib_a-fseeko.o,0,0,0,0,0,910,0
+partition.c.obj,0,8,0,0,8,679,181
+esp_flash_api.c.obj,0,0,600,0,600,16,240
+time.c.obj,0,32,115,0,147,719,0
+memory_layout_utils.c.ob,0,0,0,0,0,509,295
+rtc_wdt.c.obj,0,0,800,0,800,0,0
+esp_timer.c.obj,8,12,280,0,300,405,104
+log.c.obj,8,264,406,0,678,94,147
+rtc_time.c.obj,0,0,626,0,626,0,0
+esp_flash_spi_init.c.obj,120,4,0,0,124,215,281
+locks.c.obj,8,0,487,0,495,5,84
+xtensa_intr_asm.S.obj,512,0,51,0,563,0,0
+port.c.obj,0,16,408,0,424,0,87
+crosscore_int.c.obj,8,4,154,0,166,86,237
+soc_memory_layout.c.obj,0,0,0,0,0,0,479
+rtc_sleep.c.obj,0,0,414,0,414,0,0
+uart_hal.c.obj,0,0,0,0,0,409,0
+spi_flash_hal.c.obj,0,0,0,0,0,309,96
+cache_utils.c.obj,0,8,197,0,205,21,176
+hello_world_main.c.obj,0,0,0,0,0,192,196
+lib_a-locale.o,364,0,0,0,364,0,10
+timer.c.obj,16,16,0,0,32,184,170
+lib_a-refill.o,0,0,0,0,0,368,0
+esp_ota_ops.c.obj,0,4,0,0,4,151,214
+int_wdt.c.obj,0,0,59,0,59,302,0
+system_api_esp32s2.c.obj,0,0,323,0,323,27,0
+brownout.c.obj,0,0,0,0,0,120,203
+windowspill_asm.o,0,0,315,0,315,0,0
+cpu_util.c.obj,0,0,309,0,309,0,0
+brownout_hal.c.obj,0,0,0,0,0,304,0
+freertos_hooks.c.obj,8,64,47,0,119,243,0
+spi_flash_chip_gd.c.obj,95,0,181,0,276,0,0
+esp_app_desc.c.obj,0,0,0,0,0,0,256
+memspi_host_driver.c.obj,43,0,206,0,249,0,0
+rtc_module.c.obj,16,8,0,0,24,231,0
+lib_a-fopen.o,0,0,0,0,0,244,0
+lib_a-puts.o,0,0,0,0,0,234,2
+lib_a-reent.o,0,0,0,0,0,236,0
+lib_a-snprintf.o,0,0,0,0,0,217,0
+syscall_table.c.obj,144,240,0,0,384,70,0
+xtensa_context.S.obj,0,0,201,0,201,0,0
+spi_flash_chip_issi.c.ob,97,0,101,0,198,0,0
+pthread_local_storage.c.,8,4,0,0,12,183,0
+log_freertos.c.obj,0,8,188,0,196,0,0
+heap.c.obj,0,0,151,0,151,0,0
+xtensa_intr.c.obj,0,0,112,0,112,0,35
+spi_flash_os_func_app.c.,24,0,95,0,119,25,0
+list.c.obj,0,0,138,0,138,0,0
+lib_a-flags.o,0,0,0,0,0,128,0
+dport_panic_highint_hdl.,0,0,123,0,123,0,0
+lib_a-printf.o,0,0,0,0,0,116,0
+spi_flash_os_func_noos.c,16,0,89,0,105,0,0
+lib_a-s_frexp.o,0,0,0,0,0,100,0
+cache_err_int.c.obj,0,0,0,0,0,96,0
+lib_a-vprintf.o,0,0,0,0,0,94,0
+pthread.c.obj,0,8,0,0,8,81,0
+flash_ops.c.obj,20,4,28,0,52,29,0
+lib_a-localeconv.o,0,0,0,0,0,63,0
+reent_init.c.obj,0,0,59,0,59,0,0
+rtc_io.c.obj,0,0,0,0,0,53,0
+syscalls.c.obj,0,0,0,0,0,50,0
+xtensa_vector_defaults.S,0,0,46,0,46,0,0
+lib_a-fseek.o,0,0,0,0,0,45,0
+uart_hal_iram.c.obj,0,0,0,0,0,43,0
+system_api.c.obj,0,8,40,0,48,0,0
+_divdi3.o,0,0,0,0,0,0,40
+_moddi3.o,0,0,0,0,0,0,40
+_udivdi3.o,0,0,0,0,0,0,40
+_umoddi3.o,0,0,0,0,0,0,40
+xtensa_init.c.obj,0,4,32,0,36,0,0
+interrupts--intlevel.o,0,0,0,0,0,0,32
+spi_flash_chip_drivers.c,20,0,0,0,20,0,0
+pthread.c.obj,0,0,0,0,0,12,0
+lib_a-errno.o,0,0,0,0,0,10,0
+crtend.o,0,0,0,0,0,0,8
+pm_esp32s2.c.obj,0,0,0,0,0,8,0
+int_asm--set_intclear.o,0,0,8,0,8,0,0
+state_asm--restore_extra,0,0,7,0,7,0,0
+state_asm--save_extra_nw,0,0,7,0,7,0,0
+crti.o,0,0,0,3,3,3,0
+cxx_exception_stubs.cpp.,0,0,0,0,0,6,0
+cxx_guards.cpp.obj,0,0,0,0,0,5,0
+crtbegin.o,0,0,0,0,0,0,4
+FreeRTOS-openocd.c.obj,4,0,0,0,4,0,0
+crt0.o,0,0,0,0,0,0,0
+crtn.o,0,0,0,0,0,0,0
+project_elf_src.c.obj,0,0,0,0,0,0,0
+bootloader_common.c.obj,0,0,0,0,0,0,0
+bootloader_efuse_esp32s2,0,0,0,0,0,0,0
+bootloader_flash.c.obj,0,0,0,0,0,0,0
+bootloader_random.c.obj,0,0,0,0,0,0,0
+bootloader_sha.c.obj,0,0,0,0,0,0,0
+bootloader_utility.c.obj,0,0,0,0,0,0,0
+esp_image_format.c.obj,0,0,0,0,0,0,0
+flash_partitions.c.obj,0,0,0,0,0,0,0
+isatty.o,0,0,0,0,0,0,0
+lib_a-assert.o,0,0,0,0,0,0,0
+lib_a-bzero.o,0,0,0,0,0,0,0
+lib_a-ctype_.o,0,0,0,0,0,0,0
+lib_a-environ.o,0,4,0,0,4,0,0
+lib_a-envlock.o,0,0,0,0,0,0,0
+lib_a-fclose.o,0,0,0,0,0,0,0
+lib_a-fflush.o,0,0,0,0,0,0,0
+lib_a-findfp.o,0,0,0,0,0,0,0
+lib_a-fiprintf.o,0,0,0,0,0,0,0
+lib_a-fputs.o,0,0,0,0,0,0,0
+lib_a-fputwc.o,0,0,0,0,0,0,0
+lib_a-fvwrite.o,0,0,0,0,0,0,0
+lib_a-fwalk.o,0,0,0,0,0,0,0
+lib_a-getenv_r.o,0,0,0,0,0,0,0
+lib_a-gettzinfo.o,0,0,0,0,0,0,0
+lib_a-gmtime_r.o,0,0,0,0,0,0,0
+lib_a-impure.o,0,0,0,0,0,0,0
+lib_a-iswspace.o,0,0,0,0,0,0,0
+lib_a-lcltime_r.o,0,0,0,0,0,0,0
+lib_a-makebuf.o,0,0,0,0,0,0,0
+lib_a-mbrtowc.o,0,0,0,0,0,0,0
+lib_a-mbtowc_r.o,0,0,0,0,0,0,0
+lib_a-memchr.o,0,0,0,0,0,0,0
+lib_a-memcmp.o,0,0,0,0,0,0,0
+lib_a-memcpy.o,0,0,0,0,0,0,0
+lib_a-memmove.o,0,0,0,0,0,0,0
+lib_a-memset.o,0,0,0,0,0,0,0
+lib_a-month_lengths.o,0,0,0,0,0,0,0
+lib_a-putc.o,0,0,0,0,0,0,0
+lib_a-putchar.o,0,0,0,0,0,0,0
+lib_a-qsort.o,0,0,0,0,0,0,0
+lib_a-sccl.o,0,0,0,0,0,0,0
+lib_a-siscanf.o,0,0,0,0,0,0,0
+lib_a-stdio.o,0,0,0,0,0,0,0
+lib_a-strcmp.o,0,0,0,0,0,0,0
+lib_a-strcpy.o,0,0,0,0,0,0,0
+lib_a-strcspn.o,0,0,0,0,0,0,0
+lib_a-strerror.o,0,0,0,0,0,0,0
+lib_a-strerror_r.o,0,0,0,0,0,0,0
+lib_a-strlcpy.o,0,0,0,0,0,0,0
+lib_a-strlen.o,0,0,0,0,0,0,0
+lib_a-strncmp.o,0,0,0,0,0,0,0
+lib_a-strncpy.o,0,0,0,0,0,0,0
+lib_a-strstr.o,0,0,0,0,0,0,0
+lib_a-strtol.o,0,0,0,0,0,0,0
+lib_a-strtoll.o,0,0,0,0,0,0,0
+lib_a-strtoul.o,0,0,0,0,0,0,0
+lib_a-strtoull.o,0,0,0,0,0,0,0
+lib_a-svfiscanf.o,0,0,0,0,0,0,0
+lib_a-sysgettod.o,0,0,0,0,0,0,0
+lib_a-tzcalc_limits.o,0,0,0,0,0,0,0
+lib_a-tzlock.o,0,0,0,0,0,0,0
+lib_a-tzset.o,0,0,0,0,0,0,0
+lib_a-tzset_r.o,0,0,0,0,0,0,0
+lib_a-tzvars.o,0,0,0,0,0,0,0
+lib_a-u_strerr.o,0,0,0,0,0,0,0
+lib_a-ungetc.o,0,0,0,0,0,0,0
+lib_a-wbuf.o,0,0,0,0,0,0,0
+lib_a-wcrtomb.o,0,0,0,0,0,0,0
+lib_a-wctomb_r.o,0,0,0,0,0,0,0
+lib_a-wsetup.o,0,0,0,0,0,0,0
+gpio.c.obj,0,0,0,0,0,0,0
+spi_common.c.obj,0,0,0,0,0,0,0
+hw_random.c.obj,0,0,0,0,0,0,0
+pm_locks.c.obj,0,0,0,0,0,0,0
+_addsubdf3.o,0,0,0,0,0,0,0
+_cmpdf2.o,0,0,0,0,0,0,0
+_divdf3.o,0,0,0,0,0,0,0
+_fixdfsi.o,0,0,0,0,0,0,0
+_floatdidf.o,0,0,0,0,0,0,0
+_floatsidf.o,0,0,0,0,0,0,0
+_muldf3.o,0,0,0,0,0,0,0
+esp_mem.c.obj,0,0,0,0,0,0,0
+platform.c.obj,0,0,0,0,0,0,0
+platform_util.c.obj,0,0,0,0,0,0,0
+sha256.c.obj,0,0,0,0,0,0,0
+gpio_hal.c.obj,0,0,0,0,0,0,0
+rtc_io_hal.c.obj,0,0,0,0,0,0,0
+spi_flash_hal_gpspi.c.ob,0,0,0,0,0,0,0
+timer_hal.c.obj,0,0,0,0,0,0,0
+gpio_periph.c.obj,0,0,0,0,0,0,0
+rtc_io_periph.c.obj,0,0,0,0,0,0,0
+spi_periph.c.obj,0,0,0,0,0,0,0
+uart_periph.c.obj,0,0,0,0,0,0,0
+md5-internal.c.obj,0,0,0,0,0,0,0
+stdatomic.c.obj,0,0,0,0,0,0,0
+Total sizes:,,,
+Used stat D/IRAM,43020 bytes (153588 remain 21.9% used),,,
+.data size,7152 bytes,,,
+.bss  size,1936 bytes,,,
+.text size,32905 bytes,,,
+.vectors size,1027 bytes,,,
+Used Flash size ,93019 bytes,,,
+.text,74439 bytes,,,
+.rodata,18580 bytes,,,
+Total image size,134103 bytes (.bin may be padded larger),,,
+
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+p_timer_obj,16
+p_uart_obj,8
+s_rtc_isr_handle,4
+s_rtc_isr_handler_list,4
+Section total: 32
+
+Symbols from section: .dram0.data
+uart_context,32
+timer_spinlock,16
+periph_spinlock,8
+rtc_spinlock,8
+s_rtc_isr_handler_list_lock,8
+uart_selectlock,8
+Section total: 80
+
+Symbols from section: .flash.rodata
+timer_get_counter_value.str1.4,146
+get_clk_en_mask,136
+get_rst_en_mask,136
+uart_pattern_enqueue.str1.4,88
+uart_flush_input.str1.4,45
+uart_set_word_length.str1.4,31
+__FUNCTION__$7196,27
+__FUNCTION__$5699,24
+__FUNCTION__$6971,23
+__FUNCTION__$6966,22
+__FUNCTION__$6896,21
+__FUNCTION__$6901,21
+__FUNCTION__$6906,19
+__FUNCTION__$6911,19
+__FUNCTION__$6926,18
+__FUNCTION__$6932,18
+__FUNCTION__$7131,18
+uart_pattern_pop_pos.str1.4,18
+__FUNCTION__$7202,17
+__FUNCTION__$6916,16
+__FUNCTION__$6921,16
+uart_set_stop_bits.str1.4,15
+Section total: 894
+
+Symbols from section: .flash.text
+uart_flush_input,453
+uart_wait_tx_done,417
+get_clk_en_mask,267
+get_rst_en_mask,198
+timer_group_intr_enable,184
+uart_set_word_length,144
+uart_set_stop_bits,128
+periph_module_enable,112
+uart_get_bufferedlen,109
+uart_enable_intr_mask,98
+uart_disable_intr_mask,96
+uart_set_baudrate,96
+rtc_isr,90
+uart_get_baudrate,82
+uart_set_parity,82
+rtc_isr_ensure_installed,79
+uart_pattern_queue_update,74
+uart_get_parity,69
+uart_get_stop_bits,69
+uart_get_word_length,69
+rtc_isr_register,62
+rtc_gpio_force_hold_dis_all,53
+is_wifi_clk_peripheral,38
+uart_is_driver_installed,30
+get_rst_en_reg,25
+uart_set_select_notif_callback,23
+get_clk_en_reg,21
+uart_disable_rx_intr,18
+uart_enable_rx_intr,18
+uart_get_selectlock,12
+Section total: 3216
+
+Symbols from section: .iram0.text
+Section total: 0
+
+Symbols from section: .iram0.vectors
+Section total: 0
+
+Symbols from section: .noinit
+Section total: 0
+
+Symbols from section: .rtc.bss
+Section total: 0
+
+Symbols from section: .rtc.data
+Section total: 0
+
+Symbols from section: .rtc.text
+Section total: 0
+
+Symbols from section: .rtc_noinit
+Section total: 0
+
+***
+Producing CSV output for esp32c3...
+Total sizes:,,,
+Used stat D/IRAM,48466 bytes (279214 remain 14.8% used),,,
+.data size,5048 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,39754 bytes,,,
+Used Flash size ,117008 bytes,,,
+.text,90400 bytes,,,
+.rodata,26352 bytes,,,
+Total image size,161810 bytes (.bin may be padded larger),,,
+Total sizes:,,,
+Used stat D/IRAM,48466 bytes (279214 remain 14.8% used),,,
+.data size,5048 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,39754 bytes,,,
+Used Flash size ,117008 bytes,,,
+.text,90400 bytes,,,
+.rodata,26352 bytes,,,
+Total image size,161810 bytes (.bin may be padded larger),,,
+Per-archive contributions to ELF file:
+Archive File,DRAM .data,.rtc.data,DRAM .bss,IRAM0 .text,ram_st_total,Flash .text,& .rodata,& .appdesc
+ilp32\libc.a,4,0,4,0,8,53504,4098,0
+libesp_hw_support.a,171,16,21,4356,4564,7722,1669,0
+libfreertos.a,16,0,2228,10094,12338,194,3143,0
+libspi_flash.a,1949,0,160,7674,9783,1716,1626,0
+libesp_system.a,185,0,125,1480,1790,6314,3302,0
+libheap.a,1961,0,8,5836,7805,1988,1207,0
+libvfs.a,272,0,48,0,320,6762,378,0
+libesp_common.a,6,0,0,0,6,56,7065,0
+libhal.a,85,0,0,5788,5873,1036,96,0
+libdriver.a,44,0,35,0,79,5280,1055,0
+libnewlib.a,194,0,440,1498,2132,1252,344,0
+libesp_timer.a,16,0,28,544,588,952,277,0
+libefuse.a,96,0,4,0,100,1188,475,0
+libesp_ringbuf.a,0,0,0,1004,1004,0,512,0
+liblog.a,8,0,272,264,544,562,122,0
+libriscv.a,0,0,256,652,908,74,137,0
+ilp32\libgcc.a,0,0,0,0,0,848,0,0
+libapp_update.a,1,0,12,198,211,218,125,256
+libmain.a,0,0,0,0,0,248,232,0
+libbootloader_support.a,0,0,0,340,340,98,0,0
+libpthread.a,0,0,12,0,12,342,0,0
+libsoc.a,0,0,0,0,0,0,88,0
+libesp_pm.a,0,0,0,0,0,28,0,0
+libesp_rom.a,0,0,0,24,24,0,0,0
+libcxx.a,0,0,0,0,0,2,0,0
+Total sizes:,,,
+Used stat D/IRAM,48466 bytes (279214 remain 14.8% used),,,
+.data size,5048 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,39754 bytes,,,
+Used Flash size ,117008 bytes,,,
+.text,90400 bytes,,,
+.rodata,26352 bytes,,,
+Total image size,161810 bytes (.bin may be padded larger),,,
+Per-file contributions to ELF file:
+Object File,DRAM .data,.rtc.data,DRAM .bss,IRAM0 .text,ram_st_total,Flash .text,& .rodata,& .appdesc
+lib_a-vfprintf.o,0,0,0,0,0,14720,748,0
+lib_a-svfiprintf.o,0,0,0,0,0,9544,1172,0
+lib_a-vfiprintf.o,0,0,0,0,0,9756,737,0
+esp_err_to_name.c.obj,6,0,0,0,6,56,7065,0
+tasks.c.obj,8,0,664,5552,6224,0,1080,0
+heap_tlsf.c.obj,1796,0,0,4036,5832,0,0,0
+lib_a-dtoa.o,0,0,0,0,0,5312,233,0
+vfs_uart.c.obj,80,0,8,0,88,4402,270,0
+queue.c.obj,0,0,0,3192,3192,0,1495,0
+lib_a-mprec.o,0,0,0,0,0,4252,406,0
+memprot.c.obj,0,0,0,772,772,2762,800,0
+spi_flash_chip_generic.c,554,0,0,2684,3238,0,0,0
+uart.c.obj,40,0,8,0,48,2588,511,0
+intr_alloc.c.obj,0,0,13,688,701,2128,198,0
+panic_arch.c.obj,0,0,0,0,0,1060,1693,0
+vfs.c.obj,192,0,40,0,232,2360,108,0
+rtc_init.c.obj,0,0,0,0,0,2068,500,0
+gpio.c.obj,0,0,0,0,0,1856,459,0
+spi_flash_hal_iram.c.obj,0,0,0,2220,2220,0,0,0
+task_wdt.c.obj,45,0,12,0,57,1438,478,0
+flash_mmap.c.obj,0,0,136,1530,1666,182,240,0
+rtc_clk.c.obj,171,0,4,1738,1913,0,0,0
+esp_flash_api.c.obj,20,0,0,968,988,82,762,0
+heap_caps.c.obj,4,0,4,1122,1130,286,355,0
+ringbuf.c.obj,0,0,0,1004,1004,0,512,0
+spi_flash_hal_gpspi.c.ob,0,0,0,1484,1484,0,0,0
+esp_efuse_utility.c.obj,0,0,4,0,4,998,475,0
+locks.c.obj,0,0,168,924,1092,152,344,0
+heap_caps_init.c.obj,0,0,4,0,4,1052,338,0
+startup.c.obj,12,0,8,44,64,834,497,0
+partition.c.obj,0,0,8,0,8,1070,268,0
+lib_a-fseeko.o,0,0,0,0,0,1264,0,0
+wdt_hal_iram.c.obj,0,0,0,1160,1160,0,0,0
+lib_a-fvwrite.o,0,0,0,0,0,1156,0,0
+lib_a-findfp.o,0,0,0,0,0,1040,96,0
+panic.c.obj,12,0,5,6,23,958,131,0
+clk.c.obj,0,0,0,0,0,838,212,0
+memspi_host_driver.c.obj,397,0,0,636,1033,0,0,0
+spi_flash_chip_winbond.c,203,0,0,748,951,0,0,0
+memory_layout_utils.c.ob,0,0,0,0,0,650,283,0
+periph_ctrl.c.obj,0,0,27,0,27,836,85,0
+esp_timer.c.obj,0,0,8,296,304,514,72,0
+lib_a-fflush.o,0,0,0,0,0,856,0,0
+trunctfdf2.o,0,0,0,0,0,848,0,0
+port.c.obj,4,0,1556,588,2148,66,190,0
+systimer_hal.c.obj,85,0,0,760,845,0,0,0
+multi_heap.c.obj,157,0,0,678,835,0,0,0
+time.c.obj,0,0,20,180,200,620,0,0
+log.c.obj,8,0,264,32,304,562,122,0
+cpu_start.c.obj,0,0,0,464,464,42,158,0
+esp_timer_impl_systimer.,16,0,12,210,238,296,125,0
+esp_flash_spi_init.c.obj,68,0,4,0,72,272,261,0
+spi_flash_os_func_app.c.,52,0,0,414,466,34,95,0
+rtc_time.c.obj,0,0,0,590,590,0,0,0
+port_systick.c.obj,0,0,8,370,378,0,192,0
+vectors.S.obj,0,0,0,522,522,0,0,0
+lib_a-refill.o,0,0,0,0,0,512,0,0
+lib_a-reent.o,0,0,0,0,0,500,0,0
+esp_app_desc.c.obj,1,0,8,198,207,32,4,256
+lib_a-ftello.o,0,0,0,0,0,488,0,0
+hello_world_main.c.obj,0,0,0,0,0,248,232,0
+lib_a-fclose.o,0,0,0,0,0,456,0,0
+spi_flash_hal.c.obj,0,0,0,0,0,342,96,0
+lib_a-makebuf.o,0,0,0,0,0,436,0,0
+port_common.c.obj,0,0,0,104,104,128,186,0
+lib_a-fopen.o,0,0,0,0,0,416,0,0
+sleep_modes.c.obj,0,0,0,0,0,244,171,0
+crosscore_int.c.obj,0,0,4,162,166,106,120,0
+lib_a-wsetup.o,0,0,0,0,0,384,0,0
+lib_a-locale.o,4,0,0,0,4,0,378,0
+lib_a-puts.o,0,0,0,0,0,372,0,0
+uart_hal.c.obj,0,0,0,0,0,366,0,0
+panic_handler.c.obj,8,0,4,82,94,266,8,0
+esp_time_impl.c.obj,0,0,12,0,12,362,0,0
+lib_a-fwalk.o,0,0,0,0,0,340,0,0
+bootloader_flash.c.obj,0,0,0,340,340,0,0,0
+freertos_hooks.c.obj,0,0,64,48,112,290,0,0
+lib_a-stdio.o,0,0,0,0,0,316,0,0
+spi_flash_chip_gd.c.obj,123,0,0,190,313,0,0,0
+rtc_sleep.c.obj,0,0,0,308,308,0,0,0
+esp_ota_ops.c.obj,0,0,4,0,4,186,121,0
+system_internal.c.obj,0,0,0,298,298,0,0,0
+int_wdt.c.obj,0,0,8,74,82,206,0,0
+interrupt.c.obj,0,0,256,130,386,0,137,0
+spi_flash_chip_mxic.c.ob,190,0,0,76,266,0,0,0
+esp_err.c.obj,108,0,0,154,262,0,0,0
+system_time.c.obj,0,0,8,38,46,142,80,0
+lib_a-ctype_.o,0,0,0,0,0,0,257,0
+cpu_util_esp32c3.c.obj,0,0,0,0,0,250,0,0
+esp_clk.c.obj,0,16,4,30,50,200,0,0
+pthread_local_storage.c.,0,0,4,0,4,242,0,0
+spi_flash_chip_issi.c.ob,125,0,0,112,237,0,0,0
+memory_layout.c.obj,4,0,0,0,4,0,231,0
+log_freertos.c.obj,0,0,8,232,240,0,0,0
+newlib_init.c.obj,156,0,240,0,396,76,0,0
+lib_a-printf.o,0,0,0,0,0,224,0,0
+regi2c_ctrl.c.obj,0,0,0,202,202,0,0,0
+heap.c.obj,0,0,0,190,190,0,0,0
+lib_a-s_frexp.o,0,0,0,0,0,180,8,0
+lib_a-assert.o,0,0,0,0,0,124,63,0
+cache_utils.c.obj,0,0,8,144,152,38,0,0
+lib_a-vprintf.o,0,0,0,0,0,176,0,0
+spi_flash_chip_boya.c.ob,125,0,0,46,171,0,0,0
+esp_system.c.obj,0,0,20,90,110,80,0,0
+lib_a-flags.o,0,0,0,0,0,168,0,0
+abort.c.obj,38,0,0,128,166,0,0,0
+brownout_hal.c.obj,0,0,0,0,0,160,0,0
+esp_efuse_api.c.obj,0,0,0,0,0,158,0,0
+portasm.S.obj,0,0,0,154,154,0,0,0
+lib_a-fiprintf.o,0,0,0,0,0,148,0,0
+list.c.obj,0,0,0,134,134,0,0,0
+spi_flash_encrypt_hal_ir,0,0,0,132,132,0,0,0
+cache_err_int.c.obj,0,0,0,4,4,124,0,0
+spi_flash_os_func_noos.c,36,0,0,86,122,0,0,0
+lib_a-mbtowc_r.o,0,0,0,0,0,108,0,0
+flash_ops.c.obj,24,0,4,40,68,38,0,0
+pthread.c.obj,0,0,8,0,8,100,0,0
+esp_efuse_table.c.obj,96,0,0,0,96,0,0,0
+uart_hal_iram.c.obj,0,0,0,0,0,88,0,0
+gpio_periph.c.obj,0,0,0,0,0,0,88,0
+apb_backup_dma.c.obj,0,0,0,52,52,34,0,0
+interrupt_controller_hal,0,0,0,0,0,80,0,0
+reent_init.c.obj,0,0,0,76,76,0,0,0
+instruction_decode.c.obj,0,0,0,0,0,74,0,0
+chip_info.c.obj,0,0,0,0,0,70,0,0
+lib_a-fseek.o,0,0,0,0,0,68,0,0
+lib_a-wctomb_r.o,0,0,0,0,0,64,0,0
+flash_qio_mode.c.obj,0,0,0,0,0,58,0,0
+lib_a-sysgettod.o,0,0,0,0,0,56,0,0
+brownout.c.obj,0,0,0,0,0,38,5,0
+lib_a-localeconv.o,0,0,0,0,0,40,0,0
+syscalls.c.obj,0,0,0,0,0,36,0,0
+esp_efuse_fields.c.obj,0,0,0,0,0,32,0,0
+cpu_hal.c.obj,0,0,0,32,32,0,0,0
+spi_flash_chip_drivers.c,32,0,0,0,32,0,0,0
+lib_a-errno.o,0,0,0,0,0,28,0,0
+cpu_util.c.obj,0,0,0,28,28,0,0,0
+pm_impl.c.obj,0,0,0,0,0,28,0,0
+bootloader_flash_config_,0,0,0,0,0,26,0,0
+esp_rom_uart.c.obj,0,0,0,24,24,0,0,0
+bootloader_mem.c.obj,0,0,0,0,0,14,0,0
+pthread.c.obj,0,0,0,0,0,6,0,0
+spi_bus_lock.c.obj,4,0,0,0,4,0,0,0
+FreeRTOS-openocd.c.obj,4,0,0,0,4,0,0,0
+cxx_guards.cpp.obj,0,0,0,0,0,2,0,0
+ubsan.c.obj,0,0,0,2,2,0,0,0
+lib_a-environ.o,0,0,4,0,4,0,0,0
+_divdi3.o,0,0,0,0,0,0,0,0
+_moddi3.o,0,0,0,0,0,0,0,0
+_udivdi3.o,0,0,0,0,0,0,0,0
+_umoddi3.o,0,0,0,0,0,0,0,0
+Total sizes:,,,
+Used stat D/IRAM,48466 bytes (279214 remain 14.8% used),,,
+.data size,5048 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,39754 bytes,,,
+Used Flash size ,117008 bytes,,,
+.text,90400 bytes,,,
+.rodata,26352 bytes,,,
+Total image size,161810 bytes (.bin may be padded larger),,,
+
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+ref_counts,27
+.p_uart_obj,8
+Section total: 35
+
+Symbols from section: .dram0.data
+uart_context,32
+.uart_selectlock,8
+..g_spi_lock_main_flash_dev,4
+Section total: 44
+
+Symbols from section: .flash.appdesc
+Section total: 0
+
+Symbols from section: .flash.rodata
+gpio_set_pull_mode.str1.4,93
+periph_module_enable.str1.4,64
+gpio_input_enable.str1.4,62
+uart_disable_intr_mask_and_return_prev.str1.4,54
+uart_pattern_pop_pos.str1.4,49
+uart_set_stop_bits.str1.4,46
+uart_set_word_length.str1.4,46
+uart_flush_input.str1.4,45
+__FUNCTION__.7467,39
+__FUNCTION__.7459,27
+gpio_sleep_output_enable.str1.4,27
+__FUNCTION__.6231,26
+__FUNCTION__.6223,25
+__FUNCTION__.6235,25
+__FUNCTION__.6240,25
+__FUNCTION__.6246,25
+__FUNCTION__.6219,24
+__FUNCTION__.6227,24
+__FUNCTION__.6215,23
+__FUNCTION__.6211,22
+__FUNCTION__.7222,22
+__FUNCTION__.6207,21
+__FUNCTION__.7153,21
+__FUNCTION__.7158,21
+__func__.4238,21
+__FUNCTION__.6261,19
+__FUNCTION__.7163,19
+__FUNCTION__.7168,19
+__FUNCTION__.6257,18
+__FUNCTION__.7183,18
+__FUNCTION__.7188,18
+__FUNCTION__.7394,18
+__FUNCTION__.7471,17
+__FUNCTION__.7173,16
+__FUNCTION__.7178,16
+Section total: 1055
+
+Symbols from section: .flash.rodata_noload
+Section total: 0
+
+Symbols from section: .flash.text
+periph_module_enable,736
+uart_flush_input,580
+uart_wait_tx_done,484
+gpio_sleep_set_pull_mode,318
+uart_set_stop_bits,178
+uart_set_word_length,178
+gpio_sleep_set_direction,156
+uart_get_bufferedlen,152
+gpio_sleep_pulldown_en,148
+gpio_sleep_pullup_en,148
+gpio_sleep_sel_en,148
+gpio_sleep_pulldown_dis,146
+gpio_sleep_pullup_dis,146
+gpio_sleep_sel_dis,146
+uart_disable_intr_mask_and_return_prev,138
+gpio_sleep_input_enable,126
+gpio_sleep_output_enable,126
+gpio_sleep_input_disable,124
+gpio_sleep_output_disable,124
+uart_enable_intr_mask,122
+uart_get_baudrate,116
+uart_set_baudrate,116
+uart_set_parity,116
+uart_get_parity,86
+uart_get_stop_bits,86
+uart_get_word_length,86
+uart_pattern_queue_update,80
+periph_ll_get_clk_en_reg,50
+periph_ll_get_rst_en_reg,50
+uart_is_driver_installed,34
+uart_set_select_notif_callback,30
+uart_get_selectlock,6
+Section total: 5280
+
+Symbols from section: .iram0.bss
+Section total: 0
+
+Symbols from section: .iram0.data
+Section total: 0
+
+Symbols from section: .iram0.text
+Section total: 0
+
+Symbols from section: .noinit
+Section total: 0
+
+Symbols from section: .rtc.bss
+Section total: 0
+
+Symbols from section: .rtc.data
+Section total: 0
+
+Symbols from section: .rtc.text
+Section total: 0
+
+Symbols from section: .rtc_noinit
+Section total: 0
+
+***
+Producing CSV output for esp32h2...
+Total sizes:,,,
+Used stat D/IRAM,45656 bytes (282024 remain 13.9% used),,,
+.data size,4864 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,37128 bytes,,,
+Used Flash size ,110492 bytes,,,
+.text,85252 bytes,,,
+.rodata,24984 bytes,,,
+Total image size,152484 bytes (.bin may be padded larger),,,
+Total sizes:,,,
+Used stat D/IRAM,45656 bytes (282024 remain 13.9% used),,,
+.data size,4864 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,37128 bytes,,,
+Used Flash size ,110492 bytes,,,
+.text,85252 bytes,,,
+.rodata,24984 bytes,,,
+Total image size,152484 bytes (.bin may be padded larger),,,
+Per-archive contributions to ELF file:
+Archive File,DRAM .data,.rtc.data,DRAM .bss,IRAM0 .text,ram_st_total,Flash .text,& .rodata,& .appdesc
+ilp32\libc.a,4,0,4,0,8,53504,4098,0
+libfreertos.a,16,0,2228,10080,12324,194,3143,0
+libspi_flash.a,1949,0,160,7658,9767,1706,1626,0
+libheap.a,1961,0,8,5836,7805,1988,1207,0
+libesp_system.a,185,0,125,1392,1702,5548,3197,0
+libesp_hw_support.a,71,16,21,1920,2028,5374,998,0
+libvfs.a,272,0,48,0,320,6760,378,0
+libesp_common.a,6,0,0,0,6,56,7065,0
+libhal.a,85,0,0,5742,5827,994,96,0
+libdriver.a,44,0,35,0,79,3326,596,0
+libnewlib.a,194,0,440,1498,2132,1248,344,0
+libesp_timer.a,16,0,28,544,588,952,277,0
+libefuse.a,12,0,4,0,16,1186,475,0
+libesp_ringbuf.a,0,0,0,1002,1002,0,512,0
+liblog.a,8,0,272,264,544,562,122,0
+libriscv.a,0,0,256,652,908,74,137,0
+ilp32\libgcc.a,0,0,0,0,0,848,0,0
+libapp_update.a,1,0,12,198,211,218,125,256
+libmain.a,0,0,0,0,0,248,232,0
+libbootloader_support.a,0,0,0,340,340,98,0,0
+libpthread.a,0,0,12,0,12,342,0,0
+libesp_pm.a,0,0,0,0,0,6,0,0
+libcxx.a,0,0,0,0,0,2,0,0
+Total sizes:,,,
+Used stat D/IRAM,45656 bytes (282024 remain 13.9% used),,,
+.data size,4864 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,37128 bytes,,,
+Used Flash size ,110492 bytes,,,
+.text,85252 bytes,,,
+.rodata,24984 bytes,,,
+Total image size,152484 bytes (.bin may be padded larger),,,
+Per-file contributions to ELF file:
+Object File,DRAM .data,.rtc.data,DRAM .bss,IRAM0 .text,ram_st_total,Flash .text,& .rodata,& .appdesc
+lib_a-vfprintf.o,0,0,0,0,0,14720,748,0
+lib_a-svfiprintf.o,0,0,0,0,0,9544,1172,0
+lib_a-vfiprintf.o,0,0,0,0,0,9756,737,0
+esp_err_to_name.c.obj,6,0,0,0,6,56,7065,0
+tasks.c.obj,8,0,664,5552,6224,0,1080,0
+heap_tlsf.c.obj,1796,0,0,4036,5832,0,0,0
+lib_a-dtoa.o,0,0,0,0,0,5312,233,0
+vfs_uart.c.obj,80,0,8,0,88,4402,270,0
+queue.c.obj,0,0,0,3180,3180,0,1495,0
+lib_a-mprec.o,0,0,0,0,0,4252,406,0
+memprot.c.obj,0,0,0,772,772,2750,800,0
+spi_flash_chip_generic.c,554,0,0,2668,3222,0,0,0
+uart.c.obj,40,0,8,0,48,2588,511,0
+intr_alloc.c.obj,0,0,13,688,701,2128,198,0
+panic_arch.c.obj,0,0,0,0,0,1060,1693,0
+vfs.c.obj,192,0,40,0,232,2358,108,0
+spi_flash_hal_iram.c.obj,0,0,0,2220,2220,0,0,0
+task_wdt.c.obj,45,0,12,0,57,1438,478,0
+flash_mmap.c.obj,0,0,136,1530,1666,182,240,0
+esp_flash_api.c.obj,20,0,0,968,988,80,762,0
+heap_caps.c.obj,4,0,4,1122,1130,286,355,0
+ringbuf.c.obj,0,0,0,1002,1002,0,512,0
+spi_flash_hal_gpspi.c.ob,0,0,0,1484,1484,0,0,0
+esp_efuse_utility.c.obj,0,0,4,0,4,996,475,0
+locks.c.obj,0,0,168,924,1092,152,344,0
+heap_caps_init.c.obj,0,0,4,0,4,1052,338,0
+startup.c.obj,12,0,8,26,46,834,497,0
+partition.c.obj,0,0,8,0,8,1066,268,0
+lib_a-fseeko.o,0,0,0,0,0,1264,0,0
+wdt_hal_iram.c.obj,0,0,0,1158,1158,0,0,0
+lib_a-fvwrite.o,0,0,0,0,0,1156,0,0
+lib_a-findfp.o,0,0,0,0,0,1040,96,0
+panic.c.obj,12,0,5,6,23,958,131,0
+memspi_host_driver.c.obj,397,0,0,636,1033,0,0,0
+spi_flash_chip_winbond.c,203,0,0,748,951,0,0,0
+memory_layout_utils.c.ob,0,0,0,0,0,650,283,0
+esp_timer.c.obj,0,0,8,296,304,514,72,0
+lib_a-fflush.o,0,0,0,0,0,856,0,0
+trunctfdf2.o,0,0,0,0,0,848,0,0
+port.c.obj,4,0,1556,588,2148,66,190,0
+multi_heap.c.obj,157,0,0,678,835,0,0,0
+periph_ctrl.c.obj,0,0,27,0,27,738,85,0
+systimer_hal.c.obj,85,0,0,716,801,0,0,0
+time.c.obj,0,0,20,180,200,618,0,0
+log.c.obj,8,0,264,32,304,562,122,0
+esp_timer_impl_systimer.,16,0,12,210,238,296,125,0
+cpu_start.c.obj,0,0,0,432,432,42,158,0
+esp_flash_spi_init.c.obj,68,0,4,0,72,268,261,0
+spi_flash_os_func_app.c.,52,0,0,414,466,34,95,0
+port_systick.c.obj,0,0,8,368,376,0,192,0
+vectors.S.obj,0,0,0,522,522,0,0,0
+lib_a-refill.o,0,0,0,0,0,512,0,0
+lib_a-reent.o,0,0,0,0,0,500,0,0
+esp_app_desc.c.obj,1,0,8,198,207,32,4,256
+lib_a-ftello.o,0,0,0,0,0,488,0,0
+hello_world_main.c.obj,0,0,0,0,0,248,232,0
+lib_a-fclose.o,0,0,0,0,0,456,0,0
+lib_a-makebuf.o,0,0,0,0,0,436,0,0
+spi_flash_hal.c.obj,0,0,0,0,0,332,96,0
+port_common.c.obj,0,0,0,104,104,128,186,0
+lib_a-fopen.o,0,0,0,0,0,416,0,0
+crosscore_int.c.obj,0,0,4,162,166,106,120,0
+lib_a-wsetup.o,0,0,0,0,0,384,0,0
+lib_a-locale.o,4,0,0,0,4,0,378,0
+rtc_clk.c.obj,71,0,4,308,383,0,0,0
+lib_a-puts.o,0,0,0,0,0,372,0,0
+panic_handler.c.obj,8,0,4,82,94,266,8,0
+esp_time_impl.c.obj,0,0,12,0,12,360,0,0
+lib_a-fwalk.o,0,0,0,0,0,340,0,0
+bootloader_flash.c.obj,0,0,0,340,340,0,0,0
+freertos_hooks.c.obj,0,0,64,48,112,290,0,0
+uart_hal.c.obj,0,0,0,0,0,334,0,0
+lib_a-stdio.o,0,0,0,0,0,316,0,0
+spi_flash_chip_gd.c.obj,123,0,0,190,313,0,0,0
+esp_ota_ops.c.obj,0,0,4,0,4,186,121,0
+int_wdt.c.obj,0,0,8,74,82,206,0,0
+interrupt.c.obj,0,0,256,130,386,0,137,0
+spi_flash_chip_mxic.c.ob,190,0,0,76,266,0,0,0
+esp_err.c.obj,108,0,0,154,262,0,0,0
+system_internal.c.obj,0,0,0,260,260,0,0,0
+system_time.c.obj,0,0,8,38,46,142,80,0
+lib_a-ctype_.o,0,0,0,0,0,0,257,0
+cpu_util_esp32h2.c.obj,0,0,0,0,0,250,0,0
+pthread_local_storage.c.,0,0,4,0,4,242,0,0
+spi_flash_chip_issi.c.ob,125,0,0,112,237,0,0,0
+memory_layout.c.obj,4,0,0,0,4,0,231,0
+log_freertos.c.obj,0,0,8,232,240,0,0,0
+newlib_init.c.obj,156,0,240,0,396,76,0,0
+lib_a-printf.o,0,0,0,0,0,224,0,0
+esp_clk.c.obj,0,16,4,30,50,176,0,0
+heap.c.obj,0,0,0,190,190,0,0,0
+lib_a-s_frexp.o,0,0,0,0,0,180,8,0
+lib_a-assert.o,0,0,0,0,0,124,63,0
+cache_utils.c.obj,0,0,8,144,152,38,0,0
+fpga_overrides.c.obj,0,0,0,0,0,72,107,0
+lib_a-vprintf.o,0,0,0,0,0,176,0,0
+spi_flash_chip_boya.c.ob,125,0,0,46,171,0,0,0
+esp_system.c.obj,0,0,20,90,110,80,0,0
+lib_a-flags.o,0,0,0,0,0,168,0,0
+abort.c.obj,38,0,0,128,166,0,0,0
+brownout_hal.c.obj,0,0,0,0,0,160,0,0
+esp_efuse_api.c.obj,0,0,0,0,0,158,0,0
+portasm.S.obj,0,0,0,154,154,0,0,0
+lib_a-fiprintf.o,0,0,0,0,0,148,0,0
+list.c.obj,0,0,0,134,134,0,0,0
+spi_flash_encrypt_hal_ir,0,0,0,132,132,0,0,0
+cache_err_int.c.obj,0,0,0,4,4,124,0,0
+spi_flash_os_func_noos.c,36,0,0,86,122,0,0,0
+lib_a-mbtowc_r.o,0,0,0,0,0,108,0,0
+flash_ops.c.obj,24,0,4,40,68,38,0,0
+pthread.c.obj,0,0,8,0,8,100,0,0
+uart_hal_iram.c.obj,0,0,0,0,0,88,0,0
+apb_backup_dma.c.obj,0,0,0,52,52,34,0,0
+interrupt_controller_hal,0,0,0,0,0,80,0,0
+reent_init.c.obj,0,0,0,76,76,0,0,0
+regi2c_ctrl.c.obj,0,0,0,74,74,0,0,0
+instruction_decode.c.obj,0,0,0,0,0,74,0,0
+chip_info.c.obj,0,0,0,0,0,70,0,0
+lib_a-fseek.o,0,0,0,0,0,68,0,0
+lib_a-wctomb_r.o,0,0,0,0,0,64,0,0
+flash_qio_mode.c.obj,0,0,0,0,0,58,0,0
+lib_a-sysgettod.o,0,0,0,0,0,56,0,0
+brownout.c.obj,0,0,0,0,0,38,5,0
+lib_a-localeconv.o,0,0,0,0,0,40,0,0
+syscalls.c.obj,0,0,0,0,0,36,0,0
+esp_efuse_fields.c.obj,0,0,0,0,0,32,0,0
+cpu_hal.c.obj,0,0,0,32,32,0,0,0
+spi_flash_chip_drivers.c,32,0,0,0,32,0,0,0
+lib_a-errno.o,0,0,0,0,0,28,0,0
+cpu_util.c.obj,0,0,0,28,28,0,0,0
+bootloader_flash_config_,0,0,0,0,0,26,0,0
+rtc_time.c.obj,0,0,0,20,20,0,0,0
+bootloader_mem.c.obj,0,0,0,0,0,14,0,0
+esp_efuse_table.c.obj,12,0,0,0,12,0,0,0
+pm_impl.c.obj,0,0,0,0,0,6,0,0
+pthread.c.obj,0,0,0,0,0,6,0,0
+spi_bus_lock.c.obj,4,0,0,0,4,0,0,0
+FreeRTOS-openocd.c.obj,4,0,0,0,4,0,0,0
+cxx_guards.cpp.obj,0,0,0,0,0,2,0,0
+ubsan.c.obj,0,0,0,2,2,0,0,0
+lib_a-environ.o,0,0,4,0,4,0,0,0
+_divdi3.o,0,0,0,0,0,0,0,0
+_moddi3.o,0,0,0,0,0,0,0,0
+_udivdi3.o,0,0,0,0,0,0,0,0
+_umoddi3.o,0,0,0,0,0,0,0,0
+Total sizes:,,,
+Used stat D/IRAM,45656 bytes (282024 remain 13.9% used),,,
+.data size,4864 bytes,,,
+.bss  size,3664 bytes,,,
+.text size,37128 bytes,,,
+Used Flash size ,110492 bytes,,,
+.text,85252 bytes,,,
+.rodata,24984 bytes,,,
+Total image size,152484 bytes (.bin may be padded larger),,,
+
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+ref_counts,27
+.p_uart_obj,8
+Section total: 35
+
+Symbols from section: .dram0.data
+uart_context,32
+.uart_selectlock,8
+..g_spi_lock_main_flash_dev,4
+Section total: 44
+
+Symbols from section: .flash.appdesc
+Section total: 0
+
+Symbols from section: .flash.rodata
+periph_module_enable.str1.4,64
+uart_disable_intr_mask_and_return_prev.str1.4,54
+uart_pattern_pop_pos.str1.4,49
+uart_set_stop_bits.str1.4,46
+uart_set_word_length.str1.4,46
+uart_flush_input.str1.4,45
+__FUNCTION__.7485,39
+__FUNCTION__.7477,27
+__FUNCTION__.7240,22
+__FUNCTION__.7171,21
+__FUNCTION__.7176,21
+__func__.4215,21
+__FUNCTION__.7181,19
+__FUNCTION__.7186,19
+__FUNCTION__.7201,18
+__FUNCTION__.7206,18
+__FUNCTION__.7412,18
+__FUNCTION__.7489,17
+__FUNCTION__.7191,16
+__FUNCTION__.7196,16
+Section total: 596
+
+Symbols from section: .flash.text
+periph_module_enable,682
+uart_flush_input,580
+uart_wait_tx_done,484
+uart_set_stop_bits,178
+uart_set_word_length,178
+uart_get_bufferedlen,152
+uart_disable_intr_mask_and_return_prev,138
+uart_enable_intr_mask,122
+uart_get_baudrate,116
+uart_set_baudrate,116
+uart_set_parity,116
+uart_get_parity,86
+uart_get_stop_bits,86
+uart_get_word_length,86
+uart_pattern_queue_update,80
+uart_is_driver_installed,34
+uart_set_select_notif_callback,30
+periph_ll_get_clk_en_reg,28
+periph_ll_get_rst_en_reg,28
+uart_get_selectlock,6
+Section total: 3326
+
+Symbols from section: .iram0.bss
+Section total: 0
+
+Symbols from section: .iram0.data
+Section total: 0
+
+Symbols from section: .iram0.text
+Section total: 0
+
+Symbols from section: .noinit
+Section total: 0
+
+Symbols from section: .rtc.bss
+Section total: 0
+
+Symbols from section: .rtc.data
+Section total: 0
+
+Symbols from section: .rtc.text
+Section total: 0
+
+Symbols from section: .rtc_noinit
+Section total: 0
+
+***
+Producing CSV output for esp32s3...
+Total sizes:,,,
+Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
+.text size,45759 bytes,,,
+.vectors size,1027 bytes,,,
+Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+.data size,9252 bytes,,,
+.bss  size,2520 bytes,,,
+Used Flash size ,114851 bytes,,,
+.text,87463 bytes,,,
+.rodata,27132 bytes,,,
+Total image size,170889 bytes (.bin may be padded larger),,,
+Total sizes:,,,
+Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
+.text size,45759 bytes,,,
+.vectors size,1027 bytes,,,
+Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+.data size,9252 bytes,,,
+.bss  size,2520 bytes,,,
+Used Flash size ,114851 bytes,,,
+.text,87463 bytes,,,
+.rodata,27132 bytes,,,
+Total image size,170889 bytes (.bin may be padded larger),,,
+Per-archive contributions to ELF file:
+Archive File,DRAM .data,.rtc.data,DRAM .bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata,& .appdesc
+no-rtti\libc.a,4,0,4,0,0,8,58528,4685,0
+libfreertos.a,3128,0,748,13747,425,18048,293,3668,0
+libspi_flash.a,1886,0,550,7539,0,9975,1605,2196,0
+libesp_system.a,205,0,206,2914,0,3325,6183,3549,0
+libheap.a,1957,0,8,5195,0,7160,1741,1383,0
+libhal.a,109,0,0,7126,0,7235,1275,608,0
+libesp_hw_support.a,187,16,34,4260,0,4497,3884,288,0
+libesp_common.a,0,0,0,0,0,0,53,7287,0
+libvfs.a,308,0,48,0,0,356,5986,393,0
+libdriver.a,64,0,49,0,0,113,3468,600,0
+libnewlib.a,202,0,440,1280,0,1922,1028,344,0
+libesp_timer.a,32,0,28,515,0,575,917,277,0
+libesp_ringbuf.a,0,0,0,873,0,873,0,512,0
+libxtensa.a,1024,0,0,77,0,1101,126,35,0
+libesp_ipc.a,20,0,72,332,0,424,643,241,0
+liblog.a,8,0,272,247,0,527,499,122,0
+libapp_update.a,1,0,12,194,0,207,179,125,256
+libbootloader_support.a,0,0,0,444,0,444,95,0,0
+libmain.a,0,0,0,0,0,0,228,232,0
+libxt_hal.a,0,0,0,405,0,405,0,32,0
+libpthread.a,8,0,12,0,0,20,310,0,0
+no-rtti\libgcc.a,0,0,0,0,0,0,0,160,0
+libesp_rom.a,0,0,0,24,0,24,0,0,0
+(exe),0,0,0,0,3,3,3,12,0
+libesp_pm.a,0,0,0,0,0,0,8,0,0
+libcxx.a,0,0,0,0,0,0,5,0,0
+libmbedcrypto.a,0,0,0,0,0,0,0,0,0
+libsoc.a,0,0,0,0,0,0,0,0,0
+Total sizes:,,,
+Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
+.text size,45759 bytes,,,
+.vectors size,1027 bytes,,,
+Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+.data size,9252 bytes,,,
+.bss  size,2520 bytes,,,
+Used Flash size ,114851 bytes,,,
+.text,87463 bytes,,,
+.rodata,27132 bytes,,,
+Total image size,170889 bytes (.bin may be padded larger),,,
+Per-file contributions to ELF file:
+Object File,DRAM .data,.rtc.data,DRAM .bss,IRAM0 .text,& 0.vectors,ram_st_total,Flash .text,& .rodata,& .appdesc
+lib_a-vfprintf.o,0,0,0,0,0,0,13707,700,0
+lib_a-svfprintf.o,0,0,0,0,0,0,13331,752,0
+lib_a-svfiprintf.o,0,0,0,0,0,0,9650,1172,0
+lib_a-vfiprintf.o,0,0,0,0,0,0,9827,700,0
+tasks.c.obj,8,0,704,6792,0,7504,0,1158,0
+esp_err_to_name.c.obj,0,0,0,0,0,0,53,7287,0
+heap_tlsf.c.obj,1796,0,0,3591,0,5387,0,0,0
+queue.c.obj,0,0,0,3038,0,3038,0,1515,0
+vfs_uart.c.obj,116,0,8,0,0,124,4051,282,0
+lib_a-dtoa.o,0,0,0,0,0,0,3592,165,0
+portasm.S.obj,3084,0,0,416,0,3500,0,0,0
+spi_flash_chip_generic.c,554,0,0,2529,0,3083,0,0,0
+intr_alloc.c.obj,8,0,22,717,0,747,1958,198,0
+lib_a-mprec.o,0,0,0,0,0,0,2340,409,0
+uart.c.obj,56,0,12,0,0,68,2091,511,0
+panic_arch.c.obj,0,0,0,0,0,0,715,1538,0
+spi_flash_hal_iram.c.obj,0,0,0,2250,0,2250,0,0,0
+vfs.c.obj,192,0,40,0,0,232,1935,111,0
+rtc_clk.c.obj,171,0,8,2059,0,2238,0,0,0
+xtensa_vectors.S.obj,32,0,0,1464,425,1921,0,48,0
+task_wdt.c.obj,53,0,12,0,0,65,1319,591,0
+spi_flash_hal_gpspi.c.ob,0,0,0,1842,0,1842,0,0,0
+rtc_init.c.obj,0,0,0,0,0,0,1703,70,0
+esp_flash_api.c.obj,20,0,0,862,0,882,89,762,0
+flash_mmap.c.obj,0,0,520,1298,0,1818,166,240,0
+port.c.obj,0,0,24,945,0,969,147,541,0
+heap_caps.c.obj,4,0,4,1003,0,1011,261,355,0
+wdt_hal_iram.c.obj,0,0,0,1493,0,1493,0,0,0
+periph_ctrl.c.obj,8,0,37,0,0,45,1377,85,0
+cpu_start.c.obj,0,0,5,732,0,737,371,334,0
+ringbuf.c.obj,0,0,0,873,0,873,0,512,0
+cache_utils.c.obj,4,0,14,685,0,703,92,570,0
+heap_caps_init.c.obj,0,0,4,0,0,4,905,430,0
+startup.c.obj,8,0,11,69,0,88,748,505,0
+locks.c.obj,8,0,168,782,0,958,122,344,0
+partition.c.obj,0,0,8,0,0,8,938,268,0
+systimer_hal.c.obj,85,0,0,1052,0,1137,0,0,0
+xtensa_intr_asm.S.obj,1024,0,0,51,0,1075,0,0,0
+panic.c.obj,12,0,5,12,0,29,875,147,0
+memspi_host_driver.c.obj,397,0,0,637,0,1034,0,0,0
+clk.c.obj,0,0,0,0,0,0,802,212,0
+esp_timer.c.obj,8,0,8,282,0,298,505,72,0
+memory_layout_utils.c.ob,0,0,0,0,0,0,575,283,0
+debug_helpers.c.obj,0,0,0,747,0,747,0,73,0
+lib_a-fseeko.o,0,0,0,0,0,0,818,0,0
+spi_flash_chip_winbond.c,136,0,0,659,0,795,0,0,0
+multi_heap.c.obj,157,0,0,601,0,758,0,0,0
+esp_ipc.c.obj,0,0,56,188,0,244,456,97,0
+lib_a-fvwrite.o,0,0,0,0,0,0,721,0,0
+panic_handler.c.obj,8,0,8,66,0,82,634,8,0
+lib_a-findfp.o,0,0,0,0,0,0,612,96,0
+rtc_time.c.obj,0,0,0,675,0,675,0,0,0
+log.c.obj,8,0,264,42,0,314,499,122,0
+time.c.obj,0,0,20,127,0,147,509,0,0
+esp_timer_impl_systimer.,24,0,12,198,0,234,286,125,0
+port_systick.c.obj,0,0,12,394,0,406,0,192,0
+esp_flash_spi_init.c.obj,68,0,4,0,0,72,243,261,0
+lib_a-fflush.o,0,0,0,0,0,0,552,0,0
+interrupt_descriptor_tab,0,0,0,0,0,0,12,512,0
+spi_flash_os_func_app.c.,52,0,0,324,0,376,44,95,0
+crosscore_int.c.obj,8,0,8,229,0,245,142,120,0
+system_internal.c.obj,0,0,0,475,0,475,0,16,0
+esp_app_desc.c.obj,1,0,8,194,0,203,31,4,256
+rtc_sleep.c.obj,0,0,0,476,0,476,0,0,0
+hello_world_main.c.obj,0,0,0,0,0,0,228,232,0
+port_common.c.obj,0,0,8,98,0,106,146,214,0
+spi_flash_hal.c.obj,0,0,0,0,0,0,351,96,0
+bootloader_flash.c.obj,0,0,0,444,0,444,0,0,0
+uart_hal.c.obj,0,0,0,0,0,0,432,0,0
+xtensa_context.S.obj,0,0,0,390,0,390,0,0,0
+lib_a-locale.o,4,0,0,0,0,4,0,374,0
+esp_ipc_isr.c.obj,4,0,16,19,0,39,187,144,0
+spi_flash_chip_gd.c.obj,123,0,0,202,0,325,0,0,0
+memory_layout.c.obj,0,0,0,0,0,0,0,315,0
+lib_a-refill.o,0,0,0,0,0,0,312,0,0
+windowspill_asm.o,0,0,0,311,0,311,0,0,0
+freertos_hooks.c.obj,8,0,128,47,0,183,247,0,0
+esp_time_impl.c.obj,0,0,12,0,0,12,281,0,0
+lib_a-ftello.o,0,0,0,0,0,0,278,0,0
+lib_a-fclose.o,0,0,0,0,0,0,270,0,0
+esp_ota_ops.c.obj,0,0,4,0,0,4,148,121,0
+lib_a-makebuf.o,0,0,0,0,0,0,263,0,0
+spi_flash_chip_mxic.c.ob,190,0,0,70,0,260,0,0,0
+soc_hal.c.obj,24,0,0,234,0,258,0,0,0
+lib_a-ctype_.o,0,0,0,0,0,0,0,257,0
+lib_a-reent.o,0,0,0,0,0,0,252,0,0
+esp_err.c.obj,108,0,0,140,0,248,0,0,0
+brownout_hal.c.obj,0,0,0,0,0,0,244,0,0
+int_wdt.c.obj,0,0,9,90,0,99,152,0,0
+system_time.c.obj,0,0,8,35,0,43,126,80,0
+esp_clk.c.obj,0,16,4,25,0,45,194,0,0
+spi_flash_chip_issi.c.ob,125,0,0,108,0,233,0,0,0
+newlib_init.c.obj,156,0,240,0,0,396,73,0,0
+lib_a-wsetup.o,0,0,0,0,0,0,223,0,0
+pthread_local_storage.c.,8,0,4,0,0,12,213,0,0
+lib_a-snprintf.o,0,0,0,0,0,0,217,0,0
+lib_a-fopen.o,0,0,0,0,0,0,216,0,0
+spi_flash_encrypt_hal_ir,0,0,0,213,0,213,0,0,0
+log_freertos.c.obj,0,0,8,205,0,213,0,0,0
+abort.c.obj,38,0,0,157,0,195,0,0,0
+lib_a-puts.o,0,0,0,0,0,0,190,0,0
+xtensa_intr.c.obj,0,0,0,26,0,26,126,35,0
+lib_a-stdio.o,0,0,0,0,0,0,182,0,0
+regi2c_ctrl.c.obj,8,0,0,171,0,179,0,0,0
+spi_flash_chip_boya.c.ob,125,0,0,52,0,177,0,0,0
+list.c.obj,0,0,0,164,0,164,0,0,0
+cpu_util.c.obj,0,0,0,137,0,137,0,20,0
+heap.c.obj,0,0,0,151,0,151,0,0,0
+highint_hdl.S.obj,0,0,0,147,0,147,0,0,0
+esp_ipc_isr_handler.S.ob,16,0,0,125,0,141,0,0,0
+lib_a-assert.o,0,0,0,0,0,0,72,60,0
+lib_a-flags.o,0,0,0,0,0,0,128,0,0
+esp_system.c.obj,0,0,20,56,0,76,70,0,0
+lib_a-fwalk.o,0,0,0,0,0,0,119,0,0
+lib_a-printf.o,0,0,0,0,0,0,112,0,0
+spi_flash_os_func_noos.c,36,0,0,72,0,108,0,0,0
+uart_hal_iram.c.obj,0,0,0,0,0,0,105,0,0
+lib_a-s_frexp.o,0,0,0,0,0,0,100,0,0
+flash_ops.c.obj,24,0,4,41,0,69,33,0,0
+pthread.c.obj,0,0,8,0,0,8,97,0,0
+lib_a-vprintf.o,0,0,0,0,0,0,94,0,0
+cache_err_int.c.obj,0,0,0,7,0,7,78,0,0
+lib_a-fiprintf.o,0,0,0,0,0,0,84,0,0
+mpu_hal.c.obj,0,0,0,0,0,0,72,0,0
+panic_handler_asm.S.obj,0,0,0,66,0,66,0,0,0
+lib_a-wctomb_r.o,0,0,0,0,0,0,65,0,0
+lib_a-mbtowc_r.o,0,0,0,0,0,0,64,0,0
+reent_init.c.obj,0,0,0,63,0,63,0,0,0
+interrupt_controller_hal,0,0,0,0,0,0,59,0,0
+flash_qio_mode.c.obj,0,0,0,0,0,0,58,0,0
+lib_a-fseek.o,0,0,0,0,0,0,49,0,0
+state_asm--restore_extra,0,0,0,47,0,47,0,0,0
+state_asm--save_extra_nw,0,0,0,47,0,47,0,0,0
+lib_a-localeconv.o,0,0,0,0,0,0,47,0,0
+xtensa_vector_defaults.S,0,0,0,46,0,46,0,0,0
+cpu_hal.c.obj,0,0,0,42,0,42,0,0,0
+_divdi3.o,0,0,0,0,0,0,0,40,0
+_moddi3.o,0,0,0,0,0,0,0,40,0
+_udivdi3.o,0,0,0,0,0,0,0,40,0
+_umoddi3.o,0,0,0,0,0,0,0,40,0
+brownout.c.obj,0,0,0,0,0,0,30,5,0
+spi_flash_chip_drivers.c,32,0,0,0,0,32,0,0,0
+interrupts--intlevel.o,0,0,0,0,0,0,0,32,0
+syscalls.c.obj,0,0,0,0,0,0,31,0,0
+chip_info.c.obj,0,0,0,0,0,0,29,0,0
+lib_a-sysgettod.o,0,0,0,0,0,0,28,0,0
+debug_helpers_asm.S.obj,0,0,0,26,0,26,0,0,0
+esp_rom_uart.c.obj,0,0,0,24,0,24,0,0,0
+bootloader_flash_config_,0,0,0,0,0,0,22,0,0
+bootloader_mem.c.obj,0,0,0,0,0,0,15,0,0
+lib_a-errno.o,0,0,0,0,0,0,13,0,0
+pthread.c.obj,0,0,0,0,0,0,12,0,0
+crtend.o,0,0,0,0,0,0,0,8,0
+pm_impl.c.obj,0,0,0,0,0,0,8,0,0
+crti.o,0,0,0,0,3,3,3,0,0
+cxx_guards.cpp.obj,0,0,0,0,0,0,5,0,0
+ubsan.c.obj,0,0,0,5,0,5,0,0,0
+crtbegin.o,0,0,0,0,0,0,0,4,0
+spi_bus_lock.c.obj,0,0,0,0,0,0,0,4,0
+FreeRTOS-openocd.c.obj,4,0,0,0,0,4,0,0,0
+crt0.o,0,0,0,0,0,0,0,0,0
+crtn.o,0,0,0,0,0,0,0,0,0
+project_elf_src_esp32s3.,0,0,0,0,0,0,0,0,0
+bootloader_common.c.obj,0,0,0,0,0,0,0,0,0
+bootloader_common_loader,0,0,0,0,0,0,0,0,0
+bootloader_efuse_esp32s3,0,0,0,0,0,0,0,0,0
+bootloader_random_esp32s,0,0,0,0,0,0,0,0,0
+bootloader_sha.c.obj,0,0,0,0,0,0,0,0,0
+bootloader_utility.c.obj,0,0,0,0,0,0,0,0,0
+esp_image_format.c.obj,0,0,0,0,0,0,0,0,0
+flash_partitions.c.obj,0,0,0,0,0,0,0,0,0
+gdma.c.obj,0,0,0,0,0,0,0,0,0
+gpio.c.obj,0,0,0,0,0,0,0,0,0
+rtc_io.c.obj,0,0,0,0,0,0,0,0,0
+rtc_module.c.obj,0,0,0,0,0,0,0,0,0
+spi_common.c.obj,0,0,0,0,0,0,0,0,0
+dport_access.c.obj,0,0,0,0,0,0,0,0,0
+esp_crypto_lock.c.obj,0,0,0,0,0,0,0,0,0
+esp_ipc_isr_routines.S.o,0,0,0,0,0,0,0,0,0
+pm_locks.c.obj,0,0,0,0,0,0,0,0,0
+gdma_hal.c.obj,0,0,0,0,0,0,0,0,0
+gpio_hal.c.obj,0,0,0,0,0,0,0,0,0
+rtc_io_hal.c.obj,0,0,0,0,0,0,0,0,0
+sha_hal.c.obj,0,0,0,0,0,0,0,0,0
+esp_crypto_shared_gdma.c,0,0,0,0,0,0,0,0,0
+esp_sha256.c.obj,0,0,0,0,0,0,0,0,0
+esp_sha_gdma_impl.c.obj,0,0,0,0,0,0,0,0,0
+sha.c.obj,0,0,0,0,0,0,0,0,0
+gdma_periph.c.obj,0,0,0,0,0,0,0,0,0
+gpio_periph.c.obj,0,0,0,0,0,0,0,0,0
+rtc_io_periph.c.obj,0,0,0,0,0,0,0,0,0
+spi_periph.c.obj,0,0,0,0,0,0,0,0,0
+uart_periph.c.obj,0,0,0,0,0,0,0,0,0
+int_asm--set_intclear.o,0,0,0,0,0,0,0,0,0
+lib_a-bzero.o,0,0,0,0,0,0,0,0,0
+lib_a-environ.o,0,0,4,0,0,4,0,0,0
+lib_a-envlock.o,0,0,0,0,0,0,0,0,0
+lib_a-fprintf.o,0,0,0,0,0,0,0,0,0
+lib_a-fputs.o,0,0,0,0,0,0,0,0,0
+lib_a-fwrite.o,0,0,0,0,0,0,0,0,0
+lib_a-getenv_r.o,0,0,0,0,0,0,0,0,0
+lib_a-gettzinfo.o,0,0,0,0,0,0,0,0,0
+lib_a-gmtime_r.o,0,0,0,0,0,0,0,0,0
+lib_a-impure.o,0,0,0,0,0,0,0,0,0
+lib_a-iswspace.o,0,0,0,0,0,0,0,0,0
+lib_a-iswspace_l.o,0,0,0,0,0,0,0,0,0
+lib_a-itoa.o,0,0,0,0,0,0,0,0,0
+lib_a-lcltime_r.o,0,0,0,0,0,0,0,0,0
+lib_a-mbrtowc.o,0,0,0,0,0,0,0,0,0
+lib_a-memchr.o,0,0,0,0,0,0,0,0,0
+lib_a-memcmp.o,0,0,0,0,0,0,0,0,0
+lib_a-memcpy.o,0,0,0,0,0,0,0,0,0
+lib_a-memmove.o,0,0,0,0,0,0,0,0,0
+lib_a-memset.o,0,0,0,0,0,0,0,0,0
+lib_a-month_lengths.o,0,0,0,0,0,0,0,0,0
+lib_a-qsort.o,0,0,0,0,0,0,0,0,0
+lib_a-sccl.o,0,0,0,0,0,0,0,0,0
+lib_a-siscanf.o,0,0,0,0,0,0,0,0,0
+lib_a-strcat.o,0,0,0,0,0,0,0,0,0
+lib_a-strcmp.o,0,0,0,0,0,0,0,0,0
+lib_a-strcpy.o,0,0,0,0,0,0,0,0,0
+lib_a-strcspn.o,0,0,0,0,0,0,0,0,0
+lib_a-strerror.o,0,0,0,0,0,0,0,0,0
+lib_a-strerror_r.o,0,0,0,0,0,0,0,0,0
+lib_a-strlcat.o,0,0,0,0,0,0,0,0,0
+lib_a-strlcpy.o,0,0,0,0,0,0,0,0,0
+lib_a-strlen.o,0,0,0,0,0,0,0,0,0
+lib_a-strncmp.o,0,0,0,0,0,0,0,0,0
+lib_a-strncpy.o,0,0,0,0,0,0,0,0,0
+lib_a-strstr.o,0,0,0,0,0,0,0,0,0
+lib_a-strtol.o,0,0,0,0,0,0,0,0,0
+lib_a-strtoll.o,0,0,0,0,0,0,0,0,0
+lib_a-strtoul.o,0,0,0,0,0,0,0,0,0
+lib_a-strtoull.o,0,0,0,0,0,0,0,0,0
+lib_a-svfiscanf.o,0,0,0,0,0,0,0,0,0
+lib_a-tzcalc_limits.o,0,0,0,0,0,0,0,0,0
+lib_a-tzlock.o,0,0,0,0,0,0,0,0,0
+lib_a-tzset.o,0,0,0,0,0,0,0,0,0
+lib_a-tzset_r.o,0,0,0,0,0,0,0,0,0
+lib_a-tzvars.o,0,0,0,0,0,0,0,0,0
+lib_a-u_strerr.o,0,0,0,0,0,0,0,0,0
+lib_a-ungetc.o,0,0,0,0,0,0,0,0,0
+lib_a-utoa.o,0,0,0,0,0,0,0,0,0
+_addsubdf3.o,0,0,0,0,0,0,0,0,0
+_bswapdi2.o,0,0,0,0,0,0,0,0,0
+_cmpdf2.o,0,0,0,0,0,0,0,0,0
+_divdf3.o,0,0,0,0,0,0,0,0,0
+_fixdfsi.o,0,0,0,0,0,0,0,0,0
+_floatsidf.o,0,0,0,0,0,0,0,0,0
+_muldf3.o,0,0,0,0,0,0,0,0,0
+Total sizes:,,,
+Used static IRAM,46786 bytes (239934 remain 16.3% used),,,
+.text size,45759 bytes,,,
+.vectors size,1027 bytes,,,
+Used stat D/IRAM,11772 bytes (123396 remain 8.7% used),,,
+.data size,9252 bytes,,,
+.bss  size,2520 bytes,,,
+Used Flash size ,114851 bytes,,,
+.text,87463 bytes,,,
+.rodata,27132 bytes,,,
+Total image size,170889 bytes (.bin may be padded larger),,,
+
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+ref_counts,37
+p_uart_obj,12
+Section total: 49
+
+Symbols from section: .dram0.data
+uart_context,48
+periph_spinlock,8
+uart_selectlock,8
+Section total: 64
+
+Symbols from section: .flash.appdesc
+Section total: 0
+
+Symbols from section: .flash.rodata
+periph_module_enable.str1.4,64
+uart_disable_intr_mask_and_return_prev.str1.4,54
+uart_pattern_pop_pos.str1.4,49
+uart_set_stop_bits.str1.4,46
+uart_set_word_length.str1.4,46
+uart_flush_input.str1.4,45
+__FUNCTION__$8051,39
+__FUNCTION__$8043,27
+__FUNCTION__$7806,22
+__FUNCTION__$7737,21
+__FUNCTION__$7742,21
+__func__$4997,21
+__FUNCTION__$7747,19
+__FUNCTION__$7752,19
+__FUNCTION__$7767,18
+__FUNCTION__$7772,18
+__FUNCTION__$7978,18
+__FUNCTION__$8055,17
+__FUNCTION__$7757,16
+__FUNCTION__$7762,16
+g_spi_lock_main_flash_dev,4
+Section total: 600
+
+Symbols from section: .flash.rodata_noload
+Section total: 0
+
+Symbols from section: .flash.text
+periph_module_enable,1131
+uart_flush_input,509
+uart_wait_tx_done,393
+uart_set_stop_bits,130
+uart_set_word_length,130
+periph_ll_get_rst_en_reg,125
+uart_disable_intr_mask_and_return_prev,122
+periph_ll_get_clk_en_reg,121
+uart_get_bufferedlen,108
+uart_enable_intr_mask,100
+uart_get_baudrate,88
+uart_set_parity,88
+uart_set_baudrate,84
+uart_pattern_queue_update,74
+uart_get_parity,68
+uart_get_stop_bits,68
+uart_get_word_length,64
+uart_is_driver_installed,30
+uart_set_select_notif_callback,23
+uart_get_selectlock,12
+Section total: 3468
+
+Symbols from section: .iram0.bss
+Section total: 0
+
+Symbols from section: .iram0.data
+Section total: 0
+
+Symbols from section: .iram0.text
+Section total: 0
+
+Symbols from section: .iram0.vectors
+Section total: 0
+
+Symbols from section: .noinit
+Section total: 0
+
+Symbols from section: .rtc.bss
+Section total: 0
+
+Symbols from section: .rtc.data
+Section total: 0
+
+Symbols from section: .rtc.text
+Section total: 0
+
+Symbols from section: .rtc_noinit
+Section total: 0
+
+***
 Producing JSON file output...
 
 ***
 Producing text file output...
+
+***
+Producing csv file output...
 
 ***
 Running idf_size_tests.py...

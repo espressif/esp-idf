@@ -33,17 +33,18 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False))
 
-    def size_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
+    def size_target(target_name: str, ctx: Context, args: PropertyDict, output_format: str) -> None:
         """
         Builds the app and then executes a size-related target passed in 'target_name'.
         `tool_error_handler` handler is used to suppress errors during the build,
         so size action can run even in case of overflow.
-
         """
 
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
             print_hints(stdout, stderr)
 
+        if output_format:
+            os.environ['SIZE_OUTPUT_FORMAT'] = output_format
         ensure_build_directory(args, ctx.info_name)
         run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
                    custom_error_handler=tool_error_handler)
@@ -336,6 +337,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         'global_action_callbacks': [validate_root_options],
     }
 
+    # Default value is intentionally blank, so that we know if the user explicitly specified
+    # the format and override the OUTPUT_JSON variable if it is set
+    size_options = [{'names': ['--format', 'output_format'],
+                     'type': click.Choice(['text', 'csv', 'json']),
+                     'help': 'Specify output format: text, csv or json.',
+                     'default': ''}]
+
     build_actions = {
         'actions': {
             'all': {
@@ -388,17 +396,17 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
             'size': {
                 'callback': size_target,
                 'help': 'Print basic size information about the app.',
-                'options': global_options,
+                'options': global_options + size_options,
             },
             'size-components': {
                 'callback': size_target,
                 'help': 'Print per-component size information.',
-                'options': global_options,
+                'options': global_options + size_options,
             },
             'size-files': {
                 'callback': size_target,
                 'help': 'Print per-source-file size information.',
-                'options': global_options,
+                'options': global_options + size_options,
             },
             'bootloader': {
                 'callback': build_target,

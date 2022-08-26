@@ -531,23 +531,44 @@ macro(project project_name)
     idf_build_get_property(python PYTHON)
 
     set(idf_size ${python} ${idf_path}/tools/idf_size.py)
-    if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
-        list(APPEND idf_size "--json")
-    endif()
 
     # Add size targets, depend on map file, run idf_size.py
+    # OUTPUT_JSON is passed for compatibility reasons, SIZE_OUTPUT_FORMAT
+    # environment variable is recommended and has higher priority
     add_custom_target(size
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_SIZE_TOOL=${idf_size}"
+        -D "MAP_FILE=${mapfile}"
+        -D "OUTPUT_JSON=${OUTPUT_JSON}"
+        -P "${idf_path}/tools/cmake/run_size_tool.cmake"
         DEPENDS ${mapfile}
-        COMMAND ${idf_size} ${mapfile}
-        )
+        USES_TERMINAL
+        VERBATIM
+    )
+
     add_custom_target(size-files
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_SIZE_TOOL=${idf_size}"
+        -D "IDF_SIZE_MODE=--files"
+        -D "MAP_FILE=${mapfile}"
+        -D "OUTPUT_JSON=${OUTPUT_JSON}"
+        -P "${idf_path}/tools/cmake/run_size_tool.cmake"
         DEPENDS ${mapfile}
-        COMMAND ${idf_size} --files ${mapfile}
-        )
+        USES_TERMINAL
+        VERBATIM
+    )
+
     add_custom_target(size-components
+        COMMAND ${CMAKE_COMMAND}
+        -D "IDF_SIZE_TOOL=${idf_size}"
+        -D "IDF_SIZE_MODE=--archives"
+        -D "MAP_FILE=${mapfile}"
+        -D "OUTPUT_JSON=${OUTPUT_JSON}"
+        -P "${idf_path}/tools/cmake/run_size_tool.cmake"
         DEPENDS ${mapfile}
-        COMMAND ${idf_size} --archives ${mapfile}
-        )
+        USES_TERMINAL
+        VERBATIM
+    )
 
     unset(idf_size)
 

@@ -201,7 +201,7 @@ Similarly, this will print the same information for each component used in the p
 
 Will print size information per source file in the project.
 
-If you define variable ``-DOUTPUT_JSON=1`` when running CMake (or ``idf.py``), the output will be formatted as JSON not as human readable text. See ``idf.py-size`` for more information.
+If you define the ``OUTPUT_FORMAT`` variable as ``csv`` or ``json`` when running CMake (or ``idf.py``), the output will be formatted in the specified format and not as human readable text. See ``idf.py-size`` for more information.
 
 Reconfigure the project: reconfigure
 ------------------------------------

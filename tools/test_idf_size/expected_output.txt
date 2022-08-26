@@ -6,6 +6,6 @@ Used static IRAM:   38932 bytes (  92140 remain, 29.7% used)
       .text size:   37908 bytes
    .vectors size:    1024 bytes
 Used Flash size :  186524 bytes
-      .text     :  146944 bytes
-      .rodata   :   39580 bytes
+           .text:  146944 bytes
+         .rodata:   39580 bytes
 Total image size:  234780 bytes (.bin may be padded larger)
