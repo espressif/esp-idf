@@ -217,11 +217,11 @@ static void s_adc_oneshot_with_sleep(adc_unit_t unit_id, adc_channel_t channel)
 
         //Compare
         int32_t raw_diff = raw_expected - raw_after_sleep;
-        ESP_LOGI(TAG, "ADC%d Chan%d: raw difference: %d", unit_id + 1, channel, raw_diff);
+        ESP_LOGI(TAG, "ADC%d Chan%d: raw difference: %"PRId32, unit_id + 1, channel, raw_diff);
 
         if (do_calibration) {
                 int32_t cali_diff = cali_expected - cali_after_sleep;
-                ESP_LOGI(TAG, "ADC%d Chan%d: cali difference: %d", unit_id + 1, channel, cali_diff);
+                ESP_LOGI(TAG, "ADC%d Chan%d: cali difference: %"PRId32, unit_id + 1, channel, cali_diff);
         }
 
         //Test Calibration registers

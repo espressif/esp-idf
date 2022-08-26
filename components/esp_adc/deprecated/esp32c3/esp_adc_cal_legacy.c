@@ -101,7 +101,7 @@ static esp_err_t prepare_calib_data_for(int version_num, adc_unit_t adc_num, adc
  */
 static void calculate_characterization_coefficients(const adc_calib_parsed_info_t *parsed_data, esp_adc_cal_characteristics_t *chars)
 {
-    ESP_LOGD(LOG_TAG, "Calib V1, Cal Voltage = %d, Digi out = %d\n", parsed_data->efuse_data.ver1.voltage, parsed_data->efuse_data.ver1.digi);
+    ESP_LOGD(LOG_TAG, "Calib V1, Cal Voltage = %"PRId32", Digi out = %"PRId32, parsed_data->efuse_data.ver1.voltage, parsed_data->efuse_data.ver1.digi);
 
     chars->coeff_a = coeff_a_scaling * parsed_data->efuse_data.ver1.voltage / parsed_data->efuse_data.ver1.digi;
     chars->coeff_b = 0;
@@ -147,7 +147,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     }
 
     calculate_characterization_coefficients(&efuse_parsed_data, chars);
-    ESP_LOGD(LOG_TAG, "adc%d (atten leven %d) calibration done: A:%d B:%d\n", adc_num, atten, chars->coeff_a, chars->coeff_b);
+    ESP_LOGD(LOG_TAG, "adc%d (atten leven %d) calibration done: A:%"PRId32" B:%"PRId32, adc_num, atten, chars->coeff_a, chars->coeff_b);
 
     // Initialize remaining fields
     chars->adc_num = adc_num;

@@ -114,7 +114,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     assert(success);
     success = calculate_characterization_coefficients(&efuse_parsed_data, chars);
     assert(success);
-    ESP_LOGD(TAG, "adc%d (atten leven %d) calibration done: A:%d B:%d\n", config->unit_id, config->atten, chars->coeff_a, chars->coeff_b);
+    ESP_LOGD(TAG, "adc%d (atten leven %d) calibration done: A:%"PRId32" B:%"PRId32"\n", config->unit_id, config->atten, chars->coeff_a, chars->coeff_b);
     chars->unit_id = config->unit_id;
     chars->atten = config->atten;
 
