@@ -104,6 +104,46 @@ extern "C" {
 #define CACHE_MEMORY_DBANK0_ADDR        0x3fcf0000
 #define CACHE_MEMORY_DBANK1_ADDR        0x3fcf8000
 
+
+#define SOC_MMU_DBUS_VADDR_BASE               0x3C000000
+#define SOC_MMU_IBUS_VADDR_BASE               0x42000000
+
+/*------------------------------------------------------------------------------
+ * MMU Linear Address
+ *----------------------------------------------------------------------------*/
+/**
+ * - 64KB MMU page size: the last 0xFFFF, which is the offset
+ * - 512 MMU entries, needs 0x1FF to hold it.
+ *
+ * Therefore, 0x1FF,FFFF
+ */
+#define SOC_MMU_LINEAR_ADDR_MASK              0x1FFFFFF
+
+/**
+ * - If high linear address isn't 0, this means MMU can recognize these addresses
+ * - If high linear address is 0, this means MMU linear address range is equal or smaller than vaddr range.
+ *   Under this condition, we use the max linear space.
+ */
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW      (IRAM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#if ((IRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK) > 0)
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_HIGH     (IRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+#else
+#define SOC_MMU_IRAM0_LINEAR_ADDRESS_HIGH     (SOC_MMU_LINEAR_ADDR_MASK + 1)
+#endif
+
+#define SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW      (DRAM0_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
+#if ((DRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK) > 0)
+#define SOC_MMU_DRAM0_LINEAR_ADDRESS_HIGH     (DRAM0_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
+#else
+#define SOC_MMU_DRAM0_LINEAR_ADDRESS_HIGH     (SOC_MMU_LINEAR_ADDR_MASK + 1)
+#endif
+
+/**
+ * I/D share the MMU linear address range
+ */
+_Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -15,32 +15,15 @@ extern "C" {
 #endif
 
 /**
- * @brief Get the psram mapped vaddr range
+ * @brief Check if the pointer is on PSRAM
  *
- * @param[out] out_vstart PSRAM virtual address start
- * @param[out] out_vend   PSRAM virtual address end
- *
- * @note [out_vstart, out_vend), `out_vend` isn't included.
+ * @param[in] p  The pointer to check
  *
  * @return
- *        - ESP_OK                  On success
- *        - ESP_ERR_INVALID_STATE   PSRAM is not initialized successfully
+ *        - False: the pointer isn't on PSRAM, or PSRAM isn't initialised successfully
+ *        - True:  the pointer is on PSRAM
  */
-esp_err_t esp_psram_extram_get_mapped_range(intptr_t *out_vstart, intptr_t *out_vend);
-
-/**
- * @brief Get the psram alloced vaddr range
- *
- * @param[out] out_vstart PSRAM virtual address start
- * @param[out] out_vend   PSRAM virtual address end
- *
- * @note [out_vstart, out_vend), `out_vend` isn't included.
- *
- * @return
- *        - ESP_OK                  On success
- *        - ESP_ERR_INVALID_STATE   PSRAM is not initialized successfully
- */
-esp_err_t esp_psram_extram_get_alloced_range(intptr_t *out_vstart, intptr_t *out_vend);
+bool esp_psram_check_ptr_addr(const void *p);
 
 /**
  * @brief Add the initialized PSRAM to the heap allocator.

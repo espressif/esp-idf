@@ -21,6 +21,14 @@ typedef enum {
 } mmu_page_size_t;
 
 /**
+ * MMU virtual address type
+ */
+typedef enum {
+    MMU_VADDR_DATA,
+    MMU_VADDR_INSTRUCTION,
+} mmu_vaddr_t;
+
+/**
  * External physical memory
  */
 typedef enum {

@@ -19,6 +19,38 @@ extern "C" {
 #endif
 
 /**
+ * Convert MMU virtual address to linear address
+ *
+ * @param vaddr  virtual address
+ *
+ * @return linear address
+ */
+static inline uint32_t mmu_ll_vaddr_to_laddr(uint32_t vaddr)
+{
+    return vaddr & SOC_MMU_LINEAR_ADDR_MASK;
+}
+
+/**
+ * Convert MMU linear address to virtual address
+ *
+ * @param laddr       linear address
+ * @param vaddr_type  virtual address type, could be instruction type or data type. See `mmu_vaddr_t`
+ *
+ * @return virtual address
+ */
+static inline uint32_t mmu_ll_laddr_to_vaddr(uint32_t laddr, mmu_vaddr_t vaddr_type)
+{
+    uint32_t vaddr_base = 0;
+    if (vaddr_type == MMU_VADDR_DATA) {
+        vaddr_base = SOC_MMU_DBUS_VADDR_BASE;
+    } else {
+        vaddr_base = SOC_MMU_IBUS_VADDR_BASE;
+    }
+
+    return vaddr_base | laddr;
+}
+
+/**
  * Get MMU page size
  *
  * @param mmu_id  MMU ID
