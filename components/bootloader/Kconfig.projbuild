@@ -403,7 +403,6 @@ menu "Bootloader config"
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE
         hex "Size in bytes for custom purposes"
-        range 0 0x10
         default 0
         depends on BOOTLOADER_CUSTOM_RESERVE_RTC
         help
