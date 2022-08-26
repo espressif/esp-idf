@@ -39,8 +39,10 @@ class DeprecatedOptions(object):
         # r_dic maps deprecated options to new options; rev_r_dic maps in the opposite direction
         self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files)
 
-        # note the '=' at the end of regex for not getting partial match of configs
-        self._RE_CONFIG = re.compile(r'{}(\w+)='.format(self.config_prefix))
+        # note the '=' at the end of regex for not getting partial match of configs.
+        # Also match if the config option is followed by a whitespace, this is the case
+        # in sdkconfig.defaults files contaning "# CONFIG_MMM_NNN is not set".
+        self._RE_CONFIG = re.compile(r'{}(\w+)(=|\s+)'.format(self.config_prefix))
 
     def _parse_replacements(self, repl_paths):
         rep_dic = {}
