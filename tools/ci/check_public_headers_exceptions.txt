@@ -145,8 +145,6 @@ components/esp_rom/include/esp32/rom/uart.h
 
 ### To be fixed: files which don't compile for esp32s3 target:
 
-components/soc/esp32s3/include/soc/world_controller_struct.h
-
 
 ### To be fixed: files which don't compile for esp32c3 target:
 
