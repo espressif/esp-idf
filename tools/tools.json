@@ -946,7 +946,7 @@
       "description": "Ccache (compiler cache)",
       "export_paths": [
         [
-          "ccache-4.3-windows-64"
+          "ccache-4.6.2-windows-x86_64"
         ]
       ],
       "export_vars": {
@@ -974,12 +974,12 @@
       "version_regex": "ccache version ([0-9.]+)",
       "versions": [
         {
-          "name": "4.3",
+          "name": "4.6.2",
           "status": "recommended",
           "win64": {
-            "sha256": "a9cacae73c3906d8193456328bee74f7748cb1559a32eaced9ee78eadd416105",
-            "size": 1550675,
-            "url": "https://github.com/ccache/ccache/releases/download/v4.3/ccache-4.3-windows-64.zip"
+            "sha256": "bf230b0936962eae43a3410d6477a7d0b9308e29f89a3091881d22e2502604c5",
+            "size": 1957177,
+            "url": "https://github.com/ccache/ccache/releases/download/v4.6.2/ccache-4.6.2-windows-x86_64.zip"
           }
         }
       ]
