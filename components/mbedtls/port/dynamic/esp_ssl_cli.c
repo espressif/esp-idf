@@ -8,8 +8,10 @@
 #include "esp_mbedtls_dynamic_impl.h"
 
 int __real_mbedtls_ssl_handshake_client_step(mbedtls_ssl_context *ssl);
+int __real_mbedtls_ssl_write_client_hello(mbedtls_ssl_context *ssl);
 
 int __wrap_mbedtls_ssl_handshake_client_step(mbedtls_ssl_context *ssl);
+int __wrap_mbedtls_ssl_write_client_hello(mbedtls_ssl_context *ssl);
 
 static const char *TAG = "SSL client";
 
@@ -26,6 +28,16 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
             CHECK_OK(esp_mbedtls_free_tx_buffer(ssl));
         }
     }
+
+    /* Change state now, so that it is right in mbedtls_ssl_read_record(), used
+     * by DTLS for dropping out-of-sequence ChangeCipherSpec records */
+#if defined(MBEDTLS_SSL_SESSION_TICKETS)
+    if( ssl->state == MBEDTLS_SSL_SERVER_CHANGE_CIPHER_SPEC &&
+        ssl->handshake->new_session_ticket != 0 )
+    {
+        ssl->state = MBEDTLS_SSL_SERVER_NEW_SESSION_TICKET;
+    }
+#endif
 
     switch (state) {
         case MBEDTLS_SSL_HELLO_REQUEST:
@@ -184,6 +196,17 @@ int __wrap_mbedtls_ssl_handshake_client_step(mbedtls_ssl_context *ssl)
     CHECK_OK(manage_resource(ssl, true));
 
     CHECK_OK(__real_mbedtls_ssl_handshake_client_step(ssl));
+
+    CHECK_OK(manage_resource(ssl, false));
+
+    return 0;
+}
+
+int __wrap_mbedtls_ssl_write_client_hello(mbedtls_ssl_context *ssl)
+{
+    CHECK_OK(manage_resource(ssl, true));
+
+    CHECK_OK(__real_mbedtls_ssl_write_client_hello(ssl));
 
     CHECK_OK(manage_resource(ssl, false));
 
