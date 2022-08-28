@@ -32,12 +32,6 @@ if(NOT ULP_COCPU_IS_RISCV)
     endif()
 endif()
 
-if(ULP_COCPU_IS_RISCV)
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
-else()
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
-endif()
-
 
 set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
 get_filename_component(sdkconfig_dir ${SDKCONFIG_HEADER} DIRECTORY)
@@ -54,16 +48,23 @@ target_include_directories(${ULP_APP_NAME} PRIVATE ${COMPONENT_INCLUDES})
 
 list(APPEND ULP_PREPROCESSOR_ARGS -D__ASSEMBLER__)
 
-# Preprocess linker script, pre-linking
+# Pre-process the linker script
+if(ULP_COCPU_IS_RISCV)
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
+else()
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
+endif()
 get_filename_component(ULP_LD_SCRIPT ${ULP_LD_TEMPLATE} NAME)
 add_custom_command(OUTPUT ${ULP_LD_SCRIPT}
                    COMMAND ${CMAKE_C_COMPILER} -E -P -xc -o ${ULP_LD_SCRIPT} ${ULP_PREPROCESSOR_ARGS} ${ULP_LD_TEMPLATE}
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                   DEPENDS ${ULP_LD_TEMPLATE} ${SDKCONFIG_HEADER}
+                   MAIN_DEPENDENCY ${ULP_LD_TEMPLATE}
+                   DEPENDS ${SDKCONFIG_HEADER}
+                   COMMENT "Generating ${ULP_LD_SCRIPT} linker script..."
                    VERBATIM)
-add_custom_target(${ULP_APP_NAME}_ld_script
-                  DEPENDS ${ULP_LD_SCRIPT}
-                  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_target(ld_script DEPENDS ${ULP_LD_SCRIPT})
+add_dependencies(${ULP_APP_NAME} ld_script)
+target_link_options(${ULP_APP_NAME} PRIVATE SHELL:-T ${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT})
 
 # To avoid warning "Manually-specified variables were not used by the project"
 set(bypassWarning "${IDF_TARGET}")
@@ -76,19 +77,6 @@ if(ULP_COCPU_IS_RISCV)
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_uart.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c")
-
-    #dummy loop to force pre-processed linker file generation:
-    foreach(ulp_s_source ${ULP_S_SOURCES})
-        set(noop ${ulp_s_source})
-
-        add_custom_command(OUTPUT ${noop}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMAND cmake -E echo
-            DEPENDS ${ULP_LD_SCRIPT}
-            )
-
-        set_source_files_properties(${noop} PROPERTIES NOOP_PROPERTY ${ULP_LD_SCRIPT})
-    endforeach()
 
     set(DUMP_SYMBOL_ARGS -g)
     set(MAP_GEN_EXTRA_ARGS --riscv)
@@ -112,7 +100,7 @@ else()
                            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                            COMMAND ${CMAKE_C_COMPILER} -E -P -xc ${ULP_PREPROCESSOR_ARGS}
                            -o ${ulp_ps_output} ${ulp_s_source}
-                           DEPENDS ${ulp_s_source} ${ULP_LD_SCRIPT}
+                           DEPENDS ${ulp_s_source}
                            VERBATIM)
         # During assembly file compilation, output listing files as well.
         set_source_files_properties(${ulp_ps_output}
@@ -152,6 +140,3 @@ add_custom_target(build
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.ld
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.h
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-target_link_libraries(${ULP_APP_NAME} "-T\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT}\"")
-set_target_properties(${ULP_APP_NAME} PROPERTIES LINK_DEPENDS ${ULP_LD_SCRIPT})
