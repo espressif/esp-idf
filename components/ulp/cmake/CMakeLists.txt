@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 include(${IDF_PATH}/tools/cmake/utilities.cmake)
 project(${ULP_APP_NAME} ASM C)
+add_executable(${ULP_APP_NAME})
 
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
 
@@ -49,7 +50,7 @@ list(APPEND ULP_PREPROCESSOR_ARGS ${component_includes})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${COMPONENT_DIR})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${sdkconfig_dir})
 
-include_directories(${COMPONENT_INCLUDES})
+target_include_directories(${ULP_APP_NAME} PRIVATE ${COMPONENT_INCLUDES})
 
 list(APPEND ULP_PREPROCESSOR_ARGS -D__ASSEMBLER__)
 
@@ -89,17 +90,16 @@ if(ULP_COCPU_IS_RISCV)
         set_source_files_properties(${noop} PROPERTIES NOOP_PROPERTY ${ULP_LD_SCRIPT})
     endforeach()
 
-    #creates the executable:
-    add_executable(${ULP_APP_NAME} ${ULP_S_SOURCES})
     set(DUMP_SYMBOL_ARGS -g)
     set(MAP_GEN_EXTRA_ARGS --riscv)
-    set(EXTRA_LINKER_ARGS "-nostartfiles")
-    list(APPEND EXTRA_LINKER_ARGS "-Wl,--gc-sections")
-    list(APPEND EXTRA_LINKER_ARGS "-Wl,-Map=\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map\"")
+    target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
+    target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
+    target_link_options(${ULP_APP_NAME} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
+    target_sources(${ULP_APP_NAME} PRIVATE ${ULP_S_SOURCES})
     #Makes the csr utillies for riscv visible:
     target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include"
                                                        "${IDF_PATH}/components/ulp/ulp_riscv/shared/include")
-    target_link_libraries(${ULP_APP_NAME} "-T \"${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.periperals.ld\"")
+    target_link_options(${ULP_APP_NAME} PRIVATE -T ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.periperals.ld)
     target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
 
 else()
@@ -121,11 +121,10 @@ else()
         list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
     endforeach()
 
-    # Create an executable
-    add_executable(${ULP_APP_NAME} ${ULP_PS_SOURCES})
     set(DUMP_SYMBOL_ARGS -g -f posix)
     set(MAP_GEN_EXTRA_ARGS .)
-    set(EXTRA_LINKER_ARGS "-Map=\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map\"")
+    target_link_options(${ULP_APP_NAME} PRIVATE -Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
+    target_sources(${ULP_APP_NAME} PRIVATE ${ULP_PS_SOURCES})
 
 endif()
 
@@ -155,5 +154,4 @@ add_custom_target(build
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${ULP_APP_NAME} "-T\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT}\"")
-target_link_libraries(${ULP_APP_NAME} ${EXTRA_LINKER_ARGS})
 set_target_properties(${ULP_APP_NAME} PROPERTIES LINK_DEPENDS ${ULP_LD_SCRIPT})
