@@ -323,43 +323,6 @@ function(esptool_py_flash_target_image target_name image_name offset image)
     endif()
 endfunction()
 
-# Use this function to generate a ternary expression that will be evaluated.
-# - retexpr is the expression returned by the function
-# - condition is the expression evaluated to a boolean
-# - condtrue is the expression to evaluate if condition is true
-# - condfalse is the expression to evaluate if condition is false
-# This function can be summarized as:
-#   retexpr = condition ? condtrue : condfalse
-function(if_expr_generator retexpr condition condtrue condfalse)
-    # CMake version 3.8 and above provide a ternary operator for expression
-    # generator. For version under, we must simulate this behaviour
-    if(${CMAKE_VERSION} VERSION_LESS "3.8.0")
-
-        # If condtrue is not empty, then we have to do something in case the
-        # condition is true. Generate the expression that will be used in that
-        # case
-        if(condtrue)
-            set(iftrue "$<${condition}:${condtrue}>")
-        endif()
-
-        # Same for condfalse. If it is empty, it is useless to create an
-        # expression that will be evaluated later
-        if(condfalse)
-            set(iffalse "$<$<NOT:${condition}>:${condfalse}>")
-        endif()
-
-        # Concatenate the previously generated expressions. If one of them was
-        # not initialized (because of empty condtrue/condfalse) it will be
-        # replaced by an empty string
-        set(${retexpr} "${iftrue}${iffalse}" PARENT_SCOPE)
-
-    else()
-        # CMake 3.8 and above implement what we want, making the expression
-        # simpler
-        set(${retexpr} "$<IF:${condition},${condtrue},${condfalse}>" PARENT_SCOPE)
-    endif()
-endfunction()
-
 
 function(esptool_py_flash_target target_name main_args sub_args)
     set(single_value OFFSET IMAGE) # template file to use to be able to
@@ -442,8 +405,7 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
 encrypted-${target_name},NON_ENCRYPTED_IMAGES>>")
 
         # Prepare esptool arguments (--encrypt or --encrypt-files)
-        if_expr_generator(if_non_enc_expr ${has_non_encrypted_images}
-                          "" "--encrypt")
+        set(if_non_enc_expr "$<IF:${has_non_encrypted_images},,--encrypt>")
         set_target_properties(encrypted-${target_name} PROPERTIES SUB_ARGS
                              "${sub_args}; ${if_non_enc_expr}")
 
@@ -455,8 +417,7 @@ encrypted-${target_name},NON_ENCRYPTED_IMAGES>,\n>")
 
         # Put both lists together, use --encrypted-files if we do also have
         # plain images to flash
-        if_expr_generator(if_enc_expr ${has_non_encrypted_images}
-                          "--encrypt-files\n" "")
+        set(if_enc_expr "$<IF:${has_non_encrypted_images},--encrypt-files\n,>")
         set(flash_args_content "$<JOIN:$<TARGET_PROPERTY:\
 encrypted-${target_name},SUB_ARGS>, >\
 ${non_encrypted_files}\n\
