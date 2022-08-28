@@ -78,8 +78,6 @@ if(ULP_COCPU_IS_RISCV)
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_print.c"
         "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c")
 
-    set(DUMP_SYMBOL_ARGS -g)
-    set(MAP_GEN_EXTRA_ARGS --riscv)
     target_link_options(${ULP_APP_NAME} PRIVATE "-nostartfiles")
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,--gc-sections)
     target_link_options(${ULP_APP_NAME} PRIVATE -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
@@ -109,16 +107,18 @@ else()
         list(APPEND ULP_PS_SOURCES ${ulp_ps_output})
     endforeach()
 
-    set(DUMP_SYMBOL_ARGS -g -f posix)
-    set(MAP_GEN_EXTRA_ARGS .)
     target_link_options(${ULP_APP_NAME} PRIVATE -Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map)
     target_sources(${ULP_APP_NAME} PRIVATE ${ULP_PS_SOURCES})
 
 endif()
 
+# Currently all the supported targets have the same base address of the ULP memory in the CPU address space.
+# Modify this or pull this out of some SoC header file, if that becomes necessary.
+set(ULP_BASE_ADDR "0x50000000")
+
 # Dump the list of global symbols in a convenient format
 add_custom_command(OUTPUT ${ULP_APP_NAME}.sym
-                   COMMAND ${CMAKE_NM} ${DUMP_SYMBOL_ARGS} $<TARGET_FILE:${ULP_APP_NAME}> > ${ULP_APP_NAME}.sym
+                   COMMAND ${CMAKE_NM} -f posix -g $<TARGET_FILE:${ULP_APP_NAME}> > ${ULP_APP_NAME}.sym
                    DEPENDS ${ULP_APP_NAME}
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -129,7 +129,7 @@ add_custom_command(OUTPUT ${ULP_APP_NAME}.bin
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_custom_command(OUTPUT ${ULP_APP_NAME}.ld ${ULP_APP_NAME}.h
-                   COMMAND ${ULP_MAP_GEN} ${MAP_GEN_EXTRA_ARGS} -s ${ULP_APP_NAME}.sym -o ${ULP_APP_NAME}
+                   COMMAND ${ULP_MAP_GEN} -s ${ULP_APP_NAME}.sym -o ${ULP_APP_NAME} --base ${ULP_BASE_ADDR}
                    DEPENDS ${ULP_APP_NAME}.sym
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
