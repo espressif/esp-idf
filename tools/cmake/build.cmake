@@ -30,6 +30,9 @@ endfunction()
 function(idf_build_set_property property value)
     cmake_parse_arguments(_ "APPEND" "" "" ${ARGN})
 
+    # Fixup property value, e.g. for compatibility. (Overwrites variable 'value'.)
+    __build_fixup_property("${property}" "${value}" value)
+
     if(__APPEND)
         set_property(TARGET __idf_build_target APPEND PROPERTY ${property} ${value})
     else()
@@ -162,6 +165,21 @@ function(__build_set_lang_version)
 
     idf_build_set_property(C_COMPILE_OPTIONS "-std=${c_std}" APPEND)
     idf_build_set_property(CXX_COMPILE_OPTIONS "-std=${cxx_std}" APPEND)
+endfunction()
+
+#
+# Perform any fixes or adjustments to the values stored in IDF build properties.
+# This function only gets called from 'idf_build_set_property' and doesn't affect
+# the properties set directly via 'set_property'.
+#
+function(__build_fixup_property property value out_var)
+
+    # Fixup COMPILE_DEFINITIONS property to support -D prefix, which had to be used in IDF v4.x projects.
+    if(property STREQUAL "COMPILE_DEFINITIONS" AND NOT "${value}" STREQUAL "")
+        string(REGEX REPLACE "^-D" "" stripped_value "${value}")
+        set("${out_var}" "${stripped_value}" PARENT_SCOPE)
+    endif()
+
 endfunction()
 
 #
