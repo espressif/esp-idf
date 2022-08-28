@@ -73,7 +73,7 @@ function(__build_get_idf_git_revision)
     endif()
     # cut IDF_VER to required 32 characters.
     string(SUBSTRING "${idf_ver_t}" 0 31 idf_ver)
-    idf_build_set_property(COMPILE_DEFINITIONS "-DIDF_VER=\"${idf_ver}\"" APPEND)
+    idf_build_set_property(COMPILE_DEFINITIONS "IDF_VER=\"${idf_ver}\"" APPEND)
     git_submodule_check("${idf_path}")
     idf_build_set_property(IDF_VER ${idf_ver})
 endfunction()
@@ -90,7 +90,7 @@ function(__build_set_default_build_specifications)
     unset(c_compile_options)
     unset(cxx_compile_options)
 
-    list(APPEND compile_definitions "-D_GNU_SOURCE")
+    list(APPEND compile_definitions "_GNU_SOURCE")
 
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"
@@ -592,7 +592,7 @@ macro(idf_build_process target)
 
     # All targets built under this scope is with the ESP-IDF build system
     set(ESP_PLATFORM 1)
-    idf_build_set_property(COMPILE_DEFINITIONS "-DESP_PLATFORM" APPEND)
+    idf_build_set_property(COMPILE_DEFINITIONS "ESP_PLATFORM" APPEND)
 
     # Perform component processing (inclusion of project_include.cmake, adding component
     # subdirectories, creating library targets, linking libraries, etc.)
