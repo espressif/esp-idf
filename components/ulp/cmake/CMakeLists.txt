@@ -19,25 +19,21 @@ set(as_version ${CMAKE_MATCH_1})
 
 message(STATUS "Building ULP app ${ULP_APP_NAME}")
 
-if(ULP_COCPU_IS_RISCV)
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
-else()
+# Check the supported assembler version
+if(NOT ULP_COCPU_IS_RISCV)
     message(STATUS "ULP assembler version: ${as_version}")
-
-    # Check the supported assembler version
-    file(STRINGS ${IDF_PATH}/components/ulp/toolchain_ulp_version.mk version_file_contents)
-    string(REGEX MATCH
-        "SUPPORTED_ULP_ASSEMBLER_VERSION = (${version_pattern})"
-        as_supported_version
-        ${version_file_contents})
-    set(as_supported_version ${CMAKE_MATCH_1})
+    set(as_supported_version 2.28.51-esp-20191205)
 
     if(NOT as_version STREQUAL as_supported_version)
         message(WARNING "WARNING: ULP assembler version ${as_version} is not supported. Expected to see version: \
                         ${as_supported_version}. Please check ESP-IDF ULP setup instructions and update \
                         the toolchain, or proceed at your own risk.")
     endif()
+endif()
 
+if(ULP_COCPU_IS_RISCV)
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
+else()
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
 endif()
 
