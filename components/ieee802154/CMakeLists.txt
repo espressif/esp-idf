@@ -22,7 +22,7 @@ if(CONFIG_IEEE802154_ENABLED)
                             "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/rev2")
             endif()
         else()
-            target_link_libraries(${COMPONENT_LIB} INTERFACE "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
+            target_link_directories(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
         endif()
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> lib802154.a libphy.a libbtbb.a
                             $<TARGET_FILE:${esp_phy_lib}>)
