@@ -11,6 +11,7 @@
 #include "bootloader_flash_priv.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "esp_rom_spiflash.h"
 #include "esp_rom_efuse.h"
 #include "flash_qio_mode.h"
@@ -159,47 +160,47 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
     return ESP_OK;
 }
 
-unsigned bootloader_read_status_8b_rdsr(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_rdsr(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
 }
 
-unsigned bootloader_read_status_8b_rdsr2(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8);
 }
 
-unsigned bootloader_read_status_8b_rdsr3(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_rdsr3(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR3, 0, 0, 8);
 }
 
-unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
+IRAM_ATTR unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 }
 
-void bootloader_write_status_8b_wrsr(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_wrsr(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR, new_status, 8, 0);
 }
 
-void bootloader_write_status_8b_wrsr2(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_wrsr2(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR2, new_status, 8, 0);
 }
 
-void bootloader_write_status_8b_wrsr3(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_wrsr3(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR3, new_status, 8, 0);
 }
 
-void bootloader_write_status_16b_wrsr(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_16b_wrsr(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
-unsigned bootloader_read_status_8b_xmc25qu64a(void)
+IRAM_ATTR unsigned bootloader_read_status_8b_xmc25qu64a(void)
 {
     bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
@@ -208,7 +209,7 @@ unsigned bootloader_read_status_8b_xmc25qu64a(void)
     return read_status;
 }
 
-void bootloader_write_status_8b_xmc25qu64a(unsigned new_status)
+IRAM_ATTR void bootloader_write_status_8b_xmc25qu64a(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
