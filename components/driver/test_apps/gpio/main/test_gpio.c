@@ -622,8 +622,10 @@ TEST_CASE("GPIO_mode_test", "[gpio]")
     // Outputs high level: w/ pull up, then must read high level; w/ pull down, then must read low level
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
     gpio_set_pull_mode(TEST_GPIO_EXT_OUT_IO, GPIO_PULLUP_ONLY);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_OUTPUT_OD with GPIO_PULLUP_ONLY set error, it outputs low level");
     gpio_set_pull_mode(TEST_GPIO_EXT_OUT_IO, GPIO_PULLDOWN_ONLY);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_OUTPUT_OD with GPIO_PULLDOWN_ONLY set error, it outputs high level");
     // Outputs low level: must read low level
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
@@ -638,10 +640,12 @@ TEST_CASE("GPIO_mode_test", "[gpio]")
 #endif
     // Outputs high level: w/ pull up, then must read high level; w/ pull down, then must read low level
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
-    gpio_set_pull_mode(TEST_GPIO_EXT_OUT_IO, GPIO_PULLUP_ONLY);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(1, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_INPUT_OUTPUT_OD with GPIO_PULLUP_ONLY set error, it outputs low level");
     gpio_set_pull_mode(TEST_GPIO_EXT_OUT_IO, GPIO_PULLDOWN_ONLY);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_INPUT_OUTPUT_OD with GPIO_PULLDOWN_ONLY set error, it outputs high level");
+    gpio_set_pull_mode(TEST_GPIO_EXT_OUT_IO, GPIO_PULLUP_ONLY);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(1, gpio_get_level(TEST_GPIO_EXT_IN_IO), "direction GPIO_MODE_INPUT_OUTPUT_OD with GPIO_PULLUP_ONLY set error, it outputs low level");
     // Outputs low level: must read low level
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
     gpio_set_pull_mode(TEST_GPIO_EXT_OUT_IO, GPIO_FLOATING);
@@ -790,7 +794,7 @@ TEST_CASE_CI_IGNORE("GPIO_drive_capability_test", "[gpio]")
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
 TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 {
-    const int test_pins[] = {USB_DM_GPIO_NUM, USB_DM_GPIO_NUM};
+    const int test_pins[] = {USB_DP_GPIO_NUM, USB_DM_GPIO_NUM};
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
         .mode = GPIO_MODE_INPUT_OUTPUT,
@@ -804,8 +808,8 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
         int pin = test_pins[i];
         // test pin
         gpio_set_level(pin, 0);
-        // tested voltage is around 0v
         esp_rom_delay_us(10);
+        // tested voltage is around 0v
         TEST_ASSERT_EQUAL_INT_MESSAGE(0, gpio_get_level(pin), "get level error! the level should be low!");
         gpio_set_level(pin, 1);
         esp_rom_delay_us(10);
@@ -820,6 +824,23 @@ TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
         // tested voltage is around 3.3v
         TEST_ASSERT_EQUAL_INT_MESSAGE(1, gpio_get_level(pin), "get level error! the level should be high!");
     }
+}
+
+TEST_CASE("GPIO_USB_DP_pin_pullup_disable_test", "[gpio]")
+{
+    // This test ensures the USB D+ pin pull-up can be disabled
+    // The pull-up value of the D+ pin is controlled by the pin's pull-up value together with the USB pull-up value.
+    // If any one of the pull-up value is 1, the pin’s pull-up resistor will be enabled.
+    // USB D+ pull-up value is default to 1 (USB_SERIAL_JTAG_DP_PULLUP)
+    // Therefore, when D+ pin's pull-up value is set to 0, it will also clear USB D+ pull-up value to allow
+    // its full functionality as a normal gpio pin
+    gpio_config_t input_io = test_init_io(USB_DP_GPIO_NUM);
+    input_io.mode = GPIO_MODE_INPUT;
+    input_io.pull_up_en = 0;
+    input_io.pull_down_en = 1;
+    gpio_config(&input_io);
+
+    TEST_ASSERT_EQUAL_INT(0, gpio_get_level(USB_DP_GPIO_NUM));
 }
 #endif //SOC_USB_SERIAL_JTAG_SUPPORTED
 
