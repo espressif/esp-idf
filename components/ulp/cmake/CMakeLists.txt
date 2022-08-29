@@ -5,7 +5,7 @@ project(${ULP_APP_NAME} ASM C)
 
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
 
-set(version_pattern "[a-z0-9\.-]+")
+set(version_pattern "[a-z0-9\.-_]+")
 
 # Check assembler version
 execute_process(
@@ -23,14 +23,7 @@ if(ULP_COCPU_IS_RISCV)
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
 else()
     message(STATUS "ULP assembler version: ${as_version}")
-
-    # Check the supported assembler version
-    file(STRINGS ${IDF_PATH}/components/ulp/toolchain_ulp_version.mk version_file_contents)
-    string(REGEX MATCH
-        "SUPPORTED_ULP_ASSEMBLER_VERSION = (${version_pattern})"
-        as_supported_version
-        ${version_file_contents})
-    set(as_supported_version ${CMAKE_MATCH_1})
+    set(as_supported_version 2.35_20220830)
 
     if(NOT as_version STREQUAL as_supported_version)
         message(WARNING "WARNING: ULP assembler version ${as_version} is not supported. Expected to see version: \
