@@ -111,7 +111,7 @@ static uint32_t s_mode_mask;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-#define PERIPH_SKIP_LIGHT_SLEEP_NO 1
+#define PERIPH_SKIP_LIGHT_SLEEP_NO 2
 
 /* Indicates if light sleep shoule be skipped by peripherals. */
 static skip_light_sleep_cb_t s_periph_skip_light_sleep_cb[PERIPH_SKIP_LIGHT_SLEEP_NO];
@@ -624,6 +624,11 @@ static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
 #endif
 }
 
+static inline bool IRAM_ATTR uart_console_tx_running()
+{
+    return !uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM));
+}
+
 void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
 {
     portENTER_CRITICAL(&s_switch_lock);
@@ -738,6 +743,8 @@ void esp_pm_impl_init(void)
     esp_err_t err = uart_get_sclk_freq(clk_source, &sclk_freq);
     assert(err == ESP_OK);
     uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), CONFIG_ESP_CONSOLE_UART_BAUDRATE, sclk_freq);
+
+    esp_pm_register_skip_light_sleep_callback(uart_console_tx_running);
 #endif // CONFIG_ESP_CONSOLE_UART
 
 #ifdef CONFIG_PM_TRACE
