@@ -1,6 +1,8 @@
 Removed or Deprecated Components
 ================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Components Moved to IDF Component Registry
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -1,6 +1,8 @@
 从 ESP-IDF 中移出或弃用的组件
 ================================
 
+:link_to_translation:`en:[English]`
+
 移至 IDF Component Registry 的组件
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -18,6 +20,8 @@
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
 * `expat <https://components.espressif.com/component/espressif/expat>`_
 * `coap <https://components.espressif.com/component/espressif/coap>`_
+* `esp-cryptoauthlib <https://components.espressif.com/component/espressif/esp-cryptoauthlib>`_
+* `qrcode <https://components.espressif.com/component/espressif/qrcode>`_
 * `tjpgd <https://components.espressif.com/component/espressif/esp_jpeg>`_
 
 .. note::
