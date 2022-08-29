@@ -2,6 +2,8 @@
 #include "multi_heap.h"
 
 #include "../multi_heap_config.h"
+#include "../tlsf/tlsf_common.h"
+#include "../tlsf/tlsf_block_functions.h"
 
 #include <string.h>
 #include <assert.h>
@@ -522,4 +524,66 @@ TEST_CASE("multi_heap allocation overhead", "[multi_heap]")
     REQUIRE( free_bytes_1 - free_bytes_2 > alloc_size );
 
     multi_heap_free(heap, x);
+}
+
+/* This test will corrupt the memory of a free block in the heap and check
+ * that in the case of comprehensive poisoning the heap corruption is detected
+ * by multi_heap_check(). For light poisoning and no poisoning, the test will
+ * check that multi_heap_check() does not report the corruption.
+ */
+TEST_CASE("multi_heap poisoning detection", "[multi_heap]")
+{
+    const size_t HEAP_SIZE = 4 * 1024;
+
+    /* define heap related data */
+    uint8_t heap_mem[HEAP_SIZE];
+    memset(heap_mem, 0x00, HEAP_SIZE);
+
+    /* register the heap memory. One free block only will be available */
+    multi_heap_handle_t heap = multi_heap_register(heap_mem, HEAP_SIZE);
+
+    /* offset in memory at which to find the first free memory byte */
+    const size_t free_memory_offset = sizeof(multi_heap_info_t) + sizeof(control_t) + block_header_overhead;
+
+    /* block header of the free block under test in the heap () */
+    const block_header_t* block = (block_header_t*)(heap_mem + free_memory_offset - sizeof(block_header_t));
+
+    /* actual number of bytes potentially filled with the free pattern in the free block under test */
+    const size_t effective_free_size = block_size(block) - block_header_overhead - offsetof(block_header_t, next_free);
+
+    /* variable used in the test */
+    size_t affected_byte = 0x00;
+    uint8_t original_value = 0x00;
+    uint8_t corrupted_value = 0x00;
+
+    /* repeat the corruption a few times to cover more of the free memory */
+    for (size_t i = 0; i < effective_free_size; i++)
+    {
+        /* corrupt random bytes in the heap (it needs to be bytes from free memory in
+         * order to check that the comprehensive poisoning is doing its job) */
+        affected_byte = free_memory_offset + i;
+        corrupted_value = (rand() % UINT8_MAX) | 1;
+
+        /* keep the good value in store in order to check that when we set the byte back
+         * to its original value, multi_heap_check() no longer returns the heap corruption. */
+        original_value = heap_mem[affected_byte];
+
+        /* make sure we are not replacing the original value with the same value */
+        heap_mem[affected_byte] ^= corrupted_value;
+
+        bool is_heap_ok = multi_heap_check(heap, true);
+#ifdef CONFIG_HEAP_POISONING_COMPREHENSIVE
+        /* check that multi_heap_check() detects the corruption */
+        REQUIRE(is_heap_ok == false);
+#else
+        /* the comprehensive corruption is not checked in the multi_heap_check() */
+        REQUIRE(is_heap_ok == true);
+#endif
+        /* fix the corruption  */
+        heap_mem[affected_byte] = original_value;
+
+        /* check that multi_heap_check() stops reporting the corruption */
+        is_heap_ok = multi_heap_check(heap, true);
+        REQUIRE(is_heap_ok == true);
+    }
 }
