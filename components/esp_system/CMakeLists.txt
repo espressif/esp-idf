@@ -49,6 +49,10 @@ else()
         list(APPEND srcs "eh_frame_parser.c")
     endif()
 
+    if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
+        list(APPEND srcs "systick_etm.c")
+    endif()
+
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS include
                         PRIV_REQUIRES spi_flash esp_timer

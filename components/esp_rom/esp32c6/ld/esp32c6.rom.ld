@@ -192,8 +192,10 @@ wdt_hal_is_enabled = 0x400003bc;
  ***************************************/
 
 /* Functions */
-systimer_hal_init = 0x400003c0;
-systimer_hal_deinit = 0x400003c4;
+/* The following ROM functions are commented out because they're patched in the esp_rom_systimer.c */
+/* systimer_hal_init = 0x400003c0; */
+/* systimer_hal_deinit = 0x400003c4; */
+
 systimer_hal_set_tick_rate_ops = 0x400003c8;
 systimer_hal_get_counter_value = 0x400003cc;
 systimer_hal_get_time = 0x400003d0;
