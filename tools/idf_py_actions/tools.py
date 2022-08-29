@@ -222,12 +222,12 @@ class RunTool:
         if p.stderr and p.stdout:  # it only to avoid None type in p.std
             await asyncio.gather(
                 self.read_and_write_stream(p.stderr, stderr_output_file, sys.stderr),
-                self.read_and_write_stream(p.stdout, stdout_output_file))
+                self.read_and_write_stream(p.stdout, stdout_output_file, sys.stdout))
         await p.wait()  # added for avoiding None returncode
         return p, stderr_output_file, stdout_output_file
 
     async def read_and_write_stream(self, input_stream: asyncio.StreamReader, output_filename: str,
-                                    output_stream: TextIO=sys.stdout) -> None:
+                                    output_stream: TextIO) -> None:
         """read the output of the `input_stream` and then write it into `output_filename` and `output_stream`"""
         def delete_ansi_escape(text: str) -> str:
             ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
