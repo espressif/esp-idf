@@ -116,9 +116,10 @@ struct ble_mbuf_hdr_rxinfo
 struct ble_mbuf_hdr_txinfo
 {
     uint8_t flags;
-    uint8_t offset;
+    uint8_t reserve0;
     uint8_t pyld_len;
     uint8_t hdr_byte;
+    uint16_t offset;
 };
 
 struct ble_mbuf_hdr
