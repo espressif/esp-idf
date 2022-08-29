@@ -33,6 +33,9 @@ PROVIDE ( esp_rom_md5_init   = MD5Init );
 PROVIDE ( esp_rom_md5_update = MD5Update );
 PROVIDE ( esp_rom_md5_final  = MD5Final );
 
+PROVIDE ( esp_rom_software_reset_system = software_reset );
+PROVIDE ( esp_rom_software_reset_cpu    = software_reset_cpu );
+
 PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_install_uart_printf = ets_install_uart_printf );

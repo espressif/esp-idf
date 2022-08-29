@@ -14,6 +14,24 @@ extern "C" {
 #endif
 
 /**
+  * @brief Software Reset digital core include RTC.
+  *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
+  */
+void esp_rom_software_reset_system(void);
+
+/**
+  * @brief Software Reset cpu core.
+  *
+  * It is not recommended to use this function in esp-idf, use
+  * esp_restart() instead.
+  *
+  * @param  cpu_no : The CPU to reset, 0 for PRO CPU, 1 for APP CPU.
+  */
+void esp_rom_software_reset_cpu(int cpu_no);
+
+/**
  * @brief Print formated string to console device
  * @note float and long long data are not supported!
  *
