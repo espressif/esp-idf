@@ -272,10 +272,10 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             dut,
             config,
             expected_backtrace=[
-                # Backtrace interrupted when abort is called, IDF-842
                 'panic_abort',
                 'esp_system_abort',
-            ],
+                'abort'
+            ] + get_default_backtrace(test_func_name),
         )
     else:
         common_test(dut, config)
@@ -295,10 +295,11 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             dut,
             config,
             expected_backtrace=[
-                # Backtrace interrupted when abort is called, IDF-842
                 'panic_abort',
                 'esp_system_abort',
-            ],
+                '__ubsan_default_handler',
+                '__ubsan_handle_out_of_bounds'
+            ] + get_default_backtrace(test_func_name),
         )
     else:
         common_test(dut, config)
