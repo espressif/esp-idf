@@ -298,9 +298,11 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 
     mcpwm_critical_enter(mcpwm_num);
     int real_group_prescale = mcpwm_ll_group_get_clock_prescale(hal->dev);
-    unsigned long int real_timer_clk_hz =
+    // to avid multiplication overflow, use uint64_t here
+    uint64_t real_timer_clk_hz =
         MCPWM_GROUP_CLK_SRC_HZ / real_group_prescale / mcpwm_ll_timer_get_clock_prescale(hal->dev, timer_num);
-    mcpwm_ll_operator_set_compare_value(hal->dev, op, cmp, duty_in_us * real_timer_clk_hz / 1000000);
+    uint64_t compare_val = real_timer_clk_hz * duty_in_us / 1000000;
+    mcpwm_ll_operator_set_compare_value(hal->dev, op, cmp, (uint32_t)compare_val);
     mcpwm_ll_operator_enable_update_compare_on_tez(hal->dev, op, cmp, true);
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
