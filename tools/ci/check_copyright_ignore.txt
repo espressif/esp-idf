@@ -1140,7 +1140,6 @@ components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/spi_mem_reg.h
 components/soc/esp32s2/include/soc/spi_pins.h
 components/soc/esp32s2/include/soc/spi_reg.h
-components/soc/esp32s2/include/soc/syscon_reg.h
 components/soc/esp32s2/include/soc/systimer_reg.h
 components/soc/esp32s2/include/soc/systimer_struct.h
 components/soc/esp32s2/include/soc/touch_sensor_channel.h
