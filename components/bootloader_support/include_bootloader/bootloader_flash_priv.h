@@ -174,4 +174,12 @@ uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_n
  */
 void bootloader_enable_wp(void);
 
+/**
+ * @brief Once this function is called,
+ * any on-going internal operations will be terminated and the device will return to its default power-on
+ * state and lose all the current volatile settings, such as Volatile Status Register bits, Write Enable Latch
+ * (WEL) status, Program/Erase Suspend status, etc.
+ */
+void bootloader_spi_flash_reset(void);
+
 #endif
