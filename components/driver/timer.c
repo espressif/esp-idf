@@ -225,16 +225,18 @@ esp_err_t timer_isr_callback_add(timer_group_t group_num, timer_idx_t timer_num,
     ESP_RETURN_ON_FALSE(group_num < TIMER_GROUP_MAX, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_GROUP_NUM_ERROR);
     ESP_RETURN_ON_FALSE(timer_num < TIMER_MAX, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NUM_ERROR);
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
+    esp_err_t ret = ESP_OK;
 
     timer_disable_intr(group_num, timer_num);
     p_timer_obj[group_num][timer_num]->timer_isr_fun.fn = isr_handler;
     p_timer_obj[group_num][timer_num]->timer_isr_fun.args = args;
     p_timer_obj[group_num][timer_num]->timer_isr_fun.isr_timer_group = group_num;
-    timer_isr_register(group_num, timer_num, timer_isr_default, (void *)p_timer_obj[group_num][timer_num],
-                       intr_alloc_flags, &(p_timer_obj[group_num][timer_num]->timer_isr_fun.timer_isr_handle));
+    ret = timer_isr_register(group_num, timer_num, timer_isr_default, (void *)p_timer_obj[group_num][timer_num],
+                             intr_alloc_flags, &(p_timer_obj[group_num][timer_num]->timer_isr_fun.timer_isr_handle));
+    ESP_RETURN_ON_ERROR(ret, TIMER_TAG, "register interrupt service failed");
     timer_enable_intr(group_num, timer_num);
 
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t timer_isr_callback_remove(timer_group_t group_num, timer_idx_t timer_num)
