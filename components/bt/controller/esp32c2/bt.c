@@ -61,6 +61,12 @@
 #define EXT_FUNC_VERSION             0x20220125
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+/* ACL_DATA_MBUF_LEADINGSPCAE: The leadingspace in user info header for ACL data */
+#define ACL_DATA_MBUF_LEADINGSPCAE    4
+#endif
+
 /* Types definition
  ************************************************************************
  */
@@ -125,6 +131,8 @@ extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
                                 const uint8_t *peer_pub_key_y,
                                 const uint8_t *our_priv_key, uint8_t *out_dhkey);
 extern int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv);
+extern int ble_txpwr_set(esp_ble_enhanced_power_type_t power_type, uint16_t handle, int power_level);
+extern int ble_txpwr_get(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
 /* Local Function Declaration
  *********************************************************************
@@ -174,6 +182,7 @@ static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
 static void btdm_slp_tmr_callback(void *arg);
 static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr = NULL;
 #endif
+
 
 static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
     ._magic = OSI_COEX_MAGIC_VALUE,
@@ -238,6 +247,7 @@ static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
 #endif
 }
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
+
 bool esp_vhci_host_check_send_available(void)
 {
     if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
@@ -295,7 +305,7 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
     }
 
     if (*(data) == DATA_TYPE_ACL) {
-        struct os_mbuf *om = os_msys_get_pkthdr(0, 0);
+        struct os_mbuf *om = os_msys_get_pkthdr(0, ACL_DATA_MBUF_LEADINGSPCAE);
         assert(om);
         memcpy(om->om_data, &data[1], len - 1);
         om->om_len = len - 1;
@@ -770,15 +780,119 @@ esp_bt_controller_status_t esp_bt_controller_get_status(void)
 /* extra functions */
 esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level)
 {
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
-    return ESP_OK;
+    esp_err_t stat = ESP_FAIL;
+
+    switch (power_type) {
+    case ESP_BLE_PWR_TYPE_DEFAULT:
+    case ESP_BLE_PWR_TYPE_ADV:
+    case ESP_BLE_PWR_TYPE_SCAN:
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    case ESP_BLE_PWR_TYPE_CONN_HDL0:
+    case ESP_BLE_PWR_TYPE_CONN_HDL1:
+    case ESP_BLE_PWR_TYPE_CONN_HDL2:
+    case ESP_BLE_PWR_TYPE_CONN_HDL3:
+    case ESP_BLE_PWR_TYPE_CONN_HDL4:
+    case ESP_BLE_PWR_TYPE_CONN_HDL5:
+    case ESP_BLE_PWR_TYPE_CONN_HDL6:
+    case ESP_BLE_PWR_TYPE_CONN_HDL7:
+    case ESP_BLE_PWR_TYPE_CONN_HDL8:
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_CONN, power_type, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    default:
+        stat = ESP_ERR_NOT_SUPPORTED;
+        break;
+    }
+
+    return stat;
+}
+
+esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle, esp_power_level_t power_level)
+{
+    esp_err_t stat = ESP_FAIL;
+    switch (power_type) {
+    case ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT:
+    case ESP_BLE_ENHANCED_PWR_TYPE_SCAN:
+    case ESP_BLE_ENHANCED_PWR_TYPE_INIT:
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
+    case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
+        if (ble_txpwr_set(power_type, handle, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    default:
+        stat = ESP_ERR_NOT_SUPPORTED;
+        break;
+    }
+
+    return stat;
 }
 
 esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
 {
-    ESP_LOGW(NIMBLE_PORT_LOG_TAG, "%s not implemented, return OK", __func__);
-    return ESP_PWR_LVL_N0;
+    int tx_level = 0;
+
+    switch (power_type) {
+    case ESP_BLE_PWR_TYPE_ADV:
+    case ESP_BLE_PWR_TYPE_SCAN:
+    case ESP_BLE_PWR_TYPE_DEFAULT:
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        break;
+    case ESP_BLE_PWR_TYPE_CONN_HDL0:
+    case ESP_BLE_PWR_TYPE_CONN_HDL1:
+    case ESP_BLE_PWR_TYPE_CONN_HDL2:
+    case ESP_BLE_PWR_TYPE_CONN_HDL3:
+    case ESP_BLE_PWR_TYPE_CONN_HDL4:
+    case ESP_BLE_PWR_TYPE_CONN_HDL5:
+    case ESP_BLE_PWR_TYPE_CONN_HDL6:
+    case ESP_BLE_PWR_TYPE_CONN_HDL7:
+    case ESP_BLE_PWR_TYPE_CONN_HDL8:
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_CONN, power_type);
+        break;
+    default:
+        return ESP_PWR_LVL_INVALID;
+    }
+
+    if (tx_level < 0) {
+        return ESP_PWR_LVL_INVALID;
+    }
+
+    return (esp_power_level_t)tx_level;
 }
+
+esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle)
+{
+    int tx_level = 0;
+
+    switch (power_type) {
+    case ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT:
+    case ESP_BLE_ENHANCED_PWR_TYPE_SCAN:
+    case ESP_BLE_ENHANCED_PWR_TYPE_INIT:
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        break;
+    case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
+    case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
+        tx_level = ble_txpwr_get(power_type, handle);
+        break;
+    default:
+        return ESP_PWR_LVL_INVALID;
+    }
+
+    if (tx_level < 0) {
+       return ESP_PWR_LVL_INVALID;
+    }
+
+    return (esp_power_level_t)tx_level;
+}
+
 
 #if (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED == true)
 
