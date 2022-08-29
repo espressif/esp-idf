@@ -5,7 +5,7 @@ project(${ULP_APP_NAME} ASM C)
 
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
 
-set(version_pattern "[a-z0-9\.-]+")
+set(version_pattern "[a-z0-9\.-_]+")
 
 # Check assembler version
 execute_process(
