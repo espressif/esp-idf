@@ -132,6 +132,17 @@ static inline void rtc_cntl_ll_timer2_set_touch_wait_cycle(uint32_t wait_cycle)
     REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, wait_cycle);
 }
 
+static inline void rtc_cntl_ll_reset_system(void)
+{
+    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+}
+
+static inline void rtc_cntl_ll_reset_cpu(int cpu_no)
+{
+    uint32_t rtc_cntl_rst = (cpu_no == 0) ? RTC_CNTL_SW_PROCPU_RST : RTC_CNTL_SW_APPCPU_RST;
+    REG_WRITE(RTC_CNTL_OPTIONS0_REG, rtc_cntl_rst);
+}
+
 #ifdef __cplusplus
 }
 #endif
