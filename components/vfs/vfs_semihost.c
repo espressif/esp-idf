@@ -310,7 +310,7 @@ static int vfs_semihost_unlink(void* ctx, const char *restrict path)
 
 static DIR* vfs_semihost_opendir(void* ctx, const char *restrict path)
 {
-    if (!cpu_hal_is_debugger_attached()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         return NULL;
     }
 
@@ -391,7 +391,7 @@ static int vfs_semihost_readdir_r(void* ctx, DIR* dirp, struct dirent* entry, st
 
 static struct dirent* vfs_semihost_readdir(void* ctx, DIR* dirp)
 {
-    if (!cpu_hal_is_debugger_attached()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         return NULL;
     }
 
@@ -408,7 +408,7 @@ static struct dirent* vfs_semihost_readdir(void* ctx, DIR* dirp)
 
 static void vfs_semihost_seekdir(void* ctx, DIR* pdir, long offset)
 {
-    if (!cpu_hal_is_debugger_attached()) {
+    if (!esp_cpu_dbgr_is_attached()) {
         return;
     }
 
