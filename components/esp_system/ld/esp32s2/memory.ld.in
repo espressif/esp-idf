@@ -114,8 +114,8 @@ MEMORY
   rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 
   /* external memory, covers the dport, dram0, dram1 cacheable address space */
-  extern_ram_seg(RWX)  :             org = 0x3F500000,
-                                     len = 0xA80000
+  extern_ram_seg(RWX)  :             org = 0x3F800000,
+                                     len = 0x780000
 }
 
 #if defined(CONFIG_ESP32S2_USE_FIXED_STATIC_RAM_SIZE)

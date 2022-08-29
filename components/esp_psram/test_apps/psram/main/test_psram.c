@@ -26,13 +26,6 @@ __attribute__((unused)) const static char *TAG = "PSRAM";
 #define TEST_ALLOC_SIZE    (1 * 1024 * 1024)
 #endif
 
-static bool s_check_valid_psram_alloced_range(const void *p)
-{
-    intptr_t vaddr_start = 0;
-    intptr_t vaddr_end = 0;
-    esp_psram_extram_get_alloced_range(&vaddr_start, &vaddr_end);
-    return (intptr_t)p >= vaddr_start && (intptr_t)p < vaddr_end;
-}
 
 TEST_CASE("test psram heap allocable","[psram]")
 {
@@ -42,7 +35,7 @@ TEST_CASE("test psram heap allocable","[psram]")
     uintptr_t start = (uintptr_t)ext_buffer;
     uintptr_t end = (uintptr_t)ext_buffer + TEST_ALLOC_SIZE;
     ESP_LOGI(TAG, "test ext buffer start addr is 0x%x, end addr is 0x%x", start, end);
-    TEST_ASSERT(s_check_valid_psram_alloced_range((void *)start) && s_check_valid_psram_alloced_range((void *)end));
+    TEST_ASSERT(esp_psram_check_ptr_addr((void *)start) && esp_psram_check_ptr_addr((void *)end));
 
     for (int i = 0; i < TEST_ALLOC_SIZE / sizeof(uint32_t); i++) {
         ext_buffer[i] = (i + 1) ^ 0xaaaaaaaa;
