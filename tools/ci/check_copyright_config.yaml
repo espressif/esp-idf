@@ -132,6 +132,13 @@ argtable3:
     - BSD-3-Clause
     - Apache-2.0
 
+md5_hash:
+  include:
+    - 'components/esp_rom/include/**/rom/md5_hash.h'
+  allowed_licenses:
+    - BSD-3-Clause
+    - Apache-2.0
+
 xtensa:
   include:
     - 'components/xtensa/**'
