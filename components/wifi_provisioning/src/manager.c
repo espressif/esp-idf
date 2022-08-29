@@ -1349,6 +1349,7 @@ void wifi_prov_mgr_deinit(void)
         ESP_LOGD(TAG, "Manager already de-initialized");
         RELEASE_LOCK(prov_ctx_lock);
         vSemaphoreDelete(prov_ctx_lock);
+        prov_ctx_lock = NULL;
         return;
     }
 
@@ -1401,6 +1402,7 @@ void wifi_prov_mgr_deinit(void)
     }
 
     vSemaphoreDelete(prov_ctx_lock);
+    prov_ctx_lock = NULL;
 }
 
 esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const void *wifi_prov_sec_params,
