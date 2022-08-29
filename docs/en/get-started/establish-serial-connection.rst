@@ -83,7 +83,7 @@ For boards with an installed USB-to-UART bridge, the connection between the pers
                 shape = line;
                 style = dotted;
                 color = "#FF0000";
-                label = "Developmment Board\n\n\n";
+                label = "Development Board\n\n\n";
                 BRIDGE; CHIP;
             }
     }
@@ -121,7 +121,7 @@ Sometimes the USB-to-UART bridge is external. This is often used in small develo
                 shape = line;
                 style = dotted;
                 color = "#FF0000";
-                label = "Programmmer Board\n\n\n";
+                label = "Programmer Board\n\n\n";
                 BRIDGE
             }
             group {
