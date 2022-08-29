@@ -47,15 +47,19 @@ TEST_CASE("multi_heap poisoning detection", "[heap]")
         ptr[i] = CORRUPTED_VALUE;
 
         bool is_heap_ok = heap_caps_check_integrity(MALLOC_CAP_8BIT, true);
-#ifdef CONFIG_HEAP_POISONING_COMPREHENSIVE
+
+        /* fix the corruption by restoring the original value at ptr + i.
+         * We need to do this before the ASSERT because they may print a message.
+         * Using print allocates memory on the heap, so the heap has to be fixed. */
+        ptr[i] = original_value;
+
+#if CONFIG_HEAP_POISONING_COMPREHENSIVE
         /* check that heap_caps_check_integrity() detects the corruption */
         TEST_ASSERT_FALSE(is_heap_ok);
 #else
         /* the comprehensive corruption is not checked in the heap_caps_check_integrity() */
         TEST_ASSERT_TRUE(is_heap_ok);
 #endif
-        /* fix the corruption by restoring the original value at ptr + i */
-        ptr[i] = original_value;
 
         /* check that heap_caps_check_integrity() stops reporting the corruption */
         is_heap_ok = heap_caps_check_integrity(MALLOC_CAP_8BIT, true);

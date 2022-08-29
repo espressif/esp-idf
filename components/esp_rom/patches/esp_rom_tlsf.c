@@ -14,9 +14,17 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "esp_rom_caps.h"
 #include "rom/tlsf.h"
+
+/*!
+ * @brief Opaque types for TLSF implementation
+ */
+typedef void* tlsf_t;
+typedef void* pool_t;
+typedef void* tlsf_walker;
 
 /* ----------------------------------------------------------------
  * Bring certain inline functions, macro and structures from the
@@ -166,7 +174,7 @@ void tlsf_poison_check_pfunc_set(void *pfunc)
 
 #define tlsf_insist_no_assert(x) { if (!(x)) { status--; } }
 
-int tlsf_check(void* tlsf)
+int tlsf_check(tlsf_t tlsf)
 {
     int i, j;
 
@@ -211,25 +219,24 @@ int tlsf_check(void* tlsf)
 
                 mapping_insert(block_size(block), &fli, &sli);
                 tlsf_insist_no_assert(fli == i && sli == j && "block size indexed in wrong list");
-                block = block->next_free;
 
-                    /* block_size(block) returns the size of the usable memory when the block is allocated.
-                     * As the block under test is free, we need to subtract to the block size the next_free
-                     * and prev_free fields of the block header as they are not a part of the usable memory
-                     * when the block is free. In addition, we also need to subtract the size of prev_phys_block
-                     * as this field is in fact part of the current free block and not part of the next (allocated)
-                     * block. Check the comments in block_split function for more details.
-                     */
-                    const size_t actual_free_block_size = block_size(block)
-                                                            - offsetof(block_header_t, next_free)
-                                                            - block_header_overhead;
+                /* block_size(block) returns the size of the usable memory when the block is allocated.
+                 * As the block under test is free, we need to subtract to the block size the next_free
+                 * and prev_free fields of the block header as they are not a part of the usable memory
+                 * when the block is free. In addition, we also need to subtract the size of prev_phys_block
+                 * as this field is in fact part of the current free block and not part of the next (allocated)
+                 * block. Check the comments in block_split function for more details.
+                 */
+                const size_t actual_free_block_size = block_size(block)
+                                                        - offsetof(block_header_t, next_free)
+                                                        - block_header_overhead;
 
                 if (s_poison_check_region != NULL) {
-                   tlsf_insist_no_assert(s_poison_check_region((char *)block + sizeof(block_header_t),
-                                                    actual_free_block_size, is_block_free, true /* print errors */));
+                    tlsf_insist_no_assert(s_poison_check_region((char *)block + sizeof(block_header_t),
+                                          actual_free_block_size, is_block_free, true /* print errors */));
                 }
 
-
+                block = block->next_free;
             }
         }
     }
@@ -238,3 +245,63 @@ int tlsf_check(void* tlsf)
 }
 
 #undef tlsf_insist_no_assert
+
+/* Set up the TLSF ROM patches here */
+
+/*!
+ * @brief Structure to store all the functions of a TLSF implementation.
+ * The goal of this table is to change any of the address here in order
+ * to let the ROM code call another function implementation than the one
+ * in ROM.
+ */
+struct heap_tlsf_stub_table_t {
+    tlsf_t (*tlsf_create)(void* mem);
+    tlsf_t (*tlsf_create_with_pool)(void* mem, size_t bytes);
+    pool_t (*tlsf_get_pool)(tlsf_t tlsf);
+    pool_t (*tlsf_add_pool)(tlsf_t tlsf, void* mem, size_t bytes);
+    void (*tlsf_remove_pool)(tlsf_t tlsf, pool_t pool);
+
+    void* (*tlsf_malloc)(tlsf_t tlsf, size_t size);
+    void* (*tlsf_memalign)(tlsf_t tlsf, size_t align, size_t size);
+    void* (*tlsf_memalign_offs)(tlsf_t tlsf, size_t align, size_t size, size_t offset);
+    void* (*tlsf_realloc)(tlsf_t tlsf, void* ptr, size_t size);
+    void (*tlsf_free)(tlsf_t tlsf, void* ptr);
+
+    size_t (*tlsf_block_size)(void* ptr);
+    size_t (*tlsf_size)(void);
+    size_t (*tlsf_align_size)(void);
+    size_t (*tlsf_block_size_min)(void);
+    size_t (*tlsf_block_size_max)(void);
+    size_t (*tlsf_pool_overhead)(void);
+    size_t (*tlsf_alloc_overhead)(void);
+
+    void (*tlsf_walk_pool)(pool_t pool, tlsf_walker walker, void* user);
+
+    int (*tlsf_check)(tlsf_t tlsf);
+    int (*tlsf_check_pool)(pool_t pool);
+};
+
+/* We need the original table from the ROM */
+extern struct heap_tlsf_stub_table_t* heap_tlsf_table_ptr;
+
+/* We will copy the ROM table and modify the functions we patch */
+struct heap_tlsf_stub_table_t heap_tlsf_patch_table_ptr;
+
+/*!
+ * @brief Setup the TLSF ROM patches.
+ * This function must be called when setting up the heap. It will put in place the function patched
+ * from the ROM implementation.
+ * This function must not be defined as static, as it is marked as "undefined" in the linker flags
+ * (to force the linker to integrate the functions of this file inside the final binary)
+ */
+void __attribute__((constructor)) tlsf_set_rom_patches(void)
+{
+    /* Copy the ROM default table inside our table */
+    memcpy(&heap_tlsf_patch_table_ptr, heap_tlsf_table_ptr, sizeof(struct heap_tlsf_stub_table_t));
+
+    /* Set the patched function here */
+    heap_tlsf_patch_table_ptr.tlsf_check = tlsf_check;
+
+    /* Set our table as the one to use in the ROM code */
+    heap_tlsf_table_ptr = &heap_tlsf_patch_table_ptr;
+}
