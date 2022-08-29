@@ -19,8 +19,17 @@
 #define CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS 1
 #endif
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
 const static char *TAG = "esp_semihost";
 
+typedef struct {
+    char path[256];         /*!< VFS DIR stream path */
+    struct dirent e;        /*!< Last open dirent */
+    long id;                /*!< DIR* unique id */
+} vfs_semihost_dir_t;
 
 /* Additional open flags */
 
@@ -98,24 +107,20 @@ static esp_err_t vfs_semihost_drvinfo(vfs_semihost_ctx_t *ctx)
 
 static int vfs_semihost_open(void* ctx, const char* path, int flags, int mode)
 {
-    int ret_fd = -1;
-
     FAIL_IF_NO_DEBUGGER();
 
     if (path == NULL) {
         errno = ENOENT;
-        return ret_fd;
+        return -1;
     }
 
     ESP_LOGV(TAG, "%s: '%s 0x%x 0x%x'", __func__, path, flags, mode);
-
     int o_mode = get_o_mode(flags);
     if (o_mode == -1) { /* if wrong flags - error */
         errno = EINVAL;
-    } else {
-        ret_fd = semihosting_open(path, o_mode, mode);
+        return -1;
     }
-    return ret_fd;
+    return semihosting_open(path, o_mode, mode);
 }
 
 static ssize_t vfs_semihost_write(void* ctx, int fd, const void * data, size_t size)
@@ -159,6 +164,261 @@ static off_t vfs_semihost_lseek(void* ctx, int fd, off_t offset, int mode)
     return semihosting_seek(fd, offset, mode);
 }
 
+static int vfs_semihost_fstat(void* ctx, int fd, struct stat *restrict statbuf)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (statbuf == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '0x%x'", __func__, fd);
+    return semihosting_fstat(fd, statbuf);
+}
+
+static int vfs_semihost_fsync(void* ctx, int fd)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    ESP_LOGV(TAG, "%s: '0x%x'", __func__, fd);
+    return semihosting_fsync(fd);
+}
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static int vfs_semihost_mkdir(void* ctx, const char* path, mode_t mode)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (path == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s 0x%x'", __func__, path, mode);
+    return semihosting_mkdir(path, mode);
+}
+
+static int vfs_semihost_rmdir(void* ctx, const char* path)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (path == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s'", __func__, path);
+    return semihosting_rmdir(path);
+}
+
+static int vfs_semihost_access(void* ctx, const char* path, int mode)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (path == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s 0x%x'", __func__, path, mode);
+    return semihosting_access(path, mode);
+}
+
+static int vfs_semihost_truncate(void* ctx, const char* path, off_t length)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (length < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (path == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s after %ld bytes'", __func__, path, length);
+    return semihosting_truncate(path, length);
+}
+
+static int vfs_semihost_utime(void* ctx, const char* path, const struct utimbuf *times)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (path == NULL || times == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s'", __func__, path);
+    return semihosting_utime(path, times);
+}
+
+static int vfs_semihost_stat(void* ctx, const char *restrict path, struct stat *restrict statbuf)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (statbuf == NULL || path == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s'", __func__, path);
+    return semihosting_stat(path, statbuf);
+}
+
+static int vfs_semihost_rename(void* ctx, const char *restrict old_name, const char *restrict new_name)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (old_name == NULL || new_name == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s -> %s'", __func__, old_name, new_name);
+    return semihosting_rename(old_name, new_name);
+}
+
+static int vfs_semihost_link(void* ctx, const char *restrict path1, const char *restrict path2)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (path1 == NULL || path2 == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s <-> %s'", __func__, path1, path2);
+    return semihosting_link(path1, path2);
+}
+
+static int vfs_semihost_unlink(void* ctx, const char *restrict path)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    if (path == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: '%s'", __func__, path);
+    return semihosting_unlink(path);
+}
+
+static DIR* vfs_semihost_opendir(void* ctx, const char *restrict path)
+{
+    if (!cpu_hal_is_debugger_attached()) {
+        return NULL;
+    }
+
+    if (path == NULL) {
+        errno = ENOENT;
+        return NULL;
+    }
+
+    vfs_semihost_dir_t *semihost_dirp = (vfs_semihost_dir_t*)calloc(1, sizeof(vfs_semihost_dir_t));
+    if (semihost_dirp == NULL) {
+        ESP_LOGE("Error", "Error on vfs_semihost_dir_t creation");
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    strncpy(semihost_dirp->path, path, MIN(strlen(path), sizeof(semihost_dirp->path) - 1));
+    ESP_LOGV(TAG, "%s: '%s'", __func__, path);
+    int ret_fd = semihosting_opendir(path, (int)&semihost_dirp->id);
+    if (ret_fd < 0) {
+        free(semihost_dirp);
+        return NULL;
+    }
+    return (DIR *)semihost_dirp;
+}
+
+static int vfs_semihost_closedir(void* ctx, DIR* dirp)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    vfs_semihost_dir_t *semihost_dirp = (vfs_semihost_dir_t*)dirp;
+    if (semihost_dirp == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: %s %ld", __func__, semihost_dirp->path, semihost_dirp->id);
+    int ret_fd = semihosting_closedir(semihost_dirp->id);
+    free(semihost_dirp);
+    return ret_fd;
+}
+
+static long vfs_semihost_telldir(void* ctx, DIR* dirp)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    vfs_semihost_dir_t *semihost_dirp = (vfs_semihost_dir_t*)dirp;
+    if (semihost_dirp == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: %s %ld", __func__, semihost_dirp->path, semihost_dirp->id);
+    return semihosting_telldir(semihost_dirp->id);
+}
+
+static int vfs_semihost_readdir_r(void* ctx, DIR* dirp, struct dirent* entry, struct dirent** out_dirent)
+{
+    FAIL_IF_NO_DEBUGGER();
+
+    vfs_semihost_dir_t *semihost_dirp = (vfs_semihost_dir_t *)dirp;
+    if (semihost_dirp == NULL || entry == NULL || out_dirent == NULL) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    ESP_LOGV(TAG, "%s: %s %ld", __func__, semihost_dirp->path, semihost_dirp->id);
+    int ret_fd = semihosting_readdir((int)entry, semihost_dirp->id);
+    if (ret_fd < 0) {
+        if (errno == 0) { /* end of directory */
+            *out_dirent = NULL;
+            return 0;
+        }
+        return errno;
+    }
+    *out_dirent = entry;
+    return 0;
+}
+
+static struct dirent* vfs_semihost_readdir(void* ctx, DIR* dirp)
+{
+    if (!cpu_hal_is_debugger_attached()) {
+        return NULL;
+    }
+
+    vfs_semihost_dir_t *semihost_dirp = (vfs_semihost_dir_t *)dirp;
+    struct dirent *dir_ptr;
+    ESP_LOGV(TAG, "%s: %s %ld", __func__, semihost_dirp->path, semihost_dirp->id);
+    int ret = vfs_semihost_readdir_r(ctx, (DIR*)semihost_dirp, &semihost_dirp->e, &dir_ptr);
+    if (ret != 0) {
+        errno = ret;
+        return NULL;
+    }
+    return dir_ptr;
+}
+
+static void vfs_semihost_seekdir(void* ctx, DIR* pdir, long offset)
+{
+    if (!cpu_hal_is_debugger_attached()) {
+        return;
+    }
+
+    vfs_semihost_dir_t *semihost_dirp = (vfs_semihost_dir_t *) pdir;
+    if (semihost_dirp != NULL) {
+        ESP_LOGV(TAG, "%s: %s %ld '%ld' bytes", __func__, semihost_dirp->path, semihost_dirp->id, offset);
+        semihosting_seekdir(semihost_dirp->id, offset);
+    }
+}
+#endif
 esp_err_t esp_vfs_semihost_register(const char* base_path)
 {
     assert(base_path);
@@ -170,6 +430,25 @@ esp_err_t esp_vfs_semihost_register(const char* base_path)
         .close_p = &vfs_semihost_close,
         .read_p = &vfs_semihost_read,
         .lseek_p = &vfs_semihost_lseek,
+        .fsync_p = &vfs_semihost_fsync,
+        .fstat_p = &vfs_semihost_fstat,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        .mkdir_p = &vfs_semihost_mkdir,
+        .rmdir_p = &vfs_semihost_rmdir,
+        .access_p = &vfs_semihost_access,
+        .truncate_p = &vfs_semihost_truncate,
+        .utime_p = &vfs_semihost_utime,
+        .stat_p = &vfs_semihost_stat,
+        .rename_p = &vfs_semihost_rename,
+        .link_p = &vfs_semihost_link,
+        .unlink_p = &vfs_semihost_unlink,
+        .opendir_p = &vfs_semihost_opendir,
+        .closedir_p = &vfs_semihost_closedir,
+        .telldir_p = &vfs_semihost_telldir,
+        .readdir_p = &vfs_semihost_readdir,
+        .readdir_r_p = &vfs_semihost_readdir_r,
+        .seekdir_p = &vfs_semihost_seekdir,
+#endif
     };
     ESP_LOGD(TAG, "Register semihosting driver '%s'", base_path);
     if (!esp_cpu_dbgr_is_attached()) {
