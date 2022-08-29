@@ -124,8 +124,7 @@ void  wpa_neg_complete(void)
 bool  wpa_attach(void)
 {
     bool ret = true;
-    ret = wpa_sm_init(NULL, wpa_sendto_wrapper,
-                 wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
+    ret = wpa_sm_init();
     if(ret) {
         ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
     }
