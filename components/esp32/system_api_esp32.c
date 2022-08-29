@@ -106,11 +106,17 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-        DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
-        DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-        DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
-        DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_WIFIBB_RST    | \
+                                                   DPORT_FE_RST        | \
+                                                   DPORT_WIFIMAC_RST   | \
+                                                   DPORT_BTBB_RST      | \
+                                                   DPORT_BTMAC_RST     | \
+                                                   DPORT_SDIO_RST      | \
+                                                   DPORT_SDIO_HOST_RST | \
+                                                   DPORT_EMAC_RST      | \
+                                                   DPORT_MACPWR_RST    | \
+                                                   DPORT_RW_BTMAC_RST  | \
+                                                   DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart

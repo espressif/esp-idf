@@ -214,19 +214,31 @@ extern "C" {
 #define SYSTEM_WIFI_RST_M ((SYSTEM_WIFI_RST_V) << (SYSTEM_WIFI_RST_S))
 #define SYSTEM_WIFI_RST_V 0xFFFFFFFF
 #define SYSTEM_WIFI_RST_S 0
-#define SYSTEM_BB_REG_RST (BIT(13))
-#define SYSTEM_PWR_REG_RST (BIT(12))
-#define SYSTEM_BLE_REG_RST (BIT(11))
-#define SYSTEM_RW_BTLP_RST (BIT(10))
-#define SYSTEM_RW_BTMAC_RST (BIT(9))
-#define SYSTEM_MACPWR_RST (BIT(8))
-#define SYSTEM_EMAC_RST (BIT(7))
-#define SYSTEM_SDIO_RST (BIT(5))
-#define SYSTEM_BTMAC_RST (BIT(4))
-#define SYSTEM_BT_RST (BIT(3))
-#define SYSTEM_MAC_RST (BIT(2))
-#define SYSTEM_FE_RST (BIT(1))
-#define SYSTEM_BB_RST (BIT(0))
+
+#define SYSTEM_WIFIBB_RST           BIT(0)
+#define SYSTEM_FE_RST               BIT(1)
+#define SYSTEM_WIFIMAC_RST          BIT(2)
+#define SYSTEM_BTBB_RST             BIT(3)    /* Bluetooth Baseband */
+#define SYSTEM_BTMAC_RST            BIT(4)    /* deprecated */
+#define SYSTEM_SDIO_RST             BIT(5)
+#define SYSTEM_EMAC_RST             BIT(7)
+#define SYSTEM_MACPWR_RST           BIT(8)
+#define SYSTEM_RW_BTMAC_RST         BIT(9)    /* Bluetooth MAC */
+#define SYSTEM_RW_BTLP_RST          BIT(10)   /* Bluetooth Low Power Module */
+#define SYSTEM_RW_BTMAC_REG_RST     BIT(11)   /* Bluetooth MAC Regsiters */
+#define SYSTEM_RW_BTLP_REG_RST      BIT(12)   /* Bluetooth Low Power Registers */
+#define SYSTEM_BTBB_REG_RST         BIT(13)   /* Bluetooth Baseband Registers */
+
+#define MODEM_RESET_FIELD_WHEN_PU   (SYSTEM_WIFIBB_RST       | \
+                                     SYSTEM_FE_RST           | \
+                                     SYSTEM_WIFIMAC_RST      | \
+                                     SYSTEM_BTBB_RST         | \
+                                     SYSTEM_BTMAC_RST        | \
+                                     SYSTEM_RW_BTMAC_RST     | \
+                                     SYSTEM_RW_BTLP_RST      | \
+                                     SYSTEM_RW_BTMAC_REG_RST | \
+                                     SYSTEM_RW_BTLP_REG_RST  | \
+                                     SYSTEM_BTBB_REG_RST)
 
 #define SYSCON_HOST_INF_SEL_REG (DR_REG_SYSCON_BASE + 0x01C)
 /* SYSCON_PERI_IO_SWAP : R/W ;bitpos:[7:0] ;default: 8'h0 ; */
