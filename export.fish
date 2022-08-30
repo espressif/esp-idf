@@ -6,15 +6,13 @@ function unset
 end
 
 function __main
+    set script_dir (dirname (readlink -m (status -f)))
+
     if not set -q IDF_PATH
-        set -gx IDF_PATH (cd (dirname (status -f)); and pwd)
+        set -gx IDF_PATH $script_dir
         echo "Setting IDF_PATH to '$IDF_PATH'"
     end
 
-    set script_dir (cd (dirname (status -f)); and pwd)
-    if test "$script_dir" = "."
-        set script_dir $pwd
-    end
     if test "$IDF_PATH" != "$script_dir"
         # Change IDF_PATH is important when there are 2 ESP-IDF versions in different directories.
         # Sourcing this script without change, would cause sourcing wrong export script.
