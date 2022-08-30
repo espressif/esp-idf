@@ -148,7 +148,7 @@ static int do_i2cdetect_cmd(int argc, char **argv)
     return 0;
 }
 
-static void register_i2cdectect(void)
+static void register_i2cdetect(void)
 {
     const esp_console_cmd_t i2cdetect_cmd = {
         .command = "i2cdetect",
@@ -407,7 +407,7 @@ static void register_i2cdump(void)
 void register_i2ctools(void)
 {
     register_i2cconfig();
-    register_i2cdectect();
+    register_i2cdetect();
     register_i2cget();
     register_i2cset();
     register_i2cdump();
