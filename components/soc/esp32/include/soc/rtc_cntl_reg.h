@@ -1070,6 +1070,7 @@
 #define RTC_CNTL_DBG_ATTEN_V  0x3
 #define RTC_CNTL_DBG_ATTEN_S  24
 #define RTC_CNTL_DBG_ATTEN_DEFAULT  3
+#define RTC_CNTL_DBG_ATTEN_NODROP   0
 #define RTC_CNTL_REG          (DR_REG_RTCCNTL_BASE + 0x7c)
 /* RTC_CNTL_FORCE_PU : R/W ;bitpos:[31] ;default: 1'd1 ; */
 /*description: RTC_REG force power up*/
