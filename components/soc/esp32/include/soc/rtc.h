@@ -514,6 +514,7 @@ typedef struct rtc_sleep_config_s {
     uint32_t lslp_meminf_pd : 1;        //!< remove all peripheral force power up flags
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
     uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
+    uint32_t dbg_atten_slp : 2;             //!< voltage parameter
 } rtc_sleep_config_t;
 
 /**
@@ -547,7 +548,10 @@ typedef struct rtc_sleep_config_s {
                    : RTC_CNTL_DBIAS_0V90, \
     .lslp_meminf_pd = 1, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
-    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1 \
+    .xtal_fpu = ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
+    .dbg_atten_slp = !is_dslp(sleep_flags)                  ? RTC_CNTL_DBG_ATTEN_NODROP \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBG_ATTEN_NODROP  \
+                   : RTC_CNTL_DBG_ATTEN_DEFAULT, \
 };
 
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
