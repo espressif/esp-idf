@@ -181,7 +181,7 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
 
     /* spawn a single thread to run REPL */
     if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    &usb_serial_jtag_repl->repl_com, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
+                    usb_serial_jtag_repl, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
