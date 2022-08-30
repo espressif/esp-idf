@@ -5,5 +5,5 @@ components/ulp/test_apps/ulp_fsm:
     - if: SOC_ULP_SUPPORTED == 1
 
 components/ulp/test_apps/ulp_riscv:
-  enable:
-    - if: SOC_RISCV_COPROC_SUPPORTED == 1
+  disable:
+    - if: SOC_RISCV_COPROC_SUPPORTED != 1
