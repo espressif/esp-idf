@@ -104,7 +104,8 @@ void btc_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *data)
     msg.pid = BTC_PID_DM_SEC;
     msg.act = event;
 
-    btc_transfer_context(&msg, (btc_dm_sec_args_t *)data, sizeof(btc_dm_sec_args_t), btc_dm_sec_arg_deep_copy);
+    btc_transfer_context(&msg, (btc_dm_sec_args_t *)data,
+                            data == NULL ? 0 : sizeof(btc_dm_sec_args_t), btc_dm_sec_arg_deep_copy);
 }
 
 static void btc_enable_bluetooth_evt(tBTA_STATUS status)
