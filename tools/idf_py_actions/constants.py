@@ -12,6 +12,7 @@ GENERATORS: Dict[str, Union[str, Dict, list]] = collections.OrderedDict([
     # - dry_run: command to run in dry run mode
     # - verbose_flag: verbose flag
     # - force_progression: one liner status of the progress
+    # - envvar: environment variables
     ('Ninja', {
         'command': ['ninja'],
         'version': ['ninja', '--version'],
@@ -19,6 +20,7 @@ GENERATORS: Dict[str, Union[str, Dict, list]] = collections.OrderedDict([
         'verbose_flag': '-v',
         # as opposed to printing the status updates each in a in new line
         'force_progression': True,
+        'envvar': {}
     }),
 ])
 
@@ -28,7 +30,9 @@ if os.name != 'nt':
                                     'version': [MAKE_CMD, '--version'],
                                     'dry_run': [MAKE_CMD, '-n'],
                                     'verbose_flag': 'VERBOSE=1',
-                                    'force_progression': False}
+                                    'force_progression': False,
+                                    # CLICOLOR_FORCE if set forcing make to print ANSI escape sequence
+                                    'envvar': {'CLICOLOR_FORCE': '1'}}
 
 URL_TO_DOC = 'https://docs.espressif.com/projects/esp-idf'
 
