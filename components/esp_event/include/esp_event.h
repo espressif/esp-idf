@@ -108,9 +108,6 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 /**
  * @brief Register an event handler to the system event loop (legacy).
  *
- * @note This function is obsolete and will be deprecated soon, please use esp_event_handler_instance_register()
- *       instead.
- *
  * This function can be used to register a handler for either: (1) specific events,
  * (2) all events of a certain event base, or (3) all events known by the system event loop.
  *
@@ -143,9 +140,6 @@ esp_err_t esp_event_handler_register(esp_event_base_t event_base,
 
 /**
  * @brief Register an event handler to a specific loop (legacy).
- *
- * @note This function is obsolete and will be deprecated soon, please use esp_event_handler_instance_register_with()
- *       instead.
  *
  * This function behaves in the same manner as esp_event_handler_register, except the additional
  * specification of the event loop to register the handler to.
@@ -252,9 +246,6 @@ esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base,
 /**
  * @brief Unregister a handler with the system event loop (legacy).
  *
- * @note This function is obsolete and will be deprecated soon, please use esp_event_handler_instance_unregister()
- *       instead.
- *
  * Unregisters a handler, so it will no longer be called during dispatch.
  * Handlers can be unregistered for any combination of event_base and event_id which were previously registered.
  * To unregister a handler, the event_base and event_id arguments must match exactly the arguments passed to
@@ -279,9 +270,6 @@ esp_err_t esp_event_handler_unregister(esp_event_base_t event_base,
 
 /**
  * @brief Unregister a handler from a specific event loop (legacy).
- *
- * @note This function is obsolete and will be deprecated soon, please use esp_event_handler_instance_unregister_with()
- *       instead.
  *
  * This function behaves in the same manner as esp_event_handler_unregister, except the additional specification of
  * the event loop to unregister the handler with.
