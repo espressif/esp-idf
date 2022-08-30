@@ -1706,19 +1706,6 @@
 #endif
 
 /**
- * \def MBEDTLS_ARC4_C
- *
- * NOTE: mbedTLS-3.x release has removed support for RC4 cipher-suite.
- * TODO: IDF-4983
- *
- * Following option is kept as there are a few places in the
- * WPA supplicant component in ESP-IDF that relies on this config.
- * This shall be removed once the RC4 cipher-suite support is cleanly
- * removed from WPA supplicant component.
- */
-#undef MBEDTLS_ARC4_C
-
-/**
  * \def MBEDTLS_DHM_C
  *
  * Enable the Diffie-Hellman-Merkle module.
