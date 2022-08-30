@@ -344,12 +344,6 @@ macro(project project_name)
     # Generate compile_commands.json (needs to come after project call).
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-    # If CMAKE_COLOR_DIAGNOSTICS not set in project CMakeLists.txt or in the environment,
-    # enable it by default.
-    if(NOT DEFINED CMAKE_COLOR_DIAGNOSTICS AND NOT DEFINED ENV{CMAKE_COLOR_DIAGNOSTICS})
-        set(CMAKE_COLOR_DIAGNOSTICS ON)
-    endif()
-
     # Since components can import third-party libraries, the original definition of project() should be restored
     # before the call to add components to the build.
     function(project)
