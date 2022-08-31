@@ -32,10 +32,6 @@ if(NOT BOOTLOADER_BUILD)
         "spi_slave_hal_iram.c"
         "timer_hal.c"
         "timer_hal_iram.c"
-        "ledc_hal.c"
-        "ledc_hal_iram.c"
-        "i2c_hal.c"
-        "i2c_hal_iram.c"
         "gpio_hal.c"
         "uart_hal.c"
         "uart_hal_iram.c"
@@ -48,6 +44,14 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_SYSTIMER_SUPPORTED AND NOT CONFIG_HAL_SYSTIMER_USE_ROM_IMPL)
         list(APPEND srcs "systimer_hal.c")
+    endif()
+
+    if(CONFIG_SOC_LEDC_SUPPORTED)
+        list(APPEND srcs "ledc_hal.c" "ledc_hal_iram.c")
+    endif()
+
+    if(CONFIG_SOC_I2C_SUPPORTED)
+        list(APPEND srcs "i2c_hal.c" "i2c_hal_iram.c")
     endif()
 
     if(CONFIG_SOC_RMT_SUPPORTED)
