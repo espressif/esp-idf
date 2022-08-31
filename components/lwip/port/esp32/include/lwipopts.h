@@ -579,6 +579,11 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define TCP_MSL                         CONFIG_LWIP_TCP_MSL
 
 /**
+ * TCP_FIN_WAIT_TIMEOUT: The maximum FIN segment lifetime in milliseconds
+ */
+#define TCP_FIN_WAIT_TIMEOUT            CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT
+
+/**
  * LWIP_WND_SCALE and TCP_RCV_SCALE:
  * Set LWIP_WND_SCALE to 1 to enable window scaling.
  * Set TCP_RCV_SCALE to the desired scaling factor (shift count in the
