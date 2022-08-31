@@ -360,6 +360,11 @@
 #define TCP_MSL                         CONFIG_LWIP_TCP_MSL
 
 /**
+ * TCP_FIN_WAIT_TIMEOUT: The maximum FIN segment lifetime in milliseconds
+ */
+#define TCP_FIN_WAIT_TIMEOUT            CONFIG_LWIP_TCP_FIN_WAIT_TIMEOUT
+
+/**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
  */
 #define TCP_MAXRTX                      CONFIG_LWIP_TCP_MAXRTX

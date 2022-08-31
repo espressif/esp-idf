@@ -506,7 +506,13 @@ menu "LWIP"
             int "Maximum segment lifetime (MSL)"
             default 60000
             help
-                Set maximum segment lifetime in in milliseconds.
+                Set maximum segment lifetime in milliseconds.
+
+        config LWIP_TCP_FIN_WAIT_TIMEOUT
+            int "Maximum FIN segment lifetime"
+            default 20000
+            help
+                Set maximum segment lifetime in milliseconds.
 
         config LWIP_TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
