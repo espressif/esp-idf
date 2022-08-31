@@ -246,10 +246,14 @@ class RunTool:
             print(fit_text_in_terminal(output.strip('\n\r')), end='', file=output_stream)
 
         async def read_stream() -> Optional[str]:
-            output_b = await input_stream.readline()
-            if not output_b:
+            try:
+                output_b = await input_stream.readline()
+                return output_b.decode(errors='ignore')
+            except (asyncio.LimitOverrunError, asyncio.IncompleteReadError) as e:
+                print(e, file=sys.stderr)
                 return None
-            return output_b.decode(errors='ignore')
+            except AttributeError:
+                return None
 
         async def read_interactive_stream() -> Optional[str]:
             buffer = b''
