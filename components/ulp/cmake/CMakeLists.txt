@@ -1,36 +1,16 @@
 cmake_minimum_required(VERSION 3.16)
 
-include(${IDF_PATH}/tools/cmake/utilities.cmake)
+include(${IDF_PATH}/tools/cmake/idf.cmake)
 project(${ULP_APP_NAME} ASM C)
 
 option(ULP_COCPU_IS_RISCV "Use RISC-V based ULP" OFF)
-
-set(version_pattern "[a-z0-9\.-_]+")
-
-# Check assembler version
-execute_process(
-    COMMAND ${CMAKE_ASM_COMPILER} --version
-    OUTPUT_VARIABLE as_output
-    ERROR_QUIET)
-
-string(REGEX MATCH "\\(GNU Binutils\\) (${version_pattern})" as_version ${as_output})
-set(as_version ${CMAKE_MATCH_1})
-
 
 message(STATUS "Building ULP app ${ULP_APP_NAME}")
 
 if(ULP_COCPU_IS_RISCV)
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
 else()
-    message(STATUS "ULP assembler version: ${as_version}")
-    set(as_supported_version 2.35_20220830)
-
-    if(NOT as_version STREQUAL as_supported_version)
-        message(WARNING "WARNING: ULP assembler version ${as_version} is not supported. Expected to see version: \
-                        ${as_supported_version}. Please check ESP-IDF ULP setup instructions and update \
-                        the toolchain, or proceed at your own risk.")
-    endif()
-
+    check_expected_tool_version("esp32ulp-elf" ${CMAKE_ASM_COMPILER})
     set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_fsm.ld)
 endif()
 

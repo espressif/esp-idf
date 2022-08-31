@@ -623,7 +623,7 @@ class IDFTool(object):
             result[k] = v_repl
         return result
 
-    def check_version(self, extra_paths=None):  # type: (Optional[List[str]]) -> str
+    def get_version(self, extra_paths=None, executable_path=None):  # type: (Optional[List[str]], Optional[str]) -> str
         """
         Execute the tool, optionally prepending extra_paths to PATH,
         extract the version string and return it as a result.
@@ -635,6 +635,8 @@ class IDFTool(object):
         # this function can not be called for a different platform
         assert self._platform == CURRENT_PLATFORM
         cmd = self._current_options.version_cmd  # type: ignore
+        if executable_path:
+            cmd[0] = executable_path
         try:
             version_cmd_result = run_cmd_check_output(cmd, None, extra_paths)
         except OSError:
@@ -649,6 +651,10 @@ class IDFTool(object):
         if not match:
             return UNKNOWN_VERSION
         return re.sub(self._current_options.version_regex, self._current_options.version_regex_replace, match.group(0))  # type: ignore
+
+    def check_version(self, executable_path):  # type: (Optional[str]) -> bool
+        version = self.get_version(executable_path=executable_path)
+        return version in self.versions
 
     def get_install_type(self):  # type: () -> Callable[[str], None]
         return self._current_options.install  # type: ignore
@@ -692,7 +698,7 @@ class IDFTool(object):
         assert self._platform == CURRENT_PLATFORM
         # First check if the tool is in system PATH
         try:
-            ver_str = self.check_version()
+            ver_str = self.get_version()
         except ToolNotFound:
             # not in PATH
             pass
@@ -712,7 +718,7 @@ class IDFTool(object):
                 # version not installed
                 continue
             try:
-                ver_str = self.check_version(self.get_export_paths(version))
+                ver_str = self.get_version(self.get_export_paths(version))
             except ToolNotFound:
                 warn('directory for tool {} version {} is present, but tool was not found'.format(
                     self.name, version))
@@ -2370,6 +2376,40 @@ More info: {info_url}
     print_out('')
 
 
+def action_check_tool_supported(args):  # type: (Any) -> None
+    """
+    Print "True"/"False" to stdout as a result that tool is supported in IDF
+    Print erorr message to stderr otherwise and set exit code to 1
+    """
+    try:
+        tools_info = load_tools_info()
+        for _, v in tools_info.items():
+            if v.name == args.tool_name:
+                print(v.check_version(args.exec_path))
+                break
+    except (RuntimeError, ToolNotFound, ToolExecError) as err:
+        fatal(f'Failed to check tool support: (name: {args.tool_name}, exec: {args.exec_path})')
+        fatal(f'{err}')
+        raise SystemExit(1)
+
+
+def action_get_tool_supported_versions(args):  # type: (Any) -> None
+    """
+    Print supported versions of a tool to stdout
+    Print erorr message to stderr otherwise and set exit code to 1
+    """
+    try:
+        tools_info = load_tools_info()
+        for _, v in tools_info.items():
+            if v.name == args.tool_name:
+                print(list(v.versions.keys()))
+                break
+    except RuntimeError as err:
+        fatal(f'Failed to get tool supported versions. (tool: {args.tool_name})')
+        fatal(f'{err}')
+        raise SystemExit(1)
+
+
 def main(argv):  # type: (list[str]) -> None
     parser = argparse.ArgumentParser()
 
@@ -2465,6 +2505,15 @@ def main(argv):  # type: (list[str]) -> None
                                            help='Disable constraint settings. Use with care and only when you want '
                                                 'to manage package versions by yourself. It can be set with the IDF_PYTHON_CHECK_CONSTRAINTS '
                                                 'environment variable.')
+
+    if os.environ.get('IDF_TOOLS_VERSION_HELPER'):
+        check_tool_supported = subparsers.add_parser('check-tool-supported',
+                                                     help='Check that selected tool is compatible with IDF. Writes "True"/"False" to stdout in success.')
+        check_tool_supported.add_argument('--tool-name', required=True, help='Tool name (from tools.json)')
+        check_tool_supported.add_argument('--exec-path', required=True, help='Full path to executable under the test')
+
+        get_tool_supported_versions = subparsers.add_parser('get-tool-supported-versions', help='Prints a list of tool\'s supported versions')
+        get_tool_supported_versions.add_argument('--tool-name', required=True,  help='Tool name (from tools.json)')
 
     args = parser.parse_args(argv)
 

@@ -190,7 +190,6 @@ extensions += ['sphinx_copybutton',
                # connected to another extension
                'esp_docs.idf_extensions.build_system',
                'esp_docs.idf_extensions.esp_err_definitions',
-               'esp_docs.idf_extensions.gen_toolchain_links',
                'esp_docs.idf_extensions.gen_defines',
                'esp_docs.idf_extensions.gen_version_specific_includes',
                'esp_docs.idf_extensions.kconfig_reference',
