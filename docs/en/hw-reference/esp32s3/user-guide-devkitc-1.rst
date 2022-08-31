@@ -38,7 +38,7 @@ Description of Components
 
 .. _user-guide-s3-devkitc-1-v1.1-board-front:
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1.1-annotated-photo.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-annotated-photo.png
     :align: center
     :alt: ESP32-S3-DevKitC-1 - front
 
@@ -64,7 +64,7 @@ The key components of the board are described in a counter-clockwise direction.
      - Download button. Holding down **Boot** and then pressing **Reset** initiates Firmware Download mode for downloading firmware through the serial port.
    * - Reset Button
      - Press this button to restart the system.
-   * - ESP32-S3 USB Port
+   * - USB Port
      - ESP32-S3 full-speed USB OTG interface, compliant with the USB 1.1 specification. The interface is used for power supply to the board, for flashing applications to the chip, for communication with the chip using USB 1.1 protocols, as well as for JTAG debugging.
    * - USB-to-UART Bridge
      - Single USB-to-UART bridge chip provides transfer rates up to 3 Mbps.
