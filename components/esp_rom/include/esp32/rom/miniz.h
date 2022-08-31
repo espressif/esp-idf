@@ -760,7 +760,7 @@ typedef struct
 
 // Initializes the compressor.
 // There is no corresponding deinit() function because the tdefl API's do not dynamically allocate memory.
-// pBut_buf_func: If NULL, output data will be supplied to the specified callback. In this case, the user should call the tdefl_compress_buffer() API for compression.
+// pBut_buf_func: If **not** NULL, output data will be supplied to the specified callback. In this case, the user should call the tdefl_compress_buffer() API for compression.
 // If pBut_buf_func is NULL the user should always call the tdefl_compress() API.
 // flags: See the above enums (TDEFL_HUFFMAN_ONLY, TDEFL_WRITE_ZLIB_HEADER, etc.)
 tdefl_status tdefl_init(tdefl_compressor *d, tdefl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
