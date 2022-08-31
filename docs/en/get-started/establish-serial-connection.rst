@@ -330,7 +330,7 @@ An example log is shown below. Reset the board if you do not see anything.
     I (45) boot: compile time 18:48:10
     ...
 
-If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload of application to {IDF_TARGET_NAME}.
+If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload an application to {IDF_TARGET_NAME}.
 
 .. note::
 
