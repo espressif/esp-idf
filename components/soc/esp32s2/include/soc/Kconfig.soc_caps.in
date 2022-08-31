@@ -567,6 +567,10 @@ config SOC_SPI_DMA_CHAN_NUM
     int
     default 3
 
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
+
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 72
