@@ -17,20 +17,19 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
+#include "sdkconfig.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
-#include "esp_heap_caps.h"
-#include "esp_log.h"
-#include "soc/spi_periph.h"
-#include "test_utils.h"
-#include "test/test_common_spi.h"
+#include "driver/gpio.h"
 #include "soc/gpio_periph.h"
-#include "sdkconfig.h"
-#include "esp_private/cache_utils.h"
 #include "soc/soc_memory_layout.h"
+#include "esp_private/cache_utils.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_clk.h"
+#include "esp_heap_caps.h"
+#include "esp_log.h"
 #include "test_utils.h"
+#include "test/test_common_spi.h"
 
 
 const static char TAG[] = "test_spi";
@@ -1458,3 +1457,119 @@ TEST_CASE("spi_speed", "[spi]")
 
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 #endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
+
+//****************************************spi master add device test************************************//
+//add dummy devices first
+#if CONFIG_IDF_TARGET_ESP32
+#define DUMMY_CS_PINS() {25, 26, 27}
+#else
+#define DUMMY_CS_PINS() {0, 1, 4, 5, 8, 9}
+#endif //CONFIG_IDF_TARGET_ESP32
+
+#define CS_REAL_DEV  SPI2_IOMUX_PIN_NUM_CS
+#define TEST_TRANS_LEN    48
+
+void test_add_device_master(void)
+{
+    spi_device_handle_t devs[SOC_SPI_MAX_CS_NUM] = {};
+    uint8_t cs_pins[SOC_SPI_MAX_CS_NUM] = DUMMY_CS_PINS();
+
+    uint8_t master_sendbuf[TEST_TRANS_LEN] = {0};
+    uint8_t master_recvbuf[TEST_TRANS_LEN] = {0};
+    uint8_t master_expect[TEST_TRANS_LEN] = {0};
+
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    ESP_ERROR_CHECK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
+
+    spi_device_interface_config_t dev_cfg = {
+        .clock_speed_hz = 1 * 1000 * 1000,
+        .queue_size = 3,
+    };
+
+    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+        dev_cfg.spics_io_num = cs_pins[i];
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
+    }
+
+    spi_transaction_t trans = {};
+    trans.length = sizeof(master_sendbuf) * 8;
+    trans.tx_buffer = master_sendbuf;
+    trans.rx_buffer = master_recvbuf;
+
+    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+        //1. add max dummy devices
+        //2. replace devs[i] as a real device, than start a transaction
+        //3. free devs[i] after transaction to release the real CS pin for using again by another dev,
+        //So it will loop to check every gpio_sigal one by one use one physical pin
+        spi_bus_remove_device(devs[i]);
+        dev_cfg.spics_io_num = CS_REAL_DEV;
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
+
+        memset(master_recvbuf, 0, sizeof(master_recvbuf));
+        get_tx_buffer(21, master_sendbuf, master_expect, TEST_TRANS_LEN);
+
+        unity_send_signal("Master ready");
+        unity_wait_for_signal("Slave ready");
+        spi_device_transmit(devs[i], &trans);
+
+        ESP_LOGI("Master", "dev %d communication:", i);
+        ESP_LOG_BUFFER_HEX("Tx", master_sendbuf, sizeof(master_sendbuf));
+        // ESP_LOG_BUFFER_HEX("Rx", master_recvbuf, sizeof(master_recvbuf));
+        spitest_cmp_or_dump(master_expect, master_recvbuf, TEST_TRANS_LEN);
+
+        //swap self as a dummy device to free real cs line
+        spi_bus_remove_device(devs[i]);
+        dev_cfg.spics_io_num = cs_pins[i];
+        TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &devs[i]));
+    }
+
+    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+        spi_bus_remove_device(devs[i]);
+    }
+    spi_bus_free(TEST_SPI_HOST);
+}
+
+void test_add_device_slave(void)
+{
+    uint8_t slave_sendbuf[TEST_TRANS_LEN] = {0};
+    uint8_t slave_recvbuf[TEST_TRANS_LEN] = {0};
+    uint8_t slave_expect[TEST_TRANS_LEN] = {0};
+
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_interface_config_t slvcfg = {
+        .spics_io_num = CS_REAL_DEV,
+        .queue_size = 3,
+    };
+#if CONFIG_IDF_TARGET_ESP32
+    //now esp32 runners use SPI3 pin group to test gpio matrix together on CI.
+    bus_cfg.miso_io_num = SPI3_IOMUX_PIN_NUM_MISO;
+    bus_cfg.mosi_io_num = SPI3_IOMUX_PIN_NUM_MOSI;
+    bus_cfg.sclk_io_num = SPI3_IOMUX_PIN_NUM_CLK;
+    slvcfg.spics_io_num = SPI3_IOMUX_PIN_NUM_CS;
+#endif
+    TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &bus_cfg, &slvcfg, SPI_DMA_CH_AUTO));
+
+    spi_slave_transaction_t slave_trans = {};
+    slave_trans.length = sizeof(slave_sendbuf) * 8;
+    slave_trans.tx_buffer = slave_sendbuf;
+    slave_trans.rx_buffer = slave_recvbuf;
+
+    for (uint8_t i = 0; i < SOC_SPI_MAX_CS_NUM; i++) {
+        memset(slave_recvbuf, 0, sizeof(slave_recvbuf));
+        get_tx_buffer(21, slave_expect, slave_sendbuf, TEST_TRANS_LEN);
+
+        unity_wait_for_signal("Master ready");
+        unity_send_signal("Slave ready");
+        spi_slave_transmit(TEST_SPI_HOST, &slave_trans, portMAX_DELAY);
+
+        ESP_LOGI("Slave", "dev %d communication:", i);
+        ESP_LOG_BUFFER_HEX("Tx", slave_sendbuf, sizeof(slave_sendbuf));
+        // ESP_LOG_BUFFER_HEX("Rx", slave_recvbuf, sizeof(slave_recvbuf));
+        spitest_cmp_or_dump(slave_expect, slave_recvbuf, TEST_TRANS_LEN);
+    }
+
+    spi_slave_free(TEST_SPI_HOST);
+    spi_bus_free(TEST_SPI_HOST);
+}
+
+TEST_CASE_MULTIPLE_DEVICES("SPI_Master:Test multiple devices", "[spi_ms][test_env=Example_SPI_Multi_device]", test_add_device_master, test_add_device_slave);
