@@ -6,6 +6,7 @@
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
+idf-component-manager.rst: WARNING: Badly formated string substitution: {IDF_TARGET}
 esp_ble_mesh_defs.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/bluetooth/esp-ble-mesh:line.
 Declaration is '.. cpp:member:: uint16_t model_id'.
 rmt_encoder.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/rmt:line.

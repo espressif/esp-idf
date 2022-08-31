@@ -23,6 +23,8 @@ When CMake configures the project (e.g. ``idf.py reconfigure``) component manage
 
 The lock-file ``dependencies.lock`` and content of ``managed_components`` directory is not supposed to be modified by a user. When the component manager runs it always make sure they are up to date. If these files were accidentally modified it's possible to re-run the component manager by triggering CMake with ``idf.py reconfigure``
 
+You may set build property ``DEPENDENCIES_LOCK`` to specify the lock-file path in the top-level CMakeLists.txt. For example, adding ``idf_build_set_property(DEPENDENCIES_LOCK dependencies.lock.${IDF_TARGET})`` before ``project(PROJECT_NAME)`` could help generate different lock files for different targets.
+
 Defining dependencies in the manifest
 =====================================
 

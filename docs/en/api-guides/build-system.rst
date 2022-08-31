@@ -1177,6 +1177,7 @@ These are properties that describe the build. Values of build properties can be 
 - COMPILE_OPTIONS - compile options applied to all components' source files, regardless of it being C or C++
 - COMPILE_DEFINITIONS - compile definitions applied to all component source files
 - CXX_COMPILE_OPTIONS - compile options applied to all components' C++ source files
+- DEPENDENCIES_LOCK - lock file path used in component manager. The default value is `dependencies.lock` under the project path.
 - EXECUTABLE - project executable; set by call to ``idf_build_executable``
 - EXECUTABLE_NAME - name of project executable without extension; set by call to ``idf_build_executable``
 - EXECUTABLE_DIR - path containing the output executable
