@@ -6,8 +6,7 @@ function unset
 end
 
 function __main
-    set script_dir (dirname (readlink -m (status -f)))
-
+    set script_dir (dirname (realpath (status -f)))
     if not set -q IDF_PATH
         set -gx IDF_PATH $script_dir
         echo "Setting IDF_PATH to '$IDF_PATH'"
