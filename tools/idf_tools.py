@@ -368,6 +368,32 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
     return result
 
 
+def download(url, destination):  # type: (str, str) -> None
+    info(f'Downloading {url}')
+    info(f'Destination: {destination}')
+    try:
+        ctx = None
+        # For dl.espressif.com, add the ISRG x1 root certificate.
+        # This works around the issue with outdated certificate stores in some installations.
+        if 'dl.espressif.com' in url:
+            try:
+                ctx = ssl.create_default_context()
+                ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
+            except AttributeError:
+                # no ssl.create_default_context or load_verify_locations cadata argument
+                # in Python <=2.7.8
+                pass
+
+        urlretrieve_ctx(url, destination, report_progress if not global_non_interactive else None, context=ctx)
+        sys.stdout.write('\rDone\n')
+    except Exception as e:
+        # urlretrieve could throw different exceptions, e.g. IOError when the server is down
+        # Errors are ignored because the downloaded file is checked a couple of lines later.
+        warn('Download failure {}'.format(e))
+    finally:
+        sys.stdout.flush()
+
+
 # Sometimes renaming a directory on Windows (randomly?) causes a PermissionError.
 # This is confirmed to be a workaround:
 # https://github.com/espressif/esp-idf/issues/3819#issuecomment-515167118
@@ -688,29 +714,9 @@ class IDFTool(object):
                 return
 
         downloaded = False
+        local_temp_path = local_path + '.tmp'
         for retry in range(DOWNLOAD_RETRY_COUNT):
-            local_temp_path = local_path + '.tmp'
-            info('Downloading {} to {}'.format(archive_name, local_temp_path))
-            try:
-                ctx = None
-                # For dl.espressif.com, add the ISRG x1 root certificate.
-                # This works around the issue with outdated certificate stores in some installations.
-                if 'dl.espressif.com' in url:
-                    try:
-                        ctx = ssl.create_default_context()
-                        ctx.load_verify_locations(cadata=ISRG_X1_ROOT_CERT)
-                    except AttributeError:
-                        # no ssl.create_default_context or load_verify_locations cadata argument
-                        # in Python <=2.7.8
-                        pass
-
-                urlretrieve_ctx(url, local_temp_path, report_progress if not global_non_interactive else None, context=ctx)
-                sys.stdout.write('\rDone\n')
-            except Exception as e:
-                # urlretrieve could throw different exceptions, e.g. IOError when the server is down
-                # Errors are ignored because the downloaded file is checked a couple of lines later.
-                warn('Download failure {}'.format(e))
-            sys.stdout.flush()
+            download(url, local_temp_path)
             if not os.path.isfile(local_temp_path) or not self.check_download_file(download_obj, local_temp_path):
                 warn('Failed to download {} to {}'.format(url, local_temp_path))
                 continue
