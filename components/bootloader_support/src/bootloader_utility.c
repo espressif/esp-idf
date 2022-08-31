@@ -864,7 +864,7 @@ void bootloader_reset(void)
 #ifdef BOOTLOADER_BUILD
     bootloader_atexit();
     esp_rom_delay_us(1000); /* Allow last byte to leave FIFO */
-    REG_WRITE(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
+    esp_rom_software_reset_system();
     while (1) { }       /* This line will never be reached, used to keep gcc happy */
 #else
     abort();            /* This function should really not be called from application code */
