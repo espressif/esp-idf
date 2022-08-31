@@ -154,7 +154,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
     cd ~/esp/esp-idf
     ./install.fish {IDF_TARGET_PATH_NAME}
 
-上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示::
+上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示：
 
 .. code-block:: bash
 
