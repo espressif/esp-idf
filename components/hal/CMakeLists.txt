@@ -38,7 +38,6 @@ if(NOT BOOTLOADER_BUILD)
         "spi_flash_hal.c"
         "spi_flash_hal_iram.c"
         "spi_flash_encrypt_hal_iram.c"
-        "sha_hal.c"
         "adc_hal_common.c"
         "adc_oneshot_hal.c")
 
@@ -96,6 +95,10 @@ if(NOT BOOTLOADER_BUILD)
 
     if(CONFIG_SOC_ECC_SUPPORTED)
         list(APPEND srcs "ecc_hal.c")
+    endif()
+
+    if(CONFIG_SOC_SHA_SUPPORTED)
+        list(APPEND srcs "sha_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")
@@ -172,6 +175,20 @@ if(NOT BOOTLOADER_BUILD)
               "spi_slave_hd_hal.c"
               "esp32c2/brownout_hal.c"
               "esp32c2/rtc_cntl_hal.c")
+    endif()
+
+    if(${target} STREQUAL "esp32c6")
+        list(APPEND srcs
+              "spi_flash_hal_gpspi.c"
+              "spi_slave_hd_hal.c"
+              "esp32c6/brownout_hal.c"
+              "esp32c6/rtc_cntl_hal.c")
+
+        # TODO: IDF-5310
+        list(REMOVE_ITEM srcs
+                "adc_oneshot_hal.c"
+                "adc_hal_common.c"
+                )
     endif()
 endif()
 

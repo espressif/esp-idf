@@ -183,6 +183,10 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_MMU_PAGE_SIZE_CONFIGURABLE
+    bool
+    default y
+
 config SOC_GDMA_GROUPS
     int
     default 1
@@ -540,10 +544,6 @@ config SOC_PM_SUPPORT_WIFI_WAKEUP
     default y
 
 config SOC_PM_SUPPORT_BT_WAKEUP
-    bool
-    default y
-
-config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
 

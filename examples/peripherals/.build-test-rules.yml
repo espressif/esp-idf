@@ -107,8 +107,8 @@ examples/peripherals/rmt/ir_nec_transceiver:
       reason: lack of runners
 
 examples/peripherals/rmt/musical_buzzer:
-  enable:
-    - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT == 1
+  disable:
+    - if: SOC_RMT_SUPPORT_TX_LOOP_COUNT != 1
 
 examples/peripherals/rmt/onewire_ds18b20:
   disable:

@@ -13,9 +13,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "soc/rtc_io_periph.h"
-#include "soc/rtc_io_struct.h"
-#include "hal/rtc_io_types.h"
+#include "soc/rtc_periph.h"
 #include "hal/gpio_types.h"
 
 #define RTCIO_LL_PIN_FUNC     0

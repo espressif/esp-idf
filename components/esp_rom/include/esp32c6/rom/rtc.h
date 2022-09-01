@@ -76,12 +76,12 @@ typedef enum {
 typedef enum {
     NO_MEAN                =  0,
     POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
-    RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core*/
-    DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core*/
-    TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core*/
-    TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core*/
-    RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core*/
-    INTRUSION_RESET        = 10,    /**<10, Instrusion tested to reset CPU*/
+    RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core (hp system)*/
+    DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core (hp system)*/
+    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core (hp system)*/
+    TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core (hp system)*/
+    TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core (hp system)*/
+    RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core (hp system)*/
     TG0WDT_CPU_RESET       = 11,    /**<11, Time Group0 reset CPU*/
     RTC_SW_CPU_RESET       = 12,    /**<12, Software reset CPU*/
     RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
@@ -89,17 +89,17 @@ typedef enum {
     RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
     TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
     SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
-    GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
-    EFUSE_RESET            = 20,    /**<20, efuse reset digital core*/
-    USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core */
-    USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core */
-    POWER_GLITCH_RESET     = 23,    /**<23, power glitch reset digital core and rtc module*/
+    EFUSE_RESET            = 20,    /**<20, efuse reset digital core (hp system)*/
+    USB_UART_CHIP_RESET    = 21,    /**<21, usb uart reset digital core (hp system)*/
+    USB_JTAG_CHIP_RESET    = 22,    /**<22, usb jtag reset digital core (hp system)*/
+    JTAG_RESET             = 24,    /**<24, jtag reset CPU*/
 } RESET_REASON;
 
 // Check if the reset reason defined in ROM is compatible with soc/reset_reasons.h
 _Static_assert((soc_reset_reason_t)POWERON_RESET == RESET_REASON_CHIP_POWER_ON, "POWERON_RESET != RESET_REASON_CHIP_POWER_ON");
 _Static_assert((soc_reset_reason_t)RTC_SW_SYS_RESET == RESET_REASON_CORE_SW, "RTC_SW_SYS_RESET != RESET_REASON_CORE_SW");
 _Static_assert((soc_reset_reason_t)DEEPSLEEP_RESET == RESET_REASON_CORE_DEEP_SLEEP, "DEEPSLEEP_RESET != RESET_REASON_CORE_DEEP_SLEEP");
+_Static_assert((soc_reset_reason_t)SDIO_RESET == RESET_REASON_CORE_SDIO, "SDIO_RESET != RESET_REASON_CORE_SDIO");
 _Static_assert((soc_reset_reason_t)TG0WDT_SYS_RESET == RESET_REASON_CORE_MWDT0, "TG0WDT_SYS_RESET != RESET_REASON_CORE_MWDT0");
 _Static_assert((soc_reset_reason_t)TG1WDT_SYS_RESET == RESET_REASON_CORE_MWDT1, "TG1WDT_SYS_RESET != RESET_REASON_CORE_MWDT1");
 _Static_assert((soc_reset_reason_t)RTCWDT_SYS_RESET == RESET_REASON_CORE_RTC_WDT, "RTCWDT_SYS_RESET != RESET_REASON_CORE_RTC_WDT");
@@ -110,11 +110,10 @@ _Static_assert((soc_reset_reason_t)RTCWDT_BROWN_OUT_RESET == RESET_REASON_SYS_BR
 _Static_assert((soc_reset_reason_t)RTCWDT_RTC_RESET == RESET_REASON_SYS_RTC_WDT, "RTCWDT_RTC_RESET != RESET_REASON_SYS_RTC_WDT");
 _Static_assert((soc_reset_reason_t)TG1WDT_CPU_RESET == RESET_REASON_CPU0_MWDT1, "TG1WDT_CPU_RESET != RESET_REASON_CPU0_MWDT1");
 _Static_assert((soc_reset_reason_t)SUPER_WDT_RESET == RESET_REASON_SYS_SUPER_WDT, "SUPER_WDT_RESET != RESET_REASON_SYS_SUPER_WDT");
-_Static_assert((soc_reset_reason_t)GLITCH_RTC_RESET == RESET_REASON_SYS_CLK_GLITCH, "GLITCH_RTC_RESET != RESET_REASON_SYS_CLK_GLITCH");
 _Static_assert((soc_reset_reason_t)EFUSE_RESET == RESET_REASON_CORE_EFUSE_CRC, "EFUSE_RESET != RESET_REASON_CORE_EFUSE_CRC");
 _Static_assert((soc_reset_reason_t)USB_UART_CHIP_RESET == RESET_REASON_CORE_USB_UART, "USB_UART_CHIP_RESET != RESET_REASON_CORE_USB_UART");
 _Static_assert((soc_reset_reason_t)USB_JTAG_CHIP_RESET == RESET_REASON_CORE_USB_JTAG, "USB_JTAG_CHIP_RESET != RESET_REASON_CORE_USB_JTAG");
-_Static_assert((soc_reset_reason_t)POWER_GLITCH_RESET == RESET_REASON_CORE_PWR_GLITCH, "POWER_GLITCH_RESET != RESET_REASON_CORE_PWR_GLITCH");
+_Static_assert((soc_reset_reason_t)JTAG_RESET == RESET_REASON_CPU0_JTAG, "JTAG_RESET != RESET_REASON_CPU0_JTAG");
 
 typedef enum {
     NO_SLEEP        = 0,

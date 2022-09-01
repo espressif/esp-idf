@@ -90,6 +90,9 @@
 
 #define SOC_CPU_IDRAM_SPLIT_USING_PMP   1
 
+/*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
+
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
@@ -261,15 +264,9 @@
 
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
-
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
-/*-------------------------- MMU CAPS ----------------------------------------*/
-#define SOC_MMU_PAGE_SIZE_CONFIGURABLE  (1)
 #define SOC_PM_SUPPORT_CPU_PD           (0)
-
 #define SOC_PM_SUPPORT_WIFI_PD          (0)
-
 #define SOC_PM_SUPPORT_BT_PD            (0)
 
 /*------------------------------------ WI-FI CAPS ------------------------------------*/

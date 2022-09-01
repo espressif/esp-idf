@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DR_REG_PLIC_MX_BASE                     0x20001000
+#define DR_REG_PLIC_UX_BASE                     0x20001400
 #define DR_REG_CLINT_M_BASE                     0x20001800
 #define DR_REG_CLINT_U_BASE                     0x20001C00
 
