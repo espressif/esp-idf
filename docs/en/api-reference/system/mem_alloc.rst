@@ -30,7 +30,9 @@ For more details on these internal memory types, see :ref:`memory-layout`.
 
     It's also possible to connect external SPI RAM to the {IDF_TARGET_NAME} - :doc:`external RAM </api-guides/external-ram>` can be integrated into the {IDF_TARGET_NAME}'s memory map using the flash cache, and accessed similarly to DRAM.
 
-DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and writes). When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls ``heap_caps_malloc(size, MALLOC_CAP_8BIT)`` in order to allocate DRAM that is byte-addressable. To test the free DRAM heap size at runtime, call cpp:func:`heap_caps_get_free_size(MALLOC_CAP_8BIT)`.
+DRAM uses capability ``MALLOC_CAP_8BIT`` (accessible in single byte reads and writes). To test the free DRAM heap size at runtime, call cpp:func:`heap_caps_get_free_size(MALLOC_CAP_8BIT)`.
+
+When calling ``malloc()``, the ESP-IDF ``malloc()`` implementation internally calls cpp:func:`heap_caps_malloc_default(size)`. This will allocate memory with capability ``MALLOC_CAP_DEFAULT``, which is byte-addressable.
 
 Because malloc uses the capabilities-based allocation system, memory allocated using :cpp:func:`heap_caps_malloc` can be freed by calling
 the standard ``free()`` function.
