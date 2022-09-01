@@ -266,7 +266,6 @@ void wifi_prov_mgr_deinit(void);
  *  - ESP_OK      : Retrieved provision state successfully
  *  - ESP_FAIL    : Wi-Fi not initialized
  *  - ESP_ERR_INVALID_ARG   : Null argument supplied
- *  - ESP_ERR_INVALID_STATE : Manager not initialized
  */
 esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned);
 
