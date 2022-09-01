@@ -797,7 +797,7 @@ The basic functionality of MCPWM capture is to record the time when any pulse ed
 
     MCPWM BLDC with Hall Sensor
 
-The capture timer is usually connected with several capture channels, please refer to `<how to allocate capture timer and channels #mcpwm-capture-timer-and-channels>`__ for resource allocation.
+The capture timer is usually connected with several capture channels, please refer to `MCPWM Capture Timer and Channels <#mcpwm-capture-timer-and-channels>`__ for resource allocation.
 
 Register Event Callbacks
 ~~~~~~~~~~~~~~~~~~~~~~~~
