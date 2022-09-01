@@ -13,9 +13,10 @@ For example, when using security version 2, the ``sec_params`` parameter should 
 Wi-Fi Provisioning
 ------------------
 
-The ``pop`` field in the :cpp:func:`wifi_prov_mgr_start_provisioning` API is now deprecated. Please use the ``wifi_prov_sec_params`` field instead of ``pop``. This parameter should contain the structure (containing the security parameters) as required by the protocol version used.
+.. list::
+    * The ``pop`` field in the :cpp:func:`wifi_prov_mgr_start_provisioning` API is now deprecated. Please use the ``wifi_prov_sec_params`` field instead of ``pop``. This parameter should contain the structure (containing the security parameters) as required by the protocol version used. For example, when using security version 2, the ``wifi_prov_sec_params`` parameter should contain the pointer to the structure of type :cpp:type:`wifi_prov_security2_params_t`.
 
-For example, when using security version 2, the ``wifi_prov_sec_params`` parameter should contain the pointer to the structure of type :cpp:type:`wifi_prov_security2_params_t`.
+    * The API :cpp:func:`wifi_prov_mgr_is_provisioned` does not return :c:macro:`ESP_ERR_INVALID_STATE` error any more. This API now works without any dependency on provisioning manager initialization state.
 
 ESP Local Control
 -----------------
