@@ -1690,7 +1690,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_mode(&(uart_context[uart_num].hal), mode);
-    if (mode ==  UART_MODE_RS485_COLLISION_DETECT) {
+    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_HALF_DUPLEX)) {
         // This mode allows read while transmitting that allows collision detection
         p_uart_obj[uart_num]->coll_det_flg = false;
         // Enable collision detection interrupts
