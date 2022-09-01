@@ -1183,3 +1183,8 @@ TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
 }
+
+void app_main(void)
+{
+    unity_run_menu();
+}
