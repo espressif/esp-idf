@@ -220,6 +220,14 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         goto failure;
     }
 
+    if (ota_config->http_client_init_cb) {
+        err = ota_config->http_client_init_cb(https_ota_handle->http_client);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
+            goto http_cleanup;
+        }
+    }
+
     if (https_ota_handle->partial_http_download) {
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_HEAD);
         err = esp_http_client_perform(https_ota_handle->http_client);
@@ -250,14 +258,6 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
             free(header_val);
         }
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_GET);
-    }
-
-    if (ota_config->http_client_init_cb) {
-        err = ota_config->http_client_init_cb(https_ota_handle->http_client);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
-            goto http_cleanup;
-        }
     }
 
     err = _http_connect(https_ota_handle->http_client);
