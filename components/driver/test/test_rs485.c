@@ -23,13 +23,19 @@
 #define UART1_RTS_PIN   (18)
 
 // Number of packets to be send during test
-#define PACKETS_NUMBER  (40)
+#define PACKETS_NUMBER  (30)
 
 // Wait timeout for uart driver
-#define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
+#define PACKET_READ_TICS        (2000 / portTICK_PERIOD_MS)
+// This is for workarond to avoid master-slave syncronization issues
+// when slave gets the "Master_started" signal with delay ~2-3 seconds
+#define TEST_ALLOW_PROC_FAIL    (10)
+#define TEST_CHECK_PROC_FAIL(fails, threshold) TEST_ASSERT((fails * 100 / PACKETS_NUMBER) <= threshold)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
+
+static const char *TAG = "rs485_test";
 
 // The table for fast CRC16 calculation
 static const uint8_t crc_hi[] = {
@@ -160,7 +166,7 @@ static void rs485_init(void)
         .rx_flow_ctrl_thresh = 120,
         .source_clk = UART_SCLK_DEFAULT,
     };
-    printf("RS485 port initialization...\r\n");
+    ESP_LOGI(TAG, "RS485 port initialization...");
     TEST_ESP_OK(uart_wait_tx_idle_polling(UART_NUM1));
     // Configure UART1 parameters
     TEST_ESP_OK(uart_param_config(UART_NUM1, &uart_config));
@@ -199,9 +205,9 @@ static void rs485_slave(void)
     rs485_init();
     uint8_t* slave_data = (uint8_t*) malloc(BUF_SIZE);
     uint16_t err_count = 0, good_count = 0;
-    printf("Start recieve loop.\r\n");
     unity_send_signal("Slave_ready");
     unity_wait_for_signal("Master_started");
+    ESP_LOGI(TAG, "Start recieve loop.");
     for(int pack_count = 0; pack_count < PACKETS_NUMBER; pack_count++) {
         //Read slave_data from UART
         int len = uart_read_bytes(UART_NUM1, slave_data, BUF_SIZE, PACKET_READ_TICS);
@@ -223,12 +229,12 @@ static void rs485_slave(void)
             err_count++;
         }
     }
-    printf("Test completed. Received packets = %d, errors = %d\r\n", good_count, err_count);
+    ESP_LOGI(TAG, "Test completed. Received packets = %d, errors = %d", good_count, err_count);
     // Wait for packet to be sent
     uart_wait_tx_done(UART_NUM1, PACKET_READ_TICS);
     free(slave_data);
     uart_driver_delete(UART_NUM1);
-    TEST_ASSERT(err_count < 2);
+    TEST_CHECK_PROC_FAIL(err_count, TEST_ALLOW_PROC_FAIL);
 }
 
 // Master test of multi device test case.
@@ -243,7 +249,7 @@ static void rs485_master(void)
     // The master test case should be synchronized with slave
     unity_wait_for_signal("Slave_ready");
     unity_send_signal("Master_started");
-    printf("Start recieve loop.\r\n");
+    ESP_LOGI(TAG, "Start recieve loop.");
     for(int i = 0; i < PACKETS_NUMBER; i++) {
         // Form random buffer with CRC16
         buffer_fill_random(master_buffer, BUF_SIZE);
@@ -276,8 +282,8 @@ static void rs485_master(void)
     free(master_buffer);
     free(slave_buffer);
     uart_driver_delete(UART_NUM1);
-    TEST_ASSERT(err_count <= 1);
-    printf("Test completed. Received packets = %d, errors = %d\r\n", (uint16_t)good_count, (uint16_t)err_count);
+    ESP_LOGI(TAG, "Test completed. Received packets = %d, errors = %d", good_count, err_count);
+    TEST_CHECK_PROC_FAIL(err_count, TEST_ALLOW_PROC_FAIL);
 }
 
 /*
