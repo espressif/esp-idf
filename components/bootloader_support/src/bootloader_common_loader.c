@@ -116,6 +116,8 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 
 #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
 
+_Static_assert(RTC_RETAIN_MEM_ADDR >= SOC_RTC_DRAM_LOW, "rtc_retain_mem_t structure size is bigger than the RTC memory size. Consider reducing RTC reserved memory size.");
+
 rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 
 #ifndef BOOTLOADER_BUILD
@@ -128,14 +130,25 @@ rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR
 SOC_RESERVE_MEMORY_REGION(RTC_RETAIN_MEM_ADDR, RTC_RETAIN_MEM_ADDR + sizeof(rtc_retain_mem_t), rtc_retain_mem);
 #endif
 
+static uint32_t rtc_retain_mem_size(void) {
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+    /* A custom memory has been reserved by the user, do not consider this memory into CRC calculation as it may change without
+     * the have the user updating the CRC. Return the offset of the custom field, which is equivalent to size of the structure
+     * minus the size of everything after (including) `custom` */
+    return offsetof(rtc_retain_mem_t, custom);
+#else
+    return sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc);
+#endif
+}
+
 static bool check_rtc_retain_mem(void)
 {
-    return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc)) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
+    return esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size()) == rtc_retain_mem->crc && rtc_retain_mem->crc != UINT32_MAX;
 }
 
 static void update_rtc_retain_mem_crc(void)
 {
-    rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, sizeof(rtc_retain_mem_t) - sizeof(rtc_retain_mem->crc));
+    rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size());
 }
 
 void bootloader_common_reset_rtc_retain_mem(void)
