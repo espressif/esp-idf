@@ -95,20 +95,13 @@ typedef struct {
 #define gpio_hal_get_intr_status_high(hal, core_id, status) gpio_ll_get_intr_status_high((hal)->dev, core_id, status)
 
 /**
-  * @brief Clear GPIO interrupt status
-  *
-  * @param hal Context of the HAL layer
-  * @param mask interrupt status clear mask
-  */
-#define gpio_hal_clear_intr_status(hal, mask) gpio_ll_clear_intr_status((hal)->dev, mask)
-
-/**
-  * @brief Clear GPIO interrupt status high
-  *
-  * @param hal Context of the HAL layer
-  * @param mask interrupt status high clear mask
-  */
-#define gpio_hal_clear_intr_status_high(hal, mask) gpio_ll_clear_intr_status_high((hal)->dev, mask)
+ * @brief Clear GPIO interrupt status bit
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number. If you want to clear the interrupt status bit of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
+ */
+#define gpio_hal_clear_intr_status_bit(hal, gpio_num) (((gpio_num) < 32) ? gpio_ll_clear_intr_status((hal)->dev, 1 << gpio_num) \
+                                                                         : gpio_ll_clear_intr_status_high((hal)->dev, 1 << (gpio_num - 32)))
 
 /**
  * @brief  Enable GPIO module interrupt signal
