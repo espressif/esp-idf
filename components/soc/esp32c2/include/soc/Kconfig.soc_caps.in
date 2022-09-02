@@ -245,7 +245,7 @@ config SOC_I2C_NUM
 
 config SOC_I2C_FIFO_LEN
     int
-    default 32
+    default 16
 
 config SOC_I2C_SUPPORT_HW_CLR_BUS
     bool
