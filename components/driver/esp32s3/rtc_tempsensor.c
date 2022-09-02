@@ -144,7 +144,7 @@ static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const int dac_offse
     if (isnan(s_deltaT)) { //suggests that the value is not initialized
         read_delta_t_from_efuse();
     }
-    float result = (TSENS_ADC_FACTOR * (float)tsens_raw - TSENS_DAC_FACTOR * dac_offset - TSENS_SYS_OFFSET) - s_deltaT;
+    float result = (TSENS_ADC_FACTOR * (float)tsens_raw - TSENS_DAC_FACTOR * dac_offset - TSENS_SYS_OFFSET) - s_deltaT/10.0;
     return result;
 }
 
