@@ -23,8 +23,8 @@ ESP-IDF 之前使用的 GCC 版本为 8.4.0，现已针对所有芯片目标升�
     建议用户在抑制警告之前仔细确认该警告是否确实为误报。
 
 
-``-Wstringop-overflow``、``-Wstringop-overread``、``-Wstringop-truncation`` 和 ``-Warray-bounds``
---------------------------------------------------------------------------------------------------
+``-Wstringop-overflow``、 ``-Wstringop-overread``、 ``-Wstringop-truncation`` 和 ``-Warray-bounds``
+------------------------------------------------------------------------------------------------------------------
 
 如果编译器不能准确判断内存或字符串的大小，使用 memory/string copy/compare 函数的用户会遇到某种 ``-Wstringop`` 警告。下文展示了触发这些警告的代码，并介绍了如何抑制这些警告。
 
@@ -120,6 +120,16 @@ Xtensa 编译器中的 ``int32_t`` 和 ``uint32_t``
 
 通常，``int32_t`` 和 ``int`` 为不同的类型。同样，``uint32_t`` 和 ``unsigned int`` 也为不同的类型。
 
+如果用户在其应用中没有对格式化字符串进行上述更新，程序会报错，如下所示：
+
+.. code-block:: none
+
+    /Users/name/esp/esp-rainmaker/components/esp-insights/components/esp_diagnostics/include/esp_diagnostics.h:238:29: error: format '%u' expects argument of type 'unsigned int', but argument 3 has type 'uint32_t' {aka 'long unsigned int'} [-Werror=format=]
+    238 |     esp_diag_log_event(tag, "EV (%u) %s: " format, esp_log_timestamp(), tag, ##__VA_ARGS__); \
+        |                             ^~~~~~~~~~~~~~         ~~~~~~~~~~~~~~~~~~~
+        |                                                    |
+        |                                                    uint32_t {aka long unsigned int}
+                                                  uint32_t {aka long unsigned int}
 
 移除构建选项 ``CONFIG_COMPILER_DISABLE_GCC8_WARNINGS``
 ----------------------------------------------------------
