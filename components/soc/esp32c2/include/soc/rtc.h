@@ -90,7 +90,7 @@ extern "C" {
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
 /* Various delays to be programmed into power control state machines */
-#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (250)
+#define RTC_CNTL_XTL_BUF_WAIT_SLP_US            (1000)
 #define RTC_CNTL_PLL_BUF_WAIT_SLP_CYCLES        (1)
 #define RTC_CNTL_CK8M_WAIT_SLP_CYCLES           (4)
 #define RTC_CNTL_WAKEUP_DELAY_CYCLES            (5)
