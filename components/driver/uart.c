@@ -300,7 +300,7 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
 
     uart_sclk_t src_clk;
-    uint32_t sclk_freq;
+    uint32_t sclk_freq=0;
 
     uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
     esp_err_t err = uart_get_sclk_freq(src_clk, &sclk_freq);
@@ -317,7 +317,7 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t *baudrate)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
 
     uart_sclk_t src_clk;
-    uint32_t sclk_freq;
+    uint32_t sclk_freq=0;
 
     uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
     esp_err_t err = uart_get_sclk_freq(src_clk, &sclk_freq);
@@ -746,7 +746,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         periph_rtc_dig_clk8m_enable();
     }
 #endif
-    uint32_t sclk_freq;
+    uint32_t sclk_freq=0;
     esp_err_t err = uart_get_sclk_freq(uart_config->source_clk, &sclk_freq);
     assert(err == ESP_OK);
 
