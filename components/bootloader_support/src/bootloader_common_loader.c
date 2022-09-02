@@ -151,7 +151,7 @@ static void update_rtc_retain_mem_crc(void)
     rtc_retain_mem->crc = esp_rom_crc32_le(UINT32_MAX, (uint8_t*)rtc_retain_mem, rtc_retain_mem_size());
 }
 
-void bootloader_common_reset_rtc_retain_mem(void)
+NOINLINE_ATTR void bootloader_common_reset_rtc_retain_mem(void)
 {
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wstringop-overflow"
