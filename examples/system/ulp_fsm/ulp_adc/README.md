@@ -1,11 +1,11 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S3 |
+| ----------------- | ----- | -------- |
 
 # ULP ADC Example
 
 This example demonstrates how to use the ULP coprocessor to poll ADC in deep sleep.
 
-ULP program periodically measures the input voltage on GPIO34. The voltage is compared to two thresholds. If the voltage is less than the low threshold, or higher than the high threshold, ULP wakes up the system.
+ULP program periodically measures the input voltage on ADC_CHANNEL_6 (GPIO34 on ESP32, GPIO7 on ESP32-S3). The voltage is compared to two thresholds. If the voltage is less than the low threshold, or higher than the high threshold, ULP wakes up the system.
 
 By default, thresholds are set to 1.35V and 1.75V, approximately.
 
