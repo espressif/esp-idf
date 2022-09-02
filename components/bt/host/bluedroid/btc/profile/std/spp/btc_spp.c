@@ -865,7 +865,6 @@ static void btc_spp_write(btc_spp_args_t *arg)
                 BTA_JvRfcommWrite(arg->write.handle, slot->id, arg->write.len, arg->write.p_data);
             } else {
                 ret = ESP_SPP_NO_RESOURCE;
-                break;
             }
         }
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
