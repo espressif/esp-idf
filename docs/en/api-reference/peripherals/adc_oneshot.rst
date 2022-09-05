@@ -143,6 +143,7 @@ Read Raw Result
     ESP_ERROR_CHECK(adc_oneshot_read(adc1_handle, EXAMPLE_ADC1_CHAN1, &adc_raw[0][1]));
     ESP_LOGI(TAG, "ADC%d Channel[%d] Raw Data: %d", ADC_UNIT_1 + 1, EXAMPLE_ADC1_CHAN1, adc_raw[0][1]);
 
+.. _hardware_limitations_adc_oneshot:
 
 Hardware Limitations
 ^^^^^^^^^^^^^^^^^^^^
