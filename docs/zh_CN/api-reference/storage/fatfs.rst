@@ -87,6 +87,8 @@ FatFs 磁盘 I/O 层
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
 
+.. _fatfs-partition-generator:
+
 FatFs 分区生成器
 -------------------------
 
@@ -98,6 +100,7 @@ FatFs 分区生成器
 
 目前的最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 ``.`` 字符以及其他字符，如 ``+``、``,``、``;``、``=``、``[`` and ``]`` 等。
 
+如您想进一步了解 FatFs 分区生成器或分区分析器，请查看 :doc:`Generating and parsing FAT partition on host <./fatfsgen>`。
 
 构建系统中使用 FatFs 分区生成器
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

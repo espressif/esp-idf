@@ -87,6 +87,8 @@ These APIs provide implementation of disk I/O functions for SD/MMC cards and can
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
 
+.. _fatfs-partition-generator:
+
 FatFs Partition Generator
 -------------------------
 
@@ -98,6 +100,7 @@ The script is based on the partition generator (:component_file:`fatfsgen.py<fat
 
 The latest version supports both short and long file names, FAT12 and FAT16. The long file names are limited to 255 characters and can contain multiple periods (``.``) characters within the filename and additional characters ``+``, ``,``, ``;``, ``=``, ``[`` and ``]``.
 
+An in-depth description of the FatFs partition generator and analyzer can be found at :doc:`Generating and parsing FAT partition on host <fatfsgen>`.
 
 Build System Integration with FatFs Partition Generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
