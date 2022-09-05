@@ -104,4 +104,5 @@ TEST_CASE("mqtt broker tests", "[mqtt][test_env=UT_T2_Ethernet]")
 
     connect_test_fixture_teardown();
 }
+
 #endif // SOC_EMAC_SUPPORTED
