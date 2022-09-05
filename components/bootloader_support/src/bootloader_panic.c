@@ -12,7 +12,11 @@
 
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
+
+#if !CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
     esp_rom_printf("Assert failed in %s, %s:%d (%s)\r\n", func, file, line, expr);
+#endif
+
     while (1) {
     }
 }
