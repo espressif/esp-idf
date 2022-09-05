@@ -121,14 +121,8 @@ generate a fatal LoadStoreError exception.
 
         To use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
 
-
-API Reference - Heap Allocation
--------------------------------
-
-.. include-build-file:: inc/esp_heap_caps.inc
-
 Thread Safety
-^^^^^^^^^^^^^
+-------------
 
 Heap functions are thread safe, meaning they can be called from different tasks simultaneously without any limitations.
 
@@ -143,11 +137,6 @@ The following features are documented on the :doc:`Heap Memory Debugging </api-r
 - :ref:`Heap Corruption Detection <heap-corruption>`
 - :ref:`Heap Tracing <heap-tracing>` (memory leak detection, monitoring, etc.)
 
-API Reference - Initialisation
-------------------------------
-
-.. include-build-file:: inc/esp_heap_caps_init.inc
-
 Implementation Notes
 --------------------
 
@@ -158,6 +147,18 @@ Each contiguous region of memory contains its own memory heap. The heaps are cre
 The heap capabilities allocator uses knowledge of the memory regions to initialize each individual heap. Allocation functions in the heap capabilities API will find the most appropriate heap for the allocation (based on desired capabilities, available space, and preferences for each region's use) and then calling :cpp:func:`multi_heap_malloc` or :cpp:func:`multi_heap_calloc` for the heap situated in that particular region.
 
 Calling ``free()`` involves finding the particular heap corresponding to the freed address, and then calling :cpp:func:`multi_heap_free` on that particular multi_heap instance.
+
+
+API Reference - Heap Allocation
+-------------------------------
+
+.. include-build-file:: inc/esp_heap_caps.inc
+
+
+API Reference - Initialisation
+------------------------------
+
+.. include-build-file:: inc/esp_heap_caps_init.inc
 
 .. _multi-heap:
 
