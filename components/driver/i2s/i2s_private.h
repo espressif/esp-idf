@@ -68,7 +68,7 @@ typedef struct {
     int                     mclk;           /*!< MCK out pin, shared by tx/rx*/
 } i2s_controller_t;
 
-struct i2s_channel_t {
+struct i2s_channel_obj_t {
     /* Channel basic information */
     i2s_controller_t        *controller;    /*!< Parent pointer to controller object */
     i2s_comm_mode_t         mode;           /*!< i2s channel communication mode */

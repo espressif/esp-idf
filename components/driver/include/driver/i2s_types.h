@@ -63,7 +63,7 @@ typedef struct {
                                   */
 } i2s_event_data_t;
 
-typedef struct i2s_channel_t    *i2s_chan_handle_t; /*!< i2s channel handle, the control unit of the i2s driver*/
+typedef struct i2s_channel_obj_t    *i2s_chan_handle_t; /*!< i2s channel object handle, the control unit of the i2s driver*/
 
 /**
  * @brief I2S event callback
