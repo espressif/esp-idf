@@ -242,7 +242,7 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
 
     esp_err_t ret = ESP_OK;
 
-    i2s_chan_handle_t new_chan = (i2s_chan_handle_t)heap_caps_calloc(1, sizeof(struct i2s_channel_t), I2S_MEM_ALLOC_CAPS);
+    i2s_chan_handle_t new_chan = (i2s_chan_handle_t)heap_caps_calloc(1, sizeof(struct i2s_channel_obj_t), I2S_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(new_chan, ESP_ERR_NO_MEM, TAG, "No memory for new channel");
     new_chan->mode = I2S_COMM_MODE_NONE;
     new_chan->role = I2S_ROLE_MASTER; // Set default role to master
