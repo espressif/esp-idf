@@ -53,7 +53,7 @@ def doublequote(s: str) -> str:
     return f'"{s}"'
 
 
-def check_readme(paths: List[str]) -> None:
+def check_readme(paths: List[str], exclude_dirs: Optional[List[str]] = None) -> None:
     from idf_build_apps import App, find_apps
     from idf_build_apps.constants import SUPPORTED_TARGETS
 
@@ -138,6 +138,7 @@ def check_readme(paths: List[str]) -> None:
             paths,
             'all',
             recursive=True,
+            exclude_list=exclude_dirs or [],
             manifest_files=[
                 str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
             ],
@@ -198,7 +199,7 @@ def check_readme(paths: List[str]) -> None:
     sys.exit(exit_code)
 
 
-def check_test_scripts(paths: List[str]) -> None:
+def check_test_scripts(paths: List[str], exclude_dirs: Optional[List[str]] = None) -> None:
     from idf_build_apps import App, find_apps
 
     # takes long time, run only in CI
@@ -305,6 +306,7 @@ def check_test_scripts(paths: List[str]) -> None:
             paths,
             'all',
             recursive=True,
+            exclude_list=exclude_dirs or [],
             manifest_files=[
                 str(p) for p in Path(IDF_PATH).glob('**/.build-test-rules.yml')
             ],
@@ -415,13 +417,27 @@ if __name__ == '__main__':
         sort_yaml(arg.files)
     else:
         check_dirs = set()
-        for path in arg.paths:
-            if os.path.isfile(path):
-                check_dirs.add(os.path.dirname(path))
+
+        # check if *_caps.h files changed
+        check_all = False
+        soc_caps_header_files = list((Path(IDF_PATH) / 'components' / 'soc').glob('**/*_caps.h'))
+        for p in arg.paths:
+            if Path(p).resolve() in soc_caps_header_files:
+                check_all = True
+                break
+
+            if os.path.isfile(p):
+                check_dirs.add(os.path.dirname(p))
             else:
-                check_dirs.add(path)
+                check_dirs.add(p)
+
+        if check_all:
+            check_dirs = {IDF_PATH}
+            _exclude_dirs = [os.path.join(IDF_PATH, 'tools', 'unit-test-app')]
+        else:
+            _exclude_dirs = []
 
         if arg.action == 'check-readmes':
-            check_readme(list(check_dirs))
+            check_readme(list(check_dirs), _exclude_dirs)
         elif arg.action == 'check-test-scripts':
-            check_test_scripts(list(check_dirs))
+            check_test_scripts(list(check_dirs), _exclude_dirs)
