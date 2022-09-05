@@ -7,10 +7,6 @@ components/driver/test_apps/i2s_test_apps:
 components/driver/test_apps/i2s_test_apps/i2s_tdm:
   disable:
     - if: SOC_I2S_SUPPORTS_TDM != 1
-  disable_test:
-    - if: IDF_TARGET != "esp32s3"
-      temporary: true
-      reason: lack of runners
 
 components/driver/test_apps/i2s_test_apps/legacy_i2s_adc_dac:
   disable:

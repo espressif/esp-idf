@@ -108,7 +108,7 @@ Overview of All Modes
 =========  ========  ========  ========  ========  ========  ==========
 ESP32      I2S 0/1    I2S 0     I2S 0      none     I2S 0      I2S 0
 ESP32S2     I2S 0     none      none       none     none       I2S 0
-ESP32C3     I2S 0     I2S 0     none      I2S0      none       none
+ESP32C3     I2S 0     I2S 0     none      I2S 0     none       none
 ESP32S3    I2S 0/1    I2S 0     I2S 0    I2S 0/1    none       none
 =========  ========  ========  ========  ========  ========  ==========
 
@@ -722,6 +722,12 @@ Here is the table of the data that received in the buffer with different :cpp:me
 
     Please refer to :ref:`i2s-api-reference-i2s_tdm` for TDM API information.
     And for more details, please refer to :component_file:`driver/include/driver/i2s_tdm.h`.
+
+    .. note::
+
+        When setting the clock configuration for a slave role, please be aware that :cpp:member:`i2s_tdm_clk_config_t::bclk_div` should not be smaller than 8 (hardware limitation), increase this field can reduce the data lagging that sent from the slave. In the high sample rate case, the data might lag behind more than one ``bclk`` which will lead data malposition, you can try to increase :cpp:member:`i2s_tdm_clk_config_t::bclk_div` gradually to correct it.
+
+        As :cpp:member:`i2s_tdm_clk_config_t::bclk_div` is the division of ``mclk`` to ``bclk``, increase it will also increase the ``mclk`` frequency, therefore, the clock calculation might failed if the ``mclk`` is too high to divide from the source clock, which means :cpp:member:`i2s_tdm_clk_config_t::bclk_div` is not the bigger the better.
 
     TDM TX Mode
     ~~~~~~~~~~~

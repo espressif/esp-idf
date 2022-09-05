@@ -10,6 +10,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "driver/gpio.h"
 #include "driver/i2s_tdm.h"
 
@@ -159,7 +160,7 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     xTaskNotifyGive(subtask_handle); // notify subtask to exit
     xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY); // wait subtask to do some cleanups
     ESP_LOGI(TAG, "Deleting subtask");
-    vTaskDelete(subtask_handle); // delete subtask
+    unity_utils_task_delete(subtask_handle); // delete subtask
 
     ESP_LOGI(TAG, "I2S TDM master receive stop");
     TEST_ESP_OK(i2s_channel_disable(i2s_tdm_rx_handle));
@@ -205,6 +206,9 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
             .din = TEST_I2S_DO_IO // on slave, swap DI and DO pin
         },
     };
+    if (sample_rate >= 96000) {
+        i2s_tdm_config.clk_cfg.bclk_div = 12;
+    }
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_rx_handle, &i2s_tdm_config));
 
