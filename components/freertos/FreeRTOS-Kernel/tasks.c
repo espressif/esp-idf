@@ -699,21 +699,21 @@ static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
 
-    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pvTaskCode,
+    TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
                                                 const char * const pcName,
                                                 const uint32_t ulStackDepth,
                                                 void * const pvParameters,
                                                 UBaseType_t uxPriority,
-                                                StackType_t * const pxStackBuffer,
+                                                StackType_t * const puxStackBuffer,
                                                 StaticTask_t * const pxTaskBuffer,
                                                 const BaseType_t xCoreID )
     {
     TCB_t *pxNewTCB;
     TaskHandle_t xReturn;
 
-        configASSERT( portVALID_TCB_MEM(pxTaskBuffer) );
-        configASSERT( portVALID_STACK_MEM(pxStackBuffer) );
-        configASSERT( (xCoreID>=0 && xCoreID<configNUM_CORES) || (xCoreID==tskNO_AFFINITY) );
+        configASSERT( portVALID_STACK_MEM( puxStackBuffer ) );
+        configASSERT( portVALID_TCB_MEM( pxTaskBuffer ) );
+        configASSERT( ( ( xCoreID >= 0 ) && ( xCoreID < configNUM_CORES ) ) || ( xCoreID == tskNO_AFFINITY ) );
 
         #if ( configASSERT_DEFINED == 1 )
             {
@@ -726,13 +726,12 @@ static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
             }
         #endif /* configASSERT_DEFINED */
 
-
-        if( ( pxTaskBuffer != NULL ) && ( pxStackBuffer != NULL ) )
+        if( ( pxTaskBuffer != NULL ) && ( puxStackBuffer != NULL ) )
         {
             /* The memory used for the task's TCB and stack are passed into this
              * function - use them. */
             pxNewTCB = ( TCB_t * ) pxTaskBuffer; /*lint !e740 !e9087 Unusual cast is ok as the structures are designed to have the same alignment, and the size is checked by an assert. */
-            pxNewTCB->pxStack = ( StackType_t * ) pxStackBuffer;
+            pxNewTCB->pxStack = ( StackType_t * ) puxStackBuffer;
 
             #if ( tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE != 0 ) /*lint !e731 !e9029 Macro has been consolidated for readability reasons. */
                 {
@@ -742,7 +741,7 @@ static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
                 }
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
-            prvInitialiseNewTask( pvTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
+            prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL, xCoreID );
             prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
@@ -857,13 +856,13 @@ static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
 
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
-    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
-                            const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
-                            const uint32_t usStackDepth,
-                            void * const pvParameters,
-                            UBaseType_t uxPriority,
-                            TaskHandle_t * const pvCreatedTask,
-                            const BaseType_t xCoreID)
+    BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
+                                        const char * const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                        const configSTACK_DEPTH_TYPE usStackDepth,
+                                        void * const pvParameters,
+                                        UBaseType_t uxPriority,
+                                        TaskHandle_t * const pxCreatedTask,
+                                        const BaseType_t xCoreID)
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn;
@@ -934,7 +933,7 @@ static BaseType_t prvCheckForYieldUsingPrioritySMP( UBaseType_t uxTaskPriority,
                 }
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
-            prvInitialiseNewTask( pvTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pvCreatedTask, pxNewTCB, NULL, xCoreID );
+            prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL, xCoreID );
             prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
@@ -962,8 +961,10 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     StackType_t * pxTopOfStack;
     UBaseType_t x;
 
-    #if (configNUM_CORES < 2)
-    xCoreID = 0;
+    #if ( configNUM_CORES == 1 )
+    {
+        xCoreID = 0;
+    }
     #endif
 
     #if ( portUSING_MPU_WRAPPERS == 1 )
@@ -1524,11 +1525,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                                 const TickType_t xTimeIncrement )
     {
         TickType_t xTimeToWake;
-#ifdef ESP_PLATFORM
-        BaseType_t xShouldDelay = pdFALSE;
-#else
         BaseType_t xAlreadyYielded, xShouldDelay = pdFALSE;
-#endif // ESP_PLATFORM
 
         configASSERT( pxPreviousWakeTime );
         configASSERT( ( xTimeIncrement > 0U ) );
@@ -1596,15 +1593,13 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         }
 #ifdef ESP_PLATFORM // IDF-3755
         taskEXIT_CRITICAL( &xKernelLock );
+        xAlreadyYielded = pdFALSE;
 #else
         xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
 
         /* Force a reschedule if xTaskResumeAll has not already done so, we may
          * have put ourselves to sleep. */
-#ifdef ESP_PLATFORM
-        portYIELD_WITHIN_API();
-#else
         if( xAlreadyYielded == pdFALSE )
         {
             portYIELD_WITHIN_API();
@@ -1613,7 +1608,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         {
             mtCOVERAGE_TEST_MARKER();
         }
-#endif // ESP_PLATFORM
+
         return xShouldDelay;
     }
 
@@ -1624,6 +1619,8 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
 
     void vTaskDelay( const TickType_t xTicksToDelay )
     {
+        BaseType_t xAlreadyYielded = pdFALSE;
+
         /* A delay time of zero just forces a reschedule. */
         if( xTicksToDelay > ( TickType_t ) 0U )
         {
@@ -1647,6 +1644,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
             }
 #ifdef ESP_PLATFORM // IDF-3755
             taskEXIT_CRITICAL( &xKernelLock );
+            xAlreadyYielded = pdFALSE;
 #else
             xAlreadyYielded = xTaskResumeAll();
 #endif // ESP_PLATFORM
@@ -1656,8 +1654,16 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
             mtCOVERAGE_TEST_MARKER();
         }
 
-        /* Force a reschedule, we may have put ourselves to sleep. */
-        portYIELD_WITHIN_API();
+        /* Force a reschedule if xTaskResumeAll has not already done so, we may
+         * have put ourselves to sleep. */
+        if( xAlreadyYielded == pdFALSE )
+        {
+            portYIELD_WITHIN_API();
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
 
 #endif /* INCLUDE_vTaskDelay */
@@ -2133,8 +2139,12 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
         if( listIS_CONTAINED_WITHIN( &xSuspendedTaskList, &( pxTCB->xStateListItem ) ) != pdFALSE )
         {
             /* Has the task already been resumed from within an ISR? */
-            if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) == pdFALSE &&
-                listIS_CONTAINED_WITHIN( &xPendingReadyList[!xPortGetCoreID()], &( pxTCB->xEventListItem ))  == pdFALSE )
+            #if ( configNUM_CORES > 1 )
+                if(    ( listIS_CONTAINED_WITHIN( &xPendingReadyList[ 0 ], &( pxTCB->xEventListItem ) ) == pdFALSE )
+                    && ( listIS_CONTAINED_WITHIN( &xPendingReadyList[ 1 ], &( pxTCB->xEventListItem ) ) == pdFALSE ) )
+            #else
+                if( listIS_CONTAINED_WITHIN( &xPendingReadyList[ 0 ], &( pxTCB->xEventListItem ) ) == pdFALSE )
+            #endif
             {
                 /* Is it in the suspended list because it is in the Suspended
                  * state, or because is is blocked with no timeout? */
@@ -2251,6 +2261,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 traceTASK_RESUME_FROM_ISR( pxTCB );
 
                 /* Check the ready lists can be accessed. */
+                /* Known issue IDF-5856. We also need to check if the other core is suspended */
                 if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
                 {
                     /* Ready lists can be accessed so move the task from the
@@ -2299,7 +2310,7 @@ void vTaskStartScheduler( void )
 
 #ifdef ESP_PLATFORM
     /* Create an IDLE task for each core */
-    for(BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++)
+    for( BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++ )
 #endif //ESP_PLATFORM
     /* Add the idle task at the lowest priority. */
     #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -2449,12 +2460,12 @@ void vTaskSuspendAll( void )
      * BaseType_t.  Please read Richard Barry's reply in the following link to a
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
-#ifdef ESP_PLATFORM
-    /* For SMP, although each core has their own uxSchedulerSuspended, we still
-     * need to disable interrupts or enter a critical section when accessing. */
-    unsigned state;
-    state = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
+
+    #if ( configNUM_CORES > 1 )
+        /* For SMP, although each core has their own uxSchedulerSuspended, we still
+         * need enter a critical section when accessing. */
+        taskENTER_CRITICAL( &xKernelLock );
+    #endif
 
     /* portSOFRWARE_BARRIER() is only implemented for emulated/simulated ports that
      * do not otherwise exhibit real time behaviour. */
@@ -2468,9 +2479,9 @@ void vTaskSuspendAll( void )
      * the above increment elsewhere. */
     portMEMORY_BARRIER();
 
-#ifdef ESP_PLATFORM
-    portCLEAR_INTERRUPT_MASK_FROM_ISR( state );
-#endif
+    #if ( configNUM_CORES > 1 )
+        taskEXIT_CRITICAL( &xKernelLock );
+    #endif
 }
 /*----------------------------------------------------------*/
 
@@ -2558,12 +2569,9 @@ BaseType_t xTaskResumeAll( void )
      * tasks from this list into their appropriate ready list. */
     taskENTER_CRITICAL( &xKernelLock );
     {
-#ifdef ESP_PLATFORM
         /* Minor optimization. Core ID can't change while inside a critical section */
         BaseType_t xCoreID = xPortGetCoreID();
-#else
-        BaseType_t xCoreID = 0;
-#endif
+
         --uxSchedulerSuspended[ xCoreID ];
 
         if( uxSchedulerSuspended[ xCoreID ] == ( UBaseType_t ) pdFALSE )
@@ -2606,11 +2614,9 @@ BaseType_t xTaskResumeAll( void )
                  * they should be processed now.  This ensures the tick count does
                  * not  slip, and that any delayed tasks are resumed at the correct
                  * time. */
-#ifdef ESP_PLATFORM
                 /* Core 0 is solely responsible for managing tick count, thus it
                  * must be the only core to unwind the pended ticks */
                 if ( xCoreID == 0 )
-#endif
                 {
                     TickType_t xPendedCounts = xPendedTicks; /* Non-volatile copy. */
 
@@ -2668,7 +2674,12 @@ TickType_t xTaskGetTickCount( void )
 {
     TickType_t xTicks;
 
-    xTicks = xTickCount;
+    /* Critical section required if running on a 16 bit processor. */
+    portTICK_TYPE_ENTER_CRITICAL();
+    {
+        xTicks = xTickCount;
+    }
+    portTICK_TYPE_EXIT_CRITICAL();
 
     return xTicks;
 }
@@ -2677,7 +2688,6 @@ TickType_t xTaskGetTickCount( void )
 TickType_t xTaskGetTickCountFromISR( void )
 {
     TickType_t xReturn;
-    UBaseType_t uxSavedInterruptStatus;
 
     /* RTOS ports that support interrupt nesting have the concept of a maximum
      * system call (or maximum API call) interrupt priority.  Interrupts that are
@@ -2695,11 +2705,21 @@ TickType_t xTaskGetTickCountFromISR( void )
      * link: https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html */
     portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
-    uxSavedInterruptStatus = portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR();
+    #if ( configNUM_CORES > 1 )
+        /* We need a critical section here as we are about to access kernel data structures */
+        taskENTER_CRITICAL_ISR( &xKernelLock );
+    #else
+        UBaseType_t uxSavedInterruptStatus;
+        uxSavedInterruptStatus = portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR();
+    #endif
     {
         xReturn = xTickCount;
     }
-    portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+    #if ( configNUM_CORES > 1 )
+        taskEXIT_CRITICAL_ISR( &xKernelLock );
+    #else
+        portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+    #endif
 
     return xReturn;
 }
@@ -3470,28 +3490,26 @@ BaseType_t xTaskIncrementTick( void )
     {
         TCB_t * pxTCB;
         TaskHookFunction_t xReturn;
-#ifndef ESP_PLATFORM
-        UBaseType_t uxSavedInterruptStatus;
-#endif
 
         /* If xTask is NULL then set the calling task's hook. */
         pxTCB = prvGetTCBFromHandle( xTask );
 
         /* Save the hook function in the TCB.  A critical section is required as
          * the value can be accessed from an interrupt. */
-#ifdef ESP_PLATFORM
-        taskENTER_CRITICAL_ISR( &xKernelLock );
-#else
-        uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-#endif
+        #if ( configNUM_CORES > 1 )
+            taskENTER_CRITICAL_ISR( &xKernelLock );
+        #else
+            UBaseType_t uxSavedInterruptStatus;
+            uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
+        #endif
         {
             xReturn = pxTCB->pxTaskTag;
         }
-#ifdef ESP_PLATFORM
-        taskEXIT_CRITICAL_ISR( &xKernelLock );
-#else
-        portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
-#endif
+        #if ( configNUM_CORES > 1 )
+            taskEXIT_CRITICAL_ISR( &xKernelLock );
+        #else
+            portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+        #endif
 
         return xReturn;
     }
@@ -4079,6 +4097,7 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
              * around and gone past again. This passed since vTaskSetTimeout()
              * was called. */
             xReturn = pdTRUE;
+            *pxTicksToWait = ( TickType_t ) 0;
         }
         else if( xElapsedTime < *pxTicksToWait ) /*lint !e961 Explicit casting is only redundant with some compilers, whereas others require it to prevent integer conversion errors. */
         {
@@ -4089,7 +4108,7 @@ BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
         }
         else
         {
-            *pxTicksToWait = 0;
+            *pxTicksToWait = ( TickType_t ) 0;
             xReturn = pdTRUE;
         }
     }
@@ -4526,9 +4545,8 @@ static void prvCheckTasksWaitingTermination( void )
         pxTaskStatus->uxCurrentPriority = pxTCB->uxPriority;
         pxTaskStatus->pxStackBase = pxTCB->pxStack;
         pxTaskStatus->xTaskNumber = pxTCB->uxTCBNumber;
-
         #if ( configTASKLIST_INCLUDE_COREID == 1 )
-        pxTaskStatus->xCoreID = pxTCB->xCoreID;
+            pxTaskStatus->xCoreID = pxTCB->xCoreID;
         #endif /* configTASKLIST_INCLUDE_COREID */
 
         #if ( configUSE_MUTEXES == 1 )
@@ -4907,6 +4925,7 @@ static void prvResetNextTaskUnblockTime( void )
         BaseType_t xReturn;
         unsigned state;
 
+        /* Known issue. This should use critical sections. See IDF-5889 */
         state = portSET_INTERRUPT_MASK_FROM_ISR();
         if( xSchedulerRunning == pdFALSE )
         {
@@ -5541,13 +5560,17 @@ static void prvResetNextTaskUnblockTime( void )
 TickType_t uxTaskResetEventItemValue( void )
 {
     TickType_t uxReturn;
+    TCB_t *pxCurTCB;
 
     taskENTER_CRITICAL( &xKernelLock );
-    uxReturn = listGET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ) );
+    pxCurTCB = pxCurrentTCB[ xPortGetCoreID() ];
+
+    uxReturn = listGET_LIST_ITEM_VALUE( &( pxCurTCB->xEventListItem ) );
 
     /* Reset the event list item to its normal value - so it can be used with
      * queues and semaphores. */
-    listSET_LIST_ITEM_VALUE( &( pxCurrentTCB[ xPortGetCoreID() ]->xEventListItem ), ( ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) pxCurrentTCB[ xPortGetCoreID() ]->uxPriority ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+    listSET_LIST_ITEM_VALUE( &( pxCurTCB->xEventListItem ), ( ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) pxCurTCB->uxPriority ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+
     taskEXIT_CRITICAL( &xKernelLock );
 
     return uxReturn;
@@ -6189,13 +6212,15 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     const TickType_t xConstTickCount = xTickCount;
     BaseType_t xCurCoreID = xPortGetCoreID();
 
-    if( ( configNUM_CORES > 1 ) && listIS_CONTAINED_WITHIN( &xTasksWaitingTermination, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) ) )
-    {
-        /* vTaskDelete() has been called to delete this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
-           so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
-           be suspended permanently */
-        return;
-    }
+    #if ( configNUM_CORES > 1 )
+        if( listIS_CONTAINED_WITHIN( &xTasksWaitingTermination, &( pxCurrentTCB[ xCurCoreID ]->xStateListItem ) ) == pdTRUE )
+        {
+            /* vTaskDelete() has been called to delete this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
+               so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
+               be suspended permanently. Todo: IDF-5844. */
+            return;
+        }
+    #endif
 
     #if ( INCLUDE_xTaskAbortDelay == 1 )
         {
