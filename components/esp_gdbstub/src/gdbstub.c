@@ -847,7 +847,7 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
 static eTaskState get_task_state(size_t index)
 {
     eTaskState result = eReady;
-    TaskHandle_t handle;
+    TaskHandle_t handle = NULL;
     get_task_handle(index, &handle);
     if (gdb_debug_int == false) {
         result = eTaskGetState(handle);
@@ -858,7 +858,9 @@ static eTaskState get_task_state(size_t index)
 static int get_task_cpu_id(size_t index)
 {
     TaskHandle_t handle;
-    get_task_handle(index, &handle);
+    if (!get_task_handle(index, &handle)) {
+        return -1;
+    }
     BaseType_t core_id = xTaskGetAffinity(handle);
     return (int)core_id;
 }
