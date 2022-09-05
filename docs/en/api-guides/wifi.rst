@@ -1306,7 +1306,7 @@ Call :cpp:func:`esp_wifi_set_country()` to set the country info. The table below
    * - Field
      - Description
    * - cc[3]
-     - Country code string. This attribute identifies the country or noncountry entity in which the station/AP is operating. If it is a country, the first two octets of this string is the two-character country info as described in the document ISO/IEC3166-1. The third octect is one of the following:
+     - Country code string. This attribute identifies the country or noncountry entity in which the station/AP is operating. If it is a country, the first two octets of this string is the two-character country info as described in the document ISO/IEC3166-1. The third octet is one of the following:
 
        - an ASCII space character, which means the regulations under which the station/AP is operating encompass all environments for the current frequency band in the country.
        - an ASCII ‘O’ character, which means the regulations under which the station/AP is operating are for an outdoor environment only.
