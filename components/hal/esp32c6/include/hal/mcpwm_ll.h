@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,13 +10,15 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32-S3 MCPWM register operations
+// The LL layer for ESP32-C6 MCPWM register operations
 
 #pragma once
 
 #include <stdbool.h>
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_struct.h"
+#include "soc/clk_tree_defs.h"
+#include "soc/pcr_struct.h"
 #include "hal/mcpwm_types.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
@@ -26,7 +28,7 @@ extern "C" {
 #endif
 
 // Get MCPWM group register base address
-#define MCPWM_LL_GET_HW(ID)                  (((ID) == 0) ? &MCPWM0 : &MCPWM1)
+#define MCPWM_LL_GET_HW(ID)                  (((ID) == 0) ? &MCPWM0 : NULL)
 
 // MCPWM interrupt event mask
 #define MCPWM_LL_EVENT_TIMER_STOP(timer)     (1 << (timer))
@@ -69,16 +71,24 @@ typedef enum {
  * @param mcpwm Peripheral instance address
  * @param clk_src Clock source for the MCPWM peripheral
  */
-static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, mcpwm_timer_clock_source_t clk_src)
+static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, soc_module_clk_t clk_src)
 {
-    (void)mcpwm;
-    (void)clk_src;
+    (void)mcpwm; // only one MCPWM instance
+    switch (clk_src) {
+    case SOC_MOD_CLK_PLL_F160M:
+        PCR.pwm_clk_conf.pwm_clkm_sel = 1;
+        break;
+    case SOC_MOD_CLK_XTAL:
+        PCR.pwm_clk_conf.pwm_clkm_sel = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
 }
 
 /**
  * @brief Enable MCPWM module clock
- *
- * @note Not support to enable/disable the peripheral clock
  *
  * @param mcpwm Peripheral instance address
  * @param en true to enable, false to disable
@@ -86,7 +96,7 @@ static inline void mcpwm_ll_group_set_clock_source(mcpwm_dev_t *mcpwm, mcpwm_tim
 static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
 {
     (void)mcpwm; // only one MCPWM instance
-    (void)en;
+    PCR.pwm_clk_conf.pwm_clkm_en = en;
 }
 
 /**
@@ -97,8 +107,9 @@ static inline void mcpwm_ll_group_enable_clock(mcpwm_dev_t *mcpwm, bool en)
  */
 static inline void mcpwm_ll_group_set_clock_prescale(mcpwm_dev_t *mcpwm, int pre_scale)
 {
-    // group clock: PWM_clk = CLK_160M / (prescale + 1)
-    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->clk_cfg, clk_prescale, pre_scale - 1);
+    (void)mcpwm; // only one MCPWM instance
+    // group clock: PWM_clk = source_clock / (prescale + 1)
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.pwm_clk_conf, pwm_div_num, pre_scale - 1);
 }
 
 /**
@@ -618,7 +629,7 @@ static inline void mcpwm_ll_operator_stop_update_compare(mcpwm_dev_t *mcpwm, int
 __attribute__((always_inline))
 static inline void mcpwm_ll_operator_set_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id, uint32_t compare_value)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operators[operator_id].timestamp[compare_id], gen, compare_value);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operators[operator_id].timestamp[compare_id], cmpr, compare_value);
 }
 
 /**
@@ -926,10 +937,10 @@ static inline void mcpwm_ll_operator_set_deadtime_clock_src(mcpwm_dev_t *mcpwm, 
 {
     switch (src) {
     case MCPWM_LL_DEADTIME_CLK_SRC_GROUP:
-        mcpwm->operators[operator_id].dt_cfg.dt_clk_sel = 0;
+        mcpwm->operators[operator_id].dt_cfg.db_clk_sel = 0;
         break;
     case MCPWM_LL_DEADTIME_CLK_SRC_TIMER:
-        mcpwm->operators[operator_id].dt_cfg.dt_clk_sel = 1;
+        mcpwm->operators[operator_id].dt_cfg.db_clk_sel = 1;
         break;;
     default:
         HAL_ASSERT(false);
@@ -945,7 +956,7 @@ static inline void mcpwm_ll_operator_set_deadtime_clock_src(mcpwm_dev_t *mcpwm, 
  */
 static inline void mcpwm_ll_deadtime_red_select_generator(mcpwm_dev_t *mcpwm, int operator_id, int generator)
 {
-    mcpwm->operators[operator_id].dt_cfg.dt_red_insel = generator;
+    mcpwm->operators[operator_id].dt_cfg.db_red_insel = generator;
 }
 
 /**
@@ -957,7 +968,7 @@ static inline void mcpwm_ll_deadtime_red_select_generator(mcpwm_dev_t *mcpwm, in
  */
 static inline void mcpwm_ll_deadtime_fed_select_generator(mcpwm_dev_t *mcpwm, int operator_id, int generator)
 {
-    mcpwm->operators[operator_id].dt_cfg.dt_fed_insel = generator;
+    mcpwm->operators[operator_id].dt_cfg.db_fed_insel = generator;
 }
 
 /**
@@ -1020,7 +1031,7 @@ static inline void mcpwm_ll_deadtime_swap_out_path(mcpwm_dev_t *mcpwm, int opera
  */
 static inline void mcpwm_ll_deadtime_enable_deb(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
-    mcpwm->operators[operator_id].dt_cfg.dt_deb_mode = enable;
+    mcpwm->operators[operator_id].dt_cfg.db_deb_mode = enable;
 }
 
 /**
@@ -1032,11 +1043,11 @@ static inline void mcpwm_ll_deadtime_enable_deb(mcpwm_dev_t *mcpwm, int operator
  */
 static inline uint32_t mcpwm_ll_deadtime_get_switch_topology(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return (mcpwm->operators[operator_id].dt_cfg.dt_deb_mode << 8) | (mcpwm->operators[operator_id].dt_cfg.dt_b_outswap << 7) |
-           (mcpwm->operators[operator_id].dt_cfg.dt_a_outswap << 6) | (mcpwm->operators[operator_id].dt_cfg.dt_fed_insel << 5) |
-           (mcpwm->operators[operator_id].dt_cfg.dt_red_insel << 4) | (mcpwm->operators[operator_id].dt_cfg.dt_fed_outinvert << 3) |
-           (mcpwm->operators[operator_id].dt_cfg.dt_red_outinvert << 2) | (mcpwm->operators[operator_id].dt_cfg.dt_a_outbypass << 1) |
-           (mcpwm->operators[operator_id].dt_cfg.dt_b_outbypass << 0);
+    return (mcpwm->operators[operator_id].dt_cfg.db_deb_mode << 8) | (mcpwm->operators[operator_id].dt_cfg.db_b_outswap << 7) |
+           (mcpwm->operators[operator_id].dt_cfg.db_a_outswap << 6) | (mcpwm->operators[operator_id].dt_cfg.db_fed_insel << 5) |
+           (mcpwm->operators[operator_id].dt_cfg.db_red_insel << 4) | (mcpwm->operators[operator_id].dt_cfg.db_fed_outinvert << 3) |
+           (mcpwm->operators[operator_id].dt_cfg.db_red_outinvert << 2) | (mcpwm->operators[operator_id].dt_cfg.db_a_outbypass << 1) |
+           (mcpwm->operators[operator_id].dt_cfg.db_b_outbypass << 0);
 }
 
 /**
@@ -1048,7 +1059,7 @@ static inline uint32_t mcpwm_ll_deadtime_get_switch_topology(mcpwm_dev_t *mcpwm,
  */
 static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t fed)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operators[operator_id].dt_fed_cfg, dt_fed, fed - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operators[operator_id].dt_fed_cfg, db_fed, fed - 1);
 }
 
 /**
@@ -1060,7 +1071,7 @@ static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int o
  */
 static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int operator_id, uint32_t red)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operators[operator_id].dt_red_cfg, dt_red, red - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->operators[operator_id].dt_red_cfg, db_red, red - 1);
 }
 
 /**
@@ -1071,8 +1082,8 @@ static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int op
  */
 static inline void mcpwm_ll_deadtime_update_delay_at_once(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod = 0;
-    mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod = 0;
+    mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod = 0;
+    mcpwm->operators[operator_id].dt_cfg.db_red_upmethod = 0;
 }
 
 /**
@@ -1085,11 +1096,11 @@ static inline void mcpwm_ll_deadtime_update_delay_at_once(mcpwm_dev_t *mcpwm, in
 static inline void mcpwm_ll_deadtime_enable_update_delay_on_tez(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
     if (enable) {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod |= 1 << 0;
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod |= 1 << 0;
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod |= 1 << 0;
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod |= 1 << 0;
     } else {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod &= ~(1 << 0);
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod &= ~(1 << 0);
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod &= ~(1 << 0);
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod &= ~(1 << 0);
     }
 }
 
@@ -1103,11 +1114,11 @@ static inline void mcpwm_ll_deadtime_enable_update_delay_on_tez(mcpwm_dev_t *mcp
 static inline void mcpwm_ll_deadtime_enable_update_delay_on_tep(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
     if (enable) {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod |= 1 << 1;
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod |= 1 << 1;
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod |= 1 << 1;
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod |= 1 << 1;
     } else {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod &= ~(1 << 1);
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod &= ~(1 << 1);
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod &= ~(1 << 1);
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod &= ~(1 << 1);
     }
 }
 
@@ -1121,11 +1132,11 @@ static inline void mcpwm_ll_deadtime_enable_update_delay_on_tep(mcpwm_dev_t *mcp
 static inline void mcpwm_ll_deadtime_enable_update_delay_on_sync(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
     if (enable) {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod |= 1 << 2;
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod |= 1 << 2;
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod |= 1 << 2;
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod |= 1 << 2;
     } else {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod &= ~(1 << 2);
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod &= ~(1 << 2);
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod &= ~(1 << 2);
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod &= ~(1 << 2);
     }
 }
 
@@ -1139,11 +1150,11 @@ static inline void mcpwm_ll_deadtime_enable_update_delay_on_sync(mcpwm_dev_t *mc
 static inline void mcpwm_ll_deadtime_stop_update_delay(mcpwm_dev_t *mcpwm, int operator_id, bool stop_or_not)
 {
     if (stop_or_not) {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod |= 1 << 3;
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod |= 1 << 3;
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod |= 1 << 3;
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod |= 1 << 3;
     } else {
-        mcpwm->operators[operator_id].dt_cfg.dt_fed_upmethod &= ~(1 << 3);
-        mcpwm->operators[operator_id].dt_cfg.dt_red_upmethod &= ~(1 << 3);
+        mcpwm->operators[operator_id].dt_cfg.db_fed_upmethod &= ~(1 << 3);
+        mcpwm->operators[operator_id].dt_cfg.db_red_upmethod &= ~(1 << 3);
     }
 }
 
@@ -1158,7 +1169,7 @@ static inline void mcpwm_ll_deadtime_stop_update_delay(mcpwm_dev_t *mcpwm, int o
  */
 static inline void mcpwm_ll_carrier_enable(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
-    mcpwm->operators[operator_id].carrier_cfg.carrier_en = enable;
+    mcpwm->operators[operator_id].carrier_cfg.chopper_en = enable;
 }
 
 /**
@@ -1171,7 +1182,7 @@ static inline void mcpwm_ll_carrier_enable(mcpwm_dev_t *mcpwm, int operator_id, 
 static inline void mcpwm_ll_carrier_set_prescale(mcpwm_dev_t *mcpwm, int operator_id, uint8_t prescale)
 {
     HAL_ASSERT(prescale > 0 && prescale <= 16);
-    mcpwm->operators[operator_id].carrier_cfg.carrier_prescale = prescale - 1;
+    mcpwm->operators[operator_id].carrier_cfg.chopper_prescale = prescale - 1;
 }
 
 /**
@@ -1183,7 +1194,7 @@ static inline void mcpwm_ll_carrier_set_prescale(mcpwm_dev_t *mcpwm, int operato
  */
 static inline void mcpwm_ll_carrier_set_duty(mcpwm_dev_t *mcpwm, int operator_id, uint8_t carrier_duty)
 {
-    mcpwm->operators[operator_id].carrier_cfg.carrier_duty = carrier_duty;
+    mcpwm->operators[operator_id].carrier_cfg.chopper_duty = carrier_duty;
 }
 
 /**
@@ -1195,7 +1206,7 @@ static inline void mcpwm_ll_carrier_set_duty(mcpwm_dev_t *mcpwm, int operator_id
  */
 static inline void mcpwm_ll_carrier_out_invert(mcpwm_dev_t *mcpwm, int operator_id, bool invert)
 {
-    mcpwm->operators[operator_id].carrier_cfg.carrier_out_invert = invert;
+    mcpwm->operators[operator_id].carrier_cfg.chopper_out_invert = invert;
 }
 
 /**
@@ -1207,7 +1218,7 @@ static inline void mcpwm_ll_carrier_out_invert(mcpwm_dev_t *mcpwm, int operator_
  */
 static inline void mcpwm_ll_carrier_in_invert(mcpwm_dev_t *mcpwm, int operator_id, bool invert)
 {
-    mcpwm->operators[operator_id].carrier_cfg.carrier_in_invert = invert;
+    mcpwm->operators[operator_id].carrier_cfg.chopper_in_invert = invert;
 }
 
 /**
@@ -1220,7 +1231,7 @@ static inline void mcpwm_ll_carrier_in_invert(mcpwm_dev_t *mcpwm, int operator_i
 static inline void mcpwm_ll_carrier_set_first_pulse_width(mcpwm_dev_t *mcpwm, int operator_id, uint8_t pulse_width)
 {
     HAL_ASSERT(pulse_width >= 1);
-    mcpwm->operators[operator_id].carrier_cfg.carrier_oshtwth = pulse_width - 1;
+    mcpwm->operators[operator_id].carrier_cfg.chopper_oshtwth = pulse_width - 1;
 }
 
 ////////////////////////////////////////MCPWM Fault Specific////////////////////////////////////////////////////////////
@@ -1266,8 +1277,8 @@ static inline void mcpwm_ll_fault_set_active_level(mcpwm_dev_t *mcpwm, int fault
 static inline void mcpwm_ll_brake_clear_ost(mcpwm_dev_t *mcpwm, int operator_id)
 {
     // a posedge can clear the ost fault status
-    mcpwm->operators[operator_id].fh_cfg1.fh_clr_ost = 0;
-    mcpwm->operators[operator_id].fh_cfg1.fh_clr_ost = 1;
+    mcpwm->operators[operator_id].fh_cfg1.tz_clr_ost = 0;
+    mcpwm->operators[operator_id].fh_cfg1.tz_clr_ost = 1;
 }
 
 /**
@@ -1345,7 +1356,7 @@ static inline void mcpwm_ll_fault_enable_cbc_refresh_on_tep(mcpwm_dev_t *mcpwm, 
  */
 static inline void mcpwm_ll_brake_enable_soft_cbc(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
-    mcpwm->operators[operator_id].fh_cfg0.fh_sw_cbc = enable;
+    mcpwm->operators[operator_id].fh_cfg0.tz_sw_cbc = enable;
 }
 
 /**
@@ -1357,7 +1368,7 @@ static inline void mcpwm_ll_brake_enable_soft_cbc(mcpwm_dev_t *mcpwm, int operat
  */
 static inline void mcpwm_ll_brake_enable_soft_ost(mcpwm_dev_t *mcpwm, int operator_id, bool enable)
 {
-    mcpwm->operators[operator_id].fh_cfg0.fh_sw_ost = enable;
+    mcpwm->operators[operator_id].fh_cfg0.tz_sw_ost = enable;
 }
 
 /**
@@ -1368,7 +1379,7 @@ static inline void mcpwm_ll_brake_enable_soft_ost(mcpwm_dev_t *mcpwm, int operat
  */
 static inline void mcpwm_ll_brake_trigger_soft_cbc(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    mcpwm->operators[operator_id].fh_cfg1.fh_force_cbc = ~mcpwm->operators[operator_id].fh_cfg1.fh_force_cbc;
+    mcpwm->operators[operator_id].fh_cfg1.tz_force_cbc = ~mcpwm->operators[operator_id].fh_cfg1.tz_force_cbc;
 }
 
 /**
@@ -1379,7 +1390,7 @@ static inline void mcpwm_ll_brake_trigger_soft_cbc(mcpwm_dev_t *mcpwm, int opera
  */
 static inline void mcpwm_ll_brake_trigger_soft_ost(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    mcpwm->operators[operator_id].fh_cfg1.fh_force_ost = ~mcpwm->operators[operator_id].fh_cfg1.fh_force_ost;
+    mcpwm->operators[operator_id].fh_cfg1.tz_force_ost = ~mcpwm->operators[operator_id].fh_cfg1.tz_force_ost;
 }
 
 /**
@@ -1391,7 +1402,7 @@ static inline void mcpwm_ll_brake_trigger_soft_ost(mcpwm_dev_t *mcpwm, int opera
  */
 static inline bool mcpwm_ll_ost_brake_active(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return mcpwm->operators[operator_id].fh_status.fh_ost_on;
+    return mcpwm->operators[operator_id].fh_status.tz_ost_on;
 }
 
 /**
@@ -1403,7 +1414,7 @@ static inline bool mcpwm_ll_ost_brake_active(mcpwm_dev_t *mcpwm, int operator_id
  */
 static inline bool mcpwm_ll_cbc_brake_active(mcpwm_dev_t *mcpwm, int operator_id)
 {
-    return mcpwm->operators[operator_id].fh_status.fh_cbc_on;
+    return mcpwm->operators[operator_id].fh_status.tz_cbc_on;
 }
 
 ////////////////////////////////////////MCPWM Capture Specific//////////////////////////////////////////////////////////
@@ -1439,7 +1450,7 @@ static inline void mcpwm_ll_capture_enable_channel(mcpwm_dev_t *mcpwm, int chann
  */
 static inline void mcpwm_ll_capture_set_sync_phase_value(mcpwm_dev_t *mcpwm, uint32_t phase_value)
 {
-    mcpwm->cap_timer_phase.cap_timer_phase = phase_value;
+    mcpwm->cap_timer_phase.cap_phase = phase_value;
 }
 
 /**
@@ -1586,7 +1597,8 @@ static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int channel
 
 static inline uint32_t mcpwm_ll_group_get_clock_prescale(mcpwm_dev_t *mcpwm)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->clk_cfg, clk_prescale) + 1;
+    (void)mcpwm; // only one MCPWM instance
+    return HAL_FORCE_READ_U32_REG_FIELD(PCR.pwm_clk_conf, pwm_div_num) + 1;
 }
 
 static inline uint32_t mcpwm_ll_timer_get_clock_prescale(mcpwm_dev_t *mcpwm, int timer_id)
@@ -1617,7 +1629,7 @@ static inline mcpwm_timer_count_mode_t mcpwm_ll_timer_get_count_mode(mcpwm_dev_t
 
 static inline uint32_t mcpwm_ll_operator_get_compare_value(mcpwm_dev_t *mcpwm, int operator_id, int compare_id)
 {
-    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operators[operator_id].timestamp[compare_id], gen);
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->operators[operator_id].timestamp[compare_id], cmpr);
 }
 
 __attribute__((always_inline))

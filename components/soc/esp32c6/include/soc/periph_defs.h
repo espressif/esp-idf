@@ -38,6 +38,7 @@ typedef enum {
     PERIPH_HMAC_MODULE,
     PERIPH_DS_MODULE,
     PERIPH_GDMA_MODULE,
+    PERIPH_MCPWM0_MODULE,
     PERIPH_SYSTIMER_MODULE,
     PERIPH_SARADC_MODULE,
     PERIPH_MODULE_MAX
@@ -105,7 +106,7 @@ typedef enum {
     ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE,      /**< interrupt of system timer 1, EDGE*/
     ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE,      /**< interrupt of system timer 2, EDGE*/
     ETS_APB_ADC_INTR_SOURCE,                    /**< interrupt of APB ADC, LEVEL*/
-    ETS_PWM_INTR_SOURCE,
+    ETS_MCPWM0_INTR_SOURCE,                     /**< interrupt of MCPWM0, LEVEL*/
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_INTR_SOURCE,
     ETS_SLC0_INTR_SOURCE,

@@ -22,6 +22,7 @@
 #include "driver/mcpwm_types_legacy.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 
 static const char *TAG = "mcpwm(legacy)";
 
@@ -47,7 +48,7 @@ _Static_assert(MCPWM_UNIT_MAX == SOC_MCPWM_GROUPS, "MCPWM unit number not equal 
 #define MCPWM_INTR_FLAG  0
 #endif
 
-#define MCPWM_GROUP_CLK_SRC_HZ 160000000
+#define MCPWM_GROUP_CLK_SRC_HZ 160000000 // MCPWM clock source is fixed to `MCPWM_CAPTURE_CLK_SRC_PLL160M`
 #define MCPWM_GROUP_CLK_PRESCALE (16)
 #define MCPWM_GROUP_CLK_HZ (MCPWM_GROUP_CLK_SRC_HZ / MCPWM_GROUP_CLK_PRESCALE)
 #define MCPWM_TIMER_CLK_HZ (MCPWM_GROUP_CLK_HZ / 10)
@@ -405,6 +406,8 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     mcpwm_hal_init(hal, &config);
 
     mcpwm_critical_enter(mcpwm_num);
+    mcpwm_ll_group_enable_clock(hal->dev, true);
+    mcpwm_ll_group_set_clock_source(hal->dev, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
     mcpwm_ll_group_set_clock_prescale(hal->dev, context[mcpwm_num].group_pre_scale);
     mcpwm_ll_timer_set_clock_prescale(hal->dev, timer_num, context[mcpwm_num].timer_pre_scale[timer_num]);
     mcpwm_ll_timer_set_count_mode(hal->dev, timer_num, mcpwm_conf->counter_mode);
@@ -795,6 +798,8 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     };
     mcpwm_hal_init(hal, &init_config);
     mcpwm_critical_enter(mcpwm_num);
+    mcpwm_ll_group_enable_clock(hal->dev, true);
+    mcpwm_ll_group_set_clock_source(hal->dev, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
     mcpwm_ll_group_set_clock_prescale(hal->dev, context[mcpwm_num].group_pre_scale);
     mcpwm_ll_capture_enable_timer(hal->dev, true);
     mcpwm_ll_capture_enable_channel(hal->dev, cap_channel, true);
@@ -865,6 +870,19 @@ uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, m
     }
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
     return mcpwm_ll_capture_get_value(hal->dev, cap_sig);
+}
+
+uint32_t mcpwm_capture_get_resolution(mcpwm_unit_t mcpwm_num)
+{
+    if (mcpwm_num >= MCPWM_UNIT_MAX) {
+        ESP_LOGE(TAG, "Invalid MCPWM instance");
+        return 0;
+    }
+#if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    return MCPWM_GROUP_CLK_SRC_HZ / context[mcpwm_num].group_pre_scale;
+#else
+    return esp_clk_apb_freq();
+#endif
 }
 
 uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)

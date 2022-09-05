@@ -487,7 +487,7 @@ static void mcpwm_swsync_test(mcpwm_unit_t unit)
 
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    uint32_t delta_timestamp_us = (cap_timestamp[2] - cap_timestamp[1]) * 1000000 / esp_clk_apb_freq();
+    uint32_t delta_timestamp_us = (cap_timestamp[2] - cap_timestamp[1]) * 1000000 / mcpwm_capture_get_resolution(unit);
     uint32_t expected_phase_us = 1000000 / mcpwm_get_frequency(unit, MCPWM_TIMER_0) * test_sync_phase / 1000;
     // accept +-2 error
     TEST_ASSERT_UINT32_WITHIN(2, expected_phase_us, delta_timestamp_us);
@@ -552,8 +552,8 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
     gpio_set_level(TEST_CAP_GPIO, 1);
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(40)));
     uint32_t cap_val1 = mcpwm_capture_signal_get_value(unit, cap_chan);
-    // capture clock source is APB (80MHz), 100ms means 8000000 ticks
-    TEST_ASSERT_UINT_WITHIN(100000, 8000000, cap_val1 - cap_val0);
+    uint32_t delta = mcpwm_capture_get_resolution(unit) / (cap_val1 - cap_val0);
+    TEST_ASSERT_UINT_WITHIN(2, 10, delta);
 
     TEST_ESP_OK(mcpwm_capture_disable_channel(unit, cap_channel));
 }

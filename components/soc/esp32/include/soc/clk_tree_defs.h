@@ -228,7 +228,7 @@ typedef enum {
  */
 typedef enum {
     MCPWM_CAPTURE_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
-    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< SElect APB as the default clock choice */
+    MCPWM_CAPTURE_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default clock choice */
 } soc_periph_mcpwm_capture_clk_src_t;
 
 ///////////////////////////////////////////////////I2S//////////////////////////////////////////////////////////////////

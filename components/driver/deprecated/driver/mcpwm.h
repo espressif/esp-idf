@@ -24,7 +24,7 @@ extern "C" {
  *
  * @note This function initializes one gpio at a time.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param io_signal set MCPWM signals, each MCPWM unit has 6 output(MCPWMXA, MCPWMXB) and 9 input(SYNC_X, FAULT_X, CAP_X)
  *                  'X' is timer_num(0-2)
  * @param gpio_num set this to configure gpio for MCPWM, if you want to use gpio16, gpio_num = 16
@@ -40,7 +40,7 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
  *
  * @note This function initialize a group of MCPWM GPIOs at a time.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param mcpwm_pin MCPWM pin structure
  *
  * @return
@@ -56,7 +56,7 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
  *        The default resolution can be changed by calling mcpwm_group_set_resolution() and mcpwm_timer_set_resolution(),
  *        before calling this function.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers.
  * @param mcpwm_conf configure structure mcpwm_config_t
  *
@@ -74,7 +74,7 @@ esp_err_t mcpwm_init( mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcp
  *        to set them back.
  *        The group resolution must be an integral multiple of timer resolution.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param resolution set expected frequency resolution
  *
  * @return
@@ -91,7 +91,7 @@ esp_err_t mcpwm_group_set_resolution(mcpwm_unit_t mcpwm_num, unsigned long int r
  *        to set them back.
  *        The group resolution must be an integral multiple of timer resolution.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param resolution set expected frequency resolution
  *
@@ -104,7 +104,7 @@ esp_err_t mcpwm_timer_set_resolution(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer
 /**
  * @brief Set frequency(in Hz) of MCPWM timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param frequency set the frequency in Hz of each timer
  *
@@ -117,7 +117,7 @@ esp_err_t mcpwm_set_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, u
 /**
  * @brief Set duty cycle of each operator(MCPWMXA/MCPWMXB)
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the generator(MCPWMXA/MCPWMXB), 'X' is operator number selected
  * @param duty set duty cycle in %(i.e for 62.3% duty cycle, duty = 62.3) of each operator
@@ -131,7 +131,7 @@ esp_err_t mcpwm_set_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_
 /**
  * @brief Set duty cycle of each operator(MCPWMXA/MCPWMXB) in us
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the generator(MCPWMXA/MCPWMXB), 'x' is operator number selected
  * @param duty_in_us set duty value in microseconds of each operator
@@ -147,7 +147,7 @@ esp_err_t mcpwm_set_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
  * @note
  *        Call this function every time after mcpwm_set_signal_high or mcpwm_set_signal_low to resume with previously set duty cycle
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the generator(MCPWMXA/MCPWMXB), 'x' is operator number selected
  * @param duty_type set active low or active high duty type
@@ -161,7 +161,7 @@ esp_err_t mcpwm_set_duty_type(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
 /**
  * @brief Get frequency of timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -172,7 +172,7 @@ uint32_t mcpwm_get_frequency(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 /**
  * @brief Get duty cycle of each operator
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the generator(MCPWMXA/MCPWMXB), 'x' is operator number selected
  *
@@ -184,7 +184,7 @@ float mcpwm_get_duty(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_oper
 /**
  * @brief Get duty cycle of each operator in us
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the generator(MCPWMXA/MCPWMXB), 'x' is operator number selected
  *
@@ -196,7 +196,7 @@ uint32_t mcpwm_get_duty_in_us(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, m
 /**
  * @brief Use this function to set MCPWM signal high
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the operator(MCPWMXA/MCPWMXB), 'x' is timer number selected
  *
@@ -210,7 +210,7 @@ esp_err_t mcpwm_set_signal_high(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
 /**
  * @brief Use this function to set MCPWM signal low
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param gen set the operator(MCPWMXA/MCPWMXB), 'x' is timer number selected
  *
@@ -224,7 +224,7 @@ esp_err_t mcpwm_set_signal_low(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 /**
  * @brief Start MCPWM signal on timer 'x'
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -236,7 +236,7 @@ esp_err_t mcpwm_start(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 /**
  * @brief Start MCPWM signal on timer 'x'
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -248,7 +248,7 @@ esp_err_t mcpwm_stop(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 /**
  * @brief  Initialize carrier configuration
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param carrier_conf configure structure mcpwm_carrier_config_t
  *
@@ -261,7 +261,7 @@ esp_err_t mcpwm_carrier_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, co
 /**
  * @brief Enable MCPWM carrier submodule, for respective timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -273,7 +273,7 @@ esp_err_t mcpwm_carrier_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 /**
  * @brief Disable MCPWM carrier submodule, for respective timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -285,7 +285,7 @@ esp_err_t mcpwm_carrier_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
 /**
  * @brief Set period of carrier
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param carrier_period set the carrier period of each timer, carrier period = (carrier_period + 1)*800ns
  *                    (carrier_period <= 15)
@@ -299,7 +299,7 @@ esp_err_t mcpwm_carrier_set_period(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_n
 /**
  * @brief Set duty_cycle of carrier
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param carrier_duty set duty_cycle of carrier , carrier duty cycle = carrier_duty*12.5%
  *                  (chop_duty <= 7)
@@ -315,7 +315,7 @@ esp_err_t mcpwm_carrier_set_duty_cycle(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
  *
  * @note The carrier oneshot pulse can't disabled.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param pulse_width set pulse width of first pulse in oneshot mode, width = (carrier period)*(pulse_width +1)
  *                    (pulse_width <= 15)
@@ -329,7 +329,7 @@ esp_err_t mcpwm_carrier_oneshot_mode_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_
 /**
  * @brief Enable or disable carrier output inversion
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param carrier_ivt_mode enable or disable carrier output inversion
  *
@@ -343,7 +343,7 @@ esp_err_t mcpwm_carrier_output_invert(mcpwm_unit_t mcpwm_num, mcpwm_timer_t time
 /**
  * @brief Enable and initialize deadtime for each MCPWM timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param dt_mode set deadtime mode
  * @param red set rising edge delay = (red + 1) * MCPWM Group Resolution (default to 100ns, can be changed by `mcpwm_group_set_resolution`)
@@ -359,7 +359,7 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
 /**
  * @brief Disable deadtime on MCPWM timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -371,7 +371,7 @@ esp_err_t mcpwm_deadtime_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num
 /**
  * @brief Initialize fault submodule, currently low level triggering is not supported
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param intput_level set fault signal level, which will cause fault to occur
  * @param fault_sig set the fault pin, which needs to be enabled
  *
@@ -386,7 +386,7 @@ esp_err_t mcpwm_fault_init(mcpwm_unit_t mcpwm_num, mcpwm_fault_input_level_t int
  * @note
  *        currently low level triggering is not supported
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param fault_sig set the fault pin, which needs to be enabled for oneshot mode
  * @param action_on_pwmxa action to be taken on MCPWMXA when fault occurs, either no change or high or low or toggle
@@ -404,7 +404,7 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
  * @note
  *        currently low level triggering is not supported
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param fault_sig set the fault pin, which needs to be enabled for cyc mode
  * @param action_on_pwmxa action to be taken on MCPWMXA when fault occurs, either no change or high or low or toggle
@@ -420,7 +420,7 @@ esp_err_t mcpwm_fault_set_cyc_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_n
 /**
  * @brief Disable fault signal
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param fault_sig fault pin, which needs to be disabled
  *
  * @return
@@ -432,7 +432,7 @@ esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_
 /**
  * @brief Enable capture channel
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param cap_channel capture channel, which needs to be enabled
  * @param cap_conf capture channel configuration
  *
@@ -445,7 +445,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
 /**
  * @brief Disable capture channel
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param cap_channel capture channel, which needs to be disabled
  *
  * @return
@@ -457,7 +457,7 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
 /**
  * @brief Get capture value
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param cap_sig capture channel on which value is to be measured
  *
  * @return
@@ -466,9 +466,17 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
 uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig);
 
 /**
+ * @brief Get capture timer's resolution
+ *
+ * @param mcpwm_num set MCPWM unit
+ * @return Capture timer's resolution
+ */
+uint32_t mcpwm_capture_get_resolution(mcpwm_unit_t mcpwm_num);
+
+/**
  * @brief Get edge of capture signal
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param cap_sig capture channel of whose edge is to be determined
  *
  * @return
@@ -479,7 +487,7 @@ uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_sig
 /**
  * @brief Initialize sync submodule and sets the signal that will cause the timer be loaded with pre-defined value
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param sync_conf sync configuration on this timer
  *
@@ -492,7 +500,7 @@ esp_err_t mcpwm_sync_configure(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, 
 /**
  * @brief Disable sync submodule on given timer
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @return
@@ -505,7 +513,7 @@ esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
  * @brief Set sync output on given timer
  *        Configures what event triggers MCPWM timer to output a sync signal.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param trigger set the trigger that will cause the timer to generate a software sync signal.
  *                Specifically, `MCPWM_SWSYNC_SOURCE_DISABLED` will disable the timer from generating sync signal.
@@ -518,7 +526,7 @@ esp_err_t mcpwm_set_timer_sync_output(mcpwm_unit_t mcpwm_num, mcpwm_timer_t time
 /**
  * @brief Trigger a software sync event and sends it to a specific timer.
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  *
  * @note This software sync event will have the same effect as hw one, except that:
@@ -534,7 +542,7 @@ esp_err_t mcpwm_timer_trigger_soft_sync(mcpwm_unit_t mcpwm_num, mcpwm_timer_t ti
 /**
  * @brief Set external GPIO sync input inverter
  *
- * @param mcpwm_num set MCPWM unit(0-1)
+ * @param mcpwm_num set MCPWM unit
  * @param sync_sig set sync signal of MCPWM, only supports GPIO sync signal
  * @param invert whether GPIO sync source input is inverted (to get negative edge trigger)
  *

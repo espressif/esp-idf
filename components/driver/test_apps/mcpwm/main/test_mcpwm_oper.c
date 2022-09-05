@@ -48,7 +48,11 @@ TEST_CASE("mcpwm_operator_install_uninstall", "[mcpwm]")
             TEST_ESP_OK(mcpwm_operator_connect_timer(operators[k++], timers[i]));
         }
     }
+
+#if SOC_MCPWM_GROUPS > 1
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, mcpwm_operator_connect_timer(operators[0], timers[1]));
+#endif
+
     printf("uninstall operators and timers\r\n");
     for (int i = 0; i < total_operators; i++) {
         TEST_ESP_OK(mcpwm_del_operator(operators[i]));

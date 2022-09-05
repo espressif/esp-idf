@@ -92,6 +92,16 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     cap_timer = heap_caps_calloc(1, sizeof(mcpwm_cap_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cap_timer, ESP_ERR_NO_MEM, err, TAG, "no mem for capture timer");
 
+    ESP_GOTO_ON_ERROR(mcpwm_cap_timer_register_to_group(cap_timer, config->group_id), err, TAG, "register timer failed");
+    mcpwm_group_t *group = cap_timer->group;
+    int group_id = group->group_id;
+
+#if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    // capture timer clock source is same as the MCPWM group
+    ESP_GOTO_ON_ERROR(mcpwm_select_periph_clock(group, (soc_module_clk_t)config->clk_src), err, TAG, "set group clock failed");
+    cap_timer->resolution_hz = group->resolution_hz;
+#else
+    // capture timer has independent clock source selection
     switch (config->clk_src) {
     case MCPWM_CAPTURE_CLK_SRC_APB:
         cap_timer->resolution_hz = esp_clk_apb_freq();
@@ -103,10 +113,7 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid clock source:%d", config->clk_src);
     }
-
-    ESP_GOTO_ON_ERROR(mcpwm_cap_timer_register_to_group(cap_timer, config->group_id), err, TAG, "register timer failed");
-    mcpwm_group_t *group = cap_timer->group;
-    int group_id = group->group_id;
+#endif
 
     // fill in other capture timer specific members
     cap_timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;

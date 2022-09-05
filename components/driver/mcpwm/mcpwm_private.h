@@ -57,8 +57,8 @@ struct mcpwm_group_t {
     mcpwm_hal_context_t hal; // HAL instance is at group level
     portMUX_TYPE spinlock;   // group level spinlock
     uint32_t resolution_hz;  // MCPWM group clock resolution
-    esp_pm_lock_handle_t pm_lock;       // power management lock
-    mcpwm_timer_clock_source_t clk_src; // source clock
+    esp_pm_lock_handle_t pm_lock; // power management lock
+    soc_module_clk_t clk_src; // peripheral source clock
     mcpwm_cap_timer_t *cap_timer; // mcpwm capture timers
     mcpwm_timer_t *timers[SOC_MCPWM_TIMERS_PER_GROUP]; // mcpwm timer array
     mcpwm_oper_t *operators[SOC_MCPWM_OPERATORS_PER_GROUP]; // mcpwm operator array
@@ -220,7 +220,7 @@ struct mcpwm_cap_channel_t {
 
 mcpwm_group_t *mcpwm_acquire_group_handle(int group_id);
 void mcpwm_release_group_handle(mcpwm_group_t *group);
-esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, mcpwm_timer_clock_source_t clk_src);
+esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src);
 
 #ifdef __cplusplus
 }
