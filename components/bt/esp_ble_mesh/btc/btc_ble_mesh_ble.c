@@ -82,7 +82,7 @@ static void btc_ble_mesh_ble_callback(esp_ble_mesh_ble_cb_param_t *cb_params, ui
     msg.pid = BTC_PID_BLE_MESH_BLE_COEX;
     msg.act = act;
 
-    btc_transfer_context(&msg, cb_params, sizeof(esp_ble_mesh_ble_cb_param_t),
+    btc_transfer_context(&msg, cb_params, cb_params == NULL ? 0 : sizeof(esp_ble_mesh_ble_cb_param_t),
                          btc_ble_mesh_ble_copy_req_data);
 }
 
