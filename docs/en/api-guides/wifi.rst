@@ -1365,13 +1365,7 @@ The following table depicts which country info is used in different Wi-Fi modes 
 
        For scan:
 
-       - If schan+nchan-1 >11 :
-
-         Use active scan from schan to 11 and use passive scan from 12 to 14.
-
-       - If schan+nchan-1 <= 11 :
-
-         Use active scan from schan to schan+nchan-1 and use passive scan from schan+nchan to 14.
+         Use active scan from 1 to 11 and use passive scan from 12 to 14.
 
        Always keep in mind that if an AP with hidden SSID and station is set to a passive scan channel, the passive scan will not find it. In other words, if the application hopes to find the AP with hidden SSID in every channel, the policy of country info should be configured to WIFI_COUNTRY_POLICY_MANUAL.
 
@@ -1381,24 +1375,25 @@ The following table depicts which country info is used in different Wi-Fi modes 
 
        For scan:
 
-       - If schan+nchan-1 >11 :
-
-         Use active scan from schan to 11 and use passive scan from 12 to schan+nchan-1.
-
-       - If schan+nchan-1 <= 11 :
-
          Use active scan from schan to schan+nchan-1.
+
    * - AP
      - WIFI_COUNTRY_POLICY_AUTO
      - Always use the configured country info.
+
    * - AP
      - WIFI_COUNTRY_POLICY_MANUAL
      - Always use the configured country info.
+
    * - Station/AP-coexistence
      - WIFI_COUNTRY_POLICY_AUTO
-     - If the station does not connect to any external AP, the AP uses the configured country info. If the station connects to an external AP, the AP has the same country info as the station.
+     - Station: Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO.
+       AP: If the station does not connect to any external AP, the AP uses the configured country info. If the station connects to an external AP, the AP has the same country info as the station.
 
-       Same as station mode with policy WIFI_COUNTRY_POLICY_AUTO.
+   * - Station/AP-coexistence
+     - WIFI_COUNTRY_POLICY_MANUAL
+     - Station: Same as station mode with policy WIFI_COUNTRY_POLICY_MANUAL.
+       AP: Same as AP mode with policy WIFI_COUNTRY_POLICY_MANUAL.
 
 
 Home Channel

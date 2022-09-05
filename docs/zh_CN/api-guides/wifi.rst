@@ -1365,13 +1365,7 @@ Wi-Fi 国家/地区代码
 
        扫描时：
 
-       - 如果 schan+nchan-1>11：
-
-         主动扫描起始信道至信道 11，被动扫描信道 12 至 信道 14。
-
-       - 如果 schan+nchan-1<=11：
-
-         主动扫描起始信道至信道 schan+nchan-1，被动扫描信道 schan+nchan 至 信道 14。
+         主动扫描信道 1 至信道 11，被动扫描信道 12 至 信道 14。
 
        请记住，如果带有隐藏 SSID 的 AP 和 station 被设置在被动扫描信道上，被动扫描将无法找到该 AP。也就是说，如果应用程序希望在每个信道中找到带有隐藏 SSID 的 AP，国家/地区信息应该配置为 WIFI_COUNTRY_POLICY_MANUAL。
 
@@ -1381,25 +1375,25 @@ Wi-Fi 国家/地区代码
 
        扫描时：
 
-       - 如果 schan+nchan-1>11：
+         主动扫描信道 schan 至信道 schan+nchan-1。
 
-         主动扫描起始信道至信道 11，被动扫描信道 12 至 信道 schan+nchan-1。
-
-       - 如果 schan+nchan-1<=11：
-
-         主动扫描起始信道至信道 schan+nchan-1。
    * - AP 模式
      - WIFI_COUNTRY_POLICY_AUTO
      - 总是使用配置的国家/地区信息。
+
    * - AP 模式
      - WIFI_COUNTRY_POLICY_MANUAL
      - 总是使用配置的国家/地区信息。
+
    * - station/AP 共存模式
      - WIFI_COUNTRY_POLICY_AUTO
-     - 如果 station 不连接任何外部 AP，AP 使用配置的国家/地区信息。如果 station 连接一个外部 AP，该 AP 的国家/地区信息与该 station 相同。
+     - 该 station 与 station 模式、WIFI_COUNTRY_POLICY_AUTO 策略下使用的国家/地区信息相同。
+       如果 station 不连接任何外部 AP，AP 使用配置的国家/地区信息。如果 station 连接一个外部 AP，该 AP 的国家/地区信息与该 station 相同。
 
-       与 station 模式、WIFI_COUNTRY_POLICY_AUTO 策略下使用的国家/地区信息相同。
-
+   * - station/AP 共存模式
+     - WIFI_COUNTRY_POLICY_MANUAL
+     - 该 station 与 station 模式、WIFI_COUNTRY_POLICY_MANUAL 策略下使用的国家/地区信息相同。
+       该 AP 与 AP 模式、WIFI_COUNTRY_POLICY_MANUAL 策略下使用的国家/地区信息相同。
 
 主信道
 *************************
