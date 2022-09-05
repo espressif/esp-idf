@@ -204,7 +204,7 @@
     hint: "Projects using target_link_libraries with project_elf explicitly and custom CMake projects must specify PRIVATE, PUBLIC or INTERFACE arguments."
 
 -
-    re: "format '([^']+)' expects argument of type '((unsigned )?int|long)', but argument (\\w+) has type '([u]?int32_t)'( {aka '([^']+)'})?"
+    re: "format '([^']+)' expects argument of type '((unsigned )?int|long)', but argument (\\w+) has type '([u]?int32_t)'( \\{aka '([^']+)'\\})?"
     hint: "The issue is better to resolve by replacing format specifiers to 'PRI'-family macros (include <inttypes.h> header file)."
 
 -
