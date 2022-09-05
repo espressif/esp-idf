@@ -115,4 +115,5 @@ const uint32_t GPIO_HOLD_MASK[SOC_GPIO_PIN_COUNT] = {
     BIT(24),
     BIT(25),
     BIT(26),
+    BIT(27),
 };
