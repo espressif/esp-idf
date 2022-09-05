@@ -30,6 +30,7 @@ USUAL_TO_FORMAL = {
     'esp32c3': 'ESP32-C3',
     'esp32h2': 'ESP32-H2',
     'esp32c2': 'ESP32-C2',
+    'esp32c6': 'ESP32-C6',
     'linux': 'Linux',
 }
 
@@ -40,6 +41,7 @@ FORMAL_TO_USUAL = {
     'ESP32-C3': 'esp32c3',
     'ESP32-H2': 'esp32h2',
     'ESP32-C2': 'esp32c2',
+    'ESP32-C6': 'esp32c6',
     'Linux': 'linux',
 }
 
