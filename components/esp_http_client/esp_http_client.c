@@ -670,6 +670,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     if (config->skip_cert_common_name_check) {
         esp_transport_ssl_skip_common_name_check(ssl);
     }
+
+    if (config->common_name) {
+        esp_transport_ssl_set_common_name(ssl, config->common_name);
+    }
 #endif
 
     if (_set_config(client, config) != ESP_OK) {
