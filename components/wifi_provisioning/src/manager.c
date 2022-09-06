@@ -246,6 +246,7 @@ static cJSON* wifi_prov_get_info_json(void)
     /* Version field */
     cJSON_AddStringToObject(prov_info_json, "ver", prov_ctx->mgr_info.version);
 
+    cJSON_AddNumberToObject(prov_info_json, "sec_ver", prov_ctx->security);
     /* Capabilities field */
     cJSON_AddItemToObject(prov_info_json, "cap", prov_capabilities);
 
