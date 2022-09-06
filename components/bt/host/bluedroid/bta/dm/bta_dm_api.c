@@ -2820,6 +2820,7 @@ void BTA_DmBleGapExtAdvSetRemove(UINT8 instance)
     if ((p_msg = (tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE *) osi_malloc(sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE))) != NULL) {
         memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_EXT_ADV_SET_REMOVE));
         p_msg->hdr.event = BTA_DM_API_EXT_ADV_SET_REMOVE_EVT;
+        p_msg->instance = instance;
         //start sent the msg to the bta system control moudle
         bta_sys_sendmsg(p_msg);
     } else {
