@@ -91,6 +91,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
         default y if IDF_TARGET_ESP32H2
+        default y if IDF_TARGET_ESP32C6
         depends on !IDF_TARGET_ESP32C2
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
@@ -301,6 +302,7 @@ menu "ESP System Settings"
         default 1 if IDF_TARGET_ESP32
         default 20 if IDF_TARGET_ESP32C2
         default 21 if IDF_TARGET_ESP32C3
+        default 16 if IDF_TARGET_ESP32C6
         default 43
         help
              This GPIO is used for console UART TX output in the ESP-IDF Bootloader and the app (including
@@ -316,6 +318,7 @@ menu "ESP System Settings"
         default 3 if IDF_TARGET_ESP32
         default 19 if IDF_TARGET_ESP32C2
         default 20 if IDF_TARGET_ESP32C3
+        default 17 if IDF_TARGET_ESP32C6
         default 44
         help
             This GPIO is used for UART RX input in the ESP-IDF Bootloader and the app (including
