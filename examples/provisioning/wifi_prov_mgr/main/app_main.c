@@ -343,11 +343,8 @@ void app_main(void)
          * for the protocomm security 1.
          * This does not need not be static i.e. could be dynamically allocated
          */
-        wifi_prov_security1_params_t sec1_params = {
-            .data = (const uint8_t *)pop,
-            .len = strlen(pop),
-        };
-        wifi_prov_security1_params_t *sec_params = &sec1_params;
+        wifi_prov_security1_params_t *sec_params = pop;
+
         const char *username  = NULL;
 
 #elif CONFIG_EXAMPLE_PROV_SECURITY_VERSION_2
