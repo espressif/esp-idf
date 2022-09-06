@@ -457,8 +457,54 @@ void pthread_exit(void *value_ptr)
 
 int pthread_cancel(pthread_t thread)
 {
-    ESP_LOGE(TAG, "%s: not supported!", __FUNCTION__);
-    return ENOSYS;
+    int ret = 0;
+
+    bool detached = false;
+    /* preemptively clean up thread local storage, rather than
+       waiting for the idle task to clean up the thread */
+    pthread_internal_local_storage_destructor_callback();
+
+    if (xSemaphoreTake(s_threads_mux, portMAX_DELAY) != pdTRUE) {
+        assert(false && "Failed to lock threads list!");
+    }
+    TaskHandle_t handle = pthread_find_handle(thread);
+    esp_pthread_t *pthread = pthread_find(handle);
+    if (!pthread) {
+        assert(false && "Failed to find pthread for current task!");
+    }
+    if (pthread->task_arg) {
+        free(pthread->task_arg);
+    }
+    if (pthread->detached) {
+        // auto-free for detached threads
+        pthread_delete(pthread);
+        detached = true;
+    } else {
+        // Set return value
+        pthread->retval = PTHREAD_CANCELED;    //!check
+        // Remove from list, it indicates that task has exited
+        if (pthread->join_task) {
+            // notify join
+            xTaskNotify(pthread->join_task, 0, eNoAction);
+        } else {
+            pthread->state = PTHREAD_TASK_STATE_EXIT;
+        }
+    }
+
+    ESP_LOGD(TAG, "Task stk_wm = %d", uxTaskGetStackHighWaterMark(handle));
+
+    xSemaphoreGive(s_threads_mux);
+    // note: if this thread is joinable then after giving back s_threads_mux
+    // this task could be deleted at any time, so don't take another lock or
+    // do anything that might lock (such as printing to stdout)
+
+    if (detached) {
+        vTaskDelete(handle);
+    } else {
+        vTaskSuspend(handle);
+    }
+
+    return ret;
 }
 
 int sched_yield( void )
