@@ -188,11 +188,13 @@ typedef struct {
  * These are same as the security modes provided by protocomm
  */
 typedef enum wifi_prov_security {
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
     /**
      * No security (plain-text communication)
      */
     WIFI_PROV_SECURITY_0 = 0,
-
+#endif
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_1
     /**
      * This secure communication mode consists of
      *   X25519 key exchange
@@ -200,16 +202,27 @@ typedef enum wifi_prov_security {
      * + AES-CTR encryption
      */
     WIFI_PROV_SECURITY_1,
-
+#endif
+#ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2
     /**
      * This secure communication mode consists of
      *  SRP6a based authentication and key exchange
      *  + AES-GCM encryption/decryption
      */
     WIFI_PROV_SECURITY_2
+#endif
 } wifi_prov_security_t;
 
-typedef protocomm_security1_params_t wifi_prov_security1_params_t;
+/**
+ * @brief  Security 1 params structure
+ *         This needs to be passed when using WIFI_PROV_SECURITY_1
+ */
+typedef const char wifi_prov_security1_params_t;
+
+/**
+ * @brief  Security 2 params structure
+ *         This needs to be passed when using WIFI_PROV_SECURITY_2
+ */
 typedef protocomm_security2_params_t wifi_prov_security2_params_t;
 
 /**
