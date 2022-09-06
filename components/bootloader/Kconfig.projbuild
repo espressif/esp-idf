@@ -366,7 +366,7 @@ menu "Bootloader config"
         # only available if both Secure Boot and Check Signature on Boot are disabled
         depends on !SECURE_SIGNED_ON_BOOT
         default n
-        select BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+        select BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP if SOC_RTC_FAST_MEM_SUPPORTED
         select BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
         help
             Selecting this option prevents the bootloader from ever validating the app image before
