@@ -143,8 +143,8 @@ typedef enum {
     ESP_GAP_BLE_PASSKEY_NOTIF_EVT,                          /*!< passkey notification event */
     ESP_GAP_BLE_PASSKEY_REQ_EVT,                            /*!< passkey request event */
     ESP_GAP_BLE_OOB_REQ_EVT,                                /*!< OOB request event */
-    ESP_GAP_BLE_LOCAL_IR_EVT,                               /*!< BLE local IR event */
-    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER event */
+    ESP_GAP_BLE_LOCAL_IR_EVT,                               /*!< BLE local IR (identity Root 128-bit random static value used to generate Long Term Key) event */
+    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER (Encryption Root vakue used to genrate identity resolving key) event */
     ESP_GAP_BLE_NC_REQ_EVT,                                 /*!< Numeric Comparison request event */
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
@@ -287,19 +287,19 @@ typedef enum {
 /* relate to BTA_DM_BLE_SEC_xxx in bta/bta_api.h */
 typedef enum {
     ESP_BLE_SEC_ENCRYPT = 1,            /*!< relate to BTA_DM_BLE_SEC_ENCRYPT in bta/bta_api.h. If the device has already
-                                           bonded, the stack will used LTK to encrypt with the remote device directly.
+                                           bonded, the stack will used Long Term Key (LTK) to encrypt with the remote device directly.
                                            Else if the device hasn't bonded, the stack will used the default authentication request
                                            used the esp_ble_gap_set_security_param function set by the user. */
-    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /*!< relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta/bta_api.h. If the device has already
-                                           bonded, the stack will check the LTK Whether the authentication request has been met, if met, used the LTK
-                                           to encrypt with the remote device directly, else Re-pair with the remote device.
-                                           Else if the device hasn't bonded, the stack will used NO MITM authentication request in the current link instead of
-                                           used the authreq in the esp_ble_gap_set_security_param function set by the user. */
-    ESP_BLE_SEC_ENCRYPT_MITM,           /*!< relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta/bta_api.h. If the device has already
-                                           bonded, the stack will check the LTK Whether the authentication request has been met, if met, used the LTK
-                                           to encrypt with the remote device directly, else Re-pair with the remote device.
-                                           Else if the device hasn't bonded, the stack will used MITM authentication request in the current link instead of
-                                           used the authreq in the esp_ble_gap_set_security_param function set by the user. */
+    ESP_BLE_SEC_ENCRYPT_NO_MITM,        /*!< relate to BTA_DM_BLE_SEC_ENCRYPT_NO_MITM in bta/bta_api.h. If the device has been already
+                                           bonded, the stack will check the LTK (Long Term Key) Whether the authentication request has been met, and if met, use the LTK
+                                           to encrypt with the remote device directly, else re-pair with the remote device.
+                                           Else if the device hasn't been bonded, the stack will use NO MITM authentication request in the current link instead of
+                                           using the authreq in the esp_ble_gap_set_security_param function set by the user. */
+    ESP_BLE_SEC_ENCRYPT_MITM,           /*!< relate to BTA_DM_BLE_SEC_ENCRYPT_MITM in bta/bta_api.h. If the device has been already
+                                           bonded, the stack will check the LTK (Long Term Key) whether the authentication request has been met, and if met, use the LTK
+                                           to encrypt with the remote device directly, else re-pair with the remote device.
+                                           Else if the device hasn't been bonded, the stack will use MITM authentication request in the current link instead of
+                                           using the authreq in the esp_ble_gap_set_security_param function set by the user. */
 }esp_ble_sec_act_t;
 
 typedef enum {
@@ -1757,8 +1757,8 @@ esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_lis
 *                  SMP in response to ESP_GAP_BLE_OOB_REQ_EVT
 *
 * @param[in]       bd_addr: BD address of the peer device.
-* @param[in]       TK: TK value, the TK value shall be a 128-bit random number
-* @param[in]       len: length of tk, should always be 128-bit
+* @param[in]       TK: Temporary Key value, the TK value shall be a 128-bit random number
+* @param[in]       len: length of temporary key, should always be 128-bit
 *
 * @return          - ESP_OK : success
 *                  - other  : failed
