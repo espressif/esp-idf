@@ -211,6 +211,7 @@ build_non_test_components_apps:
   extends:
     - .build_cmake_template
     - .rules:build:component_ut
+  parallel: 2
   script:
     - set_component_ut_vars
     # CI specific options start from "--collect-size-info xxx". could ignore when running locally
