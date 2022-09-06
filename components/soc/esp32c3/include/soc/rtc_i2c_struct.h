@@ -165,7 +165,11 @@ typedef volatile struct rtc_i2c_dev_s {
     } fifo_data;
     union {
         struct {
-            uint32_t command0:     14;              /*command0*/
+            uint32_t byte_num:      8;
+            uint32_t ack_en:        1;
+            uint32_t ack_exp:       1;
+            uint32_t ack_val:       1;
+            uint32_t op_code:       3;
             uint32_t reserved14:   17;
             uint32_t done:          1;              /*command0_done*/
         };
