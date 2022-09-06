@@ -48,4 +48,7 @@ class FatalError(Exception):
 
 
 class InconsistentFATAttributes(Exception):
+    """
+    Caused by e.g. wrong number of clusters for given FAT type
+    """
     pass
