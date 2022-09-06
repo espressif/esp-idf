@@ -1176,7 +1176,7 @@ typedef void (tBTM_ESCO_CBACK) (tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA *p_data)
 #define BTM_LKEY_TYPE_UNAUTH_COMB_P_256 HCI_LKEY_TYPE_UNAUTH_COMB_P_256
 #define BTM_LKEY_TYPE_AUTH_COMB_P_256   HCI_LKEY_TYPE_AUTH_COMB_P_256
 
-#define BTM_LTK_DERIVED_LKEY_OFFSET 0x20    /* "easy" requirements for LK derived from LTK */
+#define BTM_LTK_DERIVED_LKEY_OFFSET 0x20    /* "easy" requirements for Link Key (LK) derived from Long Term Key */
 #define BTM_LKEY_TYPE_IGNORE        0xff    /* used when event is response from
                                                hci return link keys request */
 
