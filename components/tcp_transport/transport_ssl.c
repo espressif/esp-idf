@@ -408,6 +408,12 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
     ssl->cfg.skip_common_name = true;
 }
 
+void esp_transport_ssl_set_common_name(esp_transport_handle_t t, const char *common_name)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.common_name = common_name;
+}
+
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
 void esp_transport_ssl_use_secure_element(esp_transport_handle_t t)
 {
