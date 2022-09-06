@@ -907,6 +907,8 @@ static void wifi_prov_mgr_event_handler_internal(
 esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
                                         uint8_t group_channels, uint32_t period_ms)
 {
+    esp_err_t err;
+
     if (!prov_ctx_lock) {
         ESP_LOGE(TAG, "Provisioning manager not initialized");
         return ESP_ERR_INVALID_STATE;
@@ -923,6 +925,14 @@ esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
         ESP_LOGD(TAG, "Scan already running");
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_OK;
+    }
+
+    // Ensure we are disconnected
+    err = esp_wifi_disconnect();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to disconnect %d", err);
+        RELEASE_LOCK(prov_ctx_lock);
+        return ESP_FAIL;
     }
 
     /* Clear sorted list for new entries */
@@ -961,6 +971,7 @@ esp_err_t wifi_prov_mgr_wifi_scan_start(bool blocking, bool passive,
     }
 
     ESP_LOGD(TAG, "Scan started");
+    prov_ctx->prov_state = WIFI_PROV_STATE_STARTED;
     prov_ctx->scanning = true;
     prov_ctx->curr_channel = prov_ctx->scan_cfg.channel;
     RELEASE_LOCK(prov_ctx_lock);
