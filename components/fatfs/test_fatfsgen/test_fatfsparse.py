@@ -320,7 +320,7 @@ class FatFSGen(unittest.TestCase):
             f'{os.path.join(os.path.dirname(__file__), "..", "fatfsgen.py")}',
             'testf', '--long_name_support'
         ], stderr=STDOUT)
-        run(['python', '../fatfsparse.py', 'fatfs_image.img', '--long-name-support'], stderr=STDOUT)
+        run(['python', '../fatfsparse.py', 'fatfs_image.img'], stderr=STDOUT)
         assert compare_folders('testf', 'Espressif')
 
 
