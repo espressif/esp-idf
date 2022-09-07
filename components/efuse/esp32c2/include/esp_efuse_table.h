@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table ce4e849361b72f5095735d37756740aa
+// md5_digest_table ceedae45d1a885ced865a05eeca7d7ee
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -61,6 +61,11 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_256BIT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_FE_128BIT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY0_SB_128BIT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIG_DBIAS_HVT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_SLP_DBIAS2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIG_LDO_SLP_DBIAS26[];
