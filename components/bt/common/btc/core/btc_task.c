@@ -243,8 +243,6 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         return BT_STATUS_PARM_INVALID;
     }
 
-    BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
-
     lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t));
     if (lmsg == NULL) {
         return BT_STATUS_NOMEM;
@@ -265,6 +263,8 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
     } else {
         lmsg->arg = NULL;
     }
+    // compare this log values with log values in btc_thread_handler()
+    BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, lmsg->arg);
 
     return btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
 

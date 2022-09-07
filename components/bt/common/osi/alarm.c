@@ -27,7 +27,7 @@
 #include "osi/mutex.h"
 #include "bt_common.h"
 
-typedef struct alarm_t {
+typedef struct alarm_s {
     /* timer id point to here */
     esp_timer_handle_t alarm_hdl;
     osi_alarm_callback_t cb;
@@ -44,7 +44,7 @@ static osi_mutex_t alarm_mutex;
 static int alarm_state;
 
 #if (BT_BLE_DYNAMIC_ENV_MEMORY == FALSE)
-static struct alarm_t alarm_cbs[ALARM_CBS_NUM];
+static osi_alarm_t alarm_cbs[ALARM_CBS_NUM];
 #else
 static struct alarm_t *alarm_cbs;
 #endif
@@ -122,7 +122,7 @@ end:
     osi_mutex_unlock(&alarm_mutex);
 }
 
-static struct alarm_t *alarm_cbs_lookfor_available(void)
+static osi_alarm_t *alarm_cbs_lookfor_available(void)
 {
     int i;
 
@@ -136,7 +136,7 @@ static struct alarm_t *alarm_cbs_lookfor_available(void)
     return NULL;
 }
 
-static void alarm_cb_handler(struct alarm_t *alarm)
+static void alarm_cb_handler(osi_alarm_t *alarm)
 {
     OSI_TRACE_DEBUG("TimerID %p\n", alarm);
     if (alarm_state != ALARM_STATE_OPEN) {
@@ -156,12 +156,11 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
 {
     assert(alarm_mutex != NULL);
 
-    struct alarm_t *timer_id = NULL;
+    osi_alarm_t *timer_id = NULL;
 
     osi_mutex_lock(&alarm_mutex, OSI_MUTEX_MAX_TIMEOUT);
     if (alarm_state != ALARM_STATE_OPEN) {
         OSI_TRACE_ERROR("%s, invalid state %d\n", __func__, alarm_state);
-        timer_id = NULL;
         goto end;
     }
 
@@ -169,7 +168,6 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
 
     if (!timer_id) {
         OSI_TRACE_ERROR("%s alarm_cbs exhausted\n", __func__);
-        timer_id = NULL;
         goto end;
     }
 
@@ -187,7 +185,6 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
     if (stat != ESP_OK) {
         OSI_TRACE_ERROR("%s failed to create timer, err 0x%x\n", __func__, stat);
         timer_id = NULL;
-        goto end;
     }
 
 end:
@@ -295,7 +292,6 @@ osi_alarm_err_t osi_alarm_cancel(osi_alarm_t *alarm)
     if (stat != ESP_OK) {
         OSI_TRACE_DEBUG("%s failed to stop timer, err 0x%x\n", __func__, stat);
         ret = OSI_ALARM_ERR_FAIL;
-        goto end;
     }
 end:
     osi_mutex_unlock(&alarm_mutex);

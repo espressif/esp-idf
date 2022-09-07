@@ -1772,7 +1772,7 @@ void bta_dm_inq_cmpl (tBTA_DM_MSG *p_data)
     if ((bta_dm_search_cb.p_btm_inq_info = BTM_InqDbFirst()) != NULL) {
         /* start name and service discovery from the first device on inquiry result */
         bta_dm_search_cb.name_discover_done = FALSE;
-        bta_dm_search_cb.peer_name[0]       = 0;
+        bta_dm_search_cb.peer_name[0]       = '\0';
 #if (SDP_INCLUDED == TRUE)
         bta_dm_discover_device(bta_dm_search_cb.p_btm_inq_info->results.remote_bd_addr);
 #endif  ///SDP_INCLUDED == TRUE
@@ -2222,8 +2222,9 @@ void bta_dm_queue_search (tBTA_DM_MSG *p_data)
     }
 
     bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_API_SEARCH));
-    memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_SEARCH));
-
+    if (bta_dm_search_cb.p_search_queue) {
+        memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_SEARCH));
+    }
 }
 
 /*******************************************************************************
@@ -2243,7 +2244,9 @@ void bta_dm_queue_disc (tBTA_DM_MSG *p_data)
     }
 
     bta_dm_search_cb.p_search_queue = (tBTA_DM_MSG *)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
-    memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
+    if (bta_dm_search_cb.p_search_queue) {
+        memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
+    }
 }
 #endif  ///SDP_INCLUDED == TRUE
 
@@ -2471,7 +2474,7 @@ static void bta_dm_discover_next_device(void)
     /* searching next device on inquiry result */
     if ((bta_dm_search_cb.p_btm_inq_info = BTM_InqDbNext(bta_dm_search_cb.p_btm_inq_info)) != NULL) {
         bta_dm_search_cb.name_discover_done = FALSE;
-        bta_dm_search_cb.peer_name[0]       = 0;
+        bta_dm_search_cb.peer_name[0]       = '\0';
 #if (SDP_INCLUDED == TRUE)
         bta_dm_discover_device(bta_dm_search_cb.p_btm_inq_info->results.remote_bd_addr);
 #endif  ///SDP_INCLUDED == TRUE
@@ -6230,12 +6233,13 @@ static void bta_dm_gatt_disc_complete(UINT16 conn_id, tBTA_GATT_STATUS status)
             p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
             if ( bta_dm_search_cb.ble_raw_used > 0 ) {
                 p_msg->disc_result.result.disc_res.p_raw_data = osi_malloc(bta_dm_search_cb.ble_raw_used);
+                if (p_msg->disc_result.result.disc_res.p_raw_data) {
+                    memcpy( p_msg->disc_result.result.disc_res.p_raw_data,
+                            bta_dm_search_cb.p_ble_rawdata,
+                            bta_dm_search_cb.ble_raw_used );
 
-                memcpy( p_msg->disc_result.result.disc_res.p_raw_data,
-                        bta_dm_search_cb.p_ble_rawdata,
-                        bta_dm_search_cb.ble_raw_used );
-
-                p_msg->disc_result.result.disc_res.raw_data_size = bta_dm_search_cb.ble_raw_used;
+                    p_msg->disc_result.result.disc_res.raw_data_size = bta_dm_search_cb.ble_raw_used;
+                }
             } else {
                 p_msg->disc_result.result.disc_res.p_raw_data = NULL;
                 bta_dm_search_cb.p_ble_rawdata = 0;

@@ -139,10 +139,13 @@ static void search_devices_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
     tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
-    if (!p_src) {
+    if (!(p_src_data && p_dest_data)) {
         return;
     }
-    p_dest_data->p_data = (void *)osi_malloc(p_dest_data->len);
+    p_dest_data->p_data = (tBTA_DM_SEARCH *)osi_malloc(p_dest_data->len);
+    if (!p_dest_data->p_data) {
+        return;
+    }
     memset(p_dest_data->p_data, 0x00, p_dest_data->len);
     memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
 
@@ -183,10 +186,13 @@ static void search_service_record_copy_cb(btc_msg_t *msg, void *p_dest, void *p_
     tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
     tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
 
-    if (!p_src) {
+    if (!(p_src_data && p_dest_data)) {
         return;
     }
-    p_dest_data->p_data = osi_malloc(p_dest_data->len);
+    p_dest_data->p_data = (tBTA_DM_SEARCH *)osi_malloc(p_dest_data->len);
+    if (!p_dest_data->p_data) {
+        return;
+    }
     memset(p_dest_data->p_data, 0x00, p_dest_data->len);
     memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
     if ( p_dest_data->len > sizeof(tBTA_DM_SEARCH)){
@@ -265,35 +271,33 @@ static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_d
     tBTA_DM_SEARCH_PARAM search;
     search.event = event;
     search.p_data = p_data;
-
-    UINT16 param_len = 0;
+    search.len      = 0;
 
     if (p_data) {
-        param_len += sizeof(tBTA_DM_SEARCH);
-    }
-    /* Allocate buffer to hold the pointers (deep copy). The pointers will point to the end of the tBTA_DM_SEARCH */
-    switch (event) {
-    case BTA_DM_INQ_RES_EVT: {
-        if (p_data->inq_res.p_eir) {
-            param_len += HCI_EXT_INQ_RESPONSE_LEN;
+        search.len = sizeof(tBTA_DM_SEARCH);
+        /* Allocate buffer to hold the pointers (deep copy). The pointers will point to the end of the tBTA_DM_SEARCH */
+        switch (event) {
+        case BTA_DM_INQ_RES_EVT: {
+            if (p_data->inq_res.p_eir) {
+                    search.len += HCI_EXT_INQ_RESPONSE_LEN;
+            }
+        }
+        break;
+
+        case BTA_DM_DISC_RES_EVT: {
+            if (p_data->disc_res.raw_data_size && p_data->disc_res.p_raw_data) {
+                    search.len += p_data->disc_res.raw_data_size;
+            }
+        }
+        break;
+        }
+
+        /* if remote name is available in EIR, set the flag so that stack doesn't trigger RNR */
+        if (event == BTA_DM_INQ_RES_EVT) {
+            p_data->inq_res.remt_name_not_required = check_eir_remote_name(p_data, NULL, NULL);
         }
     }
-    break;
 
-    case BTA_DM_DISC_RES_EVT: {
-        if (p_data->disc_res.raw_data_size && p_data->disc_res.p_raw_data) {
-            param_len += p_data->disc_res.raw_data_size;
-        }
-    }
-    break;
-    }
-
-    /* if remote name is available in EIR, set the flag so that stack doesn't trigger RNR */
-    if (event == BTA_DM_INQ_RES_EVT) {
-        p_data->inq_res.remt_name_not_required = check_eir_remote_name(p_data, NULL, NULL);
-    }
-
-    search.len = param_len;
     do {
         btc_msg_t msg;
         msg.sig = BTC_SIG_API_CB;
@@ -392,10 +396,8 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_PARAM *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_gap_bt_search_service_record(char *p_param)
+static void btc_gap_bt_search_service_record(tBTA_DM_SEARCH_PARAM *p_data)
 {
-    tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param;
-
     switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
         esp_bt_gap_cb_param_t param;
@@ -434,18 +436,17 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_S
     tBTA_DM_SEARCH_PARAM search;
     search.event = event;
     search.p_data = p_data;
-    UINT16 param_len = 0;
+    search.len = 0;
 
     if (p_data) {
-        param_len += sizeof(tBTA_DM_SEARCH);
-    }
-    /* Allocate buffer to hold the pointers (deep copy). The pointers will point to the end of the tBTA_DM_SEARCH */
-    if (event == BTA_DM_DISC_RES_EVT) {
-        if (p_data->disc_res.raw_data_size && p_data->disc_res.p_raw_data) {
-            param_len += p_data->disc_res.raw_data_size;
+        search.len = sizeof(tBTA_DM_SEARCH);
+        /* Allocate buffer to hold the pointers (deep copy). The pointers will point to the end of the tBTA_DM_SEARCH */
+        if (event == BTA_DM_DISC_RES_EVT) {
+            if (p_data->disc_res.raw_data_size && p_data->disc_res.p_raw_data) {
+                search.len += p_data->disc_res.raw_data_size;
+            }
         }
     }
-    search.len = param_len;
     do {
         btc_msg_t msg;
         msg.sig = BTC_SIG_API_CB;
@@ -465,10 +466,8 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_S
 ** Returns          void
 **
 *******************************************************************************/
-static void btc_gap_bt_search_services(char *p_param)
+static void btc_gap_bt_search_services(tBTA_DM_SEARCH_PARAM *p_data)
 {
-    tBTA_DM_SEARCH_PARAM *p_data = (tBTA_DM_SEARCH_PARAM *)p_param;
-
     switch (p_data->event) {
     case BTA_DM_DISC_RES_EVT: {
         esp_bt_gap_cb_param_t param;
@@ -525,20 +524,19 @@ static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH 
     tBTA_DM_SEARCH_PARAM search;
     search.event = event;
     search.p_data = p_data;
+    search.len = 0;
 
-    UINT16 param_len = 0;
     if (p_data) {
-        param_len += sizeof(tBTA_DM_SEARCH);
-    }
+        search.len = sizeof(tBTA_DM_SEARCH);
 
-    switch (event) {
-    case BTA_DM_DISC_RES_EVT: {
-        if ((p_data->disc_res.result == BTA_SUCCESS) && (p_data->disc_res.num_uuids > 0)) {
-            param_len += (p_data->disc_res.num_uuids * MAX_UUID_SIZE);
+        switch (event) {
+        case BTA_DM_DISC_RES_EVT: {
+            if ((p_data->disc_res.result == BTA_SUCCESS) && (p_data->disc_res.num_uuids > 0)) {
+                    search.len += (p_data->disc_res.num_uuids * MAX_UUID_SIZE);
+            }
+        } break;
         }
-    } break;
     }
-    search.len = param_len;
     do {
         btc_msg_t msg;
         msg.sig = BTC_SIG_API_CB;
@@ -553,10 +551,13 @@ static void search_services_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src)
     tBTA_DM_SEARCH_PARAM *p_dest_data =  (tBTA_DM_SEARCH_PARAM *) p_dest;
     tBTA_DM_SEARCH_PARAM *p_src_data =  (tBTA_DM_SEARCH_PARAM *) p_src;
 
-    if (!p_src) {
+    if (!(p_src_data && p_dest_data)) {
         return;
     }
-    p_dest_data->p_data = osi_malloc(p_dest_data->len);
+    p_dest_data->p_data = (tBTA_DM_SEARCH*)osi_malloc(p_dest_data->len);
+    if (p_dest_data->p_data == NULL) {
+        return;
+    }
     memset(p_dest_data->p_data, 0x00, p_dest_data->len);
     memcpy(p_dest_data->p_data, p_src_data->p_data, p_dest_data->len);
 

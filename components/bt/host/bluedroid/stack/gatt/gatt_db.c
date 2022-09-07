@@ -1276,7 +1276,7 @@ static void *allocate_attr_in_db(tGATT_SVC_DB *p_db, tBT_UUID *p_uuid, tGATT_PER
     } else {
         p_last = (tGATT_ATTR16 *)p_db->p_attr_list;
 
-        while (p_last != NULL && p_last->p_next != NULL) {
+        while (p_last->p_next != NULL) {
             p_last = (tGATT_ATTR16 *)p_last->p_next;
         }
 

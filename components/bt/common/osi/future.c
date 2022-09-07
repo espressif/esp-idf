@@ -38,7 +38,7 @@ future_t *future_new(void)
 
     ret->ready_can_be_called = true;
     return ret;
-error:;
+error:
     future_free(ret);
     return NULL;
 }
@@ -54,7 +54,7 @@ future_t *future_new_immediate(void *value)
     ret->result = value;
     ret->ready_can_be_called = false;
     return ret;
-error:;
+error:
     future_free(ret);
     return NULL;
 }

@@ -22,7 +22,7 @@
 #include <stdint.h>
 #include "esp_timer.h"
 
-typedef struct alarm_t osi_alarm_t;
+typedef struct alarm_s osi_alarm_t;
 typedef uint64_t period_ms_t;
 typedef esp_timer_cb_t osi_alarm_callback_t;
 

@@ -2051,10 +2051,10 @@ void gatt_sr_update_prep_cnt(tGATT_TCB *p_tcb, tGATT_IF gatt_if, BOOLEAN is_inc,
 {
     UINT8 idx = ((UINT8) gatt_if) - 1 ;
 
-    GATT_TRACE_DEBUG("gatt_sr_update_prep_cnt tcb idx=%d gatt_if=%d is_inc=%d is_reset_first=%d",
-                     p_tcb->tcb_idx, gatt_if, is_inc, is_reset_first);
-
     if (p_tcb) {
+        GATT_TRACE_DEBUG("gatt_sr_update_prep_cnt tcb idx=%d gatt_if=%d is_inc=%d is_reset_first=%d",
+                         p_tcb->tcb_idx, gatt_if, is_inc, is_reset_first);
+
         if (is_reset_first) {
             gatt_sr_reset_prep_cnt(p_tcb);
         }

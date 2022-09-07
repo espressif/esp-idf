@@ -29,9 +29,9 @@
 
 #define FIXED_QUEUE_MAX_TIMEOUT           OSI_SEM_MAX_TIMEOUT
 
-struct fixed_queue_t;
+struct fixed_queue_s;
 
-typedef struct fixed_queue_t fixed_queue_t;
+typedef struct fixed_queue_s fixed_queue_t;
 //typedef struct reactor_t reactor_t;
 
 typedef void (*fixed_queue_free_cb)(void *data);

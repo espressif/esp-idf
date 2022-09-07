@@ -1386,7 +1386,7 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
             if (!enqueue_status) {
                 BTC_TRACE_DEBUG("%s tx_len:%d, fd:%d\n", __func__, fixed_queue_length(slot->tx.queue), fd);
                 osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
-                //block untill under water level, be closed or time out
+                //block until under water level, be closed or time out
                 tx_event_group_val =
                     xEventGroupWaitBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(serial) | SLOT_CLOSE_BIT(serial), pdTRUE,
                                         pdFALSE, VFS_WRITE_TIMEOUT / portTICK_PERIOD_MS);
@@ -1403,6 +1403,9 @@ static ssize_t spp_vfs_write(int fd, const void * data, size_t size)
                     sent = -1;
                     break;
                 }
+                // should not get here, but if it does,
+                // exit loop and don't call osi_mutex_unlock again down bellow
+                break;
             }
             if (tx_len == 0) {
                 esp_spp_write(slot->rfc_handle, 0, NULL);

@@ -69,12 +69,13 @@ btc_sm_handle_t btc_sm_init(const btc_sm_handler_t *p_handlers, btc_sm_state_t i
     }
 
     p_cb = (btc_sm_cb_t *)osi_malloc(sizeof(btc_sm_cb_t));
-    p_cb->state = initial_state;
-    p_cb->p_handlers = (btc_sm_handler_t *)p_handlers;
+    if (p_cb) {
+        p_cb->state = initial_state;
+        p_cb->p_handlers = (btc_sm_handler_t *)p_handlers;
 
-    /* Send BTC_SM_ENTER_EVT to the initial state */
-    p_cb->p_handlers[initial_state](BTC_SM_ENTER_EVT, NULL);
-
+        /* Send BTC_SM_ENTER_EVT to the initial state */
+        p_cb->p_handlers[initial_state](BTC_SM_ENTER_EVT, NULL);
+    }
     return (btc_sm_handle_t)p_cb;
 }
 

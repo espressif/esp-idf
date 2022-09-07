@@ -23,7 +23,7 @@
 #include "osi/mutex.h"
 #include "osi/semaphore.h"
 
-typedef struct fixed_queue_t {
+typedef struct fixed_queue_s {
 
     list_t *list;
     osi_sem_t enqueue_sem;
@@ -63,7 +63,7 @@ fixed_queue_t *fixed_queue_new(size_t capacity)
 
     return ret;
 
-error:;
+error:
     fixed_queue_free(ret, NULL);
     return NULL;
 }

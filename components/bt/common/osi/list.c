@@ -171,7 +171,7 @@ bool list_append(list_t *list, void *data)
     return true;
 }
 
-bool list_remove(list_t *list, void *data)
+bool list_remove(list_t *list, const void *data)
 {
     assert(list != NULL);
     assert(data != NULL);
@@ -201,7 +201,7 @@ bool list_remove(list_t *list, void *data)
     return false;
 }
 
-bool list_delete(list_t *list, void *data)
+bool list_delete(list_t *list, const void *data)
 {
     assert(list != NULL);
     assert(data != NULL);
