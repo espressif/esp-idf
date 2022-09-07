@@ -204,6 +204,9 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
     session->send_fn = httpd_default_send;
     session->recv_fn = httpd_default_recv;
 
+    // increment number of sessions
+    hd->hd_sd_active_count++;
+
     // Call user-defined session opening function
     if (hd->config.open_fn) {
         esp_err_t ret = hd->config.open_fn(hd, session->fd);
@@ -214,10 +217,8 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
         }
     }
 
-    // increment number of sessions
-    hd->hd_sd_active_count++;
-    ESP_LOGD(TAG, LOG_FMT("active sockets: %d"), hd->hd_sd_active_count);
 
+    ESP_LOGD(TAG, LOG_FMT("active sockets: %d"), hd->hd_sd_active_count);
     return ESP_OK;
 }
 
