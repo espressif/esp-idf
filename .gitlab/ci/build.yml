@@ -235,8 +235,10 @@ build_non_test_components_apps:
       - "**/build*/flasher_args.json"
       - "**/build*/flash_project_args"
       - "**/build*/config/sdkconfig.json"
+      - "**/build*/bootloader/*.elf"
       - "**/build*/bootloader/*.bin"
       - "**/build*/partition_table/*.bin"
+      - "**/build*/project_description.json"
       - list_job_*.json
       - size_info.txt
     when: always

@@ -14,6 +14,7 @@ from threading import Thread
 from typing import Any, Dict, List, Optional
 
 from click.core import Context
+from idf_py_actions.constants import OPENOCD_TAGET_CONFIG, OPENOCD_TAGET_CONFIG_DEFAULT
 from idf_py_actions.errors import FatalError
 from idf_py_actions.tools import PropertyDict, ensure_build_directory
 
@@ -57,6 +58,11 @@ source {py_extensions}
 source {symbols}
 source {connect}
 '''
+
+
+def get_openocd_arguments(target: str) -> str:
+    default_args = OPENOCD_TAGET_CONFIG_DEFAULT.format(target=target)
+    return str(OPENOCD_TAGET_CONFIG.get(target, default_args))
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Dict:
@@ -286,12 +292,6 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         """
         Execute openocd as external tool
         """
-        OPENOCD_TAGET_CONFIG = {
-            'esp32': '-f board/esp32-wrover-kit-3.3v.cfg',
-            'esp32s2': '-f board/esp32s2-kaluga-1.cfg',
-            'esp32c3': '-f board/esp32c3-builtin.cfg',
-            'esp32s3': '-f board/esp32s3-builtin.cfg',
-        }
         if os.getenv('OPENOCD_SCRIPTS') is None:
             raise FatalError('OPENOCD_SCRIPTS not found in the environment: Please run export.sh/export.bat', ctx)
         openocd_arguments = os.getenv('OPENOCD_COMMANDS') if openocd_commands is None else openocd_commands
@@ -299,8 +299,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if openocd_arguments is None:
             # use default value if commands not defined in the environment nor command line
             target = project_desc['target']
-            default_args = '-f interface/ftdi/esp32_devkitj_v1.cfg -f target/{}.cfg'.format(target)
-            openocd_arguments = OPENOCD_TAGET_CONFIG.get(target, default_args)
+            openocd_arguments = get_openocd_arguments(target)
             print('Note: OpenOCD cfg not found (via env variable OPENOCD_COMMANDS nor as a --openocd-commands argument)\n'
                   'OpenOCD arguments default to: "{}"'.format(openocd_arguments))
         # script directory is taken from the environment by OpenOCD, update only if command line arguments to override
@@ -405,9 +404,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         """
         Synchronous GDB target with text ui mode
         """
-        gdb(action, ctx, args, 1, gdbinit, require_openocd)
+        gdb(action, ctx, args, False, 1, gdbinit, require_openocd)
 
-    def gdb(action: str, ctx: Context, args: PropertyDict, gdb_tui: Optional[int], gdbinit: Optional[str], require_openocd: bool) -> None:
+    def gdb(action: str, ctx: Context, args: PropertyDict, batch: bool, gdb_tui: Optional[int], gdbinit: Optional[str], require_openocd: bool) -> None:
         """
         Synchronous GDB target
         """
@@ -420,6 +419,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         args = [gdb, *get_gdb_args(project_desc)]
         if gdb_tui is not None:
             args += ['-tui']
+        if batch:
+            args += ['--batch']
         t = Thread(target=run_gdb, args=(args,))
         t.start()
         while True:
@@ -477,11 +478,16 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 'help': 'Run the GDB.',
                 'options': [
                     {
+                        'names': ['--batch'],
+                        'help': ('exit after processing gdbinit.\n'),
+                        'hidden': True,
+                        'is_flag': True,
+                        'default': False,
+                    },
+                    {
                         'names': ['--gdb-tui', '--gdb_tui'],
-                        'help':
-                        ('run gdb in TUI mode\n'),
-                        'default':
-                        None,
+                        'help': ('run gdb in TUI mode\n'),
+                        'default': None,
                     }, gdbinit, fail_if_openocd_failed
                 ],
                 'order_dependencies': ['all', 'flash'],
