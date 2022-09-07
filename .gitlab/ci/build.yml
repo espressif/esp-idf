@@ -31,6 +31,7 @@
       - "**/build*/flash_project_args"
       - "**/build*/config/sdkconfig.json"
       - "**/build*/bootloader/*.bin"
+      - "**/build*/bootloader/*.elf"
       - "**/build*/partition_table/*.bin"
       - $SIZE_INFO_LOCATION
     when: always
