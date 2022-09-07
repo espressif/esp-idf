@@ -8,6 +8,7 @@ Ethernet
 
 esp_eth_ioctl() API
 -------------------
+
 :cpp:func:`esp_eth_ioctl` third argument could take `int` (`bool`) number as an input in some cases. However, it was not properly documented and, in addition, the number had to be "unnaturally" type casted to `void *` datatype to prevent compiler warnings as shown in below example:
 
 .. highlight:: c
@@ -40,6 +41,7 @@ Usage example to get Ethernet configuration:
 
 KSZ8041/81 and LAN8720 Driver Update
 ------------------------------------
+
 KSZ8041/81 and LAN8720 Drivers were updated to support more devices (generations) from associated product family. The drivers are able to recognize particular chip number and its potential support by the driver.
 
 As a result, the specific "chip number" functions calls were replaced by generic ones as follows:
@@ -50,11 +52,22 @@ As a result, the specific "chip number" functions calls were replaced by generic
 
 ESP NETIF Glue Event Handlers
 -----------------------------
+
 ``esp_eth_set_default_handlers()`` and ``esp_eth_clear_default_handlers()`` functions were removed. Registration of the default IP layer handlers for Ethernet is now handled automatically. If users have already followed the recommendation to fully initialize the Ethernet driver and network interface prior to registering their Ethernet/IP event handlers, then no action is required (except for deleting the affected functions). Otherwise, users should ensure that they register the user event handlers as the last thing prior to starting the Ethernet driver.
 
 PHY Address Auto-detect
 -----------------------
+
 Ethernet PHY address auto-detect function ``esp_eth_detect_phy_addr`` was renamed to :cpp:func:`esp_eth_phy_802_3_detect_phy_addr` and its header declaration was moved to :component_file:`esp_eth/include/esp_eth_phy_802_3.h`.
+
+
+SPI-Ethernet Modules Initialization
+-----------------------------------
+
+The SPI-Ethernet Module's initialization has been simplified. The previous initialization process required you to manually allocate an SPI device using :cpp:func:`spi_bus_add_device` before instantiating the SPI-Ethernet MAC.
+
+Now, you no longer need to call :cpp:func:`spi_bus_add_device` as the allocation of the SPI device is done internally. As a result, the :cpp:class:`eth_dm9051_config_t`, :cpp:class:`eth_w5500_config_t`, and :cpp:class:`eth_ksz8851snl_config_t` configuration structures were updated to include members for SPI device configuration (e.g., to allow fine tuning of SPI timing which may be dependent on PCB design). Likewise, the ``ETH_DM9051_DEFAULT_CONFIG``, ``ETH_W5500_DEFAULT_CONFIG``, and ``ETH_KSZ8851SNL_DEFAULT_CONFIG`` configuration initialization macros have been updated to accept new input parameters. Refer to the :doc:`Ethernet API-Reference Guide<../../api-reference/network/esp_eth>` for an example of SPI-Ethernet Module initialization 
+
 
 .. _tcpip-adapter:
 
